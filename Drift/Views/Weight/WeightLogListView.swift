@@ -5,52 +5,92 @@ struct WeightLogListView: View {
     let unit: WeightUnit
     let onDelete: (Int64) -> Void
 
+    private var monthGroups: [MonthGroup] {
+        let calendar = Calendar.current
+        var groups: [String: (title: String, entries: [WeightEntry])] = [:]
+
+        for entry in entries {
+            guard let date = DateFormatters.dateOnly.date(from: entry.date) else { continue }
+            let key = String(format: "%04d-%02d", calendar.component(.year, from: date), calendar.component(.month, from: date))
+            let title = DateFormatters.monthYear.string(from: date)
+            groups[key, default: (title, [])].entries.append(entry)
+        }
+
+        return groups.map { MonthGroup(id: $0.key, title: $0.value.title, entries: $0.value.entries) }
+            .sorted { $0.id > $1.id }
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Log")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            VStack(spacing: 0) {
-                ForEach(Array(entries.prefix(15).enumerated()), id: \.element.id) { index, entry in
-                    HStack(spacing: 12) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("\(String(format: "%.1f", unit.convert(fromKg: entry.weightKg))) \(unit.displayName)")
-                                .font(.subheadline.weight(.semibold).monospacedDigit())
-                            Text(formatDate(entry.date))
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
-                        }
-
+        VStack(alignment: .leading, spacing: 16) {
+            ForEach(monthGroups) { group in
+                VStack(alignment: .leading, spacing: 0) {
+                    // Month header with average
+                    HStack {
+                        Text(group.title)
+                            .font(.headline)
                         Spacer()
+                        let avg = group.entries.map(\.weightKg).reduce(0, +) / Double(group.entries.count)
+                        Text("avg \(String(format: "%.1f", unit.convert(fromKg: avg))) \(unit.displayName)")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.tertiary)
+                    }
+                    .padding(.bottom, 8)
 
-                        if index < entries.count - 1 {
-                            let prev = entries[index + 1]
-                            let change = unit.convert(fromKg: entry.weightKg - prev.weightKg)
-                            HStack(spacing: 3) {
-                                Image(systemName: change < -0.01 ? "arrow.down.right" : change > 0.01 ? "arrow.up.right" : "arrow.right")
-                                    .font(.caption2)
-                                Text("\(change >= 0 ? "+" : "")\(String(format: "%.1f", change))")
-                                    .font(.caption.monospacedDigit())
+                    // Entries
+                    VStack(spacing: 0) {
+                        ForEach(Array(group.entries.enumerated()), id: \.element.id) { index, entry in
+                            entryRow(entry: entry, index: index, allEntries: entries)
+
+                            if index < group.entries.count - 1 {
+                                Divider().overlay(Color.white.opacity(0.05))
                             }
-                            .foregroundStyle(change < -0.01 ? Theme.deficit : change > 0.01 ? Theme.surplus : .secondary)
-                        }
-
-                        if entry.syncedFromHk {
-                            Image(systemName: "heart.fill")
-                                .font(.caption2)
-                                .foregroundStyle(Theme.heartRed.opacity(0.6))
                         }
                     }
-                    .padding(.vertical, 8)
-
-                    if index < min(entries.count, 15) - 1 {
-                        Divider().overlay(Color.white.opacity(0.05))
-                    }
+                    .card()
                 }
             }
-            .card()
         }
+    }
+
+    private func entryRow(entry: WeightEntry, index: Int, allEntries: [WeightEntry]) -> some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(String(format: "%.1f", unit.convert(fromKg: entry.weightKg))) \(unit.displayName)")
+                    .font(.body.weight(.semibold).monospacedDigit())
+                Text(formatDate(entry.date))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Spacer()
+
+            // Day-over-day change (find next entry in full list by date)
+            if let globalIdx = allEntries.firstIndex(where: { $0.id == entry.id }),
+               globalIdx < allEntries.count - 1 {
+                let prev = allEntries[globalIdx + 1]
+                let change = unit.convert(fromKg: entry.weightKg - prev.weightKg)
+
+                HStack(spacing: 4) {
+                    Image(systemName: change < -0.01 ? "arrow.down.right" : change > 0.01 ? "arrow.up.right" : "arrow.right")
+                        .font(.caption2)
+                    if abs(change) < 0.05 {
+                        Text("No Change")
+                            .font(.caption)
+                    } else {
+                        Text("\(change >= 0 ? "+" : "")\(String(format: "%.1f", change)) \(unit.displayName)")
+                            .font(.caption.monospacedDigit())
+                    }
+                }
+                .foregroundStyle(change < -0.01 ? Theme.deficit : change > 0.01 ? Theme.surplus : .secondary)
+            }
+
+            if entry.syncedFromHk {
+                Image(systemName: "heart.fill")
+                    .font(.caption2)
+                    .foregroundStyle(Theme.heartRed.opacity(0.5))
+            }
+        }
+        .padding(.vertical, 10)
     }
 
     private func formatDate(_ s: String) -> String {
@@ -60,4 +100,10 @@ struct WeightLogListView: View {
         guard let d = f.date(from: s) else { return s }
         return DateFormatters.dayDisplay.string(from: d)
     }
+}
+
+private struct MonthGroup: Identifiable {
+    let id: String
+    let title: String
+    let entries: [WeightEntry]
 }
