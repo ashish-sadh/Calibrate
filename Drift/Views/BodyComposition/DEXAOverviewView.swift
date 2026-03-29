@@ -125,9 +125,14 @@ struct DEXAOverviewView: View {
             if let d = delta {
                 let good = lowerBetter ? d < -0.01 : d > 0.01
                 let neutral = abs(d) < 0.01
-                Text("\(d >= 0 ? "+" : "")\(String(format: "%.1f", d)) \(deltaUnit)")
-                    .font(.caption.weight(.bold))
+                let arrow = d < -0.01 ? "\u{2193}" : d > 0.01 ? "\u{2191}" : ""
+                Text("\(arrow) \(abs(d) < 0.05 ? "no change" : "\(String(format: "%.1f", abs(d))) \(deltaUnit)")")
+                    .font(.caption2.weight(.semibold))
                     .foregroundStyle(neutral ? .secondary : good ? Theme.deficit : Theme.surplus)
+            } else {
+                Text("vs prev scan")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
             }
         }
         .frame(maxWidth: .infinity).card()
