@@ -22,6 +22,10 @@ struct MoreTabView: View {
                         navRow(icon: "gear", title: "Settings", subtitle: "Units, Health access", color: .secondary) {
                             SettingsView()
                         }
+                        Divider().overlay(Color.white.opacity(0.05))
+                        navRow(icon: "slider.horizontal.3", title: "Algorithm", subtitle: "Tune deficit calculation", color: Theme.accent) {
+                            AlgorithmSettingsView()
+                        }
                     }
                     .card()
 

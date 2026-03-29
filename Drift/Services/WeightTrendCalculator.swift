@@ -1,32 +1,108 @@
 import Foundation
 
 /// Pure-logic weight trend calculator. No side effects, highly testable.
-/// Uses Exponential Moving Average (EMA) and linear regression
-/// to compute weight trends and estimated caloric deficit/surplus.
+///
+/// ## Algorithm Overview
+/// Uses Exponential Moving Average (EMA) for weight smoothing and linear regression
+/// for rate-of-change estimation. Energy deficit is derived from the weight trend.
+///
+/// ## How MacroFactor does it (for reference)
+/// MacroFactor uses BOTH food intake + weight trend to derive expenditure:
+///   Expenditure = Intake - (Weight Change × Energy Density)
+///   Deficit = Intake - Expenditure
+/// This is more accurate because it captures metabolic adaptation.
+///
+/// ## Our approach (weight-trend only)
+/// Since we may not have accurate food logging data, we estimate deficit from
+/// weight change alone using a configurable energy density (kcal per kg of body change).
+/// The 7700 kcal/kg rule overestimates early in a diet because:
+/// - Week 1: ~4858 kcal/kg (glycogen + water loss)
+/// - Weeks 4+: ~7200 kcal/kg (mostly fat)
+/// - Long-term average: ~5500-7000 kcal/kg depending on body composition
+///
+/// ## Tunable Parameters (via AlgorithmConfig)
+/// - `emaAlpha`: EMA smoothing factor (0.05-0.2). Lower = smoother, slower to react.
+/// - `regressionWindowDays`: Days of EMA data for linear regression (14-28).
+/// - `kcalPerKg`: Energy density of weight change (5500-7700).
+/// - `maintainingThresholdKgPerWeek`: Threshold for "maintaining" classification.
+///
 enum WeightTrendCalculator {
+
+    // MARK: - Configuration
+
+    /// Tunable algorithm parameters. Adjust these to calibrate deficit estimates.
+    struct AlgorithmConfig: Codable, Sendable {
+        /// EMA smoothing factor. Higher = more responsive, noisier.
+        /// - 0.05: Very smooth (half-life ~13 days). Good for noisy data.
+        /// - 0.10: Balanced (half-life ~6.6 days). Default, same as MacroFactor/Happy Scale.
+        /// - 0.15: More responsive (half-life ~4.3 days). Good for consistent daily weighers.
+        /// - 0.20: Very responsive (half-life ~3.1 days). Only if weighing daily + low variance.
+        var emaAlpha: Double
+
+        /// Number of days of EMA data to use for linear regression.
+        /// MacroFactor uses ~20 days. Range: 14-28.
+        /// Longer = more stable estimate, slower to detect changes.
+        /// Shorter = faster to react, but noisier.
+        var regressionWindowDays: Int
+
+        /// Energy density of body weight change in kcal per kg.
+        /// - 7700: Traditional "1 kg = 7700 kcal" (pure fat). Overestimates deficit.
+        /// - 7000: Adjusted for mixed fat + lean loss. Good for extended diets.
+        /// - 5500: Conservative. Accounts for water/glycogen in early dieting.
+        /// - Custom: Set based on your experience. If Drift shows higher deficit
+        ///   than MacroFactor, lower this value.
+        var kcalPerKg: Double
+
+        /// Weekly rate threshold (kg/week) below which we classify as "maintaining".
+        var maintainingThresholdKgPerWeek: Double
+
+        static let `default` = AlgorithmConfig(
+            emaAlpha: 0.1,
+            regressionWindowDays: 21,
+            kcalPerKg: 6000, // Lower than 7700 to better match MacroFactor
+            maintainingThresholdKgPerWeek: 0.05
+        )
+
+        /// Conservative: smoother, lower energy density (closer to MacroFactor estimates)
+        static let conservative = AlgorithmConfig(
+            emaAlpha: 0.08,
+            regressionWindowDays: 21,
+            kcalPerKg: 5500,
+            maintainingThresholdKgPerWeek: 0.05
+        )
+
+        /// Aggressive: more responsive, higher energy density
+        static let responsive = AlgorithmConfig(
+            emaAlpha: 0.15,
+            regressionWindowDays: 14,
+            kcalPerKg: 7700,
+            maintainingThresholdKgPerWeek: 0.05
+        )
+    }
 
     // MARK: - Public Types
 
     struct WeightTrend: Sendable {
-        let currentEMA: Double              // kg
-        let previousEMA: Double             // kg
-        let weeklyRateKg: Double            // kg/week (negative = losing)
-        let estimatedDailyDeficit: Double    // kcal (negative = deficit)
+        let currentEMA: Double
+        let previousEMA: Double
+        let weeklyRateKg: Double
+        let estimatedDailyDeficit: Double
         let trendDirection: TrendDirection
-        let projection30Day: Double?        // kg, nil if insufficient data
+        let projection30Day: Double?
         let dataPoints: [WeightDataPoint]
         let weightChanges: WeightChanges
+        let config: AlgorithmConfig // expose so UI can show what config was used
     }
 
     struct WeightDataPoint: Sendable {
         let date: Date
         let dateString: String
-        let actualWeight: Double?           // kg, nil if no measurement
-        let emaWeight: Double               // kg
+        let actualWeight: Double?
+        let emaWeight: Double
     }
 
     struct WeightChanges: Sendable {
-        let threeDay: Double?    // kg change
+        let threeDay: Double?
         let sevenDay: Double?
         let fourteenDay: Double?
         let thirtyDay: Double?
@@ -34,9 +110,7 @@ enum WeightTrendCalculator {
     }
 
     enum TrendDirection: Sendable {
-        case losing
-        case maintaining
-        case gaining
+        case losing, maintaining, gaining
 
         var displayText: String {
             switch self {
@@ -55,24 +129,11 @@ enum WeightTrendCalculator {
         }
     }
 
-    // MARK: - Constants
-
-    /// EMA smoothing factor. 0.1 = today's weight contributes 10%.
-    /// Same approach as Hacker's Diet / MacroFactor / Happy Scale.
-    static let alpha: Double = 0.1
-
-    /// kcal per kg of body weight change.
-    static let kcalPerKg: Double = 7700
-
-    /// Threshold for "maintaining" vs "losing/gaining" in kg/week.
-    static let maintainingThreshold: Double = 0.05
-
     // MARK: - Core Calculation
 
-    /// Calculate the full weight trend from a list of weight entries.
-    /// Entries must have `date` in "YYYY-MM-DD" format and `weightKg`.
     static func calculateTrend(
-        entries: [(date: String, weightKg: Double)]
+        entries: [(date: String, weightKg: Double)],
+        config: AlgorithmConfig = loadConfig()
     ) -> WeightTrend? {
         guard !entries.isEmpty else { return nil }
 
@@ -80,7 +141,6 @@ enum WeightTrendCalculator {
         formatter.dateFormat = "yyyy-MM-dd"
         formatter.locale = Locale(identifier: "en_US_POSIX")
 
-        // Sort by date ascending
         let sorted = entries
             .compactMap { entry -> (date: Date, dateString: String, weight: Double)? in
                 guard let date = formatter.date(from: entry.date) else { return nil }
@@ -90,12 +150,12 @@ enum WeightTrendCalculator {
 
         guard !sorted.isEmpty else { return nil }
 
-        // Calculate EMA
+        // Calculate EMA with configurable alpha
         var dataPoints: [WeightDataPoint] = []
         var ema = sorted[0].weight
 
         for entry in sorted {
-            ema = alpha * entry.weight + (1 - alpha) * ema
+            ema = config.emaAlpha * entry.weight + (1 - config.emaAlpha) * ema
             dataPoints.append(WeightDataPoint(
                 date: entry.date,
                 dateString: entry.dateString,
@@ -107,9 +167,9 @@ enum WeightTrendCalculator {
         let currentEMA = dataPoints.last!.emaWeight
         let previousEMA = dataPoints.count >= 2 ? dataPoints[dataPoints.count - 2].emaWeight : currentEMA
 
-        // Calculate weekly rate via linear regression on last 21 days (3 weeks) of EMA
-        let threeWeeksAgo = Calendar.current.date(byAdding: .day, value: -21, to: Date())!
-        let recentPoints = dataPoints.filter { $0.date >= threeWeeksAgo }
+        // Linear regression on configurable window
+        let windowStart = Calendar.current.date(byAdding: .day, value: -config.regressionWindowDays, to: Date())!
+        let recentPoints = dataPoints.filter { $0.date >= windowStart }
 
         let weeklyRateKg: Double
         if recentPoints.count >= 3 {
@@ -123,28 +183,21 @@ enum WeightTrendCalculator {
             weeklyRateKg = 0
         }
 
-        // Energy deficit always based on last 3 weeks of weight trend
-        let estimatedDailyDeficit = weeklyRateKg * kcalPerKg / 7
+        // Deficit using configurable energy density
+        let estimatedDailyDeficit = weeklyRateKg * config.kcalPerKg / 7
 
         let trendDirection: TrendDirection
-        if weeklyRateKg < -maintainingThreshold {
+        if weeklyRateKg < -config.maintainingThresholdKgPerWeek {
             trendDirection = .losing
-        } else if weeklyRateKg > maintainingThreshold {
+        } else if weeklyRateKg > config.maintainingThresholdKgPerWeek {
             trendDirection = .gaining
         } else {
             trendDirection = .maintaining
         }
 
-        // 30-day projection
-        let projection30Day: Double?
-        if dataPoints.count >= 3 {
-            projection30Day = currentEMA + (weeklyRateKg / 7 * 30)
-        } else {
-            projection30Day = nil
-        }
-
-        // Weight changes at various intervals
-        let weightChanges = calculateWeightChanges(dataPoints: dataPoints)
+        let projection30Day: Double? = dataPoints.count >= 3
+            ? currentEMA + (weeklyRateKg / 7 * 30)
+            : nil
 
         return WeightTrend(
             currentEMA: currentEMA,
@@ -154,37 +207,47 @@ enum WeightTrendCalculator {
             trendDirection: trendDirection,
             projection30Day: projection30Day,
             dataPoints: dataPoints,
-            weightChanges: weightChanges
+            weightChanges: calculateWeightChanges(dataPoints: dataPoints),
+            config: config
         )
+    }
+
+    // MARK: - Config Persistence
+
+    private static let configKey = "drift_algorithm_config"
+
+    static func loadConfig() -> AlgorithmConfig {
+        guard let data = UserDefaults.standard.data(forKey: configKey),
+              let config = try? JSONDecoder().decode(AlgorithmConfig.self, from: data) else {
+            return .default
+        }
+        return config
+    }
+
+    static func saveConfig(_ config: AlgorithmConfig) {
+        if let data = try? JSONEncoder().encode(config) {
+            UserDefaults.standard.set(data, forKey: configKey)
+        }
     }
 
     // MARK: - Linear Regression
 
-    /// Compute the slope of a linear regression on EMA weight values.
-    /// Returns slope in kg/day.
     static func linearRegressionSlope(points: [WeightDataPoint]) -> Double {
         guard points.count >= 2 else { return 0 }
 
         let referenceDate = points[0].date
         let n = Double(points.count)
 
-        var sumX: Double = 0
-        var sumY: Double = 0
-        var sumXY: Double = 0
-        var sumX2: Double = 0
+        var sumX: Double = 0, sumY: Double = 0, sumXY: Double = 0, sumX2: Double = 0
 
         for point in points {
             let x = Double(Calendar.current.dateComponents([.day], from: referenceDate, to: point.date).day ?? 0)
             let y = point.emaWeight
-            sumX += x
-            sumY += y
-            sumXY += x * y
-            sumX2 += x * x
+            sumX += x; sumY += y; sumXY += x * y; sumX2 += x * x
         }
 
         let denominator = n * sumX2 - sumX * sumX
         guard denominator != 0 else { return 0 }
-
         return (n * sumXY - sumX * sumY) / denominator
     }
 
@@ -196,23 +259,17 @@ enum WeightTrendCalculator {
         }
 
         func changeOverDays(_ days: Int) -> Double? {
-            let targetDate = Calendar.current.date(byAdding: .day, value: -days, to: latest.date)!
-            // Find the closest data point to the target date
-            let closest = dataPoints.min(by: { a, b in
-                abs(a.date.timeIntervalSince(targetDate)) < abs(b.date.timeIntervalSince(targetDate))
-            })
+            let target = Calendar.current.date(byAdding: .day, value: -days, to: latest.date)!
+            let closest = dataPoints.min { abs($0.date.timeIntervalSince(target)) < abs($1.date.timeIntervalSince(target)) }
             guard let closest, closest.date != latest.date else { return nil }
-            // Only use if within 2 days of target
-            let daysDiff = abs(Calendar.current.dateComponents([.day], from: closest.date, to: targetDate).day ?? 0)
+            let daysDiff = abs(Calendar.current.dateComponents([.day], from: closest.date, to: target).day ?? 0)
             guard daysDiff <= 2 else { return nil }
             return latest.emaWeight - closest.emaWeight
         }
 
         return WeightChanges(
-            threeDay: changeOverDays(3),
-            sevenDay: changeOverDays(7),
-            fourteenDay: changeOverDays(14),
-            thirtyDay: changeOverDays(30),
+            threeDay: changeOverDays(3), sevenDay: changeOverDays(7),
+            fourteenDay: changeOverDays(14), thirtyDay: changeOverDays(30),
             ninetyDay: changeOverDays(90)
         )
     }
