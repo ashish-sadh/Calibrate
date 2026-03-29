@@ -62,6 +62,7 @@ struct DEXAScan: Identifiable, Codable, Sendable {
     var fatMassLbs: Double? { fatMassKg.map { $0 * 2.20462 } }
     var leanMassLbs: Double? { leanMassKg.map { $0 * 2.20462 } }
     var visceralFatLbs: Double? { visceralFatKg.map { $0 * 2.20462 } }
+    var bmcLbs: Double? { boneMassKg.map { $0 * 2.20462 } }
 }
 
 extension DEXAScan: FetchableRecord, PersistableRecord {
