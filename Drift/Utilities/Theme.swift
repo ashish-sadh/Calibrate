@@ -6,7 +6,7 @@ enum Theme {
     static let background = Color(hex: "1C1C1E")
     static let cardBackground = Color(hex: "2C2C2E")
     static let cardBackgroundElevated = Color(hex: "3A3A3C")
-    static let accent = Color(hex: "8B5CF6") // purple like MacroFactor
+    static let accent = Color(hex: "8B5CF6") // accent purple
     static let deficit = Color(hex: "34D399") // green
     static let surplus = Color(hex: "EF4444") // red
     static let calorieBlue = Color(hex: "3B82F6")

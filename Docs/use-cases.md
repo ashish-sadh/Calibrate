@@ -24,7 +24,7 @@
 
 **Success**: User knows at a glance if they're in deficit today.
 
-### UC-3: Review Weight Trend (MacroFactor-style)
+### UC-3: Review Weight Trend
 **Actor**: User tracking progress over time
 **Flow**:
 1. User taps Weight tab

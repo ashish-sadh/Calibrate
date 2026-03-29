@@ -4,7 +4,7 @@ Local-first iOS app for weight tracking, nutrition, and body composition analysi
 
 ## Core Features
 
-- **Weight Trend Tracking** (MacroFactor-inspired) - EMA smoothing, deficit/surplus estimation, 30-day projection
+- **Weight Trend Tracking** - EMA smoothing, deficit/surplus estimation, 30-day projection
 - **Apple Health Integration** - Auto-imports weight, calories burned, sleep, steps
 - **Food Logging** - 128 curated foods (Indian staples + common items) with macros, plus quick-add
 - **Supplements** - Daily checklist for electrolytes, magnesium glycinate, creatine

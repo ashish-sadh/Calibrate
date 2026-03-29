@@ -6,8 +6,8 @@ import Foundation
 /// Uses Exponential Moving Average (EMA) for weight smoothing and linear regression
 /// for rate-of-change estimation. Energy deficit is derived from the weight trend.
 ///
-/// ## How MacroFactor does it (for reference)
-/// MacroFactor uses BOTH food intake + weight trend to derive expenditure:
+/// ## Adaptive TDEE approach (for reference)
+/// Adaptive TDEE apps use BOTH food intake + weight trend to derive expenditure:
 ///   Expenditure = Intake - (Weight Change × Energy Density)
 ///   Deficit = Intake - Expenditure
 /// This is more accurate because it captures metabolic adaptation.
@@ -34,13 +34,13 @@ enum WeightTrendCalculator {
     struct AlgorithmConfig: Codable, Sendable {
         /// EMA smoothing factor. Higher = more responsive, noisier.
         /// - 0.05: Very smooth (half-life ~13 days). Good for noisy data.
-        /// - 0.10: Balanced (half-life ~6.6 days). Default, same as MacroFactor/Happy Scale.
+        /// - 0.10: Balanced (half-life ~6.6 days). Default, same as Happy Scale.
         /// - 0.15: More responsive (half-life ~4.3 days). Good for consistent daily weighers.
         /// - 0.20: Very responsive (half-life ~3.1 days). Only if weighing daily + low variance.
         var emaAlpha: Double
 
         /// Number of days of EMA data to use for linear regression.
-        /// MacroFactor uses ~20 days. Range: 14-28.
+        /// Popular apps use ~20 days. Range: 14-28.
         /// Longer = more stable estimate, slower to detect changes.
         /// Shorter = faster to react, but noisier.
         var regressionWindowDays: Int
@@ -50,7 +50,7 @@ enum WeightTrendCalculator {
         /// - 7000: Adjusted for mixed fat + lean loss. Good for extended diets.
         /// - 5500: Conservative. Accounts for water/glycogen in early dieting.
         /// - Custom: Set based on your experience. If Drift shows higher deficit
-        ///   than MacroFactor, lower this value.
+        ///   than expected, lower this value.
         var kcalPerKg: Double
 
         /// Weekly rate threshold (kg/week) below which we classify as "maintaining".
@@ -59,11 +59,11 @@ enum WeightTrendCalculator {
         static let `default` = AlgorithmConfig(
             emaAlpha: 0.1,
             regressionWindowDays: 21,
-            kcalPerKg: 6000, // Lower than 7700 to better match MacroFactor
+            kcalPerKg: 6000, // Lower than 7700 for realistic weight loss
             maintainingThresholdKgPerWeek: 0.05
         )
 
-        /// Conservative: smoother, lower energy density (closer to MacroFactor estimates)
+        /// Conservative: smoother, lower energy density (conservative estimates)
         static let conservative = AlgorithmConfig(
             emaAlpha: 0.08,
             regressionWindowDays: 21,

@@ -15,7 +15,7 @@ struct AlgorithmSettingsView: View {
 
                     HStack(spacing: 8) {
                         presetButton("Conservative", config: .conservative,
-                                     detail: "Lower deficit estimates, closer to MacroFactor")
+                                     detail: "Lower deficit estimates, conservative")
                         presetButton("Default", config: .default,
                                      detail: "Balanced smoothing and energy density")
                         presetButton("Responsive", config: .responsive,
@@ -59,7 +59,7 @@ struct AlgorithmSettingsView: View {
                         Text("35 days").font(.caption2).foregroundStyle(.tertiary)
                     }
 
-                    Text("How many days of trend data to use for calculating your weekly rate and deficit. MacroFactor uses ~20 days. Shorter = faster to detect changes. Longer = more stable.")
+                    Text("How many days of trend data to use for calculating your weekly rate and deficit. Popular apps use ~20 days. Shorter = faster to detect changes. Longer = more stable.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -72,7 +72,7 @@ struct AlgorithmSettingsView: View {
                     range: 4000...8000,
                     step: 100,
                     format: "%.0f",
-                    description: "How many calories correspond to 1 kg of body weight change. The traditional rule is 7700 (pure fat), but real-world weight loss includes water and glycogen. If Drift shows a higher deficit than MacroFactor, lower this value.",
+                    description: "How many calories correspond to 1 kg of body weight change. The traditional rule is 7700 (pure fat), but real-world weight loss includes water and glycogen. If Drift shows a higher deficit than expected, lower this value.",
                     low: "4000 (early diet)",
                     high: "7700 (pure fat)"
                 )
@@ -86,7 +86,7 @@ struct AlgorithmSettingsView: View {
                         Text("At a rate of -0.27 kg/week, this config estimates a daily deficit of **\(example) kcal**.")
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                        Text("MacroFactor shows -296 kcal for this rate.")
+                        Text("A typical app shows ~296 kcal for this rate.")
                             .font(.caption)
                             .foregroundStyle(.tertiary)
                     }
@@ -174,7 +174,7 @@ struct AlgorithmSettingsView: View {
     }
 
     private var exampleDeficit: Int? {
-        // -0.27 kg/week is from the MacroFactor screenshot
+        // -0.27 kg/week example rate
         let weeklyRate = -0.27
         let dailyDeficit = weeklyRate * config.kcalPerKg / 7
         return Int(dailyDeficit)

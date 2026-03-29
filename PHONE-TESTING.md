@@ -141,7 +141,7 @@ Drift/
 ├── Models/                     # GRDB data models
 ├── Views/                      # SwiftUI views by feature
 │   ├── Dashboard/
-│   ├── Weight/                 # MacroFactor-inspired weight trend
+│   ├── Weight/                 # Weight trend tracking
 │   ├── Food/                   # Food search + logging
 │   ├── Supplements/            # Daily checklist
 │   ├── Glucose/                # CGM chart
