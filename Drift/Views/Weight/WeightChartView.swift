@@ -58,27 +58,31 @@ struct WeightChartView: View {
             }
 
             Chart {
-                // Starting weight reference line (gray)
+                // Starting weight reference line (gray, dashed)
                 if let startWeight = displayPoints.first?.ema {
                     RuleMark(y: .value("", startWeight))
-                        .foregroundStyle(.secondary.opacity(0.4))
-                        .lineStyle(StrokeStyle(lineWidth: 1))
-                        .annotation(position: .leading, spacing: 4) {
+                        .foregroundStyle(.secondary.opacity(0.3))
+                        .lineStyle(StrokeStyle(lineWidth: 0.8, dash: [4, 3]))
+                        .annotation(position: .topLeading, spacing: 2) {
                             Text(String(format: "%.1f", startWeight))
-                                .font(.caption2.monospacedDigit())
-                                .foregroundStyle(.secondary)
+                                .font(.system(size: 9).monospacedDigit())
+                                .foregroundStyle(.secondary.opacity(0.7))
+                                .padding(.horizontal, 3)
+                                .background(Theme.cardBackground.opacity(0.8))
                         }
                 }
 
-                // Current weight reference line (accent)
+                // Current weight reference line (accent, solid)
                 if let currentWeight = displayPoints.last?.ema {
                     RuleMark(y: .value("", currentWeight))
-                        .foregroundStyle(Theme.accent.opacity(0.6))
-                        .lineStyle(StrokeStyle(lineWidth: 1.5))
-                        .annotation(position: .trailing, spacing: 4) {
+                        .foregroundStyle(Theme.accent.opacity(0.5))
+                        .lineStyle(StrokeStyle(lineWidth: 1))
+                        .annotation(position: .bottomTrailing, spacing: 2) {
                             Text(String(format: "%.1f", currentWeight))
-                                .font(.caption2.weight(.bold).monospacedDigit())
+                                .font(.system(size: 10, weight: .bold).monospacedDigit())
                                 .foregroundStyle(Theme.accent)
+                                .padding(.horizontal, 4).padding(.vertical, 1)
+                                .background(Theme.cardBackground.opacity(0.9), in: RoundedRectangle(cornerRadius: 3))
                         }
                 }
 

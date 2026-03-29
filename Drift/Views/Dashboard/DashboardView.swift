@@ -31,6 +31,7 @@ struct DashboardView: View {
             }
             .background(Theme.background)
             .navigationTitle("Dashboard")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .task { await viewModel.loadToday() }
             .refreshable { await viewModel.loadToday() }

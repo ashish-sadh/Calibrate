@@ -44,6 +44,7 @@ struct WeightTabView: View {
         }
         .background(Theme.background)
         .navigationTitle("Weight")
+            .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {

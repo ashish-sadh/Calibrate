@@ -81,6 +81,7 @@ struct SupplementsTabView: View {
             }
             .background(Theme.background)
             .navigationTitle("Supplements")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {

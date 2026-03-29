@@ -21,6 +21,7 @@ struct FoodTabView: View {
             }
             .background(Theme.background)
             .navigationTitle("Food")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
