@@ -31,6 +31,26 @@ extension AppDatabase {
 
     /// Provides write access.
     var writer: any DatabaseWriter { dbWriter }
+
+    /// Delete ALL data from ALL tables. Nuclear option for factory reset.
+    func factoryReset() throws {
+        try dbWriter.write { db in
+            try db.execute(sql: "DELETE FROM food_entry")
+            try db.execute(sql: "DELETE FROM meal_log")
+            try db.execute(sql: "DELETE FROM weight_entry")
+            try db.execute(sql: "DELETE FROM supplement_log")
+            try db.execute(sql: "DELETE FROM supplement")
+            try db.execute(sql: "DELETE FROM glucose_reading")
+            try db.execute(sql: "DELETE FROM dexa_region")
+            try db.execute(sql: "DELETE FROM dexa_scan")
+            try db.execute(sql: "DELETE FROM hk_sync_anchor")
+            try db.execute(sql: "DELETE FROM barcode_cache")
+            try db.execute(sql: "DELETE FROM food")
+        }
+        // Re-seed default foods
+        try seedFoodsFromJSON()
+        Log.database.info("Factory reset complete - all data deleted, foods re-seeded")
+    }
 }
 
 // MARK: - Weight Entry Operations

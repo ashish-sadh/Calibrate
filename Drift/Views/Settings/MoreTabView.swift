@@ -100,6 +100,8 @@ struct MoreTabView: View {
 
 struct SettingsView: View {
     @State private var weightUnit: WeightUnit = Preferences.weightUnit
+    @State private var showingFactoryReset = false
+    @State private var resetDone = false
 
     var body: some View {
         ScrollView {
@@ -153,12 +155,50 @@ struct SettingsView: View {
                     }
                 }
                 .card()
+
+                // Factory Reset
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Danger Zone")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.surplus)
+
+                    Button(role: .destructive) {
+                        showingFactoryReset = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "trash.fill").foregroundStyle(Theme.surplus)
+                            Text("Factory Reset")
+                            Spacer()
+                        }
+                    }
+                }
+                .card()
+                .alert("Factory Reset", isPresented: $showingFactoryReset) {
+                    Button("Reset Everything", role: .destructive) { performFactoryReset() }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("This deletes ALL local data: weight entries, food logs, supplements, DEXA scans, glucose data, barcode cache, goals, and algorithm settings. Apple Health data is NOT affected. This cannot be undone.")
+                }
             }
             .padding(.horizontal, 16)
             .padding(.top, 8)
         }
         .scrollContentBackground(.hidden)
+        .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Settings")
         .toolbarColorScheme(.dark, for: .navigationBar)
+    }
+
+    private func performFactoryReset() {
+        do {
+            try AppDatabase.shared.factoryReset()
+            WeightGoal.clear()
+            WeightTrendCalculator.saveConfig(.default)
+            UserDefaults.standard.removeObject(forKey: "weight_unit")
+            Log.app.info("Factory reset performed")
+            resetDone = true
+        } catch {
+            Log.app.error("Factory reset failed: \(error.localizedDescription)")
+        }
     }
 }
