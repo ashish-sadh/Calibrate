@@ -1,144 +1,72 @@
 import SwiftUI
 import AVFoundation
+import PhotosUI
 
-/// Camera-based barcode scanner using AVFoundation.
+// MARK: - Camera Barcode Scanner
+
 struct BarcodeScannerView: UIViewControllerRepresentable {
     let onBarcodeFound: (String) -> Void
-    @Environment(\.dismiss) private var dismiss
 
-    func makeUIViewController(context: Context) -> ScannerViewController {
-        let vc = ScannerViewController()
-        vc.onBarcodeFound = { barcode in
-            onBarcodeFound(barcode)
-        }
-        return vc
-    }
-
-    func updateUIViewController(_ uiViewController: ScannerViewController, context: Context) {}
+    func makeUIViewController(context: Context) -> ScannerViewController { let vc = ScannerViewController(); vc.onBarcodeFound = onBarcodeFound; return vc }
+    func updateUIViewController(_ vc: ScannerViewController, context: Context) {}
 
     class ScannerViewController: UIViewController, @preconcurrency AVCaptureMetadataOutputObjectsDelegate {
         var onBarcodeFound: ((String) -> Void)?
         private var captureSession: AVCaptureSession?
-        private var previewLayer: AVCaptureVideoPreviewLayer?
         private var hasFoundBarcode = false
 
-        override func viewDidLoad() {
-            super.viewDidLoad()
-            view.backgroundColor = .black
-            setupCamera()
-        }
+        override func viewDidLoad() { super.viewDidLoad(); view.backgroundColor = .black; setupCamera() }
 
         private func setupCamera() {
             let session = AVCaptureSession()
-
             guard let device = AVCaptureDevice.default(for: .video),
-                  let input = try? AVCaptureDeviceInput(device: device),
-                  session.canAddInput(input) else {
-                showError("Camera not available")
-                return
-            }
-
+                  let input = try? AVCaptureDeviceInput(device: device), session.canAddInput(input) else { return }
             session.addInput(input)
-
             let output = AVCaptureMetadataOutput()
-            guard session.canAddOutput(output) else {
-                showError("Cannot process barcodes")
-                return
-            }
-
+            guard session.canAddOutput(output) else { return }
             session.addOutput(output)
             output.setMetadataObjectsDelegate(self, queue: .main)
-            output.metadataObjectTypes = [.ean13, .ean8, .upce, .code128, .code39, .code93, .interleaved2of5]
+            output.metadataObjectTypes = [.ean13, .ean8, .upce, .code128, .code39, .code93]
 
             let preview = AVCaptureVideoPreviewLayer(session: session)
             preview.videoGravity = .resizeAspectFill
             preview.frame = view.bounds
             view.layer.addSublayer(preview)
-            previewLayer = preview
-
-            // Add scan area overlay
             addOverlay()
-
             captureSession = session
-            DispatchQueue.global(qos: .userInitiated).async {
-                session.startRunning()
-            }
+            DispatchQueue.global(qos: .userInitiated).async { session.startRunning() }
         }
 
         private func addOverlay() {
-            // Semi-transparent overlay with clear center
             let overlay = UIView(frame: view.bounds)
             overlay.backgroundColor = UIColor.black.withAlphaComponent(0.5)
             overlay.isUserInteractionEnabled = false
             view.addSubview(overlay)
-
-            let scanArea = CGRect(
-                x: view.bounds.width * 0.1,
-                y: view.bounds.height * 0.3,
-                width: view.bounds.width * 0.8,
-                height: view.bounds.height * 0.15
-            )
-
+            let scanArea = CGRect(x: view.bounds.width * 0.1, y: view.bounds.height * 0.3, width: view.bounds.width * 0.8, height: view.bounds.height * 0.15)
             let path = UIBezierPath(rect: overlay.bounds)
             path.append(UIBezierPath(roundedRect: scanArea, cornerRadius: 12).reversing())
-
-            let mask = CAShapeLayer()
-            mask.path = path.cgPath
-            overlay.layer.mask = mask
-
-            // Scan area border
-            let border = CAShapeLayer()
-            border.path = UIBezierPath(roundedRect: scanArea, cornerRadius: 12).cgPath
-            border.strokeColor = UIColor(white: 1, alpha: 0.6).cgColor
-            border.fillColor = UIColor.clear.cgColor
-            border.lineWidth = 2
+            let mask = CAShapeLayer(); mask.path = path.cgPath; overlay.layer.mask = mask
+            let border = CAShapeLayer(); border.path = UIBezierPath(roundedRect: scanArea, cornerRadius: 12).cgPath
+            border.strokeColor = UIColor.white.withAlphaComponent(0.6).cgColor; border.fillColor = UIColor.clear.cgColor; border.lineWidth = 2
             view.layer.addSublayer(border)
-
-            // Label
-            let label = UILabel()
-            label.text = "Point camera at barcode"
-            label.textColor = .white
-            label.font = .systemFont(ofSize: 14, weight: .medium)
-            label.textAlignment = .center
-            label.frame = CGRect(x: 0, y: scanArea.maxY + 16, width: view.bounds.width, height: 20)
+            let label = UILabel(); label.text = "Point camera at barcode"; label.textColor = .white; label.font = .systemFont(ofSize: 14, weight: .medium)
+            label.textAlignment = .center; label.frame = CGRect(x: 0, y: scanArea.maxY + 16, width: view.bounds.width, height: 20)
             view.addSubview(label)
         }
 
-        override func viewDidLayoutSubviews() {
-            super.viewDidLayoutSubviews()
-            previewLayer?.frame = view.bounds
-        }
+        override func viewDidLayoutSubviews() { super.viewDidLayoutSubviews() }
+        override func viewWillDisappear(_ animated: Bool) { super.viewWillDisappear(animated); captureSession?.stopRunning() }
 
-        override func viewWillDisappear(_ animated: Bool) {
-            super.viewWillDisappear(animated)
-            captureSession?.stopRunning()
-        }
-
-        func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
-            guard !hasFoundBarcode,
-                  let object = metadataObjects.first as? AVMetadataMachineReadableCodeObject,
-                  let barcode = object.stringValue else { return }
-
-            hasFoundBarcode = true
-            AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
-            captureSession?.stopRunning()
-
-            Log.foodLog.info("Scanned barcode: \(barcode)")
+        func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput objects: [AVMetadataObject], from connection: AVCaptureConnection) {
+            guard !hasFoundBarcode, let obj = objects.first as? AVMetadataMachineReadableCodeObject, let barcode = obj.stringValue else { return }
+            hasFoundBarcode = true; AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate)); captureSession?.stopRunning()
             onBarcodeFound?(barcode)
-        }
-
-        private func showError(_ msg: String) {
-            let label = UILabel()
-            label.text = msg
-            label.textColor = .white
-            label.textAlignment = .center
-            label.frame = view.bounds
-            view.addSubview(label)
         }
     }
 }
 
-/// Combined view: scanner + lookup + log
+// MARK: - Main Barcode Lookup View
+
 struct BarcodeLookupView: View {
     @Bindable var viewModel: FoodLogViewModel
     @Environment(\.dismiss) private var dismiss
@@ -148,11 +76,15 @@ struct BarcodeLookupView: View {
     @State private var error: String?
     @State private var servings: Double = 1.0
     @State private var selectedMealType: MealType = .lunch
+    // OCR states
+    @State private var showingCamera = false
+    @State private var ocrResult: NutritionLabelOCR.ExtractedNutrition?
+    @State private var isProcessingOCR = false
 
     var body: some View {
         NavigationStack {
             ZStack {
-                if product == nil && !isLooking {
+                if product == nil && ocrResult == nil && !isLooking && !isProcessingOCR && error == nil {
                     BarcodeScannerView { barcode in
                         scannedBarcode = barcode
                         lookupBarcode(barcode)
@@ -161,157 +93,294 @@ struct BarcodeLookupView: View {
                 } else if isLooking {
                     VStack(spacing: 16) {
                         ProgressView()
-                        Text("Looking up barcode...")
-                            .font(.subheadline).foregroundStyle(.secondary)
-                        if let barcode = scannedBarcode {
-                            Text(barcode).font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
-                        }
+                        Text("Looking up barcode...").font(.subheadline).foregroundStyle(.secondary)
+                        if let b = scannedBarcode { Text(b).font(.caption.monospacedDigit()).foregroundStyle(.tertiary) }
+                    }
+                } else if isProcessingOCR {
+                    VStack(spacing: 16) {
+                        ProgressView()
+                        Text("Reading nutrition label...").font(.subheadline).foregroundStyle(.secondary)
                     }
                 } else if let product {
                     productView(product)
+                } else if ocrResult != nil {
+                    ocrEditView
                 }
 
-                if let error {
-                    VStack(spacing: 12) {
-                        Image(systemName: "barcode.viewfinder")
-                            .font(.system(size: 40)).foregroundStyle(Theme.surplus)
-                        Text(error).font(.subheadline).foregroundStyle(.secondary)
-                        Button("Scan Again") {
-                            self.error = nil
-                            self.product = nil
-                            self.scannedBarcode = nil
-                        }
-                        .buttonStyle(.borderedProminent).tint(Theme.accent)
-                    }
+                if let error, ocrResult == nil, product == nil {
+                    notFoundView
                 }
             }
-            .navigationTitle("Scan Barcode")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+            .navigationTitle("Scan Barcode").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+            .fullScreenCover(isPresented: $showingCamera) {
+                NutritionPhotoCaptureView { image in
+                    processNutritionPhoto(image)
                 }
             }
         }
         .preferredColorScheme(.dark)
     }
 
-    private func productView(_ p: OpenFoodFactsService.Product) -> some View {
-        ScrollView {
-            VStack(spacing: 14) {
-                // Product info
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(p.name).font(.headline)
-                    if let brand = p.brand {
-                        Text(brand).font(.subheadline).foregroundStyle(.secondary)
-                    }
-                    Text("Per 100g").font(.caption).foregroundStyle(.tertiary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .card()
+    // MARK: - Not Found → Photo option
 
-                // Macros
-                HStack(spacing: 8) {
-                    macroPill("\(Int(p.calories))", label: "cal", color: Theme.calorieBlue)
-                    macroPill("\(Int(p.proteinG))g", label: "P", color: Theme.proteinRed)
-                    macroPill("\(Int(p.carbsG))g", label: "C", color: Theme.carbsGreen)
-                    macroPill("\(Int(p.fatG))g", label: "F", color: Theme.fatYellow)
-                    macroPill("\(Int(p.fiberG))g", label: "Fiber", color: Theme.fiberBrown)
-                }
+    private var notFoundView: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "barcode.viewfinder")
+                .font(.system(size: 40)).foregroundStyle(Theme.surplus)
+            Text(error ?? "Product not found").font(.subheadline).foregroundStyle(.secondary)
 
-                // Serving + meal
-                VStack(spacing: 10) {
-                    HStack {
-                        Text("Servings (100g each)")
-                        Spacer()
-                        TextField("1", value: $servings, format: .number)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 60)
-                        Stepper("", value: $servings, in: 0.25...10, step: 0.25)
-                            .frame(width: 100)
-                    }
-
-                    if let servingG = p.servingSizeG {
-                        Button("Use serving size (\(Int(servingG))g)") {
-                            servings = servingG / 100.0
-                        }
-                        .font(.caption).foregroundStyle(Theme.accent)
-                    }
-
-                    Picker("Meal", selection: $selectedMealType) {
-                        ForEach(MealType.allCases, id: \.self) { Text($0.displayName).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                }
-                .card()
-
-                // Total
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Total").font(.caption).foregroundStyle(.secondary)
-                    Text("\(Int(p.calories * servings)) cal · \(Int(p.proteinG * servings))P \(Int(p.carbsG * servings))C \(Int(p.fatG * servings))F")
-                        .font(.subheadline.weight(.bold).monospacedDigit())
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .card()
-
+            VStack(spacing: 10) {
                 Button {
-                    logProduct(p)
+                    showingCamera = true
                 } label: {
-                    Label("Log Food", systemImage: "plus.circle.fill")
+                    Label("Take Photo of Nutrition Label", systemImage: "camera.fill")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent).tint(Theme.accent)
 
-                Button("Scan Another") {
-                    product = nil
-                    scannedBarcode = nil
+                Button("Scan Again") {
+                    self.error = nil; product = nil; scannedBarcode = nil; ocrResult = nil
+                }
+                .buttonStyle(.bordered)
+
+                Button("Enter Manually") {
+                    // Pre-fill OCR result with zeros for manual entry
+                    ocrResult = NutritionLabelOCR.ExtractedNutrition()
                     error = nil
+                }
+                .font(.caption).foregroundStyle(Theme.accent)
+            }
+            .padding(.horizontal, 32)
+        }
+    }
+
+    // MARK: - OCR Edit View (editable fields)
+
+    @State private var editName = ""
+    @State private var editCalories = ""
+    @State private var editProtein = ""
+    @State private var editCarbs = ""
+    @State private var editFat = ""
+    @State private var editFiber = ""
+
+    private var ocrEditView: some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                VStack(alignment: .leading, spacing: 6) {
+                    HStack {
+                        Image(systemName: "doc.text.viewfinder").foregroundStyle(Theme.accent)
+                        Text("Nutrition Label Scan").font(.subheadline.weight(.semibold))
+                    }
+                    Text("Review and edit the values below. OCR may not be perfect.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .card()
+
+                VStack(spacing: 10) {
+                    editField("Name", text: $editName, keyboard: .default)
+                    editField("Calories", text: $editCalories, keyboard: .decimalPad)
+                    editField("Protein (g)", text: $editProtein, keyboard: .decimalPad)
+                    editField("Carbs (g)", text: $editCarbs, keyboard: .decimalPad)
+                    editField("Fat (g)", text: $editFat, keyboard: .decimalPad)
+                    editField("Fiber (g)", text: $editFiber, keyboard: .decimalPad)
+                }
+                .card()
+
+                Picker("Meal", selection: $selectedMealType) {
+                    ForEach(MealType.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                }
+                .pickerStyle(.segmented)
+
+                Button {
+                    logOCRResult()
+                } label: {
+                    Label("Log Food", systemImage: "plus.circle.fill").frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent).tint(Theme.accent)
+
+                Button("Retake Photo") {
+                    showingCamera = true
                 }
                 .buttonStyle(.bordered)
             }
             .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
         }
         .background(Theme.background)
+        .onAppear { populateOCRFields() }
     }
 
-    private func macroPill(_ value: String, label: String, color: Color) -> some View {
+    private func editField(_ label: String, text: Binding<String>, keyboard: UIKeyboardType) -> some View {
+        HStack {
+            Text(label).font(.subheadline).frame(width: 90, alignment: .leading)
+            TextField("0", text: text)
+                .keyboardType(keyboard)
+                .multilineTextAlignment(.trailing)
+                .font(.subheadline.monospacedDigit())
+        }
+    }
+
+    private func populateOCRFields() {
+        guard let ocr = ocrResult else { return }
+        editName = ocr.name.isEmpty ? (scannedBarcode.map { "Barcode \($0)" } ?? "Scanned Food") : ocr.name
+        editCalories = ocr.calories > 0 ? String(Int(ocr.calories)) : ""
+        editProtein = ocr.proteinG > 0 ? String(format: "%.1f", ocr.proteinG) : ""
+        editCarbs = ocr.carbsG > 0 ? String(format: "%.1f", ocr.carbsG) : ""
+        editFat = ocr.fatG > 0 ? String(format: "%.1f", ocr.fatG) : ""
+        editFiber = ocr.fiberG > 0 ? String(format: "%.1f", ocr.fiberG) : ""
+    }
+
+    private func logOCRResult() {
+        let food = Food(
+            name: editName.isEmpty ? "Scanned Food" : editName,
+            category: "Scanned",
+            servingSize: 100, servingUnit: "g",
+            calories: Double(editCalories) ?? 0,
+            proteinG: Double(editProtein) ?? 0,
+            carbsG: Double(editCarbs) ?? 0,
+            fatG: Double(editFat) ?? 0,
+            fiberG: Double(editFiber) ?? 0
+        )
+        viewModel.logFood(food, servings: servings, mealType: selectedMealType)
+        dismiss()
+    }
+
+    // MARK: - Product View (from barcode lookup)
+
+    private func productView(_ p: OpenFoodFactsService.Product) -> some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(p.name).font(.headline)
+                    if let brand = p.brand { Text(brand).font(.subheadline).foregroundStyle(.secondary) }
+                    Text("Per 100g").font(.caption).foregroundStyle(.tertiary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading).card()
+
+                HStack(spacing: 8) {
+                    mpill("\(Int(p.calories))", label: "cal", color: Theme.calorieBlue)
+                    mpill("\(Int(p.proteinG))g", label: "P", color: Theme.proteinRed)
+                    mpill("\(Int(p.carbsG))g", label: "C", color: Theme.carbsGreen)
+                    mpill("\(Int(p.fatG))g", label: "F", color: Theme.fatYellow)
+                    mpill("\(Int(p.fiberG))g", label: "Fiber", color: Theme.fiberBrown)
+                }
+
+                VStack(spacing: 10) {
+                    HStack {
+                        Text("Servings (100g each)"); Spacer()
+                        TextField("1", value: $servings, format: .number).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 60)
+                        Stepper("", value: $servings, in: 0.25...10, step: 0.25).frame(width: 100)
+                    }
+                    if let g = p.servingSizeG {
+                        Button("Use serving size (\(Int(g))g)") { servings = g / 100.0 }
+                            .font(.caption).foregroundStyle(Theme.accent)
+                    }
+                    Picker("Meal", selection: $selectedMealType) {
+                        ForEach(MealType.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                    }.pickerStyle(.segmented)
+                }.card()
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Total").font(.caption).foregroundStyle(.secondary)
+                    Text("\(Int(p.calories * servings))cal · \(Int(p.proteinG * servings))P \(Int(p.carbsG * servings))C \(Int(p.fatG * servings))F")
+                        .font(.subheadline.weight(.bold).monospacedDigit())
+                }
+                .frame(maxWidth: .infinity, alignment: .leading).card()
+
+                Button { logProduct(p) } label: {
+                    Label("Log Food", systemImage: "plus.circle.fill").frame(maxWidth: .infinity)
+                }.buttonStyle(.borderedProminent).tint(Theme.accent)
+
+                Button("Scan Another") { product = nil; scannedBarcode = nil; error = nil }
+                    .buttonStyle(.bordered)
+            }
+            .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
+        }
+        .background(Theme.background)
+    }
+
+    private func mpill(_ value: String, label: String, color: Color) -> some View {
         VStack(spacing: 2) {
             Text(value).font(.caption.weight(.bold).monospacedDigit())
             Text(label).font(.caption2).foregroundStyle(.secondary)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 6)
-        .background(color.opacity(0.15), in: RoundedRectangle(cornerRadius: 8))
+        .frame(maxWidth: .infinity).padding(.vertical, 6).background(color.opacity(0.15), in: RoundedRectangle(cornerRadius: 8))
     }
 
+    // MARK: - Actions
+
     private func lookupBarcode(_ barcode: String) {
-        isLooking = true
-        error = nil
+        isLooking = true; error = nil
         Task {
-            do {
-                product = try await OpenFoodFactsService.lookup(barcode: barcode)
-                isLooking = false
-            } catch {
-                self.error = error.localizedDescription
-                isLooking = false
-            }
+            do { product = try await OpenFoodFactsService.lookup(barcode: barcode) }
+            catch { self.error = error.localizedDescription }
+            isLooking = false
         }
     }
 
     private func logProduct(_ p: OpenFoodFactsService.Product) {
-        let food = Food(
-            name: [p.name, p.brand].compactMap { $0 }.joined(separator: " - "),
-            category: "Scanned",
-            servingSize: 100,
-            servingUnit: "g",
-            calories: p.calories,
-            proteinG: p.proteinG,
-            carbsG: p.carbsG,
-            fatG: p.fatG,
-            fiberG: p.fiberG
-        )
+        let food = Food(name: [p.name, p.brand].compactMap { $0 }.joined(separator: " - "), category: "Scanned",
+                        servingSize: 100, servingUnit: "g", calories: p.calories, proteinG: p.proteinG, carbsG: p.carbsG, fatG: p.fatG, fiberG: p.fiberG)
         viewModel.logFood(food, servings: servings, mealType: selectedMealType)
         dismiss()
+    }
+
+    private func processNutritionPhoto(_ image: UIImage) {
+        isProcessingOCR = true; error = nil
+        Task {
+            do {
+                ocrResult = try await NutritionLabelOCR.extract(from: image)
+                populateOCRFields()
+            } catch {
+                self.error = "Could not read nutrition label: \(error.localizedDescription)"
+            }
+            isProcessingOCR = false
+        }
+    }
+}
+
+// MARK: - Photo Capture View
+
+struct NutritionPhotoCaptureView: View {
+    let onCapture: (UIImage) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var selectedItem: PhotosPickerItem?
+    @State private var showingPicker = false
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                Image(systemName: "camera.viewfinder")
+                    .font(.system(size: 60)).foregroundStyle(Theme.accent.opacity(0.5))
+                Text("Take a photo of the nutrition label")
+                    .font(.subheadline).foregroundStyle(.secondary)
+
+                Button {
+                    showingPicker = true
+                } label: {
+                    Label("Choose Photo", systemImage: "photo.on.rectangle")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent).tint(Theme.accent)
+                .padding(.horizontal, 32)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Theme.background)
+            .navigationTitle("Nutrition Label").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+            .photosPicker(isPresented: $showingPicker, selection: $selectedItem, matching: .images)
+            .onChange(of: selectedItem) { _, item in
+                guard let item else { return }
+                Task {
+                    if let data = try? await item.loadTransferable(type: Data.self),
+                       let image = UIImage(data: data) {
+                        onCapture(image)
+                        dismiss()
+                    }
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
     }
 }

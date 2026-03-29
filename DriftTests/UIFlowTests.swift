@@ -304,18 +304,21 @@ import Testing
 
 // MARK: - Weight Goal (6 tests)
 
-@Test func goalSaveAndLoad() async throws {
+@Test func goalEncodeDecode() async throws {
     let g = WeightGoal(targetWeightKg: 52.0, monthsToAchieve: 3, startDate: "2026-03-29", startWeightKg: 55.0)
-    g.save()
-    let loaded = WeightGoal.load()!
-    #expect(loaded.targetWeightKg == 52.0)
-    #expect(loaded.monthsToAchieve == 3)
-    WeightGoal.clear()
+    let data = try JSONEncoder().encode(g)
+    let decoded = try JSONDecoder().decode(WeightGoal.self, from: data)
+    #expect(decoded.targetWeightKg == 52.0)
+    #expect(decoded.monthsToAchieve == 3)
+    #expect(decoded.startDate == "2026-03-29")
+    #expect(decoded.startWeightKg == 55.0)
 }
 
-@Test func goalClear() async throws {
+@Test func goalPersistence() async throws {
+    // Save, load, clear - sequential
     let g = WeightGoal(targetWeightKg: 50.0, monthsToAchieve: 6, startDate: "2026-01-01", startWeightKg: 60.0)
     g.save()
+    #expect(WeightGoal.load()?.targetWeightKg == 50.0)
     WeightGoal.clear()
     #expect(WeightGoal.load() == nil)
 }
