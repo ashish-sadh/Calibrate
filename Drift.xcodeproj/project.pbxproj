@@ -49,6 +49,7 @@
 		B3B780A670DA8D354A057699 /* foods.json in Resources */ = {isa = PBXBuildFile; fileRef = FD7026C3D8745999EED9478E /* foods.json */; };
 		B8666DFAC44BA801AF626FE7 /* CSVParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D45209A3DCC7F6659E6E367 /* CSVParser.swift */; };
 		BA4A49D33CF87342C8F00DCD /* SupplementLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3E0BC3660040DBB4942437D /* SupplementLog.swift */; };
+		BEAFE882B09BA211628205D9 /* ServingUnit.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCD031A1C605FBFFDF1B7D0 /* ServingUnit.swift */; };
 		BFA019F024F4E73B203B8975 /* BodySpecPDFParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9F051926CE39DF3E0A47DA /* BodySpecPDFParser.swift */; };
 		C4412538AE3E1E269685CB2A /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99C89E28D8FBE125273FB677 /* Log.swift */; };
 		C78684F2133F07AAAC383EDB /* GoalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3258B6E91169170587AAB02B /* GoalView.swift */; };
@@ -119,6 +120,7 @@
 		A1AB1D48F6D71EC9854629ED /* DriftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriftTests.swift; sourceTree = "<group>"; };
 		AE2809389EE890A3F01ED675 /* FoodLogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodLogViewModel.swift; sourceTree = "<group>"; };
 		AE42BE067CE617760E08B051 /* DEXARegion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DEXARegion.swift; sourceTree = "<group>"; };
+		AFCD031A1C605FBFFDF1B7D0 /* ServingUnit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServingUnit.swift; sourceTree = "<group>"; };
 		B0C555B3F9005A7C75FAAD51 /* DashboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewModel.swift; sourceTree = "<group>"; };
 		B0DAF3E5EFC6C85282C084A8 /* GlucoseTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlucoseTabView.swift; sourceTree = "<group>"; };
 		B58C97F6B46397BDA539E78C /* SupplementsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupplementsTabView.swift; sourceTree = "<group>"; };
@@ -298,6 +300,7 @@
 				DF03B01EDE878137C97C5012 /* FoodEntry.swift */,
 				491E711DE9CBB80FC1BF1AE9 /* GlucoseReading.swift */,
 				C182889F4730B18DE0244F02 /* MealLog.swift */,
+				AFCD031A1C605FBFFDF1B7D0 /* ServingUnit.swift */,
 				790C2D3452366D6B473DE2B1 /* Supplement.swift */,
 				F3E0BC3660040DBB4942437D /* SupplementLog.swift */,
 				F237A2E1C7747DBE102B665C /* WeightEntry.swift */,
@@ -506,6 +509,7 @@
 				900DFB12EECDD2D618FEC253 /* OpenFoodFactsService.swift in Sources */,
 				27536FF4DD83AB95ADECF5AB /* Persistence.swift in Sources */,
 				3A45CB30EFB91DF5C4E468AD /* QuickAddView.swift in Sources */,
+				BEAFE882B09BA211628205D9 /* ServingUnit.swift in Sources */,
 				49D0426489D97845E43EA8B9 /* Supplement.swift in Sources */,
 				BA4A49D33CF87342C8F00DCD /* SupplementLog.swift in Sources */,
 				24CF74D9CA0E8A4555F1EC68 /* SupplementViewModel.swift in Sources */,
