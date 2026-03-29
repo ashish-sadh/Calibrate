@@ -180,6 +180,31 @@ struct WorkoutView: View {
 struct WorkoutDetailView: View {
     let summary: WorkoutSummary
     @State private var sets: [WorkoutSet] = []
+    @State private var showingShare = false
+
+    private var shareText: String {
+        var text = "💪 \(summary.workout.name)\n"
+        text += "📅 \(formatDate(summary.workout.date))\n"
+        if !summary.workout.durationDisplay.isEmpty { text += "⏱ \(summary.workout.durationDisplay)  " }
+        text += "🏋️ \(Int(summary.totalVolume)) lb total volume\n\n"
+
+        let grouped = Dictionary(grouping: sets.filter { !$0.isWarmup }) { $0.exerciseName }
+        for ex in summary.exercises {
+            if let exSets = grouped[ex] {
+                text += "\(ex)\n"
+                for s in exSets {
+                    let w = s.weightLbs.map { "\(Int($0)) lb" } ?? "BW"
+                    let r = s.reps.map { "× \($0)" } ?? ""
+                    text += "  \(s.setOrder). \(w) \(r)"
+                    if let rm = s.estimated1RM { text += "  (1RM: \(Int(rm)))" }
+                    text += "\n"
+                }
+                text += "\n"
+            }
+        }
+        text += "Logged with Drift"
+        return text
+    }
 
     var body: some View {
         ScrollView {
@@ -228,6 +253,16 @@ struct WorkoutDetailView: View {
         .scrollContentBackground(.hidden)
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Workout").navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button { showingShare = true } label: {
+                    Image(systemName: "square.and.arrow.up").foregroundStyle(Theme.accent)
+                }
+            }
+        }
+        .sheet(isPresented: $showingShare) {
+            ShareSheet(text: shareText)
+        }
         .onAppear {
             if let wid = summary.workout.id { sets = (try? WorkoutService.fetchSets(forWorkout: wid)) ?? [] }
         }
@@ -416,4 +451,16 @@ struct ExercisePickerView: View {
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
         }
     }
+}
+
+// MARK: - Share Sheet
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let text: String
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: [text], applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
 }

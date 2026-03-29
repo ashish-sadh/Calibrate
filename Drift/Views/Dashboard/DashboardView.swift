@@ -36,7 +36,7 @@ struct DashboardView: View {
             }
             .scrollContentBackground(.hidden)
             .background(Theme.background.ignoresSafeArea())
-            .navigationTitle("Dashboard")
+            .navigationTitle("Drift")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .task { await viewModel.loadToday() }
@@ -198,7 +198,6 @@ struct DashboardView: View {
     private var healthRow: some View {
         HStack(spacing: 12) {
             healthPill(icon: "flame.fill", value: "\(Int(viewModel.activeCalories))", label: "Active", color: Theme.stepsOrange)
-            healthPill(icon: "bed.double.fill", value: String(format: "%.1fh", viewModel.sleepHours), label: "Sleep", color: Theme.sleepIndigo)
             healthPill(icon: "figure.walk", value: formatSteps(viewModel.steps), label: "Steps", color: Theme.deficit)
         }
     }
