@@ -25,7 +25,9 @@ targets:
         MARKETING_VERSION: "0.1.0"
         CURRENT_PROJECT_VERSION: "1"
         SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_FILE: Calibrate/Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: Calibrate
         CODE_SIGN_ENTITLEMENTS: Calibrate/Calibrate.entitlements
         DEVELOPMENT_TEAM: ""
     dependencies:
@@ -48,3 +50,4 @@ targets:
     settings:
       base:
         SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES

@@ -11,7 +11,7 @@ enum Migrations {
                 t.column("date", .text).notNull().unique()
                 t.column("weight_kg", .double).notNull()
                 t.column("source", .text).notNull().defaults(to: "manual")
-                t.column("created_at", .text).notNull().defaults(sql: "datetime('now')")
+                t.column("created_at", .text).notNull().defaults(sql: "(datetime('now'))")
                 t.column("synced_from_hk", .boolean).notNull().defaults(to: false)
             }
             try db.create(index: "idx_weight_entry_date", on: "weight_entry", columns: ["date"])
@@ -36,7 +36,7 @@ enum Migrations {
                 t.autoIncrementedPrimaryKey("id")
                 t.column("date", .text).notNull()
                 t.column("meal_type", .text).notNull()
-                t.column("created_at", .text).notNull().defaults(sql: "datetime('now')")
+                t.column("created_at", .text).notNull().defaults(sql: "(datetime('now'))")
             }
             try db.create(index: "idx_meal_log_date", on: "meal_log", columns: ["date"])
 
@@ -53,7 +53,7 @@ enum Migrations {
                 t.column("carbs_g", .double).notNull().defaults(to: 0)
                 t.column("fat_g", .double).notNull().defaults(to: 0)
                 t.column("fiber_g", .double).notNull().defaults(to: 0)
-                t.column("created_at", .text).notNull().defaults(sql: "datetime('now')")
+                t.column("created_at", .text).notNull().defaults(sql: "(datetime('now'))")
             }
             try db.create(index: "idx_food_entry_meal", on: "food_entry", columns: ["meal_log_id"])
         }
@@ -123,7 +123,7 @@ enum Migrations {
                 t.column("legs_fat_pct", .double)
                 t.column("bone_density_total", .double)
                 t.column("notes", .text)
-                t.column("created_at", .text).notNull().defaults(sql: "datetime('now')")
+                t.column("created_at", .text).notNull().defaults(sql: "(datetime('now'))")
             }
             try db.create(index: "idx_dexa_scan_date", on: "dexa_scan", columns: ["scan_date"])
         }

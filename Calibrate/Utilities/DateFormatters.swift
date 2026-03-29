@@ -10,7 +10,7 @@ enum DateFormatters {
     }()
 
     /// ISO 8601 for timestamps.
-    static let iso8601: ISO8601DateFormatter = {
+    nonisolated(unsafe) static let iso8601: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime]
         return f
