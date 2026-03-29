@@ -59,17 +59,15 @@ struct WeightGoal: Codable, Sendable {
 
     /// Whether on track: actual rate vs required rate.
     func isOnTrack(actualWeeklyRateKg: Double) -> OnTrackStatus {
-        if totalChangeKg < 0 {
-            // Losing: actual rate should be negative and at least as aggressive
-            if actualWeeklyRateKg <= requiredWeeklyRateKg * 0.8 { return .ahead }
-            if actualWeeklyRateKg <= requiredWeeklyRateKg * 1.2 { return .onTrack }
-            return .behind
-        } else if totalChangeKg > 0 {
-            // Gaining: actual rate should be positive
-            if actualWeeklyRateKg >= requiredWeeklyRateKg * 0.8 { return .onTrack }
-            return .behind
-        }
-        return .onTrack
+        let required = requiredWeeklyRateKg
+        let ratio = required != 0 ? actualWeeklyRateKg / required : 1.0
+
+        // ratio > 1 means exceeding the required rate (ahead)
+        // ratio 0.8-1.2 means on track
+        // ratio < 0.8 means behind
+        if ratio > 1.2 { return .ahead }
+        if ratio >= 0.8 { return .onTrack }
+        return .behind
     }
 
     enum OnTrackStatus {
