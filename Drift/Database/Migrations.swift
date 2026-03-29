@@ -149,5 +149,30 @@ enum Migrations {
                 t.add(column: "ag_ratio", .double)
             }
         }
+
+        // v8: Barcode cache + serving sizes
+        migrator.registerMigration("v8_barcode_cache") { db in
+            try db.create(table: "barcode_cache") { t in
+                t.primaryKey("barcode", .text)
+                t.column("name", .text).notNull()
+                t.column("brand", .text)
+                t.column("calories_per_100g", .double).notNull()
+                t.column("protein_g_per_100g", .double).notNull().defaults(to: 0)
+                t.column("carbs_g_per_100g", .double).notNull().defaults(to: 0)
+                t.column("fat_g_per_100g", .double).notNull().defaults(to: 0)
+                t.column("fiber_g_per_100g", .double).notNull().defaults(to: 0)
+                t.column("serving_size_g", .double)
+                t.column("serving_description", .text)
+                t.column("created_at", .text).notNull().defaults(sql: "(datetime('now'))")
+            }
+
+            // Add serving columns to food table
+            try db.alter(table: "food") { t in
+                t.add(column: "serving_size_2", .double)
+                t.add(column: "serving_unit_2", .text)
+                t.add(column: "serving_size_3", .double)
+                t.add(column: "serving_unit_3", .text)
+            }
+        }
     }
 }

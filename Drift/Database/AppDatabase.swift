@@ -393,3 +393,26 @@ extension AppDatabase {
         }
     }
 }
+
+// MARK: - Barcode Cache
+
+extension AppDatabase {
+    func cacheBarcodeProduct(_ cache: BarcodeCache) throws {
+        try dbWriter.write { [cache] db in
+            var mutable = cache
+            try mutable.save(db)
+        }
+    }
+
+    func fetchCachedBarcode(_ barcode: String) throws -> BarcodeCache? {
+        try dbWriter.read { db in
+            try BarcodeCache.fetchOne(db, key: barcode)
+        }
+    }
+
+    func fetchRecentBarcodes(limit: Int = 20) throws -> [BarcodeCache] {
+        try dbWriter.read { db in
+            try BarcodeCache.order(Column("created_at").desc).limit(limit).fetchAll(db)
+        }
+    }
+}

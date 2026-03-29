@@ -313,8 +313,30 @@ struct BarcodeLookupView: View {
     private func lookupBarcode(_ barcode: String) {
         isLooking = true; error = nil
         Task {
-            do { product = try await OpenFoodFactsService.lookup(barcode: barcode) }
-            catch { self.error = error.localizedDescription }
+            // Check local cache first
+            if let cached = try? AppDatabase.shared.fetchCachedBarcode(barcode) {
+                Log.foodLog.info("Barcode cache hit: \(cached.name)")
+                product = OpenFoodFactsService.Product(
+                    barcode: cached.barcode, name: cached.name, brand: cached.brand,
+                    servingSize: cached.servingDescription, calories: cached.caloriesPer100g,
+                    proteinG: cached.proteinGPer100g, carbsG: cached.carbsGPer100g,
+                    fatG: cached.fatGPer100g, fiberG: cached.fiberGPer100g,
+                    servingSizeG: cached.servingSizeG
+                )
+                isLooking = false
+                return
+            }
+
+            // Fetch from Open Food Facts
+            do {
+                let p = try await OpenFoodFactsService.lookup(barcode: barcode)
+                product = p
+                // Cache locally for next time
+                try? AppDatabase.shared.cacheBarcodeProduct(BarcodeCache(from: p))
+                Log.foodLog.info("Barcode cached: \(p.name)")
+            } catch {
+                self.error = error.localizedDescription
+            }
             isLooking = false
         }
     }
