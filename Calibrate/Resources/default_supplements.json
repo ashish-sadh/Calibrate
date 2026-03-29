@@ -1,0 +1,5 @@
+[
+  {"name": "Electrolytes", "dosage": "1 packet", "unit": "packet", "sortOrder": 0},
+  {"name": "Magnesium Glycinate", "dosage": "400", "unit": "mg", "sortOrder": 1},
+  {"name": "Creatine", "dosage": "5", "unit": "g", "sortOrder": 2}
+]

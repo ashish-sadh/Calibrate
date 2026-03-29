@@ -1,0 +1,50 @@
+name: Calibrate
+options:
+  bundleIdPrefix: com.calibrate
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "16.0"
+  generateEmptyDirectories: true
+
+packages:
+  GRDB:
+    url: https://github.com/groue/GRDB.swift.git
+    from: "7.0.0"
+
+targets:
+  Calibrate:
+    type: application
+    platform: iOS
+    sources:
+      - path: Calibrate
+    resources:
+      - path: Calibrate/Resources
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.calibrate.app
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "6.0"
+        INFOPLIST_FILE: Calibrate/Info.plist
+        CODE_SIGN_ENTITLEMENTS: Calibrate/Calibrate.entitlements
+        DEVELOPMENT_TEAM: ""
+    dependencies:
+      - package: GRDB
+    entitlements:
+      path: Calibrate/Calibrate.entitlements
+      properties:
+        com.apple.developer.healthkit: true
+        com.apple.developer.healthkit.background-delivery: true
+        com.apple.developer.healthkit.access:
+          - health-records
+
+  CalibrateTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: CalibrateTests
+    dependencies:
+      - target: Calibrate
+    settings:
+      base:
+        SWIFT_VERSION: "6.0"

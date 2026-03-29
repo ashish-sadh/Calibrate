@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Calibrate reads your weight, activity, sleep, and nutrition data to track your health trends and calculate your calorie deficit.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Calibrate can write your logged nutrition data to Apple Health.</string>
+</dict>
+</plist>
