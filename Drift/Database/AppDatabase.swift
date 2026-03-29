@@ -184,6 +184,16 @@ extension AppDatabase {
         }
     }
 
+    func fetchSupplementLogs(from startDate: String, to endDate: String) throws -> [SupplementLog] {
+        try dbWriter.read { db in
+            try SupplementLog
+                .filter(Column("date") >= startDate)
+                .filter(Column("date") <= endDate)
+                .order(Column("date"))
+                .fetchAll(db)
+        }
+    }
+
     func toggleSupplementTaken(supplementId: Int64, date: String) throws {
         try dbWriter.write { db in
             if var existing = try SupplementLog
