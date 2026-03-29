@@ -14,6 +14,9 @@ struct DashboardView: View {
                     // Weight + Deficit
                     weightDeficitCard
 
+                    // Goal progress
+                    goalCard
+
                     // Macros
                     macroCard
 
@@ -207,6 +210,48 @@ struct DashboardView: View {
             return String(format: "%.1fk", steps / 1000)
         }
         return "\(Int(steps))"
+    }
+
+    // MARK: - Goal
+
+    private var goalCard: some View {
+        Group {
+            if let goal = WeightGoal.load(), let current = viewModel.currentWeight {
+                let progress = goal.progress(currentWeightKg: current)
+                let remaining = goal.remainingKg(currentWeightKg: current)
+                let unit = Preferences.weightUnit
+
+                VStack(spacing: 8) {
+                    HStack {
+                        Image(systemName: "target").foregroundStyle(Theme.deficit).font(.caption)
+                        Text("Goal: \(String(format: "%.1f", unit.convert(fromKg: goal.targetWeightKg))) \(unit.displayName)")
+                            .font(.subheadline.weight(.semibold))
+                        Spacer()
+                        if let days = goal.daysRemaining {
+                            Text("\(days)d left").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                        }
+                    }
+
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 3).fill(Theme.cardBackgroundElevated).frame(height: 6)
+                            RoundedRectangle(cornerRadius: 3).fill(Theme.accent)
+                                .frame(width: max(0, geo.size.width * progress), height: 6)
+                        }
+                    }
+                    .frame(height: 6)
+
+                    HStack {
+                        Text("\(Int(progress * 100))% done")
+                            .font(.caption2.weight(.bold)).foregroundStyle(Theme.accent)
+                        Spacer()
+                        Text("\(String(format: "%.1f", abs(unit.convert(fromKg: remaining)))) \(unit.displayName) to go")
+                            .font(.caption2).foregroundStyle(.secondary)
+                    }
+                }
+                .card()
+            }
+        }
     }
 
     // MARK: - Supplements

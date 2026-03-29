@@ -5,6 +5,14 @@ struct MoreTabView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
+                    // Goal
+                    VStack(spacing: 0) {
+                        navRow(icon: "target", title: "Weight Goal", subtitle: "Target weight, timeline, deficit plan", color: Theme.deficit) {
+                            GoalView()
+                        }
+                    }
+                    .card()
+
                     // Data section
                     VStack(spacing: 0) {
                         navRow(icon: "figure.stand", title: "Body Composition", subtitle: "DEXA scan data", color: Theme.accent) {
