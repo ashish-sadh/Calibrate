@@ -1,4 +1,5 @@
 import SwiftUI
+import Charts
 import UniformTypeIdentifiers
 
 struct DEXAOverviewView: View {
@@ -24,12 +25,12 @@ struct DEXAOverviewView: View {
                         muscleBalance
                     }
 
-                    // Scan comparison
+                    // Trend charts
                     if scans.count > 1 {
+                        trendCharts
                         scanComparison
                     }
 
-                    // Scan history
                     scanHistory
                 } else {
                     emptyState
@@ -178,6 +179,88 @@ struct DEXAOverviewView: View {
             }
         }
         .padding(.vertical, 6)
+    }
+
+    // MARK: - Trend Charts
+
+    private var trendCharts: some View {
+        let sorted = scans.sorted { $0.scanDate < $1.scanDate }
+        let dateFormatter: DateFormatter = {
+            let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.locale = Locale(identifier: "en_US_POSIX"); return f
+        }()
+
+        return VStack(alignment: .leading, spacing: 14) {
+            Text("Trends")
+                .font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+
+            // Body Fat % trend
+            trendChart(title: "Body Fat %", data: sorted.compactMap { s in
+                guard let d = dateFormatter.date(from: s.scanDate), let v = s.bodyFatPct else { return nil }
+                return (d, v)
+            }, unit: "%", color: Theme.stepsOrange)
+
+            // Fat Mass trend
+            trendChart(title: "Fat Mass", data: sorted.compactMap { s in
+                guard let d = dateFormatter.date(from: s.scanDate), let v = s.fatMassLbs else { return nil }
+                return (d, v)
+            }, unit: "lbs", color: Theme.surplus)
+
+            // Lean Mass trend
+            trendChart(title: "Lean Mass", data: sorted.compactMap { s in
+                guard let d = dateFormatter.date(from: s.scanDate), let v = s.leanMassLbs else { return nil }
+                return (d, v)
+            }, unit: "lbs", color: Theme.deficit)
+
+            // Visceral Fat trend
+            trendChart(title: "Visceral Fat", data: sorted.compactMap { s in
+                guard let d = dateFormatter.date(from: s.scanDate), let v = s.visceralFatLbs else { return nil }
+                return (d, v)
+            }, unit: "lbs", color: Theme.fatYellow)
+        }
+    }
+
+    private func trendChart(title: String, data: [(Date, Double)], unit: String, color: Color) -> some View {
+        guard data.count >= 2 else { return AnyView(EmptyView()) }
+
+        return AnyView(
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text(title).font(.caption.weight(.semibold))
+                    Spacer()
+                    if let first = data.first?.1, let last = data.last?.1 {
+                        let diff = last - first
+                        Text("\(diff >= 0 ? "+" : "")\(String(format: "%.1f", diff)) \(unit)")
+                            .font(.caption.weight(.bold).monospacedDigit())
+                            .foregroundStyle(diff < 0 ? Theme.deficit : Theme.surplus)
+                    }
+                }
+
+                Chart {
+                    ForEach(data.indices, id: \.self) { i in
+                        LineMark(x: .value("", data[i].0), y: .value("", data[i].1))
+                            .foregroundStyle(color)
+                            .lineStyle(StrokeStyle(lineWidth: 2))
+                        PointMark(x: .value("", data[i].0), y: .value("", data[i].1))
+                            .foregroundStyle(color)
+                            .symbolSize(30)
+                    }
+                }
+                .chartYScale(domain: .automatic(includesZero: false))
+                .chartXAxis {
+                    AxisMarks(values: .automatic(desiredCount: 4)) {
+                        AxisValueLabel(format: .dateTime.month(.abbreviated).year(.twoDigits)).foregroundStyle(.secondary)
+                    }
+                }
+                .chartYAxis {
+                    AxisMarks(position: .trailing) {
+                        AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3)).foregroundStyle(.secondary.opacity(0.2))
+                        AxisValueLabel().foregroundStyle(.secondary)
+                    }
+                }
+                .frame(height: 120)
+            }
+            .card()
+        )
     }
 
     // MARK: - Scan Comparison
