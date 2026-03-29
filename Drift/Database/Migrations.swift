@@ -127,5 +127,27 @@ enum Migrations {
             }
             try db.create(index: "idx_dexa_scan_date", on: "dexa_scan", columns: ["scan_date"])
         }
+
+        // v7: Expanded DEXA with regional L/R data
+        migrator.registerMigration("v7_dexa_regional") { db in
+            try db.create(table: "dexa_region") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("scan_id", .integer).notNull().references("dexa_scan", onDelete: .cascade)
+                t.column("region", .text).notNull() // arms, legs, trunk, android, gynoid, total, r_arm, l_arm, r_leg, l_leg
+                t.column("fat_pct", .double)
+                t.column("total_mass_lbs", .double)
+                t.column("fat_mass_lbs", .double)
+                t.column("lean_mass_lbs", .double)
+                t.column("bmc_lbs", .double)
+            }
+            try db.create(index: "idx_dexa_region_scan", on: "dexa_region", columns: ["scan_id"])
+
+            // Add RMR and VAT volume to dexa_scan
+            try db.alter(table: "dexa_scan") { t in
+                t.add(column: "rmr_calories", .double)
+                t.add(column: "vat_volume_in3", .double)
+                t.add(column: "ag_ratio", .double)
+            }
+        }
     }
 }

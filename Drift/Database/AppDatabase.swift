@@ -233,8 +233,30 @@ extension AppDatabase {
 extension AppDatabase {
     func saveDEXAScan(_ scan: inout DEXAScan) throws {
         try dbWriter.write { [scan] db in
-            var mutable = scan
-            try mutable.save(db)
+            // Upsert by scan_date
+            if let existing = try DEXAScan.filter(Column("scan_date") == scan.scanDate).fetchOne(db) {
+                var updated = scan
+                updated.id = existing.id
+                try updated.update(db)
+            } else {
+                var mutable = scan
+                try mutable.insert(db)
+            }
+        }
+        scan = try dbWriter.read { db in
+            try DEXAScan.filter(Column("scan_date") == scan.scanDate).fetchOne(db)
+        } ?? scan
+    }
+
+    func saveDEXARegions(_ regions: [DEXARegion], forScanId scanId: Int64) throws {
+        try dbWriter.write { db in
+            // Delete existing regions for this scan
+            try DEXARegion.filter(Column("scan_id") == scanId).deleteAll(db)
+            // Insert new ones
+            for var region in regions {
+                region.scanId = scanId
+                try region.insert(db)
+            }
         }
     }
 
@@ -242,6 +264,52 @@ extension AppDatabase {
         try dbWriter.read { db in
             try DEXAScan.order(Column("scan_date").desc).fetchAll(db)
         }
+    }
+
+    func fetchDEXARegions(forScanId scanId: Int64) throws -> [DEXARegion] {
+        try dbWriter.read { db in
+            try DEXARegion.filter(Column("scan_id") == scanId).fetchAll(db)
+        }
+    }
+
+    /// Import parsed BodySpec scans (from PDF).
+    func importBodySpecScans(_ parsedScans: [BodySpecPDFParser.ParsedScan]) throws -> Int {
+        var count = 0
+        for parsed in parsedScans {
+            var scan = DEXAScan(
+                scanDate: parsed.scanDate,
+                location: "BodySpec",
+                totalMassKg: parsed.totalMassLbs.map { $0 / 2.20462 },
+                fatMassKg: parsed.fatMassLbs.map { $0 / 2.20462 },
+                leanMassKg: parsed.leanMassLbs.map { $0 / 2.20462 },
+                boneMassKg: parsed.bmcLbs.map { $0 / 2.20462 },
+                bodyFatPct: parsed.bodyFatPct,
+                visceralFatKg: parsed.vatMassLbs.map { $0 / 2.20462 },
+                boneDensityTotal: parsed.boneDensityTotal,
+                rmrCalories: parsed.rmrCalories,
+                vatVolumeIn3: parsed.vatVolumeIn3,
+                agRatio: parsed.agRatio
+            )
+            try saveDEXAScan(&scan)
+
+            if let scanId = scan.id, !parsed.regions.isEmpty {
+                let regions = parsed.regions.map { r in
+                    DEXARegion(
+                        scanId: scanId,
+                        region: r.name,
+                        fatPct: r.fatPct,
+                        totalMassLbs: r.totalMassLbs,
+                        fatMassLbs: r.fatMassLbs,
+                        leanMassLbs: r.leanMassLbs,
+                        bmcLbs: r.bmcLbs
+                    )
+                }
+                try saveDEXARegions(regions, forScanId: scanId)
+            }
+            count += 1
+        }
+        Log.bodyComp.info("Imported \(count) DEXA scans")
+        return count
     }
 }
 

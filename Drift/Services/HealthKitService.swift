@@ -14,6 +14,7 @@ final class HealthKitService {
         if let basalEnergy = HKObjectType.quantityType(forIdentifier: .basalEnergyBurned) { types.insert(basalEnergy) }
         if let sleep = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) { types.insert(sleep) }
         if let steps = HKObjectType.quantityType(forIdentifier: .stepCount) { types.insert(steps) }
+        if let glucose = HKObjectType.quantityType(forIdentifier: .bloodGlucose) { types.insert(glucose) }
         return types
     }
 
@@ -107,6 +108,37 @@ final class HealthKitService {
         let result = try await (active, basal)
         Log.healthKit.debug("Calories: active=\(Int(result.0)) basal=\(Int(result.1))")
         return result
+    }
+
+    /// Fetch glucose readings from Apple Health for a date range.
+    func fetchGlucoseReadings(from startDate: Date, to endDate: Date) async throws -> [GlucoseReading] {
+        guard isAvailable,
+              let glucoseType = HKObjectType.quantityType(forIdentifier: .bloodGlucose) else { return [] }
+
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: glucoseType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, samples, error in
+                if let error { continuation.resume(throwing: error); return }
+
+                let readings = (samples ?? []).compactMap { sample -> GlucoseReading? in
+                    guard let quantitySample = sample as? HKQuantitySample else { return nil }
+                    let mgdl = quantitySample.quantity.doubleValue(for: HKUnit(from: "mg/dL"))
+                    return GlucoseReading(
+                        timestamp: ISO8601DateFormatter().string(from: quantitySample.startDate),
+                        glucoseMgdl: mgdl,
+                        source: "apple_health"
+                    )
+                }
+                continuation.resume(returning: readings)
+            }
+            healthStore.execute(query)
+        }
     }
 
     func fetchSteps(for date: Date) async throws -> Double {
