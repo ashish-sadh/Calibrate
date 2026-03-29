@@ -86,28 +86,21 @@ struct WeightChartView: View {
                         }
                 }
 
-                // Scale weight points (larger, more visible)
+                // Scale weight points - gray/white, clearly different from trend
                 ForEach(displayPoints.indices, id: \.self) { i in
                     if let actual = displayPoints[i].actual {
                         PointMark(x: .value("", displayPoints[i].date), y: .value("", actual))
-                            .foregroundStyle(.white.opacity(0.5))
-                            .symbolSize(granularity == .weekly ? 40 : 24)
+                            .foregroundStyle(Color.gray)
+                            .symbolSize(granularity == .weekly ? 45 : 30)
+                            .symbol(.circle)
                     }
                 }
 
-                // Trend line (thicker, brighter)
+                // Trend line - solid purple, clearly distinct
                 ForEach(displayPoints.indices, id: \.self) { i in
                     LineMark(x: .value("", displayPoints[i].date), y: .value("", displayPoints[i].ema))
                         .foregroundStyle(Theme.accent)
-                        .lineStyle(StrokeStyle(lineWidth: 3))
-                        .interpolationMethod(.catmullRom)
-                }
-
-                // Trend line glow (subtle shadow for depth)
-                ForEach(displayPoints.indices, id: \.self) { i in
-                    LineMark(x: .value("", displayPoints[i].date), y: .value("", displayPoints[i].ema))
-                        .foregroundStyle(Theme.accent.opacity(0.3))
-                        .lineStyle(StrokeStyle(lineWidth: 8))
+                        .lineStyle(StrokeStyle(lineWidth: 2.5))
                         .interpolationMethod(.catmullRom)
                 }
             }
@@ -127,11 +120,11 @@ struct WeightChartView: View {
 
             HStack(spacing: 14) {
                 HStack(spacing: 4) {
-                    Circle().fill(Theme.accent.opacity(0.4)).frame(width: 6, height: 6)
+                    Circle().fill(Color.gray).frame(width: 7, height: 7)
                     Text("Scale Weight").font(.caption2).foregroundStyle(.secondary)
                 }
                 HStack(spacing: 4) {
-                    RoundedRectangle(cornerRadius: 1).fill(Theme.accent).frame(width: 12, height: 2)
+                    RoundedRectangle(cornerRadius: 1).fill(Theme.accent).frame(width: 14, height: 2.5)
                     Text("Trend Weight").font(.caption2).foregroundStyle(.secondary)
                 }
             }

@@ -254,17 +254,18 @@ enum WeightTrendCalculator {
     // MARK: - Weight Changes
 
     static func calculateWeightChanges(dataPoints: [WeightDataPoint]) -> WeightChanges {
-        guard let latest = dataPoints.last else {
+        guard let latest = dataPoints.last, let latestActual = latest.actualWeight else {
             return WeightChanges(threeDay: nil, sevenDay: nil, fourteenDay: nil, thirtyDay: nil, ninetyDay: nil)
         }
 
         func changeOverDays(_ days: Int) -> Double? {
             let target = Calendar.current.date(byAdding: .day, value: -days, to: latest.date)!
             let closest = dataPoints.min { abs($0.date.timeIntervalSince(target)) < abs($1.date.timeIntervalSince(target)) }
-            guard let closest, closest.date != latest.date else { return nil }
+            guard let closest, closest.date != latest.date,
+                  let closestActual = closest.actualWeight else { return nil }
             let daysDiff = abs(Calendar.current.dateComponents([.day], from: closest.date, to: target).day ?? 0)
-            guard daysDiff <= 2 else { return nil }
-            return latest.emaWeight - closest.emaWeight
+            guard daysDiff <= 3 else { return nil } // allow 3 days tolerance for sparse data
+            return latestActual - closestActual
         }
 
         return WeightChanges(
