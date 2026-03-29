@@ -162,13 +162,14 @@ struct GoalView: View {
 
     private func deficitCard(_ goal: WeightGoal) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Daily Deficit Target").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+            Text("Daily Target").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
 
             HStack(spacing: 12) {
                 VStack(spacing: 3) {
-                    Text("Need").font(.caption2).foregroundStyle(.tertiary)
+                    Text("Target").font(.caption2).foregroundStyle(.tertiary)
                     Text(String(format: "%+.0f", goal.requiredDailyDeficit))
                         .font(.subheadline.weight(.bold).monospacedDigit())
+                        .foregroundStyle(goal.requiredDailyDeficit < 0 ? Theme.deficit : Theme.surplus)
                     Text("kcal/day").font(.caption2).foregroundStyle(.tertiary)
                 }
                 .frame(maxWidth: .infinity).card()
@@ -178,21 +179,7 @@ struct GoalView: View {
                     if let deficit = actualDailyDeficit {
                         Text(String(format: "%+.0f", deficit))
                             .font(.subheadline.weight(.bold).monospacedDigit())
-                            .foregroundStyle(abs(deficit) >= abs(goal.requiredDailyDeficit) * 0.8 ? Theme.deficit : Theme.surplus)
-                    } else {
-                        Text("--").font(.subheadline.weight(.bold)).foregroundStyle(.tertiary)
-                    }
-                    Text("kcal/day").font(.caption2).foregroundStyle(.tertiary)
-                }
-                .frame(maxWidth: .infinity).card()
-
-                VStack(spacing: 3) {
-                    Text("Difference").font(.caption2).foregroundStyle(.tertiary)
-                    if let deficit = actualDailyDeficit {
-                        let diff = deficit - goal.requiredDailyDeficit
-                        Text(String(format: "%+.0f", diff))
-                            .font(.subheadline.weight(.bold).monospacedDigit())
-                            .foregroundStyle(diff < 0 ? Theme.surplus : Theme.deficit)
+                            .foregroundStyle(deficit < 0 ? Theme.deficit : Theme.surplus)
                     } else {
                         Text("--").font(.subheadline.weight(.bold)).foregroundStyle(.tertiary)
                     }

@@ -12,9 +12,30 @@ struct WorkoutView: View {
     @State private var importResult: String?
     @State private var isLoading = true
 
+    @State private var activeCalories: Double = 0
+    @State private var steps: Double = 0
+
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
+                // Today's burn metrics
+                HStack(spacing: 10) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "flame.fill").font(.caption).foregroundStyle(Theme.stepsOrange)
+                        Text("\(Int(activeCalories))").font(.subheadline.weight(.bold).monospacedDigit())
+                        Text("active cal").font(.caption2).foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity).card()
+
+                    HStack(spacing: 4) {
+                        Image(systemName: "figure.walk").font(.caption).foregroundStyle(Theme.deficit)
+                        Text(steps >= 1000 ? String(format: "%.1fk", steps/1000) : "\(Int(steps))")
+                            .font(.subheadline.weight(.bold).monospacedDigit())
+                        Text("steps").font(.caption2).foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity).card()
+                }
+
                 // Body recovery map
                 BodyMapView()
 
@@ -81,6 +102,11 @@ struct WorkoutView: View {
         .sheet(isPresented: $showingNewWorkout) { ActiveWorkoutView { loadData() } }
         .fileImporter(isPresented: $showingImport, allowedContentTypes: [.commaSeparatedText]) { handleImport($0) }
         .onAppear { loadData() }
+        .task {
+            let hk = HealthKitService.shared
+            activeCalories = (try? await hk.fetchCaloriesBurned(for: Date()).active) ?? 0
+            steps = (try? await hk.fetchSteps(for: Date())) ?? 0
+        }
     }
 
     private var consistencyChart: some View {

@@ -130,12 +130,11 @@ struct WeightTabView: View {
                 }
 
                 if let lastWeek = weeklyAvgs.dropFirst().first {
-                    let change = weeklyAvgs.first.map { viewModel.weightUnit.convert(fromKg: $0.average - lastWeek.average) }
                     averageCard(
                         title: "Last Week",
                         value: String(format: "%.1f", viewModel.weightUnit.convert(fromKg: lastWeek.average)),
                         unit: viewModel.weightUnit.displayName,
-                        detail: change.map { "\($0 >= 0 ? "+" : "")\(String(format: "%.1f", $0))" } ?? ""
+                        detail: "\(lastWeek.count) weigh-ins"
                     )
                 }
 

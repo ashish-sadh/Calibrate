@@ -9,30 +9,35 @@ struct DashboardView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
-                    // Estimated deficit/surplus headline
-                    if let deficit = viewModel.dailyDeficit {
-                        VStack(spacing: 2) {
-                            Text(deficit < 0 ? "Estimated Deficit" : "Estimated Surplus")
-                                .font(.caption).foregroundStyle(.secondary)
-                            Text("\(Int(abs(deficit))) kcal/day")
-                                .font(.title.weight(.bold).monospacedDigit())
-                                .foregroundStyle(deficit < 0 ? Theme.deficit : Theme.surplus)
+                    // Weight + Deficit + Estimated deficit as tiles → Weight tab
+                    Button { selectedTab = 1 } label: {
+                        VStack(spacing: 10) {
+                            weightDeficitRow
+
+                            // Estimated deficit/surplus as part of the tile
+                            if let deficit = viewModel.dailyDeficit {
+                                HStack {
+                                    Text(deficit < 0 ? "Estimated Deficit" : "Estimated Surplus")
+                                        .font(.caption).foregroundStyle(.secondary)
+                                    Spacer()
+                                    let isGood = isGoalAligned(deficit)
+                                    Text("\(deficit < 0 ? "-" : "+")\(Int(abs(deficit))) kcal/day")
+                                        .font(.subheadline.weight(.bold).monospacedDigit())
+                                        .foregroundStyle(isGood ? Theme.deficit : Theme.surplus)
+                                }
+                            }
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 4)
-                    }
+                        .card()
+                    }.buttonStyle(.plain)
 
-                    // Weight + Deficit → Weight tab
-                    Button { selectedTab = 1 } label: { weightDeficitCard }.buttonStyle(.plain)
-
-                    // Goal progress
-                    goalCard
+                    // Goal progress → Goal page
+                    NavigationLink { GoalView() } label: { goalCard }.tint(.primary)
 
                     // Energy Balance → Food tab
                     Button { selectedTab = 2 } label: { calorieBalanceCard }.buttonStyle(.plain)
 
-                    // Health row
-                    healthRow
+                    // Active/Steps → Exercise tab
+                    Button { selectedTab = 3 } label: { healthRow }.buttonStyle(.plain)
 
                     // Sleep & Recovery → SleepRecoveryView
                     if viewModel.sleepHours > 0 || viewModel.recoveryScore > 0 {
@@ -153,49 +158,45 @@ struct DashboardView: View {
 
     // MARK: - Weight + Deficit
 
-    private var weightDeficitCard: some View {
+    /// Is this deficit/surplus aligned with the user's goal?
+    private func isGoalAligned(_ deficit: Double) -> Bool {
+        let goal = WeightGoal.load()
+        let isLosing = goal.map { $0.totalChangeKg < 0 } ?? true
+        return isLosing ? deficit < 0 : deficit > 0
+    }
+
+    private var weightDeficitRow: some View {
         HStack(spacing: 12) {
-            // Current weight
-            VStack(alignment: .leading, spacing: 4) {
-                Label("Weight", systemImage: "scalemass")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 2) {
+                Label("Weight", systemImage: "scalemass").font(.caption).foregroundStyle(.secondary)
                 if let w = viewModel.currentWeight {
-                    Text(String(format: "%.1f", Preferences.weightUnit.convert(fromKg: w)))
-                        .font(.title.weight(.bold).monospacedDigit())
-                    Text(Preferences.weightUnit.displayName)
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                    HStack(alignment: .firstTextBaseline, spacing: 3) {
+                        Text(String(format: "%.1f", Preferences.weightUnit.convert(fromKg: w)))
+                            .font(.title2.weight(.bold).monospacedDigit())
+                        Text(Preferences.weightUnit.displayName).font(.caption2).foregroundStyle(.tertiary)
+                    }
                 } else {
-                    Text("--")
-                        .font(.title.weight(.bold))
-                        .foregroundStyle(.tertiary)
+                    Text("--").font(.title2.weight(.bold)).foregroundStyle(.tertiary)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .card()
 
-            // Weekly rate + deficit
-            VStack(alignment: .leading, spacing: 4) {
-                Label("Trend", systemImage: "chart.line.downtrend.xyaxis")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+            VStack(alignment: .leading, spacing: 2) {
+                Label("Trend", systemImage: "chart.line.downtrend.xyaxis").font(.caption).foregroundStyle(.secondary)
                 if let rate = viewModel.weeklyRate {
                     let display = Preferences.weightUnit.convert(fromKg: rate)
-                    Text(String(format: "%+.2f", display))
-                        .font(.title.weight(.bold).monospacedDigit())
-                        .foregroundStyle(rate < 0 ? Theme.deficit : rate > 0 ? Theme.surplus : .primary)
-                    Text("\(Preferences.weightUnit.displayName)/wk")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                    let good = isGoalAligned(rate < 0 ? -1 : 1)
+                    HStack(alignment: .firstTextBaseline, spacing: 3) {
+                        Text(String(format: "%+.2f", display))
+                            .font(.title2.weight(.bold).monospacedDigit())
+                            .foregroundStyle(good ? Theme.deficit : Theme.surplus)
+                        Text("\(Preferences.weightUnit.displayName)/wk").font(.caption2).foregroundStyle(.tertiary)
+                    }
                 } else {
-                    Text("--")
-                        .font(.title.weight(.bold))
-                        .foregroundStyle(.tertiary)
+                    Text("--").font(.title2.weight(.bold)).foregroundStyle(.tertiary)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .card()
         }
     }
 
