@@ -340,36 +340,53 @@ struct BarcodeLookupView: View {
     }
 }
 
-// MARK: - Photo Capture View
+// MARK: - Photo Capture View (Camera + Library)
 
 struct NutritionPhotoCaptureView: View {
     let onCapture: (UIImage) -> Void
     @Environment(\.dismiss) private var dismiss
+    @State private var showingCamera = false
+    @State private var showingLibrary = false
     @State private var selectedItem: PhotosPickerItem?
-    @State private var showingPicker = false
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 20) {
                 Image(systemName: "camera.viewfinder")
                     .font(.system(size: 60)).foregroundStyle(Theme.accent.opacity(0.5))
-                Text("Take a photo of the nutrition label")
+                Text("Capture the nutrition label")
                     .font(.subheadline).foregroundStyle(.secondary)
 
-                Button {
-                    showingPicker = true
-                } label: {
-                    Label("Choose Photo", systemImage: "photo.on.rectangle")
-                        .frame(maxWidth: .infinity)
+                VStack(spacing: 10) {
+                    Button {
+                        showingCamera = true
+                    } label: {
+                        Label("Take Photo", systemImage: "camera.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent).tint(Theme.accent)
+
+                    Button {
+                        showingLibrary = true
+                    } label: {
+                        Label("Choose from Library", systemImage: "photo.on.rectangle")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
                 }
-                .buttonStyle(.borderedProminent).tint(Theme.accent)
                 .padding(.horizontal, 32)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Theme.background)
             .navigationTitle("Nutrition Label").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
-            .photosPicker(isPresented: $showingPicker, selection: $selectedItem, matching: .images)
+            .fullScreenCover(isPresented: $showingCamera) {
+                CameraView { image in
+                    onCapture(image)
+                    dismiss()
+                }
+            }
+            .photosPicker(isPresented: $showingLibrary, selection: $selectedItem, matching: .images)
             .onChange(of: selectedItem) { _, item in
                 guard let item else { return }
                 Task {
@@ -382,5 +399,39 @@ struct NutritionPhotoCaptureView: View {
             }
         }
         .preferredColorScheme(.dark)
+    }
+}
+
+// MARK: - UIImagePickerController Camera Wrapper
+
+struct CameraView: UIViewControllerRepresentable {
+    let onCapture: (UIImage) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ vc: UIImagePickerController, context: Context) {}
+
+    class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let parent: CameraView
+        init(_ parent: CameraView) { self.parent = parent }
+
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            if let image = info[.originalImage] as? UIImage {
+                parent.onCapture(image)
+            }
+            parent.dismiss()
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.dismiss()
+        }
     }
 }
