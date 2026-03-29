@@ -50,7 +50,10 @@ struct GoalView: View {
                 goal = newGoal
             }
         }
-        .onAppear { loadCurrentData() }
+        .onAppear {
+            goal = WeightGoal.load()
+            loadCurrentData()
+        }
     }
 
     // MARK: - Progress
