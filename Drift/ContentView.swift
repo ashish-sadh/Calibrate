@@ -38,13 +38,13 @@ struct ContentView: View {
                 .tabItem { Label("Weight", systemImage: "scalemass") }
                 .tag(1)
 
+            FoodTabView()
+                .tabItem { Label("Food", systemImage: "fork.knife") }
+                .tag(2)
+
             WorkoutView()
                 .wrapInNav()
                 .tabItem { Label("Exercise", systemImage: "dumbbell.fill") }
-                .tag(2)
-
-            FoodTabView()
-                .tabItem { Label("Food", systemImage: "fork.knife") }
                 .tag(3)
 
             MoreTabView()

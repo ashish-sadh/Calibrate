@@ -9,6 +9,19 @@ struct DashboardView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
+                    // Estimated deficit/surplus headline
+                    if let deficit = viewModel.dailyDeficit {
+                        VStack(spacing: 2) {
+                            Text(deficit < 0 ? "Estimated Deficit" : "Estimated Surplus")
+                                .font(.caption).foregroundStyle(.secondary)
+                            Text("\(Int(abs(deficit))) kcal/day")
+                                .font(.title.weight(.bold).monospacedDigit())
+                                .foregroundStyle(deficit < 0 ? Theme.deficit : Theme.surplus)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 4)
+                    }
+
                     // Weight + Deficit → Weight tab
                     Button { selectedTab = 1 } label: { weightDeficitCard }.buttonStyle(.plain)
 
@@ -16,7 +29,7 @@ struct DashboardView: View {
                     goalCard
 
                     // Energy Balance → Food tab
-                    Button { selectedTab = 3 } label: { calorieBalanceCard }.buttonStyle(.plain)
+                    Button { selectedTab = 2 } label: { calorieBalanceCard }.buttonStyle(.plain)
 
                     // Health row
                     healthRow
@@ -37,9 +50,18 @@ struct DashboardView: View {
             }
             .scrollContentBackground(.hidden)
             .background(Theme.background.ignoresSafeArea())
-            .navigationTitle("Drift")
-            .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "d.circle.fill")
+                            .font(.title3)
+                            .foregroundStyle(Theme.accent)
+                        Text("Drift")
+                            .font(.headline.weight(.bold))
+                    }
+                }
+            }
             .task { await viewModel.loadToday() }
             .refreshable { await viewModel.loadToday() }
             .onChange(of: syncComplete) { _, done in
