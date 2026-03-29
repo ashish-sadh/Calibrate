@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		0884D534B3ADDE47643801F8 /* WeightTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E96402659F73046846B409D5 /* WeightTabView.swift */; };
 		12608375BDCD57D211C64849 /* WeightLogListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E78D132A90B0FDC35353646 /* WeightLogListView.swift */; };
+		1706838F0C81E8CA30C39676 /* SleepRecoveryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0EA24C208A1C32DB52709A4 /* SleepRecoveryView.swift */; };
 		1E11E5682458FC83023281D7 /* WeightInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A039993077E4BE9F83149249 /* WeightInsightsView.swift */; };
 		2159F8ABA37706FCF57C3A63 /* SupplementsTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B58C97F6B46397BDA539E78C /* SupplementsTabView.swift */; };
 		24CF74D9CA0E8A4555F1EC68 /* SupplementViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D783FD1AF8952C1C8CECD29 /* SupplementViewModel.swift */; };
@@ -23,6 +24,7 @@
 		3A45CB30EFB91DF5C4E468AD /* QuickAddView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20576FEB4A7F0371596D08E6 /* QuickAddView.swift */; };
 		3BBB59B401ACCCDB35D323F3 /* DEXAScan.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E0A2B843D779BCA23400645 /* DEXAScan.swift */; };
 		3EF98591577370706EFB2940 /* GlucoseReading.swift in Sources */ = {isa = PBXBuildFile; fileRef = 491E711DE9CBB80FC1BF1AE9 /* GlucoseReading.swift */; };
+		40D9D335AB3F15A1CCB643E9 /* RecoveryEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB475E92982AD4F8897D5D8E /* RecoveryEstimator.swift */; };
 		421D57520E9C09C88A6A0B6B /* AlgorithmSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE2D9672D96D6738FA36D4F2 /* AlgorithmSettingsView.swift */; };
 		43FCEE74704AB4A0A900510A /* BarcodeScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55F24D93872F919F1A8CB319 /* BarcodeScannerView.swift */; };
 		49D0426489D97845E43EA8B9 /* Supplement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790C2D3452366D6B473DE2B1 /* Supplement.swift */; };
@@ -125,11 +127,13 @@
 		B0DAF3E5EFC6C85282C084A8 /* GlucoseTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlucoseTabView.swift; sourceTree = "<group>"; };
 		B58C97F6B46397BDA539E78C /* SupplementsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupplementsTabView.swift; sourceTree = "<group>"; };
 		C182889F4730B18DE0244F02 /* MealLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealLog.swift; sourceTree = "<group>"; };
+		CB475E92982AD4F8897D5D8E /* RecoveryEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryEstimator.swift; sourceTree = "<group>"; };
 		D0E8B598BCB7486A2C75848E /* WeightViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightViewModel.swift; sourceTree = "<group>"; };
 		DC6712FB46945A6FE1AAB0E0 /* DriftApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriftApp.swift; sourceTree = "<group>"; };
 		DD2565511DFA43570D0CE9EA /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
 		DDFFBCB3D524DCFEA822DB53 /* Persistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Persistence.swift; sourceTree = "<group>"; };
 		DF03B01EDE878137C97C5012 /* FoodEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodEntry.swift; sourceTree = "<group>"; };
+		E0EA24C208A1C32DB52709A4 /* SleepRecoveryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepRecoveryView.swift; sourceTree = "<group>"; };
 		E1A5DA3E3543A99260250279 /* UIFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIFlowTests.swift; sourceTree = "<group>"; };
 		E4BD88646DFE4A17724D4407 /* AddSupplementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSupplementView.swift; sourceTree = "<group>"; };
 		E6B95CCD0C984C915051F482 /* sample_lingo_export.csv */ = {isa = PBXFileReference; path = sample_lingo_export.csv; sourceTree = "<group>"; };
@@ -259,6 +263,7 @@
 			isa = PBXGroup;
 			children = (
 				DD2565511DFA43570D0CE9EA /* DashboardView.swift */,
+				E0EA24C208A1C32DB52709A4 /* SleepRecoveryView.swift */,
 			);
 			path = Dashboard;
 			sourceTree = "<group>";
@@ -335,6 +340,7 @@
 				F57B8BA8C0B119CF10614F14 /* HealthKitService.swift */,
 				418816F51F38F19F65BC3D77 /* NutritionLabelOCR.swift */,
 				9887274AA907DE6C5349B2D1 /* OpenFoodFactsService.swift */,
+				CB475E92982AD4F8897D5D8E /* RecoveryEstimator.swift */,
 				FD5DFCD5C5ED2C0D7E5CD8EF /* WeightTrendCalculator.swift */,
 			);
 			path = Services;
@@ -509,7 +515,9 @@
 				900DFB12EECDD2D618FEC253 /* OpenFoodFactsService.swift in Sources */,
 				27536FF4DD83AB95ADECF5AB /* Persistence.swift in Sources */,
 				3A45CB30EFB91DF5C4E468AD /* QuickAddView.swift in Sources */,
+				40D9D335AB3F15A1CCB643E9 /* RecoveryEstimator.swift in Sources */,
 				BEAFE882B09BA211628205D9 /* ServingUnit.swift in Sources */,
+				1706838F0C81E8CA30C39676 /* SleepRecoveryView.swift in Sources */,
 				49D0426489D97845E43EA8B9 /* Supplement.swift in Sources */,
 				BA4A49D33CF87342C8F00DCD /* SupplementLog.swift in Sources */,
 				24CF74D9CA0E8A4555F1EC68 /* SupplementViewModel.swift in Sources */,

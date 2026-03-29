@@ -15,6 +15,10 @@ final class HealthKitService {
         if let sleep = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) { types.insert(sleep) }
         if let steps = HKObjectType.quantityType(forIdentifier: .stepCount) { types.insert(steps) }
         if let glucose = HKObjectType.quantityType(forIdentifier: .bloodGlucose) { types.insert(glucose) }
+        if let hrv = HKObjectType.quantityType(forIdentifier: .heartRateVariabilitySDNN) { types.insert(hrv) }
+        if let rhr = HKObjectType.quantityType(forIdentifier: .restingHeartRate) { types.insert(rhr) }
+        if let hr = HKObjectType.quantityType(forIdentifier: .heartRate) { types.insert(hr) }
+        if let resp = HKObjectType.quantityType(forIdentifier: .respiratoryRate) { types.insert(resp) }
         return types
     }
 
@@ -166,6 +170,132 @@ final class HealthKitService {
         }
         Log.healthKit.debug("Sleep: \(String(format: "%.1f", hours))h")
         return hours
+    }
+
+    // MARK: - Sleep & Recovery Data
+
+    struct SleepDetail: Sendable {
+        let totalHours: Double
+        let remHours: Double
+        let deepHours: Double
+        let lightHours: Double
+        let awakeHours: Double
+        let bedStart: Date?
+        let bedEnd: Date?
+    }
+
+    /// Detailed sleep breakdown for a night.
+    func fetchSleepDetail(for date: Date) async throws -> SleepDetail {
+        guard isAvailable, let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
+            return SleepDetail(totalHours: 0, remHours: 0, deepHours: 0, lightHours: 0, awakeHours: 0, bedStart: nil, bedEnd: nil)
+        }
+        let cal = Calendar.current
+        let startOfDay = cal.startOfDay(for: date)
+        let evening = cal.date(byAdding: .hour, value: -14, to: startOfDay)!
+        let morning = cal.date(byAdding: .hour, value: 14, to: startOfDay)!
+        let predicate = HKQuery.predicateForSamples(withStart: evening, end: morning, options: .strictStartDate)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]) { _, samples, error in
+                if let error { continuation.resume(throwing: error); return }
+                let sleepSamples = (samples ?? []).compactMap { $0 as? HKCategorySample }
+
+                var rem = 0.0, deep = 0.0, light = 0.0, awake = 0.0, asleep = 0.0
+                var earliest: Date?, latest: Date?
+
+                for s in sleepSamples {
+                    let dur = s.endDate.timeIntervalSince(s.startDate) / 3600
+                    if earliest == nil || s.startDate < earliest! { earliest = s.startDate }
+                    if latest == nil || s.endDate > latest! { latest = s.endDate }
+
+                    switch s.value {
+                    case HKCategoryValueSleepAnalysis.asleepREM.rawValue: rem += dur
+                    case HKCategoryValueSleepAnalysis.asleepDeep.rawValue: deep += dur
+                    case HKCategoryValueSleepAnalysis.asleepCore.rawValue: light += dur
+                    case HKCategoryValueSleepAnalysis.asleepUnspecified.rawValue: asleep += dur
+                    case HKCategoryValueSleepAnalysis.awake.rawValue: awake += dur
+                    default: break
+                    }
+                }
+
+                let total = rem + deep + light + asleep
+                continuation.resume(returning: SleepDetail(
+                    totalHours: total, remHours: rem, deepHours: deep,
+                    lightHours: light + asleep, awakeHours: awake,
+                    bedStart: earliest, bedEnd: latest
+                ))
+            }
+            healthStore.execute(query)
+        }
+    }
+
+    /// HRV (SDNN) for a date - latest reading.
+    func fetchHRV(for date: Date) async throws -> Double {
+        guard isAvailable, let hrvType = HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN) else { return 0 }
+        let cal = Calendar.current
+        let start = cal.date(byAdding: .day, value: -1, to: cal.startOfDay(for: date))!
+        let end = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: date))!
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: hrvType, predicate: predicate, limit: 1,
+                                      sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)]) { _, samples, error in
+                if let error { continuation.resume(throwing: error); return }
+                let ms = (samples?.first as? HKQuantitySample)?.quantity.doubleValue(for: .secondUnit(with: .milli)) ?? 0
+                continuation.resume(returning: ms)
+            }
+            healthStore.execute(query)
+        }
+    }
+
+    /// Resting heart rate for a date.
+    func fetchRestingHeartRate(for date: Date) async throws -> Double {
+        guard isAvailable, let rhrType = HKQuantityType.quantityType(forIdentifier: .restingHeartRate) else { return 0 }
+        let cal = Calendar.current
+        let start = cal.startOfDay(for: date)
+        let end = cal.date(byAdding: .day, value: 1, to: start)!
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: rhrType, predicate: predicate, limit: 1,
+                                      sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)]) { _, samples, error in
+                if let error { continuation.resume(throwing: error); return }
+                let bpm = (samples?.first as? HKQuantitySample)?.quantity.doubleValue(for: .count().unitDivided(by: .minute())) ?? 0
+                continuation.resume(returning: bpm)
+            }
+            healthStore.execute(query)
+        }
+    }
+
+    /// Respiratory rate for a date.
+    func fetchRespiratoryRate(for date: Date) async throws -> Double {
+        guard isAvailable, let rrType = HKQuantityType.quantityType(forIdentifier: .respiratoryRate) else { return 0 }
+        let cal = Calendar.current
+        let start = cal.startOfDay(for: date)
+        let end = cal.date(byAdding: .day, value: 1, to: start)!
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
+
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: rrType, predicate: predicate, limit: 1,
+                                      sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)]) { _, samples, error in
+                if let error { continuation.resume(throwing: error); return }
+                let rpm = (samples?.first as? HKQuantitySample)?.quantity.doubleValue(for: .count().unitDivided(by: .minute())) ?? 0
+                continuation.resume(returning: rpm)
+            }
+            healthStore.execute(query)
+        }
+    }
+
+    /// Fetch sleep hours for multiple days (for trend chart).
+    func fetchSleepHistory(days: Int) async throws -> [(date: Date, hours: Double)] {
+        var result: [(Date, Double)] = []
+        let cal = Calendar.current
+        for i in 0..<days {
+            let date = cal.date(byAdding: .day, value: -i, to: Date())!
+            let hours = try await fetchSleepHours(for: date)
+            result.append((date, hours))
+        }
+        return result.reversed()
     }
 
     func writeNutrition(calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double, date: Date) async throws {

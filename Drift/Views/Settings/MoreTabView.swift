@@ -15,6 +15,10 @@ struct MoreTabView: View {
 
                     // Data section
                     VStack(spacing: 0) {
+                        navRow(icon: "bed.double.fill", title: "Sleep & Recovery", subtitle: "Sleep stages, HRV, recovery score", color: Theme.sleepIndigo) {
+                            SleepRecoveryView()
+                        }
+                        Divider().overlay(Color.white.opacity(0.05))
                         navRow(icon: "figure.stand", title: "Body Composition", subtitle: "DEXA scan data", color: Theme.accent) {
                             DEXAOverviewView()
                         }
