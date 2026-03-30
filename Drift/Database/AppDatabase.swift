@@ -48,6 +48,10 @@ extension AppDatabase {
             try db.execute(sql: "DELETE FROM food")
             try db.execute(sql: "DELETE FROM biomarker_result")
             try db.execute(sql: "DELETE FROM lab_report")
+            try db.execute(sql: "DELETE FROM workout_set")
+            try db.execute(sql: "DELETE FROM workout")
+            try db.execute(sql: "DELETE FROM workout_template")
+            try db.execute(sql: "DELETE FROM favorite_food")
         }
         // Re-seed default foods
         try seedFoodsFromJSON()
