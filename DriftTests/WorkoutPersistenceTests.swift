@@ -160,6 +160,45 @@ import GRDB
     #expect(workouts.count == 2, "Should allow multiple workouts same date")
 }
 
+// MARK: - WorkoutService Integration Tests (2 tests)
+
+@Test func workoutServiceSaveReturnsId() async throws {
+    // GRDB's @Sendable write closures don't propagate didInsert mutations.
+    // So we must read back the record to get the assigned ID.
+    let db = try AppDatabase.empty()
+    try await db.writer.write { dbConn in
+        var w = Workout(name: "Test", date: "2026-03-30", createdAt: "2026-03-30")
+        try w.save(dbConn)
+    }
+    let saved = try await db.reader.read { try Workout.fetchOne($0) }
+    #expect(saved?.id != nil, "Workout should have ID after save + read-back")
+    #expect(saved?.name == "Test")
+}
+
+@Test func workoutSetsSaveCorrectly() async throws {
+    let db = try AppDatabase.empty()
+    // Insert workout
+    try await db.writer.write { dbConn in
+        var w = Workout(name: "Test", date: "2026-03-30", createdAt: "2026-03-30")
+        try w.insert(dbConn)
+    }
+    let w = try await db.reader.read { try Workout.fetchOne($0) }
+    guard let wid = w?.id else { Issue.record("No workout"); return }
+
+    // Insert sets
+    try await db.writer.write { dbConn in
+        var s1 = WorkoutSet(workoutId: wid, exerciseName: "Bench", setOrder: 1, weightLbs: 135, reps: 10, isWarmup: false)
+        var s2 = WorkoutSet(workoutId: wid, exerciseName: "Bench", setOrder: 2, weightLbs: 155, reps: 8, isWarmup: false)
+        try s1.insert(dbConn)
+        try s2.insert(dbConn)
+    }
+
+    let sets = try await db.reader.read { try WorkoutSet.fetchAll($0) }
+    #expect(sets.count == 2)
+    #expect(sets[0].weightLbs == 135)
+    #expect(sets[1].weightLbs == 155)
+}
+
 // MARK: - Database Integrity Tests (4 tests)
 
 @Test func factoryResetClearsData() async throws {

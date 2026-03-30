@@ -8,12 +8,14 @@ enum WorkoutService {
     // MARK: - CRUD
 
     static func saveWorkout(_ workout: inout Workout) throws {
-        let savedWorkout = try db.writer.write { [workout] dbConn -> Workout in
+        try db.writer.write { [workout] dbConn in
             var m = workout
             try m.save(dbConn)
-            return m
         }
-        workout = savedWorkout
+        // Read back to get the assigned ID
+        workout = try db.reader.read { dbConn in
+            try Workout.order(Column("id").desc).fetchOne(dbConn)
+        } ?? workout
     }
 
     static func saveSets(_ sets: [WorkoutSet]) throws {
