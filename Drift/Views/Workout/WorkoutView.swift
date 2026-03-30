@@ -9,6 +9,8 @@ struct WorkoutView: View {
     @State private var templates: [WorkoutTemplate] = []
     @State private var showingNewWorkout = false
     @State private var showingImport = false
+    @State private var showingCreateTemplate = false
+    @State private var showingExerciseBrowser = false
     @State private var importResult: String?
     @State private var isLoading = true
     @State private var selectedTemplate: WorkoutTemplate? = nil
@@ -43,37 +45,65 @@ struct WorkoutView: View {
                 if !weeklyCounts.isEmpty { consistencyChart }
 
                 // Start buttons
-                VStack(spacing: 8) {
-                    Button { showingNewWorkout = true } label: {
-                        Label("Start Empty Workout", systemImage: "plus.circle.fill").frame(maxWidth: .infinity)
-                    }.buttonStyle(.borderedProminent).tint(Theme.accent)
+                Button { showingNewWorkout = true } label: {
+                    Label("Start Empty Workout", systemImage: "plus.circle.fill").frame(maxWidth: .infinity)
+                }.buttonStyle(.borderedProminent).tint(Theme.accent)
 
-                    // Templates
-                    if !templates.isEmpty {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Templates").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                            ForEach(templates) { t in
+                // Templates
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text("Templates").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                        Spacer()
+                        Button { showingCreateTemplate = true } label: {
+                            Label("New", systemImage: "plus").font(.caption)
+                        }
+                    }
+
+                    if templates.isEmpty {
+                        Text("Save a workout as template or create one here")
+                            .font(.caption).foregroundStyle(.tertiary)
+                    } else {
+                        ForEach(templates) { t in
+                            HStack {
                                 Button {
                                     selectedTemplate = t
                                     showingNewWorkout = true
                                 } label: {
-                                    HStack {
-                                        VStack(alignment: .leading, spacing: 1) {
-                                            Text(t.name).font(.subheadline)
-                                            Text(t.exercises.map(\.name).prefix(3).joined(separator: ", "))
-                                                .font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
-                                        }
-                                        Spacer()
-                                        Image(systemName: "play.circle").foregroundStyle(Theme.accent)
+                                    VStack(alignment: .leading, spacing: 1) {
+                                        Text(t.name).font(.subheadline)
+                                        Text(t.exercises.map(\.name).prefix(3).joined(separator: ", "))
+                                            .font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
                                     }
                                 }.tint(.primary)
+
+                                Spacer()
+
+                                Button { selectedTemplate = t; showingNewWorkout = true } label: {
+                                    Image(systemName: "play.circle").foregroundStyle(Theme.accent)
+                                }
+
+                                if let tid = t.id {
+                                    Button {
+                                        try? AppDatabase.shared.writer.write { db in _ = try WorkoutTemplate.deleteOne(db, id: tid) }
+                                        loadData()
+                                    } label: {
+                                        Image(systemName: "xmark.circle.fill").font(.caption2).foregroundStyle(.tertiary)
+                                    }.buttonStyle(.plain)
+                                }
                             }
                         }
-                        .card()
                     }
+                }
+                .card()
+
+                // Browse exercises + Import
+                HStack(spacing: 8) {
+                    Button { showingExerciseBrowser = true } label: {
+                        Label("Exercises", systemImage: "dumbbell").frame(maxWidth: .infinity)
+                    }.buttonStyle(.bordered)
 
                     Button { showingImport = true } label: {
-                        Label("Import from Strong", systemImage: "doc.badge.plus")
+                        Label("Import", systemImage: "doc.badge.plus").frame(maxWidth: .infinity)
                     }.buttonStyle(.bordered)
                 }
 
@@ -105,6 +135,12 @@ struct WorkoutView: View {
                 selectedTemplate = nil
                 loadData()
             }
+        }
+        .sheet(isPresented: $showingCreateTemplate) {
+            CreateTemplateView { loadData() }
+        }
+        .sheet(isPresented: $showingExerciseBrowser) {
+            ExerciseBrowserView()
         }
         .fileImporter(isPresented: $showingImport, allowedContentTypes: [.commaSeparatedText]) { handleImport($0) }
         .onAppear { loadData() }
@@ -721,6 +757,121 @@ struct CustomExerciseSheet: View {
                     Button("Add") { onSave(name); dismiss() }.disabled(name.isEmpty)
                 }
             }
+        }
+    }
+}
+
+// MARK: - Create Template
+
+struct CreateTemplateView: View {
+    let onSave: () -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var name = ""
+    @State private var exercises: [String] = []
+    @State private var showingPicker = false
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section("Template Name") {
+                    TextField("e.g., Push Day", text: $name)
+                }
+                Section("Exercises (\(exercises.count))") {
+                    ForEach(exercises, id: \.self) { ex in
+                        HStack {
+                            Text(ex).font(.subheadline)
+                            Spacer()
+                            Text(ExerciseDatabase.bodyPart(for: ex)).font(.caption2).foregroundStyle(.tertiary)
+                        }
+                    }
+                    .onDelete { exercises.remove(atOffsets: $0) }
+
+                    Button { showingPicker = true } label: {
+                        Label("Add Exercise", systemImage: "plus.circle").foregroundStyle(Theme.accent)
+                    }
+                }
+                Section {
+                    Button {
+                        let templateExercises = exercises.map { WorkoutTemplate.TemplateExercise(name: $0, sets: 3) }
+                        if let json = try? JSONEncoder().encode(templateExercises), let jsonStr = String(data: json, encoding: .utf8) {
+                            var t = WorkoutTemplate(name: name.isEmpty ? "Template" : name, exercisesJson: jsonStr, createdAt: ISO8601DateFormatter().string(from: Date()))
+                            try? WorkoutService.saveTemplate(&t)
+                        }
+                        onSave(); dismiss()
+                    } label: {
+                        Label("Save Template", systemImage: "checkmark.circle.fill").frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent).tint(Theme.accent)
+                    .disabled(exercises.isEmpty)
+                }
+            }
+            .navigationTitle("New Template").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+            .sheet(isPresented: $showingPicker) {
+                ExercisePickerView { name in exercises.append(name) }
+            }
+        }
+    }
+}
+
+// MARK: - Exercise Browser (873 exercises)
+
+struct ExerciseBrowserView: View {
+    @Environment(\.dismiss) private var dismiss
+    @State private var query = ""
+    @State private var selectedPart: String? = nil
+
+    private var results: [ExerciseDatabase.ExerciseInfo] {
+        var list = query.isEmpty ? ExerciseDatabase.all : ExerciseDatabase.search(query: query)
+        if let part = selectedPart { list = list.filter { $0.bodyPart == part } }
+        return list
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                HStack {
+                    Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                    TextField("Search 873 exercises", text: $query).textFieldStyle(.plain).autocorrectionDisabled()
+                }.padding().background(.ultraThinMaterial)
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        chip("All", selected: selectedPart == nil) { selectedPart = nil }
+                        ForEach(["Chest", "Back", "Legs", "Shoulders", "Arms", "Core"], id: \.self) { p in
+                            chip(p, selected: selectedPart == p) { selectedPart = p }
+                        }
+                    }.padding(.horizontal, 12).padding(.vertical, 6)
+                }
+
+                List {
+                    ForEach(results.prefix(100)) { ex in
+                        VStack(alignment: .leading, spacing: 3) {
+                            HStack {
+                                Text(ex.name).font(.subheadline)
+                                Spacer()
+                                Text(ex.bodyPart).font(.caption2).foregroundStyle(.tertiary)
+                            }
+                            HStack(spacing: 8) {
+                                Label(ex.equipment, systemImage: "wrench.and.screwdriver").font(.caption2).foregroundStyle(.tertiary)
+                                Text(ex.primaryMuscles.joined(separator: ", ")).font(.caption2).foregroundStyle(.quaternary)
+                            }
+                            Text(ex.level).font(.system(size: 9)).foregroundStyle(.quaternary)
+                        }
+                    }
+                }.listStyle(.plain)
+            }
+            .navigationTitle("Exercise Database").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
+        }
+    }
+
+    private func chip(_ label: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label).font(.caption.weight(.medium))
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .background(selected ? Theme.accent.opacity(0.3) : Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 6))
+                .foregroundStyle(selected ? .white : .secondary)
         }
     }
 }

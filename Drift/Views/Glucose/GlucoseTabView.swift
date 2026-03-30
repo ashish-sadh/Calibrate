@@ -305,10 +305,9 @@ struct GlucoseTabView: View {
         let avg = v.reduce(0, +) / Double(v.count)
         let inRange = v.filter { $0 >= 70 && $0 <= 140 }.count
         return HStack(spacing: 10) {
-            statPill("Avg", value: String(format: "%.0f", avg), unit: "mg/dL")
-            statPill("Min", value: String(format: "%.0f", v.min() ?? 0), unit: "mg/dL")
-            statPill("Max", value: String(format: "%.0f", v.max() ?? 0), unit: "mg/dL")
-            statPill("In Range", value: String(format: "%.0f%%", Double(inRange) / Double(v.count) * 100), unit: "70-140")
+            statPill("Average", value: String(format: "%.0f", avg), unit: "mg/dL")
+            statPill("Range", value: "\(Int(v.min() ?? 0))-\(Int(v.max() ?? 0))", unit: "mg/dL")
+            statPill("In Zone", value: String(format: "%.0f%%", Double(inRange) / Double(v.count) * 100), unit: "70-140")
         }
     }
 
@@ -326,52 +325,75 @@ struct GlucoseTabView: View {
         let data = parsedReadings
         guard data.count > 10 else { return AnyView(EmptyView()) }
 
-        // Find windows where glucose stayed < 100 mg/dL for 30+ minutes (fasting/fat burning)
+        // Find windows where glucose < 100 mg/dL for 30+ minutes
+        // Ignore gaps >15 min between readings (no data = not fasting)
         var fastingWindows: [(start: Date, end: Date, avgGlucose: Double)] = []
         var windowStart: Date? = nil
         var windowValues: [Double] = []
+        var lastDate: Date? = nil
 
         for (date, value) in data {
+            // If gap > 15 min from last reading, break the window (no data ≠ fasting)
+            if let prev = lastDate, date.timeIntervalSince(prev) > 900 {
+                if let start = windowStart, windowValues.count >= 6 {
+                    fastingWindows.append((start, prev, windowValues.reduce(0, +) / Double(windowValues.count)))
+                }
+                windowStart = nil; windowValues = []
+            }
+            lastDate = date
+
             if value < 100 {
                 if windowStart == nil { windowStart = date }
                 windowValues.append(value)
             } else {
-                if let start = windowStart, windowValues.count >= 6 { // 6 readings × 5min = 30min minimum
-                    let avg = windowValues.reduce(0, +) / Double(windowValues.count)
-                    fastingWindows.append((start, date, avg))
+                if let start = windowStart, windowValues.count >= 6 {
+                    fastingWindows.append((start, date, windowValues.reduce(0, +) / Double(windowValues.count)))
                 }
                 windowStart = nil; windowValues = []
             }
         }
-        // Close final window
-        if let start = windowStart, windowValues.count >= 6, let lastDate = data.last?.date {
-            let avg = windowValues.reduce(0, +) / Double(windowValues.count)
-            fastingWindows.append((start, lastDate, avg))
+        if let start = windowStart, windowValues.count >= 6, let last = data.last?.date {
+            fastingWindows.append((start, last, windowValues.reduce(0, +) / Double(windowValues.count)))
         }
 
         let totalFastingHours = fastingWindows.reduce(0.0) { $0 + $1.end.timeIntervalSince($1.start) / 3600 }
-        let totalHours = data.count > 1 ? data.last!.date.timeIntervalSince(data.first!.date) / 3600 : 1
-        let fastingPct = totalHours > 0 ? totalFastingHours / totalHours * 100 : 0
+        // Only count time where we have data (not gaps)
+        var monitoredHours = 0.0
+        for i in 1..<data.count {
+            let gap = data[i].date.timeIntervalSince(data[i-1].date)
+            if gap <= 900 { monitoredHours += gap / 3600 } // only count continuous data
+        }
+        let fastingPct = monitoredHours > 0 ? totalFastingHours / monitoredHours * 100 : 0
+
+        // Daily average fasting (group by day)
+        let cal = Calendar.current
+        var dailyFasting: [Date: Double] = [:]
+        for w in fastingWindows {
+            let day = cal.startOfDay(for: w.start)
+            dailyFasting[day, default: 0] += w.end.timeIntervalSince(w.start) / 3600
+        }
+        let avgDailyFasting = dailyFasting.isEmpty ? 0 : dailyFasting.values.reduce(0, +) / Double(dailyFasting.count)
 
         return AnyView(
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text("Fasting / Fat Burning").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
                     Spacer()
-                    Text(String(format: "%.0f%% of time", fastingPct))
+                    Text(String(format: "%.0f%%", fastingPct))
                         .font(.caption.weight(.bold).monospacedDigit())
                         .foregroundStyle(fastingPct > 50 ? Theme.deficit : Theme.fatYellow)
+                    Text("of monitored time").font(.caption2).foregroundStyle(.tertiary)
                 }
 
-                HStack(spacing: 10) {
+                HStack(spacing: 8) {
                     VStack(spacing: 2) {
-                        Text(String(format: "%.1fh", totalFastingHours)).font(.subheadline.weight(.bold).monospacedDigit())
-                        Text("Fasting").font(.caption2).foregroundStyle(.secondary)
+                        Text(String(format: "%.1fh", avgDailyFasting)).font(.subheadline.weight(.bold).monospacedDigit())
+                        Text("Avg Daily").font(.caption2).foregroundStyle(.secondary)
                     }.frame(maxWidth: .infinity).card()
 
                     VStack(spacing: 2) {
-                        Text("\(fastingWindows.count)").font(.subheadline.weight(.bold).monospacedDigit())
-                        Text("Windows").font(.caption2).foregroundStyle(.secondary)
+                        Text(String(format: "%.1fh", totalFastingHours)).font(.subheadline.weight(.bold).monospacedDigit())
+                        Text("Total").font(.caption2).foregroundStyle(.secondary)
                     }.frame(maxWidth: .infinity).card()
 
                     if let longest = fastingWindows.max(by: { $0.end.timeIntervalSince($0.start) < $1.end.timeIntervalSince($1.start) }) {
