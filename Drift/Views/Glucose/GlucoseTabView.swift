@@ -77,15 +77,11 @@ struct GlucoseTabView: View {
                 } else {
                     glucoseChart
                     statsCard
+                    fastingCard
                     if !spikes.isEmpty {
                         spikesCard
                     }
                 }
-
-                Button { showingImport = true } label: {
-                    Label("Import CSV", systemImage: "doc.badge.plus")
-                }
-                .buttonStyle(.bordered)
 
                 if let result = importResult {
                     Text(result).font(.caption).foregroundStyle(.secondary)
@@ -97,6 +93,13 @@ struct GlucoseTabView: View {
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Glucose")
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button { showingImport = true } label: {
+                    Image(systemName: "doc.badge.plus").foregroundStyle(Theme.accent)
+                }
+            }
+        }
         .fileImporter(isPresented: $showingImport, allowedContentTypes: [.commaSeparatedText, .plainText]) { handleImport($0) }
         .onAppear { loadReadings() }
     }
@@ -113,17 +116,21 @@ struct GlucoseTabView: View {
 
     private var glucoseChart: some View {
         let data = parsedReadings
+        // Wider chart for more days of data
+        let dayCount = max(1, Set(data.map { Calendar.current.startOfDay(for: $0.date) }).count)
+        let chartWidth = max(UIScreen.main.bounds.width - 64, CGFloat(dayCount) * 120)
 
         return VStack(alignment: .leading, spacing: 8) {
-            // Header
             if let first = data.first?.date, let last = data.last?.date {
                 HStack {
                     Text("Glucose").font(.subheadline.weight(.semibold))
                     Spacer()
-                    Text("\(DateFormatters.shortDisplay.string(from: first)) – \(DateFormatters.shortDisplay.string(from: last))")
+                    Text("\(data.count) readings · \(DateFormatters.shortDisplay.string(from: first)) – \(DateFormatters.shortDisplay.string(from: last))")
                         .font(.caption2).foregroundStyle(.tertiary)
                 }
             }
+
+            ScrollView(.horizontal, showsIndicators: true) {
 
             Chart {
                 // Zone backgrounds
@@ -176,7 +183,8 @@ struct GlucoseTabView: View {
                     AxisValueLabel(format: xAxisFormat).foregroundStyle(.secondary)
                 }
             }
-            .frame(height: 250)
+            .frame(width: chartWidth, height: 250)
+            } // end ScrollView
 
             // Legend
             HStack(spacing: 10) {
@@ -310,6 +318,76 @@ struct GlucoseTabView: View {
             Text(label).font(.caption2).foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity).card()
+    }
+
+    // MARK: - Fasting Analysis
+
+    private var fastingCard: some View {
+        let data = parsedReadings
+        guard data.count > 10 else { return AnyView(EmptyView()) }
+
+        // Find windows where glucose stayed < 100 mg/dL for 30+ minutes (fasting/fat burning)
+        var fastingWindows: [(start: Date, end: Date, avgGlucose: Double)] = []
+        var windowStart: Date? = nil
+        var windowValues: [Double] = []
+
+        for (date, value) in data {
+            if value < 100 {
+                if windowStart == nil { windowStart = date }
+                windowValues.append(value)
+            } else {
+                if let start = windowStart, windowValues.count >= 6 { // 6 readings × 5min = 30min minimum
+                    let avg = windowValues.reduce(0, +) / Double(windowValues.count)
+                    fastingWindows.append((start, date, avg))
+                }
+                windowStart = nil; windowValues = []
+            }
+        }
+        // Close final window
+        if let start = windowStart, windowValues.count >= 6, let lastDate = data.last?.date {
+            let avg = windowValues.reduce(0, +) / Double(windowValues.count)
+            fastingWindows.append((start, lastDate, avg))
+        }
+
+        let totalFastingHours = fastingWindows.reduce(0.0) { $0 + $1.end.timeIntervalSince($1.start) / 3600 }
+        let totalHours = data.count > 1 ? data.last!.date.timeIntervalSince(data.first!.date) / 3600 : 1
+        let fastingPct = totalHours > 0 ? totalFastingHours / totalHours * 100 : 0
+
+        return AnyView(
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Fasting / Fat Burning").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                    Spacer()
+                    Text(String(format: "%.0f%% of time", fastingPct))
+                        .font(.caption.weight(.bold).monospacedDigit())
+                        .foregroundStyle(fastingPct > 50 ? Theme.deficit : Theme.fatYellow)
+                }
+
+                HStack(spacing: 10) {
+                    VStack(spacing: 2) {
+                        Text(String(format: "%.1fh", totalFastingHours)).font(.subheadline.weight(.bold).monospacedDigit())
+                        Text("Fasting").font(.caption2).foregroundStyle(.secondary)
+                    }.frame(maxWidth: .infinity).card()
+
+                    VStack(spacing: 2) {
+                        Text("\(fastingWindows.count)").font(.subheadline.weight(.bold).monospacedDigit())
+                        Text("Windows").font(.caption2).foregroundStyle(.secondary)
+                    }.frame(maxWidth: .infinity).card()
+
+                    if let longest = fastingWindows.max(by: { $0.end.timeIntervalSince($0.start) < $1.end.timeIntervalSince($1.start) }) {
+                        VStack(spacing: 2) {
+                            Text(String(format: "%.1fh", longest.end.timeIntervalSince(longest.start) / 3600))
+                                .font(.subheadline.weight(.bold).monospacedDigit())
+                            Text("Longest").font(.caption2).foregroundStyle(.secondary)
+                        }.frame(maxWidth: .infinity).card()
+                    }
+                }
+
+                Text("Periods where glucose stayed below 100 mg/dL for 30+ minutes. Your body is likely burning fat during these windows.")
+                    .font(.caption2).foregroundStyle(.tertiary)
+            }
+            .card()
+        )
     }
 
     // MARK: - Spikes Card

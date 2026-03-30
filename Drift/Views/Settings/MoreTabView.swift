@@ -100,6 +100,7 @@ struct MoreTabView: View {
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
             }
+            .contentShape(Rectangle())
             .padding(.vertical, 10)
         }
         .buttonStyle(.plain)

@@ -34,22 +34,24 @@ struct FoodSearchView: View {
 
                 if results.isEmpty && !query.isEmpty {
                     VStack(spacing: 8) {
-                        Text("No results for \"\(viewModel.searchQuery)\"")
+                        Image(systemName: "magnifyingglass").font(.title2).foregroundStyle(.tertiary)
+                        Text("No results for \"\(query)\"")
                             .font(.subheadline).foregroundStyle(.secondary)
                         Text("Try a different spelling or use Quick Add")
                             .font(.caption).foregroundStyle(.tertiary)
                     }
-                    .padding(.top, 40)
-                    Spacer()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Theme.background)
                 } else if results.isEmpty {
                     VStack(spacing: 8) {
+                        Image(systemName: "fork.knife").font(.title2).foregroundStyle(Theme.accent.opacity(0.5))
                         Text("Search the food database")
                             .font(.subheadline).foregroundStyle(.secondary)
-                        Text("128 foods + raw ingredients")
+                        Text("Type to search 128+ foods")
                             .font(.caption).foregroundStyle(.tertiary)
                     }
-                    .padding(.top, 40)
-                    Spacer()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Theme.background)
                 } else {
                     List {
                         ForEach(results) { food in
