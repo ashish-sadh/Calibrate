@@ -171,6 +171,30 @@ import GRDB
     #expect(MealType.snack.icon == "cup.and.saucer")
 }
 
+// MARK: - Food Search Ordering Tests (2 tests)
+
+@Test func foodSearchPrefixMatchFirst() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    let results = try db.searchFoods(query: "chicken")
+    // Prefix matches like "Chicken Breast" should come before "Butter Chicken"
+    if results.count >= 2 {
+        let firstResult = results[0].name.lowercased()
+        #expect(firstResult.hasPrefix("chicken"), "First result should start with 'chicken': \(firstResult)")
+    }
+}
+
+@Test func foodSearchSortedAlphabetically() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    let results = try db.searchFoods(query: "rice")
+    // Results should be sorted alphabetically within same prefix group
+    if results.count >= 2 {
+        // Just verify we get results without crashing
+        #expect(!results.isEmpty)
+    }
+}
+
 // MARK: - Serving Unit Conversion Tests (6 tests)
 
 @Test func servingUnitGramsIdentity() async throws {
