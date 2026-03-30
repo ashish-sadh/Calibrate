@@ -302,12 +302,13 @@ struct GlucoseTabView: View {
 
     private var statsCard: some View {
         let v = readings.map(\.glucoseMgdl)
-        let avg = v.reduce(0, +) / Double(v.count)
+        let avg = v.isEmpty ? 0 : v.reduce(0, +) / Double(v.count)
         let inRange = v.filter { $0 >= 70 && $0 <= 140 }.count
+        let inRangePct = v.isEmpty ? 0 : Double(inRange) / Double(v.count) * 100
         return HStack(spacing: 10) {
             statPill("Average", value: String(format: "%.0f", avg), unit: "mg/dL")
             statPill("Range", value: "\(Int(v.min() ?? 0))-\(Int(v.max() ?? 0))", unit: "mg/dL")
-            statPill("In Zone", value: String(format: "%.0f%%", Double(inRange) / Double(v.count) * 100), unit: "70-140")
+            statPill("In Zone", value: String(format: "%.0f%%", inRangePct), unit: "70-140")
         }
     }
 
@@ -464,10 +465,10 @@ struct GlucoseTabView: View {
             let end = Date()
             let start: Date
 
-            if let days = selectedRange.days {
-                start = cal.date(byAdding: .day, value: -days, to: end)!
+            if let days = selectedRange.days, let d = cal.date(byAdding: .day, value: -days, to: end) {
+                start = d
             } else {
-                start = cal.date(byAdding: .year, value: -1, to: end)! // All = last year
+                start = cal.date(byAdding: .year, value: -1, to: end) ?? end
             }
 
             if dataSource == .appleHealth {

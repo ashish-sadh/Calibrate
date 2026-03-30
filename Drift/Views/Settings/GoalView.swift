@@ -198,8 +198,8 @@ struct GoalView: View {
         return VStack(alignment: .leading, spacing: 8) {
             Text("Projection").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
 
-            if let rate = actualWeeklyRate, let current = currentWeightKg {
-                let weeksToGoal = abs(goal.remainingKg(currentWeightKg: current) / (rate != 0 ? rate : 0.01))
+            if let rate = actualWeeklyRate, let current = currentWeightKg, abs(rate) > 0.01 {
+                let weeksToGoal = abs(goal.remainingKg(currentWeightKg: current) / rate)
                 let projectedDate = Calendar.current.date(byAdding: .day, value: Int(weeksToGoal * 7), to: Date())
 
                 HStack(spacing: 12) {

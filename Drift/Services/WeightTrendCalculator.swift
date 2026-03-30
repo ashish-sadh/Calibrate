@@ -164,19 +164,20 @@ enum WeightTrendCalculator {
             ))
         }
 
-        let currentEMA = dataPoints.last!.emaWeight
+        guard let lastPoint = dataPoints.last else { return nil }
+        let currentEMA = lastPoint.emaWeight
         let previousEMA = dataPoints.count >= 2 ? dataPoints[dataPoints.count - 2].emaWeight : currentEMA
 
         // Linear regression on configurable window
-        let windowStart = Calendar.current.date(byAdding: .day, value: -config.regressionWindowDays, to: Date())!
+        guard let windowStart = Calendar.current.date(byAdding: .day, value: -config.regressionWindowDays, to: Date()) else { return nil }
         let recentPoints = dataPoints.filter { $0.date >= windowStart }
 
         let weeklyRateKg: Double
         if recentPoints.count >= 3 {
             weeklyRateKg = linearRegressionSlope(points: recentPoints) * 7
         } else if dataPoints.count >= 2 {
-            let first = dataPoints.first!
-            let last = dataPoints.last!
+            let first = dataPoints.first ?? lastPoint
+            let last = lastPoint
             let days = Calendar.current.dateComponents([.day], from: first.date, to: last.date).day ?? 1
             weeklyRateKg = days > 0 ? (last.emaWeight - first.emaWeight) / Double(days) * 7 : 0
         } else {
@@ -259,7 +260,7 @@ enum WeightTrendCalculator {
         }
 
         func changeOverDays(_ days: Int) -> Double? {
-            let target = Calendar.current.date(byAdding: .day, value: -days, to: latest.date)!
+            guard let target = Calendar.current.date(byAdding: .day, value: -days, to: latest.date) else { return nil }
             let closest = dataPoints.min { abs($0.date.timeIntervalSince(target)) < abs($1.date.timeIntervalSince(target)) }
             guard let closest, closest.date != latest.date,
                   let closestActual = closest.actualWeight else { return nil }

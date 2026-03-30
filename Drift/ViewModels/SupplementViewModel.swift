@@ -27,13 +27,9 @@ final class SupplementViewModel {
     var currentStreak: Int {
         var streak = 0
         let cal = Calendar.current
-        for i in 0..<consistencyData.count {
-            let day = consistencyData.reversed()[i] // oldest first after reverse... actually let's just iterate properly
-            break
-        }
         // Walk backwards from today
         for dayOffset in 0..<60 {
-            let date = cal.date(byAdding: .day, value: -dayOffset, to: Date())!
+            guard let date = cal.date(byAdding: .day, value: -dayOffset, to: Date()) else { break }
             let dateStr = DateFormatters.dateOnly.string(from: date)
             if let day = consistencyData.first(where: { $0.id == dateStr }) {
                 if day.ratio >= 1.0 { streak += 1 } else { break }
@@ -70,7 +66,7 @@ final class SupplementViewModel {
         do {
             let cal = Calendar.current
             let endDate = Date()
-            let startDate = cal.date(byAdding: .day, value: -59, to: endDate)!
+            guard let startDate = cal.date(byAdding: .day, value: -59, to: endDate) else { return }
             let startStr = DateFormatters.dateOnly.string(from: startDate)
             let endStr = DateFormatters.dateOnly.string(from: endDate)
 
@@ -86,7 +82,7 @@ final class SupplementViewModel {
             // Build 60-day grid
             var days: [DayConsistency] = []
             for dayOffset in (0..<60).reversed() {
-                let date = cal.date(byAdding: .day, value: -dayOffset, to: endDate)!
+                guard let date = cal.date(byAdding: .day, value: -dayOffset, to: endDate) else { continue }
                 let dateStr = DateFormatters.dateOnly.string(from: date)
                 let taken = byDate[dateStr] ?? 0
                 days.append(DayConsistency(id: dateStr, date: date, taken: taken, total: supplementCount))

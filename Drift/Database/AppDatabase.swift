@@ -120,9 +120,15 @@ extension AppDatabase {
     }
 
     func saveFoodEntry(_ entry: inout FoodEntry) throws {
+        let isNew = entry.id == nil
         try dbWriter.write { [entry] db in
             var mutable = entry
             try mutable.save(db)
+        }
+        if isNew {
+            entry = try dbWriter.read { db in
+                try FoodEntry.order(Column("id").desc).fetchOne(db)
+            } ?? entry
         }
     }
 
@@ -383,17 +389,18 @@ extension AppDatabase {
 extension AppDatabase {
     func seedFoodsFromJSON() throws {
         try dbWriter.write { db in
-            let count = try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM food")
-            guard count == 0 else { return }
-
             guard let url = Bundle.main.url(forResource: "foods", withExtension: "json"),
                   let data = try? Data(contentsOf: url),
                   let foods = try? JSONDecoder().decode([Food].self, from: data) else {
                 return
             }
 
+            let existingNames = try Set(String.fetchAll(db, sql: "SELECT LOWER(name) FROM food"))
+
             for var food in foods {
-                try food.insert(db)
+                if !existingNames.contains(food.name.lowercased()) {
+                    try food.insert(db)
+                }
             }
         }
     }

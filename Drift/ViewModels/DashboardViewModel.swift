@@ -24,6 +24,8 @@ final class DashboardViewModel {
     var hrvMs: Double = 0
     var restingHR: Double = 0
 
+    var isLoading = false
+
     var calorieBalance: Double {
         todayNutrition.calories - caloriesBurned
     }
@@ -43,6 +45,9 @@ final class DashboardViewModel {
     }
 
     func loadToday() async {
+        guard !isLoading else { return }
+        isLoading = true
+        defer { isLoading = false }
         let today = DateFormatters.todayString
 
         // Load nutrition from local DB

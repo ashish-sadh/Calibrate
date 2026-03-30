@@ -155,8 +155,8 @@ final class HealthKitService {
         guard isAvailable, let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else { return 0 }
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
-        let evening = calendar.date(byAdding: .hour, value: -6, to: startOfDay)! // 6pm yesterday
-        let noon = calendar.date(byAdding: .hour, value: 12, to: startOfDay)!    // noon today
+        guard let evening = calendar.date(byAdding: .hour, value: -6, to: startOfDay),
+              let noon = calendar.date(byAdding: .hour, value: 12, to: startOfDay) else { return 0 }
         let predicate = HKQuery.predicateForSamples(withStart: evening, end: noon, options: [])
 
         let hours: Double = try await withCheckedThrowingContinuation { continuation in
@@ -283,8 +283,8 @@ final class HealthKitService {
     func fetchHRV(for date: Date) async throws -> Double {
         guard isAvailable, let hrvType = HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN) else { return 0 }
         let cal = Calendar.current
-        let start = cal.date(byAdding: .day, value: -1, to: cal.startOfDay(for: date))!
-        let end = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: date))!
+        guard let start = cal.date(byAdding: .day, value: -1, to: cal.startOfDay(for: date)),
+              let end = cal.date(byAdding: .day, value: 1, to: cal.startOfDay(for: date)) else { return 0 }
         let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
 
         return try await withCheckedThrowingContinuation { continuation in
@@ -303,7 +303,7 @@ final class HealthKitService {
         guard isAvailable, let rhrType = HKQuantityType.quantityType(forIdentifier: .restingHeartRate) else { return 0 }
         let cal = Calendar.current
         let start = cal.startOfDay(for: date)
-        let end = cal.date(byAdding: .day, value: 1, to: start)!
+        guard let end = cal.date(byAdding: .day, value: 1, to: start) else { return 0 }
         let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
 
         return try await withCheckedThrowingContinuation { continuation in
@@ -322,7 +322,7 @@ final class HealthKitService {
         guard isAvailable, let rrType = HKQuantityType.quantityType(forIdentifier: .respiratoryRate) else { return 0 }
         let cal = Calendar.current
         let start = cal.startOfDay(for: date)
-        let end = cal.date(byAdding: .day, value: 1, to: start)!
+        guard let end = cal.date(byAdding: .day, value: 1, to: start) else { return 0 }
         let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
 
         return try await withCheckedThrowingContinuation { continuation in
@@ -341,7 +341,7 @@ final class HealthKitService {
         var result: [(Date, Double)] = []
         let cal = Calendar.current
         for i in 0..<days {
-            let date = cal.date(byAdding: .day, value: -i, to: Date())!
+            guard let date = cal.date(byAdding: .day, value: -i, to: Date()) else { continue }
             let hours = try await fetchSleepHours(for: date)
             result.append((date, hours))
         }
@@ -369,7 +369,7 @@ final class HealthKitService {
         guard isAvailable, let quantityType = HKQuantityType.quantityType(forIdentifier: typeIdentifier) else { return 0 }
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else { return 0 }
         let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: endOfDay, options: .strictStartDate)
 
         return try await withCheckedThrowingContinuation { continuation in

@@ -16,7 +16,8 @@ struct DashboardView: View {
 
                             // Estimated deficit/surplus as part of the tile
                             if let deficit = viewModel.dailyDeficit {
-                                HStack {
+                                Divider().padding(.vertical, 2)
+                                HStack(alignment: .center) {
                                     Text(deficit < 0 ? "Estimated Deficit" : "Estimated Surplus")
                                         .font(.caption).foregroundStyle(.secondary)
                                     Spacer()
@@ -93,13 +94,11 @@ struct DashboardView: View {
 
                 HStack(spacing: 0) {
                     calorieColumn(value: Int(viewModel.todayNutrition.calories), label: "Eaten", color: Theme.calorieBlue)
-                    Spacer()
+                        .frame(maxWidth: .infinity)
                     Text("\u{2212}").font(.title3).foregroundStyle(.secondary)
-                    Spacer()
                     calorieColumn(value: Int(viewModel.caloriesBurned), label: "Burned", color: Theme.stepsOrange)
-                    Spacer()
+                        .frame(maxWidth: .infinity)
                     Text("=").font(.title3).foregroundStyle(.secondary)
-                    Spacer()
                     let balance = Int(viewModel.calorieBalance)
                     calorieColumn(
                         value: abs(balance),
@@ -107,6 +106,7 @@ struct DashboardView: View {
                         color: balance <= 0 ? Theme.deficit : Theme.surplus,
                         prefix: balance < 0 ? "-" : "+"
                     )
+                    .frame(maxWidth: .infinity)
                 }
 
                 // Inline macros

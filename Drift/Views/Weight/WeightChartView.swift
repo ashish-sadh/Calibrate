@@ -24,7 +24,7 @@ struct WeightChartView: View {
         }
         return weeks.sorted { $0.key < $1.key }.map { ws, data in
             let avgA = data.actuals.isEmpty ? nil : unit.convert(fromKg: data.actuals.reduce(0, +) / Double(data.actuals.count))
-            let avgE = unit.convert(fromKg: data.emas.reduce(0, +) / Double(data.emas.count))
+            let avgE = data.emas.isEmpty ? 0 : unit.convert(fromKg: data.emas.reduce(0, +) / Double(data.emas.count))
             return (ws, avgA, avgE)
         }
     }

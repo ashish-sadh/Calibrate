@@ -40,7 +40,7 @@ struct WeightLogListView: View {
                         Text(group.title)
                             .font(.headline)
                         Spacer()
-                        let avg = group.entries.map(\.weightKg).reduce(0, +) / Double(group.entries.count)
+                        let avg = group.entries.isEmpty ? 0 : group.entries.map(\.weightKg).reduce(0, +) / Double(group.entries.count)
                         Text("avg \(String(format: "%.1f", unit.convert(fromKg: avg))) \(unit.displayName)")
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(.tertiary)

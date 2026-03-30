@@ -311,6 +311,7 @@ struct BarcodeLookupView: View {
     // MARK: - Actions
 
     private func lookupBarcode(_ barcode: String) {
+        guard !isLooking else { return }
         isLooking = true; error = nil
         Task {
             // Check local cache first

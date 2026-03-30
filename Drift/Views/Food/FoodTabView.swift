@@ -55,6 +55,15 @@ struct FoodTabView: View {
                 viewModel.loadTodayMeals()
                 loggedDays = viewModel.loggedDays(last: 30)
             }
+            .onChange(of: showingSearch) { _, showing in
+                if !showing { viewModel.loadTodayMeals(); loggedDays = viewModel.loggedDays(last: 30) }
+            }
+            .onChange(of: showingQuickAdd) { _, showing in
+                if !showing { viewModel.loadTodayMeals(); loggedDays = viewModel.loggedDays(last: 30) }
+            }
+            .onChange(of: showingScanner) { _, showing in
+                if !showing { viewModel.loadTodayMeals(); loggedDays = viewModel.loggedDays(last: 30) }
+            }
         }
     }
 

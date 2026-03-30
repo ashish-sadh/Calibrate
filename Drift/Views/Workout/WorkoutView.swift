@@ -564,8 +564,10 @@ struct ActiveWorkoutView: View {
     // MARK: - Timers
 
     private func startWorkoutTimer() {
-        workoutTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
-            elapsedSeconds = Int(Date().timeIntervalSince(startTime))
+        workoutTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [self] _ in
+            Task { @MainActor in
+                elapsedSeconds = Int(Date().timeIntervalSince(startTime))
+            }
         }
     }
 
@@ -576,13 +578,15 @@ struct ActiveWorkoutView: View {
         activeRestSetIndex = setIndex
         restTimerActive = true
         restTimer?.invalidate()
-        restTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { t in
-            if restSeconds > 0 {
-                restSeconds -= 1
-            } else {
-                t.invalidate()
-                restTimerActive = false
-                AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
+        restTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            Task { @MainActor in
+                if restSeconds > 0 {
+                    restSeconds -= 1
+                } else {
+                    restTimer?.invalidate()
+                    restTimerActive = false
+                    AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
+                }
             }
         }
     }
@@ -611,12 +615,28 @@ struct ActiveWorkoutView: View {
                               durationSeconds: elapsedSeconds, createdAt: ISO8601DateFormatter().string(from: Date()))
         do {
             try WorkoutService.saveWorkout(&workout)
-            guard let wid = workout.id else { return }
+            guard let wid = workout.id else {
+                Log.app.error("Save workout: no ID after save")
+                return
+            }
             var allSets: [WorkoutSet] = []
             for ex in exercises {
-                for (si, s) in ex.sets.enumerated() {
-                    guard let w = Double(s.weight), let r = Int(s.reps), r > 0 else { continue }
+                for (si, s) in ex.sets.enumerated() where s.done {
+                    let w = Double(s.weight) ?? 0
+                    let r = Int(s.reps) ?? 0
+                    guard r > 0 else { continue }
                     allSets.append(WorkoutSet(workoutId: wid, exerciseName: ex.name, setOrder: si + 1, weightLbs: w, reps: r, isWarmup: false))
+                }
+            }
+            if allSets.isEmpty {
+                // Also save sets that aren't marked done but have data
+                for ex in exercises {
+                    for (si, s) in ex.sets.enumerated() {
+                        let w = Double(s.weight) ?? 0
+                        let r = Int(s.reps) ?? 0
+                        guard r > 0 else { continue }
+                        allSets.append(WorkoutSet(workoutId: wid, exerciseName: ex.name, setOrder: si + 1, weightLbs: w, reps: r, isWarmup: false))
+                    }
                 }
             }
             try WorkoutService.saveSets(allSets)

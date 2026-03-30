@@ -4,7 +4,6 @@ struct FoodSearchView: View {
     @Bindable var viewModel: FoodLogViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var selectedFood: Food?
-    @State private var showingLogSheet = false
     @State private var amount: String = "1"
     @State private var selectedUnit: ServingUnit = .grams
     @State private var selectedMealType: MealType = .lunch
@@ -47,7 +46,7 @@ struct FoodSearchView: View {
                         Image(systemName: "fork.knife").font(.title2).foregroundStyle(Theme.accent.opacity(0.5))
                         Text("Search the food database")
                             .font(.subheadline).foregroundStyle(.secondary)
-                        Text("Type to search 128+ foods")
+                        Text("Type to search 240+ foods")
                             .font(.caption).foregroundStyle(.tertiary)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -56,11 +55,11 @@ struct FoodSearchView: View {
                     List {
                         ForEach(results) { food in
                             Button {
-                                selectedFood = food
                                 // Set default amount based on food's serving
                                 amount = String(format: "%.0f", food.servingSize)
                                 selectedUnit = food.servingUnit == "ml" ? .ml : .grams
-                                showingLogSheet = true
+                                // Set selectedFood LAST to trigger .sheet(item:)
+                                selectedFood = food
                             } label: {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(food.name).font(.subheadline)
@@ -78,10 +77,8 @@ struct FoodSearchView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
             }
-            .sheet(isPresented: $showingLogSheet) {
-                if let food = selectedFood {
-                    logFoodSheet(food)
-                }
+            .sheet(item: $selectedFood) { food in
+                logFoodSheet(food)
             }
         }
     }
@@ -142,11 +139,11 @@ struct FoodSearchView: View {
             }
             .navigationTitle("Log Food").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showingLogSheet = false } }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { selectedFood = nil } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Log") {
                         viewModel.logFood(food, servings: multiplier, mealType: selectedMealType)
-                        showingLogSheet = false
+                        selectedFood = nil
                         dismiss()
                     }
                 }

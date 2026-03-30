@@ -133,8 +133,8 @@ final class FoodLogViewModel {
         loadTodayMeals()
     }
 
-    func goToPreviousDay() { goToDate(Calendar.current.date(byAdding: .day, value: -1, to: selectedDate)!) }
-    func goToNextDay() { goToDate(Calendar.current.date(byAdding: .day, value: 1, to: selectedDate)!) }
+    func goToPreviousDay() { if let d = Calendar.current.date(byAdding: .day, value: -1, to: selectedDate) { goToDate(d) } }
+    func goToNextDay() { if let d = Calendar.current.date(byAdding: .day, value: 1, to: selectedDate) { goToDate(d) } }
     var isToday: Bool { Calendar.current.isDateInToday(selectedDate) }
 
     /// Days with food logged in last N days (for consistency heatmap).
@@ -142,7 +142,7 @@ final class FoodLogViewModel {
         let cal = Calendar.current
         var result: [Date: Double] = [:]
         for offset in 0..<days {
-            let date = cal.date(byAdding: .day, value: -offset, to: Date())!
+            guard let date = cal.date(byAdding: .day, value: -offset, to: Date()) else { continue }
             let dateStr = DateFormatters.dateOnly.string(from: date)
             let nutrition = try? database.fetchDailyNutrition(for: dateStr)
             result[cal.startOfDay(for: date)] = nutrition?.calories ?? 0

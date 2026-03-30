@@ -76,8 +76,11 @@ final class WeightViewModel {
             // Load filtered entries for chart
             let startDate: String?
             if let days = selectedTimeRange.days {
-                let date = Calendar.current.date(byAdding: .day, value: -days, to: Date())!
-                startDate = DateFormatters.dateOnly.string(from: date)
+                if let date = Calendar.current.date(byAdding: .day, value: -days, to: Date()) {
+                    startDate = DateFormatters.dateOnly.string(from: date)
+                } else {
+                    startDate = nil
+                }
             } else {
                 startDate = nil
             }
@@ -124,7 +127,7 @@ final class WeightViewModel {
             let weekStart = calendar.dateInterval(of: .weekOfYear, for: date)?.start ?? date
             weeks[weekStart, default: []].append(entry.weightKg)
         }
-        return weeks.map { WeeklyAverage(weekStart: $0.key, average: $0.value.reduce(0, +) / Double($0.value.count), count: $0.value.count) }
+        return weeks.map { WeeklyAverage(weekStart: $0.key, average: $0.value.isEmpty ? 0 : $0.value.reduce(0, +) / Double($0.value.count), count: $0.value.count) }
             .sorted { $0.weekStart > $1.weekStart }
     }
 
@@ -157,7 +160,7 @@ final class WeightViewModel {
             groups[key, default: (title, [])].entries.append(entry)
         }
         return groups.map { (key, val) in
-            MonthGroup(id: key, title: val.title, entries: val.entries, average: val.entries.map(\.weightKg).reduce(0, +) / Double(val.entries.count))
+            MonthGroup(id: key, title: val.title, entries: val.entries, average: val.entries.isEmpty ? 0 : val.entries.map(\.weightKg).reduce(0, +) / Double(val.entries.count))
         }.sorted { $0.id > $1.id }
     }
 }

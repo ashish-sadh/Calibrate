@@ -8,13 +8,12 @@ enum WorkoutService {
     // MARK: - CRUD
 
     static func saveWorkout(_ workout: inout Workout) throws {
-        try db.writer.write { [workout] dbConn in
+        let savedWorkout = try db.writer.write { [workout] dbConn -> Workout in
             var m = workout
             try m.save(dbConn)
+            return m
         }
-        workout = try db.reader.read { dbConn in
-            try Workout.order(Column("created_at").desc).fetchOne(dbConn)
-        } ?? workout
+        workout = savedWorkout
     }
 
     static func saveSets(_ sets: [WorkoutSet]) throws {
@@ -126,8 +125,9 @@ enum WorkoutService {
             counts[weekStart, default: 0] += 1
         }
 
-        return (0..<weeks).map { offset in
-            let weekStart = cal.date(byAdding: .weekOfYear, value: -offset, to: cal.dateInterval(of: .weekOfYear, for: now)!.start)!
+        guard let currentWeekStart = cal.dateInterval(of: .weekOfYear, for: now)?.start else { return [] }
+        return (0..<weeks).compactMap { offset -> (weekStart: Date, count: Int)? in
+            guard let weekStart = cal.date(byAdding: .weekOfYear, value: -offset, to: currentWeekStart) else { return nil }
             return (weekStart, counts[weekStart] ?? 0)
         }.reversed()
     }
