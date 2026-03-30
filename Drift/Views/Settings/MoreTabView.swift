@@ -190,7 +190,7 @@ struct SettingsView: View {
                     Button("Reset Everything", role: .destructive) { performFactoryReset() }
                     Button("Cancel", role: .cancel) {}
                 } message: {
-                    Text("This deletes ALL local data: weight entries, food logs, supplements, DEXA scans, glucose data, lab reports, biomarker results, barcode cache, goals, and algorithm settings. Apple Health data is NOT affected. This cannot be undone.")
+                    Text("This deletes ALL local data: weight entries, food logs, workouts, favorites, supplements, DEXA scans, glucose data, lab reports, biomarker results, barcode cache, goals, and algorithm settings. Apple Health data is NOT affected. This cannot be undone.")
                 }
             }
             .padding(.horizontal, 16)
@@ -208,6 +208,7 @@ struct SettingsView: View {
             WeightGoal.clear()
             WeightTrendCalculator.saveConfig(.default)
             UserDefaults.standard.removeObject(forKey: "weight_unit")
+            UserDefaults.standard.removeObject(forKey: "drift_custom_exercises")
             Log.app.info("Factory reset performed")
             resetDone = true
         } catch {
