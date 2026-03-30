@@ -226,6 +226,59 @@ import GRDB
     #expect(regress == 0.0, "Should be clamped to 0.0")
 }
 
+// MARK: - WeightEntry Model Tests (3 tests)
+
+@Test func weightEntryKgToLbsConversion() async throws {
+    let entry = WeightEntry(date: "2026-03-30", weightKg: 70)
+    #expect(abs(entry.weightLbs - 154.3234) < 0.01, "70 kg = ~154.3 lbs")
+}
+
+@Test func weightUnitKgIdentity() async throws {
+    let unit = WeightUnit.kg
+    #expect(unit.convert(fromKg: 70) == 70)
+    #expect(unit.convertToKg(70) == 70)
+}
+
+@Test func weightUnitLbsRoundTrip() async throws {
+    let unit = WeightUnit.lbs
+    let lbs = unit.convert(fromKg: 70)
+    let backToKg = unit.convertToKg(lbs)
+    #expect(abs(backToKg - 70) < 0.01, "Should round-trip: \(backToKg)")
+}
+
+// MARK: - Food Entry Computed Properties Tests (3 tests)
+
+@Test func foodEntryTotalCaloriesZeroServings() async throws {
+    let entry = FoodEntry(mealLogId: 1, foodName: "Test", servingSizeG: 100, servings: 0, calories: 200)
+    #expect(entry.totalCalories == 0)
+}
+
+@Test func foodEntryTotalMacros() async throws {
+    let entry = FoodEntry(mealLogId: 1, foodName: "Test", servingSizeG: 100, servings: 2,
+                          calories: 200, proteinG: 10, carbsG: 30, fatG: 8, fiberG: 5)
+    #expect(entry.totalCalories == 400)
+    #expect(entry.totalProtein == 20)
+    #expect(entry.totalCarbs == 60)
+    #expect(entry.totalFat == 16)
+    #expect(entry.totalFiber == 10)
+}
+
+@Test func foodEntryFractionalServings() async throws {
+    let entry = FoodEntry(mealLogId: 1, foodName: "Test", servingSizeG: 100, servings: 0.5, calories: 200)
+    #expect(entry.totalCalories == 100)
+}
+
+// MARK: - DailyNutrition Tests (1 test)
+
+@Test func dailyNutritionZeroState() async throws {
+    let zero = DailyNutrition.zero
+    #expect(zero.calories == 0)
+    #expect(zero.proteinG == 0)
+    #expect(zero.carbsG == 0)
+    #expect(zero.fatG == 0)
+    #expect(zero.fiberG == 0)
+}
+
 // MARK: - Date Formatter Tests (2 tests)
 
 @Test func dateFormatterTodayString() async throws {
