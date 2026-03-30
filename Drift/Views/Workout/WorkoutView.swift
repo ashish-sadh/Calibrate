@@ -640,9 +640,9 @@ struct ExercisePickerView: View {
     @State private var selectedBodyPartFilter: String? = nil
 
     private var results: [ExerciseDatabase.ExerciseInfo] {
-        var list = query.isEmpty ? ExerciseDatabase.all : ExerciseDatabase.search(query: query)
+        var list = query.isEmpty ? ExerciseDatabase.allWithCustom : ExerciseDatabase.search(query: query) + ExerciseDatabase.customExercises.filter { $0.name.localizedCaseInsensitiveContains(query) }
         if let filter = selectedBodyPartFilter { list = list.filter { $0.bodyPart == filter } }
-        return Array(list.prefix(50)) // limit for performance
+        return Array(list.prefix(50))
     }
 
     // Exercises from workout history that aren't in the database
@@ -754,7 +754,11 @@ struct CustomExerciseSheet: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") { onSave(name); dismiss() }.disabled(name.isEmpty)
+                    Button("Add") {
+                        ExerciseDatabase.addCustomExercise(name: name, bodyPart: bodyPart)
+                        onSave(name)
+                        dismiss()
+                    }.disabled(name.isEmpty)
                 }
             }
         }

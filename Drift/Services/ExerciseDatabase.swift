@@ -37,12 +37,36 @@ enum ExerciseDatabase {
         }
     }
 
+    // MARK: - Custom Exercises (persisted in UserDefaults)
+
+    private static let customKey = "drift_custom_exercises"
+
+    static var customExercises: [ExerciseInfo] {
+        guard let data = UserDefaults.standard.data(forKey: customKey),
+              let decoded = try? JSONDecoder().decode([ExerciseInfo].self, from: data) else { return [] }
+        return decoded
+    }
+
+    static func addCustomExercise(name: String, bodyPart: String) {
+        var customs = customExercises
+        guard !customs.contains(where: { $0.name.lowercased() == name.lowercased() }) else { return }
+        customs.append(ExerciseInfo(name: name, bodyPart: bodyPart, primaryMuscles: [bodyPart.lowercased()],
+                                    secondaryMuscles: [], equipment: "other", category: "strength", level: "intermediate"))
+        if let data = try? JSONEncoder().encode(customs) {
+            UserDefaults.standard.set(data, forKey: customKey)
+        }
+        _exercises = nil // clear cache so `all` reloads
+    }
+
+    // Include custom exercises in all searches
+    static var allWithCustom: [ExerciseInfo] { all + customExercises }
+
     static func byBodyPart(_ part: String) -> [ExerciseInfo] {
-        all.filter { $0.bodyPart == part }
+        allWithCustom.filter { $0.bodyPart == part }
     }
 
     static func info(for name: String) -> ExerciseInfo? {
-        all.first { $0.name.lowercased() == name.lowercased() }
+        allWithCustom.first { $0.name.lowercased() == name.lowercased() }
     }
 
     static func bodyPart(for name: String) -> String {

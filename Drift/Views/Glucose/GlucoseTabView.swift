@@ -365,14 +365,11 @@ struct GlucoseTabView: View {
         }
         let fastingPct = monitoredHours > 0 ? totalFastingHours / monitoredHours * 100 : 0
 
-        // Daily average fasting (group by day)
+        // Daily average: total fasting divided by ALL monitored days (not just fasting days)
         let cal = Calendar.current
-        var dailyFasting: [Date: Double] = [:]
-        for w in fastingWindows {
-            let day = cal.startOfDay(for: w.start)
-            dailyFasting[day, default: 0] += w.end.timeIntervalSince(w.start) / 3600
-        }
-        let avgDailyFasting = dailyFasting.isEmpty ? 0 : dailyFasting.values.reduce(0, +) / Double(dailyFasting.count)
+        let allDays = Set(data.map { cal.startOfDay(for: $0.date) })
+        let totalDays = max(1, allDays.count)
+        let avgDailyFasting = totalFastingHours / Double(totalDays)
 
         return AnyView(
             VStack(alignment: .leading, spacing: 8) {

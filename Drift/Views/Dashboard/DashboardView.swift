@@ -50,12 +50,13 @@ struct DashboardView: View {
                     }
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 8)
+                .padding(.top, 2)
                 .padding(.bottom, 24)
             }
             .scrollContentBackground(.hidden)
             .background(Theme.background.ignoresSafeArea())
             .toolbarColorScheme(.dark, for: .navigationBar)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     HStack(spacing: 6) {
