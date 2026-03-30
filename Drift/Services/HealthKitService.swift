@@ -179,9 +179,21 @@ final class HealthKitService {
                     default: break // skip awake
                     }
                 }
-                // Use stages if available, otherwise fallback to inBed + unspecified
-                let totalSeconds = staged > 0 ? (staged + unspecified) : (inBed + unspecified)
-                continuation.resume(returning: totalSeconds / 3600)
+                // If detailed stages (REM/Deep/Core) exist, use ONLY those.
+                // Don't add inBed or unspecified on top — they often overlap and cause double-counting
+                // (e.g., WHOOP writes stages + iPhone writes inBed for the same night = 13h).
+                // Only fall back to unspecified or inBed when no detailed stages are available.
+                let totalSeconds: Double
+                if staged > 0 {
+                    totalSeconds = staged
+                } else if unspecified > 0 {
+                    totalSeconds = unspecified
+                } else {
+                    totalSeconds = inBed
+                }
+                // Sanity cap: sleep cannot exceed 14 hours in one night
+                let capped = min(totalSeconds, 14 * 3600)
+                continuation.resume(returning: capped / 3600)
             }
             healthStore.execute(query)
         }
