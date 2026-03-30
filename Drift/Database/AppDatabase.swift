@@ -409,10 +409,14 @@ extension AppDatabase {
         try dbWriter.read { db in
             if query.isEmpty { return [] }
             let pattern = "%\(query)%"
-            return try Food
-                .filter(Column("name").like(pattern))
-                .limit(limit)
-                .fetchAll(db)
+            // Order by: exact prefix match first, then alphabetical
+            return try Food.fetchAll(db, sql: """
+                SELECT * FROM food WHERE name LIKE ?
+                ORDER BY
+                    CASE WHEN LOWER(name) LIKE ? THEN 0 ELSE 1 END,
+                    name
+                LIMIT ?
+                """, arguments: [pattern, "\(query.lowercased())%", limit])
         }
     }
 
