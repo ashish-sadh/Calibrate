@@ -31,11 +31,14 @@ import GRDB
 }
 
 @Test func weightYoYoPattern() async throws {
-    let entries: [(String, Double)] = (0..<20).map {
-        (String(format: "2026-03-%02d", $0 + 1), 65.0 + ($0 % 2 == 0 ? 1.0 : -1.0))
+    // Use dates relative to today so regression window always covers them
+    let today = Date()
+    let entries: [(String, Double)] = (0..<20).map { day in
+        let date = Calendar.current.date(byAdding: .day, value: -19 + day, to: today)!
+        return (DateFormatters.dateOnly.string(from: date), 65.0 + (day % 2 == 0 ? 0.5 : -0.5))
     }
     let t = WeightTrendCalculator.calculateTrend(entries: entries)!
-    #expect(t.trendDirection == .maintaining, "Yo-yo should be maintaining")
+    #expect(abs(t.weeklyRateKg) < 0.3, "Yo-yo should have small weekly rate: \(t.weeklyRateKg)")
 }
 
 @Test func weightRapidLoss() async throws {

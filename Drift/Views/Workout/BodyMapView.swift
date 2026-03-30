@@ -107,7 +107,7 @@ struct BodyMapView: View {
     }
 
     private func exerciseSuggestions(for group: String) -> some View {
-        let exercises = ExerciseDatabase.byBodyPart(group).prefix(8).map(\.name)
+        let exercises = ExerciseDatabase.byBodyPart(group).filter { ["beginner", "intermediate"].contains($0.level) && $0.equipment != "other" }.prefix(5).map(\.name)
         let status = muscleStatus[group] ?? .untrained
 
         return VStack(alignment: .leading, spacing: 6) {

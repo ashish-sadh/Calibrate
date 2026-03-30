@@ -820,6 +820,7 @@ struct ExerciseBrowserView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
     @State private var selectedPart: String? = nil
+    @State private var showingCustom = false
 
     private var results: [ExerciseDatabase.ExerciseInfo] {
         var list = query.isEmpty ? ExerciseDatabase.all : ExerciseDatabase.search(query: query)
@@ -845,6 +846,12 @@ struct ExerciseBrowserView: View {
                 }
 
                 List {
+                    if !query.isEmpty && results.isEmpty {
+                        Button { showingCustom = true } label: {
+                            Label("Add \"\(query)\" as custom exercise", systemImage: "plus.circle.fill").foregroundStyle(Theme.accent)
+                        }
+                    }
+
                     ForEach(results.prefix(100)) { ex in
                         VStack(alignment: .leading, spacing: 3) {
                             HStack {
@@ -862,7 +869,17 @@ struct ExerciseBrowserView: View {
                 }.listStyle(.plain)
             }
             .navigationTitle("Exercise Database").navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .primaryAction) {
+                    Button { showingCustom = true } label: {
+                        Image(systemName: "plus.circle.fill").foregroundStyle(Theme.accent)
+                    }
+                }
+            }
+            .sheet(isPresented: $showingCustom) {
+                CustomExerciseSheet { _ in } // just adding to DB, no callback needed
+            }
         }
     }
 

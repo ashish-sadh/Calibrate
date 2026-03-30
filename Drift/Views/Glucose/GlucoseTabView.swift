@@ -325,7 +325,7 @@ struct GlucoseTabView: View {
         let data = parsedReadings
         guard data.count > 10 else { return AnyView(EmptyView()) }
 
-        // Find windows where glucose < 100 mg/dL for 30+ minutes
+        // Find windows where glucose < 100 mg/dL for 1+ hour
         // Ignore gaps >15 min between readings (no data = not fasting)
         var fastingWindows: [(start: Date, end: Date, avgGlucose: Double)] = []
         var windowStart: Date? = nil
@@ -335,7 +335,7 @@ struct GlucoseTabView: View {
         for (date, value) in data {
             // If gap > 15 min from last reading, break the window (no data ≠ fasting)
             if let prev = lastDate, date.timeIntervalSince(prev) > 900 {
-                if let start = windowStart, windowValues.count >= 6 {
+                if let start = windowStart, windowValues.count >= 12 {
                     fastingWindows.append((start, prev, windowValues.reduce(0, +) / Double(windowValues.count)))
                 }
                 windowStart = nil; windowValues = []
@@ -346,13 +346,13 @@ struct GlucoseTabView: View {
                 if windowStart == nil { windowStart = date }
                 windowValues.append(value)
             } else {
-                if let start = windowStart, windowValues.count >= 6 {
+                if let start = windowStart, windowValues.count >= 12 {
                     fastingWindows.append((start, date, windowValues.reduce(0, +) / Double(windowValues.count)))
                 }
                 windowStart = nil; windowValues = []
             }
         }
-        if let start = windowStart, windowValues.count >= 6, let last = data.last?.date {
+        if let start = windowStart, windowValues.count >= 12, let last = data.last?.date {
             fastingWindows.append((start, last, windowValues.reduce(0, +) / Double(windowValues.count)))
         }
 
@@ -405,7 +405,7 @@ struct GlucoseTabView: View {
                     }
                 }
 
-                Text("Periods where glucose stayed below 100 mg/dL for 30+ minutes. Your body is likely burning fat during these windows.")
+                Text("Periods where glucose stayed below 100 mg/dL for 1+ hour. Your body is likely burning fat during these windows.")
                     .font(.caption2).foregroundStyle(.tertiary)
             }
             .card()
