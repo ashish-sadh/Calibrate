@@ -1136,6 +1136,42 @@ import GRDB
     #expect(lastSession[2].weightLbs == 175, "Set 3 = 175lb")
 }
 
+// MARK: - Workout Complete Flow Test
+
+@Test func fullWorkoutFlow() async throws {
+    // Simulate: start workout, add exercise, mark set done, finish
+    // This tests the data model layer of the workout flow
+    let db = try AppDatabase.empty()
+
+    // 1. Create workout
+    let w = Workout(name: "Test Flow", date: "2026-03-31", durationSeconds: 1800, createdAt: "")
+    try await db.writer.write { [w] dbConn in var m = w; try m.insert(dbConn) }
+    let wid = try await db.reader.read { try Workout.fetchAll($0) }.first!.id!
+
+    // 2. Add sets
+    try await db.writer.write { dbConn in
+        var s1 = WorkoutSet(workoutId: wid, exerciseName: "Bench Press", setOrder: 1, weightLbs: 135, reps: 10, isWarmup: false)
+        var s2 = WorkoutSet(workoutId: wid, exerciseName: "Bench Press", setOrder: 2, weightLbs: 155, reps: 8, isWarmup: false)
+        var s3 = WorkoutSet(workoutId: wid, exerciseName: "Squat", setOrder: 1, weightLbs: 225, reps: 5, isWarmup: false)
+        try s1.insert(dbConn); try s2.insert(dbConn); try s3.insert(dbConn)
+    }
+
+    // 3. Verify sets saved
+    let sets = try await db.reader.read { try WorkoutSet.filter(Column("workout_id") == wid).fetchAll($0) }
+    #expect(sets.count == 3)
+
+    // 4. Verify 1RM calculations
+    let benchSets = sets.filter { $0.exerciseName == "Bench Press" }
+    let best1RM = benchSets.compactMap(\.estimated1RM).max()
+    #expect(best1RM != nil)
+    #expect(best1RM! > 155, "1RM should be > working weight")
+
+    // 5. Delete workout (cascade)
+    try await db.writer.write { dbConn in _ = try Workout.deleteOne(dbConn, id: wid) }
+    let remaining = try await db.reader.read { try WorkoutSet.filter(Column("workout_id") == wid).fetchAll($0) }
+    #expect(remaining.isEmpty, "Sets should cascade delete")
+}
+
 @Test func templateFavoriteDefault() async throws {
     let t = WorkoutTemplate(name: "Test", exercisesJson: "[]", createdAt: "")
     #expect(t.isFavorite == false, "Default should be not favorite")
