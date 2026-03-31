@@ -481,6 +481,15 @@ struct FoodTabView: View {
             .navigationTitle("Edit").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { editingEntry = nil } }
+                ToolbarItem(placement: .principal) {
+                    Button {
+                        try? AppDatabase.shared.toggleFoodFavorite(name: entry.foodName, foodId: entry.foodId)
+                    } label: {
+                        let isFav = (try? AppDatabase.shared.isFoodFavorite(name: entry.foodName)) ?? false
+                        Image(systemName: isFav ? "star.fill" : "star")
+                            .foregroundStyle(isFav ? Theme.fatYellow : .secondary)
+                    }
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         if let id = entry.id {
