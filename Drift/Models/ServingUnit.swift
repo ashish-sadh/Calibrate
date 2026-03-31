@@ -200,6 +200,20 @@ struct FoodUnit: Hashable {
             }
         }
 
+        // Nuts — add per-piece count unit
+        if lower.contains("almond") && !lower.contains("milk") && !lower.contains("butter") && !lower.contains("flour") {
+            units.append(FoodUnit(label: "almond", gramsEquivalent: 1.2))
+        }
+        if lower.contains("cashew") && !lower.contains("butter") {
+            units.append(FoodUnit(label: "cashew", gramsEquivalent: 1.5))
+        }
+        if lower.contains("pistachio") {
+            units.append(FoodUnit(label: "pistachio", gramsEquivalent: 0.6))
+        }
+        if lower.contains("walnut") {
+            units.append(FoodUnit(label: "half", gramsEquivalent: 2.5))
+        }
+
         return units
     }
 
@@ -221,6 +235,13 @@ struct FoodUnit: Hashable {
         if name.contains("orange") && ss < 200 { return FoodUnit(label: "orange", gramsEquivalent: ss) }
         if name.contains("cookie") || name.contains("biscuit") { return FoodUnit(label: "piece", gramsEquivalent: ss) }
         if name.contains("scoop") { return FoodUnit(label: "scoop", gramsEquivalent: ss) }
+        // Nuts — show count as secondary unit
+        if name.contains("almond") && !name.contains("milk") && !name.contains("butter") && !name.contains("flour") {
+            return FoodUnit(label: "serving", gramsEquivalent: ss)
+        }
+        if name.contains("cashew") && !name.contains("butter") { return FoodUnit(label: "serving", gramsEquivalent: ss) }
+        if name.contains("pistachio") { return FoodUnit(label: "serving", gramsEquivalent: ss) }
+        if name.contains("walnut") { return FoodUnit(label: "serving", gramsEquivalent: ss) }
 
         // Tablespoon items
         if name.contains("oil") || name.contains("ghee") { return FoodUnit(label: "tbsp", gramsEquivalent: 15) }

@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Drift reads your weight, activity, sleep, and nutrition data to track your health trends and calculate your calorie deficit.</string>
+	<string>Drift reads your weight, activity, sleep, and heart rate data from Apple Health to track your health trends. All data stays on your device — nothing is sent to any server.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Drift can write your logged nutrition data to Apple Health.</string>
+	<string>Drift does not write data to Apple Health. All your data stays local on your device.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Drift uses the camera to scan food barcodes for nutrition lookup.</string>
 	<key>UILaunchScreen</key>

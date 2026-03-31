@@ -20,6 +20,7 @@ struct FoodSearchView: View {
     @State private var showingRecipeBuilder = false
     @State private var showingScanner = false
     @State private var editingRecipe: FavoriteFood?
+    @State private var isFoodFavorite = false
     @FocusState private var searchFocused: Bool
 
     var body: some View {
@@ -307,10 +308,10 @@ struct FoodSearchView: View {
         let units = FoodUnit.smartUnits(for: food)
         amount = "1"
         selectedUnitIndex = 0
-        // Pre-select grams unit with food's serving size as default amount
         if units.first?.label == "g" && food.servingSize > 0 {
             amount = String(format: "%.0f", food.servingSize)
         }
+        isFoodFavorite = (try? AppDatabase.shared.isFoodFavorite(name: food.name)) ?? false
         selectedFood = food
     }
 
@@ -513,10 +514,10 @@ struct FoodSearchView: View {
                 ToolbarItem(placement: .principal) {
                     Button {
                         try? AppDatabase.shared.toggleFoodFavorite(name: food.name, foodId: food.id)
+                        isFoodFavorite.toggle()
                     } label: {
-                        let isFav = (try? AppDatabase.shared.isFoodFavorite(name: food.name)) ?? false
-                        Image(systemName: isFav ? "star.fill" : "star")
-                            .foregroundStyle(isFav ? Theme.fatYellow : .secondary)
+                        Image(systemName: isFoodFavorite ? "star.fill" : "star")
+                            .foregroundStyle(isFoodFavorite ? Theme.fatYellow : .secondary)
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {

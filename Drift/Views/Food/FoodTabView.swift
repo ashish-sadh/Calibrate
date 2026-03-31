@@ -11,6 +11,7 @@ struct FoodTabView: View {
     @State private var editingEntry: FoodEntry?
     @State private var editAmount = "1"
     @State private var editUnitIndex = 0
+    @State private var editEntryIsFav = false
 
     var body: some View {
         NavigationStack {
@@ -275,6 +276,7 @@ struct FoodTabView: View {
                     ? "\(Int(entry.servings))" : String(format: "%.1f", entry.servings)
                 editUnitIndex = 0
             }
+            editEntryIsFav = (try? AppDatabase.shared.isFoodFavorite(name: entry.foodName)) ?? false
             editingEntry = entry
         }
         .contextMenu {
@@ -501,10 +503,10 @@ struct FoodTabView: View {
                 ToolbarItem(placement: .principal) {
                     Button {
                         try? AppDatabase.shared.toggleFoodFavorite(name: entry.foodName, foodId: entry.foodId)
+                        editEntryIsFav.toggle()
                     } label: {
-                        let isFav = (try? AppDatabase.shared.isFoodFavorite(name: entry.foodName)) ?? false
-                        Image(systemName: isFav ? "star.fill" : "star")
-                            .foregroundStyle(isFav ? Theme.fatYellow : .secondary)
+                        Image(systemName: editEntryIsFav ? "star.fill" : "star")
+                            .foregroundStyle(editEntryIsFav ? Theme.fatYellow : .secondary)
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {

@@ -95,44 +95,43 @@ struct WorkoutView: View {
                     } else {
                         ScrollView {
                         ForEach(templates) { t in
-                            HStack {
-                                Button {
-                                    previewTemplate = t
-                                } label: {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        HStack(spacing: 4) {
-                                            if t.isFavorite {
-                                                Image(systemName: "star.fill").font(.caption2).foregroundStyle(Theme.fatYellow)
+                            VStack(spacing: 0) {
+                                HStack {
+                                    // Tap anywhere on the row → preview/edit
+                                    Button { previewTemplate = t } label: {
+                                        VStack(alignment: .leading, spacing: 3) {
+                                            HStack(spacing: 4) {
+                                                if t.isFavorite {
+                                                    Image(systemName: "star.fill").font(.caption2).foregroundStyle(Theme.fatYellow)
+                                                }
+                                                Text(t.name).font(.subheadline.weight(.medium))
                                             }
-                                            Text(t.name).font(.subheadline.weight(.medium))
+                                            let working = t.exercises.filter { !$0.isWarmup }
+                                            Text(working.map(\.name).prefix(3).joined(separator: ", "))
+                                                .font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
                                         }
-                                        let working = t.exercises.filter { !$0.isWarmup }
-                                        let warmupCount = t.exercises.filter(\.isWarmup).count
-                                        Text(working.map(\.name).prefix(3).joined(separator: ", "))
-                                            .font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
-                                        let totalSets = working.reduce(0) { $0 + $1.sets }
-                                        HStack(spacing: 6) {
-                                            if warmupCount > 0 {
-                                                Text("\(warmupCount) warmup").font(.system(size: 9)).foregroundStyle(Theme.fatYellow)
-                                            }
-                                            Text("\(working.count) exercises \u{00B7} \(totalSets) sets")
-                                                .font(.system(size: 9)).foregroundStyle(.quaternary)
-                                        }
-                                    }
-                                }.tint(.primary)
+                                    }.tint(.primary)
 
-                                Spacer()
+                                    Spacer()
 
-                                Button { WorkoutService.clearSession(); selectedTemplate = t; showingNewWorkout = true } label: {
-                                    Image(systemName: "play.circle.fill").foregroundStyle(Theme.accent)
+                                    // Start button — clearly separated
+                                    Button {
+                                        WorkoutService.clearSession(); selectedTemplate = t; showingNewWorkout = true
+                                    } label: {
+                                        Text("Start").font(.caption.weight(.semibold))
+                                            .padding(.horizontal, 12).padding(.vertical, 6)
+                                            .background(Theme.accent, in: RoundedRectangle(cornerRadius: 8))
+                                            .foregroundStyle(.white)
+                                    }.buttonStyle(.plain)
                                 }
+                                .padding(.vertical, 4)
                             }
                             .contextMenu {
                                 Button { WorkoutService.clearSession(); selectedTemplate = t; showingNewWorkout = true } label: {
                                     Label("Start Workout", systemImage: "play")
                                 }
                                 Button { previewTemplate = t } label: {
-                                    Label("Preview", systemImage: "eye")
+                                    Label("Edit", systemImage: "pencil")
                                 }
                                 if let tid = t.id {
                                     Button {
@@ -146,7 +145,7 @@ struct WorkoutView: View {
                                         renameTemplateName = t.name
                                         showingRenameAlert = true
                                     } label: {
-                                        Label("Rename", systemImage: "pencil")
+                                        Label("Rename", systemImage: "textformat")
                                     }
                                     Divider()
                                     Button(role: .destructive) {
@@ -674,11 +673,10 @@ struct ActiveWorkoutView: View {
                 Text("Save this workout as a reusable template")
             }
             .onAppear {
+                // Restore session BEFORE starting timer so startTime is correct
+                let restored = restoreSession()
                 startWorkoutTimer()
-                // Restore a previous session if one exists
-                if restoreSession() {
-                    return
-                }
+                if restored { return }
                 if let t = template {
                     workoutName = t.name
                     let warmups = t.exercises.filter(\.isWarmup)

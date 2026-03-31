@@ -22,15 +22,8 @@ final class HealthKitService {
         return types
     }
 
-    private var writeTypes: Set<HKSampleType> {
-        var types: Set<HKSampleType> = []
-        if let energy = HKObjectType.quantityType(forIdentifier: .dietaryEnergyConsumed) { types.insert(energy) }
-        if let protein = HKObjectType.quantityType(forIdentifier: .dietaryProtein) { types.insert(protein) }
-        if let carbs = HKObjectType.quantityType(forIdentifier: .dietaryCarbohydrates) { types.insert(carbs) }
-        if let fat = HKObjectType.quantityType(forIdentifier: .dietaryFatTotal) { types.insert(fat) }
-        if let fiber = HKObjectType.quantityType(forIdentifier: .dietaryFiber) { types.insert(fiber) }
-        return types
-    }
+    // Read-only — no write access requested. All data stays on device.
+    private var writeTypes: Set<HKSampleType> { [] }
 
     var isAvailable: Bool { HKHealthStore.isHealthDataAvailable() }
 
