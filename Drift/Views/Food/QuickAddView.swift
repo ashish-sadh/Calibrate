@@ -163,7 +163,7 @@ struct QuickAddView: View {
 }
 
 struct IdentifiableInt: Identifiable {
-    let id = UUID()
+    var id: Int { value }
     let value: Int
 }
 
