@@ -181,50 +181,6 @@ struct FoodSearchView: View {
         }
     }
 
-    private func recipeSuggestionRow(_ recipe: FavoriteFood) -> some View {
-        HStack {
-            Image(systemName: "bookmark.fill").font(.caption2).foregroundStyle(Theme.accent.opacity(0.7))
-            VStack(alignment: .leading, spacing: 1) {
-                Text(recipe.name).font(.subheadline).lineLimit(1)
-                Text(recipe.macroSummary).font(.caption2).foregroundStyle(.secondary)
-            }
-            Spacer()
-            Button {
-                viewModel.quickAdd(name: recipe.name, calories: recipe.calories,
-                                   proteinG: recipe.proteinG, carbsG: recipe.carbsG,
-                                   fatG: recipe.fatG, fiberG: recipe.fiberG,
-                                   mealType: viewModel.autoMealType)
-                viewModel.loadSuggestions()
-                loggedCount += 1
-                dismiss()
-            } label: {
-                Image(systemName: "plus.circle.fill").foregroundStyle(Theme.accent)
-            }.buttonStyle(.plain)
-        }
-        .padding(.horizontal, 16).padding(.vertical, 4)
-        .contextMenu {
-            Button {
-                viewModel.quickAdd(name: recipe.name, calories: recipe.calories,
-                                   proteinG: recipe.proteinG, carbsG: recipe.carbsG,
-                                   fatG: recipe.fatG, fiberG: recipe.fiberG,
-                                   mealType: viewModel.autoMealType)
-                viewModel.loadSuggestions()
-                loggedCount += 1
-            } label: { Label("Log", systemImage: "plus.circle") }
-
-            Button { editingRecipe = recipe } label: {
-                Label("Edit Recipe", systemImage: "pencil")
-            }
-            if let id = recipe.id {
-                Divider()
-                Button(role: .destructive) {
-                    try? AppDatabase.shared.deleteFavorite(id: id)
-                    viewModel.loadSuggestions()
-                } label: { Label("Delete Recipe", systemImage: "trash") }
-            }
-        }
-    }
-
     private func recentEntryRow(_ entry: RecentEntry) -> some View {
         HStack {
             if entry.isDBFood {
@@ -387,7 +343,12 @@ struct FoodSearchView: View {
                             // Only allow deleting user-added foods (Scanned category)
                             if food.category == "Scanned", let fid = food.id {
                                 Button(role: .destructive) {
-                                    try? AppDatabase.shared.writer.write { db in _ = try Food.deleteOne(db, id: fid) }
+                                    try? AppDatabase.shared.writer.write { db in
+                                        _ = try Food.deleteOne(db, id: fid)
+                                        // Clean up food_usage reference
+                                        try db.execute(sql: "DELETE FROM food_usage WHERE food_name = ?", arguments: [food.name])
+                                    }
+                                    viewModel.loadSuggestions()
                                     refreshSearch()
                                 } label: { Label("Delete", systemImage: "trash") }
                             }

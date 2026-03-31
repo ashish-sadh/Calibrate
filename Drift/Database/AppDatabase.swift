@@ -492,7 +492,16 @@ extension AppDatabase {
 
     func deleteFavorite(id: Int64) throws {
         try dbWriter.write { db in
+            // Get name before deleting to clean up food_usage
+            let name = try String.fetchOne(db, sql: "SELECT name FROM favorite_food WHERE id = ?", arguments: [id])
             _ = try FavoriteFood.deleteOne(db, id: id)
+            // Clean up food_usage entry for this recipe name (if no food table entry exists)
+            if let name {
+                let hasFoodEntry = try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM food WHERE LOWER(name) = LOWER(?)", arguments: [name]) ?? 0
+                if hasFoodEntry == 0 {
+                    try db.execute(sql: "DELETE FROM food_usage WHERE food_name = ? AND food_id IS NULL", arguments: [name])
+                }
+            }
         }
     }
 }
@@ -652,13 +661,14 @@ extension AppDatabase {
         try dbWriter.read { db in
             let rows = try Row.fetchAll(db, sql: """
                 SELECT fu.food_name, fu.food_id, fu.last_servings, fu.use_count,
-                       COALESCE(f.calories, ff.calories, 0) as calories,
-                       COALESCE(f.protein_g, ff.protein_g, 0) as protein_g,
-                       COALESCE(f.carbs_g, ff.carbs_g, 0) as carbs_g,
-                       COALESCE(f.fat_g, ff.fat_g, 0) as fat_g,
-                       COALESCE(f.serving_size, 0) as serving_size
+                       COALESCE(f.calories, f2.calories, ff.calories, 0) as calories,
+                       COALESCE(f.protein_g, f2.protein_g, ff.protein_g, 0) as protein_g,
+                       COALESCE(f.carbs_g, f2.carbs_g, ff.carbs_g, 0) as carbs_g,
+                       COALESCE(f.fat_g, f2.fat_g, ff.fat_g, 0) as fat_g,
+                       COALESCE(f.serving_size, f2.serving_size, 0) as serving_size
                 FROM food_usage fu
                 LEFT JOIN food f ON f.id = fu.food_id
+                LEFT JOIN food f2 ON LOWER(f2.name) = LOWER(fu.food_name) AND fu.food_id IS NULL
                 LEFT JOIN favorite_food ff ON LOWER(ff.name) = LOWER(fu.food_name)
                 ORDER BY fu.last_used DESC
                 LIMIT ?
@@ -695,12 +705,18 @@ extension AppDatabase {
     func toggleFoodFavorite(name: String, foodId: Int64?) throws {
         try dbWriter.write { db in
             let now = ISO8601DateFormatter().string(from: Date())
-            // Ensure food_usage row exists
+            // Resolve foodId if not provided — look up from food table
+            var resolvedId = foodId
+            if resolvedId == nil {
+                resolvedId = try Int64.fetchOne(db, sql: "SELECT id FROM food WHERE name = ? LIMIT 1", arguments: [name])
+            }
             try db.execute(sql: """
                 INSERT INTO food_usage (food_name, food_id, use_count, last_used, last_servings, is_favorite)
                 VALUES (?, ?, 0, ?, 1, 1)
-                ON CONFLICT(food_name) DO UPDATE SET is_favorite = NOT is_favorite
-                """, arguments: [name, foodId, now])
+                ON CONFLICT(food_name) DO UPDATE SET
+                    is_favorite = NOT is_favorite,
+                    food_id = COALESCE(excluded.food_id, food_id)
+                """, arguments: [name, resolvedId, now])
         }
     }
 
@@ -721,13 +737,14 @@ extension AppDatabase {
         try dbWriter.read { db in
             let rows = try Row.fetchAll(db, sql: """
                 SELECT fu.food_name, fu.food_id, fu.last_servings, fu.use_count,
-                       COALESCE(f.calories, ff.calories, 0) as calories,
-                       COALESCE(f.protein_g, ff.protein_g, 0) as protein_g,
-                       COALESCE(f.carbs_g, ff.carbs_g, 0) as carbs_g,
-                       COALESCE(f.fat_g, ff.fat_g, 0) as fat_g,
-                       COALESCE(f.serving_size, 0) as serving_size
+                       COALESCE(f.calories, f2.calories, ff.calories, 0) as calories,
+                       COALESCE(f.protein_g, f2.protein_g, ff.protein_g, 0) as protein_g,
+                       COALESCE(f.carbs_g, f2.carbs_g, ff.carbs_g, 0) as carbs_g,
+                       COALESCE(f.fat_g, f2.fat_g, ff.fat_g, 0) as fat_g,
+                       COALESCE(f.serving_size, f2.serving_size, 0) as serving_size
                 FROM food_usage fu
                 LEFT JOIN food f ON f.id = fu.food_id
+                LEFT JOIN food f2 ON LOWER(f2.name) = LOWER(fu.food_name) AND fu.food_id IS NULL
                 LEFT JOIN favorite_food ff ON LOWER(ff.name) = LOWER(fu.food_name)
                 WHERE fu.is_favorite = 1
                 ORDER BY fu.food_name
