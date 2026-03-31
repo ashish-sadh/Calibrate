@@ -601,6 +601,7 @@ struct ActiveWorkoutView: View {
                     }
                 }.padding(.top, 8).padding(.bottom, 24)
             }
+            .scrollDismissesKeyboard(.interactively)
             .background(Theme.background)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
