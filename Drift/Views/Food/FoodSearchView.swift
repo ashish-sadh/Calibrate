@@ -376,6 +376,14 @@ struct FoodSearchView: View {
                             }
                         }
                         .tint(.primary)
+                        .swipeActions(edge: .leading) {
+                            Button {
+                                try? AppDatabase.shared.toggleFoodFavorite(name: food.name, foodId: food.id)
+                                viewModel.loadSuggestions()
+                            } label: {
+                                Label("Favorite", systemImage: "star")
+                            }.tint(Theme.fatYellow)
+                        }
                     }
                 }
             }
