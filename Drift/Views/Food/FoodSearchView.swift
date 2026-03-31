@@ -178,12 +178,32 @@ struct FoodSearchView: View {
                                    proteinG: recipe.proteinG, carbsG: recipe.carbsG,
                                    fatG: recipe.fatG, fiberG: recipe.fiberG,
                                    mealType: viewModel.autoMealType)
+                viewModel.loadSuggestions()
+                loggedCount += 1
                 dismiss()
             } label: {
                 Image(systemName: "plus.circle.fill").foregroundStyle(Theme.accent)
             }.buttonStyle(.plain)
         }
         .padding(.horizontal, 16).padding(.vertical, 4)
+        .contextMenu {
+            Button {
+                viewModel.quickAdd(name: recipe.name, calories: recipe.calories,
+                                   proteinG: recipe.proteinG, carbsG: recipe.carbsG,
+                                   fatG: recipe.fatG, fiberG: recipe.fiberG,
+                                   mealType: viewModel.autoMealType)
+                viewModel.loadSuggestions()
+                loggedCount += 1
+            } label: { Label("Log", systemImage: "plus.circle") }
+
+            if let id = recipe.id {
+                Divider()
+                Button(role: .destructive) {
+                    try? AppDatabase.shared.deleteFavorite(id: id)
+                    viewModel.loadSuggestions()
+                } label: { Label("Delete Recipe", systemImage: "trash") }
+            }
+        }
     }
 
     private func recentEntryRow(_ entry: RecentEntry) -> some View {
@@ -278,7 +298,8 @@ struct FoodSearchView: View {
                                                proteinG: recipe.proteinG, carbsG: recipe.carbsG,
                                                fatG: recipe.fatG, fiberG: recipe.fiberG,
                                                mealType: viewModel.autoMealType)
-                            dismiss()
+                            viewModel.loadSuggestions()
+                            loggedCount += 1
                         } label: {
                             HStack {
                                 Image(systemName: "bookmark.fill").font(.caption2).foregroundStyle(Theme.accent.opacity(0.7))
@@ -290,6 +311,15 @@ struct FoodSearchView: View {
                                 Image(systemName: "plus.circle.fill").foregroundStyle(Theme.accent)
                             }
                         }.tint(.primary)
+                        .swipeActions(edge: .trailing) {
+                            if let id = recipe.id {
+                                Button(role: .destructive) {
+                                    try? AppDatabase.shared.deleteFavorite(id: id)
+                                    matchingRecipes.removeAll { $0.id == id }
+                                    viewModel.loadSuggestions()
+                                } label: { Label("Delete", systemImage: "trash") }
+                            }
+                        }
                     }
                 }
             }
