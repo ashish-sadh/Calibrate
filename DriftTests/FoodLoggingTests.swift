@@ -1227,4 +1227,30 @@ import GRDB
     #expect(after.isEmpty)
 }
 
+// MARK: - Food DB Quality Tests (3 tests)
+
+@Test func allFoodsHavePositiveCaloriesOrZero() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    let all = try db.searchFoods(query: "e", limit: 600) + db.searchFoods(query: "a", limit: 600)
+    let negative = all.filter { $0.calories < 0 }
+    #expect(negative.isEmpty, "Foods with negative calories: \(negative.map(\.name))")
+}
+
+@Test func allFoodsHaveReasonableServingSize() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    let all = try db.searchFoods(query: "e", limit: 600) + db.searchFoods(query: "a", limit: 600)
+    let zeroServing = all.filter { $0.servingSize <= 0 }
+    #expect(zeroServing.isEmpty, "Foods with zero serving: \(zeroServing.map(\.name))")
+}
+
+@Test func allFoodsHaveNonEmptyNames() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    let all = try db.searchFoods(query: "a", limit: 600)
+    let empty = all.filter { $0.name.trimmingCharacters(in: .whitespaces).isEmpty }
+    #expect(empty.isEmpty)
+}
+
 enum TestError: Error { case msg(String); init(_ s: String) { self = .msg(s) } }
