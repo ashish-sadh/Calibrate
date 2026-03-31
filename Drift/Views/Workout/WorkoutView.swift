@@ -755,7 +755,7 @@ struct ActiveWorkoutView: View {
 
     private func isAssistedExercise(_ name: String) -> Bool {
         let e = name.lowercased()
-        return e.contains("assisted") || e.contains("dip") || (e.contains("pull") && e.contains("up") && e.contains("assist"))
+        return e.contains("assisted") || e.contains("assist")
     }
 
     private func guessGroup(_ name: String) -> String {
