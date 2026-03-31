@@ -77,6 +77,22 @@ enum DefaultTemplates {
         ("Cossack Squats", "Legs"),
         // Shoulders
         ("Cable Lateral Raise", "Shoulders"),
+        ("Arnold Press", "Shoulders"),
+        ("Front Raise", "Shoulders"),
+        ("Shrug", "Shoulders"),
+        // Common aliases for better search
+        ("Goblet Squat", "Legs"),
+        ("Sumo Squat", "Legs"),
+        ("Step-Ups", "Legs"),
+        ("Glute Bridge", "Legs"),
+        ("Wall Sit", "Legs"),
+        ("Skull Crushers", "Arms"),
+        ("Rope Pushdown", "Arms"),
+        ("Cable Fly", "Chest"),
+        ("Plank", "Core"),
+        ("Dead Bug", "Core"),
+        ("Pull-Up", "Back"),
+        ("Burpee", "Full Body"),
         // Full Body
         ("Ab Wheel Rollout", "Core"),
         ("Battle Ropes", "Full Body"),
