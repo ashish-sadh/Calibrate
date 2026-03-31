@@ -71,3 +71,30 @@ extension FoodEntry: FetchableRecord, PersistableRecord {
         id = inserted.rowID
     }
 }
+
+extension FoodEntry {
+    /// Human-readable portion text: "2 eggs", "200g", etc.
+    var portionText: String {
+        guard servingSizeG > 0 else { return "" }
+        let totalG = servingSizeG * servings
+        let lower = foodName.lowercased()
+
+        func fmt(_ n: Double, _ s: String, _ p: String) -> String {
+            if n == 1 { return "1 \(s)" }
+            if n == Double(Int(n)) { return "\(Int(n)) \(p)" }
+            return String(format: "%.1f \(p)", n)
+        }
+
+        // Countable items (only when serving size matches a single piece)
+        if lower.contains("egg") && servingSizeG < 80 { return fmt(servings, "egg", "eggs") }
+        if lower.contains("roti") || lower.contains("chapati") { return fmt(servings, "roti", "rotis") }
+        if lower.contains("paratha") { return fmt(servings, "paratha", "parathas") }
+        if lower.contains("naan") { return fmt(servings, "naan", "naans") }
+        if lower.contains("dosa") { return fmt(servings, "dosa", "dosas") }
+        if lower.contains("idli") { return fmt(servings, "idli", "idlis") }
+        if lower.contains("banana") && servingSizeG < 160 { return fmt(servings, "banana", "bananas") }
+        if lower.contains("apple") && servingSizeG < 250 { return fmt(servings, "apple", "apples") }
+
+        return "\(Int(totalG))g"
+    }
+}

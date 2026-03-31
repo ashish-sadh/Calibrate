@@ -30,6 +30,19 @@ final class DashboardViewModel {
         todayNutrition.calories - caloriesBurned
     }
 
+    /// Best TDEE estimate: Apple Health burn data > weight-trend-derived > nil.
+    var estimatedTDEE: Double? {
+        // 1. Apple Health burn data (active + basal)
+        if caloriesBurned > 500 { return caloriesBurned }
+        // 2. From weight trend: if we know the deficit and average intake,
+        //    TDEE = average_intake - deficit (deficit is negative when losing)
+        if let deficit = dailyDeficit, todayNutrition.calories > 0 {
+            let tdee = todayNutrition.calories - deficit
+            if tdee > 500 { return tdee }
+        }
+        return nil
+    }
+
     var calorieBalanceText: String {
         let balance = Int(calorieBalance)
         if balance < 0 {

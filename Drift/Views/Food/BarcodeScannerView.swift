@@ -75,7 +75,6 @@ struct BarcodeLookupView: View {
     @State private var isLooking = false
     @State private var error: String?
     @State private var servings: Double = 1.0
-    @State private var selectedMealType: MealType = .lunch
     // OCR states
     @State private var showingCamera = false
     @State private var ocrResult: NutritionLabelOCR.ExtractedNutrition?
@@ -188,11 +187,6 @@ struct BarcodeLookupView: View {
                 }
                 .card()
 
-                Picker("Meal", selection: $selectedMealType) {
-                    ForEach(MealType.allCases, id: \.self) { Text($0.displayName).tag($0) }
-                }
-                .pickerStyle(.segmented)
-
                 Button {
                     logOCRResult()
                 } label: {
@@ -242,7 +236,7 @@ struct BarcodeLookupView: View {
             fatG: Double(editFat) ?? 0,
             fiberG: Double(editFiber) ?? 0
         )
-        viewModel.logFood(food, servings: servings, mealType: selectedMealType)
+        viewModel.logFood(food, servings: servings, mealType: viewModel.autoMealType)
         dismiss()
     }
 
@@ -276,9 +270,6 @@ struct BarcodeLookupView: View {
                         Button("Use serving size (\(Int(g))g)") { servings = g / 100.0 }
                             .font(.caption).foregroundStyle(Theme.accent)
                     }
-                    Picker("Meal", selection: $selectedMealType) {
-                        ForEach(MealType.allCases, id: \.self) { Text($0.displayName).tag($0) }
-                    }.pickerStyle(.segmented)
                 }.card()
 
                 VStack(alignment: .leading, spacing: 4) {
@@ -345,7 +336,7 @@ struct BarcodeLookupView: View {
     private func logProduct(_ p: OpenFoodFactsService.Product) {
         let food = Food(name: [p.name, p.brand].compactMap { $0 }.joined(separator: " - "), category: "Scanned",
                         servingSize: 100, servingUnit: "g", calories: p.calories, proteinG: p.proteinG, carbsG: p.carbsG, fatG: p.fatG, fiberG: p.fiberG)
-        viewModel.logFood(food, servings: servings, mealType: selectedMealType)
+        viewModel.logFood(food, servings: servings, mealType: viewModel.autoMealType)
         dismiss()
     }
 

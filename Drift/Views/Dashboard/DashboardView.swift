@@ -142,12 +142,29 @@ struct DashboardView: View {
                     .frame(maxWidth: .infinity)
                 }
 
-                // Inline macros
-                HStack(spacing: 6) {
-                    macroChip("P", value: viewModel.todayNutrition.proteinG, color: Theme.proteinRed)
-                    macroChip("C", value: viewModel.todayNutrition.carbsG, color: Theme.carbsGreen)
-                    macroChip("F", value: viewModel.todayNutrition.fatG, color: Theme.fatYellow)
-                    macroChip("Fiber", value: viewModel.todayNutrition.fiberG, color: Theme.fiberBrown)
+                // Calorie remaining + macro targets
+                if let targets = WeightGoal.load()?.macroTargets(currentWeightKg: viewModel.currentWeight, actualTDEE: viewModel.estimatedTDEE) {
+                    let remaining = Int(targets.calorieTarget - viewModel.todayNutrition.calories)
+                    HStack {
+                        Text(remaining >= 0 ? "\(remaining) kcal remaining" : "\(abs(remaining)) kcal over")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(remaining >= 0 ? Theme.deficit : Theme.surplus)
+                        Spacer()
+                        Text("Goal: \(Int(targets.calorieTarget))").font(.caption2).foregroundStyle(.tertiary)
+                    }
+
+                    HStack(spacing: 6) {
+                        macroChipWithTarget("P", value: viewModel.todayNutrition.proteinG, target: targets.proteinG, color: Theme.proteinRed)
+                        macroChipWithTarget("C", value: viewModel.todayNutrition.carbsG, target: targets.carbsG, color: Theme.carbsGreen)
+                        macroChipWithTarget("F", value: viewModel.todayNutrition.fatG, target: targets.fatG, color: Theme.fatYellow)
+                    }
+                } else {
+                    HStack(spacing: 6) {
+                        macroChip("P", value: viewModel.todayNutrition.proteinG, color: Theme.proteinRed)
+                        macroChip("C", value: viewModel.todayNutrition.carbsG, color: Theme.carbsGreen)
+                        macroChip("F", value: viewModel.todayNutrition.fatG, color: Theme.fatYellow)
+                        macroChip("Fiber", value: viewModel.todayNutrition.fiberG, color: Theme.fiberBrown)
+                    }
                 }
             } else {
                 // Muted state: no food logged
@@ -185,6 +202,17 @@ struct DashboardView: View {
             Text("\(Int(value))g \(label)")
                 .font(.caption2.weight(.medium).monospacedDigit())
                 .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 6).padding(.vertical, 3)
+        .background(color.opacity(0.08), in: RoundedRectangle(cornerRadius: 5))
+    }
+
+    private func macroChipWithTarget(_ label: String, value: Double, target: Double, color: Color) -> some View {
+        HStack(spacing: 2) {
+            RoundedRectangle(cornerRadius: 1).fill(color).frame(width: 2, height: 10)
+            Text("\(Int(value))/\(Int(target))g \(label)")
+                .font(.caption2.weight(.medium).monospacedDigit())
+                .foregroundStyle(value >= target ? color : .secondary)
         }
         .padding(.horizontal, 6).padding(.vertical, 3)
         .background(color.opacity(0.08), in: RoundedRectangle(cornerRadius: 5))

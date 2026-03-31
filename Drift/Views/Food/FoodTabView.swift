@@ -4,29 +4,22 @@ import Charts
 struct FoodTabView: View {
     @State private var viewModel = FoodLogViewModel()
     @State private var showingSearch = false
-    @State private var showingQuickAdd = false
+    @State private var showingRecipeBuilder = false
     @State private var showingScanner = false
     @State private var loggedDays: [Date: Double] = [:]
+    @State private var showingDatePicker = false
+    @State private var editingEntry: FoodEntry?
+    @State private var editAmount = "1"
+    @State private var editUnitIndex = 0
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
-                    // Date navigator
                     dateNav
-
-                    // Daily totals
                     dailyTotalsCard
-
-                    // Meal sections
-                    ForEach(MealType.allCases, id: \.self) { mealType in
-                        mealSection(mealType)
-                    }
-
-                    // Logging consistency (last 30 days)
-                    if !loggedDays.isEmpty {
-                        consistencySection
-                    }
+                    foodDiary
+                    if !loggedDays.isEmpty { consistencySection }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
@@ -39,35 +32,27 @@ struct FoodTabView: View {
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
-                    Menu {
-                        Button { showingScanner = true } label: { Label("Scan Barcode", systemImage: "barcode.viewfinder") }
-                        Button { showingSearch = true } label: { Label("Search Food", systemImage: "magnifyingglass") }
-                        Button { showingQuickAdd = true } label: { Label("Quick Add", systemImage: "plus.circle") }
-                    } label: {
-                        Image(systemName: "plus.circle.fill").foregroundStyle(Theme.accent)
+                    Button { showingSearch = true } label: {
+                        Image(systemName: "plus").font(.body.weight(.semibold)).foregroundStyle(Theme.accent)
                     }
                 }
             }
             .fullScreenCover(isPresented: $showingScanner) { BarcodeLookupView(viewModel: viewModel) }
             .sheet(isPresented: $showingSearch) { FoodSearchView(viewModel: viewModel) }
-            .sheet(isPresented: $showingQuickAdd) { QuickAddView(viewModel: viewModel) }
-            .onAppear {
-                viewModel.loadTodayMeals()
-                loggedDays = viewModel.loggedDays(last: 30)
-            }
-            .onChange(of: showingSearch) { _, showing in
-                if !showing { viewModel.loadTodayMeals(); loggedDays = viewModel.loggedDays(last: 30) }
-            }
-            .onChange(of: showingQuickAdd) { _, showing in
-                if !showing { viewModel.loadTodayMeals(); loggedDays = viewModel.loggedDays(last: 30) }
-            }
-            .onChange(of: showingScanner) { _, showing in
-                if !showing { viewModel.loadTodayMeals(); loggedDays = viewModel.loggedDays(last: 30) }
-            }
+            .sheet(isPresented: $showingRecipeBuilder) { QuickAddView(viewModel: viewModel) }
+            .sheet(item: $editingEntry) { entry in editEntrySheet(entry) }
+            .onAppear { reload() }
+            .onChange(of: showingSearch) { _, showing in if !showing { reload() } }
+            .onChange(of: showingRecipeBuilder) { _, showing in if !showing { reload() } }
+            .onChange(of: showingScanner) { _, showing in if !showing { reload() } }
         }
     }
 
-    @State private var showingDatePicker = false
+    private func reload() {
+        viewModel.loadTodayMeals()
+        viewModel.loadSuggestions()
+        loggedDays = viewModel.loggedDays(last: 30)
+    }
 
     // MARK: - Date Navigator
 
@@ -79,7 +64,6 @@ struct FoodTabView: View {
 
             Spacer()
 
-            // Tappable date → date picker
             Button { showingDatePicker = true } label: {
                 VStack(spacing: 1) {
                     if viewModel.isToday {
@@ -134,22 +118,61 @@ struct FoodTabView: View {
     // MARK: - Daily Totals
 
     private var dailyTotalsCard: some View {
-        VStack(spacing: 10) {
-            HStack {
-                Text("\(Int(viewModel.todayNutrition.calories))")
+        let n = viewModel.todayNutrition
+        let targets = WeightGoal.load()?.macroTargets(actualTDEE: nil)
+
+        return VStack(spacing: 10) {
+            // Calories with target
+            HStack(alignment: .firstTextBaseline) {
+                Text("\(Int(n.calories))")
                     .font(.title.weight(.bold).monospacedDigit())
+                if let t = targets {
+                    Text("/ \(Int(t.calorieTarget))").font(.subheadline.monospacedDigit()).foregroundStyle(.tertiary)
+                }
                 Text("kcal").font(.subheadline).foregroundStyle(.secondary)
                 Spacer()
+                if let t = targets {
+                    let remaining = Int(t.calorieTarget - n.calories)
+                    Text("\(remaining > 0 ? "\(remaining) left" : "\(abs(remaining)) over")")
+                        .font(.caption.weight(.medium)).foregroundStyle(remaining >= 0 ? .secondary : Theme.surplus)
+                }
             }
 
-            HStack(spacing: 8) {
-                macroPill("P", value: viewModel.todayNutrition.proteinG, color: Theme.proteinRed)
-                macroPill("C", value: viewModel.todayNutrition.carbsG, color: Theme.carbsGreen)
-                macroPill("F", value: viewModel.todayNutrition.fatG, color: Theme.fatYellow)
-                macroPill("Fiber", value: viewModel.todayNutrition.fiberG, color: Theme.fiberBrown)
+            // Macro progress bars (show when goals exist)
+            if let t = targets {
+                VStack(spacing: 6) {
+                    macroProgressRow("P", eaten: n.proteinG, target: t.proteinG, color: Theme.proteinRed)
+                    macroProgressRow("C", eaten: n.carbsG, target: t.carbsG, color: Theme.carbsGreen)
+                    macroProgressRow("F", eaten: n.fatG, target: t.fatG, color: Theme.fatYellow)
+                }
+            } else {
+                // No goal - show simple pills
+                HStack(spacing: 8) {
+                    macroPill("P", value: n.proteinG, color: Theme.proteinRed)
+                    macroPill("C", value: n.carbsG, color: Theme.carbsGreen)
+                    macroPill("F", value: n.fatG, color: Theme.fatYellow)
+                    macroPill("Fiber", value: n.fiberG, color: Theme.fiberBrown)
+                }
             }
         }
         .card()
+    }
+
+    private func macroProgressRow(_ label: String, eaten: Double, target: Double, color: Color) -> some View {
+        let fraction = target > 0 ? min(eaten / target, 1.5) : 0
+        return HStack(spacing: 6) {
+            Text(label).font(.caption2.weight(.semibold)).foregroundStyle(color).frame(width: 14)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 2).fill(color.opacity(0.15)).frame(height: 6)
+                    RoundedRectangle(cornerRadius: 2).fill(color)
+                        .frame(width: min(geo.size.width, geo.size.width * fraction), height: 6)
+                }
+            }.frame(height: 6)
+            Text("\(Int(eaten))/\(Int(target))g")
+                .font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                .frame(width: 65, alignment: .trailing)
+        }
     }
 
     private func macroPill(_ label: String, value: Double, color: Color) -> some View {
@@ -162,46 +185,323 @@ struct FoodTabView: View {
         .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
     }
 
-    // MARK: - Meal Section
+    // MARK: - Food Diary
 
-    private func mealSection(_ mealType: MealType) -> some View {
-        let entries = viewModel.todayMeals[mealType] ?? []
-        let totalCal = entries.reduce(0) { $0 + $1.totalCalories }
-
-        return VStack(alignment: .leading, spacing: 8) {
-            Button { showingSearch = true } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: mealType.icon).font(.caption).foregroundStyle(Theme.accent)
-                    Text(mealType.displayName).font(.subheadline.weight(.semibold)).foregroundStyle(.primary)
-                    Spacer()
-                    if totalCal > 0 {
-                        Text("\(Int(totalCal)) cal").font(.caption.weight(.medium).monospacedDigit()).foregroundStyle(.secondary)
-                    }
-                    Image(systemName: "plus").font(.caption).foregroundStyle(Theme.accent)
+    private var foodDiary: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("Food Diary").font(.subheadline.weight(.semibold))
+                Spacer()
+                if !viewModel.todayEntries.isEmpty {
+                    Text("\(viewModel.todayEntries.count) items")
+                        .font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
                 }
-            }.buttonStyle(.plain)
+            }
+            .padding(.bottom, 10)
 
-            if entries.isEmpty {
-                Button { showingSearch = true } label: {
-                    Text("Tap to add food").font(.caption).foregroundStyle(.tertiary).padding(.vertical, 4)
-                }.buttonStyle(.plain)
+            if viewModel.todayEntries.isEmpty {
+                emptyDiaryView
             } else {
-                ForEach(entries, id: \.id) { entry in
+                ForEach(Array(viewModel.todayEntries.enumerated()), id: \.element.id) { index, entry in
+                    entryRow(entry)
+                    if index < viewModel.todayEntries.count - 1 {
+                        Divider().padding(.leading, 0)
+                    }
+                }
+
+                Divider().padding(.vertical, 4)
+
+                Button { showingSearch = true } label: {
                     HStack {
-                        Text(entry.foodName).font(.subheadline).lineLimit(1)
+                        Image(systemName: "plus.circle").font(.subheadline).foregroundStyle(Theme.accent)
+                        Text("Add food").font(.subheadline).foregroundStyle(.secondary)
                         Spacer()
-                        Text("\(Int(entry.totalCalories)) \u{2022} \(Int(entry.totalProtein))P \(Int(entry.totalCarbs))C \(Int(entry.totalFat))F")
-                            .font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
-                        if let id = entry.id {
-                            Button { viewModel.deleteEntry(id: id) } label: {
-                                Image(systemName: "xmark.circle.fill").font(.caption2).foregroundStyle(.tertiary)
+                    }
+                }.buttonStyle(.plain)
+            }
+        }
+        .card()
+    }
+
+    private func entryRow(_ entry: FoodEntry) -> some View {
+        let dayTotal = max(viewModel.todayNutrition.calories, 1)
+        let fraction = min(entry.totalCalories / dayTotal, 1.0)
+
+        return HStack(alignment: .center, spacing: 8) {
+            // Calorie proportion bar
+            RoundedRectangle(cornerRadius: 1)
+                .fill(Theme.accent.opacity(0.3 + fraction * 0.7))
+                .frame(width: 3, height: 28)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(entry.foodName).font(.subheadline).lineLimit(1)
+                HStack(spacing: 4) {
+                    if !entry.portionText.isEmpty {
+                        Text(entry.portionText).font(.caption2).foregroundStyle(.tertiary)
+                        Text("\u{00B7}").font(.caption2).foregroundStyle(.quaternary)
+                    }
+                    Text("\(Int(entry.totalProtein))P \(Int(entry.totalCarbs))C \(Int(entry.totalFat))F")
+                        .font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                }
+            }
+            Spacer()
+            Text("\(Int(entry.totalCalories))").font(.subheadline.weight(.medium).monospacedDigit())
+            Text("cal").font(.caption2).foregroundStyle(.tertiary)
+            if let id = entry.id {
+                Button {
+                    viewModel.deleteEntry(id: id)
+                    reload()
+                } label: {
+                    Image(systemName: "xmark.circle.fill").font(.caption2).foregroundStyle(.quaternary)
+                }.buttonStyle(.plain).padding(.leading, 4)
+            }
+        }
+        .padding(.vertical, 6)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if entry.servingSizeG > 0 {
+                let food = Food(name: entry.foodName, category: "", servingSize: entry.servingSizeG,
+                                servingUnit: "g", calories: entry.calories)
+                let units = FoodUnit.smartUnits(for: food)
+                let primary = units.first ?? FoodUnit(label: "serving", gramsEquivalent: entry.servingSizeG)
+                let totalG = entry.servingSizeG * entry.servings
+                let amountInPrimary = primary.gramsEquivalent > 0 ? totalG / primary.gramsEquivalent : entry.servings
+                editAmount = amountInPrimary == Double(Int(amountInPrimary))
+                    ? "\(Int(amountInPrimary))" : String(format: "%.1f", amountInPrimary)
+                editUnitIndex = 0
+            } else {
+                // Manual/recipe entry — use a simple multiplier
+                editAmount = entry.servings == Double(Int(entry.servings))
+                    ? "\(Int(entry.servings))" : String(format: "%.1f", entry.servings)
+                editUnitIndex = 0
+            }
+            editingEntry = entry
+        }
+        .contextMenu {
+            Button {
+                viewModel.quickAdd(name: entry.foodName, calories: entry.totalCalories,
+                                   proteinG: entry.totalProtein, carbsG: entry.totalCarbs,
+                                   fatG: entry.totalFat, fiberG: entry.totalFiber,
+                                   mealType: viewModel.autoMealType)
+                reload()
+            } label: {
+                Label("Log Again", systemImage: "arrow.counterclockwise")
+            }
+            if let id = entry.id {
+                Button(role: .destructive) {
+                    viewModel.deleteEntry(id: id)
+                    reload()
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+            }
+        }
+    }
+
+    private var emptyDiaryView: some View {
+        VStack(spacing: 14) {
+            Text("No food logged").font(.subheadline).foregroundStyle(.tertiary)
+
+            Button { showingSearch = true } label: {
+                Label("Add food", systemImage: "plus.circle")
+                    .font(.subheadline).foregroundStyle(Theme.accent)
+            }
+
+            // Copy from yesterday
+            if viewModel.isToday, let yesterdayCal = yesterdayCalories(), yesterdayCal > 0 {
+                Button {
+                    copyFromYesterday()
+                    reload()
+                } label: {
+                    Label("Copy yesterday's food", systemImage: "doc.on.doc")
+                        .font(.caption).foregroundStyle(Theme.accent)
+                }
+                .padding(.top, 2)
+            }
+
+            if !viewModel.recentFoods.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("RECENT").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                        .padding(.top, 4)
+                    ForEach(viewModel.recentFoods.prefix(5)) { food in
+                        HStack {
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(food.name).font(.subheadline).lineLimit(1)
+                                Text(food.macroSummary).font(.caption2).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Button { viewModel.quickLogFood(food); reload() } label: {
+                                Image(systemName: "plus.circle.fill").foregroundStyle(Theme.accent)
                             }.buttonStyle(.plain)
                         }
+                        .padding(.vertical, 2)
                     }
                 }
             }
         }
-        .card()
+    }
+
+    private func quickAction(_ label: String, icon: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            VStack(spacing: 4) {
+                Image(systemName: icon).font(.subheadline).foregroundStyle(Theme.accent)
+                Text(label).font(.caption2).foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+            .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
+        }.buttonStyle(.plain)
+    }
+
+    private func yesterdayCalories() -> Double? {
+        guard let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) else { return nil }
+        let dateStr = DateFormatters.dateOnly.string(from: yesterday)
+        return (try? AppDatabase.shared.fetchDailyNutrition(for: dateStr))?.calories
+    }
+
+    private func copyFromYesterday() {
+        guard let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) else { return }
+        let dateStr = DateFormatters.dateOnly.string(from: yesterday)
+        guard let logs = try? AppDatabase.shared.fetchMealLogs(for: dateStr) else { return }
+        for log in logs {
+            guard let logId = log.id else { continue }
+            guard let entries = try? AppDatabase.shared.fetchFoodEntries(forMealLog: logId) else { continue }
+            for entry in entries {
+                viewModel.quickAdd(name: entry.foodName, calories: entry.totalCalories,
+                                   proteinG: entry.totalProtein, carbsG: entry.totalCarbs,
+                                   fatG: entry.totalFat, fiberG: entry.totalFiber,
+                                   mealType: viewModel.autoMealType)
+            }
+        }
+    }
+
+    // MARK: - Edit Entry Sheet
+
+    private func editEntrySheet(_ entry: FoodEntry) -> some View {
+        let hasServingSize = entry.servingSizeG > 0
+        // For DB foods: reconstruct Food for smart units
+        let food = hasServingSize
+            ? Food(name: entry.foodName, category: "", servingSize: entry.servingSizeG,
+                   servingUnit: "g", calories: entry.calories,
+                   proteinG: entry.proteinG, carbsG: entry.carbsG,
+                   fatG: entry.fatG, fiberG: entry.fiberG)
+            : nil
+        let units = food.map { FoodUnit.smartUnits(for: $0) } ?? []
+        let safeIndex = min(editUnitIndex, max(units.count - 1, 0))
+        let unit = units.isEmpty ? FoodUnit(label: "serving", gramsEquivalent: max(entry.servingSizeG, 1)) : units[safeIndex]
+        let amountNum = Double(editAmount) ?? 0
+        let multiplier: Double = hasServingSize
+            ? (entry.servingSizeG > 0 ? (amountNum * unit.gramsEquivalent) / entry.servingSizeG : amountNum)
+            : amountNum  // manual/recipe: amount IS the multiplier
+
+        return NavigationStack {
+            ScrollView {
+                VStack(spacing: 20) {
+                    VStack(spacing: 4) {
+                        Text(entry.foodName).font(.title3.weight(.semibold))
+                        if hasServingSize {
+                            let primaryLabel = units.first?.label ?? "serving"
+                            let perText = primaryLabel == "g" || primaryLabel == "ml"
+                                ? "\(Int(entry.calories))cal per \(Int(entry.servingSizeG))g"
+                                : "\(Int(entry.calories))cal per 1 \(primaryLabel) (\(Int(entry.servingSizeG))g)"
+                            Text(perText).font(.caption).foregroundStyle(.secondary)
+                        } else {
+                            Text("\(Int(entry.calories))cal per serving")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding(.top, 8)
+
+                    // Amount + unit picker
+                    HStack(spacing: 12) {
+                        TextField("1", text: $editAmount)
+                            .keyboardType(.decimalPad)
+                            .font(.title2.weight(.medium).monospacedDigit())
+                            .multilineTextAlignment(.center)
+                            .frame(width: 80)
+                            .padding(.vertical, 10)
+                            .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
+
+                        if !units.isEmpty {
+                            Picker("", selection: $editUnitIndex) {
+                                ForEach(0..<units.count, id: \.self) { i in
+                                    Text(units[i].label).tag(i)
+                                }
+                            }
+                            .pickerStyle(.menu)
+                            .labelsHidden()
+                            .padding(.vertical, 10).padding(.horizontal, 16)
+                            .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
+                            .onChange(of: editUnitIndex) { oldIdx, newIdx in
+                                guard oldIdx < units.count, newIdx < units.count else { return }
+                                let oldU = units[oldIdx]
+                                let newU = units[newIdx]
+                                let cur = Double(editAmount) ?? 0
+                                let g = cur * oldU.gramsEquivalent
+                                let conv = newU.gramsEquivalent > 0 ? g / newU.gramsEquivalent : cur
+                                editAmount = conv == Double(Int(conv)) ? "\(Int(conv))" : String(format: "%.1f", conv)
+                            }
+                        } else {
+                            Text("servings").font(.subheadline).foregroundStyle(.secondary)
+                        }
+                    }
+
+                    HStack(spacing: 6) {
+                        ForEach([0.5, 1.0, 1.5, 2.0, 3.0], id: \.self) { mult in
+                            Button {
+                                if hasServingSize && unit.label == "g" {
+                                    editAmount = String(format: "%.0f", entry.servingSizeG * mult)
+                                } else {
+                                    editAmount = mult == Double(Int(mult)) ? "\(Int(mult))" : String(format: "%.1f", mult)
+                                }
+                            } label: {
+                                Text(mult == 0.5 ? "\u{00BD}" : (mult == 1.5 ? "1\u{00BD}" : "\(Int(mult))x"))
+                                    .font(.caption.weight(.medium))
+                            }.buttonStyle(.bordered)
+                        }
+                    }
+
+                    VStack(spacing: 8) {
+                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                            Text("\(Int(entry.calories * multiplier))")
+                                .font(.title.weight(.bold).monospacedDigit())
+                            Text("cal").font(.subheadline).foregroundStyle(.secondary)
+                        }
+                        HStack(spacing: 8) {
+                            editMacroChip("P", value: entry.proteinG * multiplier, color: Theme.proteinRed)
+                            editMacroChip("C", value: entry.carbsG * multiplier, color: Theme.carbsGreen)
+                            editMacroChip("F", value: entry.fatG * multiplier, color: Theme.fatYellow)
+                        }
+                    }
+                    .card()
+                }
+                .padding(.horizontal, 16)
+            }
+            .background(Theme.background)
+            .navigationTitle("Edit").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { editingEntry = nil } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        if let id = entry.id {
+                            viewModel.updateEntryServings(id: id, servings: multiplier)
+                            reload()
+                        }
+                        editingEntry = nil
+                    }.fontWeight(.semibold)
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
+    private func editMacroChip(_ label: String, value: Double, color: Color) -> some View {
+        HStack(spacing: 2) {
+            RoundedRectangle(cornerRadius: 1).fill(color).frame(width: 2, height: 10)
+            Text("\(Int(value))g \(label)").font(.caption2.weight(.medium).monospacedDigit())
+        }
+        .padding(.horizontal, 8).padding(.vertical, 4)
+        .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
     }
 
     // MARK: - Consistency
@@ -217,7 +517,6 @@ struct FoodTabView: View {
                 Text("\(daysLogged)/30 days").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
             }
 
-            // Heatmap grid
             let columns = Array(repeating: GridItem(.flexible(), spacing: 3), count: 10)
             LazyVGrid(columns: columns, spacing: 3) {
                 ForEach(sorted, id: \.key) { date, cal in

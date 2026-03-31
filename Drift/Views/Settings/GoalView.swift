@@ -14,6 +14,7 @@ struct GoalView: View {
             VStack(spacing: 14) {
                 if let goal {
                     goalProgressCard(goal)
+                    macroTargetsCard(goal)
                     paceCard(goal)
                     deficitCard(goal)
                     projectionCard(goal)
@@ -111,6 +112,50 @@ struct GoalView: View {
             }
         }
         .card()
+    }
+
+    // MARK: - Macro Targets
+
+    private func macroTargetsCard(_ goal: WeightGoal) -> some View {
+        let targets = goal.macroTargets(currentWeightKg: currentWeightKg, actualTDEE: estimatedTDEE())
+        let pref = goal.dietPreference ?? .balanced
+        let weight = currentWeightKg ?? goal.startWeightKg
+
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Daily Targets").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                Spacer()
+                Text(pref.displayName).font(.caption.weight(.medium)).foregroundStyle(Theme.accent)
+            }
+
+            if let t = targets {
+                HStack(spacing: 8) {
+                    targetPill("\(Int(t.calorieTarget))", label: "kcal", color: Theme.accent)
+                    targetPill("\(Int(t.proteinG))g", label: "Protein", color: Theme.proteinRed)
+                    targetPill("\(Int(t.carbsG))g", label: "Carbs", color: Theme.carbsGreen)
+                    targetPill("\(Int(t.fatG))g", label: "Fat", color: Theme.fatYellow)
+                }
+                let fatMin = WeightGoal.minimumFatG(bodyweightKg: weight, calorieTarget: t.calorieTarget)
+                if t.fatG <= fatMin + 3 {
+                    Text("Fat at minimum (\(Int(fatMin))g) for hormonal health")
+                        .font(.caption2).foregroundStyle(.secondary)
+                }
+            } else {
+                Text("Set a calorie target or log weight + food to see macro targets")
+                    .font(.caption).foregroundStyle(.tertiary)
+            }
+        }
+        .card()
+    }
+
+    private func targetPill(_ value: String, label: String, color: Color) -> some View {
+        VStack(spacing: 2) {
+            Text(value).font(.subheadline.weight(.bold).monospacedDigit())
+            Text(label).font(.caption2).foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 6)
+        .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
     }
 
     // MARK: - Pace
@@ -262,6 +307,17 @@ struct GoalView: View {
         .padding(.top, 40)
     }
 
+    private func estimatedTDEE() -> Double? {
+        // Prefer actual burn from Apple Health if available
+        // For goal view, use the daily deficit from trend as a proxy:
+        // TDEE ≈ intake - deficit (if we have both)
+        // Fallback: use calorie override if set
+        if let goal = goal, let override = goal.calorieTargetOverride {
+            return override - goal.requiredDailyDeficit
+        }
+        return nil
+    }
+
     private func loadCurrentData() {
         do {
             let entries = try database.fetchWeightEntries()
@@ -287,6 +343,8 @@ struct GoalSetupView: View {
     @State private var targetWeight: String = ""
     @State private var months: Int = 3
     @State private var unit: WeightUnit = Preferences.weightUnit
+    @State private var dietPref: DietPreference = .balanced
+    @State private var calorieTarget: String = ""
 
     var body: some View {
         NavigationStack {
@@ -305,6 +363,41 @@ struct GoalSetupView: View {
                     }
                 }
 
+                Section("Diet Style") {
+                    ForEach(DietPreference.allCases, id: \.self) { pref in
+                        Button {
+                            dietPref = pref
+                        } label: {
+                            HStack {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(pref.displayName).font(.subheadline)
+                                    Text(pref.subtitle).font(.caption2).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if pref == dietPref {
+                                    Image(systemName: "checkmark").foregroundStyle(Theme.accent)
+                                }
+                            }
+                        }.tint(.primary)
+                    }
+                }
+
+                Section {
+                    HStack {
+                        Text("Daily calories")
+                        Spacer()
+                        TextField("auto", text: $calorieTarget)
+                            .keyboardType(.numberPad)
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 80)
+                        Text("kcal").font(.caption).foregroundStyle(.secondary)
+                    }
+                } header: {
+                    Text("Calorie Target")
+                } footer: {
+                    Text("Leave blank to estimate from Apple Health activity data. Set a number if you know your daily intake target.")
+                }
+
                 Section("Timeline") {
                     Stepper("\(months) month\(months == 1 ? "" : "s")", value: $months, in: 1...24)
 
@@ -318,19 +411,32 @@ struct GoalSetupView: View {
                             let config = WeightTrendCalculator.loadConfig()
                             let dailyDeficit = weeklyRate * config.kcalPerKg / 7
 
+                            let calOverride = Double(calorieTarget)
+                            let previewGoal = WeightGoal(targetWeightKg: targetKg, monthsToAchieve: months,
+                                                        startDate: DateFormatters.todayString,
+                                                        startWeightKg: current, dietPreference: dietPref,
+                                                        calorieTargetOverride: calOverride)
+                            let macros = previewGoal.macroTargets(currentWeightKg: current)
+
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("This means:")
                                     .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                                Text("• \(String(format: "%.2f", unit.convert(fromKg: weeklyRate))) \(unit.displayName)/week")
+                                Text("\u{2022} \(String(format: "%.2f", unit.convert(fromKg: weeklyRate))) \(unit.displayName)/week")
                                     .font(.caption)
-                                Text("• \(String(format: "%+.0f", dailyDeficit)) kcal/day \(dailyDeficit < 0 ? "deficit" : "surplus")")
+                                Text("\u{2022} \(String(format: "%+.0f", dailyDeficit)) kcal/day \(dailyDeficit < 0 ? "deficit" : "surplus")")
                                     .font(.caption)
+                                if let m = macros {
+                                    Text("\u{2022} \(Int(m.calorieTarget)) kcal/day target")
+                                        .font(.caption)
+                                    Text("\u{2022} \(Int(m.proteinG))g protein \u{00B7} \(Int(m.carbsG))g carbs \u{00B7} \(Int(m.fatG))g fat")
+                                        .font(.caption).foregroundStyle(Theme.accent)
+                                } else {
+                                    Text("\u{2022} Set a calorie target above to see macro breakdown")
+                                        .font(.caption).foregroundStyle(.tertiary)
+                                }
                                 if abs(dailyDeficit) > 1000 {
-                                    Text("This is aggressive — consider extending the timeline")
+                                    Text("Aggressive — consider extending the timeline")
                                         .font(.caption).foregroundStyle(Theme.surplus)
-                                } else if abs(dailyDeficit) < 200 {
-                                    Text("Very achievable pace")
-                                        .font(.caption).foregroundStyle(Theme.deficit)
                                 }
                             }
                             .padding(.vertical, 4)
@@ -348,11 +454,14 @@ struct GoalSetupView: View {
                         let targetKg = unit.convertToKg(target)
                         let currentKg = getCurrentWeight() ?? targetKg
 
+                        let calOverride = Double(calorieTarget)
                         let goal = WeightGoal(
                             targetWeightKg: targetKg,
                             monthsToAchieve: months,
                             startDate: DateFormatters.todayString,
-                            startWeightKg: existingGoal?.startWeightKg ?? currentKg
+                            startWeightKg: existingGoal?.startWeightKg ?? currentKg,
+                            dietPreference: dietPref,
+                            calorieTargetOverride: calOverride
                         )
                         onSave(goal)
                         dismiss()
@@ -364,6 +473,8 @@ struct GoalSetupView: View {
                 if let g = existingGoal {
                     targetWeight = String(format: "%.1f", unit.convert(fromKg: g.targetWeightKg))
                     months = g.monthsToAchieve
+                    dietPref = g.dietPreference ?? .balanced
+                    if let cal = g.calorieTargetOverride { calorieTarget = "\(Int(cal))" }
                 }
             }
         }

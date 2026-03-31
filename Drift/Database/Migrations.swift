@@ -270,5 +270,19 @@ enum Migrations {
             try db.create(index: "idx_biomarker_result_report", on: "biomarker_result", columns: ["report_id"])
             try db.create(index: "idx_biomarker_result_marker", on: "biomarker_result", columns: ["biomarker_id"])
         }
+
+        // v13: Food usage tracking for smart search ranking
+        migrator.registerMigration("v13_food_usage") { db in
+            try db.create(table: "food_usage") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("food_name", .text).notNull().unique()
+                t.column("food_id", .integer)
+                t.column("use_count", .integer).notNull().defaults(to: 1)
+                t.column("last_used", .text).notNull()
+                t.column("last_servings", .double).notNull().defaults(to: 1)
+            }
+            try db.create(index: "idx_food_usage_count", on: "food_usage", columns: ["use_count"])
+            try db.create(index: "idx_food_usage_last", on: "food_usage", columns: ["last_used"])
+        }
     }
 }

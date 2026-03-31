@@ -4,11 +4,22 @@ struct FoodSearchView: View {
     @Bindable var viewModel: FoodLogViewModel
     @Environment(\.dismiss) private var dismiss
     @State private var selectedFood: Food?
-    @State private var amount: String = "1"
-    @State private var selectedUnit: ServingUnit = .grams
-    @State private var selectedMealType: MealType = .lunch
+    @State private var amount = "1"
+    @State private var selectedUnitIndex = 0
     @State private var query = ""
     @State private var results: [Food] = []
+    @State private var matchingRecipes: [FavoriteFood] = []
+    @State private var showingManual = false
+    @State private var manualName = ""
+    @State private var manualCal = ""
+    @State private var manualP = ""
+    @State private var manualC = ""
+    @State private var manualF = ""
+    @State private var manualFb = ""
+    @State private var loggedCount = 0
+    @State private var showingRecipeBuilder = false
+    @State private var showingScanner = false
+    @FocusState private var searchFocused: Bool
 
     var body: some View {
         NavigationStack {
@@ -16,14 +27,16 @@ struct FoodSearchView: View {
                 // Search bar
                 HStack {
                     Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                    TextField("Search for a food", text: $query)
+                    TextField("Search food or recipe", text: $query)
                         .textFieldStyle(.plain)
                         .autocorrectionDisabled()
+                        .focused($searchFocused)
                         .onChange(of: query) { _, q in
-                            results = q.isEmpty ? [] : ((try? AppDatabase.shared.searchFoods(query: q)) ?? [])
+                            results = q.isEmpty ? [] : ((try? AppDatabase.shared.searchFoodsRanked(query: q)) ?? [])
+                            matchingRecipes = q.isEmpty ? [] : ((try? AppDatabase.shared.searchRecipes(query: q)) ?? [])
                         }
                     if !query.isEmpty {
-                        Button { query = ""; results = [] } label: {
+                        Button { query = ""; results = []; matchingRecipes = [] } label: {
                             Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
                         }
                     }
@@ -31,157 +44,451 @@ struct FoodSearchView: View {
                 .padding()
                 .background(.ultraThinMaterial)
 
-                if results.isEmpty && !query.isEmpty {
-                    VStack(spacing: 8) {
-                        Image(systemName: "magnifyingglass").font(.title2).foregroundStyle(.tertiary)
-                        Text("No results for \"\(query)\"")
-                            .font(.subheadline).foregroundStyle(.secondary)
-                        Text("Try a different spelling or use Quick Add")
-                            .font(.caption).foregroundStyle(.tertiary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Theme.background)
-                } else if results.isEmpty {
-                    VStack(spacing: 8) {
-                        Image(systemName: "fork.knife").font(.title2).foregroundStyle(Theme.accent.opacity(0.5))
-                        Text("Search the food database")
-                            .font(.subheadline).foregroundStyle(.secondary)
-                        Text("Type to search 240+ foods")
-                            .font(.caption).foregroundStyle(.tertiary)
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(Theme.background)
+                if query.isEmpty {
+                    suggestionsView
+                } else if results.isEmpty && matchingRecipes.isEmpty {
+                    noResultsView
                 } else {
-                    List {
-                        ForEach(results) { food in
-                            Button {
-                                // Set default amount based on food's serving
-                                amount = String(format: "%.0f", food.servingSize)
-                                selectedUnit = food.servingUnit == "ml" ? .ml : .grams
-                                // Set selectedFood LAST to trigger .sheet(item:)
-                                selectedFood = food
-                            } label: {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(food.name).font(.subheadline)
-                                    Text("\(food.macroSummary) · \(Int(food.servingSize))\(food.servingUnit)")
-                                        .font(.caption).foregroundStyle(.secondary)
-                                }
-                            }
-                            .tint(.primary)
-                        }
-                    }
-                    .listStyle(.plain)
+                    searchResultsList
                 }
             }
-            .navigationTitle("Search Food").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(loggedCount > 0 ? "Add Food (\(loggedCount) logged)" : "Add Food")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
             }
-            .sheet(item: $selectedFood) { food in
-                logFoodSheet(food)
+            .sheet(item: $selectedFood) { food in logFoodSheet(food) }
+            .sheet(isPresented: $showingManual) { manualEntrySheet }
+            .sheet(isPresented: $showingRecipeBuilder) { QuickAddView(viewModel: viewModel) }
+            .fullScreenCover(isPresented: $showingScanner) { BarcodeLookupView(viewModel: viewModel) }
+            .onAppear {
+                viewModel.loadSuggestions()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { searchFocused = true }
             }
         }
     }
 
-    // MARK: - Log Food Sheet with amount + units
+    // MARK: - Suggestions (empty search)
 
-    private func logFoodSheet(_ food: Food) -> some View {
-        let amountNum = Double(amount) ?? 0
-        let grams = selectedUnit.toGrams(amountNum, foodServingSize: food.servingSize)
-        let multiplier = food.servingSize > 0 ? grams / food.servingSize : 1
+    private var suggestionsView: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                // Quick actions
+                HStack(spacing: 8) {
+                    Button { showingScanner = true } label: {
+                        Label("Scan", systemImage: "barcode.viewfinder").font(.caption)
+                    }.buttonStyle(.bordered).tint(Theme.accent)
 
-        return NavigationStack {
-            Form {
-                Section {
-                    Text(food.name).font(.headline)
-                    Text("\(food.macroSummary) per \(Int(food.servingSize))\(food.servingUnit)")
-                        .font(.caption).foregroundStyle(.secondary)
+                    Button { showingRecipeBuilder = true } label: {
+                        Label("Recipe", systemImage: "fork.knife").font(.caption)
+                    }.buttonStyle(.bordered).tint(Theme.accent)
+
+                    Button { showingManual = true } label: {
+                        Label("Manual", systemImage: "pencil").font(.caption)
+                    }.buttonStyle(.bordered).tint(Theme.accent)
+                }
+                .padding(.horizontal, 16)
+
+                // Saved recipes
+                if !viewModel.savedRecipes.isEmpty {
+                    suggestionSection("YOUR RECIPES") {
+                        ForEach(viewModel.savedRecipes) { recipe in
+                            recipeSuggestionRow(recipe)
+                        }
+                    }
                 }
 
-                Section("Amount") {
+                // Recent (includes recipes, manual entries, and DB foods)
+                if !viewModel.recentEntries.isEmpty {
+                    suggestionSection("RECENT") {
+                        ForEach(viewModel.recentEntries) { entry in
+                            recentEntryRow(entry)
+                        }
+                    }
+                }
+
+                // Frequent foods
+                if !viewModel.frequentFoods.isEmpty {
+                    suggestionSection("FREQUENTLY USED") {
+                        ForEach(viewModel.frequentFoods) { food in
+                            foodSuggestionRow(food)
+                        }
+                    }
+                }
+
+                // First-time empty state: show popular starter foods
+                if viewModel.recentFoods.isEmpty && viewModel.frequentFoods.isEmpty && viewModel.savedRecipes.isEmpty {
+                    suggestionSection("POPULAR FOODS") {
+                        let starters = popularFoods()
+                        ForEach(starters) { food in
+                            foodSuggestionRow(food)
+                        }
+                    }
+                }
+            }
+            .padding(.top, 12)
+        }
+        .background(Theme.background)
+    }
+
+    private func suggestionSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                .padding(.horizontal, 16)
+            content()
+        }
+    }
+
+    private func foodSuggestionRow(_ food: Food) -> some View {
+        HStack {
+            Button { selectFood(food) } label: {
+                HStack {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(food.name).font(.subheadline).lineLimit(1)
+                        Text(food.macroSummary).font(.caption2).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Text("\(Int(food.calories))").font(.caption.weight(.medium).monospacedDigit()).foregroundStyle(.secondary)
+                    Text("cal").font(.caption2).foregroundStyle(.tertiary)
+                }
+            }.buttonStyle(.plain)
+
+            Button {
+                viewModel.quickLogFood(food)
+                viewModel.loadSuggestions()
+                loggedCount += 1
+                dismiss()
+            } label: {
+                Image(systemName: "plus.circle.fill").foregroundStyle(Theme.accent)
+            }.buttonStyle(.plain).padding(.leading, 6)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 4)
+    }
+
+    private func recipeSuggestionRow(_ recipe: FavoriteFood) -> some View {
+        HStack {
+            Image(systemName: "bookmark.fill").font(.caption2).foregroundStyle(Theme.accent.opacity(0.7))
+            VStack(alignment: .leading, spacing: 1) {
+                Text(recipe.name).font(.subheadline).lineLimit(1)
+                Text(recipe.macroSummary).font(.caption2).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button {
+                viewModel.quickAdd(name: recipe.name, calories: recipe.calories,
+                                   proteinG: recipe.proteinG, carbsG: recipe.carbsG,
+                                   fatG: recipe.fatG, fiberG: recipe.fiberG,
+                                   mealType: viewModel.autoMealType)
+                dismiss()
+            } label: {
+                Image(systemName: "plus.circle.fill").foregroundStyle(Theme.accent)
+            }.buttonStyle(.plain)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 4)
+    }
+
+    private func recentEntryRow(_ entry: RecentEntry) -> some View {
+        HStack {
+            if entry.isDBFood {
+                // DB food — tap opens log sheet with serving picker
+                Button {
+                    if let food = (try? AppDatabase.shared.searchFoods(query: entry.name, limit: 1))?.first {
+                        selectFood(food)
+                    }
+                } label: {
                     HStack {
-                        TextField("0", text: $amount)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(entry.name).font(.subheadline).lineLimit(1)
+                            Text(entry.macroSummary).font(.caption2).foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        Text("\(Int(entry.calories))").font(.caption.weight(.medium).monospacedDigit()).foregroundStyle(.secondary)
+                        Text("cal").font(.caption2).foregroundStyle(.tertiary)
+                    }
+                }.buttonStyle(.plain)
+            } else {
+                // Recipe/manual — show with bookmark icon, tap quick-logs
+                HStack {
+                    Image(systemName: "bookmark.fill").font(.caption2).foregroundStyle(Theme.accent.opacity(0.7))
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(entry.name).font(.subheadline).lineLimit(1)
+                        Text(entry.macroSummary).font(.caption2).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Text("\(Int(entry.calories))").font(.caption.weight(.medium).monospacedDigit()).foregroundStyle(.secondary)
+                    Text("cal").font(.caption2).foregroundStyle(.tertiary)
+                }
+            }
+
+            Button {
+                if entry.isDBFood, let food = (try? AppDatabase.shared.searchFoods(query: entry.name, limit: 1))?.first {
+                    viewModel.quickLogFood(food)
+                } else {
+                    viewModel.quickAdd(name: entry.name, calories: entry.calories,
+                                       proteinG: entry.proteinG, carbsG: entry.carbsG,
+                                       fatG: entry.fatG, fiberG: 0,
+                                       mealType: viewModel.autoMealType)
+                }
+                viewModel.loadSuggestions()
+                loggedCount += 1
+                dismiss()
+            } label: {
+                Image(systemName: "plus.circle.fill").foregroundStyle(Theme.accent)
+            }.buttonStyle(.plain).padding(.leading, 6)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 4)
+    }
+
+    private func selectFood(_ food: Food) {
+        let units = FoodUnit.smartUnits(for: food)
+        amount = "1"
+        selectedUnitIndex = 0
+        // Pre-select grams unit with food's serving size as default amount
+        if units.first?.label == "g" {
+            amount = String(format: "%.0f", food.servingSize)
+        }
+        selectedFood = food
+    }
+
+    // MARK: - No Results
+
+    private var noResultsView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "magnifyingglass").font(.title2).foregroundStyle(.tertiary)
+            Text("No results for \"\(query)\"").font(.subheadline).foregroundStyle(.secondary)
+            Button { showingManual = true } label: {
+                Label("Enter manually", systemImage: "pencil").font(.subheadline)
+            }.buttonStyle(.bordered)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Theme.background)
+    }
+
+    // MARK: - Search Results
+
+    private var searchResultsList: some View {
+        List {
+            // Matching recipes
+            if !matchingRecipes.isEmpty {
+                Section("Your Recipes") {
+                    ForEach(matchingRecipes) { recipe in
+                        Button {
+                            viewModel.quickAdd(name: recipe.name, calories: recipe.calories,
+                                               proteinG: recipe.proteinG, carbsG: recipe.carbsG,
+                                               fatG: recipe.fatG, fiberG: recipe.fiberG,
+                                               mealType: viewModel.autoMealType)
+                            dismiss()
+                        } label: {
+                            HStack {
+                                Image(systemName: "bookmark.fill").font(.caption2).foregroundStyle(Theme.accent.opacity(0.7))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(recipe.name).font(.subheadline)
+                                    Text(recipe.macroSummary).font(.caption).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                Image(systemName: "plus.circle.fill").foregroundStyle(Theme.accent)
+                            }
+                        }.tint(.primary)
+                    }
+                }
+            }
+
+            // Food results
+            if !results.isEmpty {
+                Section("Foods") {
+                    ForEach(results) { food in
+                        Button { selectFood(food) } label: {
+                            let primaryUnit = FoodUnit.smartUnits(for: food).first?.label ?? "serving"
+                            let unitInfo = primaryUnit == "g" || primaryUnit == "ml"
+                                ? "\(Int(food.servingSize))\(food.servingUnit)"
+                                : "1 \(primaryUnit)"
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(food.name).font(.subheadline)
+                                Text("\(food.macroSummary) \u{00B7} \(unitInfo)")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                        .tint(.primary)
+                    }
+                }
+            }
+        }
+        .listStyle(.plain)
+    }
+
+    // MARK: - Log Food Sheet
+
+    private func logFoodSheet(_ food: Food) -> some View {
+        let units = FoodUnit.smartUnits(for: food)
+        let safeIndex = min(selectedUnitIndex, max(units.count - 1, 0))
+        let unit = units.isEmpty ? FoodUnit(label: "g", gramsEquivalent: 1) : units[safeIndex]
+        let amountNum = Double(amount) ?? 0
+        let totalGrams = amountNum * unit.gramsEquivalent
+        let multiplier = food.servingSize > 0 ? totalGrams / food.servingSize : amountNum
+
+        return NavigationStack {
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Food header
+                    VStack(spacing: 4) {
+                        Text(food.name).font(.title3.weight(.semibold))
+                        let primaryLabel = units.first?.label ?? "serving"
+                        let perText = primaryLabel == "g" || primaryLabel == "ml"
+                            ? "\(food.macroSummary) per \(Int(food.servingSize))\(food.servingUnit)"
+                            : "\(food.macroSummary) per 1 \(primaryLabel) (\(Int(food.servingSize))g)"
+                        Text(perText).font(.caption).foregroundStyle(.secondary)
+                    }
+                    .padding(.top, 8)
+
+                    // Amount + unit picker (no "Unit" label)
+                    HStack(spacing: 12) {
+                        TextField("1", text: $amount)
                             .keyboardType(.decimalPad)
-                            .font(.title3.monospacedDigit())
-                        Picker("Unit", selection: $selectedUnit) {
-                            Text("g").tag(ServingUnit.grams)
-                            Text("serving").tag(ServingUnit.pieces)
-                            Text("cup").tag(ServingUnit.cups)
-                            Text("tbsp").tag(ServingUnit.tablespoons)
+                            .font(.title2.weight(.medium).monospacedDigit())
+                            .multilineTextAlignment(.center)
+                            .frame(width: 80)
+                            .padding(.vertical, 10)
+                            .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
+
+                        Picker("", selection: $selectedUnitIndex) {
+                            ForEach(0..<units.count, id: \.self) { i in
+                                Text(units[i].label).tag(i)
+                            }
                         }
                         .pickerStyle(.menu)
+                        .labelsHidden()
+                        .padding(.vertical, 10).padding(.horizontal, 16)
+                        .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
+                        .onChange(of: selectedUnitIndex) { oldIdx, newIdx in
+                            // Auto-convert amount when switching units
+                            guard oldIdx < units.count, newIdx < units.count else { return }
+                            let oldUnit = units[oldIdx]
+                            let newUnit = units[newIdx]
+                            let currentAmount = Double(amount) ?? 0
+                            let grams = currentAmount * oldUnit.gramsEquivalent
+                            let converted = newUnit.gramsEquivalent > 0 ? grams / newUnit.gramsEquivalent : currentAmount
+                            if converted == Double(Int(converted)) {
+                                amount = "\(Int(converted))"
+                            } else {
+                                amount = String(format: "%.1f", converted)
+                            }
+                        }
                     }
 
                     // Quick amount buttons
                     HStack(spacing: 6) {
-                        quickBtn("½", value: String(format: "%.0f", food.servingSize * 0.5), unit: .grams)
-                        quickBtn("1x", value: String(format: "%.0f", food.servingSize), unit: .grams)
-                        quickBtn("1.5x", value: String(format: "%.0f", food.servingSize * 1.5), unit: .grams)
-                        quickBtn("2x", value: String(format: "%.0f", food.servingSize * 2), unit: .grams)
-                        quickBtn("1 cup", value: "1", unit: .cups)
+                        ForEach([0.5, 1.0, 1.5, 2.0], id: \.self) { mult in
+                            Button {
+                                if unit.label == "g" {
+                                    amount = String(format: "%.0f", food.servingSize * mult)
+                                } else {
+                                    amount = mult == Double(Int(mult)) ? "\(Int(mult))" : String(format: "%.1f", mult)
+                                }
+                            } label: {
+                                Text(mult == 0.5 ? "\u{00BD}" : (mult == 1.5 ? "1\u{00BD}" : "\(Int(mult))x"))
+                                    .font(.caption.weight(.medium))
+                            }.buttonStyle(.bordered)
+                        }
                     }
-                }
 
-                Section("Meal") {
-                    Picker("", selection: $selectedMealType) {
-                        ForEach(MealType.allCases, id: \.self) { Text($0.displayName).tag($0) }
+                    // Total nutrition
+                    VStack(spacing: 8) {
+                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                            Text("\(Int(food.calories * multiplier))")
+                                .font(.title.weight(.bold).monospacedDigit())
+                            Text("cal").font(.subheadline).foregroundStyle(.secondary)
+                        }
+
+                        HStack(spacing: 8) {
+                            macroChip("P", value: food.proteinG * multiplier, color: Theme.proteinRed)
+                            macroChip("C", value: food.carbsG * multiplier, color: Theme.carbsGreen)
+                            macroChip("F", value: food.fatG * multiplier, color: Theme.fatYellow)
+                        }
+
+                        if food.fiberG > 0 {
+                            Text("\(Int(food.fiberG * multiplier))g fiber")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
                     }
-                    .pickerStyle(.segmented)
+                    .card()
                 }
-
-                Section("Total Nutrition") {
-                    macroRow("Calories", value: food.calories * multiplier)
-                    macroRow("Protein", value: food.proteinG * multiplier, unit: "g")
-                    macroRow("Carbs", value: food.carbsG * multiplier, unit: "g")
-                    macroRow("Fat", value: food.fatG * multiplier, unit: "g")
-                    macroRow("Fiber", value: food.fiberG * multiplier, unit: "g")
-                }
+                .padding(.horizontal, 16)
             }
+            .background(Theme.background)
             .navigationTitle("Log Food").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { selectedFood = nil } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Log") {
-                        viewModel.logFood(food, servings: multiplier, mealType: selectedMealType)
+                        viewModel.logFood(food, servings: multiplier, mealType: viewModel.autoMealType)
+                        viewModel.loadSuggestions()
+                        loggedCount += 1
                         selectedFood = nil
-                        dismiss()
                     }
+                    .fontWeight(.semibold)
                 }
             }
         }
     }
 
-    private func quickBtn(_ label: String, value: String, unit: ServingUnit) -> some View {
-        Button {
-            amount = value
-            selectedUnit = unit
-        } label: {
-            Text(label).font(.caption)
+    private func macroChip(_ label: String, value: Double, color: Color) -> some View {
+        HStack(spacing: 2) {
+            RoundedRectangle(cornerRadius: 1).fill(color).frame(width: 2, height: 10)
+            Text("\(Int(value))g \(label)").font(.caption2.weight(.medium).monospacedDigit())
         }
-        .buttonStyle(.bordered)
+        .padding(.horizontal, 8).padding(.vertical, 4)
+        .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
     }
 
-    private func macroRow(_ label: String, value: Double, unit: String = "kcal") -> some View {
+    // MARK: - Manual Entry Sheet
+
+    private var manualEntrySheet: some View {
+        NavigationStack {
+            Form {
+                Section("Food") { TextField("Name", text: $manualName) }
+                Section("Nutrition") {
+                    macroField("Calories", value: $manualCal, unit: "kcal")
+                    macroField("Protein", value: $manualP, unit: "g")
+                    macroField("Carbs", value: $manualC, unit: "g")
+                    macroField("Fat", value: $manualF, unit: "g")
+                    macroField("Fiber", value: $manualFb, unit: "g")
+                }
+            }
+            .navigationTitle("Manual Entry").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showingManual = false } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Log") {
+                        viewModel.quickAdd(name: manualName.isEmpty ? "Quick Add" : manualName,
+                                           calories: Double(manualCal) ?? 0, proteinG: Double(manualP) ?? 0,
+                                           carbsG: Double(manualC) ?? 0, fatG: Double(manualF) ?? 0,
+                                           fiberG: Double(manualFb) ?? 0, mealType: viewModel.autoMealType)
+                        viewModel.loadSuggestions()
+                        loggedCount += 1
+                        showingManual = false
+                        manualName = ""; manualCal = ""; manualP = ""; manualC = ""; manualF = ""; manualFb = ""
+                    }
+                    .disabled(manualCal.isEmpty)
+                }
+            }
+        }
+    }
+
+    private func popularFoods() -> [Food] {
+        let names = ["Rice", "Egg", "Chicken", "Roti", "Dal", "Banana", "Milk", "Oats"]
+        var result: [Food] = []
+        for name in names {
+            if let food = (try? AppDatabase.shared.searchFoods(query: name, limit: 1))?.first {
+                result.append(food)
+            }
+        }
+        return result
+    }
+
+    private func macroField(_ label: String, value: Binding<String>, unit: String) -> some View {
         HStack {
-            Text(label)
-            Spacer()
-            Text("\(Int(value)) \(unit)").monospacedDigit().foregroundStyle(.secondary)
-        }
-    }
-}
-
-// MARK: - ServingUnit extension for food-relative conversion
-
-extension ServingUnit {
-    /// Convert amount to grams, using the food's serving size as reference for "pieces" (servings).
-    func toGrams(_ amount: Double, foodServingSize: Double) -> Double {
-        switch self {
-        case .grams: return amount
-        case .pieces: return amount * foodServingSize // 1 serving = food's serving size
-        case .cups: return amount * 240 // generic cup = 240g
-        case .tablespoons: return amount * 15
-        case .teaspoons: return amount * 5
-        case .ml: return amount
+            Text(label); Spacer()
+            TextField("0", text: value).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80)
+            Text(unit).font(.caption).foregroundStyle(.secondary).frame(width: 35)
         }
     }
 }

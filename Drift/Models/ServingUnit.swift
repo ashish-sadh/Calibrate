@@ -140,3 +140,112 @@ enum RawIngredient: String, CaseIterable, Identifiable, Sendable {
         }
     }
 }
+
+// MARK: - Food-relative conversion
+
+extension ServingUnit {
+    /// Convert amount to grams, using the food's serving size as reference for "pieces" (servings).
+    func toGrams(_ amount: Double, foodServingSize: Double) -> Double {
+        switch self {
+        case .grams: return amount
+        case .pieces: return amount * foodServingSize
+        case .cups: return amount * 240
+        case .tablespoons: return amount * 15
+        case .teaspoons: return amount * 5
+        case .ml: return amount
+        }
+    }
+}
+
+// MARK: - Smart Food Units
+
+/// Context-aware serving unit for a food item (e.g. "egg" for eggs, "tbsp" for oil).
+struct FoodUnit: Hashable {
+    let label: String
+    let gramsEquivalent: Double
+
+    /// Returns food-appropriate units. First unit is the most natural for this food.
+    static func smartUnits(for food: Food) -> [FoodUnit] {
+        let lower = food.name.lowercased()
+        var units: [FoodUnit] = []
+
+        let primary = primaryUnit(for: lower, servingSize: food.servingSize)
+        units.append(primary)
+
+        if primary.label != "g" {
+            units.append(FoodUnit(label: "g", gramsEquivalent: 1))
+        }
+
+        let cupFoods = ["rice", "dal", "oats", "cereal", "flour", "lentil", "chickpea",
+                        "rajma", "chole", "paneer", "tofu", "quinoa", "pasta", "beans",
+                        "peas", "corn", "yogurt", "curd", "poha", "upma", "khichdi"]
+        if cupFoods.contains(where: { lower.contains($0) }) && primary.label != "cup" {
+            units.append(FoodUnit(label: "cup", gramsEquivalent: cupGrams(for: lower)))
+        }
+
+        let tbspFoods = ["sauce", "chutney", "ketchup", "mayo", "dressing", "syrup",
+                         "jam", "peanut butter", "almond butter", "honey", "mustard"]
+        if tbspFoods.contains(where: { lower.contains($0) }) && primary.label != "tbsp" {
+            units.append(FoodUnit(label: "tbsp", gramsEquivalent: 15))
+        }
+
+        let liquidFoods = ["milk", "juice", "lassi", "buttermilk", "coconut water",
+                           "smoothie", "broth", "soup", "shake"]
+        if liquidFoods.contains(where: { lower.contains($0) }) {
+            if primary.label != "ml" {
+                units.append(FoodUnit(label: "ml", gramsEquivalent: 1))
+            }
+            if primary.label != "cup" && !units.contains(where: { $0.label == "cup" }) {
+                units.append(FoodUnit(label: "cup", gramsEquivalent: 240))
+            }
+        }
+
+        return units
+    }
+
+    private static func primaryUnit(for name: String, servingSize: Double) -> FoodUnit {
+        let ss = servingSize > 0 ? servingSize : 100
+
+        // Countable items
+        if name.contains("egg") && ss < 80 { return FoodUnit(label: "egg", gramsEquivalent: ss) }
+        if name.contains("roti") || name.contains("chapati") || name.contains("naan") || name.contains("paratha") {
+            return FoodUnit(label: "piece", gramsEquivalent: ss)
+        }
+        if name.contains("dosa") || name.contains("idli") || name.contains("vada") ||
+           name.contains("samosa") || name.contains("pakora") || name.contains("momo") {
+            return FoodUnit(label: "piece", gramsEquivalent: ss)
+        }
+        if name.contains("banana") && ss < 160 { return FoodUnit(label: "banana", gramsEquivalent: ss) }
+        if name.contains("apple") && ss < 250 { return FoodUnit(label: "apple", gramsEquivalent: ss) }
+        if name.contains("orange") && ss < 200 { return FoodUnit(label: "orange", gramsEquivalent: ss) }
+        if name.contains("cookie") || name.contains("biscuit") { return FoodUnit(label: "piece", gramsEquivalent: ss) }
+        if name.contains("scoop") { return FoodUnit(label: "scoop", gramsEquivalent: ss) }
+
+        // Tablespoon items
+        if name.contains("oil") || name.contains("ghee") { return FoodUnit(label: "tbsp", gramsEquivalent: 15) }
+        if name.contains("butter") && !name.contains("peanut") && !name.contains("almond") && !name.contains("paneer") {
+            return FoodUnit(label: "tbsp", gramsEquivalent: 14)
+        }
+
+        // Liquid items
+        if name.contains("milk") || name.contains("juice") || name.contains("lassi") ||
+           name.contains("chai") || name.contains("tea") || name.contains("coffee") ||
+           name.contains("buttermilk") {
+            return FoodUnit(label: "ml", gramsEquivalent: 1)
+        }
+
+        return FoodUnit(label: "serving", gramsEquivalent: ss)
+    }
+
+    private static func cupGrams(for name: String) -> Double {
+        if name.contains("rice") { return 185 }
+        if name.contains("oats") { return 80 }
+        if name.contains("flour") || name.contains("atta") { return 120 }
+        if name.contains("dal") || name.contains("lentil") { return 200 }
+        if name.contains("chickpea") || name.contains("chole") || name.contains("rajma") { return 164 }
+        if name.contains("paneer") { return 150 }
+        if name.contains("yogurt") || name.contains("curd") || name.contains("dahi") { return 245 }
+        if name.contains("poha") { return 60 }
+        return 240
+    }
+}

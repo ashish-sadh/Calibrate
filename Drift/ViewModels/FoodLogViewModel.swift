@@ -10,10 +10,26 @@ final class FoodLogViewModel {
     var searchResults: [Food] = []
     var todayMeals: [MealType: [FoodEntry]] = [:]
     var todayNutrition: DailyNutrition = .zero
+    var todayEntries: [FoodEntry] = []
     var selectedDate: Date = Date()
+    var recentFoods: [Food] = []
+    var recentEntries: [RecentEntry] = []
+    var frequentFoods: [Food] = []
+    var savedRecipes: [FavoriteFood] = []
 
     var dateString: String {
         DateFormatters.dateOnly.string(from: selectedDate)
+    }
+
+    /// Auto-assign meal type based on time of day (used internally, hidden from UI).
+    var autoMealType: MealType {
+        let hour = Calendar.current.component(.hour, from: Date())
+        switch hour {
+        case 5..<11: return .breakfast
+        case 11..<15: return .lunch
+        case 15..<21: return .dinner
+        default: return .snack
+        }
     }
 
     init(database: AppDatabase = .shared) {
@@ -37,19 +53,30 @@ final class FoodLogViewModel {
             let date = dateString
             let mealLogs = try database.fetchMealLogs(for: date)
             var grouped: [MealType: [FoodEntry]] = [:]
+            var all: [FoodEntry] = []
 
             for log in mealLogs {
                 guard let mealType = MealType(rawValue: log.mealType),
                       let logId = log.id else { continue }
                 let entries = try database.fetchFoodEntries(forMealLog: logId)
                 grouped[mealType, default: []].append(contentsOf: entries)
+                all.append(contentsOf: entries)
             }
 
             todayMeals = grouped
+            todayEntries = all.sorted { $0.createdAt < $1.createdAt }
             todayNutrition = try database.fetchDailyNutrition(for: date)
         } catch {
             Log.foodLog.error("Failed to load meals: \(error.localizedDescription)")
         }
+    }
+
+    /// Load recent, frequent, and saved recipe suggestions.
+    func loadSuggestions() {
+        recentFoods = (try? database.fetchRecentFoods()) ?? []
+        recentEntries = (try? database.fetchRecentEntryNames()) ?? []
+        frequentFoods = (try? database.fetchFrequentFoods()) ?? []
+        savedRecipes = (try? database.fetchFavorites()) ?? []
     }
 
     func logFood(_ food: Food, servings: Double, mealType: MealType) {
@@ -57,7 +84,7 @@ final class FoodLogViewModel {
             let date = dateString
 
             // Find or create meal log for this meal type + date
-            var mealLogs = try database.fetchMealLogs(for: date)
+            let mealLogs = try database.fetchMealLogs(for: date)
             var mealLog = mealLogs.first { $0.mealType == mealType.rawValue }
 
             if mealLog == nil {
@@ -81,16 +108,22 @@ final class FoodLogViewModel {
                 fiberG: food.fiberG
             )
             try database.saveFoodEntry(&entry)
+            try? database.trackFoodUsage(name: food.name, foodId: food.id, servings: servings)
             loadTodayMeals()
         } catch {
             Log.foodLog.error("Failed to log food: \(error.localizedDescription)")
         }
     }
 
+    /// Quick log a food with 1 serving and auto meal type.
+    func quickLogFood(_ food: Food) {
+        logFood(food, servings: 1, mealType: autoMealType)
+    }
+
     func quickAdd(name: String, calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double, mealType: MealType) {
         do {
             let date = dateString
-            var mealLogs = try database.fetchMealLogs(for: date)
+            let mealLogs = try database.fetchMealLogs(for: date)
             var mealLog = mealLogs.first { $0.mealType == mealType.rawValue }
 
             if mealLog == nil {
@@ -113,9 +146,19 @@ final class FoodLogViewModel {
                 fiberG: fiberG
             )
             try database.saveFoodEntry(&entry)
+            try? database.trackFoodUsage(name: name, foodId: nil, servings: 1)
             loadTodayMeals()
         } catch {
             Log.foodLog.error("Failed to quick add: \(error.localizedDescription)")
+        }
+    }
+
+    func updateEntryServings(id: Int64, servings: Double) {
+        do {
+            try database.updateFoodEntryServings(id: id, servings: servings)
+            loadTodayMeals()
+        } catch {
+            Log.foodLog.error("Failed to update entry: \(error.localizedDescription)")
         }
     }
 

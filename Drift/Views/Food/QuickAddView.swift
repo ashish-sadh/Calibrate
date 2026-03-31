@@ -1,112 +1,20 @@
 import SwiftUI
 
+// MARK: - Recipe Builder (was Quick Add)
+
 struct QuickAddView: View {
     @Bindable var viewModel: FoodLogViewModel
     @Environment(\.dismiss) private var dismiss
-    @State private var mode: AddMode = .favorites
-
-    enum AddMode: String, CaseIterable {
-        case favorites = "Favorites"
-        case new = "New"
-        case manual = "Manual"
-    }
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                Picker("", selection: $mode) {
-                    ForEach(AddMode.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 12).padding(.top, 8).padding(.bottom, 4)
-
-                switch mode {
-                case .favorites: FavoritesTab(viewModel: viewModel, dismiss: dismiss)
-                case .new: BuildMealTab(viewModel: viewModel, dismiss: dismiss)
-                case .manual: ManualTab(viewModel: viewModel, dismiss: dismiss)
-                }
-            }
-            .background(Theme.background)
-            .navigationTitle("Quick Add").navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
-        }
-    }
-}
-
-// MARK: - Favorites (one-tap log)
-
-private struct FavoritesTab: View {
-    @Bindable var viewModel: FoodLogViewModel
-    let dismiss: DismissAction
-    @State private var favorites: [FavoriteFood] = []
-    @State private var mealType: MealType = .lunch
-    @State private var showingAdd = false
+    @State private var recipeName = ""
+    @State private var items: [RecipeItem] = []
+    @State private var showingIngredientPicker = false
+    @State private var editingIndex: Int?
     private let db = AppDatabase.shared
 
-    var body: some View {
-        VStack(spacing: 0) {
-            Picker("", selection: $mealType) {
-                ForEach(MealType.allCases, id: \.self) { Text($0.displayName).tag($0) }
-            }.pickerStyle(.segmented).padding(.horizontal, 12).padding(.vertical, 6)
-
-            if favorites.isEmpty {
-                VStack(spacing: 8) {
-                    Image(systemName: "star").font(.system(size: 36)).foregroundStyle(Theme.accent.opacity(0.5))
-                    Text("No favorites yet").font(.subheadline).foregroundStyle(.secondary)
-                    Text("Save meals from the 'New' tab or add manually").font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
-                    Button { showingAdd = true } label: {
-                        Label("Add Favorite", systemImage: "plus.circle")
-                    }.buttonStyle(.bordered).padding(.top, 4)
-                }.padding(.top, 30).padding(.horizontal, 20)
-                Spacer()
-            } else {
-                List {
-                    ForEach(favorites) { fav in
-                        Button {
-                            viewModel.quickAdd(name: fav.name, calories: fav.calories, proteinG: fav.proteinG,
-                                               carbsG: fav.carbsG, fatG: fav.fatG, fiberG: fav.fiberG, mealType: mealType)
-                            dismiss()
-                        } label: {
-                            HStack {
-                                Image(systemName: fav.isRecipe ? "frying.pan.fill" : "star.fill")
-                                    .font(.caption).foregroundStyle(fav.isRecipe ? Theme.stepsOrange : Theme.fatYellow)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(fav.name).font(.subheadline)
-                                    Text(fav.macroSummary).font(.caption).foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                Image(systemName: "plus.circle.fill").foregroundStyle(Theme.accent)
-                            }
-                        }.tint(.primary)
-                    }
-                    .onDelete { indexSet in
-                        for i in indexSet { if let id = favorites[i].id { try? db.deleteFavorite(id: id) } }
-                        loadFavorites()
-                    }
-                }.listStyle(.plain)
-            }
-        }
-        .onAppear { loadFavorites() }
-        .sheet(isPresented: $showingAdd) { AddFavoriteSheet { loadFavorites() } }
-    }
-
-    private func loadFavorites() { favorites = (try? db.fetchFavorites()) ?? [] }
-}
-
-// MARK: - Build Meal (search + combine items → log or log+save)
-
-private struct BuildMealTab: View {
-    @Bindable var viewModel: FoodLogViewModel
-    let dismiss: DismissAction
-    @State private var mealName = ""
-    @State private var items: [MealItem] = []
-    @State private var mealType: MealType = .lunch
-    @State private var showingSearch = false
-    private let db = AppDatabase.shared
-
-    struct MealItem: Identifiable {
+    struct RecipeItem: Identifiable {
         let id = UUID()
         var name: String
+        var portionText: String
         var calories: Double
         var proteinG: Double
         var carbsG: Double
@@ -114,75 +22,115 @@ private struct BuildMealTab: View {
         var fiberG: Double
     }
 
-    var total: MealItem {
-        MealItem(name: "", calories: items.reduce(0) { $0 + $1.calories },
-                 proteinG: items.reduce(0) { $0 + $1.proteinG },
-                 carbsG: items.reduce(0) { $0 + $1.carbsG },
-                 fatG: items.reduce(0) { $0 + $1.fatG },
-                 fiberG: items.reduce(0) { $0 + $1.fiberG })
+    private var total: (cal: Double, p: Double, c: Double, f: Double, fb: Double) {
+        (items.reduce(0) { $0 + $1.calories },
+         items.reduce(0) { $0 + $1.proteinG },
+         items.reduce(0) { $0 + $1.carbsG },
+         items.reduce(0) { $0 + $1.fatG },
+         items.reduce(0) { $0 + $1.fiberG })
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 10) {
-                TextField("Meal name (optional)", text: $mealName)
-                    .textFieldStyle(.roundedBorder).padding(.horizontal, 12)
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 14) {
+                    // Recipe name (show after first ingredient added)
+                    if !items.isEmpty {
+                        TextField("Recipe name", text: $recipeName)
+                            .font(.headline)
+                            .padding(12)
+                            .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 12))
+                    }
 
-                // Items
-                ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
-                    HStack {
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(item.name).font(.subheadline)
-                            Text("\(Int(item.calories))cal \(Int(item.proteinG))P \(Int(item.carbsG))C \(Int(item.fatG))F")
-                                .font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                    // Ingredients
+                    VStack(alignment: .leading, spacing: 0) {
+                        Text("INGREDIENTS").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                            .padding(.bottom, 8)
+
+                        if items.isEmpty {
+                            VStack(spacing: 8) {
+                                Image(systemName: "fork.knife").font(.title2).foregroundStyle(Theme.accent.opacity(0.4))
+                                Text("Add ingredients to build your recipe")
+                                    .font(.subheadline).foregroundStyle(.tertiary)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
                         }
-                        Spacer()
-                        Button { items.remove(at: i) } label: {
-                            Image(systemName: "xmark.circle.fill").font(.caption).foregroundStyle(.tertiary)
+
+                        ForEach(Array(items.enumerated()), id: \.element.id) { i, item in
+                            HStack(alignment: .center) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(item.name).font(.subheadline).lineLimit(1)
+                                    HStack(spacing: 4) {
+                                        if !item.portionText.isEmpty {
+                                            Text(item.portionText).font(.caption2).foregroundStyle(.tertiary)
+                                            Text("\u{00B7}").font(.caption2).foregroundStyle(.quaternary)
+                                        }
+                                        Text("\(Int(item.calories)) cal")
+                                            .font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                                    }
+                                }
+                                Spacer()
+                                Button { items.remove(at: i) } label: {
+                                    Image(systemName: "xmark.circle.fill").font(.caption).foregroundStyle(.tertiary)
+                                }.buttonStyle(.plain)
+                            }
+                            .padding(.vertical, 5)
+                            .contentShape(Rectangle())
+                            .onTapGesture { editingIndex = i }
+                            if i < items.count - 1 { Divider() }
+                        }
+
+                        Divider().padding(.vertical, 4)
+
+                        Button { showingIngredientPicker = true } label: {
+                            Label("Add ingredient", systemImage: "plus.circle")
+                                .font(.subheadline).foregroundStyle(Theme.accent)
                         }.buttonStyle(.plain)
-                    }.padding(.horizontal, 14).padding(.vertical, 4)
-                }
+                    }
+                    .card()
 
-                // Add item button
-                Button { showingSearch = true } label: {
-                    Label("Add Item", systemImage: "plus.circle").frame(maxWidth: .infinity)
-                }.buttonStyle(.bordered).padding(.horizontal, 12)
-
-                if !items.isEmpty {
-                    // Total
-                    VStack(spacing: 4) {
-                        Text("\(Int(total.calories)) cal").font(.title3.weight(.bold).monospacedDigit())
-                        HStack(spacing: 8) {
-                            macroChip("P", value: total.proteinG, color: Theme.proteinRed)
-                            macroChip("C", value: total.carbsG, color: Theme.carbsGreen)
-                            macroChip("F", value: total.fatG, color: Theme.fatYellow)
+                    // Total + actions
+                    if !items.isEmpty {
+                        VStack(spacing: 6) {
+                            HStack {
+                                Text("Total").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                                Spacer()
+                                Text("\(Int(total.cal)) cal").font(.subheadline.weight(.bold).monospacedDigit())
+                            }
+                            HStack(spacing: 8) {
+                                macroChip("P", value: total.p, color: Theme.proteinRed)
+                                macroChip("C", value: total.c, color: Theme.carbsGreen)
+                                macroChip("F", value: total.f, color: Theme.fatYellow)
+                            }
                         }
-                    }.card().padding(.horizontal, 12)
+                        .card()
 
-                    Picker("", selection: $mealType) {
-                        ForEach(MealType.allCases, id: \.self) { Text($0.displayName).tag($0) }
-                    }.pickerStyle(.segmented).padding(.horizontal, 12)
-
-                    // Action buttons
-                    Button {
-                        logMeal()
-                        dismiss()
-                    } label: {
-                        Label("Log", systemImage: "plus.circle.fill").frame(maxWidth: .infinity)
-                    }.buttonStyle(.borderedProminent).tint(Theme.accent).padding(.horizontal, 12)
-
-                    Button {
-                        saveFavoriteAndLog()
-                        dismiss()
-                    } label: {
-                        Label("Log + Save as Favorite", systemImage: "star.fill").frame(maxWidth: .infinity)
-                    }.buttonStyle(.bordered).padding(.horizontal, 12)
+                        Button {
+                            saveAndLogRecipe()
+                            dismiss()
+                        } label: {
+                            Text("Log").font(.headline).frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent).tint(Theme.accent)
+                    }
                 }
-            }.padding(.top, 8).padding(.bottom, 24)
-        }
-        .sheet(isPresented: $showingSearch) {
-            ItemSearchView { name, cal, p, c, f, fb in
-                items.append(MealItem(name: name, calories: cal, proteinG: p, carbsG: c, fatG: f, fiberG: fb))
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+                .padding(.bottom, 24)
+            }
+            .background(Theme.background)
+            .navigationTitle("Recipe").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+            .sheet(isPresented: $showingIngredientPicker) {
+                IngredientPickerView { item in items.append(item) }
+            }
+            .sheet(item: editingIndexBinding) { idx in
+                IngredientPickerView { replacement in
+                    if idx.value < items.count {
+                        items[idx.value] = replacement
+                    }
+                }
             }
         }
     }
@@ -196,38 +144,47 @@ private struct BuildMealTab: View {
         .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 5))
     }
 
-    private func logMeal() {
-        let t = total
-        viewModel.quickAdd(name: mealName.isEmpty ? (items.count == 1 ? items[0].name : "Meal") : mealName,
-                           calories: t.calories, proteinG: t.proteinG, carbsG: t.carbsG, fatG: t.fatG, fiberG: t.fiberG,
-                           mealType: mealType)
+    private var editingIndexBinding: Binding<IdentifiableInt?> {
+        Binding(
+            get: { editingIndex.map { IdentifiableInt(value: $0) } },
+            set: { editingIndex = $0?.value }
+        )
     }
 
-    private func saveFavoriteAndLog() {
+    private func saveAndLogRecipe() {
         let t = total
-        let name = mealName.isEmpty ? (items.count == 1 ? items[0].name : "Meal") : mealName
-        var fav = FavoriteFood(name: name, calories: t.calories, proteinG: t.proteinG, carbsG: t.carbsG,
-                               fatG: t.fatG, fiberG: t.fiberG, isRecipe: items.count > 1)
+        let name = recipeName.isEmpty ? (items.count == 1 ? items[0].name : "Recipe") : recipeName
+        var fav = FavoriteFood(name: name, calories: t.cal, proteinG: t.p, carbsG: t.c,
+                               fatG: t.f, fiberG: t.fb, isRecipe: items.count > 1)
         try? db.saveFavorite(&fav)
-        viewModel.quickAdd(name: name, calories: t.calories, proteinG: t.proteinG, carbsG: t.carbsG,
-                           fatG: t.fatG, fiberG: t.fiberG, mealType: mealType)
+        viewModel.quickAdd(name: name, calories: t.cal, proteinG: t.p, carbsG: t.c,
+                           fatG: t.f, fiberG: t.fb, mealType: viewModel.autoMealType)
     }
 }
 
-// MARK: - Item Search (DB foods + raw ingredients + manual)
+struct IdentifiableInt: Identifiable {
+    let id = UUID()
+    let value: Int
+}
 
-private struct ItemSearchView: View {
-    let onAdd: (String, Double, Double, Double, Double, Double) -> Void
+// MARK: - Ingredient Picker (search + serving picker)
+
+private struct IngredientPickerView: View {
+    let onAdd: (QuickAddView.RecipeItem) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
-    @State private var dbResults: [Food] = []
-    @State private var showManual = false
+    @State private var results: [Food] = []
+    @State private var selectedFood: Food?
+    @State private var amount = "1"
+    @State private var selectedUnitIndex = 0
+    @State private var showingManual = false
     @State private var manualName = ""
     @State private var manualCal = ""
     @State private var manualP = ""
     @State private var manualC = ""
     @State private var manualF = ""
     @State private var manualFb = ""
+    @FocusState private var searchFocused: Bool
 
     private var ingredientResults: [RawIngredient] {
         if query.isEmpty { return [] }
@@ -237,164 +194,258 @@ private struct ItemSearchView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                // Search bar
                 HStack {
                     Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                    TextField("Search food, ingredient, or enter manually", text: $query)
+                    TextField("Search ingredient", text: $query)
                         .textFieldStyle(.plain).autocorrectionDisabled()
-                        .onChange(of: query) { _, _ in dbResults = (try? AppDatabase.shared.searchFoods(query: query)) ?? [] }
-                }.padding().background(.ultraThinMaterial)
-
-                List {
-                    // Manual entry option at top
-                    Button {
-                        showManual = true
-                    } label: {
-                        Label("Enter calories manually", systemImage: "pencil")
-                            .font(.subheadline).foregroundStyle(Theme.accent)
-                    }
-
-                    // DB results
-                    if !dbResults.isEmpty {
-                        Section("Foods") {
-                            ForEach(dbResults) { food in
-                                Button {
-                                    onAdd(food.name, food.calories, food.proteinG, food.carbsG, food.fatG, food.fiberG)
-                                    dismiss()
-                                } label: {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(food.name).font(.subheadline)
-                                        Text(food.macroSummary).font(.caption).foregroundStyle(.secondary)
-                                    }
-                                }.tint(.primary)
-                            }
+                        .focused($searchFocused)
+                        .onChange(of: query) { _, q in
+                            results = q.isEmpty ? [] : ((try? AppDatabase.shared.searchFoodsRanked(query: q)) ?? [])
                         }
-                    }
-
-                    // Ingredients
-                    if !ingredientResults.isEmpty {
-                        Section("Raw Ingredients (per 100g)") {
-                            ForEach(ingredientResults) { ing in
-                                Button {
-                                    onAdd(ing.name, ing.caloriesPer100g, ing.proteinPer100g, ing.carbsPer100g, ing.fatPer100g, ing.fiberPer100g)
-                                    dismiss()
-                                } label: {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(ing.name).font(.subheadline)
-                                        Text("\(Int(ing.caloriesPer100g))cal \(Int(ing.proteinPer100g))P \(Int(ing.carbsPer100g))C \(Int(ing.fatPer100g))F /100g")
-                                            .font(.caption).foregroundStyle(.secondary)
-                                    }
-                                }.tint(.primary)
-                            }
-                        }
-                    }
-                }.listStyle(.plain)
-            }
-            .navigationTitle("Add Item").navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
-            .sheet(isPresented: $showManual) {
-                NavigationStack {
-                    Form {
-                        TextField("Name", text: $manualName)
-                        HStack { Text("Calories"); Spacer(); TextField("0", text: $manualCal).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80) }
-                        HStack { Text("Protein (g)"); Spacer(); TextField("0", text: $manualP).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80) }
-                        HStack { Text("Carbs (g)"); Spacer(); TextField("0", text: $manualC).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80) }
-                        HStack { Text("Fat (g)"); Spacer(); TextField("0", text: $manualF).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80) }
-                        HStack { Text("Fiber (g)"); Spacer(); TextField("0", text: $manualFb).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80) }
-                    }
-                    .navigationTitle("Manual Entry").navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showManual = false } }
-                        ToolbarItem(placement: .confirmationAction) {
-                            Button("Add") {
-                                onAdd(manualName.isEmpty ? "Item" : manualName, Double(manualCal) ?? 0, Double(manualP) ?? 0,
-                                      Double(manualC) ?? 0, Double(manualF) ?? 0, Double(manualFb) ?? 0)
-                                showManual = false; dismiss()
-                            }
+                    if !query.isEmpty {
+                        Button { query = ""; results = [] } label: {
+                            Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
                         }
                     }
                 }
+                .padding()
+                .background(.ultraThinMaterial)
+
+                if let food = selectedFood {
+                    servingPicker(food)
+                } else {
+                    ingredientList
+                }
+            }
+            .navigationTitle("Add Ingredient").navigationBarTitleDisplayMode(.inline)
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
+            .sheet(isPresented: $showingManual) { manualIngredientSheet }
+            .onAppear {
+                recentIngredients = (try? AppDatabase.shared.fetchRecentFoods(limit: 5)) ?? []
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { searchFocused = true }
             }
         }
     }
-}
 
-// MARK: - Add Favorite Sheet
+    @State private var recentIngredients: [Food] = []
 
-private struct AddFavoriteSheet: View {
-    let onSave: () -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var name = ""
-    @State private var calories = ""
-    @State private var protein = ""
-    @State private var carbs = ""
-    @State private var fat = ""
-    @State private var fiber = ""
+    // MARK: - Ingredient List
 
-    var body: some View {
+    private var ingredientList: some View {
+        List {
+            Button { showingManual = true } label: {
+                Label("Enter manually", systemImage: "pencil")
+                    .font(.subheadline).foregroundStyle(Theme.accent)
+            }
+
+            if query.isEmpty && !recentIngredients.isEmpty {
+                Section("Recent") {
+                    ForEach(recentIngredients) { food in
+                        Button {
+                            amount = "1"
+                            selectedUnitIndex = 0
+                            selectedFood = food
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(food.name).font(.subheadline)
+                                Text(food.macroSummary).font(.caption).foregroundStyle(.secondary)
+                            }
+                        }.tint(.primary)
+                    }
+                }
+            }
+
+            if !results.isEmpty {
+                Section("Foods") {
+                    ForEach(results) { food in
+                        Button {
+                            amount = "1"
+                            selectedUnitIndex = 0
+                            selectedFood = food
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(food.name).font(.subheadline)
+                                Text(food.macroSummary).font(.caption).foregroundStyle(.secondary)
+                            }
+                        }.tint(.primary)
+                    }
+                }
+            }
+
+            if !ingredientResults.isEmpty {
+                Section("Raw Ingredients") {
+                    ForEach(ingredientResults) { ing in
+                        Button {
+                            let gpp = ing.gramsPerPiece
+                            let scale = gpp / 100.0
+                            let food = Food(name: ing.name, category: "Ingredient",
+                                            servingSize: gpp, servingUnit: "g",
+                                            calories: ing.caloriesPer100g * scale,
+                                            proteinG: ing.proteinPer100g * scale,
+                                            carbsG: ing.carbsPer100g * scale,
+                                            fatG: ing.fatPer100g * scale,
+                                            fiberG: ing.fiberPer100g * scale)
+                            amount = "1"
+                            selectedUnitIndex = 0
+                            selectedFood = food
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(ing.name).font(.subheadline)
+                                Text("\(Int(ing.caloriesPer100g)) cal/100g").font(.caption).foregroundStyle(.secondary)
+                            }
+                        }.tint(.primary)
+                    }
+                }
+            }
+        }.listStyle(.plain)
+    }
+
+    // MARK: - Serving Picker
+
+    private func servingPicker(_ food: Food) -> some View {
+        let units = FoodUnit.smartUnits(for: food)
+        let safeIndex = min(selectedUnitIndex, max(units.count - 1, 0))
+        let unit = units.isEmpty ? FoodUnit(label: "g", gramsEquivalent: 1) : units[safeIndex]
+        let amountNum = Double(amount) ?? 0
+        let totalGrams = amountNum * unit.gramsEquivalent
+        let multiplier = food.servingSize > 0 ? totalGrams / food.servingSize : amountNum
+
+        return ScrollView {
+            VStack(spacing: 16) {
+                // Back to search
+                HStack {
+                    Button { selectedFood = nil } label: {
+                        Label("Back", systemImage: "chevron.left")
+                            .font(.caption).foregroundStyle(Theme.accent)
+                    }
+                    Spacer()
+                }
+
+                // Food info
+                VStack(spacing: 4) {
+                    Text(food.name).font(.headline)
+                    Text("\(food.macroSummary) per \(Int(food.servingSize))\(food.servingUnit)")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+
+                // Amount + unit
+                HStack(spacing: 12) {
+                    TextField("1", text: $amount)
+                        .keyboardType(.decimalPad)
+                        .font(.title2.weight(.medium).monospacedDigit())
+                        .multilineTextAlignment(.center)
+                        .frame(width: 80)
+                        .padding(.vertical, 10)
+                        .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
+
+                    Picker("", selection: $selectedUnitIndex) {
+                        ForEach(0..<units.count, id: \.self) { i in
+                            Text(units[i].label).tag(i)
+                        }
+                    }
+                    .pickerStyle(.menu)
+                    .labelsHidden()
+                    .padding(.vertical, 10).padding(.horizontal, 16)
+                    .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
+                    .onChange(of: selectedUnitIndex) { oldIdx, newIdx in
+                        guard oldIdx < units.count, newIdx < units.count else { return }
+                        let oldUnit = units[oldIdx]
+                        let newUnit = units[newIdx]
+                        let currentAmount = Double(amount) ?? 0
+                        let grams = currentAmount * oldUnit.gramsEquivalent
+                        let converted = newUnit.gramsEquivalent > 0 ? grams / newUnit.gramsEquivalent : currentAmount
+                        amount = converted == Double(Int(converted)) ? "\(Int(converted))" : String(format: "%.1f", converted)
+                    }
+                }
+
+                // Quick buttons
+                HStack(spacing: 6) {
+                    ForEach([0.5, 1.0, 1.5, 2.0], id: \.self) { mult in
+                        Button {
+                            if unit.label == "g" {
+                                amount = String(format: "%.0f", food.servingSize * mult)
+                            } else {
+                                amount = mult == Double(Int(mult)) ? "\(Int(mult))" : String(format: "%.1f", mult)
+                            }
+                        } label: {
+                            Text(mult == 0.5 ? "\u{00BD}" : (mult == 1.5 ? "1\u{00BD}" : "\(Int(mult))x"))
+                                .font(.caption.weight(.medium))
+                        }.buttonStyle(.bordered)
+                    }
+                }
+
+                // Nutrition preview
+                VStack(spacing: 4) {
+                    Text("\(Int(food.calories * multiplier)) cal")
+                        .font(.title3.weight(.bold).monospacedDigit())
+                    Text("\(Int(food.proteinG * multiplier))P \u{00B7} \(Int(food.carbsG * multiplier))C \u{00B7} \(Int(food.fatG * multiplier))F")
+                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 12)
+
+                // Add button
+                Button {
+                    let portionText = formatPortion(amount: amount, unitLabel: unit.label)
+                    onAdd(QuickAddView.RecipeItem(
+                        name: food.name, portionText: portionText,
+                        calories: food.calories * multiplier,
+                        proteinG: food.proteinG * multiplier,
+                        carbsG: food.carbsG * multiplier,
+                        fatG: food.fatG * multiplier,
+                        fiberG: food.fiberG * multiplier
+                    ))
+                    dismiss()
+                } label: {
+                    Text("Add to Recipe").font(.headline).frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent).tint(Theme.accent)
+            }
+            .padding(16)
+        }
+        .background(Theme.background)
+    }
+
+    private func formatPortion(amount: String, unitLabel: String) -> String {
+        let num = Double(amount) ?? 0
+        if num == Double(Int(num)) {
+            return "\(Int(num)) \(unitLabel)"
+        }
+        return "\(amount) \(unitLabel)"
+    }
+
+    // MARK: - Manual Ingredient Sheet
+
+    private var manualIngredientSheet: some View {
         NavigationStack {
             Form {
-                Section("Food") { TextField("Name", text: $name) }
-                Section("Per Serving") {
-                    field("Calories", $calories, "kcal"); field("Protein", $protein, "g")
-                    field("Carbs", $carbs, "g"); field("Fat", $fat, "g"); field("Fiber", $fiber, "g")
-                }
+                TextField("Name", text: $manualName)
+                HStack { Text("Calories"); Spacer(); TextField("0", text: $manualCal).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80) }
+                HStack { Text("Protein (g)"); Spacer(); TextField("0", text: $manualP).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80) }
+                HStack { Text("Carbs (g)"); Spacer(); TextField("0", text: $manualC).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80) }
+                HStack { Text("Fat (g)"); Spacer(); TextField("0", text: $manualF).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80) }
+                HStack { Text("Fiber (g)"); Spacer(); TextField("0", text: $manualFb).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80) }
             }
-            .navigationTitle("Add Favorite").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Manual Entry").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showingManual = false } }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        var fav = FavoriteFood(name: name, calories: Double(calories) ?? 0, proteinG: Double(protein) ?? 0,
-                                               carbsG: Double(carbs) ?? 0, fatG: Double(fat) ?? 0, fiberG: Double(fiber) ?? 0)
-                        try? AppDatabase.shared.saveFavorite(&fav)
-                        onSave(); dismiss()
-                    }.disabled(name.isEmpty || calories.isEmpty)
+                    Button("Add") {
+                        onAdd(QuickAddView.RecipeItem(
+                            name: manualName.isEmpty ? "Item" : manualName,
+                            portionText: "",
+                            calories: Double(manualCal) ?? 0,
+                            proteinG: Double(manualP) ?? 0,
+                            carbsG: Double(manualC) ?? 0,
+                            fatG: Double(manualF) ?? 0,
+                            fiberG: Double(manualFb) ?? 0
+                        ))
+                        showingManual = false
+                        dismiss()
+                    }
+                    .disabled(manualCal.isEmpty)
                 }
             }
         }
-    }
-
-    private func field(_ label: String, _ value: Binding<String>, _ unit: String) -> some View {
-        HStack { Text(label); Spacer(); TextField("0", text: value).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80); Text(unit).font(.caption).foregroundStyle(.secondary).frame(width: 35) }
-    }
-}
-
-// MARK: - Manual Tab
-
-private struct ManualTab: View {
-    @Bindable var viewModel: FoodLogViewModel
-    let dismiss: DismissAction
-    @State private var name = ""
-    @State private var calories = ""
-    @State private var protein = ""
-    @State private var carbs = ""
-    @State private var fat = ""
-    @State private var fiber = ""
-    @State private var mealType: MealType = .lunch
-
-    var body: some View {
-        Form {
-            Section("Food") { TextField("Name", text: $name) }
-            Section("Macros") {
-                field("Calories", $calories, "kcal"); field("Protein", $protein, "g")
-                field("Carbs", $carbs, "g"); field("Fat", $fat, "g"); field("Fiber", $fiber, "g")
-            }
-            Section("Meal") {
-                Picker("", selection: $mealType) { ForEach(MealType.allCases, id: \.self) { Text($0.displayName).tag($0) } }.pickerStyle(.segmented)
-            }
-            Section {
-                Button {
-                    viewModel.quickAdd(name: name.isEmpty ? "Quick Add" : name, calories: Double(calories) ?? 0,
-                                       proteinG: Double(protein) ?? 0, carbsG: Double(carbs) ?? 0,
-                                       fatG: Double(fat) ?? 0, fiberG: Double(fiber) ?? 0, mealType: mealType)
-                    dismiss()
-                } label: { Label("Log Food", systemImage: "plus.circle.fill").frame(maxWidth: .infinity) }
-                .buttonStyle(.borderedProminent).tint(Theme.accent).disabled(calories.isEmpty)
-            }
-        }
-    }
-
-    private func field(_ label: String, _ value: Binding<String>, _ unit: String) -> some View {
-        HStack { Text(label); Spacer(); TextField("0", text: value).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80); Text(unit).font(.caption).foregroundStyle(.secondary).frame(width: 35) }
     }
 }

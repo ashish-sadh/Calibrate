@@ -20,8 +20,8 @@ Drift is a local-first iOS health & fitness tracking app. Everything runs on-dev
 - Daily upload limit: ~25 builds/day (hit on Mar 29, resets ~24hr)
 
 ## Current Build
-- Version 0.1.0, build 24 (live on TestFlight)
-- 255 tests, all passing
+- Version 0.1.0, build 29 (live on TestFlight)
+- 408 tests, all passing
 
 ## Tab Structure
 Drift | Weight | Food | Exercise | More
@@ -52,14 +52,21 @@ Drift | Weight | Food | Exercise | More
 ### Food Tab
 - Date navigation: ← Today → with calendar picker (tap date)
 - "Today" button when viewing past dates
-- Meal sections (Breakfast/Lunch/Dinner/Snack) - headers clickable to add food
-- Search: 128 curated foods (Indian staples + common items) + 25 raw ingredients
+- Flat chronological food diary (no breakfast/lunch/dinner/snack sections)
+- Auto meal type assignment based on time of day (internal only)
+- Smart search: 289 foods ranked by usage frequency, then prefix match, then alphabetical
+- Usage tracking: foods you log frequently appear first in search, recent foods shown as suggestions
+- Saved recipes: appear in search suggestions under "YOUR RECIPES"
+- Smart serving units: food-appropriate units (egg count, tbsp for oil, ml for milk, cups for rice) - no "Unit" label
 - Barcode scanner: camera → Open Food Facts API → cache locally
 - OCR: photo nutrition label → Vision OCR → editable fields
-- Quick Add: Favorites (one-tap), New (recipe builder), Manual
-- Favorites persist, recipes saveable
+- Recipe builder: add ingredients with per-item serving picker, save + log or just log
+- Manual entry: enter calories/macros directly from search view
+- "Copy yesterday's food" when today's diary is empty
+- "Log Again" context menu on diary entries
+- Quick-log from recent foods (+ button)
 - 30-day logging consistency heatmap
-- Delete entries on any date
+- Delete entries on any date (x button or context menu)
 
 ### Exercise Tab
 - Active calories + Steps from HealthKit at top
