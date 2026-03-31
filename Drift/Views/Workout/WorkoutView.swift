@@ -519,6 +519,9 @@ struct ActiveWorkoutView: View {
     @State private var activeRestExerciseIndex: Int? = nil
     @State private var activeRestSetIndex: Int? = nil
     @State private var workoutEnded = false  // prevents re-persisting after finish/cancel
+    @State private var showingFinishOptions = false
+    @State private var templateName = ""
+    @State private var showingTemplateName = false
 
     struct ActiveExercise: Identifiable {
         let id = UUID()
@@ -587,7 +590,7 @@ struct ActiveWorkoutView: View {
                     }.buttonStyle(.bordered).tint(Theme.accent).padding(.horizontal, 12)
 
                     if !exercises.isEmpty {
-                        Button { saveWorkout() } label: {
+                        Button { showingFinishOptions = true } label: {
                             Text("Finish").frame(maxWidth: .infinity)
                         }.buttonStyle(.borderedProminent).tint(Theme.deficit).padding(.horizontal, 12)
 
@@ -614,7 +617,7 @@ struct ActiveWorkoutView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if !exercises.isEmpty {
-                        Button("Finish") { saveWorkout() }.foregroundStyle(Theme.deficit)
+                        Button("Finish") { showingFinishOptions = true }.foregroundStyle(Theme.deficit)
                     }
                 }
             }
@@ -622,6 +625,29 @@ struct ActiveWorkoutView: View {
                 ExercisePickerView { name in
                     addExercise(name: name)
                 }
+            }
+            .confirmationDialog("Finish Workout", isPresented: $showingFinishOptions) {
+                Button("Save Workout") {
+                    saveWorkout(andDismiss: true)
+                }
+                Button("Save + Save as Template") {
+                    templateName = workoutName
+                    saveWorkout(andDismiss: false)
+                    showingTemplateName = true
+                }
+                Button("Cancel", role: .cancel) {}
+            }
+            .alert("Template Name", isPresented: $showingTemplateName) {
+                TextField("Template name", text: $templateName)
+                Button("Save Template") {
+                    saveAsTemplate(name: templateName)
+                    onComplete(); dismiss()
+                }
+                Button("Skip", role: .cancel) {
+                    onComplete(); dismiss()
+                }
+            } message: {
+                Text("Save this workout as a reusable template")
             }
             .onAppear {
                 startWorkoutTimer()
@@ -916,7 +942,7 @@ struct ActiveWorkoutView: View {
                                          notes: notes, sets: sets, previousSets: Array(previous)))
     }
 
-    private func saveWorkout() {
+    private func saveWorkout(andDismiss: Bool = true) {
         workoutEnded = true
         stopTimers()
         WorkoutService.clearSession()
@@ -951,8 +977,23 @@ struct ActiveWorkoutView: View {
                 }
             }
             try WorkoutService.saveSets(allSets)
-            onComplete(); dismiss()
+            if andDismiss { onComplete(); dismiss() }
         } catch { Log.app.error("Save workout: \(error.localizedDescription)") }
+    }
+
+    private func saveAsTemplate(name: String) {
+        let templateExercises = exercises.map { ex in
+            WorkoutTemplate.TemplateExercise(name: ex.name, sets: ex.sets.count,
+                                             isWarmup: ex.isWarmupExercise,
+                                             restSeconds: ex.restTime, notes: ex.notes)
+        }
+        if let json = try? JSONEncoder().encode(templateExercises),
+           let jsonStr = String(data: json, encoding: .utf8) {
+            var t = WorkoutTemplate(name: name.isEmpty ? workoutName : name,
+                                    exercisesJson: jsonStr,
+                                    createdAt: ISO8601DateFormatter().string(from: Date()))
+            try? WorkoutService.saveTemplate(&t)
+        }
     }
 
     private static func defaultWorkoutName() -> String {
