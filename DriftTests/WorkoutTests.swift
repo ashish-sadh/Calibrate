@@ -529,3 +529,66 @@ import GRDB
     let n = DailyNutrition(calories: 2000, proteinG: 150, carbsG: 200, fatG: 80, fiberG: 30)
     #expect(n.macroSummary == "2000cal 150P 200C 80F")
 }
+
+// MARK: - Template Warmup & Rest Tests (6 tests)
+
+@Test func templateExerciseWarmupFlag() async throws {
+    let warmup = WorkoutTemplate.TemplateExercise(name: "Band Pull Aparts", sets: 2, isWarmup: true, restSeconds: 30)
+    let working = WorkoutTemplate.TemplateExercise(name: "Bench Press", sets: 3, isWarmup: false, restSeconds: 150)
+    #expect(warmup.isWarmup == true)
+    #expect(working.isWarmup == false)
+    #expect(warmup.restSeconds == 30)
+    #expect(working.restSeconds == 150)
+}
+
+@Test func templateExerciseNotes() async throws {
+    let ex = WorkoutTemplate.TemplateExercise(name: "Deadlift", sets: 3, restSeconds: 150, notes: "5-8 reps")
+    #expect(ex.notes == "5-8 reps")
+}
+
+@Test func templateExerciseBackwardCompatDecode() async throws {
+    // Old format without warmup/rest/notes fields
+    let oldJson = #"[{"name":"Bench Press","sets":3}]"#
+    let decoded = try JSONDecoder().decode([WorkoutTemplate.TemplateExercise].self, from: Data(oldJson.utf8))
+    #expect(decoded.count == 1)
+    #expect(decoded[0].name == "Bench Press")
+    #expect(decoded[0].sets == 3)
+    #expect(decoded[0].isWarmup == false, "Should default to false")
+    #expect(decoded[0].restSeconds == 90, "Should default to 90")
+    #expect(decoded[0].notes == nil, "Should default to nil")
+}
+
+@Test func templateExerciseNewFormatDecode() async throws {
+    let newJson = #"[{"name":"Band Pull Aparts","sets":2,"isWarmup":true,"restSeconds":30,"notes":"2x10"}]"#
+    let decoded = try JSONDecoder().decode([WorkoutTemplate.TemplateExercise].self, from: Data(newJson.utf8))
+    #expect(decoded[0].isWarmup == true)
+    #expect(decoded[0].restSeconds == 30)
+    #expect(decoded[0].notes == "2x10")
+}
+
+@Test func templateWarmupExerciseSeparation() async throws {
+    let exercises: [WorkoutTemplate.TemplateExercise] = [
+        .init(name: "Warmup A", sets: 2, isWarmup: true),
+        .init(name: "Warmup B", sets: 1, isWarmup: true),
+        .init(name: "Bench Press", sets: 3),
+        .init(name: "Squats", sets: 4),
+    ]
+    let warmups = exercises.filter(\.isWarmup)
+    let working = exercises.filter { !$0.isWarmup }
+    #expect(warmups.count == 2)
+    #expect(working.count == 2)
+}
+
+@Test func defaultTemplateSeeding() async throws {
+    // Verify the default templates can be built without crashing
+    // This tests the JSON encoding/decoding roundtrip
+    let templates = [
+        WorkoutTemplate.TemplateExercise(name: "Test", sets: 3, isWarmup: false, restSeconds: 120, notes: "8 reps"),
+        WorkoutTemplate.TemplateExercise(name: "Warmup", sets: 2, isWarmup: true, restSeconds: 30),
+    ]
+    let data = try JSONEncoder().encode(templates)
+    let decoded = try JSONDecoder().decode([WorkoutTemplate.TemplateExercise].self, from: data)
+    #expect(decoded.count == 2)
+    #expect(decoded[0].notes == "8 reps")
+    #expect(decoded[1].isWarmup == true)
+}

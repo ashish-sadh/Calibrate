@@ -12,6 +12,7 @@ struct DriftApp: App {
                 .task {
                     if !hasRequestedHealthKit {
                         hasRequestedHealthKit = true
+                        DefaultTemplates.seedIfNeeded()
                         #if !targetEnvironment(simulator)
                         do {
                             try await HealthKitService.shared.requestAuthorization()

@@ -45,7 +45,7 @@ struct WorkoutView: View {
                 if !weeklyCounts.isEmpty { consistencyChart }
 
                 // Start buttons
-                Button { showingNewWorkout = true } label: {
+                Button { selectedTemplate = nil; showingNewWorkout = true } label: {
                     Label("Start Empty Workout", systemImage: "plus.circle.fill").frame(maxWidth: .infinity)
                 }.buttonStyle(.borderedProminent).tint(Theme.accent)
 
@@ -69,17 +69,23 @@ struct WorkoutView: View {
                                     selectedTemplate = t
                                     showingNewWorkout = true
                                 } label: {
-                                    VStack(alignment: .leading, spacing: 1) {
-                                        Text(t.name).font(.subheadline)
-                                        Text(t.exercises.map(\.name).prefix(3).joined(separator: ", "))
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(t.name).font(.subheadline.weight(.medium))
+                                        let working = t.exercises.filter { !$0.isWarmup }
+                                        Text(working.map(\.name).prefix(3).joined(separator: ", "))
                                             .font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
+                                        let warmupCount = t.exercises.filter(\.isWarmup).count
+                                        if warmupCount > 0 {
+                                            Text("\(warmupCount) warmup + \(working.count) exercises")
+                                                .font(.system(size: 9)).foregroundStyle(.quaternary)
+                                        }
                                     }
                                 }.tint(.primary)
 
                                 Spacer()
 
                                 Button { selectedTemplate = t; showingNewWorkout = true } label: {
-                                    Image(systemName: "play.circle").foregroundStyle(Theme.accent)
+                                    Image(systemName: "play.circle.fill").foregroundStyle(Theme.accent)
                                 }
 
                                 if let tid = t.id {
@@ -301,7 +307,14 @@ struct WorkoutDetailView: View {
     }
 
     private func saveAsTemplate() {
-        let exercises = summary.exercises.map { WorkoutTemplate.TemplateExercise(name: $0, sets: 3) }
+        // Determine warmup vs working from the saved sets
+        let warmupNames = Set(sets.filter(\.isWarmup).map(\.exerciseName))
+        let exercises = summary.exercises.map { name in
+            let isW = warmupNames.contains(name)
+            let count = sets.filter { $0.exerciseName == name && !$0.isWarmup }.count
+            return WorkoutTemplate.TemplateExercise(name: name, sets: max(count, isW ? 2 : 3), isWarmup: isW,
+                                                    restSeconds: isW ? 30 : 90)
+        }
         if let json = try? JSONEncoder().encode(exercises), let jsonStr = String(data: json, encoding: .utf8) {
             var t = WorkoutTemplate(name: summary.workout.name, exercisesJson: jsonStr, createdAt: ISO8601DateFormatter().string(from: Date()))
             try? WorkoutService.saveTemplate(&t)
@@ -337,9 +350,11 @@ struct ActiveWorkoutView: View {
     struct ActiveExercise: Identifiable {
         let id = UUID()
         var name: String
-        var restTime: Int = 90 // seconds, customizable per exercise
+        var restTime: Int = 90
+        var isWarmupExercise: Bool = false  // entire exercise is warmup (from template)
+        var notes: String?                   // trainer notes (e.g. "6-8 reps")
         var sets: [ActiveSet]
-        var previousSets: [String] // display strings like "35 lb × 10"
+        var previousSets: [String]
     }
 
     struct ActiveSet: Identifiable {
@@ -347,6 +362,7 @@ struct ActiveWorkoutView: View {
         var weight: String
         var reps: String
         var done: Bool = false
+        var isWarmup: Bool = false  // individual set warmup toggle
     }
 
     var body: some View {
@@ -365,10 +381,24 @@ struct ActiveWorkoutView: View {
                         .font(.caption).foregroundStyle(.secondary)
                     }.padding(.horizontal, 12)
 
-                    // Exercises
-                    ForEach(exercises.indices, id: \.self) { ei in
-                        exerciseSection(ei)
+                    // Warmup exercises
+                    let warmupIndices = exercises.indices.filter { exercises[$0].isWarmupExercise }
+                    let workingIndices = exercises.indices.filter { !exercises[$0].isWarmupExercise }
+
+                    if !warmupIndices.isEmpty {
+                        Text("WARMUP").font(.caption2.weight(.bold)).foregroundStyle(Theme.fatYellow)
+                            .padding(.horizontal, 16)
+                        ForEach(warmupIndices, id: \.self) { ei in exerciseSection(ei) }
+
+                        if !workingIndices.isEmpty {
+                            Divider().padding(.horizontal, 16).padding(.vertical, 4)
+                            Text("WORKING SETS").font(.caption2.weight(.bold)).foregroundStyle(Theme.calorieBlue)
+                                .padding(.horizontal, 16)
+                        }
                     }
+
+                    // Working exercises
+                    ForEach(workingIndices, id: \.self) { ei in exerciseSection(ei) }
 
                     // Add exercise
                     Button { showingExercisePicker = true } label: {
@@ -402,11 +432,17 @@ struct ActiveWorkoutView: View {
             }
             .onAppear {
                 startWorkoutTimer()
-                // Load template if provided
                 if let t = template {
                     workoutName = t.name
-                    for ex in t.exercises {
-                        addExercise(name: ex.name)
+                    let warmups = t.exercises.filter(\.isWarmup)
+                    let working = t.exercises.filter { !$0.isWarmup }
+                    // Add warmup exercises
+                    for ex in warmups {
+                        addExercise(name: ex.name, setCount: ex.sets, restTime: ex.restSeconds, isWarmup: true, notes: ex.notes)
+                    }
+                    // Add working exercises
+                    for ex in working {
+                        addExercise(name: ex.name, setCount: ex.sets, restTime: ex.restSeconds, notes: ex.notes)
                     }
                 }
             }
@@ -420,7 +456,13 @@ struct ActiveWorkoutView: View {
         VStack(alignment: .leading, spacing: 4) {
             // Exercise header
             HStack {
-                Text(exercises[ei].name).font(.subheadline.weight(.bold)).foregroundStyle(Theme.calorieBlue)
+                if exercises[ei].isWarmupExercise {
+                    Text("W").font(.caption2.weight(.bold)).foregroundStyle(Theme.fatYellow)
+                        .padding(.horizontal, 4).padding(.vertical, 1)
+                        .background(Theme.fatYellow.opacity(0.2), in: RoundedRectangle(cornerRadius: 3))
+                }
+                Text(exercises[ei].name).font(.subheadline.weight(.bold))
+                    .foregroundStyle(exercises[ei].isWarmupExercise ? Theme.fatYellow : Theme.calorieBlue)
                 Text(guessGroup(exercises[ei].name)).font(.caption2).foregroundStyle(.tertiary)
                 Spacer()
                 // Rest time customizer
@@ -441,6 +483,11 @@ struct ActiveWorkoutView: View {
                 }
             }
 
+            // Notes from trainer
+            if let notes = exercises[ei].notes, !notes.isEmpty {
+                Text(notes).font(.caption2).foregroundStyle(.secondary).italic()
+            }
+
             // Column headers
             HStack(spacing: 0) {
                 Text("Set").font(.caption2.weight(.bold)).foregroundStyle(.tertiary).frame(width: 28, alignment: .leading)
@@ -455,7 +502,13 @@ struct ActiveWorkoutView: View {
             ForEach(exercises[ei].sets.indices, id: \.self) { si in
                 VStack(spacing: 0) {
                     HStack(spacing: 0) {
-                        Text("\(si + 1)").font(.caption.weight(.bold)).foregroundStyle(.secondary).frame(width: 28, alignment: .leading)
+                        Button {
+                            exercises[ei].sets[si].isWarmup.toggle()
+                        } label: {
+                            Text(exercises[ei].sets[si].isWarmup || exercises[ei].isWarmupExercise ? "W" : "\(si + 1)")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(exercises[ei].sets[si].isWarmup || exercises[ei].isWarmupExercise ? Theme.fatYellow : .secondary)
+                        }.buttonStyle(.plain).frame(width: 28, alignment: .leading)
 
                         // Previous
                         Text(si < exercises[ei].previousSets.count ? exercises[ei].previousSets[si] : "—")
@@ -595,18 +648,26 @@ struct ActiveWorkoutView: View {
 
     // MARK: - Add Exercise (with prefill)
 
-    private func addExercise(name: String) {
+    private func addExercise(name: String, setCount: Int? = nil, restTime: Int = 90, isWarmup: Bool = false, notes: String? = nil) {
         let history = (try? WorkoutService.fetchExerciseHistory(name: name).prefix(10)) ?? []
         let previous = history.prefix(3).map { s in
-            "\(Int(s.weightLbs ?? 0)) lb × \(s.reps ?? 0)"
+            "\(Int(s.weightLbs ?? 0)) lb \u{00D7} \(s.reps ?? 0)"
         }
 
-        let prefilled = history.prefix(3).map { s in
-            ActiveSet(weight: s.weightLbs.map { String(Int($0)) } ?? "", reps: s.reps.map { String($0) } ?? "")
+        let count = setCount ?? (previous.isEmpty ? 3 : max(previous.count, 3))
+        var sets: [ActiveSet] = []
+        for i in 0..<count {
+            if i < history.count {
+                let s = history[i]
+                sets.append(ActiveSet(weight: s.weightLbs.map { String(Int($0)) } ?? "",
+                                      reps: s.reps.map { String($0) } ?? "", isWarmup: isWarmup))
+            } else {
+                sets.append(ActiveSet(weight: "", reps: "", isWarmup: isWarmup))
+            }
         }
-        let sets = prefilled.isEmpty ? [ActiveSet(weight: "", reps: ""), ActiveSet(weight: "", reps: ""), ActiveSet(weight: "", reps: "")] : Array(prefilled)
 
-        exercises.append(ActiveExercise(name: name, sets: sets, previousSets: Array(previous)))
+        exercises.append(ActiveExercise(name: name, restTime: restTime, isWarmupExercise: isWarmup,
+                                         notes: notes, sets: sets, previousSets: Array(previous)))
     }
 
     private func saveWorkout() {
@@ -625,17 +686,18 @@ struct ActiveWorkoutView: View {
                     let w = Double(s.weight) ?? 0
                     let r = Int(s.reps) ?? 0
                     guard r > 0 else { continue }
-                    allSets.append(WorkoutSet(workoutId: wid, exerciseName: ex.name, setOrder: si + 1, weightLbs: w, reps: r, isWarmup: false))
+                    allSets.append(WorkoutSet(workoutId: wid, exerciseName: ex.name, setOrder: si + 1,
+                                             weightLbs: w, reps: r, isWarmup: s.isWarmup || ex.isWarmupExercise))
                 }
             }
             if allSets.isEmpty {
-                // Also save sets that aren't marked done but have data
                 for ex in exercises {
                     for (si, s) in ex.sets.enumerated() {
                         let w = Double(s.weight) ?? 0
                         let r = Int(s.reps) ?? 0
                         guard r > 0 else { continue }
-                        allSets.append(WorkoutSet(workoutId: wid, exerciseName: ex.name, setOrder: si + 1, weightLbs: w, reps: r, isWarmup: false))
+                        allSets.append(WorkoutSet(workoutId: wid, exerciseName: ex.name, setOrder: si + 1,
+                                                 weightLbs: w, reps: r, isWarmup: s.isWarmup || ex.isWarmupExercise))
                     }
                 }
             }
@@ -791,8 +853,10 @@ struct CreateTemplateView: View {
     let onSave: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
-    @State private var exercises: [String] = []
+    @State private var exercises: [WorkoutTemplate.TemplateExercise] = []
     @State private var showingPicker = false
+    @State private var addingWarmup = false
+    @State private var editingIndex: Int?
 
     var body: some View {
         NavigationStack {
@@ -800,24 +864,46 @@ struct CreateTemplateView: View {
                 Section("Template Name") {
                     TextField("e.g., Push Day", text: $name)
                 }
-                Section("Exercises (\(exercises.count))") {
-                    ForEach(exercises, id: \.self) { ex in
-                        HStack {
-                            Text(ex).font(.subheadline)
-                            Spacer()
-                            Text(ExerciseDatabase.bodyPart(for: ex)).font(.caption2).foregroundStyle(.tertiary)
+
+                let warmups = exercises.filter(\.isWarmup)
+                let working = exercises.filter { !$0.isWarmup }
+
+                if !warmups.isEmpty {
+                    Section("Warmup (\(warmups.count))") {
+                        ForEach(exercises.indices.filter { exercises[$0].isWarmup }, id: \.self) { i in
+                            templateExerciseRow(i)
+                        }
+                        .onDelete { offsets in
+                            let warmupIndices = exercises.indices.filter { exercises[$0].isWarmup }
+                            for offset in offsets.sorted().reversed() { exercises.remove(at: warmupIndices[offset]) }
+                        }
+                        Button { addingWarmup = true; showingPicker = true } label: {
+                            Label("Add Warmup", systemImage: "plus.circle").foregroundStyle(Theme.fatYellow)
                         }
                     }
-                    .onDelete { exercises.remove(atOffsets: $0) }
+                }
 
-                    Button { showingPicker = true } label: {
+                Section(warmups.isEmpty ? "Exercises" : "Working Sets (\(working.count))") {
+                    ForEach(exercises.indices.filter { !exercises[$0].isWarmup }, id: \.self) { i in
+                        templateExerciseRow(i)
+                    }
+                    .onDelete { offsets in
+                        let workingIndices = exercises.indices.filter { !exercises[$0].isWarmup }
+                        for offset in offsets.sorted().reversed() { exercises.remove(at: workingIndices[offset]) }
+                    }
+                    Button { addingWarmup = false; showingPicker = true } label: {
                         Label("Add Exercise", systemImage: "plus.circle").foregroundStyle(Theme.accent)
                     }
+                    if warmups.isEmpty {
+                        Button { addingWarmup = true; showingPicker = true } label: {
+                            Label("Add Warmup Exercise", systemImage: "plus.circle").foregroundStyle(Theme.fatYellow)
+                        }
+                    }
                 }
+
                 Section {
                     Button {
-                        let templateExercises = exercises.map { WorkoutTemplate.TemplateExercise(name: $0, sets: 3) }
-                        if let json = try? JSONEncoder().encode(templateExercises), let jsonStr = String(data: json, encoding: .utf8) {
+                        if let json = try? JSONEncoder().encode(exercises), let jsonStr = String(data: json, encoding: .utf8) {
                             var t = WorkoutTemplate(name: name.isEmpty ? "Template" : name, exercisesJson: jsonStr, createdAt: ISO8601DateFormatter().string(from: Date()))
                             try? WorkoutService.saveTemplate(&t)
                         }
@@ -832,7 +918,106 @@ struct CreateTemplateView: View {
             .navigationTitle("New Template").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
             .sheet(isPresented: $showingPicker) {
-                ExercisePickerView { name in exercises.append(name) }
+                ExercisePickerView { exName in
+                    exercises.append(.init(name: exName, sets: addingWarmup ? 2 : 3, isWarmup: addingWarmup,
+                                           restSeconds: addingWarmup ? 30 : 90))
+                }
+            }
+            .sheet(item: editingBinding) { idx in
+                TemplateExerciseEditor(exercise: exercises[idx.value]) { updated in
+                    exercises[idx.value] = updated
+                }
+            }
+        }
+    }
+
+    private var editingBinding: Binding<IdentifiableInt?> {
+        Binding(get: { editingIndex.map { IdentifiableInt(value: $0) } },
+                set: { editingIndex = $0?.value })
+    }
+
+    private func templateExerciseRow(_ index: Int) -> some View {
+        let ex = exercises[index]
+        return Button { editingIndex = index } label: {
+            HStack {
+                if ex.isWarmup {
+                    Text("W").font(.caption2.weight(.bold)).foregroundStyle(Theme.fatYellow)
+                        .padding(.horizontal, 3).padding(.vertical, 1)
+                        .background(Theme.fatYellow.opacity(0.2), in: RoundedRectangle(cornerRadius: 3))
+                }
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(ex.name).font(.subheadline)
+                    HStack(spacing: 4) {
+                        Text("\(ex.sets) sets").font(.caption2).foregroundStyle(.tertiary)
+                        Text("\u{00B7}").font(.caption2).foregroundStyle(.quaternary)
+                        Text("\(ex.restSeconds/60):\(String(format: "%02d", ex.restSeconds%60)) rest")
+                            .font(.caption2).foregroundStyle(.tertiary)
+                        if let notes = ex.notes, !notes.isEmpty {
+                            Text("\u{00B7}").font(.caption2).foregroundStyle(.quaternary)
+                            Text(notes).font(.caption2).foregroundStyle(.secondary).italic()
+                        }
+                    }
+                }
+                Spacer()
+                Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.quaternary)
+            }
+        }.tint(.primary)
+    }
+}
+
+// MARK: - Template Exercise Editor
+
+private struct TemplateExerciseEditor: View {
+    let exercise: WorkoutTemplate.TemplateExercise
+    let onSave: (WorkoutTemplate.TemplateExercise) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var sets: Int
+    @State private var restSeconds: Int
+    @State private var notes: String
+    @State private var isWarmup: Bool
+
+    init(exercise: WorkoutTemplate.TemplateExercise, onSave: @escaping (WorkoutTemplate.TemplateExercise) -> Void) {
+        self.exercise = exercise
+        self.onSave = onSave
+        _sets = State(initialValue: exercise.sets)
+        _restSeconds = State(initialValue: exercise.restSeconds)
+        _notes = State(initialValue: exercise.notes ?? "")
+        _isWarmup = State(initialValue: exercise.isWarmup)
+    }
+
+    var body: some View {
+        NavigationStack {
+            Form {
+                Section {
+                    Text(exercise.name).font(.headline)
+                }
+
+                Section("Configuration") {
+                    Stepper("\(sets) sets", value: $sets, in: 1...10)
+
+                    Picker("Rest", selection: $restSeconds) {
+                        ForEach([15, 30, 45, 60, 90, 120, 150, 180], id: \.self) { sec in
+                            Text("\(sec/60):\(String(format: "%02d", sec%60))").tag(sec)
+                        }
+                    }
+
+                    Toggle("Warmup exercise", isOn: $isWarmup)
+                }
+
+                Section("Notes") {
+                    TextField("e.g., 8-12 reps, slow eccentric", text: $notes)
+                }
+            }
+            .navigationTitle("Edit Exercise").navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        onSave(.init(name: exercise.name, sets: sets, isWarmup: isWarmup,
+                                     restSeconds: restSeconds, notes: notes.isEmpty ? nil : notes))
+                        dismiss()
+                    }.fontWeight(.semibold)
+                }
             }
         }
     }
@@ -877,18 +1062,21 @@ struct ExerciseBrowserView: View {
                     }
 
                     ForEach(results.prefix(100)) { ex in
-                        VStack(alignment: .leading, spacing: 3) {
-                            HStack {
-                                Text(ex.name).font(.subheadline)
-                                Spacer()
-                                Text(ex.bodyPart).font(.caption2).foregroundStyle(.tertiary)
+                        NavigationLink {
+                            ExerciseDetailView(exerciseName: ex.name, info: ex)
+                        } label: {
+                            VStack(alignment: .leading, spacing: 3) {
+                                HStack {
+                                    Text(ex.name).font(.subheadline)
+                                    Spacer()
+                                    Text(ex.bodyPart).font(.caption2).foregroundStyle(.tertiary)
+                                }
+                                HStack(spacing: 8) {
+                                    Label(ex.equipment, systemImage: "wrench.and.screwdriver").font(.caption2).foregroundStyle(.tertiary)
+                                    Text(ex.primaryMuscles.joined(separator: ", ")).font(.caption2).foregroundStyle(.quaternary)
+                                }
                             }
-                            HStack(spacing: 8) {
-                                Label(ex.equipment, systemImage: "wrench.and.screwdriver").font(.caption2).foregroundStyle(.tertiary)
-                                Text(ex.primaryMuscles.joined(separator: ", ")).font(.caption2).foregroundStyle(.quaternary)
-                            }
-                            Text(ex.level).font(.system(size: 9)).foregroundStyle(.quaternary)
-                        }
+                        }.tint(.primary)
                     }
                 }.listStyle(.plain)
             }
@@ -913,6 +1101,76 @@ struct ExerciseBrowserView: View {
                 .padding(.horizontal, 10).padding(.vertical, 5)
                 .background(selected ? Theme.accent.opacity(0.3) : Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 6))
                 .foregroundStyle(selected ? .white : .secondary)
+        }
+    }
+}
+
+// MARK: - Exercise Detail (history + PR)
+
+struct ExerciseDetailView: View {
+    let exerciseName: String
+    let info: ExerciseDatabase.ExerciseInfo?
+    @State private var history: [WorkoutSet] = []
+    @State private var pr: Double?
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                // Exercise info
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(exerciseName).font(.title3.weight(.bold))
+                    if let info {
+                        HStack(spacing: 8) {
+                            Label(info.bodyPart, systemImage: "figure.strengthtraining.traditional").font(.caption)
+                            Label(info.equipment, systemImage: "wrench.and.screwdriver").font(.caption)
+                        }.foregroundStyle(.secondary)
+                        if !info.primaryMuscles.isEmpty {
+                            Text("Muscles: \(info.primaryMuscles.joined(separator: ", "))")
+                                .font(.caption2).foregroundStyle(.tertiary)
+                        }
+                    }
+                    if let pr {
+                        HStack(spacing: 4) {
+                            Image(systemName: "trophy.fill").font(.caption).foregroundStyle(Theme.fatYellow)
+                            Text("PR: \(Int(pr)) lb (est. 1RM)")
+                                .font(.caption.weight(.semibold)).foregroundStyle(Theme.fatYellow)
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading).card()
+
+                // History
+                if history.isEmpty {
+                    VStack(spacing: 8) {
+                        Image(systemName: "clock").font(.title2).foregroundStyle(.tertiary)
+                        Text("No history yet").font(.subheadline).foregroundStyle(.secondary)
+                    }.padding(.top, 20)
+                } else {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("History").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                        ForEach(history.prefix(20), id: \.id) { s in
+                            HStack {
+                                Text(s.isWarmup ? "W" : "\(s.setOrder)")
+                                    .font(.caption.weight(.bold).monospacedDigit())
+                                    .foregroundStyle(s.isWarmup ? Theme.fatYellow : .secondary)
+                                    .frame(width: 20)
+                                Text(s.display).font(.subheadline.monospacedDigit())
+                                Spacer()
+                                if let rm = s.estimated1RM {
+                                    Text("1RM: \(Int(rm))").font(.caption2.monospacedDigit()).foregroundStyle(.tertiary)
+                                }
+                            }
+                        }
+                    }.card()
+                }
+            }
+            .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
+        }
+        .scrollContentBackground(.hidden).background(Theme.background.ignoresSafeArea())
+        .navigationTitle("Exercise").navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            history = (try? WorkoutService.fetchExerciseHistory(name: exerciseName)) ?? []
+            pr = try? WorkoutService.fetchPR(for: exerciseName)
         }
     }
 }

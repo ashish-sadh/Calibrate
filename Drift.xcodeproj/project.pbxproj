@@ -22,6 +22,7 @@
 		29FCA567A01752328CAEFFED /* ExerciseDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0653C13FD227ACE4F774C46 /* ExerciseDatabase.swift */; };
 		2CCF5E1D415E462AE9997DD4 /* DashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C555B3F9005A7C75FAAD51 /* DashboardViewModel.swift */; };
 		2D12F440CE4CBEB4B91023D2 /* default_supplements.json in Resources */ = {isa = PBXBuildFile; fileRef = 8810FAA67FDEA57FF05E2989 /* default_supplements.json */; };
+		307CDADBBCCE0A3FD121817C /* DefaultTemplates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D4BF27A41CD9659EFF50036 /* DefaultTemplates.swift */; };
 		30F7D3160F146CA92713AD13 /* MoreTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F6D2AA89F46A33EAE39DEAC /* MoreTabView.swift */; };
 		310C2BA2AF1BB8CC25FCC976 /* DriftTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1AB1D48F6D71EC9854629ED /* DriftTests.swift */; };
 		33EC5B66DF492493925C24CA /* CGMImportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16A8D46F9E08C1960010A695 /* CGMImportService.swift */; };
@@ -138,6 +139,7 @@
 		5893DE4C163CA3CF50E74C1A /* DEXAOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DEXAOverviewView.swift; sourceTree = "<group>"; };
 		5A981E37D718D28A6679F9C8 /* FoodTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodTabView.swift; sourceTree = "<group>"; };
 		5D1E187818C8B9D2196B4B9D /* LabReportOCRTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabReportOCRTests.swift; sourceTree = "<group>"; };
+		5D4BF27A41CD9659EFF50036 /* DefaultTemplates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultTemplates.swift; sourceTree = "<group>"; };
 		5F6D2AA89F46A33EAE39DEAC /* MoreTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreTabView.swift; sourceTree = "<group>"; };
 		647116F9E4F78CE702CB870C /* RobustnessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobustnessTests.swift; sourceTree = "<group>"; };
 		664CF8C9378B65A23548F155 /* BiomarkersTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiomarkersTabView.swift; sourceTree = "<group>"; };
@@ -424,6 +426,7 @@
 				42CC554F9454FF0FC8A31F56 /* BiomarkerKnowledgeBase.swift */,
 				9F9F051926CE39DF3E0A47DA /* BodySpecPDFParser.swift */,
 				16A8D46F9E08C1960010A695 /* CGMImportService.swift */,
+				5D4BF27A41CD9659EFF50036 /* DefaultTemplates.swift */,
 				B0653C13FD227ACE4F774C46 /* ExerciseDatabase.swift */,
 				F57B8BA8C0B119CF10614F14 /* HealthKitService.swift */,
 				E342C8090873CF9612C8A63E /* LabReportOCR.swift */,
@@ -596,6 +599,7 @@
 				FE2EC2B62CB693DA85CD1544 /* DashboardView.swift in Sources */,
 				2CCF5E1D415E462AE9997DD4 /* DashboardViewModel.swift in Sources */,
 				DAD2FB33C19A3574C2643082 /* DateFormatters.swift in Sources */,
+				307CDADBBCCE0A3FD121817C /* DefaultTemplates.swift in Sources */,
 				4C31E5F32057829ABAA0840A /* DriftApp.swift in Sources */,
 				29FCA567A01752328CAEFFED /* ExerciseDatabase.swift in Sources */,
 				87B4A86A2CDE6196B42015A4 /* FavoriteFood.swift in Sources */,
@@ -773,7 +777,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Drift/Drift.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 31;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Drift/Info.plist;
@@ -859,7 +863,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Drift/Drift.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 29;
+				CURRENT_PROJECT_VERSION = 31;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Drift/Info.plist;

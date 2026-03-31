@@ -103,6 +103,28 @@ struct WorkoutTemplate: Identifiable, Codable, Sendable, FetchableRecord, Persis
     struct TemplateExercise: Codable {
         let name: String
         let sets: Int
+        var isWarmup: Bool = false
+        var restSeconds: Int = 90
+        var notes: String?
+
+        init(name: String, sets: Int, isWarmup: Bool = false, restSeconds: Int = 90, notes: String? = nil) {
+            self.name = name; self.sets = sets; self.isWarmup = isWarmup
+            self.restSeconds = restSeconds; self.notes = notes
+        }
+
+        // Backward-compatible decoding (old templates without warmup/rest)
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            name = try c.decode(String.self, forKey: .name)
+            sets = try c.decode(Int.self, forKey: .sets)
+            isWarmup = (try? c.decode(Bool.self, forKey: .isWarmup)) ?? false
+            restSeconds = (try? c.decode(Int.self, forKey: .restSeconds)) ?? 90
+            notes = try? c.decode(String.self, forKey: .notes)
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case name, sets, isWarmup, restSeconds, notes
+        }
     }
 
     var exercises: [TemplateExercise] {
