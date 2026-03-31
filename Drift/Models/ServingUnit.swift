@@ -208,6 +208,7 @@ struct FoodUnit: Hashable {
 
         // Countable items
         if name.contains("egg") && ss < 80 { return FoodUnit(label: "egg", gramsEquivalent: ss) }
+        if name.contains("meatball") && ss < 50 { return FoodUnit(label: "meatball", gramsEquivalent: ss) }
         if name.contains("roti") || name.contains("chapati") || name.contains("naan") || name.contains("paratha") {
             return FoodUnit(label: "piece", gramsEquivalent: ss)
         }

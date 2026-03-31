@@ -87,13 +87,19 @@ extension FoodEntry {
 
         // Countable items (only when serving size matches a single piece)
         if lower.contains("egg") && servingSizeG < 80 { return fmt(servings, "egg", "eggs") }
+        if lower.contains("meatball") && servingSizeG < 50 { return fmt(servings, "meatball", "meatballs") }
         if lower.contains("roti") || lower.contains("chapati") { return fmt(servings, "roti", "rotis") }
         if lower.contains("paratha") { return fmt(servings, "paratha", "parathas") }
         if lower.contains("naan") { return fmt(servings, "naan", "naans") }
         if lower.contains("dosa") { return fmt(servings, "dosa", "dosas") }
         if lower.contains("idli") { return fmt(servings, "idli", "idlis") }
+        if lower.contains("samosa") { return fmt(servings, "samosa", "samosas") }
         if lower.contains("banana") && servingSizeG < 160 { return fmt(servings, "banana", "bananas") }
         if lower.contains("apple") && servingSizeG < 250 { return fmt(servings, "apple", "apples") }
+        if lower.contains("cookie") || lower.contains("biscuit") { return fmt(servings, "piece", "pieces") }
+        if lower.contains("slice") { return fmt(servings, "slice", "slices") }
+        if lower.contains("scoop") { return fmt(servings, "scoop", "scoops") }
+        if lower.contains("patty") || lower.contains("pattie") { return fmt(servings, "patty", "patties") }
 
         return "\(Int(totalG))g"
     }
