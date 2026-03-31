@@ -1265,8 +1265,10 @@ struct CreateTemplateView: View {
                 }
             }
             .sheet(item: editingBinding) { idx in
-                TemplateExerciseEditor(exercise: exercises[idx.value]) { updated in
-                    exercises[idx.value] = updated
+                if idx.value < exercises.count {
+                    TemplateExerciseEditor(exercise: exercises[idx.value]) { updated in
+                        if idx.value < exercises.count { exercises[idx.value] = updated }
+                    }
                 }
             }
         }
