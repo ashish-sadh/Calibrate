@@ -127,6 +127,14 @@ struct WorkoutView: View {
                         Text("History").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
                         ForEach(workouts, id: \.workout.id) { s in
                             NavigationLink { WorkoutDetailView(summary: s) } label: { workoutCard(s) }.tint(.primary)
+                                .contextMenu {
+                                    if let wid = s.workout.id {
+                                        Button(role: .destructive) {
+                                            try? WorkoutService.deleteWorkout(id: wid)
+                                            loadData()
+                                        } label: { Label("Delete Workout", systemImage: "trash") }
+                                    }
+                                }
                         }
                     }
                 }
@@ -478,7 +486,11 @@ struct ActiveWorkoutView: View {
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(Theme.accent.opacity(0.15), in: RoundedRectangle(cornerRadius: 4))
                 }
-                Button { exercises.remove(at: ei) } label: {
+                Menu {
+                    Button(role: .destructive) { exercises.remove(at: ei) } label: {
+                        Label("Remove Exercise", systemImage: "trash")
+                    }
+                } label: {
                     Image(systemName: "ellipsis").font(.caption).foregroundStyle(.secondary)
                 }
             }
@@ -557,7 +569,7 @@ struct ActiveWorkoutView: View {
             Button {
                 exercises[ei].sets.append(ActiveSet(weight: "", reps: ""))
             } label: {
-                Text("+ Add Set (\(exercises[ei].restTime / 60):\(String(format: "%02d", exercises[ei].restTime % 60)))")
+                Text("+ Set")
                     .font(.caption).foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 6)
