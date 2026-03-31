@@ -1070,4 +1070,37 @@ import GRDB
     #expect(bulkTargets.proteinG > 100)
 }
 
+// MARK: - Scanned Food Integration Tests (3 tests)
+
+@Test func scannedFoodAppearsInSearch() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    var food = Food(name: "Scanned Test Product XYZ", category: "Scanned", servingSize: 100, servingUnit: "g", calories: 250, proteinG: 10, carbsG: 30, fatG: 10)
+    try db.saveScannedFood(&food)
+    let results = try db.searchFoods(query: "Scanned Test Product")
+    #expect(!results.isEmpty, "Scanned food should appear in search")
+    #expect(results[0].calories == 250)
+}
+
+@Test func scannedFoodNotDuplicated() async throws {
+    let db = try AppDatabase.empty()
+    var f1 = Food(name: "DupTest", category: "Scanned", servingSize: 50, servingUnit: "g", calories: 100)
+    var f2 = Food(name: "DupTest", category: "Scanned", servingSize: 50, servingUnit: "g", calories: 200)
+    try db.saveScannedFood(&f1)
+    try db.saveScannedFood(&f2) // Should be skipped
+    let results = try db.searchFoods(query: "DupTest")
+    #expect(results.count == 1)
+}
+
+@Test func loggedFoodTracksUsage() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    let vm = await FoodLogViewModel(database: db)
+    let eggs = try db.searchFoods(query: "egg")
+    guard let egg = eggs.first else { return }
+    await vm.logFood(egg, servings: 2, mealType: .breakfast)
+    let recent = try db.fetchRecentFoods(limit: 10)
+    #expect(recent.contains(where: { $0.name == egg.name }), "Logged food should appear in recents")
+}
+
 enum TestError: Error { case msg(String); init(_ s: String) { self = .msg(s) } }
