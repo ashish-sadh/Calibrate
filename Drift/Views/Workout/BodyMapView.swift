@@ -177,10 +177,11 @@ struct BodyMapView: View {
                     lastWorked[group] = wDate
                 }
                 // Track recent exercises per group
-                if exercisesByGroup[group] == nil { exercisesByGroup[group] = [] }
-                if !exercisesByGroup[group]!.contains(s.exerciseName) {
-                    exercisesByGroup[group]!.append(s.exerciseName)
+                var groupExercises = exercisesByGroup[group, default: []]
+                if !groupExercises.contains(s.exerciseName) {
+                    groupExercises.append(s.exerciseName)
                 }
+                exercisesByGroup[group] = groupExercises
             }
         }
 
