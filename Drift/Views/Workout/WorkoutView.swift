@@ -254,9 +254,13 @@ struct WorkoutView: View {
                         }
 
                         Button {
+                            let template = t
                             previewTemplate = nil
-                            selectedTemplate = t
-                            showingNewWorkout = true
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                WorkoutService.clearSession()
+                                selectedTemplate = template
+                                showingNewWorkout = true
+                            }
                         } label: {
                             Label("Start Workout", systemImage: "play.fill").frame(maxWidth: .infinity)
                         }
