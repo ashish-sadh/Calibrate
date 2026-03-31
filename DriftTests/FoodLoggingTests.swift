@@ -1253,4 +1253,35 @@ import GRDB
     #expect(empty.isEmpty)
 }
 
+// MARK: - Serving Size Conversion Tests (3 tests)
+
+@Test func smartUnitsEggServing() async throws {
+    let food = Food(name: "Egg (whole, boiled)", category: "Protein", servingSize: 50, servingUnit: "g", calories: 78)
+    let units = FoodUnit.smartUnits(for: food)
+    #expect(units.first?.label == "egg")
+    // 2 eggs = 2 × 50g = 100g
+    let twoEggs = 2.0 * units.first!.gramsEquivalent
+    let multiplier = twoEggs / food.servingSize
+    #expect(multiplier == 2.0)
+    #expect(food.calories * multiplier == 156)
+}
+
+@Test func smartUnitsMeatballServing() async throws {
+    let food = Food(name: "TJ's Chicken Meatballs (1 meatball)", category: "TJ", servingSize: 21, servingUnit: "g", calories: 38)
+    let units = FoodUnit.smartUnits(for: food)
+    #expect(units.first?.label == "meatball", "Got: \(units.first?.label ?? "nil")")
+    // 4 meatballs = 4 × 21g = 84g
+    let fourMeatballs = 4.0 * units.first!.gramsEquivalent
+    let multiplier = fourMeatballs / food.servingSize
+    #expect(multiplier == 4.0)
+    #expect(food.calories * multiplier == 152)
+}
+
+@Test func smartUnitsOilTbsp() async throws {
+    let food = Food(name: "Olive Oil (1 tbsp)", category: "Oils", servingSize: 14, servingUnit: "g", calories: 120)
+    let units = FoodUnit.smartUnits(for: food)
+    #expect(units.first?.label == "tbsp")
+    #expect(units.contains(where: { $0.label == "g" }))
+}
+
 enum TestError: Error { case msg(String); init(_ s: String) { self = .msg(s) } }
