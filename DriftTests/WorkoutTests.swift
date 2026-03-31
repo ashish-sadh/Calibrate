@@ -905,6 +905,48 @@ import GRDB
     WorkoutService.saveSession(.init(workoutName: "Old", startTime: oldTime, exercises: []))
     let loaded = WorkoutService.loadSession()
     #expect(loaded == nil, "Session older than 5 hours should be expired")
+    // Should also clear itself
+    #expect(WorkoutService.hasActiveSession == false, "Expired session should auto-clear")
+}
+
+@Test func sessionNotExpiredAt4Hours() async throws {
+    let recent = Date().addingTimeInterval(-4 * 3600) // 4 hours ago
+    WorkoutService.saveSession(.init(workoutName: "Recent", startTime: recent, exercises: []))
+    let loaded = WorkoutService.loadSession()
+    #expect(loaded != nil, "Session at 4 hours should still be valid")
+    WorkoutService.clearSession()
+}
+
+@Test func sessionClearAfterFinish() async throws {
+    WorkoutService.saveSession(.init(workoutName: "X", startTime: Date(), exercises: [
+        .init(name: "Bench", isWarmup: false, notes: nil, restTime: 90,
+              sets: [.init(weight: "135", reps: "10", done: true, isWarmup: false)])
+    ]))
+    #expect(WorkoutService.hasActiveSession == true)
+    WorkoutService.clearSession() // simulates Finish
+    #expect(WorkoutService.hasActiveSession == false)
+    #expect(WorkoutService.loadSession() == nil)
+}
+
+@Test func sessionRoundtripWithWarmups() async throws {
+    let session = WorkoutService.SavedSession(
+        workoutName: "Full", startTime: Date(),
+        exercises: [
+            .init(name: "Band Pull Aparts", isWarmup: true, notes: "2x10", restTime: 30,
+                  sets: [.init(weight: "", reps: "10", done: true, isWarmup: true)]),
+            .init(name: "Bench Press", isWarmup: false, notes: "5-8 reps", restTime: 150,
+                  sets: [.init(weight: "135", reps: "8", done: true, isWarmup: false),
+                         .init(weight: "155", reps: "6", done: false, isWarmup: false)])
+        ])
+    WorkoutService.saveSession(session)
+    let loaded = WorkoutService.loadSession()!
+    #expect(loaded.exercises.count == 2)
+    #expect(loaded.exercises[0].isWarmup == true)
+    #expect(loaded.exercises[0].notes == "2x10")
+    #expect(loaded.exercises[1].sets.count == 2)
+    #expect(loaded.exercises[1].sets[0].done == true)
+    #expect(loaded.exercises[1].sets[1].done == false)
+    WorkoutService.clearSession()
 }
 
 // MARK: - Exercise Search Fix Tests (3 tests)

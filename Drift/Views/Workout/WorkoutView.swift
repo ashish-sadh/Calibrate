@@ -479,6 +479,7 @@ struct ActiveWorkoutView: View {
     @State private var restTimer: Timer?
     @State private var activeRestExerciseIndex: Int? = nil
     @State private var activeRestSetIndex: Int? = nil
+    @State private var workoutEnded = false  // prevents re-persisting after finish/cancel
 
     struct ActiveExercise: Identifiable {
         let id = UUID()
@@ -552,6 +553,7 @@ struct ActiveWorkoutView: View {
                         }.buttonStyle(.borderedProminent).tint(Theme.deficit).padding(.horizontal, 12)
 
                         Button("Cancel Workout", role: .destructive) {
+                            workoutEnded = true
                             WorkoutService.clearSession(); stopTimers(); dismiss()
                         }.font(.caption).padding(.top, 4)
                     }
@@ -564,6 +566,7 @@ struct ActiveWorkoutView: View {
                     Menu {
                         Button("Minimize (keep running)") { persistSession(); dismiss() }
                         Button("Cancel Workout", role: .destructive) {
+                            workoutEnded = true
                             WorkoutService.clearSession(); stopTimers(); dismiss()
                         }
                     } label: {
@@ -603,8 +606,8 @@ struct ActiveWorkoutView: View {
             }
             .onDisappear {
                 stopTimers()
-                // Auto-persist if workout has exercises (user might have swiped down)
-                if !exercises.isEmpty { persistSession() }
+                // Only persist if workout wasn't finished or cancelled
+                if !workoutEnded && !exercises.isEmpty { persistSession() }
             }
         }
     }
@@ -875,6 +878,7 @@ struct ActiveWorkoutView: View {
     }
 
     private func saveWorkout() {
+        workoutEnded = true
         stopTimers()
         WorkoutService.clearSession()
         var workout = Workout(name: workoutName, date: DateFormatters.dateOnly.string(from: Date()),
