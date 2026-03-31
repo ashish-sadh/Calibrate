@@ -702,10 +702,10 @@ extension AppDatabase {
             if query.isEmpty {
                 return try FavoriteFood.order(Column("name")).fetchAll(db)
             }
-            return try FavoriteFood
-                .filter(Column("name").like("%\(query)%"))
-                .order(Column("name"))
-                .fetchAll(db)
+            let escaped = Self.escapeLike(query)
+            return try FavoriteFood.fetchAll(db, sql: """
+                SELECT * FROM favorite_food WHERE name LIKE ? ESCAPE '\\' ORDER BY name
+                """, arguments: ["%\(escaped)%"])
         }
     }
 }
