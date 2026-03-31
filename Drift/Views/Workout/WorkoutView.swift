@@ -936,7 +936,7 @@ struct ExercisePickerView: View {
             VStack(spacing: 0) {
                 HStack {
                     Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                    TextField("Search 873 exercises", text: $query).textFieldStyle(.plain).autocorrectionDisabled()
+                    TextField("Search exercises", text: $query).textFieldStyle(.plain).autocorrectionDisabled()
                     if !query.isEmpty {
                         Button { query = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
                     }
@@ -1241,7 +1241,7 @@ struct ExerciseBrowserView: View {
             VStack(spacing: 0) {
                 HStack {
                     Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                    TextField("Search 873 exercises", text: $query).textFieldStyle(.plain).autocorrectionDisabled()
+                    TextField("Search exercises", text: $query).textFieldStyle(.plain).autocorrectionDisabled()
                 }.padding().background(.ultraThinMaterial)
 
                 ScrollView(.horizontal, showsIndicators: false) {
