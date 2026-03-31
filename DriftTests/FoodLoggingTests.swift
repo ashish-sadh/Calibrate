@@ -1153,4 +1153,77 @@ import GRDB
     #expect(favs.contains(where: { $0.name == dal.name }), "Can favorite without logging first")
 }
 
+// MARK: - Full User Flow Tests (3 tests)
+
+@Test func fullFlowSearchLogEditDelete() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    let vm = await FoodLogViewModel(database: db)
+
+    // 1. Search
+    let results = try db.searchFoodsRanked(query: "chicken")
+    #expect(!results.isEmpty)
+
+    // 2. Log
+    let chicken = results.first!
+    await vm.logFood(chicken, servings: 1.5, mealType: .lunch)
+    #expect(await vm.todayEntries.count == 1)
+    #expect(await vm.todayNutrition.calories > 0)
+
+    // 3. Edit serving
+    let entry = await vm.todayEntries.first!
+    await vm.updateEntryServings(id: entry.id!, servings: 2.0)
+    let updated = await vm.todayEntries.first!
+    #expect(updated.servings == 2.0)
+
+    // 4. Delete
+    await vm.deleteEntry(id: updated.id!)
+    #expect(await vm.todayEntries.isEmpty)
+    #expect(await vm.todayNutrition.calories == 0)
+}
+
+@Test func fullFlowFavoriteAndFind() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+
+    // Search for food
+    let eggs = try db.searchFoods(query: "egg")
+    guard let egg = eggs.first else { return }
+
+    // Favorite it
+    try db.toggleFoodFavorite(name: egg.name, foodId: egg.id)
+
+    // Verify in favorites
+    let favs = try db.fetchFavoriteFoods()
+    #expect(favs.contains(where: { $0.name == egg.name }))
+
+    // Unfavorite
+    try db.toggleFoodFavorite(name: egg.name, foodId: egg.id)
+    let favsAfter = try db.fetchFavoriteFoods()
+    #expect(!favsAfter.contains(where: { $0.name == egg.name }))
+}
+
+@Test func fullFlowRecipeCreateLogDelete() async throws {
+    let db = try AppDatabase.empty()
+    let vm = await FoodLogViewModel(database: db)
+
+    // Create recipe
+    var recipe = FavoriteFood(name: "Test Recipe", calories: 500, proteinG: 30, carbsG: 50, fatG: 15, isRecipe: true)
+    try db.saveFavorite(&recipe)
+
+    // Find in search
+    let found = try db.searchRecipes(query: "Test Recipe")
+    #expect(found.count == 1)
+
+    // Log it
+    await vm.quickAdd(name: recipe.name, calories: recipe.calories, proteinG: recipe.proteinG,
+                      carbsG: recipe.carbsG, fatG: recipe.fatG, fiberG: recipe.fiberG, mealType: .lunch)
+    #expect(await vm.todayNutrition.calories == 500)
+
+    // Delete recipe
+    if let id = found.first?.id { try db.deleteFavorite(id: id) }
+    let after = try db.searchRecipes(query: "Test Recipe")
+    #expect(after.isEmpty)
+}
+
 enum TestError: Error { case msg(String); init(_ s: String) { self = .msg(s) } }

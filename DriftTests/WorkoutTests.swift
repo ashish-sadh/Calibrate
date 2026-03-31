@@ -165,8 +165,9 @@ import GRDB
     let url = FileManager.default.temporaryDirectory.appendingPathComponent("strong_dur.csv")
     try csv.write(to: url, atomically: true, encoding: .utf8)
     _ = try WorkoutService.importStrongCSV(url: url)
-    let w = try WorkoutService.fetchWorkouts(limit: 1)
-    #expect(w.first?.durationSeconds == 5400) // 1.5h
+    let w = try WorkoutService.fetchWorkouts(limit: 10)
+    let longWorkout = w.first(where: { $0.name == "Long" })
+    #expect(longWorkout?.durationSeconds == 5400, "1.5h = 5400s, got \(longWorkout?.durationSeconds ?? -1)")
     try FileManager.default.removeItem(at: url)
 }
 
@@ -880,6 +881,7 @@ import GRDB
 // MARK: - Session Persistence Tests (3 tests)
 
 @Test func sessionSaveAndLoad() async throws {
+    WorkoutService.clearSession()
     let session = WorkoutService.SavedSession(
         workoutName: "Test Workout", startTime: Date(),
         exercises: [.init(name: "Bench", isWarmup: false, notes: "heavy", restTime: 120,
@@ -901,6 +903,7 @@ import GRDB
 }
 
 @Test func sessionExpiresAfter5Hours() async throws {
+    WorkoutService.clearSession()
     let oldTime = Date().addingTimeInterval(-6 * 3600) // 6 hours ago
     WorkoutService.saveSession(.init(workoutName: "Old", startTime: oldTime, exercises: []))
     let loaded = WorkoutService.loadSession()
@@ -910,10 +913,12 @@ import GRDB
 }
 
 @Test func sessionNotExpiredAt4Hours() async throws {
+    WorkoutService.clearSession() // ensure clean state
     let recent = Date().addingTimeInterval(-4 * 3600) // 4 hours ago
-    WorkoutService.saveSession(.init(workoutName: "Recent", startTime: recent, exercises: []))
+    WorkoutService.saveSession(.init(workoutName: "Recent4h", startTime: recent, exercises: []))
     let loaded = WorkoutService.loadSession()
     #expect(loaded != nil, "Session at 4 hours should still be valid")
+    #expect(loaded?.workoutName == "Recent4h")
     WorkoutService.clearSession()
 }
 
