@@ -997,6 +997,21 @@ import GRDB
     #expect(results.count > 800, "Empty query should return all exercises")
 }
 
+// MARK: - Favorite Template Tests (2 tests)
+
+@Test func templateFavoriteDefault() async throws {
+    let t = WorkoutTemplate(name: "Test", exercisesJson: "[]", createdAt: "")
+    #expect(t.isFavorite == false, "Default should be not favorite")
+}
+
+@Test func templateFavoriteRoundtrip() async throws {
+    let db = try AppDatabase.empty()
+    let t = WorkoutTemplate(name: "Fav Test", exercisesJson: "[]", createdAt: "", isFavorite: true)
+    try await db.writer.write { [t] dbConn in var m = t; try m.insert(dbConn) }
+    let fetched = try await db.reader.read { try WorkoutTemplate.fetchAll($0) }
+    #expect(fetched.first?.isFavorite == true)
+}
+
 @Test func templateMixedOldNewFormat() async throws {
     // Mix of old (no warmup field) and new (with warmup field) entries
     let json = #"[{"name":"Old Ex","sets":3},{"name":"New Ex","sets":2,"isWarmup":true,"restSeconds":30,"notes":"test"}]"#
