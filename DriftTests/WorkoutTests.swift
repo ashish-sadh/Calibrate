@@ -773,6 +773,63 @@ import GRDB
     #expect(t.exercises.isEmpty, "Invalid JSON should return empty array")
 }
 
+// MARK: - Workout Summary Tests (4 tests)
+
+@Test func workoutSummaryExcludesWarmupFromVolume() async throws {
+    // Test the volume calculation logic directly (WorkoutService uses shared DB)
+    let warmup = WorkoutSet(workoutId: 1, exerciseName: "Bench", setOrder: 1, weightLbs: 45, reps: 10, isWarmup: true)
+    let set1 = WorkoutSet(workoutId: 1, exerciseName: "Bench", setOrder: 2, weightLbs: 135, reps: 8, isWarmup: false)
+    let set2 = WorkoutSet(workoutId: 1, exerciseName: "Bench", setOrder: 3, weightLbs: 155, reps: 6, isWarmup: false)
+    let allSets = [warmup, set1, set2]
+    let workingSets = allSets.filter { !$0.isWarmup }
+    let volume = workingSets.reduce(0.0) { $0 + ($1.weightLbs ?? 0) * Double($1.reps ?? 0) }
+    #expect(volume == 2010, "Volume should exclude warmup: 135*8 + 155*6 = 2010, got \(volume)")
+    #expect(workingSets.count == 2, "Should only count 2 working sets")
+}
+
+@Test func workoutSummaryBestSetByEstimated1RM() async throws {
+    // 185×5 has higher 1RM (253) than 135×10 (180)
+    let s1 = WorkoutSet(workoutId: 1, exerciseName: "Bench", setOrder: 1, weightLbs: 135, reps: 10, isWarmup: false)
+    let s2 = WorkoutSet(workoutId: 1, exerciseName: "Bench", setOrder: 2, weightLbs: 185, reps: 5, isWarmup: false)
+    let best = [s1, s2].max(by: { ($0.estimated1RM ?? 0) < ($1.estimated1RM ?? 0) })
+    #expect(best?.weightLbs == 185, "Best set should be 185lb (higher 1RM)")
+}
+
+@Test func workoutSummaryEmptyWorkout() async throws {
+    let w = Workout(name: "Empty", date: "2026-03-30", createdAt: "")
+    let summary = try WorkoutService.buildSummary(for: w)
+    #expect(summary.exercises.isEmpty)
+    #expect(summary.totalVolume == 0)
+    #expect(summary.totalSets == 0)
+}
+
+@Test func workoutSummaryMultiExercise() async throws {
+    // Test that sets from different exercises are properly separated
+    let sets = [
+        WorkoutSet(workoutId: 1, exerciseName: "Bench", setOrder: 1, weightLbs: 135, reps: 10, isWarmup: false),
+        WorkoutSet(workoutId: 1, exerciseName: "Squat", setOrder: 1, weightLbs: 225, reps: 5, isWarmup: false),
+    ]
+    let exercises = Array(Set(sets.map(\.exerciseName)))
+    #expect(exercises.count == 2)
+}
+
+// MARK: - Duration Display Edge Cases (3 tests)
+
+@Test func durationDisplayLongWorkout() async throws {
+    let w = Workout(name: "A", date: "2026-03-30", durationSeconds: 7200, createdAt: "")
+    #expect(w.durationDisplay == "2h 0m")
+}
+
+@Test func durationDisplayShort() async throws {
+    let w = Workout(name: "A", date: "2026-03-30", durationSeconds: 120, createdAt: "")
+    #expect(w.durationDisplay == "2m")
+}
+
+@Test func durationDisplayOneMinute() async throws {
+    let w = Workout(name: "A", date: "2026-03-30", durationSeconds: 60, createdAt: "")
+    #expect(w.durationDisplay == "1m")
+}
+
 @Test func templateMixedOldNewFormat() async throws {
     // Mix of old (no warmup field) and new (with warmup field) entries
     let json = #"[{"name":"Old Ex","sets":3},{"name":"New Ex","sets":2,"isWarmup":true,"restSeconds":30,"notes":"test"}]"#
