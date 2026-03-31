@@ -367,7 +367,9 @@ struct WorkoutDetailView: View {
     private var shareText: String {
         var t = "💪 \(summary.workout.name)\n📅 \(formatDate(summary.workout.date))\n"
         if !summary.workout.durationDisplay.isEmpty { t += "⏱ \(summary.workout.durationDisplay)  " }
-        t += "🏋️ \(Int(summary.totalVolume)) lb\n\n"
+        t += "🏋️ \(Int(summary.totalVolume)) lb\n"
+        if let notes = summary.workout.notes, !notes.isEmpty { t += "📝 \(notes)\n" }
+        t += "\n"
         let grouped = Dictionary(grouping: sets.filter { !$0.isWarmup }) { $0.exerciseName }
         for ex in summary.exercises {
             if let exSets = grouped[ex] {
