@@ -80,6 +80,11 @@ final class DashboardViewModel {
             Log.supplements.error("Failed to load supplements: \(error.localizedDescription)")
         }
 
+        // Sync latest weight from Apple Health
+        #if !targetEnvironment(simulator)
+        let _ = try? await HealthKitService.shared.syncWeight()
+        #endif
+
         // Load weight trend
         do {
             let entries = try database.fetchWeightEntries()
