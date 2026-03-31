@@ -444,6 +444,17 @@ extension AppDatabase {
         }
     }
 
+    /// Save a scanned/OCR food to the food table so it appears in future searches.
+    /// Skips if a food with the same name already exists.
+    func saveScannedFood(_ food: inout Food) throws {
+        try dbWriter.write { db in
+            let exists = try Food.filter(Column("name") == food.name).fetchCount(db) > 0
+            if !exists {
+                try food.insert(db)
+            }
+        }
+    }
+
     func fetchAllFoodCategories() throws -> [String] {
         try dbWriter.read { db in
             try String.fetchAll(db, sql: "SELECT DISTINCT category FROM food ORDER BY category")

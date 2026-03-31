@@ -226,7 +226,7 @@ struct BarcodeLookupView: View {
     }
 
     private func logOCRResult() {
-        let food = Food(
+        var food = Food(
             name: editName.isEmpty ? "Scanned Food" : editName,
             category: "Scanned",
             servingSize: 100, servingUnit: "g",
@@ -236,6 +236,8 @@ struct BarcodeLookupView: View {
             fatG: Double(editFat) ?? 0,
             fiberG: Double(editFiber) ?? 0
         )
+        // Save to food DB so it shows up in future searches
+        try? AppDatabase.shared.saveScannedFood(&food)
         viewModel.logFood(food, servings: servings, mealType: viewModel.autoMealType)
         dismiss()
     }
@@ -334,8 +336,11 @@ struct BarcodeLookupView: View {
     }
 
     private func logProduct(_ p: OpenFoodFactsService.Product) {
-        let food = Food(name: [p.name, p.brand].compactMap { $0 }.joined(separator: " - "), category: "Scanned",
-                        servingSize: 100, servingUnit: "g", calories: p.calories, proteinG: p.proteinG, carbsG: p.carbsG, fatG: p.fatG, fiberG: p.fiberG)
+        var food = Food(name: [p.name, p.brand].compactMap { $0 }.joined(separator: " - "), category: "Scanned",
+                        servingSize: p.servingSizeG ?? 100, servingUnit: "g",
+                        calories: p.calories, proteinG: p.proteinG, carbsG: p.carbsG, fatG: p.fatG, fiberG: p.fiberG)
+        // Save to food DB so it shows up in future searches
+        try? AppDatabase.shared.saveScannedFood(&food)
         viewModel.logFood(food, servings: servings, mealType: viewModel.autoMealType)
         dismiss()
     }
