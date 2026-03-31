@@ -124,7 +124,11 @@ struct WorkoutView: View {
                     }.padding(.top, 30)
                 } else {
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("History").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                        HStack {
+                            Text("History").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                            Spacer()
+                            Text("\(workouts.count) workouts").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
+                        }
                         ForEach(workouts, id: \.workout.id) { s in
                             NavigationLink { WorkoutDetailView(summary: s) { loadData() } } label: { workoutCard(s) }.tint(.primary)
                                 .contextMenu {
