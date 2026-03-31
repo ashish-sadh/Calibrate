@@ -416,22 +416,28 @@ extension AppDatabase {
         }
     }
 
+    /// Escape SQL LIKE special characters in user input.
+    private static func escapeLike(_ s: String) -> String {
+        s.replacingOccurrences(of: "\\", with: "\\\\")
+         .replacingOccurrences(of: "%", with: "\\%")
+         .replacingOccurrences(of: "_", with: "\\_")
+    }
+
     func searchFoods(query: String, limit: Int = 50) throws -> [Food] {
         try dbWriter.read { db in
             if query.isEmpty { return [] }
             let words = query.lowercased().split(separator: " ").map(String.init).filter { !$0.isEmpty }
             if words.isEmpty { return [] }
 
-            // Build WHERE: each word must appear somewhere in the name
-            let whereClauses = words.map { _ in "LOWER(name) LIKE ?" }.joined(separator: " AND ")
-            let patterns: [DatabaseValueConvertible] = words.map { "%\($0)%" }
-            let prefixPattern: DatabaseValueConvertible = "\(query.lowercased())%"
+            let whereClauses = words.map { _ in "LOWER(name) LIKE ? ESCAPE '\\'" }.joined(separator: " AND ")
+            let patterns: [DatabaseValueConvertible] = words.map { "%\(Self.escapeLike($0))%" }
+            let prefixPattern: DatabaseValueConvertible = "\(Self.escapeLike(query.lowercased()))%"
             let allArgs: [DatabaseValueConvertible] = patterns + [prefixPattern, limit]
 
             return try Food.fetchAll(db, sql: """
                 SELECT * FROM food WHERE \(whereClauses)
                 ORDER BY
-                    CASE WHEN LOWER(name) LIKE ? THEN 0 ELSE 1 END,
+                    CASE WHEN LOWER(name) LIKE ? ESCAPE '\\' THEN 0 ELSE 1 END,
                     name
                 LIMIT ?
                 """, arguments: StatementArguments(allArgs))
@@ -672,9 +678,9 @@ extension AppDatabase {
             let words = query.lowercased().split(separator: " ").map(String.init).filter { !$0.isEmpty }
             if words.isEmpty { return [] }
 
-            let whereClauses = words.map { _ in "LOWER(f.name) LIKE ?" }.joined(separator: " AND ")
-            let patterns: [DatabaseValueConvertible] = words.map { "%\($0)%" }
-            let prefixPattern: DatabaseValueConvertible = "\(query.lowercased())%"
+            let whereClauses = words.map { _ in "LOWER(f.name) LIKE ? ESCAPE '\\'" }.joined(separator: " AND ")
+            let patterns: [DatabaseValueConvertible] = words.map { "%\(Self.escapeLike($0))%" }
+            let prefixPattern: DatabaseValueConvertible = "\(Self.escapeLike(query.lowercased()))%"
             let allArgs: [DatabaseValueConvertible] = patterns + [prefixPattern, limit]
 
             return try Food.fetchAll(db, sql: """
@@ -683,7 +689,7 @@ extension AppDatabase {
                 WHERE \(whereClauses)
                 ORDER BY
                     COALESCE(fu.use_count, 0) DESC,
-                    CASE WHEN LOWER(f.name) LIKE ? THEN 0 ELSE 1 END,
+                    CASE WHEN LOWER(f.name) LIKE ? ESCAPE '\\' THEN 0 ELSE 1 END,
                     f.name
                 LIMIT ?
                 """, arguments: StatementArguments(allArgs))
