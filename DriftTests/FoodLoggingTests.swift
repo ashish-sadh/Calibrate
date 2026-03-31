@@ -12,6 +12,37 @@ import GRDB
     #expect(results.count >= 4, "Should find multiple dal entries: \(results.count)")
 }
 
+@Test func foodSearchTraderJoes() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    let results = try db.searchFoods(query: "TJ")
+    #expect(results.count >= 10, "Should find Trader Joe's items: \(results.count)")
+}
+
+@Test func foodSearchMeatball() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    let results = try db.searchFoods(query: "meatball")
+    #expect(!results.isEmpty, "Should find meatball entries")
+}
+
+@Test func foodSearchCostco() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    let results = try db.searchFoods(query: "kirkland")
+    #expect(results.count >= 5, "Should find Kirkland/Costco items: \(results.count)")
+}
+
+@Test func foodDatabaseExpanded() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    // Search for common letter that appears in most food names
+    let countA = try db.searchFoods(query: "a", limit: 500).count
+    let countE = try db.searchFoods(query: "e", limit: 500).count
+    let total = max(countA, countE)
+    #expect(total >= 250, "Food DB should have many items searchable, got \(total)")
+}
+
 @Test func foodSearchLimitRespected() async throws {
     let db = try AppDatabase.empty()
     try db.seedFoodsFromJSON()
