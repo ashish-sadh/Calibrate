@@ -291,5 +291,12 @@ enum Migrations {
                 t.add(column: "is_favorite", .boolean).notNull().defaults(to: false)
             }
         }
+
+        // v15: Food favorites (user-starred items)
+        migrator.registerMigration("v15_food_favorites") { db in
+            try db.alter(table: "food_usage") { t in
+                t.add(column: "is_favorite", .boolean).notNull().defaults(to: false)
+            }
+        }
     }
 }

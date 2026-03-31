@@ -91,9 +91,18 @@ struct FoodSearchView: View {
                 }
                 .padding(.horizontal, 16)
 
+                // User favorites (starred items)
+                if !viewModel.favoriteFoods.isEmpty {
+                    suggestionSection("\u{2B50} FAVORITES") {
+                        ForEach(viewModel.favoriteFoods) { entry in
+                            recentEntryRow(entry)
+                        }
+                    }
+                }
+
                 // Saved recipes
                 if !viewModel.savedRecipes.isEmpty {
-                    suggestionSection("YOUR RECIPES") {
+                    suggestionSection("RECIPES") {
                         ForEach(viewModel.savedRecipes) { recipe in
                             recipeSuggestionRow(recipe)
                         }
@@ -118,8 +127,8 @@ struct FoodSearchView: View {
                     }
                 }
 
-                // First-time empty state: show popular starter foods
-                if viewModel.recentFoods.isEmpty && viewModel.frequentFoods.isEmpty && viewModel.savedRecipes.isEmpty {
+                // First-time empty state
+                if viewModel.recentFoods.isEmpty && viewModel.frequentFoods.isEmpty && viewModel.savedRecipes.isEmpty && viewModel.favoriteFoods.isEmpty {
                     suggestionSection("POPULAR FOODS") {
                         let starters = popularFoods()
                         ForEach(starters) { food in
@@ -165,6 +174,15 @@ struct FoodSearchView: View {
             }.buttonStyle(.plain).padding(.leading, 6)
         }
         .padding(.horizontal, 16).padding(.vertical, 4)
+        .contextMenu {
+            Button {
+                try? AppDatabase.shared.toggleFoodFavorite(name: food.name, foodId: food.id)
+                viewModel.loadSuggestions()
+            } label: {
+                let isFav = (try? AppDatabase.shared.isFoodFavorite(name: food.name)) ?? false
+                Label(isFav ? "Unfavorite" : "Favorite", systemImage: isFav ? "star.slash" : "star")
+            }
+        }
     }
 
     private func recipeSuggestionRow(_ recipe: FavoriteFood) -> some View {
@@ -260,6 +278,15 @@ struct FoodSearchView: View {
             }.buttonStyle(.plain).padding(.leading, 6)
         }
         .padding(.horizontal, 16).padding(.vertical, 4)
+        .contextMenu {
+            Button {
+                try? AppDatabase.shared.toggleFoodFavorite(name: entry.name, foodId: entry.foodId)
+                viewModel.loadSuggestions()
+            } label: {
+                let isFav = (try? AppDatabase.shared.isFoodFavorite(name: entry.name)) ?? false
+                Label(isFav ? "Unfavorite" : "Favorite", systemImage: isFav ? "star.slash" : "star")
+            }
+        }
     }
 
     private func refreshSearch() {
@@ -458,6 +485,15 @@ struct FoodSearchView: View {
             .navigationTitle("Log Food").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { selectedFood = nil } }
+                ToolbarItem(placement: .principal) {
+                    Button {
+                        try? AppDatabase.shared.toggleFoodFavorite(name: food.name, foodId: food.id)
+                    } label: {
+                        let isFav = (try? AppDatabase.shared.isFoodFavorite(name: food.name)) ?? false
+                        Image(systemName: isFav ? "star.fill" : "star")
+                            .foregroundStyle(isFav ? Theme.fatYellow : .secondary)
+                    }
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Log") {
                         viewModel.logFood(food, servings: multiplier, mealType: viewModel.autoMealType)

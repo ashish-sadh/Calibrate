@@ -691,6 +691,64 @@ extension AppDatabase {
         }
     }
 
+    /// Toggle favorite status for a food item.
+    func toggleFoodFavorite(name: String, foodId: Int64?) throws {
+        try dbWriter.write { db in
+            let now = ISO8601DateFormatter().string(from: Date())
+            // Ensure food_usage row exists
+            try db.execute(sql: """
+                INSERT INTO food_usage (food_name, food_id, use_count, last_used, last_servings, is_favorite)
+                VALUES (?, ?, 0, ?, 1, 1)
+                ON CONFLICT(food_name) DO UPDATE SET is_favorite = NOT is_favorite
+                """, arguments: [name, foodId, now])
+        }
+    }
+
+    /// Fetch user-favorited food items.
+    func fetchFavoriteFoods() throws -> [Food] {
+        try dbWriter.read { db in
+            try Food.fetchAll(db, sql: """
+                SELECT f.* FROM food f
+                INNER JOIN food_usage fu ON f.id = fu.food_id
+                WHERE fu.is_favorite = 1
+                ORDER BY f.name
+                """)
+        }
+    }
+
+    /// Fetch user-favorited entry names (includes non-DB items like recipes/manual).
+    func fetchFavoriteEntryNames() throws -> [RecentEntry] {
+        try dbWriter.read { db in
+            let rows = try Row.fetchAll(db, sql: """
+                SELECT fu.food_name, fu.food_id, fu.last_servings, fu.use_count,
+                       COALESCE(f.calories, ff.calories, 0) as calories,
+                       COALESCE(f.protein_g, ff.protein_g, 0) as protein_g,
+                       COALESCE(f.carbs_g, ff.carbs_g, 0) as carbs_g,
+                       COALESCE(f.fat_g, ff.fat_g, 0) as fat_g,
+                       COALESCE(f.serving_size, 0) as serving_size
+                FROM food_usage fu
+                LEFT JOIN food f ON f.id = fu.food_id
+                LEFT JOIN favorite_food ff ON LOWER(ff.name) = LOWER(fu.food_name)
+                WHERE fu.is_favorite = 1
+                ORDER BY fu.food_name
+                """)
+            return rows.map { row in
+                RecentEntry(name: row["food_name"], foodId: row["food_id"],
+                            calories: row["calories"], proteinG: row["protein_g"],
+                            carbsG: row["carbs_g"], fatG: row["fat_g"],
+                            servingSize: row["serving_size"], lastServings: row["last_servings"])
+            }
+        }
+    }
+
+    /// Check if a food is favorited.
+    func isFoodFavorite(name: String) throws -> Bool {
+        try dbWriter.read { db in
+            let val = try Bool.fetchOne(db, sql: "SELECT is_favorite FROM food_usage WHERE food_name = ?", arguments: [name])
+            return val ?? false
+        }
+    }
+
     /// Search foods ranked by usage frequency, then prefix match, then alphabetical.
     func searchFoodsRanked(query: String, limit: Int = 50) throws -> [Food] {
         try dbWriter.read { db in

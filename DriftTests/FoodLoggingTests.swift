@@ -1103,4 +1103,54 @@ import GRDB
     #expect(recent.contains(where: { $0.name == egg.name }), "Logged food should appear in recents")
 }
 
+// MARK: - Food Favorites Tests (4 tests)
+
+@Test func toggleFoodFavorite() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    let egg = try db.searchFoods(query: "egg").first!
+    // Initially not favorite
+    #expect(try db.isFoodFavorite(name: egg.name) == false)
+    // Toggle on
+    try db.toggleFoodFavorite(name: egg.name, foodId: egg.id)
+    #expect(try db.isFoodFavorite(name: egg.name) == true)
+    // Toggle off
+    try db.toggleFoodFavorite(name: egg.name, foodId: egg.id)
+    #expect(try db.isFoodFavorite(name: egg.name) == false)
+}
+
+@Test func fetchFavoriteFoods() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    let egg = try db.searchFoods(query: "egg").first!
+    try db.toggleFoodFavorite(name: egg.name, foodId: egg.id)
+    let favs = try db.fetchFavoriteFoods()
+    #expect(favs.contains(where: { $0.name == egg.name }))
+}
+
+@Test func favoritesAndRecentsSeparate() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    let rice = try db.searchFoods(query: "rice").first!
+    // Log rice (creates recent)
+    try db.trackFoodUsage(name: rice.name, foodId: rice.id, servings: 1)
+    // Favorite rice
+    try db.toggleFoodFavorite(name: rice.name, foodId: rice.id)
+    // Should appear in both
+    let recents = try db.fetchRecentFoods()
+    let favs = try db.fetchFavoriteFoods()
+    #expect(recents.contains(where: { $0.name == rice.name }))
+    #expect(favs.contains(where: { $0.name == rice.name }))
+}
+
+@Test func favoriteWithoutLogging() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    let dal = try db.searchFoods(query: "dal").first!
+    // Favorite without logging
+    try db.toggleFoodFavorite(name: dal.name, foodId: dal.id)
+    let favs = try db.fetchFavoriteFoods()
+    #expect(favs.contains(where: { $0.name == dal.name }), "Can favorite without logging first")
+}
+
 enum TestError: Error { case msg(String); init(_ s: String) { self = .msg(s) } }

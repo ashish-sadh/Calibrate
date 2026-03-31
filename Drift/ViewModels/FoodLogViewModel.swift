@@ -16,6 +16,7 @@ final class FoodLogViewModel {
     var recentEntries: [RecentEntry] = []
     var frequentFoods: [Food] = []
     var savedRecipes: [FavoriteFood] = []
+    var favoriteFoods: [RecentEntry] = []
 
     var dateString: String {
         DateFormatters.dateOnly.string(from: selectedDate)
@@ -77,6 +78,7 @@ final class FoodLogViewModel {
         recentEntries = (try? database.fetchRecentEntryNames()) ?? []
         frequentFoods = (try? database.fetchFrequentFoods()) ?? []
         savedRecipes = (try? database.fetchFavorites()) ?? []
+        favoriteFoods = (try? database.fetchFavoriteEntryNames()) ?? []
     }
 
     func logFood(_ food: Food, servings: Double, mealType: MealType) {
