@@ -775,6 +775,10 @@ struct ActiveWorkoutView: View {
         workoutTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [self] _ in
             Task { @MainActor in
                 elapsedSeconds = Int(Date().timeIntervalSince(startTime))
+                // Auto-save session every 30 seconds
+                if elapsedSeconds % 30 == 0 && !exercises.isEmpty {
+                    persistSession()
+                }
             }
         }
     }
