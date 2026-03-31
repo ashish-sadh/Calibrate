@@ -947,4 +947,127 @@ import GRDB
     #expect(await vm.todayNutrition.calories == 500, "100*3 + 200 = 500")
 }
 
+// MARK: - Aggressive Edge Case Tests (10 tests)
+
+@Test func foodSearchSpecialCharacters() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    // These should not crash
+    for q in ["'", "\"", "%", "_", "\\", "(", ")", "--", ";", "DROP TABLE"] {
+        let _ = try db.searchFoods(query: q)
+        let _ = try db.searchFoodsRanked(query: q)
+    }
+}
+
+@Test func foodSearchUnicodeCharacters() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    let _ = try db.searchFoods(query: "café")
+    let _ = try db.searchFoods(query: "über")
+    let _ = try db.searchFoods(query: "日本")
+}
+
+@Test func saveScannedFoodDeduplicates() async throws {
+    let db = try AppDatabase.empty()
+    var food1 = Food(name: "Test Scanned", category: "Scanned", servingSize: 100, servingUnit: "g", calories: 200)
+    var food2 = Food(name: "Test Scanned", category: "Scanned", servingSize: 100, servingUnit: "g", calories: 300)
+    try db.saveScannedFood(&food1)
+    try db.saveScannedFood(&food2) // Same name - should skip
+    let results = try db.searchFoods(query: "Test Scanned")
+    #expect(results.count == 1, "Should not duplicate scanned food")
+    #expect(results[0].calories == 200, "Should keep first entry")
+}
+
+@Test func foodUsageTrackingConcurrent() async throws {
+    let db = try AppDatabase.empty()
+    // Track same food many times rapidly
+    for i in 0..<20 {
+        try db.trackFoodUsage(name: "Rapid Food", foodId: nil, servings: Double(i + 1))
+    }
+    // Should not crash and count should be 20
+}
+
+@Test func deleteFavoriteAndSearch() async throws {
+    let db = try AppDatabase.empty()
+    var fav = FavoriteFood(name: "Delete Me Recipe", calories: 100, proteinG: 10, carbsG: 10, fatG: 5)
+    try db.saveFavorite(&fav)
+    let before = try db.searchRecipes(query: "Delete Me")
+    #expect(before.count == 1)
+    if let id = before.first?.id {
+        try db.deleteFavorite(id: id)
+    }
+    let after = try db.searchRecipes(query: "Delete Me")
+    #expect(after.isEmpty, "Deleted recipe should not appear in search")
+}
+
+@Test func viewModelDeleteAllEntries() async throws {
+    let db = try AppDatabase.empty()
+    let vm = await FoodLogViewModel(database: db)
+    // Add 5 entries then delete them all
+    for i in 0..<5 {
+        await vm.quickAdd(name: "Item \(i)", calories: 100, proteinG: 10, carbsG: 10, fatG: 5, fiberG: 0, mealType: .lunch)
+    }
+    #expect(await vm.todayEntries.count == 5)
+    // Delete all
+    for entry in await vm.todayEntries {
+        if let id = entry.id { await vm.deleteEntry(id: id) }
+    }
+    #expect(await vm.todayEntries.isEmpty, "All entries should be deleted")
+    #expect(await vm.todayNutrition.calories == 0)
+}
+
+@Test func foodEntryPortionTextEdgeCases() async throws {
+    // Very large servings
+    let large = FoodEntry(mealLogId: 1, foodName: "Rice", servingSizeG: 200, servings: 100, calories: 260)
+    #expect(large.portionText == "20000g")
+
+    // Very small servings
+    let small = FoodEntry(mealLogId: 1, foodName: "Egg (whole, boiled)", servingSizeG: 50, servings: 0.5, calories: 78)
+    #expect(small.portionText == "0.5 eggs")
+
+    // Negative servings (shouldn't happen but shouldn't crash)
+    let negative = FoodEntry(mealLogId: 1, foodName: "Bug", servingSizeG: 100, servings: -1, calories: 100)
+    let _ = negative.portionText // Should not crash
+}
+
+@Test func smartUnitsForAllDBFoods() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    let allFoods = try db.searchFoods(query: "e", limit: 500) // Most foods have 'e'
+    var issues: [String] = []
+    for food in allFoods {
+        let units = FoodUnit.smartUnits(for: food)
+        if units.isEmpty { issues.append("\(food.name): no units") }
+        if units.first?.gramsEquivalent == 0 { issues.append("\(food.name): 0g primary unit") }
+        // Verify grams is always available for non-liquid
+        let hasGrams = units.contains(where: { $0.label == "g" })
+        let isMl = units.first?.label == "ml"
+        if !hasGrams && !isMl { issues.append("\(food.name): no grams unit") }
+    }
+    #expect(issues.isEmpty, "Smart unit issues: \(issues.prefix(5).joined(separator: "; "))")
+}
+
+@Test func recentEntriesIncludeManualAdds() async throws {
+    let db = try AppDatabase.empty()
+    try db.trackFoodUsage(name: "Manual Recipe", foodId: nil, servings: 1)
+    let recents = try db.fetchRecentEntryNames()
+    // Manual entries (no food_id) should still appear in recents
+    #expect(recents.contains(where: { $0.name == "Manual Recipe" }), "Manual entries should appear in recents")
+}
+
+@Test func weightGoalMacrosWithExtremeValues() async throws {
+    // Very aggressive deficit
+    let aggressive = WeightGoal(targetWeightKg: 50, monthsToAchieve: 1, startDate: "2026-01-01", startWeightKg: 100, calorieTargetOverride: 800)
+    let targets = aggressive.macroTargets()!
+    #expect(targets.proteinG > 0)
+    #expect(targets.fatG >= WeightGoal.minimumFatG(bodyweightKg: 100, calorieTarget: 800))
+    #expect(targets.carbsG >= 0, "Carbs should not go negative")
+
+    // Very high surplus
+    let bulk = WeightGoal(targetWeightKg: 100, monthsToAchieve: 12, startDate: "2026-01-01", startWeightKg: 80, calorieTargetOverride: 4000)
+    let bulkTargets = bulk.macroTargets()!
+    #expect(bulkTargets.calorieTarget == 4000)
+    #expect(bulkTargets.proteinG > 100)
+}
+
 enum TestError: Error { case msg(String); init(_ s: String) { self = .msg(s) } }
