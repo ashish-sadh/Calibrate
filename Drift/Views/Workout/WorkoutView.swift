@@ -585,10 +585,12 @@ struct ActiveWorkoutView: View {
                 }
             }
 
-            // Notes from trainer
-            if let notes = exercises[ei].notes, !notes.isEmpty {
-                Text(notes).font(.caption2).foregroundStyle(.secondary).italic()
-            }
+            // Notes (editable - pre-filled from template)
+            TextField("Notes...", text: Binding(
+                get: { exercises[ei].notes ?? "" },
+                set: { exercises[ei].notes = $0.isEmpty ? nil : $0 }
+            ))
+            .font(.caption2).foregroundStyle(.secondary).italic()
 
             // Column headers
             HStack(spacing: 0) {
