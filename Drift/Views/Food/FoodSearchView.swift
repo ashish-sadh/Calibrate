@@ -384,6 +384,15 @@ struct FoodSearchView: View {
                                 Label("Favorite", systemImage: "star")
                             }.tint(Theme.fatYellow)
                         }
+                        .swipeActions(edge: .trailing) {
+                            // Only allow deleting user-added foods (Scanned category)
+                            if food.category == "Scanned", let fid = food.id {
+                                Button(role: .destructive) {
+                                    try? AppDatabase.shared.writer.write { db in _ = try Food.deleteOne(db, id: fid) }
+                                    refreshSearch()
+                                } label: { Label("Delete", systemImage: "trash") }
+                            }
+                        }
                     }
                 }
             }
