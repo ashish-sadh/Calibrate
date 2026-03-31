@@ -340,6 +340,9 @@ struct WorkoutDetailView: View {
                         Label("\(Int(summary.totalVolume)) lb", systemImage: "scalemass")
                         Label("\(summary.totalSets) sets", systemImage: "number")
                     }.font(.caption).foregroundStyle(.secondary)
+                    if let notes = summary.workout.notes, !notes.isEmpty {
+                        Text(notes).font(.caption).foregroundStyle(.tertiary).italic()
+                    }
                 }.frame(maxWidth: .infinity, alignment: .leading).card()
 
                 let grouped = Dictionary(grouping: sets) { $0.exerciseName }
