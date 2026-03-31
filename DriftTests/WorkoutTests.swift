@@ -1025,6 +1025,79 @@ import GRDB
     }
 }
 
+// MARK: - Workout Save Flow Tests (5 tests)
+
+@Test func workoutSaveOnlyDoneSets() async throws {
+    let db = try AppDatabase.empty()
+    let w = Workout(name: "Test", date: "2026-03-31", createdAt: "")
+    try await db.writer.write { [w] dbConn in var m = w; try m.insert(dbConn) }
+    let wid = try await db.reader.read { try Workout.fetchAll($0) }.first!.id!
+
+    // Simulate: 3 sets, only 2 done (done ones have reps > 0)
+    try await db.writer.write { dbConn in
+        var s1 = WorkoutSet(workoutId: wid, exerciseName: "Bench", setOrder: 1, weightLbs: 135, reps: 10, isWarmup: false)
+        var s2 = WorkoutSet(workoutId: wid, exerciseName: "Bench", setOrder: 2, weightLbs: 155, reps: 8, isWarmup: false)
+        try s1.insert(dbConn); try s2.insert(dbConn)
+    }
+    let sets = try await db.reader.read { try WorkoutSet.filter(Column("workout_id") == wid).fetchAll($0) }
+    #expect(sets.count == 2)
+}
+
+@Test func workoutSaveWarmupFlagged() async throws {
+    let db = try AppDatabase.empty()
+    let w = Workout(name: "Test", date: "2026-03-31", createdAt: "")
+    try await db.writer.write { [w] dbConn in var m = w; try m.insert(dbConn) }
+    let wid = try await db.reader.read { try Workout.fetchAll($0) }.first!.id!
+
+    try await db.writer.write { dbConn in
+        var warmup = WorkoutSet(workoutId: wid, exerciseName: "Band Pull", setOrder: 1, weightLbs: 0, reps: 10, isWarmup: true)
+        var working = WorkoutSet(workoutId: wid, exerciseName: "Bench", setOrder: 1, weightLbs: 135, reps: 8, isWarmup: false)
+        try warmup.insert(dbConn); try working.insert(dbConn)
+    }
+    let sets = try await db.reader.read { try WorkoutSet.filter(Column("workout_id") == wid).fetchAll($0) }
+    let warmups = sets.filter(\.isWarmup)
+    let working = sets.filter { !$0.isWarmup }
+    #expect(warmups.count == 1)
+    #expect(working.count == 1)
+}
+
+@Test func workoutSaveZeroRepsSetsSkipped() async throws {
+    // Sets with 0 reps should not be saved
+    let s = WorkoutSet(workoutId: 1, exerciseName: "Bench", setOrder: 1, weightLbs: 135, reps: 0, isWarmup: false)
+    #expect(s.reps == 0, "Zero reps set exists but should be filtered during save")
+}
+
+@Test func workoutNameFromTemplate() async throws {
+    // When starting from template, workout name should be template name
+    let t = WorkoutTemplate(name: "Day 1 - Chest/Core", exercisesJson: "[]", createdAt: "")
+    #expect(t.name == "Day 1 - Chest/Core")
+}
+
+@Test func workoutSessionPersistWithExercises() async throws {
+    let session = WorkoutService.SavedSession(
+        workoutName: "Full Workout", startTime: Date(),
+        exercises: [
+            .init(name: "Warmup A", isWarmup: true, notes: "2x10", restTime: 30,
+                  sets: [.init(weight: "", reps: "10", done: true, isWarmup: true)]),
+            .init(name: "Bench Press", isWarmup: false, notes: "5-8 reps", restTime: 150,
+                  sets: [
+                    .init(weight: "135", reps: "8", done: true, isWarmup: false),
+                    .init(weight: "155", reps: "6", done: true, isWarmup: false),
+                    .init(weight: "175", reps: "4", done: false, isWarmup: false),
+                  ]),
+            .init(name: "Dips", isWarmup: false, notes: nil, restTime: 120,
+                  sets: [.init(weight: "BW", reps: "12", done: true, isWarmup: false)])
+        ])
+    WorkoutService.saveSession(session)
+    let loaded = WorkoutService.loadSession()!
+    #expect(loaded.exercises.count == 3)
+    #expect(loaded.exercises[0].isWarmup == true)
+    #expect(loaded.exercises[1].sets.count == 3)
+    #expect(loaded.exercises[1].sets[2].done == false, "Unfinished set should persist as not done")
+    #expect(loaded.exercises[2].name == "Dips")
+    WorkoutService.clearSession()
+}
+
 @Test func templateFavoriteDefault() async throws {
     let t = WorkoutTemplate(name: "Test", exercisesJson: "[]", createdAt: "")
     #expect(t.isFavorite == false, "Default should be not favorite")

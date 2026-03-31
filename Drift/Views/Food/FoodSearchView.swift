@@ -267,7 +267,7 @@ struct FoodSearchView: View {
         amount = "1"
         selectedUnitIndex = 0
         // Pre-select grams unit with food's serving size as default amount
-        if units.first?.label == "g" {
+        if units.first?.label == "g" && food.servingSize > 0 {
             amount = String(format: "%.0f", food.servingSize)
         }
         selectedFood = food
