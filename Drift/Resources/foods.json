@@ -3531,50 +3531,6 @@
     "fiber_g": 0
   },
   {
-    "name": "Shrimp (cooked)",
-    "category": "US Staples",
-    "serving_size": 100,
-    "serving_unit": "g",
-    "calories": 99,
-    "protein_g": 24,
-    "carbs_g": 0,
-    "fat_g": 0,
-    "fiber_g": 0
-  },
-  {
-    "name": "Brown Rice (cooked)",
-    "category": "US Staples",
-    "serving_size": 200,
-    "serving_unit": "g",
-    "calories": 248,
-    "protein_g": 5,
-    "carbs_g": 52,
-    "fat_g": 2,
-    "fiber_g": 3
-  },
-  {
-    "name": "Quinoa (cooked)",
-    "category": "US Staples",
-    "serving_size": 185,
-    "serving_unit": "g",
-    "calories": 222,
-    "protein_g": 8,
-    "carbs_g": 39,
-    "fat_g": 4,
-    "fiber_g": 5
-  },
-  {
-    "name": "Whole Wheat Bread (1 slice)",
-    "category": "US Staples",
-    "serving_size": 32,
-    "serving_unit": "g",
-    "calories": 80,
-    "protein_g": 4,
-    "carbs_g": 14,
-    "fat_g": 1,
-    "fiber_g": 2
-  },
-  {
     "name": "Peanut Butter (2 tbsp)",
     "category": "US Staples",
     "serving_size": 32,
@@ -3707,7 +3663,7 @@
     "fiber_g": 8
   },
   {
-    "name": "100% Whey Protein Powder Drink Mix",
+    "name": "Whey Protein Drink Mix",
     "category": "Protein",
     "serving_size": 31,
     "serving_unit": "scoop",
@@ -3883,7 +3839,7 @@
     "fiber_g": 1
   },
   {
-    "name": "Cereals Quaker Instant Oatmeal Apples and Cinnamon Prepared With Boiling Water",
+    "name": "Quaker Instant Oatmeal Apple Cinnamon (prepared)",
     "category": "Grains",
     "serving_size": 149,
     "serving_unit": "g",
@@ -3894,7 +3850,7 @@
     "fiber_g": 3
   },
   {
-    "name": "Cereals Quaker Instant Oatmeal Cinnamon-Spice Dry",
+    "name": "Quaker Instant Oatmeal Cinnamon Spice",
     "category": "Grains",
     "serving_size": 46,
     "serving_unit": "packet",
@@ -4257,7 +4213,7 @@
     "fiber_g": 0
   },
   {
-    "name": "Fully Cooked Chicken Breast Bites By Fresh Additions",
+    "name": "Fresh Additions Chicken Breast Bites",
     "category": "Protein",
     "serving_size": 91,
     "serving_unit": "g",
@@ -4290,7 +4246,7 @@
     "fiber_g": 0
   },
   {
-    "name": "Gold Standard 100% Whey Protein Vanilla Ice Cream Flavour",
+    "name": "Gold Standard Whey Vanilla",
     "category": "Protein",
     "serving_size": 31,
     "serving_unit": "scoop",
@@ -4301,7 +4257,7 @@
     "fiber_g": 0
   },
   {
-    "name": "Gold Standard Chocolate 100% Whey Protein",
+    "name": "Gold Standard Whey Chocolate",
     "category": "Protein",
     "serving_size": 32,
     "serving_unit": "scoop",
@@ -4532,17 +4488,6 @@
     "fiber_g": 1
   },
   {
-    "name": "MCT Oil (Medium Chain Triglyceride)",
-    "category": "Grocery",
-    "serving_size": 14,
-    "serving_unit": "tbsp",
-    "calories": 116,
-    "protein_g": 0,
-    "carbs_g": 0,
-    "fat_g": 14,
-    "fiber_g": 0
-  },
-  {
     "name": "Malabar Mixture",
     "category": "Grocery",
     "serving_size": 27,
@@ -4565,7 +4510,7 @@
     "fiber_g": 0
   },
   {
-    "name": "Mediterranean Crunch Chopped Kit With Basil Balsamic Vinaigrette",
+    "name": "Mediterranean Crunch Chopped Salad Kit",
     "category": "Salad Kits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -4642,7 +4587,7 @@
     "fiber_g": 18
   },
   {
-    "name": "Natural Psyllium Husk Daily Fiber Supplement",
+    "name": "Psyllium Husk Fiber",
     "category": "Grocery",
     "serving_size": 20,
     "serving_unit": "capsule",
@@ -4730,17 +4675,6 @@
     "fiber_g": 13
   },
   {
-    "name": "Organic Large Grade A Eggs By Kirkland Signature",
-    "category": "Protein",
-    "serving_size": 50,
-    "serving_unit": "g",
-    "calories": 70,
-    "protein_g": 6,
-    "carbs_g": 0,
-    "fat_g": 5,
-    "fiber_g": 0
-  },
-  {
     "name": "Organic Large Grade a Eggs",
     "category": "Protein",
     "serving_size": 50,
@@ -4785,7 +4719,7 @@
     "fiber_g": 0
   },
   {
-    "name": "Palak Paneer Spinach & Paneer Cheese Seasoned With a Bit of Curry and Chilli",
+    "name": "Palak Paneer (ready-to-eat)",
     "category": "Indian Food",
     "serving_size": 284,
     "serving_unit": "g",
@@ -4917,7 +4851,7 @@
     "fiber_g": 5
   },
   {
-    "name": "Quaker Instant Oatmeal Maple & Brown Sugar 1.69 Oz",
+    "name": "Quaker Instant Oatmeal Maple Brown Sugar",
     "category": "Grains",
     "serving_size": 43,
     "serving_unit": "g",
@@ -5049,7 +4983,7 @@
     "fiber_g": 1
   },
   {
-    "name": "Santa Fe Style With Chicken Bowls",
+    "name": "Santa Fe Chicken Bowl",
     "category": "Ready Meals",
     "serving_size": 177,
     "serving_unit": "g",
@@ -5060,7 +4994,7 @@
     "fiber_g": 1
   },
   {
-    "name": "Santa Fe-Style Chicken Grain Bowl Brown Rice, Quinoa and Seasoned Chicken Breast With Tomatoes, Black Beans, Corn, Onion & Jalapeno Peppers in a Tomato Adobo Sauce, Santa Fe-Style Chicken",
+    "name": "Santa Fe Chicken Grain Bowl",
     "category": "Ready Meals",
     "serving_size": 100,
     "serving_unit": "g",
@@ -5291,18 +5225,7 @@
     "fiber_g": 0
   },
   {
-    "name": "Whey Protein Powder, 24 Grams Of Protein Per Scoop",
-    "category": "Protein",
-    "serving_size": 31,
-    "serving_unit": "scoop",
-    "calories": 116,
-    "protein_g": 24,
-    "carbs_g": 2,
-    "fat_g": 1,
-    "fiber_g": 0
-  },
-  {
-    "name": "Whey Protein Powder, 24 Grams of Protein Per Scoop",
+    "name": "Whey Protein (24g per scoop)",
     "category": "Protein",
     "serving_size": 31,
     "serving_unit": "scoop",
@@ -5324,7 +5247,7 @@
     "fiber_g": 1
   },
   {
-    "name": "Whole Food Dietary Supplement",
+    "name": "Whole Food Supplement",
     "category": "Grocery",
     "serving_size": 12,
     "serving_unit": "g",
