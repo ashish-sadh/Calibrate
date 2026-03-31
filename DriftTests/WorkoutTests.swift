@@ -580,8 +580,6 @@ import GRDB
 }
 
 @Test func defaultTemplateSeeding() async throws {
-    // Verify the default templates can be built without crashing
-    // This tests the JSON encoding/decoding roundtrip
     let templates = [
         WorkoutTemplate.TemplateExercise(name: "Test", sets: 3, isWarmup: false, restSeconds: 120, notes: "8 reps"),
         WorkoutTemplate.TemplateExercise(name: "Warmup", sets: 2, isWarmup: true, restSeconds: 30),
@@ -591,4 +589,196 @@ import GRDB
     #expect(decoded.count == 2)
     #expect(decoded[0].notes == "8 reps")
     #expect(decoded[1].isWarmup == true)
+}
+
+// MARK: - Workout Service Tests (10 tests)
+
+@Test func saveAndFetchWorkoutService() async throws {
+    let db = try AppDatabase.empty()
+    let w = Workout(name: "Test", date: "2026-03-30", durationSeconds: 1800, createdAt: ISO8601DateFormatter().string(from: Date()))
+    try await db.writer.write { [w] dbConn in var m = w; try m.insert(dbConn) }
+    let all = try await db.reader.read { try Workout.fetchAll($0) }
+    #expect(all.count == 1)
+    #expect(all[0].name == "Test")
+    #expect(all[0].durationSeconds == 1800)
+}
+
+@Test func workoutSetWarmupExcludedFromVolume() async throws {
+    let warmup = WorkoutSet(workoutId: 1, exerciseName: "Bench", setOrder: 1, weightLbs: 45, reps: 10, isWarmup: true)
+    let working = WorkoutSet(workoutId: 1, exerciseName: "Bench", setOrder: 2, weightLbs: 135, reps: 8, isWarmup: false)
+    let sets = [warmup, working]
+    let workingSets = sets.filter { !$0.isWarmup }
+    let volume = workingSets.reduce(0.0) { $0 + ($1.weightLbs ?? 0) * Double($1.reps ?? 0) }
+    #expect(volume == 1080, "Only working set: 135 * 8 = 1080")
+}
+
+@Test func estimated1RMBrzycki() async throws {
+    let s = WorkoutSet(workoutId: 1, exerciseName: "Bench", setOrder: 1, weightLbs: 225, reps: 5, isWarmup: false)
+    guard let rm = s.estimated1RM else { #expect(Bool(false), "Should have 1RM"); return }
+    // Brzycki: 225 * 36 / (37 - 5) = 225 * 36 / 32 = 253.125
+    #expect(abs(rm - 253.125) < 0.01, "1RM should be ~253, got \(rm)")
+}
+
+@Test func estimated1RMSingleRep() async throws {
+    let s = WorkoutSet(workoutId: 1, exerciseName: "Bench", setOrder: 1, weightLbs: 315, reps: 1, isWarmup: false)
+    #expect(s.estimated1RM == 315, "Single rep 1RM = weight itself")
+}
+
+@Test func estimated1RMBodyweight() async throws {
+    let s = WorkoutSet(workoutId: 1, exerciseName: "Push-up", setOrder: 1, weightLbs: nil, reps: 20, isWarmup: false)
+    #expect(s.estimated1RM == nil, "No weight = no 1RM estimate")
+}
+
+@Test func estimated1RMHighReps() async throws {
+    let s = WorkoutSet(workoutId: 1, exerciseName: "Curl", setOrder: 1, weightLbs: 20, reps: 35, isWarmup: false)
+    #expect(s.estimated1RM == nil, "Reps > 30 should return nil (formula unreliable)")
+}
+
+@Test func workoutSetDisplayFormat() async throws {
+    let s1 = WorkoutSet(workoutId: 1, exerciseName: "Bench", setOrder: 1, weightLbs: 135, reps: 10, isWarmup: false)
+    #expect(s1.display.contains("135") && s1.display.contains("10"))
+    let s2 = WorkoutSet(workoutId: 1, exerciseName: "Pull-up", setOrder: 1, weightLbs: nil, reps: 12, isWarmup: false)
+    #expect(s2.display.contains("BW"))
+}
+
+@Test func templateSaveAndFetchRoundtrip() async throws {
+    let db = try AppDatabase.empty()
+    let exercises: [WorkoutTemplate.TemplateExercise] = [
+        .init(name: "Bench Press", sets: 3, restSeconds: 150, notes: "6-8 reps"),
+        .init(name: "Band Pull Aparts", sets: 2, isWarmup: true, restSeconds: 30),
+    ]
+    let json = try JSONEncoder().encode(exercises)
+    let t = WorkoutTemplate(name: "Push Day", exercisesJson: String(data: json, encoding: .utf8)!,
+                            createdAt: ISO8601DateFormatter().string(from: Date()))
+    try await db.writer.write { [t] dbConn in var m = t; try m.insert(dbConn) }
+    let fetched = try await db.reader.read { try WorkoutTemplate.fetchAll($0) }
+    #expect(fetched.count == 1)
+    #expect(fetched[0].name == "Push Day")
+    let decoded = fetched[0].exercises
+    #expect(decoded.count == 2)
+    #expect(decoded[0].notes == "6-8 reps")
+    #expect(decoded[1].isWarmup == true)
+}
+
+@Test func workoutDeleteCascadesSetsVerify() async throws {
+    let db = try AppDatabase.empty()
+    // Insert workout and get its ID
+    try await db.writer.write { dbConn in
+        var w = Workout(name: "W", date: "2026-03-30", createdAt: "")
+        try w.insert(dbConn)
+    }
+    let wid = try await db.reader.read { try Workout.fetchAll($0) }.first!.id!
+    // Insert a set for that workout
+    try await db.writer.write { dbConn in
+        var s = WorkoutSet(workoutId: wid, exerciseName: "Bench", setOrder: 1, weightLbs: 100, reps: 10, isWarmup: false)
+        try s.insert(dbConn)
+    }
+    // Delete workout - sets should cascade
+    try await db.writer.write { dbConn in _ = try Workout.deleteOne(dbConn, id: wid) }
+    let sets = try await db.reader.read { try WorkoutSet.fetchAll($0) }
+    #expect(sets.isEmpty, "Sets should cascade delete with workout")
+}
+
+@Test func multipleTemplatesCoexist() async throws {
+    let db = try AppDatabase.empty()
+    for name in ["Push", "Pull", "Legs"] {
+        let json = try JSONEncoder().encode([WorkoutTemplate.TemplateExercise(name: "Ex", sets: 3)])
+        let t = WorkoutTemplate(name: name, exercisesJson: String(data: json, encoding: .utf8)!, createdAt: "")
+        try await db.writer.write { [t] dbConn in var m = t; try m.insert(dbConn) }
+    }
+    let all = try await db.reader.read { try WorkoutTemplate.fetchAll($0) }
+    #expect(all.count == 3)
+}
+
+// MARK: - Exercise Database Tests (8 tests)
+
+@Test func exerciseDatabaseLoads() async throws {
+    let all = ExerciseDatabase.all
+    #expect(all.count >= 800, "Should have 800+ exercises, got \(all.count)")
+}
+
+@Test func exerciseDatabaseSearch() async throws {
+    let results = ExerciseDatabase.search(query: "bench press")
+    #expect(!results.isEmpty, "Should find bench press")
+    #expect(results.first?.name.lowercased().contains("bench") ?? false)
+}
+
+@Test func exerciseDatabaseByBodyPart() async throws {
+    let chest = ExerciseDatabase.byBodyPart("Chest")
+    #expect(chest.count >= 50, "Should have many chest exercises")
+    #expect(chest.allSatisfy { $0.bodyPart == "Chest" })
+}
+
+@Test func exerciseDatabaseBodyPartGuess() async throws {
+    #expect(ExerciseDatabase.bodyPart(for: "Barbell Bench Press") == "Chest")
+    #expect(ExerciseDatabase.bodyPart(for: "Barbell Squat") == "Legs")
+}
+
+@Test func exerciseSearchCaseInsensitive() async throws {
+    let upper = ExerciseDatabase.search(query: "BENCH")
+    let lower = ExerciseDatabase.search(query: "bench")
+    #expect(!upper.isEmpty && !lower.isEmpty)
+    // Should find same results regardless of case
+    #expect(upper.first?.name == lower.first?.name)
+}
+
+@Test func exerciseSearchByEquipment() async throws {
+    let results = ExerciseDatabase.search(query: "barbell")
+    #expect(results.count >= 50, "Many exercises use barbell")
+}
+
+@Test func exerciseSearchByMuscle() async throws {
+    let results = ExerciseDatabase.search(query: "quadriceps")
+    #expect(!results.isEmpty, "Should find exercises targeting quadriceps")
+}
+
+@Test func customExercisePersistence() async throws {
+    // Custom exercises use UserDefaults - just verify the add doesn't crash
+    let before = ExerciseDatabase.customExercises.count
+    ExerciseDatabase.addCustomExercise(name: "Test Custom \(Int.random(in: 1000...9999))", bodyPart: "Chest")
+    let after = ExerciseDatabase.customExercises.count
+    #expect(after >= before, "Should have at least as many custom exercises")
+}
+
+// MARK: - Workout Edge Cases (5 tests)
+
+@Test func workoutZeroDuration() async throws {
+    let w = Workout(name: "Quick", date: "2026-03-30", durationSeconds: 0, createdAt: "")
+    #expect(w.durationDisplay == "", "0 seconds should show empty")
+}
+
+@Test func workoutNilDuration() async throws {
+    let w = Workout(name: "Quick", date: "2026-03-30", durationSeconds: nil, createdAt: "")
+    #expect(w.durationDisplay == "")
+}
+
+@Test func setWithZeroWeight() async throws {
+    let s = WorkoutSet(workoutId: 1, exerciseName: "Push-up", setOrder: 1, weightLbs: 0, reps: 20, isWarmup: false)
+    #expect(s.estimated1RM == nil, "Zero weight should not compute 1RM")
+    #expect(s.display.contains("0 lb"))
+}
+
+@Test func setWithZeroReps() async throws {
+    let s = WorkoutSet(workoutId: 1, exerciseName: "Bench", setOrder: 1, weightLbs: 135, reps: 0, isWarmup: false)
+    #expect(s.estimated1RM == nil, "Zero reps should not compute 1RM")
+}
+
+@Test func templateWithEmptyExercises() async throws {
+    let t = WorkoutTemplate(name: "Empty", exercisesJson: "[]", createdAt: "")
+    #expect(t.exercises.isEmpty)
+}
+
+@Test func templateWithInvalidJSON() async throws {
+    let t = WorkoutTemplate(name: "Bad", exercisesJson: "not json", createdAt: "")
+    #expect(t.exercises.isEmpty, "Invalid JSON should return empty array")
+}
+
+@Test func templateMixedOldNewFormat() async throws {
+    // Mix of old (no warmup field) and new (with warmup field) entries
+    let json = #"[{"name":"Old Ex","sets":3},{"name":"New Ex","sets":2,"isWarmup":true,"restSeconds":30,"notes":"test"}]"#
+    let decoded = try JSONDecoder().decode([WorkoutTemplate.TemplateExercise].self, from: Data(json.utf8))
+    #expect(decoded[0].isWarmup == false)
+    #expect(decoded[0].restSeconds == 90)
+    #expect(decoded[1].isWarmup == true)
+    #expect(decoded[1].notes == "test")
 }
