@@ -1284,4 +1284,26 @@ import GRDB
     #expect(units.contains(where: { $0.label == "g" }))
 }
 
+// MARK: - Factory Reset Safety Test
+
+@Test func factoryResetClearsAllData() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+
+    // Add some data
+    let vm = await FoodLogViewModel(database: db)
+    await vm.quickAdd(name: "Test", calories: 100, proteinG: 10, carbsG: 10, fatG: 5, fiberG: 0, mealType: .lunch)
+    #expect(await vm.todayEntries.count == 1)
+
+    // Factory reset
+    try db.factoryReset()
+    await vm.loadTodayMeals()
+    #expect(await vm.todayEntries.isEmpty, "All food entries should be gone after reset")
+    #expect(await vm.todayNutrition.calories == 0)
+
+    // Foods should be re-seeded
+    let foods = try db.searchFoods(query: "rice")
+    #expect(!foods.isEmpty, "Foods should be re-seeded after reset")
+}
+
 enum TestError: Error { case msg(String); init(_ s: String) { self = .msg(s) } }
