@@ -61,6 +61,8 @@ struct FoodSearchView: View {
             .sheet(isPresented: $showingManual) { manualEntrySheet }
             .sheet(isPresented: $showingRecipeBuilder) { QuickAddView(viewModel: viewModel) }
             .fullScreenCover(isPresented: $showingScanner) { BarcodeLookupView(viewModel: viewModel) }
+            .onChange(of: showingRecipeBuilder) { _, showing in if !showing { viewModel.loadSuggestions() } }
+            .onChange(of: showingScanner) { _, showing in if !showing { viewModel.loadSuggestions() } }
             .onAppear {
                 viewModel.loadSuggestions()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { searchFocused = true }
