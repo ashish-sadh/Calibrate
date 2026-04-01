@@ -393,6 +393,7 @@ struct DEXAOverviewView: View {
         }
     }
 
+    // Placeholder for future scan history timeline
     private var scanHistory: some View { EmptyView() }
 
     // MARK: - Empty + Import

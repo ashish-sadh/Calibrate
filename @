@@ -1,0 +1,18 @@
+Control file for Drift self-improvement loop.
+Check this file before every cycle.
+
+Current status: RUNNING
+Direction: do work on fitness, nutrition data too. Also I think there is some opporutnity to improve TDEE calcuatation, but don't make major changes, research well on intenet too to see what can be done to improve. But I dont' want drastic changes that shows like 3000 ish calaories for people. Current one is not too bad, just need some adjustments. Also never stop refer to all agents in self-irpvlement loop and keep working. When you feel stuck go on intenet resarch a bit
+
+Status options:
+- RUNNING: continue the loop
+- STOP: finish current work, commit, halt
+- PAUSE: commit and wait for instructions
+- REDIRECT: read Direction field, apply changes, set back to RUNNING
+
+To give feedback during a session, change status to REDIRECT and write in Direction.
+Examples:
+- "Focus only on bug fixes for the next hour"
+- "Add personality: accessibility reviewer"
+- "Revert the last color change"
+- "Skip lab biomarker work"

@@ -7489,5 +7489,82 @@
     "carbs_g": 8,
     "fat_g": 3,
     "fiber_g": 1
+  },
+  {
+    "name": "Clif Bar (Chocolate Chip)",
+    "category": "Snacks",
+    "serving_size": 68,
+    "serving_unit": "g",
+    "calories": 250,
+    "protein_g": 10,
+    "carbs_g": 43,
+    "fat_g": 6,
+    "fiber_g": 5
+  },
+  {
+    "name": "Swiss Cheese (1 slice)",
+    "category": "Dairy",
+    "serving_size": 28,
+    "serving_unit": "g",
+    "calories": 110,
+    "protein_g": 8,
+    "carbs_g": 0,
+    "fat_g": 9,
+    "fiber_g": 0
+  },
+  {
+    "name": "Mango Lassi",
+    "category": "Beverages",
+    "serving_size": 250,
+    "serving_unit": "ml",
+    "calories": 180,
+    "protein_g": 5,
+    "carbs_g": 32,
+    "fat_g": 4,
+    "fiber_g": 1
+  },
+  {
+    "name": "Gulab Jamun (2 pieces)",
+    "category": "Desserts",
+    "serving_size": 60,
+    "serving_unit": "g",
+    "calories": 175,
+    "protein_g": 3,
+    "carbs_g": 28,
+    "fat_g": 6,
+    "fiber_g": 0
+  },
+  {
+    "name": "Pav Bhaji (1 serving with 2 pav)",
+    "category": "Indian Food",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 450,
+    "protein_g": 12,
+    "carbs_g": 62,
+    "fat_g": 18,
+    "fiber_g": 6
+  },
+  {
+    "name": "Cottage Cheese (full fat, 1/2 cup)",
+    "category": "Dairy",
+    "serving_size": 113,
+    "serving_unit": "g",
+    "calories": 110,
+    "protein_g": 12,
+    "carbs_g": 4,
+    "fat_g": 5,
+    "fiber_g": 0
+  },
+  {
+    "name": "Greek Yogurt (plain, whole milk)",
+    "category": "Dairy",
+    "serving_size": 170,
+    "serving_unit": "g",
+    "calories": 160,
+    "protein_g": 15,
+    "carbs_g": 7,
+    "fat_g": 9,
+    "fiber_g": 0
   }
 ]
