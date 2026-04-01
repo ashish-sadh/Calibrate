@@ -4,6 +4,7 @@ struct DashboardView: View {
     @Binding var syncComplete: Bool
     @Binding var selectedTab: Int
     @State private var viewModel = DashboardViewModel()
+    @State private var showDeficitInfo = false
 
     var body: some View {
         NavigationStack {
@@ -47,14 +48,33 @@ struct DashboardView: View {
 
                                 if let deficit = viewModel.dailyDeficit {
                                     VStack(alignment: .leading, spacing: 2) {
-                                        Text(deficit < 0 ? "Est. Deficit" : "Est. Surplus")
-                                            .font(.caption).foregroundStyle(.secondary)
+                                        HStack(spacing: 3) {
+                                            Text(deficit < 0 ? "Est. Deficit" : "Est. Surplus")
+                                                .font(.caption).foregroundStyle(.secondary)
+                                            Button {
+                                                withAnimation(.easeInOut(duration: 0.2)) { showDeficitInfo.toggle() }
+                                            } label: {
+                                                Image(systemName: "info.circle")
+                                                    .font(.system(size: 10))
+                                                    .foregroundStyle(.tertiary)
+                                            }
+                                        }
                                         let isGood = isGoalAligned(deficit)
                                         HStack(alignment: .firstTextBaseline, spacing: 3) {
+                                            Image(systemName: deficit < 0 ? "arrow.down.right" : "arrow.up.right")
+                                                .font(.caption2.weight(.bold))
+                                                .foregroundStyle(isGood ? Theme.deficit : Theme.surplus)
                                             Text("\(deficit < 0 ? "-" : "+")\(Int(abs(deficit)))")
                                                 .font(.subheadline.weight(.bold).monospacedDigit())
                                                 .foregroundStyle(isGood ? Theme.deficit : Theme.surplus)
                                             Text("kcal/day").font(.caption2).foregroundStyle(.tertiary)
+                                        }
+                                        if showDeficitInfo {
+                                            Text("Estimated from your weight trend over the past \(WeightTrendCalculator.loadConfig().regressionWindowDays) days. Not based on watch/activity data.")
+                                                .font(.caption2)
+                                                .foregroundStyle(.secondary)
+                                                .fixedSize(horizontal: false, vertical: true)
+                                                .transition(.opacity)
                                         }
                                     }
                                 }
@@ -67,19 +87,20 @@ struct DashboardView: View {
                     // Goal progress → Goal page
                     NavigationLink { GoalView() } label: { goalCard }.tint(.primary)
 
-                    // Energy Balance → Food tab
+                    // TDEE → Algorithm settings
+                    NavigationLink { AlgorithmSettingsView() } label: { tdeeCard }.tint(.primary)
+
+                    // Nutrition → Food tab
                     Button { selectedTab = 2 } label: { calorieBalanceCard }.buttonStyle(.plain)
 
                     // Active/Steps → Exercise tab
                     Button { selectedTab = 3 } label: { healthRow }.buttonStyle(.plain)
 
-                    // Sleep & Recovery → SleepRecoveryView
-                    if viewModel.sleepHours > 0 || viewModel.recoveryScore > 0 {
-                        NavigationLink { SleepRecoveryView() } label: { sleepRecoveryCard }
-                    }
+                    // Body Rhythm → SleepRecoveryView (always visible)
+                    NavigationLink { SleepRecoveryView() } label: { sleepRecoveryCard }
 
-                    // Supplements → More > Supplements
-                    if viewModel.supplementsTotal > 0 {
+                    // Supplements — only if taken today
+                    if viewModel.supplementsTaken > 0 {
                         NavigationLink { SupplementsTabView() } label: { supplementCard }
                     }
                 }
@@ -110,6 +131,40 @@ struct DashboardView: View {
         }
     }
 
+    // MARK: - TDEE Card
+
+    private var tdeeCard: some View {
+        let est = TDEEEstimator.shared.cachedOrSync()
+        let goal = WeightGoal.load()
+        let target = goal?.macroTargets(currentWeightKg: viewModel.currentWeight)
+
+        return HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Label("Est. Expenditure", systemImage: "flame").font(.caption).foregroundStyle(.secondary)
+                HStack(alignment: .firstTextBaseline, spacing: 3) {
+                    Text("\(Int(est.tdee))")
+                        .font(.title3.weight(.bold).monospacedDigit())
+                    Text("kcal/day").font(.caption2).foregroundStyle(.tertiary)
+                }
+            }
+
+            Spacer()
+
+            if let t = target {
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("Target").font(.caption).foregroundStyle(.secondary)
+                    HStack(alignment: .firstTextBaseline, spacing: 3) {
+                        Text("\(Int(t.calorieTarget))")
+                            .font(.title3.weight(.bold).monospacedDigit())
+                            .foregroundStyle(Theme.accent)
+                        Text("kcal").font(.caption2).foregroundStyle(.tertiary)
+                    }
+                }
+            }
+        }
+        .card()
+    }
+
     // MARK: - Calorie Balance + Macros (combined)
 
     private var hasLoggedFood: Bool { viewModel.todayNutrition.calories > 0 }
@@ -117,40 +172,44 @@ struct DashboardView: View {
     private var calorieBalanceCard: some View {
         VStack(spacing: 10) {
             if hasLoggedFood {
-                // Active state: food logged
-                HStack {
-                    Text("Energy Balance")
-                        .font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
-                    Spacer()
-                    Text("Today").font(.caption).foregroundStyle(.tertiary)
-                }
+                if let targets = WeightGoal.load()?.macroTargets(currentWeightKg: viewModel.currentWeight) {
+                    // With goal: progress bar + remaining
+                    let eaten = Int(viewModel.todayNutrition.calories)
+                    let target = Int(targets.calorieTarget)
+                    let remaining = target - eaten
+                    let progress = min(Double(eaten) / Double(target), 1.5)
 
-                HStack(spacing: 0) {
-                    calorieColumn(value: Int(viewModel.todayNutrition.calories), label: "Eaten", color: Theme.calorieBlue)
-                        .frame(maxWidth: .infinity)
-                    Text("\u{2212}").font(.title3).foregroundStyle(.secondary)
-                    calorieColumn(value: Int(viewModel.caloriesBurned), label: "Burned", color: Theme.stepsOrange)
-                        .frame(maxWidth: .infinity)
-                    Text("=").font(.title3).foregroundStyle(.secondary)
-                    let balance = Int(viewModel.calorieBalance)
-                    calorieColumn(
-                        value: abs(balance),
-                        label: balance <= 0 ? "Deficit" : "Surplus",
-                        color: balance <= 0 ? Theme.deficit : Theme.surplus,
-                        prefix: balance < 0 ? "-" : "+"
-                    )
-                    .frame(maxWidth: .infinity)
-                }
-
-                // Calorie remaining + macro targets
-                if let targets = WeightGoal.load()?.macroTargets(currentWeightKg: viewModel.currentWeight, actualTDEE: viewModel.estimatedTDEE) {
-                    let remaining = Int(targets.calorieTarget - viewModel.todayNutrition.calories)
                     HStack {
-                        Text(remaining >= 0 ? "\(remaining) kcal remaining" : "\(abs(remaining)) kcal over")
+                        Text("Nutrition")
+                            .font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                        Spacer()
+                        Text("Today").font(.caption).foregroundStyle(.tertiary)
+                    }
+
+                    // Progress bar
+                    GeometryReader { geo in
+                        ZStack(alignment: .leading) {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Theme.cardBackgroundElevated)
+                                .frame(height: 8)
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(remaining >= 0 ? Theme.calorieBlue : Theme.surplus)
+                                .frame(width: max(0, geo.size.width * progress), height: 8)
+                        }
+                    }
+                    .frame(height: 8)
+
+                    HStack {
+                        Text("\(eaten)")
+                            .font(.subheadline.weight(.bold).monospacedDigit())
+                            .foregroundStyle(Theme.calorieBlue)
+                        Text("/ \(target) kcal")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.tertiary)
+                        Spacer()
+                        Text(remaining >= 0 ? "\(remaining) left" : "\(abs(remaining)) over")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(remaining >= 0 ? Theme.deficit : Theme.surplus)
-                        Spacer()
-                        Text("Goal: \(Int(targets.calorieTarget))").font(.caption2).foregroundStyle(.tertiary)
                     }
 
                     HStack(spacing: 6) {
@@ -159,6 +218,22 @@ struct DashboardView: View {
                         macroChipWithTarget("F", value: viewModel.todayNutrition.fatG, target: targets.fatG, color: Theme.fatYellow)
                     }
                 } else {
+                    // No goal: just show eaten + macros
+                    HStack {
+                        Text("Nutrition")
+                            .font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                        Spacer()
+                        Text("Today").font(.caption).foregroundStyle(.tertiary)
+                    }
+
+                    HStack(alignment: .firstTextBaseline, spacing: 3) {
+                        Text("\(Int(viewModel.todayNutrition.calories))")
+                            .font(.title3.weight(.bold).monospacedDigit())
+                            .foregroundStyle(Theme.calorieBlue)
+                        Text("kcal eaten").font(.caption).foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
                     HStack(spacing: 6) {
                         macroChip("P", value: viewModel.todayNutrition.proteinG, color: Theme.proteinRed)
                         macroChip("C", value: viewModel.todayNutrition.carbsG, color: Theme.carbsGreen)
@@ -174,7 +249,7 @@ struct DashboardView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("No food logged today")
                             .font(.subheadline).foregroundStyle(.tertiary)
-                        Text("Log meals to see energy balance and macros")
+                        Text("Log meals to see nutrition and macros")
                             .font(.caption2).foregroundStyle(.quaternary)
                     }
                     Spacer()
@@ -182,18 +257,6 @@ struct DashboardView: View {
             }
         }
         .card()
-    }
-
-    private func calorieColumn(value: Int, label: String, color: Color, prefix: String = "") -> some View {
-        VStack(spacing: 2) {
-            Text("\(prefix)\(value)")
-                .font(.title3.weight(.bold).monospacedDigit())
-                .foregroundStyle(color)
-                .minimumScaleFactor(0.7)
-                .lineLimit(1)
-            Text(label).font(.caption2).foregroundStyle(.secondary)
-        }
-        .frame(minWidth: 50)
     }
 
     private func macroChip(_ label: String, value: Double, color: Color) -> some View {
@@ -315,6 +378,19 @@ struct DashboardView: View {
                     }
                 }
                 .card()
+            } else {
+                HStack(spacing: 10) {
+                    Image(systemName: "target")
+                        .foregroundStyle(.tertiary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("No weight goal set")
+                            .font(.subheadline).foregroundStyle(.tertiary)
+                        Text("Set a goal to see calorie targets and track progress")
+                            .font(.caption2).foregroundStyle(.quaternary)
+                    }
+                    Spacer()
+                }
+                .card()
             }
         }
     }
@@ -324,49 +400,69 @@ struct DashboardView: View {
     // MARK: - Sleep & Recovery
 
     private var sleepRecoveryCard: some View {
-        HStack(spacing: 10) {
-            // Sleep
-            VStack(spacing: 3) {
-                Image(systemName: "bed.double.fill").font(.caption).foregroundStyle(Theme.sleepIndigo)
-                Text(String(format: "%.1fh", viewModel.sleepHours))
-                    .font(.subheadline.weight(.bold).monospacedDigit())
-                Text("Sleep").font(.caption2).foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity).card()
+        let hasData = viewModel.sleepHours > 0 || viewModel.recoveryScore > 0 || viewModel.hrvMs > 0 || viewModel.restingHR > 0
 
-            // Recovery
-            let recoveryColor: Color = viewModel.recoveryLevel == .green ? Theme.deficit : viewModel.recoveryLevel == .yellow ? Theme.fatYellow : Theme.surplus
-            VStack(spacing: 3) {
-                Image(systemName: "heart.circle.fill").font(.caption).foregroundStyle(recoveryColor)
-                Text("\(viewModel.recoveryScore)%")
-                    .font(.subheadline.weight(.bold).monospacedDigit())
-                    .foregroundStyle(recoveryColor)
-                Text("Recovery").font(.caption2).foregroundStyle(.secondary)
-            }
-            .frame(maxWidth: .infinity).card()
+        return VStack(spacing: 8) {
+            if hasData {
+                // Recovery + Sleep scores
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Recovery").font(.caption).foregroundStyle(.secondary)
+                        Text("\(viewModel.recoveryScore)")
+                            .font(.title2.weight(.bold).monospacedDigit())
+                            .foregroundStyle(Theme.scoreColor(viewModel.recoveryScore))
+                        GeometryReader { geo in
+                            ZStack(alignment: .leading) {
+                                RoundedRectangle(cornerRadius: 2).fill(Theme.cardBackgroundElevated).frame(height: 4)
+                                RoundedRectangle(cornerRadius: 2).fill(Theme.scoreColor(viewModel.recoveryScore))
+                                    .frame(width: geo.size.width * Double(viewModel.recoveryScore) / 100, height: 4)
+                            }
+                        }
+                        .frame(height: 4)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-            // HRV
-            if viewModel.hrvMs > 0 {
-                VStack(spacing: 3) {
-                    Image(systemName: "waveform.path").font(.caption).foregroundStyle(Theme.deficit)
-                    Text("\(Int(viewModel.hrvMs))ms")
-                        .font(.subheadline.weight(.bold).monospacedDigit())
-                    Text("HRV").font(.caption2).foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Sleep").font(.caption).foregroundStyle(.secondary)
+                        Text(viewModel.sleepHours > 0 ? String(format: "%.1fh", viewModel.sleepHours) : "--")
+                            .font(.title2.weight(.bold).monospacedDigit())
+                            .foregroundStyle(viewModel.sleepHours > 0 ? .primary : .tertiary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .frame(maxWidth: .infinity).card()
-            }
 
-            // RHR
-            if viewModel.restingHR > 0 {
-                VStack(spacing: 3) {
-                    Image(systemName: "heart.fill").font(.caption).foregroundStyle(Theme.heartRed)
-                    Text("\(Int(viewModel.restingHR))")
-                        .font(.subheadline.weight(.bold).monospacedDigit())
-                    Text("RHR").font(.caption2).foregroundStyle(.secondary)
+                HStack(spacing: 12) {
+                    if viewModel.hrvMs > 0 {
+                        HStack(spacing: 3) {
+                            Image(systemName: "waveform.path").font(.system(size: 9)).foregroundStyle(Theme.deficit)
+                            Text("\(Int(viewModel.hrvMs))ms").font(.caption2.monospacedDigit())
+                        }
+                    }
+                    if viewModel.restingHR > 0 {
+                        HStack(spacing: 3) {
+                            Image(systemName: "heart.fill").font(.system(size: 9)).foregroundStyle(Theme.heartRed)
+                            Text("\(Int(viewModel.restingHR))bpm").font(.caption2.monospacedDigit())
+                        }
+                    }
+                    Spacer()
+                    Text("Last night").font(.caption2).foregroundStyle(.quaternary)
                 }
-                .frame(maxWidth: .infinity).card()
+                .foregroundStyle(.secondary)
+            } else {
+                HStack(spacing: 10) {
+                    Image(systemName: "waveform.path")
+                        .foregroundStyle(.tertiary)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Body Rhythm")
+                            .font(.subheadline).foregroundStyle(.tertiary)
+                        Text("Sleep, recovery, and vitals from Apple Health")
+                            .font(.caption2).foregroundStyle(.quaternary)
+                    }
+                    Spacer()
+                }
             }
         }
+        .card()
     }
 
     // MARK: - Supplements

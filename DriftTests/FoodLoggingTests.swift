@@ -876,12 +876,15 @@ import GRDB
     #expect(targets80.proteinG < targets85.proteinG, "Lower weight = less protein needed")
 }
 
-@Test func macroTargetsNilWithoutData() async throws {
-    // No calorie override, no TDEE → returns nil
+@Test func macroTargetsFallbackWithoutData() async throws {
+    // No calorie override, no TDEE → uses weight-based estimate (28 kcal/kg)
     let goal = WeightGoal(targetWeightKg: 75, monthsToAchieve: 6, startDate: "2026-01-01", startWeightKg: 85)
     let targets = goal.macroTargets()
-    #expect(targets == nil, "Without calorie data, targets should be nil")
-    // But with TDEE passed, should work
+    #expect(targets != nil, "Should fall back to weight-based TDEE estimate")
+    if let t = targets {
+        #expect(t.calorieTarget > 1500 && t.calorieTarget < 3000, "Fallback target should be reasonable")
+    }
+    // With explicit TDEE, should still work
     let withTDEE = goal.macroTargets(actualTDEE: 2200)
     #expect(withTDEE != nil, "With TDEE, targets should compute")
 }

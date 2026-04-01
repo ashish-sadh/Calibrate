@@ -184,7 +184,7 @@ enum WeightTrendCalculator {
             weeklyRateKg = 0
         }
 
-        // Deficit using configurable energy density
+        // Deficit from weight trend × energy density (set by preset, independent of goals)
         let estimatedDailyDeficit = weeklyRateKg * config.kcalPerKg / 7
 
         let trendDirection: TrendDirection

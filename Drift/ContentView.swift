@@ -34,15 +34,15 @@ struct ContentView: View {
                 .tabItem { Label("Drift", systemImage: "chart.line.uptrend.xyaxis") }
                 .tag(0)
 
-            WeightTabView(syncComplete: $syncComplete)
+            WeightTabView(syncComplete: $syncComplete, selectedTab: $selectedTab)
                 .tabItem { Label("Weight", systemImage: "scalemass") }
                 .tag(1)
 
-            FoodTabView()
+            FoodTabView(selectedTab: $selectedTab)
                 .tabItem { Label("Food", systemImage: "fork.knife") }
                 .tag(2)
 
-            WorkoutView()
+            WorkoutView(selectedTab: $selectedTab)
                 .wrapInNav()
                 .tabItem { Label("Exercise", systemImage: "dumbbell.fill") }
                 .tag(3)

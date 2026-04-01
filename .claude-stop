@@ -1,0 +1,18 @@
+Control file for Drift self-improvement loop.
+Check this file before every cycle.
+
+Current status: STOP
+Direction:
+
+Status options:
+- RUNNING: continue the loop
+- STOP: finish current work, commit, halt
+- PAUSE: commit and wait for instructions
+- REDIRECT: read Direction field, apply changes, set back to RUNNING
+
+To give feedback during a session, change status to REDIRECT and write in Direction.
+Examples:
+- "Focus only on bug fixes for the next hour"
+- "Add personality: accessibility reviewer"
+- "Revert the last color change"
+- "Skip lab biomarker work"

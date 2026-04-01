@@ -162,19 +162,17 @@ import GRDB
 // MARK: - Recovery Estimator Tests (3 tests)
 
 @Test func recoveryEstimatorNormalValues() async throws {
-    let (score, level) = RecoveryEstimator.calculateRecovery(hrvMs: 50, restingHR: 60, sleepHours: 7.5)
+    let score = RecoveryEstimator.calculateRecovery(hrvMs: 50, restingHR: 60, sleepHours: 7.5)
     #expect(score > 0 && score <= 100)
-    #expect(level == .green || level == .yellow)
 }
 
 @Test func recoveryEstimatorLowValues() async throws {
-    let (score, level) = RecoveryEstimator.calculateRecovery(hrvMs: 15, restingHR: 80, sleepHours: 4)
+    let score = RecoveryEstimator.calculateRecovery(hrvMs: 15, restingHR: 80, sleepHours: 4)
     #expect(score < 60, "Low inputs should give low recovery: \(score)")
-    #expect(level == .red || level == .yellow)
 }
 
 @Test func recoveryEstimatorZeroInputs() async throws {
-    let (score, _) = RecoveryEstimator.calculateRecovery(hrvMs: 0, restingHR: 0, sleepHours: 0)
+    let score = RecoveryEstimator.calculateRecovery(hrvMs: 0, restingHR: 0, sleepHours: 0)
     #expect(score >= 0, "Should not crash or go negative")
 }
 

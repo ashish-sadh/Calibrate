@@ -2,6 +2,7 @@ import SwiftUI
 import Charts
 
 struct GoalView: View {
+    @Environment(\.dismiss) private var dismiss
     @State private var goal: WeightGoal? = WeightGoal.load()
     @State private var showingSetup = false
     @State private var currentWeightKg: Double?
@@ -44,7 +45,17 @@ struct GoalView: View {
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Weight Goal")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button { dismiss() } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(Theme.accent)
+                }
+            }
+        }
         .sheet(isPresented: $showingSetup) {
             GoalSetupView(existingGoal: goal) { newGoal in
                 newGoal.save()
@@ -117,9 +128,10 @@ struct GoalView: View {
     // MARK: - Macro Targets
 
     private func macroTargetsCard(_ goal: WeightGoal) -> some View {
-        let targets = goal.macroTargets(currentWeightKg: currentWeightKg, actualTDEE: estimatedTDEE())
+        let targets = goal.macroTargets(currentWeightKg: currentWeightKg)
         let pref = goal.dietPreference ?? .balanced
         let weight = currentWeightKg ?? goal.startWeightKg
+        let explanation = goal.calorieTargetExplanation()
 
         return VStack(alignment: .leading, spacing: 10) {
             HStack {
@@ -135,6 +147,16 @@ struct GoalView: View {
                     targetPill("\(Int(t.carbsG))g", label: "Carbs", color: Theme.carbsGreen)
                     targetPill("\(Int(t.fatG))g", label: "Fat", color: Theme.fatYellow)
                 }
+
+                // Explain how calorie target was derived
+                HStack(spacing: 4) {
+                    Image(systemName: "info.circle").font(.system(size: 10))
+                    Text("\(explanation.source): \(explanation.detail)")
+                        .font(.caption2)
+                }
+                .foregroundStyle(.tertiary)
+                .fixedSize(horizontal: false, vertical: true)
+
                 let fatMin = WeightGoal.minimumFatG(bodyweightKg: weight, calorieTarget: t.calorieTarget)
                 if t.fatG <= fatMin + 3 {
                     Text("Fat at minimum (\(Int(fatMin))g) for hormonal health")
@@ -305,17 +327,6 @@ struct GoalView: View {
                 .padding(.horizontal, 20)
         }
         .padding(.top, 40)
-    }
-
-    private func estimatedTDEE() -> Double? {
-        // Prefer actual burn from Apple Health if available
-        // For goal view, use the daily deficit from trend as a proxy:
-        // TDEE ≈ intake - deficit (if we have both)
-        // Fallback: use calorie override if set
-        if let goal = goal, let override = goal.calorieTargetOverride {
-            return override - goal.requiredDailyDeficit
-        }
-        return nil
     }
 
     private func loadCurrentData() {

@@ -23,6 +23,8 @@ struct DriftApp: App {
                             Log.app.error("Initial sync failed: \(error.localizedDescription)")
                         }
                         #endif
+                        // Refresh TDEE estimate (uses Apple Health + weight trend + food data)
+                        await TDEEEstimator.shared.refresh()
                         syncComplete = true
                     }
                 }

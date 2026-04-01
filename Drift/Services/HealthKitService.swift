@@ -332,6 +332,41 @@ final class HealthKitService {
     }
 
     /// Fetch sleep hours for multiple days (for trend chart).
+    // MARK: - History Methods (for baselines + sparklines)
+
+    func fetchHRVHistory(days: Int) async throws -> [(date: Date, ms: Double)] {
+        var result: [(Date, Double)] = []
+        let cal = Calendar.current
+        for i in 0..<days {
+            guard let date = cal.date(byAdding: .day, value: -i, to: Date()) else { continue }
+            let ms = try await fetchHRV(for: date)
+            if ms > 0 { result.append((date, ms)) }
+        }
+        return result.reversed()
+    }
+
+    func fetchRestingHeartRateHistory(days: Int) async throws -> [(date: Date, bpm: Double)] {
+        var result: [(Date, Double)] = []
+        let cal = Calendar.current
+        for i in 0..<days {
+            guard let date = cal.date(byAdding: .day, value: -i, to: Date()) else { continue }
+            let bpm = try await fetchRestingHeartRate(for: date)
+            if bpm > 0 { result.append((date, bpm)) }
+        }
+        return result.reversed()
+    }
+
+    func fetchRespiratoryRateHistory(days: Int) async throws -> [(date: Date, rpm: Double)] {
+        var result: [(Date, Double)] = []
+        let cal = Calendar.current
+        for i in 0..<days {
+            guard let date = cal.date(byAdding: .day, value: -i, to: Date()) else { continue }
+            let rpm = try await fetchRespiratoryRate(for: date)
+            if rpm > 0 { result.append((date, rpm)) }
+        }
+        return result.reversed()
+    }
+
     func fetchSleepHistory(days: Int) async throws -> [(date: Date, hours: Double)] {
         var result: [(Date, Double)] = []
         let cal = Calendar.current

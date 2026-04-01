@@ -140,6 +140,33 @@ enum WorkoutService {
         }.reversed()
     }
 
+    // MARK: - Exercise Favorites
+
+    private static let exerciseFavoritesKey = "drift_exercise_favorites"
+
+    static var exerciseFavorites: Set<String> {
+        Set(UserDefaults.standard.stringArray(forKey: exerciseFavoritesKey) ?? [])
+    }
+
+    static func toggleExerciseFavorite(_ name: String) {
+        var favs = exerciseFavorites
+        if favs.contains(name) { favs.remove(name) } else { favs.insert(name) }
+        UserDefaults.standard.set(Array(favs), forKey: exerciseFavoritesKey)
+    }
+
+    /// Most recently used exercises (by last workout date), limited to N.
+    static func recentExerciseNames(limit: Int = 15) throws -> [String] {
+        try db.reader.read { dbConn in
+            try String.fetchAll(dbConn, sql: """
+                SELECT exercise_name FROM workout_set
+                JOIN workout ON workout.id = workout_set.workout_id
+                GROUP BY exercise_name
+                ORDER BY MAX(workout.date) DESC
+                LIMIT ?
+                """, arguments: [limit])
+        }
+    }
+
     // MARK: - Active Session Persistence
 
     private static let sessionKey = "drift_active_workout_session"

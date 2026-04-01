@@ -17,6 +17,20 @@ enum Theme {
     static let sleepIndigo = Color(hex: "818CF8")
     static let stepsOrange = Color(hex: "F97316")
     static let heartRed = Color(hex: "F43F5E")
+    static let rhythmTeal = Color(hex: "2DD4BF")
+
+    /// Continuous color for a 0-100 score (red → yellow → green).
+    static func scoreColor(_ score: Int) -> Color {
+        if score >= 67 { return deficit }
+        if score >= 34 { return fatYellow }
+        return surplus
+    }
+
+    /// Gradient for score progress bars.
+    static let scoreGradient = LinearGradient(
+        colors: [surplus, fatYellow, deficit],
+        startPoint: .leading, endPoint: .trailing
+    )
 }
 
 extension Color {

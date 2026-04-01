@@ -3,9 +3,10 @@ import Charts
 
 struct WeightTabView: View {
     @Binding var syncComplete: Bool
+    @Binding var selectedTab: Int
     @State private var viewModel = WeightViewModel()
     @State private var showingAddWeight = false
-    @State private var selectedSection = 0 // 0=chart, 1=insights, 2=log
+    @State private var showLog = false
 
     var body: some View {
         NavigationStack {
@@ -14,28 +15,19 @@ struct WeightTabView: View {
             } else {
                 ScrollView {
                     VStack(spacing: 14) {
-                        // Time range + granularity
                         timeRangeBar
 
-                        // Chart
+                        // Chart — hero element
                         WeightChartView(trend: viewModel.trend, unit: viewModel.weightUnit, granularity: viewModel.granularity)
-                            .frame(height: 240)
+                            .frame(height: 280)
 
-                        // Weekly/Monthly averages
-                        averagesSection
-
-                        // Insights always from ALL data (not filtered by time range)
+                        // Compact metrics + weight changes
                         if let fullTrend = viewModel.fullTrend {
                             WeightInsightsView(trend: fullTrend, unit: viewModel.weightUnit, isLosing: viewModel.isLosing)
                         }
 
-                        // Monthly grouped log
-                        WeightLogListView(
-                            entries: viewModel.entries,
-                            unit: viewModel.weightUnit,
-                            onDelete: { viewModel.deleteWeight(id: $0) },
-                            isLosing: viewModel.isLosing
-                        )
+                        // Collapsible history log
+                        logSection
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 8)
@@ -43,12 +35,17 @@ struct WeightTabView: View {
                 }
             }
         }
-        .scrollContentBackground(.hidden)
-        .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Weight")
-            .navigationBarTitleDisplayMode(.inline)
+        .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button { selectedTab = 0 } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(Theme.accent)
+                }
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button { showingAddWeight = true } label: {
                     Image(systemName: "plus.circle.fill")
@@ -56,12 +53,13 @@ struct WeightTabView: View {
                 }
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(Theme.background.ignoresSafeArea())
         .sheet(isPresented: $showingAddWeight) {
             WeightEntryView(unit: viewModel.weightUnit) { value, date in viewModel.addWeight(value: value, date: date) }
         }
         .onAppear { viewModel.loadEntries() }
         .task {
-            // Sync latest weight from Apple Health each time the tab appears
             #if !targetEnvironment(simulator)
             let _ = try? await HealthKitService.shared.syncWeight()
             viewModel.loadEntries()
@@ -76,7 +74,6 @@ struct WeightTabView: View {
 
     private var timeRangeBar: some View {
         HStack(spacing: 0) {
-            // Time range picker
             HStack(spacing: 0) {
                 ForEach(WeightViewModel.TimeRange.allCases, id: \.self) { range in
                     Button {
@@ -95,7 +92,6 @@ struct WeightTabView: View {
 
             Spacer()
 
-            // Granularity toggle
             Menu {
                 Button { viewModel.granularity = .daily } label: {
                     Label("Daily", systemImage: viewModel.granularity == .daily ? "checkmark" : "")
@@ -114,70 +110,42 @@ struct WeightTabView: View {
         }
     }
 
-    // MARK: - Averages
+    // MARK: - Collapsible Log
 
-    private var averagesSection: some View {
-        let weeklyAvgs = viewModel.weeklyAverages
-        let monthlyAvg = viewModel.currentMonthAverage
-
-        return VStack(alignment: .leading, spacing: 10) {
-            Text("Averages")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-
-            HStack(spacing: 8) {
-                if let thisWeek = weeklyAvgs.first {
-                    averageCard(
-                        title: "This Week",
-                        value: String(format: "%.1f", viewModel.weightUnit.convert(fromKg: thisWeek.average)),
-                        unit: viewModel.weightUnit.displayName,
-                        detail: "\(thisWeek.count) weigh-ins",
-                        highlight: true
-                    )
+    private var logSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) { showLog.toggle() }
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.caption)
+                        .foregroundStyle(Theme.accent)
+                    Text("History")
+                        .font(.subheadline.weight(.semibold))
+                    Spacer()
+                    Text("\(viewModel.allEntries.count) entries")
+                        .font(.caption)
+                        .foregroundStyle(.tertiary)
+                    Image(systemName: "chevron.down")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(Theme.accent)
+                        .rotationEffect(.degrees(showLog ? 0 : -90))
                 }
+                .card()
+            }
+            .buttonStyle(.plain)
 
-                if let lastWeek = weeklyAvgs.dropFirst().first {
-                    averageCard(
-                        title: "Last Week",
-                        value: String(format: "%.1f", viewModel.weightUnit.convert(fromKg: lastWeek.average)),
-                        unit: viewModel.weightUnit.displayName,
-                        detail: "\(lastWeek.count) weigh-ins"
-                    )
-                }
-
-                if let monthly = monthlyAvg {
-                    averageCard(
-                        title: DateFormatters.monthYear.string(from: Date()),
-                        value: String(format: "%.1f", viewModel.weightUnit.convert(fromKg: monthly.average)),
-                        unit: viewModel.weightUnit.displayName,
-                        detail: "\(monthly.count) weigh-ins"
-                    )
-                }
+            if showLog {
+                WeightLogListView(
+                    entries: viewModel.allEntries,
+                    unit: viewModel.weightUnit,
+                    onDelete: { viewModel.deleteWeight(id: $0) },
+                    isLosing: viewModel.isLosing
+                )
+                .transition(.opacity)
             }
         }
-    }
-
-    private func averageCard(title: String, value: String, unit: String, detail: String, highlight: Bool = false) -> some View {
-        VStack(spacing: 3) {
-            Text(title)
-                .font(.caption2)
-                .foregroundStyle(highlight ? AnyShapeStyle(Theme.accent) : AnyShapeStyle(.tertiary))
-            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text(value)
-                    .font(.subheadline.weight(.bold).monospacedDigit())
-                Text(unit)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-            }
-            if !detail.isEmpty {
-                Text(detail)
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
-                    .lineLimit(1)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .card()
     }
 
     // MARK: - Empty State

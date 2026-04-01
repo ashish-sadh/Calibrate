@@ -18,7 +18,7 @@ struct MoreTabView: View {
 
                     // Health & Data
                     VStack(spacing: 0) {
-                        navRow(icon: "bed.double.fill", title: "Sleep & Recovery", subtitle: "Sleep stages, HRV, recovery score", color: Theme.sleepIndigo) {
+                        navRow(icon: "waveform.path", title: "Body Rhythm", subtitle: "Sleep, vitals, and recovery", color: Theme.rhythmTeal) {
                             SleepRecoveryView()
                         }
                         Divider().overlay(Color.white.opacity(0.05))
@@ -46,7 +46,7 @@ struct MoreTabView: View {
                             SettingsView()
                         }
                         Divider().overlay(Color.white.opacity(0.05))
-                        navRow(icon: "slider.horizontal.3", title: "Algorithm", subtitle: "Tune deficit calculation", color: Theme.accent) {
+                        navRow(icon: "slider.horizontal.3", title: "Algorithm", subtitle: "TDEE & calorie target settings", color: Theme.accent) {
                             AlgorithmSettingsView()
                         }
                     }

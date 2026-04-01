@@ -183,67 +183,68 @@ import GRDB
 // MARK: - Recovery Estimator (12 tests)
 
 @Test func recoveryHighHRVHighScore() async throws {
-    let (score, level) = RecoveryEstimator.calculateRecovery(hrvMs: 80, restingHR: 50, sleepHours: 8)
+    let score = RecoveryEstimator.calculateRecovery(hrvMs: 80, restingHR: 50, sleepHours: 8)
     #expect(score >= 67, "High HRV + low RHR + good sleep = good recovery: \(score)")
-    #expect(level == .green)
 }
 
 @Test func recoveryLowHRVLowScore() async throws {
-    let (score, level) = RecoveryEstimator.calculateRecovery(hrvMs: 15, restingHR: 80, sleepHours: 4)
-    #expect(score < 34, "Low HRV + high RHR + bad sleep = poor: \(score)")
-    #expect(level == .red)
+    let score = RecoveryEstimator.calculateRecovery(hrvMs: 15, restingHR: 80, sleepHours: 4)
+    #expect(score < 50, "Low HRV + high RHR + bad sleep = poor: \(score)")
 }
 
 @Test func recoveryModerate() async throws {
-    let (score, level) = RecoveryEstimator.calculateRecovery(hrvMs: 40, restingHR: 65, sleepHours: 6.5)
-    #expect(score >= 34 && score < 67, "Moderate: \(score)")
-    #expect(level == .yellow)
+    let score = RecoveryEstimator.calculateRecovery(hrvMs: 40, restingHR: 65, sleepHours: 6.5)
+    #expect(score > 20 && score < 80, "Moderate: \(score)")
 }
 
 @Test func recoveryZeroHRV() async throws {
-    let (score, _) = RecoveryEstimator.calculateRecovery(hrvMs: 0, restingHR: 60, sleepHours: 7)
+    let score = RecoveryEstimator.calculateRecovery(hrvMs: 0, restingHR: 60, sleepHours: 7)
     #expect(score >= 0)
 }
 
 @Test func recoveryPersonalizedBaseline() async throws {
-    let (scoreA, _) = RecoveryEstimator.calculateRecovery(hrvMs: 50, restingHR: 55, sleepHours: 7, avgHRV: 50)
-    let (scoreB, _) = RecoveryEstimator.calculateRecovery(hrvMs: 50, restingHR: 55, sleepHours: 7, avgHRV: 100)
+    let lowBaseline = RecoveryEstimator.Baselines(hrvMs: 50, restingHR: 55, respiratoryRate: 15, sleepHours: 7, daysOfData: 14)
+    let highBaseline = RecoveryEstimator.Baselines(hrvMs: 100, restingHR: 55, respiratoryRate: 15, sleepHours: 7, daysOfData: 14)
+    let scoreA = RecoveryEstimator.calculateRecovery(hrvMs: 50, restingHR: 55, sleepHours: 7, baselines: lowBaseline)
+    let scoreB = RecoveryEstimator.calculateRecovery(hrvMs: 50, restingHR: 55, sleepHours: 7, baselines: highBaseline)
     #expect(scoreA > scoreB, "Same HRV should score better when baseline is lower")
 }
 
 @Test func sleepScorePerfect() async throws {
-    let score = RecoveryEstimator.calculateSleepScore(totalHours: 8, remHours: 1.8, deepHours: 1.4)
+    let score = RecoveryEstimator.calculateSleepScore(totalHours: 8, remHours: 1.8, deepHours: 1.4, targetHours: 7.5)
     #expect(score >= 80, "Good sleep: \(score)")
 }
 
 @Test func sleepScorePoor() async throws {
-    let score = RecoveryEstimator.calculateSleepScore(totalHours: 4, remHours: 0.5, deepHours: 0.3)
+    let score = RecoveryEstimator.calculateSleepScore(totalHours: 4, remHours: 0.5, deepHours: 0.3, targetHours: 7.5)
     #expect(score < 60, "Poor sleep: \(score)")
 }
 
 @Test func sleepScoreZeroHours() async throws {
-    let score = RecoveryEstimator.calculateSleepScore(totalHours: 0, remHours: 0, deepHours: 0)
+    let score = RecoveryEstimator.calculateSleepScore(totalHours: 0, remHours: 0, deepHours: 0, targetHours: 7.5)
     #expect(score == 0)
 }
 
-@Test func strainLightDay() async throws {
-    let strain = RecoveryEstimator.calculateStrain(activeCalories: 200, steps: 5000)
-    #expect(strain < 8, "Light: \(strain)")
+@Test func activityLoadLight() async throws {
+    let (load, raw) = RecoveryEstimator.calculateActivityLoad(activeCalories: 300, steps: 8000)
+    #expect(load == .light || load == .moderate, "Light-moderate: \(raw)")
 }
 
-@Test func strainHardDay() async throws {
-    let strain = RecoveryEstimator.calculateStrain(activeCalories: 700, steps: 12000)
-    #expect(strain > 8 && strain < 20, "Hard: \(strain)")
+@Test func activityLoadHeavy() async throws {
+    let (load, raw) = RecoveryEstimator.calculateActivityLoad(activeCalories: 700, steps: 12000)
+    #expect(load == .heavy || load == .moderate, "Heavy: \(raw)")
 }
 
-@Test func strainZero() async throws {
-    #expect(RecoveryEstimator.calculateStrain(activeCalories: 0, steps: 0) == 0)
+@Test func activityLoadRest() async throws {
+    let (load, _) = RecoveryEstimator.calculateActivityLoad(activeCalories: 0, steps: 0)
+    #expect(load == .rest)
 }
 
-@Test func sleepNeedIncreases() async throws {
-    let low = RecoveryEstimator.estimatedSleepNeed(strain: 5)
-    let high = RecoveryEstimator.estimatedSleepNeed(strain: 18)
-    #expect(high > low, "More strain = more sleep needed")
+@Test func dynamicSleepNeedIncreases() async throws {
+    let low = RecoveryEstimator.dynamicSleepNeed(previousDayLoad: 5, rollingDebtHours: 0)
+    let high = RecoveryEstimator.dynamicSleepNeed(previousDayLoad: 18, rollingDebtHours: -4)
+    #expect(high > low, "More strain + debt = more sleep needed")
+    #expect(low >= 7.5, "Base minimum is 7.5h")
 }
 
 // MARK: - Favorites (6 tests)

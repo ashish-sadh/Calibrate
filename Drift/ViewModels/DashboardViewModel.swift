@@ -20,7 +20,6 @@ final class DashboardViewModel {
     var isHealthKitAvailable: Bool = false
     // Recovery
     var recoveryScore: Int = 0
-    var recoveryLevel: RecoveryEstimator.DailyRecovery.Level = .red
     var hrvMs: Double = 0
     var restingHR: Double = 0
 
@@ -28,19 +27,6 @@ final class DashboardViewModel {
 
     var calorieBalance: Double {
         todayNutrition.calories - caloriesBurned
-    }
-
-    /// Best TDEE estimate: Apple Health burn data > weight-trend-derived > nil.
-    var estimatedTDEE: Double? {
-        // 1. Apple Health burn data (active + basal)
-        if caloriesBurned > 500 { return caloriesBurned }
-        // 2. From weight trend: if we know the deficit and average intake,
-        //    TDEE = average_intake - deficit (deficit is negative when losing)
-        if let deficit = dailyDeficit, todayNutrition.calories > 0 {
-            let tdee = todayNutrition.calories - deficit
-            if tdee > 500 { return tdee }
-        }
-        return nil
     }
 
     var calorieBalanceText: String {
@@ -103,26 +89,29 @@ final class DashboardViewModel {
         isHealthKitAvailable = await hkService.isAvailable
 
         if isHealthKitAvailable {
-            do {
-                let calories = try await hkService.fetchCaloriesBurned(for: Date())
-                activeCalories = calories.active
-                basalCalories = calories.basal
-                caloriesBurned = calories.active + calories.basal
-
-                steps = try await hkService.fetchSteps(for: Date())
-                sleepHours = try await hkService.fetchSleepHours(for: Date())
-
-                // Recovery
-                hrvMs = try await hkService.fetchHRV(for: Date())
-                restingHR = try await hkService.fetchRestingHeartRate(for: Date())
-                let (score, level) = RecoveryEstimator.calculateRecovery(
-                    hrvMs: hrvMs, restingHR: restingHR, sleepHours: sleepHours
-                )
-                recoveryScore = score
-                recoveryLevel = level
-            } catch {
-                Log.healthKit.error("HealthKit fetch failed: \(error.localizedDescription)")
+            // Fetch each independently — one failure doesn't block others
+            if let cal = try? await hkService.fetchCaloriesBurned(for: Date()) {
+                activeCalories = cal.active
+                basalCalories = cal.basal
+                caloriesBurned = cal.active + cal.basal
             }
+            steps = (try? await hkService.fetchSteps(for: Date())) ?? 0
+            sleepHours = (try? await hkService.fetchSleepHours(for: Date())) ?? 0
+            hrvMs = (try? await hkService.fetchHRV(for: Date())) ?? 0
+            restingHR = (try? await hkService.fetchRestingHeartRate(for: Date())) ?? 0
+
+            // Build baselines (same as detail page) for consistent recovery score
+            let hrvHist = (try? await hkService.fetchHRVHistory(days: 14)) ?? []
+            let rhrHist = (try? await hkService.fetchRestingHeartRateHistory(days: 14)) ?? []
+            let sleepHist = (try? await hkService.fetchSleepHistory(days: 14)) ?? []
+            let baselines = RecoveryEstimator.calculateBaselines(
+                hrvHistory: hrvHist, rhrHistory: rhrHist,
+                respHistory: [], sleepHistory: sleepHist)
+
+            recoveryScore = RecoveryEstimator.calculateRecovery(
+                hrvMs: hrvMs, restingHR: restingHR, sleepHours: sleepHours,
+                baselines: baselines
+            )
         }
     }
 }

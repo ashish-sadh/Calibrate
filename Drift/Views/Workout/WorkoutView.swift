@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 import AudioToolbox
 
 struct WorkoutView: View {
+    @Binding var selectedTab: Int
     @State private var workouts: [WorkoutSummary] = []
     @State private var weeklyCounts: [(weekStart: Date, count: Int)] = []
     @State private var templates: [WorkoutTemplate] = []
@@ -15,12 +16,14 @@ struct WorkoutView: View {
     @State private var isLoading = true
     @State private var selectedTemplate: WorkoutTemplate? = nil
     @State private var previewTemplate: WorkoutTemplate? = nil
+    @State private var editingTemplateForEdit: WorkoutTemplate? = nil
     @State private var renameTemplateId: Int64?
     @State private var renameTemplateName = ""
     @State private var showingRenameAlert = false
 
     @State private var activeCalories: Double = 0
     @State private var steps: Double = 0
+    @State private var showHistory = false
 
     var body: some View {
         ScrollView {
@@ -93,44 +96,40 @@ struct WorkoutView: View {
                         Text("Save a workout as template or create one here")
                             .font(.caption).foregroundStyle(.tertiary)
                     } else {
-                        ScrollView {
                         ForEach(templates) { t in
-                            VStack(spacing: 0) {
-                                HStack {
-                                    // Tap anywhere on the row → preview/edit
-                                    Button { previewTemplate = t } label: {
-                                        VStack(alignment: .leading, spacing: 3) {
-                                            HStack(spacing: 4) {
-                                                if t.isFavorite {
-                                                    Image(systemName: "star.fill").font(.caption2).foregroundStyle(Theme.fatYellow)
-                                                }
-                                                Text(t.name).font(.subheadline.weight(.medium))
-                                            }
-                                            let working = t.exercises.filter { !$0.isWarmup }
-                                            Text(working.map(\.name).prefix(3).joined(separator: ", "))
-                                                .font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
+                            HStack {
+                                VStack(alignment: .leading, spacing: 3) {
+                                    HStack(spacing: 4) {
+                                        if t.isFavorite {
+                                            Image(systemName: "star.fill").font(.caption2).foregroundStyle(Theme.fatYellow)
                                         }
-                                    }.tint(.primary)
-
-                                    Spacer()
-
-                                    // Start button — clearly separated
-                                    Button {
-                                        WorkoutService.clearSession(); selectedTemplate = t; showingNewWorkout = true
-                                    } label: {
-                                        Text("Start").font(.caption.weight(.semibold))
-                                            .padding(.horizontal, 12).padding(.vertical, 6)
-                                            .background(Theme.accent, in: RoundedRectangle(cornerRadius: 8))
-                                            .foregroundStyle(.white)
-                                    }.buttonStyle(.plain)
+                                        Text(t.name).font(.subheadline.weight(.medium))
+                                    }
+                                    let working = t.exercises.filter { !$0.isWarmup }
+                                    Text(working.map(\.name).prefix(3).joined(separator: ", "))
+                                        .font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
                                 }
-                                .padding(.vertical, 4)
+
+                                Spacer()
+
+                                // Start button
+                                Button {
+                                    WorkoutService.clearSession(); selectedTemplate = t; showingNewWorkout = true
+                                } label: {
+                                    Text("Start").font(.caption.weight(.semibold))
+                                        .padding(.horizontal, 12).padding(.vertical, 6)
+                                        .background(Theme.accent, in: RoundedRectangle(cornerRadius: 8))
+                                        .foregroundStyle(.white)
+                                }.buttonStyle(.plain)
                             }
+                            .padding(.vertical, 4)
+                            .contentShape(Rectangle())
+                            .onTapGesture { previewTemplate = t }
                             .contextMenu {
                                 Button { WorkoutService.clearSession(); selectedTemplate = t; showingNewWorkout = true } label: {
                                     Label("Start Workout", systemImage: "play")
                                 }
-                                Button { previewTemplate = t } label: {
+                                Button { editingTemplateForEdit = t } label: {
                                     Label("Edit", systemImage: "pencil")
                                 }
                                 if let tid = t.id {
@@ -155,25 +154,16 @@ struct WorkoutView: View {
                                 }
                             }
                         }
-                        }.frame(maxHeight: templates.count > 4 ? 280 : .infinity)
                     }
                 }
                 .card()
 
-                // Browse exercises + Import
-                HStack(spacing: 8) {
-                    Button { showingExerciseBrowser = true } label: {
-                        Label("Exercises", systemImage: "dumbbell").frame(maxWidth: .infinity)
-                    }.buttonStyle(.bordered)
+                // Browse exercises
+                Button { showingExerciseBrowser = true } label: {
+                    Label("Browse Exercises", systemImage: "dumbbell").frame(maxWidth: .infinity)
+                }.buttonStyle(.bordered)
 
-                    Button { showingImport = true } label: {
-                        Label("Import", systemImage: "doc.badge.plus").frame(maxWidth: .infinity)
-                    }.buttonStyle(.bordered)
-                }
-
-                if let r = importResult { Text(r).font(.caption).foregroundStyle(.secondary) }
-
-                // History
+                // History — collapsible
                 if workouts.isEmpty && !isLoading {
                     VStack(spacing: 12) {
                         Image(systemName: "dumbbell.fill").font(.system(size: 40)).foregroundStyle(Theme.accent.opacity(0.5))
@@ -182,21 +172,40 @@ struct WorkoutView: View {
                     }.padding(.top, 30)
                 } else {
                     VStack(alignment: .leading, spacing: 10) {
-                        HStack {
-                            Text("History").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
-                            Spacer()
-                            Text("\(workouts.count) workouts").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) { showHistory.toggle() }
+                        } label: {
+                            HStack(spacing: 8) {
+                                Image(systemName: "clock.arrow.circlepath")
+                                    .font(.caption)
+                                    .foregroundStyle(Theme.accent)
+                                Text("History")
+                                    .font(.subheadline.weight(.semibold))
+                                Spacer()
+                                Text("\(workouts.count) workouts")
+                                    .font(.caption).foregroundStyle(.tertiary)
+                                Image(systemName: "chevron.down")
+                                    .font(.caption2.weight(.bold))
+                                    .foregroundStyle(Theme.accent)
+                                    .rotationEffect(.degrees(showHistory ? 0 : -90))
+                            }
+                            .card()
                         }
-                        ForEach(workouts, id: \.workout.id) { s in
-                            NavigationLink { WorkoutDetailView(summary: s) { loadData() } } label: { workoutCard(s) }.tint(.primary)
-                                .contextMenu {
-                                    if let wid = s.workout.id {
-                                        Button(role: .destructive) {
-                                            try? WorkoutService.deleteWorkout(id: wid)
-                                            loadData()
-                                        } label: { Label("Delete Workout", systemImage: "trash") }
+                        .buttonStyle(.plain)
+
+                        if showHistory {
+                            ForEach(workouts, id: \.workout.id) { s in
+                                NavigationLink { WorkoutDetailView(summary: s) { loadData() } } label: { workoutCard(s) }.tint(.primary)
+                                    .contextMenu {
+                                        if let wid = s.workout.id {
+                                            Button(role: .destructive) {
+                                                try? WorkoutService.deleteWorkout(id: wid)
+                                                loadData()
+                                            } label: { Label("Delete Workout", systemImage: "trash") }
+                                        }
                                     }
-                                }
+                            }
+                            .transition(.opacity)
                         }
                     }
                 }
@@ -206,6 +215,15 @@ struct WorkoutView: View {
         .scrollContentBackground(.hidden).background(Theme.background.ignoresSafeArea())
         .navigationTitle("Exercise").navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button { selectedTab = 0 } label: {
+                    Image(systemName: "chevron.left")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(Theme.accent)
+                }
+            }
+        }
         .sheet(isPresented: $showingNewWorkout) {
             ActiveWorkoutView(template: selectedTemplate) {
                 selectedTemplate = nil
@@ -214,6 +232,9 @@ struct WorkoutView: View {
         }
         .sheet(isPresented: $showingCreateTemplate) {
             CreateTemplateView { loadData() }
+        }
+        .sheet(item: $editingTemplateForEdit) { template in
+            CreateTemplateView(existingTemplate: template) { loadData() }
         }
         .sheet(isPresented: $showingExerciseBrowser) {
             ExerciseBrowserView()
@@ -228,17 +249,21 @@ struct WorkoutView: View {
                         if !warmups.isEmpty {
                             Text("WARMUP").font(.caption2.weight(.bold)).foregroundStyle(Theme.fatYellow)
                             ForEach(Array(warmups.enumerated()), id: \.offset) { _, ex in
-                                HStack {
-                                    Text("W").font(.caption2.weight(.bold)).foregroundStyle(Theme.fatYellow)
-                                        .padding(.horizontal, 3).padding(.vertical, 1)
-                                        .background(Theme.fatYellow.opacity(0.2), in: RoundedRectangle(cornerRadius: 3))
-                                    VStack(alignment: .leading, spacing: 1) {
-                                        Text(ex.name).font(.subheadline)
-                                        if let notes = ex.notes { Text(notes).font(.caption2).foregroundStyle(.secondary).italic() }
+                                NavigationLink {
+                                    ExerciseDetailView(exerciseName: ex.name, info: ExerciseDatabase.info(for: ex.name))
+                                } label: {
+                                    HStack {
+                                        Text("W").font(.caption2.weight(.bold)).foregroundStyle(Theme.fatYellow)
+                                            .padding(.horizontal, 3).padding(.vertical, 1)
+                                            .background(Theme.fatYellow.opacity(0.2), in: RoundedRectangle(cornerRadius: 3))
+                                        VStack(alignment: .leading, spacing: 1) {
+                                            Text(ex.name).font(.subheadline)
+                                            if let notes = ex.notes { Text(notes).font(.caption2).foregroundStyle(.secondary).italic() }
+                                        }
+                                        Spacer()
+                                        Text("\(ex.sets) sets").font(.caption2).foregroundStyle(.tertiary)
                                     }
-                                    Spacer()
-                                    Text("\(ex.sets) sets").font(.caption2).foregroundStyle(.tertiary)
-                                }
+                                }.tint(.primary)
                             }
                             Divider().padding(.vertical, 4)
                         }
@@ -318,23 +343,25 @@ struct WorkoutView: View {
     }
 
     private var consistencyChart: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Workouts Per Week").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
-                Spacer()
-                Text("\(weeklyCounts.reduce(0) { $0 + $1.count }) total").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
-            }
-            Chart {
-                ForEach(weeklyCounts.indices, id: \.self) { i in
-                    BarMark(x: .value("", weeklyCounts[i].weekStart), y: .value("", weeklyCounts[i].count))
-                        .foregroundStyle(weeklyCounts[i].count > 0 ? Theme.accent : Theme.cardBackgroundElevated).cornerRadius(3)
-                }
-            }
-            .chartYScale(domain: 0...max(5, (weeklyCounts.map(\.count).max() ?? 3) + 1))
-            .chartYAxis { AxisMarks(values: .automatic(desiredCount: 3)) { AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3)).foregroundStyle(.secondary.opacity(0.2)); AxisValueLabel().foregroundStyle(.secondary) } }
-            .chartXAxis { AxisMarks(values: .automatic(desiredCount: 4)) { AxisValueLabel(format: .dateTime.month(.abbreviated).day()).foregroundStyle(.secondary) } }
-            .frame(height: 100)
-        }.card()
+        let total = weeklyCounts.reduce(0) { $0 + $1.count }
+        let thisWeek = weeklyCounts.first?.count ?? 0
+
+        return HStack(spacing: 12) {
+            // This week
+            VStack(spacing: 2) {
+                Text("\(thisWeek)").font(.title2.weight(.bold).monospacedDigit())
+                Text("this week").font(.caption2).foregroundStyle(.tertiary)
+            }.frame(maxWidth: .infinity)
+
+            Divider().frame(height: 28)
+
+            // Total
+            VStack(spacing: 2) {
+                Text("\(total)").font(.title2.weight(.bold).monospacedDigit())
+                Text("in 12 wks").font(.caption2).foregroundStyle(.tertiary)
+            }.frame(maxWidth: .infinity)
+        }
+        .card()
     }
 
     private func workoutCard(_ s: WorkoutSummary) -> some View {
@@ -375,12 +402,17 @@ struct WorkoutView: View {
     }
     private func loadData() {
         isLoading = true
+        // Load independently so one failure doesn't block the others
         do {
             let raw = try WorkoutService.fetchWorkouts(limit: 50)
             workouts = try raw.map { try WorkoutService.buildSummary(for: $0) }
-            weeklyCounts = try WorkoutService.weeklyWorkoutCounts(weeks: 12)
-            templates = try WorkoutService.fetchTemplates()
         } catch { Log.app.error("Workout load: \(error.localizedDescription)") }
+        do {
+            weeklyCounts = try WorkoutService.weeklyWorkoutCounts(weeks: 12)
+        } catch { Log.app.error("Weekly counts: \(error.localizedDescription)") }
+        do {
+            templates = try WorkoutService.fetchTemplates()
+        } catch { Log.app.error("Templates load: \(error.localizedDescription)") }
         isLoading = false
     }
 }
@@ -544,6 +576,7 @@ struct ActiveWorkoutView: View {
     @State private var showingFinishOptions = false
     @State private var templateName = ""
     @State private var showingTemplateName = false
+    @State private var saveAsTemplateToggle = false
 
     struct ActiveExercise: Identifiable {
         let id = UUID()
@@ -585,6 +618,13 @@ struct ActiveWorkoutView: View {
                             .font(.caption).foregroundStyle(.secondary)
                             .lineLimit(1...3)
                             .padding(.horizontal, 16)
+                    }
+
+                    // Quick add exercise at top (useful when template already has many)
+                    if exercises.count >= 3 {
+                        Button { showingExercisePicker = true } label: {
+                            Label("Add Exercise", systemImage: "plus.circle").font(.caption)
+                        }.buttonStyle(.bordered).tint(Theme.accent).padding(.horizontal, 12)
                     }
 
                     // Warmup exercises
@@ -649,28 +689,77 @@ struct ActiveWorkoutView: View {
                     addExercise(name: name)
                 }
             }
-            .confirmationDialog("Finish Workout", isPresented: $showingFinishOptions) {
-                Button("Save Workout") {
-                    saveWorkout(andDismiss: true)
+            .sheet(isPresented: $showingFinishOptions) {
+                NavigationStack {
+                    VStack(spacing: 20) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 48))
+                            .foregroundStyle(Theme.deficit)
+                            .padding(.top, 24)
+
+                        Text("Nice work!").font(.title2.weight(.bold))
+
+                        // Workout summary
+                        HStack(spacing: 16) {
+                            VStack(spacing: 2) {
+                                Text(formatDuration(elapsedSeconds)).font(.title3.weight(.bold).monospacedDigit())
+                                Text("Duration").font(.caption2).foregroundStyle(.tertiary)
+                            }
+                            Divider().frame(height: 28)
+                            VStack(spacing: 2) {
+                                Text("\(exercises.count)").font(.title3.weight(.bold).monospacedDigit())
+                                Text("Exercises").font(.caption2).foregroundStyle(.tertiary)
+                            }
+                            Divider().frame(height: 28)
+                            VStack(spacing: 2) {
+                                let totalSets = exercises.flatMap(\.sets).filter(\.done).count
+                                Text("\(totalSets)").font(.title3.weight(.bold).monospacedDigit())
+                                Text("Sets").font(.caption2).foregroundStyle(.tertiary)
+                            }
+                        }
+                        .card()
+
+                        // Save as template toggle
+                        Toggle(isOn: $saveAsTemplateToggle) {
+                            Label("Save as template", systemImage: "doc.on.doc")
+                                .font(.subheadline)
+                        }
+                        .tint(Theme.accent)
+                        .padding(.horizontal, 16).padding(.vertical, 10)
+                        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
+
+                        if saveAsTemplateToggle {
+                            TextField("Template name", text: $templateName)
+                                .font(.subheadline)
+                                .padding(12)
+                                .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
+                        }
+
+                        Spacer()
+
+                        Button {
+                            showingFinishOptions = false
+                            saveWorkout(andDismiss: !saveAsTemplateToggle)
+                            if saveAsTemplateToggle {
+                                saveAsTemplate(name: templateName.isEmpty ? workoutName : templateName)
+                                onComplete(); dismiss()
+                            }
+                        } label: {
+                            Text("Save Workout").font(.headline).frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent).tint(Theme.deficit)
+                        .padding(.bottom, 16)
+                    }
+                    .padding(.horizontal, 16)
+                    .background(Theme.background)
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Back") { showingFinishOptions = false }
+                        }
+                    }
                 }
-                Button("Save + Save as Template") {
-                    templateName = workoutName
-                    saveWorkout(andDismiss: false)
-                    showingTemplateName = true
-                }
-                Button("Cancel", role: .cancel) {}
-            }
-            .alert("Template Name", isPresented: $showingTemplateName) {
-                TextField("Template name", text: $templateName)
-                Button("Save Template") {
-                    saveAsTemplate(name: templateName)
-                    onComplete(); dismiss()
-                }
-                Button("Skip", role: .cancel) {
-                    onComplete(); dismiss()
-                }
-            } message: {
-                Text("Save this workout as a reusable template")
+                .presentationDetents([.medium])
             }
             .onAppear {
                 // Restore session BEFORE starting timer so startTime is correct
@@ -710,8 +799,12 @@ struct ActiveWorkoutView: View {
                         .padding(.horizontal, 4).padding(.vertical, 1)
                         .background(Theme.fatYellow.opacity(0.2), in: RoundedRectangle(cornerRadius: 3))
                 }
-                Text(exercises[ei].name).font(.subheadline.weight(.bold))
-                    .foregroundStyle(exercises[ei].isWarmupExercise ? Theme.fatYellow : Theme.calorieBlue)
+                NavigationLink {
+                    ExerciseDetailView(exerciseName: exercises[ei].name, info: ExerciseDatabase.info(for: exercises[ei].name))
+                } label: {
+                    Text(exercises[ei].name).font(.subheadline.weight(.bold))
+                        .foregroundStyle(exercises[ei].isWarmupExercise ? Theme.fatYellow : Theme.calorieBlue)
+                }
                 Text(guessGroup(exercises[ei].name)).font(.caption2).foregroundStyle(.tertiary)
                 Spacer()
                 // Rest time customizer
@@ -728,6 +821,14 @@ struct ActiveWorkoutView: View {
                         .background(Theme.accent.opacity(0.15), in: RoundedRectangle(cornerRadius: 4))
                 }
                 Menu {
+                    let name = exercises[ei].name
+                    let isFav = WorkoutService.exerciseFavorites.contains(name)
+                    Button {
+                        WorkoutService.toggleExerciseFavorite(name)
+                    } label: {
+                        Label(isFav ? "Unfavorite" : "Favorite", systemImage: isFav ? "star.slash" : "star")
+                    }
+                    Divider()
                     Button(role: .destructive) { exercises.remove(at: ei) } label: {
                         Label("Remove Exercise", systemImage: "trash")
                     }
@@ -1050,12 +1151,35 @@ struct ExercisePickerView: View {
     @State private var query = ""
     @State private var showingCustom = false
     @State private var selectedBodyPartFilter: String? = nil
+    @State private var favs: Set<String> = WorkoutService.exerciseFavorites
     @FocusState private var searchFocused: Bool
 
     private var results: [ExerciseDatabase.ExerciseInfo] {
         var list = query.isEmpty ? ExerciseDatabase.allWithCustom : ExerciseDatabase.search(query: query)
         if let filter = selectedBodyPartFilter { list = list.filter { $0.bodyPart == filter } }
+        // Rank favorites first
+        let f = favs
+        list.sort { f.contains($0.name) && !f.contains($1.name) }
         return Array(list.prefix(50))
+    }
+
+    private var favoriteExercises: [ExerciseDatabase.ExerciseInfo] {
+        guard !favs.isEmpty, query.isEmpty else { return [] }
+        let all = ExerciseDatabase.allWithCustom
+        var matched = all.filter { favs.contains($0.name) }
+        if let filter = selectedBodyPartFilter { matched = matched.filter { $0.bodyPart == filter } }
+        return matched
+    }
+
+    private var recentExercises: [String] {
+        let recents = (try? WorkoutService.recentExerciseNames(limit: 10)) ?? []
+        let favNames = favs
+        var filtered = recents.filter { !favNames.contains($0) }
+        if !query.isEmpty { filtered = filtered.filter { $0.localizedCaseInsensitiveContains(query) } }
+        if let filter = selectedBodyPartFilter {
+            filtered = filtered.filter { ExerciseDatabase.bodyPart(for: $0) == filter }
+        }
+        return filtered
     }
 
     // Exercises from workout history that aren't in the database
@@ -1095,20 +1219,29 @@ struct ExercisePickerView: View {
                         Label("Create Custom Exercise", systemImage: "plus.circle.fill").foregroundStyle(Theme.accent)
                     }
 
+                    // Favorite exercises
+                    if !favoriteExercises.isEmpty {
+                        Section("Favorites") {
+                            ForEach(favoriteExercises) { ex in
+                                exerciseRow(name: ex.name, bodyPart: ex.bodyPart, equipment: ex.equipment)
+                            }
+                        }
+                    }
+
+                    // Recently used
+                    if !recentExercises.isEmpty {
+                        Section("Recent") {
+                            ForEach(recentExercises, id: \.self) { name in
+                                exerciseRow(name: name, bodyPart: ExerciseDatabase.bodyPart(for: name))
+                            }
+                        }
+                    }
+
                     // History exercises (logged before but not in DB)
                     if !historyExtras.isEmpty {
                         Section("Your Exercises") {
                             ForEach(historyExtras, id: \.self) { name in
-                                Button { onSelect(name); dismiss() } label: {
-                                    HStack {
-                                        Text(name).font(.subheadline)
-                                        Spacer()
-                                        if let lastW = try? WorkoutService.lastWeight(for: name) {
-                                            Text("\(Int(lastW)) lb").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
-                                        }
-                                        Text(ExerciseDatabase.bodyPart(for: name)).font(.caption2).foregroundStyle(.tertiary)
-                                    }
-                                }.tint(.primary)
+                                exerciseRow(name: name, bodyPart: ExerciseDatabase.bodyPart(for: name))
                             }
                         }
                     }
@@ -1116,20 +1249,7 @@ struct ExercisePickerView: View {
                     // Database exercises
                     Section(query.isEmpty ? "All Exercises (\(results.count))" : "\(results.count) results") {
                         ForEach(results) { ex in
-                            Button { onSelect(ex.name); dismiss() } label: {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    HStack {
-                                        Text(ex.name).font(.subheadline)
-                                        Spacer()
-                                        // Show last weight if user has history
-                                        if let lastW = try? WorkoutService.lastWeight(for: ex.name) {
-                                            Text("\(Int(lastW)) lb").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
-                                        }
-                                        Text(ex.bodyPart).font(.caption2).foregroundStyle(.tertiary)
-                                    }
-                                    Text(ex.equipment).font(.system(size: 9)).foregroundStyle(.quaternary)
-                                }
-                            }.tint(.primary)
+                            exerciseRow(name: ex.name, bodyPart: ex.bodyPart, equipment: ex.equipment)
                         }
                     }
                 }.listStyle(.plain)
@@ -1140,8 +1260,39 @@ struct ExercisePickerView: View {
                 CustomExerciseSheet { name in onSelect(name); dismiss() }
             }
             .onAppear {
+                favs = WorkoutService.exerciseFavorites
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { searchFocused = true }
             }
+        }
+    }
+
+    private func exerciseRow(name: String, bodyPart: String, equipment: String? = nil) -> some View {
+        Button { onSelect(name); dismiss() } label: {
+            VStack(alignment: .leading, spacing: 2) {
+                HStack {
+                    if favs.contains(name) {
+                        Image(systemName: "star.fill").font(.caption2).foregroundStyle(Theme.fatYellow)
+                    }
+                    Text(name).font(.subheadline)
+                    Spacer()
+                    if let lastW = try? WorkoutService.lastWeight(for: name) {
+                        Text("\(Int(lastW)) lb").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                    }
+                    Text(bodyPart).font(.caption2).foregroundStyle(.tertiary)
+                }
+                if let equipment, !equipment.isEmpty {
+                    Text(equipment).font(.system(size: 9)).foregroundStyle(.quaternary)
+                }
+            }
+        }
+        .tint(.primary)
+        .swipeActions(edge: .leading) {
+            Button {
+                WorkoutService.toggleExerciseFavorite(name)
+                favs = WorkoutService.exerciseFavorites
+            } label: {
+                Label(favs.contains(name) ? "Unfavorite" : "Favorite", systemImage: favs.contains(name) ? "star.slash" : "star")
+            }.tint(Theme.fatYellow)
         }
     }
 
@@ -1189,6 +1340,7 @@ struct CustomExerciseSheet: View {
 // MARK: - Create Template
 
 struct CreateTemplateView: View {
+    var existingTemplate: WorkoutTemplate? = nil
     let onSave: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var name = ""
@@ -1243,18 +1395,33 @@ struct CreateTemplateView: View {
                 Section {
                     Button {
                         if let json = try? JSONEncoder().encode(exercises), let jsonStr = String(data: json, encoding: .utf8) {
-                            var t = WorkoutTemplate(name: name.isEmpty ? "Template" : name, exercisesJson: jsonStr, createdAt: ISO8601DateFormatter().string(from: Date()))
-                            try? WorkoutService.saveTemplate(&t)
+                            if let existing = existingTemplate, let id = existing.id {
+                                // Update existing template
+                                try? AppDatabase.shared.writer.write { db in
+                                    try db.execute(sql: "UPDATE workout_template SET name = ?, exercises_json = ? WHERE id = ?",
+                                                   arguments: [name.isEmpty ? "Template" : name, jsonStr, id])
+                                }
+                            } else {
+                                // Create new
+                                var t = WorkoutTemplate(name: name.isEmpty ? "Template" : name, exercisesJson: jsonStr, createdAt: ISO8601DateFormatter().string(from: Date()))
+                                try? WorkoutService.saveTemplate(&t)
+                            }
                         }
                         onSave(); dismiss()
                     } label: {
-                        Label("Save Template", systemImage: "checkmark.circle.fill").frame(maxWidth: .infinity)
+                        Label(existingTemplate != nil ? "Update Template" : "Save Template", systemImage: "checkmark.circle.fill").frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent).tint(Theme.accent)
                     .disabled(exercises.isEmpty)
                 }
             }
-            .navigationTitle("New Template").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(existingTemplate != nil ? "Edit Template" : "New Template").navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                if let t = existingTemplate {
+                    name = t.name
+                    exercises = t.exercises
+                }
+            }
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
             .sheet(isPresented: $showingPicker) {
                 ExercisePickerView { exName in
@@ -1375,6 +1542,8 @@ struct ExerciseBrowserView: View {
     private var results: [ExerciseDatabase.ExerciseInfo] {
         var list = query.isEmpty ? ExerciseDatabase.allWithCustom : ExerciseDatabase.search(query: query)
         if let part = selectedPart { list = list.filter { $0.bodyPart == part } }
+        let favs = WorkoutService.exerciseFavorites
+        list.sort { favs.contains($0.name) && !favs.contains($1.name) }
         return list
     }
 
@@ -1453,13 +1622,25 @@ struct ExerciseDetailView: View {
     let info: ExerciseDatabase.ExerciseInfo?
     @State private var history: [WorkoutSet] = []
     @State private var pr: Double?
+    @State private var isFavorite = false
 
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
                 // Exercise info
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(exerciseName).font(.title3.weight(.bold))
+                    HStack {
+                        Text(exerciseName).font(.title3.weight(.bold))
+                        Spacer()
+                        Button {
+                            WorkoutService.toggleExerciseFavorite(exerciseName)
+                            isFavorite.toggle()
+                        } label: {
+                            Image(systemName: isFavorite ? "star.fill" : "star")
+                                .font(.title3)
+                                .foregroundStyle(isFavorite ? Theme.fatYellow : Color.gray.opacity(0.4))
+                        }
+                    }
 
                     if let info {
                         // Tags row
@@ -1526,6 +1707,7 @@ struct ExerciseDetailView: View {
         .scrollContentBackground(.hidden).background(Theme.background.ignoresSafeArea())
         .navigationTitle("Exercise").navigationBarTitleDisplayMode(.inline)
         .onAppear {
+            isFavorite = WorkoutService.exerciseFavorites.contains(exerciseName)
             history = (try? WorkoutService.fetchExerciseHistory(name: exerciseName)) ?? []
             pr = try? WorkoutService.fetchPR(for: exerciseName)
         }

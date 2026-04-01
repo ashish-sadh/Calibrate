@@ -2,6 +2,7 @@ import SwiftUI
 import Charts
 
 struct FoodTabView: View {
+    @Binding var selectedTab: Int
     @State private var viewModel = FoodLogViewModel()
     @State private var showingSearch = false
     @State private var showingRecipeBuilder = false
@@ -60,7 +61,10 @@ struct FoodTabView: View {
     private var dateNav: some View {
         HStack {
             Button { viewModel.goToPreviousDay(); loggedDays = viewModel.loggedDays(last: 30) } label: {
-                Image(systemName: "chevron.left").font(.caption.weight(.bold))
+                Image(systemName: "chevron.left")
+                    .font(.body.weight(.semibold))
+                    .frame(width: 36, height: 36)
+                    .background(Theme.cardBackgroundElevated, in: Circle())
             }
 
             Spacer()
@@ -101,11 +105,14 @@ struct FoodTabView: View {
             Spacer()
 
             if viewModel.isToday {
-                Color.clear.frame(width: 30)
+                Color.clear.frame(width: 36)
             } else {
                 HStack(spacing: 8) {
                     Button { viewModel.goToNextDay(); loggedDays = viewModel.loggedDays(last: 30) } label: {
-                        Image(systemName: "chevron.right").font(.caption.weight(.bold))
+                        Image(systemName: "chevron.right")
+                            .font(.body.weight(.semibold))
+                            .frame(width: 36, height: 36)
+                            .background(Theme.cardBackgroundElevated, in: Circle())
                     }
                     Button { viewModel.goToDate(Date()); loggedDays = viewModel.loggedDays(last: 30) } label: {
                         Text("Today").font(.caption.weight(.bold)).foregroundStyle(Theme.accent)
@@ -120,7 +127,7 @@ struct FoodTabView: View {
 
     private var dailyTotalsCard: some View {
         let n = viewModel.todayNutrition
-        let targets = WeightGoal.load()?.macroTargets(actualTDEE: nil)
+        let targets = WeightGoal.load()?.macroTargets()
 
         return VStack(spacing: 10) {
             // Calories with target

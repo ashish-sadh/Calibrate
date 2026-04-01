@@ -498,39 +498,98 @@ struct FoodSearchView: View {
     // MARK: - Manual Entry Sheet
 
     private var manualEntrySheet: some View {
-        NavigationStack {
-            Form {
-                Section("Food") { TextField("Name", text: $manualName) }
-                Section("Nutrition") {
-                    macroField("Calories", value: $manualCal, unit: "kcal")
-                    macroField("Protein", value: $manualP, unit: "g")
-                    macroField("Carbs", value: $manualC, unit: "g")
-                    macroField("Fat", value: $manualF, unit: "g")
-                    macroField("Fiber", value: $manualFb, unit: "g")
+        let p = Double(manualP) ?? 0, c = Double(manualC) ?? 0, f = Double(manualF) ?? 0
+        let macroCalories = Int(p * 4 + c * 4 + f * 9)
+        let enteredCal = Int(Double(manualCal) ?? 0)
+
+        return NavigationStack {
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Name
+                    TextField("Food name (optional)", text: $manualName)
+                        .font(.body)
+                        .padding(12)
+                        .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
+
+                    // Calories — hero
+                    VStack(spacing: 4) {
+                        Text("Calories").font(.caption2).foregroundStyle(.tertiary)
+                        TextField("0", text: $manualCal)
+                            .keyboardType(.numberPad)
+                            .font(.system(size: 44, weight: .bold).monospacedDigit())
+                            .multilineTextAlignment(.center)
+                        Text("kcal").font(.caption).foregroundStyle(.secondary)
+                        if macroCalories > 0 && !manualCal.isEmpty && macroCalories != enteredCal {
+                            Text("Macros sum to \(macroCalories) kcal")
+                                .font(.caption2).foregroundStyle(.tertiary)
+                        }
+                    }
+                    .padding(.vertical, 8)
+
+                    // Macros — inline row
+                    HStack(spacing: 10) {
+                        manualMacroField("Protein", value: $manualP, unit: "g", color: Theme.proteinRed)
+                        manualMacroField("Carbs", value: $manualC, unit: "g", color: Theme.carbsGreen)
+                        manualMacroField("Fat", value: $manualF, unit: "g", color: Theme.fatYellow)
+                    }
+
+                    // Fiber — optional, smaller
+                    HStack {
+                        Text("Fiber").font(.caption).foregroundStyle(.secondary)
+                        Spacer()
+                        TextField("0", text: $manualFb)
+                            .keyboardType(.decimalPad)
+                            .font(.subheadline.monospacedDigit())
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 60)
+                        Text("g").font(.caption).foregroundStyle(.tertiary)
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+                    .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
                 }
+                .padding(.horizontal, 16)
+                .padding(.top, 12)
             }
-            .navigationTitle("Manual Entry").navigationBarTitleDisplayMode(.inline)
+            .scrollDismissesKeyboard(.interactively)
+            .background(Theme.background)
+            .navigationTitle("Quick Add").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showingManual = false } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Log") {
+                        let cal = Double(manualCal) ?? (macroCalories > 0 ? Double(macroCalories) : 0)
                         viewModel.quickAdd(name: manualName.isEmpty ? "Quick Add" : manualName,
-                                           calories: Double(manualCal) ?? 0, proteinG: Double(manualP) ?? 0,
-                                           carbsG: Double(manualC) ?? 0, fatG: Double(manualF) ?? 0,
+                                           calories: cal, proteinG: p, carbsG: c, fatG: f,
                                            fiberG: Double(manualFb) ?? 0, mealType: viewModel.autoMealType)
                         viewModel.loadSuggestions()
                         loggedCount += 1
                         showingManual = false
                         manualName = ""; manualCal = ""; manualP = ""; manualC = ""; manualF = ""; manualFb = ""
                     }
-                    .disabled(manualCal.isEmpty)
+                    .disabled(manualCal.isEmpty && macroCalories == 0)
                 }
             }
         }
     }
 
+    private func manualMacroField(_ label: String, value: Binding<String>, unit: String, color: Color) -> some View {
+        VStack(spacing: 4) {
+            Text(label).font(.caption2).foregroundStyle(.tertiary)
+            TextField("0", text: value)
+                .keyboardType(.decimalPad)
+                .font(.title3.weight(.semibold).monospacedDigit())
+                .multilineTextAlignment(.center)
+            Text(unit).font(.caption2).foregroundStyle(.tertiary)
+        }
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity)
+        .background(color.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).stroke(color.opacity(0.2), lineWidth: 1))
+    }
+
     private func popularFoods() -> [Food] {
-        let names = ["Rice", "Egg", "Chicken", "Roti", "Dal", "Banana", "Milk", "Oats"]
+        let names = ["Egg", "Milk", "Bread", "Almonds", "Greek Yogurt",
+                     "Banana", "Chicken", "Rice", "Oats", "Avocado"]
         var result: [Food] = []
         for name in names {
             if let food = (try? AppDatabase.shared.searchFoods(query: name, limit: 1))?.first {

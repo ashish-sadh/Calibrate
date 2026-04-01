@@ -4,153 +4,235 @@ import Charts
 struct SleepRecoveryView: View {
     @State private var recovery: RecoveryEstimator.DailyRecovery?
     @State private var sleepHistory: [(date: Date, hours: Double)] = []
+    @State private var hrvHistory: [(date: Date, ms: Double)] = []
+    @State private var rhrHistory: [(date: Date, bpm: Double)] = []
+    @State private var respHistory: [(date: Date, rpm: Double)] = []
     @State private var isLoading = true
+    @State private var expandedVital: String?
 
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
-                if isLoading {
-                    ProgressView("Loading health data...")
-                        .padding(.top, 40)
-                } else if let r = recovery {
-                    // Score rings (WHOOP-style)
-                    scoreRings(r)
-
-                    // Sleep detail
-                    sleepDetailCard(r)
-
-                    // Recovery detail
-                    recoveryDetailCard(r)
-
-                    // Sleep trend chart
-                    if sleepHistory.count > 3 {
-                        sleepTrendChart
+                if let r = recovery {
+                    // Always show recovery if we have ANY data (HRV, RHR, or sleep)
+                    if r.recoveryScore > 0 || r.hrvMs > 0 || r.restingHR > 0 {
+                        recoveryHero(r)
                     }
+                    if r.hrvMs > 0 || r.restingHR > 0 || r.respiratoryRate > 0 {
+                        vitalsCard(r)
+                    }
+                    if r.sleepHours > 0 {
+                        sleepScoreSection(r)
+                        if sleepHistory.count > 3 { sleepTrendChart(r) }
+                    }
+                    activityLoadCard(r)
+                    insightsCard(r)
 
-                    // Vitals
-                    vitalsCard(r)
+                    // Hint if missing data
+                    if r.sleepHours == 0 && r.hrvMs == 0 {
+                        emptyState
+                    } else if r.hrvMs == 0 {
+                        Text("Wear Apple Watch for HRV and resting heart rate data.")
+                            .font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
+                    } else if r.sleepHours == 0 {
+                        Text("No sleep data detected. Use a sleep tracker that writes to Apple Health.")
+                            .font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
+                    }
+                } else if isLoading {
+                    Color.clear.frame(height: 200) // invisible placeholder while loading
                 } else {
-                    VStack(spacing: 12) {
-                        Image(systemName: "bed.double.fill")
-                            .font(.system(size: 48)).foregroundStyle(Theme.sleepIndigo.opacity(0.5))
-                        Text("No Sleep Data").font(.headline)
-                        Text("Wear Apple Watch to bed or use a sleep tracker that writes to Apple Health.")
-                            .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
-                    }
-                    .padding(.top, 40)
+                    emptyState
                 }
             }
             .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
         }
         .scrollContentBackground(.hidden)
         .background(Theme.background.ignoresSafeArea())
-        .navigationTitle("Sleep & Recovery").navigationBarTitleDisplayMode(.inline)
+        .navigationTitle("Body Rhythm").navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
         .task { await loadData() }
     }
 
-    // MARK: - Score Rings
+    // MARK: - Recovery Hero (big number + bar, no ring)
 
-    private func scoreRings(_ r: RecoveryEstimator.DailyRecovery) -> some View {
-        HStack(spacing: 16) {
-            scoreRing(
-                value: r.sleepScore,
-                label: "SLEEP",
-                color: r.sleepScore >= 70 ? Theme.sleepIndigo : r.sleepScore >= 40 ? Theme.fatYellow : Theme.surplus
-            )
-            scoreRing(
-                value: r.recoveryScore,
-                label: "RECOVERY",
-                color: r.recoveryLevel == .green ? Theme.deficit : r.recoveryLevel == .yellow ? Theme.fatYellow : Theme.surplus
-            )
-            VStack(spacing: 4) {
-                ZStack {
-                    Circle()
-                        .stroke(Theme.cardBackgroundElevated, lineWidth: 6)
-                        .frame(width: 70, height: 70)
-                    Circle()
-                        .trim(from: 0, to: min(1, r.strainScore / 21))
-                        .stroke(Theme.calorieBlue, style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                        .frame(width: 70, height: 70)
-                        .rotationEffect(.degrees(-90))
-                    Text(String(format: "%.1f", r.strainScore))
-                        .font(.title3.weight(.bold).monospacedDigit())
+    private func recoveryHero(_ r: RecoveryEstimator.DailyRecovery) -> some View {
+        VStack(spacing: 8) {
+            Text("Recovery").font(.caption.weight(.medium)).foregroundStyle(.secondary)
+            Text("\(r.recoveryScore)")
+                .font(.system(size: 56, weight: .bold).monospacedDigit())
+                .foregroundStyle(Theme.scoreColor(r.recoveryScore))
+
+            // Thin gradient progress bar
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Theme.cardBackgroundElevated)
+                        .frame(height: 6)
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(Theme.scoreColor(r.recoveryScore))
+                        .frame(width: geo.size.width * Double(r.recoveryScore) / 100, height: 6)
                 }
-                Text("STRAIN").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+            }
+            .frame(height: 6)
+            .padding(.horizontal, 40)
+
+            if let baselines = r.baselines, baselines.isEstablished {
+                let avgRecovery = RecoveryEstimator.calculateRecovery(
+                    hrvMs: baselines.hrvMs, restingHR: baselines.restingHR,
+                    sleepHours: baselines.sleepHours, baselines: baselines)
+                Text("Your avg: \(avgRecovery)")
+                    .font(.caption2).foregroundStyle(.tertiary)
             }
         }
         .card()
     }
 
-    private func scoreRing(value: Int, label: String, color: Color) -> some View {
-        VStack(spacing: 4) {
-            ZStack {
-                Circle()
-                    .stroke(Theme.cardBackgroundElevated, lineWidth: 6)
-                    .frame(width: 70, height: 70)
-                Circle()
-                    .trim(from: 0, to: Double(value) / 100)
-                    .stroke(color, style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                    .frame(width: 70, height: 70)
-                    .rotationEffect(.degrees(-90))
-                Text("\(value)%")
-                    .font(.title3.weight(.bold).monospacedDigit())
+    // MARK: - Vitals
+
+    private func vitalsCard(_ r: RecoveryEstimator.DailyRecovery) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            vitalRow("HRV", value: r.hrvMs, unit: "ms", baseline: r.baselines?.hrvMs,
+                     higherIsBetter: true, icon: "waveform.path", color: Theme.deficit,
+                     history: hrvHistory.map { ($0.date, $0.ms) }, id: "hrv")
+
+            Divider().overlay(Color.white.opacity(0.05))
+
+            vitalRow("Resting HR", value: r.restingHR, unit: "bpm", baseline: r.baselines?.restingHR,
+                     higherIsBetter: false, icon: "heart.fill", color: Theme.heartRed,
+                     history: rhrHistory.map { ($0.date, $0.bpm) }, id: "rhr")
+
+            Divider().overlay(Color.white.opacity(0.05))
+
+            vitalRow("Respiratory", value: r.respiratoryRate, unit: "rpm", baseline: r.baselines?.respiratoryRate,
+                     higherIsBetter: false, icon: "lungs.fill", color: Theme.calorieBlue,
+                     history: respHistory.map { ($0.date, $0.rpm) }, id: "resp")
+        }
+        .card()
+    }
+
+    private func vitalRow(_ name: String, value: Double, unit: String, baseline: Double?,
+                          higherIsBetter: Bool, icon: String, color: Color,
+                          history: [(Date, Double)], id: String) -> some View {
+        VStack(spacing: 0) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    expandedVital = expandedVital == id ? nil : id
+                }
+            } label: {
+                HStack {
+                    Image(systemName: icon).font(.caption).foregroundStyle(color).frame(width: 20)
+                    Text(name).font(.subheadline)
+                    Spacer()
+                    if value > 0 {
+                        Text(name == "Respiratory" ? String(format: "%.1f", value) : "\(Int(value))")
+                            .font(.subheadline.weight(.bold).monospacedDigit())
+                        Text(unit).font(.caption2).foregroundStyle(.tertiary)
+                        if let bl = baseline, bl > 0 {
+                            let dev = RecoveryEstimator.deviation(current: value, baseline: bl, higherIsBetter: higherIsBetter)
+                            Text("\(dev.arrow)\(dev.pct)%")
+                                .font(.caption2.weight(.semibold).monospacedDigit())
+                                .foregroundStyle(dev.favorable ? Theme.deficit : Theme.surplus)
+                        }
+                    } else {
+                        Text("--").font(.subheadline.weight(.bold)).foregroundStyle(.tertiary)
+                    }
+                }
+                .padding(.vertical, 10)
             }
-            Text(label).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+            .buttonStyle(.plain)
+
+            // Expandable 7-day sparkline
+            if expandedVital == id && history.count >= 3 {
+                Chart {
+                    ForEach(history.indices, id: \.self) { i in
+                        LineMark(x: .value("", history[i].0), y: .value("", history[i].1))
+                            .foregroundStyle(color)
+                            .lineStyle(StrokeStyle(lineWidth: 2))
+                            .interpolationMethod(.catmullRom)
+                        PointMark(x: .value("", history[i].0), y: .value("", history[i].1))
+                            .foregroundStyle(color)
+                            .symbolSize(20)
+                    }
+                    if let bl = baseline {
+                        RuleMark(y: .value("", bl))
+                            .foregroundStyle(.secondary.opacity(0.3))
+                            .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                    }
+                }
+                .chartYScale(domain: .automatic(includesZero: false))
+                .chartXAxis { AxisMarks(values: .automatic(desiredCount: 4)) { AxisValueLabel(format: .dateTime.weekday(.abbreviated)).foregroundStyle(.secondary) } }
+                .chartYAxis { AxisMarks(position: .trailing) { AxisValueLabel().foregroundStyle(.secondary) } }
+                .frame(height: 80)
+                .padding(.bottom, 8)
+                .transition(.opacity)
+            }
         }
     }
 
-    // MARK: - Sleep Detail
+    // MARK: - Sleep Score
 
-    private func sleepDetailCard(_ r: RecoveryEstimator.DailyRecovery) -> some View {
+    private func sleepScoreSection(_ r: RecoveryEstimator.DailyRecovery) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("Sleep").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
                 Spacer()
-                if let start = r.sleepDetail?.bedStart, let end = r.sleepDetail?.bedEnd {
-                    Text("\(formatTime(start)) - \(formatTime(end))")
-                        .font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
-                }
+                Text("\(r.sleepScore)")
+                    .font(.title2.weight(.bold).monospacedDigit())
+                    .foregroundStyle(Theme.scoreColor(r.sleepScore))
             }
 
-            // Hours vs needed
-            HStack(spacing: 12) {
-                VStack(spacing: 2) {
-                    Text(String(format: "%.1f", r.sleepHours))
-                        .font(.title.weight(.bold).monospacedDigit())
-                    Text("hours").font(.caption2).foregroundStyle(.secondary)
+            // Score bar
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 3).fill(Theme.cardBackgroundElevated).frame(height: 6)
+                    RoundedRectangle(cornerRadius: 3).fill(Theme.scoreColor(r.sleepScore))
+                        .frame(width: geo.size.width * Double(r.sleepScore) / 100, height: 6)
                 }
-                .frame(maxWidth: .infinity).card()
+            }
+            .frame(height: 6)
 
-                VStack(spacing: 2) {
-                    Text(String(format: "%.1f", r.sleepNeeded))
-                        .font(.title.weight(.bold).monospacedDigit())
-                        .foregroundStyle(.secondary)
+            // Hours summary
+            HStack(spacing: 16) {
+                VStack(spacing: 1) {
+                    Text(String(format: "%.1fh", r.sleepHours)).font(.subheadline.weight(.bold).monospacedDigit())
+                    Text("slept").font(.caption2).foregroundStyle(.tertiary)
+                }
+                VStack(spacing: 1) {
+                    Text(String(format: "%.1fh", r.sleepNeeded)).font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
                     Text("needed").font(.caption2).foregroundStyle(.tertiary)
                 }
-                .frame(maxWidth: .infinity).card()
-
                 let diff = r.sleepHours - r.sleepNeeded
-                VStack(spacing: 2) {
-                    Text("\(diff >= 0 ? "+" : "")\(String(format: "%.1f", diff))")
-                        .font(.title.weight(.bold).monospacedDigit())
+                VStack(spacing: 1) {
+                    Text("\(diff >= 0 ? "+" : "")\(String(format: "%.1f", diff))h")
+                        .font(.subheadline.weight(.bold).monospacedDigit())
                         .foregroundStyle(diff >= 0 ? Theme.deficit : Theme.surplus)
                     Text("balance").font(.caption2).foregroundStyle(.tertiary)
                 }
-                .frame(maxWidth: .infinity).card()
+                if let start = r.sleepDetail?.bedStart, let end = r.sleepDetail?.bedEnd {
+                    Spacer()
+                    VStack(spacing: 1) {
+                        Text("\(formatTime(start)) – \(formatTime(end))")
+                            .font(.caption2.monospacedDigit()).foregroundStyle(.tertiary)
+                        Text("bed time").font(.system(size: 8)).foregroundStyle(.quaternary)
+                    }
+                }
+            }
+
+            // Explain sleep need breakdown
+            let needExplain = sleepNeedExplanation(r)
+            if !needExplain.isEmpty {
+                Text(needExplain).font(.caption2).foregroundStyle(.tertiary)
             }
 
             // Sleep stages
             if let detail = r.sleepDetail, detail.totalHours > 0 {
-                VStack(spacing: 6) {
-                    stageBar(detail)
+                stageBar(detail)
 
-                    HStack(spacing: 8) {
-                        stagePill("REM", hours: detail.remHours, total: detail.totalHours, color: Theme.accent)
-                        stagePill("Deep", hours: detail.deepHours, total: detail.totalHours, color: Theme.sleepIndigo)
-                        stagePill("Light", hours: detail.lightHours, total: detail.totalHours, color: Theme.calorieBlue.opacity(0.5))
-                        stagePill("Awake", hours: detail.awakeHours, total: detail.totalHours + detail.awakeHours, color: Theme.surplus.opacity(0.5))
-                    }
+                HStack(spacing: 8) {
+                    stagePill("REM", hours: detail.remHours, total: detail.totalHours, color: Theme.accent)
+                    stagePill("Deep", hours: detail.deepHours, total: detail.totalHours, color: Theme.sleepIndigo)
+                    stagePill("Light", hours: detail.lightHours, total: detail.totalHours, color: Theme.calorieBlue.opacity(0.5))
+                    stagePill("Awake", hours: detail.awakeHours, total: detail.totalHours + detail.awakeHours, color: Theme.surplus.opacity(0.5))
                 }
             }
         }
@@ -160,18 +242,13 @@ struct SleepRecoveryView: View {
     private func stageBar(_ d: HealthKitService.SleepDetail) -> some View {
         let total = d.totalHours + d.awakeHours
         guard total > 0 else { return AnyView(EmptyView()) }
-
         return AnyView(
             GeometryReader { geo in
                 HStack(spacing: 1) {
-                    RoundedRectangle(cornerRadius: 2).fill(Theme.accent)
-                        .frame(width: geo.size.width * d.remHours / total)
-                    RoundedRectangle(cornerRadius: 2).fill(Theme.sleepIndigo)
-                        .frame(width: geo.size.width * d.deepHours / total)
-                    RoundedRectangle(cornerRadius: 2).fill(Theme.calorieBlue.opacity(0.5))
-                        .frame(width: geo.size.width * d.lightHours / total)
-                    RoundedRectangle(cornerRadius: 2).fill(Theme.surplus.opacity(0.3))
-                        .frame(width: geo.size.width * d.awakeHours / total)
+                    RoundedRectangle(cornerRadius: 2).fill(Theme.accent).frame(width: geo.size.width * d.remHours / total)
+                    RoundedRectangle(cornerRadius: 2).fill(Theme.sleepIndigo).frame(width: geo.size.width * d.deepHours / total)
+                    RoundedRectangle(cornerRadius: 2).fill(Theme.calorieBlue.opacity(0.5)).frame(width: geo.size.width * d.lightHours / total)
+                    RoundedRectangle(cornerRadius: 2).fill(Theme.surplus.opacity(0.3)).frame(width: geo.size.width * d.awakeHours / total)
                 }
             }
             .frame(height: 8)
@@ -183,110 +260,151 @@ struct SleepRecoveryView: View {
         VStack(spacing: 1) {
             Text(String(format: "%.1fh", hours)).font(.caption2.weight(.bold).monospacedDigit())
             Text(name).font(.system(size: 8)).foregroundStyle(.secondary)
-            if total > 0 {
-                Text("\(Int(hours / total * 100))%").font(.system(size: 8).monospacedDigit()).foregroundStyle(.tertiary)
-            }
+            if total > 0 { Text("\(Int(hours / total * 100))%").font(.system(size: 8).monospacedDigit()).foregroundStyle(.tertiary) }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 4)
         .background(color.opacity(0.15), in: RoundedRectangle(cornerRadius: 6))
     }
 
-    // MARK: - Recovery Detail
+    // MARK: - Sleep Trend (7-day)
 
-    private func recoveryDetailCard(_ r: RecoveryEstimator.DailyRecovery) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Recovery").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
-                Spacer()
-                Text(r.recoveryLevel.rawValue)
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(r.recoveryLevel == .green ? Theme.deficit : r.recoveryLevel == .yellow ? Theme.fatYellow : Theme.surplus)
-            }
+    private func sleepTrendChart(_ r: RecoveryEstimator.DailyRecovery) -> some View {
+        let recent = Array(sleepHistory.suffix(7))
+        let avg = recent.map(\.hours).reduce(0, +) / Double(max(1, recent.count))
+        let need = r.sleepNeeded
+        let todayStr = DateFormatters.dateOnly.string(from: Date())
 
-            Text(recoveryInsight(r))
-                .font(.caption).foregroundStyle(.secondary)
-        }
-        .card()
-    }
-
-    private func recoveryInsight(_ r: RecoveryEstimator.DailyRecovery) -> String {
-        if r.recoveryScore >= 67 {
-            return "Your body is well recovered. Good time for high-intensity training."
-        } else if r.recoveryScore >= 34 {
-            return "Moderate recovery. Consider lighter training or active recovery today."
-        } else {
-            return "Low recovery. Prioritize rest, hydration, and sleep tonight."
-        }
-    }
-
-    // MARK: - Sleep Trend
-
-    private var sleepTrendChart: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        return VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("Sleep Trend").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
                 Spacer()
-                let avg = sleepHistory.map(\.hours).reduce(0, +) / Double(max(1, sleepHistory.count))
-                Text("avg \(String(format: "%.1f", avg))h").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
+                HStack(spacing: 8) {
+                    HStack(spacing: 3) { Circle().fill(Theme.deficit).frame(width: 6, height: 6); Text("Good").font(.system(size: 8)) }
+                    HStack(spacing: 3) { Circle().fill(Theme.fatYellow).frame(width: 6, height: 6); Text("Fair").font(.system(size: 8)) }
+                    HStack(spacing: 3) { Circle().fill(Theme.surplus).frame(width: 6, height: 6); Text("Low").font(.system(size: 8)) }
+                }
+                .foregroundStyle(.tertiary)
             }
 
             Chart {
-                // Sleep need reference line
-                RuleMark(y: .value("", 7.5))
-                    .foregroundStyle(Theme.deficit.opacity(0.3))
+                // Need reference line
+                RuleMark(y: .value("", need))
+                    .foregroundStyle(.secondary.opacity(0.3))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
-                    .annotation(position: .topLeading, spacing: 2) {
-                        Text("Need").font(.system(size: 8)).foregroundStyle(Theme.deficit.opacity(0.5))
+                    .annotation(position: .topTrailing, spacing: 2) {
+                        Text("need").font(.system(size: 8)).foregroundStyle(.tertiary)
                     }
 
-                ForEach(sleepHistory.indices, id: \.self) { i in
-                    let entry = sleepHistory[i]
-                    BarMark(x: .value("", entry.date), y: .value("", entry.hours))
-                        .foregroundStyle(entry.hours >= 7 ? Theme.sleepIndigo : Theme.fatYellow)
+                ForEach(recent.indices, id: \.self) { i in
+                    let hours = recent[i].hours
+                    let isToday = Calendar.current.isDateInToday(recent[i].date)
+                    let barColor: Color = hours >= need ? Theme.deficit
+                        : hours >= need - 1 ? Theme.fatYellow
+                        : Theme.surplus
+
+                    BarMark(x: .value("", recent[i].date), y: .value("", hours))
+                        .foregroundStyle(barColor.opacity(isToday ? 1.0 : 0.7))
                         .cornerRadius(3)
+                        .annotation(position: .top, spacing: 2) {
+                            Text(String(format: "%.1f", hours))
+                                .font(.system(size: isToday ? 9 : 8, weight: isToday ? .bold : .regular).monospacedDigit())
+                                .foregroundStyle(isToday ? .primary : .tertiary)
+                        }
                 }
             }
-            .chartYScale(domain: 0...12)
-            .chartYAxis {
-                AxisMarks(values: [0, 3, 6, 9, 12]) {
-                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3)).foregroundStyle(.secondary.opacity(0.2))
-                    AxisValueLabel().foregroundStyle(.secondary)
-                }
-            }
+            .chartYScale(domain: 0...10)
+            .chartYAxis { AxisMarks(values: [0, 5, 10]) { AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3)).foregroundStyle(.secondary.opacity(0.2)); AxisValueLabel().foregroundStyle(.secondary) } }
             .chartXAxis {
-                AxisMarks(values: .automatic(desiredCount: 5)) {
-                    AxisValueLabel(format: .dateTime.month(.abbreviated).day()).foregroundStyle(.secondary)
+                AxisMarks(values: .automatic(desiredCount: 7)) {
+                    AxisValueLabel(format: .dateTime.weekday(.narrow)).foregroundStyle(.secondary)
                 }
             }
-            .frame(height: 150)
+            .frame(height: 140)
+
+            Text("avg \(String(format: "%.1f", avg))h · need \(String(format: "%.1f", need))h")
+                .font(.caption2).foregroundStyle(.tertiary)
         }
         .card()
     }
 
-    // MARK: - Vitals
+    // MARK: - Activity Load
 
-    private func vitalsCard(_ r: RecoveryEstimator.DailyRecovery) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Vitals").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+    private func activityLoadCard(_ r: RecoveryEstimator.DailyRecovery) -> some View {
+        let loadColor: Color = switch r.activityLoad {
+        case .rest: .secondary
+        case .light: Theme.calorieBlue
+        case .moderate: Theme.deficit
+        case .heavy: Theme.fatYellow
+        case .extreme: Theme.surplus
+        }
 
-            HStack(spacing: 10) {
-                vitalPill("HRV", value: r.hrvMs > 0 ? "\(Int(r.hrvMs))ms" : "--", icon: "waveform.path", color: Theme.deficit)
-                vitalPill("RHR", value: r.restingHR > 0 ? "\(Int(r.restingHR))bpm" : "--", icon: "heart.fill", color: Theme.heartRed)
-                vitalPill("Resp", value: r.respiratoryRate > 0 ? String(format: "%.1f", r.respiratoryRate) : "--", icon: "lungs.fill", color: Theme.calorieBlue)
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Activity Load").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                Spacer()
+                Text(r.activityLoad.rawValue)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(loadColor)
+            }
+
+            // Visual bar (0-21 mapped to width)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 3).fill(Theme.cardBackgroundElevated).frame(height: 6)
+                    RoundedRectangle(cornerRadius: 3).fill(loadColor)
+                        .frame(width: geo.size.width * min(1, r.activityRaw / 21), height: 6)
+                }
+            }
+            .frame(height: 6)
+
+            HStack(spacing: 12) {
+                HStack(spacing: 3) {
+                    Image(systemName: "flame.fill").font(.system(size: 9)).foregroundStyle(Theme.stepsOrange)
+                    Text("\(Int(r.activeCalories)) cal").font(.caption2.monospacedDigit())
+                }
+                HStack(spacing: 3) {
+                    Image(systemName: "figure.walk").font(.system(size: 9)).foregroundStyle(Theme.deficit)
+                    Text("\(Int(r.steps)) steps").font(.caption2.monospacedDigit())
+                }
+            }
+            .foregroundStyle(.secondary)
+        }
+        .card()
+    }
+
+    // MARK: - Insights
+
+    private func insightsCard(_ r: RecoveryEstimator.DailyRecovery) -> some View {
+        let insights = RecoveryEstimator.generateInsights(
+            recovery: r, hrvHistory: hrvHistory, sleepHistory: sleepHistory)
+
+        return Group {
+            if !insights.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    ForEach(insights, id: \.self) { insight in
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: "lightbulb.fill").font(.caption2).foregroundStyle(Theme.fatYellow)
+                            Text(insight).font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .card()
             }
         }
-        .card()
     }
 
-    private func vitalPill(_ label: String, value: String, icon: String, color: Color) -> some View {
-        VStack(spacing: 4) {
-            Image(systemName: icon).font(.caption).foregroundStyle(color)
-            Text(value).font(.caption.weight(.bold).monospacedDigit())
-            Text(label).font(.system(size: 8)).foregroundStyle(.secondary)
+    // MARK: - Empty State
+
+    private var emptyState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "bed.double.fill")
+                .font(.system(size: 48)).foregroundStyle(Theme.sleepIndigo.opacity(0.5))
+            Text("No Sleep Data").font(.headline)
+            Text("Wear Apple Watch to bed or use a sleep tracker that writes to Apple Health.")
+                .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
         }
-        .frame(maxWidth: .infinity).padding(.vertical, 6)
-        .background(color.opacity(0.08), in: RoundedRectangle(cornerRadius: 8))
+        .padding(.top, 40)
     }
 
     // MARK: - Data Loading
@@ -295,50 +413,90 @@ struct SleepRecoveryView: View {
         let hk = HealthKitService.shared
         let today = Date()
 
-        // Re-request authorization (in case new types like HRV/RHR were added after initial grant)
         try? await hk.requestAuthorization()
 
-        do {
-            let sleepDetail = try await hk.fetchSleepDetail(for: today)
-            Log.healthKit.info("Sleep detail: total=\(String(format: "%.1f", sleepDetail.totalHours))h rem=\(String(format: "%.1f", sleepDetail.remHours)) deep=\(String(format: "%.1f", sleepDetail.deepHours)) light=\(String(format: "%.1f", sleepDetail.lightHours)) awake=\(String(format: "%.1f", sleepDetail.awakeHours))")
-            let hrv = try await hk.fetchHRV(for: today)
-            let rhr = try await hk.fetchRestingHeartRate(for: today)
-            let resp = try await hk.fetchRespiratoryRate(for: today)
-            let calories = try await hk.fetchCaloriesBurned(for: today)
-            let steps = try await hk.fetchSteps(for: today)
+        // Fetch each source independently — one failure doesn't block others
+        hrvHistory = (try? await hk.fetchHRVHistory(days: 14)) ?? []
+        rhrHistory = (try? await hk.fetchRestingHeartRateHistory(days: 14)) ?? []
+        respHistory = (try? await hk.fetchRespiratoryRateHistory(days: 14)) ?? []
+        let sleepHist = (try? await hk.fetchSleepHistory(days: 14)) ?? []
+        sleepHistory = sleepHist
 
-            let strain = RecoveryEstimator.calculateStrain(activeCalories: calories.active, steps: steps)
-            let sleepNeed = RecoveryEstimator.estimatedSleepNeed(strain: strain)
-            let (recoveryScore, recoveryLevel) = RecoveryEstimator.calculateRecovery(
-                hrvMs: hrv, restingHR: rhr, sleepHours: sleepDetail.totalHours
-            )
-            let sleepScore = RecoveryEstimator.calculateSleepScore(
-                totalHours: sleepDetail.totalHours, remHours: sleepDetail.remHours, deepHours: sleepDetail.deepHours
-            )
+        let baselines = RecoveryEstimator.calculateBaselines(
+            hrvHistory: hrvHistory, rhrHistory: rhrHistory,
+            respHistory: respHistory, sleepHistory: sleepHist)
 
-            recovery = RecoveryEstimator.DailyRecovery(
-                date: today, recoveryScore: recoveryScore, recoveryLevel: recoveryLevel,
-                sleepScore: sleepScore, strainScore: strain,
-                sleepHours: sleepDetail.totalHours, sleepNeeded: sleepNeed,
-                hrvMs: hrv, restingHR: rhr, respiratoryRate: resp,
-                sleepDetail: sleepDetail
-            )
+        // Today's vitals (each independent)
+        let sleepDetail = (try? await hk.fetchSleepDetail(for: today))
+            ?? HealthKitService.SleepDetail(totalHours: 0, remHours: 0, deepHours: 0, lightHours: 0, awakeHours: 0, bedStart: nil, bedEnd: nil)
+        let hrv = (try? await hk.fetchHRV(for: today)) ?? 0
+        let rhr = (try? await hk.fetchRestingHeartRate(for: today)) ?? 0
+        let resp = (try? await hk.fetchRespiratoryRate(for: today)) ?? 0
+        let calories = (try? await hk.fetchCaloriesBurned(for: today)) ?? (active: 0.0, basal: 0.0)
+        let steps = (try? await hk.fetchSteps(for: today)) ?? 0
 
-            // Load history (don't let this fail the whole page)
-            sleepHistory = (try? await hk.fetchSleepHistory(days: 30)) ?? []
-        } catch {
-            Log.healthKit.error("Sleep/Recovery load failed: \(error.localizedDescription)")
-            // Still try to show something - create a minimal recovery with zeros
-            recovery = RecoveryEstimator.DailyRecovery(
-                date: today, recoveryScore: 0, recoveryLevel: .red,
-                sleepScore: 0, strainScore: 0,
-                sleepHours: 0, sleepNeeded: 7.5,
-                hrvMs: 0, restingHR: 0, respiratoryRate: 0,
-                sleepDetail: nil
-            )
+        // Use sleep hours from either fetchSleepDetail OR fetchSleepHours (whichever has data)
+        var sleepHours = sleepDetail.totalHours
+        if sleepHours == 0 {
+            sleepHours = (try? await hk.fetchSleepHours(for: today)) ?? 0
+        }
+
+        // Activity load
+        let (load, _) = RecoveryEstimator.calculateActivityLoad(activeCalories: calories.active, steps: steps)
+
+        // Dynamic sleep need
+        let previousDayLoad: Double
+        if let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: today) {
+            let yCal = (try? await hk.fetchCaloriesBurned(for: yesterday))?.active ?? 0
+            let ySteps = (try? await hk.fetchSteps(for: yesterday)) ?? 0
+            previousDayLoad = RecoveryEstimator.calculateActivityLoad(activeCalories: yCal, steps: ySteps).raw
+        } else {
+            previousDayLoad = 0
+        }
+        let sleepDebt = RecoveryEstimator.sleepDebt(recentSleep: sleepHist, need: baselines.sleepHours)
+        let sleepNeed = RecoveryEstimator.dynamicSleepNeed(previousDayLoad: previousDayLoad, rollingDebtHours: sleepDebt)
+
+        // Scores (work with whatever data is available)
+        let recoveryScore = RecoveryEstimator.calculateRecovery(
+            hrvMs: hrv, restingHR: rhr, sleepHours: sleepHours, baselines: baselines)
+        let sleepScore = sleepHours > 0
+            ? RecoveryEstimator.calculateSleepScore(
+                totalHours: sleepHours, remHours: sleepDetail.remHours,
+                deepHours: sleepDetail.deepHours, targetHours: sleepNeed)
+            : 0
+
+        recovery = RecoveryEstimator.DailyRecovery(
+            date: today, recoveryScore: recoveryScore, sleepScore: sleepScore,
+            activityLoad: load, activityRaw: RecoveryEstimator.calculateActivityLoad(activeCalories: calories.active, steps: steps).raw,
+            activeCalories: calories.active, steps: steps,
+            sleepHours: sleepHours, sleepNeeded: sleepNeed, sleepDebt: sleepDebt,
+            hrvMs: hrv, restingHR: rhr, respiratoryRate: resp,
+            sleepDetail: sleepDetail.totalHours > 0 ? sleepDetail : nil,
+            baselines: baselines)
+
+        // Extend sleep history for trend chart
+        if sleepHistory.count < 30 {
+            sleepHistory = (try? await hk.fetchSleepHistory(days: 30)) ?? sleepHistory
         }
 
         isLoading = false
+    }
+
+    private func sleepNeedExplanation(_ r: RecoveryEstimator.DailyRecovery) -> String {
+        var parts = ["7.5h base"]
+        let extra = r.sleepNeeded - 7.5
+        if extra > 0.05 {
+            if r.sleepDebt < -1 {
+                parts.append("\(String(format: "+%.1f", min(0.5, abs(r.sleepDebt) * 0.15)))h sleep debt")
+            }
+            if r.activityRaw > 10 {
+                parts.append("\(String(format: "+%.1f", min(0.5, (r.activityRaw - 10) * 0.05)))h activity")
+            }
+        }
+        if r.sleepDebt < -0.5 {
+            parts.append("debt: \(String(format: "%.1f", r.sleepDebt))h")
+        }
+        return parts.joined(separator: " · ")
     }
 
     private func formatTime(_ date: Date) -> String {

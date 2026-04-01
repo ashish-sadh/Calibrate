@@ -91,16 +91,37 @@ struct WeightGoal: Codable, Sendable {
         return max(absoluteFloor, max(recommended, fifteenPct))
     }
 
-    /// Compute daily calorie target. Returns nil if no basis for calculation.
-    /// Priority: 1) user override, 2) TDEE from actual data, 3) nil (no target).
-    func resolvedCalorieTarget(actualTDEE: Double?) -> Double? {
+    /// Compute daily calorie target.
+    /// When called from UI (no actualTDEE passed), uses the shared TDEEEstimator.
+    /// When called from tests or with explicit TDEE, uses that directly.
+    func resolvedCalorieTarget(actualTDEE: Double? = nil) -> Double? {
         if let override = calorieTargetOverride { return override }
         if let tdee = actualTDEE { return tdee + requiredDailyDeficit }
-        return nil // no data = no target
+        // Use shared estimator on MainActor, or weight-based fallback
+        if Thread.isMainThread {
+            let est = MainActor.assumeIsolated { TDEEEstimator.shared.cachedOrSync() }
+            return est.tdee + requiredDailyDeficit
+        }
+        // Off main thread fallback
+        return 200 + startWeightKg * 29 + requiredDailyDeficit
     }
 
-    /// Effective macro targets. Returns nil if no calorie target can be determined.
-    /// Pass actualTDEE from weight trend + food data for real targets.
+    /// Describes how the calorie target was determined.
+    @MainActor
+    func calorieTargetExplanation() -> (source: String, detail: String) {
+        if calorieTargetOverride != nil {
+            return ("Manual", "You set this calorie target manually.")
+        }
+        let est = TDEEEstimator.shared.cachedOrSync()
+        let target = est.tdee + requiredDailyDeficit
+        let deficitStr = requiredDailyDeficit < 0
+            ? "- \(Int(abs(requiredDailyDeficit))) deficit"
+            : "+ \(Int(abs(requiredDailyDeficit))) surplus"
+        return (est.source.rawValue,
+                "TDEE \(Int(est.tdee)) \(deficitStr) = \(Int(target)) kcal/day. \(est.confidence == .low ? "Log weight & food for better accuracy." : "")")
+    }
+
+    /// Effective macro targets.
     func macroTargets(currentWeightKg: Double? = nil, actualTDEE: Double? = nil) -> MacroTargets? {
         guard let calTarget = resolvedCalorieTarget(actualTDEE: actualTDEE) else { return nil }
 

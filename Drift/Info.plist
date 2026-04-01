@@ -2,10 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Drift reads your weight, activity, sleep, and heart rate data from Apple Health to track your health trends. All data stays on your device — nothing is sent to any server.</string>
+	<string>Drift reads your weight, activity, sleep, and heart rate data from Apple Health to track your health trends. All data stays on your device.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Drift does not write data to Apple Health. All your data stays local on your device.</string>
+	<string>Drift does not write to Apple Health. This permission is not requested.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Drift uses the camera to scan food barcodes for nutrition lookup.</string>
 	<key>UILaunchScreen</key>

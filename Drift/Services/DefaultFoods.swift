@@ -1,7 +1,6 @@
 import Foundation
 
-/// Seeds food usage data and recipe favorites from user's historical MacroFactor logs.
-/// Only runs once on first launch. Respects user edits.
+/// Seeds recipe favorites on first launch. Does NOT pre-seed recents.
 enum DefaultFoods {
     private static let seededKey = "drift_default_foods_seeded_v1"
 
@@ -9,16 +8,7 @@ enum DefaultFoods {
         guard !UserDefaults.standard.bool(forKey: seededKey) else { return }
         let db = AppDatabase.shared
 
-        // Seed food usage for frequently logged items (boosts search ranking + shows in recents)
-        for (name, count) in topFoods {
-            // Find the food ID if it exists in the DB
-            let foodId = (try? db.searchFoods(query: name, limit: 1))?.first?.id
-            for _ in 0..<count {
-                try? db.trackFoodUsage(name: name, foodId: foodId, servings: 1)
-            }
-        }
-
-        // Seed recipe favorites for common meals
+        // Only seed recipe favorites — no fake "recent" usage data
         for recipe in recipes {
             var fav = FavoriteFood(name: recipe.name, calories: recipe.calories,
                                    proteinG: recipe.protein, carbsG: recipe.carbs,
@@ -27,59 +17,8 @@ enum DefaultFoods {
         }
 
         UserDefaults.standard.set(true, forKey: seededKey)
-        Log.app.info("Seeded \(topFoods.count) food usage entries + \(recipes.count) recipes")
+        Log.app.info("Seeded \(recipes.count) recipe favorites")
     }
-
-    // MARK: - Top foods from MacroFactor logs (logged 5+ times)
-
-    private static let topFoods: [(String, Int)] = [
-        // Protein (most used)
-        ("Whey Protein Powder, 24 Grams of Protein Per Scoop", 10),
-        ("Chicken Meatballs", 10),
-        ("Gold Standard Chocolate 100% Whey Protein", 5),
-        ("Fully Cooked Chicken Breast Bites", 5),
-        ("Egg Scrambled", 5),
-        ("Atlantic Salmon", 3),
-
-        // Eggs & Dairy
-        ("Organic Large Grade a Eggs", 8),
-        ("Organic Large Grade A Eggs By Kirkland Signature", 8),
-        ("Organic Plain Greek Yogurt", 5),
-        ("2% Milk", 5),
-        ("Milk, Whole", 4),
-        ("Fage Total 2% With Blueberry", 3),
-
-        // Indian staples
-        ("Toor Dal", 8),
-        ("Uncooked Whole Durum Wheat Flour Phulka", 5),
-        ("Roti (Indian Bread), Whole Wheat", 5),
-        ("Moong Daal", 4),
-        ("Quinoa, Dry", 8),
-
-        // Salad kits
-        ("Organic Mediterranean Style Salad Kit", 5),
-        ("Lemon Tahini Crunch Chopped Salad Kit", 4),
-        ("Dill-Icious Chopped Salad Kit", 3),
-        ("Avocado Ranch Salad Kit", 3),
-        ("Miso Crunch Chopped Salad Kit", 3),
-
-        // Fruits & nuts
-        ("Banana, Fresh", 5),
-        ("Avocados Raw", 5),
-        ("Blueberries, Fresh", 4),
-        ("Pistachio Nuts, Roasted, Salted", 4),
-        ("Almonds, Raw", 3),
-        ("Walnuts", 3),
-        ("Chia Seeds", 3),
-
-        // Oils & supplements
-        ("MCT Oil", 5),
-        ("Avocado Oil", 4),
-        ("Ag1", 3),
-
-        // Oatmeal
-        ("Cereals, Quaker, Quick Oats, Dry", 3),
-    ]
 
     // MARK: - Pre-built recipes from common meals
 

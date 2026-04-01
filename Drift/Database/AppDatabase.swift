@@ -193,6 +193,36 @@ extension AppDatabase {
             )
         }
     }
+
+    /// Count of days with food logged in a date range.
+    func daysWithFoodLogged(from startDate: String, to endDate: String) throws -> Int {
+        try dbWriter.read { db in
+            let row = try Row.fetchOne(db, sql: """
+                SELECT COUNT(DISTINCT ml.date) as days
+                FROM meal_log ml
+                JOIN food_entry fe ON fe.meal_log_id = ml.id
+                WHERE ml.date BETWEEN ? AND ?
+                """, arguments: [startDate, endDate])
+            return row?["days"] ?? 0
+        }
+    }
+
+    /// Average daily calories over a date range (for TDEE estimation).
+    func averageDailyCalories(from startDate: String, to endDate: String) throws -> Double {
+        try dbWriter.read { db in
+            let row = try Row.fetchOne(db, sql: """
+                SELECT AVG(daily_cal) as avg_cal FROM (
+                    SELECT ml.date, SUM(fe.calories * fe.servings) as daily_cal
+                    FROM food_entry fe
+                    JOIN meal_log ml ON fe.meal_log_id = ml.id
+                    WHERE ml.date BETWEEN ? AND ?
+                    GROUP BY ml.date
+                    HAVING daily_cal > 200
+                )
+                """, arguments: [startDate, endDate])
+            return row?["avg_cal"] ?? 0
+        }
+    }
 }
 
 // MARK: - Supplement Operations
