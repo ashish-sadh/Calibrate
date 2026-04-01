@@ -99,8 +99,8 @@ struct DashboardView: View {
                     // Body Rhythm → SleepRecoveryView (always visible)
                     NavigationLink { SleepRecoveryView() } label: { sleepRecoveryCard }
 
-                    // Supplements — only if taken today
-                    if viewModel.supplementsTaken > 0 {
+                    // Supplements — show if any configured
+                    if viewModel.supplementsTotal > 0 {
                         NavigationLink { SupplementsTabView() } label: { supplementCard }
                     }
                 }
