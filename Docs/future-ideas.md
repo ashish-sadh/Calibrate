@@ -13,6 +13,10 @@ These are larger changes identified during autonomous sessions that require huma
 - **Export data**: Allow users to export their weight, food, workout data as CSV.
 - **Widget support**: iOS home screen widget showing today's calories remaining or recovery score.
 
+## Performance
+- **Cache recovery baselines**: Dashboard fetches 14-day HRV/RHR/sleep history (42 HealthKit queries) on every load. Should cache baselines for 6 hours.
+- **Accessibility labels**: Zero VoiceOver labels in the entire app. Needs systematic pass.
+
 ## UI
 - **Dark theme variant**: Some users may prefer a slightly lighter dark (OLED black vs dark gray).
 - **Haptic feedback**: Add subtle haptics to key interactions (logging food, completing a set, finishing a workout).
