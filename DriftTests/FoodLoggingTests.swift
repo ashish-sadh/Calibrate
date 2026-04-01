@@ -1321,4 +1321,47 @@ import GRDB
     #expect(!foods.isEmpty, "Foods should be re-seeded after reset")
 }
 
+// MARK: - Recovery Estimator Tests
+
+@Test func recoveryDeviationCalculation() async throws {
+    // HRV above baseline should be favorable
+    let (arrow, pct, favorable) = RecoveryEstimator.deviation(current: 65, baseline: 50, higherIsBetter: true)
+    #expect(arrow == "↑")
+    #expect(pct == 30)
+    #expect(favorable == true)
+
+    // RHR above baseline should be unfavorable (lower is better)
+    let (arrow2, _, fav2) = RecoveryEstimator.deviation(current: 70, baseline: 60, higherIsBetter: false)
+    #expect(arrow2 == "↑")
+    #expect(fav2 == false)
+}
+
+@Test func dynamicSleepNeedCapped() async throws {
+    // Even with extreme inputs, sleep need should never exceed 9h
+    let need = RecoveryEstimator.dynamicSleepNeed(previousDayLoad: 21, rollingDebtHours: -3)
+    #expect(need <= 9.0, "Sleep need should be capped at 9h, got \(need)")
+    #expect(need >= 7.5, "Sleep need should be at least 7.5h")
+}
+
+@Test func sleepDebtCapped() async throws {
+    // Massive undersleeping should cap at -3h
+    let recentSleep: [(date: Date, hours: Double)] = (0..<7).map { i in
+        (Calendar.current.date(byAdding: .day, value: -i, to: Date())!, 4.0)
+    }
+    let debt = RecoveryEstimator.sleepDebt(recentSleep: recentSleep, need: 8.0)
+    #expect(debt >= -3.0, "Debt should be capped at -3, got \(debt)")
+}
+
+@Test func activityLoadClassification() async throws {
+    let (rest, _) = RecoveryEstimator.calculateActivityLoad(activeCalories: 0, steps: 0)
+    #expect(rest == .rest)
+
+    let (moderate, _) = RecoveryEstimator.calculateActivityLoad(activeCalories: 400, steps: 8000)
+    #expect(moderate == .moderate || moderate == .light)
+
+    let (high, raw) = RecoveryEstimator.calculateActivityLoad(activeCalories: 1000, steps: 20000)
+    #expect(raw > 10, "High activity should produce raw > 10, got \(raw)")
+    #expect(high == .moderate || high == .heavy)
+}
+
 enum TestError: Error { case msg(String); init(_ s: String) { self = .msg(s) } }
