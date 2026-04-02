@@ -126,15 +126,36 @@ final class TDEEEstimator {
         return 2000 * sqrt(w / 70) * (activityMultiplier / 29)
     }
 
-    /// Compute Mifflin-St Jeor TDEE when profile is available.
-    nonisolated static func computeMifflin(weightKg: Double, config: TDEEConfig) -> Double? {
-        guard let age = config.age, let height = config.heightCm, let sex = config.sex else { return nil }
+    /// Compute Mifflin-St Jeor TDEE. Works with partial profile — uses population defaults for missing fields.
+    /// Returns (tdee, confidence) where confidence scales with how many fields were provided (0.0-1.0).
+    nonisolated static func computeMifflin(weightKg: Double, config: TDEEConfig) -> (tdee: Double, confidence: Double)? {
+        // Need at least ONE profile field to be useful
+        guard config.age != nil || config.heightCm != nil || config.sex != nil else { return nil }
+
+        let age = Double(config.age ?? 30)            // default: 30yo (fitness app user avg)
+        let height = config.heightCm ?? 170            // default: 170cm (5'7", between male/female avg)
+
         let bmr: Double
-        switch sex {
-        case .male:   bmr = 10 * weightKg + 6.25 * height - 5 * Double(age) + 5
-        case .female: bmr = 10 * weightKg + 6.25 * height - 5 * Double(age) - 161
+        if let sex = config.sex {
+            switch sex {
+            case .male:   bmr = 10 * weightKg + 6.25 * height - 5 * age + 5
+            case .female: bmr = 10 * weightKg + 6.25 * height - 5 * age - 161
+            }
+        } else {
+            // No sex: average male and female BMR
+            let maleBMR = 10 * weightKg + 6.25 * height - 5 * age + 5
+            let femaleBMR = 10 * weightKg + 6.25 * height - 5 * age - 161
+            bmr = (maleBMR + femaleBMR) / 2  // splits the 166-cal difference
         }
-        return bmr * config.mifflinActivityFactor
+
+        // Confidence: how many of 3 fields are provided (each worth 0.33)
+        var fieldsProvided = 0.0
+        if config.age != nil { fieldsProvided += 1 }
+        if config.heightCm != nil { fieldsProvided += 1 }
+        if config.sex != nil { fieldsProvided += 1 }
+        let confidence = fieldsProvided / 3.0  // 0.33, 0.67, or 1.0
+
+        return (bmr * config.mifflinActivityFactor, confidence)
     }
 
     // MARK: - Refresh (async — uses Apple Health)
@@ -151,10 +172,10 @@ final class TDEEEstimator {
 
         // Step 2: Corrections
 
-        // Mifflin correction (0.4 dampening)
-        if let w = weightKg, let mifflin = Self.computeMifflin(weightKg: w, config: config) {
-            tdee += (mifflin - tdee) * 0.4
-            sources.append("Profile")
+        // Mifflin correction (dampening scales with confidence: 0.4 × confidence)
+        if let w = weightKg, let (mifflin, confidence) = Self.computeMifflin(weightKg: w, config: config) {
+            tdee += (mifflin - tdee) * 0.4 * confidence
+            sources.append("Profile\(confidence < 1 ? " (partial)" : "")")
             bestSource = .mifflin
         }
 
@@ -202,9 +223,9 @@ final class TDEEEstimator {
         var bestSource: Estimate.Source = .bodyWeight
 
         // Step 2: Mifflin correction
-        if let w = weightKg, let mifflin = Self.computeMifflin(weightKg: w, config: config) {
-            tdee += (mifflin - tdee) * 0.4
-            sources.append("Profile")
+        if let w = weightKg, let (mifflin, confidence) = Self.computeMifflin(weightKg: w, config: config) {
+            tdee += (mifflin - tdee) * 0.4 * confidence
+            sources.append("Profile\(confidence < 1 ? " (partial)" : "")")
             bestSource = .mifflin
         }
 

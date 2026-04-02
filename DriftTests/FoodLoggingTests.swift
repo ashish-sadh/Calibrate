@@ -1407,23 +1407,46 @@ import GRDB
 @Test func mifflinMale() async throws {
     let config = TDEEEstimator.TDEEConfig(activityMultiplier: 29, appleHealthTrust: 1.0, manualAdjustment: 0,
                                             age: 36, heightCm: 185, sex: .male)
-    let tdee = TDEEEstimator.computeMifflin(weightKg: 78.4, config: config)!
-    // BMR = 10×78.4 + 6.25×185 - 5×36 + 5 = 1765, × 1.55 = 2736
+    let (tdee, confidence) = TDEEEstimator.computeMifflin(weightKg: 78.4, config: config)!
     #expect(abs(tdee - 2736) < 5, "Male Mifflin TDEE ~2,736, got \(Int(tdee))")
+    #expect(confidence == 1.0, "All 3 fields = 100% confidence")
 }
 
 @Test func mifflinFemale() async throws {
     let config = TDEEEstimator.TDEEConfig(activityMultiplier: 29, appleHealthTrust: 1.0, manualAdjustment: 0,
                                             age: 30, heightCm: 165, sex: .female)
-    let tdee = TDEEEstimator.computeMifflin(weightKg: 62, config: config)!
-    // BMR = 10×62 + 6.25×165 - 5×30 - 161 = 1341, × 1.55 = 2079
+    let (tdee, _) = TDEEEstimator.computeMifflin(weightKg: 62, config: config)!
     #expect(abs(tdee - 2079) < 5, "Female Mifflin TDEE ~2,079, got \(Int(tdee))")
 }
 
-@Test func mifflinReturnsNilWithoutProfile() async throws {
+@Test func mifflinReturnsNilWithoutAnyProfile() async throws {
     let config = TDEEEstimator.TDEEConfig.default
-    let tdee = TDEEEstimator.computeMifflin(weightKg: 70, config: config)
-    #expect(tdee == nil, "No profile = nil Mifflin")
+    let result = TDEEEstimator.computeMifflin(weightKg: 70, config: config)
+    #expect(result == nil, "No profile fields at all = nil")
+}
+
+@Test func mifflinPartialAgeOnly() async throws {
+    let config = TDEEEstimator.TDEEConfig(activityMultiplier: 29, appleHealthTrust: 1.0, manualAdjustment: 0,
+                                            age: 36, heightCm: nil, sex: nil)
+    let (tdee, confidence) = TDEEEstimator.computeMifflin(weightKg: 78.4, config: config)!
+    #expect(confidence > 0.3 && confidence < 0.4, "1 of 3 fields = ~33% confidence")
+    #expect(tdee > 1500 && tdee < 3000, "Partial Mifflin should be reasonable")
+}
+
+@Test func mifflinPartialSexOnly() async throws {
+    let config = TDEEEstimator.TDEEConfig(activityMultiplier: 29, appleHealthTrust: 1.0, manualAdjustment: 0,
+                                            age: nil, heightCm: nil, sex: .female)
+    let (tdee, confidence) = TDEEEstimator.computeMifflin(weightKg: 62, config: config)!
+    #expect(confidence > 0.3 && confidence < 0.4)
+    // Uses defaults: age 30, height 170cm
+    #expect(tdee > 1500 && tdee < 2500, "Female partial should be reasonable")
+}
+
+@Test func mifflinPartialTwoFields() async throws {
+    let config = TDEEEstimator.TDEEConfig(activityMultiplier: 29, appleHealthTrust: 1.0, manualAdjustment: 0,
+                                            age: 36, heightCm: 185, sex: nil)
+    let (_, confidence) = TDEEEstimator.computeMifflin(weightKg: 78.4, config: config)!
+    #expect(confidence > 0.6 && confidence < 0.7, "2 of 3 fields = ~67% confidence")
 }
 
 // Group 4: Mifflin correction dampening
@@ -1431,8 +1454,8 @@ import GRDB
     let base = TDEEEstimator.computeBase(weightKg: 78.4, activityMultiplier: 29) // ~2117
     let config = TDEEEstimator.TDEEConfig(activityMultiplier: 29, appleHealthTrust: 1.0, manualAdjustment: 0,
                                             age: 36, heightCm: 185, sex: .male)
-    let mifflin = TDEEEstimator.computeMifflin(weightKg: 78.4, config: config)! // ~2736
-    let corrected = base + (mifflin - base) * 0.4 // ~2365
+    let (mifflin, confidence) = TDEEEstimator.computeMifflin(weightKg: 78.4, config: config)! // ~2736, 1.0
+    let corrected = base + (mifflin - base) * 0.4 * confidence // ~2365
     #expect(corrected > 2300 && corrected < 2400, "Dampened correction should be ~2,365, got \(Int(corrected))")
     #expect(corrected < mifflin, "Correction must be less than raw Mifflin")
     #expect(corrected > base, "Correction must be more than base for tall active male")
@@ -1446,11 +1469,11 @@ import GRDB
                                                 age: 28, heightCm: 185, sex: .male)
     let femaleConfig = TDEEEstimator.TDEEConfig(activityMultiplier: 29, appleHealthTrust: 1.0, manualAdjustment: 0,
                                                   age: 50, heightCm: 158, sex: .female)
-    let maleMifflin = TDEEEstimator.computeMifflin(weightKg: 78, config: maleConfig)!
-    let femaleMifflin = TDEEEstimator.computeMifflin(weightKg: 78, config: femaleConfig)!
+    let (maleMifflin, maleConf) = TDEEEstimator.computeMifflin(weightKg: 78, config: maleConfig)!
+    let (femaleMifflin, femaleConf) = TDEEEstimator.computeMifflin(weightKg: 78, config: femaleConfig)!
 
-    let maleResult = base + (maleMifflin - base) * 0.4
-    let femaleResult = base + (femaleMifflin - base) * 0.4
+    let maleResult = base + (maleMifflin - base) * 0.4 * maleConf
+    let femaleResult = base + (femaleMifflin - base) * 0.4 * femaleConf
 
     #expect(maleResult - femaleResult > 250, "Same 78kg: male should be >250 cal higher than older shorter female, got \(Int(maleResult - femaleResult))")
 }

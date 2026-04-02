@@ -20,9 +20,9 @@ struct AlgorithmSettingsView: View {
         let db = AppDatabase.shared
         let weight = (try? db.fetchWeightEntries(from: nil))?.first?.weightKg
         var tdee = TDEEEstimator.computeBase(weightKg: weight, activityMultiplier: tdeeConfig.activityMultiplier)
-        // Apply Mifflin correction if profile available
-        if let w = weight, let mifflin = TDEEEstimator.computeMifflin(weightKg: w, config: tdeeConfig) {
-            tdee += (mifflin - tdee) * 0.4
+        // Apply Mifflin correction if any profile data available
+        if let w = weight, let (mifflin, confidence) = TDEEEstimator.computeMifflin(weightKg: w, config: tdeeConfig) {
+            tdee += (mifflin - tdee) * 0.4 * confidence
         }
         return Int(max(1200, tdee + tdeeConfig.manualAdjustment))
     }
@@ -177,11 +177,16 @@ struct AlgorithmSettingsView: View {
                         }
                     }
 
-                    if tdeeConfig.hasMifflinProfile, let w = (try? AppDatabase.shared.fetchWeightEntries(from: nil))?.first?.weightKg {
-                        if let mifflin = TDEEEstimator.computeMifflin(weightKg: w, config: tdeeConfig) {
-                            Text("Mifflin BMR: \(Int(mifflin / tdeeConfig.mifflinActivityFactor)) × \(String(format: "%.2f", tdeeConfig.mifflinActivityFactor)) = \(Int(mifflin)) kcal")
-                                .font(.caption2).foregroundStyle(.tertiary)
+                    if let w = (try? AppDatabase.shared.fetchWeightEntries(from: nil))?.first?.weightKg,
+                       let (mifflin, confidence) = TDEEEstimator.computeMifflin(weightKg: w, config: tdeeConfig) {
+                        let bmr = Int(mifflin / tdeeConfig.mifflinActivityFactor)
+                        HStack(spacing: 4) {
+                            Text("Mifflin: \(bmr) BMR × \(String(format: "%.2f", tdeeConfig.mifflinActivityFactor)) = \(Int(mifflin)) kcal")
+                            if confidence < 1 {
+                                Text("(\(Int(confidence * 100))% confidence)")
+                            }
                         }
+                        .font(.caption2).foregroundStyle(.tertiary)
                     }
                 }
                 .card()
