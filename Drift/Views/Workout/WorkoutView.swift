@@ -603,6 +603,7 @@ struct ActiveWorkoutView: View {
     @State private var templateName = ""
     @State private var showingTemplateName = false
     @State private var saveAsTemplateToggle = false
+    @State private var favoriteAllToggle = false
 
     struct ActiveExercise: Identifiable {
         let id = UUID()
@@ -754,6 +755,15 @@ struct ActiveWorkoutView: View {
                         .padding(.horizontal, 16).padding(.vertical, 10)
                         .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
 
+                        // Favorite all exercises toggle
+                        Toggle(isOn: $favoriteAllToggle) {
+                            Label("Favorite all exercises", systemImage: "star")
+                                .font(.subheadline)
+                        }
+                        .tint(Theme.fatYellow)
+                        .padding(.horizontal, 16).padding(.vertical, 10)
+                        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
+
                         if saveAsTemplateToggle {
                             TextField("Template name", text: $templateName)
                                 .font(.subheadline)
@@ -765,6 +775,13 @@ struct ActiveWorkoutView: View {
 
                         Button {
                             showingFinishOptions = false
+                            if favoriteAllToggle {
+                                for ex in exercises where !ex.isWarmupExercise {
+                                    if !WorkoutService.exerciseFavorites.contains(ex.name) {
+                                        WorkoutService.toggleExerciseFavorite(ex.name)
+                                    }
+                                }
+                            }
                             saveWorkout(andDismiss: !saveAsTemplateToggle)
                             if saveAsTemplateToggle {
                                 saveAsTemplate(name: templateName.isEmpty ? workoutName : templateName)
