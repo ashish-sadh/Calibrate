@@ -83,8 +83,20 @@ struct AlgorithmSettingsView: View {
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
-                Button("Done") { UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil) }
+                Button("Done") {
+                    // Just dismiss keyboard — don't collapse the section
+                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                }
             }
+        }
+        // Keep profile section open while editing fields
+        .onChange(of: tdeeConfig.age) { _, _ in
+            expandedSection = "profile" // prevent collapse
+            save()
+        }
+        .onChange(of: tdeeConfig.heightCm) { _, _ in
+            expandedSection = "profile"
+            save()
         }
         .navigationTitle("Algorithm")
         .navigationBarBackButtonHidden(true)
@@ -100,8 +112,6 @@ struct AlgorithmSettingsView: View {
         .onChange(of: tdeeConfig.activityMultiplier) { _, _ in save() }
         .onChange(of: tdeeConfig.manualAdjustment) { _, _ in save() }
         .onChange(of: tdeeConfig.appleHealthTrust) { _, _ in save() }
-        .onChange(of: tdeeConfig.age) { _, _ in save() }
-        .onChange(of: tdeeConfig.heightCm) { _, _ in save() }
         .onChange(of: tdeeConfig.sex) { _, _ in save() }
         .onChange(of: config.emaAlpha) { _, _ in save() }
     }
