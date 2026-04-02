@@ -1,30 +1,22 @@
 # Self-Improvement Session Log
 
 ## Session 2 (April 1-2, 2026)
-- **Commits**: 19, all pushed
+- **Commits**: 22, all pushed
 - **TestFlight**: Build 51 published
 - **Tests**: 566 → 614 (+48 new tests, 0 regressions)
-- **Food DB**: 716 → 756 items (+51 added, 11 dupes removed, names cleaned)
+- **Food DB**: 716 → 768 items (+63 added, 11 dupes removed, names cleaned)
 - **Exercise DB**: 884 → 907 items (+23 added, 4 dupes removed, 21 capitalization fixes)
 
 ### Changes
-- TDEE base formula soft-capped at 2700 to prevent 3000+ without profile data
-- 14 comprehensive TDEE demographic tests (all age groups, weight×activity matrix)
-- Dashboard TDEE card shows data source chips + "Add data to improve" hint
-- VoiceOver accessibility labels added to dashboard (weight, health pills, recovery)
-- Food DB: Chipotle, Panda Express, Chick-fil-A, Popeyes, Five Guys, In-N-Out, Shake Shack, Dunkin', Domino's, common US home-cooked, Asian, Indian snacks, healthy staples, vegetables
-- Exercise DB: Bulgarian Split Squat, Chest Fly, Seated Row, Pendlay Row, Ab Wheel, Hip machines, Dragon Flag, L-Sit, Pike Push-Up, machine presses, cable exercises
-- Fixed HRV trend detection (all sequential pairs, not just first < last)
-- Fixed 3 flaky workout session tests (UserDefaults race conditions)
-- Fixed factory reset: now clears TDEE config, exercise favorites, TDEE cache
-- Fixed WeightGoal off-main-thread TDEE fallback (now uses soft cap)
-- Fixed MoreTabView missing dark background
-- Barcode scanner: ml serving size support for liquids
-- Lab report OCR: month-name date formats (Mar 15, 2026) + 5 tests
-- Dynamic version string from bundle
-- Food DB cleaned: 11 duplicates removed, lowercase names capitalized, eggplant recategorized
-- Exercise DB: equipment/category capitalization normalized (21 fixes)
-- Dead comments removed from DashboardView
+- **TDEE**: Base formula soft-capped at 2700 (prevents 3000+ without profile data). 14 comprehensive demographic tests across all age groups and weight×activity matrix. WeightGoal TDEE fallback uses soft cap. Research logged (Schofield equation, 4000 kcal ceiling) in future-ideas.md.
+- **Dashboard**: TDEE card shows data source chips + "Add data to improve" hint. VoiceOver accessibility labels added (weight, health pills, recovery). Dead comments removed.
+- **Food**: +63 items (Chipotle, Panda Express, Chick-fil-A, Popeyes, Five Guys, In-N-Out, Shake Shack, Dunkin', Domino's, US home-cooked, Asian, Indian snacks, plant-based, fermented foods, healthy staples). 11 duplicates removed. Lowercase names capitalized. Eggplant recategorized from Proteins to Vegetables. Consistency heatmap batch query (30 → 1 DB queries).
+- **Exercises**: +23 items (Bulgarian Split Squat, Chest Fly, Seated Row, Pendlay Row, Ab Wheel, Hip machines, Dragon Flag, L-Sit, Pike Push-Up, machine presses, cable exercises). 4 duplicates removed. Equipment/category capitalization normalized (21 fixes).
+- **Bugs fixed**: HRV trend detection (sequential pairs vs first<last), 3 flaky workout session tests (UserDefaults race conditions), factory reset missing TDEE config + exercise favorites + TDEE cache, MoreTabView dark background, barcode scanner ml serving sizes.
+- **Lab OCR**: Month-name date formats (Mar 15, 2026 / January 5, 2026 / 15 Mar 2026) + 5 tests.
+- **Accessibility**: VoiceOver labels on dashboard (weight card, health pills, recovery) and food diary entries.
+- **Performance**: Food consistency heatmap batch query (30 individual queries → 1 batch query).
+- **Other**: Dynamic version string, stale code comments removed, docs updated.
 
 ---
 
