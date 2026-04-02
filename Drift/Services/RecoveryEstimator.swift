@@ -220,12 +220,4 @@ enum RecoveryEstimator {
         return Array(insights.prefix(2))
     }
 
-    // MARK: - Score Color
-
-    /// Returns a color interpolated across the score range (no discrete buckets).
-    static func scoreColorName(_ score: Int) -> String {
-        if score >= 67 { return "deficit" }   // green
-        if score >= 34 { return "fatYellow" } // yellow
-        return "surplus"                       // red
-    }
 }

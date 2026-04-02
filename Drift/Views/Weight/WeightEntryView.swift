@@ -33,12 +33,12 @@ struct WeightEntryView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
-                        if let value = Double(weightText) {
+                        if let value = Double(weightText), value > 0 {
                             onSave(value, selectedDate)
                             dismiss()
                         }
                     }
-                    .disabled(Double(weightText) == nil)
+                    .disabled((Double(weightText) ?? 0) <= 0)
                 }
             }
         }
