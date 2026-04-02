@@ -828,16 +828,22 @@ extension AppDatabase {
             let prefixPattern: DatabaseValueConvertible = "\(Self.escapeLike(query.lowercased()))%"
             let allArgs: [DatabaseValueConvertible] = patterns + [prefixPattern, limit]
 
+            let queryEscaped: DatabaseValueConvertible = "%\(Self.escapeLike(query.lowercased()))%"
+            let allArgsWithPhrase: [DatabaseValueConvertible] = patterns + [prefixPattern, queryEscaped, limit]
+
             return try Food.fetchAll(db, sql: """
                 SELECT f.* FROM food f
-                LEFT JOIN food_usage fu ON f.id = fu.food_id
+                LEFT JOIN food_usage fu ON f.id = fu.food_id OR LOWER(fu.food_name) = LOWER(f.name)
                 WHERE \(whereClauses)
                 ORDER BY
+                    COALESCE(fu.is_favorite, 0) DESC,
                     COALESCE(fu.use_count, 0) DESC,
                     CASE WHEN LOWER(f.name) LIKE ? ESCAPE '\\' THEN 0 ELSE 1 END,
+                    CASE WHEN LOWER(f.name) LIKE ? ESCAPE '\\' THEN 0 ELSE 1 END,
+                    LENGTH(f.name),
                     f.name
                 LIMIT ?
-                """, arguments: StatementArguments(allArgs))
+                """, arguments: StatementArguments(allArgsWithPhrase))
         }
     }
 

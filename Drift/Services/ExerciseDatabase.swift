@@ -41,21 +41,26 @@ enum ExerciseDatabase {
         }.sorted { a, b in
             let aLower = a.name.lowercased()
             let bLower = b.name.lowercased()
-            // 1. Exact match first
+            let favs = WorkoutService.exerciseFavorites
+            // 1. Favorites first
+            let aFav = favs.contains(a.name)
+            let bFav = favs.contains(b.name)
+            if aFav != bFav { return aFav }
+            // 2. Exact match
             let aExact = aLower == queryLower
             let bExact = bLower == queryLower
             if aExact != bExact { return aExact }
-            // 2. Starts with query (e.g., "Chest Press" for "chest press")
+            // 3. Starts with query (e.g., "Chest Press" for "chest press")
             let aPrefix = aLower.hasPrefix(queryLower)
             let bPrefix = bLower.hasPrefix(queryLower)
             if aPrefix != bPrefix { return aPrefix }
-            // 3. Name contains query as contiguous substring vs scattered words
+            // 4. Name contains query as contiguous substring vs scattered words
             let aContiguous = aLower.contains(queryLower)
             let bContiguous = bLower.contains(queryLower)
             if aContiguous != bContiguous { return aContiguous }
-            // 4. Shorter names = more specific (Chest Press before Wide-Grip Decline Barbell Bench Press)
+            // 5. Shorter names = more specific
             if a.name.count != b.name.count { return a.name.count < b.name.count }
-            // 5. Alphabetical
+            // 6. Alphabetical
             return aLower < bLower
         }
     }
