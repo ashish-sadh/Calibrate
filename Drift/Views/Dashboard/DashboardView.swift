@@ -4,6 +4,7 @@ struct DashboardView: View {
     @Binding var syncComplete: Bool
     @Binding var selectedTab: Int
     @State private var viewModel = DashboardViewModel()
+    @State private var showDeficitExplainer = false
 
     var body: some View {
         NavigationStack {
@@ -168,26 +169,52 @@ struct DashboardView: View {
                 }
             }
 
-            // Row 3: Required vs Current
+            // Row 3: Required vs Current with explainer
             if let goal {
                 let required = goal.requiredDailyDeficit
-                HStack(spacing: 12) {
-                    HStack(spacing: 4) {
-                        Text("Required").font(.system(size: 9)).foregroundStyle(.tertiary)
-                        Text("\(required < 0 ? "" : "+")\(Int(required))")
-                            .font(.caption2.weight(.bold).monospacedDigit())
-                            .foregroundStyle(isGoalAligned(required) ? Theme.deficit : Theme.surplus)
-                    }
-                    if let deficit = viewModel.dailyDeficit {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 12) {
                         HStack(spacing: 4) {
-                            Text("Current").font(.system(size: 9)).foregroundStyle(.tertiary)
-                            Text("\(deficit < 0 ? "" : "+")\(Int(deficit))")
+                            Text("Required").font(.system(size: 9)).foregroundStyle(.tertiary)
+                            Text("\(required < 0 ? "" : "+")\(Int(required))")
                                 .font(.caption2.weight(.bold).monospacedDigit())
-                                .foregroundStyle(isGoalAligned(deficit) ? Theme.deficit : Theme.surplus)
+                                .foregroundStyle(isGoalAligned(required) ? Theme.deficit : Theme.surplus)
+                        }
+                        if let deficit = viewModel.dailyDeficit {
+                            HStack(spacing: 4) {
+                                Text("Current").font(.system(size: 9)).foregroundStyle(.tertiary)
+                                Text("\(deficit < 0 ? "" : "+")\(Int(deficit))")
+                                    .font(.caption2.weight(.bold).monospacedDigit())
+                                    .foregroundStyle(isGoalAligned(deficit) ? Theme.deficit : Theme.surplus)
+                            }
+                        }
+                        Text("kcal/day").font(.system(size: 9)).foregroundStyle(.quaternary)
+                        Spacer()
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) { showDeficitExplainer.toggle() }
+                        } label: {
+                            Image(systemName: "questionmark.circle")
+                                .font(.system(size: 11)).foregroundStyle(.tertiary)
                         }
                     }
-                    Text("kcal/day").font(.system(size: 9)).foregroundStyle(.quaternary)
-                    Spacer()
+
+                    if showDeficitExplainer {
+                        let config = WeightTrendCalculator.loadConfig()
+                        VStack(alignment: .leading, spacing: 3) {
+                            if let rate = viewModel.weeklyRate {
+                                Text("Your weight trend: \(String(format: "%+.2f", Preferences.weightUnit.convert(fromKg: rate))) \(Preferences.weightUnit.displayName)/wk")
+                                    .font(.caption2).foregroundStyle(.secondary)
+                                if let deficit = viewModel.dailyDeficit {
+                                    Text("= \(String(format: "%+.0f", rate * config.kcalPerKg / 7)) kcal/day (\(String(format: "%.0f", config.kcalPerKg)) kcal per \(Preferences.weightUnit == .kg ? "kg" : "lb equivalent"))")
+                                        .font(.caption2).foregroundStyle(.tertiary)
+                                }
+                            }
+                            Text("Based on \(config.regressionWindowDays)-day weight trend, not activity data.")
+                                .font(.caption2).foregroundStyle(.quaternary)
+                        }
+                        .padding(.top, 2)
+                        .transition(.opacity)
+                    }
                 }
             }
 
