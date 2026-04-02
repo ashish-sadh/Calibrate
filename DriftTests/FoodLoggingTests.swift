@@ -1398,6 +1398,38 @@ import GRDB
     #expect(high == .moderate || high == .heavy)
 }
 
+// MARK: - Recovery Algorithm Tests (missing data handling)
+
+@Test func recoveryMissingHRVWithGoodRHRAndSleep() async throws {
+    // User's real scenario: no HRV, RHR 51 (baseline 65), sleep 6.8h (baseline 7.5h)
+    let baselines = RecoveryEstimator.Baselines(hrvMs: 45, restingHR: 65, respiratoryRate: 15, sleepHours: 7.5, daysOfData: 14)
+    let score = RecoveryEstimator.calculateRecovery(hrvMs: 0, restingHR: 51, sleepHours: 6.8, baselines: baselines)
+    #expect(score >= 80, "Missing HRV + excellent RHR + decent sleep should score 80+, got \(score)")
+    #expect(score <= 95, "Should not be unrealistically high, got \(score)")
+}
+
+@Test func recoveryMissingHRVScoresHigherThanBadHRV() async throws {
+    // Missing HRV should redistribute weights, not penalize.
+    // Bad HRV (15ms) should score LOWER than no HRV with same RHR/sleep.
+    let baselines = RecoveryEstimator.Baselines(hrvMs: 45, restingHR: 65, respiratoryRate: 15, sleepHours: 7.5, daysOfData: 14)
+    let noHRV = RecoveryEstimator.calculateRecovery(hrvMs: 0, restingHR: 55, sleepHours: 7, baselines: baselines)
+    let badHRV = RecoveryEstimator.calculateRecovery(hrvMs: 15, restingHR: 55, sleepHours: 7, baselines: baselines)
+    #expect(noHRV > badHRV, "No HRV (\(noHRV)) should score higher than bad HRV (\(badHRV))")
+}
+
+@Test func sleepScoreWithoutStageData() async throws {
+    // iPhone-only sleep: no REM/Deep stages, just duration
+    let score = RecoveryEstimator.calculateSleepScore(totalHours: 6.8, remHours: 0, deepHours: 0, targetHours: 7.5)
+    #expect(score >= 85, "Good duration without stage data should score 85+, got \(score)")
+}
+
+@Test func sleepScoreWithStageDataStillUsesQuality() async throws {
+    // When stage data exists, quality should still matter
+    let good = RecoveryEstimator.calculateSleepScore(totalHours: 7, remHours: 1.5, deepHours: 1.2, targetHours: 7.5)
+    let noStages = RecoveryEstimator.calculateSleepScore(totalHours: 7, remHours: 0, deepHours: 0, targetHours: 7.5)
+    #expect(good > noStages || good == noStages, "Good stages should score >= no stages: good=\(good) noStages=\(noStages)")
+}
+
 // MARK: - TDEE Estimator Tests
 
 // Group 1: Base formula

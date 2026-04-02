@@ -74,19 +74,26 @@ enum RecoveryEstimator {
         let rhrBaseline = baselines?.restingHR ?? 65.0
         let sleepBaseline = baselines?.sleepHours ?? 7.5
 
-        // HRV component (40%): higher = better
-        let hrvRatio = hrvMs > 0 ? min(2.0, hrvMs / hrvBaseline) : 0.5
+        // HRV component: higher = better
+        let hrvAvailable = hrvMs > 0
+        let hrvRatio = hrvAvailable ? min(2.0, hrvMs / hrvBaseline) : 0.5
         let hrvScore = min(100, Int(hrvRatio * 50))
 
-        // RHR component (30%): lower = better
-        let rhrRatio = restingHR > 0 ? rhrBaseline / restingHR : 0.8
-        let rhrScore = min(100, Int(rhrRatio * 50))
+        // RHR component: lower = better. Baseline match = 70, 20% better ≈ 92, 20% worse ≈ 48.
+        let percentBetter = restingHR > 0 ? (rhrBaseline - restingHR) / rhrBaseline : 0
+        let rhrScore = min(100, max(0, Int(70 + percentBetter * 110)))
 
-        // Sleep component (30%): closer to baseline = better
+        // Sleep component: squared ratio rewards getting close to need.
+        // 100% of need = 100, 90% = 81, 80% = 64, 50% = 25.
         let sleepRatio = sleepHours > 0 ? min(1.2, sleepHours / sleepBaseline) : 0
-        let sleepScore = min(100, Int(sleepRatio * 83))
+        let sleepScore = min(100, max(0, Int(sleepRatio * sleepRatio * 100)))
 
-        let total = Int(Double(hrvScore) * 0.4 + Double(rhrScore) * 0.3 + Double(sleepScore) * 0.3)
+        // When HRV is missing, redistribute its weight to RHR + Sleep equally
+        let hrvWeight: Double = hrvAvailable ? 0.4 : 0.0
+        let rhrWeight: Double = hrvAvailable ? 0.3 : 0.5
+        let sleepWeight: Double = hrvAvailable ? 0.3 : 0.5
+
+        let total = Int(Double(hrvScore) * hrvWeight + Double(rhrScore) * rhrWeight + Double(sleepScore) * sleepWeight)
         return max(0, min(100, total))
     }
 
@@ -98,17 +105,23 @@ enum RecoveryEstimator {
         deepHours: Double,
         targetHours: Double
     ) -> Int {
-        // Duration vs dynamic need (60%)
+        // Duration vs dynamic need
         let durationScore = min(100, Int(totalHours / max(1, targetHours) * 100))
 
-        // Quality: REM + deep proportions (40%)
+        // Quality: REM + deep proportions
         let remPct = totalHours > 0 ? remHours / totalHours : 0
         let deepPct = totalHours > 0 ? deepHours / totalHours : 0
         let remScore = min(100, Int(remPct / 0.22 * 100))   // ideal ~22% REM
         let deepScore = min(100, Int(deepPct / 0.17 * 100)) // ideal ~17% deep
         let qualityScore = (remScore + deepScore) / 2
 
-        return max(0, min(100, Int(Double(durationScore) * 0.6 + Double(qualityScore) * 0.4)))
+        // When no stage data (iPhone without wearable), score entirely on duration.
+        // Don't penalize users for missing REM/Deep data they can't provide.
+        let hasStages = remHours > 0 || deepHours > 0
+        let durationWeight: Double = hasStages ? 0.6 : 1.0
+        let qualityWeight: Double = hasStages ? 0.4 : 0.0
+
+        return max(0, min(100, Int(Double(durationScore) * durationWeight + Double(qualityScore) * qualityWeight)))
     }
 
     // MARK: - Activity Load
