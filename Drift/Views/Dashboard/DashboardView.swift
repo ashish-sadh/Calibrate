@@ -168,7 +168,31 @@ struct DashboardView: View {
                 }
             }
 
-            // Confidence: shows data sources contributing to the estimate
+            // Required vs Current deficit/surplus (same as Algorithm page)
+            if let goal {
+                let required = goal.requiredDailyDeficit
+                let isLosing = goal.totalChangeKg < 0
+                HStack(spacing: 12) {
+                    HStack(spacing: 4) {
+                        Text("Required").font(.system(size: 9)).foregroundStyle(.tertiary)
+                        Text("\(required < 0 ? "" : "+")\(Int(required))")
+                            .font(.caption2.weight(.bold).monospacedDigit())
+                            .foregroundStyle(isGoalAligned(required) ? Theme.deficit : Theme.surplus)
+                    }
+                    if let deficit = viewModel.dailyDeficit {
+                        HStack(spacing: 4) {
+                            Text("Current").font(.system(size: 9)).foregroundStyle(.tertiary)
+                            Text("\(deficit < 0 ? "" : "+")\(Int(deficit))")
+                                .font(.caption2.weight(.bold).monospacedDigit())
+                                .foregroundStyle(isGoalAligned(deficit) ? Theme.deficit : Theme.surplus)
+                        }
+                    }
+                    Text("kcal/day").font(.system(size: 9)).foregroundStyle(.quaternary)
+                    Spacer()
+                }
+            }
+
+            // Data sources
             HStack(spacing: 4) {
                 ForEach(est.activeSources, id: \.self) { source in
                     Text(source)
