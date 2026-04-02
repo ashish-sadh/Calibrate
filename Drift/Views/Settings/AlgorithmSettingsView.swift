@@ -134,14 +134,17 @@ struct AlgorithmSettingsView: View {
                 }
             }
 
-            // Est. Deficit/Surplus from weight trend
+            // Est. Deficit/Surplus — visually separated
             if let deficit = liveDeficit {
+                Divider().frame(width: 40).overlay(Color.white.opacity(0.1))
                 HStack(spacing: 4) {
-                    Text(deficit < 0 ? "Est. Deficit" : "Est. Surplus")
+                    Text("Current:")
                         .font(.caption2).foregroundStyle(.tertiary)
-                    Text("\(deficit) kcal/day")
+                    Text(deficit < 0 ? "Est. Deficit \(deficit)" : "Est. Surplus +\(deficit)")
                         .font(.caption2.weight(.semibold).monospacedDigit())
                         .foregroundStyle(deficit < 0 ? Theme.deficit : Theme.surplus)
+                    Text("kcal/day")
+                        .font(.caption2).foregroundStyle(.quaternary)
                 }
             }
         }

@@ -236,7 +236,18 @@ struct GoalView: View {
     // MARK: - Deficit
 
     private func deficitCard(_ goal: WeightGoal) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        let isLosing = goal.totalChangeKg < 0
+
+        // Goal-aware color: green when aligned with goal direction
+        func goalColor(_ value: Double) -> Color {
+            if isLosing {
+                return value < 0 ? Theme.deficit : Theme.surplus  // deficit = good for losing
+            } else {
+                return value > 0 ? Theme.deficit : Theme.surplus  // surplus = good for gaining
+            }
+        }
+
+        return VStack(alignment: .leading, spacing: 10) {
             Text("Daily Target").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
 
             HStack(spacing: 12) {
@@ -244,7 +255,7 @@ struct GoalView: View {
                     Text("Target").font(.caption2).foregroundStyle(.tertiary)
                     Text(String(format: "%+.0f", goal.requiredDailyDeficit))
                         .font(.subheadline.weight(.bold).monospacedDigit())
-                        .foregroundStyle(goal.requiredDailyDeficit < 0 ? Theme.deficit : Theme.surplus)
+                        .foregroundStyle(goalColor(goal.requiredDailyDeficit))
                     Text("kcal/day").font(.caption2).foregroundStyle(.tertiary)
                 }
                 .frame(maxWidth: .infinity).card()
@@ -254,7 +265,7 @@ struct GoalView: View {
                     if let deficit = actualDailyDeficit {
                         Text(String(format: "%+.0f", deficit))
                             .font(.subheadline.weight(.bold).monospacedDigit())
-                            .foregroundStyle(deficit < 0 ? Theme.deficit : Theme.surplus)
+                            .foregroundStyle(goalColor(deficit))
                     } else {
                         Text("--").font(.subheadline.weight(.bold)).foregroundStyle(.tertiary)
                     }
