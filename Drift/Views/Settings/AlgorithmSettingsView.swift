@@ -10,6 +10,7 @@ struct AlgorithmSettingsView: View {
     @State private var ahResting: Double = 0
     @State private var ahActive: Double = 0
     @State private var ahSteps: Double = 0
+    @FocusState private var isFieldFocused: Bool
 
     // MARK: - Computed (unchanged)
 
@@ -76,18 +77,10 @@ struct AlgorithmSettingsView: View {
             .padding(.top, 8)
             .padding(.bottom, 24)
         }
-        .scrollDismissesKeyboard(.interactively)
+        .scrollDismissesKeyboard(.immediately)
         .scrollContentBackground(.hidden)
         .background(Theme.background.ignoresSafeArea())
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("Done") {
-                    // Just dismiss keyboard — don't collapse the section
-                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                }
-            }
-        }
+        .onTapGesture { isFieldFocused = false }
         // Keep profile section open while editing fields
         .onChange(of: tdeeConfig.age) { _, _ in
             expandedSection = "profile" // prevent collapse
@@ -125,17 +118,14 @@ struct AlgorithmSettingsView: View {
                 .font(.system(size: 48, weight: .bold).monospacedDigit())
             Text("kcal/day").font(.caption).foregroundStyle(.tertiary)
 
-            // Target
+            // Target or goal link
             if let target = liveCalorieTarget {
-                let goal = WeightGoal.load()
-                let adj = goal?.requiredDailyDeficit ?? 0
+                let adj = WeightGoal.load()?.requiredDailyDeficit ?? 0
                 HStack(spacing: 4) {
-                    Text("Target")
-                        .font(.caption2).foregroundStyle(.tertiary)
-                    Text("\(target)")
+                    Text("Target \(target)")
                         .font(.caption2.weight(.bold).monospacedDigit())
                         .foregroundStyle(Theme.accent)
-                    Text(adj < 0 ? "for weight loss" : adj > 0 ? "to gain" : "maintenance")
+                    Text(adj < 0 ? "for weight loss" : adj > 0 ? "to gain" : "")
                         .font(.caption2).foregroundStyle(.quaternary)
                 }
             } else {
@@ -144,53 +134,15 @@ struct AlgorithmSettingsView: View {
                 }
             }
 
-            // Weight trend subtitle
-            if let deficit = liveDeficit, let trend = liveTrend {
-                let unit = Preferences.weightUnit
-                HStack(spacing: 6) {
-                    Text(deficit < 0 ? "Deficit" : "Surplus")
+            // Est. Deficit/Surplus from weight trend
+            if let deficit = liveDeficit {
+                HStack(spacing: 4) {
+                    Text(deficit < 0 ? "Est. Deficit" : "Est. Surplus")
                         .font(.caption2).foregroundStyle(.tertiary)
-                    Text("\(deficit) kcal")
+                    Text("\(deficit) kcal/day")
                         .font(.caption2.weight(.semibold).monospacedDigit())
                         .foregroundStyle(deficit < 0 ? Theme.deficit : Theme.surplus)
-                    Text("·").foregroundStyle(.quaternary)
-                    Text("\(String(format: "%+.2f", unit.convert(fromKg: trend.weeklyRateKg))) \(unit.displayName)/wk")
-                        .font(.caption2.monospacedDigit()).foregroundStyle(.tertiary)
                 }
-            }
-
-            // Data source indicators
-            HStack(spacing: 10) {
-                sourceChip("Weight", active: (try? AppDatabase.shared.fetchWeightEntries(from: nil))?.first != nil)
-                sourceChip("Profile", active: tdeeConfig.age != nil || tdeeConfig.heightCm != nil || tdeeConfig.sex != nil)
-                sourceChip("Apple Health", active: ahResting > 0)
-                sourceChip("Trend", active: liveDeficit != nil)
-            }
-            .padding(.top, 4)
-
-            // Apple Health breakdown (when available)
-            if ahResting > 0 || ahActive > 0 {
-                HStack(spacing: 12) {
-                    HStack(spacing: 3) {
-                        Image(systemName: "bed.double.fill").font(.system(size: 8)).foregroundStyle(Theme.sleepIndigo)
-                        Text("\(Int(ahResting))").font(.caption2.weight(.semibold).monospacedDigit())
-                        Text("resting").font(.system(size: 8)).foregroundStyle(.quaternary)
-                    }
-                    HStack(spacing: 3) {
-                        Image(systemName: "flame.fill").font(.system(size: 8)).foregroundStyle(Theme.stepsOrange)
-                        Text("\(Int(ahActive))").font(.caption2.weight(.semibold).monospacedDigit())
-                        Text("active").font(.system(size: 8)).foregroundStyle(.quaternary)
-                    }
-                    if ahSteps > 0 {
-                        HStack(spacing: 3) {
-                            Image(systemName: "figure.walk").font(.system(size: 8)).foregroundStyle(Theme.deficit)
-                            Text("\(Int(ahSteps))").font(.caption2.weight(.semibold).monospacedDigit())
-                            Text("steps").font(.system(size: 8)).foregroundStyle(.quaternary)
-                        }
-                    }
-                }
-                .foregroundStyle(.secondary)
-                .padding(.top, 2)
             }
         }
         .card()
@@ -293,6 +245,7 @@ struct AlgorithmSettingsView: View {
                     Text("Age").font(.caption2).foregroundStyle(.secondary)
                     TextField("—", value: $tdeeConfig.age, format: .number)
                         .keyboardType(.numberPad)
+                        .focused($isFieldFocused)
                         .font(.subheadline.weight(.semibold).monospacedDigit())
                         .multilineTextAlignment(.center)
                         .padding(.vertical, 6)
@@ -305,6 +258,7 @@ struct AlgorithmSettingsView: View {
                 Text("Height").font(.caption2).foregroundStyle(.secondary)
                 TextField("cm", value: $tdeeConfig.heightCm, format: .number)
                     .keyboardType(.decimalPad)
+                    .focused($isFieldFocused)
                     .font(.subheadline.weight(.semibold).monospacedDigit())
                     .multilineTextAlignment(.center)
                     .padding(.vertical, 6)
@@ -360,6 +314,39 @@ struct AlgorithmSettingsView: View {
 
             if showAdvanced {
                 VStack(spacing: 10) {
+                    // Data sources
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Active Data Sources").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+                        HStack(spacing: 10) {
+                            sourceChip("Weight", active: (try? AppDatabase.shared.fetchWeightEntries(from: nil))?.first != nil)
+                            sourceChip("Profile", active: tdeeConfig.age != nil || tdeeConfig.heightCm != nil || tdeeConfig.sex != nil)
+                            sourceChip("Apple Health", active: ahResting > 0)
+                            sourceChip("Food Log", active: liveDeficit != nil)
+                        }
+
+                        if ahResting > 0 || ahActive > 0 {
+                            HStack(spacing: 10) {
+                                HStack(spacing: 3) {
+                                    Image(systemName: "bed.double.fill").font(.system(size: 8)).foregroundStyle(Theme.sleepIndigo)
+                                    Text("\(Int(ahResting)) resting").font(.caption2.monospacedDigit())
+                                }
+                                HStack(spacing: 3) {
+                                    Image(systemName: "flame.fill").font(.system(size: 8)).foregroundStyle(Theme.stepsOrange)
+                                    Text("\(Int(ahActive)) active").font(.caption2.monospacedDigit())
+                                }
+                                if ahSteps > 0 {
+                                    HStack(spacing: 3) {
+                                        Image(systemName: "figure.walk").font(.system(size: 8)).foregroundStyle(Theme.deficit)
+                                        Text("\(Int(ahSteps)) steps").font(.caption2.monospacedDigit())
+                                    }
+                                }
+                            }
+                            .foregroundStyle(.tertiary)
+                        }
+                    }
+
+                    Divider().overlay(Color.white.opacity(0.05))
+
                     // Presets
                     VStack(alignment: .leading, spacing: 6) {
                         Text("Estimation Style").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
@@ -380,9 +367,9 @@ struct AlgorithmSettingsView: View {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("How it works").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
                         howItWorksRow("1", "Apple Health", "Resting + active energy (7-day avg)")
-                        howItWorksRow("2", "Profile", "Mifflin-St Jeor from age/height/sex")
-                        howItWorksRow("3", "Weight + Food", "Adaptive: intake − weight change")
-                        howItWorksRow("4", "Body Weight", "Fallback: 2000 × √(weight/70)")
+                        howItWorksRow("2", "Profile", "Age, height, sex (Mifflin-St Jeor)")
+                        howItWorksRow("3", "Food Log", "Your intake vs weight change")
+                        howItWorksRow("4", "Body Weight", "Baseline from weight + activity")
                         Text("Each source refines the estimate. More data = more accurate.")
                             .font(.caption2).foregroundStyle(.quaternary)
                     }
