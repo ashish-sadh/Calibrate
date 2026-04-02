@@ -281,48 +281,83 @@ struct GoalView: View {
     private func projectionCard(_ goal: WeightGoal) -> some View {
         let unit = Preferences.weightUnit
 
+        let isLosing = goal.totalChangeKg < 0
+
         return VStack(alignment: .leading, spacing: 8) {
             Text("Projection").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
 
             if let rate = actualWeeklyRate, let current = currentWeightKg, abs(rate) > 0.01 {
-                let weeksToGoal = abs(goal.remainingKg(currentWeightKg: current) / rate)
-                let projectedDate = Calendar.current.date(byAdding: .day, value: Int(weeksToGoal * 7), to: Date())
+                let remaining = goal.remainingKg(currentWeightKg: current)
+                // Check if moving in the right direction
+                let movingRight = (isLosing && rate < 0) || (!isLosing && rate > 0)
 
-                HStack(spacing: 12) {
-                    VStack(spacing: 3) {
-                        Text("At current pace").font(.caption2).foregroundStyle(.tertiary)
-                        if let date = projectedDate {
-                            Text(DateFormatters.shortDisplay.string(from: date))
-                                .font(.subheadline.weight(.bold))
+                if movingRight {
+                    let weeksToGoal = abs(remaining / rate)
+                    let projectedDate = Calendar.current.date(byAdding: .day, value: Int(weeksToGoal * 7), to: Date())
+
+                    HStack(spacing: 12) {
+                        VStack(spacing: 3) {
+                            Text("At current pace").font(.caption2).foregroundStyle(.tertiary)
+                            if let date = projectedDate {
+                                Text(DateFormatters.shortDisplay.string(from: date))
+                                    .font(.subheadline.weight(.bold))
+                            }
+                            Text("\(Int(weeksToGoal)) weeks").font(.caption2).foregroundStyle(.tertiary)
                         }
-                        Text("\(Int(weeksToGoal)) weeks").font(.caption2).foregroundStyle(.tertiary)
+                        .frame(maxWidth: .infinity).card()
+
+                        VStack(spacing: 3) {
+                            Text("Goal date").font(.caption2).foregroundStyle(.tertiary)
+                            if let date = goal.targetDate {
+                                Text(DateFormatters.shortDisplay.string(from: date))
+                                    .font(.subheadline.weight(.bold))
+                            }
+                            if let weeks = goal.weeksRemaining {
+                                Text("\(Int(weeks)) weeks").font(.caption2).foregroundStyle(.tertiary)
+                            }
+                        }
+                        .frame(maxWidth: .infinity).card()
                     }
-                    .frame(maxWidth: .infinity).card()
 
-                    VStack(spacing: 3) {
-                        Text("Goal date").font(.caption2).foregroundStyle(.tertiary)
-                        if let date = goal.targetDate {
-                            Text(DateFormatters.shortDisplay.string(from: date))
-                                .font(.subheadline.weight(.bold))
-                        }
-                        if let weeks = goal.weeksRemaining {
-                            Text("\(Int(weeks)) weeks").font(.caption2).foregroundStyle(.tertiary)
+                    if let projected = projectedDate, let target = goal.targetDate {
+                        let diff = Calendar.current.dateComponents([.day], from: target, to: projected).day ?? 0
+                        if diff < -7 {
+                            Text("On track to reach your goal \(abs(diff)) days early")
+                                .font(.caption).foregroundStyle(Theme.deficit)
+                        } else if diff > 7 {
+                            Text("\(diff) days behind — adjust your \(isLosing ? "deficit" : "surplus") or extend timeline")
+                                .font(.caption).foregroundStyle(Theme.surplus)
+                        } else {
+                            Text("Right on schedule")
+                                .font(.caption).foregroundStyle(Theme.deficit)
                         }
                     }
-                    .frame(maxWidth: .infinity).card()
-                }
+                } else {
+                    // Moving the WRONG direction
+                    VStack(spacing: 6) {
+                        HStack(spacing: 12) {
+                            VStack(spacing: 3) {
+                                Text("At current pace").font(.caption2).foregroundStyle(.tertiary)
+                                Text("Wrong direction")
+                                    .font(.subheadline.weight(.bold)).foregroundStyle(Theme.surplus)
+                            }
+                            .frame(maxWidth: .infinity).card()
 
-                if let projected = projectedDate, let target = goal.targetDate {
-                    let diff = Calendar.current.dateComponents([.day], from: target, to: projected).day ?? 0
-                    if diff < -7 {
-                        Text("You'll reach your goal \(abs(diff)) days early at this pace")
-                            .font(.caption).foregroundStyle(Theme.deficit)
-                    } else if diff > 7 {
-                        Text("You're \(diff) days behind schedule — increase deficit or extend timeline")
+                            VStack(spacing: 3) {
+                                Text("Goal date").font(.caption2).foregroundStyle(.tertiary)
+                                if let date = goal.targetDate {
+                                    Text(DateFormatters.shortDisplay.string(from: date))
+                                        .font(.subheadline.weight(.bold))
+                                }
+                                if let weeks = goal.weeksRemaining {
+                                    Text("\(Int(weeks)) weeks").font(.caption2).foregroundStyle(.tertiary)
+                                }
+                            }
+                            .frame(maxWidth: .infinity).card()
+                        }
+
+                        Text("You're \(isLosing ? "gaining" : "losing") weight but your goal is to \(isLosing ? "lose" : "gain"). Review your calorie target or update your goal.")
                             .font(.caption).foregroundStyle(Theme.surplus)
-                    } else {
-                        Text("Right on schedule")
-                            .font(.caption).foregroundStyle(Theme.deficit)
                     }
                 }
             } else {
