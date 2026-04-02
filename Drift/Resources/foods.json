@@ -8446,5 +8446,137 @@
     "carbs_g": 60,
     "fat_g": 8,
     "fiber_g": 6
+  },
+  {
+    "name": "Fish Tacos (2)",
+    "category": "Fast Food",
+    "serving_size": 2,
+    "serving_unit": "tacos",
+    "calories": 420,
+    "protein_g": 26,
+    "carbs_g": 38,
+    "fat_g": 18,
+    "fiber_g": 3
+  },
+  {
+    "name": "Quesadilla (cheese)",
+    "category": "Fast Food",
+    "serving_size": 1,
+    "serving_unit": "quesadilla",
+    "calories": 490,
+    "protein_g": 20,
+    "carbs_g": 38,
+    "fat_g": 28,
+    "fiber_g": 2
+  },
+  {
+    "name": "Miso Soup",
+    "category": "Fast Food",
+    "serving_size": 1,
+    "serving_unit": "cup",
+    "calories": 40,
+    "protein_g": 3,
+    "carbs_g": 5,
+    "fat_g": 1,
+    "fiber_g": 1
+  },
+  {
+    "name": "Lentil Soup",
+    "category": "US Staples",
+    "serving_size": 1,
+    "serving_unit": "cup",
+    "calories": 180,
+    "protein_g": 12,
+    "carbs_g": 28,
+    "fat_g": 2,
+    "fiber_g": 8
+  },
+  {
+    "name": "Chicken Tenders (4 pieces)",
+    "category": "Fast Food",
+    "serving_size": 4,
+    "serving_unit": "pieces",
+    "calories": 360,
+    "protein_g": 24,
+    "carbs_g": 20,
+    "fat_g": 20,
+    "fiber_g": 1
+  },
+  {
+    "name": "Baked Potato (medium)",
+    "category": "Vegetables",
+    "serving_size": 1,
+    "serving_unit": "potato",
+    "calories": 161,
+    "protein_g": 4,
+    "carbs_g": 37,
+    "fat_g": 0,
+    "fiber_g": 4
+  },
+  {
+    "name": "Corn on the Cob (1 ear)",
+    "category": "Vegetables",
+    "serving_size": 1,
+    "serving_unit": "ear",
+    "calories": 90,
+    "protein_g": 3,
+    "carbs_g": 19,
+    "fat_g": 1,
+    "fiber_g": 2
+  },
+  {
+    "name": "Egg White Omelet (3 whites)",
+    "category": "Proteins",
+    "serving_size": 3,
+    "serving_unit": "whites",
+    "calories": 51,
+    "protein_g": 11,
+    "carbs_g": 0,
+    "fat_g": 0,
+    "fiber_g": 0
+  },
+  {
+    "name": "Protein Pancakes (2)",
+    "category": "Grains & Cereals",
+    "serving_size": 2,
+    "serving_unit": "pancakes",
+    "calories": 260,
+    "protein_g": 25,
+    "carbs_g": 28,
+    "fat_g": 6,
+    "fiber_g": 2
+  },
+  {
+    "name": "BBQ Sauce",
+    "category": "Condiments",
+    "serving_size": 2,
+    "serving_unit": "tbsp",
+    "calories": 60,
+    "protein_g": 0,
+    "carbs_g": 14,
+    "fat_g": 0,
+    "fiber_g": 0
+  },
+  {
+    "name": "Honey Mustard Dressing",
+    "category": "Condiments",
+    "serving_size": 2,
+    "serving_unit": "tbsp",
+    "calories": 110,
+    "protein_g": 0,
+    "carbs_g": 10,
+    "fat_g": 8,
+    "fiber_g": 0
+  },
+  {
+    "name": "Ranch Dressing",
+    "category": "Condiments",
+    "serving_size": 2,
+    "serving_unit": "tbsp",
+    "calories": 130,
+    "protein_g": 0,
+    "carbs_g": 2,
+    "fat_g": 14,
+    "fiber_g": 0
   }
 ]
