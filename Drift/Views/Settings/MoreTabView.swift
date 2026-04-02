@@ -273,6 +273,8 @@ struct SettingsView: View {
             WorkoutService.clearSession()
             UserDefaults.standard.removeObject(forKey: "weight_unit")
             UserDefaults.standard.removeObject(forKey: "drift_custom_exercises")
+            UserDefaults.standard.removeObject(forKey: "drift_exercise_favorites")
+            UserDefaults.standard.removeObject(forKey: "drift_tdee_cache")
             UserDefaults.standard.removeObject(forKey: "drift_default_templates_v3")
             UserDefaults.standard.removeObject(forKey: "drift_default_templates_v2")
             UserDefaults.standard.removeObject(forKey: "drift_default_templates_seeded")

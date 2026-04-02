@@ -1,8 +1,9 @@
 # Self-Improvement Session Log
 
 ## Session 2 (April 1-2, 2026)
-- **Commits**: 8 so far, all pushed
-- **Tests**: 566 → 609 (+43 new tests, 0 regressions)
+- **Commits**: 13, all pushed
+- **TestFlight**: Build 51 published
+- **Tests**: 566 → 614 (+48 new tests, 0 regressions)
 - **Food DB**: 716 → 767 items (+51 foods)
 - **Exercise DB**: 884 → 907 items (+23 exercises, 4 dupes removed)
 
