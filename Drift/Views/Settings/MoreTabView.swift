@@ -70,7 +70,7 @@ struct MoreTabView: View {
                     .card()
 
                     // Version
-                    Text("Drift v0.1.0")
+                    Text("Drift v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"))")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                         .padding(.top, 4)
@@ -268,6 +268,7 @@ struct SettingsView: View {
             try AppDatabase.shared.factoryReset()
             WeightGoal.clear()
             WeightTrendCalculator.saveConfig(.default)
+            TDEEEstimator.saveConfig(.default)
             WorkoutService.clearSession()
             UserDefaults.standard.removeObject(forKey: "weight_unit")
             UserDefaults.standard.removeObject(forKey: "drift_custom_exercises")
