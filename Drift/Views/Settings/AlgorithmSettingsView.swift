@@ -147,33 +147,53 @@ struct AlgorithmSettingsView: View {
                     Text("More data = more accurate estimate. Auto-filled from Apple Health when available.")
                         .font(.caption2).foregroundStyle(.tertiary)
 
+                    // Row 1: Sex + Age
                     HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Sex").font(.caption2).foregroundStyle(.secondary)
+                            Picker("", selection: Binding(
+                                get: { tdeeConfig.sex },
+                                set: { tdeeConfig.sex = $0 }
+                            )) {
+                                Text("—").tag(nil as TDEEEstimator.Sex?)
+                                Text("Male").tag(TDEEEstimator.Sex.male as TDEEEstimator.Sex?)
+                                Text("Female").tag(TDEEEstimator.Sex.female as TDEEEstimator.Sex?)
+                            }
+                            .pickerStyle(.segmented)
+                        }
+
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Age").font(.caption2).foregroundStyle(.secondary)
                             TextField("—", value: $tdeeConfig.age, format: .number)
                                 .keyboardType(.numberPad)
-                                .font(.subheadline.monospacedDigit())
-                                .padding(8)
+                                .font(.title3.weight(.semibold).monospacedDigit())
+                                .multilineTextAlignment(.center)
+                                .padding(.vertical, 6)
                                 .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 8))
                         }
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Height (cm)").font(.caption2).foregroundStyle(.secondary)
-                            TextField("—", value: $tdeeConfig.heightCm, format: .number)
-                                .keyboardType(.decimalPad)
-                                .font(.subheadline.monospacedDigit())
-                                .padding(8)
-                                .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 8))
-                        }
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("Sex").font(.caption2).foregroundStyle(.secondary)
-                            Picker("", selection: Binding(
-                                get: { tdeeConfig.sex ?? .male },
-                                set: { tdeeConfig.sex = $0 }
-                            )) {
-                                Text("M").tag(TDEEEstimator.Sex.male)
-                                Text("F").tag(TDEEEstimator.Sex.female)
+                        .frame(width: 70)
+                    }
+
+                    // Row 2: Height with ft/in display
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text("Height").font(.caption2).foregroundStyle(.secondary)
+                            Spacer()
+                            if let h = tdeeConfig.heightCm {
+                                let totalInches = h / 2.54
+                                let feet = Int(totalInches / 12)
+                                let inches = Int(totalInches.truncatingRemainder(dividingBy: 12))
+                                Text("\(feet)'\(inches)\"").font(.caption2).foregroundStyle(.tertiary)
                             }
-                            .pickerStyle(.segmented)
+                        }
+                        HStack(spacing: 8) {
+                            TextField("cm", value: $tdeeConfig.heightCm, format: .number)
+                                .keyboardType(.decimalPad)
+                                .font(.title3.weight(.semibold).monospacedDigit())
+                                .multilineTextAlignment(.center)
+                                .padding(.vertical, 6)
+                                .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 8))
+                            Text("cm").font(.caption).foregroundStyle(.tertiary)
                         }
                     }
 
