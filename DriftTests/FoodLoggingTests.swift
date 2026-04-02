@@ -1496,4 +1496,49 @@ import GRDB
     #expect(base >= 1200, "TDEE should never go below 1200")
 }
 
+// MARK: - TDEE Sync Tests (Algorithm page must match Dashboard)
+
+@MainActor
+@Test func tdeeSyncAfterConfigChange() async throws {
+    // Save a config, then verify cachedOrSync returns consistent value
+    var config = TDEEEstimator.TDEEConfig.default
+    config.activityMultiplier = 32
+    TDEEEstimator.saveConfig(config) // clears cache
+    let first = TDEEEstimator.shared.cachedOrSync().tdee
+    let second = TDEEEstimator.shared.cachedOrSync().tdee
+    #expect(first == second, "Two consecutive reads must return same TDEE")
+    // Restore default
+    TDEEEstimator.saveConfig(.default)
+}
+
+@MainActor
+@Test func tdeeSyncBetweenReads() async throws {
+    // Verify that cachedOrSync is idempotent within a session
+    TDEEEstimator.saveConfig(.default)
+    let read1 = TDEEEstimator.shared.cachedOrSync()
+    let read2 = TDEEEstimator.shared.cachedOrSync()
+    let read3 = TDEEEstimator.shared.cachedOrSync()
+    #expect(read1.tdee == read2.tdee && read2.tdee == read3.tdee,
+            "All reads must return identical TDEE: \(read1.tdee), \(read2.tdee), \(read3.tdee)")
+}
+
+@MainActor
+@Test func tdeeCacheInvalidatedOnSave() async throws {
+    // Change config, verify TDEE changes
+    var config1 = TDEEEstimator.TDEEConfig.default
+    config1.manualAdjustment = 0
+    TDEEEstimator.saveConfig(config1)
+    let tdee1 = TDEEEstimator.shared.cachedOrSync().tdee
+
+    var config2 = config1
+    config2.manualAdjustment = 200
+    TDEEEstimator.saveConfig(config2)
+    let tdee2 = TDEEEstimator.shared.cachedOrSync().tdee
+
+    #expect(abs(tdee2 - tdee1 - 200) < 1, "Adding +200 adjustment should increase TDEE by ~200, got \(tdee2 - tdee1)")
+
+    // Restore
+    TDEEEstimator.saveConfig(.default)
+}
+
 enum TestError: Error { case msg(String); init(_ s: String) { self = .msg(s) } }

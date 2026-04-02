@@ -23,15 +23,11 @@ struct AlgorithmSettingsView: View {
         entries.map { (date: $0.date, weightKg: $0.weightKg) }
     }
 
+    /// Always reads from the shared estimator — same number as Dashboard.
+    /// save() clears the cache, cachedOrSync() recomputes, refreshKey triggers re-render.
     private var liveTDEE: Int {
         let _ = refreshKey
-        let db = AppDatabase.shared
-        let weight = (try? db.fetchWeightEntries(from: nil))?.first?.weightKg
-        var tdee = TDEEEstimator.computeBase(weightKg: weight, activityMultiplier: tdeeConfig.activityMultiplier)
-        if let w = weight, let (mifflin, confidence) = TDEEEstimator.computeMifflin(weightKg: w, config: tdeeConfig) {
-            tdee += (mifflin - tdee) * 0.4 * confidence
-        }
-        return Int(max(1200, tdee + tdeeConfig.manualAdjustment))
+        return Int(TDEEEstimator.shared.cachedOrSync().tdee)
     }
 
     private var liveCalorieTarget: Int? {
