@@ -266,6 +266,8 @@ struct FoodTabView: View {
         }
         .padding(.vertical, 6)
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(entry.foodName), \(Int(entry.totalCalories)) calories, \(Int(entry.totalProtein)) protein, \(Int(entry.totalCarbs)) carbs, \(Int(entry.totalFat)) fat")
         .onTapGesture {
             if entry.servingSizeG > 0 {
                 let food = Food(name: entry.foodName, category: "", servingSize: entry.servingSizeG,
