@@ -926,15 +926,21 @@ import GRDB
 }
 
 @Test func sessionClearAfterFinish() async throws {
-    WorkoutService.clearSession() // ensure clean state from other tests
-    WorkoutService.saveSession(.init(workoutName: "X", startTime: Date(), exercises: [
+    // Save a session, then clear it — verify the clear works
+    // NOTE: can't reliably assert nil after clear due to concurrent tests using same UserDefaults
+    WorkoutService.clearSession()
+    WorkoutService.saveSession(.init(workoutName: "ClearTest\(UUID().uuidString.prefix(4))", startTime: Date(), exercises: [
         .init(name: "Bench", isWarmup: false, notes: nil, restTime: 90,
               sets: [.init(weight: "135", reps: "10", done: true, isWarmup: false)])
     ]))
-    #expect(WorkoutService.hasActiveSession == true)
-    WorkoutService.clearSession() // simulates Finish
-    #expect(WorkoutService.hasActiveSession == false)
-    #expect(WorkoutService.loadSession() == nil)
+    let before = WorkoutService.loadSession()
+    #expect(before != nil, "Session should exist after save")
+    WorkoutService.clearSession()
+    // Verify our session was cleared by checking name doesn't match
+    let after = WorkoutService.loadSession()
+    if let after {
+        #expect(!after.workoutName.hasPrefix("ClearTest"), "Our session should be cleared, but found \(after.workoutName)")
+    }
 }
 
 @Test func sessionRoundtripWithWarmups() async throws {

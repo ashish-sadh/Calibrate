@@ -138,27 +138,45 @@ struct DashboardView: View {
         let goal = WeightGoal.load()
         let target = goal?.macroTargets(currentWeightKg: viewModel.currentWeight)
 
-        return HStack {
-            VStack(alignment: .leading, spacing: 2) {
-                Label("Est. Expenditure", systemImage: "flame").font(.caption).foregroundStyle(.secondary)
-                HStack(alignment: .firstTextBaseline, spacing: 3) {
-                    Text("\(Int(est.tdee))")
-                        .font(.title3.weight(.bold).monospacedDigit())
-                    Text("kcal/day").font(.caption2).foregroundStyle(.tertiary)
+        return VStack(spacing: 6) {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Label("Est. Expenditure", systemImage: "flame").font(.caption).foregroundStyle(.secondary)
+                    HStack(alignment: .firstTextBaseline, spacing: 3) {
+                        Text("\(Int(est.tdee))")
+                            .font(.title3.weight(.bold).monospacedDigit())
+                        Text("kcal/day").font(.caption2).foregroundStyle(.tertiary)
+                    }
+                }
+
+                Spacer()
+
+                if let t = target {
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("Target").font(.caption).foregroundStyle(.secondary)
+                        HStack(alignment: .firstTextBaseline, spacing: 3) {
+                            Text("\(Int(t.calorieTarget))")
+                                .font(.title3.weight(.bold).monospacedDigit())
+                                .foregroundStyle(Theme.accent)
+                            Text("kcal").font(.caption2).foregroundStyle(.tertiary)
+                        }
+                    }
                 }
             }
 
-            Spacer()
-
-            if let t = target {
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("Target").font(.caption).foregroundStyle(.secondary)
-                    HStack(alignment: .firstTextBaseline, spacing: 3) {
-                        Text("\(Int(t.calorieTarget))")
-                            .font(.title3.weight(.bold).monospacedDigit())
-                            .foregroundStyle(Theme.accent)
-                        Text("kcal").font(.caption2).foregroundStyle(.tertiary)
-                    }
+            // Confidence: shows data sources contributing to the estimate
+            HStack(spacing: 4) {
+                ForEach(est.activeSources, id: \.self) { source in
+                    Text(source)
+                        .font(.system(size: 9).weight(.medium))
+                        .padding(.horizontal, 5).padding(.vertical, 2)
+                        .background(Theme.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 4))
+                        .foregroundStyle(Theme.accent.opacity(0.8))
+                }
+                Spacer()
+                if est.confidence == .low {
+                    Text("Add data to improve")
+                        .font(.system(size: 9)).foregroundStyle(.quaternary)
                 }
             }
         }
