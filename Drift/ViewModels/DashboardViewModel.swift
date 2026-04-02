@@ -16,6 +16,7 @@ final class DashboardViewModel {
     var weeklyRate: Double? // kg/week
     var dailyDeficit: Double? // kcal (from weight trend)
     var avgDailyIntake: Double = 0 // 14-day avg calories eaten
+    var foodLogConsistency: Double = 0 // 0.0-1.0 (fraction of last 14 days with food logged)
     var supplementsTaken: Int = 0
     var supplementsTotal: Int = 0
     var isHealthKitAvailable: Bool = false
@@ -85,13 +86,15 @@ final class DashboardViewModel {
             Log.weightTrend.error("Failed to load weight trend: \(error.localizedDescription)")
         }
 
-        // Load 14-day avg daily intake (for energy balance bar)
+        // Load 14-day avg daily intake + consistency (for energy balance bar)
         do {
             let today = Date()
             let twoWeeksAgo = Calendar.current.date(byAdding: .day, value: -14, to: today) ?? today
-            avgDailyIntake = try database.averageDailyCalories(
-                from: DateFormatters.dateOnly.string(from: twoWeeksAgo),
-                to: DateFormatters.dateOnly.string(from: today))
+            let fromStr = DateFormatters.dateOnly.string(from: twoWeeksAgo)
+            let toStr = DateFormatters.dateOnly.string(from: today)
+            avgDailyIntake = try database.averageDailyCalories(from: fromStr, to: toStr)
+            let daysLogged = try database.daysWithFoodLogged(from: fromStr, to: toStr)
+            foodLogConsistency = Double(daysLogged) / 14.0
         } catch {
             Log.app.error("Failed to load avg intake: \(error.localizedDescription)")
         }

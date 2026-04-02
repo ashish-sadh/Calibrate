@@ -137,12 +137,21 @@ struct DashboardView: View {
             }
 
             // Row 2: Energy balance bar
-            // Show when we have food logging data OR weight trend (estimated intake = TDEE + deficit)
             if let deficit = viewModel.dailyDeficit {
                 let tdee = est.tdee
-                let hasLoggedFood = viewModel.avgDailyIntake > 500
-                let estIntake = hasLoggedFood ? viewModel.avgDailyIntake : (tdee + deficit)
-                let barFraction = min(1.5, max(0, estIntake / max(1, tdee)))
+                let trendIntake = tdee + deficit // estimated from weight trend
+                let consistency = viewModel.foodLogConsistency
+                let loggedIntake = viewModel.avgDailyIntake
+
+                // Decide which intake number to trust:
+                // - Consistent food logs (≥50% of days): use logged average
+                // - Partial logs but wildly off from trend: use trend estimate (logs are incomplete)
+                // - No/low logs: use trend estimate
+                let useFoodLogs = consistency >= 0.5 && loggedIntake > 500
+                    && abs(loggedIntake - trendIntake) < trendIntake * 0.4 // within 40% of trend
+                let intake = useFoodLogs ? loggedIntake : trendIntake
+                let intakeLabel = useFoodLogs ? "avg intake" : "est. intake"
+                let barFraction = min(1.5, max(0, intake / max(1, tdee)))
 
                 VStack(spacing: 4) {
                     GeometryReader { geo in
@@ -159,9 +168,9 @@ struct DashboardView: View {
 
                     HStack {
                         HStack(spacing: 3) {
-                            Text("~\(Int(estIntake))")
+                            Text("~\(Int(intake))")
                                 .font(.caption2.weight(.medium).monospacedDigit())
-                            Text(hasLoggedFood ? "avg intake" : "est. intake")
+                            Text(intakeLabel)
                                 .font(.caption2).foregroundStyle(.tertiary)
                         }
                         Spacer()
