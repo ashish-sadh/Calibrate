@@ -1541,4 +1541,187 @@ import GRDB
     TDEEEstimator.saveConfig(.default)
 }
 
+// MARK: - TDEE Comprehensive Demographic Tests
+
+// Soft cap: base formula should never exceed ~2800 without profile data
+@Test func tdeeBaseSoftCapPreventsExtreme() async throws {
+    // 110kg athlete: raw would be ~3114, soft cap should bring it under 2850
+    let heavy = TDEEEstimator.computeBase(weightKg: 110, activityMultiplier: 36)
+    #expect(heavy < 2850, "110kg athlete base should be soft-capped, got \(Int(heavy))")
+    #expect(heavy > 2700, "Should still be higher than moderate, got \(Int(heavy))")
+
+    // 140kg athlete: raw would be ~3514, soft cap should keep it well under 3000
+    let veryHeavy = TDEEEstimator.computeBase(weightKg: 140, activityMultiplier: 36)
+    #expect(veryHeavy < 3000, "140kg athlete base must stay under 3000 without profile, got \(Int(veryHeavy))")
+    #expect(veryHeavy > 2800, "But still meaningful, got \(Int(veryHeavy))")
+}
+
+@Test func tdeeBaseSoftCapDoesNotAffectNormal() async throws {
+    // Normal-weight people at moderate activity should NOT be capped
+    let at53 = TDEEEstimator.computeBase(weightKg: 53, activityMultiplier: 29)
+    let at70 = TDEEEstimator.computeBase(weightKg: 70, activityMultiplier: 29)
+    let at85 = TDEEEstimator.computeBase(weightKg: 85, activityMultiplier: 29)
+
+    #expect(at53 > 1700 && at53 < 1800, "53kg moderate unchanged, got \(Int(at53))")
+    #expect(abs(at70 - 2000) < 1, "70kg anchor unchanged, got \(Int(at70))")
+    #expect(at85 > 2100 && at85 < 2250, "85kg moderate unchanged, got \(Int(at85))")
+}
+
+// Age group tests: Mifflin-St Jeor across demographics
+@Test func mifflinYoungMale20() async throws {
+    let config = TDEEEstimator.TDEEConfig(activityMultiplier: 29, appleHealthTrust: 1.0, manualAdjustment: 0,
+                                            age: 20, heightCm: 178, sex: .male)
+    let (tdee, _) = TDEEEstimator.computeMifflin(weightKg: 75, config: config)!
+    // BMR: 10*75 + 6.25*178 - 5*20 + 5 = 750+1112.5-100+5 = 1767.5, × 1.55 = 2740
+    #expect(tdee > 2600 && tdee < 2850, "Young 20yo male TDEE ~2740, got \(Int(tdee))")
+}
+
+@Test func mifflinYoungFemale25() async throws {
+    let config = TDEEEstimator.TDEEConfig(activityMultiplier: 29, appleHealthTrust: 1.0, manualAdjustment: 0,
+                                            age: 25, heightCm: 163, sex: .female)
+    let (tdee, _) = TDEEEstimator.computeMifflin(weightKg: 58, config: config)!
+    // BMR: 10*58 + 6.25*163 - 5*25 - 161 = 580+1018.75-125-161 = 1312.75, × 1.55 = 2035
+    #expect(tdee > 1900 && tdee < 2150, "Young 25yo female TDEE ~2035, got \(Int(tdee))")
+}
+
+@Test func mifflinMiddleAgeMale45() async throws {
+    let config = TDEEEstimator.TDEEConfig(activityMultiplier: 29, appleHealthTrust: 1.0, manualAdjustment: 0,
+                                            age: 45, heightCm: 175, sex: .male)
+    let (tdee, _) = TDEEEstimator.computeMifflin(weightKg: 85, config: config)!
+    // BMR: 10*85 + 6.25*175 - 5*45 + 5 = 850+1093.75-225+5 = 1723.75, × 1.55 = 2672
+    #expect(tdee > 2550 && tdee < 2800, "Middle-aged 45yo male TDEE ~2672, got \(Int(tdee))")
+}
+
+@Test func mifflinMiddleAgeFemale50() async throws {
+    let config = TDEEEstimator.TDEEConfig(activityMultiplier: 29, appleHealthTrust: 1.0, manualAdjustment: 0,
+                                            age: 50, heightCm: 160, sex: .female)
+    let (tdee, _) = TDEEEstimator.computeMifflin(weightKg: 70, config: config)!
+    // BMR: 10*70 + 6.25*160 - 5*50 - 161 = 700+1000-250-161 = 1289, × 1.55 = 1998
+    #expect(tdee > 1880 && tdee < 2120, "Middle-aged 50yo female TDEE ~1998, got \(Int(tdee))")
+}
+
+@Test func mifflinOlderMale65() async throws {
+    let config = TDEEEstimator.TDEEConfig(activityMultiplier: 25, appleHealthTrust: 1.0, manualAdjustment: 0,
+                                            age: 65, heightCm: 172, sex: .male)
+    let (tdee, _) = TDEEEstimator.computeMifflin(weightKg: 78, config: config)!
+    // BMR: 10*78 + 6.25*172 - 5*65 + 5 = 780+1075-325+5 = 1535, × 1.35 (light) = 2072
+    #expect(tdee > 1950 && tdee < 2200, "Older 65yo light-active male TDEE ~2072, got \(Int(tdee))")
+}
+
+@Test func mifflinOlderFemale70() async throws {
+    let config = TDEEEstimator.TDEEConfig(activityMultiplier: 22, appleHealthTrust: 1.0, manualAdjustment: 0,
+                                            age: 70, heightCm: 155, sex: .female)
+    let (tdee, _) = TDEEEstimator.computeMifflin(weightKg: 62, config: config)!
+    // BMR: 10*62 + 6.25*155 - 5*70 - 161 = 620+968.75-350-161 = 1077.75, × 1.2 (sedentary) = 1293
+    #expect(tdee > 1200 && tdee < 1400, "Older 70yo sedentary female TDEE ~1293, got \(Int(tdee))")
+}
+
+// Blended TDEE: base + Mifflin correction should be reasonable across all combos
+@Test func blendedTDEENeverExtremeWithoutAppleHealth() async throws {
+    // Test various weight × activity × demographic combos
+    let weights: [Double] = [45, 53, 60, 70, 80, 90, 100, 110, 120]
+    let activities: [Double] = [22, 25, 29, 33, 36]
+
+    for w in weights {
+        for act in activities {
+            let base = TDEEEstimator.computeBase(weightKg: w, activityMultiplier: act)
+
+            // Without Mifflin: base alone should be 1200-2950
+            #expect(base >= 1200, "Base too low for \(w)kg/act\(act): \(Int(base))")
+            #expect(base < 2950, "Base too high for \(w)kg/act\(act) without profile: \(Int(base))")
+
+            // With Mifflin (male, 30, 175cm): blended should be 1200-3200
+            let maleConfig = TDEEEstimator.TDEEConfig(activityMultiplier: act, appleHealthTrust: 1.0, manualAdjustment: 0,
+                                                        age: 30, heightCm: 175, sex: .male)
+            if let (mifflin, conf) = TDEEEstimator.computeMifflin(weightKg: w, config: maleConfig) {
+                let blended = base + (mifflin - base) * 0.4 * conf
+                #expect(blended >= 1200, "Blended too low for \(w)kg male: \(Int(blended))")
+                #expect(blended < 3500, "Blended too high for \(w)kg male: \(Int(blended))")
+            }
+
+            // With Mifflin (female, 30, 165cm): blended should be lower
+            let femaleConfig = TDEEEstimator.TDEEConfig(activityMultiplier: act, appleHealthTrust: 1.0, manualAdjustment: 0,
+                                                          age: 30, heightCm: 165, sex: .female)
+            if let (mifflin, conf) = TDEEEstimator.computeMifflin(weightKg: w, config: femaleConfig) {
+                let blended = base + (mifflin - base) * 0.4 * conf
+                #expect(blended >= 1200, "Blended too low for \(w)kg female: \(Int(blended))")
+                #expect(blended < 3200, "Blended too high for \(w)kg female: \(Int(blended))")
+            }
+        }
+    }
+}
+
+// The 53kg user case: with weight trend correction, should be ~1800
+@Test func tdee53kgWithWeightTrendShouldBe1800ish() async throws {
+    // Simulates: 53kg, moderate activity, losing 0.5kg/week, eating ~1400 cal/day
+    let base = TDEEEstimator.computeBase(weightKg: 53, activityMultiplier: 29)
+    // base ~1738
+
+    // Weight trend TDEE: avgIntake - deficit = 1400 - (-428) = 1828
+    let weeklyRate = -0.5 // losing
+    let deficit = weeklyRate * 6000 / 7 // -428.57
+    let avgIntake = 1400.0
+    let trendTDEE = avgIntake - deficit // 1828.57
+
+    // Apply 0.3 dampening (same as TDEEEstimator.refresh)
+    let blended = base + (trendTDEE - base) * 0.3
+    #expect(blended > 1750 && blended < 1850,
+            "53kg with trend should be ~1800, got \(Int(blended))")
+}
+
+// Test that higher intake + same trend = higher TDEE (sanity)
+@Test func tdeeAdaptiveHigherIntakeMeansHigherTDEE() async throws {
+    let base = TDEEEstimator.computeBase(weightKg: 70, activityMultiplier: 29)
+    let deficit = -0.5 * 6000 / 7 // -428 kcal/day
+
+    let lowIntake = 1600.0
+    let highIntake = 2000.0
+
+    let trendLow = lowIntake - deficit // 2028
+    let trendHigh = highIntake - deficit // 2428
+
+    let blendedLow = base + (trendLow - base) * 0.3
+    let blendedHigh = base + (trendHigh - base) * 0.3
+
+    #expect(blendedHigh > blendedLow, "Higher intake with same weight loss = higher TDEE")
+    #expect(blendedHigh - blendedLow > 100, "Difference should be meaningful: \(Int(blendedHigh - blendedLow))")
+}
+
+// Test weight × activity matrix: every combo produces a sane result
+@Test func tdeeBaseWeightActivityMatrix() async throws {
+    let cases: [(weight: Double, activity: Double, min: Int, max: Int, label: String)] = [
+        (45, 22, 1150, 1350, "45kg sedentary"),
+        (45, 29, 1500, 1650, "45kg moderate"),
+        (45, 36, 1850, 2050, "45kg athlete"),
+        (53, 22, 1250, 1400, "53kg sedentary"),
+        (53, 29, 1700, 1800, "53kg moderate"),
+        (53, 36, 2050, 2250, "53kg athlete"),
+        (70, 22, 1450, 1600, "70kg sedentary"),
+        (70, 29, 1950, 2050, "70kg moderate"),
+        (70, 36, 2400, 2550, "70kg athlete"),
+        (85, 29, 2150, 2300, "85kg moderate"),
+        (100, 29, 2300, 2500, "100kg moderate"),
+        (100, 36, 2700, 2850, "100kg athlete"),  // soft cap region
+        (120, 29, 2550, 2700, "120kg moderate"),
+        (120, 36, 2750, 2950, "120kg athlete"),  // soft cap region
+    ]
+
+    for c in cases {
+        let base = TDEEEstimator.computeBase(weightKg: c.weight, activityMultiplier: c.activity)
+        #expect(Int(base) >= c.min && Int(base) <= c.max,
+                "\(c.label): expected \(c.min)-\(c.max), got \(Int(base))")
+    }
+}
+
+// Mifflin activity factor mapping
+@Test func mifflinActivityFactorMapping() async throws {
+    let config22 = TDEEEstimator.TDEEConfig(activityMultiplier: 22, appleHealthTrust: 1.0, manualAdjustment: 0)
+    let config29 = TDEEEstimator.TDEEConfig(activityMultiplier: 29, appleHealthTrust: 1.0, manualAdjustment: 0)
+    let config36 = TDEEEstimator.TDEEConfig(activityMultiplier: 36, appleHealthTrust: 1.0, manualAdjustment: 0)
+
+    #expect(abs(config22.mifflinActivityFactor - 1.2) < 0.01, "Sedentary = 1.2")
+    #expect(abs(config29.mifflinActivityFactor - 1.55) < 0.01, "Moderate = 1.55")
+    #expect(abs(config36.mifflinActivityFactor - 1.9) < 0.01, "Athlete = 1.9")
+}
+
 enum TestError: Error { case msg(String); init(_ s: String) { self = .msg(s) } }

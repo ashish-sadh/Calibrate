@@ -121,9 +121,14 @@ final class TDEEEstimator {
 
     /// Compute base TDEE from weight + activity slider.
     /// Anchored at 2000 kcal for 70kg, sqrt scaling for diminishing returns.
+    /// Soft-capped at 2700 kcal — without profile data (age/height/sex), we're guessing,
+    /// so stay conservative. Mifflin/Apple Health corrections can push higher when backed by data.
     nonisolated static func computeBase(weightKg: Double?, activityMultiplier: Double) -> Double {
         guard let w = weightKg, w > 0 else { return 2000 }
-        return 2000 * sqrt(w / 70) * (activityMultiplier / 29)
+        let raw = 2000 * sqrt(w / 70) * (activityMultiplier / 29)
+        let softCap = 2700.0
+        guard raw > softCap else { return raw }
+        return softCap + (raw - softCap) * 0.3
     }
 
     /// Compute Mifflin-St Jeor TDEE. Works with partial profile — uses population defaults for missing fields.
