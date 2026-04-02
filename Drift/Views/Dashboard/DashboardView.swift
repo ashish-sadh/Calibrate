@@ -27,6 +27,10 @@ struct DashboardView: View {
                                 }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel(viewModel.currentWeight.map {
+                                "Weight: \(String(format: "%.1f", Preferences.weightUnit.convert(fromKg: $0))) \(Preferences.weightUnit.displayName)"
+                            } ?? "Weight: no data")
 
                             // Right column: Trend + Estimated Deficit stacked
                             VStack(alignment: .leading, spacing: 8) {
@@ -349,6 +353,8 @@ struct DashboardView: View {
         }
         .frame(maxWidth: .infinity)
         .card()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label): \(value)")
     }
 
     private func formatSteps(_ steps: Double) -> String {
@@ -481,6 +487,10 @@ struct DashboardView: View {
             }
         }
         .card()
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(hasData
+            ? "Recovery \(viewModel.recoveryScore) percent, Sleep \(viewModel.sleepHours > 0 ? String(format: "%.1f hours", viewModel.sleepHours) : "no data")"
+            : "Body Rhythm: no data from Apple Health")
     }
 
     // MARK: - Supplements
