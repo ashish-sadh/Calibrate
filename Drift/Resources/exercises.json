@@ -11916,8 +11916,8 @@
   {
     "name": "Burpee",
     "bodyPart": "Core",
-    "category": "Bodyweight",
-    "equipment": "Bodyweight",
+    "category": "strength",
+    "equipment": "body only",
     "level": "intermediate",
     "primaryMuscles": [
       "chest",
@@ -11933,8 +11933,8 @@
   {
     "name": "Burpee (with Push-Up)",
     "bodyPart": "Core",
-    "category": "Bodyweight",
-    "equipment": "Bodyweight",
+    "category": "strength",
+    "equipment": "body only",
     "level": "intermediate",
     "primaryMuscles": [
       "chest",
@@ -11949,8 +11949,8 @@
   {
     "name": "Box Jump",
     "bodyPart": "Legs",
-    "category": "Bodyweight",
-    "equipment": "Other",
+    "category": "strength",
+    "equipment": "other",
     "level": "intermediate",
     "primaryMuscles": [
       "quadriceps",
@@ -11964,8 +11964,8 @@
   {
     "name": "Jump Squat",
     "bodyPart": "Legs",
-    "category": "Bodyweight",
-    "equipment": "Bodyweight",
+    "category": "strength",
+    "equipment": "body only",
     "level": "intermediate",
     "primaryMuscles": [
       "quadriceps",
@@ -11979,8 +11979,8 @@
   {
     "name": "Turkish Get-Up",
     "bodyPart": "Core",
-    "category": "Strength",
-    "equipment": "Kettlebells",
+    "category": "strength",
+    "equipment": "kettlebells",
     "level": "advanced",
     "primaryMuscles": [
       "shoulders",
@@ -11995,8 +11995,8 @@
   {
     "name": "Battle Ropes",
     "bodyPart": "Core",
-    "category": "Strength",
-    "equipment": "Other",
+    "category": "strength",
+    "equipment": "other",
     "level": "intermediate",
     "primaryMuscles": [
       "shoulders",
@@ -12011,8 +12011,8 @@
   {
     "name": "Wall Ball",
     "bodyPart": "Legs",
-    "category": "Strength",
-    "equipment": "Medicine Ball",
+    "category": "strength",
+    "equipment": "medicine ball",
     "level": "intermediate",
     "primaryMuscles": [
       "quadriceps",
@@ -12027,8 +12027,8 @@
   {
     "name": "Rowing Machine",
     "bodyPart": "Back",
-    "category": "Cardio",
-    "equipment": "Machine",
+    "category": "cardio",
+    "equipment": "machine",
     "level": "beginner",
     "primaryMuscles": [
       "middle back",
@@ -12043,8 +12043,8 @@
   {
     "name": "Kettlebell Goblet Squat",
     "bodyPart": "Legs",
-    "category": "Strength",
-    "equipment": "Kettlebells",
+    "category": "strength",
+    "equipment": "kettlebells",
     "level": "beginner",
     "primaryMuscles": [
       "quadriceps",
@@ -12059,8 +12059,8 @@
   {
     "name": "Kettlebell Clean and Press",
     "bodyPart": "Shoulders",
-    "category": "Strength",
-    "equipment": "Kettlebells",
+    "category": "strength",
+    "equipment": "kettlebells",
     "level": "intermediate",
     "primaryMuscles": [
       "shoulders"
@@ -12074,7 +12074,7 @@
   {
     "name": "Bear Crawl",
     "bodyPart": "Core",
-    "category": "Strength",
+    "category": "strength",
     "equipment": "body only",
     "level": "intermediate",
     "primaryMuscles": [
