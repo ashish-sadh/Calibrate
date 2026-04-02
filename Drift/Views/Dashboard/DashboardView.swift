@@ -136,31 +136,34 @@ struct DashboardView: View {
                 }
             }
 
-            // Row 2: Energy balance bar (only when avg intake data exists)
-            if viewModel.avgDailyIntake > 500 {
+            // Row 2: Energy balance bar
+            // Show when we have food logging data OR weight trend (estimated intake = TDEE + deficit)
+            if let deficit = viewModel.dailyDeficit {
                 let tdee = est.tdee
-                let intake = viewModel.avgDailyIntake
-                let deficit = intake - tdee
-                let barFraction = min(1.0, max(0, intake / tdee))
+                let hasLoggedFood = viewModel.avgDailyIntake > 500
+                let estIntake = hasLoggedFood ? viewModel.avgDailyIntake : (tdee + deficit)
+                let barFraction = min(1.5, max(0, estIntake / max(1, tdee)))
 
                 VStack(spacing: 4) {
                     GeometryReader { geo in
                         ZStack(alignment: .leading) {
-                            // TDEE (full bar, muted)
                             RoundedRectangle(cornerRadius: 3)
                                 .fill(Theme.cardBackgroundElevated)
                                 .frame(height: 8)
-                            // Avg intake (partial fill)
                             RoundedRectangle(cornerRadius: 3)
                                 .fill(deficit < 0 ? Theme.calorieBlue : Theme.stepsOrange)
-                                .frame(width: max(0, geo.size.width * barFraction), height: 8)
+                                .frame(width: max(0, min(geo.size.width, geo.size.width * barFraction)), height: 8)
                         }
                     }
                     .frame(height: 8)
 
                     HStack {
-                        Text("\(Int(intake)) avg intake")
-                            .font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                        HStack(spacing: 3) {
+                            Text("~\(Int(estIntake))")
+                                .font(.caption2.weight(.medium).monospacedDigit())
+                            Text(hasLoggedFood ? "avg intake" : "est. intake")
+                                .font(.caption2).foregroundStyle(.tertiary)
+                        }
                         Spacer()
                         Text("\(deficit < 0 ? "" : "+")\(Int(deficit)) /day")
                             .font(.caption2.weight(.semibold).monospacedDigit())
