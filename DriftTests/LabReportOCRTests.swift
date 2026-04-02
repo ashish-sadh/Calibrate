@@ -593,6 +593,38 @@ HCV Ab <0.1 s/co ratio 0.0-0.9 01
     #expect(r?.value == 22)
 }
 
+// MARK: - Date Parsing Tests
+
+@Test func dateParsingMMDDYYYY() {
+    let text = "Collection Date: 03/15/2026\nGLUCOSE 89 mg/dL"
+    let output = LabReportOCR.parseLabReport(text: text)
+    #expect(output.reportDate == "2026-03-15")
+}
+
+@Test func dateParsingYYYYMMDD() {
+    let text = "Date: 2026-03-15\nGLUCOSE 89 mg/dL"
+    let output = LabReportOCR.parseLabReport(text: text)
+    #expect(output.reportDate == "2026-03-15")
+}
+
+@Test func dateParsingMonthNameDDYYYY() {
+    let text = "Collection Date: Mar 15, 2026\nGLUCOSE 89 mg/dL"
+    let output = LabReportOCR.parseLabReport(text: text)
+    #expect(output.reportDate == "2026-03-15", "Should parse 'Mar 15, 2026' format, got \(output.reportDate ?? "nil")")
+}
+
+@Test func dateParsingFullMonthName() {
+    let text = "Collected: January 5, 2026\nGLUCOSE 89 mg/dL"
+    let output = LabReportOCR.parseLabReport(text: text)
+    #expect(output.reportDate == "2026-01-05", "Should parse 'January 5, 2026' format, got \(output.reportDate ?? "nil")")
+}
+
+@Test func dateParsingDDMonYYYY() {
+    let text = "Collected: 15 Mar 2026\nGLUCOSE 89 mg/dL"
+    let output = LabReportOCR.parseLabReport(text: text)
+    #expect(output.reportDate == "2026-03-15", "Should parse '15 Mar 2026' format, got \(output.reportDate ?? "nil")")
+}
+
 // MARK: - Helper
 
 private func findResult(_ biomarkerId: String, in text: String) -> LabReportOCR.ExtractedResult? {

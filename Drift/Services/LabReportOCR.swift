@@ -243,6 +243,7 @@ enum LabReportOCR {
     }
 
     private static func extractFirstDate(from line: String, monthMap: [String: Int]) -> String? {
+        // MM/DD/YYYY
         if let regex = try? NSRegularExpression(pattern: #"(\d{1,2})/(\d{1,2})/(\d{4})"#),
            let match = regex.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)),
            let r1 = Range(match.range(at: 1), in: line), let m = Int(line[r1]),
@@ -251,6 +252,7 @@ enum LabReportOCR {
            y > 2000, m >= 1, m <= 12, d >= 1, d <= 31 {
             return String(format: "%04d-%02d-%02d", y, m, d)
         }
+        // YYYY-MM-DD
         if let regex = try? NSRegularExpression(pattern: #"(\d{4})-(\d{2})-(\d{2})"#),
            let match = regex.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)),
            let r1 = Range(match.range(at: 1), in: line), let y = Int(line[r1]),
@@ -258,6 +260,28 @@ enum LabReportOCR {
            let r3 = Range(match.range(at: 3), in: line), let d = Int(line[r3]),
            y > 2000, m >= 1, m <= 12, d >= 1, d <= 31 {
             return String(format: "%04d-%02d-%02d", y, m, d)
+        }
+        // "Mon DD, YYYY" or "Month DD, YYYY" (e.g., "Mar 15, 2026", "March 15, 2026")
+        let lower = line.lowercased()
+        for (abbr, monthNum) in monthMap {
+            let patterns = [
+                #"\b\#(abbr)\w*\s+(\d{1,2}),?\s+(\d{4})"#,   // "Mar 15, 2026" or "March 15 2026"
+                #"(\d{1,2})\s+\#(abbr)\w*\s+(\d{4})"#         // "15 Mar 2026"
+            ]
+            if let regex = try? NSRegularExpression(pattern: patterns[0]),
+               let match = regex.firstMatch(in: lower, range: NSRange(lower.startIndex..., in: lower)),
+               let r1 = Range(match.range(at: 1), in: lower), let d = Int(lower[r1]),
+               let r2 = Range(match.range(at: 2), in: lower), let y = Int(lower[r2]),
+               y > 2000, d >= 1, d <= 31 {
+                return String(format: "%04d-%02d-%02d", y, monthNum, d)
+            }
+            if let regex = try? NSRegularExpression(pattern: patterns[1]),
+               let match = regex.firstMatch(in: lower, range: NSRange(lower.startIndex..., in: lower)),
+               let r1 = Range(match.range(at: 1), in: lower), let d = Int(lower[r1]),
+               let r2 = Range(match.range(at: 2), in: lower), let y = Int(lower[r2]),
+               y > 2000, d >= 1, d <= 31 {
+                return String(format: "%04d-%02d-%02d", y, monthNum, d)
+            }
         }
         return nil
     }
