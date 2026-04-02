@@ -7687,5 +7687,82 @@
     "carbs_g": 56,
     "fat_g": 9,
     "fiber_g": 0
+  },
+  {
+    "name": "Dahi / Plain Curd (1 cup)",
+    "category": "Indian Staples",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 120,
+    "protein_g": 7,
+    "carbs_g": 9,
+    "fat_g": 6,
+    "fiber_g": 0
+  },
+  {
+    "name": "Chicken Korma (1 cup)",
+    "category": "Indian Staples",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 28,
+    "carbs_g": 10,
+    "fat_g": 26,
+    "fiber_g": 2
+  },
+  {
+    "name": "Chicken Vindaloo (1 cup)",
+    "category": "Indian Staples",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 30,
+    "carbs_g": 8,
+    "fat_g": 18,
+    "fiber_g": 2
+  },
+  {
+    "name": "Medu Vada (2 pieces)",
+    "category": "Indian Staples",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 8,
+    "carbs_g": 32,
+    "fat_g": 14,
+    "fiber_g": 3
+  },
+  {
+    "name": "Rava Dosa",
+    "category": "Indian Staples",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 230,
+    "protein_g": 4,
+    "carbs_g": 36,
+    "fat_g": 8,
+    "fiber_g": 1
+  },
+  {
+    "name": "Pesarattu (Green Moong Dosa)",
+    "category": "Indian Staples",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 200,
+    "protein_g": 10,
+    "carbs_g": 28,
+    "fat_g": 5,
+    "fiber_g": 4
+  },
+  {
+    "name": "Jalebi (2 pieces)",
+    "category": "Desserts",
+    "serving_size": 60,
+    "serving_unit": "g",
+    "calories": 200,
+    "protein_g": 2,
+    "carbs_g": 40,
+    "fat_g": 4,
+    "fiber_g": 0
   }
 ]
