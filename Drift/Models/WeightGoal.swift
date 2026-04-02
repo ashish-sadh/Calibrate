@@ -206,14 +206,6 @@ struct WeightGoal: Codable, Sendable {
             case .behind: "Behind schedule"
             }
         }
-
-        var color: String {
-            switch self {
-            case .ahead: "deficit"
-            case .onTrack: "deficit"
-            case .behind: "surplus"
-            }
-        }
     }
 
     // MARK: - Persistence
