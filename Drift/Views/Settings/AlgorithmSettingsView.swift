@@ -7,6 +7,9 @@ struct AlgorithmSettingsView: View {
     @State private var refreshKey = 0
     @State private var expandedSection: String?
     @State private var showAdvanced = false
+    @State private var ahResting: Double = 0
+    @State private var ahActive: Double = 0
+    @State private var ahSteps: Double = 0
 
     // MARK: - Computed (unchanged)
 
@@ -109,6 +112,7 @@ struct AlgorithmSettingsView: View {
             }
         }
         .onAppear { prefillFromAppleHealth() }
+        .task { await loadAppleHealthData() }
         .onChange(of: tdeeConfig.activityMultiplier) { _, _ in save() }
         .onChange(of: tdeeConfig.manualAdjustment) { _, _ in save() }
         .onChange(of: tdeeConfig.appleHealthTrust) { _, _ in save() }
@@ -163,10 +167,35 @@ struct AlgorithmSettingsView: View {
             HStack(spacing: 10) {
                 sourceChip("Weight", active: (try? AppDatabase.shared.fetchWeightEntries(from: nil))?.first != nil)
                 sourceChip("Profile", active: tdeeConfig.age != nil || tdeeConfig.heightCm != nil || tdeeConfig.sex != nil)
-                sourceChip("Apple Health", active: false) // async, can't check sync
+                sourceChip("Apple Health", active: ahResting > 0)
                 sourceChip("Trend", active: liveDeficit != nil)
             }
             .padding(.top, 4)
+
+            // Apple Health breakdown (when available)
+            if ahResting > 0 || ahActive > 0 {
+                HStack(spacing: 12) {
+                    HStack(spacing: 3) {
+                        Image(systemName: "bed.double.fill").font(.system(size: 8)).foregroundStyle(Theme.sleepIndigo)
+                        Text("\(Int(ahResting))").font(.caption2.weight(.semibold).monospacedDigit())
+                        Text("resting").font(.system(size: 8)).foregroundStyle(.quaternary)
+                    }
+                    HStack(spacing: 3) {
+                        Image(systemName: "flame.fill").font(.system(size: 8)).foregroundStyle(Theme.stepsOrange)
+                        Text("\(Int(ahActive))").font(.caption2.weight(.semibold).monospacedDigit())
+                        Text("active").font(.system(size: 8)).foregroundStyle(.quaternary)
+                    }
+                    if ahSteps > 0 {
+                        HStack(spacing: 3) {
+                            Image(systemName: "figure.walk").font(.system(size: 8)).foregroundStyle(Theme.deficit)
+                            Text("\(Int(ahSteps))").font(.caption2.weight(.semibold).monospacedDigit())
+                            Text("steps").font(.system(size: 8)).foregroundStyle(.quaternary)
+                        }
+                    }
+                }
+                .foregroundStyle(.secondary)
+                .padding(.top, 2)
+            }
         }
         .card()
     }
@@ -396,6 +425,17 @@ struct AlgorithmSettingsView: View {
         if tdeeConfig.heightCm == nil, let h = profile.heightCm, h > 0 { tdeeConfig.heightCm = round(h * 10) / 10; changed = true }
         if tdeeConfig.sex == nil, let s = profile.sex { tdeeConfig.sex = s; changed = true }
         if changed { save() }
+        #endif
+    }
+
+    private func loadAppleHealthData() async {
+        #if !targetEnvironment(simulator)
+        let hk = HealthKitService.shared
+        if let cal = try? await hk.fetchCaloriesBurned(for: Date()) {
+            ahResting = cal.basal
+            ahActive = cal.active
+        }
+        ahSteps = (try? await hk.fetchSteps(for: Date())) ?? 0
         #endif
     }
 
