@@ -8,18 +8,18 @@
     "protein_g": 14,
     "carbs_g": 36,
     "fat_g": 1,
-    "fiber_g": 8
+    "fiber_g": 15.2
   },
   {
     "name": "Toor Dal (cooked)",
     "category": "Indian Staples",
     "serving_size": 200,
     "serving_unit": "g",
-    "calories": 240,
+    "calories": 216,
     "protein_g": 16,
     "carbs_g": 40,
     "fat_g": 1.5,
-    "fiber_g": 7
+    "fiber_g": 10.2
   },
   {
     "name": "Masoor Dal (cooked)",
@@ -30,7 +30,7 @@
     "protein_g": 18,
     "carbs_g": 38,
     "fat_g": 0.8,
-    "fiber_g": 8
+    "fiber_g": 16
   },
   {
     "name": "Chana Dal (cooked)",
@@ -129,7 +129,7 @@
     "protein_g": 3.5,
     "carbs_g": 20,
     "fat_g": 3,
-    "fiber_g": 2
+    "fiber_g": 3.6
   },
   {
     "name": "Naan",
@@ -422,7 +422,7 @@
     "category": "Proteins",
     "serving_size": 50,
     "serving_unit": "g",
-    "calories": 78,
+    "calories": 72,
     "protein_g": 6,
     "carbs_g": 0.6,
     "fat_g": 5,
@@ -1511,9 +1511,9 @@
     "category": "Dairy",
     "serving_size": 100,
     "serving_unit": "g",
-    "calories": 92,
-    "protein_g": 12,
-    "carbs_g": 4,
+    "calories": 81,
+    "protein_g": 10.5,
+    "carbs_g": 4.8,
     "fat_g": 2.5,
     "fiber_g": 0
   },
@@ -1621,7 +1621,7 @@
     "category": "Grains & Cereals",
     "serving_size": 30,
     "serving_unit": "g",
-    "calories": 69,
+    "calories": 76,
     "protein_g": 3.6,
     "carbs_g": 12,
     "fat_g": 1.1,
