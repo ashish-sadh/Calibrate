@@ -136,47 +136,49 @@ struct DashboardView: View {
                 }
             }
 
-            // Row 2: Energy balance bar
+            // Row 2: Energy balance ring — visually distinct from Nutrition bar
             if let deficit = viewModel.dailyDeficit {
                 let tdee = est.tdee
-                let trendIntake = tdee + deficit // estimated from weight trend
+                let trendIntake = tdee + deficit
                 let consistency = viewModel.foodLogConsistency
                 let loggedIntake = viewModel.avgDailyIntake
-
-                // Decide which intake number to trust:
-                // - Consistent food logs (≥50% of days): use logged average
-                // - Partial logs but wildly off from trend: use trend estimate (logs are incomplete)
-                // - No/low logs: use trend estimate
                 let useFoodLogs = consistency >= 0.5 && loggedIntake > 500
-                    && abs(loggedIntake - trendIntake) < trendIntake * 0.4 // within 40% of trend
+                    && abs(loggedIntake - trendIntake) < trendIntake * 0.4
                 let intake = useFoodLogs ? loggedIntake : trendIntake
-                let intakeLabel = useFoodLogs ? "avg intake" : "est. intake"
-                let barFraction = min(1.5, max(0, intake / max(1, tdee)))
+                let intakeLabel = useFoodLogs ? "est. avg daily intake" : "est. avg daily intake"
+                let ringFraction = min(1.0, max(0, intake / max(1, tdee)))
+                let deficitLabel = deficit < 0 ? "deficit" : "surplus"
 
-                VStack(spacing: 4) {
-                    GeometryReader { geo in
-                        ZStack(alignment: .leading) {
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(Theme.cardBackgroundElevated)
-                                .frame(height: 8)
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(deficit < 0 ? Theme.calorieBlue : Theme.stepsOrange)
-                                .frame(width: max(0, min(geo.size.width, geo.size.width * barFraction)), height: 8)
-                        }
+                HStack(spacing: 14) {
+                    // Mini donut ring: intake / expenditure
+                    ZStack {
+                        Circle()
+                            .stroke(Theme.cardBackgroundElevated, lineWidth: 6)
+                            .frame(width: 48, height: 48)
+                        Circle()
+                            .trim(from: 0, to: ringFraction)
+                            .stroke(isGoalAligned(deficit) ? Theme.deficit : Theme.surplus, style: StrokeStyle(lineWidth: 6, lineCap: .round))
+                            .frame(width: 48, height: 48)
+                            .rotationEffect(.degrees(-90))
+                        Text("\(Int(ringFraction * 100))%")
+                            .font(.system(size: 10, weight: .bold).monospacedDigit())
+                            .foregroundStyle(.secondary)
                     }
-                    .frame(height: 8)
 
-                    HStack {
-                        HStack(spacing: 3) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        HStack(spacing: 4) {
                             Text("~\(Int(intake))")
-                                .font(.caption2.weight(.medium).monospacedDigit())
+                                .font(.caption.weight(.semibold).monospacedDigit())
                             Text(intakeLabel)
                                 .font(.caption2).foregroundStyle(.tertiary)
                         }
-                        Spacer()
-                        Text("\(deficit < 0 ? "" : "+")\(Int(deficit)) /day")
-                            .font(.caption2.weight(.semibold).monospacedDigit())
-                            .foregroundStyle(isGoalAligned(deficit) ? Theme.deficit : Theme.surplus)
+                        HStack(spacing: 4) {
+                            Text("\(Int(abs(deficit))) \(deficitLabel)")
+                                .font(.caption2.weight(.bold).monospacedDigit())
+                                .foregroundStyle(isGoalAligned(deficit) ? Theme.deficit : Theme.surplus)
+                            Text("/day avg")
+                                .font(.system(size: 9)).foregroundStyle(.quaternary)
+                        }
                     }
                 }
             }
