@@ -367,7 +367,7 @@ struct SettingsView: View {
 
     private func exportFoodLogsCSV() -> URL? {
         let db = AppDatabase.shared
-        var csv = "Date,Food,Calories,Protein,Carbs,Fat,Fiber,Servings\n"
+        var csv = "Date,Time,Food,Calories,Protein,Carbs,Fat,Fiber,Servings\n"
         // Export last 90 days
         let today = Date()
         for dayOffset in 0..<90 {
@@ -378,7 +378,9 @@ struct SettingsView: View {
                 guard let logId = log.id, let entries = try? db.fetchFoodEntries(forMealLog: logId) else { continue }
                 for e in entries {
                     let fName = e.foodName.replacingOccurrences(of: "\"", with: "\"\"")
-                    csv += "\"\(dateStr)\",\"\(fName)\",\(Int(e.totalCalories)),\(Int(e.totalProtein)),\(Int(e.totalCarbs)),\(Int(e.totalFat)),\(Int(e.totalFiber)),\(String(format: "%.1f", e.servings))\n"
+                    let time = (DateFormatters.iso8601.date(from: e.loggedAt) ?? DateFormatters.sqliteDatetime.date(from: e.loggedAt))
+                        .map { DateFormatters.shortTime.string(from: $0) } ?? ""
+                    csv += "\"\(dateStr)\",\"\(time)\",\"\(fName)\",\(Int(e.totalCalories)),\(Int(e.totalProtein)),\(Int(e.totalCarbs)),\(Int(e.totalFat)),\(Int(e.totalFiber)),\(String(format: "%.1f", e.servings))\n"
                 }
             }
         }
