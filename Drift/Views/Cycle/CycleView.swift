@@ -566,7 +566,7 @@ struct CycleView: View {
         }
 
         // Estimate from cycle length
-        let ovDay = avg / 2
+        let ovDay = max(avg - 14, avg / 2)
         guard let ovDate = cal.date(byAdding: .day, value: ovDay, to: lastStart),
               let start = cal.date(byAdding: .day, value: -5, to: ovDate) else { return nil }
         return FertileWindow(start: start, end: ovDate, isFromOvulationTest: false)
@@ -587,7 +587,7 @@ struct CycleView: View {
     }
 
     private func fertileWindowDayRange(cycleLength: Int) -> ClosedRange<Int>? {
-        let ovDay = cycleLength / 2
+        let ovDay = max(cycleLength - 14, cycleLength / 2)
         return max(1, ovDay - 5)...ovDay
     }
 }
@@ -696,7 +696,7 @@ private func cyclePhases(cycleLength: Int) -> [CyclePhase] {
 
 private func currentPhase(cycleDay: Int, cycleLength: Int) -> String? {
     if cycleDay <= 5 { return "Menstrual phase" }
-    let ovDay = cycleLength / 2
+    let ovDay = max(cycleLength - 14, cycleLength / 2)
     if cycleDay < ovDay - 1 { return "Follicular phase" }
     if cycleDay <= ovDay + 1 { return "Ovulation window" }
     return "Luteal phase"
@@ -704,7 +704,7 @@ private func currentPhase(cycleDay: Int, cycleLength: Int) -> String? {
 
 private func currentPhaseId(cycleDay: Int, cycleLength: Int) -> String {
     if cycleDay <= 5 { return "period" }
-    let ovDay = cycleLength / 2
+    let ovDay = max(cycleLength - 14, cycleLength / 2)
     if cycleDay < ovDay - 1 { return "follicular" }
     if cycleDay <= ovDay + 1 { return "ovulation" }
     return "luteal"
