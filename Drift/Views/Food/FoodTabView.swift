@@ -618,10 +618,22 @@ struct FoodTabView: View {
         let sorted = loggedDays.sorted { $0.key < $1.key }
         let daysLogged = sorted.filter { $0.value > 0 }.count
 
+        // Calculate current streak (consecutive days from today)
+        let cal = Calendar.current
+        var streak = 0
+        for dayOffset in 0..<30 {
+            guard let date = cal.date(byAdding: .day, value: -dayOffset, to: Date()) else { break }
+            let dayStart = cal.startOfDay(for: date)
+            if (loggedDays[dayStart] ?? 0) > 0 { streak += 1 } else { break }
+        }
+
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("Logging Consistency").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
                 Spacer()
+                if streak > 1 {
+                    Text("\(streak) day streak").font(.caption.weight(.bold).monospacedDigit()).foregroundStyle(Theme.accent)
+                }
                 Text("\(daysLogged)/30 days").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
             }
 

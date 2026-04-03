@@ -117,9 +117,10 @@ final class FoodLogViewModel {
         }
     }
 
-    /// Quick log a food with 1 serving and auto meal type.
+    /// Quick log a food with last-used serving size (or 1) and auto meal type.
     func quickLogFood(_ food: Food) {
-        logFood(food, servings: 1, mealType: autoMealType)
+        let lastUsed = recentEntries.first(where: { $0.name == food.name })?.lastServings ?? 1
+        logFood(food, servings: lastUsed, mealType: autoMealType)
     }
 
     func quickAdd(name: String, calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double, mealType: MealType) {
