@@ -108,12 +108,13 @@ enum ExerciseDatabase {
 
     static func guessBodyPart(_ name: String) -> String {
         let e = name.lowercased()
-        if e.contains("bench") || e.contains("chest") || e.contains("fly") || e.contains("dip") { return "Chest" }
-        if e.contains("squat") || e.contains("leg") || e.contains("calf") || e.contains("deadlift") || e.contains("lunge") || e.contains("hip") || e.contains("thrust") { return "Legs" }
-        if e.contains("lat") || e.contains("row") || e.contains("pull") || e.contains("back") { return "Back" }
-        if e.contains("shoulder") || e.contains("lateral raise") || e.contains("overhead") || e.contains("face pull") || e.contains("military") { return "Shoulders" }
-        if e.contains("bicep") || e.contains("curl") || e.contains("tricep") || e.contains("hammer") { return "Arms" }
-        if e.contains("crunch") || e.contains("plank") || e.contains("ab") || e.contains("leg raise") { return "Core" }
+        // Check more specific patterns first to avoid false matches (e.g., "lateral" matching "lat")
+        if e.contains("lateral raise") || e.contains("shoulder") || e.contains("overhead press") || e.contains("face pull") || e.contains("military") || e.contains("shrug") { return "Shoulders" }
+        if e.contains("bench") || e.contains("chest") || e.contains("fly") || e.contains("dip") || e.contains("push-up") || e.contains("push up") { return "Chest" }
+        if e.contains("squat") || e.contains("leg") || e.contains("calf") || e.contains("deadlift") || e.contains("lunge") || e.contains("hip") || e.contains("thrust") || e.contains("glute") { return "Legs" }
+        if e.contains("lat ") || e.contains("lat\t") || e.contains("row") || e.contains("pull") || e.contains("back") || e.contains("pulldown") { return "Back" }
+        if e.contains("bicep") || e.contains("curl") || e.contains("tricep") || e.contains("hammer") || e.contains("extension") { return "Arms" }
+        if e.contains("crunch") || e.contains("plank") || e.contains("ab") || e.contains("leg raise") || e.contains("core") { return "Core" }
         return "Other"
     }
 }

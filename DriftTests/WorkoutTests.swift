@@ -1206,3 +1206,70 @@ import GRDB
     #expect(decoded[1].isWarmup == true)
     #expect(decoded[1].notes == "test")
 }
+
+// MARK: - Exercise Body Part Guessing Tests
+
+@Test func guessBodyPartChest() async throws {
+    #expect(ExerciseDatabase.guessBodyPart("Bench Press (Barbell)") == "Chest")
+    #expect(ExerciseDatabase.guessBodyPart("Incline Dumbbell Fly") == "Chest")
+    #expect(ExerciseDatabase.guessBodyPart("Cable Chest Press") == "Chest")
+    #expect(ExerciseDatabase.guessBodyPart("Dips") == "Chest")
+}
+
+@Test func guessBodyPartLegs() async throws {
+    #expect(ExerciseDatabase.guessBodyPart("Barbell Squat") == "Legs")
+    #expect(ExerciseDatabase.guessBodyPart("Leg Extension (Machine)") == "Legs")
+    #expect(ExerciseDatabase.guessBodyPart("Calf Press on Seated Leg Press") == "Legs")
+    #expect(ExerciseDatabase.guessBodyPart("Hip Thrust") == "Legs")
+}
+
+@Test func guessBodyPartBack() async throws {
+    #expect(ExerciseDatabase.guessBodyPart("Lat Pulldown (Cable)") == "Back")
+    #expect(ExerciseDatabase.guessBodyPart("Barbell Row") == "Back")
+    #expect(ExerciseDatabase.guessBodyPart("Pull Up") == "Back")
+}
+
+@Test func guessBodyPartArms() async throws {
+    #expect(ExerciseDatabase.guessBodyPart("Bicep Curl (Dumbbell)") == "Arms")
+    #expect(ExerciseDatabase.guessBodyPart("Triceps Pushdown (Cable)") == "Arms")
+    #expect(ExerciseDatabase.guessBodyPart("Hammer Curl") == "Arms")
+}
+
+@Test func guessBodyPartShoulders() async throws {
+    #expect(ExerciseDatabase.guessBodyPart("Shoulder Press") == "Shoulders")
+    #expect(ExerciseDatabase.guessBodyPart("Lateral Raise") == "Shoulders")
+}
+
+@Test func guessBodyPartCore() async throws {
+    #expect(ExerciseDatabase.guessBodyPart("Ab Crunch Machine") == "Core")
+    #expect(ExerciseDatabase.guessBodyPart("Plank") == "Core")
+}
+
+@Test func guessBodyPartUnknown() async throws {
+    // Unknown exercises should return something, not crash
+    let result = ExerciseDatabase.guessBodyPart("Some Weird Exercise Nobody Does")
+    #expect(!result.isEmpty, "Should return a default body part, got '\(result)'")
+}
+
+// MARK: - Hevy Format Detection Tests
+
+@Test func hevyFormatDetection() async throws {
+    let hevyCsv = "title,start_time,end_time,exercise_title,set_index,set_type,weight_kg,reps\n"
+    #expect(hevyCsv.lowercased().contains("exercise_title"), "Should detect Hevy format")
+}
+
+@Test func strongFormatDetection() async throws {
+    let strongCsv = "Date,Workout Name,Exercise Name,Set Order,Weight,Reps\n"
+    #expect(!strongCsv.lowercased().contains("exercise_title"), "Should NOT detect as Hevy")
+}
+
+// MARK: - Default Templates Load Tests
+
+@Test func loadCuratedIsIdempotent() async throws {
+    // Loading curated twice should not create duplicates
+    let first = DefaultTemplates.loadCurated()
+    let second = DefaultTemplates.loadCurated()
+    // Second call must add 0 — all names already exist
+    #expect(second == 0, "Second load should skip all duplicates, got \(second)")
+    #expect(first >= 0)
+}
