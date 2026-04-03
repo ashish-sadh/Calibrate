@@ -324,39 +324,63 @@ enum WorkoutService {
             }
         }
 
-        // Auto-extract templates from recurring workout names (max 5)
+        // Smart template extraction: group by session, find frequently co-occurring exercises
         let nameKey = isHevy ? "title" : "Workout Name"
         let exerciseKey = isHevy ? "exercise_title" : "Exercise Name"
-        var templatesByName: [String: [String]] = [:]
-        var templateFrequency: [String: Int] = [:] // count of unique dates per workout name
+        let dateKey = isHevy ? "start_time" : "Date"
+
+        // Build per-session exercise lists: workoutName → [[exercises in session1], [exercises in session2], ...]
+        var sessionsByName: [String: [[String]]] = [:]
+        var currentSession: [String: (date: String, exercises: [String])] = [:]
+
         for row in result.rows {
-            guard let name = row[nameKey], let exercise = row[exerciseKey] else { continue }
-            if templatesByName[name] == nil { templatesByName[name] = [] }
-            if !(templatesByName[name]?.contains(exercise) ?? false) {
-                templatesByName[name]?.append(exercise)
+            guard let name = row[nameKey], let exercise = row[exerciseKey],
+                  let dateStr = row[dateKey].map({ String($0.prefix(10)) }) else { continue }
+            let key = "\(name)|\(dateStr)"
+            if currentSession[key] == nil { currentSession[key] = (dateStr, []) }
+            if !(currentSession[key]?.exercises.contains(exercise) ?? false) {
+                currentSession[key]?.exercises.append(exercise)
             }
         }
-
-        // Count frequency (dates per workout name)
-        let dateKey = isHevy ? "start_time" : "Date"
-        for (name, _) in templatesByName {
-            let dates = Set(result.rows.compactMap { row -> String? in
-                guard row[nameKey] == name else { return nil }
-                return row[dateKey].map { String($0.prefix(10)) }
-            })
-            templateFrequency[name] = dates.count
+        for (key, session) in currentSession {
+            let name = String(key.split(separator: "|").first ?? "")
+            sessionsByName[name, default: []].append(session.exercises)
         }
 
-        // Sort by frequency, take top 5, require 2+ dates
+        // For each workout name: find exercises appearing in ≥50% of sessions
         var templatesCreated = 0
         let existingTemplates = Set((try? fetchTemplates())?.map(\.name) ?? [])
-        let sortedNames = templateFrequency.sorted { $0.value > $1.value }.map(\.key)
+        let sortedNames = sessionsByName.sorted { $0.value.count > $1.value.count }.map(\.key)
+
+        // Find typical max exercises per session across all workouts
+        let allSessionSizes = sessionsByName.values.flatMap { $0 }.map(\.count)
+        let typicalMax = allSessionSizes.sorted().dropLast(allSessionSizes.count / 10).last ?? 8 // 90th percentile
 
         for name in sortedNames where templatesCreated < 5 {
-            guard let exercises = templatesByName[name], exercises.count >= 2 else { continue }
-            guard (templateFrequency[name] ?? 0) >= 2, !existingTemplates.contains(name) else { continue }
+            let sessions = sessionsByName[name] ?? []
+            guard sessions.count >= 2, !existingTemplates.contains(name) else { continue }
 
-            let templateExercises = exercises.map {
+            // Count how often each exercise appears across sessions
+            var exerciseFreq: [String: Int] = [:]
+            var exerciseOrder: [String: Double] = [:] // average position
+            for session in sessions {
+                for (i, ex) in session.enumerated() {
+                    exerciseFreq[ex, default: 0] += 1
+                    exerciseOrder[ex, default: 0] += Double(i)
+                }
+            }
+
+            // Keep exercises appearing in ≥50% of sessions, sorted by avg position
+            let threshold = max(1, sessions.count / 2)
+            let frequent = exerciseFreq.filter { $0.value >= threshold }
+                .sorted { (exerciseOrder[$0.key] ?? 0) / Double($0.value) < (exerciseOrder[$1.key] ?? 0) / Double($1.value) }
+                .map(\.key)
+
+            // Cap at typical session size
+            let capped = Array(frequent.prefix(min(typicalMax, 10)))
+            guard capped.count >= 2 else { continue }
+
+            let templateExercises = capped.map {
                 WorkoutTemplate.TemplateExercise(name: $0, sets: 3, restSeconds: 90)
             }
             if let json = try? JSONEncoder().encode(templateExercises),

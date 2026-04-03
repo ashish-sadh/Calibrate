@@ -149,10 +149,9 @@ struct WorkoutView: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(t.name).font(.subheadline.weight(.medium))
                                     let working = t.exercises.filter { !$0.isWarmup }
-                                    let preview = working.prefix(3).map(\.name).joined(separator: ", ")
-                                    let suffix = working.count > 3 ? " +\(working.count - 3)" : ""
-                                    Text(preview + suffix)
-                                        .font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
+                                    let warmups = t.exercises.filter { $0.isWarmup }
+                                    Text("\(working.count) exercises\(warmups.isEmpty ? "" : " · \(warmups.count) warmup")")
+                                        .font(.caption2).foregroundStyle(.tertiary)
                                 }
                                 Spacer()
                                 Image(systemName: "play.circle.fill")
