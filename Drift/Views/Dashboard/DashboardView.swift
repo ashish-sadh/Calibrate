@@ -117,7 +117,7 @@ struct DashboardView: View {
             && abs(loggedIntake - trendIntake) < trendIntake * 0.4
         let intake = viewModel.dailyDeficit != nil ? (useFoodLogs ? loggedIntake : trendIntake) : 0
         let ringFraction = intake > 0 ? min(1.0, max(0, intake / max(1, tdee))) : 0
-        let deficitLabel = deficit < 0 ? "deficit" : "surplus"
+        let deficitLabel = deficit < -5 ? "deficit" : deficit > 5 ? "surplus" : "balanced"
 
         return VStack(spacing: 12) {
             // Section header
@@ -182,8 +182,8 @@ struct DashboardView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
 
-            // Expandable detail
-            if showDeficitExplainer {
+            // Expandable detail (only when we have actual data to explain)
+            if showDeficitExplainer, (goal != nil || viewModel.weeklyRate != nil) {
                 VStack(alignment: .leading, spacing: 6) {
                     if let goal {
                         let required = goal.requiredDailyDeficit
@@ -203,13 +203,13 @@ struct DashboardView: View {
                             Text("kcal/day").font(.caption2).foregroundStyle(.quaternary)
                         }
                     }
-                    let config = WeightTrendCalculator.loadConfig()
                     if let rate = viewModel.weeklyRate {
+                        let config = WeightTrendCalculator.loadConfig()
                         Text("Trend: \(String(format: "%+.2f", Preferences.weightUnit.convert(fromKg: rate))) \(Preferences.weightUnit.displayName)/wk → \(String(format: "%+.0f", deficit)) kcal/day")
                             .font(.caption2).foregroundStyle(.tertiary)
+                        Text("Based on \(config.regressionWindowDays)-day weight trend.")
+                            .font(.caption2).foregroundStyle(.quaternary)
                     }
-                    Text("Based on \(config.regressionWindowDays)-day weight trend.")
-                        .font(.caption2).foregroundStyle(.quaternary)
                 }
                 .transition(.opacity)
             }

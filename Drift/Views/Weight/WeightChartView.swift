@@ -68,7 +68,7 @@ struct WeightChartView: View {
                                 .font(.caption.monospacedDigit())
                                 .foregroundStyle(.secondary.opacity(0.7))
                                 .padding(.horizontal, 3)
-                                .background(Theme.cardBackground.opacity(0.8))
+                                .background(Theme.background)
                         }
                 }
 
@@ -82,7 +82,7 @@ struct WeightChartView: View {
                                 .font(.caption.weight(.bold).monospacedDigit())
                                 .foregroundStyle(Theme.accent)
                                 .padding(.horizontal, 4).padding(.vertical, 1)
-                                .background(Theme.cardBackground.opacity(0.9), in: RoundedRectangle(cornerRadius: 3))
+                                .background(Theme.background, in: RoundedRectangle(cornerRadius: 3))
                         }
                 }
 
