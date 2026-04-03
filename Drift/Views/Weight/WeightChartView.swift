@@ -129,7 +129,7 @@ struct WeightChartView: View {
                 }
             }
         }
-        .card()
+        .padding(.horizontal, 4)
     }
 
     private var averageWeight: Double {
