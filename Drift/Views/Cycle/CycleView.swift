@@ -108,7 +108,7 @@ struct CycleView: View {
                     summaryRow(label: "Average cycle", value: "\(avg) days")
                 }
                 if let next = nextPeriodEstimate {
-                    summaryRow(label: "Next period", value: "~\(DateFormatters.shortDate.string(from: next))")
+                    summaryRow(label: "Next period", value: "~\(DateFormatters.shortDisplay.string(from: next))")
                 }
             }
             .padding(.top, 4)
@@ -302,7 +302,7 @@ struct CycleView: View {
         for i in 1..<starts.count {
             let days = Calendar.current.dateComponents([.day], from: starts[i - 1], to: starts[i]).day ?? 0
             if days > 0 {
-                result.append((label: DateFormatters.shortDate.string(from: starts[i - 1]), length: days))
+                result.append((label: DateFormatters.shortDisplay.string(from: starts[i - 1]), length: days))
             }
         }
         return result
@@ -391,7 +391,7 @@ struct CycleView: View {
                 }
 
                 HStack {
-                    Text("\(DateFormatters.shortDate.string(from: window.start)) – \(DateFormatters.shortDate.string(from: window.end))")
+                    Text("\(DateFormatters.shortDisplay.string(from: window.start)) – \(DateFormatters.shortDisplay.string(from: window.end))")
                         .font(.subheadline.weight(.medium))
                     Spacer()
                     Text(fertileWindowStatus(window))
@@ -644,8 +644,8 @@ private func groupIntoPeriods(_ entries: [HealthKitService.CycleEntry]) -> [Cycl
 }
 
 private func formatPeriodRange(_ period: CyclePeriod) -> String {
-    let start = DateFormatters.shortDate.string(from: period.startDate)
-    let end = DateFormatters.shortDate.string(from: period.endDate)
+    let start = DateFormatters.shortDisplay.string(from: period.startDate)
+    let end = DateFormatters.shortDisplay.string(from: period.endDate)
     return start == end ? start : "\(start) – \(end)"
 }
 
@@ -710,12 +710,4 @@ private func currentPhaseId(cycleDay: Int, cycleLength: Int) -> String {
     return "luteal"
 }
 
-// MARK: - Date Formatter
 
-extension DateFormatters {
-    static let shortDate: DateFormatter = {
-        let f = DateFormatter()
-        f.dateFormat = "MMM d"
-        return f
-    }()
-}
