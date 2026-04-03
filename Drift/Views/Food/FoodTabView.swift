@@ -126,6 +126,8 @@ struct FoodTabView: View {
                     ForEach(days, id: \.self) { day in
                         let isSelected = cal.isDate(day, inSameDayAs: selected)
                         let isToday = cal.isDate(day, inSameDayAs: today)
+                        let dayStart = cal.startOfDay(for: day)
+                        let hasFood = (loggedDays[dayStart] ?? 0) > 0
 
                         Button {
                             viewModel.goToDate(day)
@@ -138,9 +140,10 @@ struct FoodTabView: View {
                                 Text("\(cal.component(.day, from: day))")
                                     .font(.callout.weight(isSelected ? .bold : .regular).monospacedDigit())
                                     .foregroundStyle(isSelected ? .white : .primary)
+                                // Dot: accent for today, white for days with food, empty otherwise
                                 Circle()
-                                    .fill(isToday ? Theme.accent : Color.clear)
-                                    .frame(width: 4, height: 4)
+                                    .fill(isToday ? Theme.accent : hasFood ? Color.white.opacity(0.4) : Color.clear)
+                                    .frame(width: isSelected ? 6 : 4, height: isSelected ? 6 : 4)
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 6)
