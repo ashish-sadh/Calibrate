@@ -3,7 +3,7 @@ import SwiftUI
 /// Shared styling for consistent dark UI.
 enum Theme {
     // Colors
-    static let background = Color(hex: "1C1C1E")
+    static let background = Color.black
     static let cardBackground = Color.white.opacity(0.08)
     static let cardBackgroundElevated = Color.white.opacity(0.14)
     static let accent = Color(hex: "A78BFA") // refined indigo — softer, more premium than #8B5CF6

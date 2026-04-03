@@ -58,74 +58,38 @@ struct WeightChartView: View {
             }
 
             Chart {
-                // Starting weight reference line (gray, dashed)
-                if let startWeight = displayPoints.first?.ema {
-                    RuleMark(y: .value("", startWeight))
-                        .foregroundStyle(.secondary.opacity(0.3))
-                        .lineStyle(StrokeStyle(lineWidth: 0.8, dash: [4, 3]))
-                        .annotation(position: .topLeading, spacing: 2) {
-                            Text(String(format: "%.1f", startWeight))
-                                .font(.caption.monospacedDigit())
-                                .foregroundStyle(.secondary.opacity(0.7))
-                                .padding(.horizontal, 3)
-                                .background(Theme.background)
-                        }
-                }
-
-                // Current weight reference line (accent, solid)
+                // Current value reference line (accent, horizontal)
                 if let currentWeight = displayPoints.last?.ema {
                     RuleMark(y: .value("", currentWeight))
-                        .foregroundStyle(Theme.accent.opacity(0.5))
-                        .lineStyle(StrokeStyle(lineWidth: 1))
-                        .annotation(position: .bottomTrailing, spacing: 2) {
+                        .foregroundStyle(Theme.accent.opacity(0.4))
+                        .lineStyle(StrokeStyle(lineWidth: 1.5))
+                        .annotation(position: .trailing, spacing: 4) {
                             Text(String(format: "%.1f", currentWeight))
                                 .font(.caption.weight(.bold).monospacedDigit())
                                 .foregroundStyle(Theme.accent)
-                                .padding(.horizontal, 4).padding(.vertical, 1)
-                                .background(Theme.background, in: RoundedRectangle(cornerRadius: 3))
                         }
                 }
 
-                // Scale weight points - gray/white, clearly different from trend
-                ForEach(displayPoints.indices, id: \.self) { i in
-                    if let actual = displayPoints[i].actual {
-                        PointMark(x: .value("", displayPoints[i].date), y: .value("", actual))
-                            .foregroundStyle(Color.gray)
-                            .symbolSize(granularity == .weekly ? 45 : 30)
-                            .symbol(.circle)
-                    }
-                }
-
-                // Trend line - solid purple, clearly distinct
+                // Single clean line — EMA trend with dots at each point
                 ForEach(displayPoints.indices, id: \.self) { i in
                     LineMark(x: .value("", displayPoints[i].date), y: .value("", displayPoints[i].ema))
-                        .foregroundStyle(Theme.accent)
-                        .lineStyle(StrokeStyle(lineWidth: 2.5))
+                        .foregroundStyle(.white.opacity(0.7))
+                        .lineStyle(StrokeStyle(lineWidth: 2))
                         .interpolationMethod(.catmullRom)
+                    PointMark(x: .value("", displayPoints[i].date), y: .value("", displayPoints[i].ema))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .symbolSize(granularity == .weekly ? 30 : 16)
                 }
             }
             .chartYScale(domain: .automatic(includesZero: false))
             .chartXAxis {
-                AxisMarks(values: .automatic(desiredCount: 5)) {
-                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3)).foregroundStyle(.secondary.opacity(0.2))
-                    AxisValueLabel(format: .dateTime.month(.abbreviated).day()).foregroundStyle(.secondary)
+                AxisMarks(values: .automatic(desiredCount: 4)) {
+                    AxisValueLabel(format: .dateTime.month(.abbreviated)).foregroundStyle(.tertiary)
                 }
             }
             .chartYAxis {
                 AxisMarks(position: .trailing) {
-                    AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3)).foregroundStyle(.secondary.opacity(0.2))
-                    AxisValueLabel().foregroundStyle(.secondary)
-                }
-            }
-
-            HStack(spacing: 14) {
-                HStack(spacing: 4) {
-                    Circle().fill(Color.gray).frame(width: 7, height: 7)
-                    Text("Scale Weight").font(.caption2).foregroundStyle(.secondary)
-                }
-                HStack(spacing: 4) {
-                    RoundedRectangle(cornerRadius: 1).fill(Theme.accent).frame(width: 14, height: 2.5)
-                    Text("Trend Weight").font(.caption2).foregroundStyle(.secondary)
+                    AxisValueLabel().foregroundStyle(.tertiary)
                 }
             }
         }
