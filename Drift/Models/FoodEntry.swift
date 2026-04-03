@@ -109,6 +109,12 @@ extension FoodEntry {
         if lower.contains("scoop") { return fmt(servings, "scoop", "scoops") }
         if lower.contains("patty") || lower.contains("pattie") { return fmt(servings, "patty", "patties") }
         if lower.contains("bar") && !lower.contains("barley") && servingSizeG < 80 { return fmt(servings, "bar", "bars") }
+        if lower.contains("tortilla") && servingSizeG < 80 { return fmt(servings, "tortilla", "tortillas") }
+        if lower.contains("pancake") && servingSizeG < 100 { return fmt(servings, "pancake", "pancakes") }
+        if lower.contains("waffle") && servingSizeG < 100 { return fmt(servings, "waffle", "waffles") }
+        if lower.contains("muffin") && servingSizeG < 120 { return fmt(servings, "muffin", "muffins") }
+        if lower.contains("bagel") && servingSizeG < 130 { return fmt(servings, "bagel", "bagels") }
+        if lower.contains("cup") && servingSizeG > 200 { return fmt(servings, "cup", "cups") }
 
         return "\(Int(totalG))g"
     }
