@@ -17,9 +17,9 @@ struct WeightTabView: View {
                     VStack(spacing: 14) {
                         timeRangeBar
 
-                        // Chart — hero element (no card background, floats on page)
+                        // Chart — hero element
                         WeightChartView(trend: viewModel.trend, unit: viewModel.weightUnit, granularity: viewModel.granularity)
-                            .frame(height: 240)
+                            .frame(height: 260)
 
                         // Compact metrics + weight changes
                         if let fullTrend = viewModel.fullTrend {

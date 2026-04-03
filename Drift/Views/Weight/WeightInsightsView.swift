@@ -159,7 +159,6 @@ struct WeightInsightsView: View {
         .padding(.vertical, 12)
         .padding(.horizontal, 6)
         .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Color.white.opacity(0.06), lineWidth: 0.5))
     }
 
     // MARK: - Weight Changes Row
@@ -174,6 +173,7 @@ struct WeightInsightsView: View {
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 8)
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
     }
 
     private func changeChip(_ period: String, value: Double?) -> some View {
