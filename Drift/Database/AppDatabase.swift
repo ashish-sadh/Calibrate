@@ -166,7 +166,10 @@ extension AppDatabase {
 
     func fetchFoodEntries(forMealLog mealLogId: Int64) throws -> [FoodEntry] {
         try dbWriter.read { db in
-            try FoodEntry.filter(Column("meal_log_id") == mealLogId).fetchAll(db)
+            try FoodEntry
+                .filter(Column("meal_log_id") == mealLogId)
+                .order(Column("logged_at").asc)
+                .fetchAll(db)
         }
     }
 

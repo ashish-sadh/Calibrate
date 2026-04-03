@@ -311,6 +311,18 @@ struct FoodTabView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.foodName).font(.subheadline).lineLimit(1)
                 HStack(spacing: 4) {
+                    if let time = entryTimeString(entry) {
+                        HStack(spacing: 3) {
+                            Text(time).foregroundStyle(.quaternary)
+                            if isCopiedEntry(entry) {
+                                Image(systemName: "doc.on.doc")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(Theme.accent.opacity(0.5))
+                            }
+                        }
+                        .font(.caption2)
+                        Text("\u{00B7}").font(.caption2).foregroundStyle(.quaternary)
+                    }
                     if !entry.portionText.isEmpty {
                         Text(entry.portionText).font(.caption2).foregroundStyle(.tertiary)
                         Text("\u{00B7}").font(.caption2).foregroundStyle(.quaternary)
@@ -457,18 +469,54 @@ struct FoodTabView: View {
         return (try? AppDatabase.shared.fetchDailyNutrition(for: dateStr))?.calories
     }
 
+    private func parseTimestamp(_ str: String) -> Date? {
+        ISO8601DateFormatter().date(from: str)
+            ?? DateFormatters.sqliteDatetime.date(from: str)
+    }
+
+    private func isCopiedEntry(_ entry: FoodEntry) -> Bool {
+        guard let logged = parseTimestamp(entry.loggedAt),
+              let created = parseTimestamp(entry.createdAt) else { return false }
+        return abs(logged.timeIntervalSince(created)) > 300
+    }
+
+    private func entryTimeString(_ entry: FoodEntry) -> String? {
+        guard let date = parseTimestamp(entry.loggedAt) else { return nil }
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        return f.string(from: date)
+    }
+
     private func copyFromYesterday() {
         guard let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: viewModel.selectedDate) else { return }
         let dateStr = DateFormatters.dateOnly.string(from: yesterday)
         guard let logs = try? AppDatabase.shared.fetchMealLogs(for: dateStr) else { return }
+        let iso = ISO8601DateFormatter()
+        let todayDate = viewModel.selectedDate
+        let cal = Calendar.current
+
         for log in logs {
             guard let logId = log.id else { continue }
+            let mealType = MealType(rawValue: log.mealType) ?? viewModel.autoMealType
             guard let entries = try? AppDatabase.shared.fetchFoodEntries(forMealLog: logId) else { continue }
             for entry in entries {
+                // Map yesterday's time to today's date
+                let mappedLoggedAt: String
+                if let originalDate = iso.date(from: entry.loggedAt) {
+                    let timeComponents = cal.dateComponents([.hour, .minute, .second], from: originalDate)
+                    var todayComponents = cal.dateComponents([.year, .month, .day], from: todayDate)
+                    todayComponents.hour = timeComponents.hour
+                    todayComponents.minute = timeComponents.minute
+                    todayComponents.second = timeComponents.second
+                    mappedLoggedAt = iso.string(from: cal.date(from: todayComponents) ?? todayDate)
+                } else {
+                    mappedLoggedAt = iso.string(from: todayDate)
+                }
+
                 viewModel.quickAdd(name: entry.foodName, calories: entry.totalCalories,
                                    proteinG: entry.totalProtein, carbsG: entry.totalCarbs,
                                    fatG: entry.totalFat, fiberG: entry.totalFiber,
-                                   mealType: viewModel.autoMealType)
+                                   mealType: mealType, loggedAt: mappedLoggedAt)
             }
         }
     }

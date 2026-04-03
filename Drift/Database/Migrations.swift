@@ -298,5 +298,14 @@ enum Migrations {
                 t.add(column: "is_favorite", .boolean).notNull().defaults(to: false)
             }
         }
+
+        // v16: Food entry logged_at (time eaten, for ordering)
+        migrator.registerMigration("v16_food_logged_at") { db in
+            try db.alter(table: "food_entry") { t in
+                t.add(column: "logged_at", .text).notNull().defaults(to: "")
+            }
+            // Backfill: copy created_at into logged_at for existing rows
+            try db.execute(sql: "UPDATE food_entry SET logged_at = created_at WHERE logged_at = ''")
+        }
     }
 }

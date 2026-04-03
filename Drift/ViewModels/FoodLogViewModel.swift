@@ -35,7 +35,84 @@ final class FoodLogViewModel {
 
     init(database: AppDatabase = .shared) {
         self.database = database
+        #if targetEnvironment(simulator)
+        seedMockFoodIfNeeded()
+        #endif
     }
+
+    #if targetEnvironment(simulator)
+    private func seedMockFoodIfNeeded() {
+        let key = "drift_mock_food_seeded_v1"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        let cal = Calendar.current
+        let iso = ISO8601DateFormatter()
+
+        // Seed yesterday and day-before with realistic food logs
+        let mockDays: [(dayOffset: Int, meals: [(type: MealType, foods: [(name: String, cal: Double, p: Double, c: Double, f: Double, fiber: Double, hour: Int, min: Int)])])] = [
+            (dayOffset: -1, meals: [
+                (.breakfast, [
+                    ("Oatmeal with Banana", 350, 12, 58, 8, 6, 7, 30),
+                    ("Black Coffee", 5, 0, 1, 0, 0, 7, 35),
+                ]),
+                (.lunch, [
+                    ("Grilled Chicken Salad", 420, 38, 18, 22, 4, 12, 30),
+                    ("Whole Wheat Bread", 130, 5, 22, 2, 3, 12, 30),
+                ]),
+                (.dinner, [
+                    ("Salmon with Rice", 580, 35, 52, 20, 2, 19, 0),
+                    ("Mixed Vegetables", 85, 3, 14, 2, 5, 19, 0),
+                ]),
+                (.snack, [
+                    ("Greek Yogurt", 150, 15, 12, 5, 0, 16, 0),
+                ]),
+            ]),
+            (dayOffset: -2, meals: [
+                (.breakfast, [
+                    ("Scrambled Eggs (2)", 180, 14, 2, 13, 0, 8, 0),
+                    ("Toast with Butter", 160, 3, 20, 7, 1, 8, 0),
+                ]),
+                (.lunch, [
+                    ("Chicken Tikka Masala", 480, 32, 28, 24, 3, 13, 0),
+                    ("Basmati Rice", 210, 4, 46, 1, 1, 13, 0),
+                ]),
+                (.dinner, [
+                    ("Pasta Bolognese", 520, 28, 62, 16, 4, 19, 30),
+                ]),
+            ]),
+        ]
+
+        do {
+            for day in mockDays {
+                guard let date = cal.date(byAdding: .day, value: day.dayOffset, to: Date()) else { continue }
+                let dateStr = DateFormatters.dateOnly.string(from: date)
+                for meal in day.meals {
+                    var mealLog = MealLog(date: dateStr, mealType: meal.type.rawValue)
+                    try database.saveMealLog(&mealLog)
+                    guard let mealLogId = mealLog.id else { continue }
+                    for food in meal.foods {
+                        guard let logTime = cal.date(bySettingHour: food.hour, minute: food.min, second: 0, of: date) else { continue }
+                        var entry = FoodEntry(
+                            mealLogId: mealLogId,
+                            foodName: food.name,
+                            servingSizeG: 0,
+                            servings: 1,
+                            calories: food.cal,
+                            proteinG: food.p,
+                            carbsG: food.c,
+                            fatG: food.f,
+                            fiberG: food.fiber,
+                            loggedAt: iso.string(from: logTime)
+                        )
+                        try database.saveFoodEntry(&entry)
+                    }
+                }
+            }
+            UserDefaults.standard.set(true, forKey: key)
+        } catch {
+            Log.foodLog.error("Mock food seed failed: \(error.localizedDescription)")
+        }
+    }
+    #endif
 
     func search() {
         guard !searchQuery.isEmpty else {
@@ -65,7 +142,7 @@ final class FoodLogViewModel {
             }
 
             todayMeals = grouped
-            todayEntries = all.sorted { $0.createdAt < $1.createdAt }
+            todayEntries = all.sorted { $0.loggedAt < $1.loggedAt }
             todayNutrition = try database.fetchDailyNutrition(for: date)
         } catch {
             Log.foodLog.error("Failed to load meals: \(error.localizedDescription)")
@@ -123,7 +200,7 @@ final class FoodLogViewModel {
         logFood(food, servings: lastUsed, mealType: autoMealType)
     }
 
-    func quickAdd(name: String, calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double, mealType: MealType) {
+    func quickAdd(name: String, calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double, mealType: MealType, loggedAt: String? = nil) {
         do {
             let date = dateString
             let mealLogs = try database.fetchMealLogs(for: date)
@@ -137,6 +214,7 @@ final class FoodLogViewModel {
 
             guard let mealLogId = mealLog?.id else { return }
 
+            let now = ISO8601DateFormatter().string(from: Date())
             var entry = FoodEntry(
                 mealLogId: mealLogId,
                 foodName: name,
@@ -146,7 +224,8 @@ final class FoodLogViewModel {
                 proteinG: proteinG,
                 carbsG: carbsG,
                 fatG: fatG,
-                fiberG: fiberG
+                fiberG: fiberG,
+                loggedAt: loggedAt ?? now
             )
             try database.saveFoodEntry(&entry)
             try? database.trackFoodUsage(name: name, foodId: nil, servings: 1)

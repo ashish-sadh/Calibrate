@@ -37,6 +37,15 @@ enum DateFormatters {
         return f
     }()
 
+    /// SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
+    static let sqliteDatetime: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.timeZone = TimeZone(identifier: "UTC")
+        return f
+    }()
+
     /// Today's date as "YYYY-MM-DD".
     static var todayString: String {
         dateOnly.string(from: Date())

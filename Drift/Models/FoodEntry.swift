@@ -14,6 +14,7 @@ struct FoodEntry: Identifiable, Codable, Sendable {
     var fatG: Double
     var fiberG: Double
     var createdAt: String
+    var loggedAt: String
 
     enum CodingKeys: String, CodingKey {
         case id, servings, calories
@@ -26,6 +27,7 @@ struct FoodEntry: Identifiable, Codable, Sendable {
         case fatG = "fat_g"
         case fiberG = "fiber_g"
         case createdAt = "created_at"
+        case loggedAt = "logged_at"
     }
 
     init(
@@ -40,7 +42,8 @@ struct FoodEntry: Identifiable, Codable, Sendable {
         carbsG: Double = 0,
         fatG: Double = 0,
         fiberG: Double = 0,
-        createdAt: String = ISO8601DateFormatter().string(from: Date())
+        createdAt: String = ISO8601DateFormatter().string(from: Date()),
+        loggedAt: String = ISO8601DateFormatter().string(from: Date())
     ) {
         self.id = id
         self.mealLogId = mealLogId
@@ -54,6 +57,7 @@ struct FoodEntry: Identifiable, Codable, Sendable {
         self.fatG = fatG
         self.fiberG = fiberG
         self.createdAt = createdAt
+        self.loggedAt = loggedAt
     }
 
     /// Total calories for this entry (per-serving * servings).
