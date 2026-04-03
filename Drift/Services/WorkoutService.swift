@@ -289,7 +289,40 @@ enum WorkoutService {
             workoutCount += 1
         }
 
-        Log.app.info("Imported \(workoutCount) workouts, \(result.rows.count) sets, \(exerciseNames.count) exercises from Strong CSV")
+        // Auto-extract templates from recurring workout names
+        var templatesByName: [String: [String]] = [:] // workoutName → [exerciseNames in order]
+        for row in result.rows {
+            guard let name = row["Workout Name"], let exercise = row["Exercise Name"] else { continue }
+            if templatesByName[name] == nil { templatesByName[name] = [] }
+            if !(templatesByName[name]?.contains(exercise) ?? false) {
+                templatesByName[name]?.append(exercise)
+            }
+        }
+
+        // Create templates for workout names that appeared 2+ times
+        var templatesCreated = 0
+        let existingTemplates = Set((try? fetchTemplates())?.map(\.name) ?? [])
+        for (name, exercises) in templatesByName where exercises.count >= 2 {
+            // Only create if this workout name appears in multiple dates AND isn't already a template
+            let datesWithName = Set(result.rows.compactMap { row -> String? in
+                guard row["Workout Name"] == name else { return nil }
+                return row["Date"].map { String($0.prefix(10)) }
+            })
+            guard datesWithName.count >= 2, !existingTemplates.contains(name) else { continue }
+
+            let templateExercises = exercises.map {
+                WorkoutTemplate.TemplateExercise(name: $0, sets: 3, restSeconds: 90)
+            }
+            if let json = try? JSONEncoder().encode(templateExercises),
+               let jsonStr = String(data: json, encoding: .utf8) {
+                var t = WorkoutTemplate(name: name, exercisesJson: jsonStr,
+                                        createdAt: ISO8601DateFormatter().string(from: Date()))
+                try? saveTemplate(&t)
+                templatesCreated += 1
+            }
+        }
+
+        Log.app.info("Imported \(workoutCount) workouts, \(result.rows.count) sets, \(exerciseNames.count) exercises, \(templatesCreated) templates from Strong CSV")
 
         return ImportResult(workouts: workoutCount, sets: result.rows.count, exercises: exerciseNames.count)
     }
