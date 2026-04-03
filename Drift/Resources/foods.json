@@ -4965,11 +4965,11 @@
     "category": "Grocery",
     "serving_size": 60,
     "serving_unit": "g",
-    "calories": 4,
-    "protein_g": 0,
-    "carbs_g": 1,
-    "fat_g": 0,
-    "fiber_g": 0
+    "calories": 15,
+    "protein_g": 0.8,
+    "carbs_g": 3.5,
+    "fat_g": 0.1,
+    "fiber_g": 1.5
   },
   {
     "name": "Side Chicken Skewer",
