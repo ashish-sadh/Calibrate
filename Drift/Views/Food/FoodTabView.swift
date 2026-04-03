@@ -150,6 +150,7 @@ struct FoodTabView: View {
                             .background(isSelected ? Theme.accent.opacity(0.3) : Color.clear, in: RoundedRectangle(cornerRadius: 10))
                         }
                         .buttonStyle(.plain)
+                        .accessibilityLabel("\(dayFormatter.string(from: day)) \(cal.component(.day, from: day))\(isToday ? ", today" : "")\(hasFood ? ", food logged" : "")\(isSelected ? ", selected" : "")")
                     }
 
                     // Next week arrow
