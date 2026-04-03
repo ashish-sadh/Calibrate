@@ -8864,5 +8864,126 @@
     "carbs_g": 28,
     "fat_g": 9,
     "fiber_g": 2
+  },
+  {
+    "name": "Sirloin Steak (grilled, 6oz)",
+    "category": "Proteins",
+    "serving_size": 170,
+    "serving_unit": "g",
+    "calories": 310,
+    "protein_g": 40,
+    "carbs_g": 0,
+    "fat_g": 16,
+    "fiber_g": 0
+  },
+  {
+    "name": "Filet Mignon (grilled, 6oz)",
+    "category": "Proteins",
+    "serving_size": 170,
+    "serving_unit": "g",
+    "calories": 350,
+    "protein_g": 38,
+    "carbs_g": 0,
+    "fat_g": 22,
+    "fiber_g": 0
+  },
+  {
+    "name": "NY Strip Steak (grilled, 8oz)",
+    "category": "Proteins",
+    "serving_size": 227,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 48,
+    "carbs_g": 0,
+    "fat_g": 32,
+    "fiber_g": 0
+  },
+  {
+    "name": "Cheerios (1 cup)",
+    "category": "Grains & Cereals",
+    "serving_size": 28,
+    "serving_unit": "g",
+    "calories": 100,
+    "protein_g": 3,
+    "carbs_g": 20,
+    "fat_g": 2,
+    "fiber_g": 3
+  },
+  {
+    "name": "Special K (1 cup)",
+    "category": "Grains & Cereals",
+    "serving_size": 31,
+    "serving_unit": "g",
+    "calories": 120,
+    "protein_g": 7,
+    "carbs_g": 22,
+    "fat_g": 0,
+    "fiber_g": 1
+  },
+  {
+    "name": "Vanilla Ice Cream (1/2 cup)",
+    "category": "Desserts",
+    "serving_size": 66,
+    "serving_unit": "g",
+    "calories": 140,
+    "protein_g": 2,
+    "carbs_g": 16,
+    "fat_g": 7,
+    "fiber_g": 0
+  },
+  {
+    "name": "Halo Top Vanilla (1/2 cup)",
+    "category": "Desserts",
+    "serving_size": 66,
+    "serving_unit": "g",
+    "calories": 70,
+    "protein_g": 5,
+    "carbs_g": 14,
+    "fat_g": 2,
+    "fiber_g": 3
+  },
+  {
+    "name": "IPA Beer (12oz)",
+    "category": "Beverages",
+    "serving_size": 355,
+    "serving_unit": "ml",
+    "calories": 200,
+    "protein_g": 2,
+    "carbs_g": 20,
+    "fat_g": 0,
+    "fiber_g": 0
+  },
+  {
+    "name": "Light Beer (12oz)",
+    "category": "Beverages",
+    "serving_size": 355,
+    "serving_unit": "ml",
+    "calories": 103,
+    "protein_g": 1,
+    "carbs_g": 6,
+    "fat_g": 0,
+    "fiber_g": 0
+  },
+  {
+    "name": "White Wine (5oz)",
+    "category": "Beverages",
+    "serving_size": 148,
+    "serving_unit": "ml",
+    "calories": 121,
+    "protein_g": 0,
+    "carbs_g": 4,
+    "fat_g": 0,
+    "fiber_g": 0
+  },
+  {
+    "name": "Margarita",
+    "category": "Beverages",
+    "serving_size": 1,
+    "serving_unit": "glass",
+    "calories": 274,
+    "protein_g": 0,
+    "carbs_g": 36,
+    "fat_g": 0,
+    "fiber_g": 0
   }
 ]
