@@ -489,7 +489,7 @@ struct FoodTabView: View {
         guard let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: viewModel.selectedDate) else { return }
         let dateStr = DateFormatters.dateOnly.string(from: yesterday)
         guard let logs = try? AppDatabase.shared.fetchMealLogs(for: dateStr) else { return }
-        let iso = ISO8601DateFormatter()
+        let iso = DateFormatters.iso8601
         let todayDate = viewModel.selectedDate
         let cal = Calendar.current
 
@@ -500,7 +500,7 @@ struct FoodTabView: View {
             for entry in entries {
                 // Map yesterday's time to today's date
                 let mappedLoggedAt: String
-                if let originalDate = iso.date(from: entry.loggedAt) {
+                if let originalDate = parseTimestamp(entry.loggedAt) {
                     let timeComponents = cal.dateComponents([.hour, .minute, .second], from: originalDate)
                     var todayComponents = cal.dateComponents([.year, .month, .day], from: todayDate)
                     todayComponents.hour = timeComponents.hour
