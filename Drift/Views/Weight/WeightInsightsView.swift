@@ -4,8 +4,6 @@ struct WeightInsightsView: View {
     let trend: WeightTrendCalculator.WeightTrend
     let unit: WeightUnit
     var isLosing: Bool = true
-    @State private var activeTooltip: String?
-
     private func changeColor(_ value: Double) -> Color {
         let isDecrease = value < -0.01
         let isIncrease = value > 0.01
@@ -104,7 +102,7 @@ struct WeightInsightsView: View {
         tooltip: String
     ) -> some View {
         VStack(spacing: 4) {
-            // Label row: icon + label + direction arrow + info
+            // Label + direction arrow
             HStack(spacing: 4) {
                 if let labelIcon {
                     Image(systemName: labelIcon)
@@ -119,19 +117,9 @@ struct WeightInsightsView: View {
                         .font(.caption.weight(.bold))
                         .foregroundStyle(directionColor ?? color)
                 }
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        activeTooltip = activeTooltip == id ? nil : id
-                    }
-                } label: {
-                    Image(systemName: "info.circle")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.tertiary)
-                }
-                .contentShape(Rectangle().inset(by: -8))
             }
 
-            // Clean value — signed number only, no arrow
+            // Value
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Text(value)
                     .font(.title3.weight(.bold).monospacedDigit())
@@ -141,18 +129,6 @@ struct WeightInsightsView: View {
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
-            }
-
-            // Expandable tooltip
-            if activeTooltip == id {
-                Text(tooltip)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.top, 4)
-                    .padding(.horizontal, 2)
-                    .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .top)))
             }
         }
         .frame(maxWidth: .infinity)
