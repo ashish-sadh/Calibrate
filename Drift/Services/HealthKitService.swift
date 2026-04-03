@@ -33,7 +33,13 @@ final class HealthKitService {
     // Read-only — no write access requested. All data stays on device.
     private var writeTypes: Set<HKSampleType> { [] }
 
-    var isAvailable: Bool { HKHealthStore.isHealthDataAvailable() }
+    var isAvailable: Bool {
+        #if targetEnvironment(simulator)
+        return true
+        #else
+        return HKHealthStore.isHealthDataAvailable()
+        #endif
+    }
 
     func requestAuthorization() async throws {
         guard isAvailable else {
@@ -158,11 +164,15 @@ final class HealthKitService {
     }
 
     func fetchCaloriesBurned(for date: Date) async throws -> (active: Double, basal: Double) {
+        #if targetEnvironment(simulator)
+        return (active: 420, basal: 1580)
+        #else
         async let active = fetchDaySum(typeIdentifier: .activeEnergyBurned, for: date)
         async let basal = fetchDaySum(typeIdentifier: .basalEnergyBurned, for: date)
         let result = try await (active, basal)
         Log.healthKit.debug("Calories: active=\(Int(result.0)) basal=\(Int(result.1))")
         return result
+        #endif
     }
 
     // MARK: - Apple Health Workouts
@@ -584,15 +594,23 @@ final class HealthKitService {
     }
 
     func fetchSteps(for date: Date) async throws -> Double {
+        #if targetEnvironment(simulator)
+        return 7842
+        #else
         let steps = try await fetchDaySum(typeIdentifier: .stepCount, for: date, unit: .count())
         Log.healthKit.debug("Steps: \(Int(steps))")
         return steps
+        #endif
     }
 
     /// Simplified sleep hours — delegates to fetchSleepDetail to avoid duplicate logic.
     func fetchSleepHours(for date: Date) async throws -> Double {
+        #if targetEnvironment(simulator)
+        return 7.4
+        #else
         let detail = try await fetchSleepDetail(for: date)
         return detail.totalHours
+        #endif
     }
 
     // MARK: - Sleep & Recovery Data
@@ -677,20 +695,32 @@ final class HealthKitService {
 
     /// HRV (SDNN) for a date - latest reading.
     func fetchHRV(for date: Date) async throws -> Double {
+        #if targetEnvironment(simulator)
+        return 48
+        #else
         try await fetchLatestQuantity(identifier: .heartRateVariabilitySDNN, for: date,
                                        unit: .secondUnit(with: .milli), windowDays: 1)
+        #endif
     }
 
     /// Resting heart rate for a date.
     func fetchRestingHeartRate(for date: Date) async throws -> Double {
+        #if targetEnvironment(simulator)
+        return 62
+        #else
         try await fetchLatestQuantity(identifier: .restingHeartRate, for: date,
                                        unit: .count().unitDivided(by: .minute()))
+        #endif
     }
 
     /// Respiratory rate for a date.
     func fetchRespiratoryRate(for date: Date) async throws -> Double {
+        #if targetEnvironment(simulator)
+        return 15
+        #else
         try await fetchLatestQuantity(identifier: .respiratoryRate, for: date,
                                        unit: .count().unitDivided(by: .minute()))
+        #endif
     }
 
     /// Generic helper: fetch the latest sample of a quantity type for a date.
