@@ -8578,5 +8578,170 @@
     "carbs_g": 2,
     "fat_g": 14,
     "fiber_g": 0
+  },
+  {
+    "name": "Moong Dal (dry)",
+    "category": "Indian Staples",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 347,
+    "protein_g": 24,
+    "carbs_g": 60,
+    "fat_g": 1.2,
+    "fiber_g": 16
+  },
+  {
+    "name": "Toor Dal (dry)",
+    "category": "Indian Staples",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 343,
+    "protein_g": 22,
+    "carbs_g": 63,
+    "fat_g": 1.5,
+    "fiber_g": 15
+  },
+  {
+    "name": "Masoor Dal (dry)",
+    "category": "Indian Staples",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 352,
+    "protein_g": 25,
+    "carbs_g": 60,
+    "fat_g": 1,
+    "fiber_g": 11
+  },
+  {
+    "name": "Chana Dal (dry)",
+    "category": "Indian Staples",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 360,
+    "protein_g": 20,
+    "carbs_g": 60,
+    "fat_g": 5,
+    "fiber_g": 18
+  },
+  {
+    "name": "Urad Dal (dry)",
+    "category": "Indian Staples",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 341,
+    "protein_g": 25,
+    "carbs_g": 59,
+    "fat_g": 1.4,
+    "fiber_g": 18
+  },
+  {
+    "name": "Red Lentils (dry)",
+    "category": "Indian Staples",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 358,
+    "protein_g": 24,
+    "carbs_g": 63,
+    "fat_g": 1,
+    "fiber_g": 11
+  },
+  {
+    "name": "Green Lentils (dry)",
+    "category": "Indian Staples",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 352,
+    "protein_g": 25,
+    "carbs_g": 63,
+    "fat_g": 1,
+    "fiber_g": 11
+  },
+  {
+    "name": "Black Lentils / Whole Urad (dry)",
+    "category": "Indian Staples",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 341,
+    "protein_g": 25,
+    "carbs_g": 59,
+    "fat_g": 1.4,
+    "fiber_g": 18
+  },
+  {
+    "name": "Yellow Lentils (dry)",
+    "category": "Indian Staples",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 338,
+    "protein_g": 24,
+    "carbs_g": 57,
+    "fat_g": 1.1,
+    "fiber_g": 12
+  },
+  {
+    "name": "Red Lentils (cooked)",
+    "category": "Indian Staples",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 230,
+    "protein_g": 18,
+    "carbs_g": 40,
+    "fat_g": 0.8,
+    "fiber_g": 8
+  },
+  {
+    "name": "Green Lentils (cooked)",
+    "category": "Indian Staples",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 230,
+    "protein_g": 18,
+    "carbs_g": 40,
+    "fat_g": 0.8,
+    "fiber_g": 16
+  },
+  {
+    "name": "Dal Tadka",
+    "category": "Indian Staples",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 220,
+    "protein_g": 12,
+    "carbs_g": 30,
+    "fat_g": 6,
+    "fiber_g": 6
+  },
+  {
+    "name": "Dal Fry",
+    "category": "Indian Staples",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 240,
+    "protein_g": 14,
+    "carbs_g": 32,
+    "fat_g": 7,
+    "fiber_g": 7
+  },
+  {
+    "name": "Dal Palak (Spinach Dal)",
+    "category": "Indian Staples",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 200,
+    "protein_g": 12,
+    "carbs_g": 28,
+    "fat_g": 5,
+    "fiber_g": 8
+  },
+  {
+    "name": "Sambhar",
+    "category": "Indian Staples",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 8,
+    "carbs_g": 26,
+    "fat_g": 5,
+    "fiber_g": 6
   }
 ]
