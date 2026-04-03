@@ -134,8 +134,20 @@ struct DashboardView: View {
                 }
             }
 
-            // Centered ring: eating / deficit / burning
-            if viewModel.dailyDeficit != nil {
+            // Centered ring: eating / deficit / burning (or just TDEE if no trend)
+            if viewModel.dailyDeficit == nil {
+                // No weight trend — just show TDEE estimate
+                VStack(spacing: 4) {
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text("\(Int(tdee))")
+                            .font(.title.weight(.bold).monospacedDigit())
+                        Text("kcal/day").font(.caption).foregroundStyle(.tertiary)
+                    }
+                    Text("Est. Expenditure").font(.caption).foregroundStyle(.secondary)
+                    Text("Log weight to see energy balance").font(.caption2).foregroundStyle(.quaternary)
+                }
+                .padding(.vertical, 8)
+            } else if viewModel.dailyDeficit != nil {
                 HStack(spacing: 0) {
                     VStack(spacing: 2) {
                         Text("~\(Int(intake))")
