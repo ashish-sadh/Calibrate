@@ -33,6 +33,11 @@ These are larger changes identified during autonomous sessions that require huma
 - **VO2 Max**: Fitness level indicator from Apple Watch. Could factor into recovery scoring or activity recommendations.
 - **Walking heart rate average**: More stable than resting HR for recovery estimation on days without formal workouts.
 
+## Small Delights (researched, 1-2 hours each)
+- **Weekday weight pattern**: "You tend to weigh least on Wednesdays" — group historical weights by day-of-week, show insight. Users never think to check this.
+- **Macro rings on Food tab**: Concentric rings (like Apple Fitness) showing P/C/F progress toward targets. "Close the ring" motivation.
+- **Time since last meal**: Dashboard shows "Last logged 4h ago" when it's been a while. Non-annoying awareness without push notifications.
+
 ## UI
 - **Dark theme variant**: Some users may prefer a slightly lighter dark (OLED black vs dark gray).
 - **Haptic feedback**: Add subtle haptics to key interactions (logging food, completing a set, finishing a workout).
