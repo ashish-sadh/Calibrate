@@ -1,8 +1,9 @@
 # Self-Improvement Session Log
 
-## Session 4 (April 3, 2026) — IN PROGRESS
-- **Tests**: 646 → 662 (+16, 0 regressions)
-- **Food DB**: 7 USDA corrections (dal fiber, cottage cheese, egg, bread, roti)
+## Session 4 (April 3, 2026) — COMPLETED
+- **Commits**: 16
+- **Tests**: 640 → 662 (+22, 0 regressions)
+- **Food DB**: 817 → 847 foods (+30), 8 USDA corrections
 
 ### New Features
 - Cycle tracking from Apple Health (6-section view: hero, timeline, biometric correlation chart, cycle length trend, fertile window, history)
@@ -27,8 +28,13 @@
 - Extracted CycleCalculations.swift (testable computation layer)
 - 16 cycle calculation tests + 6 loggedAt/formatter tests
 
+### Food Database
+- 30 new foods: berries, condiments (sriracha, mustard, fish sauce), seafood (lobster, crab, scallops), beverages (espresso, Gatorade), grains (spaghetti, barley)
+- 8 corrections: dal fiber +50%, cottage cheese -14% cal/protein, egg -6 cal, cabbage all macros
+
 ### Research
 - UX research curated to Docs/future-ideas.md (food/exercise logging, AI photo, exercise GIFs)
+- App taste memory saved (privacy-first, Indian food focus, clean dark UI, practical over fancy)
 
 ---
 
