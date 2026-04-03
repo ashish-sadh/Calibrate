@@ -1,49 +1,34 @@
 # Self-Improvement Session Log
 
-## Session 2 (April 1-2, 2026)
-- **Commits**: 22, all pushed
-- **TestFlight**: Build 51 published
-- **Tests**: 566 → 614 (+48 new tests, 0 regressions)
-- **Food DB**: 716 → 768 items (+63 added, 11 dupes removed, names cleaned)
-- **Exercise DB**: 884 → 907 items (+23 added, 4 dupes removed, 21 capitalization fixes)
+## Session 3 (April 2-3, 2026) — In Progress
+- **Commits**: 50+ across sessions 2-3
+- **TestFlight**: Builds 51-54 published
+- **Tests**: 566 → 626 (+60, 0 regressions)
+- **Food DB**: 716 → 802 foods
+- **Exercise DB**: 884 → 960 exercises
 
-### Changes
-- **TDEE**: Base formula soft-capped at 2700 (prevents 3000+ without profile data). 14 comprehensive demographic tests across all age groups and weight×activity matrix. WeightGoal TDEE fallback uses soft cap. Research logged (Schofield equation, 4000 kcal ceiling) in future-ideas.md.
-- **Dashboard**: TDEE card shows data source chips + "Add data to improve" hint. VoiceOver accessibility labels added (weight, health pills, recovery). Dead comments removed.
-- **Food**: +63 items (Chipotle, Panda Express, Chick-fil-A, Popeyes, Five Guys, In-N-Out, Shake Shack, Dunkin', Domino's, US home-cooked, Asian, Indian snacks, plant-based, fermented foods, healthy staples). 11 duplicates removed. Lowercase names capitalized. Eggplant recategorized from Proteins to Vegetables. Consistency heatmap batch query (30 → 1 DB queries).
-- **Exercises**: +23 items (Bulgarian Split Squat, Chest Fly, Seated Row, Pendlay Row, Ab Wheel, Hip machines, Dragon Flag, L-Sit, Pike Push-Up, machine presses, cable exercises). 4 duplicates removed. Equipment/category capitalization normalized (21 fixes).
-- **Bugs fixed**: HRV trend detection (sequential pairs vs first<last), 3 flaky workout session tests (UserDefaults race conditions), factory reset missing TDEE config + exercise favorites + TDEE cache, MoreTabView dark background, barcode scanner ml serving sizes.
-- **Lab OCR**: Month-name date formats (Mar 15, 2026 / January 5, 2026 / 15 Mar 2026) + 5 tests.
-- **Accessibility**: VoiceOver labels on dashboard (weight card, health pills, recovery) and food diary entries.
-- **Performance**: Food consistency heatmap batch query (30 individual queries → 1 batch query).
-- **Other**: Dynamic version string, stale code comments removed, docs updated.
+### Session 3 Highlights (since Build 53)
+- **Full UI polish**: true black background, lighter cards (0.08 opacity), 46 font fixes (no sub-11pt)
+- **Apple Health style weight chart**: single clean white line, no scatter dots, no grid lines
+- **Renpho-style TDEE ring**: centered 88pt ring with eating/deficit/burning layout
+- **Food tab day strip**: 7-day pills replace confusing arrows, past-date amber warning banner
+- **Food log half-sheet**: was full-screen, now medium detent
+- **Recovery overhaul**: missing HRV graceful (55→88), better RHR/sleep curves
+- **Exercise search ranking**: relevance-based, favorites first, dedup
+- **"Favorite all exercises" toggle** in workout finish
+- **"Wrong direction" detection** on goal pace
+- **Smart intake estimation**: cross-validates food logs vs weight trend
+- **Deficit explainer**: (?) button shows calculation breakdown
+- **Target sync**: Dashboard and Algorithm page match exactly
+- **Barcode scan**: defaults to actual serving size
+- **Whey Protein auto-seed removed**
+- **Bug fixes**: elevated card mismatch, zero deficit label, chart annotations, weekOffset reset, Ranch Dressing dupe, Ginger Tea macros
 
 ---
 
-## Session 1 (March 29-30, 2026)
-- **Commits**: 33 total, all pushed to remote
-- **TestFlight**: Builds 48 + 49
-- **Tests**: 575 passing (4 new)
-- **Food DB**: 681 → 714 items (+33)
-- **Exercise DB**: 873 → 884 items (+11)
-- **0 regressions**
+## Session 2 (April 1-2, 2026)
+- See git log for detailed changes
+- Builds 51-53, TDEE improvements, food/exercise expansion, recovery overhaul
 
-### Highlights
-- Fixed launch screen white flash (missing color asset)
-- Accent color refined (#A78BFA — softer, less "AI")
-- Templates compacted (play icon instead of big Start button)
-- Delete confirmations on templates + workouts
-- Settings health buttons now show success/error + descriptions
-- Factory reset shows confirmation alert
-- Sleep fetching deduplicated (-47 lines)
-- HealthKit query helper extracted (-18 lines)
-- Food data cleaned (broken entries fixed, categories merged)
-- Fast food added (McDonald's, Starbucks, Taco Bell, Wendy's)
-- Indian foods expanded (korma, vindaloo, dahi, jalebi, etc.)
-- Exercises added (Turkish get-up, farmer's walk, battle ropes, etc.)
-- Goal edit button in toolbar
-- Copy previous day shows calorie count
-- Template preview shows last-used weights
-- Recovery estimator tests added
-- Manual food entry validates numeric input
-- Force unwrap removed from GlucoseTabView
+## Session 1 (March 29-30, 2026)
+- Builds 48-49, accent color, templates, food/exercise additions
