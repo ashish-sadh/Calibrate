@@ -103,7 +103,7 @@ struct WorkoutView: View {
                         ForEach(templates) { t in
                             HStack(spacing: 8) {
                                 if t.isFavorite {
-                                    Image(systemName: "star.fill").font(.system(size: 9)).foregroundStyle(Theme.fatYellow)
+                                    Image(systemName: "star.fill").font(.caption).foregroundStyle(Theme.fatYellow)
                                 }
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(t.name).font(.subheadline.weight(.medium))
@@ -1324,7 +1324,7 @@ struct ExercisePickerView: View {
                     Text(bodyPart).font(.caption2).foregroundStyle(.tertiary)
                 }
                 if let equipment, !equipment.isEmpty {
-                    Text(equipment).font(.system(size: 9)).foregroundStyle(.quaternary)
+                    Text(equipment).font(.caption).foregroundStyle(.quaternary)
                 }
             }
         }

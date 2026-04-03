@@ -158,7 +158,7 @@ struct GoalView: View {
 
                 // Explain how calorie target was derived
                 HStack(spacing: 4) {
-                    Image(systemName: "info.circle").font(.system(size: 10))
+                    Image(systemName: "info.circle").font(.caption)
                     Text("\(explanation.source): \(explanation.detail)")
                         .font(.caption2)
                 }

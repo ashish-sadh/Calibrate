@@ -181,19 +181,19 @@ struct SupplementsTabView: View {
 
             // Legend
             HStack(spacing: 4) {
-                Text("Less").font(.system(size: 8)).foregroundStyle(.tertiary)
+                Text("Less").font(.caption2).foregroundStyle(.tertiary)
                 ForEach([0.0, 0.33, 0.66, 1.0], id: \.self) { ratio in
                     RoundedRectangle(cornerRadius: 2)
                         .fill(colorForRatio(ratio))
                         .frame(width: 12, height: 12)
                 }
-                Text("All").font(.system(size: 8)).foregroundStyle(.tertiary)
+                Text("All").font(.caption2).foregroundStyle(.tertiary)
                 Spacer()
 
                 // Month labels
                 if let first = viewModel.consistencyData.first, let last = viewModel.consistencyData.last {
                     Text("\(DateFormatters.shortDisplay.string(from: first.date)) – \(DateFormatters.shortDisplay.string(from: last.date))")
-                        .font(.system(size: 8)).foregroundStyle(.tertiary)
+                        .font(.caption2).foregroundStyle(.tertiary)
                 }
             }
 
@@ -215,14 +215,14 @@ struct SupplementsTabView: View {
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3)).foregroundStyle(.secondary.opacity(0.2))
                     AxisValueLabel {
                         if let v = value.as(Double.self) {
-                            Text("\(Int(v * 100))%").font(.system(size: 8)).foregroundStyle(.tertiary)
+                            Text("\(Int(v * 100))%").font(.caption2).foregroundStyle(.tertiary)
                         }
                     }
                 }
             }
             .chartXAxis {
                 AxisMarks(values: .automatic(desiredCount: 4)) {
-                    AxisValueLabel(format: .dateTime.month(.abbreviated).day()).font(.system(size: 8)).foregroundStyle(.tertiary)
+                    AxisValueLabel(format: .dateTime.month(.abbreviated).day()).font(.caption2).foregroundStyle(.tertiary)
                 }
             }
             .frame(height: 80)

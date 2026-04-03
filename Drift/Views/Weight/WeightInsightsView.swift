@@ -108,7 +108,7 @@ struct WeightInsightsView: View {
             HStack(spacing: 4) {
                 if let labelIcon {
                     Image(systemName: labelIcon)
-                        .font(.system(size: 10))
+                        .font(.caption)
                         .foregroundStyle(.tertiary)
                 }
                 Text(label)
@@ -116,7 +116,7 @@ struct WeightInsightsView: View {
                     .foregroundStyle(.secondary)
                 if let direction {
                     Image(systemName: direction)
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.caption.weight(.bold))
                         .foregroundStyle(directionColor ?? color)
                 }
                 Button {
@@ -185,7 +185,7 @@ struct WeightInsightsView: View {
                 let d = unit.convert(fromKg: value)
                 HStack(spacing: 1) {
                     Image(systemName: directionIcon(value))
-                        .font(.system(size: 8, weight: .bold))
+                        .font(.caption2.weight(.bold))
                     Text(String(format: "%+.1f", d))
                         .font(.caption.weight(.semibold).monospacedDigit())
                 }

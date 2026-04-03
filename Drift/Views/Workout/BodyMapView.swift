@@ -37,9 +37,9 @@ struct BodyMapView: View {
                             Text(group).font(.caption2.weight(.semibold))
                             if let days = daysSince[group] {
                                 Text(days == 0 ? "Today" : "\(days)d ago")
-                                    .font(.system(size: 8).monospacedDigit()).foregroundStyle(.secondary)
+                                    .font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
                             } else {
-                                Text("\u{2014}").font(.system(size: 8)).foregroundStyle(.quaternary)
+                                Text("\u{2014}").font(.caption2).foregroundStyle(.quaternary)
                             }
                         }
                         .frame(maxWidth: .infinity).padding(.vertical, 8)

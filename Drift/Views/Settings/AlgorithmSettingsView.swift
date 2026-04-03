@@ -137,20 +137,20 @@ struct AlgorithmSettingsView: View {
                 Divider().frame(width: 40).overlay(Color.white.opacity(0.1))
                 HStack(spacing: 12) {
                     VStack(spacing: 1) {
-                        Text("Required").font(.system(size: 9)).foregroundStyle(.tertiary)
+                        Text("Required").font(.caption).foregroundStyle(.tertiary)
                         Text("\(requiredDeficit < 0 ? "" : "+")\(Int(requiredDeficit))")
                             .font(.caption2.weight(.bold).monospacedDigit())
                             .foregroundStyle(isLosing ? (requiredDeficit < 0 ? Theme.deficit : Theme.surplus) : (requiredDeficit > 0 ? Theme.deficit : Theme.surplus))
                     }
                     if let deficit = liveDeficit {
                         VStack(spacing: 1) {
-                            Text("Current").font(.system(size: 9)).foregroundStyle(.tertiary)
+                            Text("Current").font(.caption).foregroundStyle(.tertiary)
                             Text("\(deficit < 0 ? "" : "+")\(Int(deficit))")
                                 .font(.caption2.weight(.bold).monospacedDigit())
                                 .foregroundStyle(isLosing ? (deficit < 0 ? Theme.deficit : Theme.surplus) : (deficit > 0 ? Theme.deficit : Theme.surplus))
                         }
                     }
-                    Text("kcal/day").font(.system(size: 9)).foregroundStyle(.quaternary)
+                    Text("kcal/day").font(.caption).foregroundStyle(.quaternary)
                 }
             } else if liveCalorieTarget != nil {
                 // Has TDEE target but no goal
@@ -171,7 +171,7 @@ struct AlgorithmSettingsView: View {
     private func sourceChip(_ label: String, active: Bool) -> some View {
         HStack(spacing: 3) {
             Circle().fill(active ? Theme.accent : Color.gray.opacity(0.3)).frame(width: 6, height: 6)
-            Text(label).font(.system(size: 9)).foregroundStyle(active ? .secondary : .quaternary)
+            Text(label).font(.caption).foregroundStyle(active ? .secondary : .quaternary)
         }
     }
 
@@ -347,16 +347,16 @@ struct AlgorithmSettingsView: View {
                         if ahResting > 0 || ahActive > 0 {
                             HStack(spacing: 10) {
                                 HStack(spacing: 3) {
-                                    Image(systemName: "bed.double.fill").font(.system(size: 8)).foregroundStyle(Theme.sleepIndigo)
+                                    Image(systemName: "bed.double.fill").font(.caption2).foregroundStyle(Theme.sleepIndigo)
                                     Text("\(Int(ahResting)) resting").font(.caption2.monospacedDigit())
                                 }
                                 HStack(spacing: 3) {
-                                    Image(systemName: "flame.fill").font(.system(size: 8)).foregroundStyle(Theme.stepsOrange)
+                                    Image(systemName: "flame.fill").font(.caption2).foregroundStyle(Theme.stepsOrange)
                                     Text("\(Int(ahActive)) active").font(.caption2.monospacedDigit())
                                 }
                                 if ahSteps > 0 {
                                     HStack(spacing: 3) {
-                                        Image(systemName: "figure.walk").font(.system(size: 8)).foregroundStyle(Theme.deficit)
+                                        Image(systemName: "figure.walk").font(.caption2).foregroundStyle(Theme.deficit)
                                         Text("\(Int(ahSteps)) steps").font(.caption2.monospacedDigit())
                                     }
                                 }
@@ -459,7 +459,7 @@ struct AlgorithmSettingsView: View {
 
     private func howItWorksRow(_ num: String, _ title: String, _ detail: String) -> some View {
         HStack(alignment: .top, spacing: 6) {
-            Text(num).font(.system(size: 9, weight: .bold)).foregroundStyle(Theme.accent)
+            Text(num).font(.caption.weight(.bold)).foregroundStyle(Theme.accent)
                 .frame(width: 14, height: 14).background(Theme.accent.opacity(0.15), in: Circle())
             Text("\(title): ").font(.caption2.weight(.semibold)) + Text(detail).font(.caption2).foregroundStyle(.tertiary)
         }

@@ -65,7 +65,7 @@ struct WeightChartView: View {
                         .lineStyle(StrokeStyle(lineWidth: 0.8, dash: [4, 3]))
                         .annotation(position: .topLeading, spacing: 2) {
                             Text(String(format: "%.1f", startWeight))
-                                .font(.system(size: 9).monospacedDigit())
+                                .font(.caption.monospacedDigit())
                                 .foregroundStyle(.secondary.opacity(0.7))
                                 .padding(.horizontal, 3)
                                 .background(Theme.cardBackground.opacity(0.8))
@@ -79,7 +79,7 @@ struct WeightChartView: View {
                         .lineStyle(StrokeStyle(lineWidth: 1))
                         .annotation(position: .bottomTrailing, spacing: 2) {
                             Text(String(format: "%.1f", currentWeight))
-                                .font(.system(size: 10, weight: .bold).monospacedDigit())
+                                .font(.caption.weight(.bold).monospacedDigit())
                                 .foregroundStyle(Theme.accent)
                                 .padding(.horizontal, 4).padding(.vertical, 1)
                                 .background(Theme.cardBackground.opacity(0.9), in: RoundedRectangle(cornerRadius: 3))

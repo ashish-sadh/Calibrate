@@ -573,13 +573,13 @@ struct FoodTabView: View {
             }
 
             HStack(spacing: 4) {
-                Text("Less").font(.system(size: 8)).foregroundStyle(.tertiary)
+                Text("Less").font(.caption2).foregroundStyle(.tertiary)
                 ForEach([0.0, 500.0, 1000.0, 2000.0], id: \.self) { cal in
                     RoundedRectangle(cornerRadius: 2)
                         .fill(cal > 0 ? Theme.accent.opacity(min(1, cal / 2000)) : Theme.cardBackgroundElevated)
                         .frame(width: 10, height: 10)
                 }
-                Text("More").font(.system(size: 8)).foregroundStyle(.tertiary)
+                Text("More").font(.caption2).foregroundStyle(.tertiary)
             }
         }
         .card()

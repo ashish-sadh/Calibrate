@@ -213,7 +213,7 @@ struct SleepRecoveryView: View {
                     VStack(spacing: 1) {
                         Text("\(formatTime(start)) – \(formatTime(end))")
                             .font(.caption2.monospacedDigit()).foregroundStyle(.tertiary)
-                        Text("bed time").font(.system(size: 8)).foregroundStyle(.quaternary)
+                        Text("bed time").font(.caption2).foregroundStyle(.quaternary)
                     }
                 }
             }
@@ -259,8 +259,8 @@ struct SleepRecoveryView: View {
     private func stagePill(_ name: String, hours: Double, total: Double, color: Color) -> some View {
         VStack(spacing: 1) {
             Text(String(format: "%.1fh", hours)).font(.caption2.weight(.bold).monospacedDigit())
-            Text(name).font(.system(size: 8)).foregroundStyle(.secondary)
-            if total > 0 { Text("\(Int(hours / total * 100))%").font(.system(size: 8).monospacedDigit()).foregroundStyle(.tertiary) }
+            Text(name).font(.caption2).foregroundStyle(.secondary)
+            if total > 0 { Text("\(Int(hours / total * 100))%").font(.caption2.monospacedDigit()).foregroundStyle(.tertiary) }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 4)
@@ -280,9 +280,9 @@ struct SleepRecoveryView: View {
                 Text("Sleep Trend").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
                 Spacer()
                 HStack(spacing: 8) {
-                    HStack(spacing: 3) { Circle().fill(Theme.deficit).frame(width: 6, height: 6); Text("Good").font(.system(size: 8)) }
-                    HStack(spacing: 3) { Circle().fill(Theme.fatYellow).frame(width: 6, height: 6); Text("Fair").font(.system(size: 8)) }
-                    HStack(spacing: 3) { Circle().fill(Theme.surplus).frame(width: 6, height: 6); Text("Low").font(.system(size: 8)) }
+                    HStack(spacing: 3) { Circle().fill(Theme.deficit).frame(width: 6, height: 6); Text("Good").font(.caption2) }
+                    HStack(spacing: 3) { Circle().fill(Theme.fatYellow).frame(width: 6, height: 6); Text("Fair").font(.caption2) }
+                    HStack(spacing: 3) { Circle().fill(Theme.surplus).frame(width: 6, height: 6); Text("Low").font(.caption2) }
                 }
                 .foregroundStyle(.tertiary)
             }
@@ -293,7 +293,7 @@ struct SleepRecoveryView: View {
                     .foregroundStyle(.secondary.opacity(0.3))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
                     .annotation(position: .topTrailing, spacing: 2) {
-                        Text("need").font(.system(size: 8)).foregroundStyle(.tertiary)
+                        Text("need").font(.caption2).foregroundStyle(.tertiary)
                     }
 
                 ForEach(recent.indices, id: \.self) { i in
@@ -360,11 +360,11 @@ struct SleepRecoveryView: View {
 
             HStack(spacing: 12) {
                 HStack(spacing: 3) {
-                    Image(systemName: "flame.fill").font(.system(size: 9)).foregroundStyle(Theme.stepsOrange)
+                    Image(systemName: "flame.fill").font(.caption).foregroundStyle(Theme.stepsOrange)
                     Text("\(Int(r.activeCalories)) cal").font(.caption2.monospacedDigit())
                 }
                 HStack(spacing: 3) {
-                    Image(systemName: "figure.walk").font(.system(size: 9)).foregroundStyle(Theme.deficit)
+                    Image(systemName: "figure.walk").font(.caption).foregroundStyle(Theme.deficit)
                     Text("\(Int(r.steps)) steps").font(.caption2.monospacedDigit())
                 }
             }

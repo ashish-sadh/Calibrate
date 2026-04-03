@@ -155,7 +155,7 @@ struct BiomarkerDetailView: View {
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
                     .annotation(position: .leading, spacing: 2) {
                         Text(formatValue(definition.optimalLow))
-                            .font(.system(size: 9, weight: .semibold).monospacedDigit())
+                            .font(.caption.weight(.semibold).monospacedDigit())
                             .foregroundStyle(Theme.deficit)
                     }
                 RuleMark(y: .value("", definition.optimalHigh))
@@ -163,7 +163,7 @@ struct BiomarkerDetailView: View {
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
                     .annotation(position: .leading, spacing: 2) {
                         Text(formatValue(definition.optimalHigh))
-                            .font(.system(size: 9, weight: .semibold).monospacedDigit())
+                            .font(.caption.weight(.semibold).monospacedDigit())
                             .foregroundStyle(Theme.deficit)
                     }
                 // Sufficient threshold line (if different from optimal)
@@ -173,7 +173,7 @@ struct BiomarkerDetailView: View {
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 5]))
                         .annotation(position: .leading, spacing: 2) {
                             Text(formatValue(definition.sufficientHigh))
-                                .font(.system(size: 9, weight: .semibold).monospacedDigit())
+                                .font(.caption.weight(.semibold).monospacedDigit())
                                 .foregroundStyle(Theme.fatYellow)
                         }
                 }

@@ -108,144 +108,122 @@ struct DashboardView: View {
         let target = goal?.macroTargets(currentWeightKg: viewModel.currentWeight)
         let unit = Preferences.weightUnit
 
-        return VStack(spacing: 8) {
-            // Row 1: TDEE + Target
+        let deficit = viewModel.dailyDeficit ?? 0
+        let tdee = est.tdee
+        let trendIntake = tdee + deficit
+        let consistency = viewModel.foodLogConsistency
+        let loggedIntake = viewModel.avgDailyIntake
+        let useFoodLogs = consistency >= 0.5 && loggedIntake > 500
+            && abs(loggedIntake - trendIntake) < trendIntake * 0.4
+        let intake = viewModel.dailyDeficit != nil ? (useFoodLogs ? loggedIntake : trendIntake) : 0
+        let ringFraction = intake > 0 ? min(1.0, max(0, intake / max(1, tdee))) : 0
+        let deficitLabel = deficit < 0 ? "deficit" : "surplus"
+
+        return VStack(spacing: 12) {
+            // Section header
             HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Label("Est. Expenditure", systemImage: "flame").font(.caption).foregroundStyle(.secondary)
-                    HStack(alignment: .firstTextBaseline, spacing: 3) {
-                        Text("\(Int(est.tdee))")
-                            .font(.title3.weight(.bold).monospacedDigit())
-                        Text("kcal/day").font(.caption2).foregroundStyle(.tertiary)
-                    }
-                }
+                Text("Daily Average").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
                 Spacer()
-                if let t = target, let goal {
-                    let remaining = abs(unit.convert(fromKg: goal.totalChangeKg))
-                    let isLosing = goal.totalChangeKg < 0
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text("eat to \(isLosing ? "lose" : "gain") \(String(format: "%.1f", remaining)) \(unit.displayName)")
-                            .font(.caption).foregroundStyle(.secondary)
-                        HStack(alignment: .firstTextBaseline, spacing: 3) {
-                            Text("\(Int(t.calorieTarget))")
-                                .font(.title3.weight(.bold).monospacedDigit())
-                                .foregroundStyle(Theme.accent)
-                            Text("kcal").font(.caption2).foregroundStyle(.tertiary)
-                        }
+                HStack(spacing: 4) {
+                    Text("14-day").font(.caption2).foregroundStyle(.tertiary)
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.2)) { showDeficitExplainer.toggle() }
+                    } label: {
+                        Image(systemName: "info.circle").font(.caption).foregroundStyle(.tertiary)
                     }
                 }
             }
 
-            // Row 2: Energy balance ring — visually distinct from Nutrition bar
-            if let deficit = viewModel.dailyDeficit {
-                let tdee = est.tdee
-                let trendIntake = tdee + deficit
-                let consistency = viewModel.foodLogConsistency
-                let loggedIntake = viewModel.avgDailyIntake
-                let useFoodLogs = consistency >= 0.5 && loggedIntake > 500
-                    && abs(loggedIntake - trendIntake) < trendIntake * 0.4
-                let intake = useFoodLogs ? loggedIntake : trendIntake
-                let intakeLabel = useFoodLogs ? "est. avg daily intake" : "est. avg daily intake"
-                let ringFraction = min(1.0, max(0, intake / max(1, tdee)))
-                let deficitLabel = deficit < 0 ? "deficit" : "surplus"
+            // Centered ring: eating / deficit / burning
+            if viewModel.dailyDeficit != nil {
+                HStack(spacing: 0) {
+                    VStack(spacing: 2) {
+                        Text("~\(Int(intake))")
+                            .font(.title3.weight(.bold).monospacedDigit())
+                        Text("eating")
+                            .font(.caption).foregroundStyle(.tertiary)
+                    }
+                    .frame(maxWidth: .infinity)
 
-                HStack(spacing: 14) {
-                    // Mini donut ring: intake / expenditure
                     ZStack {
                         Circle()
-                            .stroke(Theme.cardBackgroundElevated, lineWidth: 6)
-                            .frame(width: 48, height: 48)
+                            .stroke(Theme.cardBackgroundElevated, lineWidth: 8)
                         Circle()
                             .trim(from: 0, to: ringFraction)
-                            .stroke(isGoalAligned(deficit) ? Theme.deficit : Theme.surplus, style: StrokeStyle(lineWidth: 6, lineCap: .round))
-                            .frame(width: 48, height: 48)
+                            .stroke(isGoalAligned(deficit) ? Theme.deficit : Theme.surplus,
+                                    style: StrokeStyle(lineWidth: 8, lineCap: .round))
                             .rotationEffect(.degrees(-90))
-                        Text("\(Int(ringFraction * 100))%")
-                            .font(.system(size: 10, weight: .bold).monospacedDigit())
-                            .foregroundStyle(.secondary)
-                    }
-
-                    VStack(alignment: .leading, spacing: 3) {
-                        HStack(spacing: 4) {
-                            Text("~\(Int(intake))")
-                                .font(.caption.weight(.semibold).monospacedDigit())
-                            Text(intakeLabel)
+                        VStack(spacing: 1) {
+                            Text("\(Int(abs(deficit)))")
+                                .font(.title3.weight(.bold).monospacedDigit())
+                            Text(deficitLabel)
+                                .font(.caption2.weight(.medium)).foregroundStyle(.secondary)
+                            Text("/day")
                                 .font(.caption2).foregroundStyle(.tertiary)
                         }
-                        HStack(spacing: 4) {
-                            Text("\(Int(abs(deficit))) \(deficitLabel)")
-                                .font(.caption2.weight(.bold).monospacedDigit())
-                                .foregroundStyle(isGoalAligned(deficit) ? Theme.deficit : Theme.surplus)
-                            Text("/day avg")
-                                .font(.system(size: 9)).foregroundStyle(.quaternary)
-                        }
                     }
+                    .frame(width: 88, height: 88)
+
+                    VStack(spacing: 2) {
+                        Text("\(Int(tdee))")
+                            .font(.title3.weight(.bold).monospacedDigit())
+                        Text("burning")
+                            .font(.caption).foregroundStyle(.tertiary)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
             }
 
-            // Row 3: Required vs Current with explainer
-            if let goal {
-                let required = goal.requiredDailyDeficit
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 12) {
-                        HStack(spacing: 4) {
-                            Text("Required").font(.system(size: 9)).foregroundStyle(.tertiary)
-                            Text("\(required < 0 ? "" : "+")\(Int(required))")
-                                .font(.caption2.weight(.bold).monospacedDigit())
-                                .foregroundStyle(isGoalAligned(required) ? Theme.deficit : Theme.surplus)
-                        }
-                        if let deficit = viewModel.dailyDeficit {
-                            HStack(spacing: 4) {
-                                Text("Current").font(.system(size: 9)).foregroundStyle(.tertiary)
+            // Target line
+            if let t = target, let goal {
+                let remaining = abs(unit.convert(fromKg: goal.totalChangeKg))
+                let isLosing = goal.totalChangeKg < 0
+                Text("Target: eat \(Int(t.calorieTarget)) kcal to \(isLosing ? "lose" : "gain") \(String(format: "%.1f", remaining)) \(unit.displayName)")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+
+            // Expandable detail
+            if showDeficitExplainer {
+                VStack(alignment: .leading, spacing: 6) {
+                    if let goal {
+                        let required = goal.requiredDailyDeficit
+                        HStack(spacing: 16) {
+                            VStack(spacing: 2) {
+                                Text("Required").font(.caption2).foregroundStyle(.tertiary)
+                                Text("\(required < 0 ? "" : "+")\(Int(required))")
+                                    .font(.caption.weight(.bold).monospacedDigit())
+                                    .foregroundStyle(isGoalAligned(required) ? Theme.deficit : Theme.surplus)
+                            }
+                            VStack(spacing: 2) {
+                                Text("Current").font(.caption2).foregroundStyle(.tertiary)
                                 Text("\(deficit < 0 ? "" : "+")\(Int(deficit))")
-                                    .font(.caption2.weight(.bold).monospacedDigit())
+                                    .font(.caption.weight(.bold).monospacedDigit())
                                     .foregroundStyle(isGoalAligned(deficit) ? Theme.deficit : Theme.surplus)
                             }
-                        }
-                        Text("kcal/day").font(.system(size: 9)).foregroundStyle(.quaternary)
-                        Spacer()
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.2)) { showDeficitExplainer.toggle() }
-                        } label: {
-                            Image(systemName: "questionmark.circle")
-                                .font(.system(size: 11)).foregroundStyle(.tertiary)
+                            Text("kcal/day").font(.caption2).foregroundStyle(.quaternary)
                         }
                     }
-
-                    if showDeficitExplainer {
-                        let config = WeightTrendCalculator.loadConfig()
-                        VStack(alignment: .leading, spacing: 3) {
-                            if let rate = viewModel.weeklyRate {
-                                Text("Your weight trend: \(String(format: "%+.2f", Preferences.weightUnit.convert(fromKg: rate))) \(Preferences.weightUnit.displayName)/wk")
-                                    .font(.caption2).foregroundStyle(.secondary)
-                                if let deficit = viewModel.dailyDeficit {
-                                    Text("= \(String(format: "%+.0f", rate * config.kcalPerKg / 7)) kcal/day (\(String(format: "%.0f", config.kcalPerKg)) kcal per \(Preferences.weightUnit == .kg ? "kg" : "lb equivalent"))")
-                                        .font(.caption2).foregroundStyle(.tertiary)
-                                }
-                            }
-                            Text("Based on \(config.regressionWindowDays)-day weight trend, not activity data.")
-                                .font(.caption2).foregroundStyle(.quaternary)
-                        }
-                        .padding(.top, 2)
-                        .transition(.opacity)
+                    let config = WeightTrendCalculator.loadConfig()
+                    if let rate = viewModel.weeklyRate {
+                        Text("Trend: \(String(format: "%+.2f", Preferences.weightUnit.convert(fromKg: rate))) \(Preferences.weightUnit.displayName)/wk → \(String(format: "%+.0f", deficit)) kcal/day")
+                            .font(.caption2).foregroundStyle(.tertiary)
                     }
+                    Text("Based on \(config.regressionWindowDays)-day weight trend.")
+                        .font(.caption2).foregroundStyle(.quaternary)
                 }
+                .transition(.opacity)
             }
 
-            // Row 4: Data sources
+            // Data sources
             HStack(spacing: 4) {
                 ForEach(est.activeSources, id: \.self) { source in
                     Text(source)
-                        .font(.system(size: 9).weight(.medium))
+                        .font(.caption2.weight(.medium))
                         .padding(.horizontal, 5).padding(.vertical, 2)
                         .background(Theme.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 4))
                         .foregroundStyle(Theme.accent.opacity(0.8))
                 }
                 Spacer()
-                if est.confidence == .low {
-                    Text("Add data to improve")
-                        .font(.system(size: 9)).foregroundStyle(.quaternary)
-                }
             }
         }
         .card()
@@ -518,13 +496,13 @@ struct DashboardView: View {
                 HStack(spacing: 12) {
                     if viewModel.hrvMs > 0 {
                         HStack(spacing: 3) {
-                            Image(systemName: "waveform.path").font(.system(size: 9)).foregroundStyle(Theme.deficit)
+                            Image(systemName: "waveform.path").font(.caption).foregroundStyle(Theme.deficit)
                             Text("\(Int(viewModel.hrvMs))ms").font(.caption2.monospacedDigit())
                         }
                     }
                     if viewModel.restingHR > 0 {
                         HStack(spacing: 3) {
-                            Image(systemName: "heart.fill").font(.system(size: 9)).foregroundStyle(Theme.heartRed)
+                            Image(systemName: "heart.fill").font(.caption).foregroundStyle(Theme.heartRed)
                             Text("\(Int(viewModel.restingHR))bpm").font(.caption2.monospacedDigit())
                         }
                     }
