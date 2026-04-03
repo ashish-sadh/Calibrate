@@ -1,42 +1,46 @@
 # Self-Improvement Session Log
 
-## Session 3 (April 2-3, 2026) — In Progress
-- **Commits**: 52+ across sessions 2-3
-- **TestFlight**: Builds 51-56 published
+## Session 3 (April 2-3, 2026) — COMPLETED
+- **Commits**: 64
+- **TestFlight**: Builds 51-57 published
 - **Tests**: 566 → 630 (+64, 0 regressions)
 - **Food DB**: 716 → 817 foods
 - **Exercise DB**: 884 → 960 exercises
 
 ### New Features
-- **"New Low!" milestone toast** — celebratory overlay on new all-time low/high weight
-- **"Same as yesterday" for supplements** — one-tap to copy yesterday's routine
-- **Weekday weight pattern** — "You weigh least on Wednesdays" insight
-- **"Favorite all exercises" toggle** in workout finish
-- **"Wrong direction" detection** on goal pace
+- "New Low!" / "New High!" milestone toast on weight entry
+- "Same as yesterday" for supplements
+- Weekday weight pattern insight ("You weigh least on Wednesdays")
+- "Favorite all exercises" toggle in workout finish
+- "Wrong direction" detection on goal pace
+- Hevy CSV import (auto-detected alongside Strong)
+- Auto-extract workout templates from Strong/Hevy recurring workouts
+- Strong CSV: RPE + Weight Unit (kg→lbs auto-conversion)
+- Hevy: warmup set detection from set_type
+- Smart serving defaults (remembers last-used amount per food)
+- Quick-log uses last serving size
+- Food logging streak counter
+- Template list shows exercise names preview
+- Deficit explainer (?) with calculation breakdown
 
 ### UI Redesign
-- True black background (#000000), lighter cards (0.08 opacity)
-- 47 font fixes (no sub-11pt in entire app)
-- Apple Health style weight chart (single clean line, no scatter)
+- True black background, lighter cards (0.08 opacity)
+- 47 font fixes (no sub-11pt), VoiceOver on 7 screens
+- Apple Health style weight chart (clean line, no scatter)
 - Renpho-style TDEE ring (eating/deficit/burning)
-- Food tab day strip (7-day pills, week nav, past-date amber banner)
-- Food log half-sheet, deficit explainer (?), energy balance ring
-- Removed tooltip tap-to-expand on weight insights
+- Food tab: 7-day strip, week nav, past-date amber banner, dots for logged days
+- Food log half-sheet, energy balance ring, smart intake estimation
 
 ### Algorithms
 - Recovery overhaul: missing HRV → weight redistribution (55→88)
-- TDEE soft cap at 2700, smart intake estimation
-- Target sync (Dashboard = Algorithm page)
+- TDEE soft cap at 2700, target sync fix
 - Weight trend fallback uses recent entries
 
-### Data
-- 817 foods: Chipotle, Panda Express, Indian street food, steaks, cereals, beverages
-- 960 exercises: all basic gym variations
-- Exercise search ranking + favorites + dedup
-
 ### Bug Fixes
-- Factory reset clears all UserDefaults keys
-- Barcode serving size defaults to actual, display clarified
-- Strong CSV "1h" duration parsing
-- Card contrast for true black, chart annotation backgrounds
-- Flaky tests, zero deficit label, weekOffset reset
+- 20+ bug fixes including factory reset, barcode serving, duration parsing, card contrast, weekOffset reset, macro field contrast, chart annotations
+
+---
+
+## Previous Sessions
+- Session 2 (April 1-2): 33 commits, Builds 51-53
+- Session 1 (March 29-30): 33 commits, Builds 48-49
