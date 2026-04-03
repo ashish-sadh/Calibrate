@@ -169,6 +169,7 @@ struct FoodTabView: View {
             if !viewModel.isToday {
                 Button {
                     viewModel.goToDate(Date())
+                    weekOffset = 0
                     loggedDays = viewModel.loggedDays(last: 30)
                 } label: {
                     HStack(spacing: 6) {
