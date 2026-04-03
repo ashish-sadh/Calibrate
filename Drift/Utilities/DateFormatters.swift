@@ -37,6 +37,13 @@ enum DateFormatters {
         return f
     }()
 
+    /// Short time display: "8:30 AM"
+    static let shortTime: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        return f
+    }()
+
     /// SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
     static let sqliteDatetime: DateFormatter = {
         let f = DateFormatter()

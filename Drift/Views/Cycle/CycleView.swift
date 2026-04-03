@@ -17,14 +17,7 @@ struct CycleView: View {
     }
 
     private var cycleLengths: [Int] {
-        let starts = periods.map(\.startDate)
-        guard starts.count >= 2 else { return [] }
-        var gaps: [Int] = []
-        for i in 1..<starts.count {
-            let days = Calendar.current.dateComponents([.day], from: starts[i - 1], to: starts[i]).day ?? 0
-            if days > 0 { gaps.append(days) }
-        }
-        return gaps
+        cycleLengthsWithDates.map(\.length)
     }
 
     private var averageCycleLength: Int? {
@@ -594,8 +587,7 @@ struct CycleView: View {
     }
 
     private func fertileWindowDayRange(cycleLength: Int) -> ClosedRange<Int>? {
-        guard let avg = averageCycleLength else { return nil }
-        let ovDay = avg / 2
+        let ovDay = cycleLength / 2
         return max(1, ovDay - 5)...ovDay
     }
 }

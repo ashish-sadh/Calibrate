@@ -470,7 +470,7 @@ struct FoodTabView: View {
     }
 
     private func parseTimestamp(_ str: String) -> Date? {
-        ISO8601DateFormatter().date(from: str)
+        DateFormatters.iso8601.date(from: str)
             ?? DateFormatters.sqliteDatetime.date(from: str)
     }
 
@@ -482,9 +482,7 @@ struct FoodTabView: View {
 
     private func entryTimeString(_ entry: FoodEntry) -> String? {
         guard let date = parseTimestamp(entry.loggedAt) else { return nil }
-        let f = DateFormatter()
-        f.dateFormat = "h:mm a"
-        return f.string(from: date)
+        return DateFormatters.shortTime.string(from: date)
     }
 
     private func copyFromYesterday() {
