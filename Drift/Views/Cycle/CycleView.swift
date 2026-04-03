@@ -13,7 +13,7 @@ struct CycleView: View {
     @State private var showFertileWindow = Preferences.cycleFertileWindow
 
     private var periods: [CyclePeriod] {
-        groupIntoPeriods(entries)
+        CycleCalculations.groupIntoPeriods(entries)
     }
 
     private var cycleLengths: [Int] {
@@ -21,14 +21,11 @@ struct CycleView: View {
     }
 
     private var averageCycleLength: Int? {
-        guard !cycleLengths.isEmpty else { return nil }
-        return cycleLengths.reduce(0, +) / cycleLengths.count
+        CycleCalculations.averageCycleLength(periods: periods)
     }
 
     private var currentCycleDay: Int? {
-        guard let lastStart = periods.last?.startDate else { return nil }
-        let days = Calendar.current.dateComponents([.day], from: lastStart, to: Date()).day ?? 0
-        return days + 1
+        CycleCalculations.currentCycleDay(periods: periods)
     }
 
     private var nextPeriodEstimate: Date? {
@@ -92,7 +89,7 @@ struct CycleView: View {
                     .foregroundStyle(.pink)
 
                 if let avg = averageCycleLength {
-                    if let phase = currentPhase(cycleDay: day, cycleLength: avg) {
+                    if let phase = CycleCalculations.currentPhase(cycleDay: day, cycleLength: avg) {
                         Text(phase)
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(.secondary)
@@ -129,7 +126,7 @@ struct CycleView: View {
     private func timelineCard(cycleDay: Int, cycleLength: Int) -> some View {
         let phases = cyclePhases(cycleLength: cycleLength)
         let progress = min(Double(cycleDay) / Double(cycleLength), 1.0)
-        let currentId = currentPhaseId(cycleDay: cycleDay, cycleLength: cycleLength)
+        let currentId = CycleCalculations.currentPhaseId(cycleDay: cycleDay, cycleLength: cycleLength)
         let fertileRange = fertileWindowDayRange(cycleLength: cycleLength)
 
         return VStack(alignment: .leading, spacing: 10) {
@@ -213,7 +210,7 @@ struct CycleView: View {
             let rhrVal = rhrHistory.first { $0.date >= dateStart && $0.date < dateEnd }?.bpm
 
             if hrvVal != nil || rhrVal != nil {
-                let phase = currentPhaseId(cycleDay: cycleDay, cycleLength: avg)
+                let phase = CycleCalculations.currentPhaseId(cycleDay: cycleDay, cycleLength: avg)
                 points.append(BiometricCyclePoint(
                     cycleDay: cycleDay, phase: phase,
                     hrvMs: hrvVal, rhrBpm: rhrVal
@@ -294,18 +291,8 @@ struct CycleView: View {
 
     // MARK: - Section 4: Cycle Length Trend
 
-    /// Cycle lengths paired with their start dates for chart labels.
     private var cycleLengthsWithDates: [(label: String, length: Int)] {
-        let starts = periods.map(\.startDate)
-        guard starts.count >= 2 else { return [] }
-        var result: [(label: String, length: Int)] = []
-        for i in 1..<starts.count {
-            let days = Calendar.current.dateComponents([.day], from: starts[i - 1], to: starts[i]).day ?? 0
-            if days > 0 {
-                result.append((label: DateFormatters.shortDisplay.string(from: starts[i - 1]), length: days))
-            }
-        }
-        return result
+        CycleCalculations.cycleLengthsWithDates(periods: periods)
     }
 
     private var cycleLengthTrendCard: some View {
@@ -513,7 +500,7 @@ struct CycleView: View {
 
         // Biometric data for correlation chart
         #if targetEnvironment(simulator)
-        let mockPeriods = groupIntoPeriods(entries)
+        let mockPeriods = CycleCalculations.groupIntoPeriods(entries)
         let periodInfo = mockPeriods.enumerated().compactMap { i, p -> (start: Date, length: Int)? in
             if i < mockPeriods.count - 1 {
                 let gap = Calendar.current.dateComponents([.day], from: p.startDate, to: mockPeriods[i + 1].startDate).day ?? 28
@@ -592,64 +579,13 @@ struct CycleView: View {
     }
 }
 
-// MARK: - Period Grouping
-
-private struct CyclePeriod {
-    let startDate: Date
-    let days: [HealthKitService.CycleEntry]
-
-    var endDate: Date { days.last?.date ?? startDate }
-
-    var dominantFlow: Int {
-        let flows = days.map(\.flow).filter { $0 >= 1 && $0 <= 3 }
-        guard !flows.isEmpty else { return 1 }
-        return flows.max() ?? 2
-    }
-
-    var dominantFlowDisplay: String {
-        switch dominantFlow {
-        case 1: "Light"
-        case 2: "Medium"
-        case 3: "Heavy"
-        default: "Light"
-        }
-    }
-}
-
-private func groupIntoPeriods(_ entries: [HealthKitService.CycleEntry]) -> [CyclePeriod] {
-    let flowEntries = entries.filter { $0.flow >= 1 && $0.flow <= 3 }
-    guard !flowEntries.isEmpty else { return [] }
-
-    let sorted = flowEntries.sorted { $0.date < $1.date }
-    var periods: [CyclePeriod] = []
-    var currentDays: [HealthKitService.CycleEntry] = []
-
-    for entry in sorted {
-        if let last = currentDays.last {
-            let gap = Calendar.current.dateComponents([.day], from: last.date, to: entry.date).day ?? 0
-            if gap > 3 {
-                periods.append(CyclePeriod(startDate: currentDays.first!.date, days: currentDays))
-                currentDays = [entry]
-            } else {
-                currentDays.append(entry)
-            }
-        } else {
-            currentDays = [entry]
-        }
-    }
-    if !currentDays.isEmpty {
-        periods.append(CyclePeriod(startDate: currentDays.first!.date, days: currentDays))
-    }
-    return periods
-}
+// MARK: - View-only helpers
 
 private func formatPeriodRange(_ period: CyclePeriod) -> String {
     let start = DateFormatters.shortDisplay.string(from: period.startDate)
     let end = DateFormatters.shortDisplay.string(from: period.endDate)
     return start == end ? start : "\(start) – \(end)"
 }
-
-// MARK: - Biometric Cycle Point
 
 private struct BiometricCyclePoint: Identifiable {
     let id = UUID()
@@ -659,15 +595,12 @@ private struct BiometricCyclePoint: Identifiable {
     let rhrBpm: Double?
 }
 
-// MARK: - Cycle Phase Model
-
 private struct CyclePhase: Identifiable, Equatable {
     let id: String
     let name: String
     let color: Color
     let fraction: Double
     let dayRange: String
-
     static func == (lhs: CyclePhase, rhs: CyclePhase) -> Bool { lhs.id == rhs.id }
 }
 
@@ -675,7 +608,8 @@ private func cyclePhases(cycleLength: Int) -> [CyclePhase] {
     let cl = Double(cycleLength)
     let periodDays = 5
     let ovDays = 2
-    let follicularDays = max(0, cycleLength / 2 - periodDays - 1)
+    let ovDay = CycleCalculations.ovulationDay(cycleLength: cycleLength)
+    let follicularDays = max(0, ovDay - periodDays - 1)
     let lutealDays = max(0, cycleLength - periodDays - follicularDays - ovDays)
 
     var dayStart = 1
@@ -693,21 +627,4 @@ private func cyclePhases(cycleLength: Int) -> [CyclePhase] {
         CyclePhase(id: "luteal", name: "Luteal", color: .blue, fraction: Double(lutealDays) / cl, dayRange: range(lutealDays)),
     ]
 }
-
-private func currentPhase(cycleDay: Int, cycleLength: Int) -> String? {
-    if cycleDay <= 5 { return "Menstrual phase" }
-    let ovDay = max(cycleLength - 14, cycleLength / 2)
-    if cycleDay < ovDay - 1 { return "Follicular phase" }
-    if cycleDay <= ovDay + 1 { return "Ovulation window" }
-    return "Luteal phase"
-}
-
-private func currentPhaseId(cycleDay: Int, cycleLength: Int) -> String {
-    if cycleDay <= 5 { return "period" }
-    let ovDay = max(cycleLength - 14, cycleLength / 2)
-    if cycleDay < ovDay - 1 { return "follicular" }
-    if cycleDay <= ovDay + 1 { return "ovulation" }
-    return "luteal"
-}
-
 
