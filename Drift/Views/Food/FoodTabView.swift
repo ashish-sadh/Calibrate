@@ -79,7 +79,7 @@ struct FoodTabView: View {
                 HStack(spacing: 4) {
                     Text(DateFormatters.monthYear.string(from: viewModel.selectedDate))
                         .font(.caption.weight(.medium)).foregroundStyle(.secondary)
-                    Image(systemName: "chevron.down").font(.system(size: 8)).foregroundStyle(.tertiary)
+                    Image(systemName: "chevron.down").font(.caption2).foregroundStyle(.tertiary)
                 }
             }
             .sheet(isPresented: $showingDatePicker) {

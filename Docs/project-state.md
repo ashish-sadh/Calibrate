@@ -20,9 +20,9 @@ Drift is a local-first iOS health & fitness tracking app. Everything runs on-dev
 - Daily upload limit: ~25 builds/day (hit on Mar 29, resets ~24hr)
 
 ## Current Build
-- Version 0.1.0, build 50 (live on TestFlight)
-- 609 tests, all passing
-- 767 foods, 907 exercises
+- Version 0.1.0, build 54 (live on TestFlight)
+- 626 tests, all passing
+- 795 foods, 960 exercises
 
 ## Tab Structure
 Drift | Weight | Food | Exercise | More
