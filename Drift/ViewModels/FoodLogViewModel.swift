@@ -142,7 +142,8 @@ final class FoodLogViewModel {
             }
 
             todayMeals = grouped
-            todayEntries = all.sorted { $0.loggedAt < $1.loggedAt }
+            // Normalize sort: replace "T" with space so ISO8601 and SQLite formats sort consistently
+            todayEntries = all.sorted { $0.loggedAt.replacingOccurrences(of: "T", with: " ") < $1.loggedAt.replacingOccurrences(of: "T", with: " ") }
             todayNutrition = try database.fetchDailyNutrition(for: date)
         } catch {
             Log.foodLog.error("Failed to load meals: \(error.localizedDescription)")

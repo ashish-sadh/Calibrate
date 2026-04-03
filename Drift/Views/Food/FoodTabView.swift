@@ -10,6 +10,7 @@ struct FoodTabView: View {
     @State private var loggedDays: [Date: Double] = [:]
     @State private var showingDatePicker = false
     @State private var editingEntry: FoodEntry?
+    @State private var isCopying = false
     @State private var editAmount = "1"
     @State private var editUnitIndex = 0
     @State private var editEntryIsFav = false
@@ -486,6 +487,9 @@ struct FoodTabView: View {
     }
 
     private func copyFromYesterday() {
+        guard !isCopying else { return }
+        isCopying = true
+        defer { isCopying = false }
         guard let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: viewModel.selectedDate) else { return }
         let dateStr = DateFormatters.dateOnly.string(from: yesterday)
         guard let logs = try? AppDatabase.shared.fetchMealLogs(for: dateStr) else { return }
