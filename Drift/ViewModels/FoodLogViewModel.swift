@@ -45,7 +45,7 @@ final class FoodLogViewModel {
         let key = "drift_mock_food_seeded_v1"
         guard !UserDefaults.standard.bool(forKey: key) else { return }
         let cal = Calendar.current
-        let iso = ISO8601DateFormatter()
+        let iso = DateFormatters.iso8601
 
         // Seed yesterday and day-before with realistic food logs
         let mockDays: [(dayOffset: Int, meals: [(type: MealType, foods: [(name: String, cal: Double, p: Double, c: Double, f: Double, fiber: Double, hour: Int, min: Int)])])] = [
@@ -215,7 +215,7 @@ final class FoodLogViewModel {
 
             guard let mealLogId = mealLog?.id else { return }
 
-            let now = ISO8601DateFormatter().string(from: Date())
+            let now = DateFormatters.iso8601.string(from: Date())
             var entry = FoodEntry(
                 mealLogId: mealLogId,
                 foodName: name,
