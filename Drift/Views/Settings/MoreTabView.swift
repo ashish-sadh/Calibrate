@@ -125,8 +125,6 @@ struct SettingsView: View {
     @State private var showingFactoryReset = false
     @State private var resetDone = false
     @State private var syncStatus: String?
-    @State private var showingExport = false
-    @State private var exportURL: URL?
 
     var body: some View {
         ScrollView {
@@ -229,8 +227,9 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
 
                     Button {
-                        exportURL = exportWorkoutsCSV()
-                        if exportURL != nil { showingExport = true }
+                        if let url = exportWorkoutsCSV() {
+                            shareFile(url)
+                        }
                     } label: {
                         HStack {
                             Image(systemName: "dumbbell.fill").foregroundStyle(Theme.accent)
@@ -240,8 +239,9 @@ struct SettingsView: View {
                     }
 
                     Button {
-                        exportURL = exportFoodLogsCSV()
-                        if exportURL != nil { showingExport = true }
+                        if let url = exportFoodLogsCSV() {
+                            shareFile(url)
+                        }
                     } label: {
                         HStack {
                             Image(systemName: "fork.knife").foregroundStyle(Theme.accent)
@@ -251,11 +251,6 @@ struct SettingsView: View {
                     }
                 }
                 .card()
-                .sheet(isPresented: $showingExport) {
-                    if let url = exportURL {
-                        ShareSheet(items: [url])
-                    }
-                }
 
                 // Factory Reset
                 VStack(alignment: .leading, spacing: 10) {
@@ -299,6 +294,13 @@ struct SettingsView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
             withAnimation { syncStatus = nil }
         }
+    }
+
+    private func shareFile(_ url: URL) {
+        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let root = scene.windows.first?.rootViewController else { return }
+        let vc = UIActivityViewController(activityItems: [url], applicationActivities: nil)
+        root.present(vc, animated: true)
     }
 
     private func performFactoryReset() {
