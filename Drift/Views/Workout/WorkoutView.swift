@@ -163,7 +163,7 @@ struct WorkoutView: View {
                     VStack(spacing: 12) {
                         Image(systemName: "dumbbell.fill").font(.system(size: 40)).foregroundStyle(Theme.accent.opacity(0.5))
                         Text("No Workouts").font(.headline)
-                        Text("Start a workout or import from Strong").font(.caption).foregroundStyle(.secondary)
+                        Text("Start a workout or import from Strong / Hevy").font(.caption).foregroundStyle(.secondary)
                     }.padding(.top, 30)
                 } else {
                     VStack(alignment: .leading, spacing: 10) {
