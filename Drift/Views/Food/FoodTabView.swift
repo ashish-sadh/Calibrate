@@ -59,29 +59,22 @@ struct FoodTabView: View {
     // MARK: - Date Navigator
 
     private var dateNav: some View {
-        HStack {
-            Button { viewModel.goToPreviousDay(); loggedDays = viewModel.loggedDays(last: 30) } label: {
-                Image(systemName: "chevron.left")
-                    .font(.body.weight(.semibold))
-                    .frame(width: 36, height: 36)
-                    .background(Theme.cardBackgroundElevated, in: Circle())
-            }
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        let selected = cal.startOfDay(for: viewModel.selectedDate)
 
-            Spacer()
+        // Build 7 days centered on selected date (3 before, selected, 3 after)
+        let days: [Date] = (-3...3).compactMap { cal.date(byAdding: .day, value: $0, to: selected) }
+        let dayFormatter: DateFormatter = {
+            let f = DateFormatter(); f.dateFormat = "EEE"; return f
+        }()
 
+        return VStack(spacing: 8) {
+            // Month label — tap to open calendar
             Button { showingDatePicker = true } label: {
-                VStack(spacing: 1) {
-                    if viewModel.isToday {
-                        Text("Today").font(.subheadline.weight(.semibold))
-                    } else {
-                        Text(DateFormatters.dayDisplay.string(from: viewModel.selectedDate))
-                            .font(.subheadline.weight(.semibold))
-                    }
-                    Text(DateFormatters.dateOnly.string(from: viewModel.selectedDate))
-                        .font(.caption2).foregroundStyle(.tertiary)
-                }
+                Text(DateFormatters.monthYear.string(from: viewModel.selectedDate))
+                    .font(.caption.weight(.medium)).foregroundStyle(.secondary)
             }
-            .tint(.primary)
             .sheet(isPresented: $showingDatePicker) {
                 NavigationStack {
                     DatePicker("Go to date", selection: Binding(
@@ -102,25 +95,57 @@ struct FoodTabView: View {
                 .presentationDetents([.medium])
             }
 
-            Spacer()
+            // Day strip — 7 pills
+            HStack(spacing: 6) {
+                ForEach(days, id: \.self) { day in
+                    let isSelected = cal.isDate(day, inSameDayAs: selected)
+                    let isToday = cal.isDate(day, inSameDayAs: today)
 
-            if viewModel.isToday {
-                Color.clear.frame(width: 36)
-            } else {
-                HStack(spacing: 8) {
-                    Button { viewModel.goToNextDay(); loggedDays = viewModel.loggedDays(last: 30) } label: {
-                        Image(systemName: "chevron.right")
-                            .font(.body.weight(.semibold))
-                            .frame(width: 36, height: 36)
-                            .background(Theme.cardBackgroundElevated, in: Circle())
+                    Button {
+                        viewModel.goToDate(day)
+                        loggedDays = viewModel.loggedDays(last: 30)
+                    } label: {
+                        VStack(spacing: 3) {
+                            Text(dayFormatter.string(from: day))
+                                .font(.caption2)
+                                .foregroundStyle(isSelected ? Color.white : Color.gray)
+                            Text("\(cal.component(.day, from: day))")
+                                .font(.subheadline.weight(isSelected ? .bold : .regular).monospacedDigit())
+                                .foregroundStyle(isSelected ? .white : .primary)
+                            // Today dot indicator
+                            Circle()
+                                .fill(isToday ? Theme.accent : Color.clear)
+                                .frame(width: 4, height: 4)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 8)
+                        .background(isSelected ? Theme.accent.opacity(0.3) : Color.clear, in: RoundedRectangle(cornerRadius: 10))
                     }
-                    Button { viewModel.goToDate(Date()); loggedDays = viewModel.loggedDays(last: 30) } label: {
-                        Text("Today").font(.caption.weight(.bold)).foregroundStyle(Theme.accent)
-                    }
+                    .buttonStyle(.plain)
                 }
             }
+
+            // Past-date warning banner
+            if !viewModel.isToday {
+                Button {
+                    viewModel.goToDate(Date())
+                    loggedDays = viewModel.loggedDays(last: 30)
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.caption2).foregroundStyle(Theme.fatYellow)
+                        Text("Viewing \(DateFormatters.dayDisplay.string(from: viewModel.selectedDate))")
+                            .font(.caption.weight(.medium))
+                        Text("· Tap to return to today")
+                            .font(.caption2).foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 8).padding(.horizontal, 12)
+                    .frame(maxWidth: .infinity)
+                    .background(Theme.fatYellow.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(.plain)
+            }
         }
-        .padding(.vertical, 6)
     }
 
     // MARK: - Daily Totals
