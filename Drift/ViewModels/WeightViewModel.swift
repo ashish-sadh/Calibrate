@@ -91,10 +91,26 @@ final class WeightViewModel {
         }
     }
 
+    // Milestone detection
+    var milestoneMessage: String?
+
     func addWeight(value: Double, date: Date = Date()) {
         let kg = weightUnit.convertToKg(value)
         var entry = WeightEntry(date: DateFormatters.dateOnly.string(from: date), weightKg: kg, source: "manual")
         do {
+            // Check for milestone BEFORE saving (compare against existing entries)
+            let existingWeights = allEntries.map(\.weightKg)
+            if !existingWeights.isEmpty {
+                if isLosing {
+                    if let currentMin = existingWeights.min(), kg < currentMin {
+                        milestoneMessage = "New Low! \(String(format: "%.1f", weightUnit.convert(fromKg: kg))) \(weightUnit.displayName)"
+                    }
+                } else {
+                    if let currentMax = existingWeights.max(), kg > currentMax {
+                        milestoneMessage = "New High! \(String(format: "%.1f", weightUnit.convert(fromKg: kg))) \(weightUnit.displayName)"
+                    }
+                }
+            }
             try database.saveWeightEntry(&entry)
             loadEntries()
         } catch {

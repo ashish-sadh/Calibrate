@@ -7,6 +7,7 @@ struct WeightTabView: View {
     @State private var viewModel = WeightViewModel()
     @State private var showingAddWeight = false
     @State private var showLog = false
+    @State private var showMilestone = false
 
     var body: some View {
         NavigationStack {
@@ -57,6 +58,33 @@ struct WeightTabView: View {
         .background(Theme.background.ignoresSafeArea())
         .sheet(isPresented: $showingAddWeight) {
             WeightEntryView(unit: viewModel.weightUnit) { value, date in viewModel.addWeight(value: value, date: date) }
+        }
+        .onChange(of: viewModel.milestoneMessage) { _, message in
+            if message != nil {
+                showMilestone = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                    withAnimation(.easeOut(duration: 0.5)) { showMilestone = false }
+                    viewModel.milestoneMessage = nil
+                }
+            }
+        }
+        .overlay {
+            if showMilestone, let msg = viewModel.milestoneMessage {
+                VStack(spacing: 6) {
+                    Image(systemName: "star.fill")
+                        .font(.title2).foregroundStyle(Theme.fatYellow)
+                    Text(msg)
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(.white)
+                }
+                .padding(.horizontal, 28).padding(.vertical, 16)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                .shadow(color: Theme.accent.opacity(0.3), radius: 20)
+                .scaleEffect(showMilestone ? 1.0 : 0.8)
+                .opacity(showMilestone ? 1.0 : 0)
+                .animation(.spring(response: 0.4, dampingFraction: 0.6), value: showMilestone)
+                .transition(.scale.combined(with: .opacity))
+            }
         }
         .onAppear { viewModel.loadEntries() }
         .task {
