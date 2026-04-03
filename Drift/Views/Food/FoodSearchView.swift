@@ -495,7 +495,9 @@ struct FoodSearchView: View {
                 }
             }
         }
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.fraction(0.65), .large])
+        .presentationBackground(Theme.background)
+        .presentationCornerRadius(20)
     }
 
     private func macroChip(_ label: String, value: Double, color: Color) -> some View {
