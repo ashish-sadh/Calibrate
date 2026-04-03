@@ -345,7 +345,9 @@ struct SettingsView: View {
                 let weight = s.weightLbs.map { String(format: "%.1f", $0) } ?? ""
                 let reps = s.reps.map { "\($0)" } ?? ""
                 let rpe = s.rpe.map { String(format: "%.1f", $0) } ?? ""
-                csv += "\"\(w.date)\",\"\(w.name)\",\"\(s.exerciseName)\",\(s.setOrder),\(weight),\(reps),\(rpe)\n"
+                let eName = s.exerciseName.replacingOccurrences(of: "\"", with: "\"\"")
+                let wName = w.name.replacingOccurrences(of: "\"", with: "\"\"")
+                csv += "\"\(w.date)\",\"\(wName)\",\"\(eName)\",\(s.setOrder),\(weight),\(reps),\(rpe)\n"
             }
         }
         let dateStr = DateFormatters.dateOnly.string(from: Date())
@@ -366,7 +368,8 @@ struct SettingsView: View {
             for log in logs {
                 guard let logId = log.id, let entries = try? db.fetchFoodEntries(forMealLog: logId) else { continue }
                 for e in entries {
-                    csv += "\"\(dateStr)\",\"\(e.foodName)\",\(Int(e.totalCalories)),\(Int(e.totalProtein)),\(Int(e.totalCarbs)),\(Int(e.totalFat)),\(Int(e.totalFiber)),\(String(format: "%.1f", e.servings))\n"
+                    let fName = e.foodName.replacingOccurrences(of: "\"", with: "\"\"")
+                    csv += "\"\(dateStr)\",\"\(fName)\",\(Int(e.totalCalories)),\(Int(e.totalProtein)),\(Int(e.totalCarbs)),\(Int(e.totalFat)),\(Int(e.totalFiber)),\(String(format: "%.1f", e.servings))\n"
                 }
             }
         }

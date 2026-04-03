@@ -333,18 +333,21 @@ enum WorkoutService {
         var sessionsByName: [String: [[String]]] = [:]
         var currentSession: [String: (date: String, exercises: [String])] = [:]
 
+        // Use struct key instead of string concatenation (avoids pipe-in-name bug)
+        struct SessionKey: Hashable { let name: String; let date: String }
+        var sessionMap: [SessionKey: [String]] = [:]
+
         for row in result.rows {
             guard let name = row[nameKey], let exercise = row[exerciseKey],
                   let dateStr = row[dateKey].map({ String($0.prefix(10)) }) else { continue }
-            let key = "\(name)|\(dateStr)"
-            if currentSession[key] == nil { currentSession[key] = (dateStr, []) }
-            if !(currentSession[key]?.exercises.contains(exercise) ?? false) {
-                currentSession[key]?.exercises.append(exercise)
+            let key = SessionKey(name: name, date: dateStr)
+            if sessionMap[key] == nil { sessionMap[key] = [] }
+            if !(sessionMap[key]?.contains(exercise) ?? false) {
+                sessionMap[key]?.append(exercise)
             }
         }
-        for (key, session) in currentSession {
-            let name = String(key.split(separator: "|").first ?? "")
-            sessionsByName[name, default: []].append(session.exercises)
+        for (key, exercises) in sessionMap {
+            sessionsByName[key.name, default: []].append(exercises)
         }
 
         // For each workout name: find exercises appearing in ≥50% of sessions
@@ -371,7 +374,7 @@ enum WorkoutService {
             }
 
             // Keep exercises appearing in ≥50% of sessions, sorted by avg position
-            let threshold = max(1, sessions.count / 2)
+            let threshold = max(2, (sessions.count + 1) / 2) // proper ≥50% rounding up
             let frequent = exerciseFreq.filter { $0.value >= threshold }
                 .sorted { (exerciseOrder[$0.key] ?? 0) / Double($0.value) < (exerciseOrder[$1.key] ?? 0) / Double($1.value) }
                 .map(\.key)
