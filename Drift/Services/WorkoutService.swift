@@ -230,11 +230,13 @@ enum WorkoutService {
         var errorDescription: String? { "Could not access the selected file. Try re-selecting it." }
     }
 
+    /// Import from Strong or Hevy CSV (auto-detected by column names).
     static func importStrongCSV(url: URL) throws -> ImportResult {
         guard url.startAccessingSecurityScopedResource() else { throw ImportError.fileAccessDenied }
         defer { url.stopAccessingSecurityScopedResource() }
 
         let content = try String(contentsOf: url, encoding: .utf8)
+        let isHevy = content.lowercased().contains("exercise_title") || content.lowercased().contains("set_type")
         let result = CSVParser.parse(content: content)
 
         var workoutsByDate: [String: (name: String, duration: String, notes: String)] = [:]
@@ -242,25 +244,43 @@ enum WorkoutService {
         var exerciseNames = Set<String>()
 
         for row in result.rows {
-            guard let dateStr = row["Date"], let exerciseName = row["Exercise Name"] else { continue }
-            let date = String(dateStr.prefix(10))
-            let workoutName = row["Workout Name"] ?? "Workout"
-            let duration = row["Duration"] ?? ""
-            let notes = row["Workout Notes"] ?? ""
+            // Auto-detect column names: Strong vs Hevy
+            let dateStr: String?
+            let exerciseName: String?
+            let workoutName: String
+            let duration: String
+            let notes: String
+
+            if isHevy {
+                dateStr = row["start_time"]
+                exerciseName = row["exercise_title"]
+                workoutName = row["title"] ?? "Workout"
+                duration = "" // Hevy has start_time + end_time, duration computed elsewhere
+                notes = row["description"] ?? ""
+            } else {
+                dateStr = row["Date"]
+                exerciseName = row["Exercise Name"]
+                workoutName = row["Workout Name"] ?? "Workout"
+                duration = row["Duration"] ?? row["Workout Duration"] ?? ""
+                notes = row["Workout Notes"] ?? ""
+            }
+
+            guard let ds = dateStr, let en = exerciseName else { continue }
+            let date = String(ds.prefix(10))
 
             workoutsByDate[date] = (workoutName, duration, notes)
-            exerciseNames.insert(exerciseName)
+            exerciseNames.insert(en)
 
-            let setOrder = Int(row["Set Order"] ?? "1") ?? 1
-            var weight = Double(row["Weight"] ?? "0") ?? 0
-            let reps = Int(Double(row["Reps"] ?? "0") ?? 0)
-            let rpe = Double(row["RPE"] ?? "")
-            let weightUnit = row["Weight Unit"] ?? "lbs"
+            let setOrder = Int(row[isHevy ? "set_index" : "Set Order"] ?? "1") ?? 1
+            var weight = Double(row[isHevy ? "weight_kg" : "Weight"] ?? "0") ?? 0
+            let reps = Int(Double(row[isHevy ? "reps" : "Reps"] ?? "0") ?? 0)
+            let rpe = Double(row[isHevy ? "rpe" : "RPE"] ?? "")
+            let weightUnit = isHevy ? "kg" : (row["Weight Unit"] ?? "lbs")
 
             // Convert kg to lbs if needed (our DB stores lbs)
             if weightUnit.lowercased() == "kg" { weight *= 2.20462 }
 
-            let set = WorkoutSet(workoutId: 0, exerciseName: exerciseName, setOrder: setOrder,
+            let set = WorkoutSet(workoutId: 0, exerciseName: en, setOrder: setOrder,
                                  weightLbs: weight, reps: reps, isWarmup: false, rpe: rpe)
             setsByDate[date, default: []].append(set)
         }
@@ -295,9 +315,11 @@ enum WorkoutService {
         }
 
         // Auto-extract templates from recurring workout names
-        var templatesByName: [String: [String]] = [:] // workoutName → [exerciseNames in order]
+        let nameKey = isHevy ? "title" : "Workout Name"
+        let exerciseKey = isHevy ? "exercise_title" : "Exercise Name"
+        var templatesByName: [String: [String]] = [:]
         for row in result.rows {
-            guard let name = row["Workout Name"], let exercise = row["Exercise Name"] else { continue }
+            guard let name = row[nameKey], let exercise = row[exerciseKey] else { continue }
             if templatesByName[name] == nil { templatesByName[name] = [] }
             if !(templatesByName[name]?.contains(exercise) ?? false) {
                 templatesByName[name]?.append(exercise)
@@ -309,9 +331,10 @@ enum WorkoutService {
         let existingTemplates = Set((try? fetchTemplates())?.map(\.name) ?? [])
         for (name, exercises) in templatesByName where exercises.count >= 2 {
             // Only create if this workout name appears in multiple dates AND isn't already a template
+            let dateKey = isHevy ? "start_time" : "Date"
             let datesWithName = Set(result.rows.compactMap { row -> String? in
-                guard row["Workout Name"] == name else { return nil }
-                return row["Date"].map { String($0.prefix(10)) }
+                guard row[nameKey] == name else { return nil }
+                return row[dateKey].map { String($0.prefix(10)) }
             })
             guard datesWithName.count >= 2, !existingTemplates.contains(name) else { continue }
 
