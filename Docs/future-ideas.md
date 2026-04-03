@@ -156,6 +156,30 @@ These are larger changes identified during autonomous sessions that require huma
 5. **Watch-assisted workout hints**: If Apple Watch detects elevated HR + wrist motion pattern, suggest "Starting a workout?" in the app. Do not auto-log -- just prompt.
 6. **Confirm-not-log pattern**: Any AI suggestion should be presented for human confirmation, never silently logged. Reduces frustration from wrong guesses.
 
+## UX Research (April 2026)
+
+### Highest-Impact Food Logging Improvements
+1. **Saved meals (one-tap re-log)**: Users eat the same breakfast ~80% of the time. Save multi-item meals and re-log with one tap. *(Lose It!, MFP — easy)*
+2. **Time-of-day search context**: Show coffee/oats in morning search, protein at dinner. Boost relevance without changing ranking algorithm. *(Lose It! — easy)*
+3. **Quick-add raw calories**: Dedicated "just enter 500 cal" button for eating out, no food search needed. *(MFP — easy)*
+4. **Voice food logging**: "Two eggs and toast" → parsed via iOS Speech framework. SnackSmart does this on-device. *(medium)*
+5. **AI photo recognition**: Passio Nutrition-AI SDK — on-device Core ML, 2.5M food DB, iOS Swift Package, token pricing ($2.50/M). Privacy-compatible. *(hard, but SDK handles ML)*
+
+### Exercise Logging Improvements
+1. **Single-tap set completion**: Show prefilled weight/reps from last session, tap checkmark to confirm. Minimize taps. *(Setgraph — easy)*
+2. **Swipe gestures on sets**: Swipe to adjust reps +/- 1 instead of opening picker. *(medium)*
+3. **Post-workout summary card**: Shareable card with PRs, volume, duration. *(Hevy — medium)*
+
+### Exercise Media (for user's research question)
+- **ExerciseDB API**: 11,000+ exercises with GIFs/images. Open source on GitHub. *(free — medium to integrate)*
+- **Wger**: Open source, 500 exercises with illustrations. *(free — medium)*
+- **Strategy**: Lazy-download GIFs per exercise on first view. Bundle nothing. Show in exercise detail sheet.
+
+### Reducing Logging Fatigue
+- Streaks + "don't break the chain" counter (Drift has heatmaps, add streak number)
+- Progressive disclosure: calories-only default, expand for macros
+- Weekly summary notification: "6/7 days logged, X cal avg"
+
 ### Key risk to monitor
 
 - **Apple Health+ with built-in food tracking** could launch at WWDC 2026. If Apple adds native calorie logging to the Health app, it changes the competitive landscape. Drift's advantage would be its algorithm (TDEE, projections, goal tracking) rather than raw food logging.
