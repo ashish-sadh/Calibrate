@@ -268,8 +268,10 @@ enum WorkoutService {
             let durStr = info.duration.lowercased()
             if durStr.contains("h") || durStr.contains("m") {
                 let parts = durStr.components(separatedBy: CharacterSet.decimalDigits.inverted).filter { !$0.isEmpty }
-                if durStr.contains("h") && parts.count >= 2 {
-                    durationSec = (Int(parts[0]) ?? 0) * 3600 + (Int(parts[1]) ?? 0) * 60
+                if durStr.contains("h") {
+                    let hours = Int(parts.first ?? "0") ?? 0
+                    let minutes = parts.count >= 2 ? (Int(parts[1]) ?? 0) : 0
+                    durationSec = hours * 3600 + minutes * 60
                 } else if let m = Int(parts.first ?? "") {
                     durationSec = m * 60
                 }
