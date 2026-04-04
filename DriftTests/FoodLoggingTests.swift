@@ -1947,4 +1947,61 @@ import GRDB
     #expect(str == "2:30 PM")
 }
 
+// MARK: - Scanned Product Unit Tests
+
+@Test func smartUnitScannedMilkGetsMl() async throws {
+    // Scanned "Amul Toned Milk" with 240ml serving from OpenFoodFacts
+    let food = Food(name: "Amul Toned Milk - Amul", category: "Scanned", servingSize: 240, servingUnit: "g", calories: 120)
+    let units = FoodUnit.smartUnits(for: food)
+    #expect(units.first?.label == "ml", "Scanned milk should get ml as primary, got: \(units.first?.label ?? "nil")")
+    #expect(units.contains(where: { $0.label == "cup" }), "Should have cup option")
+    #expect(units.contains(where: { $0.label == "g" }), "Should have grams option")
+}
+
+@Test func smartUnitScannedChipsGetsServing() async throws {
+    // Scanned "Lay's Classic" with 28g serving — must NOT match "lassi" in "classic"
+    let food = Food(name: "Lay's Classic Potato Chips - Frito-Lay", category: "Scanned", servingSize: 28, servingUnit: "g", calories: 160)
+    let units = FoodUnit.smartUnits(for: food)
+    #expect(units.first?.label == "serving", "Chips should get serving as primary, got: \(units.first?.label ?? "nil")")
+    #expect(units.first?.gramsEquivalent == 28, "Serving should be 28g, got: \(units.first?.gramsEquivalent ?? 0)")
+    #expect(units.contains(where: { $0.label == "g" }), "Should have grams option")
+    #expect(!units.contains(where: { $0.label == "ml" }), "Chips should NOT get ml unit")
+}
+
+@Test func smartUnitScannedOilGetsTbsp() async throws {
+    let food = Food(name: "Extra Virgin Olive Oil - Bertolli", category: "Scanned", servingSize: 15, servingUnit: "g", calories: 120)
+    let units = FoodUnit.smartUnits(for: food)
+    #expect(units.first?.label == "tbsp", "Scanned oil should get tbsp")
+}
+
+@Test func smartUnitScannedYogurtGetsCup() async throws {
+    let food = Food(name: "Greek Yogurt - Chobani", category: "Scanned", servingSize: 170, servingUnit: "g", calories: 100)
+    let units = FoodUnit.smartUnits(for: food)
+    #expect(units.contains(where: { $0.label == "cup" }), "Yogurt should have cup option")
+}
+
+@Test func scannedFoodServingSizePreserved() async throws {
+    // Verify that when saving a scanned food with non-100g serving, it persists
+    let db = try AppDatabase.empty()
+    var food = Food(name: "Test Scanned Product", category: "Scanned", servingSize: 30, servingUnit: "g", calories: 150)
+    try db.saveScannedFood(&food)
+    let results = try db.searchFoods(query: "Test Scanned Product")
+    #expect(results.count == 1)
+    #expect(results[0].servingSize == 30, "Serving size should be 30g, got: \(results[0].servingSize)")
+}
+
+@Test func scannedFoodMultiplierCalculation() async throws {
+    // 28g serving, user picks 2 servings → multiplier should be 2
+    let servingG: Double = 28
+    let amount: Double = 2
+    let unit = FoodUnit(label: "serving", gramsEquivalent: servingG)
+    let totalGrams = amount * unit.gramsEquivalent
+    let multiplier = totalGrams / servingG
+    #expect(multiplier == 2.0)
+    // 100g in grams → multiplier should be 100/28 ≈ 3.57
+    let gUnit = FoodUnit(label: "g", gramsEquivalent: 1)
+    let gMultiplier = (100 * gUnit.gramsEquivalent) / servingG
+    #expect(abs(gMultiplier - 3.571) < 0.01)
+}
+
 enum TestError: Error { case msg(String); init(_ s: String) { self = .msg(s) } }

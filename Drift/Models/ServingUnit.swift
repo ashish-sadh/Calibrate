@@ -167,9 +167,10 @@ struct FoodUnit: Hashable {
     /// Returns food-appropriate units. First unit is the most natural for this food.
     static func smartUnits(for food: Food) -> [FoodUnit] {
         let lower = food.name.lowercased()
+        let words = Set(lower.split(whereSeparator: { !$0.isLetter }).map { String($0) })
         var units: [FoodUnit] = []
 
-        let primary = primaryUnit(for: lower, servingSize: food.servingSize)
+        let primary = primaryUnit(for: lower, servingSize: food.servingSize, words: words)
         units.append(primary)
 
         if primary.label != "g" {
@@ -213,9 +214,10 @@ struct FoodUnit: Hashable {
             units.append(FoodUnit(label: "piece", gramsEquivalent: pieceWeight))
         }
 
-        let liquidFoods = ["milk", "juice", "lassi", "buttermilk", "coconut water",
-                           "smoothie", "broth", "soup", "shake"]
-        if liquidFoods.contains(where: { lower.contains($0) }) {
+        let liquidSubstrings = ["milk", "juice", "buttermilk", "coconut water",
+                                "smoothie", "broth", "soup", "shake"]
+        let isLiquid = liquidSubstrings.contains(where: { lower.contains($0) }) || words.contains("lassi")
+        if isLiquid {
             if primary.label != "ml" {
                 units.append(FoodUnit(label: "ml", gramsEquivalent: 1))
             }
@@ -241,7 +243,7 @@ struct FoodUnit: Hashable {
         return units
     }
 
-    private static func primaryUnit(for name: String, servingSize: Double) -> FoodUnit {
+    private static func primaryUnit(for name: String, servingSize: Double, words: Set<String> = []) -> FoodUnit {
         let ss = servingSize > 0 ? servingSize : 100
 
         // Countable items
@@ -273,9 +275,9 @@ struct FoodUnit: Hashable {
             return FoodUnit(label: "tbsp", gramsEquivalent: 14)
         }
 
-        // Liquid items
-        if name.contains("milk") || name.contains("juice") || name.contains("lassi") ||
-           name.contains("chai") || name.contains("tea") || name.contains("coffee") ||
+        // Liquid items (use word boundaries to avoid false matches like "classic" → "lassi")
+        if words.contains("milk") || name.contains("juice") || words.contains("lassi") ||
+           words.contains("chai") || words.contains("tea") || words.contains("coffee") ||
            name.contains("buttermilk") {
             return FoodUnit(label: "ml", gramsEquivalent: 1)
         }
