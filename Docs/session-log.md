@@ -1,9 +1,10 @@
 # Self-Improvement Session Log
 
-## Session 4 (April 3, 2026) — COMPLETED
+## Session 4 (April 3, 2026) — IN PROGRESS
 - **Commits**: 16
-- **Tests**: 640 → 662 (+22, 0 regressions)
-- **Food DB**: 817 → 974 foods (+127 Indian, +30 global), 8 USDA corrections
+- **Commits**: 26
+- **Tests**: 640 → 663 (+23, 0 regressions, 2 flaky tests fixed)
+- **Food DB**: 817 → 979 foods (+127 Indian, +30 global, +5 spirits), 8 USDA corrections
 
 ### New Features
 - Cycle tracking from Apple Health (6-section view: hero, timeline, biometric correlation chart, cycle length trend, fertile window, history)
@@ -36,6 +37,8 @@
 ### Barcode Scanner Fix
 - Scanned foods now use smart unit picker (ml, cup, g, tbsp) instead of bare "100g servings" stepper
 - Uses actual product serving size from OpenFoodFacts, not hardcoded 100g
+- Fixed critical display bug: preview showed per-100g values instead of per-serving
+- "Scan Another" now properly resets OCR state
 
 ### Research
 - UX research curated to Docs/future-ideas.md (food/exercise logging, AI photo, exercise GIFs)
