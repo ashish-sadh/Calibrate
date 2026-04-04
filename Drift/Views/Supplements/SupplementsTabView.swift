@@ -50,7 +50,8 @@ struct SupplementsTabView: View {
                         .buttonStyle(.bordered).tint(Theme.accent)
                     }
 
-                    // Checklist
+                    // Checklist (only render card if supplements exist)
+                    if !viewModel.supplements.isEmpty {
                     VStack(spacing: 0) {
                         ForEach(Array(viewModel.supplements.enumerated()), id: \.element.id) { index, supplement in
                             Button {
@@ -117,6 +118,7 @@ struct SupplementsTabView: View {
                         }
                     }
                     .card()
+                    } // end if supplements not empty
 
                     if viewModel.supplements.isEmpty {
                         VStack(spacing: 12) {

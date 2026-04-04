@@ -439,7 +439,7 @@ struct GlucoseTabView: View {
                     Text("Dip to \(Int(dip.value)) mg/dL")
                         .font(.caption)
                     Spacer()
-                    Text("\(Int(dip.deviation)) below avg")
+                    Text("\(Int(abs(dip.deviation))) below avg")
                         .font(.caption2.monospacedDigit())
                         .foregroundStyle(Theme.calorieBlue)
                     Text(formatEventTime(dip.date))

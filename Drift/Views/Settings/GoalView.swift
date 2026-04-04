@@ -517,7 +517,10 @@ struct GoalSetupView: View {
                     Button("Save") {
                         guard let target = Double(targetWeight) else { return }
                         let targetKg = unit.convertToKg(target)
-                        let currentKg = getCurrentWeight() ?? targetKg
+                        guard let currentKg = getCurrentWeight() ?? existingGoal?.startWeightKg else {
+                            // No weight data at all — need at least one weight entry
+                            return
+                        }
 
                         let calOverride = Double(calorieTarget)
                         let goal = WeightGoal(

@@ -100,8 +100,11 @@ struct WeightChartView: View {
 
     private var averageWeight: Double {
         let a = displayPoints.compactMap(\.actual)
-        guard !a.isEmpty else { return 0 }
-        return a.reduce(0, +) / Double(a.count)
+        if !a.isEmpty { return a.reduce(0, +) / Double(a.count) }
+        // Fallback to EMA values if no raw weights in range
+        let e = displayPoints.compactMap(\.ema)
+        guard !e.isEmpty else { return 0 }
+        return e.reduce(0, +) / Double(e.count)
     }
 
     private var totalDifference: Double? {

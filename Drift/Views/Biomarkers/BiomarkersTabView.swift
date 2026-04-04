@@ -89,7 +89,7 @@ struct BiomarkersTabView: View {
 
     private var donutSummary: some View {
         let counts = statusCounts
-        let total = latestResults.count
+        let total = counts.optimal + counts.sufficient + counts.outOfRange
 
         return VStack(spacing: 12) {
             ZStack {
