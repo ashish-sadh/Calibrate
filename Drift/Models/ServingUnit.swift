@@ -190,9 +190,8 @@ struct FoodUnit: Hashable {
             units.append(FoodUnit(label: "tbsp", gramsEquivalent: 15))
         }
 
-        // Oils — add spray, ml, tsp alongside tbsp
-        let oilFoods = ["oil", "ghee"]
-        if oilFoods.contains(where: { lower.contains($0) }) {
+        // Oils — add spray, ml, tsp alongside tbsp (word boundary: "boiled" contains "oil")
+        if words.contains("oil") || words.contains("ghee") {
             if !units.contains(where: { $0.label == "spray" }) {
                 units.append(FoodUnit(label: "spray", gramsEquivalent: 0.25)) // ~1 cal per spray
             }
@@ -270,9 +269,9 @@ struct FoodUnit: Hashable {
         if name.contains("pistachio") { return FoodUnit(label: "serving", gramsEquivalent: ss) }
         if name.contains("walnut") { return FoodUnit(label: "serving", gramsEquivalent: ss) }
 
-        // Tablespoon items
-        if name.contains("oil") || name.contains("ghee") { return FoodUnit(label: "tbsp", gramsEquivalent: 15) }
-        if name.contains("butter") && !name.contains("peanut") && !name.contains("almond") && !name.contains("paneer") {
+        // Tablespoon items (word boundaries: "boiled" contains "oil", "butternut" contains "butter")
+        if words.contains("oil") || words.contains("ghee") { return FoodUnit(label: "tbsp", gramsEquivalent: 15) }
+        if words.contains("butter") && !name.contains("peanut") && !name.contains("almond") && !name.contains("paneer") {
             return FoodUnit(label: "tbsp", gramsEquivalent: 14)
         }
 

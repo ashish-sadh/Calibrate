@@ -1995,6 +1995,22 @@ import GRDB
     #expect(units.first?.label != "egg", "Veggie burger must not get egg, got: \(units.first?.label ?? "nil")")
 }
 
+@Test func smartUnitBoiledEggNotOil() async throws {
+    // "boiled" contains "oil" — must NOT get tbsp units
+    let food = Food(name: "Egg (whole, boiled)", category: "Protein", servingSize: 50, servingUnit: "g", calories: 72)
+    let units = FoodUnit.smartUnits(for: food)
+    #expect(units.first?.label == "egg", "Boiled egg should get egg unit, got: \(units.first?.label ?? "nil")")
+    #expect(!units.contains(where: { $0.label == "tbsp" }), "Boiled egg should NOT get tbsp")
+    #expect(!units.contains(where: { $0.label == "spray" }), "Boiled egg should NOT get spray")
+}
+
+@Test func smartUnitButternutSquashNotButter() async throws {
+    // "butternut" contains "butter" — must NOT get tbsp
+    let food = Food(name: "Butternut Squash (cooked)", category: "Vegetables", servingSize: 200, servingUnit: "g", calories: 82)
+    let units = FoodUnit.smartUnits(for: food)
+    #expect(units.first?.label != "tbsp", "Butternut squash must not get tbsp")
+}
+
 @Test func smartUnitSteamedRiceNotLiquid() async throws {
     // "steamed" contains "tea" — must NOT get ml
     let food = Food(name: "Steamed Rice (white)", category: "Grains", servingSize: 200, servingUnit: "g", calories: 260)
