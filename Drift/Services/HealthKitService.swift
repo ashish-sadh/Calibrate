@@ -802,6 +802,9 @@ final class HealthKitService {
     }
 
     func writeNutrition(calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double, date: Date) async throws {
+        #if targetEnvironment(simulator)
+        return // No write access on simulator
+        #else
         guard isAvailable else { return }
         var samples: [HKQuantitySample] = []
         func addSample(_ id: HKQuantityTypeIdentifier, value: Double, unit: HKUnit) {
@@ -816,6 +819,7 @@ final class HealthKitService {
         guard !samples.isEmpty else { return }
         try await healthStore.save(samples)
         Log.healthKit.info("Wrote nutrition: \(Int(calories))cal \(Int(proteinG))P \(Int(carbsG))C \(Int(fatG))F")
+    #endif
     }
 
     private func fetchDaySum(typeIdentifier: HKQuantityTypeIdentifier, for date: Date, unit: HKUnit = .kilocalorie()) async throws -> Double {
