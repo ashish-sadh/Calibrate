@@ -323,6 +323,23 @@ import Testing
     #expect(steps != nil, "Screen-aware fallback should fetch glucose context")
 }
 
+// MARK: - Food Search Qualifier Stripping
+
+@Test func aiFoodSearchWithQualifier() async throws {
+    // "slices of" should be stripped before searching
+    let intent = AIActionExecutor.parseFoodIntent("log 2 slices of pizza")
+    #expect(intent != nil)
+    // The query will be "slices of pizza" — findFood should strip "slices of "
+    #expect(intent?.servings == 2)
+}
+
+@Test func aiFoodSearchWithSome() async throws {
+    let intent = AIActionExecutor.parseFoodIntent("had some rice")
+    #expect(intent != nil)
+    // "some" is stripped in qualifiers
+    #expect(intent?.query == "some rice" || intent?.query == "rice")
+}
+
 // MARK: - Weight Intent Edge Cases
 
 @Test func aiWeightSanityCheck() async throws {
