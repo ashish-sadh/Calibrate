@@ -19,11 +19,12 @@ enum AIScreen: String, Sendable {
 // MARK: - Chain of Thought
 
 /// Multi-step reasoning: classifies queries, fetches relevant data, then calls LLM once with enriched context.
+@MainActor
 enum AIChainOfThought {
 
     struct Step {
         let label: String
-        let fetch: @Sendable () -> String
+        let fetch: () -> String
     }
 
     /// Determine if a query needs multi-step data fetching before answering.
@@ -102,7 +103,6 @@ enum AIChainOfThought {
     }
 
     /// Execute chain: run steps to gather data, build enriched context, call LLM once.
-    @MainActor
     static func execute(
         query: String,
         screen: AIScreen,

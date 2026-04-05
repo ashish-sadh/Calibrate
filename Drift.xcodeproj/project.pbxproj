@@ -98,6 +98,7 @@
 		DF025680665178535364944C /* WeightTrendCalculatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F51E9EC49412B4F96068D35 /* WeightTrendCalculatorTests.swift */; };
 		DFCF8C1D8A9F7A20072F37C0 /* HealthKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F57B8BA8C0B119CF10614F14 /* HealthKitService.swift */; };
 		DFFA7CC42D60E67CB40222E8 /* WeightChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ABDC86BA4516AA3699FE080 /* WeightChartView.swift */; };
+		E005CF28B290C9D3A57C6264 /* AIDataCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B05CAB03715CB2E39F8E8262 /* AIDataCache.swift */; };
 		E083B1E037CD15A623ABFF2D /* FoodEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF03B01EDE878137C97C5012 /* FoodEntry.swift */; };
 		E0F86EB4273E7AC079F525CE /* LabReportOCR.swift in Sources */ = {isa = PBXBuildFile; fileRef = E342C8090873CF9612C8A63E /* LabReportOCR.swift */; };
 		E10A3A33C9E718C1D077AC02 /* WeightEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 217B3F5DA6C6AA9BB267D9F3 /* WeightEntryView.swift */; };
@@ -199,6 +200,7 @@
 		AE2809389EE890A3F01ED675 /* FoodLogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodLogViewModel.swift; sourceTree = "<group>"; };
 		AE42BE067CE617760E08B051 /* DEXARegion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DEXARegion.swift; sourceTree = "<group>"; };
 		AFCD031A1C605FBFFDF1B7D0 /* ServingUnit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServingUnit.swift; sourceTree = "<group>"; };
+		B05CAB03715CB2E39F8E8262 /* AIDataCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIDataCache.swift; sourceTree = "<group>"; };
 		B0653C13FD227ACE4F774C46 /* ExerciseDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseDatabase.swift; sourceTree = "<group>"; };
 		B0C555B3F9005A7C75FAAD51 /* DashboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewModel.swift; sourceTree = "<group>"; };
 		B0DAF3E5EFC6C85282C084A8 /* GlucoseTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlucoseTabView.swift; sourceTree = "<group>"; };
@@ -488,6 +490,7 @@
 				64BFDDB952907C50869B4078 /* AIBackend.swift */,
 				B0EFA5472653570BDFE77155 /* AIChainOfThought.swift */,
 				AB907D183F2E9999A4BC3915 /* AIContextBuilder.swift */,
+				B05CAB03715CB2E39F8E8262 /* AIDataCache.swift */,
 				377CCA5F9E895164E95EC65E /* AIModelManager.swift */,
 				237FC00B086CC3785B482588 /* AIRuleEngine.swift */,
 				42CC554F9454FF0FC8A31F56 /* BiomarkerKnowledgeBase.swift */,
@@ -656,6 +659,7 @@
 				EBB7CC6399A751DB3037402E /* AIChainOfThought.swift in Sources */,
 				E16388BC43C225F2C6B7368A /* AIChatView.swift in Sources */,
 				12D17153112FD530712D6FC6 /* AIContextBuilder.swift in Sources */,
+				E005CF28B290C9D3A57C6264 /* AIDataCache.swift in Sources */,
 				C2CAF32E19EB6A66F3C6554E /* AIModelManager.swift in Sources */,
 				BE6B98B254C7B200F8428F01 /* AIRuleEngine.swift in Sources */,
 				3375CEC1D52AFAE8D81F4012 /* AISetupView.swift in Sources */,

@@ -143,6 +143,7 @@ struct FloatingAIAssistant: View {
                 downloadPrompt
             } else {
                 AIChatView()
+                    .task { await AIDataCache.shared.refreshIfNeeded() }
             }
         }
         .frame(height: UIScreen.main.bounds.height * 0.55)

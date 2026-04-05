@@ -2,6 +2,7 @@ import Foundation
 
 /// Builds rich, context-specific prompts for AI interactions.
 /// Each action/page gets tailored data injected into the prompt.
+@MainActor
 enum AIContextBuilder {
 
     // MARK: - Main Entry Point
@@ -315,13 +316,101 @@ enum AIContextBuilder {
         }
     }
 
-    // MARK: - New Context Builders (stub — Phase 2 fills these in)
+    // MARK: - Sleep & Recovery Context
 
-    static func sleepRecoveryContext() -> String { "" }
-    static func glucoseContext() -> String { "" }
-    static func biomarkerContext() -> String { "" }
-    static func dexaContext() -> String { "" }
-    static func cycleContext() -> String { "" }
+    static func sleepRecoveryContext() -> String {
+        guard let data = AIDataCache.shared.sleep else { return "No sleep data available." }
+        var lines: [String] = ["Sleep & Recovery:"]
+        if data.sleepHours > 0 {
+            lines.append("  Last night: \(String(format: "%.1f", data.sleepHours))h sleep")
+        }
+        if let detail = data.sleepDetail {
+            if detail.remHours > 0 { lines.append("  REM: \(String(format: "%.1f", detail.remHours))h") }
+            if detail.deepHours > 0 { lines.append("  Deep: \(String(format: "%.1f", detail.deepHours))h") }
+        }
+        if data.hrvMs > 0 { lines.append("  HRV: \(Int(data.hrvMs))ms") }
+        if data.restingHR > 0 { lines.append("  Resting HR: \(Int(data.restingHR)) bpm") }
+        lines.append("  Recovery score: \(data.recoveryScore)/100")
+        return lines.joined(separator: "\n")
+    }
+
+    // MARK: - Glucose Context
+
+    static func glucoseContext() -> String {
+        let today = DateFormatters.todayString
+        guard let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: Date()) else { return "" }
+        let endStr = DateFormatters.dateOnly.string(from: tomorrow)
+        guard let readings = try? AppDatabase.shared.fetchGlucoseReadings(from: today, to: endStr),
+              !readings.isEmpty else { return "No glucose data today." }
+
+        let values = readings.map(\.glucoseMgdl)
+        let avg = values.reduce(0, +) / Double(values.count)
+        let inNormal = readings.filter { $0.zone == .normal }.count
+        let spikes = readings.filter { $0.glucoseMgdl > 140 }.count
+
+        return "Glucose today (\(readings.count) readings): avg \(Int(avg)) mg/dL, range \(Int(values.min() ?? 0))-\(Int(values.max() ?? 0)), \(Int(Double(inNormal) / Double(readings.count) * 100))% in normal zone, \(spikes) spike\(spikes == 1 ? "" : "s") >140"
+    }
+
+    // MARK: - Biomarker Context
+
+    static func biomarkerContext() -> String {
+        guard let results = try? AppDatabase.shared.fetchLatestBiomarkerResults(),
+              !results.isEmpty else { return "No lab results on file." }
+
+        var lines = ["Latest biomarkers (\(results.count) markers):"]
+        var optimalCount = 0
+
+        // Show out-of-range and sufficient first (most actionable)
+        for r in results {
+            guard let def = BiomarkerKnowledgeBase.byId[r.biomarkerId] else { continue }
+            let status = def.status(for: r.normalizedValue)
+            if status == .optimal {
+                optimalCount += 1
+            } else {
+                lines.append("  \(def.name): \(String(format: "%.1f", r.value)) \(r.unit) [\(status.label)]")
+            }
+        }
+        lines.append("  \(optimalCount)/\(results.count) in optimal range")
+        return lines.prefix(12).joined(separator: "\n") // Cap to fit context window
+    }
+
+    // MARK: - DEXA / Body Composition Context
+
+    static func dexaContext() -> String {
+        guard let scans = try? AppDatabase.shared.fetchDEXAScans(),
+              let latest = scans.first else { return "No DEXA data on file." }
+
+        var lines = ["DEXA scan (\(latest.scanDate)):"]
+        if let bf = latest.bodyFatPct { lines.append("  Body fat: \(String(format: "%.1f", bf))%") }
+        if let lean = latest.leanMassLbs { lines.append("  Lean mass: \(String(format: "%.1f", lean)) lbs") }
+        if let fat = latest.fatMassLbs { lines.append("  Fat mass: \(String(format: "%.1f", fat)) lbs") }
+        if let visc = latest.visceralFatKg { lines.append("  Visceral fat: \(String(format: "%.2f", visc)) kg") }
+
+        // Compare with previous scan if available
+        if scans.count > 1 {
+            let prev = scans[1]
+            if let curBf = latest.bodyFatPct, let prevBf = prev.bodyFatPct {
+                lines.append("  Change from \(prev.scanDate): \(String(format: "%+.1f", curBf - prevBf))% body fat")
+            }
+            if let curLean = latest.leanMassKg, let prevLean = prev.leanMassKg {
+                let deltaLbs = (curLean - prevLean) * 2.20462
+                lines.append("  Lean mass: \(String(format: "%+.1f", deltaLbs)) lbs")
+            }
+        }
+        return lines.joined(separator: "\n")
+    }
+
+    // MARK: - Cycle Context
+
+    static func cycleContext() -> String {
+        guard let data = AIDataCache.shared.cycle, data.periodCount >= 2 else { return "" }
+
+        var lines = ["Cycle:"]
+        if let day = data.currentCycleDay { lines.append("  Day \(day) of cycle") }
+        if let phase = data.currentPhase { lines.append("  Phase: \(phase)") }
+        if let avg = data.avgCycleLength { lines.append("  Average cycle: \(avg) days") }
+        return lines.joined(separator: "\n")
+    }
 
     // MARK: - App Feature Context (always included so LLM can answer about Drift)
 
