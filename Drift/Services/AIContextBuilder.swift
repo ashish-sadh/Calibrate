@@ -11,9 +11,8 @@ enum AIContextBuilder {
     static func buildContext(tab: Int = 0, action: String? = nil) -> String {
         var parts: [String] = []
 
-        // Always include base context + app features
+        // Always include base context
         parts.append(baseContext())
-        parts.append(featureContext())
 
         // Action-specific or page-specific context
         if let action {

@@ -143,6 +143,95 @@ import Testing
     #expect(intent?.unit == .kg)
 }
 
+// MARK: - Multi-Food Parsing
+
+@Test func aiMultiFoodParsing() async throws {
+    let intents = AIActionExecutor.parseMultiFoodIntent("log chicken and rice")
+    #expect(intents != nil)
+    #expect(intents?.count == 2)
+    #expect(intents?[0].query == "chicken")
+    #expect(intents?[1].query == "rice")
+}
+
+@Test func aiMultiFoodWithAmounts() async throws {
+    let intents = AIActionExecutor.parseMultiFoodIntent("ate 2 eggs and toast")
+    #expect(intents != nil)
+    #expect(intents?.count == 2)
+    #expect(intents?[0].query == "eggs")
+    #expect(intents?[0].servings == 2)
+    #expect(intents?[1].query == "toast")
+}
+
+@Test func aiMultiFoodSingleItem() async throws {
+    // Single item should return nil (use parseFoodIntent instead)
+    let intents = AIActionExecutor.parseMultiFoodIntent("log banana")
+    #expect(intents == nil)
+}
+
+// MARK: - Chain-of-Thought Tests
+
+@Test @MainActor func aiChainOfThoughtWeightQuery() async throws {
+    let steps = AIChainOfThought.plan(query: "am I on track?", screen: .weight)
+    #expect(steps != nil, "Weight query should trigger chain-of-thought")
+    #expect(steps?.contains(where: { $0.label.contains("weight") }) == true)
+}
+
+@Test @MainActor func aiChainOfThoughtFoodQuery() async throws {
+    let steps = AIChainOfThought.plan(query: "what should I eat for dinner?", screen: .food)
+    #expect(steps != nil)
+    #expect(steps?.contains(where: { $0.label.contains("meals") }) == true)
+}
+
+@Test @MainActor func aiChainOfThoughtSimpleQuery() async throws {
+    let steps = AIChainOfThought.plan(query: "hello", screen: .dashboard)
+    #expect(steps == nil, "Simple query should not trigger chain-of-thought")
+}
+
+@Test @MainActor func aiChainOfThoughtOverview() async throws {
+    let steps = AIChainOfThought.plan(query: "how am I doing?", screen: .dashboard)
+    #expect(steps != nil)
+    #expect(steps?.count ?? 0 >= 2, "Overview should fetch multiple data sources")
+}
+
+// MARK: - Response Cleaner Tests
+
+@Test func aiResponseCleanerRemovesArtifacts() async throws {
+    let dirty = "Hello<|im_end|> world<|im_start|>assistant"
+    let clean = AIResponseCleaner.clean(dirty)
+    #expect(!clean.contains("<|im_end|>"))
+    #expect(!clean.contains("<|im_start|>"))
+}
+
+@Test func aiResponseCleanerRemovesDisclaimers() async throws {
+    let dirty = "You're doing great. As an AI, I cannot provide medical advice. Keep it up!"
+    let clean = AIResponseCleaner.clean(dirty)
+    #expect(!clean.lowercased().contains("as an ai"))
+}
+
+@Test func aiResponseCleanerDeduplicates() async throws {
+    let dirty = "Great progress. Great progress. Keep going."
+    let clean = AIResponseCleaner.clean(dirty)
+    // Should only have one "Great progress"
+    let count = clean.components(separatedBy: "Great progress").count - 1
+    #expect(count == 1)
+}
+
+// MARK: - Token Budget Tests
+
+@Test @MainActor func aiTokenEstimation() async throws {
+    let text = "Hello world this is a test" // ~7 tokens
+    let estimate = AIContextBuilder.estimateTokens(text)
+    #expect(estimate > 0)
+    #expect(estimate < 20)
+}
+
+@Test @MainActor func aiTokenTruncation() async throws {
+    let long = String(repeating: "Hello world. ", count: 100) // ~1300 chars = ~325 tokens
+    let truncated = AIContextBuilder.truncateToFit(long, maxTokens: 50) // 50 tokens = ~200 chars
+    #expect(truncated.count < long.count)
+    #expect(truncated.count <= 200)
+}
+
 @Test func aiParseMultipleActionsFirstWins() async throws {
     // If response has multiple actions, first one should be extracted
     let (action, _) = AIActionParser.parse("[LOG_FOOD: rice] and [START_WORKOUT: push]")
