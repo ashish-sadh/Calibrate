@@ -298,6 +298,10 @@ struct AIChatView: View {
             messages.append(ChatMessage(role: .assistant, text: "Anytime! Let me know if you need anything else."))
             return
         }
+        if lower == "undo" || lower == "remove that" || lower == "delete that" || lower == "nevermind" {
+            messages.append(ChatMessage(role: .assistant, text: "I can't undo actions yet. To remove a food entry, tap it in the Food tab. To delete a weight entry, swipe it in the Weight tab."))
+            return
+        }
 
         // Rule engine: instant answers for exact-match patterns only
         // Broader questions go to LLM for nuanced, personalized responses
