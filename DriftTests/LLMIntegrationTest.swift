@@ -91,6 +91,28 @@ final class LLMIntegrationTest: XCTestCase {
         print("Streaming test: \(counter.value) tokens, response: '\(response)'")
     }
 
+    /// Test LLM with health context — verifies it uses injected data.
+    func testLLMWithContext() async throws {
+        let modelPath = URL(fileURLWithPath: "/tmp/smollm2-360m-instruct-q8_0.gguf")
+        guard FileManager.default.fileExists(atPath: modelPath.path) else {
+            throw XCTSkip("SmolLM2 not found at /tmp/")
+        }
+
+        let backend = LlamaCppBackend(modelPath: modelPath)
+        try backend.loadSync()
+
+        // Inject specific context and check if model references it
+        let context = "Eaten: 1200/1800cal | 600 left | 80P 120C 40F\nGoal: losing to 155lbs | 60% done"
+        let prompt = "Context about the user:\n\(context)\n\nUser: How am I doing today?"
+        let response = await backend.respond(to: prompt, systemPrompt: "Health assistant. Use ONLY context data. 2-3 sentences.")
+
+        print("Context test response: '\(response)'")
+        XCTAssertFalse(response.isEmpty)
+        // The model should reference numbers from the context
+        let hasNumbers = response.contains("1200") || response.contains("1800") || response.contains("600") || response.contains("155")
+        XCTAssertTrue(hasNumbers, "Model should reference numbers from injected context")
+    }
+
     /// Test Qwen2.5-1.5B with raw C API.
     func testQwen15B() async throws {
         let modelPath = URL(fileURLWithPath: "/tmp/qwen2.5-1.5b-instruct-q4_k_m.gguf")
