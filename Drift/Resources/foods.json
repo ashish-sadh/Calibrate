@@ -11020,5 +11020,38 @@
     "carbs_g": 30,
     "fat_g": 12,
     "fiber_g": 2
+  },
+  {
+    "name": "Taco (chicken)",
+    "category": "Mexican",
+    "serving_size": 80,
+    "serving_unit": "g",
+    "calories": 160,
+    "protein_g": 12,
+    "carbs_g": 14,
+    "fat_g": 7,
+    "fiber_g": 1.5
+  },
+  {
+    "name": "Taco (veggie/bean)",
+    "category": "Mexican",
+    "serving_size": 80,
+    "serving_unit": "g",
+    "calories": 140,
+    "protein_g": 5,
+    "carbs_g": 18,
+    "fat_g": 5,
+    "fiber_g": 4
+  },
+  {
+    "name": "Taco (pork/carnitas)",
+    "category": "Mexican",
+    "serving_size": 80,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 11,
+    "carbs_g": 14,
+    "fat_g": 9,
+    "fiber_g": 1
   }
 ]
