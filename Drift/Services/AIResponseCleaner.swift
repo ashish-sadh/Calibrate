@@ -89,13 +89,16 @@ enum AIResponseCleaner {
         ]
         if genericPhrases.contains(where: { trimmed.contains($0) }) && trimmed.count < 80 { return true }
 
-        // Pure repetition of the question
-        // (detected by very low unique word ratio)
+        // Pure repetition
         let words = trimmed.components(separatedBy: .whitespaces).filter { $0.count > 2 }
         if words.count > 5 {
             let unique = Set(words).count
-            if Double(unique) / Double(words.count) < 0.3 { return true } // Very repetitive
+            if Double(unique) / Double(words.count) < 0.3 { return true }
         }
+
+        // Garbage detection: mostly non-alpha characters
+        let alphaCount = trimmed.filter(\.isLetter).count
+        if trimmed.count > 20 && Double(alphaCount) / Double(trimmed.count) < 0.5 { return true }
 
         return false
     }
