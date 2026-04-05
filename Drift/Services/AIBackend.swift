@@ -68,22 +68,10 @@ enum AIBackendType: Sendable {
 enum DeviceCapability {
     /// Detect the best model tier + backend for this device.
     static func detectTier() -> (tier: AIModelTier, backend: AIBackendType) {
-        let ramGB = Double(ProcessInfo.processInfo.physicalMemory) / (1024 * 1024 * 1024)
-        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
+        // Force small model until MLX vision backend is implemented
+        // TODO: Enable vision tier when MLX backend is ready
+        return (.small, .llamaCpp)
 
-        // iOS 18+ required for MLX
-        let canUseMLX = osVersion.majorVersion >= 18
-
-        if ramGB >= 7.5 && canUseMLX {
-            // 8GB device (iPhone 15 Pro+) — vision model via MLX
-            return (.vision, .mlx)
-        } else if canUseMLX {
-            // 6GB device with iOS 18+ — small model via MLX (faster than llama.cpp)
-            return (.small, .mlx)
-        } else {
-            // Older iOS or small device — llama.cpp fallback
-            return (.small, .llamaCpp)
-        }
     }
 
     /// Check if there's enough free disk space for the model.
