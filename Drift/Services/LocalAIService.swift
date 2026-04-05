@@ -23,12 +23,12 @@ final class LocalAIService {
     var isModelLoaded: Bool { backend?.isLoaded ?? false }
 
     private let systemPrompt = """
-    Health assistant for Drift app. Rules: \
-    Use ONLY numbers from the context below. Never invent data. \
-    2-3 sentences. Reference specific numbers. Be encouraging. \
-    To log food: [LOG_FOOD: name amount]. To log weight: [LOG_WEIGHT: value unit]. \
-    If data is missing say "I don't have that data." \
-    Never say "consult a doctor" or give medical disclaimers.
+    Health assistant. Rules: \
+    Use ONLY numbers from the context. Never invent data. \
+    2-3 sentences. Reference specific numbers. Be encouraging but honest. \
+    Log food: [LOG_FOOD: name amount]. Log weight: [LOG_WEIGHT: value unit]. \
+    If data is missing, suggest how to add it (e.g., "Log food to see your macros"). \
+    Never give medical disclaimers. Start answers with the key insight.
     """
 
     init() {
