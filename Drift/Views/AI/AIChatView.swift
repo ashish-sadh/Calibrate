@@ -81,6 +81,7 @@ struct AIChatView: View {
         .onAppear {
             if messages.isEmpty {
                 messages.append(ChatMessage(role: .assistant, text: pageInsight))
+                messages.append(ChatMessage(role: .assistant, text: "This is an experimental feature. If something doesn't work, you can turn it off from the toggle on Dashboard or in More \u{2192} Settings."))
             }
             if !aiService.isModelLoaded && aiService.state == .ready {
                 aiService.loadModel()
@@ -121,6 +122,42 @@ struct AIChatView: View {
             charCount += line.count
         }
         return lines.joined(separator: "\n")
+    }
+
+    /// Resolve pronouns like "it", "that", "this" by scanning recent messages for food/topic mentions.
+    /// "log it" after discussing banana → "log banana"
+    private func resolvePronouns(_ text: String) -> String {
+        let pronouns = ["log it", "log that", "log this", "add it", "add that", "add this", "track it", "track that"]
+        guard pronouns.contains(where: { text.contains($0) }) else { return text }
+
+        // Scan recent messages for food-like nouns (from both user and assistant)
+        let recentTexts = messages.suffix(6).map(\.text)
+        for recent in recentTexts.reversed() {
+            let lower = recent.lowercased()
+            // Look for food names mentioned by assistant ("banana", "chicken breast", etc.)
+            // Try to find a word that could be a food
+            if let foods = try? AppDatabase.shared.searchFoodsRanked(query: ""),
+               !foods.isEmpty {
+                // This won't work — need a different approach
+            }
+
+            // Simple heuristic: find the last noun the user or assistant mentioned
+            // that looks like a food (exists in our food DB)
+            let words = lower.components(separatedBy: .whitespaces)
+            for word in words.reversed() where word.count > 2 {
+                if let results = try? AppDatabase.shared.searchFoodsRanked(query: word),
+                   let match = results.first,
+                   match.name.lowercased().contains(word) {
+                    // Replace pronoun with the food name
+                    var resolved = text
+                    for pronoun in ["it", "that", "this"] {
+                        resolved = resolved.replacingOccurrences(of: " \(pronoun)", with: " \(match.name.lowercased())")
+                    }
+                    return resolved
+                }
+            }
+        }
+        return text
     }
 
     // MARK: - Smart Suggestions
@@ -256,8 +293,11 @@ struct AIChatView: View {
             return
         }
 
+        // Resolve pronouns from conversation context: "log it", "log that", "add this"
+        let resolved = resolvePronouns(lower)
+
         // Multi-food intent: "log chicken and rice"
-        if let intents = AIActionExecutor.parseMultiFoodIntent(lower) {
+        if let intents = AIActionExecutor.parseMultiFoodIntent(resolved) {
             let names = intents.map(\.query).joined(separator: ", ")
             messages.append(ChatMessage(role: .assistant, text: "Opening search for \(names)..."))
             // Open search for first item
@@ -268,7 +308,7 @@ struct AIChatView: View {
         }
 
         // Single food intent: "log 2 eggs", "ate avocado"
-        if let intent = AIActionExecutor.parseFoodIntent(lower) {
+        if let intent = AIActionExecutor.parseFoodIntent(resolved) {
             foodSearchQuery = intent.query
             foodSearchServings = intent.servings
             messages.append(ChatMessage(role: .assistant, text: "Opening \(intent.query)..."))
