@@ -45,6 +45,16 @@ enum AIContextBuilder {
             lines.append("Supplements: \(names.joined(separator: ", "))")
         }
 
+        // 7-day calorie average
+        let cal = Calendar.current
+        if let weekAgo = cal.date(byAdding: .day, value: -7, to: Date()) {
+            let fromStr = DateFormatters.dateOnly.string(from: weekAgo)
+            let toStr = DateFormatters.todayString
+            if let avg = try? AppDatabase.shared.averageDailyCalories(from: fromStr, to: toStr), avg > 0 {
+                lines.append("7-day avg intake: \(Int(avg)) kcal/day")
+            }
+        }
+
         return lines.joined(separator: "\n")
     }
 }
