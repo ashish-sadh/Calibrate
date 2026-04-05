@@ -102,6 +102,9 @@ final class HealthKitService {
     }
 
     func syncWeight() async throws -> Int {
+        #if targetEnvironment(simulator)
+        return 0 // No real HealthKit weight data on simulator
+        #else
         guard isAvailable,
               let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else { return 0 }
 
@@ -143,14 +146,19 @@ final class HealthKitService {
         }
         Log.healthKit.info("Synced \(count) weight entries from HealthKit")
         return count
+    #endif
     }
 
     /// Force a full re-sync by clearing the saved anchor.
     func fullResyncWeight() async throws -> Int {
+        #if targetEnvironment(simulator)
+        return 0
+        #else
         let database = AppDatabase.shared
         try database.saveAnchor(dataType: "bodyMass", anchor: Data())
         Log.healthKit.info("Cleared weight sync anchor, performing full re-sync")
         return try await syncWeight()
+        #endif
     }
 
     private func queryAnchoredWeight(type: HKQuantityType, anchor: HKQueryAnchor?) async throws -> ([HKQuantitySample], HKQueryAnchor?) {

@@ -1126,6 +1126,14 @@ struct ActiveWorkoutView: View {
                                 .font(.title3)
                                 .foregroundStyle(exercises[ei].sets[si].done ? Theme.deficit : .secondary)
                         }.frame(width: 30)
+
+                        // Inline delete button
+                        Button {
+                            exercises[ei].sets.remove(at: si)
+                            if exercises[ei].sets.isEmpty { exercises.remove(at: ei) }
+                        } label: {
+                            Image(systemName: "xmark").font(.system(size: 10)).foregroundStyle(.quaternary)
+                        }.frame(width: 20)
                     }
                     .padding(.vertical, 2)
                     .contextMenu {

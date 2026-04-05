@@ -16,6 +16,8 @@ struct FoodSearchView: View {
     @State private var manualC = ""
     @State private var manualF = ""
     @State private var manualFb = ""
+    @State private var manualServing = "1"
+    @State private var manualServingUnit = "serving"
     @State private var loggedCount = 0
     @State private var showingRecipeBuilder = false
     @State private var showingScanner = false
@@ -145,13 +147,11 @@ struct FoodSearchView: View {
                     }
                 }
 
-                // First-time empty state
-                if viewModel.recentEntries.isEmpty && viewModel.frequentFoods.isEmpty && viewModel.favoriteFoods.isEmpty {
-                    suggestionSection("POPULAR FOODS") {
-                        let starters = popularFoods()
-                        ForEach(starters) { food in
-                            foodSuggestionRow(food)
-                        }
+                // Popular foods — always shown
+                suggestionSection("POPULAR") {
+                    let starters = popularFoods()
+                    ForEach(starters) { food in
+                        foodSuggestionRow(food)
                     }
                 }
             }
@@ -646,6 +646,28 @@ struct FoodSearchView: View {
                     }
                     .padding(.horizontal, 16).padding(.vertical, 10)
                     .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
+
+                    // Serving size — optional
+                    HStack {
+                        Text("Serving").font(.caption).foregroundStyle(.secondary)
+                        Spacer()
+                        TextField("1", text: $manualServing)
+                            .keyboardType(.decimalPad)
+                            .font(.subheadline.monospacedDigit())
+                            .multilineTextAlignment(.trailing)
+                            .frame(width: 50)
+                        Picker("", selection: $manualServingUnit) {
+                            Text("serving").tag("serving")
+                            Text("g").tag("g")
+                            Text("ml").tag("ml")
+                            Text("piece").tag("piece")
+                            Text("cup").tag("cup")
+                            Text("tbsp").tag("tbsp")
+                        }
+                        .pickerStyle(.menu).labelsHidden()
+                    }
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+                    .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
@@ -658,13 +680,23 @@ struct FoodSearchView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Log") {
                         let cal = Double(manualCal) ?? (macroCalories > 0 ? Double(macroCalories) : 0)
+                        let servingVal = Double(manualServing) ?? 1
+                        let servingG: Double = switch manualServingUnit {
+                        case "g": servingVal
+                        case "ml": servingVal
+                        case "cup": servingVal * 240
+                        case "tbsp": servingVal * 15
+                        default: 0
+                        }
                         viewModel.quickAdd(name: manualName.isEmpty ? "Quick Add" : manualName,
                                            calories: cal, proteinG: p, carbsG: c, fatG: f,
-                                           fiberG: Double(manualFb) ?? 0, mealType: viewModel.autoMealType)
+                                           fiberG: Double(manualFb) ?? 0, mealType: viewModel.autoMealType,
+                                           servingSizeG: servingG)
                         viewModel.loadSuggestions()
                         loggedCount += 1
                         showingManual = false
                         manualName = ""; manualCal = ""; manualP = ""; manualC = ""; manualF = ""; manualFb = ""
+                        manualServing = "1"; manualServingUnit = "serving"
                     }
                     .disabled((Double(manualCal) ?? 0) == 0 && macroCalories == 0)
                 }

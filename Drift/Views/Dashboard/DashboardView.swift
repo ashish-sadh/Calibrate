@@ -99,6 +99,7 @@ struct DashboardView: View {
             }
             .task { await viewModel.loadToday() }
             .refreshable { await viewModel.loadToday() }
+            .refreshable { await viewModel.loadToday() }
             .onChange(of: syncComplete) { _, done in
                 if done { Task { await viewModel.loadToday() } }
             }
