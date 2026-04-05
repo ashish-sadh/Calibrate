@@ -55,7 +55,9 @@ enum AIActionExecutor {
     /// "weight is 75.2 kg" → WeightIntent(75.2, kg)
     static func parseWeightIntent(_ text: String) -> WeightIntent? {
         let lower = text.lowercased()
-        guard lower.contains("weigh") || lower.contains("weight is") || lower.contains("weight:") else { return nil }
+        guard lower.contains("weigh") || lower.contains("weight is") || lower.contains("weight:")
+              || lower.contains("weighed in") || lower.contains("scale says") || lower.contains("i'm at ")
+              || lower.contains("log weight") || lower.contains("my weight") else { return nil }
 
         // Extract number
         let pattern = #"(\d+\.?\d*)\s*(kg|lbs|lb|pounds?)?"#
