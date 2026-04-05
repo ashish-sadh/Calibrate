@@ -99,6 +99,11 @@ struct AIChatView: View {
         .navigationTitle("Drift AI")
         .navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.dark, for: .navigationBar)
+        .sheet(isPresented: $showingFoodSearch) {
+            NavigationStack {
+                FoodSearchView(viewModel: FoodLogViewModel())
+            }
+        }
         .onAppear {
             if messages.isEmpty {
                 messages.append(ChatMessage(role: .system, text: "I'm your health assistant. Ask me about your nutrition, weight, workouts, or say \"log food\" / \"start workout\" and I'll help."))
