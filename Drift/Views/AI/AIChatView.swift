@@ -247,12 +247,33 @@ struct AIChatView: View {
             return
         }
 
-        // Food intent: "log 2 eggs", "ate avocado"
+        // Multi-food intent: "log chicken and rice"
+        if let intents = AIActionExecutor.parseMultiFoodIntent(lower) {
+            let names = intents.map(\.query).joined(separator: ", ")
+            messages.append(ChatMessage(role: .assistant, text: "Opening search for \(names)..."))
+            // Open search for first item
+            foodSearchQuery = intents[0].query
+            foodSearchServings = intents[0].servings
+            showingFoodSearch = true
+            return
+        }
+
+        // Single food intent: "log 2 eggs", "ate avocado"
         if let intent = AIActionExecutor.parseFoodIntent(lower) {
             foodSearchQuery = intent.query
             foodSearchServings = intent.servings
             messages.append(ChatMessage(role: .assistant, text: "Opening \(intent.query)..."))
             showingFoodSearch = true
+            return
+        }
+
+        // Weight intent: "I weigh 165", "weight is 75.2 kg"
+        if let weightIntent = AIActionExecutor.parseWeightIntent(lower) {
+            let kg = weightIntent.unit == .kg ? weightIntent.weightValue : weightIntent.weightValue / 2.20462
+            var entry = WeightEntry(date: DateFormatters.todayString, weightKg: kg, source: "manual")
+            try? AppDatabase.shared.saveWeightEntry(&entry)
+            let display = String(format: "%.1f", weightIntent.weightValue)
+            messages.append(ChatMessage(role: .assistant, text: "Logged \(display) \(weightIntent.unit.displayName) for today."))
             return
         }
 

@@ -69,6 +69,36 @@ enum AIActionExecutor {
         return WeightIntent(weightValue: value, unit: unit)
     }
 
+    // MARK: - Multi-Food Parsing
+
+    /// Parse multiple food items: "log chicken and rice" → [FoodIntent("chicken"), FoodIntent("rice")]
+    static func parseMultiFoodIntent(_ text: String) -> [FoodIntent]? {
+        let lower = text.lowercased().trimmingCharacters(in: .whitespaces)
+
+        let verbs = ["log ", "ate ", "had ", "add ", "track ", "logged ", "eating "]
+        guard let verb = verbs.first(where: { lower.hasPrefix($0) }) else { return nil }
+
+        var remainder = String(lower.dropFirst(verb.count)).trimmingCharacters(in: .whitespaces)
+        for suffix in [" for me", " please", " today", " for breakfast", " for lunch", " for dinner", " for snack"] {
+            if remainder.hasSuffix(suffix) { remainder = String(remainder.dropLast(suffix.count)) }
+        }
+        guard !remainder.isEmpty else { return nil }
+
+        // Split on separators
+        var parts = [remainder]
+        for sep in [", and ", " and ", ", "] {
+            parts = parts.flatMap { $0.components(separatedBy: sep) }
+        }
+        parts = parts.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+
+        guard parts.count > 1 else { return nil } // Single item — use parseFoodIntent instead
+
+        return parts.map { part in
+            let (amount, food) = extractAmount(from: part)
+            return FoodIntent(query: food, servings: amount)
+        }
+    }
+
     // MARK: - Food Search + AI Fallback
 
     struct FoodMatch {
