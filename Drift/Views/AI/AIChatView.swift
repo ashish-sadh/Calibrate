@@ -286,7 +286,11 @@ struct AIChatView: View {
         // Quick conversational responses — no LLM needed
         let greetings = ["hi", "hello", "hey", "yo", "sup"]
         if greetings.contains(lower) {
-            messages.append(ChatMessage(role: .assistant, text: "Hey! What can I help you with? Try asking about your food, weight, or workouts."))
+            messages.append(ChatMessage(role: .assistant, text: "Hey! Ask about your food, weight, workouts, or say \"log 2 eggs\" to quickly log meals."))
+            return
+        }
+        if lower == "help" || lower == "what can you do" || lower == "what can you do?" {
+            messages.append(ChatMessage(role: .assistant, text: "I can help you:\n\u{2022} Log food: \"log 2 eggs and toast\"\n\u{2022} Check progress: \"how am I doing?\"\n\u{2022} Get insights: \"calories left\", \"daily summary\"\n\u{2022} Ask about: weight, workouts, sleep, biomarkers, glucose, supplements"))
             return
         }
         let thanks = ["thanks", "thank you", "thx", "ty", "cool", "ok", "okay", "got it", "nice"]
