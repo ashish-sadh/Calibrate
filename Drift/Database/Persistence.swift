@@ -28,8 +28,26 @@ extension AppDatabase {
 
             return database
         } catch {
-            Log.database.fault("Database setup failed: \(error.localizedDescription)")
-            fatalError("Database setup failed: \(error)")
+            Log.database.fault("Database setup failed: \(error.localizedDescription). Attempting recovery...")
+            // Recovery: delete corrupt database and try again
+            do {
+                let fileManager = FileManager.default
+                let appSupportURL = try fileManager.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: false)
+                let dbURL = appSupportURL.appendingPathComponent("Drift/drift.sqlite")
+                try? fileManager.removeItem(at: dbURL)
+                try? fileManager.removeItem(at: URL(fileURLWithPath: dbURL.path + "-wal"))
+                try? fileManager.removeItem(at: URL(fileURLWithPath: dbURL.path + "-shm"))
+                Log.database.info("Deleted corrupt database, recreating...")
+                let directoryURL = appSupportURL.appendingPathComponent("Drift", isDirectory: true)
+                try fileManager.createDirectory(at: directoryURL, withIntermediateDirectories: true)
+                let dbPool = try DatabasePool(path: dbURL.path, configuration: makeConfiguration())
+                let database = try AppDatabase(dbPool)
+                try database.seedFoodsFromJSON()
+                Log.database.info("Database recovered successfully")
+                return database
+            } catch {
+                fatalError("Database setup failed and recovery failed: \(error)")
+            }
         }
     }
 

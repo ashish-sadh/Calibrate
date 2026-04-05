@@ -59,7 +59,7 @@ final class HealthKitService {
         let sex: TDEEEstimator.Sex?
     }
 
-    func fetchUserProfile() -> UserProfile {
+    func fetchUserProfile() async -> UserProfile {
         guard isAvailable else { return UserProfile(age: nil, heightCm: nil, sex: nil) }
 
         // Biological sex
@@ -82,19 +82,18 @@ final class HealthKitService {
             age = nil
         }
 
-        // Height (latest sample)
-        var heightCm: Double?
-        if let heightType = HKQuantityType.quantityType(forIdentifier: .height) {
-            let semaphore = DispatchSemaphore(value: 0)
+        // Height (latest sample) — async to avoid blocking main thread
+        let heightCm: Double? = await withCheckedContinuation { continuation in
+            guard let heightType = HKQuantityType.quantityType(forIdentifier: .height) else {
+                continuation.resume(returning: nil)
+                return
+            }
             let query = HKSampleQuery(sampleType: heightType, predicate: nil, limit: 1,
                                       sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)]) { _, samples, _ in
-                if let sample = samples?.first as? HKQuantitySample {
-                    heightCm = sample.quantity.doubleValue(for: .meterUnit(with: .centi))
-                }
-                semaphore.signal()
+                let cm = (samples?.first as? HKQuantitySample)?.quantity.doubleValue(for: .meterUnit(with: .centi))
+                continuation.resume(returning: cm)
             }
             healthStore.execute(query)
-            semaphore.wait()
         }
 
         Log.healthKit.info("Profile: age=\(age ?? -1), height=\(heightCm ?? -1)cm, sex=\(sex?.rawValue ?? "nil")")
@@ -845,7 +844,10 @@ final class HealthKitService {
     }
 
     private nonisolated func saveAnchor(_ anchor: HKQueryAnchor, for dataType: String, database: AppDatabase) throws {
-        let data = try NSKeyedArchiver.archivedData(withRootObject: anchor, requiringSecureCoding: true)
+        guard let data = try? NSKeyedArchiver.archivedData(withRootObject: anchor, requiringSecureCoding: true) else {
+            Log.healthKit.error("Failed to archive anchor for \(dataType)")
+            return
+        }
         try database.saveAnchor(dataType: dataType, anchor: data)
     }
 }

@@ -422,12 +422,14 @@ struct AlgorithmSettingsView: View {
 
     private func prefillFromAppleHealth() {
         #if !targetEnvironment(simulator)
-        let profile = HealthKitService.shared.fetchUserProfile()
-        var changed = false
-        if tdeeConfig.age == nil, let age = profile.age, age > 0 { tdeeConfig.age = age; changed = true }
-        if tdeeConfig.heightCm == nil, let h = profile.heightCm, h > 0 { tdeeConfig.heightCm = round(h * 10) / 10; changed = true }
-        if tdeeConfig.sex == nil, let s = profile.sex { tdeeConfig.sex = s; changed = true }
-        if changed { save() }
+        Task {
+            let profile = await HealthKitService.shared.fetchUserProfile()
+            var changed = false
+            if tdeeConfig.age == nil, let age = profile.age, age > 0 { tdeeConfig.age = age; changed = true }
+            if tdeeConfig.heightCm == nil, let h = profile.heightCm, h > 0 { tdeeConfig.heightCm = round(h * 10) / 10; changed = true }
+            if tdeeConfig.sex == nil, let s = profile.sex { tdeeConfig.sex = s; changed = true }
+            if changed { save() }
+        }
         #endif
     }
 
