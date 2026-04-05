@@ -263,6 +263,18 @@ struct AIChatView: View {
 
         let lower = text.lowercased()
 
+        // Quick conversational responses — no LLM needed
+        let greetings = ["hi", "hello", "hey", "yo", "sup"]
+        if greetings.contains(lower) {
+            messages.append(ChatMessage(role: .assistant, text: "Hey! What can I help you with? Try asking about your food, weight, or workouts."))
+            return
+        }
+        let thanks = ["thanks", "thank you", "thx", "ty", "cool", "ok", "okay", "got it", "nice"]
+        if thanks.contains(lower) {
+            messages.append(ChatMessage(role: .assistant, text: "Anytime! Let me know if you need anything else."))
+            return
+        }
+
         // Rule engine: instant answers for exact-match patterns only
         // Broader questions go to LLM for nuanced, personalized responses
         if lower == "daily summary" || lower == "summary" || lower == "my day" {

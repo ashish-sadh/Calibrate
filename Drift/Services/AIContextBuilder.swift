@@ -252,7 +252,14 @@ enum AIContextBuilder {
         if let workouts = try? WorkoutService.fetchWorkouts(limit: 10) {
             if let last = workouts.first {
                 let daysAgo = Calendar.current.dateComponents([.day], from: DateFormatters.dateOnly.date(from: last.date) ?? Date(), to: Date()).day ?? 0
-                lines.append("Last workout: \(last.name) (\(daysAgo) days ago)")
+                lines.append("Last: \(last.name) (\(daysAgo)d ago)")
+
+                // Pre-computed suggestion
+                if daysAgo == 0 {
+                    lines.append("Note: already trained today")
+                } else if daysAgo >= 3 {
+                    lines.append("Note: \(daysAgo) days since last workout — may be time to train")
+                }
             }
 
             // This week count
@@ -261,6 +268,12 @@ enum AIContextBuilder {
                 return Calendar.current.isDate(d, equalTo: Date(), toGranularity: .weekOfYear)
             }.count
             lines.append("This week: \(thisWeek) workouts")
+
+            // Recent workout names for variety suggestion
+            let recentNames = Array(Set(workouts.prefix(5).map(\.name)))
+            if !recentNames.isEmpty {
+                lines.append("Recent types: \(recentNames.joined(separator: ", "))")
+            }
         }
 
         // Templates
@@ -271,7 +284,7 @@ enum AIContextBuilder {
             }
         }
 
-        return lines.isEmpty ? "No workout history." : "Workout context:\n" + lines.joined(separator: "\n")
+        return lines.isEmpty ? "No workout data." : lines.joined(separator: "\n")
     }
 
     // MARK: - Supplement Context
@@ -279,11 +292,20 @@ enum AIContextBuilder {
     static func supplementContext() -> String {
         let today = DateFormatters.todayString
         guard let supplements = try? AppDatabase.shared.fetchActiveSupplements(),
+              !supplements.isEmpty,
               let logs = try? AppDatabase.shared.fetchSupplementLogs(for: today) else {
             return "No supplements set up."
         }
         let takenIds = Set(logs.filter(\.taken).compactMap(\.supplementId))
-        var lines = ["Supplements (\(takenIds.count)/\(supplements.count) taken):"]
+        let taken = takenIds.count
+        let total = supplements.count
+        var lines = ["Supplements: \(taken)/\(total) taken"]
+        if taken == total {
+            lines.append("Note: all supplements taken today")
+        } else {
+            let untaken = supplements.filter { !takenIds.contains($0.id ?? 0) }.map(\.name)
+            lines.append("Still need: \(untaken.joined(separator: ", "))")
+        }
         for s in supplements {
             let status = takenIds.contains(s.id ?? 0) ? "✓" : "✗"
             lines.append("  \(status) \(s.name)")
