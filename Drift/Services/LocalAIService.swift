@@ -8,18 +8,16 @@ final class LocalAIService {
     static let shared = LocalAIService()
 
     enum ModelState: Equatable {
-        case notDownloaded
-        case downloading(progress: Double)
+        case loading
         case ready
         case error(String)
     }
 
-    private(set) var state: ModelState = .notDownloaded
+    private(set) var state: ModelState = .loading
     nonisolated(unsafe) private var bot: LLM?
 
-    // Model config
-    private let modelFileName = "qwen2.5-0.5b-instruct-q4_k_m.gguf"
-    private let modelURL = "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf"
+    // Model config — bundled with the app
+    private let modelFileName = "qwen2.5-0.5b-instruct-q4_k_m"
     private let systemPrompt = """
     You are Drift AI, a brief health assistant. Rules:
     1. Answer in 1-3 short sentences. Never ramble.
@@ -34,61 +32,32 @@ final class LocalAIService {
     User: "Start leg day" → "Let's go! [START_WORKOUT: legs]"
     """
 
-    private var modelPath: URL {
-        let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        return docs.appendingPathComponent(modelFileName)
+    private var modelPath: URL? {
+        Bundle.main.url(forResource: modelFileName, withExtension: "gguf")
     }
 
-    var isModelDownloaded: Bool {
-        FileManager.default.fileExists(atPath: modelPath.path)
+    var isModelAvailable: Bool {
+        modelPath != nil
     }
 
     init() {
-        if isModelDownloaded {
-            state = .ready
-        }
-    }
-
-    // MARK: - Download
-
-    func downloadModel() async {
-        guard !isModelDownloaded else { state = .ready; return }
-        guard let url = URL(string: modelURL) else {
-            state = .error("Invalid model URL")
-            return
-        }
-
-        state = .downloading(progress: 0)
-
-        do {
-            // Use delegate-based download for progress tracking
-            let delegate = DownloadDelegate { [weak self] progress in
-                Task { @MainActor in
-                    self?.state = .downloading(progress: progress)
-                }
-            }
-            let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
-            let (tempURL, _) = try await session.download(from: url)
-
-            // Move to final location
-            let dest = modelPath
-            try? FileManager.default.removeItem(at: dest)
-            try FileManager.default.moveItem(at: tempURL, to: dest)
-            state = .ready
-            Log.app.info("AI model downloaded: \(self.modelFileName)")
-        } catch {
-            state = .error("Download failed: \(error.localizedDescription)")
-            try? FileManager.default.removeItem(at: modelPath)
-        }
+        state = isModelAvailable ? .ready : .error("Model not found in app bundle")
     }
 
     // MARK: - Load Model
 
     func loadModel() {
-        guard isModelDownloaded, bot == nil else { return }
-        bot = LLM(from: modelPath, template: .chatML(systemPrompt), historyLimit: 6, maxTokenCount: 512)
-        bot?.temp = 0.7
-        bot?.topP = 0.9
+        guard let path = modelPath, bot == nil else { return }
+        state = .loading
+        bot = LLM(from: path, template: .chatML(systemPrompt), historyLimit: 6, maxTokenCount: 512)
+        if bot != nil {
+            bot?.temp = 0.7
+            bot?.topP = 0.9
+            state = .ready
+            Log.app.info("AI model loaded from bundle")
+        } else {
+            state = .error("Failed to load model")
+        }
     }
 
     // MARK: - Inference
@@ -122,31 +91,7 @@ final class LocalAIService {
         bot?.reset()
     }
 
-    // MARK: - Delete Model
-
-    func deleteModel() {
-        bot = nil
-        try? FileManager.default.removeItem(at: modelPath)
-        state = .notDownloaded
-    }
-}
-
-// MARK: - Download Progress Delegate
-
-private final class DownloadDelegate: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
-    let onProgress: (Double) -> Void
-
-    init(onProgress: @escaping (Double) -> Void) {
-        self.onProgress = onProgress
-    }
-
-    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
-        guard totalBytesExpectedToWrite > 0 else { return }
-        let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
-        onProgress(progress)
-    }
-
-    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
-        // Handled by the async download(from:) caller
+    func resetChat() {
+        bot?.reset()
     }
 }

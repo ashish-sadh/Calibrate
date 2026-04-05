@@ -101,18 +101,15 @@ struct AIChatView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    Button { aiService.reset() } label: {
-                        Label("New Chat", systemImage: "plus.message")
-                    }
-                    Button(role: .destructive) {
-                        aiService.deleteModel()
-                        messages.removeAll()
-                    } label: {
-                        Label("Delete Model (~470 MB)", systemImage: "trash")
+                Button {
+                    aiService.resetChat()
+                    messages.removeAll()
+                    messages.append(ChatMessage(role: .system, text: "I'm your health assistant. Ask me about your nutrition, weight, workouts, or say \"log food\" / \"start workout\" and I'll help."))
+                    if let insight = AIRuleEngine.quickInsight() {
+                        messages.append(ChatMessage(role: .assistant, text: insight))
                     }
                 } label: {
-                    Image(systemName: "ellipsis.circle").foregroundStyle(.secondary)
+                    Image(systemName: "plus.message").foregroundStyle(.secondary)
                 }
             }
         }
@@ -132,9 +129,7 @@ struct AIChatView: View {
                     messages.append(ChatMessage(role: .assistant, text: next))
                 }
             }
-            if aiService.state == .ready && !aiService.isModelDownloaded {
-                // Model was deleted
-            } else if aiService.state == .ready {
+            if aiService.state == .ready {
                 aiService.loadModel()
             }
         }
@@ -162,9 +157,9 @@ struct AIChatView: View {
         Task {
             let context = AIContextBuilder.buildContext()
 
-            if aiService.state != .ready || !aiService.isModelDownloaded {
+            if aiService.state != .ready {
                 // No model — use rule engine
-                var response = "I need the AI model to answer that. Download it from the setup screen, or try asking for a \"daily summary.\""
+                var response = "AI model is loading. Try asking for a \"daily summary\" in the meantime."
                 if let insight = AIRuleEngine.quickInsight() {
                     response = insight
                 }

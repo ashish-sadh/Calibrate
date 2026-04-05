@@ -47,6 +47,7 @@
 		5A5C3B121A517C9F07A31C5A /* CycleCalculations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D1FB1A43791483D88EC4BC /* CycleCalculations.swift */; };
 		5D88D4133DC583D407E81955 /* FoodLoggingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D6A44D7C25BC4956132FE8 /* FoodLoggingTests.swift */; };
 		5F4476C2F1B7DC3E662A1DBC /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24385DF0FF7F89584AE40020 /* Theme.swift */; };
+		64D84D0A0CF5CBAB0ADAF666 /* qwen2.5-0.5b-instruct-q4_k_m.gguf in Resources */ = {isa = PBXBuildFile; fileRef = 059DC68033836366AEFCA6E7 /* qwen2.5-0.5b-instruct-q4_k_m.gguf */; };
 		685C24962B2912E5B124EB60 /* BodyMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5286E0309471AF898D70E3C /* BodyMapView.swift */; };
 		6A4AC25199199579681FCAD4 /* WeightViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E8B598BCB7486A2C75848E /* WeightViewModel.swift */; };
 		6B0CE72048898157F8BA881F /* BarcodeCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4EFC6AC02BBE73CDE74B5E2 /* BarcodeCache.swift */; };
@@ -122,6 +123,7 @@
 /* Begin PBXFileReference section */
 		0207D73F0C177B95B548B321 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		059465804E239D09C0E9C1D4 /* biomarkers.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = biomarkers.json; sourceTree = "<group>"; };
+		059DC68033836366AEFCA6E7 /* qwen2.5-0.5b-instruct-q4_k_m.gguf */ = {isa = PBXFileReference; path = "qwen2.5-0.5b-instruct-q4_k_m.gguf"; sourceTree = "<group>"; };
 		08E33CA6BE80D735A37ED745 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0D45209A3DCC7F6659E6E367 /* CSVParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVParser.swift; sourceTree = "<group>"; };
 		1053BB3F19E5D50A27C74DDE /* DailyNutrition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyNutrition.swift; sourceTree = "<group>"; };
@@ -417,6 +419,7 @@
 				059465804E239D09C0E9C1D4 /* biomarkers.json */,
 				C10970FB3ED143760EC6C8C5 /* exercises.json */,
 				FD7026C3D8745999EED9478E /* foods.json */,
+				059DC68033836366AEFCA6E7 /* qwen2.5-0.5b-instruct-q4_k_m.gguf */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -619,6 +622,7 @@
 				2789843CBA7CA913FA86CCEB /* biomarkers.json in Resources */,
 				9BDC062DA33278D9CE34EFC3 /* exercises.json in Resources */,
 				B3B780A670DA8D354A057699 /* foods.json in Resources */,
+				64D84D0A0CF5CBAB0ADAF666 /* qwen2.5-0.5b-instruct-q4_k_m.gguf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
