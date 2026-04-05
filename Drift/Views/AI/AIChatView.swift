@@ -153,6 +153,16 @@ struct AIChatView: View {
             messages.append(ChatMessage(role: .assistant, text: summary))
             return
         }
+        if lower.contains("calorie") || lower.contains("how many cal") || lower.contains("macro") || lower.contains("protein") {
+            let today = DateFormatters.todayString
+            let nutrition = (try? AppDatabase.shared.fetchDailyNutrition(for: today)) ?? .zero
+            if nutrition.calories > 0 {
+                messages.append(ChatMessage(role: .assistant, text: "Today so far: \(Int(nutrition.calories)) cal, \(Int(nutrition.proteinG))g protein, \(Int(nutrition.carbsG))g carbs, \(Int(nutrition.fatG))g fat, \(Int(nutrition.fiberG))g fiber."))
+            } else {
+                messages.append(ChatMessage(role: .assistant, text: "No food logged today yet. Tap \"Log food\" to start."))
+            }
+            return
+        }
         if lower.contains("weight") || lower.contains("how much do i weigh") {
             if let entries = try? AppDatabase.shared.fetchWeightEntries(),
                let trend = WeightTrendCalculator.calculateTrend(entries: entries.map { (date: $0.date, weightKg: $0.weightKg) }) {
