@@ -91,6 +91,13 @@ enum AIActionExecutor {
         }
         guard !remainder.isEmpty else { return nil }
 
+        // Check for compound foods that contain "and" (don't split these)
+        let compoundFoods = ["mac and cheese", "bread and butter", "salt and pepper", "rice and beans",
+                             "peanut butter and jelly", "fish and chips", "ham and cheese"]
+        if compoundFoods.contains(where: { remainder.contains($0) }) {
+            return nil // Treat as single food
+        }
+
         // Split on separators
         var parts = [remainder]
         for sep in [", and ", " and ", ", "] {

@@ -175,6 +175,12 @@ import Testing
     #expect(intents?[1].query == "toast")
 }
 
+@Test func aiMultiFoodCompoundNames() async throws {
+    // "Mac and cheese" should NOT be split into "mac" + "cheese"
+    let intents = AIActionExecutor.parseMultiFoodIntent("log mac and cheese")
+    #expect(intents == nil, "Compound food 'mac and cheese' should not be split")
+}
+
 @Test func aiMultiFoodSingleItem() async throws {
     // Single item should return nil (use parseFoodIntent instead)
     let intents = AIActionExecutor.parseMultiFoodIntent("log banana")
