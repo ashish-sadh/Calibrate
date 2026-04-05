@@ -12,6 +12,10 @@ enum AIResponseCleaner {
             text = text.replacingOccurrences(of: artifact, with: "")
         }
 
+        // Remove format echoes from small models
+        if text.lowercased().hasPrefix("a: ") { text = String(text.dropFirst(3)) }
+        if text.lowercased().hasPrefix("assistant: ") { text = String(text.dropFirst(11)) }
+
         // Remove mechanical preambles and question echoes
         let preambles = ["based on your data, ", "based on the context, ", "according to the data, ",
                          "according to your information, ", "based on the information provided, ",
