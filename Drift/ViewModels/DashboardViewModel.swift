@@ -72,7 +72,12 @@ final class DashboardViewModel {
 
         // Sync latest weight from Apple Health
         #if !targetEnvironment(simulator)
-        let _ = try? await HealthKitService.shared.syncWeight()
+        do {
+            let synced = try await HealthKitService.shared.syncWeight()
+            if synced > 0 { Log.healthKit.info("Dashboard synced \(synced) weight entries") }
+        } catch {
+            Log.healthKit.error("Dashboard weight sync failed: \(error.localizedDescription)")
+        }
         #endif
 
         // Load weight trend

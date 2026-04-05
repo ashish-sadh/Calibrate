@@ -275,25 +275,26 @@ struct FoodTabView: View {
             }
             .padding(.bottom, 10)
 
+            // Add food button — always at top
+            Button { showingSearch = true } label: {
+                HStack {
+                    Image(systemName: "plus.circle").font(.subheadline).foregroundStyle(Theme.accent)
+                    Text("Add food").font(.subheadline).foregroundStyle(.secondary)
+                    Spacer()
+                }
+            }.buttonStyle(.plain)
+
             if viewModel.todayEntries.isEmpty {
                 emptyDiaryView
             } else {
+                Divider().padding(.vertical, 2)
+
                 ForEach(Array(viewModel.todayEntries.enumerated()), id: \.element.id) { index, entry in
                     entryRow(entry)
                     if index < viewModel.todayEntries.count - 1 {
                         Divider().padding(.leading, 0)
                     }
                 }
-
-                Divider().padding(.vertical, 4)
-
-                Button { showingSearch = true } label: {
-                    HStack {
-                        Image(systemName: "plus.circle").font(.subheadline).foregroundStyle(Theme.accent)
-                        Text("Add food").font(.subheadline).foregroundStyle(.secondary)
-                        Spacer()
-                    }
-                }.buttonStyle(.plain)
             }
         }
         .card()
