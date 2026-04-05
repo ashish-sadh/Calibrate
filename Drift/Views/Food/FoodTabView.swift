@@ -275,18 +275,18 @@ struct FoodTabView: View {
             }
             .padding(.bottom, 10)
 
-            // Add food button — always at top
-            Button { showingSearch = true } label: {
-                HStack {
-                    Image(systemName: "plus.circle").font(.subheadline).foregroundStyle(Theme.accent)
-                    Text("Add food").font(.subheadline).foregroundStyle(.secondary)
-                    Spacer()
-                }
-            }.buttonStyle(.plain)
-
             if viewModel.todayEntries.isEmpty {
                 emptyDiaryView
             } else {
+                // Small add food — only when entries exist
+                Button { showingSearch = true } label: {
+                    HStack {
+                        Image(systemName: "plus.circle").font(.subheadline).foregroundStyle(Theme.accent)
+                        Text("Add food").font(.subheadline).foregroundStyle(.secondary)
+                        Spacer()
+                    }
+                }.buttonStyle(.plain)
+
                 Divider().padding(.vertical, 2)
 
                 ForEach(Array(viewModel.todayEntries.enumerated()), id: \.element.id) { index, entry in
@@ -401,6 +401,11 @@ struct FoodTabView: View {
     private var emptyDiaryView: some View {
         VStack(spacing: 14) {
             Text("No food logged").font(.subheadline).foregroundStyle(.tertiary)
+
+            Button { showingSearch = true } label: {
+                Label("Add food", systemImage: "plus.circle")
+                    .font(.subheadline).foregroundStyle(Theme.accent)
+            }
 
             // Copy from yesterday
             if let yesterdayCal = yesterdayCalories(), yesterdayCal > 0 {
