@@ -6,17 +6,51 @@ struct FloatingAIAssistant: View {
     @State private var aiService = LocalAIService.shared
     @State private var modelManager = AIModelManager.shared
 
+    @State private var showReadyBanner = false
+
     var body: some View {
-        Group {
+        VStack(spacing: 8) {
+            // "I'm ready" banner
+            if showReadyBanner {
+                Button { showReadyBanner = false; isExpanded = true } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "sparkles").font(.caption)
+                        Text("AI is ready").font(.caption.weight(.medium))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14).padding(.vertical, 8)
+                    .background(Theme.accent, in: Capsule())
+                    .shadow(color: Theme.accent.opacity(0.3), radius: 8, y: 4)
+                }
+                .transition(.scale.combined(with: .opacity))
+            }
+
             if isExpanded {
                 expandedChat
             } else {
                 minimizedBubble
             }
         }
-        .padding(.bottom, 70) // above tab bar
+        .padding(.bottom, 70)
         .padding(.trailing, 16)
         .animation(.spring(response: 0.3), value: isExpanded)
+        .animation(.spring(response: 0.3), value: showReadyBanner)
+        .onChange(of: modelManager.downloadState) { old, new in
+            // Auto-minimize when download starts
+            if case .downloading = new, isExpanded {
+                isExpanded = false
+            }
+            // Pop "I'm ready" when download completes
+            if case .completed = new {
+                if case .downloading = old {
+                    showReadyBanner = true
+                    // Auto-dismiss after 5 seconds
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+                        showReadyBanner = false
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Minimized Bubble

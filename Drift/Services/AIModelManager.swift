@@ -102,22 +102,26 @@ final class AIModelManager {
 
     private func downloadFile(from url: URL, to destination: URL, fileSizeMB: Int, offsetMB: Int, totalMB: Int) async -> Bool {
         do {
-            let delegate = DownloadProgressDelegate { [weak self] fileProgress in
-                Task { @MainActor in
-                    let overallProgress = (Double(offsetMB) + fileProgress * Double(fileSizeMB)) / Double(totalMB)
-                    self?.downloadState = .downloading(progress: min(overallProgress, 0.99))
-                }
-            }
-            let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
-            let (tempURL, response) = try await session.download(from: url)
+            // Use default session (follows redirects automatically)
+            // Track progress via bytes received
+            let (asyncBytes, response) = try await URLSession.shared.bytes(from: url)
+            let totalBytes = response.expectedContentLength
+            var data = Data()
+            data.reserveCapacity(fileSizeMB * 1024 * 1024)
+            var received: Int64 = 0
 
-            guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
-                downloadState = .error("Download failed: server returned error")
-                return false
+            for try await byte in asyncBytes {
+                data.append(byte)
+                received += 1
+                if received % (512 * 1024) == 0 { // Update every 512KB
+                    let fileProgress = totalBytes > 0 ? Double(received) / Double(totalBytes) : 0
+                    let overallProgress = (Double(offsetMB) + fileProgress * Double(fileSizeMB)) / Double(totalMB)
+                    downloadState = .downloading(progress: min(overallProgress, 0.99))
+                }
             }
 
             try? FileManager.default.removeItem(at: destination)
-            try FileManager.default.moveItem(at: tempURL, to: destination)
+            try data.write(to: destination)
             return true
         } catch {
             downloadState = .error("Download failed: \(error.localizedDescription)")
@@ -148,21 +152,5 @@ final class AIModelManager {
     }
 }
 
-// MARK: - Download Delegate
 
-private final class DownloadProgressDelegate: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
-    let onProgress: (Double) -> Void
 
-    init(onProgress: @escaping (Double) -> Void) {
-        self.onProgress = onProgress
-    }
-
-    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
-        guard totalBytesExpectedToWrite > 0 else { return }
-        onProgress(Double(totalBytesWritten) / Double(totalBytesExpectedToWrite))
-    }
-
-    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
-        // Handled by async download caller
-    }
-}

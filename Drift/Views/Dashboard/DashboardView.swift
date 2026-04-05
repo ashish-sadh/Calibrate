@@ -98,20 +98,13 @@ struct DashboardView: View {
                     }
                 }
                 ToolbarItem(placement: .primaryAction) {
-                    Button {
-                        aiEnabled.toggle()
-                    } label: {
-                        HStack(spacing: 3) {
-                            Image(systemName: "sparkles")
-                                .font(.caption)
-                            Text("AI")
-                                .font(.caption.weight(.semibold))
-                        }
-                        .foregroundStyle(aiEnabled ? Theme.accent : Color.gray)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(aiEnabled ? Theme.accent.opacity(0.15) : Color.clear, in: Capsule())
+                    Toggle(isOn: $aiEnabled) {
+                        Image(systemName: "sparkles")
+                            .font(.caption)
                     }
+                    .toggleStyle(.switch)
+                    .tint(Theme.accent)
+                    .scaleEffect(0.7)
                 }
             }
             .task { await viewModel.loadToday() }
