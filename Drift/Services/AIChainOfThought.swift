@@ -132,6 +132,8 @@ enum AIChainOfThought {
         }
         if needsWorkout {
             steps.append(Step(label: "Looking at workouts...") { AIContextBuilder.workoutContext() })
+            // Also check sleep/recovery for training readiness
+            steps.append(Step(label: "Checking recovery...") { AIContextBuilder.sleepRecoveryContext() })
         }
         if needsSupplements {
             steps.append(Step(label: "Checking supplements...") { AIContextBuilder.supplementContext() })
