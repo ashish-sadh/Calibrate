@@ -47,6 +47,7 @@ final class LocalAIService {
         switch modelManager.downloadState {
         case .completed:
             state = .ready
+            loadModel() // Auto-load after download
         case .error(let msg):
             state = .error(msg)
         default:
