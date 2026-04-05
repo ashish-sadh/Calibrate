@@ -299,6 +299,12 @@ struct AIChatView: View {
 
         let lower = text.lowercased()
 
+        // Emoji-only messages — just acknowledge
+        if lower.unicodeScalars.allSatisfy({ $0.properties.isEmoji || $0.properties.isEmojiPresentation || $0 == " " }) && !lower.isEmpty && lower.count <= 4 {
+            messages.append(ChatMessage(role: .assistant, text: "What can I help you with?"))
+            return
+        }
+
         // Quick conversational responses — no LLM needed
         let greetings = ["hi", "hello", "hey", "yo", "sup"]
         if greetings.contains(lower) {
