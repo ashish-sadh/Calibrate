@@ -59,11 +59,20 @@ enum AIChainOfThought {
             || q.contains("stack")
         let needsOverview = q.contains("how am i") || q.contains("overview") || q.contains("doing")
             || q.contains("my day") || q.contains("summary")
+        let needsComparison = q.contains("compare") || q.contains("versus") || q.contains("vs")
+            || q.contains("last week") || q.contains("this week") || q.contains("better") || q.contains("worse")
 
         // Broad queries get a comprehensive overview (fullDayContext includes food+workouts+supplements)
         if needsOverview {
             steps.append(Step(label: "Reviewing your day...") { AIContextBuilder.fullDayContext() })
             steps.append(Step(label: "Analyzing weight trend...") { AIContextBuilder.weightContext() })
+            return steps
+        }
+
+        // Comparison queries get broad data
+        if needsComparison {
+            steps.append(Step(label: "Comparing your data...") { AIContextBuilder.comparisonContext() })
+            steps.append(Step(label: "Checking trends...") { AIContextBuilder.weightContext() })
             return steps
         }
 

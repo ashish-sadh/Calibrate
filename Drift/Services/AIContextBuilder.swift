@@ -503,6 +503,40 @@ enum AIContextBuilder {
         """
     }
 
+    // MARK: - Comparison Context
+
+    /// Pre-computed this-week vs last-week comparison for food and weight.
+    static func comparisonContext() -> String {
+        var lines: [String] = []
+        let cal = Calendar.current
+        let today = Date()
+
+        // This week vs last week calories
+        guard let weekStart = cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: today)),
+              let lastWeekStart = cal.date(byAdding: .weekOfYear, value: -1, to: weekStart),
+              let lastWeekEnd = cal.date(byAdding: .day, value: -1, to: weekStart) else {
+            return ""
+        }
+
+        let thisWeekFrom = DateFormatters.dateOnly.string(from: weekStart)
+        let thisWeekTo = DateFormatters.dateOnly.string(from: today)
+        let lastWeekFrom = DateFormatters.dateOnly.string(from: lastWeekStart)
+        let lastWeekTo = DateFormatters.dateOnly.string(from: lastWeekEnd)
+
+        let thisAvg = (try? AppDatabase.shared.averageDailyCalories(from: thisWeekFrom, to: thisWeekTo)) ?? 0
+        let lastAvg = (try? AppDatabase.shared.averageDailyCalories(from: lastWeekFrom, to: lastWeekTo)) ?? 0
+
+        if thisAvg > 0 || lastAvg > 0 {
+            lines.append("This week avg: \(Int(thisAvg))cal/day | Last week: \(Int(lastAvg))cal/day")
+            if lastAvg > 0 {
+                let diff = thisAvg - lastAvg
+                lines.append("Change: \(diff > 0 ? "+" : "")\(Int(diff))cal/day (\(diff > 0 ? "eating more" : "eating less"))")
+            }
+        }
+
+        return lines.isEmpty ? "" : lines.joined(separator: "\n")
+    }
+
     // MARK: - Token Budget Management
 
     /// Rough token estimate (1 token per 4 chars for English text).
