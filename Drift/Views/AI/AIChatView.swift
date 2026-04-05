@@ -370,7 +370,8 @@ struct AIChatView: View {
                     let f = match.food
                     let s = match.servings
                     vm.quickAdd(name: f.name, calories: f.calories * s, proteinG: f.proteinG * s,
-                                carbsG: f.carbsG * s, fatG: f.fatG * s, fiberG: f.fiberG * s, mealType: meal)
+                                carbsG: f.carbsG * s, fatG: f.fatG * s, fiberG: f.fiberG * s,
+                                mealType: meal, servingSizeG: f.servingSize * s)
                     logged.append("\(f.name) (\(Int(f.calories * s))cal)")
                 } else {
                     notFound.append(intent)
@@ -405,7 +406,8 @@ struct AIChatView: View {
                 let vm = FoodLogViewModel()
                 vm.quickAdd(name: f.name, calories: cal, proteinG: p,
                             carbsG: f.carbsG * servings, fatG: f.fatG * servings,
-                            fiberG: f.fiberG * servings, mealType: currentMealType)
+                            fiberG: f.fiberG * servings, mealType: currentMealType,
+                            servingSizeG: f.servingSize * servings)
                 let meal = currentMealType.displayName.lowercased()
                 // Show updated calories remaining after logging
                 let todayN = (try? AppDatabase.shared.fetchDailyNutrition(for: DateFormatters.todayString)) ?? .zero
