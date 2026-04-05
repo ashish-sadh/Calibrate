@@ -55,7 +55,7 @@ struct ContentView: View {
         }
         .tint(Theme.accent)
         .background(Theme.background.ignoresSafeArea())
-        .overlay(alignment: .bottomTrailing) {
+        .overlay {
             if aiEnabled {
                 FloatingAIAssistant()
             }
