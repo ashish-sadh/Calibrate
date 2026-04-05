@@ -455,11 +455,22 @@ enum AIContextBuilder {
         guard let scans = try? AppDatabase.shared.fetchDEXAScans(),
               let latest = scans.first else { return "No DEXA data on file." }
 
-        var lines = ["DEXA scan (\(latest.scanDate)):"]
-        if let bf = latest.bodyFatPct { lines.append("  Body fat: \(String(format: "%.1f", bf))%") }
-        if let lean = latest.leanMassLbs { lines.append("  Lean mass: \(String(format: "%.1f", lean)) lbs") }
-        if let fat = latest.fatMassLbs { lines.append("  Fat mass: \(String(format: "%.1f", fat)) lbs") }
-        if let visc = latest.visceralFatKg { lines.append("  Visceral fat: \(String(format: "%.2f", visc)) kg") }
+        var lines = ["DEXA (\(latest.scanDate)):"]
+        if let bf = latest.bodyFatPct {
+            let category: String
+            switch bf {
+            case ..<15: category = "athletic"
+            case ..<20: category = "fit"
+            case ..<25: category = "average"
+            case ..<30: category = "above average"
+            default: category = "high"
+            }
+            lines.append("  BF: \(String(format: "%.1f", bf))% (\(category))")
+        }
+        if let lean = latest.leanMassLbs { lines.append("  Lean: \(String(format: "%.1f", lean))lbs") }
+        if let fat = latest.fatMassLbs { lines.append("  Fat: \(String(format: "%.1f", fat))lbs") }
+        if let visc = latest.visceralFatKg { lines.append("  Visceral: \(String(format: "%.2f", visc))kg") }
+        if let rmr = latest.rmrCalories { lines.append("  RMR: \(Int(rmr))kcal") }
 
         // Compare with previous scan if available
         if scans.count > 1 {
