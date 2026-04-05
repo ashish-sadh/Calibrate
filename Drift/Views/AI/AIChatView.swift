@@ -153,6 +153,19 @@ struct AIChatView: View {
             messages.append(ChatMessage(role: .assistant, text: summary))
             return
         }
+        if lower.contains("weight") || lower.contains("how much do i weigh") {
+            if let entries = try? AppDatabase.shared.fetchWeightEntries(),
+               let trend = WeightTrendCalculator.calculateTrend(entries: entries.map { (date: $0.date, weightKg: $0.weightKg) }) {
+                let unit = Preferences.weightUnit
+                let current = String(format: "%.1f", unit.convert(fromKg: trend.currentEMA))
+                let rate = String(format: "%+.2f", unit.convert(fromKg: trend.weeklyRateKg))
+                let direction = trend.weeklyRateKg < -0.01 ? "losing" : trend.weeklyRateKg > 0.01 ? "gaining" : "maintaining"
+                messages.append(ChatMessage(role: .assistant, text: "Your current weight is \(current) \(unit.displayName). You're \(direction) at \(rate) \(unit.displayName)/week."))
+            } else {
+                messages.append(ChatMessage(role: .assistant, text: "No weight data yet. Log your weight in the Weight tab to start tracking."))
+            }
+            return
+        }
         if lower.contains("yesterday") || lower.contains("what did i eat") {
             let summary = AIRuleEngine.yesterdaySummary()
             messages.append(ChatMessage(role: .assistant, text: summary))
