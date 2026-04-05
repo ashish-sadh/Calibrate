@@ -417,8 +417,18 @@ enum AIContextBuilder {
             if detail.deepHours > 0 { lines.append("  Deep: \(String(format: "%.1f", detail.deepHours))h") }
         }
         if data.hrvMs > 0 { lines.append("  HRV: \(Int(data.hrvMs))ms") }
-        if data.restingHR > 0 { lines.append("  Resting HR: \(Int(data.restingHR)) bpm") }
-        lines.append("  Recovery score: \(data.recoveryScore)/100")
+        if data.restingHR > 0 { lines.append("  RHR: \(Int(data.restingHR))bpm") }
+        lines.append("  Recovery: \(data.recoveryScore)/100")
+
+        // Pre-computed assessment
+        if data.recoveryScore >= 80 {
+            lines.append("  Assessment: well recovered — good for intense training")
+        } else if data.recoveryScore >= 50 {
+            lines.append("  Assessment: moderate recovery — light to moderate activity ok")
+        } else if data.recoveryScore > 0 {
+            lines.append("  Assessment: low recovery — rest or light activity recommended")
+        }
+
         return lines.joined(separator: "\n")
     }
 
