@@ -20,6 +20,7 @@ struct QuickAddView: View {
         var carbsG: Double
         var fatG: Double
         var fiberG: Double
+        var servingSizeG: Double = 0
     }
 
     private var total: (cal: Double, p: Double, c: Double, f: Double, fb: Double) {
@@ -158,8 +159,10 @@ struct QuickAddView: View {
         var fav = FavoriteFood(name: name, calories: t.cal, proteinG: t.p, carbsG: t.c,
                                fatG: t.f, fiberG: t.fb, isRecipe: items.count > 1)
         try? db.saveFavorite(&fav)
+        let totalServing = items.reduce(0.0) { $0 + $1.servingSizeG }
         viewModel.quickAdd(name: name, calories: t.cal, proteinG: t.p, carbsG: t.c,
-                           fatG: t.f, fiberG: t.fb, mealType: viewModel.autoMealType)
+                           fatG: t.f, fiberG: t.fb, mealType: viewModel.autoMealType,
+                           servingSizeG: totalServing)
     }
 }
 
@@ -185,6 +188,8 @@ private struct IngredientPickerView: View {
     @State private var manualC = ""
     @State private var manualF = ""
     @State private var manualFb = ""
+    @State private var manualServing = "1"
+    @State private var manualServingUnit = "serving"
     @FocusState private var searchFocused: Bool
 
     private var ingredientResults: [RawIngredient] {
@@ -422,6 +427,21 @@ private struct IngredientPickerView: View {
         NavigationStack {
             Form {
                 TextField("Name", text: $manualName)
+                HStack {
+                    Text("Serving")
+                    Spacer()
+                    TextField("1", text: $manualServing)
+                        .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 60)
+                    Picker("", selection: $manualServingUnit) {
+                        Text("serving").tag("serving")
+                        Text("g").tag("g")
+                        Text("ml").tag("ml")
+                        Text("piece").tag("piece")
+                        Text("cup").tag("cup")
+                        Text("tbsp").tag("tbsp")
+                    }
+                    .pickerStyle(.menu).labelsHidden().frame(width: 80)
+                }
                 HStack { Text("Calories"); Spacer(); TextField("0", text: $manualCal).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80) }
                 HStack { Text("Protein (g)"); Spacer(); TextField("0", text: $manualP).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80) }
                 HStack { Text("Carbs (g)"); Spacer(); TextField("0", text: $manualC).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80) }
@@ -433,14 +453,26 @@ private struct IngredientPickerView: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { showingManual = false } }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Add") {
+                        let servingVal = Double(manualServing) ?? 1
+                        let servingG: Double
+                        switch manualServingUnit {
+                        case "g": servingG = servingVal
+                        case "ml": servingG = servingVal
+                        case "cup": servingG = servingVal * 240
+                        case "tbsp": servingG = servingVal * 15
+                        default: servingG = servingVal > 0 ? servingVal : 0 // serving/piece — use as-is or 0
+                        }
+                        let portionText = servingVal > 0 && manualServingUnit != "serving"
+                            ? "\(Int(servingVal))\(manualServingUnit)" : ""
                         onAdd(QuickAddView.RecipeItem(
                             name: manualName.isEmpty ? "Item" : manualName,
-                            portionText: "",
+                            portionText: portionText,
                             calories: Double(manualCal) ?? 0,
                             proteinG: Double(manualP) ?? 0,
                             carbsG: Double(manualC) ?? 0,
                             fatG: Double(manualF) ?? 0,
-                            fiberG: Double(manualFb) ?? 0
+                            fiberG: Double(manualFb) ?? 0,
+                            servingSizeG: servingG
                         ))
                         showingManual = false
                         dismiss()

@@ -380,7 +380,8 @@ struct FoodTabView: View {
                 viewModel.quickAdd(name: entry.foodName, calories: entry.totalCalories,
                                    proteinG: entry.totalProtein, carbsG: entry.totalCarbs,
                                    fatG: entry.totalFat, fiberG: entry.totalFiber,
-                                   mealType: viewModel.autoMealType)
+                                   mealType: viewModel.autoMealType,
+                                   servingSizeG: entry.servingSizeG)
                 reload()
             } label: {
                 Label("Log Again", systemImage: "arrow.counterclockwise")

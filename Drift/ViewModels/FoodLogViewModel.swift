@@ -201,7 +201,7 @@ final class FoodLogViewModel {
         logFood(food, servings: lastUsed, mealType: autoMealType)
     }
 
-    func quickAdd(name: String, calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double, mealType: MealType, loggedAt: String? = nil) {
+    func quickAdd(name: String, calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double, mealType: MealType, loggedAt: String? = nil, servingSizeG: Double = 0) {
         do {
             let date = dateString
             let mealLogs = try database.fetchMealLogs(for: date)
@@ -219,7 +219,7 @@ final class FoodLogViewModel {
             var entry = FoodEntry(
                 mealLogId: mealLogId,
                 foodName: name,
-                servingSizeG: 0,
+                servingSizeG: servingSizeG,
                 servings: 1,
                 calories: calories,
                 proteinG: proteinG,
