@@ -102,29 +102,30 @@ final class AIModelManager {
 
     private func downloadFile(from url: URL, to destination: URL, fileSizeMB: Int, offsetMB: Int, totalMB: Int) async -> Bool {
         do {
-            // Use default session (follows redirects automatically)
-            // Track progress via bytes received
-            let (asyncBytes, response) = try await URLSession.shared.bytes(from: url)
-            let totalBytes = response.expectedContentLength
-            let fileHandle = FileManager.default.createFile(atPath: destination.path, contents: nil) ? try FileHandle(forWritingTo: destination) : nil
-            guard let fileHandle else { throw URLError(.cannotCreateFile) }
-            var received: Int64 = 0
-            var buffer = Data()
-            let chunkSize = 256 * 1024 // 256KB chunks
+            // Resolve redirect first (GitHub 302 → blob storage)
+            var request = URLRequest(url: url)
+            request.httpMethod = "HEAD"
+            let (_, headResponse) = try await URLSession.shared.data(for: request)
+            let finalURL = headResponse.url ?? url
 
-            for try await byte in asyncBytes {
-                buffer.append(byte)
-                received += 1
-                if buffer.count >= chunkSize {
-                    fileHandle.write(buffer)
-                    buffer.removeAll(keepingCapacity: true)
-                    let fileProgress = totalBytes > 0 ? Double(received) / Double(totalBytes) : 0
-                    let overallProgress = (Double(offsetMB) + fileProgress * Double(fileSizeMB)) / Double(totalMB)
-                    downloadState = .downloading(progress: min(overallProgress, 0.99))
+            // Download with progress delegate (fast, native download task)
+            let tracker = ProgressTracker { [weak self] fileProgress in
+                Task { @MainActor in
+                    let overall = (Double(offsetMB) + fileProgress * Double(fileSizeMB)) / Double(totalMB)
+                    self?.downloadState = .downloading(progress: min(overall, 0.99))
                 }
             }
-            if !buffer.isEmpty { fileHandle.write(buffer) }
-            fileHandle.closeFile()
+            let session = URLSession(configuration: .default, delegate: tracker, delegateQueue: nil)
+            let (tempURL, response) = try await session.download(from: finalURL)
+
+            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
+                let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+                downloadState = .error("Download failed: HTTP \(code)")
+                return false
+            }
+
+            try? FileManager.default.removeItem(at: destination)
+            try FileManager.default.moveItem(at: tempURL, to: destination)
             return true
         } catch {
             downloadState = .error("Download failed: \(error.localizedDescription)")
@@ -155,5 +156,23 @@ final class AIModelManager {
     }
 }
 
+// MARK: - Download Progress Tracker
+
+private final class ProgressTracker: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
+    let onProgress: (Double) -> Void
+
+    init(onProgress: @escaping (Double) -> Void) {
+        self.onProgress = onProgress
+    }
+
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didWriteData bytesWritten: Int64, totalBytesWritten: Int64, totalBytesExpectedToWrite: Int64) {
+        guard totalBytesExpectedToWrite > 0 else { return }
+        onProgress(Double(totalBytesWritten) / Double(totalBytesExpectedToWrite))
+    }
+
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
+        // Handled by async session.download(from:)
+    }
+}
 
 
