@@ -104,9 +104,13 @@ enum AIChainOfThought {
             return steps
         }
 
-        // Specific domain queries
+        // Specific domain queries — with automatic dependencies
         if needsWeight {
             steps.append(Step(label: "Analyzing weight trend...") { AIContextBuilder.weightContext() })
+            // Weight questions often need food context too (for "why am I not losing?")
+            if q.contains("why") || q.contains("not losing") || q.contains("plateau") || q.contains("stall") {
+                steps.append(Step(label: "Checking your meals...") { AIContextBuilder.foodContext() })
+            }
         }
         if needsFood {
             steps.append(Step(label: "Checking your meals...") { AIContextBuilder.foodContext() })
