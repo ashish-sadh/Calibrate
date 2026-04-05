@@ -323,6 +323,18 @@ import Testing
     #expect(steps != nil, "Screen-aware fallback should fetch glucose context")
 }
 
+// MARK: - Weight Intent Edge Cases
+
+@Test func aiWeightSanityCheck() async throws {
+    // Values outside 20-500 should be rejected (prevents food weight logging)
+    let small = AIActionExecutor.parseWeightIntent("chicken weighs 200g")
+    #expect(small == nil, "200g is too small for body weight (if no unit, treated as raw number)")
+    // But 165 is valid
+    let valid = AIActionExecutor.parseWeightIntent("I weigh 165")
+    #expect(valid != nil)
+    #expect(valid?.weightValue == 165)
+}
+
 @Test func aiParseMultipleActionsFirstWins() async throws {
     // If response has multiple actions, first one should be extracted
     let (action, _) = AIActionParser.parse("[LOG_FOOD: rice] and [START_WORKOUT: push]")
