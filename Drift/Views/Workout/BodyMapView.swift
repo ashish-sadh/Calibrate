@@ -158,7 +158,7 @@ struct BodyMapView: View {
     private func loadMuscleStatus() {
         let cal = Calendar.current
         let today = Date()
-        guard let workouts = try? WorkoutService.fetchWorkouts(limit: 50) else { return }
+        guard let workouts = try? WorkoutService.fetchWorkouts(limit: 500) else { return }
 
         var lastWorked: [String: Date] = [:]
         var exercisesByGroup: [String: [String]] = [:]

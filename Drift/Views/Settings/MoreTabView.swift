@@ -183,7 +183,7 @@ struct SettingsView: View {
                                 let count = try await HealthKitService.shared.syncWeight()
                                 syncStatus = "Synced \(count) weight entries"
                             } catch {
-                                syncStatus = "Sync failed"
+                                syncStatus = "Sync failed: \(error.localizedDescription)"
                             }
                             clearStatus()
                         }
@@ -205,7 +205,7 @@ struct SettingsView: View {
                                 let count = try await HealthKitService.shared.fullResyncWeight()
                                 syncStatus = "Re-synced \(count) entries from all history"
                             } catch {
-                                syncStatus = "Re-sync failed"
+                                syncStatus = "Re-sync failed: \(error.localizedDescription)"
                             }
                             clearStatus()
                         }

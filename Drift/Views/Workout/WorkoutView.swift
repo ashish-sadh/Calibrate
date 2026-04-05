@@ -8,6 +8,7 @@ struct WorkoutView: View {
     @State private var workouts: [WorkoutSummary] = []
     @State private var weeklyCounts: [(weekStart: Date, count: Int)] = []
     @State private var templates: [WorkoutTemplate] = []
+    @State private var showAllTemplates = false
     @State private var showingNewWorkout = false
     @State private var showingImport = false
     @State private var showingCreateTemplate = false
@@ -174,7 +175,8 @@ struct WorkoutView: View {
                             }
                         }
                     } else {
-                        ForEach(templates) { t in
+                        let displayedTemplates = showAllTemplates ? templates : Array(templates.prefix(5))
+                        ForEach(displayedTemplates) { t in
                             Button {
                                 previewTemplate = t
                             } label: {
@@ -195,6 +197,13 @@ struct WorkoutView: View {
                                 .padding(.vertical, 6)
                             }
                             .buttonStyle(.plain)
+                        }
+                        if !showAllTemplates && templates.count > 5 {
+                            Button { showAllTemplates = true } label: {
+                                Text("Show all \(templates.count) templates")
+                                    .font(.caption).foregroundStyle(Theme.accent)
+                                    .frame(maxWidth: .infinity)
+                            }
                         }
                     }
                 }
@@ -534,7 +543,7 @@ struct WorkoutView: View {
         isLoading = true
         // Load independently so one failure doesn't block the others
         do {
-            let raw = try WorkoutService.fetchWorkouts(limit: 50)
+            let raw = try WorkoutService.fetchWorkouts(limit: 500)
             workouts = try raw.map { try WorkoutService.buildSummary(for: $0) }
         } catch { Log.app.error("Workout load: \(error.localizedDescription)") }
         do {
