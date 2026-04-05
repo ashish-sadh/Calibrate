@@ -334,7 +334,7 @@ struct AIChatView: View {
 
         // Rule engine: instant answers for exact-match patterns only
         // Broader questions go to LLM for nuanced, personalized responses
-        if lower == "daily summary" || lower == "summary" || lower == "my day" {
+        if lower == "daily summary" || lower == "summary" {
             messages.append(ChatMessage(role: .assistant, text: AIRuleEngine.dailySummary()))
             return
         }
