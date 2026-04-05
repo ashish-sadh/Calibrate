@@ -5,6 +5,7 @@ enum AIActionParser {
 
     enum Action {
         case logFood(name: String, amount: String?)  // [LOG_FOOD: chicken breast 200g]
+        case logWeight(value: Double, unit: String)   // [LOG_WEIGHT: 165 lbs]
         case startWorkout(type: String?)              // [START_WORKOUT: legs]
         case showWeight                                // [SHOW_WEIGHT]
         case showNutrition                             // [SHOW_NUTRITION]
@@ -25,6 +26,20 @@ enum AIActionParser {
             // Try to separate name from amount (e.g., "chicken breast 200g")
             let parts = extractFoodParts(content)
             return (.logFood(name: parts.name, amount: parts.amount), text.trimmingCharacters(in: .whitespacesAndNewlines))
+        }
+
+        // [LOG_WEIGHT: 165 lbs]
+        if let range = text.range(of: #"\[LOG_WEIGHT:\s*(.+?)\]"#, options: .regularExpression) {
+            let match = String(text[range])
+            let content = match.replacingOccurrences(of: "[LOG_WEIGHT:", with: "")
+                .replacingOccurrences(of: "]", with: "")
+                .trimmingCharacters(in: .whitespaces)
+            text.removeSubrange(range)
+            let parts = content.split(separator: " ")
+            if let value = Double(String(parts.first ?? "")) {
+                let unit = parts.count > 1 ? String(parts[1]) : "lbs"
+                return (.logWeight(value: value, unit: unit), text.trimmingCharacters(in: .whitespacesAndNewlines))
+            }
         }
 
         // [START_WORKOUT: ...]

@@ -463,9 +463,16 @@ struct AIChatView: View {
 
             // Auto-execute actions from LLM response
             let parsed = AIActionParser.parse(finalResponse)
-            if case .logFood(let name, _) = parsed.action {
+            switch parsed.action {
+            case .logFood(let name, _):
                 foodSearchQuery = name
                 showingFoodSearch = true
+            case .logWeight(let value, let unit):
+                let kg = unit.lowercased().hasPrefix("kg") ? value : value / 2.20462
+                var entry = WeightEntry(date: DateFormatters.todayString, weightKg: kg, source: "manual")
+                try? AppDatabase.shared.saveWeightEntry(&entry)
+            default:
+                break
             }
         }
     }
