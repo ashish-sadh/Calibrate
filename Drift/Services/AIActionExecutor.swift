@@ -85,9 +85,16 @@ enum AIActionExecutor {
         let lower = text.lowercased().trimmingCharacters(in: .whitespaces)
 
         let verbs = ["log ", "ate ", "had ", "add ", "track ", "logged ", "eating "]
-        guard let verb = verbs.first(where: { lower.hasPrefix($0) }) else { return nil }
+        let naturalPrefixes = ["i just had ", "i just ate ", "i had ", "i ate ", "just had ", "just ate "]
+        var remainder: String
 
-        var remainder = String(lower.dropFirst(verb.count)).trimmingCharacters(in: .whitespaces)
+        if let verb = verbs.first(where: { lower.hasPrefix($0) }) {
+            remainder = String(lower.dropFirst(verb.count)).trimmingCharacters(in: .whitespaces)
+        } else if let prefix = naturalPrefixes.first(where: { lower.hasPrefix($0) }) {
+            remainder = String(lower.dropFirst(prefix.count)).trimmingCharacters(in: .whitespaces)
+        } else {
+            return nil
+        }
         for suffix in [" for me", " please", " today", " for breakfast", " for lunch", " for dinner", " for snack"] {
             if remainder.hasSuffix(suffix) { remainder = String(remainder.dropLast(suffix.count)) }
         }
