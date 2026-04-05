@@ -1126,17 +1126,18 @@ struct ActiveWorkoutView: View {
                                 .font(.title3)
                                 .foregroundStyle(exercises[ei].sets[si].done ? Theme.deficit : .secondary)
                         }.frame(width: 30)
-
-                        // Delete set button (only if more than 1 set)
-                        if exercises[ei].sets.count > 1 {
-                            Button {
-                                exercises[ei].sets.remove(at: si)
-                            } label: {
-                                Image(systemName: "minus.circle").font(.caption2).foregroundStyle(.quaternary)
-                            }.frame(width: 20)
-                        }
                     }
                     .padding(.vertical, 2)
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            exercises[ei].sets.remove(at: si)
+                            if exercises[ei].sets.isEmpty {
+                                exercises.remove(at: ei)
+                            }
+                        } label: {
+                            Label("Delete Set", systemImage: "trash")
+                        }
+                    }
 
                     // Inline rest timer bar (shows after this set if active)
                     if restTimerActive && activeRestExerciseIndex == ei && activeRestSetIndex == si {
@@ -1145,9 +1146,10 @@ struct ActiveWorkoutView: View {
                 }
             }
 
-            // Add set button with rest time
+            // Add set button — prefills from last set
             Button {
-                exercises[ei].sets.append(ActiveSet(weight: "", reps: ""))
+                let last = exercises[ei].sets.last
+                exercises[ei].sets.append(ActiveSet(weight: last?.weight ?? "", reps: last?.reps ?? ""))
             } label: {
                 Text("+ Set")
                     .font(.caption).foregroundStyle(.secondary)
