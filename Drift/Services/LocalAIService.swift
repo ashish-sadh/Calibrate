@@ -1,23 +1,27 @@
 import Foundation
-@preconcurrency import LLM
 
-/// Manages local AI model download and inference.
+/// Orchestrates AI inference — picks backend (MLX or llama.cpp) and model tier based on device.
 @MainActor
 @Observable
 final class LocalAIService {
     static let shared = LocalAIService()
 
-    enum ModelState: Equatable {
-        case loading
+    enum State: Equatable {
+        case notSetUp       // Model not downloaded
+        case downloading(progress: Double)
+        case loading        // Loading into memory
         case ready
         case error(String)
+        case notEnoughSpace(String)
     }
 
-    private(set) var state: ModelState = .loading
-    nonisolated(unsafe) private var bot: LLM?
+    private(set) var state: State = .notSetUp
+    nonisolated(unsafe) private var backend: AIBackend?
+    let modelManager = AIModelManager.shared
 
-    // Model config — bundled with the app
-    private let modelFileName = "qwen2.5-0.5b-instruct-q4_k_m"
+    var supportsVision: Bool { backend?.supportsVision ?? false }
+    var isModelLoaded: Bool { backend?.isLoaded ?? false }
+
     private let systemPrompt = """
     You are Drift AI, a brief health assistant. Rules:
     1. Answer in 1-3 short sentences. Never ramble.
@@ -32,43 +36,48 @@ final class LocalAIService {
     User: "Start leg day" → "Let's go! [START_WORKOUT: legs]"
     """
 
-    private var modelPath: URL? {
-        Bundle.main.url(forResource: modelFileName, withExtension: "gguf")
-    }
-
-    var isModelAvailable: Bool {
-        modelPath != nil
-    }
-
-    var isModelLoaded: Bool {
-        bot != nil
-    }
-
     init() {
-        state = isModelAvailable ? .ready : .error("Model not found in app bundle")
+        if modelManager.isModelDownloaded {
+            state = .ready
+        } else if !DeviceCapability.hasEnoughDiskSpace(for: modelManager.currentTier) {
+            state = .notEnoughSpace("Not enough storage for AI (\(modelManager.currentTier.downloadSizeMB)MB needed, keep 2GB free)")
+        }
     }
 
-    // MARK: - Load Model
+    // MARK: - Setup
+
+    func downloadModel() async {
+        await modelManager.downloadModel()
+        switch modelManager.downloadState {
+        case .completed:
+            state = .ready
+        case .error(let msg):
+            state = .error(msg)
+        default:
+            break
+        }
+    }
 
     func loadModel() {
-        guard let path = modelPath, bot == nil else { return }
+        guard modelManager.isModelDownloaded, backend == nil else { return }
         state = .loading
-        bot = LLM(from: path, template: .chatML(systemPrompt), historyLimit: 6, maxTokenCount: 512)
-        if bot != nil {
-            bot?.temp = 0.7
-            bot?.topP = 0.9
-            state = .ready
-            Log.app.info("AI model loaded from bundle")
-        } else {
-            state = .error("Failed to load model")
+
+        guard let modelPath = modelManager.primaryModelPath else {
+            state = .error("Model file not found")
+            return
         }
+
+        // Create appropriate backend
+        let llama = LlamaCppBackend(modelPath: modelPath)
+        try? llama.loadSync()
+        backend = llama
+        state = llama.isLoaded ? .ready : .error("Failed to load model")
     }
 
     // MARK: - Inference
 
-    /// Generate a response with health context injected.
     func respond(to message: String, context: String = "") async -> String {
-        guard let bot else { return "Model not loaded." }
+        guard let backend else { return "Model not loaded." }
 
         let prompt: String
         if context.isEmpty {
@@ -77,25 +86,42 @@ final class LocalAIService {
             prompt = "Context about the user:\n\(context)\n\nUser: \(message)"
         }
 
-        let localBot = bot
-        await localBot.respond(to: prompt)
-        return localBot.output.trimmingCharacters(in: .whitespacesAndNewlines)
+        let b = backend
+        return await b.respond(to: prompt, systemPrompt: systemPrompt)
     }
 
-    /// Get the bot's live output (for streaming UI updates).
-    var output: String {
-        bot?.output ?? ""
-    }
+    // MARK: - Management
 
     func stop() {
-        bot?.stop()
-    }
-
-    func reset() {
-        bot?.reset()
+        // No-op for now — LLM.swift doesn't expose cancel cleanly
     }
 
     func resetChat() {
-        bot?.reset()
+        backend?.unload()
+        backend = nil
+        if modelManager.isModelDownloaded {
+            loadModel()
+        }
+    }
+
+    func deleteModel() {
+        backend?.unload()
+        backend = nil
+        modelManager.deleteModel()
+        state = .notSetUp
+    }
+
+    /// Device info for display.
+    var deviceInfo: String {
+        let ram = String(format: "%.0f", DeviceCapability.ramGB)
+        let free = String(format: "%.1f", DeviceCapability.freeDiskGB)
+        let tier = modelManager.currentTier.displayName
+        return "\(ram)GB RAM · \(free)GB free · \(tier)"
+    }
+
+    /// Download size for display.
+    var downloadSizeText: String {
+        let mb = modelManager.currentTier.downloadSizeMB
+        return mb >= 1024 ? String(format: "%.1f GB", Double(mb) / 1024) : "\(mb) MB"
     }
 }
