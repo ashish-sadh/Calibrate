@@ -103,6 +103,8 @@ struct AIChatView: View {
 
     private var thinkingIndicator: some View {
         HStack(spacing: 6) {
+            Image(systemName: "sparkles").font(.system(size: 10))
+                .foregroundStyle(Theme.accent).padding(.top, 1)
             ProgressView().scaleEffect(0.6)
             switch generatingState {
             case .thinking(let step):
