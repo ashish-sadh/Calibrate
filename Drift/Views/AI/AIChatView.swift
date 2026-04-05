@@ -129,8 +129,10 @@ struct AIChatView: View {
                     messages.append(ChatMessage(role: .assistant, text: next))
                 }
             }
-            if aiService.state == .ready {
-                aiService.loadModel()
+            if aiService.state == .ready && !aiService.isModelLoaded {
+                Task {
+                    aiService.loadModel()
+                }
             }
         }
     }

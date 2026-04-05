@@ -40,6 +40,10 @@ final class LocalAIService {
         modelPath != nil
     }
 
+    var isModelLoaded: Bool {
+        bot != nil
+    }
+
     init() {
         state = isModelAvailable ? .ready : .error("Model not found in app bundle")
     }
