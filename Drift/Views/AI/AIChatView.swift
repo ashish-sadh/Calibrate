@@ -49,6 +49,12 @@ struct AIChatView: View {
                         withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
                     }
                 }
+                .onChange(of: messages.last?.text) { _, _ in
+                    // Also scroll during streaming as text grows
+                    if streamingMessageId != nil, let last = messages.last {
+                        proxy.scrollTo(last.id, anchor: .bottom)
+                    }
+                }
             }
 
             // Smart suggestion pills
