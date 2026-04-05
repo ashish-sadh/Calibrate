@@ -212,6 +212,12 @@ struct AIChatView: View {
             pills.append("Daily summary")
         }
 
+        // Weekly on weekends or end of day
+        let weekday = Calendar.current.component(.weekday, from: Date())
+        if weekday == 1 || weekday == 7 || hour >= 20 {
+            pills.append("Weekly summary")
+        }
+
         // Screen-specific pills
         switch screen {
         case .weight, .goal:
