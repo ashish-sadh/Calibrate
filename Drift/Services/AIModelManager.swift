@@ -18,14 +18,7 @@ final class AIModelManager {
     private(set) var backendType: AIBackendType
 
     // Base URL for model downloads — GitHub Releases (primary), HuggingFace (fallback for vision)
-    private var baseURL: String {
-        switch currentTier {
-        case .small:
-            return "https://github.com/ashish-sadh/Drift/releases/download/models-v1"
-        case .vision:
-            return "https://huggingface.co/unsloth/Qwen3-VL-2B-Instruct-GGUF/resolve/main"
-        }
-    }
+    private let baseURL = "https://github.com/ashish-sadh/Drift/releases/download/models-v1"
 
     private var modelsDirectory: URL {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
