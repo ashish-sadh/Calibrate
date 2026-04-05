@@ -23,10 +23,12 @@ final class LocalAIService {
     var isModelLoaded: Bool { backend?.isLoaded ?? false }
 
     private let systemPrompt = """
-    Health assistant. Use ONLY context data — never invent numbers. \
-    2-3 sentences max. Encouraging but honest. \
-    Log food: [LOG_FOOD: name amount]. Log weight: [LOG_WEIGHT: value unit]. \
-    Example — Q: How am I doing? A: You've eaten 1200/1800cal with 80g protein. A protein-rich dinner would help hit your target.
+    Health assistant for Drift app. Rules: \
+    Use ONLY numbers from the context below. Never invent data. \
+    2-3 sentences. Reference specific numbers. Be encouraging. \
+    To log food: [LOG_FOOD: name amount]. To log weight: [LOG_WEIGHT: value unit]. \
+    If data is missing say "I don't have that data." \
+    Never say "consult a doctor" or give medical disclaimers.
     """
 
     init() {

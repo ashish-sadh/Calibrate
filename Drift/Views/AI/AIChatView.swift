@@ -111,17 +111,19 @@ struct AIChatView: View {
     // MARK: - Conversation History
 
     private func buildConversationHistory() -> String {
-        let recent = messages.suffix(6) // Last 3 exchanges
+        // Compact format: Q/A instead of User/Assistant (saves tokens)
+        let recent = messages.suffix(4) // Last 2 exchanges — keep tight for small models
         var lines: [String] = []
         var charCount = 0
         for msg in recent {
-            let prefix = msg.role == .user ? "User" : "Assistant"
-            let line = "\(prefix): \(msg.text)"
-            if charCount + line.count > 400 { break }
+            let prefix = msg.role == .user ? "Q" : "A"
+            let truncatedText = msg.text.prefix(150) // Truncate long messages
+            let line = "\(prefix): \(truncatedText)"
+            if charCount + line.count > 300 { break } // Tighter budget
             lines.append(line)
             charCount += line.count
         }
-        return lines.joined(separator: "\n")
+        return lines.isEmpty ? "" : lines.joined(separator: "\n")
     }
 
     /// Resolve pronouns like "it", "that", "this" by scanning recent messages for food mentions.
