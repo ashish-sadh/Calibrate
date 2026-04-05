@@ -43,6 +43,14 @@ enum AIResponseCleaner {
             }
         }
 
-        return text.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Remove trailing incomplete sentence (ends without period)
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty && !trimmed.hasSuffix(".") && !trimmed.hasSuffix("!") && !trimmed.hasSuffix("?") {
+            if let lastPeriod = trimmed.lastIndex(of: ".") {
+                return String(trimmed[...lastPeriod])
+            }
+        }
+
+        return trimmed
     }
 }

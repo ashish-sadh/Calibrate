@@ -104,10 +104,29 @@ enum AIContextBuilder {
             }
         }
 
-        // Goal — pre-computed
+        // Goal — pre-computed with progress
         if let goal = WeightGoal.load() {
             let u = Preferences.weightUnit
-            lines.append("Goal: \(String(format: "%.1f", u.convert(fromKg: goal.targetWeightKg)))\(u.displayName) in \(goal.monthsToAchieve)mo")
+            if let entries = try? AppDatabase.shared.fetchWeightEntries(),
+               let latest = entries.last {
+                let progress = goal.progress(currentWeightKg: latest.weightKg)
+                let goalW = String(format: "%.1f", u.convert(fromKg: goal.targetWeightKg))
+                lines.append("Goal: \(goalW)\(u.displayName) | \(Int(progress * 100))% done | \(goal.monthsToAchieve)mo timeline")
+            }
+        }
+
+        // Pre-computed insights — tell the model what's notable
+        let hour = Calendar.current.component(.hour, from: Date())
+        if nutrition.calories > 0 {
+            let pctTarget = Double(nutrition.calories) / Double(target)
+            if hour < 12 && pctTarget > 0.5 {
+                lines.append("Note: eaten >50% of target before noon")
+            } else if hour > 18 && pctTarget < 0.3 {
+                lines.append("Note: only \(Int(pctTarget * 100))% of target by evening — undereating today")
+            }
+            if nutrition.proteinG < 30 && hour > 14 {
+                lines.append("Note: low protein so far (\(Int(nutrition.proteinG))g)")
+            }
         }
 
         return lines.joined(separator: "\n")
@@ -119,21 +138,25 @@ enum AIContextBuilder {
         var lines: [String] = []
         let today = DateFormatters.todayString
 
-        // Recent foods for quick reference
-        if let recents = try? AppDatabase.shared.fetchRecentEntryNames() {
-            let names = recents.prefix(5).map(\.name)
-            if !names.isEmpty {
-                lines.append("Recent foods: \(names.joined(separator: ", "))")
-            }
-        }
-
-        // Today's food entries
+        // Today's food entries — compact format
+        var todayFoods: [String] = []
         if let logs = try? AppDatabase.shared.fetchMealLogs(for: today) {
             for log in logs {
                 guard let logId = log.id, let entries = try? AppDatabase.shared.fetchFoodEntries(forMealLog: logId) else { continue }
                 for entry in entries {
-                    lines.append("- \(entry.foodName): \(Int(entry.totalCalories))cal")
+                    todayFoods.append("\(entry.foodName) \(Int(entry.totalCalories))cal")
                 }
+            }
+        }
+        if !todayFoods.isEmpty {
+            lines.append("Today's food: \(todayFoods.joined(separator: ", "))")
+        }
+
+        // Recent foods for "log it again" type queries
+        if let recents = try? AppDatabase.shared.fetchRecentEntryNames() {
+            let names = recents.prefix(5).map(\.name)
+            if !names.isEmpty {
+                lines.append("Recent: \(names.joined(separator: ", "))")
             }
         }
 
@@ -158,24 +181,35 @@ enum AIContextBuilder {
         if let entries = try? AppDatabase.shared.fetchWeightEntries() {
             let input = entries.map { (date: $0.date, weightKg: $0.weightKg) }
             if let trend = WeightTrendCalculator.calculateTrend(entries: input) {
-                let unit = Preferences.weightUnit
+                let u = Preferences.weightUnit
                 let changes = trend.weightChanges
-                lines.append("Current: \(String(format: "%.1f", unit.convert(fromKg: trend.currentEMA))) \(unit.displayName)")
-                lines.append("Weekly: \(String(format: "%+.2f", unit.convert(fromKg: trend.weeklyRateKg)))/wk")
-                if let d7 = changes.sevenDay { lines.append("7-day change: \(String(format: "%+.1f", unit.convert(fromKg: d7)))") }
-                if let d30 = changes.thirtyDay { lines.append("30-day change: \(String(format: "%+.1f", unit.convert(fromKg: d30)))") }
-                if let proj = trend.projection30Day {
-                    lines.append("30-day projection: \(String(format: "%.1f", unit.convert(fromKg: proj))) \(unit.displayName)")
+                let cur = String(format: "%.1f", u.convert(fromKg: trend.currentEMA))
+                let rate = String(format: "%+.1f", u.convert(fromKg: trend.weeklyRateKg))
+                lines.append("Weight: \(cur)\(u.displayName) | \(rate)/wk | \(trend.trendDirection)")
+
+                if let d7 = changes.sevenDay {
+                    lines.append("7d: \(String(format: "%+.1f", u.convert(fromKg: d7)))\(u.displayName)")
                 }
-                lines.append("Direction: \(trend.trendDirection)")
+                if let d30 = changes.thirtyDay {
+                    lines.append("30d: \(String(format: "%+.1f", u.convert(fromKg: d30)))\(u.displayName)")
+                }
+
+                // Pre-computed assessment
+                let isLosingGoal = (WeightGoal.load()?.targetWeightKg ?? 0) < (input.last?.weightKg ?? 0)
+                if isLosingGoal && trend.weeklyRateKg < -0.15 {
+                    lines.append("Assessment: losing at healthy pace")
+                } else if isLosingGoal && trend.weeklyRateKg > 0 {
+                    lines.append("Assessment: gaining despite losing goal — review intake")
+                } else if !isLosingGoal && trend.weeklyRateKg > 0.1 {
+                    lines.append("Assessment: gaining as planned")
+                }
             }
 
             // Goal progress
             if let goal = WeightGoal.load() {
-                let unit = Preferences.weightUnit
+                let u = Preferences.weightUnit
                 let progress = goal.progress(currentWeightKg: input.last?.weightKg ?? goal.targetWeightKg)
-                lines.append("Goal: \(String(format: "%.1f", unit.convert(fromKg: goal.targetWeightKg))) \(unit.displayName)")
-                lines.append("Progress: \(Int(progress * 100))%")
+                lines.append("Goal: \(String(format: "%.1f", u.convert(fromKg: goal.targetWeightKg)))\(u.displayName) | \(Int(progress * 100))% done")
             }
         }
 
