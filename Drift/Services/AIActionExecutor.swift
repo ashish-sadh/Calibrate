@@ -152,6 +152,17 @@ enum AIActionExecutor {
            let best = results.first {
             return FoodMatch(food: best, servings: servings ?? 1)
         }
+        // Try stripping qualifiers: "slices of pizza" → "pizza", "cups of rice" → "rice"
+        let qualifiers = ["slices of ", "pieces of ", "cups of ", "bowls of ", "glasses of ", "servings of ", "portions of ", "plate of ", "some "]
+        for qual in qualifiers {
+            if query.lowercased().hasPrefix(qual) {
+                let stripped = String(query.dropFirst(qual.count))
+                if let results = try? AppDatabase.shared.searchFoodsRanked(query: stripped),
+                   let best = results.first {
+                    return FoodMatch(food: best, servings: servings ?? 1)
+                }
+            }
+        }
         // Try first word only (chicken breast → chicken)
         let firstWord = String(query.split(separator: " ").first ?? Substring(query))
         if firstWord != query && firstWord.count >= 3,
