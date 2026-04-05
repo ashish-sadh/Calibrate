@@ -415,14 +415,10 @@ struct AIChatView: View {
             // Finalize: clean the response, check quality, replace streaming message
             let finalResponse: String
             if response.isEmpty {
-                finalResponse = "I took too long to respond. Try a simpler question, or check the relevant tab directly."
+                finalResponse = fallbackResponse(for: screen)
             } else {
                 let cleaned = AIResponseCleaner.clean(response)
-                if AIResponseCleaner.isLowQuality(cleaned) {
-                    finalResponse = "I couldn't generate a helpful answer. Try asking about your food, weight, workouts, or health data."
-                } else {
-                    finalResponse = cleaned
-                }
+                finalResponse = AIResponseCleaner.isLowQuality(cleaned) ? fallbackResponse(for: screen) : cleaned
             }
 
             if let idx = messages.firstIndex(where: { $0.id == streamingMessageId }) {
@@ -437,6 +433,21 @@ struct AIChatView: View {
                 foodSearchQuery = name
                 showingFoodSearch = true
             }
+        }
+    }
+
+    // MARK: - Message Bubble
+
+    /// Screen-aware fallback when LLM fails or produces low-quality output.
+    private func fallbackResponse(for screen: AIScreen) -> String {
+        switch screen {
+        case .food: return "I couldn't answer that. Try asking \"calories left\" or \"what should I eat for dinner?\""
+        case .weight, .goal: return "I couldn't answer that. Try \"am I on track?\" or \"how much have I lost?\""
+        case .exercise: return "I couldn't answer that. Try \"what should I train?\" or \"how many workouts this week?\""
+        case .biomarkers: return "I couldn't answer that. Try \"which markers are out of range?\" or \"how's my cholesterol?\""
+        case .glucose: return "I couldn't answer that. Try \"any spikes today?\" or \"what's my average glucose?\""
+        case .bodyRhythm: return "I couldn't answer that. Try \"how did I sleep?\" or \"what's my recovery score?\""
+        default: return "I couldn't answer that. Try asking about your food, weight, workouts, or health data."
         }
     }
 
