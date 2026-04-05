@@ -1,6 +1,35 @@
 # Self-Improvement Session Log
 
-## Session 4 (April 3, 2026) — IN PROGRESS
+## Session 5 (April 4, 2026) — IN PROGRESS
+- **Focus**: On-device AI assistant (Drift AI), workout improvements, bug fixes
+- **Tests**: 684 → 690
+- **Food DB**: 1004 foods
+- **Builds**: 61, 62 on TestFlight
+
+### Drift AI (Local Inference)
+- LLM.swift integration (llama.cpp backend, Qwen2.5-0.5B-Instruct Q4_K_M)
+- Model download with progress (470MB, lazy download from HuggingFace)
+- Chat UI: message bubbles, input bar, suggestion chips, thinking indicator
+- AIContextBuilder: injects nutrition, weight, workouts, supplements, 7-day avg
+- AIActionParser: extracts [LOG_FOOD], [START_WORKOUT] from responses
+- Action buttons: "Log chicken breast" → opens FoodSearchView
+- Toolbar: New Chat, Delete Model
+- Privacy-first: all on-device, nothing leaves phone
+- 6 AI tests (action parsing + context builder)
+
+### Other Improvements
+- Duration exercises: plank/farmers walk show "Time (s)" instead of "Reps"
+- Workout: copy set, delete set (inline + context menu), share after save, milestones
+- Exercise order preserved in DB, history limit 50→500, templates scroll
+- Manual food entry: serving size field, popular section always visible
+- OpenFoodFacts background search (< 3 local results → auto-search online)
+- Weight sync: corrupted anchor fix, main thread block fix, DB crash recovery
+- 21-day nudges on weight tiles
+- Mexican/Latin foods (1004 total)
+
+---
+
+## Session 4 (April 3, 2026) — COMPLETED
 - **Commits**: 16
 - **Commits**: 26
 - **Tests**: 640 → 663 (+23, 0 regressions, 2 flaky tests fixed)
