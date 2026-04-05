@@ -339,16 +339,25 @@ enum AIContextBuilder {
 
         if nutrition.calories == 0 { return "No food logged yesterday." }
 
-        var lines = ["Yesterday (\(DateFormatters.shortDisplay.string(from: yesterday))):"]
-        lines.append("Total: \(Int(nutrition.calories))cal, \(Int(nutrition.proteinG))P \(Int(nutrition.carbsG))C \(Int(nutrition.fatG))F")
+        let tdee = TDEEEstimator.shared.current?.tdee ?? 2000
+        let deficit = WeightGoal.load()?.requiredDailyDeficit ?? 0
+        let target = max(500, Int(tdee - deficit))
+        let vsTarget = Int(nutrition.calories) - target
 
+        var lines = ["Yesterday: \(Int(nutrition.calories))cal (\(vsTarget > 0 ? "+\(vsTarget) over" : "\(abs(vsTarget)) under") target), \(Int(nutrition.proteinG))P \(Int(nutrition.carbsG))C \(Int(nutrition.fatG))F"]
+
+        // Compact food list
+        var foods: [String] = []
         if let logs = try? AppDatabase.shared.fetchMealLogs(for: dateStr) {
             for log in logs {
                 guard let logId = log.id, let entries = try? AppDatabase.shared.fetchFoodEntries(forMealLog: logId) else { continue }
                 for entry in entries {
-                    lines.append("- \(entry.foodName): \(Int(entry.totalCalories))cal")
+                    foods.append("\(entry.foodName) \(Int(entry.totalCalories))cal")
                 }
             }
+        }
+        if !foods.isEmpty {
+            lines.append("Foods: \(foods.joined(separator: ", "))")
         }
         return lines.joined(separator: "\n")
     }
