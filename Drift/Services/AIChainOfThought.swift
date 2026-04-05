@@ -59,6 +59,9 @@ enum AIChainOfThought {
             || q.contains("stack")
         let needsOverview = q.contains("how am i") || q.contains("overview") || q.contains("doing")
             || q.contains("my day") || q.contains("summary")
+        let needsNutritionLookup = (q.contains("how many calorie") || q.contains("nutrition in")
+            || q.contains("calories in") || q.contains("protein in") || q.contains("macros in")
+            || q.contains("carbs in") || q.contains("fat in"))
         let needsComparison = q.contains("compare") || q.contains("versus") || q.contains("vs")
             || q.contains("last week") || q.contains("this week") || q.contains("better") || q.contains("worse")
 
@@ -66,6 +69,28 @@ enum AIChainOfThought {
         if needsOverview {
             steps.append(Step(label: "Reviewing your day...") { AIContextBuilder.fullDayContext() })
             steps.append(Step(label: "Analyzing weight trend...") { AIContextBuilder.weightContext() })
+            return steps
+        }
+
+        // Nutrition lookup — search DB for specific food
+        if needsNutritionLookup {
+            steps.append(Step(label: "Looking up nutrition...") {
+                // Extract food name from query
+                let foodName = q.replacingOccurrences(of: "how many calories in ", with: "")
+                    .replacingOccurrences(of: "calories in ", with: "")
+                    .replacingOccurrences(of: "nutrition in ", with: "")
+                    .replacingOccurrences(of: "protein in ", with: "")
+                    .replacingOccurrences(of: "macros in ", with: "")
+                    .replacingOccurrences(of: "a ", with: "")
+                    .replacingOccurrences(of: "an ", with: "")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+
+                if let match = AIActionExecutor.findFood(query: foodName, servings: 1) {
+                    let f = match.food
+                    return "Nutrition for \(f.name) (per \(Int(f.servingSize))\(f.servingUnit)): \(Int(f.calories))cal, \(Int(f.proteinG))P \(Int(f.carbsG))C \(Int(f.fatG))F \(Int(f.fiberG))fiber"
+                }
+                return "Food '\(foodName)' not found in database. Estimate if you can."
+            })
             return steps
         }
 
