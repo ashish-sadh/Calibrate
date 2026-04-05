@@ -310,25 +310,34 @@ struct AIChatView: View {
         // Resolve pronouns from conversation context: "log it", "log that", "add this"
         let resolved = resolvePronouns(lower)
 
-        // Multi-food intent: "log chicken and rice" — find each in DB
+        // Multi-food intent: "log chicken and rice" — log known foods directly
         if let intents = AIActionExecutor.parseMultiFoodIntent(resolved) {
-            var found: [String] = []
+            var logged: [String] = []
             var notFound: [AIActionExecutor.FoodIntent] = []
+            let vm = FoodLogViewModel()
+            let meal = currentMealType
+
             for intent in intents {
                 if let match = AIActionExecutor.findFood(query: intent.query, servings: intent.servings) {
-                    found.append("\(match.food.name) (\(Int(match.food.calories))cal)")
+                    let f = match.food
+                    let s = match.servings
+                    vm.quickAdd(name: f.name, calories: f.calories * s, proteinG: f.proteinG * s,
+                                carbsG: f.carbsG * s, fatG: f.fatG * s, fiberG: f.fiberG * s, mealType: meal)
+                    logged.append("\(f.name) (\(Int(f.calories * s))cal)")
                 } else {
                     notFound.append(intent)
                 }
             }
-            if !found.isEmpty {
-                messages.append(ChatMessage(role: .assistant, text: "Found: \(found.joined(separator: ", ")). Opening search to add them..."))
+
+            if !logged.isEmpty {
+                messages.append(ChatMessage(role: .assistant, text: "Logged: \(logged.joined(separator: ", "))."))
             }
-            // Open search for first item (found or not)
-            let first = notFound.first ?? intents[0]
-            foodSearchQuery = first.query
-            foodSearchServings = first.servings
-            showingFoodSearch = true
+            if let first = notFound.first {
+                messages.append(ChatMessage(role: .assistant, text: "Couldn't find \(notFound.map(\.query).joined(separator: ", ")) — opening search..."))
+                foodSearchQuery = first.query
+                foodSearchServings = first.servings
+                showingFoodSearch = true
+            }
             return
         }
 
