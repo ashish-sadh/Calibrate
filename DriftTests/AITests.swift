@@ -299,6 +299,21 @@ import Testing
     #expect(AIResponseCleaner.isLowQuality("You've eaten 1200 of 1800 cal. Consider a protein-rich dinner.") == false)
 }
 
+// MARK: - Auto-Dependency Tests
+
+@Test @MainActor func aiChainOfThoughtWeightPlateau() async throws {
+    // "Why am I not losing weight?" should fetch BOTH weight AND food context
+    let steps = AIChainOfThought.plan(query: "why am I not losing weight?", screen: .weight)
+    #expect(steps != nil)
+    #expect(steps?.count ?? 0 >= 2, "Weight plateau query should fetch weight + food context")
+}
+
+@Test @MainActor func aiChainOfThoughtScreenFallback() async throws {
+    // On glucose screen, any unknown query should still fetch glucose context
+    let steps = AIChainOfThought.plan(query: "tell me more", screen: .glucose)
+    #expect(steps != nil, "Screen-aware fallback should fetch glucose context")
+}
+
 @Test func aiParseMultipleActionsFirstWins() async throws {
     // If response has multiple actions, first one should be extracted
     let (action, _) = AIActionParser.parse("[LOG_FOOD: rice] and [START_WORKOUT: push]")
