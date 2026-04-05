@@ -257,7 +257,9 @@ struct AIChatView: View {
     // MARK: - Send Message
 
     private func sendMessage() {
-        let text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        var text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Cap input length to preserve context budget
+        if text.count > 300 { text = String(text.prefix(300)) }
         guard !text.isEmpty, !isGenerating else { return }
         inputText = ""
 
