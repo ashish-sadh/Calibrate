@@ -417,7 +417,13 @@ struct AIChatView: View {
 
         // Generic "log food/breakfast/lunch"
         if lower.contains("log food") || lower.contains("log breakfast") || lower.contains("log lunch") || lower.contains("log dinner") {
-            messages.append(ChatMessage(role: .assistant, text: "What did you eat?"))
+            messages.append(ChatMessage(role: .assistant, text: "What did you eat? Say something like \"2 eggs and toast\" and I'll log it for you."))
+            return
+        }
+
+        // Restaurant/eating out — guide to estimate
+        if lower.contains("ate out") || lower.contains("restaurant") || lower.contains("fast food") || lower.contains("ordered") {
+            messages.append(ChatMessage(role: .assistant, text: "What did you order? Describe it and I'll help you estimate the calories — e.g., \"burger and fries\" or \"pasta with cream sauce\"."))
             return
         }
 
