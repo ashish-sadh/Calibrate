@@ -102,27 +102,17 @@ final class AIModelManager {
 
     private func downloadFile(from url: URL, to destination: URL, fileSizeMB: Int, offsetMB: Int, totalMB: Int) async -> Bool {
         do {
-            // Resolve redirect first (GitHub 302 → blob storage)
-            var request = URLRequest(url: url)
-            request.httpMethod = "HEAD"
-            let (_, headResponse) = try await URLSession.shared.data(for: request)
-            let finalURL = headResponse.url ?? url
-
-            // Download with progress delegate (fast, native download task)
+            // Download with progress delegate — follows redirects automatically
             let tracker = ProgressTracker { [weak self] fileProgress in
                 Task { @MainActor in
                     let overall = (Double(offsetMB) + fileProgress * Double(fileSizeMB)) / Double(totalMB)
                     self?.downloadState = .downloading(progress: min(overall, 0.99))
                 }
             }
-            let session = URLSession(configuration: .default, delegate: tracker, delegateQueue: nil)
-            let (tempURL, response) = try await session.download(from: finalURL)
-
-            guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
-                let code = (response as? HTTPURLResponse)?.statusCode ?? 0
-                downloadState = .error("Download failed: HTTP \(code)")
-                return false
-            }
+            let config = URLSessionConfiguration.default
+            config.httpMaximumConnectionsPerHost = 1
+            let session = URLSession(configuration: config, delegate: tracker, delegateQueue: nil)
+            let (tempURL, _) = try await session.download(from: url)
 
             try? FileManager.default.removeItem(at: destination)
             try FileManager.default.moveItem(at: tempURL, to: destination)
@@ -137,6 +127,8 @@ final class AIModelManager {
 
     func deleteModel() {
         try? FileManager.default.removeItem(at: modelsDirectory)
+        // Recreate empty directory for next download
+        try? FileManager.default.createDirectory(at: modelsDirectory, withIntermediateDirectories: true)
         downloadState = .idle
         Log.app.info("AI model deleted")
     }
