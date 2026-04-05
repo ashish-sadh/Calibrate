@@ -176,7 +176,7 @@ struct CycleView: View {
                             .font(.system(size: 11, weight: phase.id == currentId ? .semibold : .regular))
                             .foregroundStyle(phase.color)
                         Text(phase.dayRange)
-                            .font(.system(size: 9))
+                            .font(.system(size: 10))
                             .foregroundStyle(.tertiary)
                     }
                     .frame(maxWidth: .infinity)
@@ -319,7 +319,7 @@ struct CycleView: View {
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
                     .annotation(position: .trailing, alignment: .leading) {
                         Text("28")
-                            .font(.system(size: 9))
+                            .font(.system(size: 10))
                             .foregroundStyle(.tertiary)
                     }
 
