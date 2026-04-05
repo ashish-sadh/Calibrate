@@ -159,17 +159,27 @@ enum AIContextBuilder {
             }
         }
 
+        // Macro targets — pre-computed remaining macros for meal suggestions
+        let nutrition = (try? AppDatabase.shared.fetchDailyNutrition(for: today)) ?? .zero
+        if let goal = WeightGoal.load(),
+           let targets = goal.macroTargets() {
+            let pLeft = max(0, Int(targets.proteinG - nutrition.proteinG))
+            let cLeft = max(0, Int(targets.carbsG - nutrition.carbsG))
+            let fLeft = max(0, Int(targets.fatG - nutrition.fatG))
+            lines.append("Remaining macros: \(pLeft)P \(cLeft)C \(fLeft)F")
+        }
+
         // 7-day average
         let cal = Calendar.current
         if let weekAgo = cal.date(byAdding: .day, value: -7, to: Date()) {
             let from = DateFormatters.dateOnly.string(from: weekAgo)
             let to = DateFormatters.todayString
             if let avg = try? AppDatabase.shared.averageDailyCalories(from: from, to: to), avg > 0 {
-                lines.append("7-day avg: \(Int(avg))cal/day")
+                lines.append("7d avg: \(Int(avg))cal/day")
             }
         }
 
-        return lines.isEmpty ? "" : "Food context:\n" + lines.joined(separator: "\n")
+        return lines.isEmpty ? "" : lines.joined(separator: "\n")
     }
 
     // MARK: - Weight Context
