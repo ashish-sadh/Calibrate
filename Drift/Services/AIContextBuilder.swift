@@ -451,9 +451,14 @@ enum AIContextBuilder {
             if status == .optimal {
                 optimalCount += 1
             } else {
-                // Include optimal range so model can explain the gap
                 let direction = r.normalizedValue < def.optimalLow ? "low" : "high"
-                outOfRange.append("\(def.name): \(String(format: "%.1f", r.value))\(r.unit) [\(direction), optimal \(String(format: "%.0f", def.optimalLow))-\(String(format: "%.0f", def.optimalHigh))]")
+                var entry = "\(def.name): \(String(format: "%.1f", r.value))\(r.unit) [\(direction), optimal \(String(format: "%.0f", def.optimalLow))-\(String(format: "%.0f", def.optimalHigh))]"
+                // Add improvement tip for first 2 out-of-range markers (save tokens)
+                if outOfRange.count < 2, !def.howToImprove.isEmpty {
+                    let tip = String(def.howToImprove.prefix(80))
+                    entry += " Tip: \(tip)"
+                }
+                outOfRange.append(entry)
             }
         }
 
