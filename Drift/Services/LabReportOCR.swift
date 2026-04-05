@@ -41,7 +41,13 @@ enum LabReportOCR {
         let text = try extractTextFromPDF(url: url)
         guard !text.isEmpty else { throw OCRError.noTextFound }
         Log.biomarkers.info("PDF OCR: \(text.count) chars extracted")
-        return parseLabReport(text: text)
+        let regexResult = parseLabReport(text: text)
+
+        // AI fallback: if regex found few results and AI is available, try to find more
+        if regexResult.results.count < 10, Preferences.aiEnabled, await LocalAIService.shared.isModelLoaded {
+            return await enhanceWithAI(regexResult: regexResult, rawText: text)
+        }
+        return regexResult
     }
 
     /// Extract biomarkers from a photo of a lab report.
@@ -51,7 +57,62 @@ enum LabReportOCR {
         guard !lines.isEmpty else { throw OCRError.noTextFound }
         let text = lines.joined(separator: "\n")
         Log.biomarkers.info("Image OCR: \(lines.count) lines recognized")
-        return parseLabReport(text: text)
+        let regexResult = parseLabReport(text: text)
+
+        if regexResult.results.count < 10, Preferences.aiEnabled, await LocalAIService.shared.isModelLoaded {
+            return await enhanceWithAI(regexResult: regexResult, rawText: text)
+        }
+        return regexResult
+    }
+
+    // MARK: - AI Enhancement
+
+    /// Use LLM to find biomarkers that regex missed. Regex results take priority.
+    private static func enhanceWithAI(regexResult: ExtractionOutput, rawText: String) async -> ExtractionOutput {
+        let existingIds = Set(regexResult.results.map(\.biomarkerId))
+
+        // Find lines that look like they contain results (have numbers + potential units)
+        let candidateLines = rawText.components(separatedBy: .newlines).filter { line in
+            line.contains(where: \.isNumber) && line.count > 5 && line.count < 200
+        }
+        guard !candidateLines.isEmpty else { return regexResult }
+
+        // Send small batch to LLM
+        let batch = candidateLines.prefix(15).joined(separator: "\n")
+        let knownIds = BiomarkerKnowledgeBase.all.prefix(30).map { "\($0.id)=\($0.name)" }.joined(separator: ", ")
+
+        let prompt = """
+        Extract biomarker values from these lab report lines. \
+        Known biomarkers: \(knownIds). \
+        Reply ONLY in format: id|value|unit (one per line). Nothing else. \
+        Lines:\n\(batch)
+        """
+
+        let response = await LocalAIService.shared.respond(to: prompt)
+        let aiResults = parseAIBiomarkerResponse(response, excluding: existingIds)
+
+        if aiResults.isEmpty { return regexResult }
+        Log.biomarkers.info("AI found \(aiResults.count) additional biomarkers")
+
+        var merged = regexResult.results + aiResults
+        // Deduplicate by biomarkerId (regex wins)
+        var seen = Set<String>()
+        merged = merged.filter { seen.insert($0.biomarkerId).inserted }
+
+        return ExtractionOutput(results: merged, labName: regexResult.labName, reportDate: regexResult.reportDate)
+    }
+
+    /// Parse "id|value|unit" lines from LLM response.
+    private static func parseAIBiomarkerResponse(_ response: String, excluding existingIds: Set<String>) -> [ExtractedResult] {
+        response.components(separatedBy: .newlines).compactMap { line in
+            let parts = line.split(separator: "|")
+            guard parts.count >= 3 else { return nil }
+            let id = String(parts[0]).trimmingCharacters(in: .whitespaces)
+            guard BiomarkerKnowledgeBase.byId[id] != nil, !existingIds.contains(id) else { return nil }
+            guard let value = Double(String(parts[1]).trimmingCharacters(in: .whitespaces)) else { return nil }
+            let unit = String(parts[2]).trimmingCharacters(in: .whitespaces)
+            return ExtractedResult(biomarkerId: id, value: value, unit: unit, referenceLow: nil, referenceHigh: nil)
+        }
     }
 
     // MARK: - Text Extraction

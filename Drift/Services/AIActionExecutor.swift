@@ -135,6 +135,25 @@ enum AIActionExecutor {
         return nil
     }
 
+    /// Try to find food with AI normalization: "PBJ" → "peanut butter sandwich" → local search.
+    static func findFoodWithAI(query: String, servings: Double?) async -> FoodMatch? {
+        // Try local first
+        if let match = findFood(query: query, servings: servings) { return match }
+
+        guard Preferences.aiEnabled, await LocalAIService.shared.isModelLoaded else { return nil }
+
+        let prompt = "What food is '\(query)'? Reply with ONLY the common food name, nothing else."
+        let normalized = await LocalAIService.shared.respond(to: prompt)
+        let cleaned = normalized.trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: "\"", with: "")
+
+        if !cleaned.isEmpty && cleaned != query.lowercased() {
+            return findFood(query: cleaned, servings: servings)
+        }
+        return nil
+    }
+
     /// Ask the LLM to estimate nutrition for an unknown food.
     /// Returns a prompt that will get structured nutrition data back.
     static func nutritionEstimationPrompt(food: String, servings: Double?) -> String {
