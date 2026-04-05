@@ -71,7 +71,7 @@ enum DeviceCapability {
     /// Detect the best model tier + backend for this device.
     static func detectTier() -> (tier: AIModelTier, backend: AIBackendType) {
         if ramGB >= 7.5 {
-            // 8GB+ device — 1.5B model (smarter, compatible with llama.cpp)
+            // 8GB+ device — 1.5B model via llama.cpp
             return (.large, .llamaCpp)
         } else {
             // 6GB device — 0.5B model

@@ -55,15 +55,15 @@ final class LocalAIService {
     }
 
     func loadModel() {
-        guard modelManager.isModelDownloaded, backend == nil else { return }
+        guard backend == nil else { return }
         state = .loading
 
-        guard let modelPath = modelManager.primaryModelPath else {
-            state = .error("Model file not found")
+        guard modelManager.isModelDownloaded, let modelPath = modelManager.primaryModelPath else {
+            state = .notSetUp
             return
         }
 
-        // Create appropriate backend
+        // llama.cpp backend
         let llama = LlamaCppBackend(modelPath: modelPath)
         try? llama.loadSync()
         backend = llama
