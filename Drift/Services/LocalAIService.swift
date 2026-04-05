@@ -24,8 +24,9 @@ final class LocalAIService {
 
     private let systemPrompt = """
     You are Drift AI, a concise health assistant inside a fitness tracking app. \
-    You have the user's real health data in the context. Use actual numbers. \
+    You have the user's real health data and app feature info in the context. Use actual numbers. \
     Be brief (2-4 sentences). Be encouraging but honest. \
+    When user asks about the app or its features, answer using the feature context provided. \
     When user wants to log food: respond with [LOG_FOOD: food_name amount]. \
     When user wants to start workout: respond with [START_WORKOUT: type]. \
     When asked about unknown food nutrition: estimate with NUTRITION|name|cal|protein|carbs|fat|fiber|grams. \
@@ -60,15 +61,66 @@ final class LocalAIService {
         state = .loading
 
         guard modelManager.isModelDownloaded, let modelPath = modelManager.primaryModelPath else {
+            Log.app.error("AI: model not downloaded or path missing")
             state = .notSetUp
             return
         }
 
-        // llama.cpp backend
+        // Verify file isn't truncated/corrupted
+        let expectedMB = modelManager.currentTier.modelFiles[0].sizeMB
+        let attrs = try? FileManager.default.attributesOfItem(atPath: modelPath.path)
+        let actualMB = ((attrs?[.size] as? Int64) ?? 0) / (1024 * 1024)
+        if actualMB < Int64(expectedMB) / 2 {
+            Log.app.error("AI: model file too small (\(actualMB)MB, expected ~\(expectedMB)MB) — likely corrupted")
+            modelManager.deleteModel()
+            state = .error("Model file was corrupted. Please re-download.")
+            return
+        }
+
+        // Pre-flight diagnostics
+        let pathStr = modelPath.path
+        let exists = FileManager.default.fileExists(atPath: pathStr)
+        let readable = FileManager.default.isReadableFile(atPath: pathStr)
+        let header = (try? Data(contentsOf: modelPath, options: .mappedIfSafe).prefix(4)) ?? Data()
+        let isGGUF = header == Data([0x47, 0x47, 0x55, 0x46])
+        Log.app.info("AI: path=\(modelPath.lastPathComponent) size=\(actualMB)MB exists=\(exists) readable=\(readable) gguf=\(isGGUF)")
+        Log.app.info("AI: full path=\(pathStr)")
+
+        guard exists, readable, isGGUF else {
+            state = .error("Model file issue: exists=\(exists) readable=\(readable) gguf=\(isGGUF)")
+            return
+        }
+
         let llama = LlamaCppBackend(modelPath: modelPath)
-        try? llama.loadSync()
-        backend = llama
-        state = llama.isLoaded ? .ready : .error("Failed to load model")
+        do {
+            try llama.loadSync()
+            backend = llama
+            // Don't say ready yet — run a health check
+            Task { await healthCheck() }
+        } catch {
+            Log.app.error("AI: load failed: \(error)")
+            state = .error(error.localizedDescription)
+        }
+    }
+
+    /// Send a trivial prompt to verify the model actually works before declaring ready.
+    private func healthCheck() async {
+        guard let backend else {
+            state = .error("Model not loaded.")
+            return
+        }
+        Log.app.info("AI: running health check…")
+        let result = await backend.respond(to: "Hi", systemPrompt: "Reply OK.")
+        if result.isEmpty {
+            Log.app.error("AI: health check returned empty — model broken")
+            self.backend?.unload()
+            self.backend = nil
+            modelManager.deleteModel()
+            state = .error("Model failed health check. Please re-download.")
+        } else {
+            Log.app.info("AI: health check passed (\(result.prefix(30)))")
+            state = .ready
+        }
     }
 
     // MARK: - Inference

@@ -21,29 +21,29 @@ protocol AIBackend: AnyObject, Sendable {
 
 /// Which model to download based on device capabilities.
 enum AIModelTier: Sendable {
-    case small   // Qwen2.5-0.5B text-only (~491MB) — 6GB devices
-    case large   // Qwen2.5-1.5B text (~1.12GB) — 8GB+ devices, much smarter
+    case small   // SmolLM2-360M Q8 (~368MB) — 6GB devices
+    case large   // Qwen2.5-1.5B Q4_K_M (~1065MB) — 8GB+ devices, best quality
 
     var displayName: String {
         switch self {
-        case .small: "Standard"
-        case .large: "Advanced"
+        case .small: "SmolLM2"
+        case .large: "Qwen 1.5B"
         }
     }
 
     var downloadSizeMB: Int {
         switch self {
-        case .small: 491
-        case .large: 1120
+        case .small: 368
+        case .large: 1065
         }
     }
 
     var modelFiles: [ModelFile] {
         switch self {
         case .small:
-            return [ModelFile(name: "qwen2.5-0.5b-instruct-q4_k_m.gguf", sizeMB: 491)]
+            return [ModelFile(name: "smollm2-360m-instruct-q8_0.gguf", sizeMB: 368)]
         case .large:
-            return [ModelFile(name: "qwen2.5-1.5b-instruct-q4_k_m.gguf", sizeMB: 1120)]
+            return [ModelFile(name: "qwen2.5-1.5b-instruct-q4_k_m.gguf", sizeMB: 1065)]
         }
     }
 
@@ -71,10 +71,8 @@ enum DeviceCapability {
     /// Detect the best model tier + backend for this device.
     static func detectTier() -> (tier: AIModelTier, backend: AIBackendType) {
         if ramGB >= 7.5 {
-            // 8GB+ device — 1.5B model via llama.cpp
             return (.large, .llamaCpp)
         } else {
-            // 6GB device — 0.5B model
             return (.small, .llamaCpp)
         }
     }

@@ -123,11 +123,26 @@ final class AIModelManager {
 
             try? FileManager.default.removeItem(at: destination)
             try FileManager.default.moveItem(at: tempURL, to: destination)
+
+            // Verify GGUF magic bytes
+            guard Self.isValidGGUF(at: destination) else {
+                try? FileManager.default.removeItem(at: destination)
+                downloadState = .error("Downloaded file is not a valid model. Please try again.")
+                return false
+            }
             return true
         } catch {
             downloadState = .error("Download failed: \(error.localizedDescription)")
             return false
         }
+    }
+
+    /// Check that a file starts with the GGUF magic bytes (0x47 0x47 0x55 0x46 = "GGUF").
+    static func isValidGGUF(at url: URL) -> Bool {
+        guard let handle = try? FileHandle(forReadingFrom: url) else { return false }
+        defer { try? handle.close() }
+        guard let header = try? handle.read(upToCount: 4), header.count == 4 else { return false }
+        return header == Data([0x47, 0x47, 0x55, 0x46]) // "GGUF"
     }
 
     // MARK: - Delete

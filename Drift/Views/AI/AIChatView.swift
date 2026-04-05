@@ -143,20 +143,21 @@ struct AIChatView: View {
     // MARK: - Page Insight
 
     private var pageInsight: String {
+        let hour = Calendar.current.component(.hour, from: Date())
+        let greeting = hour < 12 ? "Good morning!" : hour < 17 ? "Good afternoon!" : "Good evening!"
+
         switch currentTab {
-        case 0: return AIRuleEngine.quickInsight() ?? "How can I help you today?"
+        case 0:
+            return "\(greeting) How can I help you today?"
         case 1:
-            if let entries = try? AppDatabase.shared.fetchWeightEntries(),
-               let trend = WeightTrendCalculator.calculateTrend(entries: entries.map { ($0.date, $0.weightKg) }) {
-                let u = Preferences.weightUnit
-                return "You're at \(String(format: "%.1f", u.convert(fromKg: trend.currentEMA))) \(u.displayName), \(trend.weeklyRateKg < -0.01 ? "losing" : trend.weeklyRateKg > 0.01 ? "gaining" : "maintaining"). What would you like to know?"
-            }
-            return "How can I help with your weight tracking?"
+            return "\(greeting) I can help with your weight progress — just ask."
         case 2:
             let n = (try? AppDatabase.shared.fetchDailyNutrition(for: DateFormatters.todayString)) ?? .zero
-            return n.calories > 0 ? "You've eaten \(Int(n.calories)) cal today. What would you like to log?" : "No food logged yet. What did you have?"
-        case 3: return "Ready for a workout? Tell me what you want to train."
-        default: return "How can I help?"
+            return n.calories > 0 ? "\(greeting) You've logged \(Int(n.calories)) cal so far. Need to add anything?" : "\(greeting) What did you have to eat?"
+        case 3:
+            return "\(greeting) Ready for a workout? Tell me what you'd like to train."
+        default:
+            return "\(greeting) How can I help?"
         }
     }
 
@@ -203,10 +204,31 @@ struct AIChatView: View {
             return
         }
 
-        // LLM for everything else
+        // LLM for everything else (feature questions answered via context injection)
         if !aiService.isModelLoaded {
-            messages.append(ChatMessage(role: .assistant, text: "AI is still setting up. Try \"daily summary\", \"log 2 eggs\", or \"calories\"."))
-            return
+            // Try loading if model is downloaded but not loaded yet
+            if aiService.state == .ready {
+                aiService.loadModel()
+            }
+            // If that worked, fall through to LLM
+            if !aiService.isModelLoaded {
+                let hint = "Try \"daily summary\", \"log 2 eggs\", or \"calories\"."
+                switch aiService.state {
+                case .notSetUp:
+                    messages.append(ChatMessage(role: .assistant, text: "AI model not downloaded yet. Tap the download button to get started. \(hint)"))
+                case .downloading(let progress):
+                    messages.append(ChatMessage(role: .assistant, text: "Downloading AI (\(Int(progress * 100))%)… \(hint)"))
+                case .loading:
+                    messages.append(ChatMessage(role: .assistant, text: "Loading AI model — just a moment…"))
+                case .error(let msg):
+                    messages.append(ChatMessage(role: .assistant, text: msg))
+                case .notEnoughSpace(let msg):
+                    messages.append(ChatMessage(role: .assistant, text: msg))
+                case .ready:
+                    messages.append(ChatMessage(role: .assistant, text: "AI model couldn't start. \(hint)"))
+                }
+                return
+            }
         }
 
         isGenerating = true
@@ -226,6 +248,7 @@ struct AIChatView: View {
             }
         }
     }
+
 
     // MARK: - Message Bubble
 

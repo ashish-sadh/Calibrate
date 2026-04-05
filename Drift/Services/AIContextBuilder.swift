@@ -10,8 +10,9 @@ enum AIContextBuilder {
     static func buildContext(tab: Int = 0, action: String? = nil) -> String {
         var parts: [String] = []
 
-        // Always include base context
+        // Always include base context + app features
         parts.append(baseContext())
+        parts.append(featureContext())
 
         // Action-specific or page-specific context
         if let action {
@@ -288,6 +289,29 @@ enum AIContextBuilder {
         case 4: return supplementContext()
         default: return ""
         }
+    }
+
+    // MARK: - App Feature Context (always included so LLM can answer about Drift)
+
+    static func featureContext() -> String {
+        """
+        About Drift (the app the user is using):
+        - Local-first health tracking app. All data stays on device — no cloud, no accounts, no analytics.
+        - Food logging: search 1000+ foods, scan barcodes (Open Food Facts), custom foods, copy from yesterday.
+        - Weight tracking: daily weigh-ins, EMA trend line, goal progress projection, syncs with Apple Health.
+        - Exercise: workout templates, import from Strong/Hevy, track sets/reps/weight, duration exercises.
+        - Body Rhythm: sleep, HRV, resting heart rate from Apple Health.
+        - Cycle tracking: reads period data from Apple Health, shows biometric correlations.
+        - Supplements: daily checklist with consistency tracking.
+        - Body Composition: DEXA scan data entry and tracking.
+        - Glucose: CGM glucose tracking.
+        - Biomarkers: blood test results and trends.
+        - AI assistant (this chat): on-device, private, no data leaves the phone.
+        - Barcode scanning: tap + on Food tab, then Scan. Looks up nutrition from Open Food Facts.
+        - To log food: say "log 2 eggs" or use the Food tab search. Can also say "ate chicken breast".
+        - To track weight: Weight tab → tap + to add entry. Apple Health weights sync automatically.
+        - To start workout: Exercise tab → pick a template or create custom.
+        """
     }
 
     // MARK: - Legacy (backward compat)

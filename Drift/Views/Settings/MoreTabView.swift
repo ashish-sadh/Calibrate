@@ -4,6 +4,8 @@ struct MoreTabView: View {
     @Binding var selectedTab: Int
     @State private var navId = UUID()
     @State private var hasCycleData = false
+    @State private var showingAIRemoveConfirm = false
+    @State private var showingAIRemoved = false
 
     var body: some View {
         NavigationStack {
@@ -77,23 +79,44 @@ struct MoreTabView: View {
                         }
                         .padding(.vertical, 10)
 
-                        if AIModelManager.shared.isModelDownloaded {
+                        if AIModelManager.shared.isModelDownloaded || showingAIRemoved {
                             Divider().overlay(Color.white.opacity(0.05))
-                            Button(role: .destructive) {
-                                LocalAIService.shared.deleteModel()
-                                Preferences.aiEnabled = false
-                            } label: {
-                                HStack(spacing: 12) {
-                                    Image(systemName: "trash").foregroundStyle(Theme.surplus).frame(width: 24)
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text("Remove AI Data").font(.subheadline.weight(.medium)).foregroundStyle(Theme.surplus)
-                                        Text("Free ~\(AIModelManager.shared.modelSizeOnDiskMB) MB")
-                                            .font(.caption2).foregroundStyle(.tertiary)
-                                    }
-                                    Spacer()
+                            if showingAIRemoved {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.deficit)
+                                    Text("AI data removed").font(.subheadline).foregroundStyle(.secondary)
                                 }
                                 .padding(.vertical, 10)
-                            }.buttonStyle(.plain)
+                                .transition(.opacity)
+                            } else {
+                                Button(role: .destructive) {
+                                    showingAIRemoveConfirm = true
+                                } label: {
+                                    HStack(spacing: 12) {
+                                        Image(systemName: "trash").foregroundStyle(Theme.surplus).frame(width: 24)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("Remove AI Data").font(.subheadline.weight(.medium)).foregroundStyle(Theme.surplus)
+                                            Text("Free ~\(AIModelManager.shared.modelSizeOnDiskMB) MB")
+                                                .font(.caption2).foregroundStyle(.tertiary)
+                                        }
+                                        Spacer()
+                                    }
+                                    .padding(.vertical, 10)
+                                }.buttonStyle(.plain)
+                                .alert("Remove AI Data?", isPresented: $showingAIRemoveConfirm) {
+                                    Button("Remove", role: .destructive) {
+                                        LocalAIService.shared.deleteModel()
+                                        Preferences.aiEnabled = false
+                                        withAnimation { showingAIRemoved = true }
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+                                            withAnimation { showingAIRemoved = false }
+                                        }
+                                    }
+                                    Button("Cancel", role: .cancel) {}
+                                } message: {
+                                    Text("This will delete the AI model (~\(AIModelManager.shared.modelSizeOnDiskMB) MB) from your device.")
+                                }
+                            }
                         }
                     }
                     .card()
