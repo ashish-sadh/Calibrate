@@ -146,7 +146,14 @@ enum AIRuleEngine {
 
         let remaining = target - nutrition.calories
         if remaining > 0 {
-            return "You've eaten \(Int(nutrition.calories)) of \(Int(target)) cal. \(Int(remaining)) cal remaining."
+            // Add protein context if relevant
+            if let goal = WeightGoal.load(), let targets = goal.macroTargets() {
+                let pLeft = max(0, Int(targets.proteinG - nutrition.proteinG))
+                if pLeft > 20 {
+                    return "\(Int(remaining)) cal left (\(Int(nutrition.calories))/\(Int(target))). Still need \(pLeft)g protein."
+                }
+            }
+            return "\(Int(remaining)) cal left (\(Int(nutrition.calories))/\(Int(target)))."
         } else {
             return "You've eaten \(Int(nutrition.calories)) of \(Int(target)) cal — \(Int(abs(remaining))) over target."
         }
