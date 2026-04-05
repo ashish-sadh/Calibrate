@@ -40,12 +40,15 @@ enum AIChainOfThought {
             || q.contains("breakfast") || q.contains("food") || q.contains("calorie") || q.contains("protein")
             || q.contains("macro") || q.contains("nutrition") || q.contains("diet")
         let needsSleep = q.contains("sleep") || q.contains("recovery") || q.contains("hrv") || q.contains("rest")
-            || q.contains("tired") || q.contains("energy")
+            || q.contains("tired") || q.contains("energy") || q.contains("heart rate")
+            || q.contains("fatigue") || q.contains("well") || q.contains("rested")
         let needsGlucose = q.contains("glucose") || q.contains("blood sugar") || q.contains("spike")
             || q.contains("cgm") || q.contains("fasting")
         let needsBiomarkers = q.contains("biomarker") || q.contains("blood test") || q.contains("lab")
             || q.contains("cholesterol") || q.contains("testosterone") || q.contains("vitamin")
-            || q.contains("thyroid") || q.contains("iron")
+            || q.contains("thyroid") || q.contains("iron") || q.contains("marker")
+            || q.contains("out of range") || q.contains("blood work") || q.contains("hemoglobin")
+            || q.contains("glucose") || q.contains("a1c")
         let needsDEXA = q.contains("dexa") || q.contains("body fat") || q.contains("body comp")
             || q.contains("lean mass") || q.contains("muscle mass")
         let needsCycle = q.contains("cycle") || q.contains("period") || q.contains("phase")
@@ -93,9 +96,20 @@ enum AIChainOfThought {
             steps.append(Step(label: "Checking supplements...") { AIContextBuilder.supplementContext() })
         }
 
-        // If no specific domain matched, use screen-aware context
+        // If no keyword matched, use the current screen as a hint
         if steps.isEmpty {
-            return nil // Simple query — single-shot LLM
+            switch screen {
+            case .weight, .goal: steps.append(Step(label: "Checking weight data...") { AIContextBuilder.weightContext() })
+            case .food: steps.append(Step(label: "Checking meals...") { AIContextBuilder.foodContext() })
+            case .exercise: steps.append(Step(label: "Looking at workouts...") { AIContextBuilder.workoutContext() })
+            case .bodyRhythm: steps.append(Step(label: "Checking sleep...") { AIContextBuilder.sleepRecoveryContext() })
+            case .glucose: steps.append(Step(label: "Reading glucose...") { AIContextBuilder.glucoseContext() })
+            case .biomarkers: steps.append(Step(label: "Reviewing labs...") { AIContextBuilder.biomarkerContext() })
+            case .cycle: steps.append(Step(label: "Checking cycle...") { AIContextBuilder.cycleContext() })
+            case .bodyComposition: steps.append(Step(label: "Checking DEXA...") { AIContextBuilder.dexaContext() })
+            case .supplements: steps.append(Step(label: "Checking supplements...") { AIContextBuilder.supplementContext() })
+            default: return nil // Dashboard/settings — single-shot
+            }
         }
 
         return steps
