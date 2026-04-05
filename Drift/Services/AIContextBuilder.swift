@@ -83,7 +83,7 @@ enum AIContextBuilder {
         let nutrition = (try? AppDatabase.shared.fetchDailyNutrition(for: today)) ?? .zero
         let tdee = TDEEEstimator.shared.current?.tdee ?? 2000
         let deficit = WeightGoal.load()?.requiredDailyDeficit ?? 0
-        let target = Int(tdee - deficit)
+        let target = max(500, Int(tdee - deficit)) // Floor at 500 to prevent negative/zero
 
         if nutrition.calories > 0 {
             let left = target - Int(nutrition.calories)

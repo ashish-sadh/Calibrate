@@ -137,12 +137,12 @@ struct AIChatView: View {
                                        "with", "about", "from", "that", "this", "been", "will", "can", "how",
                                        "what", "today", "calories", "protein", "carbs", "fat", "logged", "eaten"]
 
-        for msg in messages.suffix(8).reversed() {
+        for msg in messages.suffix(4).reversed() {
             let words = msg.text.lowercased()
                 .components(separatedBy: CharacterSet.alphanumerics.inverted)
                 .filter { $0.count > 2 && !skipWords.contains($0) }
 
-            for word in words {
+            for word in words.prefix(5) { // Limit DB queries
                 if let results = try? AppDatabase.shared.searchFoodsRanked(query: word),
                    let match = results.first,
                    match.name.lowercased().contains(word) {

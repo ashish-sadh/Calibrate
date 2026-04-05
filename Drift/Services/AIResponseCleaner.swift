@@ -59,8 +59,8 @@ enum AIResponseCleaner {
         let lower = response.lowercased()
         let trimmed = lower.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        // Too short
-        if trimmed.count < 10 { return true }
+        // Too short — but allow short factual answers like "4" or "Yes!"
+        if trimmed.count < 5 { return true }
 
         // Generic fillers
         let genericPhrases = [
