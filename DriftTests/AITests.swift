@@ -175,6 +175,15 @@ import Testing
     #expect(intents?[1].query == "toast")
 }
 
+@Test func aiMultiFoodNaturalPhrasing() async throws {
+    // "I just had chicken and rice" should be multi-food
+    let intents = AIActionExecutor.parseMultiFoodIntent("i just had chicken and rice")
+    #expect(intents != nil, "Natural phrasing should work for multi-food")
+    #expect(intents?.count == 2)
+    #expect(intents?[0].query == "chicken")
+    #expect(intents?[1].query == "rice")
+}
+
 @Test func aiMultiFoodCompoundNames() async throws {
     // "Mac and cheese" should NOT be split into "mac" + "cheese"
     let intents = AIActionExecutor.parseMultiFoodIntent("log mac and cheese")
