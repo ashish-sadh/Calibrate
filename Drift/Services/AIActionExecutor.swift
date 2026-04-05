@@ -153,7 +153,9 @@ enum AIActionExecutor {
             return FoodMatch(food: best, servings: servings ?? 1)
         }
         // Try stripping qualifiers: "slices of pizza" → "pizza", "cups of rice" → "rice"
-        let qualifiers = ["slices of ", "pieces of ", "cups of ", "bowls of ", "glasses of ", "servings of ", "portions of ", "plate of ", "some "]
+        let qualifiers = ["slices of ", "slice of ", "pieces of ", "piece of ", "cups of ", "cup of ",
+                          "bowls of ", "bowl of ", "glasses of ", "glass of ", "servings of ", "serving of ",
+                          "portions of ", "portion of ", "plate of ", "plates of ", "some ", "handful of ", "scoop of "]
         for qual in qualifiers {
             if query.lowercased().hasPrefix(qual) {
                 let stripped = String(query.dropFirst(qual.count))
