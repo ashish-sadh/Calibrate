@@ -5,7 +5,7 @@ struct DashboardView: View {
     @Binding var selectedTab: Int
     @State private var viewModel = DashboardViewModel()
     @State private var showDeficitExplainer = false
-    @State private var aiEnabled = Preferences.aiEnabled
+    @AppStorage("drift_ai_enabled") private var aiEnabled = false
 
     var body: some View {
         NavigationStack {
@@ -100,7 +100,6 @@ struct DashboardView: View {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
                         aiEnabled.toggle()
-                        Preferences.aiEnabled = aiEnabled
                     } label: {
                         HStack(spacing: 3) {
                             Image(systemName: "sparkles")

@@ -28,7 +28,7 @@ struct ContentView: View {
         UINavigationBar.appearance().compactAppearance = navAppearance
     }
 
-    @State private var aiEnabled = Preferences.aiEnabled
+    @AppStorage("drift_ai_enabled") private var aiEnabled = false
 
     var body: some View {
         ZStack {
@@ -62,7 +62,8 @@ struct ContentView: View {
                 FloatingAIAssistant()
             }
         } // end ZStack
-        .onChange(of: aiEnabled) { _, val in Preferences.aiEnabled = val }
+
+
     }
 }
 
