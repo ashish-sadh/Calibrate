@@ -310,13 +310,24 @@ struct AIChatView: View {
         // Resolve pronouns from conversation context: "log it", "log that", "add this"
         let resolved = resolvePronouns(lower)
 
-        // Multi-food intent: "log chicken and rice"
+        // Multi-food intent: "log chicken and rice" — find each in DB
         if let intents = AIActionExecutor.parseMultiFoodIntent(resolved) {
-            let names = intents.map(\.query).joined(separator: ", ")
-            messages.append(ChatMessage(role: .assistant, text: "Opening search for \(names)..."))
-            // Open search for first item
-            foodSearchQuery = intents[0].query
-            foodSearchServings = intents[0].servings
+            var found: [String] = []
+            var notFound: [AIActionExecutor.FoodIntent] = []
+            for intent in intents {
+                if let match = AIActionExecutor.findFood(query: intent.query, servings: intent.servings) {
+                    found.append("\(match.food.name) (\(Int(match.food.calories))cal)")
+                } else {
+                    notFound.append(intent)
+                }
+            }
+            if !found.isEmpty {
+                messages.append(ChatMessage(role: .assistant, text: "Found: \(found.joined(separator: ", ")). Opening search to add them..."))
+            }
+            // Open search for first item (found or not)
+            let first = notFound.first ?? intents[0]
+            foodSearchQuery = first.query
+            foodSearchServings = first.servings
             showingFoodSearch = true
             return
         }
