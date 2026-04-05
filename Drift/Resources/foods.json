@@ -9020,17 +9020,6 @@
     "fiber_g": 2.5
   },
   {
-    "name": "Raspberries",
-    "category": "Fruits",
-    "serving_size": 123,
-    "serving_unit": "g",
-    "calories": 64,
-    "protein_g": 1.5,
-    "carbs_g": 14.7,
-    "fat_g": 0.8,
-    "fiber_g": 8
-  },
-  {
     "name": "Blackberries",
     "category": "Fruits",
     "serving_size": 144,
