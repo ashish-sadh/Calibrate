@@ -452,7 +452,7 @@ struct AIChatView: View {
                 case .downloading(let progress):
                     messages.append(ChatMessage(role: .assistant, text: "Downloading AI (\(Int(progress * 100))%)… \(hint)"))
                 case .loading:
-                    messages.append(ChatMessage(role: .assistant, text: "Loading AI model — just a moment…"))
+                    messages.append(ChatMessage(role: .assistant, text: "AI is loading — should be ready in a few seconds. Meanwhile, try \"daily summary\" or \"log 2 eggs\"."))
                 case .error(let msg):
                     messages.append(ChatMessage(role: .assistant, text: msg))
                 case .notEnoughSpace(let msg):
