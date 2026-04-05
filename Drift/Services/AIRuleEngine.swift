@@ -2,6 +2,7 @@ import Foundation
 
 /// Rule-based health insights — works without the AI model.
 /// Used as fallback when model isn't downloaded, and to enrich AI responses.
+@MainActor
 enum AIRuleEngine {
 
     /// Generate a quick insight based on today's data.
@@ -129,5 +130,40 @@ enum AIRuleEngine {
         }
 
         return lines.joined(separator: "\n")
+    }
+
+    /// Calories remaining vs target.
+    static func caloriesLeft() -> String {
+        let today = DateFormatters.todayString
+        let nutrition = (try? AppDatabase.shared.fetchDailyNutrition(for: today)) ?? .zero
+        let tdee = TDEEEstimator.shared.current?.tdee ?? 2000
+        let deficit = WeightGoal.load()?.requiredDailyDeficit ?? 0
+        let target = tdee - deficit
+
+        if nutrition.calories == 0 {
+            return "No food logged yet. Your target is \(Int(target)) cal."
+        }
+
+        let remaining = target - nutrition.calories
+        if remaining > 0 {
+            return "You've eaten \(Int(nutrition.calories)) of \(Int(target)) cal. \(Int(remaining)) cal remaining."
+        } else {
+            return "You've eaten \(Int(nutrition.calories)) of \(Int(target)) cal — \(Int(abs(remaining))) over target."
+        }
+    }
+
+    /// Supplement check.
+    static func supplementStatus() -> String {
+        let today = DateFormatters.todayString
+        guard let supplements = try? AppDatabase.shared.fetchActiveSupplements(),
+              !supplements.isEmpty else { return "No supplements set up." }
+        let logs = (try? AppDatabase.shared.fetchSupplementLogs(for: today)) ?? []
+        let takenIds = Set(logs.filter(\.taken).compactMap(\.supplementId))
+        let taken = takenIds.count
+        let total = supplements.count
+
+        if taken == total { return "All \(total) supplements taken today." }
+        let untaken = supplements.filter { !takenIds.contains($0.id ?? 0) }.map(\.name)
+        return "Supplements: \(taken)/\(total) taken. Still need: \(untaken.joined(separator: ", "))."
     }
 }

@@ -246,6 +246,14 @@ struct AIChatView: View {
                 : "No food logged today yet."))
             return
         }
+        if lower.contains("calories left") || lower.contains("how much can i eat") || lower.contains("remaining") {
+            messages.append(ChatMessage(role: .assistant, text: AIRuleEngine.caloriesLeft()))
+            return
+        }
+        if lower.contains("supplement") && (lower.contains("take") || lower.contains("status") || lower.contains("did i")) {
+            messages.append(ChatMessage(role: .assistant, text: AIRuleEngine.supplementStatus()))
+            return
+        }
 
         // Multi-food intent: "log chicken and rice"
         if let intents = AIActionExecutor.parseMultiFoodIntent(lower) {
@@ -306,23 +314,40 @@ struct AIChatView: View {
             }
         }
 
-        // Chain-of-thought: fetch relevant data, then call LLM once
+        // Chain-of-thought with timeout: fetch data, call LLM, clean response
         let screen = screenTracker.currentScreen
         let history = buildConversationHistory()
 
         generatingState = .thinking(step: "Understanding your question...")
         Task {
-            let response = await AIChainOfThought.execute(
-                query: text, screen: screen, history: history
-            ) { step in
-                Task { @MainActor in
-                    generatingState = .thinking(step: step)
+            // Race LLM against 30s timeout
+            let response: String? = await withTaskGroup(of: String?.self) { group in
+                group.addTask {
+                    await AIChainOfThought.execute(
+                        query: text, screen: screen, history: history
+                    ) { step in
+                        Task { @MainActor in
+                            generatingState = .thinking(step: step)
+                        }
+                    }
                 }
+                group.addTask {
+                    try? await Task.sleep(for: .seconds(30))
+                    return nil // timeout sentinel
+                }
+                for await result in group {
+                    group.cancelAll()
+                    return result
+                }
+                return nil
             }
 
-            let finalResponse = response.isEmpty
-                ? "I'm not sure about that. Try asking about your food, weight, or workouts."
-                : response
+            let finalResponse: String
+            if let response, !response.isEmpty {
+                finalResponse = AIResponseCleaner.clean(response)
+            } else {
+                finalResponse = "I took too long to respond. Try a simpler question, or check the relevant tab directly."
+            }
 
             messages.append(ChatMessage(role: .assistant, text: finalResponse))
             generatingState = .idle
