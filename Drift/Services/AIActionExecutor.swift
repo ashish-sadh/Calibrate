@@ -235,7 +235,7 @@ enum AIActionExecutor {
     /// Extract amount from beginning of string: "1/3 avocado" → (0.33, "avocado")
     private static func extractAmount(from text: String) -> (Double?, String) {
         // Multi-word amounts first
-        let multiWord: [(String, Double)] = [("a couple of ", 2), ("couple of ", 2), ("a few ", 3)]
+        let multiWord: [(String, Double)] = [("a couple of ", 2), ("couple of ", 2), ("a few ", 3), ("a lot of ", 2), ("lots of ", 2)]
         for (prefix, amount) in multiWord {
             if text.lowercased().hasPrefix(prefix) {
                 return (amount, String(text.dropFirst(prefix.count)).trimmingCharacters(in: .whitespaces))
