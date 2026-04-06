@@ -16,10 +16,18 @@ enum AIResponseCleaner {
         if text.lowercased().hasPrefix("a: ") { text = String(text.dropFirst(3)) }
         if text.lowercased().hasPrefix("assistant: ") { text = String(text.dropFirst(11)) }
 
-        // Strip markdown bold/headers (looks awkward in plain text chat)
+        // Strip markdown formatting (looks awkward in plain text chat)
         text = text.replacingOccurrences(of: "**", with: "")
         text = text.replacingOccurrences(of: "## ", with: "")
         text = text.replacingOccurrences(of: "# ", with: "")
+        text = text.replacingOccurrences(of: "* ", with: "\u{2022} ") // bullet points → proper bullet
+        text = text.replacingOccurrences(of: "- ", with: "\u{2022} ") // dash lists → proper bullet
+
+        // Clean up numbered lists: "1. " → "1) " (more conversational)
+        let numberedPattern = #"(\d+)\.\s"#
+        if let regex = try? NSRegularExpression(pattern: numberedPattern) {
+            text = regex.stringByReplacingMatches(in: text, range: NSRange(text.startIndex..., in: text), withTemplate: "$1) ")
+        }
 
         // Remove mechanical preambles and question echoes
         let preambles = ["based on your data, ", "based on the context, ", "according to the data, ",
@@ -112,6 +120,10 @@ enum AIResponseCleaner {
         // Context regurgitation: response is just the raw data format
         if trimmed.contains("|") && trimmed.filter({ $0 == "|" }).count > 3 { return true }
         if trimmed.hasPrefix("eaten:") || trimmed.hasPrefix("weight:") || trimmed.hasPrefix("goal:") { return true }
+        if trimmed.hasPrefix("screen:") || trimmed.hasPrefix("actions:") || trimmed.hasPrefix("context:") { return true }
+
+        // Model echoing the system prompt or instructions
+        if trimmed.contains("action tag") || trimmed.contains("[log_food") || trimmed.contains("[create_workout") { return true }
 
         return false
     }
