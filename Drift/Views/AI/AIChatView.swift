@@ -69,7 +69,7 @@ struct AIChatView: View {
                 Image(systemName: "lock.shield.fill")
                     .font(.system(size: 10))
                     .foregroundStyle(Theme.accent)
-                Text("Small on-device model \u{2014} responses may not be perfect. Data never leaves your phone. Turn off in More \u{2192} Settings.")
+                Text("Small on-device model \u{2014} responses may not be perfect. Data never leaves your phone. Thank you for testing! Next release will be faster and smarter. Turn off in More \u{2192} Settings.")
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
             }
