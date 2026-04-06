@@ -1,7 +1,7 @@
 Control file for Drift self-improvement loop.
 Check this file before every cycle.
 
-Current status: REDIRECT
+Current status: RUNNING
 Direction:
 
 NEVER STOP. Keep improving until human changes status to STOP.

@@ -181,8 +181,11 @@ enum AIChainOfThought {
             return await LocalAIService.shared.respondStreaming(to: query, context: context, history: history, onToken: onToken)
         }
 
-        // Gather data from each step
-        var contextParts: [String] = [AIContextBuilder.baseContext()]
+        // Inject current state — model should never need to "remember"
+        var contextParts: [String] = [
+            "Screen: \(screen.rawValue)",
+            AIContextBuilder.baseContext()
+        ]
 
         for step in steps {
             onStep(step.label)
