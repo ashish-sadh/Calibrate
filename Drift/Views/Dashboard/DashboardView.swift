@@ -11,6 +11,18 @@ struct DashboardView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
+                    // Privacy banner
+                    HStack(spacing: 6) {
+                        Image(systemName: "lock.shield.fill")
+                            .font(.system(size: 11))
+                            .foregroundStyle(Theme.deficit)
+                        Text("All data & AI models stay on your device. Nothing leaves your phone.")
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, 4)
+
                     // Weight + Deficit + Estimated deficit as tiles → Weight tab
                     Button { selectedTab = 1 } label: {
                         HStack(spacing: 12) {

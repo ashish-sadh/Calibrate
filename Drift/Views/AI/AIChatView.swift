@@ -87,9 +87,10 @@ struct AIChatView: View {
         .onAppear {
             if messages.isEmpty {
                 messages.append(ChatMessage(role: .assistant, text: pageInsight))
-                // Show experimental warning only once
+                // Show disclaimers only once
                 if !UserDefaults.standard.bool(forKey: "drift_ai_warned") {
-                    messages.append(ChatMessage(role: .assistant, text: "This is an experimental feature. Turn it off from the toggle on Dashboard or More \u{2192} Settings."))
+                    messages.append(ChatMessage(role: .assistant, text: "All AI models run locally on your device. Your data never leaves your phone."))
+                    messages.append(ChatMessage(role: .assistant, text: "This is a work in progress \u{2014} inference may be slower for now. Expect faster speeds in upcoming releases. Thank you for testing the beta!"))
                     UserDefaults.standard.set(true, forKey: "drift_ai_warned")
                 }
             }
