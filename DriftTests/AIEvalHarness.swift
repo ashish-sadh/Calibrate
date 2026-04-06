@@ -357,6 +357,34 @@ final class AIEvalHarness: XCTestCase {
 
     // MARK: - Summary Report
 
+    // MARK: - Context Builder Smoke Tests
+
+    @MainActor
+    func testContextBuildersProduceOutput() {
+        // All context builders should return something (not crash) on empty DB
+        let base = AIContextBuilder.baseContext()
+        XCTAssertFalse(base.isEmpty, "Base context should never be empty (at least shows target)")
+
+        let food = AIContextBuilder.foodContext()
+        // Food context may be empty if no food logged — that's OK
+
+        let weight = AIContextBuilder.weightContext()
+        // Weight context may say "No weight data" — that's OK
+        XCTAssertFalse(weight.isEmpty || weight.contains("crash"), "Weight context should not crash")
+
+        let workout = AIContextBuilder.workoutContext()
+        // May be empty or "No workout data"
+
+        let supplement = AIContextBuilder.supplementContext()
+        XCTAssertFalse(supplement.isEmpty, "Supplement context should return something")
+
+        // Screen-based context
+        let dashboard = AIContextBuilder.buildContext(screen: .dashboard)
+        XCTAssertFalse(dashboard.isEmpty)
+        let weightScreen = AIContextBuilder.buildContext(screen: .weight)
+        XCTAssertFalse(weightScreen.isEmpty)
+    }
+
     func testPrintSummary() {
         print("=== AI EVAL HARNESS SUMMARY ===")
         print("Run individual tests for detailed precision/recall metrics.")
