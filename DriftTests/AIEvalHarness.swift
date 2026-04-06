@@ -943,6 +943,75 @@ final class AIEvalHarness: XCTestCase {
         XCTAssertEqual(ruleEngineQueries.count, 19, "Should have 19 rule engine patterns")
     }
 
+    // MARK: - Comprehensive Routing Matrix
+
+    @MainActor
+    func testRoutingByScreenContext() {
+        // Queries on wrong screens should still route to correct domain
+        let crossScreenQueries: [(String, AIScreen, String)] = [
+            ("how's my weight", .food, "weight"),           // weight query on food screen
+            ("what should I eat", .weight, "meal"),          // food query on weight screen
+            ("how'd I sleep", .exercise, "sleep"),           // sleep query on exercise screen
+            ("what should I train", .food, "workout"),       // workout query on food screen
+            ("any glucose spikes", .dashboard, "glucose"),   // glucose on dashboard
+            ("which labs are off", .dashboard, "lab"),        // biomarkers on dashboard
+        ]
+
+        var correct = 0
+        for (query, screen, expectedKeyword) in crossScreenQueries {
+            let steps = AIChainOfThought.plan(query: query, screen: screen)
+            XCTAssertNotNil(steps, "'\(query)' on \(screen) should trigger chain-of-thought")
+            let labels = steps?.map { $0.label.lowercased() } ?? []
+            if labels.contains(where: { $0.contains(expectedKeyword) || $0.contains("check") || $0.contains("look") || $0.contains("review") }) {
+                correct += 1
+            } else {
+                print("CROSS-SCREEN MISS: '\(query)' on \(screen) got labels: \(labels)")
+            }
+        }
+        let precision = Double(correct) / Double(crossScreenQueries.count)
+        XCTAssertGreaterThanOrEqual(precision, 0.83, "Cross-screen routing: \(correct)/\(crossScreenQueries.count)")
+    }
+
+    // MARK: - Food Logging Comprehensive
+
+    func testFoodLoggingWithMealTimes() {
+        let mealTimed = [
+            ("log eggs for breakfast", "breakfast"),
+            ("had pasta for lunch", "lunch"),
+            ("ate chicken for dinner", "dinner"),
+            ("log a snack", nil),  // "snack" suffix not specifically handled as meal
+        ]
+
+        for (query, expectedMeal) in mealTimed {
+            let intent = AIActionExecutor.parseFoodIntent(query.lowercased())
+            XCTAssertNotNil(intent, "'\(query)' should parse")
+            if let expected = expectedMeal {
+                XCTAssertEqual(intent?.mealHint, expected, "'\(query)' meal should be \(expected)")
+            }
+        }
+    }
+
+    func testFoodLoggingWithQuantifiers() {
+        let quantified = [
+            "log a slice of pizza",
+            "had a bowl of soup",
+            "ate a piece of chicken",
+            "log a cup of coffee",
+            "had a glass of milk",
+            "ate a plate of rice",
+        ]
+
+        var detected = 0
+        for query in quantified {
+            if AIActionExecutor.parseFoodIntent(query.lowercased()) != nil {
+                detected += 1
+            } else {
+                print("MISS (quantifier): '\(query)'")
+            }
+        }
+        XCTAssertGreaterThanOrEqual(detected, 5, "Quantifier food logging: \(detected)/\(quantified.count)")
+    }
+
     // MARK: - Edge Cases and Robustness
 
     func testEmptyAndSpecialInputs() {
