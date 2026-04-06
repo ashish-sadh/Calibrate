@@ -568,12 +568,13 @@ struct AIChatView: View {
                 }
             )
 
-            // Finalize: clean the response, check quality, replace streaming message
+            // Finalize: clean the response, strip action tags for display, check quality
             let finalResponse: String
             if response.isEmpty {
                 finalResponse = fallbackResponse(for: screen)
             } else {
-                let cleaned = AIResponseCleaner.clean(response)
+                let (_, cleanText) = AIActionParser.parse(response) // Strip action tags first
+                let cleaned = AIResponseCleaner.clean(cleanText)
                 finalResponse = AIResponseCleaner.isLowQuality(cleaned) ? fallbackResponse(for: screen) : cleaned
             }
 
@@ -583,8 +584,8 @@ struct AIChatView: View {
             streamingMessageId = nil
             generatingState = .idle
 
-            // Auto-execute actions from LLM response
-            let parsed = AIActionParser.parse(finalResponse)
+            // Auto-execute actions from original LLM response (before cleaning which might strip tags)
+            let parsed = AIActionParser.parse(response)
             switch parsed.action {
             case .logFood(let name, _):
                 foodSearchQuery = name
