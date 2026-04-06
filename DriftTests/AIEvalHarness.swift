@@ -33,6 +33,7 @@ final class AIEvalHarness: XCTestCase {
             "just ate some yogurt",
             "i had a coffee",
             "had 3 eggs for breakfast",
+            "i had 2 eggs and a banana",
         ]
 
         var detected = 0
