@@ -222,6 +222,17 @@ final class AIEvalHarness: XCTestCase {
             "You have 3 supplements left to take today: Vitamin D, Omega-3, and Magnesium.",
         ]
 
+        // Markdown stripping
+        let mdResponse = "**You've eaten** 1200 cal. ## Summary\nKeep going!"
+        let mdCleaned = AIResponseCleaner.clean(mdResponse)
+        XCTAssertFalse(mdCleaned.contains("**"), "Should strip markdown bold")
+        XCTAssertFalse(mdCleaned.contains("##"), "Should strip markdown headers")
+
+        // Preamble removal
+        let preambleResponse = "Based on your data, you've eaten 1200 cal today."
+        let pCleaned = AIResponseCleaner.clean(preambleResponse)
+        XCTAssertFalse(pCleaned.lowercased().hasPrefix("based on"), "Should strip preambles")
+
         for response in goodResponses {
             let cleaned = AIResponseCleaner.clean(response)
             XCTAssertFalse(AIResponseCleaner.isLowQuality(cleaned), "Good response marked as low quality: '\(response.prefix(50))'")
