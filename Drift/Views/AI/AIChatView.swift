@@ -343,10 +343,14 @@ struct AIChatView: View {
             }
         }
 
-        // Rule engine: instant answers for exact-match patterns only
-        // Broader questions go to LLM for nuanced, personalized responses
+        // Rule engine: instant answers for exact-match patterns
         if lower == "daily summary" || lower == "summary" {
             messages.append(ChatMessage(role: .assistant, text: AIRuleEngine.dailySummary()))
+            return
+        }
+        if lower == "what did i eat today" || lower == "what did i eat" || lower == "today's food" {
+            let context = AIContextBuilder.foodContext()
+            messages.append(ChatMessage(role: .assistant, text: context.isEmpty ? "No food logged today yet." : context))
             return
         }
         if lower == "yesterday" || lower == "what did i eat yesterday" {
