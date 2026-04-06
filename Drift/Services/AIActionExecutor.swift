@@ -98,8 +98,9 @@ enum AIActionExecutor {
     static func parseMultiFoodIntent(_ text: String) -> [FoodIntent]? {
         let lower = text.lowercased().trimmingCharacters(in: .whitespaces)
 
-        let verbs = ["log ", "ate ", "had ", "add ", "track ", "logged ", "eating "]
-        let naturalPrefixes = ["i just had ", "i just ate ", "i had ", "i ate ", "just had ", "just ate "]
+        let verbs = ["log ", "ate ", "had ", "add ", "track ", "logged ", "eating ", "drank ", "drinking ", "made "]
+        let naturalPrefixes = ["i just had ", "i just ate ", "i had ", "i ate ", "just had ", "just ate ",
+                               "i'm having ", "i'm eating ", "snacked on ", "i drank ", "just drank ", "i made "]
         var remainder: String
 
         if let verb = verbs.first(where: { lower.hasPrefix($0) }) {
