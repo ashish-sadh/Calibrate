@@ -266,6 +266,40 @@ final class AIEvalHarness: XCTestCase {
         XCTAssertGreaterThanOrEqual(precision, 0.78, "Amount parsing should be >= 78%")
     }
 
+    // MARK: - Conversational Pattern Detection
+
+    func testConversationalPatterns() {
+        // Greetings should be caught (not sent to LLM)
+        let greetings = ["hi", "hello", "hey", "yo", "sup"]
+        for g in greetings {
+            XCTAssertTrue(greetings.contains(g), "Greeting '\(g)' should be in list")
+        }
+
+        // Thanks should be caught
+        let thanks = ["thanks", "thank you", "thx", "ty", "cool", "ok", "okay", "got it", "nice"]
+        for t in thanks {
+            XCTAssertTrue(thanks.contains(t))
+        }
+
+        // These should NOT be greetings or thanks (should go to LLM or food parser)
+        let notConversational = ["help", "log eggs", "how am I doing", "calories left", "daily summary"]
+        for q in notConversational {
+            XCTAssertFalse(greetings.contains(q.lowercased()), "'\(q)' should not be a greeting")
+            XCTAssertFalse(thanks.contains(q.lowercased()), "'\(q)' should not be thanks")
+        }
+    }
+
+    // MARK: - Compound Food Protection
+
+    func testCompoundFoodNotSplit() {
+        // These contain "and" but should NOT be split into multiple foods
+        let compounds = ["mac and cheese", "bread and butter", "rice and beans"]
+        for food in compounds {
+            let result = AIActionExecutor.parseMultiFoodIntent("log \(food)")
+            XCTAssertNil(result, "Compound food '\(food)' should not be split")
+        }
+    }
+
     // MARK: - Summary Report
 
     func testPrintSummary() {
