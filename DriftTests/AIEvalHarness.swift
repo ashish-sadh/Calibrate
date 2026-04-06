@@ -968,6 +968,24 @@ final class AIEvalHarness: XCTestCase {
         XCTAssertGreaterThanOrEqual(precision, 0.85, "Calorie estimation routing: \(correct)/\(queries.count)")
     }
 
+    // MARK: - Calorie Estimation False Positives
+
+    @MainActor
+    func testCalorieEstimationNotTriggeredForLogging() {
+        // These are food LOGGING queries, not calorie ESTIMATION
+        let loggingNotEstimation = [
+            "log 2 eggs",
+            "ate chicken breast",
+            "had a banana for lunch",
+            "track 3 rotis",
+        ]
+        for query in loggingNotEstimation {
+            let steps = AIChainOfThought.plan(query: query, screen: .food)
+            let hasNutritionLookup = steps?.contains(where: { $0.label.lowercased().contains("nutrition") || $0.label.lowercased().contains("looking up") }) ?? false
+            XCTAssertFalse(hasNutritionLookup, "'\(query)' should NOT trigger nutrition lookup (it's a logging intent)")
+        }
+    }
+
     // MARK: - Keyword Precision Tests
 
     @MainActor
