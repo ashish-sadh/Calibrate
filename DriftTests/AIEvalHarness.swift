@@ -943,11 +943,156 @@ final class AIEvalHarness: XCTestCase {
         XCTAssertEqual(ruleEngineQueries.count, 19, "Should have 19 rule engine patterns")
     }
 
+    // MARK: - Edge Cases and Robustness
+
+    func testEmptyAndSpecialInputs() {
+        // These should NOT crash or produce false positives
+        let edgeCases = [
+            "",
+            " ",
+            "   ",
+            "!@#$%",
+            "12345",
+            "🍕🍔🌮",
+            String(repeating: "a", count: 500), // very long
+        ]
+
+        for input in edgeCases {
+            // Should not crash
+            let _ = AIActionExecutor.parseFoodIntent(input)
+            let _ = AIActionExecutor.parseWeightIntent(input)
+            let _ = AIActionExecutor.parseMultiFoodIntent(input)
+            let (_, _) = AIActionParser.parse(input)
+            let cleaned = AIResponseCleaner.clean(input)
+            let _ = AIResponseCleaner.isLowQuality(cleaned)
+        }
+        // If we get here without crashing, test passes
+    }
+
+    func testMixedIntentQueries() {
+        // Queries that could be ambiguous between food and weight
+        let cases: [(String, Bool, Bool)] = [
+            // (query, shouldBeFood, shouldBeWeight)
+            ("log 2 eggs", true, false),
+            ("i weigh 165", false, true),
+            ("how much does this weigh", false, false), // question, not logging
+            ("log some chicken", true, false),
+            ("weight is 80 kg", false, true),
+        ]
+
+        for (query, shouldBeFood, shouldBeWeight) in cases {
+            let lower = query.lowercased()
+            let isFood = AIActionExecutor.parseFoodIntent(lower) != nil || AIActionExecutor.parseMultiFoodIntent(lower) != nil
+            let isWeight = AIActionExecutor.parseWeightIntent(lower) != nil
+            XCTAssertEqual(isFood, shouldBeFood, "'\(query)' food=\(isFood), expected=\(shouldBeFood)")
+            XCTAssertEqual(isWeight, shouldBeWeight, "'\(query)' weight=\(isWeight), expected=\(shouldBeWeight)")
+        }
+    }
+
+    @MainActor
+    func testScreenFallbackContext() {
+        // Unrecognized queries on specific screens should still get relevant context
+        let screenFallbacks: [(AIScreen, Bool)] = [
+            (.food, true),      // Should get food context
+            (.weight, true),    // Should get weight context
+            (.exercise, true),  // Should get workout context
+            (.dashboard, false), // Short query → no context
+            (.settings, false),  // Settings → no context
+        ]
+
+        for (screen, shouldHaveSteps) in screenFallbacks {
+            let steps = AIChainOfThought.plan(query: "hmm", screen: screen)
+            if shouldHaveSteps {
+                XCTAssertNotNil(steps, "Screen \(screen) should provide fallback context")
+            } else {
+                XCTAssertNil(steps, "Screen \(screen) should not provide context for short query")
+            }
+        }
+    }
+
+    func testResponseCleanerTruncation() {
+        // Very long response should be truncated
+        let longResponse = String(repeating: "This is a test sentence. ", count: 50)
+        let cleaned = AIResponseCleaner.clean(longResponse)
+        XCTAssertLessThanOrEqual(cleaned.count, 500, "Should truncate to ~500 chars")
+        // Should end with punctuation or be significantly shorter than input
+        let endsClean = cleaned.hasSuffix(".") || cleaned.hasSuffix("!") || cleaned.hasSuffix("?")
+        XCTAssertTrue(endsClean || cleaned.count < longResponse.count / 2, "Should be truncated cleanly")
+    }
+
+    func testResponseCleanerDisclaimers() {
+        let disclaimers = [
+            "As an AI, I can tell you that you've eaten 1500 calories.",
+            "I'm not a doctor, but your glucose looks normal.",
+            "As a language model, I should note that protein is important.",
+        ]
+        for response in disclaimers {
+            let cleaned = AIResponseCleaner.clean(response)
+            XCTAssertFalse(cleaned.lowercased().contains("as an ai"), "Should strip AI disclaimer")
+            XCTAssertFalse(cleaned.lowercased().contains("i'm not a doctor"), "Should strip medical disclaimer")
+            XCTAssertFalse(cleaned.lowercased().contains("language model"), "Should strip language model mention")
+        }
+    }
+
+    func testResponseCleanerDedupe() {
+        let duped = "You've eaten 1500 calories. You've eaten 1500 calories. Good job staying on track."
+        let cleaned = AIResponseCleaner.clean(duped)
+        let sentences = cleaned.components(separatedBy: ". ")
+        let unique = Set(sentences.map { $0.lowercased().trimmingCharacters(in: .whitespacesAndNewlines) })
+        XCTAssertEqual(sentences.count, unique.count, "Duplicate sentences should be removed")
+    }
+
+    // MARK: - Weight Unit Detection
+
+    func testWeightUnitDetection() {
+        let cases: [(String, String)] = [
+            ("i weigh 165 lbs", "lbs"),
+            ("i weigh 75 kg", "kg"),
+            ("my weight is 82 kg", "kg"),
+            ("i weigh 170 pounds", "lbs"),
+            ("i weigh 165 lb", "lbs"),
+        ]
+
+        for (query, expectedUnit) in cases {
+            let intent = AIActionExecutor.parseWeightIntent(query.lowercased())
+            XCTAssertNotNil(intent, "'\(query)' should parse")
+            if let intent {
+                let actualUnit = intent.unit == .kg ? "kg" : "lbs"
+                XCTAssertEqual(actualUnit, expectedUnit, "'\(query)' unit should be \(expectedUnit)")
+            }
+        }
+    }
+
+    // MARK: - Context Builder Token Budget
+
+    @MainActor
+    func testAllContextsUnderTokenBudget() {
+        // Every context builder should produce output under 800 tokens
+        let contexts = [
+            AIContextBuilder.baseContext(),
+            AIContextBuilder.foodContext(),
+            AIContextBuilder.weightContext(),
+            AIContextBuilder.workoutContext(),
+            AIContextBuilder.supplementContext(),
+        ]
+
+        for context in contexts {
+            let tokens = AIContextBuilder.estimateTokens(context)
+            // Individual contexts should be reasonable (they get truncated when combined)
+            XCTAssertLessThan(tokens, 2000, "Context too large: \(tokens) tokens (\(context.prefix(50))...)")
+        }
+
+        // Combined context (what actually goes to LLM) should be under 800
+        let combined = AIContextBuilder.buildContext(screen: .dashboard)
+        let combinedTokens = AIContextBuilder.estimateTokens(combined)
+        XCTAssertLessThanOrEqual(combinedTokens, 800, "Combined dashboard context: \(combinedTokens) tokens")
+    }
+
     // MARK: - Summary
 
     func testPrintSummary() {
         print("=== AI EVAL HARNESS SUMMARY ===")
-        print("Run individual tests for detailed precision/recall metrics.")
+        print("Total eval test methods: 48+")
         print("Target: food logging >= 85%, weight >= 83%, routing >= 85%, parsing >= 78%")
         print("===============================")
     }
