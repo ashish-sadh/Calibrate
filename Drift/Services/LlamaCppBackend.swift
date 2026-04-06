@@ -70,13 +70,34 @@ final class LlamaCppBackend: AIBackend, @unchecked Sendable {
         ctxParams.offload_kqv = true
         ctxParams.op_offload = true
 
-        // Try GPU context first, fall back to CPU-only if Metal fails
+        // Try GPU context first, fall back to pure CPU if Metal fails
         var c = llama_init_from_model(m, ctxParams)
         if c == nil {
-            Log.app.info("AI: GPU context failed, falling back to CPU-only")
+            Log.app.info("AI: GPU context failed, reloading model CPU-only")
+            llama_model_free(m)
+
+            // Reload model with CPU-only device to avoid Metal entirely
+            var cpuDev: ggml_backend_dev_t?
+            for i in 0..<ggml_backend_reg_count() {
+                let reg = ggml_backend_reg_get(i)
+                let regName = String(cString: ggml_backend_reg_name(reg))
+                if regName == "CPU" { cpuDev = ggml_backend_reg_dev_get(reg, 0); break }
+            }
+            var cpuParams = llama_model_default_params()
+            cpuParams.n_gpu_layers = 0
+            var devList: [ggml_backend_dev_t?] = []
+            if let cpuDev {
+                devList = [cpuDev, nil]
+                cpuParams.devices = UnsafeMutablePointer(mutating: devList.withUnsafeBufferPointer { $0.baseAddress })
+            }
+            guard let cpuModel = withExtendedLifetime(devList, { llama_model_load_from_file(cPath, cpuParams) }) else {
+                throw LoadError.modelLoadFailed
+            }
+            model = cpuModel
+
             ctxParams.offload_kqv = false
             ctxParams.op_offload = false
-            c = llama_init_from_model(m, ctxParams)
+            c = llama_init_from_model(cpuModel, ctxParams)
         }
         guard let c else {
             llama_model_free(m)
