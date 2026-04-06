@@ -834,6 +834,33 @@ final class AIEvalHarness: XCTestCase {
         XCTAssertGreaterThanOrEqual(precision, 0.83, "Food phrasing coverage: \(detected)/\(phrasings.count)")
     }
 
+    func testFoodLoggingBeveragesAndSnacks() {
+        let beveragesAndSnacks = [
+            "drank a protein shake",
+            "drinking water",
+            "i drank a glass of milk",
+            "just drank a smoothie",
+            "snacked on almonds",
+            "made a salad",
+            "i made oatmeal",
+            "i'm having lunch",
+            "i'm eating a sandwich",
+        ]
+
+        var detected = 0
+        for query in beveragesAndSnacks {
+            let lower = query.lowercased()
+            if AIActionExecutor.parseFoodIntent(lower) != nil || AIActionExecutor.parseMultiFoodIntent(lower) != nil {
+                detected += 1
+            } else {
+                print("MISS (beverage/snack): '\(query)'")
+            }
+        }
+
+        let precision = Double(detected) / Double(beveragesAndSnacks.count)
+        XCTAssertGreaterThanOrEqual(precision, 0.78, "Beverage/snack coverage: \(detected)/\(beveragesAndSnacks.count)")
+    }
+
     func testMultiFoodLogging() {
         // Multi-food queries that should be split
         let multiFood = [

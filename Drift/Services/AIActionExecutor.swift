@@ -23,14 +23,15 @@ enum AIActionExecutor {
         let lower = text.lowercased().trimmingCharacters(in: .whitespaces)
 
         // Direct verb prefix: "log eggs", "ate chicken"
-        let verbs = ["log ", "ate ", "had ", "add ", "track ", "logged ", "eating "]
+        let verbs = ["log ", "ate ", "had ", "add ", "track ", "logged ", "eating ", "drank ", "drinking ", "made "]
         var remainder: String
 
         if let verb = verbs.first(where: { lower.hasPrefix($0) }) {
             remainder = String(lower.dropFirst(verb.count)).trimmingCharacters(in: .whitespaces)
         } else {
             // Natural phrasing: "I just had", "I ate", "just ate", "just had"
-            let naturalPrefixes = ["i just had ", "i just ate ", "i had ", "i ate ", "just had ", "just ate ", "just logged "]
+            let naturalPrefixes = ["i just had ", "i just ate ", "i had ", "i ate ", "just had ", "just ate ", "just logged ",
+                                     "i'm having ", "i'm eating ", "snacked on ", "i drank ", "just drank ", "i made "]
             guard let prefix = naturalPrefixes.first(where: { lower.hasPrefix($0) }) else { return nil }
             remainder = String(lower.dropFirst(prefix.count)).trimmingCharacters(in: .whitespaces)
         }
