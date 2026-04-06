@@ -8,111 +8,122 @@ NEVER STOP. Keep improving until human changes status to STOP.
 Commit frequently. Don't publish TestFlight unless asked.
 Check this file before every improvement cycle.
 
-=== PRIORITY 1: VISION MODEL — Photo-based Food Logging ===
+80% of energy on PRIORITY 1 (text chat quality).
+20% on exploration/research.
 
-Implement Qwen3-VL-2B vision model support for photo-based food logging.
+=== PRIORITY 1: MAKE TEXT CHAT FEEL SMARTER THAN THE MODEL IS (80%) ===
 
-Steps:
-1. Research how llama.cpp handles vision models (llava-style API)
-   - Look at llama.cpp examples/llava/ for the C API usage
-   - Check if our source-built xcframework (b7310) includes vision/clip headers
-   - If not, rebuild xcframework with vision support enabled
+The model is small (1.5B). Customers will notice limitations.
+The goal: hide the model's weaknesses by being REALLY smart about
+what we compute in Swift vs what we ask the model to do.
 
-2. Implement vision pipeline in LlamaCppBackend:
-   - Load mmproj (multimodal projector) alongside the main model
-   - Add method: processImage(UIImage) -> image embeddings
-   - Add method: respondWithImage(prompt, image) -> text response
-   - Keep existing text-only respond() working
+Study how Claude Code CLI works (leaked repo, web articles):
+- Claude Code pre-computes everything and gives the model structured context
+- The model's job is ONLY to phrase things naturally
+- Intent classification happens in code, not in the model
+- The CLI shows what it's doing (tool calls, thinking) so users feel informed
 
-3. Download and test Qwen3-VL-2B model:
-   - Files already on GitHub releases: Qwen3-VL-2B-Instruct-Q4_K_M.gguf + mmproj
-   - Update AIModelTier to include a vision tier
-   - Test on simulator first
+Apply these principles to Drift AI:
 
-4. Add photo food logging UI:
-   - Camera button in AI chat
-   - Take photo or pick from gallery
-   - Send to vision model: "What food is in this image? Estimate calories."
-   - Parse response → open food log sheet pre-filled
+1) EXPAND RULE ENGINE — handle more queries WITHOUT the LLM
+   - "How's my protein?" → instant answer with target comparison
+   - "What did I eat today?" → instant meal-grouped list
+   - "Am I on track?" → instant weight trend + deficit analysis
+   - "Calories left?" → instant with protein reminder
+   - The more we handle in Swift, the faster AND more accurate
+   - Goal: 60-70% of common queries answered instantly, no LLM needed
 
-5. Add nutrition label scanning via vision:
-   - Photo of nutrition label → vision model extracts macros
+2) WHEN LLM IS NEEDED, PRE-DIGEST EVERYTHING
+   - Never ask the model to compute — do all math in Swift
+   - Give the model a pre-written conclusion: "Assessment: losing at healthy pace"
+   - The model just wraps it in natural language
+   - Include 1 short example in the context for tone/format guidance
+   - Keep context TIGHT — every token matters at 2048 window
 
-=== PRIORITY 2: AI CHAT QUALITY ===
+3) MAKE THE CHAT FEEL INTELLIGENT THROUGH UX
+   - Show "thinking" steps: "Checking your meals..." → "Analyzing weight..."
+   - Stream tokens so responses appear word-by-word (already done)
+   - Smart suggestion pills that change based on screen + time + data
+   - When food is found: "Found Egg (78 cal). Opening to confirm..." (already done)
+   - Multi-turn: "What did you eat?" → user says "rice" → opens food search
+   - These make the app feel smart even when the model gives a basic response
 
-The AI chat must be world-class at three things:
+4) RESPONSE QUALITY — MAKE EVERY LLM RESPONSE CLEAN
+   - Strip markdown, preambles, disclaimers, format echoes (already done)
+   - Catch low-quality/garbage responses and show fallback
+   - Truncate incomplete sentences
+   - If response doesn't reference the actual data, try again or use rule engine
+   - Test with eval harness after every change
 
-1) FOOD LOGGING VIA CHAT
-   - Multi-turn conversation: "I had rice" → "how much?" → "1 cup" → logged
-   - Handle ambiguity: "I had coffee" → "black or with milk?" → smart follow-up
-   - Show what the agent is doing: "Searching for rice..." → "Found: Rice (206cal)"
-   - Handle corrections: "actually it was 3 not 2"
+5) FOOD LOGGING — THE KILLER FEATURE
+   - "log chicken and rice" → finds both, opens search
+   - "I just had 2 samosas for lunch" → natural phrasing works
+   - "a couple of eggs" → amounts parsed correctly
+   - "2 slices of pizza" → qualifiers stripped
+   - After logging: show remaining calories immediately
+   - This should be FLAWLESS — test every edge case
 
-2) NATURAL CONVERSATION FLOW
-   - Context should flow naturally between turns
-   - AI should remember what was discussed in the session
-   - When AI doesn't know, ask clarifying questions instead of guessing
-   - Keep responses under 3 sentences unless user asks for detail
+6) EVAL HARNESS — MEASURE EVERYTHING
+   - 50+ test queries with expected behavior
+   - Precision: does it trigger the right action?
+   - Recall: does it handle the query or fall to fallback?
+   - Run after every change: xcodebuild test -only-testing:'DriftTests/AIEvalHarness'
+   - Add new test cases for every bug found
+   - This is the safety net against regressions
 
-3) WORKOUT TEMPLATE CREATION VIA CHAT
-   - "I want to do a push day" → show available templates or help create one
-   - "Add bench press 3x10" → build a workout step by step
-   - Let them start the workout from chat
+=== PRIORITY 2: POC / EXPLORATION (20%) — don't commit, just learn ===
 
-=== PRIORITY 3: MODEL EVALUATION HARNESS ===
+These are research spikes. Write code to test, but use a git branch
+or /tmp directory. Don't merge into main unless it works end-to-end.
 
-Build gold-standard test harness for evaluating LLM quality:
-- 50+ synthetic queries with expected responses
-- Measure precision (correct actions) and recall (handled vs fallback)
-- Score response quality
-- Easy to swap models and compare
-- Run as part of test suite
+A) VISION MODEL SPIKE
+   - Can llama.cpp b7310 load Qwen3-VL-2B + mmproj?
+   - Does our xcframework include clip/llava headers?
+   - If not, what build flags are needed?
+   - Write a minimal test: load model + mmproj, feed an image, get text
+   - Document findings in Docs/ai-improvement-ideas.md
+   - DON'T commit to main — just learn if it's possible
 
-=== PRIORITY 4: INFERENCE OPTIMIZATION ===
+B) METAL GPU FIX SPIKE
+   - Try building llama.cpp with GGML_METAL_USE_BF16=OFF
+   - Does that fix the A19 Pro shader crash?
+   - If yes, rebuild xcframework and test on device
+   - Try latest llama.cpp (b8600+) — maybe they fixed the shader bug
+   - Document findings
 
-Speed without quality loss:
-- Check if newer llama.cpp (b8000+) fixed the Metal bfloat/half shader bug
-- Try building with GGML_METAL_USE_BF16=OFF to disable bfloat
-- Profile where time is spent: tokenization vs prompt eval vs generation
-- Try different quantizations: Q4_K_M vs Q5_K_M — benchmark quality vs speed
-- Research: can we use Apple's Neural Engine via CoreML?
+C) STUDY CLAUDE CODE CLI PATTERNS
+   - Search web for claude code architecture, leaked repo analysis
+   - How does it handle tool calling, context management, streaming?
+   - What patterns can we apply to make Drift AI feel like a big model?
+   - Key insight: Claude Code is smart because of the HARNESS, not just the model
+   - Save findings to Docs/ai-improvement-ideas.md
 
-=== PRIORITY 5: MEDICAL REPORT EXTRACTION ===
+=== PRIORITY 3: BUG HUNTING ===
 
-When AI model is loaded, use it to improve:
-- Lab report OCR: LLM fallback exists — test with real reports, improve accuracy
-- Nutrition label parsing: use LLM to extract from photos when regex fails
-- Food name normalization: "PBJ" → "peanut butter and jelly sandwich"
-
-=== PRIORITY 6: BUG HUNTING ===
-
-Before adding features, ensure stability:
 - Look at recent commits — that's where bugs hide
 - Write tests for every new feature
-- Check edge cases: empty DB, no HealthKit, no internet, model not downloaded
-- Test full flow: download model → load → chat → log food → verify in Food tab
+- Check edge cases: empty DB, no HealthKit, model not downloaded
+- Test full flow on simulator
 
-=== RESEARCH IDEAS (curate, don't implement) ===
+=== PRIORITY 4: RESEARCH IDEAS (curate only) ===
 
-Save findings to Docs/ai-improvement-ideas.md:
-1) Exercise demonstration: how to show users form videos/images for exercises
-2) Image-based food logging: photo → describe → log (needs vision model)
-3) Voice input: iOS speech-to-text → AI chat → hands-free food logging
-4) Weekly AI summary: background task generates weekly health insight notification
-5) Fine-tuning: create health Q&A dataset, fine-tune for better domain answers
-6) Model distillation: train SmolLM2-360M to match Qwen quality for faster inference
-7) On-device embeddings: MiniLM for semantic food search
-8) Apple Neural Engine: CoreML conversion for ANE acceleration
+Save to Docs/ai-improvement-ideas.md:
+1) Voice input: iOS speech-to-text → AI chat
+2) Weekly AI summary push notification
+3) Fine-tuning health Q&A dataset
+4) Apple Neural Engine via CoreML
+5) Exercise form videos/images
+6) On-device embeddings for semantic food search
 
 === HOW TO WORK ===
 
 - Check .claude-stop status before every cycle
-- Commit after each meaningful improvement
+- Commit after each meaningful improvement (Priority 1 only)
+- POC work goes in branches or /tmp — never main
 - Run tests after every change
 - Build after every change
 - Push to git frequently
-- When stuck, research on the web
-- When something isn't clear, don't break existing functionality
+- When stuck, search the web
 
 Status options:
 - RUNNING: continue the loop
