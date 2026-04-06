@@ -838,6 +838,7 @@ extension AppDatabase {
                 SELECT f.* FROM food f
                 LEFT JOIN food_usage fu ON f.id = fu.food_id OR LOWER(fu.food_name) = LOWER(f.name)
                 WHERE \(whereClauses)
+                GROUP BY f.id
                 ORDER BY
                     COALESCE(fu.is_favorite, 0) DESC,
                     COALESCE(fu.use_count, 0) DESC,

@@ -190,6 +190,29 @@ struct FoodUnit: Hashable {
             units.append(FoodUnit(label: "tbsp", gramsEquivalent: 15))
         }
 
+        // Protein powder / supplements — add "scoop"
+        let scoopFoods = ["protein", "whey", "casein", "isolate", "creatine", "collagen",
+                          "powder", "supplement", "pre-workout", "bcaa"]
+        if scoopFoods.contains(where: { lower.contains($0) }) && !units.contains(where: { $0.label == "scoop" }) {
+            units.append(FoodUnit(label: "scoop", gramsEquivalent: food.servingSize > 0 ? food.servingSize : 30))
+        }
+
+        // Coffee / tea — add "cup" (240ml)
+        let coffeeFoods = ["coffee", "espresso", "americano", "latte", "cappuccino", "mocha"]
+        if coffeeFoods.contains(where: { lower.contains($0) }) {
+            if !units.contains(where: { $0.label == "cup" }) {
+                units.append(FoodUnit(label: "cup", gramsEquivalent: 240))
+            }
+            if !units.contains(where: { $0.label == "ml" }) {
+                units.append(FoodUnit(label: "ml", gramsEquivalent: 1))
+            }
+        }
+
+        // Universal: add tsp for sauces, condiments, and oils
+        if tbspFoods.contains(where: { lower.contains($0) }) && !units.contains(where: { $0.label == "tsp" }) {
+            units.append(FoodUnit(label: "tsp", gramsEquivalent: 5))
+        }
+
         // Oils — add spray, ml, tsp alongside tbsp (word boundary: "boiled" contains "oil")
         if words.contains("oil") || words.contains("ghee") {
             if !units.contains(where: { $0.label == "spray" }) {

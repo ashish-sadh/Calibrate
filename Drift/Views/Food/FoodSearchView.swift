@@ -38,7 +38,6 @@ struct FoodSearchView: View {
                     Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                     TextField("Search food or recipe", text: $query)
                         .textFieldStyle(.plain)
-                        .autocorrectionDisabled()
                         .focused($searchFocused)
                         .onChange(of: query) { _, q in
                             results = q.isEmpty ? [] : ((try? AppDatabase.shared.searchFoodsRanked(query: q)) ?? [])
@@ -413,10 +412,12 @@ struct FoodSearchView: View {
                 }
             }
 
-            // Online results (from OpenFoodFacts)
-            if !onlineResults.isEmpty {
+            // Online results (from OpenFoodFacts) — deduplicated against local
+            let localNames = Set(results.map { $0.name.lowercased() })
+            let dedupedOnline = onlineResults.filter { !localNames.contains($0.name.lowercased()) }
+            if !dedupedOnline.isEmpty {
                 Section {
-                    ForEach(onlineResults) { food in
+                    ForEach(dedupedOnline) { food in
                         Button { selectFood(food) } label: {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
@@ -540,17 +541,19 @@ struct FoodSearchView: View {
                     }
 
                     // Quick amount buttons
-                    HStack(spacing: 6) {
-                        ForEach([0.5, 1.0, 1.5, 2.0], id: \.self) { mult in
+                    HStack(spacing: 5) {
+                        ForEach(Array(zip([0.25, 1.0/3, 0.5, 1.0, 1.5, 2.0],
+                                          ["\u{00BC}", "\u{2153}", "\u{00BD}", "1x", "1\u{00BD}", "2x"])), id: \.0) { mult, label in
                             Button {
                                 if unit.label == "g" {
                                     amount = String(format: "%.0f", food.servingSize * mult)
+                                } else if mult < 1 {
+                                    amount = String(format: "%.2f", mult)
                                 } else {
                                     amount = mult == Double(Int(mult)) ? "\(Int(mult))" : String(format: "%.1f", mult)
                                 }
                             } label: {
-                                Text(mult == 0.5 ? "\u{00BD}" : (mult == 1.5 ? "1\u{00BD}" : "\(Int(mult))x"))
-                                    .font(.caption.weight(.medium))
+                                Text(label).font(.caption2.weight(.medium))
                             }.buttonStyle(.bordered)
                         }
                     }

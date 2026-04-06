@@ -102,6 +102,13 @@ struct WeightLogListView: View {
             }
         }
         .padding(.vertical, 10)
+        .contextMenu {
+            Button(role: .destructive) {
+                if let id = entry.id { onDelete(id) }
+            } label: {
+                Label("Delete Entry", systemImage: "trash")
+            }
+        }
     }
 
     private func formatDate(_ s: String) -> String {

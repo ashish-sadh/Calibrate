@@ -179,29 +179,44 @@ struct WeightTabView: View {
     // MARK: - Empty State
 
     private var emptyState: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
             Spacer()
-            Image(systemName: "scalemass")
-                .font(.system(size: 48))
-                .foregroundStyle(Theme.accent.opacity(0.5))
-            Text("No Weight Data")
-                .font(.headline)
-            Text("Log your first weight or sync from Apple Health.")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
 
-            Button("Sync from Apple Health") {
-                Task {
-                    _ = try? await HealthKitService.shared.syncWeight()
-                    viewModel.loadEntries()
-                }
+            Image(systemName: "scalemass.fill")
+                .font(.system(size: 44))
+                .foregroundStyle(Theme.accent.opacity(0.4))
+
+            VStack(spacing: 6) {
+                Text("Track Your Weight")
+                    .font(.title3.weight(.semibold))
+                Text("Log your first weigh-in or sync from Apple Health to start tracking your progress.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(2)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(Theme.accent)
 
-            Button("Log Weight Manually") { showingAddWeight = true }
+            VStack(spacing: 10) {
+                Button {
+                    Task {
+                        _ = try? await HealthKitService.shared.syncWeight()
+                        viewModel.loadEntries()
+                    }
+                } label: {
+                    Label("Sync from Apple Health", systemImage: "heart.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.accent)
+
+                Button { showingAddWeight = true } label: {
+                    Label("Log Weight Manually", systemImage: "plus")
+                        .frame(maxWidth: .infinity)
+                }
                 .buttonStyle(.bordered)
+            }
+            .padding(.horizontal, 20)
+
             Spacer()
         }
         .padding(.horizontal, 32)
