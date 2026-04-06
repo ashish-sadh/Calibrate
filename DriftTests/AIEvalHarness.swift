@@ -1111,6 +1111,118 @@ final class AIEvalHarness: XCTestCase {
         XCTAssertEqual(sentences.count, unique.count, "Duplicate sentences should be removed")
     }
 
+    // MARK: - Food Amount Extraction Comprehensive
+
+    func testAmountExtractionFromPrefix() {
+        // Verify exact amounts are extracted correctly
+        let cases: [(String, Double)] = [
+            ("log 2 eggs", 2.0),
+            ("log 3 rotis", 3.0),
+            ("log 1 banana", 1.0),
+            ("ate 4 samosas", 4.0),
+            ("had 5 almonds", 5.0),
+        ]
+        for (query, expected) in cases {
+            let intent = AIActionExecutor.parseFoodIntent(query.lowercased())
+            XCTAssertNotNil(intent, "'\(query)' should parse")
+            XCTAssertEqual(intent?.servings ?? 0, expected, accuracy: 0.01, "'\(query)' amount")
+        }
+    }
+
+    func testFractionAmounts() {
+        let fractions: [(String, Double)] = [
+            ("log half avocado", 0.5),
+            ("log 1/3 avocado", 1.0/3.0),
+            ("log 1/4 pizza", 0.25),
+        ]
+        for (query, expected) in fractions {
+            let intent = AIActionExecutor.parseFoodIntent(query.lowercased())
+            XCTAssertNotNil(intent, "'\(query)' should parse")
+            if let actual = intent?.servings {
+                XCTAssertEqual(actual, expected, accuracy: 0.05, "'\(query)' fraction amount")
+            }
+        }
+    }
+
+    // MARK: - Response Cleaner Comprehensive
+
+    func testCleanerPreservesActionTags() {
+        // Action tags embedded in response should remain parseable
+        let responses = [
+            "Here you go! [LOG_FOOD: eggs 2] Enjoy your breakfast!",
+            "Starting now! [START_WORKOUT: Push Day]",
+            "Logged! [LOG_WEIGHT: 165 lbs]",
+            "Workout ready! [CREATE_WORKOUT: Bench Press 3x10@135]",
+        ]
+        for response in responses {
+            let (action, _) = AIActionParser.parse(response)
+            if case .none = action {
+                XCTFail("Action should be extracted from: '\(response.prefix(50))'")
+            }
+        }
+    }
+
+    func testCleanerChatMLArtifacts() {
+        let artifacts = [
+            "<|im_start|>assistant\nYou've eaten 1500 cal.<|im_end|>",
+            "<|endoftext|>Your weight is trending down.",
+            "<|assistant|>Great progress this week!",
+        ]
+        for response in artifacts {
+            let cleaned = AIResponseCleaner.clean(response)
+            XCTAssertFalse(cleaned.contains("<|"), "Should strip ChatML: \(cleaned)")
+        }
+    }
+
+    func testCleanerFormatEchoStripping() {
+        let echos = [
+            "A: You've eaten 1500 calories today.",
+            "Assistant: Your weight is 165 lbs.",
+        ]
+        for response in echos {
+            let cleaned = AIResponseCleaner.clean(response)
+            XCTAssertFalse(cleaned.hasPrefix("A: "), "Should strip 'A: ' prefix")
+            XCTAssertFalse(cleaned.hasPrefix("Assistant: "), "Should strip 'Assistant: ' prefix")
+        }
+    }
+
+    // MARK: - Workout Parsing Comprehensive
+
+    func testWorkoutParsingVariousFormats() {
+        let formats: [(String, Int, String)] = [
+            ("[CREATE_WORKOUT: Push Ups 3x15]", 1, "Push Ups"),
+            ("[CREATE_WORKOUT: Bench Press 4x8@155, OHP 3x10@95]", 2, "Bench Press"),
+            ("[CREATE_WORKOUT: Squats 5x5@225, Leg Press 3x12@180, Lunges 3x10]", 3, "Squats"),
+        ]
+        for (response, expectedCount, firstExercise) in formats {
+            let (action, _) = AIActionParser.parse(response)
+            if case .createWorkout(let exercises) = action {
+                XCTAssertEqual(exercises.count, expectedCount, "Exercise count for '\(response.prefix(40))'")
+                XCTAssertEqual(exercises[0].name, firstExercise)
+            } else {
+                XCTFail("Expected createWorkout from '\(response.prefix(40))'")
+            }
+        }
+    }
+
+    func testStartWorkoutVariousTemplates() {
+        let templates = [
+            ("[START_WORKOUT: Push Day]", "Push Day"),
+            ("[START_WORKOUT: Pull Day]", "Pull Day"),
+            ("[START_WORKOUT: Legs]", "Legs"),
+            ("[START_WORKOUT: Full Body]", "Full Body"),
+            ("[START_WORKOUT: Upper Lower A]", "Upper Lower A"),
+        ]
+        for (response, expected) in templates {
+            let (action, _) = AIActionParser.parse(response)
+            if case .startWorkout(let type) = action {
+                XCTAssertEqual(type, expected)
+            } else {
+                XCTFail("Expected startWorkout for '\(response)'")
+            }
+        }
+    }
+
     // MARK: - Weight Unit Detection
 
     func testWeightUnitDetection() {
