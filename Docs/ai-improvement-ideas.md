@@ -77,6 +77,22 @@
 
 Run: `xcodebuild test -only-testing:'DriftTests/AIEvalHarness'`
 
+## Claude Code Harness Patterns (Applied to 1.5B)
+
+Key insight: "harness intelligence + model intelligence = total intelligence"
+With 1.5B, shift ratio heavily toward harness intelligence.
+
+1. **Narrow tool surface per turn** — show only relevant action schemas
+2. **Inject state every turn** — prepend current screen, last action, user goal
+3. **Pre-parse intent in harness** — keywords pick category, model fills details
+4. **Compress aggressively** — old turns summarized, context truncated
+5. **Structured output enforcement** — grammar-based sampling in llama.cpp
+
+Already implemented: #2 (screen-aware context), #3 (food/weight/workout parsers),
+#4 (conversation history truncation, context budgeting)
+
+TODO: #1 (dynamic action schema per screen), #5 (grammar sampling)
+
 ## Ideas for Next Session
 
 ### High Impact
