@@ -113,3 +113,16 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 **Priority:** P3 (Eval harness)
 **Change:** Eval 40→48: edge cases, robustness, truncation, disclaimers, dedup, weight units
 **Commit:** a6e717d | **Status:** keep
+
+---
+
+## Cycles 14-26 · 2026-04-06 09:00-09:15
+
+**Summary of changes:**
+- P1: Few-shot examples in system prompt, dashboard fallback context, expanded keywords (deficit/surplus/carbs/plateau/stall), tightened keywords (fast→fasting, rest→rest day, press→space+press)
+- P2: Direct template start handler, workout context suggests don't auto-start, CREATE_WORKOUT invites additions
+- P3: Eval harness 35→58 methods (~380 test cases)
+- P4: Synced multi-food parser verbs with single-food parser
+- P6: Bullet regex line-start only, numbered list regex line-start only, weight false positive fix
+
+**Commits:** 3381884, 1c33d34, 8b8b9a0, 377aa0f, 86f258a, 9af6908, 564e91a, 488bdf5, aeb707a, cd708a5, e1c346f, 0a7a577

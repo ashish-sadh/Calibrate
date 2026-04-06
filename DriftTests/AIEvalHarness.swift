@@ -1205,6 +1205,24 @@ final class AIEvalHarness: XCTestCase {
         }
     }
 
+    func testCreateWorkoutWeightExtraction() {
+        // Verify weight is correctly parsed from @notation
+        let cases: [(String, Double?)] = [
+            ("[CREATE_WORKOUT: Bench Press 3x10@135]", 135),
+            ("[CREATE_WORKOUT: Squats 4x8@225]", 225),
+            ("[CREATE_WORKOUT: Push Ups 3x15]", nil),
+            ("[CREATE_WORKOUT: OHP 3x10@0]", 0),
+        ]
+        for (response, expectedWeight) in cases {
+            let (action, _) = AIActionParser.parse(response)
+            if case .createWorkout(let exercises) = action {
+                XCTAssertEqual(exercises[0].weight, expectedWeight, "Weight for '\(response.prefix(40))'")
+            } else {
+                XCTFail("Expected createWorkout from '\(response.prefix(40))'")
+            }
+        }
+    }
+
     func testStartWorkoutVariousTemplates() {
         let templates = [
             ("[START_WORKOUT: Push Day]", "Push Day"),
