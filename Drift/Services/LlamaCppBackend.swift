@@ -41,27 +41,14 @@ final class LlamaCppBackend: AIBackend, @unchecked Sendable {
 
         let cPath = modelPath.path.cString(using: .utf8)!
 
-        // CPU-only: force CPU device to avoid Metal shader crash on A19 Pro.
-        // GPU acceleration requires building llama.cpp xcframework from source
-        // with Xcode 17's Metal SDK — the prebuilt one has incompatible shaders.
-        var cpuDev: ggml_backend_dev_t?
-        for i in 0..<ggml_backend_reg_count() {
-            let reg = ggml_backend_reg_get(i)
-            let name = String(cString: ggml_backend_reg_name(reg))
-            if name == "CPU" {
-                cpuDev = ggml_backend_reg_dev_get(reg, 0)
-                break
-            }
-        }
-
+        // GPU acceleration: xcframework built from source with Xcode 17 Metal SDK
         var modelParams = llama_model_default_params()
-        modelParams.n_gpu_layers = 0
-        var deviceList: [ggml_backend_dev_t?] = []
-        if let cpuDev {
-            deviceList = [cpuDev, nil]
-            modelParams.devices = UnsafeMutablePointer(mutating: deviceList.withUnsafeBufferPointer { $0.baseAddress })
-        }
-        guard let m = withExtendedLifetime(deviceList, { llama_model_load_from_file(cPath, modelParams) }) else {
+        #if targetEnvironment(simulator)
+        modelParams.n_gpu_layers = 0    // no Metal on simulator
+        #else
+        modelParams.n_gpu_layers = 999  // offload all layers to A19 Pro GPU
+        #endif
+        guard let m = llama_model_load_from_file(cPath, modelParams) else {
             throw LoadError.modelLoadFailed
         }
         model = m
@@ -80,8 +67,13 @@ final class LlamaCppBackend: AIBackend, @unchecked Sendable {
         // KV cache at full precision for best quality
         // (Q8_0 was faster but degraded response quality)
 
+        #if targetEnvironment(simulator)
         ctxParams.offload_kqv = false
         ctxParams.op_offload = false
+        #else
+        ctxParams.offload_kqv = true
+        ctxParams.op_offload = true
+        #endif
         guard let c = llama_init_from_model(m, ctxParams) else {
             llama_model_free(m)
             model = nil

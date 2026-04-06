@@ -10,9 +10,8 @@ packages:
   GRDB:
     url: https://github.com/groue/GRDB.swift.git
     from: "7.0.0"
-  LLM:
-    url: https://github.com/eastriverlee/LLM.swift
-    branch: main
+  LlamaLocal:
+    path: Packages/LlamaLocal
 
 
 
@@ -37,7 +36,8 @@ targets:
         DEVELOPMENT_TEAM: ZJ5H5XH82A
     dependencies:
       - package: GRDB
-      - package: LLM
+      - package: LlamaLocal
+        product: llama
 
 
     entitlements:

@@ -54,7 +54,7 @@
 		6A5E607A5053083EB25372F7 /* AIActionExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C1323C593FD4D57F250E362 /* AIActionExecutor.swift */; };
 		6B0CE72048898157F8BA881F /* BarcodeCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4EFC6AC02BBE73CDE74B5E2 /* BarcodeCache.swift */; };
 		70F621B0C5089E738C2DEA5E /* FoodTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A981E37D718D28A6679F9C8 /* FoodTabView.swift */; };
-		71248B6DE58F57FE294B28A3 /* LLM in Frameworks */ = {isa = PBXBuildFile; productRef = 9D027B373F40785E72CCD81F /* LLM */; };
+		71248B6DE58F57FE294B28A3 /* llama in Frameworks */ = {isa = PBXBuildFile; productRef = 50C3973AB95D033FCF4312E5 /* llama */; };
 		7BDC02B8C99F8B719546A8A1 /* WeightEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F237A2E1C7747DBE102B665C /* WeightEntry.swift */; };
 		8224D8220B6D9328EDDDB648 /* DEXAOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5893DE4C163CA3CF50E74C1A /* DEXAOverviewView.swift */; };
 		86211210D2E5528F57C90AEF /* WorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB2998A31AEC29094C6F4062 /* WorkoutView.swift */; };
@@ -174,6 +174,7 @@
 		659C59EE72A777C6DEA046D9 /* AIResponseCleaner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIResponseCleaner.swift; sourceTree = "<group>"; };
 		664CF8C9378B65A23548F155 /* BiomarkersTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiomarkersTabView.swift; sourceTree = "<group>"; };
 		668D8D5951EB119A1624DDB2 /* DriftTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = DriftTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		6968F5B22F85C1C92E4CCAA8 /* LlamaLocal */ = {isa = PBXFileReference; lastKnownFileType = folder; name = LlamaLocal; path = Packages/LlamaLocal; sourceTree = SOURCE_ROOT; };
 		6A797FB70463B0909C9C34E3 /* Food.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Food.swift; sourceTree = "<group>"; };
 		6B6C02FCD909BDE67D229EC1 /* CycleCalculationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleCalculationTests.swift; sourceTree = "<group>"; };
 		6D6B07DD56345F8A5F5448BC /* CSVParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVParserTests.swift; sourceTree = "<group>"; };
@@ -252,7 +253,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				EA461A149CE8C537C738BF00 /* GRDB in Frameworks */,
-				71248B6DE58F57FE294B28A3 /* LLM in Frameworks */,
+				71248B6DE58F57FE294B28A3 /* llama in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -313,6 +314,7 @@
 			children = (
 				DF13210FEF8ED80B93DD4A50 /* Drift */,
 				230C4300561292D969C89B4E /* DriftTests */,
+				E43DD523F801D0D6B44061E1 /* Packages */,
 				0EA67573775347F2DA7F1A99 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -490,6 +492,14 @@
 			path = Drift;
 			sourceTree = "<group>";
 		};
+		E43DD523F801D0D6B44061E1 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				6968F5B22F85C1C92E4CCAA8 /* LlamaLocal */,
+			);
+			path = Packages;
+			sourceTree = "<group>";
+		};
 		E9AB1B657564FD836D16BAB5 /* Services */ = {
 			isa = PBXGroup;
 			children = (
@@ -591,7 +601,7 @@
 			name = Drift;
 			packageProductDependencies = (
 				8D44ABA58001AC21A70DEA3A /* GRDB */,
-				9D027B373F40785E72CCD81F /* LLM */,
+				50C3973AB95D033FCF4312E5 /* llama */,
 			);
 			productName = Drift;
 			productReference = 552F5AE6789DA294DDB91E8B /* Drift.app */;
@@ -622,7 +632,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				A0800830A85682E9EA5E8575 /* XCRemoteSwiftPackageReference "GRDB.swift" */,
-				74AA54CFD37A7835341C2CB3 /* XCRemoteSwiftPackageReference "LLM.swift" */,
+				AEEC61F42D58AA2E4EEB4586 /* XCLocalSwiftPackageReference "Packages/LlamaLocal" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 0EA67573775347F2DA7F1A99 /* Products */;
@@ -1020,15 +1030,14 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCRemoteSwiftPackageReference section */
-		74AA54CFD37A7835341C2CB3 /* XCRemoteSwiftPackageReference "LLM.swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/eastriverlee/LLM.swift";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
+/* Begin XCLocalSwiftPackageReference section */
+		AEEC61F42D58AA2E4EEB4586 /* XCLocalSwiftPackageReference "Packages/LlamaLocal" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/LlamaLocal;
 		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCRemoteSwiftPackageReference section */
 		A0800830A85682E9EA5E8575 /* XCRemoteSwiftPackageReference "GRDB.swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/groue/GRDB.swift.git";
@@ -1040,15 +1049,14 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		50C3973AB95D033FCF4312E5 /* llama */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = llama;
+		};
 		8D44ABA58001AC21A70DEA3A /* GRDB */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = A0800830A85682E9EA5E8575 /* XCRemoteSwiftPackageReference "GRDB.swift" */;
 			productName = GRDB;
-		};
-		9D027B373F40785E72CCD81F /* LLM */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 74AA54CFD37A7835341C2CB3 /* XCRemoteSwiftPackageReference "LLM.swift" */;
-			productName = LLM;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
