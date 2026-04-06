@@ -3,10 +3,18 @@ import Foundation
 /// Parses AI responses for action commands and extracts structured data.
 enum AIActionParser {
 
+    struct WorkoutExercise {
+        let name: String
+        let sets: Int
+        let reps: Int
+        let weight: Double?
+    }
+
     enum Action {
         case logFood(name: String, amount: String?)  // [LOG_FOOD: chicken breast 200g]
         case logWeight(value: Double, unit: String)   // [LOG_WEIGHT: 165 lbs]
         case startWorkout(type: String?)              // [START_WORKOUT: legs]
+        case createWorkout(exercises: [WorkoutExercise]) // [CREATE_WORKOUT: Push Ups 3x15, Bench 3x10@135]
         case showWeight                                // [SHOW_WEIGHT]
         case showNutrition                             // [SHOW_NUTRITION]
         case none
@@ -42,6 +50,19 @@ enum AIActionParser {
             }
         }
 
+        // [CREATE_WORKOUT: Push Ups 3x15, Bench Press 3x10@135]
+        if let range = text.range(of: #"\[CREATE_WORKOUT:\s*(.+?)\]"#, options: .regularExpression) {
+            let match = String(text[range])
+            let content = match.replacingOccurrences(of: "[CREATE_WORKOUT:", with: "")
+                .replacingOccurrences(of: "]", with: "")
+                .trimmingCharacters(in: .whitespaces)
+            text.removeSubrange(range)
+            let exercises = parseWorkoutExercises(content)
+            if !exercises.isEmpty {
+                return (.createWorkout(exercises: exercises), text.trimmingCharacters(in: .whitespacesAndNewlines))
+            }
+        }
+
         // [START_WORKOUT: ...]
         if let range = text.range(of: #"\[START_WORKOUT:\s*(.+?)\]"#, options: .regularExpression) {
             let match = String(text[range])
@@ -65,6 +86,25 @@ enum AIActionParser {
         }
 
         return (.none, text)
+    }
+
+    /// Parse "Push Ups 3x15, Bench Press 3x10@135" into WorkoutExercise array.
+    private static func parseWorkoutExercises(_ input: String) -> [WorkoutExercise] {
+        input.split(separator: ",").compactMap { part in
+            let trimmed = part.trimmingCharacters(in: .whitespaces)
+            // Match: "Exercise Name 3x15" or "Exercise Name 3x10@135"
+            let pattern = #"(.+?)\s+(\d+)x(\d+)(?:@(\d+\.?\d*))?"#
+            guard let regex = try? NSRegularExpression(pattern: pattern),
+                  let match = regex.firstMatch(in: trimmed, range: NSRange(trimmed.startIndex..., in: trimmed)) else {
+                // No sets/reps pattern — treat as exercise name only
+                return trimmed.isEmpty ? nil : WorkoutExercise(name: trimmed, sets: 3, reps: 10, weight: nil)
+            }
+            let name = Range(match.range(at: 1), in: trimmed).map { String(trimmed[$0]).trimmingCharacters(in: .whitespaces) } ?? trimmed
+            let sets = Range(match.range(at: 2), in: trimmed).flatMap { Int(trimmed[$0]) } ?? 3
+            let reps = Range(match.range(at: 3), in: trimmed).flatMap { Int(trimmed[$0]) } ?? 10
+            let weight = Range(match.range(at: 4), in: trimmed).flatMap { Double(trimmed[$0]) }
+            return WorkoutExercise(name: name, sets: sets, reps: reps, weight: weight)
+        }
     }
 
     /// Try to separate "chicken breast 200g" into name="chicken breast" amount="200g"

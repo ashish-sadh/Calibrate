@@ -12,6 +12,8 @@ struct AIChatView: View {
     @State private var showingFoodSearch = false
     @State private var foodSearchQuery = ""
     @State private var foodSearchServings: Double? = nil
+    @State private var showingWorkout = false
+    @State private var workoutTemplate: WorkoutTemplate? = nil
     @FocusState private var inputFocused: Bool
 
     enum GeneratingState: Equatable {
@@ -102,6 +104,16 @@ struct AIChatView: View {
         .sheet(isPresented: $showingFoodSearch) {
             NavigationStack {
                 FoodSearchView(viewModel: FoodLogViewModel(), initialQuery: foodSearchQuery, initialServings: foodSearchServings)
+            }
+        }
+        .sheet(isPresented: $showingWorkout) {
+            if let template = workoutTemplate {
+                NavigationStack {
+                    ActiveWorkoutView(template: template) {
+                        showingWorkout = false
+                        workoutTemplate = nil
+                    }
+                }
             }
         }
         .onAppear {
@@ -576,9 +588,30 @@ struct AIChatView: View {
                 var entry = WeightEntry(date: DateFormatters.todayString, weightKg: kg, source: "manual")
                 try? AppDatabase.shared.saveWeightEntry(&entry)
             case .startWorkout(let type):
-                // Can't navigate from chat overlay — guide user to Exercise tab
-                let name = type ?? "workout"
-                messages.append(ChatMessage(role: .assistant, text: "Head to the Exercise tab to start \(name). Your templates are ready there!"))
+                // Find matching template and open it
+                if let type,
+                   let templates = try? WorkoutService.fetchTemplates(),
+                   let matched = templates.first(where: { $0.name.lowercased().contains(type.lowercased()) }) {
+                    workoutTemplate = matched
+                    showingWorkout = true
+                } else {
+                    messages.append(ChatMessage(role: .assistant, text: "Head to the Exercise tab to start your workout."))
+                }
+            case .createWorkout(let exercises):
+                // Build a temporary template from AI-parsed exercises
+                let templateExercises = exercises.map {
+                    WorkoutTemplate.TemplateExercise(name: $0.name, sets: $0.sets)
+                }
+                if let json = try? JSONEncoder().encode(templateExercises),
+                   let jsonStr = String(data: json, encoding: .utf8) {
+                    let template = WorkoutTemplate(
+                        name: "AI Workout",
+                        exercisesJson: jsonStr,
+                        createdAt: DateFormatters.iso8601.string(from: Date())
+                    )
+                    workoutTemplate = template
+                    showingWorkout = true
+                }
             default:
                 break
             }

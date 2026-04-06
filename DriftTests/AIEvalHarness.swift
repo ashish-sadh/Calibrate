@@ -305,6 +305,36 @@ final class AIEvalHarness: XCTestCase {
         }
     }
 
+    // MARK: - Workout Action Parsing
+
+    func testCreateWorkoutParsing() {
+        // [CREATE_WORKOUT: Push Ups 3x15, Bench Press 3x10@135]
+        let (action, clean) = AIActionParser.parse("Let's do it! [CREATE_WORKOUT: Push Ups 3x15, Bench Press 3x10@135]")
+        if case .createWorkout(let exercises) = action {
+            XCTAssertEqual(exercises.count, 2)
+            XCTAssertEqual(exercises[0].name, "Push Ups")
+            XCTAssertEqual(exercises[0].sets, 3)
+            XCTAssertEqual(exercises[0].reps, 15)
+            XCTAssertNil(exercises[0].weight)
+            XCTAssertEqual(exercises[1].name, "Bench Press")
+            XCTAssertEqual(exercises[1].sets, 3)
+            XCTAssertEqual(exercises[1].reps, 10)
+            XCTAssertEqual(exercises[1].weight, 135)
+        } else {
+            XCTFail("Expected createWorkout action")
+        }
+        XCTAssertTrue(clean.contains("Let's do it"))
+    }
+
+    func testStartWorkoutParsing() {
+        let (action, _) = AIActionParser.parse("[START_WORKOUT: Push Day]")
+        if case .startWorkout(let type) = action {
+            XCTAssertEqual(type, "Push Day")
+        } else {
+            XCTFail("Expected startWorkout action")
+        }
+    }
+
     // MARK: - Conversational Pattern Detection
 
     func testConversationalPatterns() {
