@@ -65,12 +65,18 @@ struct AIChatView: View {
             Divider().overlay(Color.white.opacity(0.06))
 
             // Disclaimer note
-            Text("Small on-device model \u{2014} responses may not be perfect. Your data never leaves your phone. Improving in next release. Turn off in More \u{2192} Settings.")
-                .font(.system(size: 9))
-                .foregroundStyle(.quaternary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 16)
-                .padding(.top, 4)
+            HStack(spacing: 6) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: 10))
+                    .foregroundStyle(Theme.accent)
+                Text("Small on-device model \u{2014} responses may not be perfect. Data never leaves your phone. Turn off in More \u{2192} Settings.")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .frame(maxWidth: .infinity)
+            .background(Color.white.opacity(0.03))
 
             // Input bar
             HStack(spacing: 8) {
