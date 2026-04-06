@@ -528,6 +528,10 @@ struct AIChatView: View {
                 let kg = unit.lowercased().hasPrefix("kg") ? value : value / 2.20462
                 var entry = WeightEntry(date: DateFormatters.todayString, weightKg: kg, source: "manual")
                 try? AppDatabase.shared.saveWeightEntry(&entry)
+            case .startWorkout(let type):
+                // Can't navigate from chat overlay — guide user to Exercise tab
+                let name = type ?? "workout"
+                messages.append(ChatMessage(role: .assistant, text: "Head to the Exercise tab to start \(name). Your templates are ready there!"))
             default:
                 break
             }
