@@ -269,7 +269,17 @@ enum AIContextBuilder {
                 let daysAgo = Calendar.current.dateComponents([.day], from: DateFormatters.dateOnly.date(from: last.date) ?? Date(), to: Date()).day ?? 0
                 lines.append("Last: \(last.name) (\(daysAgo)d ago)")
 
-                // Pre-computed suggestion
+                // Show last workout's exercises so LLM knows what was done
+                if let lastId = last.id, let sets = try? WorkoutService.fetchSets(forWorkout: lastId) {
+                    let grouped = Dictionary(grouping: sets.filter { !$0.isWarmup }, by: \.exerciseName)
+                    let summary = grouped.prefix(5).map { (name, sets) in
+                        let bestSet = sets.max(by: { ($0.weightLbs ?? 0) < ($1.weightLbs ?? 0) })
+                        let w = bestSet?.weightLbs.map { "\(Int($0))lb" } ?? ""
+                        return "\(name) \(sets.count)x\(w)"
+                    }.joined(separator: ", ")
+                    if !summary.isEmpty { lines.append("Last exercises: \(summary)") }
+                }
+
                 if daysAgo == 0 {
                     lines.append("Note: already trained today")
                 } else if daysAgo >= 3 {
@@ -284,10 +294,24 @@ enum AIContextBuilder {
             }.count
             lines.append("This week: \(thisWeek) workouts")
 
-            // Recent workout names for variety suggestion
-            let recentNames = Array(Set(workouts.prefix(5).map(\.name)))
-            if !recentNames.isEmpty {
-                lines.append("Recent types: \(recentNames.joined(separator: ", "))")
+            // Body part coverage — which parts haven't been trained recently
+            var bodyPartDays: [String: Int] = [:]
+            for w in workouts.prefix(7) {
+                guard let wId = w.id, let sets = try? WorkoutService.fetchSets(forWorkout: wId) else { continue }
+                let daysAgo = Calendar.current.dateComponents([.day], from: DateFormatters.dateOnly.date(from: w.date) ?? Date(), to: Date()).day ?? 0
+                for name in Set(sets.map(\.exerciseName)) {
+                    let part = ExerciseDatabase.bodyPart(for: name)
+                    if bodyPartDays[part] == nil || daysAgo < bodyPartDays[part]! {
+                        bodyPartDays[part] = daysAgo
+                    }
+                }
+            }
+            if !bodyPartDays.isEmpty {
+                let neglected = bodyPartDays.filter { $0.value >= 4 }.sorted { $0.value > $1.value }
+                if !neglected.isEmpty {
+                    let parts = neglected.map { "\($0.key) (\($0.value)d)" }.joined(separator: ", ")
+                    lines.append("Needs training: \(parts)")
+                }
             }
         }
 
@@ -297,7 +321,6 @@ enum AIContextBuilder {
                 let exerciseNames = t.exercises.prefix(4).map(\.name).joined(separator: ", ")
                 lines.append("Template '\(t.name)': \(exerciseNames)")
             }
-            lines.append("To start a template, respond with [START_WORKOUT: template name]")
 
             // Suggest one not done recently
             if let workouts = try? WorkoutService.fetchWorkouts(limit: 5) {
