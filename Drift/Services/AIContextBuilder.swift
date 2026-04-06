@@ -291,16 +291,19 @@ enum AIContextBuilder {
             }
         }
 
-        // Templates with suggestion
+        // Templates with exercises — so LLM can suggest and start them
         if let templates = try? WorkoutService.fetchTemplates(), !templates.isEmpty {
-            let names = templates.prefix(5).map(\.name)
-            lines.append("Templates: \(names.joined(separator: ", "))")
+            for t in templates.prefix(3) {
+                let exerciseNames = t.exercises.prefix(4).map(\.name).joined(separator: ", ")
+                lines.append("Template '\(t.name)': \(exerciseNames)")
+            }
+            lines.append("To start a template, respond with [START_WORKOUT: template name]")
 
-            // Suggest a template not done recently
+            // Suggest one not done recently
             if let workouts = try? WorkoutService.fetchWorkouts(limit: 5) {
                 let recentSet = Set(workouts.map(\.name))
                 if let suggestion = templates.first(where: { !recentSet.contains($0.name) }) {
-                    lines.append("Suggestion: try \(suggestion.name) (not done recently)")
+                    lines.append("Suggestion: \(suggestion.name) (not done recently)")
                 }
             }
         }
