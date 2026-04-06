@@ -62,7 +62,9 @@
    - Model's job: turn structured data into friendly sentences
    - Never ask model to do arithmetic or retrieve from memory
 
-## Evaluation Harness Baseline (AIEvalHarness.swift)
+## Evaluation Harness (AIEvalHarness.swift) — 22 Tests
+
+Run: `xcodebuild test -only-testing:'DriftTests/AIEvalHarness'`
 
 | Metric | Score | Target |
 |--------|-------|--------|
