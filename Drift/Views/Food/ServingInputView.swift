@@ -46,7 +46,7 @@ struct ServingInputView: View {
             }
 
             // Conversion hint
-            if unit.label != "g" && unit.label != "serving" {
+            if unit.label != "g" && unit.label != "ml" && unit.label != "serving" && unit.gramsEquivalent > 1 {
                 Text("1 \(unit.label) = \(Int(unit.gramsEquivalent))g")
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
