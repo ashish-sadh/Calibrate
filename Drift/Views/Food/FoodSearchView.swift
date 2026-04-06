@@ -40,7 +40,13 @@ struct FoodSearchView: View {
                         .textFieldStyle(.plain)
                         .focused($searchFocused)
                         .onChange(of: query) { _, q in
-                            results = q.isEmpty ? [] : ((try? AppDatabase.shared.searchFoodsRanked(query: q)) ?? [])
+                            var localResults = q.isEmpty ? [] : ((try? AppDatabase.shared.searchFoodsRanked(query: q)) ?? [])
+                            // Fuzzy fallback: if no results, try dropping last char (common typo fix)
+                            if localResults.isEmpty && q.count >= 4 {
+                                let shortened = String(q.dropLast())
+                                localResults = (try? AppDatabase.shared.searchFoodsRanked(query: shortened)) ?? []
+                            }
+                            results = localResults
                             matchingRecipes = q.isEmpty ? [] : ((try? AppDatabase.shared.searchRecipes(query: q)) ?? [])
                             onlineResults = []
                             // Smart trigger: search online when local results are insufficient
