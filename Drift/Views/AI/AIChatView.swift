@@ -598,12 +598,19 @@ struct AIChatView: View {
                     messages.append(ChatMessage(role: .assistant, text: "Head to the Exercise tab to start your workout."))
                 }
             case .createWorkout(let exercises):
-                // Build a temporary template from AI-parsed exercises
+                // Build a temporary template and show confirmation
                 let templateExercises = exercises.map {
                     WorkoutTemplate.TemplateExercise(name: $0.name, sets: $0.sets)
                 }
                 if let json = try? JSONEncoder().encode(templateExercises),
                    let jsonStr = String(data: json, encoding: .utf8) {
+                    let summary = exercises.map { e in
+                        var s = "\(e.name) \(e.sets)x\(e.reps)"
+                        if let w = e.weight { s += " @ \(Int(w)) lbs" }
+                        return s
+                    }.joined(separator: ", ")
+                    messages.append(ChatMessage(role: .assistant, text: "Workout ready: \(summary). Opening..."))
+
                     let template = WorkoutTemplate(
                         name: "AI Workout",
                         exercisesJson: jsonStr,
