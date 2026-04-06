@@ -562,8 +562,11 @@ struct FoodTabView: View {
                     }
                     .padding(.top, 8)
 
-                    // Amount + unit picker
-                    HStack(spacing: 12) {
+                    // Shared serving input
+                    if !units.isEmpty {
+                        ServingInputView(amount: $editAmount, selectedUnitIndex: $editUnitIndex,
+                                         units: units, servingSize: entry.servingSizeG)
+                    } else {
                         TextField("1", text: $editAmount)
                             .keyboardType(.decimalPad)
                             .font(.title2.weight(.medium).monospacedDigit())
@@ -571,44 +574,6 @@ struct FoodTabView: View {
                             .frame(width: 80)
                             .padding(.vertical, 10)
                             .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
-
-                        if !units.isEmpty {
-                            Picker("", selection: $editUnitIndex) {
-                                ForEach(0..<units.count, id: \.self) { i in
-                                    Text(units[i].label).tag(i)
-                                }
-                            }
-                            .pickerStyle(.menu)
-                            .labelsHidden()
-                            .padding(.vertical, 10).padding(.horizontal, 16)
-                            .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
-                            .onChange(of: editUnitIndex) { oldIdx, newIdx in
-                                guard oldIdx < units.count, newIdx < units.count else { return }
-                                let oldU = units[oldIdx]
-                                let newU = units[newIdx]
-                                let cur = Double(editAmount) ?? 0
-                                let g = cur * oldU.gramsEquivalent
-                                let conv = newU.gramsEquivalent > 0 ? g / newU.gramsEquivalent : cur
-                                editAmount = conv == Double(Int(conv)) ? "\(Int(conv))" : String(format: "%.1f", conv)
-                            }
-                        } else {
-                            Text("servings").font(.subheadline).foregroundStyle(.secondary)
-                        }
-                    }
-
-                    HStack(spacing: 6) {
-                        ForEach([0.5, 1.0, 1.5, 2.0, 3.0], id: \.self) { mult in
-                            Button {
-                                if hasServingSize && unit.label == "g" {
-                                    editAmount = String(format: "%.0f", entry.servingSizeG * mult)
-                                } else {
-                                    editAmount = mult == Double(Int(mult)) ? "\(Int(mult))" : String(format: "%.1f", mult)
-                                }
-                            } label: {
-                                Text(mult == 0.5 ? "\u{00BD}" : (mult == 1.5 ? "1\u{00BD}" : "\(Int(mult))x"))
-                                    .font(.caption.weight(.medium))
-                            }.buttonStyle(.bordered)
-                        }
                     }
 
                     VStack(spacing: 8) {

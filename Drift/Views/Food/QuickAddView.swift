@@ -335,51 +335,9 @@ private struct IngredientPickerView: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
 
-                // Amount + unit
-                HStack(spacing: 12) {
-                    TextField("1", text: $amount)
-                        .keyboardType(.decimalPad)
-                        .font(.title2.weight(.medium).monospacedDigit())
-                        .multilineTextAlignment(.center)
-                        .frame(width: 80)
-                        .padding(.vertical, 10)
-                        .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
-
-                    Picker("", selection: $selectedUnitIndex) {
-                        ForEach(0..<units.count, id: \.self) { i in
-                            Text(units[i].label).tag(i)
-                        }
-                    }
-                    .pickerStyle(.menu)
-                    .labelsHidden()
-                    .padding(.vertical, 10).padding(.horizontal, 16)
-                    .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
-                    .onChange(of: selectedUnitIndex) { oldIdx, newIdx in
-                        guard oldIdx < units.count, newIdx < units.count else { return }
-                        let oldUnit = units[oldIdx]
-                        let newUnit = units[newIdx]
-                        let currentAmount = Double(amount) ?? 0
-                        let grams = currentAmount * oldUnit.gramsEquivalent
-                        let converted = newUnit.gramsEquivalent > 0 ? grams / newUnit.gramsEquivalent : currentAmount
-                        amount = converted == Double(Int(converted)) ? "\(Int(converted))" : String(format: "%.1f", converted)
-                    }
-                }
-
-                // Quick buttons
-                HStack(spacing: 6) {
-                    ForEach([0.5, 1.0, 1.5, 2.0], id: \.self) { mult in
-                        Button {
-                            if unit.label == "g" {
-                                amount = String(format: "%.0f", food.servingSize * mult)
-                            } else {
-                                amount = mult == Double(Int(mult)) ? "\(Int(mult))" : String(format: "%.1f", mult)
-                            }
-                        } label: {
-                            Text(mult == 0.5 ? "\u{00BD}" : (mult == 1.5 ? "1\u{00BD}" : "\(Int(mult))x"))
-                                .font(.caption.weight(.medium))
-                        }.buttonStyle(.bordered)
-                    }
-                }
+                // Shared serving input
+                ServingInputView(amount: $amount, selectedUnitIndex: $selectedUnitIndex,
+                                 units: units, servingSize: food.servingSize)
 
                 // Nutrition preview
                 VStack(spacing: 4) {
@@ -439,6 +397,8 @@ private struct IngredientPickerView: View {
                         Text("piece").tag("piece")
                         Text("cup").tag("cup")
                         Text("tbsp").tag("tbsp")
+                        Text("tsp").tag("tsp")
+                        Text("scoop").tag("scoop")
                     }
                     .pickerStyle(.menu).labelsHidden().frame(width: 80)
                 }
@@ -460,6 +420,8 @@ private struct IngredientPickerView: View {
                         case "ml": servingG = servingVal
                         case "cup": servingG = servingVal * 240
                         case "tbsp": servingG = servingVal * 15
+                        case "tsp": servingG = servingVal * 5
+                        case "scoop": servingG = servingVal * 30
                         default: servingG = servingVal > 0 ? servingVal : 0 // serving/piece — use as-is or 0
                         }
                         let portionText = servingVal > 0 && manualServingUnit != "serving"

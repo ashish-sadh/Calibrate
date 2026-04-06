@@ -505,58 +505,9 @@ struct FoodSearchView: View {
                     }
                     .padding(.top, 8)
 
-                    // Amount + unit picker (no "Unit" label)
-                    HStack(spacing: 12) {
-                        TextField("1", text: $amount)
-                            .keyboardType(.decimalPad)
-                            .font(.title2.weight(.medium).monospacedDigit())
-                            .multilineTextAlignment(.center)
-                            .frame(width: 80)
-                            .padding(.vertical, 10)
-                            .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
-
-                        Picker("", selection: $selectedUnitIndex) {
-                            ForEach(0..<units.count, id: \.self) { i in
-                                Text(units[i].label).tag(i)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                        .labelsHidden()
-                        .padding(.vertical, 10).padding(.horizontal, 16)
-                        .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
-                        .onChange(of: selectedUnitIndex) { oldIdx, newIdx in
-                            // Auto-convert amount when switching units
-                            guard oldIdx < units.count, newIdx < units.count else { return }
-                            let oldUnit = units[oldIdx]
-                            let newUnit = units[newIdx]
-                            let currentAmount = Double(amount) ?? 0
-                            let grams = currentAmount * oldUnit.gramsEquivalent
-                            let converted = newUnit.gramsEquivalent > 0 ? grams / newUnit.gramsEquivalent : currentAmount
-                            if converted == Double(Int(converted)) {
-                                amount = "\(Int(converted))"
-                            } else {
-                                amount = String(format: "%.1f", converted)
-                            }
-                        }
-                    }
-
-                    // Quick amount buttons
-                    HStack(spacing: 5) {
-                        ForEach(Array(zip([0.25, 1.0/3, 0.5, 1.0, 1.5, 2.0],
-                                          ["\u{00BC}", "\u{2153}", "\u{00BD}", "1x", "1\u{00BD}", "2x"])), id: \.0) { mult, label in
-                            Button {
-                                if unit.label == "g" {
-                                    amount = String(format: "%.0f", food.servingSize * mult)
-                                } else if mult < 1 {
-                                    amount = String(format: "%.2f", mult)
-                                } else {
-                                    amount = mult == Double(Int(mult)) ? "\(Int(mult))" : String(format: "%.1f", mult)
-                                }
-                            } label: {
-                                Text(label).font(.caption2.weight(.medium))
-                            }.buttonStyle(.bordered)
-                        }
-                    }
+                    // Shared serving input (amount + units + quick buttons)
+                    ServingInputView(amount: $amount, selectedUnitIndex: $selectedUnitIndex,
+                                     units: units, servingSize: food.servingSize)
 
                     // Total nutrition
                     VStack(spacing: 8) {
