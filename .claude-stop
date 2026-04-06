@@ -1,116 +1,79 @@
 Control file for Drift self-improvement loop.
 Check this file before every cycle.
 
-Current status: STOP
+Current status: RUNNING
 Direction:
 
 NEVER STOP. Keep improving until human changes status to STOP.
 Commit frequently. Don't publish TestFlight unless asked.
 Check this file before every improvement cycle.
 
-=== PRIORITY 1: AI CHAT QUALITY ===
+=== PRIORITY 1: VISION MODEL — Photo-based Food Logging ===
 
-The AI chat must be world-class at three things:
+Implement Qwen3-VL-2B vision model support for photo-based food logging.
+This is the PRIMARY focus of this session.
 
-1) FOOD LOGGING VIA CHAT
-   - Multi-turn conversation: "I had rice" → "how much?" → "1 cup" → logged
-   - Handle ambiguity: "I had coffee" → "black or with milk?" → smart follow-up
-   - Show what the agent is doing: "Searching for rice..." → "Found: Rice (206cal). Opening log..."
-   - When food is found in DB, open the food log sheet pre-filled (never log silently)
-   - Test with synthetic queries: "log dal and roti", "I just had 2 samosas for lunch", "add a protein shake"
-   - Handle corrections: "actually it was 3 not 2"
+Steps:
+1. Research how llama.cpp handles vision models (llava-style API)
+   - Look at llama.cpp examples/llava/ for the C API usage
+   - Understand: llava_image_embed_make_with_bytes, clip_model_load, etc.
+   - Check if our source-built xcframework (b7310) includes the vision/clip headers
+   - If not, rebuild xcframework with vision support enabled
 
-2) NATURAL CONVERSATION FLOW
-   - Study how Claude Code CLI handles multi-turn — the leaked repo shows great patterns
-   - Context should flow naturally between turns
-   - AI should remember what was discussed in the session
-   - When AI doesn't know, it should ask clarifying questions instead of guessing
-   - Responses should feel human — no "Based on your data," preambles
-   - Keep responses under 3 sentences unless user asks for detail
+2. Implement vision pipeline in LlamaCppBackend:
+   - Load mmproj (multimodal projector) alongside the main model
+   - Add method: processImage(UIImage) -> image embeddings
+   - Add method: respondWithImage(prompt, image) -> text response
+   - Keep existing text-only respond() working
 
-3) WORKOUT TEMPLATE CREATION VIA CHAT
-   - "I want to do a push day" → show available templates or help create one
-   - "Add bench press 3x10" → build a workout step by step
-   - Show the user what's being built: display the workout as it forms
-   - Let them start the workout from chat
+3. Download and test Qwen3-VL-2B model:
+   - Files already on GitHub releases: Qwen3-VL-2B-Instruct-Q4_K_M.gguf + mmproj
+   - Update AIModelTier to include a vision tier
+   - Test on simulator first, then verify it works
 
-=== PRIORITY 2: MODEL EVALUATION HARNESS ===
+4. Add photo food logging UI:
+   - Camera button in AI chat (already have supportsVision flag)
+   - Take photo or pick from gallery
+   - Send to vision model: "What food is in this image? Estimate calories."
+   - Parse response → open food log sheet pre-filled
+   - Show the image in the chat bubble
 
-Build a gold-standard test harness for evaluating LLM quality:
+5. Add nutrition label scanning via vision:
+   - Photo of nutrition label → vision model extracts macros
+   - Pre-fill the quick add form with extracted values
 
-- Create a test suite of 50+ synthetic queries with expected responses
-- Categories: food logging, health questions, workout advice, biomarker interpretation, general
-- Measure precision (correct actions triggered) and recall (queries handled vs. falling to fallback)
-- Score response quality: references real data? appropriate length? no hallucination?
-- Make it easy to swap models and compare: Qwen2.5-1.5B vs SmolLM2-360M vs future models
-- Store results in a JSON/markdown report so humans can review
-- Run as part of test suite: `xcodebuild test`
-- This harness lets us confidently upgrade models without regression
+6. Test extensively:
+   - Photo of an egg → should identify as egg
+   - Photo of a plate of food → should list items
+   - Photo of nutrition label → should extract calories/protein/carbs/fat
+   - Dark/blurry photos → should say "can't identify"
 
-=== PRIORITY 3: INFERENCE OPTIMIZATION ===
+=== PRIORITY 2: CONTINUE AI CHAT QUALITY ===
 
-Speed without quality loss:
+While vision work is in progress, also improve:
+- Multi-turn conversation flow
+- Test with eval harness after any changes
+- Fix any bugs found during testing
 
-- Research building llama.cpp from source as SPM package for Metal GPU support
-  (prebuilt xcframework has A19 Pro shader incompatibility — building from source fixes this)
-  GPU inference would be 10-20x faster than current CPU-only
-- Explore prompt caching: system prompt tokens could be pre-computed and reused
-- Profile where time is spent: tokenization vs prompt eval vs generation
-- Try different quantizations: Q4_K_M vs Q5_K_M vs Q8_0 — benchmark quality vs speed
-- Consider smaller context window for simple queries (512 vs 2048)
-- Research: can we use Apple's Neural Engine via CoreML for even faster inference?
+=== PRIORITY 3: INFERENCE SPEED ===
 
-=== PRIORITY 4: MEDICAL REPORT EXTRACTION ===
-
-When AI model is loaded, use it to improve:
-
-- Lab report OCR: LLM fallback already exists — test it with real reports, improve accuracy
-- Nutrition label parsing: use LLM to extract from photos when regex fails
-- Food name normalization: "PBJ" → "peanut butter and jelly sandwich"
-- Create test cases with sample lab report text to validate extraction quality
-
-=== PRIORITY 5: BUG HUNTING ===
-
-Before adding features, ensure stability:
-
-- Look at recent commits (last 150+) — that's where bugs hide
-- Write tests for every new feature added in this session
-- Check edge cases: empty DB, no HealthKit, no internet, model not downloaded
-- Test the full flow: download model → load → chat → log food → verify in Food tab
-
-=== RESEARCH IDEAS (curate, don't implement) ===
-
-Save findings to Docs/ai-improvement-ideas.md:
-
-1) Exercise demonstration: how to show users form videos/images for exercises
-2) Image-based food logging: photo → describe → log (needs vision model or classifier)
-3) Voice input: iOS speech-to-text → AI chat → hands-free food logging
-4) Weekly AI summary: background task generates weekly health insight notification
-5) Fine-tuning: create health Q&A dataset, fine-tune Qwen2.5-1.5B for better domain answers
-6) Model distillation: train SmolLM2-360M to match Qwen quality for faster inference
-7) On-device embeddings: MiniLM for semantic food search instead of keyword matching
-8) Apple Neural Engine: CoreML conversion of the model for ANE acceleration
+- The Metal GPU shader bug is in llama.cpp's source code (bfloat/half mismatch)
+- Check if newer llama.cpp (b8000+) has fixed this
+- If fixed, rebuild xcframework and enable GPU
+- Also try building with GGML_METAL_USE_BF16=OFF to disable bfloat
 
 === HOW TO WORK ===
 
 - Check .claude-stop status before every cycle
 - Commit after each meaningful improvement
-- Run tests after every change: `xcodebuild test`
-- Build after every change: `xcodebuild build`
+- Run tests after every change
+- Build after every change
 - Push to git frequently
-- Log what you did in commit messages
-- When stuck, research on the web
-- When something isn't clear, err on the side of not breaking existing functionality
+- When stuck on vision API, search llama.cpp source code and examples
+- If vision doesn't work with b7310, try building latest llama.cpp
 
 Status options:
 - RUNNING: continue the loop
 - STOP: finish current work, commit, halt
 - PAUSE: commit and wait for instructions
 - REDIRECT: read Direction field, apply changes, set back to RUNNING
-
-To give feedback during a session, change status to REDIRECT and write in Direction.
-Examples:
-- "Focus only on bug fixes for the next hour"
-- "Skip workout template work, focus on food logging"
-- "The model quality got worse, revert last change"
-- "Publish TestFlight now"
