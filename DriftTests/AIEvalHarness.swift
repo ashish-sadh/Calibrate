@@ -968,6 +968,32 @@ final class AIEvalHarness: XCTestCase {
         XCTAssertGreaterThanOrEqual(precision, 0.85, "Calorie estimation routing: \(correct)/\(queries.count)")
     }
 
+    // MARK: - Nutrition Lookup Queries
+
+    @MainActor
+    func testNutritionLookupFormats() {
+        // These should all be recognized as nutrition lookup queries
+        let lookupQueries = [
+            "how many calories in a banana",
+            "calories in chicken breast",
+            "how much protein in eggs",
+            "nutrition in oatmeal",
+            "nutrition for rice",
+            "calories for a samosa",
+            "carbs in bread",
+            "protein in dal",
+        ]
+
+        var routed = 0
+        for query in lookupQueries {
+            let steps = AIChainOfThought.plan(query: query, screen: .dashboard)
+            let hasLookup = steps?.contains(where: { $0.label.lowercased().contains("nutrition") || $0.label.lowercased().contains("look") }) ?? false
+            if hasLookup { routed += 1 }
+            else { print("MISS (nutrition lookup): '\(query)'") }
+        }
+        XCTAssertGreaterThanOrEqual(routed, 7, "Nutrition lookup routing: \(routed)/\(lookupQueries.count)")
+    }
+
     // MARK: - Calorie Estimation False Positives
 
     @MainActor
