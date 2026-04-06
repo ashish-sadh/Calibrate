@@ -30,6 +30,9 @@ final class AIEvalHarness: XCTestCase {
             "had a scoop of protein",
             "log eggs for dinner",
             "ate a lot of rice",
+            "just ate some yogurt",
+            "i had a coffee",
+            "had 3 eggs for breakfast",
         ]
 
         var detected = 0
@@ -57,6 +60,10 @@ final class AIEvalHarness: XCTestCase {
             "am I on track",
             "how much does chicken weigh",
             "what's in a samosa",
+            "I did push ups",
+            "start push day",
+            "what should I train",
+            "how's my sleep",
         ]
 
         var falsePositives = 0
