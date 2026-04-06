@@ -358,82 +358,22 @@ struct AIChatView: View {
         // Resolve pronouns from conversation context: "log it", "log that", "add this"
         let resolved = resolvePronouns(lower)
 
-        // Multi-food intent: "log chicken and rice" — log known foods directly
+        // Multi-food intent: "log chicken and rice" — open search for first item
         if let intents = AIActionExecutor.parseMultiFoodIntent(resolved) {
-            var logged: [String] = []
-            var notFound: [AIActionExecutor.FoodIntent] = []
-            let vm = FoodLogViewModel()
-            let meal = currentMealType
-
-            for intent in intents {
-                if let match = AIActionExecutor.findFood(query: intent.query, servings: intent.servings) {
-                    let f = match.food
-                    let s = match.servings
-                    vm.quickAdd(name: f.name, calories: f.calories * s, proteinG: f.proteinG * s,
-                                carbsG: f.carbsG * s, fatG: f.fatG * s, fiberG: f.fiberG * s,
-                                mealType: meal, servingSizeG: f.servingSize * s)
-                    logged.append("\(f.name) (\(Int(f.calories * s))cal)")
-                } else {
-                    notFound.append(intent)
-                }
-            }
-
-            if !logged.isEmpty {
-                let todayN = (try? AppDatabase.shared.fetchDailyNutrition(for: DateFormatters.todayString)) ?? .zero
-                let tdee = TDEEEstimator.shared.current?.tdee ?? 2000
-                let deficit = WeightGoal.load()?.requiredDailyDeficit ?? 0
-                let target = max(500, Int(tdee - deficit))
-                let left = target - Int(todayN.calories)
-                messages.append(ChatMessage(role: .assistant, text: "Logged for \(meal.displayName.lowercased()): \(logged.joined(separator: ", ")). \(left > 0 ? "\(left) cal left." : "Over by \(abs(left)) cal.")"))
-            }
-            if let first = notFound.first {
-                messages.append(ChatMessage(role: .assistant, text: "Couldn't find \(notFound.map(\.query).joined(separator: ", ")) — opening search..."))
-                foodSearchQuery = first.query
-                foodSearchServings = first.servings
-                showingFoodSearch = true
-            }
+            let names = intents.map(\.query).joined(separator: ", ")
+            messages.append(ChatMessage(role: .assistant, text: "Opening search for \(names)..."))
+            foodSearchQuery = intents[0].query
+            foodSearchServings = intents[0].servings
+            showingFoodSearch = true
             return
         }
 
         // Single food intent: "log 2 eggs", "ate avocado"
-        // Try direct logging if exact DB match found
+        // Always open search/confirmation sheet — never log without user seeing the food first
         if let intent = AIActionExecutor.parseFoodIntent(resolved) {
-            if let match = AIActionExecutor.findFood(query: intent.query, servings: intent.servings) {
-                let f = match.food
-                let servings = match.servings
-                let cal = f.calories * servings
-
-                if cal > 2000 {
-                    messages.append(ChatMessage(role: .assistant, text: "That would be \(Int(cal)) cal — are you sure? Try specifying a smaller amount (e.g., \"log 2 \(intent.query)\")."))
-                    return
-                }
-
-                // Use meal hint if user specified, otherwise auto-detect from time
-                let meal: MealType = if let hint = intent.mealHint {
-                    MealType(rawValue: hint) ?? currentMealType
-                } else {
-                    currentMealType
-                }
-
-                let p = f.proteinG * servings
-                let vm = FoodLogViewModel()
-                vm.quickAdd(name: f.name, calories: cal, proteinG: p,
-                            carbsG: f.carbsG * servings, fatG: f.fatG * servings,
-                            fiberG: f.fiberG * servings, mealType: meal,
-                            servingSizeG: f.servingSize * servings)
-                // Show updated calories remaining after logging
-                let todayN = (try? AppDatabase.shared.fetchDailyNutrition(for: DateFormatters.todayString)) ?? .zero
-                let tdee = TDEEEstimator.shared.current?.tdee ?? 2000
-                let deficit = WeightGoal.load()?.requiredDailyDeficit ?? 0
-                let target = max(500, Int(tdee - deficit))
-                let left = target - Int(todayN.calories)
-                messages.append(ChatMessage(role: .assistant, text: "Logged \(f.name)\(servings != 1 ? " x\(Int(servings))" : "") for \(meal.displayName.lowercased()) (\(Int(cal)) cal). \(left > 0 ? "\(left) cal left today." : "Over target by \(abs(left)) cal.")"))
-                return
-            }
-            // No exact match — open search
             foodSearchQuery = intent.query
             foodSearchServings = intent.servings
-            messages.append(ChatMessage(role: .assistant, text: "Searching for \(intent.query)..."))
+            messages.append(ChatMessage(role: .assistant, text: "Opening \(intent.query)..."))
             showingFoodSearch = true
             return
         }
