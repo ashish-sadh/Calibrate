@@ -58,7 +58,7 @@ enum AIChainOfThought {
         let needsCycle = q.contains("cycle") || q.contains("period") || q.contains("phase")
             || q.contains("ovulation") || q.contains("fertile")
         let needsWorkout = q.contains("workout") || q.contains("work out") || q.contains("exercise")
-            || q.contains("train") || q.contains("gym") || q.contains("lift") || q.contains("run")
+            || q.contains("train") || q.contains("gym") || q.contains("lift") || q.contains("went running") || q.contains("go run") || q.contains("mile run")
             || q.contains("cardio") || q.contains("sets") || q.contains("reps")
             || q.contains("push up") || q.contains("pull up") || q.contains("squat")
             || q.contains("bench") || q.contains("deadlift") || q.contains(" press")
