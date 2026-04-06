@@ -94,7 +94,7 @@ enum AIChainOfThought {
                 guard !foodName.isEmpty else { return "" }
                 if let match = AIActionExecutor.findFood(query: foodName, servings: 1) {
                     let f = match.food
-                    return "Nutrition for \(f.name) (per \(Int(f.servingSize))\(f.servingUnit)): \(Int(f.calories))cal, \(Int(f.proteinG))P \(Int(f.carbsG))C \(Int(f.fatG))F \(Int(f.fiberG))fiber"
+                    return "Nutrition for \(f.name) (per \(Int(f.servingSize))\(f.servingUnit)): \(Int(f.calories))cal, \(Int(f.proteinG))P \(Int(f.carbsG))C \(Int(f.fatG))F \(Int(f.fiberG))fiber. Suggest user say 'log \(f.name.lowercased())' to add it."
                 }
                 return "Food '\(foodName)' not found in database. Estimate if you can."
             })
