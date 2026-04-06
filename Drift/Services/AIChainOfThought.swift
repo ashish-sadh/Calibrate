@@ -105,10 +105,16 @@ enum AIChainOfThought {
             return steps
         }
 
-        // Comparison queries get broad data
+        // Comparison queries get broad data + domain-specific data when mentioned
         if needsComparison {
             steps.append(Step(label: "Comparing your data...") { AIContextBuilder.comparisonContext() })
-            steps.append(Step(label: "Checking trends...") { AIContextBuilder.weightContext() })
+            if needsWorkout {
+                steps.append(Step(label: "Looking at workouts...") { AIContextBuilder.workoutContext() })
+            } else if needsFood {
+                steps.append(Step(label: "Checking your meals...") { AIContextBuilder.foodContext() })
+            } else {
+                steps.append(Step(label: "Checking trends...") { AIContextBuilder.weightContext() })
+            }
             return steps
         }
 
