@@ -419,7 +419,8 @@ struct AIChatView: View {
         if let lastAssistant = messages.last(where: { $0.role == .assistant }),
            (lastAssistant.text.contains("What did you eat") || lastAssistant.text.contains("what did you eat")
             || lastAssistant.text.contains("What did you order") || lastAssistant.text.contains("Describe it")),
-           !lower.contains("summary") && !lower.contains("calorie") && lower.count > 2 {
+           !lower.contains("summary") && !lower.contains("calorie") && lower.count > 2
+           && !["yes", "no", "ok", "okay", "sure", "nah", "nope", "yeah", "yep", "thanks", "thank you"].contains(lower) {
             // Treat the reply as a food to log
             if let match = AIActionExecutor.findFood(query: lower, servings: nil) {
                 messages.append(ChatMessage(role: .assistant, text: "Found \(match.food.name) (\(Int(match.food.calories)) cal). Opening to confirm..."))
