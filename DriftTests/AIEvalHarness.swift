@@ -326,6 +326,23 @@ final class AIEvalHarness: XCTestCase {
         XCTAssertTrue(clean.contains("Let's do it"))
     }
 
+    @MainActor
+    func testWorkoutExerciseKeywords() {
+        // Exercise names should trigger workout context
+        let exerciseQueries = [
+            ("I did push ups", AIScreen.dashboard),
+            ("just finished squats", AIScreen.exercise),
+            ("bench press 3x10", AIScreen.exercise),
+            ("I did deadlifts today", AIScreen.dashboard),
+        ]
+        for (query, screen) in exerciseQueries {
+            let steps = AIChainOfThought.plan(query: query, screen: screen)
+            XCTAssertNotNil(steps, "'\(query)' should trigger chain-of-thought")
+            let hasWorkout = steps?.contains(where: { $0.label.lowercased().contains("workout") }) ?? false
+            XCTAssertTrue(hasWorkout, "'\(query)' should fetch workout context")
+        }
+    }
+
     func testStartWorkoutParsing() {
         let (action, _) = AIActionParser.parse("[START_WORKOUT: Push Day]")
         if case .startWorkout(let type) = action {
