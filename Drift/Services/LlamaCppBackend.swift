@@ -66,11 +66,21 @@ final class LlamaCppBackend: AIBackend, @unchecked Sendable {
         }
         model = m
 
-        // Create context — also CPU only
+        // Create context — CPU optimized
         var ctxParams = llama_context_default_params()
         let trainCtx = llama_model_n_ctx_train(m)
         ctxParams.n_ctx = min(2048, UInt32(trainCtx))
         ctxParams.n_batch = min(2048, UInt32(trainCtx))
+
+        // Dynamic thread count based on device cores
+        let coreCount = ProcessInfo.processInfo.activeProcessorCount
+        ctxParams.n_threads = Int32(max(2, min(coreCount - 2, 6)))       // leave 2 for UI
+        ctxParams.n_threads_batch = Int32(max(2, min(coreCount, 8)))     // use all for prompt eval
+
+        // Quantized KV cache — reduces memory bandwidth (main CPU bottleneck)
+        ctxParams.type_k = GGML_TYPE_Q8_0
+        ctxParams.type_v = GGML_TYPE_Q8_0
+
         ctxParams.offload_kqv = false
         ctxParams.op_offload = false
         guard let c = llama_init_from_model(m, ctxParams) else {
@@ -145,9 +155,14 @@ final class LlamaCppBackend: AIBackend, @unchecked Sendable {
                 }
             }
 
-            // Check stop sequence
-            let partial = String(cString: outputBuf + [0])
-            if partial.contains("<|im_end|>") { break }
+            // Check stop sequence — only check tail (not entire buffer)
+            let bufLen = outputBuf.count
+            if bufLen >= 10 {
+                let tailStart = max(0, bufLen - 14)
+                let tail = Array(outputBuf[tailStart...]) + [0]
+                let tailStr = String(cString: tail)
+                if tailStr.contains("<|im_end|>") { break }
+            }
 
             // Feed token back
             var tokenArr = [newToken]
