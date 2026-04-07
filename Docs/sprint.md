@@ -9,7 +9,7 @@ _(pick from Ready)_
 ### Tool-Calling Polish (Phase 2b)
 - [x] **TC-11: Pre-tool validation hooks** — c1e2ee7+
 - [x] **TC-12: Post-tool response hooks** — 0546387+
-- [ ] **TC-13: Remove old keyword routing** — Delete AIChainOfThought keyword matching for domains where tools handle it. Keep rule engine for instant answers only.
+- [ ] **TC-13: Remove old keyword routing** — DEFERRED: keywords still needed for context fetching (what data to include in prompt). Tools handle execution, not context selection.
 - [x] **TC-14: Screen-aware tool filtering** — Already in ToolRegistry.toolsForScreen() + schemaPrompt(forScreen:)
 - [ ] **MQ-1: Test tool-calling models** — Try Hermes-3-Llama-3.2-1B for structured JSON output. Compare with Qwen2.5-1.5B on eval harness.
 - [ ] **MQ-2: Grammar-constrained sampling** — Use llama.cpp grammar to force valid JSON tool calls.
