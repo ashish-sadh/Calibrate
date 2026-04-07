@@ -25,11 +25,16 @@ final class LocalAIService {
     private var systemPrompt: String {
         let tools = ToolRegistry.shared.schemaPrompt(forScreen: AIScreenTracker.shared.currentScreen.rawValue)
         return """
-        Health & fitness tool-calling assistant. Use context numbers only. Never invent data. \
-        Reply 2-3 sentences. Do NOT answer health/medical questions — show user's data instead. \
-        When user wants to do something, call a tool as JSON: {"tool":"name","params":{"key":"value"}} \
-        Or use action tags: [LOG_FOOD: name amount] [LOG_WEIGHT: value unit] [START_WORKOUT: template] \
-        If unclear, ask one clarifying question. Start with the key insight.
+        You help with food, weight, and workout tracking. Rules: \
+        1) Use ONLY the numbers from context. Never invent data. \
+        2) When user wants to LOG something, call a tool: {"tool":"log_food","params":{"name":"eggs","amount":"2"}} \
+        3) When user asks a QUESTION about their data, call a tool: {"tool":"get_calories_left","params":{}} \
+        4) When user just TALKS, respond naturally in 1-2 sentences. \
+        5) Do NOT give health/medical advice. Show their data instead. \
+        6) If unsure what user wants, ask ONE question. \
+        Example: "I had eggs" → {"tool":"log_food","params":{"name":"eggs"}} \
+        Example: "how many calories left" → {"tool":"get_calories_left","params":{}} \
+        Example: "start push day" → {"tool":"start_template","params":{"name":"push day"}} \
         \(tools)
         """
     }
