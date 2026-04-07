@@ -20,6 +20,7 @@ struct FoodSearchView: View {
     @State private var manualFb = ""
     @State private var manualServing = "1"
     @State private var manualServingUnit = "serving"
+    @State private var manualLogTime = Date()
     @State private var loggedCount = 0
     @State private var showingRecipeBuilder = false
     @State private var showingScanner = false
@@ -650,6 +651,12 @@ struct FoodSearchView: View {
                     }
                     .padding(.horizontal, 16).padding(.vertical, 10)
                     .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
+
+                    // Log time — defaults to now, user can change
+                    DatePicker("Log time", selection: $manualLogTime, displayedComponents: .hourAndMinute)
+                        .font(.caption).foregroundStyle(.secondary)
+                        .padding(.horizontal, 16).padding(.vertical, 10)
+                        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
@@ -670,10 +677,11 @@ struct FoodSearchView: View {
                         case "tbsp": servingVal * 15
                         default: 0
                         }
+                        let loggedAtStr = ISO8601DateFormatter().string(from: manualLogTime)
                         viewModel.quickAdd(name: manualName.isEmpty ? "Quick Add" : manualName,
                                            calories: cal, proteinG: p, carbsG: c, fatG: f,
                                            fiberG: Double(manualFb) ?? 0, mealType: viewModel.autoMealType,
-                                           servingSizeG: servingG)
+                                           loggedAt: loggedAtStr, servingSizeG: servingG)
                         viewModel.loadSuggestions()
                         loggedCount += 1
                         showingManual = false

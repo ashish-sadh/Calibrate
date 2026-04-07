@@ -160,7 +160,9 @@ extension AppDatabase {
 
     func fetchMealLogs(for date: String) throws -> [MealLog] {
         try dbWriter.read { db in
-            try MealLog.filter(Column("date") == date).fetchAll(db)
+            try MealLog.filter(Column("date") == date)
+                .order(Column("id").asc)
+                .fetchAll(db)
         }
     }
 

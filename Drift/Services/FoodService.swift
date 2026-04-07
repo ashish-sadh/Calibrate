@@ -229,10 +229,24 @@ enum FoodService {
             var newLog = MealLog(date: todayStr, mealType: ml.mealType)
             guard let _ = try? AppDatabase.shared.saveMealLog(&newLog), let newLogId = newLog.id else { continue }
             for entry in entries {
+                // Preserve yesterday's time-of-day but with today's date
+                let adjustedLoggedAt: String
+                let isoFmt = ISO8601DateFormatter()
+                if let originalDate = isoFmt.date(from: entry.loggedAt),
+                   let todayDate = DateFormatters.dateOnly.date(from: todayStr) {
+                    let cal = Calendar.current
+                    let time = cal.dateComponents([.hour, .minute, .second], from: originalDate)
+                    if let adjusted = cal.date(bySettingHour: time.hour ?? 12, minute: time.minute ?? 0,
+                                                second: time.second ?? 0, of: todayDate) {
+                        adjustedLoggedAt = isoFmt.string(from: adjusted)
+                    } else { adjustedLoggedAt = isoFmt.string(from: Date()) }
+                } else { adjustedLoggedAt = isoFmt.string(from: Date()) }
+
                 var newEntry = FoodEntry(mealLogId: newLogId, foodId: entry.foodId, foodName: entry.foodName,
                                           servingSizeG: entry.servingSizeG, servings: entry.servings,
                                           calories: entry.calories, proteinG: entry.proteinG,
-                                          carbsG: entry.carbsG, fatG: entry.fatG)
+                                          carbsG: entry.carbsG, fatG: entry.fatG,
+                                          fiberG: entry.fiberG, loggedAt: adjustedLoggedAt)
                 try? AppDatabase.shared.saveFoodEntry(&newEntry)
                 copied += 1
             }

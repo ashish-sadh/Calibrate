@@ -1069,15 +1069,13 @@ final class AIEvalHarness: XCTestCase {
             ("log eggs for breakfast", "breakfast"),
             ("had pasta for lunch", "lunch"),
             ("ate chicken for dinner", "dinner"),
-            ("log a snack", nil),  // "snack" suffix not specifically handled as meal
+            // ("log a snack", nil) — now triggers meal flow (snack in nonFoodWords), tested separately
         ]
 
         for (query, expectedMeal) in mealTimed {
             let intent = AIActionExecutor.parseFoodIntent(query.lowercased())
             XCTAssertNotNil(intent, "'\(query)' should parse")
-            if let expected = expectedMeal {
-                XCTAssertEqual(intent?.mealHint, expected, "'\(query)' meal should be \(expected)")
-            }
+            XCTAssertEqual(intent?.mealHint, expectedMeal, "'\(query)' meal should be \(expectedMeal)")
         }
     }
 
@@ -1155,12 +1153,12 @@ final class AIEvalHarness: XCTestCase {
             (.food, true),      // Should get food context
             (.weight, true),    // Should get weight context
             (.exercise, true),  // Should get workout context
-            (.dashboard, false), // Short query → no context
+            (.dashboard, true),  // fullDayContext for unmatched queries
             (.settings, false),  // Settings → no context
         ]
 
         for (screen, shouldHaveSteps) in screenFallbacks {
-            let steps = AIChainOfThought.plan(query: "hmm", screen: screen)
+            let steps = AIChainOfThought.plan(query: "hello how are you today", screen: screen)
             if shouldHaveSteps {
                 XCTAssertNotNil(steps, "Screen \(screen) should provide fallback context")
             } else {
@@ -2881,7 +2879,7 @@ final class AIEvalHarness: XCTestCase {
         // 8 consolidated: log_food, food_info, log_weight, weight_info,
         // start_workout, exercise_info, sleep_recovery, supplements + glucose + biomarkers = 10
         XCTAssertGreaterThanOrEqual(tools.count, 8)
-        XCTAssertLessThanOrEqual(tools.count, 12)
+        XCTAssertLessThanOrEqual(tools.count, 20) // Expanded: food(4), weight(3), exercise(2), health(5+)
     }
 
     // MARK: - Non-Food Blocklist Completeness

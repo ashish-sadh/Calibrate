@@ -183,6 +183,7 @@ enum AIChainOfThought {
         // Always include fullDayContext so cross-domain queries get good answers regardless of screen
         if steps.isEmpty {
             if q.count <= 5 { return nil } // Too short for chain (greetings, etc.)
+            if screen == .settings || screen == .algorithm { return nil } // No data context for settings
 
             // Base: always give a full-day overview for unmatched queries
             steps.append(Step(label: "Checking your day...") { AIContextBuilder.fullDayContext() })
