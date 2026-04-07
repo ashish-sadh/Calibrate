@@ -37,8 +37,15 @@ _(pick from Ready)_
 - [x] **Time-of-day food search boost** — FoodSearchView now uses FoodService.searchFood (includes time boost + spell correction)
 - [x] **Quick-add raw calories** — Already exists in FoodSearchView → manual entry section
 
-### Next: Run Qwen3 eval and compare
+### Eval Results
 - [x] **Qwen3-1.7B eval** — Food Logging: 30% (vs Qwen2.5 100%). Qwen3 is WORSE. Keeping Qwen2.5.
+
+### Next Sprint (refilled)
+- [ ] **Conversation context** — Pass last 2 exchanges to tool handlers for contextual responses
+- [ ] **Reduce hallucination** — Post-response check: verify numbers match context data
+- [ ] **Eval harness 144→200** — More edge cases, typos, Indian food, ambiguous queries
+- [ ] **Saved meals (one-tap re-log)** — Save multi-item meals as a group
+- [ ] **Publish build 85** — TestFlight update with all improvements
 
 ### Blocked (needs device)
 - [ ] **MQ-1: Test tool-calling models** — Hermes-3-Llama-3.2-1B for structured JSON.
