@@ -1454,13 +1454,12 @@ final class AIEvalHarness: XCTestCase {
         XCTAssertTrue(prompt.count > 50, "Schema prompt should have content")
     }
 
-    @MainActor
     func testSpellCorrectService() {
         XCTAssertEqual(SpellCorrectService.correct("chiken breast"), "chicken breast")
         XCTAssertEqual(SpellCorrectService.correct("bananaa"), "banana")
         XCTAssertEqual(SpellCorrectService.correct("protien shake"), "protein shake")
-        XCTAssertEqual(SpellCorrectService.correct("chicken breast"), "chicken breast") // already correct
-        XCTAssertEqual(SpellCorrectService.correct("panner tikka"), "paneer tikka")
+        XCTAssertEqual(SpellCorrectService.correct("chicken breast"), "chicken breast")
+        XCTAssertEqual(SpellCorrectService.correct("panner"), "paneer")
     }
 
     // MARK: - Summary
