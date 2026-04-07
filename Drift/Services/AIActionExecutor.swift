@@ -57,6 +57,14 @@ enum AIActionExecutor {
 
         let (amount, food) = extractAmount(from: remainder)
         guard !food.isEmpty else { return nil }
+
+        // Reject non-food words that get caught by "log" prefix
+        let nonFoodWords: Set<String> = [
+            "exercise", "workout", "a workout", "weight", "sleep", "supplement",
+            "supplements", "recovery", "template", "a template", "my weight",
+        ]
+        if nonFoodWords.contains(food.lowercased()) { return nil }
+
         return FoodIntent(query: food, servings: amount, mealHint: mealHint)
     }
 

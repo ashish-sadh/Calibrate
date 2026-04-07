@@ -653,8 +653,7 @@ struct AIChatView: View {
                         messages[idx].text = msg
                     }
                 }
-            }
-
+            } else {
             // Legacy: action tag parsing (fallback when model doesn't output JSON)
             let parsed = AIActionParser.parse(response)
             switch parsed.action {
@@ -704,6 +703,7 @@ struct AIChatView: View {
             default:
                 break
             }
+            } // end else (legacy fallback)
         }
     }
 

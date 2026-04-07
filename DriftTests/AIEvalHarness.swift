@@ -1385,8 +1385,8 @@ final class AIEvalHarness: XCTestCase {
             (#"{"tool":"get_calories_left","params":{}}"#, "get_calories_left"),
             (#"{"tool":"log_weight","params":{"value":"165","unit":"lbs"}}"#, "log_weight"),
             (#"{"tool":"start_template","params":{"name":"Push Day"}}"#, "start_template"),
-            (#"{"tool":"suggest_workout","params":{}}"#, "suggest_workout"),
-            (#"{"tool":"get_sleep","params":{}}"#, "get_sleep"),
+            (#"{"tool":"exercise_info","params":{}}"#, "exercise_info"),
+            (#"{"tool":"sleep_recovery","params":{}}"#, "sleep_recovery"),
             ("No tool call here, just text.", nil),
             ("This has no JSON at all.", nil),
         ]
@@ -1435,14 +1435,14 @@ final class AIEvalHarness: XCTestCase {
     func testToolRegistryHasTools() {
         ToolRegistration.registerAll()
         let tools = ToolRegistry.shared.allTools()
-        XCTAssertGreaterThanOrEqual(tools.count, 15, "Should have 15+ tools registered")
+        XCTAssertGreaterThanOrEqual(tools.count, 8, "Should have 8+ tools registered")
 
         // Check key tools exist
         let names = Set(tools.map(\.name))
-        XCTAssertTrue(names.contains("search_food"), "search_food tool should exist")
+        XCTAssertTrue(names.contains("food_info"), "search_food tool should exist")
         XCTAssertTrue(names.contains("log_weight"), "log_weight tool should exist")
-        XCTAssertTrue(names.contains("suggest_workout"), "suggest_workout tool should exist")
-        XCTAssertTrue(names.contains("get_sleep"), "get_sleep tool should exist")
+        XCTAssertTrue(names.contains("exercise_info"), "suggest_workout tool should exist")
+        XCTAssertTrue(names.contains("sleep_recovery"), "get_sleep tool should exist")
     }
 
     @MainActor
@@ -1578,7 +1578,7 @@ final class AIEvalHarness: XCTestCase {
     @MainActor
     func testToolExecutionSuggestWorkout() async {
         ToolRegistration.registerAll()
-        let call = ToolCall(tool: "suggest_workout", params: ToolCallParams(values: [:]))
+        let call = ToolCall(tool: "exercise_info", params: ToolCallParams(values: [:]))
         let result = await ToolRegistry.shared.execute(call)
         if case .text(let text) = result {
             XCTAssertFalse(text.isEmpty)
@@ -1671,7 +1671,7 @@ final class AIEvalHarness: XCTestCase {
     @MainActor
     func testToolExecutionGetSleep() async {
         ToolRegistration.registerAll()
-        let call = ToolCall(tool: "get_sleep", params: ToolCallParams(values: [:]))
+        let call = ToolCall(tool: "sleep_recovery", params: ToolCallParams(values: [:]))
         let result = await ToolRegistry.shared.execute(call)
         if case .text(let text) = result {
             XCTAssertFalse(text.isEmpty)
@@ -1799,11 +1799,11 @@ final class AIEvalHarness: XCTestCase {
     func testToolCallJSONFormats() {
         // Various JSON formats the model might produce
         let valid = [
-            #"{"tool":"search_food","params":{"query":"chicken"}}"#,
+            #"{"tool":"food_info","params":{"query":"chicken"}}"#,
             #"{"tool":"log_weight","params":{"value":"75.2","unit":"kg"}}"#,
             #"{"tool":"get_calories_left","params":{}}"#,
-            #"{"tool":"suggest_workout","params":{}}"#,
-            #"{"tool":"get_sleep","params":{}}"#,
+            #"{"tool":"exercise_info","params":{}}"#,
+            #"{"tool":"sleep_recovery","params":{}}"#,
         ]
         for json in valid {
             let call = parseToolCallJSON(json)
@@ -1813,7 +1813,7 @@ final class AIEvalHarness: XCTestCase {
         // Invalid formats
         let invalid = [
             "just plain text",
-            #"{"no_tool_key":"search_food"}"#,
+            #"{"no_tool_key":"food_info"}"#,
             #"{"tool":123}"#,  // tool should be string
             "",
         ]
@@ -2110,9 +2110,9 @@ final class AIEvalHarness: XCTestCase {
     }
 
     func testToolCallEmptyParams() {
-        let json = #"{"tool":"get_sleep","params":{}}"#
+        let json = #"{"tool":"sleep_recovery","params":{}}"#
         let call = parseToolCallJSON(json)!
-        XCTAssertEqual(call.tool, "get_sleep")
+        XCTAssertEqual(call.tool, "sleep_recovery")
         XCTAssertNil(call.params.string("any"))
     }
 
@@ -2183,7 +2183,7 @@ final class AIEvalHarness: XCTestCase {
     @MainActor
     func testToolRegistrySearchFood() async {
         ToolRegistration.registerAll()
-        let call = ToolCall(tool: "search_food", params: ToolCallParams(values: ["query": "rice"]))
+        let call = ToolCall(tool: "food_info", params: ToolCallParams(values: ["query": "rice"]))
         let result = await ToolRegistry.shared.execute(call)
         if case .text(let text) = result {
             XCTAssertFalse(text.isEmpty)

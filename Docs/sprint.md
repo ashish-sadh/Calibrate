@@ -7,7 +7,7 @@ _(pick from Ready)_
 ## Ready
 
 ### P0: AI Chat Quality — NEVER DONE (highest priority, always improve)
-- [ ] **Harness compensates for 1.5B model** — The model is weak. The harness must be smart. Pre-parse intent in Swift before calling LLM. Post-validate LLM output. Fallback to rule engine when LLM fails. The system around the model matters more than the model.
+- [x] **Harness compensates for 1.5B model** — Fixed: non-food blocklist, double-execution bug, eval test tool names updated
 - [ ] **Eval harness 97→150+** — Add: ambiguous queries ("I had something light"), typos ("log chiken"), multi-turn ("also add rice"), tool-call format validation, response quality scoring, Indian food coverage, workout conversation flows.
 - [ ] **Improve intent detection** — Current keyword matching misses natural phrasing. Add fuzzy matching, common synonyms, implicit intents ("I'm hungry" → suggest_meal tool).
 - [ ] **Better context injection** — LLM needs the RIGHT data, not ALL data. Trim context to most relevant info. Include user's recent actions. Show what changed since last message.
