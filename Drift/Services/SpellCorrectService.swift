@@ -64,7 +64,13 @@ enum SpellCorrectService {
                 continue
             }
 
-            // Fuzzy match against food DB names (edit distance ≤ 2)
+            // Skip if word is already a known food word
+            if isKnownFoodWord(lower) {
+                result.append(word)
+                continue
+            }
+
+            // Fuzzy match against food DB names (edit distance 1)
             if let match = closestFoodWord(lower) {
                 result.append(match)
                 changed = true
@@ -76,7 +82,14 @@ enum SpellCorrectService {
         return changed ? result.joined(separator: " ") : text
     }
 
-    /// Find the closest food name word within edit distance 2.
+    /// Check if a word is already a known food word (exact match in DB).
+    private static func isKnownFoodWord(_ word: String) -> Bool {
+        foodNames.contains(where: { name in
+            name.split(separator: " ").contains(where: { String($0).filter(\.isLetter) == word })
+        })
+    }
+
+    /// Find the closest food name word within edit distance 1.
     private static func closestFoodWord(_ word: String) -> String? {
         // Check against individual words from food names
         var best: (word: String, distance: Int)?

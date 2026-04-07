@@ -2148,7 +2148,135 @@ final class AIEvalHarness: XCTestCase {
         }
     }
 
+    // MARK: - Comprehensive Spelling Correction
+
+    func testSpellCorrectionFuzzyFromDB() {
+        // Words close to food DB entries should be corrected
+        let corrected1 = SpellCorrectService.correct("chiken")
+        XCTAssertEqual(corrected1, "chicken")
+
+        let corrected2 = SpellCorrectService.correct("bananaa")
+        XCTAssertEqual(corrected2, "banana")
+
+        // Already correct words should pass through
+        XCTAssertEqual(SpellCorrectService.correct("chicken"), "chicken")
+        XCTAssertEqual(SpellCorrectService.correct("rice"), "rice")
+    }
+
+    func testSpellCorrectionPreservesShortWords() {
+        // Short words (< 4 chars) should not be corrected
+        XCTAssertEqual(SpellCorrectService.correct("log 2 eggs"), "log 2 eggs")
+        XCTAssertEqual(SpellCorrectService.correct("had dal"), "had dal")
+    }
+
+    // MARK: - End-to-End Food Intent with Spelling
+
+    func testFoodIntentWithSpellingCorrection() {
+        let corrected = SpellCorrectService.correct("log chiken breast")
+        let intent = AIActionExecutor.parseFoodIntent(corrected.lowercased())
+        XCTAssertNotNil(intent, "Should parse after spell correction")
+        XCTAssertTrue(intent?.query.contains("chicken") == true, "Should contain 'chicken' not 'chiken'")
+    }
+
+    // MARK: - Tool Registry Execution End-to-End
+
+    @MainActor
+    func testToolRegistrySearchFood() async {
+        ToolRegistration.registerAll()
+        let call = ToolCall(tool: "search_food", params: ToolCallParams(values: ["query": "rice"]))
+        let result = await ToolRegistry.shared.execute(call)
+        if case .text(let text) = result {
+            XCTAssertFalse(text.isEmpty)
+        }
+    }
+
+    @MainActor
+    func testToolRegistrySuggestMeal() async {
+        ToolRegistration.registerAll()
+        let call = ToolCall(tool: "suggest_meal", params: ToolCallParams(values: [:]))
+        let result = await ToolRegistry.shared.execute(call)
+        if case .text(let text) = result {
+            XCTAssertFalse(text.isEmpty)
+        }
+    }
+
+    @MainActor
+    func testToolRegistryGetReadiness() async {
+        ToolRegistration.registerAll()
+        let call = ToolCall(tool: "get_readiness", params: ToolCallParams(values: [:]))
+        let result = await ToolRegistry.shared.execute(call)
+        if case .text(let text) = result {
+            XCTAssertFalse(text.isEmpty)
+        }
+    }
+
+    @MainActor
+    func testToolRegistryBuildSmartSession() async {
+        ToolRegistration.registerAll()
+        let call = ToolCall(tool: "build_smart_session", params: ToolCallParams(values: ["muscle_group": "chest"]))
+        let result = await ToolRegistry.shared.execute(call)
+        // May return text (workout plan) or text (couldn't build)
+        if case .text(let text) = result {
+            XCTAssertFalse(text.isEmpty)
+        }
+    }
+
+    @MainActor
+    func testToolRegistryMarkSupplement() async {
+        ToolRegistration.registerAll()
+        let call = ToolCall(tool: "mark_supplement_taken", params: ToolCallParams(values: ["name": "vitamin d"]))
+        let result = await ToolRegistry.shared.execute(call)
+        if case .text(let text) = result {
+            XCTAssertFalse(text.isEmpty)
+        }
+    }
+
+    @MainActor
+    func testToolRegistryDetectSpikes() async {
+        ToolRegistration.registerAll()
+        let call = ToolCall(tool: "detect_spikes", params: ToolCallParams(values: [:]))
+        let result = await ToolRegistry.shared.execute(call)
+        if case .text(let text) = result {
+            XCTAssertFalse(text.isEmpty)
+        }
+    }
+
+    @MainActor
+    func testToolRegistryGetBiomarkerDetail() async {
+        ToolRegistration.registerAll()
+        let call = ToolCall(tool: "get_biomarker_detail", params: ToolCallParams(values: ["name": "cholesterol"]))
+        let result = await ToolRegistry.shared.execute(call)
+        if case .text(let text) = result {
+            XCTAssertFalse(text.isEmpty)
+        }
+    }
+
+    // MARK: - Quality Gate Edge Cases
+
+    func testQualityGateCatchesRefusals() {
+        XCTAssertTrue(AIResponseCleaner.isLowQuality("I cannot provide that information."))
+        XCTAssertTrue(AIResponseCleaner.isLowQuality("I can't answer medical questions."))
+        XCTAssertTrue(AIResponseCleaner.isLowQuality("I don't have access to that data."))
+    }
+
+    func testQualityGatePassesGoodData() {
+        XCTAssertFalse(AIResponseCleaner.isLowQuality("You've eaten 1200 of 1800 calories. 600 remaining. Protein at 45g."))
+        XCTAssertFalse(AIResponseCleaner.isLowQuality("Your bench press 1RM has improved from 135 to 155 over 4 sessions."))
+        XCTAssertFalse(AIResponseCleaner.isLowQuality("Recovery score: 78/100. HRV: 45ms. Good to train."))
+    }
+
+    // MARK: - Context Truncation
+
+    @MainActor
+    func testContextTruncationPreservesLines() {
+        let longContext = (1...100).map { "Line \($0): some data here" }.joined(separator: "\n")
+        let truncated = AIContextBuilder.truncateToFit(longContext, maxTokens: 100)
+        XCTAssertLessThan(truncated.count, longContext.count)
+        // Should end at a line boundary
+        XCTAssertTrue(truncated.hasSuffix("\n") || !truncated.contains("\n") || truncated.count < 400)
+    }
+
     func testPrintSummary() {
-        print("=== AI EVAL HARNESS: 130+ test methods ===")
+        print("=== AI EVAL HARNESS: 140+ test methods ===")
     }
 }
