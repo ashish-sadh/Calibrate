@@ -47,9 +47,17 @@ _(pick from Ready)_
 - [ ] **Saved meals (one-tap re-log)** — Save multi-item meals as a group
 - [x] **Publish build 85** — Uploaded to TestFlight
 
+### Next Sprint
+- [ ] **Saved meals (one-tap re-log)** — Save multi-item meals as a group
+- [ ] **Eval harness 200→250** — Keep growing: more ambiguous queries, multi-turn, edge cases
+- [ ] **AI chat: handle "yes" after weight confirm** — "Log 165 lbs? Say yes" → user says "yes" → actually save
+- [ ] **HealthKit body composition sync** — Sync body fat % and BMI from Apple Health
+- [ ] **Accessibility pass** — VoiceOver labels on key screens
+
 ### Blocked (needs device)
 - [ ] **MQ-1: Test tool-calling models** — Hermes-3-Llama-3.2-1B for structured JSON.
 - [ ] **MQ-2: Grammar-constrained sampling** — llama.cpp grammar for valid JSON.
+- [ ] **Metal GPU acceleration** — b7400 xcframework ready, needs A19 Pro test.
 - [ ] **Metal GPU acceleration** — b7400 xcframework ready, needs A19 Pro test.
 
 ## Done
