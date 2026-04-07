@@ -333,7 +333,7 @@ enum Migrations {
                 t.column("bmi", .double)
                 t.column("water_pct", .double)
                 t.column("source", .text).notNull().defaults(to: "manual")
-                t.column("created_at", .text).notNull().defaults(sql: "datetime('now')")
+                t.column("created_at", .text).notNull().defaults(sql: "(datetime('now'))")
             }
             try db.create(indexOn: "body_composition", columns: ["date"])
 
