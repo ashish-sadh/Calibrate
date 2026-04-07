@@ -23,7 +23,7 @@ _(pick from Ready)_
 ### P1: AI Chat Quality + Multi-Turn (Gemma 4)
 - [x] **Gemma 4 prompt tuning** — Added 5 new tool examples (mark_supplement, delete_food, set_goal, body_comp, copy_yesterday).
 - [ ] **Multi-turn meal planning** — "plan my meals for today" → iterative macro-aware suggestions. Gemma 4 only.
-- [ ] **Cross-domain analysis** — "why am I not losing weight?" → combine food + weight + exercise context in one answer.
+- [x] **Cross-domain analysis** — "why am I not losing weight?", "should I eat more", "I feel tired" → auto-combine relevant domains.
 - [ ] **Eval harness 212→300+** — Cross-domain queries, screen-bias regression, multi-turn scenarios, supplement/goal commands.
 
 ### P2: More Chat Features

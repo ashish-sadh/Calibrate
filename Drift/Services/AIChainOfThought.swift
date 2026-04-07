@@ -75,6 +75,7 @@ enum AIChainOfThought {
             || q.contains("stack")
         let needsOverview = q.contains("how am i") || q.contains("overview") || q.contains("how am i doing")
             || q.contains("my day") || q.contains("summary") || q.contains("how's my day")
+            || q.contains("making progress") || q.contains("doing well") || q.contains("on track")
         let needsNutritionLookup = (q.contains("how many calorie") || q.contains("nutrition in")
             || q.contains("calories in") || q.contains("protein in") || q.contains("macros in")
             || q.contains("carbs in") || q.contains("fat in")
@@ -135,10 +136,21 @@ enum AIChainOfThought {
         // Specific domain queries — with automatic dependencies
         if needsWeight {
             steps.append(Step(label: "Analyzing weight trend...") { AIContextBuilder.weightContext() })
-            // Weight questions often need food context too (for "why am I not losing?")
-            if q.contains("why") || q.contains("not losing") || q.contains("plateau") || q.contains("stall") {
+            // Weight questions often need food context too
+            if q.contains("why") || q.contains("not losing") || q.contains("plateau") || q.contains("stall")
+                || q.contains("progress") || q.contains("should i eat") {
                 steps.append(Step(label: "Checking your meals...") { AIContextBuilder.foodContext() })
             }
+        }
+        // Cross-domain: "should I eat more" needs food + exercise
+        if q.contains("eat more") || q.contains("eat back") || q.contains("enough calories") || q.contains("enough protein") {
+            if !needsFood { steps.append(Step(label: "Checking meals...") { AIContextBuilder.foodContext() }) }
+            if !needsWorkout { steps.append(Step(label: "Checking workouts...") { AIContextBuilder.workoutContext() }) }
+        }
+        // Cross-domain: "I feel tired" needs sleep + food
+        if q.contains("tired") || q.contains("exhausted") || q.contains("no energy") || q.contains("fatigue") {
+            if !needsSleep { steps.append(Step(label: "Checking sleep...") { AIContextBuilder.sleepRecoveryContext() }) }
+            if !needsFood { steps.append(Step(label: "Checking meals...") { AIContextBuilder.foodContext() }) }
         }
         if needsFood {
             steps.append(Step(label: "Checking your meals...") { AIContextBuilder.foodContext() })

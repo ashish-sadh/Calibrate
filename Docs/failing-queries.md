@@ -22,11 +22,11 @@ Real queries that don't work well. The self-improvement loop picks from here, fi
 - [ ] **"how much sugar today"** — No sugar tracking in daily totals display. Similar: "sugar intake", "how much sugar did I eat"
 
 ### Weight
-- [ ] **"am I making progress"** — Ambiguous. Should combine weight trend + food adherence. Similar: "how's my progress", "am I doing well"
+- [x] **"am I making progress"** — Fixed: added to needsOverview keywords, gets fullDayContext + weight.
 
 ### Cross-Domain
-- [ ] **"should I eat more today"** — Needs food remaining + workout data. Similar: "do I need more calories", "should I eat back exercise calories"
-- [ ] **"I feel tired"** — Should check sleep + recovery + food intake. Similar: "I'm exhausted", "no energy today"
+- [x] **"should I eat more today"** — Fixed: cross-domain trigger pulls food + workout context automatically.
+- [x] **"I feel tired"** — Fixed: cross-domain trigger pulls sleep + food context automatically.
 
 ### Multi-Turn
 - [ ] **"plan my meals for today"** — Should be iterative: suggest breakfast → user confirms → suggest lunch → etc. Currently gives a single response.
