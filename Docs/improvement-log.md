@@ -145,3 +145,12 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 ## db7fdc5 QA-1: Eval harness 63→69 (JSON tool-call tests)
 ## 7e5f461 QA-2/3/4: Service unit tests (69→80 eval tests)
 ## 7564b2f fix: Flaky session tests
+## 88fe49b sprint: P0 AI Chat Quality — never done
+## c24260e test: Eval 97→108, TestFlight 3h rule
+## b31dd28 improve: Data-aware fallback responses
+## a7197eb improve: Implicit intent keywords
+## 53a3b70 improve: System prompt rewritten for 1.5B
+## 7196164 test: Eval 108→122, realistic conversations
+## b46d000 improve: Quality gate v2 — catch refusals, mangled JSON
+## 797fd43 improve: SpellCorrect uses food DB fuzzy matching
+## 1c686a2 test: Eval 122→128
