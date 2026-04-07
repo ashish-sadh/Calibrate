@@ -720,16 +720,36 @@ struct AIChatView: View {
         }
     }
 
-    /// Screen-aware fallback when LLM fails or produces low-quality output.
+    /// Data-aware fallback when LLM fails. Uses actual user data to suggest something useful.
     private func fallbackResponse(for screen: AIScreen) -> String {
         switch screen {
-        case .food: return "I couldn't answer that. Try asking \"calories left\" or \"what should I eat for dinner?\""
-        case .weight, .goal: return "I couldn't answer that. Try \"am I on track?\" or \"how much have I lost?\""
-        case .exercise: return "I couldn't answer that. Try \"what should I train?\" or \"how many workouts this week?\""
-        case .biomarkers: return "I couldn't answer that. Try \"which markers are out of range?\" or \"how's my cholesterol?\""
-        case .glucose: return "I couldn't answer that. Try \"any spikes today?\" or \"what's my average glucose?\""
-        case .bodyRhythm: return "I couldn't answer that. Try \"how did I sleep?\" or \"what's my recovery score?\""
-        default: return "I couldn't answer that. Try asking about your food, weight, workouts, or health data."
+        case .food:
+            let totals = FoodService.getDailyTotals()
+            if totals.eaten == 0 {
+                return "No food logged yet today. Say \"log [food]\" to start tracking, or \"calories left\" to see your target."
+            }
+            return "\(totals.remaining) cal remaining today. Say \"suggest meal\" for ideas or \"explain calories\" for the math."
+        case .weight, .goal:
+            let trend = WeightServiceAPI.describeTrend()
+            return trend == "No weight data yet." ? "No weight data yet. Say \"I weigh [number]\" to log." : trend
+        case .exercise:
+            let suggestion = ExerciseService.suggestWorkout()
+            return suggestion
+        case .biomarkers:
+            let results = BiomarkerService.getResults()
+            return results
+        case .glucose:
+            return GlucoseService.getReadings()
+        case .bodyRhythm:
+            return SleepRecoveryService.getRecovery()
+        case .supplements:
+            return SupplementService.getStatus()
+        default:
+            let totals = FoodService.getDailyTotals()
+            if totals.eaten > 0 {
+                return "\(totals.remaining) cal remaining. Say \"calories left\", \"daily summary\", or ask about weight, workouts, sleep."
+            }
+            return "Say \"log [food]\" to track meals, \"I weigh [number]\" for weight, or \"what should I train\" for workout ideas."
         }
     }
 
