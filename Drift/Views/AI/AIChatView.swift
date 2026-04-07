@@ -690,6 +690,16 @@ struct AIChatView: View {
             return
         }
 
+        // Workout suggestion routing — both models use Swift (fast + reliable)
+        let workoutQuestions = ["suggest me workout", "suggest a workout", "suggest workout",
+                                "give me a workout", "recommend exercises", "recommend workout",
+                                "plan my workout", "what workout should i do", "workout ideas",
+                                "what should i train", "what to train", "what muscle should i work"]
+        if workoutQuestions.contains(where: { lower.contains($0) }) {
+            messages.append(ChatMessage(role: .assistant, text: ExerciseService.suggestWorkout()))
+            return
+        }
+
         // Food question routing — Swift handles better than LLM for small model
         // Large model (Gemma 4) skips this and lets the LLM use food_info tool instead
         if !aiService.isLargeModel {

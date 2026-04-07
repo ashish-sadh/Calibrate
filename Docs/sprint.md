@@ -16,7 +16,7 @@ _(pick from Ready)_
 - [x] **Set/update weight goal** — "set goal to 160 lbs", "change goal to 75 kg". Add goal tool that updates WeightGoal.
 
 ### P0.5: Fix Failing Queries (from failing-queries.md)
-- [ ] **"suggest me workout"** — Handle workout suggestion variants. Small model: keyword handler. Large model: ensure exercise_info tool called. Add eval tests for 5+ phrasings.
+- [x] **"suggest me workout"** — Handle workout suggestion variants. Small model: keyword handler. Large model: ensure exercise_info tool called. Add eval tests for 5+ phrasings.
 - [ ] **"I did yoga today"** — Log completed workout by name. Small: parse "I did [activity]". Large: LLM calls tool. Eval tests.
 - [ ] **"how many workouts this week"** — Instant answer from WorkoutService. Add to rule engine. Eval tests.
 

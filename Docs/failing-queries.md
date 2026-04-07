@@ -12,7 +12,7 @@ Real queries that don't work well. The self-improvement loop picks from here, fi
 ## Failing
 
 ### Exercise
-- [ ] **"suggest me workout"** — Falls through to LLM, doesn't reliably call exercise_info or start_workout. Should suggest a workout (like "what should I train") or build a smart session. Similar: "give me a workout", "recommend exercises", "plan my workout", "what workout should I do"
+- [x] **"suggest me workout"** — Fixed: hardcoded handler catches 12 phrasings. Both models use Swift path.
 - [ ] **"I did yoga today"** — No handler for logging a completed workout by name. Should create a workout entry. Similar: "I went running", "did 30 min cardio", "just finished pilates"
 - [ ] **"how many workouts this week"** — Falls to LLM, should be instant from WorkoutService. Similar: "workout count", "how often did I train"
 
