@@ -63,6 +63,16 @@ enum ToolRegistration {
         ))
 
         r.register(ToolSchema(
+            id: "food.delete_food", name: "delete_food", service: "food",
+            description: "User wants to REMOVE or DELETE a food entry. Use when they say 'remove', 'delete', 'undo food'.",
+            parameters: [ToolParam("name", "string", "Food name to remove, or 'last' for most recent entry")],
+            handler: { params in
+                let name = params.string("name") ?? "last"
+                return .text(FoodService.deleteEntry(matching: name))
+            }
+        ))
+
+        r.register(ToolSchema(
             id: "food.explain_calories", name: "explain_calories", service: "food",
             description: "User asks HOW calories are calculated, what TDEE means, or why their target is a certain number.",
             parameters: [],

@@ -434,9 +434,24 @@ struct AIChatView: View {
             }
         }
 
-        if lower == "undo" || lower == "remove that" || lower == "delete that" || lower == "nevermind" {
-            messages.append(ChatMessage(role: .assistant, text: "I can't undo actions yet. To remove a food entry, tap it in the Food tab. To delete a weight entry, long-press it."))
-            return
+        // Delete/remove food: "remove the rice", "delete last entry", "undo"
+        let deleteVerbs = ["remove ", "delete ", "undo "]
+        if deleteVerbs.contains(where: { lower.hasPrefix($0) }) || lower == "undo" {
+            let name: String
+            if lower == "undo" || lower == "delete last" || lower == "remove last" || lower == "delete last entry" {
+                name = "last"
+            } else {
+                name = lower
+                    .replacingOccurrences(of: "remove ", with: "")
+                    .replacingOccurrences(of: "delete ", with: "")
+                    .replacingOccurrences(of: "the ", with: "")
+                    .replacingOccurrences(of: "my ", with: "")
+                    .trimmingCharacters(in: .whitespaces)
+            }
+            if !name.isEmpty {
+                messages.append(ChatMessage(role: .assistant, text: FoodService.deleteEntry(matching: name)))
+                return
+            }
         }
 
         // Correction: "actually 3" or "make it 3" after a food log

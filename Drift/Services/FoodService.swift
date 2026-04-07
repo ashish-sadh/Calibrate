@@ -136,6 +136,45 @@ enum FoodService {
         return Array(fitting.prefix(3))
     }
 
+    // MARK: - Delete
+
+    /// Delete the most recent food entry matching a name. Returns confirmation or error.
+    static func deleteEntry(matching name: String) -> String {
+        let today = DateFormatters.todayString
+        guard let mealLogs = try? AppDatabase.shared.fetchMealLogs(for: today) else {
+            return "No food logged today."
+        }
+        // Search all today's entries for a name match (newest first)
+        var allEntries: [(entry: FoodEntry, foodName: String)] = []
+        for ml in mealLogs {
+            guard let mlId = ml.id,
+                  let entries = try? AppDatabase.shared.fetchFoodEntries(forMealLog: mlId) else { continue }
+            for entry in entries {
+                let entryName = entry.foodName
+                allEntries.append((entry: entry, foodName: entryName))
+            }
+        }
+
+        let lower = name.lowercased()
+        // Try exact match first, then contains
+        let match = allEntries.last(where: { $0.foodName.lowercased() == lower })
+            ?? allEntries.last(where: { $0.foodName.lowercased().contains(lower) })
+
+        guard let found = match, let entryId = found.entry.id else {
+            if lower == "last" || lower == "last entry" {
+                // Delete the very last entry
+                guard let last = allEntries.last, let lastId = last.entry.id else {
+                    return "No food entries today."
+                }
+                try? AppDatabase.shared.deleteFoodEntry(id: lastId)
+                return "Removed \(last.foodName) (\(Int(last.entry.calories)) cal)."
+            }
+            return "Couldn't find '\(name)' in today's food log."
+        }
+        try? AppDatabase.shared.deleteFoodEntry(id: entryId)
+        return "Removed \(found.foodName) (\(Int(found.entry.calories)) cal)."
+    }
+
     // MARK: - Explain
 
     /// Break down the calories math: TDEE, deficit, target, eaten, remaining.
