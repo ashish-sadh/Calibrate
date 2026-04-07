@@ -7,7 +7,7 @@ _(pick from Ready)_
 ## Ready
 
 ### Infrastructure
-- [ ] **TC-1: ToolSchema + ToolRegistry** — Create `ToolSchema.swift` with ToolSchema struct, ToolParam, ToolCallParams, ToolResult, ToolAction enums. ToolRegistry singleton with register/execute/schemaPrompt. This is the foundation.
+- [x] **TC-1: ToolSchema + ToolRegistry** — b24799d
 - [ ] **TC-2: SpellCorrectService** — UITextChecker wrapper. correct(text) → corrected text. Run on all user input before LLM/search. Handles "chiken"→"chicken".
 - [ ] **TC-3: JSON tool-call parser** — Add JSON parsing to AIActionParser: `{"tool":"name","params":{...}}`. Keep action tag regex as fallback.
 

@@ -69,6 +69,7 @@
 		92B596C732C7784167EC8CDE /* WorkoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A884AC137C46CE932FEE1C9 /* WorkoutTests.swift */; };
 		92F6CD33F11BF82738AAF81C /* LabReportOCRTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D1E187818C8B9D2196B4B9D /* LabReportOCRTests.swift */; };
 		940612EB003CCC2F1FF36DD1 /* AIEvalHarness.swift in Sources */ = {isa = PBXBuildFile; fileRef = BADD153523D188C4ED89B55D /* AIEvalHarness.swift */; };
+		9870D7B4B5A001CA244B3785 /* SpellCorrectService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C93A5EC7AC72AD0108FAC30 /* SpellCorrectService.swift */; };
 		98FBDD66D792C10086005407 /* AIBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64BFDDB952907C50869B4078 /* AIBackend.swift */; };
 		98FF97CFE71A6BBCFF976259 /* UIFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A5DA3E3543A99260250279 /* UIFlowTests.swift */; };
 		9ACECC13D2365A3DF7F2C28C /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F78E3B6C1497F6A200DF8095 /* ContentView.swift */; };
@@ -183,6 +184,7 @@
 		55F24D93872F919F1A8CB319 /* BarcodeScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeScannerView.swift; sourceTree = "<group>"; };
 		5893DE4C163CA3CF50E74C1A /* DEXAOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DEXAOverviewView.swift; sourceTree = "<group>"; };
 		5A981E37D718D28A6679F9C8 /* FoodTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodTabView.swift; sourceTree = "<group>"; };
+		5C93A5EC7AC72AD0108FAC30 /* SpellCorrectService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpellCorrectService.swift; sourceTree = "<group>"; };
 		5D1E187818C8B9D2196B4B9D /* LabReportOCRTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabReportOCRTests.swift; sourceTree = "<group>"; };
 		5D4BF27A41CD9659EFF50036 /* DefaultTemplates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultTemplates.swift; sourceTree = "<group>"; };
 		5F6D2AA89F46A33EAE39DEAC /* MoreTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreTabView.swift; sourceTree = "<group>"; };
@@ -544,6 +546,7 @@
 				418816F51F38F19F65BC3D77 /* NutritionLabelOCR.swift */,
 				9887274AA907DE6C5349B2D1 /* OpenFoodFactsService.swift */,
 				CB475E92982AD4F8897D5D8E /* RecoveryEstimator.swift */,
+				5C93A5EC7AC72AD0108FAC30 /* SpellCorrectService.swift */,
 				BC5309A92CB03534993AE5E9 /* TDEEEstimator.swift */,
 				C170D4FEDFB68CA8A61E1D03 /* ToolSchema.swift */,
 				FD5DFCD5C5ED2C0D7E5CD8EF /* WeightTrendCalculator.swift */,
@@ -758,6 +761,7 @@
 				D1F92D043D241D539585C068 /* ServingInputView.swift in Sources */,
 				BEAFE882B09BA211628205D9 /* ServingUnit.swift in Sources */,
 				1706838F0C81E8CA30C39676 /* SleepRecoveryView.swift in Sources */,
+				9870D7B4B5A001CA244B3785 /* SpellCorrectService.swift in Sources */,
 				49D0426489D97845E43EA8B9 /* Supplement.swift in Sources */,
 				BA4A49D33CF87342C8F00DCD /* SupplementLog.swift in Sources */,
 				24CF74D9CA0E8A4555F1EC68 /* SupplementViewModel.swift in Sources */,
