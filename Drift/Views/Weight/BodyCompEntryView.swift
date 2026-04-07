@@ -1,10 +1,9 @@
 import SwiftUI
 
 /// Entry view for body composition + optional weight.
-/// Most smart scales give weight + body fat + BMI together.
 struct BodyCompEntryView: View {
     let unit: WeightUnit
-    let onSave: (Double?, Double?, Double?, Double?, Date) -> Void  // weight, bodyFat, bmi, water, date
+    let onSave: (Double?, BodyComposition, Date) -> Void  // weight, bodyComp, date
     var lastBodyFat: Double? = nil
     var lastBMI: Double? = nil
     var lastWater: Double? = nil
@@ -14,58 +13,40 @@ struct BodyCompEntryView: View {
     @State private var bodyFatText = ""
     @State private var bmiText = ""
     @State private var waterText = ""
+    @State private var muscleMassText = ""
+    @State private var boneMassText = ""
+    @State private var visceralFatText = ""
+    @State private var metabolicAgeText = ""
+    @State private var showMore = false
     @State private var selectedDate = Date()
 
     var body: some View {
         NavigationStack {
             Form {
                 Section {
-                    HStack {
-                        Label("Weight", systemImage: "scalemass.fill")
-                        Spacer()
-                        TextField("—", text: $weightText)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 80)
-                        Text(unit.displayName).foregroundStyle(.secondary)
-                    }
+                    fieldRow(icon: "scalemass.fill", label: "Weight", text: $weightText, unit: unit.displayName)
                 } header: {
                     Text("Weight (Optional)")
-                } footer: {
-                    Text("Add weight if your scale shows it alongside body composition.")
                 }
 
                 Section {
-                    HStack {
-                        Label("Body Fat", systemImage: "figure.arms.open")
-                        Spacer()
-                        TextField(lastBodyFat.map { String(format: "%.1f", $0) } ?? "—", text: $bodyFatText)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 80)
-                        Text("%").foregroundStyle(.secondary)
-                    }
-                    HStack {
-                        Label("BMI", systemImage: "heart.text.clipboard")
-                        Spacer()
-                        TextField(lastBMI.map { String(format: "%.1f", $0) } ?? "—", text: $bmiText)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 80)
-                    }
-                    HStack {
-                        Label("Water", systemImage: "drop")
-                        Spacer()
-                        TextField(lastWater.map { String(format: "%.1f", $0) } ?? "—", text: $waterText)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 80)
-                        Text("%").foregroundStyle(.secondary)
-                    }
+                    fieldRow(icon: "figure.arms.open", label: "Body Fat", text: $bodyFatText, unit: "%",
+                             placeholder: lastBodyFat.map { String(format: "%.1f", $0) })
+                    fieldRow(icon: "heart.text.clipboard", label: "BMI", text: $bmiText,
+                             placeholder: lastBMI.map { String(format: "%.1f", $0) })
+                    fieldRow(icon: "drop", label: "Water", text: $waterText, unit: "%",
+                             placeholder: lastWater.map { String(format: "%.1f", $0) })
                 } header: {
                     Text("Body Composition")
-                } footer: {
-                    Text("Enter any values you have. Leave blank to skip.")
+                }
+
+                Section {
+                    DisclosureGroup("More Measurements", isExpanded: $showMore) {
+                        fieldRow(icon: "figure.strengthtraining.traditional", label: "Muscle Mass", text: $muscleMassText, unit: "kg")
+                        fieldRow(icon: "bone", label: "Bone Mass", text: $boneMassText, unit: "kg")
+                        fieldRow(icon: "circle.dotted.and.circle", label: "Visceral Fat", text: $visceralFatText, unit: "rating")
+                        fieldRow(icon: "clock.arrow.trianglehead.counterclockwise.rotate.90", label: "Metabolic Age", text: $metabolicAgeText, unit: "years")
+                    }
                 }
 
                 Section("Date") {
@@ -79,17 +60,45 @@ struct BodyCompEntryView: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Save") {
-                        let weight = Double(weightText)
-                        let bf = Double(bodyFatText)
-                        let bmi = Double(bmiText)
-                        let water = Double(waterText)
-                        guard weight != nil || bf != nil || bmi != nil || water != nil else { return }
-                        onSave(weight, bf, bmi, water, selectedDate)
-                        dismiss()
-                    }
-                    .disabled(weightText.isEmpty && bodyFatText.isEmpty && bmiText.isEmpty && waterText.isEmpty)
+                    Button("Save") { save() }
+                    .disabled(!hasAnyValue)
                 }
+            }
+        }
+    }
+
+    private var hasAnyValue: Bool {
+        !weightText.isEmpty || !bodyFatText.isEmpty || !bmiText.isEmpty || !waterText.isEmpty ||
+        !muscleMassText.isEmpty || !boneMassText.isEmpty || !visceralFatText.isEmpty || !metabolicAgeText.isEmpty
+    }
+
+    private func save() {
+        let weight = Double(weightText)
+        let comp = BodyComposition(
+            date: DateFormatters.dateOnly.string(from: selectedDate),
+            bodyFatPct: Double(bodyFatText),
+            bmi: Double(bmiText),
+            waterPct: Double(waterText),
+            muscleMassKg: Double(muscleMassText),
+            boneMassKg: Double(boneMassText),
+            visceralFat: Double(visceralFatText),
+            metabolicAge: Int(metabolicAgeText)
+        )
+        guard weight != nil || comp.hasData else { return }
+        onSave(weight, comp, selectedDate)
+        dismiss()
+    }
+
+    private func fieldRow(icon: String, label: String, text: Binding<String>, unit: String = "", placeholder: String? = nil) -> some View {
+        HStack {
+            Label(label, systemImage: icon)
+            Spacer()
+            TextField(placeholder ?? "—", text: text)
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.trailing)
+                .frame(width: 80)
+            if !unit.isEmpty {
+                Text(unit).foregroundStyle(.secondary).frame(width: 35, alignment: .leading)
             }
         }
     }

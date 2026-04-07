@@ -345,5 +345,15 @@ enum Migrations {
                 WHERE body_fat_pct IS NOT NULL OR bmi IS NOT NULL OR water_pct IS NOT NULL
             """)
         }
+
+        // v20: Extended body composition fields (muscle, bone, visceral, metabolic age)
+        migrator.registerMigration("v20_extended_body_comp") { db in
+            try db.alter(table: "body_composition") { t in
+                t.add(column: "muscle_mass_kg", .double)
+                t.add(column: "bone_mass_kg", .double)
+                t.add(column: "visceral_fat", .double)
+                t.add(column: "metabolic_age", .integer)
+            }
+        }
     }
 }
