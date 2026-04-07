@@ -21,7 +21,15 @@ enum AIActionParser {
     }
 
     /// Extract action from AI response text. Returns the action and clean text (without the bracket command).
+    /// Tries JSON tool-call format first, falls back to bracket action tags.
     static func parse(_ response: String) -> (action: Action, cleanText: String) {
+        // Try JSON tool-call format first: {"tool":"name","params":{...}}
+        if let toolCall = parseToolCallJSON(response) {
+            let cleanText = stripJSON(from: response)
+            let action = actionFromToolCall(toolCall)
+            return (action, cleanText)
+        }
+
         var text = response
 
         // [LOG_FOOD: ...]
@@ -105,6 +113,41 @@ enum AIActionParser {
             let weight = Range(match.range(at: 4), in: trimmed).flatMap { Double(trimmed[$0]) }
             return WorkoutExercise(name: name, sets: sets, reps: reps, weight: weight)
         }
+    }
+
+    /// Convert a parsed ToolCall into an Action enum.
+    private static func actionFromToolCall(_ call: ToolCall) -> Action {
+        switch call.tool {
+        case "log_food", "search_food":
+            let name = call.params.string("name") ?? call.params.string("query") ?? ""
+            let amount = call.params.string("amount")
+            return name.isEmpty ? .none : .logFood(name: name, amount: amount)
+        case "log_weight":
+            guard let value = call.params.double("value") else { return .none }
+            let unit = call.params.string("unit") ?? "lbs"
+            return .logWeight(value: value, unit: unit)
+        case "start_workout", "start_template":
+            let name = call.params.string("name") ?? call.params.string("template")
+            return .startWorkout(type: name)
+        case "create_workout":
+            // JSON params might have exercises as a string description
+            if let desc = call.params.string("exercises") {
+                let exercises = parseWorkoutExercises(desc)
+                return exercises.isEmpty ? .none : .createWorkout(exercises: exercises)
+            }
+            return .none
+        default:
+            return .none
+        }
+    }
+
+    /// Strip JSON object from response text for clean display.
+    private static func stripJSON(from text: String) -> String {
+        guard let start = text.firstIndex(of: "{"),
+              let end = text.lastIndex(of: "}") else { return text }
+        var clean = text
+        clean.removeSubrange(start...end)
+        return clean.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// Try to separate "chicken breast 200g" into name="chicken breast" amount="200g"

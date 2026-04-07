@@ -121,23 +121,25 @@ final class ToolRegistry {
         return await tool.handler(call.params)
     }
 
-    /// Parse a JSON tool call from LLM output.
-    /// Expected format: {"tool":"name","params":{"key":"value"}}
-    static func parseToolCall(_ text: String) -> ToolCall? {
-        // Find JSON object in the text
-        guard let start = text.firstIndex(of: "{"),
-              let end = text.lastIndex(of: "}") else { return nil }
-        let jsonStr = String(text[start...end])
-        guard let data = jsonStr.data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let toolName = json["tool"] as? String else { return nil }
+}
 
-        var params: [String: String] = [:]
-        if let p = json["params"] as? [String: Any] {
-            for (key, value) in p {
-                params[key] = "\(value)"
-            }
+// MARK: - JSON Tool Call Parsing (nonisolated — usable from any context)
+
+/// Parse a JSON tool call from LLM output.
+/// Expected format: {"tool":"name","params":{"key":"value"}}
+func parseToolCallJSON(_ text: String) -> ToolCall? {
+    guard let start = text.firstIndex(of: "{"),
+          let end = text.lastIndex(of: "}") else { return nil }
+    let jsonStr = String(text[start...end])
+    guard let data = jsonStr.data(using: .utf8),
+          let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+          let toolName = json["tool"] as? String else { return nil }
+
+    var params: [String: String] = [:]
+    if let p = json["params"] as? [String: Any] {
+        for (key, value) in p {
+            params[key] = "\(value)"
         }
-        return ToolCall(tool: toolName, params: ToolCallParams(values: params))
     }
+    return ToolCall(tool: toolName, params: ToolCallParams(values: params))
 }

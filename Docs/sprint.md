@@ -8,8 +8,8 @@ _(pick from Ready)_
 
 ### Infrastructure
 - [x] **TC-1: ToolSchema + ToolRegistry** — b24799d
-- [ ] **TC-2: SpellCorrectService** — UITextChecker wrapper. correct(text) → corrected text. Run on all user input before LLM/search. Handles "chiken"→"chicken".
-- [ ] **TC-3: JSON tool-call parser** — Add JSON parsing to AIActionParser: `{"tool":"name","params":{...}}`. Keep action tag regex as fallback.
+- [x] **TC-2: SpellCorrectService** — da6e4c8
+- [x] **TC-3: JSON tool-call parser** — da6e4c8+
 
 ### Services (one per domain — UI and AI share these)
 - [ ] **SVC-1: FoodService** — Consolidate food logic. Methods: search_food, log_food, get_nutrition, get_daily_totals, get_calories_left, top_protein_foods, suggest_meal, explain_calories. Wraps AppDatabase + adds new query methods.
