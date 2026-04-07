@@ -502,6 +502,14 @@ struct AIChatView: View {
                 showingWorkout = true
                 return
             }
+            // No template matched — build a smart session
+            if let smart = ExerciseService.buildSmartSession(muscleGroup: templateQuery) {
+                let exercises = smart.exercises.prefix(5).map { "\($0.name) — \($0.notes ?? "3x10")" }
+                messages.append(ChatMessage(role: .assistant, text: "Built a \(templateQuery) session:\n\(exercises.joined(separator: "\n"))"))
+                workoutTemplate = smart
+                showingWorkout = true
+                return
+            }
         }
 
         // Weight intent: "I weigh 165", "weight is 75.2 kg"

@@ -25,7 +25,7 @@ _(pick from Ready)_
 - [x] **WIRE-2: Update system prompt** — 6042fee+
 - [x] **WIRE-3: Replace AIChatView routing** — cf9ce57+
 - [x] **WIRE-4: Block health questions** — Done in WIRE-2 (system prompt)
-- [ ] **WIRE-5: Smart workout when no template** — If user says "I want to work out" and has no templates, call build_smart_session instead of listing empty templates.
+- [x] **WIRE-5: Smart workout when no template** — e7eacfb+
 
 ### Quality
 - [ ] **QA-1: Eval tests for tool-call format** — 10+ tests verifying LLM outputs valid JSON tool calls.
