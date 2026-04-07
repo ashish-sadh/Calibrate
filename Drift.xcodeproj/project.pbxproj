@@ -16,6 +16,7 @@
 		17A238D33D727EA1C3C9E814 /* GlucoseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E003BCE9AE8B62B2BC163C7B /* GlucoseService.swift */; };
 		199FAB3D1CB2427EF6A5792A /* SupplementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D4B47196E8598EB15359D7C /* SupplementService.swift */; };
 		1BF24E5EFE0ECE537D36EA2E /* FloatingAIAssistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFF155F20FB2EF069D634C95 /* FloatingAIAssistant.swift */; };
+		1CCD2D031DB1C7F7BB7E52EF /* ToolRegistration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F42EA4B9416215EFE670984 /* ToolRegistration.swift */; };
 		1E0CA8E39AF5CE13AC703456 /* BiomarkerKnowledgeBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42CC554F9454FF0FC8A31F56 /* BiomarkerKnowledgeBase.swift */; };
 		1E11E5682458FC83023281D7 /* WeightInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A039993077E4BE9F83149249 /* WeightInsightsView.swift */; };
 		1E41F060499A92A9EFB59BE1 /* BiomarkerDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 155E590DFD0A95014B993B9D /* BiomarkerDetailView.swift */; };
@@ -209,6 +210,7 @@
 		6F84469D20EBBA0BD037FBCA /* WorkoutService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutService.swift; sourceTree = "<group>"; };
 		7392F1C1953721F1AD362662 /* LlamaCppBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LlamaCppBackend.swift; sourceTree = "<group>"; };
 		790C2D3452366D6B473DE2B1 /* Supplement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Supplement.swift; sourceTree = "<group>"; };
+		7F42EA4B9416215EFE670984 /* ToolRegistration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolRegistration.swift; sourceTree = "<group>"; };
 		7F4C6870115BE53081FA0CDE /* AISetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISetupView.swift; sourceTree = "<group>"; };
 		7F7F3BAFA978301368D148CF /* ServingInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServingInputView.swift; sourceTree = "<group>"; };
 		82577AEF6B12486590A24B47 /* BiomarkerResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiomarkerResult.swift; sourceTree = "<group>"; };
@@ -568,6 +570,7 @@
 				5C93A5EC7AC72AD0108FAC30 /* SpellCorrectService.swift */,
 				2D4B47196E8598EB15359D7C /* SupplementService.swift */,
 				BC5309A92CB03534993AE5E9 /* TDEEEstimator.swift */,
+				7F42EA4B9416215EFE670984 /* ToolRegistration.swift */,
 				C170D4FEDFB68CA8A61E1D03 /* ToolSchema.swift */,
 				98998A5705EBF13038A98C27 /* WeightService2.swift */,
 				FD5DFCD5C5ED2C0D7E5CD8EF /* WeightTrendCalculator.swift */,
@@ -795,6 +798,7 @@
 				2159F8ABA37706FCF57C3A63 /* SupplementsTabView.swift in Sources */,
 				F1E4DA4DB8A18FEE2C6A4413 /* TDEEEstimator.swift in Sources */,
 				5F4476C2F1B7DC3E662A1DBC /* Theme.swift in Sources */,
+				1CCD2D031DB1C7F7BB7E52EF /* ToolRegistration.swift in Sources */,
 				7430C66B3A1C306F1199C3FA /* ToolSchema.swift in Sources */,
 				9CBCD31AD1998B4E5237C1A6 /* Units.swift in Sources */,
 				DFFA7CC42D60E67CB40222E8 /* WeightChartView.swift in Sources */,

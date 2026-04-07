@@ -21,7 +21,7 @@ _(pick from Ready)_
 - [x] **SVC-7: BiomarkerService** — 17adc16+
 
 ### Wiring
-- [ ] **WIRE-1: Register all tools** — Register every service method in ToolRegistry with schema + handler closure.
+- [x] **WIRE-1: Register all tools** — d72c698+
 - [ ] **WIRE-2: Update system prompt** — Inject ToolRegistry.schemaPrompt() into LLM context. Screen-aware filtering.
 - [ ] **WIRE-3: Replace AIChatView routing** — Use ToolRegistry.execute() instead of hardcoded sendMessage() routing. Keep rule engine for instant answers.
 - [ ] **WIRE-4: Block health questions** — System prompt: "Don't give health advice. Show user's data instead. Redirect to service tools."

@@ -53,13 +53,13 @@ struct ToolCall: Sendable {
 }
 
 /// A registered tool with schema + handler.
-struct ToolSchema: Sendable, Identifiable {
+struct ToolSchema: Identifiable {
     let id: String              // "food.search_food"
     let name: String            // "search_food"
     let service: String         // "food"
     let description: String     // Shown to LLM
     let parameters: [ToolParam]
-    nonisolated(unsafe) let handler: @Sendable (ToolCallParams) async -> ToolResult
+    let handler: @MainActor (ToolCallParams) async -> ToolResult
 }
 
 // MARK: - Tool Registry
