@@ -33,7 +33,7 @@ _(pick from Ready)_
 
 ### P3: Traditional UI Improvements
 - [ ] **Saved meals (one-tap re-log)** — Save multi-item meals as a group for quick re-logging.
-- [ ] **Workout streak display** — Show current + longest streak on Exercise tab (logic already in WorkoutService.workoutStreak()).
+- [x] **Workout streak display** — Flame icon + "X week streak" + "Best: Yw" above consistency chart
 - [ ] **Time-of-day food search boost** — Morning: coffee/oats, evening: protein/dinner items.
 - [ ] **Quick-add raw calories** — "Just enter 500 cal" button for eating out.
 

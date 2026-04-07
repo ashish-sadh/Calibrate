@@ -109,7 +109,22 @@ struct WorkoutView: View {
                     showingNewWorkout = true
                 }
 
-                if !weeklyCounts.isEmpty { consistencyChart }
+                if !weeklyCounts.isEmpty {
+                    // Streak display
+                    if let streak = try? WorkoutService.workoutStreak(), streak.current > 0 {
+                        HStack {
+                            Image(systemName: "flame.fill").foregroundStyle(.orange)
+                            Text("\(streak.current) week streak")
+                                .font(.subheadline.weight(.semibold))
+                            Spacer()
+                            Text("Best: \(streak.longest)w")
+                                .font(.caption).foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal, 12).padding(.vertical, 8)
+                        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+                    }
+                    consistencyChart
+                }
 
                 // Start buttons
                 Button {
