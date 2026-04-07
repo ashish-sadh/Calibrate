@@ -6,59 +6,50 @@ _(pick from Ready)_
 
 ## Ready
 
-### Next Up
-- [ ] **Saved meals (one-tap re-log)** — Save multi-item meals as a group. One tap to re-log "My usual breakfast". Most-requested feature.
-- [ ] **Time-of-day food search boost** — Coffee/oats ranked higher in morning, protein at dinner. Boost in search ranking, not separate UI.
-- [x] **Workout streak tracking** — WorkoutService.workoutStreak() added (consecutive weeks)
-- [x] **Eval harness 86→97** — Tool execution tests for all registered tools
-- [ ] **Quick-add raw calories** — "Just enter 500 cal" button in Food tab for eating out.
+### P1: Enrich Tools + Improve AI Tool Use
+- [ ] **Spell correction from food DB** — Instead of hardcoded dictionary, build correction candidates from foods.json names (1004 foods). Levenshtein distance matching against actual DB entries. Scalable.
+- [ ] **Tool confirm-before-action** — Tools that write data (log_food, log_weight, mark_supplement) should return a confirmation prompt first, not execute immediately. "Log 2 eggs (140 cal)? Say yes to confirm."
+- [ ] **Enrich food tools** — Add: get_recent_foods (what user eats often), get_macro_balance (P/C/F ratio vs targets), get_food_history(date) (what was eaten on a specific day).
+- [ ] **Enrich exercise tools** — Add: get_last_session(exercise) (sets/reps/weight from last time), get_volume_trend(exercise) (total volume over time), get_body_part_split (which parts trained this week).
+- [ ] **Enrich weight tools** — Add: get_weight_history_chart (data points for inline display), compare_weeks (this week vs last week avg).
+- [ ] **Tool response formatting** — Tool results should be structured enough that AI chat can present them nicely. Return data + suggested display, not just flat strings.
+- [ ] **Log food from tool result** — When get_nutrition returns food info, offer "[LOG_FOOD: name]" so user can say "yes log it" and it opens the sheet.
+- [ ] **Eval: tool-call accuracy** — Add 20+ eval tests: given user message, does the right tool get called with right params? Test ambiguous cases.
 
-### Blocked (needs device/model)
-- [ ] **MQ-1: Test tool-calling models** — Try Hermes-3-Llama-3.2-1B. Needs device + model download.
-- [ ] **MQ-2: Grammar-constrained sampling** — llama.cpp grammar for JSON. Needs device testing.
-- [ ] **Metal GPU acceleration** — b7400 xcframework ready, needs device test on A19 Pro.
+### P2: AI Chat Quality
+- [ ] **Better system prompt for tool selection** — The model needs clearer instructions on WHEN to call a tool vs respond naturally. Add examples of both.
+- [ ] **Conversation context in tool calls** — Pass recent conversation to tool handlers so they can give contextual responses (e.g., "you asked about protein earlier, here are high-protein options").
+- [ ] **Handle tool failures gracefully** — When a tool returns .error, the AI should explain and suggest alternatives, not just show the error.
+- [ ] **Reduce hallucination** — Add post-response check: if LLM mentions specific numbers, verify they match tool output. Flag mismatches.
 
-### Previous Sprint (remaining)
+### P3: Traditional UI Improvements
+- [ ] **Saved meals (one-tap re-log)** — Save multi-item meals as a group for quick re-logging.
+- [ ] **Time-of-day food search boost** — Morning: coffee/oats, evening: protein/dinner items.
+- [ ] **Quick-add raw calories** — "Just enter 500 cal" button for eating out.
+- [ ] **Workout streak display** — Show current + longest streak on Exercise tab (logic already in WorkoutService.workoutStreak()).
 
-### Infrastructure
-- [x] **TC-1: ToolSchema + ToolRegistry** — b24799d
-- [x] **TC-2: SpellCorrectService** — da6e4c8
-- [x] **TC-3: JSON tool-call parser** — da6e4c8+
-
-### Services (one per domain — UI and AI share these)
-- [x] **SVC-1: FoodService** — c8cc327+
-- [x] **SVC-2: WeightService** — bc80c11+
-- [x] **SVC-3: ExerciseService** — 7894260+
-- [x] **SVC-4: SleepRecoveryService** — 17adc16+
-- [x] **SVC-5: SupplementService** — 17adc16+
-- [x] **SVC-6: GlucoseService** — 17adc16+
-- [x] **SVC-7: BiomarkerService** — 17adc16+
-
-### Wiring
-- [x] **WIRE-1: Register all tools** — d72c698+
-- [x] **WIRE-2: Update system prompt** — 6042fee+
-- [x] **WIRE-3: Replace AIChatView routing** — cf9ce57+
-- [x] **WIRE-4: Block health questions** — Done in WIRE-2 (system prompt)
-- [x] **WIRE-5: Smart workout when no template** — e7eacfb+
-
-### Quality
-- [x] **QA-1: Eval tests for tool-call format** — af5f810+
-- [x] **QA-2: Service unit tests** — db7fdc5+
-- [x] **QA-3: Progressive overload tests** — db7fdc5+
-- [x] **QA-4: Smart session builder tests** — db7fdc5+
-
-### Bugs
-- [ ] **BUG: Total calories error** — Needs reproduction steps from user. Calories math looks correct in FoodService/AIRuleEngine/AIContextBuilder.
-- [x] **BUG: Flaky workout session tests** — 7564b2f+
-- [x] **FEAT-001: Calorie estimation** — DB lookup instant, LLM fallback works via chain-of-thought
+### Blocked (needs device)
+- [ ] **MQ-1: Test tool-calling models** — Hermes-3-Llama-3.2-1B for structured JSON.
+- [ ] **MQ-2: Grammar-constrained sampling** — llama.cpp grammar for valid JSON.
+- [ ] **Metal GPU acceleration** — b7400 xcframework ready, needs A19 Pro test.
 
 ## Done
 
-- [x] BUG-001: Calories left wrong number
-- [x] Action tags in system prompt + all screens
-- [x] Removed hardcoded handlers → LLM
-- [x] Direct template start from chat
-- [x] Food parser: beverages, snacks, cooking verbs
-- [x] 41 self-improvement cycles, 63 eval tests, build 84
-- [x] Docs rewrite: clean structure, tool-calling vision
-- [x] Simplified program.md (220→76 lines)
+- [x] TC-1: ToolSchema + ToolRegistry
+- [x] TC-2: SpellCorrectService
+- [x] TC-3: JSON tool-call parser
+- [x] SVC-1-7: All 8 services (Food, Weight, Exercise, SleepRecovery, Supplement, Glucose, Biomarker)
+- [x] WIRE-1: 20 tools registered
+- [x] WIRE-2: System prompt injects tool schemas
+- [x] WIRE-3: AIChatView uses ToolRegistry.execute()
+- [x] WIRE-4: Block health questions
+- [x] WIRE-5: Smart workout fallback
+- [x] TC-11/12: Pre/post tool hooks
+- [x] TC-14: Screen-aware tool filtering
+- [x] Multi-turn workout accumulation
+- [x] Eval harness 97 test methods
+- [x] Flaky session tests fixed
+- [x] FEAT-001: Calorie estimation
+- [x] BUG-001: Calories left
+- [x] Workout streak logic
+- [x] Docs rewrite

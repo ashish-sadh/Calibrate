@@ -8,10 +8,30 @@ enum FoodService {
 
     // MARK: - Search
 
-    /// Search foods by name. Returns ranked results (usage frequency, then relevance).
+    /// Search foods by name. Returns ranked results (usage, relevance, time-of-day boost).
     static func searchFood(query: String) -> [Food] {
         let corrected = SpellCorrectService.correct(query)
-        return (try? AppDatabase.shared.searchFoodsRanked(query: corrected)) ?? []
+        var results = (try? AppDatabase.shared.searchFoodsRanked(query: corrected)) ?? []
+
+        // Time-of-day boost: re-rank top results based on meal type
+        let hour = Calendar.current.component(.hour, from: Date())
+        let boostKeywords: [String]
+        switch hour {
+        case ..<11: boostKeywords = ["oat", "egg", "toast", "coffee", "tea", "cereal", "milk", "banana", "yogurt"]
+        case 11..<15: boostKeywords = ["chicken", "rice", "sandwich", "salad", "dal", "roti", "wrap"]
+        case 15..<18: boostKeywords = ["protein", "shake", "bar", "almonds", "fruit", "snack"]
+        default: boostKeywords = ["chicken", "fish", "paneer", "rice", "pasta", "vegetables", "curry"]
+        }
+
+        results.sort { a, b in
+            let aBoost = boostKeywords.contains(where: { a.name.lowercased().contains($0) })
+            let bBoost = boostKeywords.contains(where: { b.name.lowercased().contains($0) })
+            if aBoost && !bBoost { return true }
+            if !aBoost && bBoost { return false }
+            return false // preserve existing order
+        }
+
+        return results
     }
 
     // MARK: - Nutrition Lookup
