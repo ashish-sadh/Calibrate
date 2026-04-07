@@ -641,7 +641,13 @@ struct AIChatView: View {
             } else {
                 let (_, cleanText) = AIActionParser.parse(response) // Strip action tags first
                 let cleaned = AIResponseCleaner.clean(cleanText)
-                finalResponse = AIResponseCleaner.isLowQuality(cleaned) ? fallbackResponse(for: screen) : cleaned
+                if AIResponseCleaner.isLowQuality(cleaned) {
+                    finalResponse = fallbackResponse(for: screen)
+                } else if AIResponseCleaner.hasHallucinatedNumbers(cleaned, context: AIContextBuilder.baseContext()) {
+                    finalResponse = fallbackResponse(for: screen)  // Numbers don't match real data
+                } else {
+                    finalResponse = cleaned
+                }
             }
 
             if let idx = messages.firstIndex(where: { $0.id == streamingMessageId }) {

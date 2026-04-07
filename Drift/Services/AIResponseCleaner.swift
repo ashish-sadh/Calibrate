@@ -137,4 +137,32 @@ enum AIResponseCleaner {
 
         return false
     }
+
+    /// Check if response contains hallucinated numbers (not from context).
+    /// Returns true if suspicious numbers found.
+    static func hasHallucinatedNumbers(_ response: String, context: String) -> Bool {
+        // Extract all numbers from response
+        let responseNums = extractNumbers(response)
+        guard !responseNums.isEmpty else { return false }  // No numbers = can't hallucinate
+
+        // Extract numbers from context (these are "allowed")
+        let contextNums = Set(extractNumbers(context))
+        guard !contextNums.isEmpty else { return false }  // No context numbers = can't verify
+
+        // Check: are response numbers a subset of context numbers?
+        let hallucinated = responseNums.filter { !contextNums.contains($0) }
+
+        // Allow small numbers (1-10) and common numbers (100, 1000) — these are often phrasing
+        let suspicious = hallucinated.filter { $0 > 10 && $0 != 100 && $0 != 1000 }
+        return suspicious.count > 2  // More than 2 unknown numbers = likely hallucination
+    }
+
+    private static func extractNumbers(_ text: String) -> [Int] {
+        let pattern = #"\b(\d{2,5})\b"#  // 2-5 digit numbers (skip single digits)
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+        let matches = regex.matches(in: text, range: NSRange(text.startIndex..., in: text))
+        return matches.compactMap { match in
+            Range(match.range(at: 1), in: text).flatMap { Int(text[$0]) }
+        }
+    }
 }

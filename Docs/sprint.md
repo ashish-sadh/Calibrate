@@ -42,7 +42,7 @@ _(pick from Ready)_
 
 ### Next Sprint (refilled)
 - [ ] **Conversation context** — Pass last 2 exchanges to tool handlers for contextual responses
-- [ ] **Reduce hallucination** — Post-response check: verify numbers match context data
+- [x] **Reduce hallucination** — hasHallucinatedNumbers() checks response numbers vs context; replaces with fallback if >2 unknown numbers
 - [ ] **Eval harness 144→200** — More edge cases, typos, Indian food, ambiguous queries
 - [ ] **Saved meals (one-tap re-log)** — Save multi-item meals as a group
 - [ ] **Publish build 85** — TestFlight update with all improvements
