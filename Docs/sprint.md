@@ -12,7 +12,7 @@ _(pick from Ready)_
 - [x] **TC-3: JSON tool-call parser** — da6e4c8+
 
 ### Services (one per domain — UI and AI share these)
-- [ ] **SVC-1: FoodService** — Consolidate food logic. Methods: search_food, log_food, get_nutrition, get_daily_totals, get_calories_left, top_protein_foods, suggest_meal, explain_calories. Wraps AppDatabase + adds new query methods.
+- [x] **SVC-1: FoodService** — c8cc327+
 - [ ] **SVC-2: WeightService** — Consolidate weight logic. Methods: log_weight, get_trend, get_history, get_goal_progress. Wraps AppDatabase + WeightTrendCalculator.
 - [ ] **SVC-3: ExerciseService** — Consolidate workout + exercise. Methods: start_template, build_smart_session (max 5 exercises, popular first, add notes), create_workout, get_workout_history, suggest_workout, get_progressive_overload, exercises_by_muscle, popular_exercises. Wraps WorkoutService + ExerciseDatabase.
 - [ ] **SVC-4: SleepRecoveryService** — Consolidate HealthKit biometrics. Methods: get_sleep, get_recovery, get_hrv, get_readiness. Wraps HealthKitService + RecoveryEstimator.
