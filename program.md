@@ -40,7 +40,7 @@ LOOP FOREVER — do NOT stop between tickets:
 6. `xcodebuild test -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' > /tmp/drift-test.log 2>&1 && echo "TESTS OK" || echo "TESTS FAILED"` then `grep "✘" /tmp/drift-test.log`
 7. Fail? Fix or `git checkout -- .`. Pass? `git add -A && git commit -m "improve: description" && git push`
 8. Mark `[x]` in sprint.md. One-line log to improvement-log.md.
-9. **IMMEDIATELY go to step 1.** Do not summarize. Do not pause. Do not ask the human anything. Do not output more than 1 sentence between tickets. The next tool call after committing must be reading sprint.md for the next ticket. NEVER STOP.
+9. **IMMEDIATELY go to step 1.** Do not summarize what you did. Do not output progress updates. Do not pause. Do not write any text to the user. The ONLY output between tickets is the commit message and the log line. Your next tool call after pushing must be reading sprint.md. Zero words to the user. NEVER STOP.
 
 ---
 
