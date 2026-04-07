@@ -380,6 +380,26 @@ struct AIChatView: View {
             }
         }
 
+        // "yes" after weight confirmation → actually log the weight
+        if (lower == "yes" || lower == "yeah" || lower == "yep" || lower == "confirm") {
+            if let lastAssistant = messages.last(where: { $0.role == .assistant }),
+               lastAssistant.text.contains("Log") && lastAssistant.text.contains("Say yes") || lastAssistant.text.contains("Say 'yes'") {
+                // Extract weight from the confirmation message: "Log 165.0 lbs for today?"
+                let pattern = #"Log (\d+\.?\d*) (lbs|kg)"#
+                if let regex = try? NSRegularExpression(pattern: pattern),
+                   let match = regex.firstMatch(in: lastAssistant.text, range: NSRange(lastAssistant.text.startIndex..., in: lastAssistant.text)),
+                   let valRange = Range(match.range(at: 1), in: lastAssistant.text),
+                   let unitRange = Range(match.range(at: 2), in: lastAssistant.text),
+                   let value = Double(String(lastAssistant.text[valRange])) {
+                    let unit = String(lastAssistant.text[unitRange])
+                    if let _ = WeightServiceAPI.logWeight(value: value, unit: unit) {
+                        messages.append(ChatMessage(role: .assistant, text: "Logged \(String(format: "%.1f", value)) \(unit)."))
+                        return
+                    }
+                }
+            }
+        }
+
         if lower == "undo" || lower == "remove that" || lower == "delete that" || lower == "nevermind" {
             messages.append(ChatMessage(role: .assistant, text: "I can't undo actions yet. To remove a food entry, tap it in the Food tab. To delete a weight entry, long-press it."))
             return

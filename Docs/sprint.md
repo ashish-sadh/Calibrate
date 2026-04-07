@@ -50,7 +50,7 @@ _(pick from Ready)_
 ### Next Sprint
 - [ ] **Saved meals (one-tap re-log)** — Save multi-item meals as a group
 - [ ] **Eval harness 200→250** — Keep growing: more ambiguous queries, multi-turn, edge cases
-- [ ] **AI chat: handle "yes" after weight confirm** — "Log 165 lbs? Say yes" → user says "yes" → actually save
+- [x] **AI chat: handle "yes" after weight confirm** — Parses weight from confirmation message, saves on "yes"
 - [ ] **HealthKit body composition sync** — Sync body fat % and BMI from Apple Health
 - [ ] **Accessibility pass** — VoiceOver labels on key screens
 
