@@ -31,7 +31,7 @@ _(pick from Ready)_
 - [ ] **Trigger barcode scan from chat** — "scan barcode", "scan food". Open camera sheet.
 - [ ] **Manual food with inline macros** — "log 400 cal 30g protein lunch". Parse calorie+macro intent.
 - [ ] **Add supplement to stack** — "add vitamin D 2000 IU". Supplement management tool.
-- [ ] **Weekly comparison** — "compare this week to last". Trend analysis response.
+- [x] **Weekly comparison** — "compare this week to last". Instant rule engine answer from comparisonContext().
 
 ### P3: UI Polish
 - [ ] **Saved meals (one-tap re-log)** — Save multi-item meals for quick re-logging from UI.

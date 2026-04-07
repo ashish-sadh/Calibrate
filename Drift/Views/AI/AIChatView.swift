@@ -454,6 +454,13 @@ struct AIChatView: View {
             }
         }
 
+        // Weekly comparison: "compare this week to last", "this week vs last"
+        if lower.contains("this week") && (lower.contains("last") || lower.contains("compare") || lower.contains("vs")) {
+            let comparison = AIContextBuilder.comparisonContext()
+            messages.append(ChatMessage(role: .assistant, text: comparison.isEmpty ? "Not enough data to compare weeks yet." : comparison))
+            return
+        }
+
         // Body comp entry: "my body fat is 18%", "body fat 18", "bmi 22.5"
         let bfPattern = #"(?:body fat|bf|body fat %|bodyfat)\s*(?:is\s+)?(\d+\.?\d*)"#
         if let bfRegex = try? NSRegularExpression(pattern: bfPattern),
