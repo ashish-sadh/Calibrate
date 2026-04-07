@@ -31,10 +31,18 @@ Based on data: **hybrid approach**
 
 The 1.5B model is a **food logging specialist + conversational rephraser**, not a general tool-caller. The harness must compensate.
 
-## Next Steps
+## Qwen3-1.7B Comparison (2026-04-07)
 
-1. Keep food logging via LLM tool call (it works)
-2. Keep Swift intent parsing for weight, exercise, supplements
-3. For questions: Swift calls the right service tool, returns data, LLM phrases it
-4. Improve food question routing: add "what should I eat" → suggest_meal in Swift
-5. Test with Hermes-3 or other tool-tuned models for comparison
+| Category | Qwen2.5-1.5B | Qwen3-1.7B |
+|----------|-------------|------------|
+| Food Logging | **100%** | **30%** |
+
+Qwen3 is WORSE at tool calling. It prefers to respond naturally instead of outputting JSON tool calls. Qwen2.5-1.5B-Instruct remains the best choice — its instruction tuning produces better structured output.
+
+## Architecture Decision (confirmed by data)
+
+1. **Qwen2.5-1.5B** stays as the model
+2. **Food logging** → LLM tool calling (100% accurate)
+3. **Everything else** → Swift harness routes, calls tools, passes to LLM for phrasing
+4. **Food questions** → Swift handles directly (LLM only 40%)
+5. **Exercise/weight** → Swift handles directly (LLM only 13-20%)

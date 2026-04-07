@@ -38,7 +38,7 @@ _(pick from Ready)_
 - [ ] **Quick-add raw calories** — "Just enter 500 cal" button for eating out.
 
 ### Next: Run Qwen3 eval and compare
-- [ ] **Qwen3-1.7B eval** — Run testQwen3FoodLogging, testQwen3FoodQuestions, testQwen3Weight, testQwen3Exercise. Compare with Qwen2.5 baseline.
+- [x] **Qwen3-1.7B eval** — Food Logging: 30% (vs Qwen2.5 100%). Qwen3 is WORSE. Keeping Qwen2.5.
 
 ### Blocked (needs device)
 - [ ] **MQ-1: Test tool-calling models** — Hermes-3-Llama-3.2-1B for structured JSON.
