@@ -27,7 +27,7 @@ _(pick from Ready)_
 - [ ] **Eval harness 212→300+** — Cross-domain queries, screen-bias regression, multi-turn scenarios, supplement/goal commands.
 
 ### P2: More Chat Features
-- [ ] **Body comp entry via chat** — "my body fat is 18%", "log body fat". Add body comp tool.
+- [x] **Body comp entry via chat** — "my body fat is 18%", "log body fat", "bmi 22.5". Hardcoded + log_body_comp tool.
 - [ ] **Trigger barcode scan from chat** — "scan barcode", "scan food". Open camera sheet.
 - [ ] **Manual food with inline macros** — "log 400 cal 30g protein lunch". Parse calorie+macro intent.
 - [ ] **Add supplement to stack** — "add vitamin D 2000 IU". Supplement management tool.

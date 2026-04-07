@@ -247,5 +247,24 @@ enum ToolRegistration {
             parameters: [],
             handler: { _ in .text(AIContextBuilder.dexaContext()) }
         ))
+
+        r.register(ToolSchema(
+            id: "health.log_body_comp", name: "log_body_comp", service: "bodycomp",
+            description: "User LOGS body composition data: body fat %, BMI, or weight from a smart scale.",
+            parameters: [ToolParam("body_fat", "number", "Body fat percentage", required: false),
+                         ToolParam("bmi", "number", "BMI value", required: false)],
+            handler: { params in
+                let bf = params.double("body_fat")
+                let bmi = params.double("bmi")
+                guard bf != nil || bmi != nil else { return .error("Provide body fat % or BMI.") }
+                var entry = BodyComposition(date: DateFormatters.todayString, bodyFatPct: bf, bmi: bmi,
+                                             source: "manual", createdAt: DateFormatters.iso8601.string(from: Date()))
+                try? AppDatabase.shared.saveBodyComposition(&entry)
+                var parts: [String] = []
+                if let bf { parts.append("body fat \(String(format: "%.1f", bf))%") }
+                if let bmi { parts.append("BMI \(String(format: "%.1f", bmi))") }
+                return .text("Logged \(parts.joined(separator: ", ")).")
+            }
+        ))
     }
 }

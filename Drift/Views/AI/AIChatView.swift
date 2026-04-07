@@ -454,6 +454,30 @@ struct AIChatView: View {
             }
         }
 
+        // Body comp entry: "my body fat is 18%", "body fat 18", "bmi 22.5"
+        let bfPattern = #"(?:body fat|bf|body fat %|bodyfat)\s*(?:is\s+)?(\d+\.?\d*)"#
+        if let bfRegex = try? NSRegularExpression(pattern: bfPattern),
+           let bfMatch = bfRegex.firstMatch(in: lower, range: NSRange(lower.startIndex..., in: lower)),
+           let numRange = Range(bfMatch.range(at: 1), in: lower),
+           let bf = Double(String(lower[numRange])), bf > 3 && bf < 60 {
+            var entry = BodyComposition(date: DateFormatters.todayString, bodyFatPct: bf,
+                                         source: "manual", createdAt: DateFormatters.iso8601.string(from: Date()))
+            try? AppDatabase.shared.saveBodyComposition(&entry)
+            messages.append(ChatMessage(role: .assistant, text: "Logged body fat \(String(format: "%.1f", bf))%."))
+            return
+        }
+        let bmiPattern = #"bmi\s*(?:is\s+)?(\d+\.?\d*)"#
+        if let bmiRegex = try? NSRegularExpression(pattern: bmiPattern),
+           let bmiMatch = bmiRegex.firstMatch(in: lower, range: NSRange(lower.startIndex..., in: lower)),
+           let numRange = Range(bmiMatch.range(at: 1), in: lower),
+           let bmi = Double(String(lower[numRange])), bmi > 10 && bmi < 50 {
+            var entry = BodyComposition(date: DateFormatters.todayString, bmi: bmi,
+                                         source: "manual", createdAt: DateFormatters.iso8601.string(from: Date()))
+            try? AppDatabase.shared.saveBodyComposition(&entry)
+            messages.append(ChatMessage(role: .assistant, text: "Logged BMI \(String(format: "%.1f", bmi))."))
+            return
+        }
+
         // Set weight goal: "set goal to 160", "target weight 75 kg", "I want to weigh 150"
         let goalPattern = #"(?:set goal to|target weight|i want to weigh|goal weight|my goal is)\s+(\d+\.?\d*)\s*(kg|lbs|lb|pounds?)?"#
         if let goalRegex = try? NSRegularExpression(pattern: goalPattern),
