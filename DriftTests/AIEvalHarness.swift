@@ -2941,7 +2941,101 @@ final class AIEvalHarness: XCTestCase {
         }
     }
 
+    // MARK: - Mixed Intent Queries
+
+    func testAmbiguousIntentResolution() {
+        // "I had some chicken" — food intent, not a question
+        let intent = AIActionExecutor.parseFoodIntent("i had some chicken")
+        XCTAssertNotNil(intent)
+        // "how much chicken did I have" — question, not logging
+        let intent2 = AIActionExecutor.parseFoodIntent("how much chicken did i have")
+        XCTAssertNil(intent2) // "how much" doesn't have a food prefix
+    }
+
+    func testLogPrefixVariations() {
+        let prefixes = ["log ", "ate ", "had ", "add ", "track ", "eating ", "drank ", "made "]
+        for prefix in prefixes {
+            let intent = AIActionExecutor.parseFoodIntent("\(prefix)rice")
+            XCTAssertNotNil(intent, "'\(prefix)rice' should parse as food")
+        }
+    }
+
+    func testNaturalPrefixVariations() {
+        let naturals = ["i just had rice", "i ate rice", "just had rice", "i'm having rice", "snacked on rice"]
+        for phrase in naturals {
+            let intent = AIActionExecutor.parseFoodIntent(phrase)
+            XCTAssertNotNil(intent, "'\(phrase)' should parse")
+        }
+    }
+
+    // MARK: - Token Estimation Accuracy
+
+    @MainActor
+    func testTokenEstimationReasonable() {
+        let text = "Hello, this is a test sentence with some numbers like 1200 and 1800."
+        let tokens = AIContextBuilder.estimateTokens(text)
+        // ~17 tokens for this sentence (1 token per ~4 chars)
+        XCTAssertGreaterThan(tokens, 10)
+        XCTAssertLessThan(tokens, 30)
+    }
+
+    // MARK: - Tool Param Types
+
+    func testToolCallParamsStringAccess() {
+        let params = ToolCallParams(values: ["name": "chicken", "amount": "2.5"])
+        XCTAssertEqual(params.string("name"), "chicken")
+        XCTAssertEqual(params.double("amount"), 2.5)
+        XCTAssertNil(params.string("missing"))
+        XCTAssertNil(params.double("missing"))
+    }
+
+    func testToolCallParamsIntAccess() {
+        let params = ToolCallParams(values: ["count": "3"])
+        XCTAssertEqual(params.int("count"), 3)
+        XCTAssertNil(params.int("missing"))
+    }
+
+    // MARK: - Response Cleaner Complete Pipeline
+
+    func testCleanerFullPipeline() {
+        let raw = "<|im_start|>assistant\n**Based on your data,** you've eaten 1200 cal. I'm here to help! What would you like to know?<|im_end|>"
+        let cleaned = AIResponseCleaner.clean(raw)
+        XCTAssertFalse(cleaned.contains("<|"))
+        XCTAssertFalse(cleaned.contains("**"))
+        XCTAssertFalse(cleaned.lowercased().hasPrefix("based on"))
+    }
+
+    func testCleanerPreservesNumbers() {
+        let response = "You've eaten 1200 of 1800 calories. 600 remaining. 80g protein."
+        let cleaned = AIResponseCleaner.clean(response)
+        XCTAssertTrue(cleaned.contains("1200"))
+        XCTAssertTrue(cleaned.contains("1800"))
+    }
+
+    // MARK: - Food Service Explain Calories
+
+    @MainActor
+    func testExplainCaloriesContainsTDEE() {
+        let explanation = FoodService.explainCalories()
+        XCTAssertTrue(explanation.contains("TDEE"))
+        XCTAssertTrue(explanation.contains("target") || explanation.contains("Target"))
+    }
+
+    // MARK: - ExerciseService Body Parts
+
+    @MainActor
+    func testExercisesByMuscleFindsChest() {
+        let results = ExerciseService.exercisesByMuscle(group: "chest")
+        XCTAssertFalse(results.isEmpty, "Should find chest exercises")
+    }
+
+    @MainActor
+    func testExercisesByMuscleFindsLegs() {
+        let results = ExerciseService.exercisesByMuscle(group: "legs")
+        XCTAssertFalse(results.isEmpty, "Should find leg exercises")
+    }
+
     func testPrintSummary() {
-        print("=== AI EVAL HARNESS: 215+ test methods ===")
+        print("=== AI EVAL HARNESS: 225+ test methods ===")
     }
 }
