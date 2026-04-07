@@ -206,7 +206,9 @@ struct FloatingAIAssistant: View {
                     let ramNeeded = modelManager.currentTier == .large ? "~2.9 GB" : "~0.4 GB"
                     Text("Storage: \(aiService.downloadSizeText) needed · \(freeGB) GB available")
                         .font(.caption2).foregroundStyle(.tertiary)
-                    Text("Memory: \(ramNeeded) while chatting (\(freeRAM) GB on device) · won't slow your phone")
+                    Text("Memory: \(ramNeeded) while chatting (\(freeRAM) GB on device)")
+                        .font(.caption2).foregroundStyle(.tertiary)
+                    Text("Won't use memory or slow your phone when not chatting")
                         .font(.caption2).foregroundStyle(.tertiary)
                     Text("You can always clean up from Settings")
                         .font(.caption2).foregroundStyle(.quaternary)
