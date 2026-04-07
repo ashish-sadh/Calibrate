@@ -23,7 +23,7 @@ _(pick from Ready)_
 - [x] **Enrich weight tools** — weight_info includes trend + goal + body comp from describeTrend()
 - [x] **Tool response formatting** — All tools now return user-friendly text with suggestions, not raw data
 - [x] **Log food from tool result** — food_info already shows "Say 'log [name]' to add it" after nutrition lookup
-- [ ] **Eval: tool-call accuracy** — Add 20+ eval tests: given user message, does the right tool get called with right params? Test ambiguous cases.
+- [x] **Eval: tool-call accuracy** — 144 eval tests + 100-query LLM eval (food 100%, questions 40%, exercise 13%, weight 20%)
 
 ### P2: AI Chat Quality
 - [x] **Better system prompt** — Done: LOGGING/QUESTION/CHAT framework, 7 examples, 6-tool limit
