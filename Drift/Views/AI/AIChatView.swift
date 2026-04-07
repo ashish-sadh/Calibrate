@@ -606,7 +606,37 @@ struct AIChatView: View {
             streamingMessageId = nil
             generatingState = .idle
 
-            // Auto-execute actions from original LLM response (before cleaning which might strip tags)
+            // Try JSON tool call first (new path), fall back to action tags (legacy)
+            if let toolCall = parseToolCallJSON(response) {
+                let result = await ToolRegistry.shared.execute(toolCall)
+                switch result {
+                case .text(let text):
+                    if let idx = messages.firstIndex(where: { $0.id == streamingMessageId }) {
+                        messages[idx].text = text
+                    }
+                case .action(let action):
+                    switch action {
+                    case .openFoodSearch(let query, let servings):
+                        foodSearchQuery = query
+                        foodSearchServings = servings
+                        showingFoodSearch = true
+                    case .openWorkout(let templateName):
+                        if let templates = try? WorkoutService.fetchTemplates(),
+                           let matched = templates.first(where: { $0.name.lowercased().contains(templateName.lowercased()) }) {
+                            workoutTemplate = matched
+                            showingWorkout = true
+                        }
+                    case .openWeightEntry: break
+                    case .navigate: break
+                    }
+                case .error(let msg):
+                    if let idx = messages.firstIndex(where: { $0.id == streamingMessageId }) {
+                        messages[idx].text = msg
+                    }
+                }
+            }
+
+            // Legacy: action tag parsing (fallback when model doesn't output JSON)
             let parsed = AIActionParser.parse(response)
             switch parsed.action {
             case .logFood(let name, _):

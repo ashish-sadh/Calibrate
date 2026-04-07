@@ -23,8 +23,8 @@ _(pick from Ready)_
 ### Wiring
 - [x] **WIRE-1: Register all tools** — d72c698+
 - [x] **WIRE-2: Update system prompt** — 6042fee+
-- [ ] **WIRE-3: Replace AIChatView routing** — Use ToolRegistry.execute() instead of hardcoded sendMessage() routing. Keep rule engine for instant answers.
-- [ ] **WIRE-4: Block health questions** — System prompt: "Don't give health advice. Show user's data instead. Redirect to service tools."
+- [x] **WIRE-3: Replace AIChatView routing** — cf9ce57+
+- [x] **WIRE-4: Block health questions** — Done in WIRE-2 (system prompt)
 - [ ] **WIRE-5: Smart workout when no template** — If user says "I want to work out" and has no templates, call build_smart_session instead of listing empty templates.
 
 ### Quality
