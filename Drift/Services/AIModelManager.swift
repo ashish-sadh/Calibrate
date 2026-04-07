@@ -88,7 +88,7 @@ final class AIModelManager {
 
         var downloadedMB = 0
         for file in files {
-            let url = URL(string: "\(baseURL)/\(file.name)")!
+            let url = URL(string: file.customURL ?? "\(baseURL)/\(file.name)")!
             let dest = modelPath(for: file.name)
 
             // Skip if this file already exists

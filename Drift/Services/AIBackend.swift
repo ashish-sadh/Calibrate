@@ -46,13 +46,15 @@ enum AIModelTier: Sendable {
         case .small:
             return [ModelFile(name: "smollm2-360m-instruct-q8_0.gguf", sizeMB: 368)]
         case .large:
-            return [ModelFile(name: "gemma-4-e2b-q4_k_m.gguf", sizeMB: 2900)]
+            return [ModelFile(name: "gemma-4-e2b-q4_k_m.gguf", sizeMB: 2900,
+                              customURL: "https://huggingface.co/unsloth/gemma-4-E2B-it-GGUF/resolve/main/gemma-4-E2B-it-Q4_K_M.gguf")]
         }
     }
 
     struct ModelFile: Sendable {
         let name: String
         let sizeMB: Int
+        var customURL: String? = nil  // Override download URL (for HuggingFace, etc.)
     }
 }
 
