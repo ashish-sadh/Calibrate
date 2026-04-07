@@ -33,14 +33,20 @@ _Override:_ CONTINUE
 LOOP FOREVER:
 
 1. **Re-read steering notes** above. Stop if override says STOP.
-2. **Pick work.** Read `Docs/sprint.md`. Pick top unchecked item. Bugs in `human-reported-bugs.md` override everything.
-3. **Make ONE change.** Read only the files you need to edit. Make the change. Keep it small.
-4. **Build.** `xcodebuild build -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' > /tmp/drift-build.log 2>&1 && echo "BUILD OK" || (tail -20 /tmp/drift-build.log && echo "BUILD FAILED")`
-5. **Test.** `xcodebuild test -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' > /tmp/drift-test.log 2>&1 && echo "TESTS OK" || echo "TESTS FAILED"` then `grep "✘" /tmp/drift-test.log`
-6. **If fail:** fix or `git checkout -- .` and try something else.
-7. **If pass:** `git add -A && git commit -m "improve: description"` then `git push`
-8. **Log.** Append one line to `Docs/improvement-log.md`: `## [commit hash] description`
-9. **Go to step 1.** Do NOT pause. Do NOT ask "should I continue?". NEVER STOP.
+2. **Refill sprint if empty.** If `Docs/sprint.md` has no unchecked items in "In Progress" or "Ready":
+   - Read `Docs/human-reported-bugs.md` — any open bugs become top sprint items
+   - Read `Docs/roadmap.md` — find next incomplete item in current phase
+   - Read `Docs/backlog.md` — pull highest-impact items
+   - Add 3-5 new tickets to sprint.md "Ready" section
+3. **Pick work.** Read `Docs/sprint.md`. Pick top unchecked item. Open bugs always override.
+4. **Make ONE change.** Read only the files you need to edit. Make the change. Keep it small.
+5. **Build.** `xcodebuild build -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' > /tmp/drift-build.log 2>&1 && echo "BUILD OK" || (tail -20 /tmp/drift-build.log && echo "BUILD FAILED")`
+6. **Test.** `xcodebuild test -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' > /tmp/drift-test.log 2>&1 && echo "TESTS OK" || echo "TESTS FAILED"` then `grep "✘" /tmp/drift-test.log`
+7. **If fail:** fix or `git checkout -- .` and try something else.
+8. **If pass:** `git add -A && git commit -m "improve: description"` then `git push`
+9. **Mark done.** In `Docs/sprint.md`: check off the item `[x]`, move it to "Done" section. If bug, mark fixed in `human-reported-bugs.md`.
+10. **Log.** Append one line to `Docs/improvement-log.md`: `## [commit hash] description`
+11. **Go to step 1.** Do NOT pause. Do NOT ask "should I continue?". NEVER STOP.
 
 ---
 
