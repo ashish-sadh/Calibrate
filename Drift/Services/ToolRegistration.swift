@@ -65,10 +65,8 @@ enum ToolRegistration {
             handler: { params in
                 guard let value = params.double("value") else { return .error("Missing weight value") }
                 let unit = params.string("unit") ?? "lbs"
-                if let _ = WeightServiceAPI.logWeight(value: value, unit: unit) {
-                    return .text("Logged \(String(format: "%.1f", value)) \(unit).")
-                }
-                return .error("Invalid weight value.")
+                // Show confirmation first — Swift pre-parser handles actual logging
+                return .text("Log \(String(format: "%.1f", value)) \(unit) for today? Say 'yes' to confirm.")
             }
         ))
 
