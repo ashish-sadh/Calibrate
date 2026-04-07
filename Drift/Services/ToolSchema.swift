@@ -61,6 +61,7 @@ struct ToolSchema: Identifiable {
     let parameters: [ToolParam]
     var validate: (@MainActor (ToolCallParams) -> String?)?  // Returns error message if invalid, nil if OK
     let handler: @MainActor (ToolCallParams) async -> ToolResult
+    var postHook: (@MainActor (ToolResult) -> String)?  // Suggest follow-up after execution
 }
 
 // MARK: - Tool Registry
@@ -114,16 +115,22 @@ final class ToolRegistry {
         return "Tools:\n\(lines.joined(separator: "\n"))"
     }
 
-    /// Execute a tool call by name. Runs validation first if defined.
+    /// Execute a tool call by name. Runs validation first, post-hook after.
     func execute(_ call: ToolCall) async -> ToolResult {
         guard let tool = tools[call.tool] else {
             return .error("Unknown tool: \(call.tool)")
         }
-        // Pre-tool validation hook
+        // Pre-tool validation
         if let validate = tool.validate, let error = validate(call.params) {
             return .error(error)
         }
-        return await tool.handler(call.params)
+        let result = await tool.handler(call.params)
+        // Post-tool hook: append follow-up suggestion
+        if let postHook = tool.postHook, case .text(let text) = result {
+            let followUp = postHook(result)
+            return .text(text + " " + followUp)
+        }
+        return result
     }
 
 }

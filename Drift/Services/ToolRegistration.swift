@@ -50,7 +50,8 @@ enum ToolRegistration {
             id: "food.get_calories_left", name: "get_calories_left", service: "food",
             description: "Show remaining calories and protein for today",
             parameters: [],
-            handler: { _ in .text(FoodService.getCaloriesLeft()) }
+            handler: { _ in .text(FoodService.getCaloriesLeft()) },
+            postHook: { _ in "Say 'suggest meal' for food ideas or 'explain calories' for the math." }
         ))
 
         r.register(ToolSchema(
