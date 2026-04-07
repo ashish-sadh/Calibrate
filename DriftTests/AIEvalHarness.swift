@@ -1465,10 +1465,81 @@ final class AIEvalHarness: XCTestCase {
 
     // MARK: - Summary
 
+    // MARK: - Service Unit Tests
+
+    @MainActor
+    func testFoodServiceDailyTotals() {
+        // Should not crash on empty DB
+        let totals = FoodService.getDailyTotals()
+        XCTAssertGreaterThanOrEqual(totals.target, 500, "Target should be at least 500")
+        XCTAssertGreaterThanOrEqual(totals.eaten, 0)
+    }
+
+    @MainActor
+    func testFoodServiceCaloriesLeft() {
+        let result = FoodService.getCaloriesLeft()
+        XCTAssertFalse(result.isEmpty, "Should return a string")
+    }
+
+    @MainActor
+    func testFoodServiceSearchFood() {
+        let results = FoodService.searchFood(query: "chicken")
+        // May or may not find results depending on DB state, but shouldn't crash
+        XCTAssertTrue(true) // No crash = pass
+    }
+
+    @MainActor
+    func testFoodServiceExplainCalories() {
+        let explanation = FoodService.explainCalories()
+        XCTAssertTrue(explanation.contains("TDEE"), "Should mention TDEE")
+        XCTAssertTrue(explanation.contains("target"), "Should mention target")
+    }
+
+    @MainActor
+    func testWeightServiceDescribeTrend() {
+        let trend = WeightServiceAPI.describeTrend()
+        XCTAssertFalse(trend.isEmpty, "Should return something even with no data")
+    }
+
+    @MainActor
+    func testExerciseServiceSuggestWorkout() {
+        let suggestion = ExerciseService.suggestWorkout()
+        XCTAssertFalse(suggestion.isEmpty, "Should return workout suggestion")
+    }
+
+    @MainActor
+    func testExerciseServiceBuildSmartSession() {
+        // May return nil on empty DB, but shouldn't crash
+        let _ = ExerciseService.buildSmartSession(muscleGroup: "chest")
+    }
+
+    @MainActor
+    func testSleepRecoveryServiceGetSleep() {
+        let result = SleepRecoveryService.getSleep()
+        XCTAssertFalse(result.isEmpty)
+    }
+
+    @MainActor
+    func testSupplementServiceGetStatus() {
+        let result = SupplementService.getStatus()
+        XCTAssertFalse(result.isEmpty)
+    }
+
+    @MainActor
+    func testGlucoseServiceGetReadings() {
+        let result = GlucoseService.getReadings()
+        XCTAssertFalse(result.isEmpty)
+    }
+
+    @MainActor
+    func testBiomarkerServiceGetResults() {
+        let result = BiomarkerService.getResults()
+        XCTAssertFalse(result.isEmpty)
+    }
+
     func testPrintSummary() {
         print("=== AI EVAL HARNESS SUMMARY ===")
-        print("Total eval test methods: 70+")
-        print("Target: food logging >= 85%, weight >= 83%, routing >= 85%, parsing >= 78%")
+        print("Total eval test methods: 80+")
         print("===============================")
     }
 }

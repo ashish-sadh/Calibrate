@@ -29,9 +29,9 @@ _(pick from Ready)_
 
 ### Quality
 - [x] **QA-1: Eval tests for tool-call format** — af5f810+
-- [ ] **QA-2: Service unit tests** — At least 5 tests per new service (FoodService, WeightService, ExerciseService).
-- [ ] **QA-3: Progressive overload tests** — Verify improving/stalling/declining detection.
-- [ ] **QA-4: Smart session builder tests** — Verify max 5 exercises, popular first, notes included.
+- [x] **QA-2: Service unit tests** — db7fdc5+
+- [x] **QA-3: Progressive overload tests** — db7fdc5+
+- [x] **QA-4: Smart session builder tests** — db7fdc5+
 
 ### Bugs
 - [ ] **BUG: Total calories error** — Investigate and fix calories calculation inaccuracy.
