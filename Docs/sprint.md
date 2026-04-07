@@ -36,7 +36,7 @@ _(pick from Ready)_
 ### Bugs
 - [ ] **BUG: Total calories error** — Needs reproduction steps from user. Calories math looks correct in FoodService/AIRuleEngine/AIContextBuilder.
 - [x] **BUG: Flaky workout session tests** — 7564b2f+
-- [ ] **FEAT-001: Calorie estimation for unknown foods** — LLM fallback when DB lookup fails.
+- [x] **FEAT-001: Calorie estimation** — DB lookup instant, LLM fallback works via chain-of-thought
 
 ## Done
 
