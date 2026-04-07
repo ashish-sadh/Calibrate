@@ -199,27 +199,90 @@ struct WeightInsightsView: View {
     }
 
     private func bodyCompChartSheet(title: String, entries: [(date: String, value: Double)]) -> some View {
-        NavigationStack {
-            if entries.count < 2 {
+        let parsed = entries.compactMap { e -> (date: Date, value: Double)? in
+            DateFormatters.dateOnly.date(from: e.date).map { ($0, e.value) }
+        }.sorted { $0.date < $1.date }
+
+        return NavigationStack {
+            if parsed.count < 2 {
                 ContentUnavailableView("Not enough data", systemImage: "chart.line.uptrend.xyaxis",
                                        description: Text("Log at least 2 entries to see a trend."))
             } else {
-                Chart {
-                    ForEach(entries, id: \.date) { entry in
-                        if let d = DateFormatters.dateOnly.date(from: entry.date) {
-                            LineMark(x: .value("Date", d), y: .value(title, entry.value))
-                                .foregroundStyle(Theme.accent)
-                            PointMark(x: .value("Date", d), y: .value(title, entry.value))
-                                .foregroundStyle(Theme.accent)
+                VStack(alignment: .leading, spacing: 12) {
+                    // Header — matches weight chart style
+                    HStack(alignment: .firstTextBaseline) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Latest").font(.caption2).foregroundStyle(.tertiary)
+                            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                                Text(String(format: "%.1f", parsed.last?.value ?? 0))
+                                    .font(.title2.weight(.bold).monospacedDigit())
+                                Text(title.contains("%") ? "%" : "")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
+                        Spacer()
+                        if let first = parsed.first?.value, let last = parsed.last?.value {
+                            let diff = last - first
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text("Change").font(.caption2).foregroundStyle(.tertiary)
+                                Text(String(format: "%+.1f", diff))
+                                    .font(.title3.weight(.bold).monospacedDigit())
+                                    .foregroundStyle(diff < 0 ? Theme.deficit : diff > 0 ? Theme.surplus : .secondary)
+                            }
                         }
                     }
+
+                    // Date range
+                    if let f = parsed.first?.date, let l = parsed.last?.date {
+                        Text("\(DateFormatters.shortDisplay.string(from: f)) – \(DateFormatters.shortDisplay.string(from: l))")
+                            .font(.caption2).foregroundStyle(.tertiary)
+                    }
+
+                    // Chart — matches weight chart styling
+                    Chart {
+                        if let current = parsed.last?.value {
+                            RuleMark(y: .value("", current))
+                                .foregroundStyle(Theme.accent.opacity(0.4))
+                                .lineStyle(StrokeStyle(lineWidth: 1.5))
+                                .annotation(position: .trailing, spacing: 4) {
+                                    Text(String(format: "%.1f", current))
+                                        .font(.caption.weight(.bold).monospacedDigit())
+                                        .foregroundStyle(Theme.accent)
+                                }
+                        }
+                        ForEach(parsed.indices, id: \.self) { i in
+                            LineMark(x: .value("Date", parsed[i].date), y: .value(title, parsed[i].value))
+                                .foregroundStyle(.white.opacity(0.7))
+                                .lineStyle(StrokeStyle(lineWidth: 2))
+                                .interpolationMethod(.catmullRom)
+                            PointMark(x: .value("Date", parsed[i].date), y: .value(title, parsed[i].value))
+                                .foregroundStyle(.white.opacity(0.8))
+                                .symbolSize(20)
+                        }
+                    }
+                    .chartYScale(domain: .automatic(includesZero: false))
+                    .chartXAxis {
+                        AxisMarks(values: .automatic(desiredCount: 4)) {
+                            AxisValueLabel(format: .dateTime.month(.abbreviated).day())
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                    .chartYAxis {
+                        AxisMarks(position: .trailing) {
+                            AxisValueLabel().foregroundStyle(.tertiary)
+                        }
+                    }
+                    .frame(height: 220)
                 }
-                .chartYScale(domain: .automatic(includesZero: false))
+                .padding()
+                .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 16))
                 .padding()
             }
         }
         .navigationTitle(title)
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
+        .scrollContentBackground(.hidden)
+        .background(Theme.background)
     }
 
     // MARK: - Weekday Pattern
