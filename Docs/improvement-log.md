@@ -126,3 +126,22 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 - P6: Bullet regex line-start only, numbered list regex line-start only, weight false positive fix
 
 **Commits:** 3381884, 1c33d34, 8b8b9a0, 377aa0f, 86f258a, 9af6908, 564e91a, 488bdf5, aeb707a, cd708a5, e1c346f, 0a7a577
+
+---
+
+## Sprint: Unified Service Layer · 2026-04-06
+
+## b24799d TC-1: ToolSchema + ToolRegistry
+## da6e4c8 TC-2: SpellCorrectService
+## c8cc327 TC-3: JSON tool-call parser
+## bc80c11 SVC-1: FoodService
+## 7894260 SVC-2: WeightServiceAPI
+## 17adc16 SVC-3: ExerciseService (smart builder, progressive overload)
+## d72c698 SVC-4/5/6/7: SleepRecovery, Supplement, Glucose, Biomarker services
+## 4b0750f WIRE-1: Register 20 tools in ToolRegistry
+## cf9ce57 WIRE-2: System prompt injects tool schemas
+## e7eacfb WIRE-3: AIChatView uses ToolRegistry.execute()
+## af5f810 WIRE-5: Smart workout fallback
+## db7fdc5 QA-1: Eval harness 63→69 (JSON tool-call tests)
+## 7e5f461 QA-2/3/4: Service unit tests (69→80 eval tests)
+## 7564b2f fix: Flaky session tests

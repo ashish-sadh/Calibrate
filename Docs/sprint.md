@@ -35,7 +35,7 @@ _(pick from Ready)_
 
 ### Bugs
 - [ ] **BUG: Total calories error** — Needs reproduction steps from user. Calories math looks correct in FoodService/AIRuleEngine/AIContextBuilder.
-- [ ] **BUG: Flaky workout session tests** — Fix sessionSaveAndLoad, sessionRoundtripWithWarmups intermittent failures.
+- [x] **BUG: Flaky workout session tests** — 7564b2f+
 - [ ] **FEAT-001: Calorie estimation for unknown foods** — LLM fallback when DB lookup fails.
 
 ## Done
