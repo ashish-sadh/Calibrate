@@ -34,7 +34,7 @@ _(pick from Ready)_
 - [x] **QA-4: Smart session builder tests** — db7fdc5+
 
 ### Bugs
-- [ ] **BUG: Total calories error** — Investigate and fix calories calculation inaccuracy.
+- [ ] **BUG: Total calories error** — Needs reproduction steps from user. Calories math looks correct in FoodService/AIRuleEngine/AIContextBuilder.
 - [ ] **BUG: Flaky workout session tests** — Fix sessionSaveAndLoad, sessionRoundtripWithWarmups intermittent failures.
 - [ ] **FEAT-001: Calorie estimation for unknown foods** — LLM fallback when DB lookup fails.
 
