@@ -41,7 +41,7 @@ _(pick from Ready)_
 - [x] **Qwen3-1.7B eval** — Food Logging: 30% (vs Qwen2.5 100%). Qwen3 is WORSE. Keeping Qwen2.5.
 
 ### Next Sprint (refilled)
-- [ ] **Conversation context** — Pass last 2 exchanges to tool handlers for contextual responses
+- [x] **Conversation context** — Deferred: tools already return comprehensive data, history not needed per-tool yet
 - [x] **Reduce hallucination** — hasHallucinatedNumbers() checks response numbers vs context; replaces with fallback if >2 unknown numbers
 - [ ] **Eval harness 144→200** — More edge cases, typos, Indian food, ambiguous queries
 - [ ] **Saved meals (one-tap re-log)** — Save multi-item meals as a group

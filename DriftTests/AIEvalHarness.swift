@@ -2427,7 +2427,122 @@ final class AIEvalHarness: XCTestCase {
         }
     }
 
+    // MARK: - Hallucination Number Extraction
+
+    func testNumberExtraction() {
+        // hasHallucinatedNumbers uses extractNumbers internally
+        // Test via the public API
+        let ctx = "Calories: 1500 eaten, 2000 target"
+        XCTAssertFalse(AIResponseCleaner.hasHallucinatedNumbers("You ate 1500 of 2000 cal.", context: ctx))
+        XCTAssertTrue(AIResponseCleaner.hasHallucinatedNumbers("You ate 9999 of 8888 cal and burned 7777.", context: ctx))
+    }
+
+    // MARK: - Food Logging Coverage Expansion
+
+    func testFoodLoggingMorePhrasings() {
+        let more = [
+            "log a bowl of cereal",
+            "ate fish and chips",
+            "had a glass of juice",
+            "log 2 slices of bread",
+            "ate a piece of cake",
+            "had some nuts",
+            "log a plate of pasta",
+            "drank a smoothie",
+            "ate leftovers",
+            "had a wrap for lunch",
+        ]
+        var detected = 0
+        for q in more {
+            if AIActionExecutor.parseFoodIntent(q.lowercased()) != nil || AIActionExecutor.parseMultiFoodIntent(q.lowercased()) != nil {
+                detected += 1
+            }
+        }
+        XCTAssertGreaterThanOrEqual(detected, 7, "More phrasings: \(detected)/\(more.count)")
+    }
+
+    // MARK: - Weight Logging Coverage
+
+    func testWeightLoggingMorePhrasings() {
+        let valid = [
+            ("i weigh 72 kg", true),
+            ("my weight is 160", true),
+            ("log weight 155 lbs", true),
+            ("weighed in at 68 kg", true),
+        ]
+        for (q, shouldParse) in valid {
+            let intent = AIActionExecutor.parseWeightIntent(q.lowercased())
+            XCTAssertEqual(intent != nil, shouldParse, "'\(q)' parse=\(intent != nil)")
+        }
+    }
+
+    func testWeightRejectsNonWeight() {
+        let invalid = [
+            "how much does rice weigh",
+            "chicken weighs 200g",
+            "the package weighs 5 lbs",
+            "what should I weigh",
+        ]
+        for q in invalid {
+            XCTAssertNil(AIActionExecutor.parseWeightIntent(q.lowercased()), "'\(q)' should NOT be weight")
+        }
+    }
+
+    // MARK: - Response Cleaner Comprehensive
+
+    func testCleanerRemovesAllArtifacts() {
+        let messy = "<|im_start|>assistant\n**Based on your data,** you've eaten 1200 cal.\n## Summary\n- Protein: 80g<|im_end|>"
+        let clean = AIResponseCleaner.clean(messy)
+        XCTAssertFalse(clean.contains("<|"))
+        XCTAssertFalse(clean.contains("**"))
+        XCTAssertFalse(clean.contains("##"))
+        XCTAssertFalse(clean.lowercased().hasPrefix("based on"))
+    }
+
+    // MARK: - FoodService Edge Cases
+
+    @MainActor
+    func testFoodServiceDailyTotalsAlwaysValid() {
+        let totals = FoodService.getDailyTotals()
+        XCTAssertGreaterThanOrEqual(totals.target, 500)
+        XCTAssertGreaterThanOrEqual(totals.eaten, 0)
+        XCTAssertGreaterThanOrEqual(totals.proteinG, 0)
+    }
+
+    @MainActor
+    func testFoodServiceGetCaloriesLeftNotEmpty() {
+        let result = FoodService.getCaloriesLeft()
+        XCTAssertFalse(result.isEmpty)
+        XCTAssertTrue(result.contains("cal") || result.contains("Target") || result.contains("remaining"))
+    }
+
+    // MARK: - ExerciseService Edge Cases
+
+    @MainActor
+    func testExerciseServiceSuggestNeverEmpty() {
+        let suggestion = ExerciseService.suggestWorkout()
+        XCTAssertFalse(suggestion.isEmpty)
+    }
+
+    @MainActor
+    func testExerciseServiceStartTemplateNilForUnknown() {
+        let result = ExerciseService.startTemplate(name: "completely_fake_template_xyz")
+        XCTAssertNil(result)
+    }
+
+    // MARK: - WeightService Edge Cases
+
+    @MainActor
+    func testWeightServiceRejectsTinyWeight() {
+        XCTAssertNil(WeightServiceAPI.logWeight(value: 3, unit: "kg"))
+    }
+
+    @MainActor
+    func testWeightServiceRejectsHugeWeight() {
+        XCTAssertNil(WeightServiceAPI.logWeight(value: 999, unit: "kg"))
+    }
+
     func testPrintSummary() {
-        print("=== AI EVAL HARNESS: 155+ test methods ===")
+        print("=== AI EVAL HARNESS: 165+ test methods ===")
     }
 }
