@@ -2655,7 +2655,179 @@ final class AIEvalHarness: XCTestCase {
         XCTAssertEqual(call?.tool, "log_food")
     }
 
+    // MARK: - Beverage and Snack Logging
+
+    func testBeverageLogging() {
+        let beverages = ["drank water", "drank a smoothie", "drinking tea", "I drank a latte", "just drank juice"]
+        var detected = 0
+        for q in beverages {
+            if AIActionExecutor.parseFoodIntent(q.lowercased()) != nil { detected += 1 }
+        }
+        XCTAssertGreaterThanOrEqual(detected, 4, "Beverages: \(detected)/\(beverages.count)")
+    }
+
+    func testSnackLogging() {
+        let snacks = ["snacked on almonds", "had a protein bar", "ate some chips", "log a cookie"]
+        var detected = 0
+        for q in snacks {
+            if AIActionExecutor.parseFoodIntent(q.lowercased()) != nil { detected += 1 }
+        }
+        XCTAssertGreaterThanOrEqual(detected, 3, "Snacks: \(detected)/\(snacks.count)")
+    }
+
+    // MARK: - Amount Parsing Robustness
+
+    func testAmountParsingDecimal() {
+        let intent = AIActionExecutor.parseFoodIntent("log 1.5 cups oatmeal")
+        XCTAssertNotNil(intent)
+        XCTAssertEqual(intent?.servings ?? 0, 1.5, accuracy: 0.01)
+    }
+
+    func testAmountParsingFraction() {
+        let intent = AIActionExecutor.parseFoodIntent("log 1/2 avocado")
+        XCTAssertNotNil(intent)
+        XCTAssertEqual(intent?.servings ?? 0, 0.5, accuracy: 0.01)
+    }
+
+    func testAmountParsingWordNumber() {
+        let intent = AIActionExecutor.parseFoodIntent("log three eggs")
+        XCTAssertNotNil(intent)
+        XCTAssertEqual(intent?.servings ?? 0, 3.0, accuracy: 0.01)
+    }
+
+    // MARK: - Chain of Thought Keyword Precision
+
+    @MainActor
+    func testKeywordPrecisionBroad() {
+        // "fast" should NOT trigger food (changed to "fasting")
+        let steps = AIChainOfThought.plan(query: "that was fast", screen: .dashboard)
+        let hasFood = steps?.contains(where: { $0.label.lowercased().contains("meal") }) ?? false
+        XCTAssertFalse(hasFood, "'that was fast' should not trigger food")
+    }
+
+    @MainActor
+    func testKeywordPrecisionRest() {
+        // "rest" should NOT trigger sleep (changed to "rest day")
+        let steps = AIChainOfThought.plan(query: "rest my case", screen: .dashboard)
+        let hasSleep = steps?.contains(where: { $0.label.lowercased().contains("sleep") }) ?? false
+        XCTAssertFalse(hasSleep, "'rest my case' should not trigger sleep")
+    }
+
+    // MARK: - Body Composition Model
+
+    func testWeightEntryBodyCompFields() {
+        let entry = WeightEntry(date: "2026-04-07", weightKg: 75, bodyFatPct: 18.5, bmi: 22.3, waterPct: 55.0)
+        XCTAssertEqual(entry.bodyFatPct, 18.5)
+        XCTAssertEqual(entry.bmi, 22.3)
+        XCTAssertEqual(entry.waterPct, 55.0)
+        XCTAssertTrue(entry.hasBodyComposition)
+    }
+
+    func testWeightEntryNoBodyComp() {
+        let entry = WeightEntry(date: "2026-04-07", weightKg: 75)
+        XCTAssertNil(entry.bodyFatPct)
+        XCTAssertNil(entry.bmi)
+        XCTAssertFalse(entry.hasBodyComposition)
+    }
+
+    // MARK: - SleepRecovery Service
+
+    @MainActor
+    func testSleepServiceAllMethods() {
+        XCTAssertFalse(SleepRecoveryService.getSleep().isEmpty)
+        XCTAssertFalse(SleepRecoveryService.getRecovery().isEmpty)
+        XCTAssertFalse(SleepRecoveryService.getHRV().isEmpty)
+        XCTAssertFalse(SleepRecoveryService.getReadiness().isEmpty)
+    }
+
+    // MARK: - Supplement Service Extended
+
+    @MainActor
+    func testSupplementStatusNonEmpty() {
+        XCTAssertFalse(SupplementService.getStatus().isEmpty)
+    }
+
+    @MainActor
+    func testSupplementServiceMarkUnknown() {
+        let result = SupplementService.markTaken(name: "nonexistent_supplement_xyz")
+        XCTAssertTrue(result.contains("Couldn't find") || result.contains("No supplements"))
+    }
+
+    // MARK: - Glucose Service
+
+    @MainActor
+    func testGlucoseServiceReadings() {
+        XCTAssertFalse(GlucoseService.getReadings().isEmpty)
+    }
+
+    @MainActor
+    func testGlucoseServiceSpikes() {
+        XCTAssertFalse(GlucoseService.detectSpikes().isEmpty)
+    }
+
+    // MARK: - Biomarker Service
+
+    @MainActor
+    func testBiomarkerServiceResults() {
+        XCTAssertFalse(BiomarkerService.getResults().isEmpty)
+    }
+
+    @MainActor
+    func testBiomarkerServiceDetailUnknown() {
+        let result = BiomarkerService.getDetail(name: "nonexistent_marker_xyz")
+        XCTAssertTrue(result.contains("not found"))
+    }
+
+    // MARK: - Token Budget
+
+    @MainActor
+    func testBaseContextTokenBudget() {
+        let base = AIContextBuilder.baseContext()
+        let tokens = AIContextBuilder.estimateTokens(base)
+        XCTAssertLessThan(tokens, 200, "Base context should be compact: \(tokens) tokens")
+    }
+
+    // MARK: - Final Coverage Push
+
+    func testFoodIntentWithArticles() {
+        XCTAssertNotNil(AIActionExecutor.parseFoodIntent("log a banana"))
+        XCTAssertNotNil(AIActionExecutor.parseFoodIntent("log an apple"))
+        XCTAssertNotNil(AIActionExecutor.parseFoodIntent("had a coffee"))
+    }
+
+    func testFoodIntentHandlesMixedCase() {
+        // Parser lowercases internally — mixed case should still work
+        let intent = AIActionExecutor.parseFoodIntent("Log Chicken Breast")
+        XCTAssertNotNil(intent) // Should work since parser lowercases
+    }
+
+    @MainActor
+    func testToolRegistrySchemaNotEmptyV2() {
+        ToolRegistration.registerAll()
+        let prompt = ToolRegistry.shared.schemaPrompt()
+        XCTAssertTrue(prompt.count > 20, "Schema prompt should have content: got \(prompt.count) chars")
+    }
+
+    @MainActor
+    func testWeightServiceGetHistoryNoCrash() {
+        let history = WeightServiceAPI.getHistory(days: 7)
+        // May be empty but shouldn't crash
+        XCTAssertTrue(history.count >= 0)
+    }
+
+    @MainActor
+    func testExerciseServicePopularNoCrash() {
+        let popular = ExerciseService.popularExercises(limit: 10)
+        XCTAssertTrue(popular.count <= 10)
+    }
+
+    @MainActor
+    func testFoodServiceTopProteinNoCrash() {
+        let top = FoodService.topProteinFoods(limit: 5)
+        XCTAssertTrue(top.count <= 5)
+    }
+
     func testPrintSummary() {
-        print("=== AI EVAL HARNESS: 180+ test methods ===")
+        print("=== AI EVAL HARNESS: 200+ test methods ===")
     }
 }

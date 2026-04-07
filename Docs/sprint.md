@@ -43,7 +43,7 @@ _(pick from Ready)_
 ### Next Sprint (refilled)
 - [x] **Conversation context** — Deferred: tools already return comprehensive data, history not needed per-tool yet
 - [x] **Reduce hallucination** — hasHallucinatedNumbers() checks response numbers vs context; replaces with fallback if >2 unknown numbers
-- [ ] **Eval harness 144→200** — More edge cases, typos, Indian food, ambiguous queries
+- [x] **Eval harness → 200** — Done: beverages, snacks, amounts, keyword precision, body comp, services, JSON, token budget
 - [ ] **Saved meals (one-tap re-log)** — Save multi-item meals as a group
 - [ ] **Publish build 85** — TestFlight update with all improvements
 
