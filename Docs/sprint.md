@@ -34,7 +34,7 @@ _(pick from Ready)_
 ### P3: Traditional UI Improvements
 - [ ] **Saved meals (one-tap re-log)** — Save multi-item meals as a group for quick re-logging.
 - [x] **Workout streak display** — Flame icon + "X week streak" + "Best: Yw" above consistency chart
-- [ ] **Time-of-day food search boost** — Morning: coffee/oats, evening: protein/dinner items.
+- [x] **Time-of-day food search boost** — FoodSearchView now uses FoodService.searchFood (includes time boost + spell correction)
 - [ ] **Quick-add raw calories** — "Just enter 500 cal" button for eating out.
 
 ### Next: Run Qwen3 eval and compare
