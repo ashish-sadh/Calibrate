@@ -75,10 +75,14 @@ enum DeviceCapability {
 
     /// Detect the best model tier + backend for this device.
     static func detectTier() -> (tier: AIModelTier, backend: AIBackendType) {
-        if ramGB >= 7.5 {
-            return (.large, .llamaCpp)
+        // physicalMemory reports total RAM but iOS reserves 1-2GB
+        // iPhone 16 Pro (8GB) reports ~7.2-7.8, iPhone 15 (6GB) reports ~5.2-5.8
+        if ramGB >= 6.5 {
+            return (.large, .llamaCpp)  // Gemma 4 (2.9GB) — 8GB devices (Pro models)
+        } else if ramGB >= 5.0 {
+            return (.small, .llamaCpp)  // SmolLM2 (368MB) — 6GB devices
         } else {
-            return (.small, .llamaCpp)
+            return (.small, .llamaCpp)  // SmolLM2 — older devices
         }
     }
 
