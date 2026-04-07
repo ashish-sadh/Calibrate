@@ -498,6 +498,31 @@ struct AIChatView: View {
             return
         }
 
+        // Workout intent: "log exercise", "log workout", "log a workout"
+        if lower.hasPrefix("log ") {
+            let remainder = String(lower.dropFirst(4)).trimmingCharacters(in: .whitespaces)
+            let workoutWords: Set<String> = ["exercise", "workout", "a workout", "my workout", "training"]
+            if workoutWords.contains(remainder) {
+                messages.append(ChatMessage(role: .assistant, text: ExerciseService.suggestWorkout()))
+                return
+            }
+        }
+
+        // Food question routing (LLM scores 40% on these — Swift handles better)
+        let foodQuestions = ["what should i eat", "what to eat", "suggest food", "suggest meal",
+                            "what can i eat", "i'm hungry", "im hungry", "feeling hungry",
+                            "what should i have", "need food ideas"]
+        if foodQuestions.contains(where: { lower.contains($0) }) {
+            let totals = FoodService.getDailyTotals()
+            var response = "\(totals.remaining > 0 ? "\(totals.remaining)" : "0") cal remaining."
+            let suggestions = FoodService.suggestMeal()
+            if !suggestions.isEmpty {
+                response += " Try: " + suggestions.prefix(3).map { "\($0.name) (\(Int($0.calories))cal, \(Int($0.proteinG))P)" }.joined(separator: ", ")
+            }
+            messages.append(ChatMessage(role: .assistant, text: response))
+            return
+        }
+
         // Direct template start: "start push day", "start legs", "let's do chest day"
         if (lower.hasPrefix("start ") || lower.hasPrefix("let's do ") || lower.hasPrefix("lets do ") || lower.hasPrefix("begin ")) {
             let templateQuery = lower
