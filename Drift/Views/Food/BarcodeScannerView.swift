@@ -75,6 +75,7 @@ struct BarcodeLookupView: View {
     @State private var isLooking = false
     @State private var error: String?
     @State private var amount: String = "1"
+    @State private var barcodeLogTime = Date()
     @State private var selectedUnitIndex: Int = 0
     // OCR states
     @State private var showingCamera = false
@@ -291,6 +292,9 @@ struct BarcodeLookupView: View {
                     }
                 }.card()
 
+                DatePicker("Time", selection: $barcodeLogTime, displayedComponents: .hourAndMinute)
+                    .font(.subheadline).foregroundStyle(.secondary)
+
                 Button { logProduct(p) } label: {
                     Label("Log Food", systemImage: "plus.circle.fill").frame(maxWidth: .infinity)
                 }.buttonStyle(.borderedProminent).tint(Theme.accent)
@@ -367,7 +371,7 @@ struct BarcodeLookupView: View {
         let amountNum = Double(amount) ?? 1
         let totalGrams = amountNum * unit.gramsEquivalent
         let multiplier = servingG > 0 ? totalGrams / servingG : amountNum
-        viewModel.logFood(food, servings: multiplier, mealType: viewModel.autoMealType)
+        viewModel.logFood(food, servings: multiplier, mealType: viewModel.autoMealType, loggedAt: barcodeLogTime)
         dismiss()
     }
 

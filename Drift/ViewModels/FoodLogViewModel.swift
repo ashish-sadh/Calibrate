@@ -159,7 +159,7 @@ final class FoodLogViewModel {
         favoriteFoods = (try? database.fetchFavoriteEntryNames()) ?? []
     }
 
-    func logFood(_ food: Food, servings: Double, mealType: MealType) {
+    func logFood(_ food: Food, servings: Double, mealType: MealType, loggedAt: Date = Date()) {
         do {
             let date = dateString
 
@@ -185,7 +185,8 @@ final class FoodLogViewModel {
                 proteinG: food.proteinG,
                 carbsG: food.carbsG,
                 fatG: food.fatG,
-                fiberG: food.fiberG
+                fiberG: food.fiberG,
+                loggedAt: ISO8601DateFormatter().string(from: loggedAt)
             )
             try database.saveFoodEntry(&entry)
             try? database.trackFoodUsage(name: food.name, foodId: food.id, servings: servings)

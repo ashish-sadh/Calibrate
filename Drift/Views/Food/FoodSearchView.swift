@@ -21,6 +21,7 @@ struct FoodSearchView: View {
     @State private var manualServing = "1"
     @State private var manualServingUnit = "serving"
     @State private var manualLogTime = Date()
+    @State private var logTime = Date()
     @State private var loggedCount = 0
     @State private var showingRecipeBuilder = false
     @State private var showingScanner = false
@@ -537,6 +538,11 @@ struct FoodSearchView: View {
                     .card()
                 }
                 .padding(.horizontal, 16)
+
+                // Time picker
+                DatePicker("Time", selection: $logTime, displayedComponents: .hourAndMinute)
+                    .font(.subheadline).foregroundStyle(.secondary)
+                    .padding(.horizontal, 16).padding(.vertical, 8)
             }
             .scrollDismissesKeyboard(.interactively)
             .background(Theme.background)
@@ -554,7 +560,7 @@ struct FoodSearchView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Log") {
-                        viewModel.logFood(food, servings: multiplier, mealType: viewModel.autoMealType)
+                        viewModel.logFood(food, servings: multiplier, mealType: viewModel.autoMealType, loggedAt: logTime)
                         viewModel.loadSuggestions()
                         refreshSearch()
                         loggedCount += 1

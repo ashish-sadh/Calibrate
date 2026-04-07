@@ -11,6 +11,7 @@ struct QuickAddView: View {
     @State private var items: [RecipeItem] = []
     @State private var showingIngredientPicker = false
     @State private var editingIndex: Int?
+    @State private var recipeLogTime = Date()
     private let db = AppDatabase.shared
 
     struct RecipeItem: Identifiable {
@@ -109,6 +110,10 @@ struct QuickAddView: View {
                         }
                         .card()
 
+                        // Time picker
+                        DatePicker("Time", selection: $recipeLogTime, displayedComponents: .hourAndMinute)
+                            .font(.subheadline).foregroundStyle(.secondary)
+
                         Button {
                             saveAndLogRecipe()
                             dismiss()
@@ -171,9 +176,10 @@ struct QuickAddView: View {
                                fatG: t.f, fiberG: t.fb, isRecipe: items.count > 1)
         try? db.saveFavorite(&fav)
         let totalServing = items.reduce(0.0) { $0 + $1.servingSizeG }
+        let loggedAtStr = ISO8601DateFormatter().string(from: recipeLogTime)
         viewModel.quickAdd(name: name, calories: t.cal, proteinG: t.p, carbsG: t.c,
                            fatG: t.f, fiberG: t.fb, mealType: viewModel.autoMealType,
-                           servingSizeG: totalServing)
+                           loggedAt: loggedAtStr, servingSizeG: totalServing)
     }
 }
 
