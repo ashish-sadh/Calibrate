@@ -175,6 +175,33 @@ enum FoodService {
         return "Removed \(found.foodName) (\(Int(found.entry.calories)) cal)."
     }
 
+    // MARK: - Quick Add Calories
+
+    /// Quick-add raw calories: "log 500 cal for lunch". Creates a manual entry.
+    static func quickAddCalories(_ calories: Int, meal: String? = nil) -> String {
+        let today = DateFormatters.todayString
+        let mealType = meal ?? {
+            let hour = Calendar.current.component(.hour, from: Date())
+            switch hour { case ..<11: return "breakfast"; case ..<15: return "lunch"; case ..<21: return "dinner"; default: return "snack" }
+        }()
+        do {
+            var mealLogs = try AppDatabase.shared.fetchMealLogs(for: today)
+            var mealLog = mealLogs.first { $0.mealType == mealType }
+            if mealLog == nil {
+                var newLog = MealLog(date: today, mealType: mealType)
+                try AppDatabase.shared.saveMealLog(&newLog)
+                mealLog = newLog
+            }
+            guard let mlId = mealLog?.id else { return "Failed to create meal log." }
+            var entry = FoodEntry(mealLogId: mlId, foodName: "Quick Add", servingSizeG: 0, servings: 1,
+                                   calories: Double(calories), proteinG: 0, carbsG: 0, fatG: 0)
+            try AppDatabase.shared.saveFoodEntry(&entry)
+            return "Logged \(calories) cal for \(mealType)."
+        } catch {
+            return "Failed: \(error.localizedDescription)"
+        }
+    }
+
     // MARK: - Copy Yesterday
 
     /// Copy all of yesterday's food entries to today. Returns confirmation.

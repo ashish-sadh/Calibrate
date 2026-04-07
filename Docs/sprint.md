@@ -11,7 +11,7 @@ _(pick from Ready)_
 ### P0: Close AI Chat Parity Gaps (from ai-parity.md)
 - [x] **Mark supplement taken via chat** — "took my creatine", "took vitamin D". Add handler + supplement tool to mark taken by name.
 - [x] **Edit/delete food entry via chat** — "remove the rice", "delete last entry", "undo". Add delete tool that removes most recent matching entry.
-- [ ] **Copy yesterday's food** — "copy yesterday", "same as yesterday". Add tool that duplicates yesterday's food entries to today.
+- [x] **Copy yesterday's food** — "copy yesterday", "same as yesterday". Add tool that duplicates yesterday's food entries to today.
 - [ ] **Quick-add raw calories** — "just log 500 cal for lunch", "log 400 calories". Parse calorie-only intents, create manual entry.
 - [ ] **Set/update weight goal** — "set goal to 160 lbs", "change goal to 75 kg". Add goal tool that updates WeightGoal.
 

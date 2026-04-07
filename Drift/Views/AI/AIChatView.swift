@@ -454,6 +454,21 @@ struct AIChatView: View {
             }
         }
 
+        // Quick-add raw calories: "log 500 cal", "just log 400 calories for lunch"
+        let calPattern = #"(\d+)\s*(?:cal(?:ories?)?|kcal)"#
+        if let regex = try? NSRegularExpression(pattern: calPattern),
+           let match = regex.firstMatch(in: lower, range: NSRange(lower.startIndex..., in: lower)),
+           let numRange = Range(match.range(at: 1), in: lower),
+           let cal = Int(String(lower[numRange])), cal >= 50 && cal <= 5000 {
+            // Check for meal hint
+            var meal: String? = nil
+            for (suffix, m) in [("breakfast", "breakfast"), ("lunch", "lunch"), ("dinner", "dinner"), ("snack", "snack")] {
+                if lower.contains(suffix) { meal = m; break }
+            }
+            messages.append(ChatMessage(role: .assistant, text: FoodService.quickAddCalories(cal, meal: meal)))
+            return
+        }
+
         // Copy yesterday's food: "copy yesterday", "same as yesterday"
         if lower == "copy yesterday" || lower == "same as yesterday" || lower == "repeat yesterday"
             || lower == "log same as yesterday" || lower == "yesterday's food" {
