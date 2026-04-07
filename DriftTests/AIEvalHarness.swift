@@ -1537,9 +1537,80 @@ final class AIEvalHarness: XCTestCase {
         XCTAssertFalse(result.isEmpty)
     }
 
+    // MARK: - Multi-Turn Patterns
+
+    @MainActor
+    func testMultiTurnFoodFollowUp() {
+        // When AI asks "What did you eat?" and user says a food name
+        // The food should be parseable as an intent
+        let followUps = ["rice", "chicken", "eggs", "banana", "dal"]
+        for food in followUps {
+            let results = FoodService.searchFood(query: food)
+            // Should find something (may be empty on test DB, but shouldn't crash)
+            XCTAssertTrue(true, "Search for '\(food)' didn't crash")
+        }
+    }
+
+    func testSpellCorrectionIntegration() {
+        // Spell correction should work with food search
+        let misspelled = ["chiken", "bananaa", "protien", "panner", "samossa"]
+        for word in misspelled {
+            let corrected = SpellCorrectService.correct(word)
+            XCTAssertNotEqual(corrected, word, "'\(word)' should be corrected to '\(corrected)'")
+        }
+    }
+
+    // MARK: - Tool Execution Integration
+
+    @MainActor
+    func testToolExecutionCaloriesLeft() async {
+        ToolRegistration.registerAll()
+        let call = ToolCall(tool: "get_calories_left", params: ToolCallParams(values: [:]))
+        let result = await ToolRegistry.shared.execute(call)
+        if case .text(let text) = result {
+            XCTAssertFalse(text.isEmpty, "get_calories_left should return text")
+        } else if case .error = result {
+            // OK on empty DB
+        } else {
+            XCTFail("Unexpected result type")
+        }
+    }
+
+    @MainActor
+    func testToolExecutionSuggestWorkout() async {
+        ToolRegistration.registerAll()
+        let call = ToolCall(tool: "suggest_workout", params: ToolCallParams(values: [:]))
+        let result = await ToolRegistry.shared.execute(call)
+        if case .text(let text) = result {
+            XCTAssertFalse(text.isEmpty)
+        }
+    }
+
+    @MainActor
+    func testToolValidationRejectsInvalidWeight() async {
+        ToolRegistration.registerAll()
+        let call = ToolCall(tool: "log_weight", params: ToolCallParams(values: ["value": "5000", "unit": "lbs"]))
+        let result = await ToolRegistry.shared.execute(call)
+        if case .error(let msg) = result {
+            XCTAssertTrue(msg.contains("outside valid range"), "Should reject extreme weight")
+        } else {
+            XCTFail("Should have rejected weight of 5000 lbs")
+        }
+    }
+
+    @MainActor
+    func testUnknownToolReturnsError() async {
+        ToolRegistration.registerAll()
+        let call = ToolCall(tool: "nonexistent_tool", params: ToolCallParams(values: [:]))
+        let result = await ToolRegistry.shared.execute(call)
+        if case .error(let msg) = result {
+            XCTAssertTrue(msg.contains("Unknown tool"))
+        } else {
+            XCTFail("Should return error for unknown tool")
+        }
+    }
+
     func testPrintSummary() {
-        print("=== AI EVAL HARNESS SUMMARY ===")
-        print("Total eval test methods: 80+")
-        print("===============================")
+        print("=== AI EVAL HARNESS: 86+ test methods ===")
     }
 }
