@@ -2,37 +2,41 @@
 
 ## In Progress
 
-_(empty — pick from Ready)_
+_(pick from Ready)_
 
 ## Ready
 
-### Tool-Calling Foundation
-- [ ] **TC-1: ToolSchema struct** — Create `Drift/Services/ToolSchema.swift`. Struct with name, description, parameters (as JSON-encodable), handler closure. This is the building block.
-- [ ] **TC-2: ToolRegistry** — Create `Drift/Services/ToolRegistry.swift`. Singleton that holds all registered tools. Methods: `register()`, `schemaPrompt()` (returns tool list for LLM prompt), `execute(toolCall:)`.
-- [ ] **TC-3: Register food tools** — Register `search_food`, `log_food`, `get_nutrition`, `get_calories_left` in ToolRegistry. Handlers call existing AIActionExecutor/AppDatabase methods.
-- [ ] **TC-4: Register weight tools** — Register `log_weight`, `get_weight_trend`, `get_goal_progress`. Handlers call existing WeightTrendCalculator/AppDatabase.
-- [ ] **TC-5: Register workout tools** — Register `start_workout`, `create_workout`, `suggest_workout`. Handlers call existing WorkoutService.
-- [ ] **TC-6: Register remaining tools** — Sleep, supplements, glucose, biomarkers, navigation. One tool per service.
-- [ ] **TC-7: Inject tool schemas into system prompt** — Update LocalAIService.systemPrompt to include `ToolRegistry.shared.schemaPrompt()`. Keep it compact (tool name + 1-line description + params).
-- [ ] **TC-8: JSON tool-call parser** — Add JSON parsing to AIActionParser alongside existing regex. Parse `{"tool":"name","params":{...}}` from LLM output.
-- [ ] **TC-9: Wire ToolRegistry into AIChatView** — After LLM responds, check for JSON tool call → `ToolRegistry.execute()` → show result. Keep existing action tag parsing as fallback.
-- [ ] **TC-10: Eval tests for tool calling** — Add 10+ eval tests: does the LLM output valid tool calls for "log 2 eggs", "start push day", "calories in banana"?
+### Infrastructure
+- [ ] **TC-1: ToolSchema + ToolRegistry** — Create `ToolSchema.swift` with ToolSchema struct, ToolParam, ToolCallParams, ToolResult, ToolAction enums. ToolRegistry singleton with register/execute/schemaPrompt. This is the foundation.
+- [ ] **TC-2: SpellCorrectService** — UITextChecker wrapper. correct(text) → corrected text. Run on all user input before LLM/search. Handles "chiken"→"chicken".
+- [ ] **TC-3: JSON tool-call parser** — Add JSON parsing to AIActionParser: `{"tool":"name","params":{...}}`. Keep action tag regex as fallback.
 
-### Tool-Calling Polish
-- [ ] **TC-11: Pre-tool hooks** — Validate params before execution (weight in 20-500 range, food name non-empty). Add to ToolSchema as optional `validate` closure.
-- [ ] **TC-12: Post-tool hooks** — After tool executes, format result + suggest follow-up ("Want to log something else?"). Add as optional `formatResult` closure.
-- [ ] **TC-13: Remove old keyword routing** — Once tools work reliably, remove AIChainOfThought keyword matching. Keep rule engine for instant answers only.
-- [ ] **TC-14: Screen-aware tool filtering** — Only show relevant tools per screen (food screen → food tools, exercise → workout tools). Reduces prompt size.
+### Services (one per domain — UI and AI share these)
+- [ ] **SVC-1: FoodService** — Consolidate food logic. Methods: search_food, log_food, get_nutrition, get_daily_totals, get_calories_left, top_protein_foods, suggest_meal, explain_calories. Wraps AppDatabase + adds new query methods.
+- [ ] **SVC-2: WeightService** — Consolidate weight logic. Methods: log_weight, get_trend, get_history, get_goal_progress. Wraps AppDatabase + WeightTrendCalculator.
+- [ ] **SVC-3: ExerciseService** — Consolidate workout + exercise. Methods: start_template, build_smart_session (max 5 exercises, popular first, add notes), create_workout, get_workout_history, suggest_workout, get_progressive_overload, exercises_by_muscle, popular_exercises. Wraps WorkoutService + ExerciseDatabase.
+- [ ] **SVC-4: SleepRecoveryService** — Consolidate HealthKit biometrics. Methods: get_sleep, get_recovery, get_hrv, get_readiness. Wraps HealthKitService + RecoveryEstimator.
+- [ ] **SVC-5: SupplementService** — Light wrapper. Methods: get_status, mark_taken.
+- [ ] **SVC-6: GlucoseService** — Methods: get_readings, detect_spikes.
+- [ ] **SVC-7: BiomarkerService** — Methods: get_results, get_detail, parse_report (AI-enhanced).
 
-### Model Quality
-- [ ] **MQ-1: Test tool-calling models** — Try Hermes-3-Llama-3.2-1B and functionary-small for structured output. Compare with Qwen2.5-1.5B on eval harness.
-- [ ] **MQ-2: Grammar-constrained sampling** — Use llama.cpp grammar to force valid JSON tool calls. Eliminates malformed output.
-- [ ] **MQ-3: Eval harness to 100+ methods** — Expand from 63. Focus: tool-call format, multi-turn, ambiguous queries, Indian foods.
+### Wiring
+- [ ] **WIRE-1: Register all tools** — Register every service method in ToolRegistry with schema + handler closure.
+- [ ] **WIRE-2: Update system prompt** — Inject ToolRegistry.schemaPrompt() into LLM context. Screen-aware filtering.
+- [ ] **WIRE-3: Replace AIChatView routing** — Use ToolRegistry.execute() instead of hardcoded sendMessage() routing. Keep rule engine for instant answers.
+- [ ] **WIRE-4: Block health questions** — System prompt: "Don't give health advice. Show user's data instead. Redirect to service tools."
+- [ ] **WIRE-5: Smart workout when no template** — If user says "I want to work out" and has no templates, call build_smart_session instead of listing empty templates.
 
-### Bugs & Polish
-- [ ] **FEAT-001: Calorie estimation for unknown foods** — LLM fallback when DB lookup fails. Partially done (DB lookup works). Needs: LLM prompt for estimation, show breakdown, offer to log.
-- [ ] **Food data gaps** — Add missing common foods found during testing (check eval harness MISS logs).
-- [ ] **Flaky workout session tests** — `sessionSaveAndLoad`, `sessionRoundtripWithWarmups` fail intermittently. Fix UserDefaults timing.
+### Quality
+- [ ] **QA-1: Eval tests for tool-call format** — 10+ tests verifying LLM outputs valid JSON tool calls.
+- [ ] **QA-2: Service unit tests** — At least 5 tests per new service (FoodService, WeightService, ExerciseService).
+- [ ] **QA-3: Progressive overload tests** — Verify improving/stalling/declining detection.
+- [ ] **QA-4: Smart session builder tests** — Verify max 5 exercises, popular first, notes included.
+
+### Bugs
+- [ ] **BUG: Total calories error** — Investigate and fix calories calculation inaccuracy.
+- [ ] **BUG: Flaky workout session tests** — Fix sessionSaveAndLoad, sessionRoundtripWithWarmups intermittent failures.
+- [ ] **FEAT-001: Calorie estimation for unknown foods** — LLM fallback when DB lookup fails.
 
 ## Done
 
@@ -41,14 +45,6 @@ _(empty — pick from Ready)_
 - [x] Removed hardcoded handlers → LLM
 - [x] Direct template start from chat
 - [x] Food parser: beverages, snacks, cooking verbs
-- [x] Synced multi-food parser verbs
-- [x] Enhanced workout context (body parts, exercises, suggestions)
-- [x] CREATE_WORKOUT includes reps + weight
-- [x] Few-shot examples in system prompt
-- [x] Tightened 8 keyword false positives
-- [x] Fixed action tag stripping bug
-- [x] Instant nutrition lookup for DB foods
-- [x] Response cleaner improvements
-- [x] Calorie target floored at 500
 - [x] 41 self-improvement cycles, 63 eval tests, build 84
-- [x] Docs rewrite: 11 deleted, 7 created, clean structure
+- [x] Docs rewrite: clean structure, tool-calling vision
+- [x] Simplified program.md (220→76 lines)
