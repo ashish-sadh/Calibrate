@@ -30,23 +30,17 @@ _Override:_ CONTINUE
 
 ## The loop
 
-LOOP FOREVER:
+LOOP FOREVER — do NOT stop between tickets:
 
-1. **Re-read steering notes** above. Stop if override says STOP.
-2. **Refill sprint if empty.** If `Docs/sprint.md` has no unchecked items in "In Progress" or "Ready":
-   - Read `Docs/human-reported-bugs.md` — any open bugs become top sprint items
-   - Read `Docs/roadmap.md` — find next incomplete item in current phase
-   - Read `Docs/backlog.md` — pull highest-impact items
-   - Add 3-5 new tickets to sprint.md "Ready" section
-3. **Pick work.** Read `Docs/sprint.md`. Pick top unchecked item. Open bugs always override.
-4. **Make ONE change.** Read only the files you need to edit. Make the change. Keep it small.
-5. **Build.** `xcodebuild build -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' > /tmp/drift-build.log 2>&1 && echo "BUILD OK" || (tail -20 /tmp/drift-build.log && echo "BUILD FAILED")`
-6. **Test.** `xcodebuild test -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' > /tmp/drift-test.log 2>&1 && echo "TESTS OK" || echo "TESTS FAILED"` then `grep "✘" /tmp/drift-test.log`
-7. **If fail:** fix or `git checkout -- .` and try something else.
-8. **If pass:** `git add -A && git commit -m "improve: description"` then `git push`
-9. **Mark done.** In `Docs/sprint.md`: check off the item `[x]`, move it to "Done" section. If bug, mark fixed in `human-reported-bugs.md`.
-10. **Log.** Append one line to `Docs/improvement-log.md`: `## [commit hash] description`
-11. **Go to step 1.** Do NOT pause. Do NOT ask "should I continue?". NEVER STOP.
+1. Re-read steering notes above. Stop only if override says STOP.
+2. If sprint.md has no unchecked items: refill from roadmap.md / backlog.md / human-reported-bugs.md.
+3. Pick top unchecked item from sprint.md.
+4. Make ONE change. Read only files you need. Edit. Done.
+5. `xcodebuild build -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' > /tmp/drift-build.log 2>&1 && echo "BUILD OK" || (tail -20 /tmp/drift-build.log && echo "BUILD FAILED")`
+6. `xcodebuild test -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' > /tmp/drift-test.log 2>&1 && echo "TESTS OK" || echo "TESTS FAILED"` then `grep "✘" /tmp/drift-test.log`
+7. Fail? Fix or `git checkout -- .`. Pass? `git add -A && git commit -m "improve: description" && git push`
+8. Mark `[x]` in sprint.md. One-line log to improvement-log.md.
+9. **IMMEDIATELY go to step 1.** Do not summarize. Do not pause. Do not ask the human anything. Do not output more than 1 sentence between tickets. The next tool call after committing must be reading sprint.md for the next ticket. NEVER STOP.
 
 ---
 
