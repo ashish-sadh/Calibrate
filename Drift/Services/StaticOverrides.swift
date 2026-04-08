@@ -124,6 +124,32 @@ enum StaticOverrides {
         // --- Deterministic overrides (both models) ---
         // These are exact-match or regex-parsed — no LLM quality benefit from Gemma handling them.
 
+        // Calorie/nutrition estimation: "calories in samosa", "estimate calories for biryani"
+        let estimatePrefixes = ["calories in ", "calories for ", "estimate calories for ", "estimate calories in ",
+                                 "how many calories in ", "how many calories does ", "how many calories are in ",
+                                 "nutrition for ", "nutrition in ", "macros in ", "macros for ",
+                                 "i want to estimate calories for ", "what are the calories in ",
+                                 "protein in ", "how much protein in "]
+        if let ePrefix = estimatePrefixes.first(where: { lower.hasPrefix($0) }) {
+            var food = String(lower.dropFirst(ePrefix.count)).trimmingCharacters(in: .whitespaces)
+            // Strip trailing "have" etc: "how many calories does a samosa have" → "a samosa"
+            for suffix in [" have", " has", " contain"] {
+                if food.hasSuffix(suffix) { food = String(food.dropLast(suffix.count)) }
+            }
+            // Strip leading article
+            for prefix in ["a ", "an ", "one "] {
+                if food.hasPrefix(prefix) { food = String(food.dropFirst(prefix.count)) }
+            }
+            if !food.isEmpty {
+                return .handler {
+                    if let result = FoodService.getNutrition(name: food) {
+                        return "\(result.perServing) Say 'log \(result.food.name.lowercased())' to add it."
+                    }
+                    return "I don't have \(food) in the database. Try a similar name or log it manually."
+                }
+            }
+        }
+
         // Copy yesterday
         if lower == "copy yesterday" || lower == "same as yesterday" || lower == "repeat yesterday"
             || lower == "log same as yesterday" || lower == "yesterday's food" {

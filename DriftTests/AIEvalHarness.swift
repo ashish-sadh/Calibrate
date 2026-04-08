@@ -67,6 +67,11 @@ final class AIEvalHarness: XCTestCase {
             ("delete last entry", "delete"),
             ("remove the rice", "delete"),
             ("undo last food", "delete"),
+            // Calorie estimation
+            ("calories in samosa", "estimate"),
+            ("estimate calories for biryani", "estimate"),
+            ("how many calories in a banana", "estimate"),
+            ("i want to estimate calories for samosa", "estimate"),
             // Diet/fitness advice
             ("i want to reduce fat", "advice"),
             ("how to lose fat", "advice"),
