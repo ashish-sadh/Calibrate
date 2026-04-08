@@ -580,6 +580,41 @@ struct AIChatView: View {
             return
         }
 
+        // Meal continuation: "also add broccoli", "and some yogurt" after recipe was built
+        let continuationPrefixes = ["also add ", "also ", "and also ", "add ", "plus "]
+        if !pendingRecipeItems.isEmpty,
+           let contPrefix = continuationPrefixes.first(where: { lower.hasPrefix($0) }) {
+            let remainder = String(lower.dropFirst(contPrefix.count)).trimmingCharacters(in: .whitespaces)
+            if !remainder.isEmpty {
+                let items = splitFoodItems(remainder)
+                var newItems: [QuickAddView.RecipeItem] = []
+                var notFound: [String] = []
+                for item in items {
+                    let trimmed = item.trimmingCharacters(in: .whitespaces)
+                    let (servings, foodName, gramAmount) = AIActionExecutor.extractAmount(from: trimmed)
+                    if let match = AIActionExecutor.findFood(query: foodName, servings: servings, gramAmount: gramAmount) {
+                        let f = match.food
+                        let portionText = gramAmount.map { "\(Int($0))g" } ?? "\(String(format: "%.1f", match.servings)) serving"
+                        newItems.append(QuickAddView.RecipeItem(
+                            name: f.name, portionText: portionText,
+                            calories: f.calories * match.servings, proteinG: f.proteinG * match.servings,
+                            carbsG: f.carbsG * match.servings, fatG: f.fatG * match.servings,
+                            fiberG: f.fiberG * match.servings,
+                            servingSizeG: f.servingSize))
+                    } else { notFound.append(trimmed) }
+                }
+                if !newItems.isEmpty {
+                    pendingRecipeItems.append(contentsOf: newItems)
+                    let addedNames = newItems.map { "\($0.name) (\(Int($0.calories)) cal)" }.joined(separator: ", ")
+                    var msg = "Added \(addedNames) to \(pendingRecipeName). \(pendingRecipeItems.count) items total."
+                    if !notFound.isEmpty { msg += " Couldn't find: \(notFound.joined(separator: ", "))." }
+                    messages.append(ChatMessage(role: .assistant, text: msg))
+                    showingRecipeBuilder = true
+                    return
+                }
+            }
+        }
+
         // Pending meal: user listing food after "What did you have for lunch?"
         // Uses state var OR history detection as fallback (survives navigation/state loss)
         let resolvedMealName = pendingMealName ?? detectMealFromHistory()
