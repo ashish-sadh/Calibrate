@@ -69,6 +69,9 @@ final class AIEvalHarness: XCTestCase {
             ("delete last entry", "delete"),
             ("remove the rice", "delete"),
             ("undo last food", "delete"),
+            // TDEE/BMR
+            ("what's my tdee", "tdee"), ("explain tdee", "tdee"),
+            ("how many calories do i burn", "tdee"),
             // Cross-domain analysis
             ("why am i not losing weight", "cross"),
             ("am i eating enough protein for my workouts", "cross"),

@@ -72,6 +72,19 @@ enum StaticOverrides {
         if lower == "supplements" || lower == "did i take my supplements" || lower == "supplement status" {
             return .handler { AIRuleEngine.supplementStatus() }
         }
+        // TDEE / BMR / metabolism queries
+        if lower.contains("tdee") || lower.contains("bmr") || lower == "what's my metabolism"
+            || lower == "how many calories do i burn" || lower == "explain calories" || lower == "explain tdee" {
+            return .handler {
+                let tdee = TDEEEstimator.shared.current?.tdee ?? 0
+                if tdee > 0 {
+                    let deficit = WeightGoal.load()?.requiredDailyDeficit ?? 0
+                    let target = max(500, Int(tdee - deficit))
+                    return "TDEE (estimated daily burn): \(Int(tdee)) cal. Target intake: \(target) cal\(deficit > 0 ? " (\(Int(deficit)) cal deficit for weight loss)" : "")."
+                }
+                return "No TDEE estimate yet. Log your weight a few times and I'll calculate it."
+            }
+        }
         if lower == "what did i eat today" || lower == "what did i eat" || lower == "today's food" {
             return .handler {
                 let context = AIContextBuilder.foodContext()

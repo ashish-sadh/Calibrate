@@ -7,15 +7,16 @@ Items move to `sprint.md` when picked up.
 ## AI Pipeline Improvements
 
 ### Normalizer Quality
-- **Normalizer accuracy tuning** — Test on 50+ messy queries. Tune prompt for Gemma 4 2B.
-- **Multi-turn context resolution** — "what about protein?" after food chat. Normalizer needs reliable pronoun resolution from history.
-- **Meal continuation** — "also add broccoli" after recipe builder opened. Keep pendingMealName alive or use normalizer + history.
-- **Number range handling** — "2 to 3 bananas" → 3. Normalizer or extractAmount enhancement.
+- ~~Normalizer accuracy tuning~~ ✓ — 330+ eval scenarios, 90-100%
+- ~~Multi-turn context resolution~~ ✓ — history-based detection + topic continuation
+- ~~Meal continuation~~ ✓ — "also add broccoli" appends to recipe
+- ~~Number range handling~~ ✓ — "2 to 3 bananas" → 3
+- ~~Word numbers~~ ✓ — "set goal to one sixty" → 160
 
 ### Tool-First Execution
-- **Parallel tool execution** — "how am I doing" → execute food_info + weight_info simultaneously before streaming.
+- ~~Parallel tool execution~~ ✓ — TaskGroup-based parallel info tool execution
 - **Progressive multi-item disclosure** — "rice and dal" → show each item as found, don't batch.
-- **Parallel rule check + normalize** — While normalizer runs, also check rules. Cancel normalizer if rules match.
+- ~~Parallel rule check + normalize~~ ✓ — StaticOverrides + parsers already instant before normalizer
 
 ### Chat Quality
 - **Grammar-constrained sampling** — Force valid JSON from SmolLM via llama.cpp grammar.
@@ -42,7 +43,7 @@ Items move to `sprint.md` when picked up.
 - **Workout split** — "build me a PPL split". Design across multiple sessions.
 - ~~Cross-domain~~ ✓
 - ~~Comparison~~ ✓
-- **Coaching** — "am I eating enough for my workouts?". Contextual using real data.
+- ~~Coaching~~ ✓ — cross-domain handler with contextual real data
 
 ## Input Expansion
 - **Voice input** — iOS 26 SpeechAnalyzer → on-device speech-to-text → AI chat.
