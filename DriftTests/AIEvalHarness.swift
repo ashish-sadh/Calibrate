@@ -69,6 +69,8 @@ final class AIEvalHarness: XCTestCase {
             ("delete last entry", "delete"),
             ("remove the rice", "delete"),
             ("undo last food", "delete"),
+            // Barcode scan
+            ("scan barcode", "scan"), ("scan food", "scan"),
             // Meal suggestions
             ("what should i eat", "suggest"), ("what should i eat for dinner", "suggest"),
             ("food ideas", "suggest"),

@@ -72,6 +72,13 @@ enum StaticOverrides {
         if lower == "supplements" || lower == "did i take my supplements" || lower == "supplement status" {
             return .handler { AIRuleEngine.supplementStatus() }
         }
+        // Barcode scan: "scan barcode", "scan food"
+        let scanPatterns = ["scan barcode", "scan food", "scan a barcode", "barcode",
+                             "scan something", "scan a food", "scan it"]
+        if scanPatterns.contains(where: { lower == $0 || lower.hasPrefix($0) }) {
+            return .uiAction(.navigate(tab: 0), "Opening barcode scanner...")
+        }
+
         // Meal suggestions: "what should I eat", "suggest dinner", "what's healthy for dinner"
         let mealSuggestionPatterns = ["what should i eat", "suggest me food", "what to eat",
                                        "suggest dinner", "suggest lunch", "suggest breakfast",
