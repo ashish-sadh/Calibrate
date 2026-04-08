@@ -436,6 +436,9 @@ final class AIEvalHarness: XCTestCase {
             ("3 slices of pizza", 3, "pizza"),
             ("a piece of cake", 1, "cake"),
             ("5 almonds", 5, "almonds"),
+            // Range parsing: "2 to 3 bananas" → 3
+            ("2 to 3 bananas", 3, "bananas"),
+            ("1 or 2 eggs", 2, "eggs"),
         ]
         var correct = 0
         for (input, expectedAmount, _) in cases {

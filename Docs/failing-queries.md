@@ -18,8 +18,8 @@ Real queries that don't work well. Fix systematically, then move to Fixed.
 - [ ] **"I did yoga for like half an hour"** — "like half an hour" = 30 min. Normalizer should rewrite.
 
 ### Multi-Turn
-- [ ] **Second meal item after recipe builder** — "Log dinner" → "rice and dal" → recipe opens. Then "also add broccoli" doesn't continue the meal.
-- [ ] **"what about protein?" after food chat** — Normalizer needs to resolve from history. 2B model may not reliably infer.
+- [x] **Second meal item after recipe builder** — "Log dinner" → "rice and dal" → recipe opens. Then "also add broccoli" doesn't continue the meal. FIXED: meal continuation handler prepends to pendingRecipeItems.
+- [x] **"what about protein?" after food chat** — Normalizer needs to resolve from history. 2B model may not reliably infer. FIXED: topic continuation in StaticOverrides.
 - [ ] **"and yesterday?" after today's data** — Same pronoun resolution issue.
 - [ ] **"plan my meals for today"** — Should be iterative: suggest breakfast → confirm → suggest lunch. Currently single response.
 
@@ -36,8 +36,8 @@ Real queries that don't work well. Fix systematically, then move to Fixed.
 - [ ] **"I want to reduce fat"** — Should be food_info (diet advice). Currently misclassified as food logging, returns "log greek yogurt (0% fa)\<start_of_turn\>". Also leaks Gemma chat template tokens. Variants: "how to lose fat", "tips to cut fat", "I need to burn fat".
 
 ### Food Search Quality
-- [ ] **"I had couple of bananas"** — "couple of" (no "a") should extract (2, "bananas"). Fixed in extractAmount but search may return wrong food if DB has "Gone Bananas" type entries. Singular-first search helps.
-- [ ] **Kirkland Rotisserie Chicken for "100 gram of rice"** — Fixed by moving pendingMealName before food parsers. Verify no regression.
+- [x] **"I had couple of bananas"** — FIXED: singular-first search + LENGTH tiebreaker ranks plain Banana first.
+- [x] **Kirkland Rotisserie Chicken for "100 gram of rice"** — FIXED: pendingMealName before food parsers. Verified, no regression.
 
 ## Fixed
 

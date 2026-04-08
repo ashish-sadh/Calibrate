@@ -8,6 +8,11 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 
 - **Fix test isolation**: 12 mutating tests got own DB (shared seededDB caused flaky failures). Fixed extractAmount to return servings for count units (slices/cups) vs grams for weight units.
 - **Multi-turn via history detection**: Added detectMealFromHistory() and detectWorkoutFromHistory() — conversation continues from history even when state vars are nil. Enhanced normalizer with continuation examples.
+- **Normalizer accuracy + eval 300+**: Added messy input parsing tests, count unit extraction. Expanded eval to 300+ scenarios across food, weight, ToolRanker, pipeline, CoT routing. All 90-100%.
+- **Multi-turn pronoun resolution**: "what about protein?", "how about carbs?" handled deterministically in StaticOverrides.
+- **Multi-item meal continuation**: "also add broccoli" appends to existing recipe without re-triggering meal flow.
+- **Gram/unit parsing**: "200ml milk", "half cup oats", "100g chicken" all parse correctly via compact leading and word amount patterns.
+- **Food search ranking**: Verified singular-first + LENGTH tiebreaker ranks plain Banana over TJ's Gone Bananas.
 
 ---
 

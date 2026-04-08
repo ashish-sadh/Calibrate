@@ -382,6 +382,17 @@ enum AIActionExecutor {
             }
         }
 
+        // Range: "2 to 3 bananas", "1 or 2 eggs" → take the higher number
+        if let num1 = Double(firstStr), leadingWords.count >= 4 {
+            let connector = leadingWords[1].lowercased()
+            if (connector == "to" || connector == "or" || connector == "-"),
+               let num2 = Double(leadingWords[2]) {
+                let food = leadingWords[3...].joined(separator: " ")
+                let higher = max(num1, num2)
+                return (higher, food.trimmingCharacters(in: .whitespaces), nil)
+            }
+        }
+
         // Number: "2", "0.5", "200"
         if let num = Double(firstStr) {
             let food = parts.count > 1 ? String(parts[1]) : ""
