@@ -55,9 +55,9 @@ The self-improvement loop picks from the **Gap** section to close parity.
 ### P2 — Multi-Turn Intelligence (Gemma 4 Only)
 - [ ] **Meal planning** — "plan my meals for today" → iterative suggestions based on remaining macros + history.
 - [ ] **Workout split builder** — "build me a PPL split" → multi-turn designing across sessions.
-- [ ] **Cross-domain analysis** — "why am I not losing weight?" → combines food + weight + exercise data.
+- [x] **Cross-domain analysis** — "why am I not losing weight?" → combines food + weight + exercise data. StaticOverrides handler.
 - [ ] **Weekly comparison** — "compare this week to last" → trend analysis with data.
-- [ ] **Coaching dialogue** — "am I eating enough protein for my workouts?" → contextual advice using real data.
+- [x] **Coaching dialogue** — "am I eating enough protein for my workouts?" → cross-domain handler with contextual advice using real data.
 
 ### P3 — Nice to Have
 - [ ] **Navigate to screen** — "show me my weight chart", "go to food tab". Needs: navigation tool.
