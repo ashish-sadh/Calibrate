@@ -69,6 +69,9 @@ final class AIEvalHarness: XCTestCase {
             ("delete last entry", "delete"),
             ("remove the rice", "delete"),
             ("undo last food", "delete"),
+            // Meal suggestions
+            ("what should i eat", "suggest"), ("what should i eat for dinner", "suggest"),
+            ("food ideas", "suggest"),
             // General status
             ("how am i doing", "status"), ("how's my day", "status"),
             // Weight progress

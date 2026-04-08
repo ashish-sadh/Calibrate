@@ -72,6 +72,26 @@ enum StaticOverrides {
         if lower == "supplements" || lower == "did i take my supplements" || lower == "supplement status" {
             return .handler { AIRuleEngine.supplementStatus() }
         }
+        // Meal suggestions: "what should I eat", "suggest dinner", "what's healthy for dinner"
+        let mealSuggestionPatterns = ["what should i eat", "suggest me food", "what to eat",
+                                       "suggest dinner", "suggest lunch", "suggest breakfast",
+                                       "what's healthy for", "what's good for dinner",
+                                       "meal ideas", "food ideas", "what can i eat"]
+        if mealSuggestionPatterns.contains(where: { lower.contains($0) }) {
+            return .handler {
+                let totals = FoodService.getDailyTotals()
+                let calsLeft = totals.remaining
+                let targets = WeightGoal.load()?.macroTargets()
+                let protLeft = targets.map { max(0, Int($0.proteinG) - totals.proteinG) }
+                let suggestions = FoodService.suggestMeal(caloriesLeft: calsLeft, proteinNeeded: protLeft)
+                if suggestions.isEmpty {
+                    return "\(calsLeft) cal remaining. Try something with protein like chicken, eggs, or greek yogurt."
+                }
+                let items = suggestions.prefix(3).map { "\($0.name) (\(Int($0.calories)) cal, \(Int($0.proteinG))P)" }
+                return "\(calsLeft) cal remaining\(protLeft.map { ", need \($0)g protein" } ?? ""). Try: " + items.joined(separator: ", ")
+            }
+        }
+
         // General status: "how am I doing", "how's my day"
         let statusPatterns = ["how am i doing", "how's my day", "how is my day",
                                "how am i today", "status", "my status", "give me a summary"]
