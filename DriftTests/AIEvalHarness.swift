@@ -33,21 +33,35 @@ final class AIEvalHarness: XCTestCase {
     @MainActor
     func testStaticOverridesRuleEngine() {
         let ruleQueries: [(String, String)] = [
-            ("daily summary", "day"),
-            ("summary", "day"),
-            ("calories left", "cal"),
-            ("yesterday", ""),
-            ("this week", ""),
-            ("weekly summary", ""),
-            ("supplements", ""),
-            ("what did i eat today", ""),
+            // Summaries
+            ("daily summary", "day"), ("summary", "day"),
+            ("yesterday", ""), ("this week", ""), ("weekly summary", ""),
+            // Nutrition status
+            ("calories left", "cal"), ("how many calories left", "cal"),
+            ("what did i eat today", ""), ("what did i eat", ""),
+            // Supplements
+            ("supplements", ""), ("did i take everything", ""),
+            // Copy
             ("copy yesterday", ""),
-            // Multi-turn pronoun resolution / topic continuation
-            ("what about protein?", "protein"),
-            ("what about carbs?", "carb"),
-            ("how about fat?", "fat"),
-            ("and protein?", "protein"),
+            // Topic continuation
+            ("what about protein?", "protein"), ("what about carbs?", "carb"),
+            ("how about fat?", "fat"), ("and protein?", "protein"),
             ("what's my protein", "protein"),
+            // Data entry
+            ("body fat 18", "bf"), ("bf 22.5", "bf"),
+            ("bmi 24", "bmi"), ("bmi 22.1", "bmi"),
+            ("set goal to 160 lbs", "goal"), ("target weight 75 kg", "goal"),
+            ("i want to weigh 150", "goal"),
+            // Quick-add
+            ("log 500 cal", "quick"), ("log 400 calories for lunch", "quick"),
+            ("log 400 cal 30g protein lunch", "macro"),
+            // Greetings & closers
+            ("hi", "greet"), ("hello", "greet"), ("hey", "greet"),
+            ("thanks", "thanks"), ("thank you", "thanks"), ("ok", "ok"),
+            // Activity/exercise via StaticOverrides
+            ("i did yoga for 30 minutes", ""),
+            ("i did push ups", ""),
+            ("just did 20 min cardio", ""),
         ]
         for (query, _) in ruleQueries {
             let result = StaticOverrides.match(query)
@@ -109,17 +123,41 @@ final class AIEvalHarness: XCTestCase {
 
     func testFoodLoggingIntents() {
         let shouldLog = [
+            // Basic verb forms
             "log 2 eggs", "ate chicken breast", "had a banana",
-            "log rice and dal", "I just had a samosa for lunch",
             "add a protein shake", "track 3 rotis", "eating oatmeal",
-            "logged half avocado", "i ate 2 slices of pizza",
-            "had a cup of rice", "log a bowl of oatmeal",
-            "i just had chicken and rice", "ate a couple of eggs",
-            "just had some dal", "i ate a few rotis",
-            "had a scoop of protein", "log eggs for dinner",
-            "ate a lot of rice", "just ate some yogurt",
+            "logged half avocado", "log eggs for dinner",
+            // Natural phrasing
+            "I just had a samosa for lunch", "just ate some yogurt",
             "i had a coffee", "had 3 eggs for breakfast",
-            "i had 2 eggs and a banana",
+            "i just had chicken and rice",
+            // Quantifiers
+            "ate a couple of eggs", "just had some dal",
+            "i ate a few rotis", "had a scoop of protein",
+            "ate a lot of rice",
+            // Unit-based
+            "i ate 2 slices of pizza", "had a cup of rice",
+            "log a bowl of oatmeal", "log 2 scoops protein",
+            "ate 3 pieces of chicken",
+            // Multi-food
+            "log rice and dal", "i had 2 eggs and a banana",
+            // Indian foods
+            "had paneer tikka", "ate 2 idli with chutney",
+            "log 1 dosa", "had a plate of biryani",
+            "ate chole bhature", "log rajma chawal",
+            "had 2 parathas for breakfast", "ate aloo gobi",
+            // American foods
+            "had a cheeseburger", "ate spaghetti and meatballs",
+            "log a caesar salad", "had a PB&J sandwich",
+            "ate mac and cheese", "log turkey sandwich",
+            // Drinks
+            "drank a smoothie", "had a glass of milk",
+            "drinking green tea", "log a latte",
+            // Gram-based
+            "log 100g chicken", "ate 200 gram rice",
+            "had 150g paneer", "log paneer biryani 300 gram",
+            // Servings
+            "had 1.5 servings of pasta", "log 2 portions of dal",
         ]
         var detected = 0
         for query in shouldLog {
@@ -141,6 +179,16 @@ final class AIEvalHarness: XCTestCase {
             "am I on track", "how much does chicken weigh",
             "what's in a samosa", "I did push ups",
             "start push day", "what should I train", "how's my sleep",
+            // Info/status queries
+            "how am I doing", "what's my TDEE", "weekly summary",
+            "yesterday", "what should I eat", "supplements",
+            // Exercise queries
+            "log exercise", "log workout", "how was my workout",
+            "start smart workout", "coach me today",
+            // Weight queries
+            "how's my weight", "am I losing weight",
+            // Ambiguous
+            "hello", "thanks", "ok", "yeah", "sure",
         ]
         var fp = 0
         for query in shouldNotLog {
@@ -164,6 +212,10 @@ final class AIEvalHarness: XCTestCase {
             ("scale says 82 kg", 82.0, .kg),
             ("my weight is 165", 165.0, .lbs),
             ("log weight 170 lbs", 170.0, .lbs),
+            ("i'm at 160 lbs", 160.0, .lbs),
+            ("weight: 78.5 kg", 78.5, .kg),
+            ("I weigh 155", 155.0, .lbs),
+            ("log weight 80 kg", 80.0, .kg),
         ]
         var detected = 0
         for (query, expectedValue, _) in shouldLog {
@@ -179,6 +231,8 @@ final class AIEvalHarness: XCTestCase {
         let shouldNotLog = [
             "how much does chicken weigh", "am I losing weight",
             "what's my weight trend", "how much have I lost",
+            "set goal to 160 lbs", "target weight 75 kg",
+            "how's my weight going", "am I on track for my goal",
         ]
         for query in shouldNotLog {
             XCTAssertNil(AIActionExecutor.parseWeightIntent(query.lowercased()),
@@ -194,6 +248,10 @@ final class AIEvalHarness: XCTestCase {
             ("I had 2 eggs", "log_food"),
             ("log chicken breast", "log_food"),
             ("ate a banana", "log_food"),
+            ("track 3 rotis", "log_food"),
+            ("ate paneer tikka", "log_food"),
+            ("log 100g chicken", "log_food"),
+            ("had a protein shake", "log_food"),
         ]
         for (query, expectedTool) in foodLogQueries {
             let tools = ToolRanker.rank(query: query.lowercased(), screen: .food)
@@ -205,6 +263,10 @@ final class AIEvalHarness: XCTestCase {
             ("calories left", "food_info"),
             ("how much protein in banana", "food_info"),
             ("what should I eat", "food_info"),
+            ("what should I eat for dinner", "food_info"),
+            ("how many calories in rice", "food_info"),
+            ("macros today", "food_info"),
+            ("what are the macros in chicken", "food_info"),
         ]
         for (query, expectedTool) in foodInfoQueries {
             let tools = ToolRanker.rank(query: query.lowercased(), screen: .food)
@@ -234,6 +296,9 @@ final class AIEvalHarness: XCTestCase {
             ("start chest workout", "start_workout", .exercise),
             ("what should I train today", "exercise_info", .exercise),
             ("I did yoga for 30 min", "log_activity", .exercise),
+            ("start smart workout", "start_workout", .exercise),
+            ("begin leg day", "start_workout", .exercise),
+            ("start push day", "start_workout", .exercise),
         ]
         for (query, expectedTool, screen) in queries {
             let tools = ToolRanker.rank(query: query.lowercased(), screen: screen)
@@ -363,6 +428,14 @@ final class AIEvalHarness: XCTestCase {
             ("three samosas", 3, "samosas"),
             ("a banana", 1, "banana"),
             ("chicken breast", nil, "chicken breast"),
+            ("4 rotis", 4, "rotis"),
+            ("1.5 cups of rice", 1.5, "rice"),
+            ("two eggs", 2, "eggs"),
+            ("an apple", 1, "apple"),
+            ("lots of rice", 2, "rice"),
+            ("3 slices of pizza", 3, "pizza"),
+            ("a piece of cake", 1, "cake"),
+            ("5 almonds", 5, "almonds"),
         ]
         var correct = 0
         for (input, expectedAmount, _) in cases {
@@ -390,6 +463,12 @@ final class AIEvalHarness: XCTestCase {
             ("ate 2 eggs and toast", 2),
             ("i just had chicken and rice", 2),
             ("had dal, rice, and roti", 3),
+            ("log chicken, rice, and dal", 3),
+            ("ate eggs, bacon, and toast", 3),
+            ("had paneer and naan", 2),
+            ("log rice and dal and roti", 3),
+            ("ate oatmeal and banana", 2),
+            ("i had coffee and toast", 2),
         ]
         for (query, expectedCount) in shouldSplit {
             let intents = AIActionExecutor.parseMultiFoodIntent(query.lowercased())
@@ -399,7 +478,7 @@ final class AIEvalHarness: XCTestCase {
     }
 
     func testCompoundFoodsNotSplit() {
-        let compounds = ["mac and cheese", "bread and butter", "rice and beans"]
+        let compounds = ["mac and cheese", "bread and butter", "rice and beans", "peanut butter and jelly", "salt and pepper chicken"]
         for food in compounds {
             let result = AIActionExecutor.parseMultiFoodIntent("log \(food)")
             XCTAssertNil(result, "Compound '\(food)' should not be split")
@@ -419,17 +498,37 @@ final class AIEvalHarness: XCTestCase {
         let tests: [LayerTest] = [
             // StaticOverrides layer
             LayerTest(query: "hi", expectedLayer: "static"),
+            LayerTest(query: "hello", expectedLayer: "static"),
             LayerTest(query: "daily summary", expectedLayer: "static"),
+            LayerTest(query: "summary", expectedLayer: "static"),
             LayerTest(query: "calories left", expectedLayer: "static"),
             LayerTest(query: "body fat 18", expectedLayer: "static"),
             LayerTest(query: "log 500 cal", expectedLayer: "static"),
+            LayerTest(query: "yesterday", expectedLayer: "static"),
+            LayerTest(query: "this week", expectedLayer: "static"),
+            LayerTest(query: "weekly summary", expectedLayer: "static"),
+            LayerTest(query: "supplements", expectedLayer: "static"),
+            LayerTest(query: "copy yesterday", expectedLayer: "static"),
+            LayerTest(query: "thanks", expectedLayer: "static"),
+            LayerTest(query: "set goal to 160 lbs", expectedLayer: "static"),
+            LayerTest(query: "bf 22", expectedLayer: "static"),
+            LayerTest(query: "bmi 24", expectedLayer: "static"),
+            LayerTest(query: "what about protein?", expectedLayer: "static"),
+            LayerTest(query: "i did yoga for 30 minutes", expectedLayer: "static"),
+            LayerTest(query: "just did 20 min cardio", expectedLayer: "static"),
 
             // Food parser layer
             LayerTest(query: "I had 2 eggs", expectedLayer: "food_parser"),
             LayerTest(query: "ate chicken and rice", expectedLayer: "food_parser"),
+            LayerTest(query: "log a banana", expectedLayer: "food_parser"),
+            LayerTest(query: "ate paneer tikka", expectedLayer: "food_parser"),
+            LayerTest(query: "had 3 rotis for dinner", expectedLayer: "food_parser"),
+            LayerTest(query: "log 100g chicken", expectedLayer: "food_parser"),
 
             // Weight parser layer
             LayerTest(query: "I weigh 165 lbs", expectedLayer: "weight_parser"),
+            LayerTest(query: "weight is 75.2 kg", expectedLayer: "weight_parser"),
+            LayerTest(query: "scale says 82 kg", expectedLayer: "weight_parser"),
         ]
 
         for test in tests {
@@ -506,13 +605,23 @@ final class AIEvalHarness: XCTestCase {
             ("ate 3 pieces of chicken", "chicken", 3),
             ("had 2 cups of rice", "rice", 2),
             ("log 2 scoops protein", "protein", 2),
+            ("ate 1 serving of pasta", "pasta", 1),
+            ("had 2 portions of dal", "dal", 2),
+            ("log 1 tbsp of ghee", "ghee", 1),
             // Gram parsing
             ("log 100 gram of rice", "rice", nil),
             ("ate 200g chicken", "chicken", nil),
+            ("log 50 ml milk", nil, nil), // gram amount, not servings
             // Natural phrasing
             ("i had some rice", "rice", nil),
             ("just had eggs", "eggs", nil),
-            ("i ate chicken and rice", nil, nil), // multi-food, no single parse
+            ("just ate a mango", "mango", nil),
+            ("eating a sandwich", "sandwich", nil),
+            // Multi-food (no single parse expected)
+            ("i ate chicken and rice", nil, nil),
+            // Edge cases
+            ("log half avocado", "avocado", nil),
+            ("ate a couple of eggs", "eggs", 2),
         ]
         var correct = 0
         for (input, expectedQuery, expectedServings) in cases {
