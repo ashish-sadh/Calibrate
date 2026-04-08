@@ -152,6 +152,22 @@ enum ToolRegistration {
                     }
                 }
 
+                // Include supplement + workout status for broad status queries
+                if query.contains("how") || query.contains("doing") || query.contains("summary") || query.contains("status") {
+                    let today = DateFormatters.todayString
+                    if let supps = try? AppDatabase.shared.fetchActiveSupplements(), !supps.isEmpty,
+                       let logs = try? AppDatabase.shared.fetchSupplementLogs(for: today) {
+                        let taken = logs.filter(\.taken).count
+                        lines.append("Supplements: \(taken)/\(supps.count) taken.")
+                    }
+                    if let workouts = try? WorkoutService.fetchWorkouts(limit: 10) {
+                        let todayWorkouts = workouts.filter { $0.date == today }
+                        if !todayWorkouts.isEmpty {
+                            lines.append("Workout: \(todayWorkouts.map(\.name).joined(separator: ", "))")
+                        }
+                    }
+                }
+
                 return .text(lines.joined(separator: "\n"))
             }
         ))
