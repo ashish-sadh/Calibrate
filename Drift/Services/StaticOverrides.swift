@@ -72,6 +72,13 @@ enum StaticOverrides {
         if lower == "supplements" || lower == "did i take my supplements" || lower == "supplement status" {
             return .handler { AIRuleEngine.supplementStatus() }
         }
+        // General status: "how am I doing", "how's my day"
+        let statusPatterns = ["how am i doing", "how's my day", "how is my day",
+                               "how am i today", "status", "my status", "give me a summary"]
+        if statusPatterns.contains(where: { lower == $0 || lower.hasPrefix($0) }) {
+            return .handler { AIRuleEngine.dailySummary() }
+        }
+
         // Weight progress: "how much have I lost", "am I losing weight"
         let weightProgressPatterns = ["how much have i lost", "how much weight have i lost",
                                        "am i losing weight", "weight progress", "how's my weight",
