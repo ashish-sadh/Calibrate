@@ -490,10 +490,46 @@ enum StaticOverrides {
             }
         }
 
+        // Weekly comparison: "compare this week to last"
+        if lower.contains("compare this week") || lower.contains("week vs last") || lower.contains("this week vs") {
+            return .handler {
+                let cal = Calendar.current
+                let today = Date()
+                var thisWeekCals: [Double] = []
+                var lastWeekCals: [Double] = []
+
+                for offset in 0..<7 {
+                    if let d = cal.date(byAdding: .day, value: -offset, to: today) {
+                        let date = DateFormatters.dateOnly.string(from: d)
+                        let n = (try? AppDatabase.shared.fetchDailyNutrition(for: date)) ?? .zero
+                        if n.calories > 0 { thisWeekCals.append(n.calories) }
+                    }
+                    if let d = cal.date(byAdding: .day, value: -offset - 7, to: today) {
+                        let date = DateFormatters.dateOnly.string(from: d)
+                        let n = (try? AppDatabase.shared.fetchDailyNutrition(for: date)) ?? .zero
+                        if n.calories > 0 { lastWeekCals.append(n.calories) }
+                    }
+                }
+
+                var lines: [String] = []
+                let thisAvg = thisWeekCals.isEmpty ? 0 : thisWeekCals.reduce(0, +) / Double(thisWeekCals.count)
+                let lastAvg = lastWeekCals.isEmpty ? 0 : lastWeekCals.reduce(0, +) / Double(lastWeekCals.count)
+
+                lines.append("This week: avg \(Int(thisAvg)) cal/day (\(thisWeekCals.count) days logged)")
+                if !lastWeekCals.isEmpty {
+                    lines.append("Last week: avg \(Int(lastAvg)) cal/day (\(lastWeekCals.count) days)")
+                    let diff = Int(thisAvg - lastAvg)
+                    lines.append("Change: \(diff >= 0 ? "+" : "")\(diff) cal/day \(diff < 0 ? "(eating less)" : diff > 0 ? "(eating more)" : "(same)")")
+                } else {
+                    lines.append("No data from last week to compare.")
+                }
+                return lines.joined(separator: "\n")
+            }
+        }
+
         // Cross-domain analysis: "why am I not losing weight?", "am I eating enough protein for workouts?"
         let crossDomainPatterns = ["why am i not losing", "why aren't i losing", "not losing weight",
-                                    "weight plateau", "weight stalled", "am i eating enough protein for",
-                                    "compare this week to last", "how's my week vs last"]
+                                    "weight plateau", "weight stalled", "am i eating enough protein for"]
         if crossDomainPatterns.contains(where: { lower.contains($0) }) {
             return .handler {
                 var lines: [String] = []

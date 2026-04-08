@@ -82,6 +82,8 @@ final class AIEvalHarness: XCTestCase {
             // TDEE/BMR
             ("what's my tdee", "tdee"), ("explain tdee", "tdee"),
             ("how many calories do i burn", "tdee"),
+            // Weekly comparison
+            ("compare this week to last", "weekly"),
             // Cross-domain analysis
             ("why am i not losing weight", "cross"),
             ("am i eating enough protein for my workouts", "cross"),
