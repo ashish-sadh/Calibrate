@@ -69,6 +69,8 @@ final class AIEvalHarness: XCTestCase {
             ("delete last entry", "delete"),
             ("remove the rice", "delete"),
             ("undo last food", "delete"),
+            // Undo
+            ("undo", "undo"), ("undo that", "undo"), ("undo last", "undo"),
             // TDEE/BMR
             ("what's my tdee", "tdee"), ("explain tdee", "tdee"),
             ("how many calories do i burn", "tdee"),

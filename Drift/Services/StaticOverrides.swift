@@ -72,6 +72,19 @@ enum StaticOverrides {
         if lower == "supplements" || lower == "did i take my supplements" || lower == "supplement status" {
             return .handler { AIRuleEngine.supplementStatus() }
         }
+        // Undo: "undo", "undo that", "undo last" — same as "delete last entry"
+        if lower == "undo" || lower == "undo that" || lower == "undo last" {
+            return .handler {
+                let today = DateFormatters.todayString
+                guard let entries = try? AppDatabase.shared.fetchFoodEntries(for: today),
+                      let last = entries.first, let id = last.id else {
+                    return "Nothing to undo."
+                }
+                try? AppDatabase.shared.deleteFoodEntry(id: id)
+                return "Undone: removed \(last.foodName) (\(Int(last.calories * last.servings)) cal)."
+            }
+        }
+
         // TDEE / BMR / metabolism queries
         if lower.contains("tdee") || lower.contains("bmr") || lower == "what's my metabolism"
             || lower == "how many calories do i burn" || lower == "explain calories" || lower == "explain tdee" {
