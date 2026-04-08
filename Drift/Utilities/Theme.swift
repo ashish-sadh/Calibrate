@@ -18,6 +18,7 @@ enum Theme {
     static let stepsOrange = Color(hex: "F97316")
     static let heartRed = Color(hex: "F43F5E")
     static let rhythmTeal = Color(hex: "2DD4BF")
+    static let plantGreen = Color(hex: "4ADE80")  // vibrant green for plant points
 
     /// Continuous color for a 0-100 score (red → yellow → green).
     static func scoreColor(_ score: Int) -> Color {

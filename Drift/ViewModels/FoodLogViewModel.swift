@@ -17,6 +17,8 @@ final class FoodLogViewModel {
     var frequentFoods: [Food] = []
     var savedRecipes: [FavoriteFood] = []
     var favoriteFoods: [RecentEntry] = []
+    var weeklyPlantPoints: PlantPointsService.PlantPoints = .init(uniquePlants: [], uniqueHerbsSpices: [])
+    var dailyNewPlants: Int = 0
 
     var dateString: String {
         DateFormatters.dateOnly.string(from: selectedDate)
@@ -261,11 +263,46 @@ final class FoodLogViewModel {
     func goToDate(_ date: Date) {
         selectedDate = date
         loadTodayMeals()
+        loadPlantPoints()
     }
 
     func goToPreviousDay() { if let d = Calendar.current.date(byAdding: .day, value: -1, to: selectedDate) { goToDate(d) } }
     func goToNextDay() { if let d = Calendar.current.date(byAdding: .day, value: 1, to: selectedDate) { goToDate(d) } }
     var isToday: Bool { Calendar.current.isDateInToday(selectedDate) }
+
+    /// Load plant points for the week containing selectedDate.
+    func loadPlantPoints() {
+        let cal = Calendar.current
+        guard let weekInterval = cal.dateInterval(of: .weekOfYear, for: selectedDate) else { return }
+        let weekStart = DateFormatters.dateOnly.string(from: weekInterval.start)
+        let weekEndDate = cal.date(byAdding: .day, value: -1, to: weekInterval.end) ?? weekInterval.end
+        let weekEnd = DateFormatters.dateOnly.string(from: weekEndDate)
+
+        do {
+            let weekNames = try database.fetchUniqueFoodNames(from: weekStart, to: weekEnd)
+            weeklyPlantPoints = PlantPointsService.calculate(from: weekNames)
+
+            // Count new plants added today vs rest of week
+            let todayStr = dateString
+            let todayNames = try database.fetchUniqueFoodNames(from: todayStr, to: todayStr)
+            let todayPlants = PlantPointsService.calculate(from: todayNames)
+
+            // Plants logged before today this week
+            let yesterdayDate = cal.date(byAdding: .day, value: -1, to: selectedDate) ?? selectedDate
+            let beforeToday = DateFormatters.dateOnly.string(from: yesterdayDate)
+            if weekStart <= beforeToday {
+                let priorNames = try database.fetchUniqueFoodNames(from: weekStart, to: beforeToday)
+                let priorPlants = PlantPointsService.calculate(from: priorNames)
+                let priorSet = Set(priorPlants.uniquePlants + priorPlants.uniqueHerbsSpices)
+                let todaySet = Set(todayPlants.uniquePlants + todayPlants.uniqueHerbsSpices)
+                dailyNewPlants = todaySet.subtracting(priorSet).count
+            } else {
+                dailyNewPlants = todayPlants.plantCount
+            }
+        } catch {
+            Log.foodLog.error("Failed to load plant points: \(error.localizedDescription)")
+        }
+    }
 
     /// Days with food logged in last N days (for consistency heatmap).
     /// Uses single batch query instead of N individual queries.
