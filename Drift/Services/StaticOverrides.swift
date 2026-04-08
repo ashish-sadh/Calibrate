@@ -76,6 +76,36 @@ enum StaticOverrides {
                 return context.isEmpty ? "No food logged today yet." : context
             }
         }
+        // Topic continuation: "what about protein?", "and carbs?", "how about fat?"
+        let topicContinuationPrefixes = ["what about ", "how about ", "and ", "what's my ", "how's my ", "how is my "]
+        let macroKeywords: [(String, String)] = [
+            ("protein", "protein"), ("carbs", "carb"), ("carbohydrates", "carb"),
+            ("fat", "fat"), ("fiber", "fiber"), ("fibre", "fiber")
+        ]
+        for (keyword, macro) in macroKeywords {
+            let isTopic = topicContinuationPrefixes.contains(where: { lower.hasPrefix($0) }) && lower.contains(keyword)
+            if isTopic {
+                return .handler {
+                    let n = (try? AppDatabase.shared.fetchDailyNutrition(for: DateFormatters.todayString)) ?? .zero
+                    switch macro {
+                    case "protein":
+                        guard n.proteinG > 0 else { return "No food logged yet. Log your meals to track protein." }
+                        if let goal = WeightGoal.load(), let targets = goal.macroTargets() {
+                            let left = max(0, Int(targets.proteinG - n.proteinG))
+                            return "\(Int(n.proteinG))g protein today (\(Int(targets.proteinG))g target). \(left > 0 ? "Still need \(left)g." : "Target reached!")"
+                        }
+                        return "\(Int(n.proteinG))g protein today."
+                    case "carb":
+                        return "\(Int(n.carbsG))g carbs today."
+                    case "fat":
+                        return "\(Int(n.fatG))g fat today."
+                    case "fiber":
+                        return "\(Int(n.fiberG))g fiber today."
+                    default: return "\(Int(n.calories)) cal today."
+                    }
+                }
+            }
+        }
         if lower == "how's my protein" || lower == "how's my protein?" || lower == "protein status"
             || lower == "how is my protein" || lower == "how is my protein?" || lower.contains("protein") && (lower.contains("how") || lower.contains("status")) {
             return .handler {

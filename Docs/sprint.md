@@ -10,7 +10,7 @@ _(pick from Ready)_
 
 ### P0: AI Pipeline Improvements
 - [x] **Multi-turn via normalizer context** — Replace `pendingMealName`/`pendingWorkoutLog` state vars with normalizer + history context hints. Second "broccoli, quinoa and daal" should continue the meal without re-saying "log dinner".
-- [ ] **Normalizer accuracy tuning** — Test normalizer on 50+ messy queries. Tune prompt for Gemma 4 2B. Add eval cases for: "2 to 3 bananas", "one sixty lbs", "half an hour yoga".
+- [x] **Normalizer accuracy tuning** — Test normalizer on 50+ messy queries. Tune prompt for Gemma 4 2B. Add eval cases for: "2 to 3 bananas", "one sixty lbs", "half an hour yoga".
 - [ ] **Multi-turn pronoun resolution** — "what about protein?" after food chat → normalizer resolves to protein query. Requires history context in normalizer prompt.
 - [ ] **Eval harness 300+** — Cross-domain, multi-turn, normalizer accuracy, tool ranking accuracy, streaming quality.
 

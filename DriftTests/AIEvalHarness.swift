@@ -42,6 +42,12 @@ final class AIEvalHarness: XCTestCase {
             ("supplements", ""),
             ("what did i eat today", ""),
             ("copy yesterday", ""),
+            // Multi-turn pronoun resolution / topic continuation
+            ("what about protein?", "protein"),
+            ("what about carbs?", "carb"),
+            ("how about fat?", "fat"),
+            ("and protein?", "protein"),
+            ("what's my protein", "protein"),
         ]
         for (query, _) in ruleQueries {
             let result = StaticOverrides.match(query)
