@@ -40,17 +40,17 @@ The self-improvement loop picks from the **Gap** section to close parity.
 ## Gap: UI-Only Features to Bring to AI Chat
 
 ### P0 — High Impact Friction Reducers
-- [ ] **Mark supplement taken** — "took my creatine", "took vitamin D". Needs: supplement tool handler to mark taken.
+- [x] **Mark supplement taken** — "took my creatine", "took vitamin D". StaticOverrides handler.
 - [ ] **Edit/delete food entry** — "remove the rice", "delete last entry". Needs: undo/delete tool.
-- [ ] **Copy yesterday's food** — "copy yesterday", "same as yesterday". Needs: tool to duplicate entries.
-- [ ] **Quick-add raw calories** — "just log 500 cal for lunch". Needs: handle numeric-only food intents.
-- [ ] **Set/update weight goal** — "set goal to 160 lbs", "I want to lose 10 lbs". Needs: goal tool.
+- [x] **Copy yesterday's food** — "copy yesterday", "same as yesterday". StaticOverrides handler.
+- [x] **Quick-add raw calories** — "just log 500 cal for lunch". StaticOverrides handler.
+- [x] **Set/update weight goal** — "set goal to 160 lbs", "I want to lose 10 lbs". StaticOverrides regex + word number resolver.
 
 ### P1 — Data Entry from Chat
 - [ ] **Trigger barcode scan** — "scan barcode", "scan food". Needs: open camera from chat.
-- [ ] **Manual food with macros** — "log 400 cal 30g protein lunch". Needs: parse inline macros.
-- [ ] **Body comp entry** — "my body fat is 18%", "log body fat 18". Needs: body comp tool.
-- [ ] **Add supplement to stack** — "add vitamin D", "add creatine 5g". Needs: supplement management tool.
+- [x] **Manual food with macros** — "log 400 cal 30g protein lunch". StaticOverrides inline macro parser.
+- [x] **Body comp entry** — "my body fat is 18%", "log body fat 18". StaticOverrides regex handler.
+- [x] **Add supplement to stack** — "add vitamin D", "add creatine 5g". add_supplement tool in ToolRegistration.
 
 ### P2 — Multi-Turn Intelligence (Gemma 4 Only)
 - [ ] **Meal planning** — "plan my meals for today" → iterative suggestions based on remaining macros + history.

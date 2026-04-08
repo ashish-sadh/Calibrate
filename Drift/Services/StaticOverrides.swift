@@ -130,6 +130,40 @@ enum StaticOverrides {
             return .handler { FoodService.copyYesterday() }
         }
 
+        // Delete/remove food entry
+        let deletePrefixes = ["delete ", "remove ", "undo "]
+        if let prefix = deletePrefixes.first(where: { lower.hasPrefix($0) }) {
+            let target = String(lower.dropFirst(prefix.count)).trimmingCharacters(in: .whitespaces)
+            if target == "last entry" || target == "last food" || target == "last" {
+                return .handler {
+                    let today = DateFormatters.todayString
+                    guard let entries = try? AppDatabase.shared.fetchFoodEntries(for: today),
+                          let last = entries.first, let id = last.id else {
+                        return "No food entries today to delete."
+                    }
+                    try? AppDatabase.shared.deleteFoodEntry(id: id)
+                    return "Deleted \(last.foodName) (\(Int(last.calories * last.servings)) cal)."
+                }
+            }
+            // Delete by name: "remove the rice", "delete chicken"
+            let cleanTarget = target.replacingOccurrences(of: "the ", with: "")
+                .replacingOccurrences(of: "my ", with: "")
+            if !cleanTarget.isEmpty && cleanTarget.count > 2 {
+                return .handler {
+                    let today = DateFormatters.todayString
+                    guard let entries = try? AppDatabase.shared.fetchFoodEntries(for: today) else {
+                        return "No food entries today."
+                    }
+                    if let match = entries.first(where: { $0.foodName.lowercased().contains(cleanTarget) }),
+                       let id = match.id {
+                        try? AppDatabase.shared.deleteFoodEntry(id: id)
+                        return "Deleted \(match.foodName) (\(Int(match.calories * match.servings)) cal)."
+                    }
+                    return "Couldn't find '\(cleanTarget)' in today's food log."
+                }
+            }
+        }
+
         // Workout count
         if lower.contains("how many workout") || lower.contains("workout count") || lower.contains("how often did i train")
             || lower.contains("workouts this week") || lower.contains("how many times did i work") {

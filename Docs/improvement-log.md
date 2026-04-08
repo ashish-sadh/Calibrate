@@ -13,6 +13,12 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 - **Multi-item meal continuation**: "also add broccoli" appends to existing recipe without re-triggering meal flow.
 - **Gram/unit parsing**: "200ml milk", "half cup oats", "100g chicken" all parse correctly via compact leading and word amount patterns.
 - **Food search ranking**: Verified singular-first + LENGTH tiebreaker ranks plain Banana over TJ's Gone Bananas.
+- **Range parsing**: "2 to 3 bananas" → 3. extractAmount handles X to Y / X or Y.
+- **Diet advice handler**: "I want to reduce fat" deterministically returns macro-aware advice.
+- **"and yesterday?"**: Topic continuation for time references.
+- **Workout history**: exercise_info now shows recent 7-day workout history from HealthKit.
+- **Weekly sleep**: sleep_recovery tool accepts period param, shows 7-day avg sleep.
+- **Word number resolver**: "set my goal to one sixty" → 160. resolveWordNumbers() handles compound word numbers.
 
 ---
 

@@ -166,6 +166,18 @@ extension AppDatabase {
         }
     }
 
+    /// Fetch all food entries for a given date (joins through meal_log).
+    func fetchFoodEntries(for date: String) throws -> [FoodEntry] {
+        try dbWriter.read { db in
+            try FoodEntry.fetchAll(db, sql: """
+                SELECT fe.* FROM food_entry fe
+                JOIN meal_log ml ON fe.meal_log_id = ml.id
+                WHERE ml.date = ?
+                ORDER BY fe.logged_at DESC
+                """, arguments: [date])
+        }
+    }
+
     func fetchFoodEntries(forMealLog mealLogId: Int64) throws -> [FoodEntry] {
         try dbWriter.read { db in
             try FoodEntry

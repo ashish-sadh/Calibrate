@@ -14,7 +14,7 @@ Real queries that don't work well. Fix systematically, then move to Fixed.
 ### Normalizer / Natural Language
 - [x] **"I had 2 to 3 bananas"** — FIXED: extractAmount now handles ranges "X to Y" by taking higher number.
 - [x] **"I ate three biryani"** — FIXED: extractAmount already handles "three"→3. Verified with eval test.
-- [ ] **"set my goal to one sixty"** — Word number "one sixty" = 160. Normalizer should rewrite.
+- [x] **"set my goal to one sixty"** — FIXED: resolveWordNumbers() converts "one sixty"→160 before regex matching.
 - [ ] **"I did yoga for like half an hour"** — "like half an hour" = 30 min. Normalizer should rewrite.
 
 ### Multi-Turn
@@ -34,6 +34,7 @@ Real queries that don't work well. Fix systematically, then move to Fixed.
 
 ### Intent Misclassification
 - [x] **"I want to reduce fat"** — FIXED: StaticOverrides catches diet/fitness advice queries. Returns personalized macro advice instead of falling through to LLM.
+- [ ] **"I want to estimate calories for samosa"** — Should trigger calorie estimation/food lookup for samosa. Currently misclassified and returns daily calorie intake summary instead.
 
 ### Food Search Quality
 - [x] **"I had couple of bananas"** — FIXED: singular-first search + LENGTH tiebreaker ranks plain Banana first.
