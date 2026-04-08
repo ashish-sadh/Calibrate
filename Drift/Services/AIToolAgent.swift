@@ -104,7 +104,9 @@ enum AIToolAgent {
                     query: bestQuery, toolData: data, screen: screen, onToken: onToken
                 )
             } else {
-                return AgentOutput(text: data, action: nil, toolsCalled: toolResults.flatMap(\.toolsCalled))
+                // SmolLM: add a brief insight prefix to raw data
+                let prefixed = addInsightPrefix(to: data)
+                return AgentOutput(text: prefixed, action: nil, toolsCalled: toolResults.flatMap(\.toolsCalled))
             }
         }
 
@@ -237,6 +239,21 @@ enum AIToolAgent {
         }
         // Fallback: return raw tool data if LLM presentation fails
         return AgentOutput(text: toolData, action: nil, toolsCalled: ["presentation"])
+    }
+
+    // MARK: - SmolLM Insight Prefix
+
+    /// Add a brief conversational prefix to raw tool data for SmolLM (no LLM presentation available).
+    private static func addInsightPrefix(to data: String) -> String {
+        let lower = data.lowercased()
+        if lower.contains("over target") || lower.contains("over") && lower.contains("cal") {
+            return "Heads up — \(data)"
+        } else if lower.contains("on track") || lower.contains("remaining") {
+            return "Looking good — \(data)"
+        } else if lower.contains("no food logged") || lower.contains("nothing logged") {
+            return data // don't prefix empty state
+        }
+        return data
     }
 
     // MARK: - Tool Execution
