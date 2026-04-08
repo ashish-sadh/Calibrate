@@ -74,6 +74,7 @@
 		86899F322EA3AB5164995C09 /* AIActionParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6B64C16D8106D8EB594C117 /* AIActionParser.swift */; };
 		87B4A86A2CDE6196B42015A4 /* FavoriteFood.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2C63097444CD8E010008D65 /* FavoriteFood.swift */; };
 		88C39BC23EC131562257B528 /* BodyComposition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9EB82B9906D11C092B3111 /* BodyComposition.swift */; };
+		897722DC29F4AAF58BDA1CCF /* ActiveWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F8386EAF9FBD18F89C8C60 /* ActiveWorkoutView.swift */; };
 		8A8CF11C6A7AF26DCABECF6A /* CSVParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D6B07DD56345F8A5F5448BC /* CSVParserTests.swift */; };
 		8B4A3B20843E58F584398C79 /* LabReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5437789EE3514EE1191D392 /* LabReport.swift */; };
 		8CB8BF68CE3F11B2CFBDDB16 /* sample_lingo_export.csv in Resources */ = {isa = PBXBuildFile; fileRef = E6B95CCD0C984C915051F482 /* sample_lingo_export.csv */; };
@@ -194,6 +195,7 @@
 		1E0A2B843D779BCA23400645 /* DEXAScan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DEXAScan.swift; sourceTree = "<group>"; };
 		20576FEB4A7F0371596D08E6 /* QuickAddView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickAddView.swift; sourceTree = "<group>"; };
 		217B3F5DA6C6AA9BB267D9F3 /* WeightEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightEntryView.swift; sourceTree = "<group>"; };
+		22F8386EAF9FBD18F89C8C60 /* ActiveWorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWorkoutView.swift; sourceTree = "<group>"; };
 		237FC00B086CC3785B482588 /* AIRuleEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRuleEngine.swift; sourceTree = "<group>"; };
 		24385DF0FF7F89584AE40020 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		2A19AD32FF007540A79C20BC /* AppDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDatabase.swift; sourceTree = "<group>"; };
@@ -513,6 +515,7 @@
 		B6B13628C10FC8148ACA6AF2 /* Workout */ = {
 			isa = PBXGroup;
 			children = (
+				22F8386EAF9FBD18F89C8C60 /* ActiveWorkoutView.swift */,
 				D5286E0309471AF898D70E3C /* BodyMapView.swift */,
 				AB2998A31AEC29094C6F4062 /* WorkoutView.swift */,
 			);
@@ -798,6 +801,7 @@
 				BE6B98B254C7B200F8428F01 /* AIRuleEngine.swift in Sources */,
 				3375CEC1D52AFAE8D81F4012 /* AISetupView.swift in Sources */,
 				3B34922CC0191BA81ED569E2 /* AIToolAgent.swift in Sources */,
+				897722DC29F4AAF58BDA1CCF /* ActiveWorkoutView.swift in Sources */,
 				8D8FB3814300848676740EC6 /* AddSupplementView.swift in Sources */,
 				421D57520E9C09C88A6A0B6B /* AlgorithmSettingsView.swift in Sources */,
 				EB2A292ED2019794749E4839 /* AppDatabase.swift in Sources */,
