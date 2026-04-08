@@ -318,8 +318,8 @@ enum ToolRegistration {
         r.register(ToolSchema(
             id: "health.sleep_recovery", name: "sleep_recovery", service: "sleep",
             description: "User asks about SLEEP, RECOVERY, HRV, heart rate, tiredness, or whether to rest vs train.",
-            parameters: [],
-            handler: { _ in
+            parameters: [ToolParam("period", "string", "'today', 'week', or 'last week'", required: false)],
+            handler: { params in
                 var lines: [String] = []
                 let sleep = SleepRecoveryService.getSleep()
                 let recovery = SleepRecoveryService.getRecovery()
@@ -327,6 +327,14 @@ enum ToolRegistration {
                 if !sleep.contains("No ") { lines.append(sleep) }
                 if !recovery.contains("No ") { lines.append(recovery) }
                 lines.append(readiness)
+                // Weekly sleep trend from HealthKit
+                let period = params.string("period")?.lowercased() ?? ""
+                if period.contains("week") || period.contains("last") {
+                    if let recent = try? await HealthKitService.shared.fetchRecentSleepData(days: 7), !recent.isEmpty {
+                        let avgHours = recent.map(\.hours).reduce(0, +) / Double(recent.count)
+                        lines.append("Last 7 days avg: \(String(format: "%.1f", avgHours))h sleep (\(recent.count) nights tracked)")
+                    }
+                }
                 return .text(lines.joined(separator: "\n"))
             }
         ))

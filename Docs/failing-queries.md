@@ -24,7 +24,7 @@ Real queries that don't work well. Fix systematically, then move to Fixed.
 - [ ] **"plan my meals for today"** — Should be iterative: suggest breakfast → confirm → suggest lunch. Currently single response.
 
 ### Exercise
-- [ ] **"Tell me my workout history"** — Should show recent workouts. Doesn't route correctly.
+- [x] **"Tell me my workout history"** — FIXED: exercise_info now shows recent workouts from HealthKit.
 
 ### Sleep
 - [ ] **"How is my sleep quality last week"** — Should route to sleep_recovery and show weekly sleep data. Variants: "sleep last week", "how did I sleep this week", "sleep trend".

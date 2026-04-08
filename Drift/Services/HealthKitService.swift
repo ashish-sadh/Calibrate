@@ -327,6 +327,37 @@ final class HealthKitService {
         #endif
     }
 
+    // MARK: - Sleep History
+
+    struct SleepNight: Sendable {
+        let date: Date
+        let hours: Double
+    }
+
+    /// Fetch recent sleep data (hours per night, last N days).
+    func fetchRecentSleepData(days: Int = 7) async throws -> [SleepNight] {
+        #if targetEnvironment(simulator)
+        // Mock data for simulator
+        let cal = Calendar.current
+        return (0..<days).compactMap { offset in
+            guard let date = cal.date(byAdding: .day, value: -offset, to: Date()) else { return nil }
+            let hours = 6.5 + Double.random(in: -1...1.5) // 5.5-8h
+            return SleepNight(date: date, hours: hours)
+        }
+        #else
+        guard isAvailable else { return [] }
+        var results: [SleepNight] = []
+        let cal = Calendar.current
+        for offset in 0..<days {
+            guard let date = cal.date(byAdding: .day, value: -offset, to: Date()) else { continue }
+            if let detail = try? await fetchSleepDetail(for: date), detail.totalHours > 0 {
+                results.append(SleepNight(date: date, hours: detail.totalHours))
+            }
+        }
+        return results
+        #endif
+    }
+
     // MARK: - Workout Mock Data (simulator only)
 
     static func mockWorkouts(for date: Date) -> [HealthWorkout] {
