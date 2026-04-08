@@ -238,15 +238,16 @@ enum StaticOverrides {
             }
         }
 
-        // Set weight goal
-        let goalPattern = #"(?:set goal to|target weight|i want to weigh|goal weight|my goal is)\s+(\d+\.?\d*)\s*(kg|lbs|lb|pounds?)?"#
+        // Set weight goal — resolve word numbers first ("one sixty" → "160")
+        let goalInput = Self.resolveWordNumbers(lower)
+        let goalPattern = #"(?:set (?:my )?goal to|target weight|i want to weigh|goal weight|my goal is)\s+(\d+\.?\d*)\s*(kg|lbs|lb|pounds?)?"#
         if let goalRegex = try? NSRegularExpression(pattern: goalPattern),
-           let goalMatch = goalRegex.firstMatch(in: lower, range: NSRange(lower.startIndex..., in: lower)),
-           let numRange = Range(goalMatch.range(at: 1), in: lower),
-           let target = Double(String(lower[numRange])) {
+           let goalMatch = goalRegex.firstMatch(in: goalInput, range: NSRange(goalInput.startIndex..., in: goalInput)),
+           let numRange = Range(goalMatch.range(at: 1), in: goalInput),
+           let target = Double(String(goalInput[numRange])) {
             let unit: String
-            if let unitRange = Range(goalMatch.range(at: 2), in: lower) {
-                unit = String(lower[unitRange]).hasPrefix("kg") ? "kg" : "lbs"
+            if let unitRange = Range(goalMatch.range(at: 2), in: goalInput) {
+                unit = String(goalInput[unitRange]).hasPrefix("kg") ? "kg" : "lbs"
             } else {
                 unit = Preferences.weightUnit.rawValue
             }
@@ -381,5 +382,60 @@ enum StaticOverrides {
         }
 
         return nil
+    }
+
+    /// Convert word numbers to digits: "one sixty" → "160", "seventy five" → "75"
+    private static func resolveWordNumbers(_ text: String) -> String {
+        let tens: [String: Int] = ["twenty": 20, "thirty": 30, "forty": 40, "fifty": 50,
+                                    "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90]
+        let ones: [String: Int] = ["one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
+                                    "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10,
+                                    "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14,
+                                    "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19]
+        let hundreds: [String: Int] = ["hundred": 100]
+
+        let words = text.split(separator: " ").map { String($0) }
+        var result = text
+        var i = 0
+        while i < words.count {
+            let w = words[i].lowercased()
+            var num: Int? = nil
+            var consumed = 1
+
+            // "one sixty" = 100 + 60, "one forty five" = 100 + 45
+            if let o = ones[w], o <= 9, i + 1 < words.count {
+                let next = words[i + 1].lowercased()
+                if let t = tens[next] {
+                    num = o * 100 + t
+                    consumed = 2
+                    // "one sixty five" = 165
+                    if i + 2 < words.count, let o2 = ones[words[i + 2].lowercased()], o2 <= 9 {
+                        num = (num ?? 0) + o2
+                        consumed = 3
+                    }
+                } else if next == "hundred" {
+                    num = o * 100
+                    consumed = 2
+                }
+            }
+            // "seventy five" = 75
+            else if let t = tens[w] {
+                num = t
+                consumed = 1
+                if i + 1 < words.count, let o = ones[words[i + 1].lowercased()], o <= 9 {
+                    num = t + o
+                    consumed = 2
+                }
+            }
+
+            if let num {
+                let origWords = words[i..<(i + consumed)].joined(separator: " ")
+                result = result.replacingOccurrences(of: origWords, with: "\(num)")
+                i += consumed
+            } else {
+                i += 1
+            }
+        }
+        return result
     }
 }

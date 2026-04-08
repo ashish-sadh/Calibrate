@@ -52,6 +52,7 @@ final class AIEvalHarness: XCTestCase {
             ("bmi 24", "bmi"), ("bmi 22.1", "bmi"),
             ("set goal to 160 lbs", "goal"), ("target weight 75 kg", "goal"),
             ("i want to weigh 150", "goal"),
+            ("set my goal to one sixty", "goal"),
             // Quick-add
             ("log 500 cal", "quick"), ("log 400 calories for lunch", "quick"),
             ("log 400 cal 30g protein lunch", "macro"),

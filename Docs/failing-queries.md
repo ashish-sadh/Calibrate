@@ -27,7 +27,7 @@ Real queries that don't work well. Fix systematically, then move to Fixed.
 - [x] **"Tell me my workout history"** — FIXED: exercise_info now shows recent workouts from HealthKit.
 
 ### Sleep
-- [ ] **"How is my sleep quality last week"** — Should route to sleep_recovery and show weekly sleep data. Variants: "sleep last week", "how did I sleep this week", "sleep trend".
+- [x] **"How is my sleep quality last week"** — FIXED: sleep_recovery now accepts period param, fetches 7-day sleep average from HealthKit.
 
 ### Data Accuracy
 - [ ] **"Daily summary"** — Reports wrong weight. AI service reads weight from different source than UI. Should use same service/query as the weight display on screen.
