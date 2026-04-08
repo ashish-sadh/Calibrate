@@ -2,8 +2,19 @@
 
 ## Running Tests
 
+**CRITICAL: Never run multiple `xcodebuild test` in parallel.** They fight for the simulator and deadlock. Always kill stale processes before starting a new test run.
+
+**Why simulator?** Test target is `bundle.unit-test` for iOS. Tests use `@testable import Drift` which targets iOS. Can't run without simulator.
+
+**LLM eval tests** (LLMToolCallingEval, LLMGemma4Eval, LLMQwen3Eval, LLMIntegrationTest) check for model files at `/tmp/*.gguf` and **skip gracefully** if not found. They do NOT download models. These are opt-in — run separately when model is pre-staged.
+
+**Expected timing:** ~2-3 min for all 729+ tests (simulator already booted). If it takes longer, you probably have stale xcodebuild processes — kill them.
+
 ```bash
 cd /Users/ashishsadh/workspace/Drift
+
+# ALWAYS kill stale processes first
+pkill -9 -f xcodebuild 2>/dev/null; sleep 2
 
 # All tests (729+)
 xcodebuild test -project Drift.xcodeproj -scheme Drift \

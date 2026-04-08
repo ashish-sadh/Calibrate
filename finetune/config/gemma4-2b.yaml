@@ -1,4 +1,4 @@
-model_id: "google/gemma-3-1b-it"
+model_id: "google/gemma-4-E2B-it"
 chat_template: "gemma"
 lora:
   r: 16

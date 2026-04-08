@@ -8,12 +8,14 @@ final class LlamaCppBackend: AIBackend, @unchecked Sendable {
     private var smpl: UnsafeMutablePointer<llama_sampler>?  // llama_sampler *
     private let modelPath: URL
     private var isGemma: Bool = false  // Gemma uses different chat template
+    private let threadOverride: Int?  // nil = auto, set lower for parallel eval
 
     var isLoaded: Bool { model != nil && context != nil }
     var supportsVision: Bool { false }
 
-    init(modelPath: URL) {
+    init(modelPath: URL, threads: Int? = nil) {
         self.modelPath = modelPath
+        self.threadOverride = threads
     }
 
     func loadSync() throws {
@@ -60,10 +62,15 @@ final class LlamaCppBackend: AIBackend, @unchecked Sendable {
         ctxParams.n_ctx = min(2048, UInt32(trainCtx))
         ctxParams.n_batch = min(2048, UInt32(trainCtx))
 
-        // Dynamic thread count based on device cores
+        // Dynamic thread count based on device cores (or explicit override for parallel eval)
         let coreCount = ProcessInfo.processInfo.activeProcessorCount
-        ctxParams.n_threads = Int32(max(2, min(coreCount - 2, 6)))       // leave 2 for UI
-        ctxParams.n_threads_batch = Int32(max(2, min(coreCount, 8)))     // use all for prompt eval
+        if let t = threadOverride {
+            ctxParams.n_threads = Int32(t)
+            ctxParams.n_threads_batch = Int32(t)
+        } else {
+            ctxParams.n_threads = Int32(max(2, min(coreCount - 2, 6)))       // leave 2 for UI
+            ctxParams.n_threads_batch = Int32(max(2, min(coreCount, 8)))     // use all for prompt eval
+        }
 
         // KV cache at full precision for best quality
         // (Q8_0 was faster but degraded response quality)
@@ -181,6 +188,13 @@ final class LlamaCppBackend: AIBackend, @unchecked Sendable {
                 if !stopTokens.contains(where: { tokenStr.contains($0) }) {
                     onToken(tokenStr)
                 }
+            }
+
+            // Early JSON termination: stop as soon as we have complete JSON
+            if let first = outputBuf.first, first == 0x7B { // starts with '{'
+                let opens = outputBuf.filter { $0 == 0x7B }.count
+                let closes = outputBuf.filter { $0 == 0x7D }.count
+                if closes > 0 && opens == closes { break }
             }
 
             // Check stop sequence — only check tail (not entire buffer)

@@ -23,7 +23,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.drift.health
         MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "89"
+        CURRENT_PROJECT_VERSION: "91"
         SWIFT_VERSION: "6.0"
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_FILE: Drift/Info.plist
@@ -47,6 +47,20 @@ targets:
     platform: iOS
     sources:
       - path: DriftTests
+        excludes:
+          - "LLMEval"
+    dependencies:
+      - target: Drift
+    settings:
+      base:
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+
+  DriftLLMEvalTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: DriftTests/LLMEval
     dependencies:
       - target: Drift
     settings:

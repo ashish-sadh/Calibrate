@@ -2,7 +2,7 @@ import XCTest
 @testable import Drift
 
 /// Evaluates Gemma 4 E2B tool-calling vs Qwen2.5-1.5B baseline.
-/// Run: xcodebuild test -only-testing:'DriftTests/LLMGemma4Eval'
+/// Lite: 3 queries (~30s). Deep: 40 queries (~10 min, needs DRIFT_DEEP_EVAL=1).
 final class LLMGemma4Eval: XCTestCase {
 
     nonisolated(unsafe) static var backend: LlamaCppBackend?
@@ -59,7 +59,35 @@ final class LLMGemma4Eval: XCTestCase {
         return (call?.tool, correct)
     }
 
+    // MARK: - Lite (runs every time)
+
+    func testLiteSanity() async throws {
+        guard Self.backend != nil else { throw XCTSkip("Gemma 4 not available") }
+        let queries: [(String, String?, String)] = [
+            ("I had 2 eggs", "log_food", "food log"),
+            ("calories left?", "food_info", "food question"),
+            ("how's my weight trend", "weight_info", "weight question"),
+        ]
+        var correct = 0
+        for (query, expected, label) in queries {
+            let r = await run(query, expected: expected)
+            if r.correct { correct += 1 }
+            else { print("❌ LITE \(label): '\(query)' → \(r.tool ?? "none")") }
+        }
+        print("📊 Gemma4 Lite: \(correct)/\(queries.count)")
+        XCTAssertGreaterThanOrEqual(correct, 2, "Lite sanity: \(correct)/\(queries.count)")
+    }
+
+    private func skipUnlessDeepEval() throws {
+        guard ProcessInfo.processInfo.environment["DRIFT_DEEP_EVAL"] != nil else {
+            throw XCTSkip("Deep eval skipped — set DRIFT_DEEP_EVAL=1 to run")
+        }
+    }
+
+    // MARK: - Deep Tests
+
     func testGemma4FoodLogging() async throws {
+        try skipUnlessDeepEval()
         guard Self.backend != nil else { throw XCTSkip("Gemma 4 not available") }
         let queries: [(String, String)] = [
             ("I had 2 eggs", "log_food"),
@@ -82,6 +110,7 @@ final class LLMGemma4Eval: XCTestCase {
     }
 
     func testGemma4FoodQuestions() async throws {
+        try skipUnlessDeepEval()
         guard Self.backend != nil else { throw XCTSkip("Gemma 4 not available") }
         let queries: [(String, String)] = [
             ("calories left?", "food_info"),
@@ -104,6 +133,7 @@ final class LLMGemma4Eval: XCTestCase {
     }
 
     func testGemma4Weight() async throws {
+        try skipUnlessDeepEval()
         guard Self.backend != nil else { throw XCTSkip("Gemma 4 not available") }
         let queries: [(String, String)] = [
             ("I weigh 165 lbs", "log_weight"),
@@ -126,6 +156,7 @@ final class LLMGemma4Eval: XCTestCase {
     }
 
     func testGemma4Exercise() async throws {
+        try skipUnlessDeepEval()
         guard Self.backend != nil else { throw XCTSkip("Gemma 4 not available") }
         let queries: [(String, String)] = [
             ("what should I train today", "exercise_info"),

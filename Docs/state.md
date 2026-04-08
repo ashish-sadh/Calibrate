@@ -10,6 +10,7 @@ AI-first local health tracker. AI chat is the primary interface — every data e
 - **Foods:** 1004+ (Indian, Mexican, global)
 - **Exercises:** 873 (free-exercise-db)
 - **Biomarkers:** 65 across 9 categories
+- **AI Tools:** 19 registered tools
 - **AI Chat Features:** 25+ (see `Docs/ai-parity.md`)
 
 ## Tech Stack
@@ -18,21 +19,40 @@ AI-first local health tracker. AI chat is the primary interface — every data e
 - llama.cpp xcframework (rebuilt from source, Metal GPU)
 - XcodeGen for project generation
 
-## AI System — Dual-Model
-- **SmolLM2-360M Q8** (368MB) — 6GB devices. Reliable harness, hardcoded rules do heavy lifting.
-- **Gemma 4 E2B Q4_K_M** (2900MB) — 8GB+ devices. Intelligence layer, all tools, multi-turn capable.
-- **Backend:** Raw llama.cpp C API, Metal GPU (36 layers offloaded, ~3GB VRAM)
-- **Auto-detect:** RAM >= 6.5GB → Gemma 4, >= 5.0GB → SmolLM
-- **Auto-unload:** 60s idle, reload on return ("Preparing AI assistant...")
-- **Tools:** 10 JSON tools. Gemma sees all, SmolLM sees 6 screen-filtered.
-- **Parity:** See `Docs/ai-parity.md` for what's in chat vs UI-only.
+## AI System — Tiered Pipeline
+
+### Dual-Model
+- **SmolLM2-360M Q8** (368MB) — 6GB devices. Rule-based harness.
+- **Gemma 4 E2B Q4_K_M** (2900MB) — 8GB+ devices. Tiered pipeline with normalizer.
+
+### Pipeline (Gemma 4)
+```
+Tier 0: Instant rules (StaticOverrides + Swift parsers)     → ~60-70% of queries
+Tier 1: LLM normalizer → re-run rules (~3s)                 → ~20% more
+Tier 2: Rule-based tool pick (ToolRanker, instant)           → ~10% more
+Tier 3: Tool-first execution → stream presentation (~5-8s)   → info queries
+Tier 4: Pure streaming with context (~10-20s)                → conversation
+```
+
+### Key Components
+- **ToolRanker** — Keyword scoring, 19 tool profiles, `tryRulePick()`, `normalizePrompt()`
+- **AIToolAgent** — Tiered orchestrator with 20s timeout on all LLM calls
+- **StaticOverrides** — Universal deterministic handlers (no model gate)
+- **Early JSON termination** — Bracket counting stops generation when JSON complete
+- **Spell correction** — SpellCorrectService in findFood() search chain
+
+### Backend
+- Raw llama.cpp C API, Metal GPU (all layers offloaded, ~3GB VRAM)
+- Auto-detect: RAM >= 6.5GB → Gemma 4, >= 5.0GB → SmolLM
+- Auto-unload after 60s idle
+- Context: 2048 tokens, max prompt: 1776, max generation: 256
 
 ## AI Chat Capabilities
-- Food: log single/multi/meal/gram, nutrition lookup, suggestions, summaries
-- Weight: log, trend, goal progress
-- Exercise: start template, smart workout (coach me), log exercises, suggestion, overload
-- Health: sleep/recovery, supplements, glucose, biomarkers, body comp
-- Meta: explain TDEE, daily/weekly/yesterday summary, calories left, protein status
+- Food: log single/multi/meal/gram, nutrition lookup, macro-specific (protein/carbs/fat), suggestions
+- Weight: log, trend, goal progress, set goal
+- Exercise: start template, smart workout, log exercises, log activity, suggestion
+- Health: sleep/recovery, supplements (status/mark/add), glucose, biomarkers, body comp
+- Meta: explain TDEE, daily/weekly/yesterday summary, calories left, copy yesterday
 
 ## Tab Structure
 Dashboard | Weight | Food | Exercise | More

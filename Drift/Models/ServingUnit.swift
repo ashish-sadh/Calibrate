@@ -271,10 +271,19 @@ struct FoodUnit: Hashable {
             units.append(FoodUnit(label: "half", gramsEquivalent: 2.5))
         }
 
-        // Universal: always include "piece" as an option for every food
-        // Countable labels like "egg", "banana", "piece" already cover some foods
-        let countableLabels: Set<String> = ["piece", "egg", "banana", "apple", "orange", "meatball", "slice"]
-        if !units.contains(where: { countableLabels.contains($0.label) }) {
+        // Universal: include "piece" for foods where a "piece" makes sense
+        // Skip for: bulk foods (nuts, grains, powder, flour, oil, butter, rice, oats)
+        // and foods that already have a per-item unit (almond, cashew, egg, banana, etc.)
+        let countableLabels: Set<String> = ["piece", "egg", "banana", "apple", "orange", "meatball",
+                                             "slice", "almond", "cashew", "pistachio", "half"]
+        let bulkFoods = ["almond", "cashew", "pistachio", "walnut", "peanut", "nut", "seed",
+                         "rice", "oats", "oatmeal", "flour", "sugar", "salt", "powder",
+                         "oil", "butter", "ghee", "cream", "cheese", "yogurt", "curd",
+                         "dal", "lentil", "bean", "chickpea", "quinoa", "couscous",
+                         "granola", "cereal", "pasta", "noodle", "sauce", "dressing",
+                         "hummus", "pesto", "jam", "honey", "syrup", "mayo"]
+        let isBulk = bulkFoods.contains(where: { lower.contains($0) })
+        if !isBulk && !units.contains(where: { countableLabels.contains($0.label) }) {
             let pieceWeight = food.servingSize > 0 ? food.servingSize : 100
             units.append(FoodUnit(label: "piece", gramsEquivalent: pieceWeight))
         }

@@ -1,6 +1,6 @@
 # Sprint Board
 
-Priority: close AI chat parity gaps from `Docs/ai-parity.md`. AI chat is the showstopper.
+Priority: improve AI chat architecture and close remaining parity gaps.
 
 ## In Progress
 
@@ -8,48 +8,54 @@ _(pick from Ready)_
 
 ## Ready
 
-### P0: Close AI Chat Parity Gaps (from ai-parity.md)
-- [x] **Mark supplement taken via chat** — "took my creatine", "took vitamin D". Add handler + supplement tool to mark taken by name.
-- [x] **Edit/delete food entry via chat** — "remove the rice", "delete last entry", "undo". Add delete tool that removes most recent matching entry.
-- [x] **Copy yesterday's food** — "copy yesterday", "same as yesterday". Add tool that duplicates yesterday's food entries to today.
-- [x] **Quick-add raw calories** — "just log 500 cal for lunch", "log 400 calories". Parse calorie-only intents, create manual entry.
-- [x] **Set/update weight goal** — "set goal to 160 lbs", "change goal to 75 kg". Add goal tool that updates WeightGoal.
+### P0: AI Pipeline Improvements
+- [ ] **Multi-turn via normalizer context** — Replace `pendingMealName`/`pendingWorkoutLog` state vars with normalizer + history context hints. Second "broccoli, quinoa and daal" should continue the meal without re-saying "log dinner".
+- [ ] **Normalizer accuracy tuning** — Test normalizer on 50+ messy queries. Tune prompt for Gemma 4 2B. Add eval cases for: "2 to 3 bananas", "one sixty lbs", "half an hour yoga".
+- [ ] **Multi-turn pronoun resolution** — "what about protein?" after food chat → normalizer resolves to protein query. Requires history context in normalizer prompt.
+- [ ] **Eval harness 300+** — Cross-domain, multi-turn, normalizer accuracy, tool ranking accuracy, streaming quality.
 
-### P0.5: Fix Failing Queries (from failing-queries.md)
-- [x] **"suggest me workout"** — Handle workout suggestion variants. Small model: keyword handler. Large model: ensure exercise_info tool called. Add eval tests for 5+ phrasings.
-- [x] **"I did yoga today"** — Log completed workout by name. Small: parse "I did [activity]". Large: LLM calls tool. Eval tests.
-- [x] **"how many workouts this week"** — Instant answer from WorkoutService. Add to rule engine. Eval tests.
+### P1: Food Logging Quality
+- [ ] **Multi-item meal continuation** — After "Log lunch" → "rice and dal" builds recipe, user should be able to say "also add broccoli" without re-triggering "Log lunch".
+- [ ] **Gram/unit parsing improvements** — "100 gram of rice" works (new NUMBER UNIT of FOOD pattern). Test: "200ml milk", "2 scoops protein", "half cup oats".
+- [ ] **Food search ranking** — Singular-first search added. Test that "bananas" → plain Banana, not "TJ's Gone Bananas". Consider name-length tiebreaker.
 
-### P1: AI Chat Quality + Multi-Turn (Gemma 4)
-- [x] **Gemma 4 prompt tuning** — Added 5 new tool examples (mark_supplement, delete_food, set_goal, body_comp, copy_yesterday).
-- [ ] **Multi-turn meal planning** — "plan my meals for today" → iterative macro-aware suggestions. Gemma 4 only.
-- [x] **Cross-domain analysis** — "why am I not losing weight?", "should I eat more", "I feel tired" → auto-combine relevant domains.
-- [ ] **Eval harness 212→300+** — Cross-domain queries, screen-bias regression, multi-turn scenarios, supplement/goal commands.
-
-### P2: More Chat Features
-- [x] **Body comp entry via chat** — "my body fat is 18%", "log body fat", "bmi 22.5". Hardcoded + log_body_comp tool.
-- [x] **Trigger barcode scan from chat** — "scan barcode", "scan food". Opens camera from chat.
-- [x] **Manual food with inline macros** — "log 400 cal 30g protein lunch", "500cal 25p 60c 20f". Parse calorie+macro intent.
-- [x] **Add supplement to stack** — "add vitamin D 2000 IU", "add creatine 5g". Hardcoded + add_supplement tool.
-- [x] **Weekly comparison** — "compare this week to last". Instant rule engine answer from comparisonContext().
+### P2: Streaming & Latency
+- [ ] **Tool-first streaming** — For "how am I doing", execute food_info + weight_info in parallel, then stream presentation with real data. First token in ~2s.
+- [ ] **Parallel rule check + normalize** — While normalizer runs (~3s), also check rules on raw input. If rules match, cancel normalizer.
+- [ ] **Progressive multi-item disclosure** — For "rice and dal", show each found item as it's discovered, don't batch.
 
 ### P3: UI Polish
 - [ ] **Saved meals (one-tap re-log)** — Save multi-item meals for quick re-logging from UI.
 - [ ] **Accessibility pass** — VoiceOver labels on key screens.
+- [ ] **Multi-turn meal planning** — "plan my meals for today" → iterative macro-aware suggestions. Gemma 4 only.
 
 ## Done
 
+### Architecture (this sprint)
+- [x] **Tiered pipeline** — Tier 0 (instant rules) → Tier 1 (normalizer) → Tier 2 (rule pick) → Tier 3 (tool-first+stream) → Tier 4 (pure stream)
+- [x] **ToolRanker** — Keyword-based tool scoring with 19 profiles, `tryRulePick()`, `normalizePrompt()`, `extractParamsForTool()`
+- [x] **AIToolAgent rewrite** — Single-pass streaming, then two-tier, then tool-first architecture
+- [x] **Universal StaticOverrides** — Removed `isLargeModel` gate. All deterministic handlers work for both models.
+- [x] **Handler ordering fix** — Moved view-state handlers, multi-turn handlers, food/weight/activity parsers BEFORE Gemma pipeline
+- [x] **20s LLM timeout** — All LLM calls have timeout, fallback to screen-appropriate text
+- [x] **Early JSON termination** — Bracket-counting in LlamaCppBackend stops generation as soon as JSON is complete
+- [x] **Spell correction in findFood()** — SpellCorrectService.correct() added to food search chain
+- [x] **Singular-first food search** — "bananas" searches "banana" first for better matches
+- [x] **extractAmount "NUMBER UNIT of FOOD"** — Handles "100 gram of rice", "2 cups of dal"
+- [x] **Bulk food "piece" filtering** — Nuts, grains, powder, dal, rice don't get misleading "piece" unit
+- [x] **food_info macro focus** — query:"protein"/"carbs"/"fat" returns focused response
+- [x] **Body fat/BMI validation** — bf >= 3 && <= 60, bmi >= 12 && <= 60
+- [x] **Tool name parens fix** — `parseToolCallJSON` strips `()` from tool names
+- [x] **Empty placeholder removal** — UI action responses don't leave empty chat bubbles
+- [x] **"log exercise" handler** — Added before Gemma pipeline, triggers pendingWorkoutLog
+
+### Previous sprints
 - [x] Dual-model architecture (SmolLM + Gemma 4)
-- [x] Screen bias removal (fullDayContext, universal pills, all tools for Gemma)
-- [x] Model-aware routing, universal suggestion pills, "Start smart workout" pill
-- [x] Loading indicator ("Preparing AI assistant...")
-- [x] 10 consolidated tools with JSON tool-calling
-- [x] Gemma 4 integration (xcframework, Metal GPU, chat template)
-- [x] Meal logging flow ("log lunch" → recipe builder)
-- [x] Exercise logging flow ("add exercise" → parse exercises → template)
-- [x] "Coach Me" button in Exercise tab with reasoning notes
-- [x] Gram-based food logging ("log paneer biryani 300 gram")
-- [x] "Start" after workout recommendation fix
-- [x] End-of-turn tail buffer widened (16→32)
-- [x] Body composition tracking, HealthKit sync, auto-refresh
+- [x] Screen bias removal
+- [x] 19 consolidated tools with JSON tool-calling
+- [x] Gemma 4 integration (xcframework, Metal GPU)
+- [x] Meal/exercise logging flows
+- [x] Gram-based food logging
+- [x] Body composition tracking
 - [x] 212+ eval tests + 100-query LLM eval
+- [x] All P0/P0.5/P2 parity gaps closed

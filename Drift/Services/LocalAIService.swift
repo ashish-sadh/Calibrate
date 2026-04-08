@@ -25,36 +25,13 @@ final class LocalAIService {
 
     private var systemPrompt: String {
         let screen = AIScreenTracker.shared.currentScreen.rawValue
-        let large = isLargeModel
-        let tools = ToolRegistry.shared.schemaPrompt(forScreen: screen, isLargeModel: large)
+        let tools = ToolRegistry.shared.schemaPrompt(forScreen: screen, isLargeModel: false)
 
-        if large {
-            // Gemma 4: richer prompt, all tools, cross-domain awareness
+        if isLargeModel {
+            // Gemma 4: lightweight fallback prompt. Main path uses AIToolAgent + ToolRanker.
             return """
-            You are a health tracking assistant. You help log food, weight, and workouts, \
-            and answer questions about the user's health data. \
-            Classify the user's intent: \
-            LOGGING (ate food, did workout, weigh-in) → call the appropriate log tool with JSON. \
-            QUESTION (asks about data, progress, trends) → call the appropriate info tool with JSON. \
-            CHAT (greeting, thanks, small talk) → respond naturally, no tool call. \
-            Rules: Never give health/medical advice. Never invent numbers — only use data from context. \
-            Always respond with EITHER a JSON tool call OR a short natural language answer, never both. \
-            Tool call format: {"tool":"tool_name","params":{"key":"value"}} \
-            Examples: \
-            "I had 2 eggs" → {"tool":"log_food","params":{"name":"eggs","amount":"2"}} \
-            "calories left" → {"tool":"food_info","params":{}} \
-            "how's my weight" → {"tool":"weight_info","params":{}} \
-            "start chest workout" → {"tool":"start_workout","params":{"name":"chest"}} \
-            "what should I train" → {"tool":"exercise_info","params":{}} \
-            "how'd I sleep" → {"tool":"sleep_recovery","params":{}} \
-            "took my creatine" → {"tool":"mark_supplement","params":{"name":"creatine"}} \
-            "remove the rice" → {"tool":"delete_food","params":{"name":"rice"}} \
-            "set goal to 160" → {"tool":"set_goal","params":{"target":"160","unit":"lbs"}} \
-            "how's my body fat" → {"tool":"body_comp","params":{}} \
-            "same as yesterday" → {"tool":"copy_yesterday","params":{}} \
-            "how am I doing" → {"tool":"food_info","params":{}} \
-            "thanks" → You're welcome! \
-            \(tools)
+            You are a health tracking assistant. Answer questions about food, weight, and workouts. \
+            Use data from context. Never give health advice. Never invent numbers.
             """
         } else {
             // Small model: concise prompt, filtered tools
@@ -191,6 +168,20 @@ final class LocalAIService {
         let prompt = parts.joined(separator: "\n\n")
         let b = backend
         return await b.respondStreaming(to: prompt, systemPrompt: systemPrompt, onToken: onToken)
+    }
+
+    // MARK: - Direct Backend Access (for agent pipeline)
+
+    /// Respond with a custom system prompt, bypassing the built-in systemPrompt.
+    /// Used by AIToolAgent so planner/chain/presentation steps don't get double-wrapped with tools.
+    func respondDirect(systemPrompt: String, message: String) async -> String {
+        guard let backend else { return "Model not loaded." }
+        return await backend.respond(to: message, systemPrompt: systemPrompt)
+    }
+
+    func respondStreamingDirect(systemPrompt: String, message: String, onToken: @escaping @Sendable (String) -> Void) async -> String {
+        guard let backend else { return "Model not loaded." }
+        return await backend.respondStreaming(to: message, systemPrompt: systemPrompt, onToken: onToken)
     }
 
     // MARK: - Management

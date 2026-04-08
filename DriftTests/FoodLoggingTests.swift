@@ -3,39 +3,45 @@ import Testing
 import GRDB
 @testable import Drift
 
+// Shared pre-seeded database — created once, reused by read-only tests.
+// Tests that modify data should use `try AppDatabase.empty()` + seed individually.
+private let _sharedSeededDB: AppDatabase = {
+    let db = try! AppDatabase.empty()
+    try! db.seedFoodsFromJSON()
+    return db
+}()
+
+/// Returns the shared pre-seeded database for read-only food search tests.
+private func seededDB() -> AppDatabase { _sharedSeededDB }
+
 // MARK: - Food Search Extended Tests (6 tests)
 
 @Test func foodSearchPartialMatchDal() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     let results = try db.searchFoods(query: "dal")
     #expect(results.count >= 4, "Should find multiple dal entries: \(results.count)")
 }
 
 @Test func foodSearchTraderJoes() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     let results = try db.searchFoods(query: "TJ")
     #expect(results.count >= 10, "Should find Trader Joe's items: \(results.count)")
 }
 
 @Test func foodSearchMeatball() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     let results = try db.searchFoods(query: "meatball")
     #expect(!results.isEmpty, "Should find meatball entries")
 }
 
 @Test func foodSearchCostco() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     let results = try db.searchFoods(query: "kirkland")
     #expect(results.count >= 5, "Should find Kirkland/Costco items: \(results.count)")
 }
 
 @Test func foodDatabaseCount() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     // Verify the food DB has at least 580 items (allows some margin from 600)
     let countA = try db.searchFoods(query: "a", limit: 600).count
     let countE = try db.searchFoods(query: "e", limit: 600).count
@@ -45,22 +51,19 @@ import GRDB
 }
 
 @Test func foodSearchLimitRespected() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     let limited = try db.searchFoods(query: "a", limit: 5)
     #expect(limited.count <= 5)
 }
 
 @Test func foodSearchNoMatchReturnsEmpty() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     let results = try db.searchFoods(query: "xyznonfooditematall")
     #expect(results.isEmpty)
 }
 
 @Test func foodCategoriesExist() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     let categories = try db.fetchAllFoodCategories()
     #expect(categories.count >= 10, "Should have many categories: \(categories.count)")
 }
@@ -206,8 +209,7 @@ import GRDB
 // MARK: - Food Search Ordering Tests (2 tests)
 
 @Test func foodSearchPrefixMatchFirst() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     let results = try db.searchFoods(query: "chicken")
     // Prefix matches like "Chicken Breast" should come before "Butter Chicken"
     if results.count >= 2 {
@@ -217,8 +219,7 @@ import GRDB
 }
 
 @Test func foodSearchSortedAlphabetically() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     let results = try db.searchFoods(query: "rice")
     // Results should be sorted alphabetically within same prefix group
     if results.count >= 2 {
@@ -582,8 +583,7 @@ import GRDB
 
 /// Round 8: Smart units for ALL actual DB food categories
 @Test func e2eSmartUnitsAcrossCategories() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     let allFoods = try db.searchFoods(query: "a", limit: 289)
     var issues: [String] = []
     for food in allFoods {
@@ -693,8 +693,7 @@ import GRDB
 // MARK: - Multi-word Search Tests (3 tests)
 
 @Test func multiWordSearchBothDirections() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     // "egg boiled" should find "Egg (whole, boiled)" and "Boiled Egg (1)"
     let results1 = try db.searchFoods(query: "egg boiled")
     #expect(!results1.isEmpty, "Should find eggs with 'egg boiled'")
@@ -708,8 +707,7 @@ import GRDB
 }
 
 @Test func multiWordSearchNarrows() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     let broad = try db.searchFoods(query: "chicken")
     let narrow = try db.searchFoods(query: "chicken curry")
     #expect(narrow.count < broad.count, "Adding a word should narrow results")
@@ -717,8 +715,7 @@ import GRDB
 }
 
 @Test func multiWordRankedSearch() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     let results = try db.searchFoodsRanked(query: "rice cooked")
     #expect(!results.isEmpty, "Should find cooked rice")
     #expect(results.allSatisfy { $0.name.lowercased().contains("rice") && $0.name.lowercased().contains("cooked") })
@@ -727,23 +724,20 @@ import GRDB
 // MARK: - Indian Food Search Usability (4 tests)
 
 @Test func searchDalVariations() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     // "moong dal" should work as multi-word
     let results = try db.searchFoods(query: "moong dal")
     #expect(!results.isEmpty, "Should find moong dal")
 }
 
 @Test func searchChickenBreast() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     let results = try db.searchFoods(query: "chicken breast")
     #expect(!results.isEmpty, "Should find chicken breast")
 }
 
 @Test func searchPaneerSmartUnit() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     let paneer = try db.searchFoods(query: "paneer")
     guard let p = paneer.first else { return }
     let units = FoodUnit.smartUnits(for: p)
@@ -752,8 +746,7 @@ import GRDB
 }
 
 @Test func searchGheeSmartUnit() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     let ghee = try db.searchFoods(query: "ghee")
     guard let g = ghee.first else { return }
     let units = FoodUnit.smartUnits(for: g)
@@ -966,8 +959,7 @@ import GRDB
 // MARK: - Aggressive Edge Case Tests (10 tests)
 
 @Test func foodSearchSpecialCharacters() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     // These should not crash
     for q in ["'", "\"", "%", "_", "\\", "(", ")", "--", ";", "DROP TABLE"] {
         let _ = try db.searchFoods(query: q)
@@ -976,8 +968,7 @@ import GRDB
 }
 
 @Test func foodSearchUnicodeCharacters() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     let _ = try db.searchFoods(query: "café")
     let _ = try db.searchFoods(query: "über")
     let _ = try db.searchFoods(query: "日本")
@@ -1047,8 +1038,7 @@ import GRDB
 }
 
 @Test func smartUnitsForAllDBFoods() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     let allFoods = try db.searchFoods(query: "e", limit: 500) // Most foods have 'e'
     var issues: [String] = []
     for food in allFoods {
@@ -1245,24 +1235,21 @@ import GRDB
 // MARK: - Food DB Quality Tests (3 tests)
 
 @Test func allFoodsHavePositiveCaloriesOrZero() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     let all = try db.searchFoods(query: "e", limit: 600) + db.searchFoods(query: "a", limit: 600)
     let negative = all.filter { $0.calories < 0 }
     #expect(negative.isEmpty, "Foods with negative calories: \(negative.map(\.name))")
 }
 
 @Test func allFoodsHaveReasonableServingSize() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     let all = try db.searchFoods(query: "e", limit: 600) + db.searchFoods(query: "a", limit: 600)
     let zeroServing = all.filter { $0.servingSize <= 0 }
     #expect(zeroServing.isEmpty, "Foods with zero serving: \(zeroServing.map(\.name))")
 }
 
 @Test func allFoodsHaveNonEmptyNames() async throws {
-    let db = try AppDatabase.empty()
-    try db.seedFoodsFromJSON()
+    let db = seededDB()
     let all = try db.searchFoods(query: "a", limit: 600)
     let empty = all.filter { $0.name.trimmingCharacters(in: .whitespaces).isEmpty }
     #expect(empty.isEmpty)

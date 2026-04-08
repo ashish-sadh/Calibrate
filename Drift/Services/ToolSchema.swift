@@ -59,6 +59,8 @@ struct ToolSchema: Identifiable {
     let service: String         // "food"
     let description: String     // Shown to LLM
     let parameters: [ToolParam]
+    var needsConfirmation: Bool = false  // Tool asks user "yes" before executing
+    var preHook: (@MainActor (ToolCallParams) async -> ToolCallParams)?  // Enrich params before execution
     var validate: (@MainActor (ToolCallParams) -> String?)?  // Returns error message if invalid, nil if OK
     let handler: @MainActor (ToolCallParams) async -> ToolResult
     var postHook: (@MainActor (ToolResult) -> String)?  // Suggest follow-up after execution
@@ -128,17 +130,22 @@ final class ToolRegistry {
         return result
     }
 
-    /// Execute a tool call by name. Runs validation first, post-hook after.
+    /// Execute a tool call by name. Runs pre-hook → validation → handler → post-hook.
     func execute(_ call: ToolCall) async -> ToolResult {
         guard let tool = tools[call.tool] else {
             return .error("Unknown tool: \(call.tool)")
         }
-        // Pre-tool validation
-        if let validate = tool.validate, let error = validate(call.params) {
+        // Pre-hook: enrich params (e.g., DB lookup, gram conversion)
+        var params = call.params
+        if let preHook = tool.preHook {
+            params = await preHook(params)
+        }
+        // Validation
+        if let validate = tool.validate, let error = validate(params) {
             return .error(error)
         }
-        let result = await tool.handler(call.params)
-        // Post-tool hook: append follow-up suggestion
+        let result = await tool.handler(params)
+        // Post-hook: append follow-up suggestion
         if let postHook = tool.postHook, case .text(let text) = result {
             let followUp = postHook(result)
             return .text(text + " " + followUp)
@@ -158,7 +165,13 @@ func parseToolCallJSON(_ text: String) -> ToolCall? {
     let jsonStr = String(text[start...end])
     guard let data = jsonStr.data(using: .utf8),
           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-          let toolName = json["tool"] as? String else { return nil }
+          var toolName = json["tool"] as? String else { return nil }
+
+    // LLM sometimes copies parens from prompt: "sleep_recovery()" → "sleep_recovery"
+    if let parenIdx = toolName.firstIndex(of: "(") {
+        toolName = String(toolName[..<parenIdx])
+    }
+    toolName = toolName.trimmingCharacters(in: .whitespaces)
 
     var params: [String: String] = [:]
     if let p = json["params"] as? [String: Any] {

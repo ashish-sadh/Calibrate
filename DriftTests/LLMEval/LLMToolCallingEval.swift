@@ -2,8 +2,9 @@ import XCTest
 @testable import Drift
 
 /// Evaluates whether Qwen2.5-1.5B can reliably select the right tool from a schema list.
-/// Loads the actual model and runs 100 queries. Takes ~25 min.
-/// Run: xcodebuild test -only-testing:'DriftTests/LLMToolCallingEval'
+/// Lite: 3 queries (~30s). Deep: 100 queries (~25 min, needs DRIFT_DEEP_EVAL=1).
+/// Run lite: xcodebuild test -only-testing:'DriftLLMEvalTests/LLMToolCallingEval/testLiteSanity'
+/// Run deep: DRIFT_DEEP_EVAL=1 xcodebuild test -only-testing:'DriftLLMEvalTests/LLMToolCallingEval'
 final class LLMToolCallingEval: XCTestCase {
 
     nonisolated(unsafe) static var backend: LlamaCppBackend?
@@ -98,9 +99,35 @@ final class LLMToolCallingEval: XCTestCase {
         return (response, actualTool, correct)
     }
 
-    // MARK: - Food Logging (30)
+    // MARK: - Lite (runs every time)
+
+    func testLiteSanity() async throws {
+        guard Self.backend != nil else { throw XCTSkip("Model not available") }
+        let queries: [(String, String?, String)] = [
+            ("I had 2 eggs", "log_food", "food log"),
+            ("calories left?", "food_info", "food question"),
+            ("how's my weight trend", "weight_info", "weight question"),
+        ]
+        var correct = 0
+        for (query, expected, label) in queries {
+            let result = await runQuery(query, screen: "dashboard", expectedTool: expected)
+            if result.correct { correct += 1 }
+            else { print("❌ LITE \(label): '\(query)' → \(result.tool ?? "none")") }
+        }
+        print("📊 Qwen2.5-1.5B Lite: \(correct)/\(queries.count)")
+        XCTAssertGreaterThanOrEqual(correct, 2, "Lite sanity: \(correct)/\(queries.count)")
+    }
+
+    private func skipUnlessDeepEval() throws {
+        guard ProcessInfo.processInfo.environment["DRIFT_DEEP_EVAL"] != nil else {
+            throw XCTSkip("Deep eval skipped — set DRIFT_DEEP_EVAL=1 to run")
+        }
+    }
+
+    // MARK: - Food Logging (30) [DEEP]
 
     func testFoodLogging() async throws {
+        try skipUnlessDeepEval()
         guard Self.backend != nil else { throw XCTSkip("Model not available") }
 
         let queries: [(String, String)] = [
@@ -141,6 +168,7 @@ final class LLMToolCallingEval: XCTestCase {
     // MARK: - Food Understanding (15)
 
     func testFoodUnderstanding() async throws {
+        try skipUnlessDeepEval()
         guard Self.backend != nil else { throw XCTSkip("Model not available") }
 
         let queries: [(String, String)] = [
@@ -176,6 +204,7 @@ final class LLMToolCallingEval: XCTestCase {
     // MARK: - Weight (15)
 
     func testWeightQueries() async throws {
+        try skipUnlessDeepEval()
         guard Self.backend != nil else { throw XCTSkip("Model not available") }
 
         let queries: [(String, String)] = [
@@ -211,6 +240,7 @@ final class LLMToolCallingEval: XCTestCase {
     // MARK: - Exercise Coach (25)
 
     func testExerciseCoach() async throws {
+        try skipUnlessDeepEval()
         guard Self.backend != nil else { throw XCTSkip("Model not available") }
 
         let queries: [(String, String)] = [
@@ -254,6 +284,7 @@ final class LLMToolCallingEval: XCTestCase {
     // MARK: - Sleep & Recovery (10)
 
     func testSleepRecovery() async throws {
+        try skipUnlessDeepEval()
         guard Self.backend != nil else { throw XCTSkip("Model not available") }
 
         let queries: [(String, String)] = [
@@ -284,6 +315,7 @@ final class LLMToolCallingEval: XCTestCase {
     // MARK: - No Tool Expected (15)
 
     func testNoToolExpected() async throws {
+        try skipUnlessDeepEval()
         guard Self.backend != nil else { throw XCTSkip("Model not available") }
 
         let queries: [(String, String?)] = [
@@ -315,6 +347,7 @@ final class LLMToolCallingEval: XCTestCase {
     // MARK: - Ambiguous / Tricky (5)
 
     func testAmbiguousQueries() async throws {
+        try skipUnlessDeepEval()
         guard Self.backend != nil else { throw XCTSkip("Model not available") }
 
         let queries: [(String, String)] = [

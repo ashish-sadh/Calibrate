@@ -9,34 +9,33 @@ Built the foundation: weight, food, exercise, sleep, supplements, body comp, glu
 ## Phase 2: AI Chat Foundation (DONE)
 - On-device inference: llama.cpp, Metal GPU
 - Dual-model: SmolLM (reliable harness) + Gemma 4 (intelligence)
-- 10 JSON tools, screen bias removed, chain-of-thought
+- 19 JSON tools, screen bias removed, chain-of-thought
 - Food/weight/exercise/health logging and queries from chat
 - Eval harness: 212+ tests + 100-query LLM eval
 
-## Phase 3: AI Chat Parity (CURRENT)
-Close the gap between AI chat and UI. See `Docs/ai-parity.md`.
+## Phase 3: AI Chat Architecture (CURRENT)
 
-### 3a: Friction Reducers (IN PROGRESS)
-- Mark supplement taken via chat
-- Edit/delete food entries via chat
-- Copy yesterday's food
-- Quick-add raw calories
-- Set/update weight goal
-- Trigger barcode scan from chat
+### 3a: Tiered Pipeline (DONE)
+- ToolRanker: keyword scoring, 19 tool profiles, rule-based tool pick
+- AIToolAgent: tiered normalize → rules → tool-first → stream
+- Universal StaticOverrides (no isLargeModel gate)
+- LLM normalizer: spell correction, number normalization, query rewriting
+- 20s timeout on all LLM calls
+- Early JSON termination, spell correction in findFood
 
-### 3b: Multi-Turn Intelligence — Gemma 4 (IN PROGRESS)
-- Meal planning dialogue ("plan my meals for today")
-- Workout split builder ("build me a PPL")
-- Cross-domain analysis ("why am I not losing weight?")
-- Weekly comparison with trend data
-- Coaching conversations using real user data
+### 3b: Parity Gaps Closed (DONE)
+- Mark supplement, edit/delete food, copy yesterday, quick-add calories
+- Set weight goal, barcode scan, body comp, add supplement
+- Weekly comparison, cross-domain analysis
+- Handler ordering: all view-state + multi-turn handlers before LLM pipeline
 
-### 3c: Chat Quality (CONTINUOUS)
-- Prompt optimization per tool
+### 3c: Pipeline Quality (IN PROGRESS)
+- Multi-turn via normalizer context (replace pendingMealName state vars)
+- Normalizer accuracy tuning for Gemma 4 2B
+- Multi-turn pronoun resolution
+- Tool-first streaming presentation (execute tools → inject data → stream)
 - Eval expansion (300+ tests)
-- Response quality scoring
-- Multi-turn context management
-- Conversation memory (tool results in history)
+- Food search quality (singular-first, extractAmount patterns)
 
 ## Phase 4: Input Expansion (NEXT)
 - Voice input: iOS 26 SpeechAnalyzer (on-device) → AI chat
@@ -50,3 +49,5 @@ Close the gap between AI chat and UI. See `Docs/ai-parity.md`.
 - On-device embeddings: semantic food/exercise search
 - Training programming across weeks
 - Weekly AI summary push notification
+- Conversation memory (tool results persist across sessions)
+- Multi-turn meal planning dialogue

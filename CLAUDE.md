@@ -32,7 +32,8 @@ Human says "run self-improvement" or "never stop". Read `program.md` and follow 
 
 ## Rules
 - Build and test after every change
-- All 729+ tests must pass before committing
+- All 729+ unit tests (DriftTests) must pass before committing
+- Run LLM eval lite after AI changes; deep eval only when asked
 - Don't publish TestFlight unless the user says "publish"
 - No MacroFactor references anywhere
 - Privacy-first: everything local, no cloud, no analytics
@@ -45,19 +46,35 @@ Human says "run self-improvement" or "never stop". Read `program.md` and follow 
 - Default: assume losing weight
 
 ## Build & Test
+
+**CRITICAL: Never run multiple `xcodebuild test` in parallel.** They fight for the simulator and deadlock. Always kill stale processes first.
+
 ```bash
 cd /Users/ashishsadh/workspace/Drift
 
 # Build
 xcodebuild build -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 
-# Test (all 729+)
-xcodebuild test -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+# Unit tests (729+ fast tests, ~10s) — ALWAYS kill stale processes first
+pkill -9 -f xcodebuild 2>/dev/null; sleep 2
+xcodebuild test -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:DriftTests
+
+# LLM eval lite (3 queries per model, ~2 min) — run after AI changes
+pkill -9 -f xcodebuild 2>/dev/null; sleep 2
+xcodebuild test -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:DriftLLMEvalTests 2>&1 | grep -E "📊|❌|✔|✘|passed|failed"
+
+# LLM eval deep PARALLEL (40 queries x 3 models, ~10 min) — only when asked, run in background
+pkill -9 -f xcodebuild 2>/dev/null; sleep 2
+DRIFT_DEEP_EVAL=1 xcodebuild test -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:'DriftLLMEvalTests/ParallelLLMEval'
+
+# LLM eval deep SEQUENTIAL (100+ queries per model, ~25 min each) — full eval
+pkill -9 -f xcodebuild 2>/dev/null; sleep 2
+DRIFT_DEEP_EVAL=1 xcodebuild test -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:DriftLLMEvalTests
 
 # Check failures
 xcodebuild test ... 2>&1 | grep "✘"  # empty = all pass
 
-# AI eval harness only
+# AI eval harness only (intent detection, no LLM)
 xcodebuild test ... -only-testing:'DriftTests/AIEvalHarness'
 ```
 

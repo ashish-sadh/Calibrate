@@ -14,7 +14,49 @@ enum ToolRegistration {
         r.register(ToolSchema(
             id: "food.log_food", name: "log_food", service: "food",
             description: "User wants to LOG/ADD food they ate. Use this when they say 'I had', 'ate', 'log', 'add'.",
-            parameters: [ToolParam("name", "string", "Food name"), ToolParam("amount", "number", "How many servings", required: false)],
+            parameters: [ToolParam("name", "string", "Food name"), ToolParam("amount", "number", "How many servings or grams (e.g. '200g', '2')", required: false)],
+            preHook: { params in
+                // Parse gram amounts: "paneer biryani 200g" or amount="200g"
+                guard let rawName = params.string("name") else { return params }
+                var name = rawName
+                var gramAmount: Double? = nil
+                var servings = params.double("amount")
+
+                // Check if amount contains "g" → treat as grams
+                if let amtStr = params.string("amount") {
+                    let gramPattern = #"^(\d+\.?\d*)\s*g(?:ram)?s?$"#
+                    if let regex = try? NSRegularExpression(pattern: gramPattern, options: .caseInsensitive),
+                       let match = regex.firstMatch(in: amtStr, range: NSRange(amtStr.startIndex..., in: amtStr)),
+                       let numRange = Range(match.range(at: 1), in: amtStr),
+                       let grams = Double(String(amtStr[numRange])) {
+                        gramAmount = grams
+                        servings = nil
+                    }
+                }
+
+                // Also parse "200g" or "200 gram" embedded in the name
+                let nameGramPattern = #"\s+(\d+\.?\d*)\s*g(?:ram)?s?\s*$"#
+                if gramAmount == nil,
+                   let regex = try? NSRegularExpression(pattern: nameGramPattern, options: .caseInsensitive),
+                   let match = regex.firstMatch(in: name, range: NSRange(name.startIndex..., in: name)),
+                   let numRange = Range(match.range(at: 1), in: name),
+                   let grams = Double(String(name[numRange])) {
+                    gramAmount = grams
+                    name = String(name[..<name.index(name.startIndex, offsetBy: match.range.location)]).trimmingCharacters(in: .whitespaces)
+                }
+
+                // DB lookup + gram→serving conversion
+                if let food = AIActionExecutor.findFood(query: name, servings: servings, gramAmount: gramAmount) {
+                    var enriched: [String: String] = ["name": food.food.name]
+                    enriched["amount"] = "\(food.servings)"
+                    return ToolCallParams(values: enriched)
+                }
+
+                // No match — pass cleaned name through for search
+                var enriched: [String: String] = ["name": name]
+                if let s = servings { enriched["amount"] = "\(s)" }
+                return ToolCallParams(values: enriched)
+            },
             handler: { params in
                 guard let name = params.string("name") else { return .error("Missing food name") }
                 return .action(.openFoodSearch(query: name, servings: params.double("amount")))
@@ -26,31 +68,57 @@ enum ToolRegistration {
             description: "User asks ABOUT food: calories, protein, nutrition, 'what should I eat', diet questions. NOT for logging.",
             parameters: [ToolParam("query", "string", "What they asked about", required: false)],
             handler: { params in
-                let query = params.string("query") ?? ""
-                // Try nutrition lookup first
+                let query = (params.string("query") ?? "").lowercased()
+
+                // Nutrition lookup for specific food: "calories in banana"
                 if !query.isEmpty, let result = FoodService.getNutrition(name: query) {
                     return .text("\(result.perServing) Say 'log \(result.food.name.lowercased())' to add it.")
                 }
-                // Show comprehensive food info: calories, macros, balance, suggestions
+
+                let n = (try? AppDatabase.shared.fetchDailyNutrition(for: DateFormatters.todayString)) ?? .zero
+                let goal = WeightGoal.load()
+                let targets = goal?.macroTargets()
+
+                // Macro-specific focus: "how is my protein", "carbs today", "fat intake"
+                if query.contains("protein") {
+                    guard n.proteinG > 0 else { return .text("No food logged yet. Log meals to track protein.") }
+                    if let t = targets {
+                        let left = max(0, Int(t.proteinG - n.proteinG))
+                        var response = "\(Int(n.proteinG))g protein today (\(Int(t.proteinG))g target). \(left > 0 ? "Still need \(left)g." : "Target reached!")"
+                        let topP = FoodService.topProteinFoods(limit: 3)
+                        if left > 20 && !topP.isEmpty {
+                            response += " Try: " + topP.map { "\($0.name) (\(Int($0.proteinG))P)" }.joined(separator: ", ")
+                        }
+                        return .text(response)
+                    }
+                    return .text("\(Int(n.proteinG))g protein today.")
+                }
+                if query.contains("carb") {
+                    let left = targets.map { max(0, Int($0.carbsG - n.carbsG)) }
+                    return .text("\(Int(n.carbsG))g carbs today.\(left.map { " Target: \(Int(targets!.carbsG))g. \($0 > 0 ? "Need \($0)g more." : "Reached!")" } ?? "")")
+                }
+                if query.contains("fat") && !query.contains("body fat") {
+                    let left = targets.map { max(0, Int($0.fatG - n.fatG)) }
+                    return .text("\(Int(n.fatG))g fat today.\(left.map { " Target: \(Int(targets!.fatG))g. \($0 > 0 ? "Need \($0)g more." : "Reached!")" } ?? "")")
+                }
+
+                // General food info: calories, macros, suggestions
                 let totals = FoodService.getDailyTotals()
                 var lines: [String] = []
                 lines.append("\(totals.remaining > 0 ? "\(totals.remaining)" : "0") cal remaining (\(totals.eaten)/\(totals.target)).")
 
-                // Macro balance
-                if let goal = WeightGoal.load(), let targets = goal.macroTargets() {
-                    let pLeft = max(0, Int(targets.proteinG) - totals.proteinG)
-                    let cLeft = max(0, Int(targets.carbsG) - totals.carbsG)
-                    let fLeft = max(0, Int(targets.fatG) - totals.fatG)
+                if let t = targets {
+                    let pLeft = max(0, Int(t.proteinG) - totals.proteinG)
+                    let cLeft = max(0, Int(t.carbsG) - totals.carbsG)
+                    let fLeft = max(0, Int(t.fatG) - totals.fatG)
                     lines.append("Macros: \(totals.proteinG)P/\(totals.carbsG)C/\(totals.fatG)F. Need: \(pLeft)P \(cLeft)C \(fLeft)F more.")
                 }
 
-                // Suggestions
                 let suggestions = FoodService.suggestMeal()
                 if !suggestions.isEmpty {
                     lines.append("Try: " + suggestions.prefix(3).map { "\($0.name) (\(Int($0.calories))cal, \(Int($0.proteinG))P)" }.joined(separator: ", "))
                 }
 
-                // Top protein if protein is low
                 if totals.proteinG < 50 {
                     let topP = FoodService.topProteinFoods(limit: 3)
                     if !topP.isEmpty {
@@ -92,6 +160,7 @@ enum ToolRegistration {
             id: "weight.log_weight", name: "log_weight", service: "weight",
             description: "User wants to LOG their body weight. Use when they say 'I weigh', 'my weight is', 'scale says'.",
             parameters: [ToolParam("value", "number", "Weight number"), ToolParam("unit", "string", "kg or lbs", required: false)],
+            needsConfirmation: true,
             validate: { params in
                 guard let value = params.double("value") else { return "Missing weight value" }
                 let unit = params.string("unit") ?? "lbs"
@@ -185,6 +254,52 @@ enum ToolRegistration {
                     lines.append("Streak: \(streak.current) weeks (longest: \(streak.longest))")
                 }
                 return .text(lines.joined(separator: "\n"))
+            }
+        ))
+
+        r.register(ToolSchema(
+            id: "exercise.log_activity", name: "log_activity", service: "exercise",
+            description: "User says they COMPLETED an activity: 'I did yoga', 'went running', 'just finished pilates'. NOT for starting a new workout.",
+            parameters: [
+                ToolParam("name", "string", "Activity name like 'yoga', 'running', 'swimming'"),
+                ToolParam("duration", "number", "Duration in minutes if mentioned", required: false)
+            ],
+            needsConfirmation: true,
+            preHook: { params in
+                guard var name = params.string("name") else { return params }
+                var duration = params.double("duration")
+
+                // Parse duration embedded in name: "30 min yoga" → 30, "yoga"
+                let durPattern = #"^(\d+)\s*(?:min(?:ute)?s?)\s+"#
+                if duration == nil,
+                   let regex = try? NSRegularExpression(pattern: durPattern),
+                   let match = regex.firstMatch(in: name, range: NSRange(name.startIndex..., in: name)),
+                   let numRange = Range(match.range(at: 1), in: name) {
+                    duration = Double(String(name[numRange]))
+                    name = String(name[name.index(name.startIndex, offsetBy: match.range.length)...]).trimmingCharacters(in: .whitespaces)
+                }
+
+                // Also: "yoga for 30 min" → "yoga", 30
+                let trailingDurPattern = #"\s+(?:for\s+)?(\d+)\s*(?:min(?:ute)?s?)\s*$"#
+                if duration == nil,
+                   let regex = try? NSRegularExpression(pattern: trailingDurPattern),
+                   let match = regex.firstMatch(in: name, range: NSRange(name.startIndex..., in: name)),
+                   let numRange = Range(match.range(at: 1), in: name) {
+                    duration = Double(String(name[numRange]))
+                    name = String(name[..<name.index(name.startIndex, offsetBy: match.range.location)]).trimmingCharacters(in: .whitespaces)
+                }
+
+                var enriched: [String: String] = ["name": name]
+                if let d = duration { enriched["duration"] = "\(Int(d))" }
+                return ToolCallParams(values: enriched)
+            },
+            handler: { params in
+                guard let name = params.string("name"), !name.isEmpty else {
+                    return .error("What activity did you do?")
+                }
+                let display = name.capitalized
+                let durText = params.double("duration").map { " (\(Int($0)) min)" } ?? ""
+                return .text("Log \(display)\(durText) for today? Say yes to confirm.")
             }
         ))
 

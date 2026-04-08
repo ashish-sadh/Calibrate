@@ -164,23 +164,30 @@ enum AIActionExecutor {
             return servings ?? 1
         }
 
-        // Try exact search first
-        if let results = try? AppDatabase.shared.searchFoodsRanked(query: query),
-           let best = results.first {
-            let queryWords = query.lowercased().split(separator: " ")
-            let nameWords = best.name.lowercased()
-            let matchCount = queryWords.filter { nameWords.contains($0) }.count
-            if matchCount > 0 {
-                return FoodMatch(food: best, servings: resolveServings(for: best))
+        // Try singular first for better matches: "bananas" → "banana" (avoids "TJ's Gone Bananas")
+        let singular = query.hasSuffix("s") && query.count > 3 ? String(query.dropLast()) : query
+        let searchQueries = singular != query ? [singular, query] : [query]
+
+        for searchQuery in searchQueries {
+            if let results = try? AppDatabase.shared.searchFoodsRanked(query: searchQuery),
+               let best = results.first {
+                // Prefer foods whose name closely matches the query (not just contains)
+                let queryWords = searchQuery.lowercased().split(separator: " ")
+                let nameWords = best.name.lowercased()
+                let matchCount = queryWords.filter { nameWords.contains($0) }.count
+                if matchCount > 0 {
+                    return FoodMatch(food: best, servings: resolveServings(for: best))
+                }
             }
         }
-        // Try without trailing 's' (eggs → egg, bananas → banana)
-        let singular = query.hasSuffix("s") ? String(query.dropLast()) : query
-        if singular != query,
-           let results = try? AppDatabase.shared.searchFoodsRanked(query: singular),
+        // Try spell correction: "bannana" → "banana", "chiken" → "chicken"
+        let corrected = SpellCorrectService.correct(query)
+        if corrected != query,
+           let results = try? AppDatabase.shared.searchFoodsRanked(query: corrected),
            let best = results.first {
             return FoodMatch(food: best, servings: resolveServings(for: best))
         }
+
         // Try stripping qualifiers: "slices of pizza" → "pizza", "cups of rice" → "rice"
         let qualifiers = ["slices of ", "slice of ", "pieces of ", "piece of ", "cups of ", "cup of ",
                           "bowls of ", "bowl of ", "glasses of ", "glass of ", "servings of ", "serving of ",
@@ -254,7 +261,31 @@ enum AIActionExecutor {
 
     /// Extract amount from beginning of string: "1/3 avocado" → (0.33, "avocado")
     /// Also returns gram amount separately: "paneer biryani 300 gram" → (nil, "paneer biryani", 300)
-    private static func extractAmount(from text: String) -> (Double?, String, Double?) {
+    static func extractAmount(from text: String) -> (Double?, String, Double?) {
+        // "NUMBER UNIT of FOOD": "100 gram of rice", "2 cups of dal", "200 oz of daal"
+        let gramUnitsLeading: Set<String> = ["g", "gram", "grams", "gm", "oz", "ml", "kg"]
+        let countUnitsLeading: Set<String> = ["scoop", "scoops", "tbsp", "tsp", "cup", "cups",
+                                               "piece", "pieces", "slice", "slices", "serving", "servings",
+                                               "portion", "portions"]
+        let leadingWords = text.split(separator: " ").map(String.init)
+        if leadingWords.count >= 3, let num = Double(leadingWords[0]) {
+            let unit = leadingWords[1].lowercased()
+            let isGramUnit = gramUnitsLeading.contains(unit)
+            let isCountUnit = countUnitsLeading.contains(unit)
+            if isGramUnit || isCountUnit {
+                var foodStart = 2
+                if leadingWords.count > 3 && leadingWords[2].lowercased() == "of" { foodStart = 3 }
+                let food = leadingWords[foodStart...].joined(separator: " ")
+                if !food.isEmpty {
+                    if isGramUnit {
+                        return (nil, food.trimmingCharacters(in: .whitespaces), num)
+                    } else {
+                        return (num, food.trimmingCharacters(in: .whitespaces), nil)
+                    }
+                }
+            }
+        }
+
         // Multi-word amounts first
         let multiWord: [(String, Double)] = [("a couple of ", 2), ("couple of ", 2), ("a few ", 3), ("a lot of ", 2), ("lots of ", 2)]
         for (prefix, amount) in multiWord {
