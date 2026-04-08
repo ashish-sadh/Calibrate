@@ -157,26 +157,39 @@ enum AIToolAgent {
 
     // MARK: - Tool-First Execution
 
-    /// Execute top relevant info tools before streaming. Actions skip this.
+    /// Execute top relevant info tools in parallel before streaming. Actions skip this.
     private static func executeRelevantTools(query: String, screen: AIScreen) async -> [AgentOutput] {
         let tools = ToolRanker.rank(query: query, screen: screen, topN: 2)
-        var results: [AgentOutput] = []
+            .filter { isInfoTool($0.name) }
+        guard !tools.isEmpty else { return [] }
 
-        for tool in tools {
-            guard isInfoTool(tool.name) else { continue }
+        // Extract params on MainActor before parallel execution
+        let calls: [ToolCall] = tools.map { tool in
             let params = ToolRanker.extractParamsForTool(tool, from: query)
-            let call = ToolCall(tool: tool.name, params: ToolCallParams(values: params))
-            let result = await ToolRegistry.shared.execute(call)
-            switch result {
-            case .text(let text):
-                results.append(AgentOutput(text: text, action: nil, toolsCalled: [tool.name]))
-            case .action(let action):
-                results.append(AgentOutput(text: "", action: action, toolsCalled: [tool.name]))
-            case .error:
-                break
-            }
+            return ToolCall(tool: tool.name, params: ToolCallParams(values: params))
         }
-        return results
+
+        // Execute tools in parallel
+        return await withTaskGroup(of: AgentOutput?.self) { group in
+            for call in calls {
+                group.addTask {
+                    let result = await ToolRegistry.shared.execute(call)
+                    switch result {
+                    case .text(let text):
+                        return AgentOutput(text: text, action: nil, toolsCalled: [call.tool])
+                    case .action(let action):
+                        return AgentOutput(text: "", action: action, toolsCalled: [call.tool])
+                    case .error:
+                        return nil
+                    }
+                }
+            }
+            var results: [AgentOutput] = []
+            for await output in group {
+                if let output { results.append(output) }
+            }
+            return results
+        }
     }
 
     private static let infoTools: Set<String> = [
