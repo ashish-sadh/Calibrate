@@ -6,7 +6,7 @@ AI-first local health tracker. AI chat is the primary interface — every data e
 ## Numbers
 - **Version:** 0.1.0, Build 87
 - **Tests:** 729+ (19 test files, 248 methods)
-- **AI Eval:** 212+ methods + 100-query LLM eval
+- **AI Eval:** 330+ scenarios in eval harness + LLM eval
 - **Foods:** 1004+ (Indian, Mexican, global)
 - **Exercises:** 873 (free-exercise-db)
 - **Biomarkers:** 65 across 9 categories
@@ -48,11 +48,12 @@ Tier 4: Pure streaming with context (~10-20s)                → conversation
 - Context: 2048 tokens, max prompt: 1776, max generation: 256
 
 ## AI Chat Capabilities
-- Food: log single/multi/meal/gram, nutrition lookup, macro-specific (protein/carbs/fat), suggestions
-- Weight: log, trend, goal progress, set goal
-- Exercise: start template, smart workout, log exercises, log activity, suggestion
-- Health: sleep/recovery, supplements (status/mark/add), glucose, biomarkers, body comp
-- Meta: explain TDEE, daily/weekly/yesterday summary, calories left, copy yesterday
+- Food: log single/multi/meal/gram, nutrition lookup, calorie estimation, macro-specific, delete entry, suggestions
+- Weight: log, trend, goal progress, set goal (incl. word numbers), cross-domain analysis
+- Exercise: start template, smart workout, log exercises, log activity, suggestion, workout history
+- Health: sleep/recovery (weekly), supplements (status/mark/add), glucose, biomarkers, body comp
+- Meta: explain TDEE, daily/weekly/yesterday summary, calories left, copy yesterday, topic continuation
+- Multi-turn: meal continuation ("also add X"), history-based context, pronoun resolution
 
 ## Tab Structure
 Dashboard | Weight | Food | Exercise | More

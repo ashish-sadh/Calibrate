@@ -113,9 +113,9 @@ enum AIRuleEngine {
             lines.append("Food: nothing logged yet (target: \(target) cal)")
         }
 
-        // Weight
+        // Weight (entries sorted DESC by date, so .first = most recent)
         if let entries = try? AppDatabase.shared.fetchWeightEntries(),
-           let latest = entries.last {
+           let latest = entries.first {
             let unit = Preferences.weightUnit
             lines.append("Weight: \(String(format: "%.1f", unit.convert(fromKg: latest.weightKg)))\(unit.displayName)")
         }
