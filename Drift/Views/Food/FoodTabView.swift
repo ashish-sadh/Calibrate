@@ -390,12 +390,7 @@ struct FoodTabView: View {
                 .frame(width: 3, height: 28)
 
             VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 3) {
-                    Text(entry.foodName).font(.subheadline).lineLimit(1)
-                    if PlantPointsService.classify(entry.foodName) != .notPlant {
-                        Image(systemName: "leaf.fill").font(.caption2).foregroundStyle(Theme.plantGreen)
-                    }
-                }
+                Text(entry.foodName).font(.subheadline).lineLimit(1)
                 HStack(spacing: 4) {
                     if let time = entryTimeString(entry) {
                         HStack(spacing: 3) {
