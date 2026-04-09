@@ -4387,7 +4387,8 @@
     "fat_g": 14,
     "fiber_g": 2,
     "ingredients": [
-      "WF Caesar Salad Kit"
+      "romaine lettuce",
+      "croutons"
     ]
   },
   {
@@ -4401,7 +4402,10 @@
     "fat_g": 7,
     "fiber_g": 4,
     "ingredients": [
-      "WF Kale & Quinoa Salad Kit"
+      "kale",
+      "quinoa",
+      "cranberry",
+      "pumpkin seeds"
     ]
   },
   {
@@ -4919,7 +4923,10 @@
     "fat_g": 11,
     "fiber_g": 2,
     "ingredients": [
-      "Avocado Ranch Salad Kit"
+      "romaine lettuce",
+      "avocado",
+      "corn",
+      "tomato"
     ]
   },
   {
@@ -5157,7 +5164,12 @@
     "fat_g": 6,
     "fiber_g": 0,
     "ingredients": [
-      "Chicken Shawarma"
+      "onion",
+      "tomato",
+      "garlic",
+      "cumin",
+      "turmeric",
+      "paprika"
     ]
   },
   {
@@ -5241,7 +5253,11 @@
     "fat_g": 10,
     "fiber_g": 2,
     "ingredients": [
-      "Classic Greek Salad"
+      "cucumber",
+      "tomato",
+      "onion",
+      "olive",
+      "bell pepper"
     ]
   },
   {
@@ -5311,7 +5327,9 @@
     "fat_g": 11,
     "fiber_g": 2,
     "ingredients": [
-      "Creamy Dill Pickle Chopped Kit"
+      "romaine lettuce",
+      "cucumber",
+      "dill"
     ]
   },
   {
@@ -5325,7 +5343,10 @@
     "fat_g": 3,
     "fiber_g": 3,
     "ingredients": [
-      "Crunch Sesame Ramen Salad - Correct"
+      "cabbage",
+      "carrot",
+      "scallion",
+      "sesame seeds"
     ]
   },
   {
@@ -5381,7 +5402,10 @@
     "fat_g": 11,
     "fiber_g": 2,
     "ingredients": [
-      "Dill-Icious Chopped Salad Kit"
+      "romaine lettuce",
+      "cucumber",
+      "dill",
+      "onion"
     ]
   },
   {
@@ -5563,7 +5587,10 @@
     "fat_g": 12,
     "fiber_g": 0,
     "ingredients": [
-      "Greek Side Salad"
+      "cucumber",
+      "tomato",
+      "onion",
+      "olive"
     ]
   },
   {
@@ -5661,7 +5688,10 @@
     "fat_g": 39,
     "fiber_g": 8,
     "ingredients": [
-      "Harvest Bowl"
+      "quinoa",
+      "sweet potato",
+      "kale",
+      "chickpeas"
     ]
   },
   {
@@ -5815,7 +5845,11 @@
     "fat_g": 10,
     "fiber_g": 2,
     "ingredients": [
-      "Lemon Tahini Crunch Chopped Salad Kit"
+      "kale",
+      "cabbage",
+      "tahini",
+      "lemon",
+      "sunflower seeds"
     ]
   },
   {
@@ -5871,7 +5905,11 @@
     "fat_g": 10,
     "fiber_g": 2,
     "ingredients": [
-      "Mediterranean Crunch Chopped Salad Kit"
+      "romaine lettuce",
+      "cucumber",
+      "tomato",
+      "olive",
+      "chickpeas"
     ]
   },
   {
@@ -5899,7 +5937,11 @@
     "fat_g": 12,
     "fiber_g": 2,
     "ingredients": [
-      "Mexican Street Corn Chopped Kit"
+      "romaine lettuce",
+      "corn",
+      "tomato",
+      "cilantro",
+      "lime"
     ]
   },
   {
@@ -5941,7 +5983,10 @@
     "fat_g": 11,
     "fiber_g": 2,
     "ingredients": [
-      "Miso Crunch Chopped Salad Kit"
+      "cabbage",
+      "carrot",
+      "edamame",
+      "scallion"
     ]
   },
   {
@@ -6473,7 +6518,11 @@
     "fat_g": 18,
     "fiber_g": 1,
     "ingredients": [
-      "Santa Fe Chicken Bowl"
+      "rice",
+      "beans",
+      "corn",
+      "bell pepper",
+      "onion"
     ]
   },
   {
@@ -6487,7 +6536,11 @@
     "fat_g": 4,
     "fiber_g": 2,
     "ingredients": [
-      "Santa Fe Chicken Grain Bowl"
+      "rice",
+      "beans",
+      "corn",
+      "bell pepper",
+      "onion"
     ]
   },
   {
@@ -7313,7 +7366,7 @@
     "fat_g": 0,
     "fiber_g": 6,
     "ingredients": [
-      "WF 365 Organic Black Beans (canned)"
+      "black beans"
     ]
   },
   {
@@ -7327,7 +7380,7 @@
     "fat_g": 0,
     "fiber_g": 6,
     "ingredients": [
-      "WF 365 Organic Pinto Beans (canned)"
+      "pinto beans"
     ]
   },
   {
@@ -7355,7 +7408,11 @@
     "fat_g": 9,
     "fiber_g": 2,
     "ingredients": [
-      "WF Asian Chopped Salad Kit"
+      "cabbage",
+      "carrot",
+      "edamame",
+      "sesame seeds",
+      "ginger"
     ]
   },
   {
@@ -7369,7 +7426,9 @@
     "fat_g": 0,
     "fiber_g": 2,
     "ingredients": [
-      "WF Power Greens (spinach/kale mix)"
+      "spinach",
+      "kale",
+      "chard"
     ]
   },
   {
