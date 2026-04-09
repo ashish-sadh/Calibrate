@@ -679,9 +679,53 @@ struct FoodTabView: View {
                             editMacroChip("P", value: entry.proteinG * multiplier, color: Theme.proteinRed)
                             editMacroChip("C", value: entry.carbsG * multiplier, color: Theme.carbsGreen)
                             editMacroChip("F", value: entry.fatG * multiplier, color: Theme.fatYellow)
+                            if entry.fiberG > 0 {
+                                editMacroChip("Fb", value: entry.fiberG * multiplier, color: Theme.fiberBrown)
+                            }
                         }
                     }
                     .card()
+
+                    // Plant indicator + ingredients
+                    let plantClass = PlantPointsService.classify(entry.foodName)
+                    if plantClass != .notPlant {
+                        HStack(spacing: 6) {
+                            Image(systemName: "leaf.fill").foregroundStyle(Theme.plantGreen)
+                            Text(plantClass == .herbSpice ? "Herb/Spice (¼ pt)" : "Plant (1 pt)")
+                                .font(.caption.weight(.medium))
+                            Spacer()
+                        }
+                        .padding(.horizontal, 4)
+                    }
+
+                    // Ingredients (if food has them)
+                    if let foodId = entry.foodId,
+                       let dbFood = try? AppDatabase.shared.reader.read({ db in try Food.fetchOne(db, id: foodId) }),
+                       dbFood.ingredientList.count > 1 || dbFood.ingredientList.first != dbFood.name {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Ingredients").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                            Text(dbFood.ingredientList.joined(separator: ", "))
+                                .font(.caption).foregroundStyle(.tertiary)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 4)
+                    }
+
+                    // Copy to Today (only when viewing past day)
+                    if !viewModel.isToday {
+                        Button {
+                            viewModel.copyEntryToToday(entry)
+                            copiedToTodayName = entry.foodName
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedToTodayName = nil }
+                            editingEntry = nil
+                        } label: {
+                            Label("Copy to Today", systemImage: "doc.on.doc")
+                                .font(.subheadline.weight(.medium))
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(Theme.accent)
+                    }
                 }
                 .padding(.horizontal, 16)
             }
