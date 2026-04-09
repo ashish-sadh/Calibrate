@@ -133,7 +133,7 @@ struct WorkoutView: View {
                         selectedTemplate = nil
                         showingNewWorkout = true
                     } label: {
-                        Label("Empty Workout", systemImage: "plus.circle.fill").frame(maxWidth: .infinity)
+                        Label("Start Workout", systemImage: "plus.circle.fill").frame(maxWidth: .infinity)
                     }.buttonStyle(.borderedProminent).tint(Theme.accent)
 
                     Button {
