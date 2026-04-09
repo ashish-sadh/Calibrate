@@ -18,6 +18,11 @@ struct FoodTabView: View {
     @State private var editUnitIndex = 0
     @State private var editEntryIsFav = false
     @State private var editEntryTime = Date()
+    @State private var editCal = ""
+    @State private var editP = ""
+    @State private var editC = ""
+    @State private var editF = ""
+    @State private var editFb = ""
     @State private var foodSortMode: FoodSortMode = .time
 
     enum FoodSortMode: String, CaseIterable {
@@ -491,6 +496,12 @@ struct FoodTabView: View {
             }
             editEntryIsFav = (try? AppDatabase.shared.isFoodFavorite(name: entry.foodName)) ?? false
             editEntryTime = parseTimestamp(entry.loggedAt) ?? Date()
+            // For custom entries: populate editable macros
+            editCal = "\(Int(entry.calories))"
+            editP = "\(Int(entry.proteinG))"
+            editC = "\(Int(entry.carbsG))"
+            editF = "\(Int(entry.fatG))"
+            editFb = "\(Int(entry.fiberG))"
             editingEntry = entry
         }
         .contextMenu {
@@ -769,22 +780,40 @@ struct FoodTabView: View {
                             .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
                     }
 
-                    VStack(spacing: 8) {
-                        HStack(alignment: .firstTextBaseline, spacing: 4) {
-                            Text("\(Int(entry.calories * multiplier))")
-                                .font(.title.weight(.bold).monospacedDigit())
-                            Text("cal").font(.subheadline).foregroundStyle(.secondary)
-                        }
-                        HStack(spacing: 8) {
-                            editMacroChip("P", value: entry.proteinG * multiplier, color: Theme.proteinRed)
-                            editMacroChip("C", value: entry.carbsG * multiplier, color: Theme.carbsGreen)
-                            editMacroChip("F", value: entry.fatG * multiplier, color: Theme.fatYellow)
-                            if entry.fiberG > 0 {
-                                editMacroChip("Fb", value: entry.fiberG * multiplier, color: Theme.fiberBrown)
+                    if entry.foodId == nil {
+                        // Custom entry — editable macros
+                        VStack(spacing: 8) {
+                            HStack {
+                                Text("Cal").font(.caption.weight(.medium)).foregroundStyle(.secondary).frame(width: 30)
+                                TextField("0", text: $editCal).keyboardType(.numberPad).font(.title2.weight(.bold).monospacedDigit()).multilineTextAlignment(.center)
+                            }
+                            HStack(spacing: 12) {
+                                editableMacroField("P", text: $editP, color: Theme.proteinRed)
+                                editableMacroField("C", text: $editC, color: Theme.carbsGreen)
+                                editableMacroField("F", text: $editF, color: Theme.fatYellow)
+                                editableMacroField("Fb", text: $editFb, color: Theme.fiberBrown)
                             }
                         }
+                        .card()
+                    } else {
+                        // DB food — read-only macros (adjusted by serving multiplier)
+                        VStack(spacing: 8) {
+                            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                Text("\(Int(entry.calories * multiplier))")
+                                    .font(.title.weight(.bold).monospacedDigit())
+                                Text("cal").font(.subheadline).foregroundStyle(.secondary)
+                            }
+                            HStack(spacing: 8) {
+                                editMacroChip("P", value: entry.proteinG * multiplier, color: Theme.proteinRed)
+                                editMacroChip("C", value: entry.carbsG * multiplier, color: Theme.carbsGreen)
+                                editMacroChip("F", value: entry.fatG * multiplier, color: Theme.fatYellow)
+                                if entry.fiberG > 0 {
+                                    editMacroChip("Fb", value: entry.fiberG * multiplier, color: Theme.fiberBrown)
+                                }
+                            }
+                        }
+                        .card()
                     }
-                    .card()
 
                     // Ingredients + plant indicator
                     let dbFood: Food? = {
@@ -869,7 +898,17 @@ struct FoodTabView: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         if let id = entry.id {
-                            viewModel.updateEntryServings(id: id, servings: multiplier)
+                            if entry.foodId == nil {
+                                // Custom entry — save edited macros
+                                try? AppDatabase.shared.updateFoodEntryMacros(
+                                    id: id, calories: Double(editCal) ?? entry.calories,
+                                    proteinG: Double(editP) ?? entry.proteinG,
+                                    carbsG: Double(editC) ?? entry.carbsG,
+                                    fatG: Double(editF) ?? entry.fatG,
+                                    fiberG: Double(editFb) ?? entry.fiberG)
+                            } else {
+                                viewModel.updateEntryServings(id: id, servings: multiplier)
+                            }
                             // Update time if changed
                             let newLoggedAt = DateFormatters.iso8601.string(from: editEntryTime)
                             if newLoggedAt != entry.loggedAt {
@@ -892,6 +931,19 @@ struct FoodTabView: View {
         }
         .padding(.horizontal, 8).padding(.vertical, 4)
         .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
+    }
+
+    private func editableMacroField(_ label: String, text: Binding<String>, color: Color) -> some View {
+        VStack(spacing: 2) {
+            Text(label).font(.caption2.weight(.semibold)).foregroundStyle(color)
+            TextField("0", text: text)
+                .keyboardType(.numberPad)
+                .font(.caption.weight(.medium).monospacedDigit())
+                .multilineTextAlignment(.center)
+                .frame(width: 45)
+                .padding(.vertical, 4)
+                .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
+        }
     }
 
     // MARK: - Consistency

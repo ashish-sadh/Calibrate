@@ -145,6 +145,14 @@ extension AppDatabase {
         }
     }
 
+    func updateFoodEntryMacros(id: Int64, calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double) throws {
+        try dbWriter.write { db in
+            try db.execute(sql: """
+                UPDATE food_entry SET calories = ?, protein_g = ?, carbs_g = ?, fat_g = ?, fiber_g = ? WHERE id = ?
+                """, arguments: [calories, proteinG, carbsG, fatG, fiberG, id])
+        }
+    }
+
     func updateFoodEntryLoggedAt(id: Int64, loggedAt: String) throws {
         try dbWriter.write { db in
             try db.execute(sql: "UPDATE food_entry SET logged_at = ? WHERE id = ?", arguments: [loggedAt, id])
