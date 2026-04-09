@@ -409,5 +409,27 @@ enum Migrations {
             // Mark barcode scans
             try db.execute(sql: "UPDATE food SET source = 'barcode' WHERE source IS NULL AND category = 'Scanned'")
         }
+
+        // v25: Merge saved_food into food table — unified food storage
+        migrator.registerMigration("v25_merge_saved_food") { db in
+            // Add saved_food columns to food table
+            try db.alter(table: "food") { t in
+                t.add(column: "is_recipe", .boolean).notNull().defaults(to: false)
+                t.add(column: "sort_order", .integer).notNull().defaults(to: 0)
+                t.add(column: "default_servings", .double).notNull().defaults(to: 1)
+            }
+            // Copy saved_food rows into food table
+            try db.execute(sql: """
+                INSERT INTO food (name, category, serving_size, serving_unit, calories,
+                                  protein_g, carbs_g, fat_g, fiber_g, ingredients,
+                                  source, is_recipe, sort_order, default_servings)
+                SELECT sf.name, CASE WHEN sf.is_recipe THEN 'Recipe' ELSE 'Saved' END,
+                       1.0, 'serving', sf.calories,
+                       sf.protein_g, sf.carbs_g, sf.fat_g, sf.fiber_g, sf.ingredients,
+                       'recipe', sf.is_recipe, sf.sort_order, sf.default_servings
+                FROM saved_food sf
+                WHERE NOT EXISTS (SELECT 1 FROM food f WHERE LOWER(f.name) = LOWER(sf.name))
+                """)
+        }
     }
 }

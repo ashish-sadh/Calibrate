@@ -126,20 +126,13 @@ extension AppDatabase {
         }
     }
 
-    /// Fetch user-favorited entry names (includes non-DB items like recipes/manual).
+    /// Fetch user-favorited entry names (unified — food table has everything now).
     func fetchFavoriteEntryNames() throws -> [RecentEntry] {
         try reader.read { db in
             let rows = try Row.fetchAll(db, sql: """
-                SELECT fu.food_name, fu.food_id, fu.last_servings, fu.use_count,
-                       COALESCE(f.calories, f2.calories, ff.calories, 0) as calories,
-                       COALESCE(f.protein_g, f2.protein_g, ff.protein_g, 0) as protein_g,
-                       COALESCE(f.carbs_g, f2.carbs_g, ff.carbs_g, 0) as carbs_g,
-                       COALESCE(f.fat_g, f2.fat_g, ff.fat_g, 0) as fat_g,
-                       COALESCE(f.serving_size, f2.serving_size, 0) as serving_size
+                SELECT fu.food_name, fu.food_id, fu.last_servings,
+                       fu.calories, fu.protein_g, fu.carbs_g, fu.fat_g, fu.serving_size_g
                 FROM food_usage fu
-                LEFT JOIN food f ON f.id = fu.food_id
-                LEFT JOIN food f2 ON LOWER(f2.name) = LOWER(fu.food_name) AND fu.food_id IS NULL
-                LEFT JOIN saved_food ff ON LOWER(ff.name) = LOWER(fu.food_name)
                 WHERE fu.is_favorite = 1
                 ORDER BY fu.food_name
                 """)
@@ -147,7 +140,7 @@ extension AppDatabase {
                 RecentEntry(name: row["food_name"], foodId: row["food_id"],
                             calories: row["calories"], proteinG: row["protein_g"],
                             carbsG: row["carbs_g"], fatG: row["fat_g"],
-                            servingSize: row["serving_size"], lastServings: row["last_servings"])
+                            servingSize: row["serving_size_g"], lastServings: row["last_servings"])
             }
         }
     }
@@ -196,11 +189,12 @@ extension AppDatabase {
     func searchRecipes(query: String) throws -> [SavedFood] {
         try reader.read { db in
             if query.isEmpty {
-                return try SavedFood.order(Column("name")).fetchAll(db)
+                return try Food.filter(Column("source") == "recipe")
+                    .order(Column("name")).fetchAll(db)
             }
             let escaped = Self.escapeLike(query)
-            return try SavedFood.fetchAll(db, sql: """
-                SELECT * FROM saved_food WHERE name LIKE ? ESCAPE '\\' ORDER BY name
+            return try Food.fetchAll(db, sql: """
+                SELECT * FROM food WHERE source = 'recipe' AND name LIKE ? ESCAPE '\\' ORDER BY name
                 """, arguments: ["%\(escaped)%"])
         }
     }

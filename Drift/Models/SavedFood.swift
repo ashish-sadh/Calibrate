@@ -1,58 +1,21 @@
 import Foundation
-import GRDB
 
-/// User-created food: recipes, favorites, saved custom entries.
-/// Renamed from FavoriteFood — table holds more than just favorites.
-struct SavedFood: Identifiable, Codable, Sendable {
-    var id: Int64?
-    var name: String
-    var calories: Double
-    var proteinG: Double
-    var carbsG: Double
-    var fatG: Double
-    var fiberG: Double
-    var defaultServings: Double
-    var isRecipe: Bool
-    var sortOrder: Int
-    var createdAt: String
-    var ingredients: String?  // JSON array of ingredient names
+/// SavedFood is now a typealias for Food — all food types live in one table.
+/// Use source="recipe" for recipes, source="custom" for user-created entries.
+typealias SavedFood = Food
 
-    enum CodingKeys: String, CodingKey {
-        case id, name, calories, ingredients
-        case proteinG = "protein_g"
-        case carbsG = "carbs_g"
-        case fatG = "fat_g"
-        case fiberG = "fiber_g"
-        case defaultServings = "default_servings"
-        case isRecipe = "is_recipe"
-        case sortOrder = "sort_order"
-        case createdAt = "created_at"
-    }
-
+extension Food {
+    /// Convenience init matching the old SavedFood signature for backwards compatibility.
     init(id: Int64? = nil, name: String, calories: Double, proteinG: Double = 0, carbsG: Double = 0,
          fatG: Double = 0, fiberG: Double = 0, defaultServings: Double = 1, isRecipe: Bool = false,
          sortOrder: Int = 0, createdAt: String = ISO8601DateFormatter().string(from: Date()),
          ingredients: String? = nil) {
-        self.id = id; self.name = name; self.calories = calories; self.proteinG = proteinG
-        self.carbsG = carbsG; self.fatG = fatG; self.fiberG = fiberG
-        self.defaultServings = defaultServings; self.isRecipe = isRecipe
-        self.sortOrder = sortOrder; self.createdAt = createdAt; self.ingredients = ingredients
+        self.init(id: id, name: name,
+                  category: isRecipe ? "Recipe" : "Saved",
+                  servingSize: 1, servingUnit: "serving",
+                  calories: calories, proteinG: proteinG, carbsG: carbsG,
+                  fatG: fatG, fiberG: fiberG,
+                  ingredients: ingredients, source: "recipe",
+                  isRecipe: isRecipe, sortOrder: sortOrder, defaultServings: defaultServings)
     }
-
-    /// Parsed ingredient names. Falls back to [name].
-    var ingredientList: [String] {
-        guard let json = ingredients,
-              let data = json.data(using: .utf8),
-              let arr = try? JSONDecoder().decode([String].self, from: data) else {
-            return [name]
-        }
-        return arr.isEmpty ? [name] : arr
-    }
-
-    var macroSummary: String { "\(Int(calories))cal \(Int(proteinG))P \(Int(carbsG))C \(Int(fatG))F" }
-}
-
-extension SavedFood: FetchableRecord, PersistableRecord {
-    static let databaseTableName = "saved_food"
-    mutating func didInsert(_ inserted: InsertionSuccess) { id = inserted.rowID }
 }

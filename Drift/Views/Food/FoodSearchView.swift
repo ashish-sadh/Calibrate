@@ -636,7 +636,7 @@ private struct EditRecipeSheet: View {
                         if let id = recipe.id {
                             try? AppDatabase.shared.writer.write { db in
                                 try db.execute(sql: """
-                                    UPDATE saved_food SET name = ?, calories = ?, protein_g = ?,
+                                    UPDATE food SET name = ?, calories = ?, protein_g = ?,
                                     carbs_g = ?, fat_g = ?, fiber_g = ? WHERE id = ?
                                     """, arguments: [name, Double(calories) ?? 0, Double(protein) ?? 0,
                                                      Double(carbs) ?? 0, Double(fat) ?? 0, Double(fiber) ?? 0, id])

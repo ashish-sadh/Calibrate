@@ -51,7 +51,8 @@ extension AppDatabase {
             try db.execute(sql: "DELETE FROM workout_set")
             try db.execute(sql: "DELETE FROM workout")
             try db.execute(sql: "DELETE FROM workout_template")
-            try db.execute(sql: "DELETE FROM saved_food")
+            try db.execute(sql: "DELETE FROM saved_food")  // legacy table (may be empty after v25)
+            try db.execute(sql: "DELETE FROM food WHERE source != 'database' AND source IS NOT NULL")
             try db.execute(sql: "DELETE FROM food_usage")
         }
         // Re-seed default foods
@@ -614,32 +615,31 @@ extension AppDatabase {
 
 extension AppDatabase {
     func saveFavorite(_ fav: inout SavedFood) throws {
+        // SavedFood is now Food — save to food table with source='recipe'
+        if fav.source == nil { fav.source = "recipe" }
         try dbWriter.write { [fav] db in
             var m = fav
             try m.save(db)
         }
         fav = try dbWriter.read { db in
-            try SavedFood.filter(Column("name") == fav.name).order(Column("created_at").desc).fetchOne(db)
+            try Food.filter(Column("name") == fav.name && Column("source") == "recipe")
+                .order(Column("id").desc).fetchOne(db)
         } ?? fav
     }
 
     func fetchFavorites() throws -> [SavedFood] {
         try dbWriter.read { db in
-            try SavedFood.order(Column("sort_order")).fetchAll(db)
+            try Food.filter(Column("source") == "recipe")
+                .order(Column("sort_order")).fetchAll(db)
         }
     }
 
     func deleteFavorite(id: Int64) throws {
         try dbWriter.write { db in
-            // Get name before deleting to clean up food_usage
-            let name = try String.fetchOne(db, sql: "SELECT name FROM saved_food WHERE id = ?", arguments: [id])
-            _ = try SavedFood.deleteOne(db, id: id)
-            // Clean up food_usage entry for this recipe name (if no food table entry exists)
+            let name = try String.fetchOne(db, sql: "SELECT name FROM food WHERE id = ?", arguments: [id])
+            _ = try Food.deleteOne(db, id: id)
             if let name {
-                let hasFoodEntry = try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM food WHERE LOWER(name) = LOWER(?)", arguments: [name]) ?? 0
-                if hasFoodEntry == 0 {
-                    try db.execute(sql: "DELETE FROM food_usage WHERE food_name = ? AND food_id IS NULL", arguments: [name])
-                }
+                try db.execute(sql: "DELETE FROM food_usage WHERE food_name = ? AND food_id IS NULL", arguments: [name])
             }
         }
     }
