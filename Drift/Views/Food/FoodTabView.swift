@@ -385,17 +385,6 @@ struct FoodTabView: View {
                     }
                 }
                 Spacer()
-                if !viewModel.isToday && !viewModel.todayEntries.isEmpty {
-                    Button {
-                        copyAllToToday()
-                        copiedToTodayName = "all \(viewModel.todayEntries.count) items"
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedToTodayName = nil }
-                    } label: {
-                        Label("Copy All", systemImage: "doc.on.doc")
-                            .font(.caption.weight(.medium))
-                    }
-                    .tint(Theme.accent)
-                }
                 if !viewModel.todayEntries.isEmpty {
                     Text("\(viewModel.todayEntries.count) items")
                         .font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
@@ -406,6 +395,22 @@ struct FoodTabView: View {
             if viewModel.todayEntries.isEmpty {
                 emptyDiaryView
             } else {
+                // Copy All — only for past days
+                if !viewModel.isToday {
+                    Button {
+                        copyAllToToday()
+                        copiedToTodayName = "all \(viewModel.todayEntries.count) items"
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedToTodayName = nil }
+                    } label: {
+                        HStack {
+                            Image(systemName: "doc.on.doc").font(.subheadline).foregroundStyle(Theme.accent)
+                            Text("Copy all to today").font(.subheadline).foregroundStyle(.secondary)
+                            Spacer()
+                        }
+                    }.buttonStyle(.plain)
+                    Divider().padding(.vertical, 2)
+                }
+
                 // Small add food — only when entries exist
                 Button { showingSearch = true } label: {
                     HStack {
