@@ -7,9 +7,16 @@ struct PlantPointsCardView: View {
     @State private var showingPlantList = false
 
     enum PlantPeriod: String, CaseIterable {
-        case day = "Today"
+        case day = "Day"
         case week = "Week"
         case month = "Month"
+    }
+
+    /// "Today" when viewing today, otherwise "Apr 5" etc.
+    private var dayLabel: String {
+        Calendar.current.isDateInToday(viewModel.selectedDate)
+            ? "Today"
+            : DateFormatters.shortDisplay.string(from: viewModel.selectedDate)
     }
 
     var body: some View {
@@ -32,7 +39,7 @@ struct PlantPointsCardView: View {
                             withAnimation(.easeInOut(duration: 0.2)) { plantPeriod = period }
                             loadPlantPointsForPeriod()
                         } label: {
-                            Text(period.rawValue)
+                            Text(period == .day ? dayLabel : period.rawValue)
                                 .font(.caption2.weight(.medium))
                                 .foregroundStyle(plantPeriod == period ? .white : .secondary)
                                 .padding(.horizontal, 10)

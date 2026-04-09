@@ -32,7 +32,7 @@ _(pick from Ready)_
 - [ ] **Conversation memory** — Pass previous tool results to next turn so LLM can reference them ("you mentioned protein was low earlier").
 
 ### P0: UI Bugs & Features (human-reported)
-- [ ] **BUG: Recent foods missing macros** — When a manual entry (quick-add) is saved, it doesn't copy calories/macros to the recent foods list. Re-logging from recents shows 0 cal. Investigate `trackFoodUsage()` in `AppDatabase+FoodUsage.swift` — likely stores name but not nutrition. Fix: pass macros through to usage tracking.
+- [x] **BUG: Recent foods missing macros** — Fixed: added macro columns to food_usage, trackFoodUsage() stores macros, fetchRecentEntryNames() reads directly. Migration v21 backfills.
 - [ ] **Copy to today from past day** — When viewing a past day's food log, show a "Copy to today" option per item. Don't show when viewing today. Brief toast confirms without navigating. Files: `FoodTabView.swift`, `FoodLogViewModel.swift`.
 - [ ] **Plant points date awareness** — "Today" label in `PlantPointsCardView.swift` doesn't update when viewing a different date. Show actual date (e.g. "Apr 5") when not today. Week/month fine.
 

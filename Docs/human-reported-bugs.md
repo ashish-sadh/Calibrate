@@ -51,7 +51,7 @@ User should be able to ask "how many calories in a samosa?" or "estimate calorie
 ## BUG-002: Recent foods missing macros on manual entries
 
 **Reported:** 2026-04-08
-**Status:** Open
+**Status:** Fixed (commit 6bb0add)
 **Severity:** Medium
 
 When a user adds a manual entry (quick-add with custom calories/macros), it doesn't properly save nutrition data to the recents system. Re-logging the food from "Recent" shows 0 calories and 0 macros.
