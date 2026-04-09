@@ -280,6 +280,14 @@ final class FoodLogViewModel {
         }
     }
 
+    func updateEntryLoggedAt(id: Int64, loggedAt: String) {
+        do {
+            try database.updateFoodEntryLoggedAt(id: id, loggedAt: loggedAt)
+        } catch {
+            Log.foodLog.error("Failed to update entry time: \(error.localizedDescription)")
+        }
+    }
+
     func updateEntryServings(id: Int64, servings: Double) {
         do {
             try database.updateFoodEntryServings(id: id, servings: servings)

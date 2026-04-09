@@ -518,6 +518,23 @@ struct FoodTabView: View {
                     Label("Copy to Today", systemImage: "doc.on.doc")
                 }
             }
+            // Reorder (only in time sort mode)
+            if foodSortMode == .time, let entryIndex = sortedEntries.firstIndex(where: { $0.id == entry.id }) {
+                if entryIndex > 0 {
+                    Button {
+                        swapEntryTimestamps(entryIndex, entryIndex - 1)
+                    } label: {
+                        Label("Move Up", systemImage: "arrow.up")
+                    }
+                }
+                if entryIndex < sortedEntries.count - 1 {
+                    Button {
+                        swapEntryTimestamps(entryIndex, entryIndex + 1)
+                    } label: {
+                        Label("Move Down", systemImage: "arrow.down")
+                    }
+                }
+            }
             if let id = entry.id {
                 Button(role: .destructive) {
                     viewModel.deleteEntry(id: id)
@@ -617,6 +634,19 @@ struct FoodTabView: View {
     private func entryTimeString(_ entry: FoodEntry) -> String? {
         guard let date = parseTimestamp(entry.loggedAt) else { return nil }
         return DateFormatters.shortTime.string(from: date)
+    }
+
+    /// Swap timestamps of two entries to reorder them.
+    private func swapEntryTimestamps(_ indexA: Int, _ indexB: Int) {
+        let entries = sortedEntries
+        guard indexA >= 0, indexA < entries.count, indexB >= 0, indexB < entries.count,
+              let idA = entries[indexA].id, let idB = entries[indexB].id else { return }
+        let timeA = entries[indexA].loggedAt
+        let timeB = entries[indexB].loggedAt
+        // Swap: A gets B's time, B gets A's time
+        viewModel.updateEntryLoggedAt(id: idA, loggedAt: timeB)
+        viewModel.updateEntryLoggedAt(id: idB, loggedAt: timeA)
+        reload()
     }
 
     /// Copy all entries from the viewed day to today, preserving original meal times.
