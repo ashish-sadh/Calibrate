@@ -47,18 +47,21 @@ enum FoodService {
 
     // MARK: - Daily Totals
 
+    /// Single source of truth for daily calorie target. All calorie "remaining" displays should use this.
+    static func resolvedCalorieTarget() -> Int {
+        if let goalTarget = WeightGoal.load()?.macroTargets()?.calorieTarget {
+            return max(500, Int(goalTarget))
+        }
+        let tdee = TDEEEstimator.shared.current?.tdee ?? 2000
+        let deficit = WeightGoal.load()?.requiredDailyDeficit ?? 0
+        return max(500, Int(tdee - deficit))
+    }
+
     /// Get today's nutrition totals with target and remaining.
     static func getDailyTotals(date: String? = nil) -> DailyTotals {
         let dateStr = date ?? DateFormatters.todayString
         let nutrition = (try? AppDatabase.shared.fetchDailyNutrition(for: dateStr)) ?? .zero
-        // Use same calorie target as Food tab (WeightGoal → macroTargets → resolvedCalorieTarget)
-        let target: Int
-        if let goalTarget = WeightGoal.load()?.macroTargets()?.calorieTarget {
-            target = max(500, Int(goalTarget))
-        } else {
-            let tdee = TDEEEstimator.shared.current?.tdee ?? 2000
-            target = max(500, Int(tdee))
-        }
+        let target = resolvedCalorieTarget()
         let remaining = target - Int(nutrition.calories)
 
         return DailyTotals(

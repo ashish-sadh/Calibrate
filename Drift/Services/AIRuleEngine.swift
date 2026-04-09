@@ -74,9 +74,7 @@ enum AIRuleEngine {
 
         if nutrition.calories == 0 { return "No food was logged yesterday." }
 
-        let tdee = TDEEEstimator.shared.current?.tdee ?? 2000
-        let deficit = WeightGoal.load()?.requiredDailyDeficit ?? 0
-        let target = max(500, Int(tdee - deficit))
+        let target = FoodService.resolvedCalorieTarget()
         let vsTarget = Int(nutrition.calories) - target
 
         var lines = ["Yesterday: \(Int(nutrition.calories)) cal (\(vsTarget > 0 ? "+\(vsTarget) over" : "\(abs(vsTarget)) under") target) — \(Int(nutrition.proteinG))P \(Int(nutrition.carbsG))C \(Int(nutrition.fatG))F"]
@@ -102,9 +100,7 @@ enum AIRuleEngine {
 
         // Nutrition with target
         let nutrition = (try? AppDatabase.shared.fetchDailyNutrition(for: today)) ?? .zero
-        let tdee = TDEEEstimator.shared.current?.tdee ?? 2000
-        let deficit = WeightGoal.load()?.requiredDailyDeficit ?? 0
-        let target = max(500, Int(tdee - deficit))
+        let target = FoodService.resolvedCalorieTarget()
 
         if nutrition.calories > 0 {
             let left = target - Int(nutrition.calories)
@@ -211,18 +207,5 @@ enum AIRuleEngine {
         return lines.joined(separator: "\n")
     }
 
-    /// Supplement check.
-    static func supplementStatus() -> String {
-        let today = DateFormatters.todayString
-        guard let supplements = try? AppDatabase.shared.fetchActiveSupplements(),
-              !supplements.isEmpty else { return "No supplements set up." }
-        let logs = (try? AppDatabase.shared.fetchSupplementLogs(for: today)) ?? []
-        let takenIds = Set(logs.filter(\.taken).compactMap(\.supplementId))
-        let taken = takenIds.count
-        let total = supplements.count
-
-        if taken == total { return "All \(total) supplements taken today." }
-        let untaken = supplements.filter { !takenIds.contains($0.id ?? 0) }.map(\.name)
-        return "Supplements: \(taken)/\(total) taken. Still need: \(untaken.joined(separator: ", "))."
-    }
+    // supplementStatus() removed — use SupplementService.getStatus() instead (single path)
 }

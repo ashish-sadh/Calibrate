@@ -81,9 +81,7 @@ enum AIContextBuilder {
 
         // Nutrition — pre-computed with target
         let nutrition = (try? AppDatabase.shared.fetchDailyNutrition(for: today)) ?? .zero
-        let tdee = TDEEEstimator.shared.current?.tdee ?? 2000
-        let deficit = WeightGoal.load()?.requiredDailyDeficit ?? 0
-        let target = max(500, Int(tdee - deficit)) // Floor at 500 to prevent negative/zero
+        let target = FoodService.resolvedCalorieTarget()
 
         if nutrition.calories > 0 {
             let left = target - Int(nutrition.calories)
@@ -369,9 +367,7 @@ enum AIContextBuilder {
 
         if nutrition.calories == 0 { return "No food logged yesterday." }
 
-        let tdee = TDEEEstimator.shared.current?.tdee ?? 2000
-        let deficit = WeightGoal.load()?.requiredDailyDeficit ?? 0
-        let target = max(500, Int(tdee - deficit))
+        let target = FoodService.resolvedCalorieTarget()
         let vsTarget = Int(nutrition.calories) - target
 
         var lines = ["Yesterday: \(Int(nutrition.calories))cal (\(vsTarget > 0 ? "+\(vsTarget) over" : "\(abs(vsTarget)) under") target), \(Int(nutrition.proteinG))P \(Int(nutrition.carbsG))C \(Int(nutrition.fatG))F"]
