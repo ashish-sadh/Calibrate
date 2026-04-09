@@ -5,7 +5,7 @@ import HealthKit
 final class HealthKitService {
     static let shared = HealthKitService()
 
-    private let healthStore = HKHealthStore()
+    let healthStore = HKHealthStore()
 
     private var readTypes: Set<HKObjectType> {
         var types: Set<HKObjectType> = []
