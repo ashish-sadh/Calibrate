@@ -45,3 +45,37 @@ User should be able to ask "how many calories in a samosa?" or "estimate calorie
 - Multi-item: "calories in a thali" should break down components
 
 **Not in scope:** Photo-based estimation (that's a separate vision model POC).
+
+---
+
+## BUG-002: Recent foods missing macros on manual entries
+
+**Reported:** 2026-04-08
+**Status:** Open
+**Severity:** Medium
+
+When a user adds a manual entry (quick-add with custom calories/macros), it doesn't properly save nutrition data to the recents system. Re-logging the food from "Recent" shows 0 calories and 0 macros.
+
+**How to reproduce:** Quick-add a food with macros → check Recent foods → try to re-log it → shows 0 cal.
+
+**Where to look:** `FoodLogViewModel.logFood()` or `quickAdd()` → how it calls `trackFoodUsage()`. Check if `trackFoodUsage` stores calories/macros or just the name.
+
+---
+
+## FEAT-002: Copy food to today from past day view
+
+**Reported:** 2026-04-08
+**Status:** Open
+**Priority:** Medium
+
+When viewing a past day's food log, user should be able to copy individual items (or all) to today. Should show a brief confirmation toast without navigating away. Don't show copy option when already viewing today.
+
+---
+
+## BUG-003: Plant points "Today" label doesn't update with date
+
+**Reported:** 2026-04-08
+**Status:** Open
+**Severity:** Low
+
+Plant points section shows "Today" even when user navigates to a different date. Should show the actual date (e.g. "Apr 5") when not viewing today. Week and month sections are fine.

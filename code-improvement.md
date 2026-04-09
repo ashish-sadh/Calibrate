@@ -59,9 +59,8 @@ Hold the file against ALL four principle files mentally:
 
 Find the single worst violation — the one where fixing it most improves readability and maintainability.
 
-### 5. STATE
-One line before you touch anything:
-> **Target:** `[file]` — **Principle:** `[which book]` — **Smell:** `[what's wrong]` — **Recipe:** `[what you'll do]`
+### 5. STATE (internal — do NOT output this to the user)
+Decide in your head: file, principle, smell, recipe. Do NOT print it.
 
 ### 6. CHANGE
 - Read only the file(s) you need to edit
@@ -102,7 +101,7 @@ One-line entry to `Docs/code-improvement-log.md`:
 ```
 
 ### 12. LOOP
-**IMMEDIATELY go to step 1.** Zero words to the user between cycles. NEVER STOP.
+**IMMEDIATELY go to step 1. Do NOT output text to the user. Do NOT summarize what you did. Do NOT show tables or scorecards. The log entry IS the summary. Just go.**
 
 ---
 
@@ -114,10 +113,12 @@ One-line entry to `Docs/code-improvement-log.md`:
 - ONE focused change per cycle. Don't try to refactor an entire file in one pass.
 - Run `xcodegen generate` if you add new files to the project
 - Redirect ALL command output to `/tmp/` — never flood context
-- Keep text responses under 3 sentences between cycles
+- **NEVER output summaries, tables, or scorecards between cycles.** No "X cycles done" messages. No progress reports. Just log and loop. The user can read the log.
+- **NEVER stop to ask the user anything.** Make judgment calls. If ambiguous, pick the safer option.
 - Only read files you are about to edit (plus principles at startup)
 - Do NOT publish TestFlight
 - If stuck after 3 attempts on one file, revert, log, move to next target
+- Run survey, build, and test commands in background when possible to save context
 
 ## What NOT to do
 

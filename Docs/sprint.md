@@ -31,6 +31,11 @@ _(pick from Ready)_
 - [ ] **Multi-turn meal planning** — "plan my meals for today" → iterative macro-aware suggestions. Gemma 4 only.
 - [ ] **Conversation memory** — Pass previous tool results to next turn so LLM can reference them ("you mentioned protein was low earlier").
 
+### P0: UI Bugs & Features (human-reported)
+- [ ] **BUG: Recent foods missing macros** — When a manual entry (quick-add) is saved, it doesn't copy calories/macros to the recent foods list. Re-logging from recents shows 0 cal. Investigate how quick-add saves to food_usage and whether it stores the nutrition data.
+- [ ] **Copy to today from past day** — When viewing a past day's food log, show a "Copy to today" option on each item (or a bulk copy). Don't show when already viewing today. Show a brief toast/nudge confirming the item was added without navigating away.
+- [ ] **Plant points date awareness** — "Today" label under plant points doesn't update when viewing a different date. Change to show the actual date when not viewing today (e.g. "Apr 5" instead of "Today"). Week and month sections are fine.
+
 ## Done
 
 ### This sprint
