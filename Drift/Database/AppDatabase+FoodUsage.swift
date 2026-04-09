@@ -115,7 +115,7 @@ extension AppDatabase {
     }
 
     /// Fetch user-favorited food items.
-    func fetchFavoriteFoods() throws -> [Food] {
+    func fetchSavedFoods() throws -> [Food] {
         try reader.read { db in
             try Food.fetchAll(db, sql: """
                 SELECT f.* FROM food f
@@ -193,13 +193,13 @@ extension AppDatabase {
     }
 
     /// Search saved recipes/favorites by name.
-    func searchRecipes(query: String) throws -> [FavoriteFood] {
+    func searchRecipes(query: String) throws -> [SavedFood] {
         try reader.read { db in
             if query.isEmpty {
-                return try FavoriteFood.order(Column("name")).fetchAll(db)
+                return try SavedFood.order(Column("name")).fetchAll(db)
             }
             let escaped = Self.escapeLike(query)
-            return try FavoriteFood.fetchAll(db, sql: """
+            return try SavedFood.fetchAll(db, sql: """
                 SELECT * FROM saved_food WHERE name LIKE ? ESCAPE '\\' ORDER BY name
                 """, arguments: ["%\(escaped)%"])
         }

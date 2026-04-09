@@ -427,7 +427,7 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
 
 @Test func searchRecipesFindsMatches() async throws {
     let db = try AppDatabase.empty()
-    var fav = FavoriteFood(name: "Morning Oatmeal", calories: 350, proteinG: 15, carbsG: 50, fatG: 8)
+    var fav = SavedFood(name: "Morning Oatmeal", calories: 350, proteinG: 15, carbsG: 50, fatG: 8)
     try db.saveFavorite(&fav)
     let results = try db.searchRecipes(query: "oat")
     #expect(results.count == 1, "Should find the saved recipe")
@@ -580,7 +580,7 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
 /// Round 7: Favorite/recipe save and search integration
 @Test func e2eRecipeSaveAndSearch() async throws {
     let db = try AppDatabase.empty()
-    var recipe = FavoriteFood(name: "My Protein Bowl", calories: 500, proteinG: 40, carbsG: 50, fatG: 15, isRecipe: true)
+    var recipe = SavedFood(name: "My Protein Bowl", calories: 500, proteinG: 40, carbsG: 50, fatG: 15, isRecipe: true)
     try db.saveFavorite(&recipe)
 
     // Search should find it
@@ -699,8 +699,8 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
 /// Duplicate recipe names
 @Test func edgeCaseDuplicateRecipes() async throws {
     let db = try AppDatabase.empty()
-    var r1 = FavoriteFood(name: "Breakfast", calories: 300, proteinG: 20, carbsG: 30, fatG: 10)
-    var r2 = FavoriteFood(name: "Breakfast", calories: 500, proteinG: 30, carbsG: 50, fatG: 15)
+    var r1 = SavedFood(name: "Breakfast", calories: 300, proteinG: 20, carbsG: 30, fatG: 10)
+    var r2 = SavedFood(name: "Breakfast", calories: 500, proteinG: 30, carbsG: 50, fatG: 15)
     try db.saveFavorite(&r1)
     try db.saveFavorite(&r2)
     let results = try db.searchRecipes(query: "breakfast")
@@ -1013,7 +1013,7 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
 
 @Test func deleteFavoriteAndSearch() async throws {
     let db = try AppDatabase.empty()
-    var fav = FavoriteFood(name: "Delete Me Recipe", calories: 100, proteinG: 10, carbsG: 10, fatG: 5)
+    var fav = SavedFood(name: "Delete Me Recipe", calories: 100, proteinG: 10, carbsG: 10, fatG: 5)
     try db.saveFavorite(&fav)
     let before = try db.searchRecipes(query: "Delete Me")
     #expect(before.count == 1)
@@ -1142,12 +1142,12 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
     #expect(try db.isFoodFavorite(name: egg.name) == false)
 }
 
-@Test func fetchFavoriteFoods() async throws {
+@Test func fetchSavedFoods() async throws {
     let db = try AppDatabase.empty()
     try db.seedFoodsFromJSON()
     let egg = try db.searchFoods(query: "egg").first!
     try db.toggleFoodFavorite(name: egg.name, foodId: egg.id)
-    let favs = try db.fetchFavoriteFoods()
+    let favs = try db.fetchSavedFoods()
     #expect(favs.contains(where: { $0.name == egg.name }))
 }
 
@@ -1161,7 +1161,7 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
     try db.toggleFoodFavorite(name: rice.name, foodId: rice.id)
     // Should appear in both
     let recents = try db.fetchRecentFoods()
-    let favs = try db.fetchFavoriteFoods()
+    let favs = try db.fetchSavedFoods()
     #expect(recents.contains(where: { $0.name == rice.name }))
     #expect(favs.contains(where: { $0.name == rice.name }))
 }
@@ -1172,7 +1172,7 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
     let dal = try db.searchFoods(query: "dal").first!
     // Favorite without logging
     try db.toggleFoodFavorite(name: dal.name, foodId: dal.id)
-    let favs = try db.fetchFavoriteFoods()
+    let favs = try db.fetchSavedFoods()
     #expect(favs.contains(where: { $0.name == dal.name }), "Can favorite without logging first")
 }
 
@@ -1217,12 +1217,12 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
     try db.toggleFoodFavorite(name: egg.name, foodId: egg.id)
 
     // Verify in favorites
-    let favs = try db.fetchFavoriteFoods()
+    let favs = try db.fetchSavedFoods()
     #expect(favs.contains(where: { $0.name == egg.name }))
 
     // Unfavorite
     try db.toggleFoodFavorite(name: egg.name, foodId: egg.id)
-    let favsAfter = try db.fetchFavoriteFoods()
+    let favsAfter = try db.fetchSavedFoods()
     #expect(!favsAfter.contains(where: { $0.name == egg.name }))
 }
 
@@ -1231,7 +1231,7 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
     let vm = await FoodLogViewModel(database: db)
 
     // Create recipe
-    var recipe = FavoriteFood(name: "Test Recipe", calories: 500, proteinG: 30, carbsG: 50, fatG: 15, isRecipe: true)
+    var recipe = SavedFood(name: "Test Recipe", calories: 500, proteinG: 30, carbsG: 50, fatG: 15, isRecipe: true)
     try db.saveFavorite(&recipe)
 
     // Find in search

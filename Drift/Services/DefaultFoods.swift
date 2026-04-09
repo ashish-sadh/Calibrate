@@ -10,7 +10,7 @@ enum DefaultFoods {
 
         // Only seed recipe favorites — no fake "recent" usage data
         for recipe in recipes {
-            var fav = FavoriteFood(name: recipe.name, calories: recipe.calories,
+            var fav = SavedFood(name: recipe.name, calories: recipe.calories,
                                    proteinG: recipe.protein, carbsG: recipe.carbs,
                                    fatG: recipe.fat, fiberG: recipe.fiber, isRecipe: true)
             try? db.saveFavorite(&fav)

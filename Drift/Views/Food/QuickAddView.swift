@@ -176,7 +176,7 @@ struct QuickAddView: View {
         let ingredientNames = items.map(\.name)
         let ingredientsJson = (try? JSONEncoder().encode(ingredientNames))
             .flatMap { String(data: $0, encoding: .utf8) }
-        var fav = FavoriteFood(name: name, calories: t.cal, proteinG: t.p, carbsG: t.c,
+        var fav = SavedFood(name: name, calories: t.cal, proteinG: t.p, carbsG: t.c,
                                fatG: t.f, fiberG: t.fb, isRecipe: items.count > 1,
                                ingredients: ingredientsJson)
         try? db.saveFavorite(&fav)

@@ -602,19 +602,19 @@ extension AppDatabase {
 // MARK: - Favorites & Recipes
 
 extension AppDatabase {
-    func saveFavorite(_ fav: inout FavoriteFood) throws {
+    func saveFavorite(_ fav: inout SavedFood) throws {
         try dbWriter.write { [fav] db in
             var m = fav
             try m.save(db)
         }
         fav = try dbWriter.read { db in
-            try FavoriteFood.filter(Column("name") == fav.name).order(Column("created_at").desc).fetchOne(db)
+            try SavedFood.filter(Column("name") == fav.name).order(Column("created_at").desc).fetchOne(db)
         } ?? fav
     }
 
-    func fetchFavorites() throws -> [FavoriteFood] {
+    func fetchFavorites() throws -> [SavedFood] {
         try dbWriter.read { db in
-            try FavoriteFood.order(Column("sort_order")).fetchAll(db)
+            try SavedFood.order(Column("sort_order")).fetchAll(db)
         }
     }
 
@@ -622,7 +622,7 @@ extension AppDatabase {
         try dbWriter.write { db in
             // Get name before deleting to clean up food_usage
             let name = try String.fetchOne(db, sql: "SELECT name FROM saved_food WHERE id = ?", arguments: [id])
-            _ = try FavoriteFood.deleteOne(db, id: id)
+            _ = try SavedFood.deleteOne(db, id: id)
             // Clean up food_usage entry for this recipe name (if no food table entry exists)
             if let name {
                 let hasFoodEntry = try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM food WHERE LOWER(name) = LOWER(?)", arguments: [name]) ?? 0

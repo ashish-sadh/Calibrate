@@ -251,7 +251,7 @@ import GRDB
 
 @Test func favoriteSaveAndFetch() async throws {
     let db = try AppDatabase.empty()
-    var fav = FavoriteFood(name: "Morning Oats", calories: 400, proteinG: 20, carbsG: 50, fatG: 10, fiberG: 5)
+    var fav = SavedFood(name: "Morning Oats", calories: 400, proteinG: 20, carbsG: 50, fatG: 10, fiberG: 5)
     try db.saveFavorite(&fav)
     let all = try db.fetchFavorites()
     #expect(all.count == 1 && all[0].name == "Morning Oats")
@@ -259,7 +259,7 @@ import GRDB
 
 @Test func favoriteDelete() async throws {
     let db = try AppDatabase.empty()
-    var fav = FavoriteFood(name: "X", calories: 100)
+    var fav = SavedFood(name: "X", calories: 100)
     try db.saveFavorite(&fav)
     let fetched = try db.fetchFavorites()
     try db.deleteFavorite(id: fetched[0].id!)
@@ -267,24 +267,24 @@ import GRDB
 }
 
 @Test func favoriteRecipeFlag() async throws {
-    let fav = FavoriteFood(name: "Post-Workout", calories: 600, isRecipe: true)
+    let fav = SavedFood(name: "Post-Workout", calories: 600, isRecipe: true)
     #expect(fav.isRecipe == true)
     #expect(fav.macroSummary == "600cal 0P 0C 0F")
 }
 
 @Test func favoriteMultiple() async throws {
     let db = try AppDatabase.empty()
-    for n in ["A", "B", "C"] { var f = FavoriteFood(name: n, calories: 100); try db.saveFavorite(&f) }
+    for n in ["A", "B", "C"] { var f = SavedFood(name: n, calories: 100); try db.saveFavorite(&f) }
     #expect(try db.fetchFavorites().count == 3)
 }
 
 @Test func favoriteMacroSummary() async throws {
-    let f = FavoriteFood(name: "X", calories: 500, proteinG: 30, carbsG: 60, fatG: 15)
+    let f = SavedFood(name: "X", calories: 500, proteinG: 30, carbsG: 60, fatG: 15)
     #expect(f.macroSummary == "500cal 30P 60C 15F")
 }
 
 @Test func favoriteDefaultServings() async throws {
-    let f = FavoriteFood(name: "X", calories: 200)
+    let f = SavedFood(name: "X", calories: 200)
     #expect(f.defaultServings == 1)
 }
 

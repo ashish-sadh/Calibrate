@@ -56,6 +56,3 @@ extension SavedFood: FetchableRecord, PersistableRecord {
     static let databaseTableName = "saved_food"
     mutating func didInsert(_ inserted: InsertionSuccess) { id = inserted.rowID }
 }
-
-/// Backwards compatibility alias
-typealias FavoriteFood = SavedFood

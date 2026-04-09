@@ -15,7 +15,7 @@ final class FoodLogViewModel {
     var recentFoods: [Food] = []
     var recentEntries: [RecentEntry] = []
     var frequentFoods: [Food] = []
-    var savedRecipes: [FavoriteFood] = []
+    var savedRecipes: [SavedFood] = []
     var favoriteFoods: [RecentEntry] = []
     var weeklyPlantPoints: PlantPointsService.PlantPoints = .init(uniquePlants: [], uniqueHerbsSpices: [])
     var dailyNewPlants: Int = 0

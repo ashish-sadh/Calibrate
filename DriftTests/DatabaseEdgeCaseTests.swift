@@ -131,7 +131,7 @@ import GRDB
 
 @Test func favoriteFoodSaveAndFetch() async throws {
     let db = try AppDatabase.empty()
-    var fav = FavoriteFood(name: "Morning Oats", calories: 350, proteinG: 15, carbsG: 50, fatG: 10, fiberG: 6)
+    var fav = SavedFood(name: "Morning Oats", calories: 350, proteinG: 15, carbsG: 50, fatG: 10, fiberG: 6)
     try db.saveFavorite(&fav)
     #expect(fav.id != nil)
 
@@ -142,7 +142,7 @@ import GRDB
 
 @Test func favoriteFoodDelete() async throws {
     let db = try AppDatabase.empty()
-    var fav = FavoriteFood(name: "Smoothie", calories: 280)
+    var fav = SavedFood(name: "Smoothie", calories: 280)
     try db.saveFavorite(&fav)
     guard let id = fav.id else { Issue.record("No fav ID"); return }
 
@@ -152,7 +152,7 @@ import GRDB
 }
 
 @Test func favoriteFoodMacroSummary() async throws {
-    let fav = FavoriteFood(name: "Test", calories: 500, proteinG: 30, carbsG: 45, fatG: 20)
+    let fav = SavedFood(name: "Test", calories: 500, proteinG: 30, carbsG: 45, fatG: 20)
     #expect(fav.macroSummary == "500cal 30P 45C 20F")
 }
 

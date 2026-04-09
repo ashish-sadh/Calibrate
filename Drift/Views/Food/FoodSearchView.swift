@@ -10,13 +10,13 @@ struct FoodSearchView: View {
     @State private var selectedUnitIndex = 0
     @State private var query = ""
     @State private var results: [Food] = []
-    @State private var matchingRecipes: [FavoriteFood] = []
+    @State private var matchingRecipes: [SavedFood] = []
     @State private var showingManual = false
     @State private var logTime = Date()
     @State private var loggedCount = 0
     @State private var showingRecipeBuilder = false
     @State private var showingScanner = false
-    @State private var editingRecipe: FavoriteFood?
+    @State private var editingRecipe: SavedFood?
     @State private var isFoodFavorite = false
     @State private var onlineResults: [Food] = []
     @State private var isSearchingOnline = false
@@ -596,7 +596,7 @@ struct FoodSearchView: View {
 // MARK: - Edit Recipe Sheet
 
 private struct EditRecipeSheet: View {
-    let recipe: FavoriteFood
+    let recipe: SavedFood
     let onSave: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var name: String
@@ -606,7 +606,7 @@ private struct EditRecipeSheet: View {
     @State private var fat: String
     @State private var fiber: String
 
-    init(recipe: FavoriteFood, onSave: @escaping () -> Void) {
+    init(recipe: SavedFood, onSave: @escaping () -> Void) {
         self.recipe = recipe; self.onSave = onSave
         _name = State(initialValue: recipe.name)
         _calories = State(initialValue: "\(Int(recipe.calories))")
