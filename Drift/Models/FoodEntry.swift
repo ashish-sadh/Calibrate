@@ -3,7 +3,7 @@ import GRDB
 
 struct FoodEntry: Identifiable, Codable, Sendable {
     var id: Int64?
-    var mealLogId: Int64
+    var mealLogId: Int64      // kept for backwards compat (legacy FK to meal_log)
     var foodId: Int64?        // nil if quick-add
     var foodName: String
     var servingSizeG: Double
@@ -15,9 +15,11 @@ struct FoodEntry: Identifiable, Codable, Sendable {
     var fiberG: Double
     var createdAt: String
     var loggedAt: String
+    var date: String?         // "YYYY-MM-DD" — which day this belongs to
+    var mealType: String?     // "breakfast" | "lunch" | "dinner" | "snack"
 
     enum CodingKeys: String, CodingKey {
-        case id, servings, calories
+        case id, servings, calories, date
         case mealLogId = "meal_log_id"
         case foodId = "food_id"
         case foodName = "food_name"
@@ -28,11 +30,12 @@ struct FoodEntry: Identifiable, Codable, Sendable {
         case fiberG = "fiber_g"
         case createdAt = "created_at"
         case loggedAt = "logged_at"
+        case mealType = "meal_type"
     }
 
     init(
         id: Int64? = nil,
-        mealLogId: Int64,
+        mealLogId: Int64 = 0,
         foodId: Int64? = nil,
         foodName: String,
         servingSizeG: Double,
@@ -43,7 +46,9 @@ struct FoodEntry: Identifiable, Codable, Sendable {
         fatG: Double = 0,
         fiberG: Double = 0,
         createdAt: String = ISO8601DateFormatter().string(from: Date()),
-        loggedAt: String = ISO8601DateFormatter().string(from: Date())
+        loggedAt: String = ISO8601DateFormatter().string(from: Date()),
+        date: String? = nil,
+        mealType: String? = nil
     ) {
         self.id = id
         self.mealLogId = mealLogId
@@ -58,6 +63,8 @@ struct FoodEntry: Identifiable, Codable, Sendable {
         self.fiberG = fiberG
         self.createdAt = createdAt
         self.loggedAt = loggedAt
+        self.date = date
+        self.mealType = mealType
     }
 
     /// Total calories for this entry (per-serving * servings).

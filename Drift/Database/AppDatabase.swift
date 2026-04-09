@@ -126,6 +126,13 @@ extension AppDatabase {
     }
 
     func saveFoodEntry(_ entry: inout FoodEntry) throws {
+        // Auto-populate date/mealType from meal_log if not set (backwards compat)
+        if entry.date == nil && entry.mealLogId > 0 {
+            if let ml = try? dbWriter.read({ db in try MealLog.fetchOne(db, id: entry.mealLogId) }) {
+                entry.date = ml.date
+                entry.mealType = ml.mealType
+            }
+        }
         let isNew = entry.id == nil
         try dbWriter.write { [entry] db in
             var mutable = entry
@@ -167,15 +174,15 @@ extension AppDatabase {
         }
     }
 
-    /// Fetch all food entries for a given date (joins through meal_log).
+    /// Fetch all food entries for a given date. Uses date column (v26+) with meal_log fallback.
     func fetchFoodEntries(for date: String) throws -> [FoodEntry] {
         try dbWriter.read { db in
             try FoodEntry.fetchAll(db, sql: """
                 SELECT fe.* FROM food_entry fe
-                JOIN meal_log ml ON fe.meal_log_id = ml.id
-                WHERE ml.date = ?
+                LEFT JOIN meal_log ml ON fe.meal_log_id = ml.id
+                WHERE fe.date = ? OR (fe.date IS NULL AND ml.date = ?)
                 ORDER BY fe.logged_at DESC
-                """, arguments: [date])
+                """, arguments: [date, date])
         }
     }
 
@@ -198,9 +205,9 @@ extension AppDatabase {
                     COALESCE(SUM(fe.fat_g * fe.servings), 0) as total_fat,
                     COALESCE(SUM(fe.fiber_g * fe.servings), 0) as total_fiber
                 FROM food_entry fe
-                JOIN meal_log ml ON fe.meal_log_id = ml.id
-                WHERE ml.date = ?
-                """, arguments: [date])
+                LEFT JOIN meal_log ml ON fe.meal_log_id = ml.id
+                WHERE fe.date = ? OR (fe.date IS NULL AND ml.date = ?)
+                """, arguments: [date, date])
 
             return DailyNutrition(
                 calories: row?["total_calories"] ?? 0,
@@ -216,10 +223,9 @@ extension AppDatabase {
     func daysWithFoodLogged(from startDate: String, to endDate: String) throws -> Int {
         try dbWriter.read { db in
             let row = try Row.fetchOne(db, sql: """
-                SELECT COUNT(DISTINCT ml.date) as days
-                FROM meal_log ml
-                JOIN food_entry fe ON fe.meal_log_id = ml.id
-                WHERE ml.date BETWEEN ? AND ?
+                SELECT COUNT(DISTINCT fe.date) as days
+                FROM food_entry fe
+                WHERE fe.date BETWEEN ? AND ?
                 """, arguments: [startDate, endDate])
             return row?["days"] ?? 0
         }
@@ -229,11 +235,10 @@ extension AppDatabase {
     func fetchDailyCalories(from startDate: String, to endDate: String) throws -> [String: Double] {
         try dbWriter.read { db in
             let rows = try Row.fetchAll(db, sql: """
-                SELECT ml.date, SUM(fe.calories * fe.servings) as total_cal
+                SELECT fe.date, SUM(fe.calories * fe.servings) as total_cal
                 FROM food_entry fe
-                JOIN meal_log ml ON fe.meal_log_id = ml.id
-                WHERE ml.date BETWEEN ? AND ?
-                GROUP BY ml.date
+                WHERE fe.date BETWEEN ? AND ?
+                GROUP BY fe.date
                 """, arguments: [startDate, endDate])
             var result: [String: Double] = [:]
             for row in rows {
@@ -250,11 +255,10 @@ extension AppDatabase {
         try dbWriter.read { db in
             let row = try Row.fetchOne(db, sql: """
                 SELECT AVG(daily_cal) as avg_cal FROM (
-                    SELECT ml.date, SUM(fe.calories * fe.servings) as daily_cal
+                    SELECT fe.date, SUM(fe.calories * fe.servings) as daily_cal
                     FROM food_entry fe
-                    JOIN meal_log ml ON fe.meal_log_id = ml.id
-                    WHERE ml.date BETWEEN ? AND ?
-                    GROUP BY ml.date
+                    WHERE fe.date BETWEEN ? AND ?
+                    GROUP BY fe.date
                     HAVING daily_cal > 200
                 )
                 """, arguments: [startDate, endDate])
@@ -268,9 +272,8 @@ extension AppDatabase {
             let rows = try Row.fetchAll(db, sql: """
                 SELECT DISTINCT fe.food_name, f.ingredients
                 FROM food_entry fe
-                JOIN meal_log ml ON fe.meal_log_id = ml.id
                 LEFT JOIN food f ON f.id = fe.food_id
-                WHERE ml.date BETWEEN ? AND ?
+                WHERE fe.date BETWEEN ? AND ?
                 """, arguments: [startDate, endDate])
             var allIngredients: Set<String> = []
             for row in rows {
@@ -293,8 +296,7 @@ extension AppDatabase {
             try String.fetchAll(db, sql: """
                 SELECT DISTINCT fe.food_name
                 FROM food_entry fe
-                JOIN meal_log ml ON fe.meal_log_id = ml.id
-                WHERE ml.date BETWEEN ? AND ?
+                WHERE fe.date BETWEEN ? AND ?
                 """, arguments: [startDate, endDate])
         }
     }
@@ -303,11 +305,10 @@ extension AppDatabase {
     func fetchUniqueFoodNamesByDay(from startDate: String, to endDate: String) throws -> [String: [String]] {
         try dbWriter.read { db in
             let rows = try Row.fetchAll(db, sql: """
-                SELECT DISTINCT ml.date, fe.food_name
+                SELECT DISTINCT fe.date, fe.food_name
                 FROM food_entry fe
-                JOIN meal_log ml ON fe.meal_log_id = ml.id
-                WHERE ml.date BETWEEN ? AND ?
-                ORDER BY ml.date
+                WHERE fe.date BETWEEN ? AND ?
+                ORDER BY fe.date
                 """, arguments: [startDate, endDate])
             var result: [String: [String]] = [:]
             for row in rows {

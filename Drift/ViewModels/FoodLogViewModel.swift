@@ -131,21 +131,17 @@ final class FoodLogViewModel {
     func loadTodayMeals() {
         do {
             let date = dateString
-            let mealLogs = try database.fetchMealLogs(for: date)
+            let entries = try database.fetchFoodEntries(for: date)
             var grouped: [MealType: [FoodEntry]] = [:]
-            var all: [FoodEntry] = []
 
-            for log in mealLogs {
-                guard let mealType = MealType(rawValue: log.mealType),
-                      let logId = log.id else { continue }
-                let entries = try database.fetchFoodEntries(forMealLog: logId)
-                grouped[mealType, default: []].append(contentsOf: entries)
-                all.append(contentsOf: entries)
+            for entry in entries {
+                if let mt = entry.mealType, let mealType = MealType(rawValue: mt) {
+                    grouped[mealType, default: []].append(entry)
+                }
             }
 
             todayMeals = grouped
-            // Normalize sort: replace "T" with space so ISO8601 and SQLite formats sort consistently
-            todayEntries = all.sorted { $0.loggedAt.replacingOccurrences(of: "T", with: " ") < $1.loggedAt.replacingOccurrences(of: "T", with: " ") }
+            todayEntries = entries.sorted { $0.loggedAt.replacingOccurrences(of: "T", with: " ") < $1.loggedAt.replacingOccurrences(of: "T", with: " ") }
             todayNutrition = try database.fetchDailyNutrition(for: date)
         } catch {
             Log.foodLog.error("Failed to load meals: \(error.localizedDescription)")
@@ -188,7 +184,9 @@ final class FoodLogViewModel {
                 carbsG: food.carbsG,
                 fatG: food.fatG,
                 fiberG: food.fiberG,
-                loggedAt: ISO8601DateFormatter().string(from: loggedAt)
+                loggedAt: ISO8601DateFormatter().string(from: loggedAt),
+                date: date,
+                mealType: mealType.rawValue
             )
             try database.saveFoodEntry(&entry)
             try? database.trackFoodUsage(name: food.name, foodId: food.id, servings: servings,
@@ -220,7 +218,8 @@ final class FoodLogViewModel {
                 servingSizeG: entry.servingSizeG, servings: entry.servings,
                 calories: entry.calories, proteinG: entry.proteinG,
                 carbsG: entry.carbsG, fatG: entry.fatG, fiberG: entry.fiberG,
-                loggedAt: DateFormatters.iso8601.string(from: Date())
+                loggedAt: DateFormatters.iso8601.string(from: Date()),
+                date: todayStr, mealType: mealType.rawValue
             )
             try database.saveFoodEntry(&newEntry)
             try? database.trackFoodUsage(name: entry.foodName, foodId: entry.foodId, servings: entry.servings,
@@ -263,7 +262,9 @@ final class FoodLogViewModel {
                 carbsG: carbsG,
                 fatG: fatG,
                 fiberG: fiberG,
-                loggedAt: loggedAt ?? now
+                loggedAt: loggedAt ?? now,
+                date: date,
+                mealType: mealType.rawValue
             )
             try database.saveFoodEntry(&entry)
             // Only track usage for named foods (not generic "Quick Add")

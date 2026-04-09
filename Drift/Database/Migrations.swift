@@ -431,5 +431,21 @@ enum Migrations {
                 WHERE NOT EXISTS (SELECT 1 FROM food f WHERE LOWER(f.name) = LOWER(sf.name))
                 """)
         }
+
+        // v26: Flatten meal_log into food_entry — add date + meal_type columns
+        migrator.registerMigration("v26_flatten_meal_log") { db in
+            try db.alter(table: "food_entry") { t in
+                t.add(column: "date", .text)       // "YYYY-MM-DD"
+                t.add(column: "meal_type", .text)   // "breakfast" | "lunch" | "dinner" | "snack"
+            }
+            // Backfill from meal_log
+            try db.execute(sql: """
+                UPDATE food_entry SET
+                    date = (SELECT ml.date FROM meal_log ml WHERE ml.id = food_entry.meal_log_id),
+                    meal_type = (SELECT ml.meal_type FROM meal_log ml WHERE ml.id = food_entry.meal_log_id)
+                """)
+            // Index for date queries
+            try db.create(index: "idx_food_entry_date", on: "food_entry", columns: ["date"])
+        }
     }
 }
