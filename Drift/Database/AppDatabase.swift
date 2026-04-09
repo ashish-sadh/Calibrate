@@ -271,9 +271,12 @@ extension AppDatabase {
     func fetchFoodItemsForPlantPoints(from startDate: String, to endDate: String) throws -> [PlantPointsService.FoodItem] {
         try dbWriter.read { db in
             let rows = try Row.fetchAll(db, sql: """
-                SELECT DISTINCT fe.food_name, f.ingredients, f.nova_group
+                SELECT DISTINCT fe.food_name,
+                       COALESCE(f.ingredients, f2.ingredients) as ingredients,
+                       COALESCE(f.nova_group, f2.nova_group) as nova_group
                 FROM food_entry fe
                 LEFT JOIN food f ON f.id = fe.food_id
+                LEFT JOIN food f2 ON fe.food_id IS NULL AND LOWER(f2.name) = LOWER(fe.food_name)
                 LEFT JOIN meal_log ml ON fe.meal_log_id = ml.id
                 WHERE fe.date BETWEEN ? AND ?
                    OR (fe.date IS NULL AND ml.date BETWEEN ? AND ?)
