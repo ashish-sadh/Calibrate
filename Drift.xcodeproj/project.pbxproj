@@ -60,6 +60,7 @@
 		5D88D4133DC583D407E81955 /* FoodLoggingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D6A44D7C25BC4956132FE8 /* FoodLoggingTests.swift */; };
 		5DB274604E30B658591C0CC9 /* PlantPointsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39A9E88135361C3B6F2AE538 /* PlantPointsService.swift */; };
 		5F4476C2F1B7DC3E662A1DBC /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24385DF0FF7F89584AE40020 /* Theme.swift */; };
+		6327143E6A1E3CD8CFEEB252 /* ExercisePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDFC1B5E83F6D2661A50BA65 /* ExercisePickerView.swift */; };
 		685C24962B2912E5B124EB60 /* BodyMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5286E0309471AF898D70E3C /* BodyMapView.swift */; };
 		6A4AC25199199579681FCAD4 /* WeightViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E8B598BCB7486A2C75848E /* WeightViewModel.swift */; };
 		6A5E607A5053083EB25372F7 /* AIActionExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C1323C593FD4D57F250E362 /* AIActionExecutor.swift */; };
@@ -310,6 +311,7 @@
 		E6B95CCD0C984C915051F482 /* sample_lingo_export.csv */ = {isa = PBXFileReference; path = sample_lingo_export.csv; sourceTree = "<group>"; };
 		E96402659F73046846B409D5 /* WeightTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTabView.swift; sourceTree = "<group>"; };
 		EC7D489024FD036D6FA417EA /* PlantPointsCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlantPointsCardView.swift; sourceTree = "<group>"; };
+		EDFC1B5E83F6D2661A50BA65 /* ExercisePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExercisePickerView.swift; sourceTree = "<group>"; };
 		EE0664FF9B8E28C6F853B820 /* ExerciseService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseService.swift; sourceTree = "<group>"; };
 		EE2D9672D96D6738FA36D4F2 /* AlgorithmSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlgorithmSettingsView.swift; sourceTree = "<group>"; };
 		F237A2E1C7747DBE102B665C /* WeightEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightEntry.swift; sourceTree = "<group>"; };
@@ -531,6 +533,7 @@
 			children = (
 				22F8386EAF9FBD18F89C8C60 /* ActiveWorkoutView.swift */,
 				D5286E0309471AF898D70E3C /* BodyMapView.swift */,
+				EDFC1B5E83F6D2661A50BA65 /* ExercisePickerView.swift */,
 				AB2998A31AEC29094C6F4062 /* WorkoutView.swift */,
 			);
 			path = Workout;
@@ -850,6 +853,7 @@
 				307CDADBBCCE0A3FD121817C /* DefaultTemplates.swift in Sources */,
 				4C31E5F32057829ABAA0840A /* DriftApp.swift in Sources */,
 				29FCA567A01752328CAEFFED /* ExerciseDatabase.swift in Sources */,
+				6327143E6A1E3CD8CFEEB252 /* ExercisePickerView.swift in Sources */,
 				46ED8561ED2CE03CCFE4BC0F /* ExerciseService.swift in Sources */,
 				87B4A86A2CDE6196B42015A4 /* FavoriteFood.swift in Sources */,
 				1BF24E5EFE0ECE537D36EA2E /* FloatingAIAssistant.swift in Sources */,
