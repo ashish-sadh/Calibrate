@@ -50,6 +50,10 @@ Current implementation is keyword-matching on food names only. Composite foods l
   5. **Consider:** The main AI model (SmolLM or Gemma) could also do this if it's already loaded when the user is in chat. But if they log from the Food tab (no chat), no model is loaded. A dedicated tiny model solves this but adds download size.
 - [ ] **Herbs/spices composite expansion** — "Garam Masala" = cumin + coriander + cardamom + cloves + pepper (1.25 pts, not 0.25). Expand known spice blends. This is rules-only, no model needed.
 
+### P1.5: Data Model Cleanup
+- [ ] **Rename `favorite_food` → `saved_food`** — Table holds favorites, recipes, and (soon) saved custom entries. `FavoriteFood` model → `SavedFood`. Migration: `ALTER TABLE favorite_food RENAME TO saved_food`. Update all references: model, AppDatabase queries, FoodLogViewModel, QuickAddView, DefaultFoods, FoodService, StaticOverrides, AI tools, tests. `isRecipe` flag stays. Consider adding `isFavorite` bool alongside it.
+- [ ] **Unify user-created food storage** — Currently: DB foods in `food`, recipes in `favorite_food`, manual entries in neither (only `food_entry` + `food_usage`). After rename, `saved_food` becomes the single table for all user-created foods: recipes, manual "save for future" entries, barcode scans (move from `food`?). The seeded `food` table stays read-only.
+
 ### P2: Salad Bowl / Custom Meal Builder
 Goal: let users build Sweetgreen-style salads without fatigue. Existing recipe builder is the foundation.
 
