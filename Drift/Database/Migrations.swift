@@ -393,5 +393,10 @@ enum Migrations {
                 WHERE ingredients IS NULL
                 """)
         }
+
+        // v23: Rename favorite_food → saved_food (cleaner data model)
+        migrator.registerMigration("v23_rename_saved_food") { db in
+            try db.rename(table: "favorite_food", to: "saved_food")
+        }
     }
 }

@@ -139,7 +139,7 @@ extension AppDatabase {
                 FROM food_usage fu
                 LEFT JOIN food f ON f.id = fu.food_id
                 LEFT JOIN food f2 ON LOWER(f2.name) = LOWER(fu.food_name) AND fu.food_id IS NULL
-                LEFT JOIN favorite_food ff ON LOWER(ff.name) = LOWER(fu.food_name)
+                LEFT JOIN saved_food ff ON LOWER(ff.name) = LOWER(fu.food_name)
                 WHERE fu.is_favorite = 1
                 ORDER BY fu.food_name
                 """)
@@ -200,7 +200,7 @@ extension AppDatabase {
             }
             let escaped = Self.escapeLike(query)
             return try FavoriteFood.fetchAll(db, sql: """
-                SELECT * FROM favorite_food WHERE name LIKE ? ESCAPE '\\' ORDER BY name
+                SELECT * FROM saved_food WHERE name LIKE ? ESCAPE '\\' ORDER BY name
                 """, arguments: ["%\(escaped)%"])
         }
     }

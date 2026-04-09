@@ -51,7 +51,7 @@ extension AppDatabase {
             try db.execute(sql: "DELETE FROM workout_set")
             try db.execute(sql: "DELETE FROM workout")
             try db.execute(sql: "DELETE FROM workout_template")
-            try db.execute(sql: "DELETE FROM favorite_food")
+            try db.execute(sql: "DELETE FROM saved_food")
             try db.execute(sql: "DELETE FROM food_usage")
         }
         // Re-seed default foods
@@ -621,7 +621,7 @@ extension AppDatabase {
     func deleteFavorite(id: Int64) throws {
         try dbWriter.write { db in
             // Get name before deleting to clean up food_usage
-            let name = try String.fetchOne(db, sql: "SELECT name FROM favorite_food WHERE id = ?", arguments: [id])
+            let name = try String.fetchOne(db, sql: "SELECT name FROM saved_food WHERE id = ?", arguments: [id])
             _ = try FavoriteFood.deleteOne(db, id: id)
             // Clean up food_usage entry for this recipe name (if no food table entry exists)
             if let name {

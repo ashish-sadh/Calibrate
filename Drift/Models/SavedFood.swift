@@ -1,7 +1,9 @@
 import Foundation
 import GRDB
 
-struct FavoriteFood: Identifiable, Codable, Sendable {
+/// User-created food: recipes, favorites, saved custom entries.
+/// Renamed from FavoriteFood — table holds more than just favorites.
+struct SavedFood: Identifiable, Codable, Sendable {
     var id: Int64?
     var name: String
     var calories: Double
@@ -50,7 +52,10 @@ struct FavoriteFood: Identifiable, Codable, Sendable {
     var macroSummary: String { "\(Int(calories))cal \(Int(proteinG))P \(Int(carbsG))C \(Int(fatG))F" }
 }
 
-extension FavoriteFood: FetchableRecord, PersistableRecord {
-    static let databaseTableName = "favorite_food"
+extension SavedFood: FetchableRecord, PersistableRecord {
+    static let databaseTableName = "saved_food"
     mutating func didInsert(_ inserted: InsertionSuccess) { id = inserted.rowID }
 }
+
+/// Backwards compatibility alias
+typealias FavoriteFood = SavedFood
