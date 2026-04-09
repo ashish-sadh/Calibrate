@@ -86,6 +86,7 @@
 		92B596C732C7784167EC8CDE /* WorkoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A884AC137C46CE932FEE1C9 /* WorkoutTests.swift */; };
 		92F6CD33F11BF82738AAF81C /* LabReportOCRTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D1E187818C8B9D2196B4B9D /* LabReportOCRTests.swift */; };
 		940612EB003CCC2F1FF36DD1 /* AIEvalHarness.swift in Sources */ = {isa = PBXBuildFile; fileRef = BADD153523D188C4ED89B55D /* AIEvalHarness.swift */; };
+		96B6BBB4C02D93E14F28C043 /* AIChatView+Suggestions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 188A69D621CC2DF63ADFB21F /* AIChatView+Suggestions.swift */; };
 		9870D7B4B5A001CA244B3785 /* SpellCorrectService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C93A5EC7AC72AD0108FAC30 /* SpellCorrectService.swift */; };
 		98D72BF25E0ACD62C871A4CD /* ParallelLLMEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BE85182415E10B646F68DA4 /* ParallelLLMEval.swift */; };
 		98FBDD66D792C10086005407 /* AIBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64BFDDB952907C50869B4078 /* AIBackend.swift */; };
@@ -192,6 +193,7 @@
 		1575030FD9A7BEF5BC9E0612 /* NutritionOCRTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NutritionOCRTests.swift; sourceTree = "<group>"; };
 		163C4017D9AEE2E0927DC907 /* CycleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleView.swift; sourceTree = "<group>"; };
 		16A8D46F9E08C1960010A695 /* CGMImportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CGMImportService.swift; sourceTree = "<group>"; };
+		188A69D621CC2DF63ADFB21F /* AIChatView+Suggestions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AIChatView+Suggestions.swift"; sourceTree = "<group>"; };
 		19E7517E5B4779CBBE1C7284 /* AITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AITests.swift; sourceTree = "<group>"; };
 		1A884AC137C46CE932FEE1C9 /* WorkoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutTests.swift; sourceTree = "<group>"; };
 		1ABDC86BA4516AA3699FE080 /* WeightChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightChartView.swift; sourceTree = "<group>"; };
@@ -509,6 +511,7 @@
 			isa = PBXGroup;
 			children = (
 				9FA2C56E731BE5610FDC5B12 /* AIChatView.swift */,
+				188A69D621CC2DF63ADFB21F /* AIChatView+Suggestions.swift */,
 				7F4C6870115BE53081FA0CDE /* AISetupView.swift */,
 				DFF155F20FB2EF069D634C95 /* FloatingAIAssistant.swift */,
 			);
@@ -805,6 +808,7 @@
 				86899F322EA3AB5164995C09 /* AIActionParser.swift in Sources */,
 				98FBDD66D792C10086005407 /* AIBackend.swift in Sources */,
 				EBB7CC6399A751DB3037402E /* AIChainOfThought.swift in Sources */,
+				96B6BBB4C02D93E14F28C043 /* AIChatView+Suggestions.swift in Sources */,
 				E16388BC43C225F2C6B7368A /* AIChatView.swift in Sources */,
 				12D17153112FD530712D6FC6 /* AIContextBuilder.swift in Sources */,
 				E005CF28B290C9D3A57C6264 /* AIDataCache.swift in Sources */,
