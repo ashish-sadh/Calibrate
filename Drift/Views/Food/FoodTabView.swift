@@ -12,6 +12,7 @@ struct FoodTabView: View {
     @State private var showingGoalSetup = false
     @State private var editingEntry: FoodEntry?
     @State private var isCopying = false
+    @State private var copiedToTodayName: String? = nil
     @State private var editAmount = "1"
     @State private var editUnitIndex = 0
     @State private var editEntryIsFav = false
@@ -43,6 +44,18 @@ struct FoodTabView: View {
                 }
             }
             .fullScreenCover(isPresented: $showingScanner) { BarcodeLookupView(viewModel: viewModel) }
+            .overlay(alignment: .bottom) {
+                if let name = copiedToTodayName {
+                    Text("Added \(name) to today")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 16).padding(.vertical, 10)
+                        .background(.green.opacity(0.9), in: Capsule())
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                        .padding(.bottom, 20)
+                }
+            }
+            .animation(.easeInOut(duration: 0.3), value: copiedToTodayName)
             .sheet(isPresented: $showingSearch) { FoodSearchView(viewModel: viewModel) }
             .sheet(isPresented: $showingRecipeBuilder) { QuickAddView(viewModel: viewModel) }
             .sheet(isPresented: $showingGoalSetup) {
@@ -405,6 +418,15 @@ struct FoodTabView: View {
                 reload()
             } label: {
                 Label("Log Again", systemImage: "arrow.counterclockwise")
+            }
+            if !viewModel.isToday {
+                Button {
+                    viewModel.copyEntryToToday(entry)
+                    copiedToTodayName = entry.foodName
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedToTodayName = nil }
+                } label: {
+                    Label("Copy to Today", systemImage: "doc.on.doc")
+                }
             }
             if let id = entry.id {
                 Button(role: .destructive) {

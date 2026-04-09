@@ -34,7 +34,7 @@ _(pick from Ready)_
 ### P0: UI Bugs & Features (human-reported)
 - [x] **BUG: Recent foods missing macros** — Fixed: added macro columns to food_usage, trackFoodUsage() stores macros, fetchRecentEntryNames() reads directly. Migration v21 backfills.
 - [ ] **Copy to today from past day** — When viewing a past day's food log, show a "Copy to today" option per item. Don't show when viewing today. Brief toast confirms without navigating. Files: `FoodTabView.swift`, `FoodLogViewModel.swift`.
-- [ ] **Plant points date awareness** — "Today" label in `PlantPointsCardView.swift` doesn't update when viewing a different date. Show actual date (e.g. "Apr 5") when not today. Week/month fine.
+- [x] **Plant points date awareness** — Fixed: shows "Today" or actual date (e.g. "Apr 5") based on selectedDate.
 
 ### P1: Plant Points Accuracy
 Current: keyword-matching on food names only. Fix: every food gets an `ingredients` JSON array. Plant points counts unique plant ingredients, not food names. No ML model needed — precompute for seeded foods, inherit from recipe builder, default to `[self]` for simple items.

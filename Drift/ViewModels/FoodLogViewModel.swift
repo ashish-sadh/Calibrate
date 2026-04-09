@@ -201,6 +201,37 @@ final class FoodLogViewModel {
         }
     }
 
+    /// Copy a food entry to today (used when viewing a past day).
+    func copyEntryToToday(_ entry: FoodEntry) {
+        let todayStr = DateFormatters.todayString
+        let hour = Calendar.current.component(.hour, from: Date())
+        let mealType: MealType = hour < 11 ? .breakfast : hour < 15 ? .lunch : hour < 18 ? .snack : .dinner
+        do {
+            let mealLogs = try database.fetchMealLogs(for: todayStr)
+            var mealLog = mealLogs.first { $0.mealType == mealType.rawValue }
+            if mealLog == nil {
+                var newLog = MealLog(date: todayStr, mealType: mealType.rawValue)
+                try database.saveMealLog(&newLog)
+                mealLog = newLog
+            }
+            guard let mealLogId = mealLog?.id else { return }
+            var newEntry = FoodEntry(
+                mealLogId: mealLogId, foodId: entry.foodId, foodName: entry.foodName,
+                servingSizeG: entry.servingSizeG, servings: entry.servings,
+                calories: entry.calories, proteinG: entry.proteinG,
+                carbsG: entry.carbsG, fatG: entry.fatG, fiberG: entry.fiberG,
+                loggedAt: DateFormatters.iso8601.string(from: Date())
+            )
+            try database.saveFoodEntry(&newEntry)
+            try? database.trackFoodUsage(name: entry.foodName, foodId: entry.foodId, servings: entry.servings,
+                                         calories: entry.calories, proteinG: entry.proteinG,
+                                         carbsG: entry.carbsG, fatG: entry.fatG, fiberG: entry.fiberG,
+                                         servingSizeG: entry.servingSizeG)
+        } catch {
+            Log.foodLog.error("Failed to copy to today: \(error.localizedDescription)")
+        }
+    }
+
     /// Quick log a food with last-used serving size (or 1) and auto meal type.
     func quickLogFood(_ food: Food) {
         let lastUsed = recentEntries.first(where: { $0.name == food.name })?.lastServings ?? 1
