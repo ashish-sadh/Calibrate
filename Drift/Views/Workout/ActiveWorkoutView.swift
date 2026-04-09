@@ -232,7 +232,7 @@ struct ActiveWorkoutView: View {
                         }
                     }
                 }
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.fraction(0.75), .large])
             }
             .sheet(isPresented: $showingCompletionSheet) {
                 // Dismiss everything when completion sheet closes
@@ -251,12 +251,7 @@ struct ActiveWorkoutView: View {
                         .font(.subheadline).foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
 
-                    Button {
-                        guard let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                              let root = scene.windows.first?.rootViewController else { return }
-                        let vc = UIActivityViewController(activityItems: [completionShareText], applicationActivities: nil)
-                        root.present(vc, animated: true)
-                    } label: {
+                    ShareLink(item: completionShareText) {
                         Label("Share", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)
