@@ -53,8 +53,8 @@ enum PlantPointsService {
                 let normalized = resolveAlias(normalize(name))
                 if isHerbOrSpice(normalized) {
                     herbsSpices.insert(normalized)
-                } else if isPlantFood(normalized) {
-                    plants.insert(normalized)
+                } else if let plantName = matchingPlantKeyword(normalized) {
+                    plants.insert(plantName)  // insert the keyword, not the full food name
                 }
             }
         }
@@ -283,6 +283,21 @@ enum PlantPointsService {
     private static let plantCategories: Set<String> = [
         "fruits", "vegetables", "nuts & seeds",
     ]
+
+    /// Returns the matching plant keyword if found (e.g. "avocado toast" → "avocado"), or nil.
+    private static func matchingPlantKeyword(_ name: String) -> String? {
+        guard isPlantFood(name) else { return nil }
+        // If the name IS a keyword, return as-is
+        if plantKeywords.contains(name) { return name }
+        // Otherwise find which keyword matched
+        let words = Set(name.components(separatedBy: .whitespaces))
+        if let match = words.first(where: { plantKeywords.contains($0) }) { return match }
+        // Multi-word keyword match
+        for keyword in plantKeywords {
+            if name.contains(keyword) { return keyword }
+        }
+        return name // fallback to full name
+    }
 
     private static func isPlantFood(_ name: String) -> Bool {
         // Reject processed plant-derived foods (bread, pasta, naan, etc.)
