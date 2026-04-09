@@ -17,6 +17,34 @@ struct FoodTabView: View {
     @State private var editAmount = "1"
     @State private var editUnitIndex = 0
     @State private var editEntryIsFav = false
+    @State private var foodSortMode: FoodSortMode = .time
+
+    enum FoodSortMode: String, CaseIterable {
+        case time, protein, carbs, fat, plantPoints
+        var label: String {
+            switch self {
+            case .time: "🕐"
+            case .protein: "P"
+            case .carbs: "C"
+            case .fat: "F"
+            case .plantPoints: "🌱"
+            }
+        }
+    }
+
+    private var sortedEntries: [FoodEntry] {
+        switch foodSortMode {
+        case .time: viewModel.todayEntries
+        case .protein: viewModel.todayEntries.sorted { $0.totalProtein > $1.totalProtein }
+        case .carbs: viewModel.todayEntries.sorted { $0.totalCarbs > $1.totalCarbs }
+        case .fat: viewModel.todayEntries.sorted { $0.totalFat > $1.totalFat }
+        case .plantPoints: viewModel.todayEntries.sorted {
+            let a = PlantPointsService.classify($0.foodName) != .notPlant
+            let b = PlantPointsService.classify($1.foodName) != .notPlant
+            return a && !b
+        }
+        }
+    }
 
     var body: some View {
         NavigationStack {
@@ -333,12 +361,27 @@ struct FoodTabView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text("Food Diary").font(.subheadline.weight(.semibold))
+                // Sort chips
+                if viewModel.todayEntries.count > 1 {
+                    HStack(spacing: 2) {
+                        ForEach(FoodSortMode.allCases, id: \.self) { mode in
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.2)) { foodSortMode = mode }
+                            } label: {
+                                Text(mode.label)
+                                    .font(.caption2.weight(.medium))
+                                    .foregroundStyle(foodSortMode == mode ? .white : .secondary)
+                                    .padding(.horizontal, 6).padding(.vertical, 3)
+                                    .background(foodSortMode == mode ? Theme.accent.opacity(0.4) : Color.clear, in: Capsule())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
                 Spacer()
                 if !viewModel.isToday && !viewModel.todayEntries.isEmpty {
                     Button {
-                        for entry in viewModel.todayEntries {
-                            viewModel.copyEntryToToday(entry)
-                        }
+                        copyAllToToday()
                         copiedToTodayName = "all \(viewModel.todayEntries.count) items"
                         DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedToTodayName = nil }
                     } label: {
@@ -368,9 +411,9 @@ struct FoodTabView: View {
 
                 Divider().padding(.vertical, 2)
 
-                ForEach(Array(viewModel.todayEntries.enumerated()), id: \.element.id) { index, entry in
+                ForEach(Array(sortedEntries.enumerated()), id: \.element.id) { index, entry in
                     entryRow(entry)
-                    if index < viewModel.todayEntries.count - 1 {
+                    if index < sortedEntries.count - 1 {
                         Divider().padding(.leading, 0)
                     }
                 }
@@ -574,6 +617,32 @@ struct FoodTabView: View {
     private func entryTimeString(_ entry: FoodEntry) -> String? {
         guard let date = parseTimestamp(entry.loggedAt) else { return nil }
         return DateFormatters.shortTime.string(from: date)
+    }
+
+    /// Copy all entries from the viewed day to today, preserving original meal times.
+    private func copyAllToToday() {
+        let cal = Calendar.current
+        let todayDate = Date()
+        let iso = DateFormatters.iso8601
+        for entry in viewModel.todayEntries {
+            let mappedLoggedAt: String
+            if let originalDate = parseTimestamp(entry.loggedAt) {
+                let timeComponents = cal.dateComponents([.hour, .minute, .second], from: originalDate)
+                var todayComponents = cal.dateComponents([.year, .month, .day], from: todayDate)
+                todayComponents.hour = timeComponents.hour
+                todayComponents.minute = timeComponents.minute
+                todayComponents.second = timeComponents.second
+                mappedLoggedAt = iso.string(from: cal.date(from: todayComponents) ?? todayDate)
+            } else {
+                mappedLoggedAt = iso.string(from: todayDate)
+            }
+            let mealType = entry.mealType.flatMap { MealType(rawValue: $0) } ?? viewModel.autoMealType
+            viewModel.quickAdd(name: entry.foodName, calories: entry.totalCalories,
+                               proteinG: entry.totalProtein, carbsG: entry.totalCarbs,
+                               fatG: entry.totalFat, fiberG: entry.totalFiber,
+                               mealType: mealType, loggedAt: mappedLoggedAt,
+                               servingSizeG: entry.servingSizeG)
+        }
     }
 
     private func copyFromYesterday() {
