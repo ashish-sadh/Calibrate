@@ -261,7 +261,32 @@ extension AppDatabase {
         }
     }
 
-    /// Unique food names logged in a date range (for plant points).
+    /// Unique ingredient names for plant points. Uses ingredients JSON when available, falls back to food_name.
+    func fetchUniqueIngredients(from startDate: String, to endDate: String) throws -> [String] {
+        try dbWriter.read { db in
+            let rows = try Row.fetchAll(db, sql: """
+                SELECT DISTINCT fe.food_name, f.ingredients
+                FROM food_entry fe
+                JOIN meal_log ml ON fe.meal_log_id = ml.id
+                LEFT JOIN food f ON f.id = fe.food_id
+                WHERE ml.date BETWEEN ? AND ?
+                """, arguments: [startDate, endDate])
+            var allIngredients: Set<String> = []
+            for row in rows {
+                let foodName: String = row["food_name"]
+                if let json: String = row["ingredients"],
+                   let data = json.data(using: .utf8),
+                   let arr = try? JSONDecoder().decode([String].self, from: data), !arr.isEmpty {
+                    for ingredient in arr { allIngredients.insert(ingredient.lowercased()) }
+                } else {
+                    allIngredients.insert(foodName.lowercased())
+                }
+            }
+            return Array(allIngredients)
+        }
+    }
+
+    /// Unique food names logged in a date range (for plant points — legacy, prefer fetchUniqueIngredients).
     func fetchUniqueFoodNames(from startDate: String, to endDate: String) throws -> [String] {
         try dbWriter.read { db in
             try String.fetchAll(db, sql: """

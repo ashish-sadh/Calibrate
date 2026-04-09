@@ -39,19 +39,27 @@ _(pick from Ready)_
 ### P1: Plant Points Accuracy
 Current: keyword-matching on food names only. Fix: every food gets an `ingredients` JSON array. Plant points counts unique plant ingredients, not food names. No ML model needed — precompute for seeded foods, inherit from recipe builder, default to `[self]` for simple items.
 
-- [ ] **Add `ingredients TEXT` column to `food` + `saved_food`** — JSON array of ingredient names. Migration. Simple foods: `["banana"]`, `["egg"]`. Dishes: `["rice", "onion", "tomato", "turmeric", "cumin"]`. Default: `[food.name]` (self). Precompute for all 1000+ seeded foods in `foods.json` — simple items = self, top ~200 composite dishes = hardcoded ingredient list.
-- [ ] **Recipe builder saves ingredients** — `saveAndLogRecipe()` stores `items.map(\.name)` as `ingredients` JSON on the saved entry. Already has the data, just needs to persist it.
+- [x] **Add `ingredients TEXT` column to `food` + `favorite_food`** — Migration v22. JSON array. Default `[self.name]`. `ingredientList` computed property with fallback.
+- [x] **Recipe builder saves ingredients** — `saveAndLogRecipe()` stores `items.map(\.name)` as ingredients JSON.
 - [ ] **Barcode scan saves ingredients** — OpenFoodFacts API returns ingredient list. Parse and store as `ingredients` JSON when saving scanned food.
 - [ ] **Custom entry ingredients** — Default to `[name]`. If built via recipe builder, gets real ingredients automatically.
 - [ ] **PlantPointsService reads ingredients** — Change from `fetchUniqueFoodNames()` to reading `ingredients` JSON from each food_entry. Flatten all ingredient arrays → count unique plants. Falls back to `[food_name]` if ingredients is null (old entries).
 - [ ] **Six-category alignment** — Classify each ingredient into Super Six: Vegetables, Fruits, Whole Grains, Legumes, Nuts/Seeds, Herbs/Spices (¼ pt). Use Food.category field + keyword matching.
-- [ ] **Avocado + edge case audit** — Ensure avocado (fruit), coconut (fruit), quinoa (seed), tofu (legume) all classify correctly. Audit non-plant overrides list.
+- [x] **Avocado + edge case audit** — Verified: avocado, coconut, quinoa, tofu, edamame, tempeh all in plantKeywords. No false negatives.
 - [ ] **Spice blend expansion** — "Garam Masala" ingredients: `["cumin", "coriander", "cardamom", "cloves", "pepper"]`. Hardcode top 10 spice blends.
 - [ ] **No ML model needed** — Precomputed ingredients in DB + recipe builder + OpenFoodFacts covers ~95% of cases. Tiny model evaluation deferred — revisit only if custom entries without ingredients are common.
 
 ### P1.5: Data Model Cleanup
 - [ ] **Rename `favorite_food` → `saved_food`** — Table holds favorites, recipes, and (soon) saved custom entries. `FavoriteFood` model → `SavedFood`. Migration: `ALTER TABLE favorite_food RENAME TO saved_food`. Update all references: model, AppDatabase queries, FoodLogViewModel, QuickAddView, DefaultFoods, FoodService, StaticOverrides, AI tools, tests. `isRecipe` flag stays. Consider adding `isFavorite` bool alongside it.
 - [ ] **Unify user-created food storage** — Currently: DB foods in `food`, recipes in `favorite_food`, manual entries in neither (only `food_entry` + `food_usage`). After rename, `saved_food` becomes the single table for all user-created foods: recipes, manual "save for future" entries, barcode scans (move from `food`?). The seeded `food` table stays read-only.
+
+### P1: Workout History & Editing
+Goal: let users add past workouts and edit existing ones. Currently workouts are live-only — no way to log a gym session after the fact or fix mistakes.
+
+- [ ] **Manual workout entry** — "Add Past Workout" button on workout tab. Pick date, name exercises, enter sets/reps/weight. Uses existing CreateTemplateView flow but saves as a completed workout instead of a template.
+- [ ] **Edit existing workout** — Tap a workout in history → edit sets, reps, weight, exercise order. Add/remove exercises and sets. Save updates back to DB.
+- [ ] **Edit workout name & notes** — Allow renaming and editing notes on completed workouts from detail view.
+- [ ] **Delete individual sets** — Swipe-to-delete on individual sets in workout detail view.
 
 ### P2: Salad Bowl / Custom Meal Builder
 Goal: let users build Sweetgreen-style salads without fatigue. Existing recipe builder is the foundation.
