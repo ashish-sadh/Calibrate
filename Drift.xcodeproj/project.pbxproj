@@ -70,6 +70,7 @@
 		7430C66B3A1C306F1199C3FA /* ToolSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = C170D4FEDFB68CA8A61E1D03 /* ToolSchema.swift */; };
 		7BDC02B8C99F8B719546A8A1 /* WeightEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F237A2E1C7747DBE102B665C /* WeightEntry.swift */; };
 		7FF64D8FECEB7302909982E6 /* LLMQwen3Eval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C100ED24DAB0D032BD8C5BD /* LLMQwen3Eval.swift */; };
+		813BBE938E8D3E2FF5A34A60 /* AppDatabase+FoodUsage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62E7E108AC25A8262DC23EB7 /* AppDatabase+FoodUsage.swift */; };
 		8224D8220B6D9328EDDDB648 /* DEXAOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5893DE4C163CA3CF50E74C1A /* DEXAOverviewView.swift */; };
 		86211210D2E5528F57C90AEF /* WorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB2998A31AEC29094C6F4062 /* WorkoutView.swift */; };
 		86899F322EA3AB5164995C09 /* AIActionParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6B64C16D8106D8EB594C117 /* AIActionParser.swift */; };
@@ -226,6 +227,7 @@
 		5D1E187818C8B9D2196B4B9D /* LabReportOCRTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabReportOCRTests.swift; sourceTree = "<group>"; };
 		5D4BF27A41CD9659EFF50036 /* DefaultTemplates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultTemplates.swift; sourceTree = "<group>"; };
 		5F6D2AA89F46A33EAE39DEAC /* MoreTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreTabView.swift; sourceTree = "<group>"; };
+		62E7E108AC25A8262DC23EB7 /* AppDatabase+FoodUsage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppDatabase+FoodUsage.swift"; sourceTree = "<group>"; };
 		647116F9E4F78CE702CB870C /* RobustnessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobustnessTests.swift; sourceTree = "<group>"; };
 		64BFDDB952907C50869B4078 /* AIBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIBackend.swift; sourceTree = "<group>"; };
 		659C59EE72A777C6DEA046D9 /* AIResponseCleaner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIResponseCleaner.swift; sourceTree = "<group>"; };
@@ -433,6 +435,7 @@
 			isa = PBXGroup;
 			children = (
 				2A19AD32FF007540A79C20BC /* AppDatabase.swift */,
+				62E7E108AC25A8262DC23EB7 /* AppDatabase+FoodUsage.swift */,
 				9FDCCAED76696ACF2A89F445 /* Migrations.swift */,
 				DDFFBCB3D524DCFEA822DB53 /* Persistence.swift */,
 			);
@@ -810,6 +813,7 @@
 				897722DC29F4AAF58BDA1CCF /* ActiveWorkoutView.swift in Sources */,
 				8D8FB3814300848676740EC6 /* AddSupplementView.swift in Sources */,
 				421D57520E9C09C88A6A0B6B /* AlgorithmSettingsView.swift in Sources */,
+				813BBE938E8D3E2FF5A34A60 /* AppDatabase+FoodUsage.swift in Sources */,
 				EB2A292ED2019794749E4839 /* AppDatabase.swift in Sources */,
 				6B0CE72048898157F8BA881F /* BarcodeCache.swift in Sources */,
 				43FCEE74704AB4A0A900510A /* BarcodeScannerView.swift in Sources */,
