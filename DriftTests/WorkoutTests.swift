@@ -1103,6 +1103,9 @@ import GRDB
 }
 
 @Test func workoutSessionPersistWithExercises() async throws {
+    // Clear any stale session from the simulator's shared UserDefaults
+    WorkoutService.clearSession()
+
     let session = WorkoutService.SavedSession(
         workoutName: "Full Workout", startTime: Date(),
         exercises: [

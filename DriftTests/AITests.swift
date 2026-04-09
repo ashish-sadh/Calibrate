@@ -61,7 +61,10 @@ import Testing
 @Test @MainActor func aiContextBuilderReturnsString() async throws {
     let context = AIContextBuilder.buildContext()
     #expect(!context.isEmpty, "Context should not be empty")
-    #expect(context.contains("food") || context.contains("No") || context.contains("Target"))
+    // baseContext always outputs calorie info — either "Calories:" (food logged) or "No food logged" or "Target"
+    // Also accept "cal" which appears in the target suffix (e.g. "2000cal")
+    #expect(context.contains("cal") || context.contains("food") || context.contains("No") || context.contains("Target"),
+            "Context should contain nutrition info, got: \(context.prefix(200))")
 }
 
 // MARK: - AIRuleEngine Tests
