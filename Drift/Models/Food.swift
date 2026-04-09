@@ -34,7 +34,8 @@ struct Food: Identifiable, Codable, Sendable {
         proteinG: Double = 0,
         carbsG: Double = 0,
         fatG: Double = 0,
-        fiberG: Double = 0
+        fiberG: Double = 0,
+        ingredients: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -46,6 +47,27 @@ struct Food: Identifiable, Codable, Sendable {
         self.carbsG = carbsG
         self.fatG = fatG
         self.fiberG = fiberG
+        self.ingredients = ingredients
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decodeIfPresent(Int64.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        category = try c.decode(String.self, forKey: .category)
+        servingSize = try c.decode(Double.self, forKey: .servingSize)
+        servingUnit = try c.decode(String.self, forKey: .servingUnit)
+        calories = try c.decode(Double.self, forKey: .calories)
+        proteinG = try c.decodeIfPresent(Double.self, forKey: .proteinG) ?? 0
+        carbsG = try c.decodeIfPresent(Double.self, forKey: .carbsG) ?? 0
+        fatG = try c.decodeIfPresent(Double.self, forKey: .fatG) ?? 0
+        fiberG = try c.decodeIfPresent(Double.self, forKey: .fiberG) ?? 0
+        // ingredients: accept array from JSON file or string from DB
+        if let arr = try? c.decode([String].self, forKey: .ingredients) {
+            ingredients = (try? JSONEncoder().encode(arr)).flatMap { String(data: $0, encoding: .utf8) }
+        } else {
+            ingredients = try c.decodeIfPresent(String.self, forKey: .ingredients)
+        }
     }
 
     /// Compact macro string like "165cal 31P 0C 4F"

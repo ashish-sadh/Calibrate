@@ -544,6 +544,10 @@ extension AppDatabase {
             for var food in foods {
                 if !existingNames.contains(food.name.lowercased()) {
                     try food.insert(db)
+                } else if let ingredients = food.ingredients {
+                    // Update ingredients for existing foods (backfill from JSON)
+                    try db.execute(sql: "UPDATE food SET ingredients = ? WHERE LOWER(name) = ? AND (ingredients IS NULL OR ingredients = '[\"' || name || '\"]')",
+                                   arguments: [ingredients, food.name.lowercased()])
                 }
             }
         }

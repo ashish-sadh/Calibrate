@@ -47,7 +47,7 @@ Current: keyword-matching on food names only. Fix: every food gets an `ingredien
 - [x] **Six-category alignment** — Already aligned: Vegetables/Fruits/Grains/Legumes/Nuts = 1pt (plantKeywords), Herbs/Spices = 0.25pt. Food.category unused but plantKeywords cover same foods. No change needed.
 - [x] **Avocado + edge case audit** — Verified: avocado, coconut, quinoa, tofu, edamame, tempeh all in plantKeywords. No false negatives.
 - [x] **Spice blend expansion** — 10 blends: garam masala, curry powder, italian seasoning, etc. expandSpiceBlends() decomposes before classification.
-- [ ] **No ML model needed** — Precomputed ingredients in DB + recipe builder + OpenFoodFacts covers ~95% of cases. Tiny model evaluation deferred — revisit only if custom entries without ingredients are common.
+- [x] **No ML model needed** — Confirmed: ingredients column + recipe builder + spice expansion covers ~95%. Tiny model deferred.
 
 ### P1.5: Data Model Cleanup
 - [ ] **Rename `favorite_food` → `saved_food`** — Table holds favorites, recipes, and (soon) saved custom entries. `FavoriteFood` model → `SavedFood`. Migration: `ALTER TABLE favorite_food RENAME TO saved_food`. Update all references: model, AppDatabase queries, FoodLogViewModel, QuickAddView, DefaultFoods, FoodService, StaticOverrides, AI tools, tests. `isRecipe` flag stays. Consider adding `isFavorite` bool alongside it.
