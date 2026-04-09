@@ -139,6 +139,7 @@
 		E0F86EB4273E7AC079F525CE /* LabReportOCR.swift in Sources */ = {isa = PBXBuildFile; fileRef = E342C8090873CF9612C8A63E /* LabReportOCR.swift */; };
 		E10A3A33C9E718C1D077AC02 /* WeightEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 217B3F5DA6C6AA9BB267D9F3 /* WeightEntryView.swift */; };
 		E16388BC43C225F2C6B7368A /* AIChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA2C56E731BE5610FDC5B12 /* AIChatView.swift */; };
+		E220B46BAB957B8242ABA44A /* IntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24EBC73AF46E92F7FF6A10FF /* IntegrationTests.swift */; };
 		E312846BA4FBD129108D7C82 /* ExerciseBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21311CD0AE82F339C988BDD2 /* ExerciseBrowserView.swift */; };
 		E5611698773A5EEF24F10014 /* EditFoodEntrySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F30EC2EF2E12E44F63B37582 /* EditFoodEntrySheet.swift */; };
 		EA08170013B8F2A7481FF81F /* Workout.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE56F885D3FD4E44B8999557 /* Workout.swift */; };
@@ -214,6 +215,7 @@
 		22F8386EAF9FBD18F89C8C60 /* ActiveWorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWorkoutView.swift; sourceTree = "<group>"; };
 		237FC00B086CC3785B482588 /* AIRuleEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIRuleEngine.swift; sourceTree = "<group>"; };
 		24385DF0FF7F89584AE40020 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		24EBC73AF46E92F7FF6A10FF /* IntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationTests.swift; sourceTree = "<group>"; };
 		2A19AD32FF007540A79C20BC /* AppDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDatabase.swift; sourceTree = "<group>"; };
 		2CFE343BFAFCD99118098211 /* AIToolAgent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIToolAgent.swift; sourceTree = "<group>"; };
 		2D4B47196E8598EB15359D7C /* SupplementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupplementService.swift; sourceTree = "<group>"; };
@@ -441,6 +443,7 @@
 				A1AB1D48F6D71EC9854629ED /* DriftTests.swift */,
 				47334FA11098E0172ED4A19A /* EdgeCaseTests.swift */,
 				B3D6A44D7C25BC4956132FE8 /* FoodLoggingTests.swift */,
+				24EBC73AF46E92F7FF6A10FF /* IntegrationTests.swift */,
 				5D1E187818C8B9D2196B4B9D /* LabReportOCRTests.swift */,
 				1575030FD9A7BEF5BC9E0612 /* NutritionOCRTests.swift */,
 				647116F9E4F78CE702CB870C /* RobustnessTests.swift */,
@@ -974,6 +977,7 @@
 				310C2BA2AF1BB8CC25FCC976 /* DriftTests.swift in Sources */,
 				F29E79872466C7556AC9D549 /* EdgeCaseTests.swift in Sources */,
 				5D88D4133DC583D407E81955 /* FoodLoggingTests.swift in Sources */,
+				E220B46BAB957B8242ABA44A /* IntegrationTests.swift in Sources */,
 				92F6CD33F11BF82738AAF81C /* LabReportOCRTests.swift in Sources */,
 				FC725819F735636B40300619 /* NutritionOCRTests.swift in Sources */,
 				C6533AEBED5F6D1F5387F98A /* RobustnessTests.swift in Sources */,
