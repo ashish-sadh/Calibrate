@@ -280,10 +280,10 @@ struct FoodTabView: View {
                     Image(systemName: "leaf.fill").font(.caption2).foregroundStyle(Theme.plantGreen)
                     Text("\(String(format: pp.total == Double(Int(pp.total)) ? "%.0f" : "%.1f", pp.total))/30")
                         .font(.caption.weight(.semibold).monospacedDigit())
-                    Text("plants")
+                    Text(viewModel.isToday ? "plants this week" : "plants that week")
                         .font(.caption2).foregroundStyle(.secondary)
-                    if viewModel.dailyNewPlants > 0 {
-                        Text("+\(viewModel.dailyNewPlants) new")
+                    if viewModel.dailyNewPlants > 0 && viewModel.isToday {
+                        Text("+\(viewModel.dailyNewPlants) new today")
                             .font(.caption2.weight(.medium)).foregroundStyle(Theme.plantGreen)
                     }
                     Spacer()
