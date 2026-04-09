@@ -666,7 +666,8 @@ struct FoodTabView: View {
                                proteinG: entry.totalProtein, carbsG: entry.totalCarbs,
                                fatG: entry.totalFat, fiberG: entry.totalFiber,
                                mealType: mealType, loggedAt: mappedLoggedAt,
-                               servingSizeG: entry.servingSizeG)
+                               servingSizeG: entry.servingSizeG,
+                               date: DateFormatters.todayString)
         }
     }
 

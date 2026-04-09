@@ -827,6 +827,212 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
     #expect(await vm.todayNutrition.calories == 500, "Total should be 200 + 300 = 500")
 }
 
+// MARK: - Copy All to Today (date targeting)
+
+@Test func copyAllToTodayUsesTodaysDate() async throws {
+    let db = try AppDatabase.empty()
+    let vm = await FoodLogViewModel(database: db)
+
+    // Log food on a past date
+    let pastDate = Calendar.current.date(byAdding: .day, value: -3, to: Date())!
+    await vm.goToDate(pastDate)
+    await vm.quickAdd(name: "Past Meal A", calories: 400, proteinG: 30, carbsG: 40, fatG: 15, fiberG: 4, mealType: .lunch)
+    await vm.quickAdd(name: "Past Meal B", calories: 250, proteinG: 20, carbsG: 25, fatG: 10, fiberG: 2, mealType: .lunch)
+    #expect(await vm.todayEntries.count == 2)
+
+    // Stay on past date (simulating user viewing a past day) and copy with explicit today date
+    let todayStr = DateFormatters.todayString
+    let pastEntries = await vm.todayEntries
+    for entry in pastEntries {
+        await vm.quickAdd(name: entry.foodName, calories: entry.totalCalories,
+                          proteinG: entry.totalProtein, carbsG: entry.totalCarbs,
+                          fatG: entry.totalFat, fiberG: entry.totalFiber,
+                          mealType: .lunch, date: todayStr)
+    }
+
+    // Past date should still have only 2 entries (not 4)
+    await vm.goToDate(pastDate)
+    #expect(await vm.todayEntries.count == 2, "Past date should still have only 2 entries")
+
+    // Today should have the 2 copied entries
+    await vm.goToDate(Date())
+    #expect(await vm.todayEntries.count == 2, "Today should have 2 copied entries")
+    #expect(await vm.todayNutrition.calories == 650, "Total should be 400 + 250 = 650")
+}
+
+@Test func quickAddWithoutDateParameterUsesSelectedDate() async throws {
+    let db = try AppDatabase.empty()
+    let vm = await FoodLogViewModel(database: db)
+
+    // Navigate to a past date and quickAdd without date param
+    let pastDate = Calendar.current.date(byAdding: .day, value: -5, to: Date())!
+    let pastStr = DateFormatters.dateOnly.string(from: pastDate)
+    await vm.goToDate(pastDate)
+    await vm.quickAdd(name: "Past Entry", calories: 100, proteinG: 10, carbsG: 10, fatG: 5, fiberG: 1, mealType: .lunch)
+
+    // Entry should be on the past date
+    let logs = try db.fetchMealLogs(for: pastStr)
+    #expect(!logs.isEmpty, "Meal log should exist on past date")
+    let entries = try db.fetchFoodEntries(forMealLog: logs[0].id!)
+    #expect(entries.count == 1)
+    #expect(entries[0].date == pastStr, "Entry date should match selected past date")
+
+    // Today should be empty
+    let todayLogs = try db.fetchMealLogs(for: DateFormatters.todayString)
+    let todayEntryCount = try todayLogs.reduce(0) { sum, log in
+        sum + (try db.fetchFoodEntries(forMealLog: log.id!)).count
+    }
+    #expect(todayEntryCount == 0, "Today should have no entries")
+}
+
+@Test func quickAddWithDateParameterOverridesSelectedDate() async throws {
+    let db = try AppDatabase.empty()
+    let vm = await FoodLogViewModel(database: db)
+
+    // Navigate to a past date but quickAdd with explicit today date
+    let pastDate = Calendar.current.date(byAdding: .day, value: -5, to: Date())!
+    let pastStr = DateFormatters.dateOnly.string(from: pastDate)
+    let todayStr = DateFormatters.todayString
+    await vm.goToDate(pastDate)
+    await vm.quickAdd(name: "Redirected Entry", calories: 200, proteinG: 15, carbsG: 20, fatG: 8, fiberG: 2, mealType: .lunch, date: todayStr)
+
+    // Past date should have nothing
+    let pastLogs = try db.fetchMealLogs(for: pastStr)
+    let pastEntryCount = try pastLogs.reduce(0) { sum, log in
+        sum + (try db.fetchFoodEntries(forMealLog: log.id!)).count
+    }
+    #expect(pastEntryCount == 0, "Past date should have no entries")
+
+    // Today should have the entry
+    let todayLogs = try db.fetchMealLogs(for: todayStr)
+    #expect(!todayLogs.isEmpty, "Today should have a meal log")
+    let todayEntries = try db.fetchFoodEntries(forMealLog: todayLogs[0].id!)
+    #expect(todayEntries.count == 1)
+    #expect(todayEntries[0].foodName == "Redirected Entry")
+    #expect(todayEntries[0].date == todayStr)
+}
+
+@Test func copyAllToTodayPreservesNutritionData() async throws {
+    let db = try AppDatabase.empty()
+    let vm = await FoodLogViewModel(database: db)
+
+    // Log food with specific macros on a past date
+    let pastDate = Calendar.current.date(byAdding: .day, value: -2, to: Date())!
+    await vm.goToDate(pastDate)
+    await vm.quickAdd(name: "Chicken Breast", calories: 330, proteinG: 62, carbsG: 0, fatG: 7, fiberG: 0, mealType: .lunch, servingSizeG: 200)
+    await vm.quickAdd(name: "Brown Rice", calories: 215, proteinG: 5, carbsG: 45, fatG: 2, fiberG: 4, mealType: .lunch, servingSizeG: 180)
+
+    let todayStr = DateFormatters.todayString
+    let pastEntries = await vm.todayEntries
+    for entry in pastEntries {
+        await vm.quickAdd(name: entry.foodName, calories: entry.totalCalories,
+                          proteinG: entry.totalProtein, carbsG: entry.totalCarbs,
+                          fatG: entry.totalFat, fiberG: entry.totalFiber,
+                          mealType: .lunch, servingSizeG: entry.servingSizeG, date: todayStr)
+    }
+
+    // Verify nutrition is preserved on today
+    await vm.goToDate(Date())
+    let todayEntries = await vm.todayEntries
+    #expect(todayEntries.count == 2, "Should have 2 copied entries")
+
+    let chicken = todayEntries.first { $0.foodName == "Chicken Breast" }
+    let rice = todayEntries.first { $0.foodName == "Brown Rice" }
+    #expect(chicken != nil, "Chicken should be copied")
+    #expect(rice != nil, "Rice should be copied")
+    #expect(chicken?.totalCalories == 330)
+    #expect(chicken?.totalProtein == 62)
+    #expect(chicken?.servingSizeG == 200)
+    #expect(rice?.totalCalories == 215)
+    #expect(rice?.totalCarbs == 45)
+    #expect(rice?.totalFiber == 4)
+}
+
+@Test func copyAllToTodayDoesNotDuplicateOnSource() async throws {
+    let db = try AppDatabase.empty()
+    let vm = await FoodLogViewModel(database: db)
+
+    // Log 3 entries on a past date
+    let pastDate = Calendar.current.date(byAdding: .day, value: -4, to: Date())!
+    let pastStr = DateFormatters.dateOnly.string(from: pastDate)
+    await vm.goToDate(pastDate)
+    await vm.quickAdd(name: "Item 1", calories: 100, proteinG: 10, carbsG: 10, fatG: 5, fiberG: 1, mealType: .breakfast)
+    await vm.quickAdd(name: "Item 2", calories: 200, proteinG: 20, carbsG: 20, fatG: 10, fiberG: 2, mealType: .lunch)
+    await vm.quickAdd(name: "Item 3", calories: 300, proteinG: 30, carbsG: 30, fatG: 15, fiberG: 3, mealType: .dinner)
+
+    // Copy all to today
+    let todayStr = DateFormatters.todayString
+    let pastEntries = await vm.todayEntries
+    for entry in pastEntries {
+        await vm.quickAdd(name: entry.foodName, calories: entry.totalCalories,
+                          proteinG: entry.totalProtein, carbsG: entry.totalCarbs,
+                          fatG: entry.totalFat, fiberG: entry.totalFiber,
+                          mealType: MealType(rawValue: entry.mealType ?? "lunch") ?? .lunch, date: todayStr)
+    }
+
+    // Source date should still have exactly 3
+    await vm.goToDate(pastDate)
+    #expect(await vm.todayEntries.count == 3, "Source date should still have exactly 3 entries")
+
+    // Count entries in DB for past date to be extra sure
+    let pastLogs = try db.fetchMealLogs(for: pastStr)
+    let pastTotal = try pastLogs.reduce(0) { sum, log in
+        sum + (try db.fetchFoodEntries(forMealLog: log.id!)).count
+    }
+    #expect(pastTotal == 3, "DB should have exactly 3 entries on source date")
+}
+
+@Test func copyEntryToTodayFromDistantPast() async throws {
+    let db = try AppDatabase.empty()
+    let vm = await FoodLogViewModel(database: db)
+
+    // Log on a date 30 days ago
+    let distantPast = Calendar.current.date(byAdding: .day, value: -30, to: Date())!
+    await vm.goToDate(distantPast)
+    await vm.quickAdd(name: "Old Meal", calories: 500, proteinG: 35, carbsG: 50, fatG: 20, fiberG: 5, mealType: .lunch)
+
+    // Copy single entry to today
+    let entries = await vm.todayEntries
+    guard let entry = entries.first else {
+        #expect(Bool(false), "Should have an entry to copy")
+        return
+    }
+    await vm.copyEntryToToday(entry)
+
+    // Verify on today
+    await vm.goToDate(Date())
+    await vm.loadTodayMeals()
+    let todayEntries = await vm.todayEntries
+    #expect(todayEntries.count == 1, "Should have 1 copied entry on today")
+    #expect(todayEntries[0].foodName == "Old Meal")
+    #expect(todayEntries[0].totalCalories == 500)
+    #expect(todayEntries[0].date == DateFormatters.todayString, "Copied entry date must be today")
+}
+
+@Test func copyEntryToTodayDoesNotRemoveFromSource() async throws {
+    let db = try AppDatabase.empty()
+    let vm = await FoodLogViewModel(database: db)
+
+    let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+    await vm.goToDate(yesterday)
+    await vm.quickAdd(name: "Keep Me", calories: 150, proteinG: 12, carbsG: 15, fatG: 6, fiberG: 2, mealType: .lunch)
+
+    let entries = await vm.todayEntries
+    guard let entry = entries.first else { return }
+    await vm.copyEntryToToday(entry)
+
+    // Source should still have the entry
+    await vm.goToDate(yesterday)
+    await vm.loadTodayMeals()
+    #expect(await vm.todayEntries.count == 1, "Source entry should not be removed")
+    #expect(await vm.todayEntries[0].foodName == "Keep Me")
+
+    // Today should also have it
+    await vm.goToDate(Date())
+    await vm.loadTodayMeals()
+    #expect(await vm.todayEntries.count == 1, "Today should have copied entry")
+}
+
 // MARK: - Stress Tests
 
 @Test func stressLogManyItems() async throws {
