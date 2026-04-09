@@ -158,8 +158,8 @@ struct PlantPointsCardView: View {
             endStr = DateFormatters.dateOnly.string(from: end)
         }
 
-        guard let names = try? AppDatabase.shared.fetchUniqueFoodNames(from: startStr, to: endStr) else { return }
-        periodPlantPoints = PlantPointsService.calculate(from: names)
+        guard let items = try? AppDatabase.shared.fetchFoodItemsForPlantPoints(from: startStr, to: endStr) else { return }
+        periodPlantPoints = PlantPointsService.calculate(from: items)
     }
 
     private func plantChip(icon: String, label: String, detail: String, color: Color) -> some View {
