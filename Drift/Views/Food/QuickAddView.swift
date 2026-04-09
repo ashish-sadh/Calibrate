@@ -172,8 +172,13 @@ struct QuickAddView: View {
     private func saveAndLogRecipe() {
         let t = total
         let name = recipeName.isEmpty ? (items.count == 1 ? items[0].name : "Recipe") : recipeName
+        // Store ingredient names as JSON for plant points
+        let ingredientNames = items.map(\.name)
+        let ingredientsJson = (try? JSONEncoder().encode(ingredientNames))
+            .flatMap { String(data: $0, encoding: .utf8) }
         var fav = FavoriteFood(name: name, calories: t.cal, proteinG: t.p, carbsG: t.c,
-                               fatG: t.f, fiberG: t.fb, isRecipe: items.count > 1)
+                               fatG: t.f, fiberG: t.fb, isRecipe: items.count > 1,
+                               ingredients: ingredientsJson)
         try? db.saveFavorite(&fav)
         let totalServing = items.reduce(0.0) { $0 + $1.servingSizeG }
         let loggedAtStr = ISO8601DateFormatter().string(from: recipeLogTime)

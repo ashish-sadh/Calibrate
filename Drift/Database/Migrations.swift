@@ -378,5 +378,20 @@ enum Migrations {
                 WHERE food_id IS NOT NULL
                 """)
         }
+
+        // v22: Add ingredients column to food and favorite_food for plant points
+        migrator.registerMigration("v22_food_ingredients") { db in
+            try db.alter(table: "food") { t in
+                t.add(column: "ingredients", .text) // JSON array: '["rice","onion","turmeric"]'
+            }
+            try db.alter(table: "favorite_food") { t in
+                t.add(column: "ingredients", .text)
+            }
+            // Default: simple foods get [self.name]
+            try db.execute(sql: """
+                UPDATE food SET ingredients = '["' || REPLACE(name, '"', '\\"') || '"]'
+                WHERE ingredients IS NULL
+                """)
+        }
     }
 }
