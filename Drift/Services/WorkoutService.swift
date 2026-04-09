@@ -305,13 +305,23 @@ enum WorkoutService {
             exerciseNames.insert(en)
 
             let setOrder = Int(row[isHevy ? "set_index" : "Set Order"] ?? "1") ?? 1
-            var weight = Double(row[isHevy ? "weight_kg" : "Weight"] ?? "0") ?? 0
+            var weight: Double
             let reps = Int(Double(row[isHevy ? "reps" : "Reps"] ?? "0") ?? 0)
             let rpe = Double(row[isHevy ? "rpe" : "RPE"] ?? "")
-            let weightUnit = isHevy ? "kg" : (row["Weight Unit"] ?? "lbs")
 
-            // Convert kg to lbs if needed (our DB stores lbs)
-            if weightUnit.lowercased() == "kg" { weight *= 2.20462 }
+            if isHevy {
+                // Hevy exports weight in lbs (column: weight_lbs)
+                weight = Double(row["weight_lbs"] ?? "0") ?? 0
+                // Fallback: try weight_kg if weight_lbs missing (older exports?)
+                if weight == 0, let kg = Double(row["weight_kg"] ?? ""), kg > 0 {
+                    weight = kg * 2.20462
+                }
+            } else {
+                // Strong exports weight with a unit column
+                weight = Double(row["Weight"] ?? "0") ?? 0
+                let weightUnit = row["Weight Unit"] ?? "lbs"
+                if weightUnit.lowercased() == "kg" { weight *= 2.20462 }
+            }
 
             let isWarmup = isHevy && (row["set_type"] ?? "").lowercased() == "warmup"
             let set = WorkoutSet(workoutId: 0, exerciseName: en, setOrder: setOrder,
