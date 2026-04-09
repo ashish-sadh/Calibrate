@@ -42,7 +42,7 @@ Current: keyword-matching on food names only. Fix: every food gets an `ingredien
 - [x] **Add `ingredients TEXT` column to `food` + `favorite_food`** — Migration v22. JSON array. Default `[self.name]`. `ingredientList` computed property with fallback.
 - [x] **Recipe builder saves ingredients** — `saveAndLogRecipe()` stores `items.map(\.name)` as ingredients JSON.
 - [ ] **Barcode scan saves ingredients** — OpenFoodFacts API returns ingredient list. Parse and store as `ingredients` JSON when saving scanned food.
-- [ ] **Custom entry ingredients** — Default to `[name]`. If built via recipe builder, gets real ingredients automatically.
+- [x] **Custom entry ingredients** — Default `[name]` via migration. Recipe builder saves real ingredients automatically.
 - [x] **PlantPointsService reads ingredients** — fetchUniqueIngredients() reads ingredients JSON, falls back to food_name. ViewModel updated.
 - [x] **Six-category alignment** — Already aligned: Vegetables/Fruits/Grains/Legumes/Nuts = 1pt (plantKeywords), Herbs/Spices = 0.25pt. Food.category unused but plantKeywords cover same foods. No change needed.
 - [x] **Avocado + edge case audit** — Verified: avocado, coconut, quinoa, tofu, edamame, tempeh all in plantKeywords. No false negatives.

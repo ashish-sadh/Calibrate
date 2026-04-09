@@ -292,7 +292,7 @@ import GRDB
 
 @Test func barcodeCacheSaveAndFetch() async throws {
     let db = try AppDatabase.empty()
-    let product = OpenFoodFactsService.Product(barcode: "1234567890", name: "Test Bar", brand: "Brand", servingSize: "30g", calories: 200, proteinG: 20, carbsG: 25, fatG: 8, fiberG: 3, servingSizeG: 30)
+    let product = OpenFoodFactsService.Product(barcode: "1234567890", name: "Test Bar", brand: "Brand", servingSize: "30g", calories: 200, proteinG: 20, carbsG: 25, fatG: 8, fiberG: 3, servingSizeG: 30, ingredientsText: nil)
     try db.cacheBarcodeProduct(BarcodeCache(from: product))
     let cached = try db.fetchCachedBarcode("1234567890")
     #expect(cached != nil)
@@ -308,7 +308,7 @@ import GRDB
 @Test func barcodeCacheRecentOrder() async throws {
     let db = try AppDatabase.empty()
     for i in 1...5 {
-        let p = OpenFoodFactsService.Product(barcode: "000\(i)", name: "Item \(i)", brand: nil, servingSize: nil, calories: Double(i * 100), proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0, servingSizeG: nil)
+        let p = OpenFoodFactsService.Product(barcode: "000\(i)", name: "Item \(i)", brand: nil, servingSize: nil, calories: Double(i * 100), proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0, servingSizeG: nil, ingredientsText: nil)
         try db.cacheBarcodeProduct(BarcodeCache(from: p))
     }
     let recent = try db.fetchRecentBarcodes(limit: 3)
@@ -316,12 +316,12 @@ import GRDB
 }
 
 @Test func barcodeCacheDisplayName() async throws {
-    let c = BarcodeCache(from: OpenFoodFactsService.Product(barcode: "123", name: "Oats", brand: "Quaker", servingSize: nil, calories: 100, proteinG: 3, carbsG: 20, fatG: 1, fiberG: 2, servingSizeG: nil))
+    let c = BarcodeCache(from: OpenFoodFactsService.Product(barcode: "123", name: "Oats", brand: "Quaker", servingSize: nil, calories: 100, proteinG: 3, carbsG: 20, fatG: 1, fiberG: 2, servingSizeG: nil, ingredientsText: nil))
     #expect(c.displayName == "Oats - Quaker")
 }
 
 @Test func barcodeCacheNoBrand() async throws {
-    let c = BarcodeCache(from: OpenFoodFactsService.Product(barcode: "123", name: "Generic", brand: nil, servingSize: nil, calories: 50, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0, servingSizeG: nil))
+    let c = BarcodeCache(from: OpenFoodFactsService.Product(barcode: "123", name: "Generic", brand: nil, servingSize: nil, calories: 50, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0, servingSizeG: nil, ingredientsText: nil))
     #expect(c.displayName == "Generic")
 }
 

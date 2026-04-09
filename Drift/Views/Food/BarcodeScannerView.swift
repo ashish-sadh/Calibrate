@@ -329,7 +329,8 @@ struct BarcodeLookupView: View {
                     servingSize: cached.servingDescription, calories: cached.caloriesPer100g,
                     proteinG: cached.proteinGPer100g, carbsG: cached.carbsGPer100g,
                     fatG: cached.fatGPer100g, fiberG: cached.fiberGPer100g,
-                    servingSizeG: cached.servingSizeG
+                    servingSizeG: cached.servingSizeG,
+                    ingredientsText: nil  // cached items don't store ingredients yet
                 )
                 product = p
                 amount = "1"; selectedUnitIndex = 0
@@ -356,13 +357,19 @@ struct BarcodeLookupView: View {
         let servingG = p.servingSizeG ?? 100
         // Create food with actual serving size (not hardcoded 100g)
         // Macros stored per-serving (scaled from per-100g)
+        // Parse ingredients from OpenFoodFacts (comma-separated text → JSON array)
+        let ingredientsJson: String? = p.ingredientsText.flatMap { text in
+            let names = text.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces).lowercased() }.filter { !$0.isEmpty }
+            return names.isEmpty ? nil : (try? JSONEncoder().encode(names)).flatMap { String(data: $0, encoding: .utf8) }
+        }
         var food = Food(name: [p.name, p.brand].compactMap { $0 }.joined(separator: " - "), category: "Scanned",
                         servingSize: servingG, servingUnit: "g",
                         calories: p.calories * servingG / 100,
                         proteinG: p.proteinG * servingG / 100,
                         carbsG: p.carbsG * servingG / 100,
                         fatG: p.fatG * servingG / 100,
-                        fiberG: p.fiberG * servingG / 100)
+                        fiberG: p.fiberG * servingG / 100,
+                        ingredients: ingredientsJson)
         try? AppDatabase.shared.saveScannedFood(&food)
         // Calculate servings multiplier from amount + unit
         let units = FoodUnit.smartUnits(for: food)

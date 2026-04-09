@@ -70,7 +70,7 @@ import GRDB
     let db = try AppDatabase.empty()
     let product = OpenFoodFactsService.Product(
         barcode: "1234567890", name: "Test Product", brand: "Test Brand",
-        servingSize: "100g", calories: 200, proteinG: 10, carbsG: 30, fatG: 8, fiberG: 5, servingSizeG: 100
+        servingSize: "100g", calories: 200, proteinG: 10, carbsG: 30, fatG: 8, fiberG: 5, servingSizeG: 100, ingredientsText: nil
     )
     try db.cacheBarcodeProduct(BarcodeCache(from: product))
 
@@ -91,7 +91,7 @@ import GRDB
     for i in 0..<5 {
         let product = OpenFoodFactsService.Product(
             barcode: "00000\(i)", name: "Product \(i)", brand: nil,
-            servingSize: nil, calories: Double(i * 100), proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0, servingSizeG: nil
+            servingSize: nil, calories: Double(i * 100), proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0, servingSizeG: nil, ingredientsText: nil
         )
         try db.cacheBarcodeProduct(BarcodeCache(from: product))
     }

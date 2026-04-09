@@ -16,6 +16,7 @@ enum OpenFoodFactsService {
         let fatG: Double
         let fiberG: Double
         let servingSizeG: Double?  // parsed serving size in grams
+        let ingredientsText: String?  // raw ingredients string from OpenFoodFacts
     }
 
     enum LookupError: LocalizedError {
@@ -34,7 +35,7 @@ enum OpenFoodFactsService {
 
     /// Look up a product by barcode (EAN/UPC).
     static func lookup(barcode: String) async throws -> Product {
-        let urlString = "https://world.openfoodfacts.org/api/v2/product/\(barcode).json?fields=product_name,brands,serving_size,nutriments"
+        let urlString = "https://world.openfoodfacts.org/api/v2/product/\(barcode).json?fields=product_name,brands,serving_size,nutriments,ingredients_text"
         guard let url = URL(string: urlString) else {
             throw LookupError.networkError("Invalid URL")
         }
@@ -79,6 +80,7 @@ enum OpenFoodFactsService {
         }
 
         let servingG = parseServingSize(servingStr)
+        let ingredientsText = product["ingredients_text"] as? String
 
         Log.foodLog.info("Found: \(name) (\(brand ?? "")) - \(Int(calories))cal/100g")
 
@@ -92,7 +94,8 @@ enum OpenFoodFactsService {
             carbsG: carbs,
             fatG: fat,
             fiberG: fiber,
-            servingSizeG: servingG
+            servingSizeG: servingG,
+            ingredientsText: ingredientsText
         )
     }
 
@@ -130,7 +133,8 @@ enum OpenFoodFactsService {
 
             return Product(barcode: barcode, name: name, brand: brand, servingSize: servingStr,
                            calories: calories, proteinG: protein, carbsG: carbs, fatG: fat,
-                           fiberG: fiber, servingSizeG: parseServingSize(servingStr))
+                           fiberG: fiber, servingSizeG: parseServingSize(servingStr),
+                           ingredientsText: product["ingredients_text"] as? String)
         }
     }
 
