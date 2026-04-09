@@ -115,6 +115,7 @@ struct FoodTabView: View {
     }
 
     private func reload() {
+        foodSortMode = .time
         viewModel.loadTodayMeals()
         viewModel.loadSuggestions()
         viewModel.loadPlantPoints()
