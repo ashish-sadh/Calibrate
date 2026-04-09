@@ -62,6 +62,7 @@
 		5D88D4133DC583D407E81955 /* FoodLoggingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D6A44D7C25BC4956132FE8 /* FoodLoggingTests.swift */; };
 		5DB274604E30B658591C0CC9 /* PlantPointsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39A9E88135361C3B6F2AE538 /* PlantPointsService.swift */; };
 		5F4476C2F1B7DC3E662A1DBC /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24385DF0FF7F89584AE40020 /* Theme.swift */; };
+		6191E6C9B6E6F21E8BE507EF /* CreateTemplateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58A17CA98BD8D443868D1794 /* CreateTemplateView.swift */; };
 		6327143E6A1E3CD8CFEEB252 /* ExercisePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDFC1B5E83F6D2661A50BA65 /* ExercisePickerView.swift */; };
 		685C24962B2912E5B124EB60 /* BodyMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5286E0309471AF898D70E3C /* BodyMapView.swift */; };
 		6A4AC25199199579681FCAD4 /* WeightViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E8B598BCB7486A2C75848E /* WeightViewModel.swift */; };
@@ -231,6 +232,7 @@
 		552F5AE6789DA294DDB91E8B /* Drift.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Drift.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		55F24D93872F919F1A8CB319 /* BarcodeScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeScannerView.swift; sourceTree = "<group>"; };
 		5893DE4C163CA3CF50E74C1A /* DEXAOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DEXAOverviewView.swift; sourceTree = "<group>"; };
+		58A17CA98BD8D443868D1794 /* CreateTemplateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateTemplateView.swift; sourceTree = "<group>"; };
 		5A981E37D718D28A6679F9C8 /* FoodTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodTabView.swift; sourceTree = "<group>"; };
 		5C93A5EC7AC72AD0108FAC30 /* SpellCorrectService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpellCorrectService.swift; sourceTree = "<group>"; };
 		5D1E187818C8B9D2196B4B9D /* LabReportOCRTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabReportOCRTests.swift; sourceTree = "<group>"; };
@@ -542,6 +544,7 @@
 			children = (
 				22F8386EAF9FBD18F89C8C60 /* ActiveWorkoutView.swift */,
 				D5286E0309471AF898D70E3C /* BodyMapView.swift */,
+				58A17CA98BD8D443868D1794 /* CreateTemplateView.swift */,
 				EDFC1B5E83F6D2661A50BA65 /* ExercisePickerView.swift */,
 				C004CB5B32E81B2A39730FE7 /* WorkoutDetailView.swift */,
 				AB2998A31AEC29094C6F4062 /* WorkoutView.swift */,
@@ -853,6 +856,7 @@
 				33EC5B66DF492493925C24CA /* CGMImportService.swift in Sources */,
 				B8666DFAC44BA801AF626FE7 /* CSVParser.swift in Sources */,
 				9ACECC13D2365A3DF7F2C28C /* ContentView.swift in Sources */,
+				6191E6C9B6E6F21E8BE507EF /* CreateTemplateView.swift in Sources */,
 				5A5C3B121A517C9F07A31C5A /* CycleCalculations.swift in Sources */,
 				D8DCF736FEE3123E530756CA /* CycleView.swift in Sources */,
 				8224D8220B6D9328EDDDB648 /* DEXAOverviewView.swift in Sources */,
