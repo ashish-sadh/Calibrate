@@ -53,6 +53,10 @@ Current: keyword-matching on food names only. Fix: every food gets an `ingredien
 - [x] **Rename `favorite_food` → `saved_food`** — Migration v23. SavedFood model. All 40 references updated across 11 files. No typealias.
 - [x] **Unify food storage foundation** — Added `source` column to `food` table (migration v24): 'database', 'barcode', 'recipe', 'custom'. Backfills existing data. `saved_food` still exists for now — recipes can migrate to `food` table when ready.
 
+### P0: Workout Bugs (human-reported)
+- [ ] **BUG: Save as Template skips completion share screen** — When "Save as template" toggle is on, the workout saves and dismisses immediately without showing the "Nice work!" completion sheet with share button. Works correctly when toggle is off. Investigate `saveWorkout(andDismiss:)` + `saveAsTemplate()` flow in `ActiveWorkoutView.swift` — the `andDismiss: !saveAsTemplateToggle` logic may be dismissing before the completion sheet appears.
+- [ ] **Rest timer confusing / not optional** — Timer between sets auto-starts and confuses users who don't want timed rests. Fix: add a "Rest Timer" toggle at the top of the active workout session. Default OFF. When on, shows countdown between sets. When off, no timer UI. Current timer UI doesn't label itself as "rest timer" — unclear what it's for.
+
 ### P1: Workout History & Editing
 Goal: let users add past workouts and edit existing ones. Currently workouts are live-only — no way to log a gym session after the fact or fix mistakes.
 
