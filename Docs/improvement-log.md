@@ -27,9 +27,27 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 - **Activity trailing duration**: "I did yoga for like half an hour" → 30 min. Strips filler words.
 - **Calorie estimation from chat**: "calories in samosa", "estimate calories for biryani" — instant DB lookup.
 
-**Session totals:** 28 cycles, 28 commits. All P0/P1 sprint items + tool-first streaming done. All failing queries fixed except meal planning.
-New features: undo, weight progress, TDEE/BMR, meal suggestions, "how am I doing" instant, cross-domain analysis, calorie estimation.
-Eval: 370+ scenarios, 90-100% across all categories.
+**Session 1 totals:** 33 cycles, 33 commits. All P0/P1 sprint items + tool-first streaming done. All failing queries fixed except meal planning.
+
+## Cycle · 2026-04-08 (session 2 — chat quality + plant points)
+- **LLM presentation layer** — Info queries route through Gemma 4 streaming instead of data dumps
+- **Presentation prompt tuned** — time-of-day, example, "warm and brief" guidance
+- **bestQuery flows through pipeline** — normalizer output used for tool execution + LLM presentation
+- **Richer tool data** — food_info has progress status, weight_info has total change + weekly trend
+- **SmolLM insight prefix** — "Looking good —" / "Heads up —" for raw data responses
+- **"how am I doing" fetches food + weight** — parallel execution for comprehensive answer
+- **BUG-002 fixed** — recents macros: added macro columns to food_usage (migration v21)
+- **BUG-003 fixed** — plant points date label updates with date navigation
+- **FEAT-002** — "Copy to Today" from past day entries with toast confirmation
+- **Ingredients column** — food + favorite_food (migration v22). Food.ingredientList computed property
+- **Recipe builder saves ingredients** — items.map(\.name) persisted as JSON
+- **PlantPointsService reads ingredients** — fetchUniqueIngredients() replaces fetchUniqueFoodNames()
+- **Spice blend expansion** — 10 blends decomposed (garam masala = 5 spices = 1.25 pts)
+- **Precomputed ingredients** — 40 composite dishes in foods.json (biryani, tikka masala, etc.)
+- **Barcode scan saves ingredients** — OpenFoodFacts ingredientsText parsed and stored
+- **Avocado + edge cases** — Verified all in plantKeywords
+
+---
 
 ---
 
