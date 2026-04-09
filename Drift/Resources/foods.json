@@ -100,7 +100,7 @@
     "fat_g": 1,
     "fiber_g": 11,
     "ingredients": [
-      "Rajma (cooked)"
+      "kidney beans"
     ]
   },
   {
@@ -114,7 +114,7 @@
     "fat_g": 0.5,
     "fiber_g": 0.6,
     "ingredients": [
-      "White Rice (cooked)"
+      "rice"
     ]
   },
   {
@@ -128,7 +128,7 @@
     "fat_g": 1.8,
     "fiber_g": 3.2,
     "ingredients": [
-      "Brown Rice (cooked)"
+      "brown rice"
     ]
   },
   {
@@ -142,7 +142,8 @@
     "fat_g": 5,
     "fiber_g": 1,
     "ingredients": [
-      "Jeera Rice"
+      "rice",
+      "cumin"
     ]
   },
   {
@@ -238,7 +239,7 @@
     "fat_g": 6,
     "fiber_g": 1,
     "ingredients": [
-      "Puri"
+      "wheat"
     ]
   },
   {
@@ -341,7 +342,7 @@
     "fat_g": 20,
     "fiber_g": 0,
     "ingredients": [
-      "Paneer"
+      "milk"
     ]
   },
   {
@@ -534,7 +535,11 @@
     "fat_g": 2,
     "fiber_g": 0.5,
     "ingredients": [
-      "Pickle / Achar"
+      "mango",
+      "mustard oil",
+      "fenugreek",
+      "turmeric",
+      "chili powder"
     ]
   },
   {
@@ -548,7 +553,7 @@
     "fat_g": 0.5,
     "fiber_g": 1,
     "ingredients": [
-      "Papad (roasted)"
+      "urad dal"
     ]
   },
   {
@@ -1822,7 +1827,9 @@
     "fat_g": 9,
     "fiber_g": 3,
     "ingredients": [
-      "Egg/Besan Chilla"
+      "chickpea flour",
+      "onion",
+      "green chili"
     ]
   },
   {
@@ -2819,7 +2826,12 @@
     "fat_g": 12,
     "fiber_g": 1,
     "ingredients": [
-      "Tandoori Chicken (leg)"
+      "yogurt",
+      "garlic",
+      "ginger",
+      "turmeric",
+      "cumin",
+      "paprika"
     ]
   },
   {
@@ -2892,7 +2904,10 @@
     "fat_g": 18,
     "fiber_g": 1,
     "ingredients": [
-      "Cheeseburger"
+      "bread",
+      "lettuce",
+      "tomato",
+      "onion"
     ]
   },
   {
@@ -2906,7 +2921,7 @@
     "fat_g": 19,
     "fiber_g": 4,
     "ingredients": [
-      "French Fries (medium)"
+      "potato"
     ]
   },
   {
@@ -2920,7 +2935,7 @@
     "fat_g": 18,
     "fiber_g": 1,
     "ingredients": [
-      "Chicken Nuggets (6 pc)"
+      "wheat"
     ]
   },
   {
@@ -2952,7 +2967,10 @@
     "fat_g": 10,
     "fiber_g": 1.5,
     "ingredients": [
-      "Taco (beef)"
+      "tortilla",
+      "onion",
+      "cilantro",
+      "lime"
     ]
   },
   {
@@ -2966,7 +2984,7 @@
     "fat_g": 17,
     "fiber_g": 0.8,
     "ingredients": [
-      "Hot Dog"
+      "bread"
     ]
   },
   {
@@ -2981,8 +2999,7 @@
     "fiber_g": 2,
     "ingredients": [
       "romaine lettuce",
-      "croutons",
-      "parmesan"
+      "croutons"
     ]
   },
   {
@@ -3012,7 +3029,10 @@
     "fat_g": 7,
     "fiber_g": 3,
     "ingredients": [
-      "Sushi Roll (California)"
+      "rice",
+      "seaweed",
+      "avocado",
+      "cucumber"
     ]
   },
   {
@@ -3026,7 +3046,12 @@
     "fat_g": 18,
     "fiber_g": 3,
     "ingredients": [
-      "Pad Thai"
+      "rice noodles",
+      "peanuts",
+      "bean sprouts",
+      "scallion",
+      "lime",
+      "tamarind"
     ]
   },
   {
@@ -3040,7 +3065,11 @@
     "fat_g": 12,
     "fiber_g": 2,
     "ingredients": [
-      "Fried Rice"
+      "rice",
+      "peas",
+      "carrot",
+      "onion",
+      "soy sauce"
     ]
   },
   {
@@ -3402,7 +3431,7 @@
     "fat_g": 0.9,
     "fiber_g": 15,
     "ingredients": [
-      "Black Beans (cooked)"
+      "black beans"
     ]
   },
   {
@@ -3416,7 +3445,7 @@
     "fat_g": 0.9,
     "fiber_g": 11,
     "ingredients": [
-      "Kidney Beans (cooked)"
+      "kidney beans"
     ]
   },
   {
@@ -3430,7 +3459,7 @@
     "fat_g": 0.8,
     "fiber_g": 16,
     "ingredients": [
-      "Lentils (cooked)"
+      "lentils"
     ]
   },
   {
@@ -3444,7 +3473,7 @@
     "fat_g": 4.2,
     "fiber_g": 12.5,
     "ingredients": [
-      "Chickpeas (cooked)"
+      "chickpeas"
     ]
   },
   {
@@ -3690,7 +3719,10 @@
     "fat_g": 2.5,
     "fiber_g": 2,
     "ingredients": [
-      "Soup (Tomato)"
+      "tomato",
+      "onion",
+      "garlic",
+      "basil"
     ]
   },
   {
@@ -3704,7 +3736,11 @@
     "fat_g": 14,
     "fiber_g": 3,
     "ingredients": [
-      "Greek Salad"
+      "cucumber",
+      "tomato",
+      "onion",
+      "olive",
+      "bell pepper"
     ]
   },
   {
@@ -3956,7 +3992,13 @@
     "fat_g": 18,
     "fiber_g": 6,
     "ingredients": [
-      "Pav Bhaji"
+      "potato",
+      "cauliflower",
+      "peas",
+      "tomato",
+      "onion",
+      "butter",
+      "pav bhaji masala"
     ]
   },
   {
@@ -3970,7 +4012,11 @@
     "fat_g": 14,
     "fiber_g": 2,
     "ingredients": [
-      "Vada Pav"
+      "potato",
+      "chickpea flour",
+      "bread",
+      "garlic",
+      "green chili"
     ]
   },
   {
@@ -10678,7 +10724,12 @@
     "fat_g": 7,
     "fiber_g": 3,
     "ingredients": [
-      "Bhel Puri"
+      "puffed rice",
+      "onion",
+      "tomato",
+      "cilantro",
+      "chaat masala",
+      "tamarind"
     ]
   },
   {
@@ -13230,7 +13281,8 @@
     "fat_g": 5,
     "fiber_g": 0,
     "ingredients": [
-      "Rasgulla"
+      "milk",
+      "sugar"
     ]
   },
   {
