@@ -291,19 +291,15 @@ final class TDEEEstimator {
     // MARK: - Weight Trend + Food Logs (Adaptive TDEE)
 
     private func fetchWeightTrendTDEE() -> Double? {
-        let db = AppDatabase.shared
-        // Only use last 90 days — old HealthKit data skews TDEE
-        let cutoff = Calendar.current.date(byAdding: .day, value: -90, to: Date())
-        let cutoffStr = cutoff.map { DateFormatters.dateOnly.string(from: $0) }
-        guard let entries = try? db.fetchWeightEntries(from: cutoffStr), entries.count >= 7 else { return nil }
-        let input = entries.map { (date: $0.date, weightKg: $0.weightKg) }
-        guard let trend = WeightTrendCalculator.calculateTrend(entries: input) else { return nil }
+        // Use centralized trend service (90-day filter + outlier detection)
+        guard let trend = WeightTrendService.shared.trend else { return nil }
+        guard !WeightTrendService.shared.isStale else { return nil }
 
         let deficit = trend.estimatedDailyDeficit
         let today = Date()
         let twoWeeksAgo = Calendar.current.date(byAdding: .day, value: -14, to: today) ?? today
 
-        guard let avgIntake = try? db.averageDailyCalories(
+        guard let avgIntake = try? AppDatabase.shared.averageDailyCalories(
             from: DateFormatters.dateOnly.string(from: twoWeeksAgo),
             to: DateFormatters.dateOnly.string(from: today)),
               avgIntake > 500 else { return nil }

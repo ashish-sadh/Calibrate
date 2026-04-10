@@ -65,6 +65,7 @@
 		5F4476C2F1B7DC3E662A1DBC /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24385DF0FF7F89584AE40020 /* Theme.swift */; };
 		6191E6C9B6E6F21E8BE507EF /* CreateTemplateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58A17CA98BD8D443868D1794 /* CreateTemplateView.swift */; };
 		6327143E6A1E3CD8CFEEB252 /* ExercisePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDFC1B5E83F6D2661A50BA65 /* ExercisePickerView.swift */; };
+		67E6DD4C4837E4F4EB971CB2 /* WeightTrendService.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF522FED101388047FEE98FD /* WeightTrendService.swift */; };
 		685C24962B2912E5B124EB60 /* BodyMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5286E0309471AF898D70E3C /* BodyMapView.swift */; };
 		6A4AC25199199579681FCAD4 /* WeightViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E8B598BCB7486A2C75848E /* WeightViewModel.swift */; };
 		6A5E607A5053083EB25372F7 /* AIActionExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C1323C593FD4D57F250E362 /* AIActionExecutor.swift */; };
@@ -291,6 +292,7 @@
 		AC27830A40DBACACBC571BF9 /* PipelineLLMEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelineLLMEval.swift; sourceTree = "<group>"; };
 		AE2809389EE890A3F01ED675 /* FoodLogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodLogViewModel.swift; sourceTree = "<group>"; };
 		AE42BE067CE617760E08B051 /* DEXARegion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DEXARegion.swift; sourceTree = "<group>"; };
+		AF522FED101388047FEE98FD /* WeightTrendService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTrendService.swift; sourceTree = "<group>"; };
 		AFCD031A1C605FBFFDF1B7D0 /* ServingUnit.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServingUnit.swift; sourceTree = "<group>"; };
 		B05CAB03715CB2E39F8E8262 /* AIDataCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIDataCache.swift; sourceTree = "<group>"; };
 		B0653C13FD227ACE4F774C46 /* ExerciseDatabase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseDatabase.swift; sourceTree = "<group>"; };
@@ -673,6 +675,7 @@
 				C170D4FEDFB68CA8A61E1D03 /* ToolSchema.swift */,
 				98998A5705EBF13038A98C27 /* WeightService2.swift */,
 				FD5DFCD5C5ED2C0D7E5CD8EF /* WeightTrendCalculator.swift */,
+				AF522FED101388047FEE98FD /* WeightTrendService.swift */,
 				6F84469D20EBBA0BD037FBCA /* WorkoutService.swift */,
 			);
 			path = Services;
@@ -948,6 +951,7 @@
 				29C556485877B9BA84899A44 /* WeightService2.swift in Sources */,
 				0884D534B3ADDE47643801F8 /* WeightTabView.swift in Sources */,
 				ADFD099AC0AEB4154AF6063B /* WeightTrendCalculator.swift in Sources */,
+				67E6DD4C4837E4F4EB971CB2 /* WeightTrendService.swift in Sources */,
 				6A4AC25199199579681FCAD4 /* WeightViewModel.swift in Sources */,
 				EA08170013B8F2A7481FF81F /* Workout.swift in Sources */,
 				43D1CAC12A4A29C3DE9AC385 /* WorkoutDetailView.swift in Sources */,

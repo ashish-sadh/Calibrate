@@ -16,10 +16,8 @@ enum AIRuleEngine {
             return "You haven't logged any food today. Tap \"Log breakfast\" to get started."
         }
 
-        // Weight trend
-        if let entries = try? AppDatabase.shared.fetchWeightEntries() {
-            let input = entries.map { (date: $0.date, weightKg: $0.weightKg) }
-            if let trend = WeightTrendCalculator.calculateTrend(entries: input) {
+        // Weight trend — from centralized service
+        if let trend = WeightTrendService.shared.trend, !WeightTrendService.shared.isStale {
                 let rate = trend.weeklyRateKg
                 let deficit = trend.estimatedDailyDeficit
 
@@ -31,7 +29,6 @@ enum AIRuleEngine {
                 } else {
                     return "Weight is stable. You've eaten \(Int(nutrition.calories)) calories today with \(Int(nutrition.proteinG))g protein."
                 }
-            }
         }
 
         return "You've logged \(Int(nutrition.calories)) calories today with \(Int(nutrition.proteinG))g protein."
@@ -110,10 +107,10 @@ enum AIRuleEngine {
         }
 
         // Weight (entries sorted DESC by date, so .first = most recent)
-        if let entries = try? AppDatabase.shared.fetchWeightEntries(),
-           let latest = entries.first {
+        // Weight (from centralized service)
+        if let weightKg = WeightTrendService.shared.currentWeight {
             let unit = Preferences.weightUnit
-            lines.append("Weight: \(String(format: "%.1f", unit.convert(fromKg: latest.weightKg)))\(unit.displayName)")
+            lines.append("Weight: \(String(format: "%.1f", unit.convert(fromKg: weightKg)))\(unit.displayName)")
         }
 
         // Workouts today
@@ -194,14 +191,10 @@ enum AIRuleEngine {
         if avg > 0 { lines.append("Avg intake: \(Int(avg)) cal/day") }
         lines.append("Workouts: \(workoutCount)")
 
-        // Weight change this week
-        if let entries = try? AppDatabase.shared.fetchWeightEntries() {
+        // Weight change this week (from centralized service)
+        if let changes = WeightTrendService.shared.weightChanges, let d7 = changes.sevenDay {
             let u = Preferences.weightUnit
-            let weekEntries = entries.filter { $0.date >= from }
-            if let first = weekEntries.first, let last = weekEntries.last, first.date != last.date {
-                let change = u.convert(fromKg: last.weightKg - first.weightKg)
-                lines.append("Weight: \(String(format: "%+.1f", change))\(u.displayName)")
-            }
+            lines.append("Weight: \(String(format: "%+.1f", u.convert(fromKg: d7)))\(u.displayName)")
         }
 
         return lines.joined(separator: "\n")

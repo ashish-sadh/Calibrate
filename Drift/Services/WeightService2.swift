@@ -20,11 +20,10 @@ enum WeightServiceAPI {
 
     /// Get current weight trend: current weight, weekly rate, direction, changes.
     static func getTrend() -> WeightTrendInfo? {
-        guard let entries = try? AppDatabase.shared.fetchWeightEntries() else { return nil }
-        let input = entries.map { (date: $0.date, weightKg: $0.weightKg) }
-        guard let trend = WeightTrendCalculator.calculateTrend(entries: input) else { return nil }
+        let service = WeightTrendService.shared
+        guard let trend = service.trend, !service.isStale else { return nil }
         let u = Preferences.weightUnit
-        let latest = entries.last
+        let latest = (try? AppDatabase.shared.fetchWeightEntries(from: nil))?.first
         return WeightTrendInfo(
             currentWeight: u.convert(fromKg: trend.currentEMA),
             unit: u.displayName,

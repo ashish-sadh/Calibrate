@@ -91,24 +91,21 @@ enum AIContextBuilder {
             lines.append("No food logged | Target: \(target)cal")
         }
 
-        // Weight — pre-computed trend
-        if let entries = try? AppDatabase.shared.fetchWeightEntries() {
-            let input = entries.map { (date: $0.date, weightKg: $0.weightKg) }
-            if let trend = WeightTrendCalculator.calculateTrend(entries: input) {
-                let u = Preferences.weightUnit
-                let w = String(format: "%.1f", u.convert(fromKg: trend.currentEMA))
-                let rate = String(format: "%+.1f", u.convert(fromKg: trend.weeklyRateKg))
-                lines.append("Weight: \(w)\(u.displayName) | \(rate)/wk")
-            }
+        // Weight — from centralized trend service
+        let ws = WeightTrendService.shared
+        if let trend = ws.trend, !ws.isStale {
+            let u = Preferences.weightUnit
+            let w = String(format: "%.1f", u.convert(fromKg: trend.currentEMA))
+            let rate = String(format: "%+.1f", u.convert(fromKg: trend.weeklyRateKg))
+            lines.append("Weight: \(w)\(u.displayName) | \(rate)/wk")
         }
 
         // Goal — pre-computed with progress
         if let goal = WeightGoal.load() {
             let u = Preferences.weightUnit
             let direction = goal.totalChangeKg < 0 ? "losing" : "gaining"
-            if let entries = try? AppDatabase.shared.fetchWeightEntries(),
-               let latest = entries.last {
-                let progress = goal.progress(currentWeightKg: latest.weightKg)
+            if let currentKg = ws.currentWeight {
+                let progress = goal.progress(currentWeightKg: currentKg)
                 let goalW = String(format: "%.1f", u.convert(fromKg: goal.targetWeightKg))
                 lines.append("Goal: \(direction) to \(goalW)\(u.displayName) | \(Int(progress * 100))% done | \(goal.monthsToAchieve)mo")
             }
@@ -184,9 +181,7 @@ enum AIContextBuilder {
     static func weightContext() -> String {
         var lines: [String] = []
 
-        if let entries = try? AppDatabase.shared.fetchWeightEntries() {
-            let input = entries.map { (date: $0.date, weightKg: $0.weightKg) }
-            if let trend = WeightTrendCalculator.calculateTrend(entries: input) {
+        if let trend = WeightTrendService.shared.trend, !WeightTrendService.shared.isStale {
                 let u = Preferences.weightUnit
                 let changes = trend.weightChanges
                 let cur = String(format: "%.1f", u.convert(fromKg: trend.currentEMA))
@@ -201,7 +196,7 @@ enum AIContextBuilder {
                 }
 
                 // Pre-computed assessment
-                let isLosingGoal = (WeightGoal.load()?.targetWeightKg ?? 0) < (input.last?.weightKg ?? 0)
+                let isLosingGoal = (WeightGoal.load()?.targetWeightKg ?? 0) < trend.currentEMA
                 if isLosingGoal && trend.weeklyRateKg < -0.15 {
                     lines.append("Assessment: losing at healthy pace")
                 } else if isLosingGoal && trend.weeklyRateKg > 0 {
@@ -209,12 +204,11 @@ enum AIContextBuilder {
                 } else if !isLosingGoal && trend.weeklyRateKg > 0.1 {
                     lines.append("Assessment: gaining as planned")
                 }
-            }
 
             // Goal progress
             if let goal = WeightGoal.load() {
                 let u = Preferences.weightUnit
-                let progress = goal.progress(currentWeightKg: input.last?.weightKg ?? goal.targetWeightKg)
+                let progress = goal.progress(currentWeightKg: trend.currentEMA)
                 lines.append("Goal: \(String(format: "%.1f", u.convert(fromKg: goal.targetWeightKg)))\(u.displayName) | \(Int(progress * 100))% done")
             }
         }
