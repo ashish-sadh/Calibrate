@@ -18,3 +18,7 @@ Track of code quality improvement cycles. Each entry = one refactoring cycle.
 - **LabReportOCR.swift** — [Principle: Clean Code] Smell: 652-line enum mixing OCR + biomarker logic → extracted biomarker extraction + aliases (300 lines) to LabReportOCR+Biomarkers.swift. File reduced to 352 lines.
 - **WorkoutView.swift** — [Principle: SwiftUI] Smell: 6 extra structs still in file → extracted WorkoutDetailView (142 lines). File reduced to 991 lines.
 - **WorkoutView.swift** — [Principle: SwiftUI] Smell: 4 extra structs → extracted CreateTemplateView + TemplateExerciseEditor (190 lines). File reduced to 800 lines.
+
+## 2026-04-09
+
+- **FoodTabView.swift** — [Principle: SwiftUI] Smell: 1011 lines, 9 edit* @State vars → extracted EditFoodEntrySheet (250 lines) as self-contained view. File reduced to 765 lines.

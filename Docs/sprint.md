@@ -1,6 +1,6 @@
 # Sprint Board
 
-Priority: AI chat quality — natural conversation, better tool calling, insightful responses.
+Priority: LLM-first AI chat — remove hardcoded strings, use LLM for intent detection + tool calling.
 
 ## In Progress
 
@@ -8,90 +8,64 @@ _(pick from Ready)_
 
 ## Ready
 
-### P0: Chat Response Quality
-- [x] **Presentation prompt tuning** — Added time-of-day context, example response, "warm and brief" tone. Tuned for Gemma 4 2B.
-- [x] **Include user query in presentation context** — bestQuery (normalizer output) now flows through Phase 3 tool execution + LLM presentation.
-- [x] **Richer tool data for presentation** — food_info has progress status indicator, weight_info has total change + weekly trend.
-- [x] **SmolLM fallback templates** — addInsightPrefix() adds "Looking good —" / "Heads up —" based on data content.
+### P0: LLM-Driven Intent + Tool Calling (CORE REDESIGN)
 
-### P1: Tool Calling Accuracy
-- [x] **Tool routing verification** — 12 new eval cases verifying removed StaticOverrides queries route correctly. daily summary→food_info, sleep trend→sleep_recovery, weight progress→weight_info.
-- [ ] **LLM eval on tool routing** — Run 40+ queries through Gemma 4 tool-calling path on device. Requires LLM eval (not unit test).
-- [x] **Normalizer → tool pick chain** — bestQuery flows from normalizer through Phase 3 tool execution.
-- [x] **Tool param extraction quality** — food_info gets yesterday/weekly/suggest context. sleep_recovery gets period=week. General queries pass raw query for LLM context.
-- [x] **Anti-keyword tuning** — Verified: "how much does chicken weigh" suppressed by "how" anti-keyword on log_weight. "reduce fat" caught by diet advice handler.
+**Goal:** Replace ~1500 lines of hardcoded string matching with LLM-driven intent detection. The 2B model (Gemma 4) should decide intent and call tools via JSON — not keyword scoring.
 
-### P2: Latency & Streaming
-- [ ] **Measure end-to-end latency** — Time each pipeline stage for 10 common queries. Where is time spent? Normalizer? Tool execution? LLM presentation? Find the bottleneck.
-- [ ] **Progressive multi-item disclosure** — For "rice and dal", show each found item as it's discovered, don't batch.
-- [ ] **Normalizer cache** — If the same query was normalized before (same session), skip the 3s normalizer call.
+**Architecture: Intent → SubIntent → Tool → Action**
 
-### P3: Conversation Feel
-- [ ] **Vary response openings** — LLM tends to start every response the same way. Add variety hints in the presentation prompt (time of day, performance vs goal).
-- [ ] **Multi-turn meal planning** — "plan my meals for today" → iterative macro-aware suggestions. Gemma 4 only.
-- [ ] **Conversation memory** — Pass previous tool results to next turn so LLM can reference them ("you mentioned protein was low earlier").
+```
+User: "Log breakfast with 2% milk, eggs and toast"
+  ↓
+LLM classifies: intent=food_logging, subintent=multi_item_meal
+  ↓  
+LLM tool call: {"tool": "log_food", "items": [{"name": "2% milk"}, {"name": "eggs"}, {"name": "toast"}], "meal": "breakfast"}
+  ↓
+Execute: find each food → show confirmation UI → log
+```
 
-### P0: UI Bugs & Features (human-reported)
-- [x] **BUG: Recent foods missing macros** — Fixed: added macro columns to food_usage, trackFoodUsage() stores macros, fetchRecentEntryNames() reads directly. Migration v21 backfills.
-- [x] **Copy to today from past day** — Context menu "Copy to Today" on past day entries. Green toast confirmation. copyEntryToToday() in ViewModel.
-- [x] **Plant points date awareness** — Fixed: shows "Today" or actual date (e.g. "Apr 5") based on selectedDate.
+- [ ] **LLM intent classifier prompt** — Design a compact (~100 token) system prompt for Gemma 4 that classifies user message into: `food_log`, `food_query`, `weight_log`, `weight_query`, `exercise_start`, `exercise_log`, `exercise_query`, `health_query`, `chat`. Returns JSON: `{"intent": "food_log", "sub_intent": "multi_item"}`. Test on 50+ synthetic queries.
+- [ ] **Synthetic training data** — Generate 200+ realistic user messages across all intents. Include: "Log breakfast with 2% milk, egg and toast", "had a salad with chicken and avocado", "can you help me log my lunch", "I ate out at Chipotle", "how's my protein looking", "did I hit my calorie goal", "start push day", "I did 30 min yoga". Test each through the pipeline.
+- [ ] **Unified tool schema prompt** — Design compact tool definitions for the LLM (~200 tokens for all tools). The model should see available tools and return JSON tool calls. Format: `{"tool": "log_food", "params": {"items": [...], "meal": "breakfast"}}`. Test tool selection accuracy on synthetic data.
+- [ ] **Remove StaticOverrides for intent routing** — Keep StaticOverrides ONLY for instant commands (undo, delete, copy, barcode scan, greetings). Move ALL intent detection to LLM. Info queries, food logging, exercise — all through LLM.
+- [ ] **Streaming intent detection** — Stream the LLM response. If first token is `{` → tool call JSON. If text → direct response. Already partially implemented in Phase 4 — extend to be the PRIMARY path, not fallback.
+- [ ] **Multi-item food logging** — LLM parses "rice with dal and chicken" as 3 items. No more hardcoded "and" splitting or compound food exclusion lists. LLM understands context.
+- [ ] **Confirmation UI for actions** — After LLM returns tool call, show brief confirmation before executing. "Log 2 eggs, toast, and milk for breakfast? ✓". Tap to confirm. Prevents wrong actions.
 
-### P1: Plant Points Accuracy
-Current: keyword-matching on food names only. Fix: every food gets an `ingredients` JSON array. Plant points counts unique plant ingredients, not food names. No ML model needed — precompute for seeded foods, inherit from recipe builder, default to `[self]` for simple items.
+### P1: Tool Quality + Prompt Engineering
+- [ ] **Tool calling accuracy eval** — Run 100 synthetic queries through Gemma 4. Measure: correct tool picked? Correct params extracted? Track accuracy per tool. Target: 85%+.
+- [ ] **Prompt compression** — Current system prompt is ~500 tokens. Compress to ~200. Gemma 4 has 2048 context — every token matters. Remove redundant examples, use terse format.
+- [ ] **Multi-turn context** — Pass last 2-3 tool results in history so LLM can reference: "you mentioned protein was low" or "you logged 1200 cal so far". Currently history only has Q/A text, not tool data.
+- [ ] **Error recovery** — If LLM picks wrong tool or bad params, detect and retry. Show "I didn't understand, could you rephrase?" instead of wrong action.
+- [ ] **Latency optimization** — Measure: intent detection time, tool execution time, presentation time. Target: first token in <2s for info queries, <1s for logging confirmations.
 
-- [x] **Add `ingredients TEXT` column to `food` + `favorite_food`** — Migration v22. JSON array. Default `[self.name]`. `ingredientList` computed property with fallback.
-- [x] **Recipe builder saves ingredients** — `saveAndLogRecipe()` stores `items.map(\.name)` as ingredients JSON.
-- [x] **Barcode scan saves ingredients** — API request includes ingredients_text. Parsed into JSON array on Food.ingredients.
-- [x] **Custom entry ingredients** — Default `[name]` via migration. Recipe builder saves real ingredients automatically.
-- [x] **PlantPointsService reads ingredients** — fetchUniqueIngredients() reads ingredients JSON, falls back to food_name. ViewModel updated.
-- [x] **Six-category alignment** — Already aligned: Vegetables/Fruits/Grains/Legumes/Nuts = 1pt (plantKeywords), Herbs/Spices = 0.25pt. Food.category unused but plantKeywords cover same foods. No change needed.
-- [x] **Avocado + edge case audit** — Verified: avocado, coconut, quinoa, tofu, edamame, tempeh all in plantKeywords. No false negatives.
-- [x] **Spice blend expansion** — 10 blends: garam masala, curry powder, italian seasoning, etc. expandSpiceBlends() decomposes before classification.
-- [x] **No ML model needed** — Confirmed: ingredients column + recipe builder + spice expansion covers ~95%. Tiny model deferred.
-
-### P1.5: Data Model Cleanup
-- [x] **Rename `favorite_food` → `saved_food`** — Migration v23. SavedFood model. All 40 references updated across 11 files. No typealias.
-- [x] **Unify food storage foundation** — Added `source` column to `food` table (migration v24): 'database', 'barcode', 'recipe', 'custom'. Backfills existing data. `saved_food` still exists for now — recipes can migrate to `food` table when ready.
+### P2: Presentation Quality
+- [ ] **LLM presentation for ALL responses** — Every response should feel conversational. No raw data dumps. Even error messages should be natural.
+- [ ] **Streaming everywhere** — User sees tokens appearing as LLM generates. No "thinking..." delays for simple queries.
+- [ ] **Context-aware responses** — Time of day, progress vs goal, recent history influence tone. Morning: encouraging. Evening: summary-oriented. Over target: gentle nudge.
 
 ### P0: Workout Bugs (human-reported)
-- [ ] **BUG: Save as Template skips completion share screen** — When "Save as template" toggle is on, the workout saves and dismisses immediately without showing the "Nice work!" completion sheet with share button. Works correctly when toggle is off. Investigate `saveWorkout(andDismiss:)` + `saveAsTemplate()` flow in `ActiveWorkoutView.swift` — the `andDismiss: !saveAsTemplateToggle` logic may be dismissing before the completion sheet appears.
-- [ ] **Rest timer confusing / not optional** — Timer between sets auto-starts and confuses users who don't want timed rests. Fix: add a "Rest Timer" toggle at the top of the active workout session. Default OFF. When on, shows countdown between sets. When off, no timer UI. Current timer UI doesn't label itself as "rest timer" — unclear what it's for.
+- [ ] **BUG: Save as Template skips completion share screen** — When "Save as template" toggle is on, the workout saves and dismisses immediately without showing the "Nice work!" completion sheet with share button.
+- [ ] **Rest timer confusing / not optional** — Add a "Rest Timer" toggle at the top of active workout. Default OFF. When on, shows countdown between sets.
 
 ### P1: Workout History & Editing
-Goal: let users add past workouts and edit existing ones. Currently workouts are live-only — no way to log a gym session after the fact or fix mistakes.
-
-- [ ] **Manual workout entry** — "Add Past Workout" button on workout tab. Pick date, name exercises, enter sets/reps/weight. Uses existing CreateTemplateView flow but saves as a completed workout instead of a template.
-- [ ] **Edit existing workout** — Tap a workout in history → edit sets, reps, weight, exercise order. Add/remove exercises and sets. Save updates back to DB.
-- [ ] **Edit workout name & notes** — Allow renaming and editing notes on completed workouts from detail view.
-- [ ] **Delete individual sets** — Swipe-to-delete on individual sets in workout detail view.
+- [ ] **Manual workout entry** — "Add Past Workout" button on workout tab.
+- [ ] **Edit existing workout** — Tap a workout in history → edit sets, reps, weight.
+- [ ] **Edit workout name & notes** — Allow renaming from detail view.
+- [ ] **Delete individual sets** — Swipe-to-delete on individual sets.
 
 ### P2: Salad Bowl / Custom Meal Builder
-Goal: let users build Sweetgreen-style salads without fatigue. Existing recipe builder is the foundation.
+- [x] **Salad base templates** — 5 templates seeded with ingredients.
+- [x] **Recent ingredients in picker** — Already implemented.
+- [x] **Category tabs in ingredient picker** — Horizontal chips for browsing.
+- [ ] **Ingredient persistence** — Store per-ingredient macros for recipe rebuilding.
 
-- [x] **Salad base templates** — 5 templates: Green Salad, Grain Bowl, Protein Bowl, Mediterranean, Poke Bowl. Seeded with ingredients.
-- [x] **Recent ingredients in picker** — Already implemented: "Recent" section shows when search is empty in IngredientPickerView.
-- [x] **Category tabs in ingredient picker** — Horizontal chips: Vegetables, Fruits, Proteins, Grains, Nuts & Seeds, Dairy. fetchFoodsByCategory().
-- [ ] **Ingredient persistence** — Use the `ingredient_names` JSON column (from plant points task) — already stores ingredient list. For salad rebuilding, also store per-ingredient macros in `favorite_food.ingredients_json` (full RecipeItem data). Enables: recipe rebuilding, "what's in this?" via AI chat. No new table.
-
-## Done
-
-### This sprint
-- [x] **LLM presentation layer** — Info queries route through tool execution → Gemma 4 streaming presentation instead of data dumps
-- [x] **Parallel tool execution** — TaskGroup-based parallel info tool execution
-- [x] **ToolRanker keyword expansion** — food_info, weight_info, sleep_recovery enriched with summary/yesterday/weekly/suggest/trend keywords
-- [x] **Enriched weight_info** — Total change + weekly trend data for LLM presentation
-- [x] **Food_info context routing** — yesterday/weekly/suggest queries get specific data paths
-- [x] **Sleep_recovery period param** — "sleep trend" routes with period=week
-
-### Previous sprint
-- [x] Multi-turn via normalizer context + history detection
-- [x] Normalizer accuracy tuning (330+ eval scenarios)
-- [x] Multi-turn pronoun resolution
-- [x] Eval harness 370+ scenarios
-- [x] Multi-item meal continuation
-- [x] Gram/unit parsing (200ml, half cup, ranges)
-- [x] Food search ranking (singular-first + length tiebreaker)
-- [x] All P0/P1 AI parity gaps closed
-- [x] All failing queries fixed (except meal planning)
-- [x] Cross-domain analysis, weekly comparison, calorie estimation
-- [x] Delete/undo food, weight progress, TDEE/BMR, barcode scan from chat
+## Done (this sprint)
+- [x] LLM presentation layer for info queries
+- [x] Parallel tool execution
+- [x] bestQuery flows through pipeline
+- [x] Plant points: NOVA, aliases, processed exclusion, spice blends, 75 dishes
+- [x] Data model: saved_food rename, source column, meal_log flattened, calorie target deduplicated
+- [x] Food diary: sort chips, reorder, copy all, edit time/macros, detail view
+- [x] Hevy import, workout share, save button, warmups
+- [x] 743 tests
