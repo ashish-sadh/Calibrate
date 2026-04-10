@@ -356,7 +356,7 @@ struct FoodTabView: View {
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 2).fill(color.opacity(0.08)).frame(height: 6)
                     if fraction > 0 {
-                        RoundedRectangle(cornerRadius: 2).fill(isOver ? Theme.surplus : color)
+                        RoundedRectangle(cornerRadius: 2).fill(color)
                             .frame(width: max(0, geo.size.width * fraction), height: 6)
                     }
                 }
