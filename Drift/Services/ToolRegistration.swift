@@ -45,6 +45,19 @@ enum ToolRegistration {
                     name = String(name[..<name.index(name.startIndex, offsetBy: match.range.location)]).trimmingCharacters(in: .whitespaces)
                 }
 
+                // Handle comma-separated items from LLM intent classifier: "eggs, toast, milk"
+                let items = name.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+                if items.count > 1 {
+                    // Multi-item: return first item for food search, store rest for follow-up
+                    let firstName = items[0]
+                    if let food = AIActionExecutor.findFood(query: firstName, servings: servings, gramAmount: gramAmount) {
+                        var enriched: [String: String] = ["name": food.food.name, "amount": "\(food.servings)"]
+                        enriched["remaining_items"] = items.dropFirst().joined(separator: ", ")
+                        return ToolCallParams(values: enriched)
+                    }
+                    return ToolCallParams(values: ["name": firstName, "remaining_items": items.dropFirst().joined(separator: ", ")])
+                }
+
                 // DB lookup + gram→serving conversion
                 if let food = AIActionExecutor.findFood(query: name, servings: servings, gramAmount: gramAmount) {
                     var enriched: [String: String] = ["name": food.food.name]
