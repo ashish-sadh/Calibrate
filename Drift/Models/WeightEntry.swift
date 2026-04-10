@@ -11,9 +11,10 @@ struct WeightEntry: Identifiable, Codable, Sendable {
     var bodyFatPct: Double?    // 0-100, optional
     var bmi: Double?           // e.g. 22.5, optional
     var waterPct: Double?      // 0-100, optional
+    var hidden: Bool = false   // soft-delete: hidden entries aren't shown but block HealthKit re-sync
 
     enum CodingKeys: String, CodingKey {
-        case id, date, source, bmi
+        case id, date, source, bmi, hidden
         case weightKg = "weight_kg"
         case createdAt = "created_at"
         case syncedFromHk = "synced_from_hk"

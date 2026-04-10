@@ -476,5 +476,12 @@ enum Migrations {
             // NOVA 3: Everything else (Dairy, Grains, Indian Staples, US Staples, Mexican, etc.)
             try db.execute(sql: "UPDATE food SET nova_group = 3 WHERE nova_group IS NULL")
         }
+
+        // v28: Soft-delete for weight entries (hidden flag prevents HealthKit re-sync)
+        migrator.registerMigration("v28_weight_hidden") { db in
+            try db.alter(table: "weight_entry") { t in
+                t.add(column: "hidden", .boolean).notNull().defaults(to: false)
+            }
+        }
     }
 }

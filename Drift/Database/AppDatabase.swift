@@ -66,12 +66,17 @@ extension AppDatabase {
 extension AppDatabase {
     func saveWeightEntry(_ entry: inout WeightEntry) throws {
         try dbWriter.write { [entry] db in
-            // Upsert: if date already exists, update the weight
+            // Upsert: if date already exists, update the weight (with priority rules)
             if let existing = try WeightEntry.filter(Column("date") == entry.date).fetchOne(db) {
+                // Don't overwrite manual entries with HealthKit data
+                if existing.source == "manual" && entry.source == "healthkit" { return }
+                // Don't overwrite user-deleted entries with HealthKit data
+                if existing.hidden && entry.source == "healthkit" { return }
                 var updated = existing
                 updated.weightKg = entry.weightKg
                 updated.source = entry.source
                 updated.syncedFromHk = entry.syncedFromHk
+                updated.hidden = false  // un-hide if manually re-added
                 try updated.update(db)
             } else {
                 var mutable = entry
@@ -85,13 +90,14 @@ extension AppDatabase {
 
     func deleteWeightEntry(id: Int64) throws {
         try dbWriter.write { db in
-            _ = try WeightEntry.deleteOne(db, id: id)
+            // Soft-delete: mark hidden instead of deleting (prevents HealthKit re-sync)
+            try db.execute(sql: "UPDATE weight_entry SET hidden = 1 WHERE id = ?", arguments: [id])
         }
     }
 
     func fetchWeightEntries(from startDate: String? = nil, to endDate: String? = nil) throws -> [WeightEntry] {
         try dbWriter.read { db in
-            var request = WeightEntry.order(Column("date").desc)
+            var request = WeightEntry.filter(Column("hidden") == false).order(Column("date").desc)
             if let start = startDate {
                 request = request.filter(Column("date") >= start)
             }
