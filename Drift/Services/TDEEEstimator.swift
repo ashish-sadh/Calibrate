@@ -292,7 +292,10 @@ final class TDEEEstimator {
 
     private func fetchWeightTrendTDEE() -> Double? {
         let db = AppDatabase.shared
-        guard let entries = try? db.fetchWeightEntries(from: nil), entries.count >= 7 else { return nil }
+        // Only use last 90 days — old HealthKit data skews TDEE
+        let cutoff = Calendar.current.date(byAdding: .day, value: -90, to: Date())
+        let cutoffStr = cutoff.map { DateFormatters.dateOnly.string(from: $0) }
+        guard let entries = try? db.fetchWeightEntries(from: cutoffStr), entries.count >= 7 else { return nil }
         let input = entries.map { (date: $0.date, weightKg: $0.weightKg) }
         guard let trend = WeightTrendCalculator.calculateTrend(entries: input) else { return nil }
 

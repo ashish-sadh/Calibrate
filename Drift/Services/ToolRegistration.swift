@@ -251,7 +251,8 @@ enum ToolRegistration {
                 }
                 // Enrich with total change + weekly trend for LLM presentation
                 let unit = Preferences.weightUnit
-                if let entries = try? AppDatabase.shared.fetchWeightEntries(), entries.count >= 2 {
+                let cutoff90 = Calendar.current.date(byAdding: .day, value: -90, to: Date()).map { DateFormatters.dateOnly.string(from: $0) }
+                if let entries = try? AppDatabase.shared.fetchWeightEntries(from: cutoff90), entries.count >= 2 {
                     let latest = entries.first!
                     let oldest = entries.last!
                     let totalChange = unit.convert(fromKg: latest.weightKg - oldest.weightKg)

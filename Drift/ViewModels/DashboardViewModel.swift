@@ -80,14 +80,28 @@ final class DashboardViewModel {
         }
         #endif
 
-        // Load weight trend
+        // Load weight trend (last 90 days only — old HealthKit data skews calculations)
         do {
-            let entries = try database.fetchWeightEntries()
-            let input = entries.map { (date: $0.date, weightKg: $0.weightKg) }
-            if let trend = WeightTrendCalculator.calculateTrend(entries: input) {
-                currentWeight = trend.currentEMA
-                weeklyRate = trend.weeklyRateKg
-                dailyDeficit = trend.estimatedDailyDeficit
+            let cutoff = Calendar.current.date(byAdding: .day, value: -90, to: Date())
+            let cutoffStr = cutoff.map { DateFormatters.dateOnly.string(from: $0) }
+            let entries = try database.fetchWeightEntries(from: cutoffStr)
+
+            // Guardrail: if no weight logged in last 60 days, don't show trends
+            let sixtyDaysAgo = Calendar.current.date(byAdding: .day, value: -60, to: Date())
+            let recentEnough = entries.first.flatMap { entry in
+                DateFormatters.dateOnly.date(from: entry.date)
+            }.map { $0 >= (sixtyDaysAgo ?? Date()) } ?? false
+
+            if recentEnough {
+                let input = entries.map { (date: $0.date, weightKg: $0.weightKg) }
+                if let trend = WeightTrendCalculator.calculateTrend(entries: input) {
+                    currentWeight = trend.currentEMA
+                    weeklyRate = trend.weeklyRateKg
+                    dailyDeficit = trend.estimatedDailyDeficit
+                }
+            } else {
+                // Stale data — show current weight but no trends
+                currentWeight = entries.first?.weightKg
             }
         } catch {
             Log.weightTrend.error("Failed to load weight trend: \(error.localizedDescription)")
