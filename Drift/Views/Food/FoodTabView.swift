@@ -348,20 +348,21 @@ struct FoodTabView: View {
     }
 
     private func macroProgressRow(_ label: String, eaten: Double, target: Double, color: Color) -> some View {
-        let fraction = target > 0 ? min(eaten / target, 1.5) : 0
+        let fraction = target > 0 ? min(eaten / target, 1.0) : 0  // cap at 100%
+        let isOver = eaten > target
         return HStack(spacing: 6) {
             Text(label).font(.caption2.weight(.semibold)).foregroundStyle(color).frame(width: 14)
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 2).fill(color.opacity(0.08)).frame(height: 6)
                     if fraction > 0 {
-                        RoundedRectangle(cornerRadius: 2).fill(color)
+                        RoundedRectangle(cornerRadius: 2).fill(isOver ? Theme.surplus : color)
                             .frame(width: max(0, geo.size.width * fraction), height: 6)
                     }
                 }
             }.frame(height: 6)
             Text("\(Int(eaten))/\(Int(target))g")
-                .font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                .font(.caption2.monospacedDigit()).foregroundStyle(isOver ? Theme.surplus : .secondary)
                 .frame(width: 65, alignment: .trailing)
         }
     }
