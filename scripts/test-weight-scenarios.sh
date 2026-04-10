@@ -16,7 +16,7 @@ echo ""
 
 # Find the simulator DB
 DB_DIR="$HOME/Library/Developer/CoreSimulator/Devices"
-DB_PATH=$(find "$DB_DIR" -name "drift.sqlite" -path "*/Documents/*" 2>/dev/null | head -1)
+DB_PATH=$(find "$DB_DIR" -name "drift.sqlite" -path "*/Application Support/Drift/*" 2>/dev/null | head -1)
 
 if [ -z "$DB_PATH" ]; then
     echo "❌ Can't find drift.sqlite. Make sure the app has been run in the simulator at least once."
