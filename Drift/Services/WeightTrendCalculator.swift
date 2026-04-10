@@ -150,11 +150,17 @@ enum WeightTrendCalculator {
 
         guard !sorted.isEmpty else { return nil }
 
+        // Outlier removal: drop entries >15% from median weight (likely typos/glitches)
+        let weights = sorted.map(\.weight)
+        let median = weights.sorted()[weights.count / 2]
+        let filtered = sorted.filter { abs($0.weight - median) / median <= 0.15 }
+        guard !filtered.isEmpty else { return nil }
+
         // Calculate EMA with configurable alpha
         var dataPoints: [WeightDataPoint] = []
-        var ema = sorted[0].weight
+        var ema = filtered[0].weight
 
-        for entry in sorted {
+        for entry in filtered {
             ema = config.emaAlpha * entry.weight + (1 - config.emaAlpha) * ema
             dataPoints.append(WeightDataPoint(
                 date: entry.date,

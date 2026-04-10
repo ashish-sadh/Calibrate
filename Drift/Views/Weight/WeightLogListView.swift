@@ -75,24 +75,28 @@ struct WeightLogListView: View {
 
             Spacer()
 
-            // Day-over-day change (find next entry in full list by date)
+            // Change vs previous entry (skip if gap > 90 days — misleading with old data)
             if let globalIdx = allEntries.firstIndex(where: { $0.id == entry.id }),
                globalIdx < allEntries.count - 1 {
                 let prev = allEntries[globalIdx + 1]
-                let change = unit.convert(fromKg: entry.weightKg - prev.weightKg)
-
-                HStack(spacing: 4) {
-                    Image(systemName: change < -0.01 ? "arrow.down.right" : change > 0.01 ? "arrow.up.right" : "arrow.right")
-                        .font(.caption2)
-                    if abs(change) < 0.05 {
-                        Text("No Change")
-                            .font(.caption)
-                    } else {
-                        Text("\(change >= 0 ? "+" : "")\(String(format: "%.1f", change)) \(unit.displayName)")
-                            .font(.caption.monospacedDigit())
+                let daysBetween = abs(Calendar.current.dateComponents([.day],
+                    from: DateFormatters.dateOnly.date(from: prev.date) ?? Date(),
+                    to: DateFormatters.dateOnly.date(from: entry.date) ?? Date()).day ?? 0)
+                if daysBetween <= 90 {
+                    let change = unit.convert(fromKg: entry.weightKg - prev.weightKg)
+                    HStack(spacing: 4) {
+                        Image(systemName: change < -0.01 ? "arrow.down.right" : change > 0.01 ? "arrow.up.right" : "arrow.right")
+                            .font(.caption2)
+                        if abs(change) < 0.05 {
+                            Text("No Change")
+                                .font(.caption)
+                        } else {
+                            Text("\(change >= 0 ? "+" : "")\(String(format: "%.1f", change)) \(unit.displayName)")
+                                .font(.caption.monospacedDigit())
+                        }
                     }
+                    .foregroundStyle(changeColor(change))
                 }
-                .foregroundStyle(changeColor(change))
             }
 
             if entry.syncedFromHk {
