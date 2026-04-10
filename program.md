@@ -48,8 +48,11 @@ LOOP FOREVER — do NOT stop between tickets:
 
 ## Rules
 
-- All 729+ tests must pass before committing
+- All 743+ tests must pass before committing
 - Run eval harness after every AI change — if scores drop, revert
+- Write tests for any new service/logic code. Coverage targets: **80%** pure logic, **50%** services
+- Run `./scripts/coverage-check.sh` periodically. Fix files below threshold before moving on
+- Every 5th cycle: run coverage check and write tests if new code is uncovered
 - Each cycle closes one gap or fixes one failing query. Stay focused.
 - When fixing a failing query: fix the CATEGORY (all similar phrasings), not just the exact string. Add 3+ variant tests to eval harness. Test both model paths. Move to Fixed section in failing-queries.md.
 - Redirect ALL command output to `/tmp/` — never flood context

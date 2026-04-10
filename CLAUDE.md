@@ -41,6 +41,9 @@ Human says "run self-improvement" or "never stop". Read `program.md` and follow 
 - Privacy-first: everything local, no cloud, no analytics
 - Run `xcodegen generate` after changing project.yml or adding new files
 - Run eval harness after any AI change
+- Run coverage check after writing tests: `./scripts/coverage-check.sh`
+- Coverage targets: **80%** for pure logic/calculators, **50%** for services/viewmodels/database
+- Write tests for any new service or logic code before committing
 
 ## Color Philosophy (Goal-Aware)
 - Green (Theme.deficit) = aligned with goal direction
@@ -78,6 +81,12 @@ xcodebuild test ... 2>&1 | grep "✘"  # empty = all pass
 
 # AI eval harness only (intent detection, no LLM)
 xcodebuild test ... -only-testing:'DriftTests/AIEvalHarness'
+
+# Coverage check (run after tests with coverage enabled)
+rm -rf /tmp/DriftCoverage.xcresult
+pkill -9 -f xcodebuild 2>/dev/null; sleep 2
+xcodebuild test -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:DriftTests -enableCodeCoverage YES -resultBundlePath /tmp/DriftCoverage.xcresult
+./scripts/coverage-check.sh
 ```
 
 ## TestFlight
