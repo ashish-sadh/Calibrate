@@ -249,21 +249,14 @@ enum ToolRegistration {
                 if let goal = WeightServiceAPI.getGoalProgress() {
                     lines.append("Goal: \(String(format: "%.1f", goal.currentWeight)) → \(String(format: "%.1f", goal.targetWeight))\(goal.unit), \(goal.progressPct)% done.")
                 }
-                // Enrich with total change + weekly trend for LLM presentation
+                // Weight changes from centralized service
                 let unit = Preferences.weightUnit
-                let cutoff90 = Calendar.current.date(byAdding: .day, value: -90, to: Date()).map { DateFormatters.dateOnly.string(from: $0) }
-                if let entries = try? AppDatabase.shared.fetchWeightEntries(from: cutoff90), entries.count >= 2 {
-                    let latest = entries.first!
-                    let oldest = entries.last!
-                    let totalChange = unit.convert(fromKg: latest.weightKg - oldest.weightKg)
-                    lines.append("Total change: \(totalChange >= 0 ? "+" : "")\(String(format: "%.1f", totalChange)) \(unit.displayName) over \(entries.count) entries")
-                    // Weekly
-                    let weekAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
-                    let weekStr = DateFormatters.dateOnly.string(from: weekAgo)
-                    let recent = entries.filter { $0.date >= weekStr }
-                    if recent.count >= 2, let weekOldest = recent.last {
-                        let weekChange = unit.convert(fromKg: latest.weightKg - weekOldest.weightKg)
-                        lines.append("This week: \(weekChange >= 0 ? "+" : "")\(String(format: "%.1f", weekChange)) \(unit.displayName)")
+                if let changes = WeightTrendService.shared.weightChanges {
+                    if let d90 = changes.ninetyDay {
+                        lines.append("90-day change: \(String(format: "%+.1f", unit.convert(fromKg: d90))) \(unit.displayName)")
+                    }
+                    if let d7 = changes.sevenDay {
+                        lines.append("This week: \(String(format: "%+.1f", unit.convert(fromKg: d7))) \(unit.displayName)")
                     }
                 }
                 return .text(lines.joined(separator: "\n"))
@@ -280,7 +273,7 @@ enum ToolRegistration {
                 let targetKg = unit.lowercased().hasPrefix("kg") ? target : target / 2.20462
                 if targetKg < 20 || targetKg > 200 { return .error("Target \(target) \(unit) is outside valid range.") }
 
-                let currentKg = (try? AppDatabase.shared.fetchWeightEntries())?.first?.weightKg ?? targetKg
+                let currentKg = WeightTrendService.shared.latestWeightKg ?? targetKg
                 var goal = WeightGoal.load() ?? WeightGoal(targetWeightKg: targetKg, monthsToAchieve: 6,
                     startDate: DateFormatters.todayString, startWeightKg: currentKg)
                 goal.targetWeightKg = targetKg

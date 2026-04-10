@@ -168,7 +168,7 @@ final class TDEEEstimator {
     func refresh() async {
         let config = Self.loadConfig()
         let db = AppDatabase.shared
-        let weightKg = (try? db.fetchWeightEntries(from: nil))?.first?.weightKg
+        let weightKg = WeightTrendService.shared.latestWeightKg
 
         // Step 1: Base
         var tdee = Self.computeBase(weightKg: weightKg, activityMultiplier: config.activityMultiplier)
@@ -220,7 +220,7 @@ final class TDEEEstimator {
 
         let config = Self.loadConfig()
         let db = AppDatabase.shared
-        let weightKg = (try? db.fetchWeightEntries(from: nil))?.first?.weightKg
+        let weightKg = WeightTrendService.shared.latestWeightKg
 
         // Step 1: Base
         var tdee = Self.computeBase(weightKg: weightKg, activityMultiplier: config.activityMultiplier)
@@ -263,7 +263,7 @@ final class TDEEEstimator {
 
         // Step correction: 0.04 kcal/step baseline, don't scale DOWN for lighter people
         let db = AppDatabase.shared
-        let weightKg = (try? db.fetchWeightEntries(from: nil))?.first?.weightKg ?? 70
+        let weightKg = WeightTrendService.shared.latestWeightKg ?? 70
         let kcalPerStep = 0.04 * max(1.0, weightKg / 70)
 
         var dailyTotals: [Double] = []

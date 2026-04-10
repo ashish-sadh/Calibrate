@@ -97,7 +97,7 @@ extension AIChatView {
 
         switch screen {
         case .weight, .goal:
-            if let entries = try? AppDatabase.shared.fetchWeightEntries(), !entries.isEmpty {
+            if WeightTrendService.shared.latestWeightKg != nil {
                 return "\(greeting) I can help with your weight progress — ask about your trend, goal, or pace."
             }
             return "\(greeting) Log your weight using the + button to start tracking your progress."

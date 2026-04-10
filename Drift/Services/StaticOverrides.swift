@@ -320,7 +320,7 @@ enum StaticOverrides {
             let targetKg = unit == "kg" ? target : target / 2.20462
             if targetKg >= 20 && targetKg <= 200 {
                 return .handler {
-                    let currentKg = (try? AppDatabase.shared.fetchWeightEntries())?.first?.weightKg ?? targetKg
+                    let currentKg = WeightTrendService.shared.latestWeightKg ?? targetKg
                     var goal = WeightGoal.load() ?? WeightGoal(targetWeightKg: targetKg, monthsToAchieve: 6,
                         startDate: DateFormatters.todayString, startWeightKg: currentKg)
                     goal.targetWeightKg = targetKg

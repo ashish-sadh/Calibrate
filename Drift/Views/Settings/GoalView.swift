@@ -385,14 +385,14 @@ struct GoalView: View {
     }
 
     private func loadCurrentData() {
-        do {
-            let entries = try database.fetchWeightEntries()
-            let input = entries.map { (date: $0.date, weightKg: $0.weightKg) }
-            if let trend = WeightTrendCalculator.calculateTrend(entries: input) {
-                currentWeightKg = trend.currentEMA
-                actualWeeklyRate = trend.weeklyRateKg
-                actualDailyDeficit = trend.estimatedDailyDeficit
-            }
+        let service = WeightTrendService.shared
+        service.refresh()
+        if let trend = service.trend {
+            currentWeightKg = trend.currentEMA
+            actualWeeklyRate = trend.weeklyRateKg
+            actualDailyDeficit = trend.estimatedDailyDeficit
+        }
+        do { // keep the do/catch structure for other loads below
         } catch {
             Log.app.error("Failed to load weight data for goal: \(error.localizedDescription)")
         }
@@ -550,8 +550,6 @@ struct GoalSetupView: View {
     }
 
     private func getCurrentWeight() -> Double? {
-        let entries = try? AppDatabase.shared.fetchWeightEntries()
-        let input = (entries ?? []).map { (date: $0.date, weightKg: $0.weightKg) }
-        return WeightTrendCalculator.calculateTrend(entries: input)?.currentEMA
+        WeightTrendService.shared.currentWeight
     }
 }

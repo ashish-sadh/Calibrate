@@ -15,10 +15,7 @@ struct AlgorithmSettingsView: View {
     // MARK: - Computed (unchanged)
 
     private var liveTrend: WeightTrendCalculator.WeightTrend? {
-        let db = AppDatabase.shared
-        let cutoff = Calendar.current.date(byAdding: .day, value: -90, to: Date()).map { DateFormatters.dateOnly.string(from: $0) }
-        guard let entries = try? db.fetchWeightEntries(from: cutoff), !entries.isEmpty else { return nil }
-        return WeightTrendCalculator.calculateTrend(entries: input(entries), config: config)
+        WeightTrendService.shared.trendForRange(days: 90, config: config)
     }
 
     private func input(_ entries: [WeightEntry]) -> [(date: String, weightKg: Double)] {
