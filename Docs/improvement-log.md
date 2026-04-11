@@ -11,7 +11,13 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 - **Eval harness setUp fix**: ToolRegistration.registerAll() in setUp — fixed 2 pre-existing failures (testToolRankerWeightTools, testTryRulePickHitsCorrectTool).
 - **StaticOverrides migration round 1**: Removed 8 info handlers (~60 lines). TDEE/BMR, "what did I eat", protein/macro queries → ToolRanker/IntentClassifier.
 - **StaticOverrides migration round 2**: Removed calorie estimation + workout count (~40 lines). StaticOverrides 533→437.
-- **StaticOverrides migration round 3**: Removed weekly comparison, workout suggestions, sugar query, diet advice (~40 more lines). StaticOverrides 437→393. All info queries now route through ToolRanker/IntentClassifier → tool execution → LLM presentation. Only deterministic commands remain.
+- **StaticOverrides migration round 3**: Removed weekly comparison, workout suggestions, sugar query, diet advice (~40 more lines). StaticOverrides 437→393. All info queries now route through ToolRanker/IntentClassifier.
+- **Multi-item food logging**: Comma-separated items from LLM now open recipe builder with all items + DB macros.
+- **Tool routing accuracy eval**: 42 queries across all tools, 80%+ accuracy thresholds.
+- **Prompt compression**: IntentClassifier prompt 50% smaller (35→17 lines).
+- **Multi-turn context**: streamPresentation receives conversation history for LLM to reference prior responses.
+- **Error recovery**: Friendly error messages + tool name sanitization.
+- **Pipeline timing**: Instrumentation for latency measurement per phase.
 
 ---
 

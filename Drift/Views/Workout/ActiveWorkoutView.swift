@@ -6,9 +6,11 @@ import AudioToolbox
 struct ActiveWorkoutView: View {
     @Environment(\.scenePhase) private var scenePhase
     var template: WorkoutTemplate? = nil
+    var pastDate: Date? = nil  // Non-nil = logging a past workout (no timer)
     let onComplete: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var workoutName = defaultWorkoutName()
+    @State private var workoutDate = Date()
     @State private var workoutNotes = ""
     @State private var exercises: [ActiveExercise] = []
     @State private var showingExercisePicker = false
@@ -60,11 +62,19 @@ struct ActiveWorkoutView: View {
                         TextField("Workout name", text: $workoutName)
                             .font(.title3.weight(.bold))
                             .multilineTextAlignment(.center)
-                        HStack(spacing: 12) {
-                            Label(DateFormatters.dayDisplay.string(from: Date()), systemImage: "calendar")
-                            Label(formatDuration(elapsedSeconds), systemImage: "clock")
+                        if pastDate != nil {
+                            // Past workout: date picker
+                            DatePicker("Date", selection: $workoutDate, in: ...Date(), displayedComponents: .date)
+                                .labelsHidden()
+                                .font(.caption)
+                        } else {
+                            // Live workout: date + timer
+                            HStack(spacing: 12) {
+                                Label(DateFormatters.dayDisplay.string(from: Date()), systemImage: "calendar")
+                                Label(formatDuration(elapsedSeconds), systemImage: "clock")
+                            }
+                            .font(.caption).foregroundStyle(.secondary)
                         }
-                        .font(.caption).foregroundStyle(.secondary)
                     }.padding(.horizontal, 12)
 
                     // Notes (collapsed by default)
@@ -265,10 +275,16 @@ struct ActiveWorkoutView: View {
                 .background(Theme.background)
             }
             .onAppear {
-                // Restore session BEFORE starting timer so startTime is correct
-                let restored = restoreSession()
-                startWorkoutTimer()
-                if restored { return }
+                if let pd = pastDate {
+                    workoutDate = pd
+                    workoutName = "Workout"
+                }
+                // Live workouts: restore session + start timer
+                if pastDate == nil {
+                    let restored = restoreSession()
+                    startWorkoutTimer()
+                    if restored { return }
+                }
                 if let t = template {
                     workoutName = t.name
                     // Smart sessions (no DB id) — use coach reasoning as workout notes
@@ -645,8 +661,10 @@ struct ActiveWorkoutView: View {
         workoutEnded = true
         stopTimers()
         WorkoutService.clearSession()
-        var workout = Workout(name: workoutName, date: DateFormatters.dateOnly.string(from: Date()),
-                              durationSeconds: elapsedSeconds, notes: workoutNotes.isEmpty ? nil : workoutNotes,
+        let saveDate = pastDate != nil ? workoutDate : Date()
+        var workout = Workout(name: workoutName, date: DateFormatters.dateOnly.string(from: saveDate),
+                              durationSeconds: pastDate != nil ? nil : elapsedSeconds,
+                              notes: workoutNotes.isEmpty ? nil : workoutNotes,
                               createdAt: ISO8601DateFormatter().string(from: Date()))
         do {
             try WorkoutService.saveWorkout(&workout)
