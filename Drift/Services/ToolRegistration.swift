@@ -360,7 +360,8 @@ enum ToolRegistration {
         r.register(ToolSchema(
             id: "exercise.exercise_info", name: "exercise_info", service: "exercise",
             description: "User asks ABOUT workouts: what to train, progress, history, recovery. NOT for starting a workout.",
-            parameters: [ToolParam("exercise", "string", "Specific exercise name if asking about progress", required: false)],
+            parameters: [ToolParam("exercise", "string", "Specific exercise name if asking about progress", required: false),
+                         ToolParam("query", "string", "What they asked about workouts", required: false)],
             handler: { params in
                 if let exercise = params.string("exercise") {
                     var lines: [String] = []
@@ -373,6 +374,19 @@ enum ToolRegistration {
                         lines.append("Last weight: \(Int(w)) lbs")
                     }
                     return .text(lines.isEmpty ? "No data for '\(exercise)' yet." : lines.joined(separator: "\n"))
+                }
+                // Workout count query: "how many workouts this week"
+                let query = (params.string("query") ?? "").lowercased()
+                if query.contains("how many") || query.contains("count") || query.contains("how often") {
+                    let weekWorkouts = (try? WorkoutService.fetchWorkouts(limit: 7))?.filter {
+                        guard let d = DateFormatters.dateOnly.date(from: $0.date) else { return false }
+                        return Calendar.current.isDate(d, equalTo: Date(), toGranularity: .weekOfYear)
+                    }.count ?? 0
+                    var response = "\(weekWorkouts) workout\(weekWorkouts == 1 ? "" : "s") this week."
+                    if let streak = try? WorkoutService.workoutStreak() {
+                        response += " Streak: \(streak.current) weeks (best: \(streak.longest))."
+                    }
+                    return .text(response)
                 }
                 // General workout info: suggestion + history + streak
                 var lines: [String] = [ExerciseService.suggestWorkout()]
