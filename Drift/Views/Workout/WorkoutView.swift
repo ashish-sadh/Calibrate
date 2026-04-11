@@ -9,6 +9,7 @@ struct WorkoutView: View {
     @State private var weeklyCounts: [(weekStart: Date, count: Int)] = []
     @State private var templates: [WorkoutTemplate] = []
     @State private var showingNewWorkout = false
+    @State private var showingPastWorkout = false
     @State private var showingImport = false
     @State private var showingCreateTemplate = false
     @State private var showingExerciseBrowser = false
@@ -146,6 +147,11 @@ struct WorkoutView: View {
                     }
                     .buttonStyle(.borderedProminent).tint(Theme.accent.opacity(0.7))
                 }
+
+                Button { showingPastWorkout = true } label: {
+                    Label("Log Past Workout", systemImage: "clock.arrow.circlepath")
+                        .font(.caption)
+                }.buttonStyle(.bordered).tint(.secondary)
 
                 // Templates
                 VStack(alignment: .leading, spacing: 8) {
@@ -308,6 +314,9 @@ struct WorkoutView: View {
                 loadData()
             }
         }
+        .sheet(isPresented: $showingPastWorkout) {
+            ActiveWorkoutView(pastDate: Date().addingTimeInterval(-86400)) { loadData() }
+        }
         .sheet(isPresented: $showingCreateTemplate) {
             CreateTemplateView { loadData() }
         }
@@ -318,125 +327,25 @@ struct WorkoutView: View {
             ExerciseBrowserView()
         }
         .sheet(item: $previewTemplate) { t in
-            NavigationStack {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
-                        let warmups = t.exercises.filter(\.isWarmup)
-                        let working = t.exercises.filter { !$0.isWarmup }
-
-                        if !warmups.isEmpty {
-                            Text("WARMUP").font(.caption2.weight(.bold)).foregroundStyle(Theme.fatYellow)
-                            ForEach(Array(warmups.enumerated()), id: \.offset) { _, ex in
-                                NavigationLink {
-                                    ExerciseDetailView(exerciseName: ex.name, info: ExerciseDatabase.info(for: ex.name))
-                                } label: {
-                                    HStack {
-                                        Text("W").font(.caption2.weight(.bold)).foregroundStyle(Theme.fatYellow)
-                                            .padding(.horizontal, 3).padding(.vertical, 1)
-                                            .background(Theme.fatYellow.opacity(0.2), in: RoundedRectangle(cornerRadius: 3))
-                                        VStack(alignment: .leading, spacing: 1) {
-                                            Text(ex.name).font(.subheadline)
-                                            if let notes = ex.notes { Text(notes).font(.caption2).foregroundStyle(.secondary).italic() }
-                                        }
-                                        Spacer()
-                                        Text("\(ex.sets) sets").font(.caption2).foregroundStyle(.tertiary)
-                                    }
-                                }.tint(.primary)
-                            }
-                            Divider().padding(.vertical, 4)
-                        }
-
-                        if !working.isEmpty {
-                            Text("EXERCISES").font(.caption2.weight(.bold)).foregroundStyle(Theme.calorieBlue)
-                            ForEach(Array(working.enumerated()), id: \.offset) { i, ex in
-                                NavigationLink {
-                                    ExerciseDetailView(exerciseName: ex.name, info: ExerciseDatabase.info(for: ex.name))
-                                } label: {
-                                    HStack {
-                                        Text("\(i + 1)").font(.caption.weight(.bold)).foregroundStyle(.secondary).frame(width: 20)
-                                        VStack(alignment: .leading, spacing: 1) {
-                                            Text(ex.name).font(.subheadline)
-                                            HStack(spacing: 4) {
-                                                Text("\(ex.sets) sets").font(.caption2).foregroundStyle(.tertiary)
-                                                if let lastW = try? WorkoutService.lastWeight(for: ex.name) {
-                                                    Text("\u{00B7}").font(.caption2).foregroundStyle(.quaternary)
-                                                    Text("\(Int(lastW)) lb").font(.caption2.monospacedDigit()).foregroundStyle(.tertiary)
-                                                }
-                                                if let notes = ex.notes {
-                                                    Text("\u{00B7}").font(.caption2).foregroundStyle(.quaternary)
-                                                    Text(notes).font(.caption2).foregroundStyle(.secondary).italic()
-                                                }
-                                            }
-                                        }
-                                        Spacer()
-                                        Text("\(ex.restSeconds/60):\(String(format: "%02d", ex.restSeconds%60))")
-                                            .font(.caption2.monospacedDigit()).foregroundStyle(.tertiary)
-                                    }
-                                }.tint(.primary)
-                            }
-                        }
-
-                        // Actions
-                        VStack(spacing: 10) {
-                            Button {
-                                let template = t
-                                previewTemplate = nil
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                    WorkoutService.clearSession()
-                                    selectedTemplate = template
-                                    showingNewWorkout = true
-                                }
-                            } label: {
-                                Label("Start Workout", systemImage: "play.fill").frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(.borderedProminent).tint(Theme.accent)
-
-                            HStack(spacing: 12) {
-                                Button {
-                                    let template = t
-                                    previewTemplate = nil
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                        editingTemplateForEdit = template
-                                    }
-                                } label: {
-                                    Label("Edit", systemImage: "pencil").frame(maxWidth: .infinity)
-                                }.buttonStyle(.bordered)
-
-                                Button {
-                                    if let tid = t.id {
-                                        try? WorkoutService.toggleFavorite(id: tid)
-                                        previewTemplate = nil
-                                        loadData()
-                                    }
-                                } label: {
-                                    Label(t.isFavorite ? "Unfavorite" : "Favorite",
-                                          systemImage: t.isFavorite ? "star.slash" : "star")
-                                        .frame(maxWidth: .infinity)
-                                }.buttonStyle(.bordered).tint(Theme.fatYellow)
-                            }
-
-                            Button(role: .destructive) {
-                                if let tid = t.id {
-                                    try? AppDatabase.shared.writer.write { db in _ = try WorkoutTemplate.deleteOne(db, id: tid) }
-                                    previewTemplate = nil
-                                    loadData()
-                                }
-                            } label: {
-                                Label("Delete Template", systemImage: "trash").font(.caption)
-                            }
-                            .padding(.top, 4)
-                        }
-                        .padding(.top, 8)
+            TemplatePreviewSheet(
+                template: t,
+                onStartWorkout: { template in
+                    previewTemplate = nil
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        WorkoutService.clearSession()
+                        selectedTemplate = template
+                        showingNewWorkout = true
                     }
-                    .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
-                }
-                .background(Theme.background)
-                .navigationTitle(t.name).navigationBarTitleDisplayMode(.inline)
-                .toolbar {
-                    ToolbarItem(placement: .cancellationAction) { Button("Close") { previewTemplate = nil } }
-                }
-            }
-            .presentationDetents([.medium, .large])
+                },
+                onEditTemplate: { template in
+                    previewTemplate = nil
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                        editingTemplateForEdit = template
+                    }
+                },
+                onDismiss: { previewTemplate = nil },
+                onReload: { loadData() }
+            )
         }
         .fileImporter(isPresented: $showingImport, allowedContentTypes: [.commaSeparatedText]) { handleImport($0) }
         .alert("Rename Template", isPresented: $showingRenameAlert) {

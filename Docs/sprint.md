@@ -40,7 +40,7 @@ Execute: find each food → show confirmation UI → log
 - [x] **Latency optimization** — Added pipeline timing instrumentation (logTiming per phase). Phase 1 rules are instant. Actual on-device measurement requires LLM eval.
 
 ### P1: Workout History & Editing
-- [ ] **Manual workout entry** — "Add Past Workout" button on workout tab. Pick date, name exercises, enter sets/reps/weight.
+- [~] **Manual workout entry** — ActiveWorkoutView supports pastDate param (date picker, no timer). UI button blocked by type checker on WorkoutView body — needs template preview extraction first.
 - [x] **Edit existing workout** — Tap any set → edit weight/reps alert. WorkoutService.updateSet(). Handles duration exercises.
 - [x] **Edit workout name & notes** — Menu option in detail view, alert with pre-populated fields, WorkoutService.updateWorkout().
 - [x] **Delete individual sets** — Swipe-to-delete on sets in detail view. WorkoutService.deleteSet().
