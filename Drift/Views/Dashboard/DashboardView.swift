@@ -273,8 +273,6 @@ struct DashboardView: View {
 
     // MARK: - Goal
 
-    @State private var showingGoalEdit = false
-
     private var goalCard: some View {
         Group {
             if let goal = WeightGoal.load(), let current = viewModel.currentWeight {

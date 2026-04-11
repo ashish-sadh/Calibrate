@@ -48,9 +48,15 @@ struct GoalView: View {
                 if let goal {
                     GoalProgressCard(
                         goal: goal,
-                        currentWeightKg: currentWeightKg ?? goal.startWeightKg,
-                        onEdit: { showingSetup = true }
+                        currentWeightKg: currentWeightKg ?? goal.startWeightKg
                     )
+
+                    Button { showingSetup = true } label: {
+                        Label("Update Goal", systemImage: "pencil.circle")
+                            .font(.subheadline.weight(.medium))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered).tint(Theme.accent)
                     macroTargetsCard(goal)
                     paceCard(goal)
                     deficitCard(goal)

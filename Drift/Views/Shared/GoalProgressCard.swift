@@ -5,8 +5,6 @@ import SwiftUI
 struct GoalProgressCard: View {
     let goal: WeightGoal
     let currentWeightKg: Double
-    var showEditLink: Bool = true
-    var onEdit: (() -> Void)?
 
     private var progress: Double { goal.progress(currentWeightKg: currentWeightKg) }
     private var remaining: Double { goal.remainingKg(currentWeightKg: currentWeightKg) }
@@ -44,23 +42,15 @@ struct GoalProgressCard: View {
                     .font(.caption2).foregroundStyle(.secondary)
             }
 
-            // Start info + edit
-            if showEditLink {
-                Button {
-                    onEdit?()
-                } label: {
-                    HStack(spacing: 4) {
-                        Text("Started \(String(format: "%.1f", unit.convert(fromKg: goal.startWeightKg))) \(unit.displayName)")
-                            .font(.caption2).foregroundStyle(.tertiary)
-                        if let startDate = DateFormatters.dateOnly.date(from: goal.startDate) {
-                            Text("· \(DateFormatters.shortDisplay.string(from: startDate))")
-                                .font(.caption2).foregroundStyle(.quaternary)
-                        }
-                        Spacer()
-                        Text("Edit").font(.caption2).foregroundStyle(Theme.accent)
-                    }
+            // Start info
+            HStack(spacing: 4) {
+                Text("Started \(String(format: "%.1f", unit.convert(fromKg: goal.startWeightKg))) \(unit.displayName)")
+                    .font(.caption2).foregroundStyle(.tertiary)
+                if let startDate = DateFormatters.dateOnly.date(from: goal.startDate) {
+                    Text("· \(DateFormatters.shortDisplay.string(from: startDate))")
+                        .font(.caption2).foregroundStyle(.quaternary)
                 }
-                .buttonStyle(.plain)
+                Spacer()
             }
         }
         .card()
