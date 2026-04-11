@@ -39,7 +39,10 @@ struct SleepRecoveryView: View {
                             .font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
                     }
                 } else if isLoading {
-                    Color.clear.frame(height: 200) // invisible placeholder while loading
+                    VStack(spacing: 12) {
+                        ProgressView().tint(.secondary)
+                        Text("Loading health data...").font(.caption).foregroundStyle(.tertiary)
+                    }.frame(height: 200)
                 } else {
                     emptyState
                 }

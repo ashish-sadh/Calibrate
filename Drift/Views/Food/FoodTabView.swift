@@ -186,6 +186,7 @@ struct FoodTabView: View {
                             .font(.caption2.weight(.bold)).foregroundStyle(.tertiary)
                             .frame(width: 24, height: 44)
                     }
+                    .accessibilityLabel("Previous week")
 
                     // Day pills — fixed positions, only highlight moves
                     ForEach(days, id: \.self) { day in
@@ -201,13 +202,12 @@ struct FoodTabView: View {
                             VStack(spacing: 2) {
                                 Text(dayFormatter.string(from: day))
                                     .font(.caption2)
-                                    .foregroundStyle(isSelected ? Color.white : Color.gray)
+                                    .foregroundStyle(isSelected ? .white : .secondary)
                                 Text("\(cal.component(.day, from: day))")
                                     .font(.callout.weight(isSelected ? .bold : .regular).monospacedDigit())
                                     .foregroundStyle(isSelected ? .white : .primary)
-                                // Dot: accent for today, white for days with food, empty otherwise
                                 Circle()
-                                    .fill(isToday ? Theme.accent : hasFood ? Color.white.opacity(0.4) : Color.clear)
+                                    .fill(isToday ? Theme.accent : hasFood ? .secondary.opacity(0.5) : Color.clear)
                                     .frame(width: isSelected ? 6 : 4, height: isSelected ? 6 : 4)
                             }
                             .frame(maxWidth: .infinity)
@@ -228,6 +228,7 @@ struct FoodTabView: View {
                             .font(.caption2.weight(.bold)).foregroundStyle(.tertiary)
                             .frame(width: 24, height: 44)
                     }
+                    .accessibilityLabel("Next week")
                 }
             }
 
