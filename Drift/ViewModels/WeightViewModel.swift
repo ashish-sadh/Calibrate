@@ -16,9 +16,12 @@ final class WeightViewModel {
     var weightUnit: WeightUnit = Preferences.weightUnit
     var goal: WeightGoal? = WeightGoal.load()
 
-    /// Is the user trying to lose weight? Default true if no goal set.
+    /// Is the user trying to lose weight? Based on current weight vs target.
     var isLosing: Bool {
-        if let goal { return goal.totalChangeKg < 0 }
+        if let goal {
+            let currentKg = WeightTrendService.shared.latestWeightKg ?? goal.startWeightKg
+            return goal.isLosing(currentWeightKg: currentKg)
+        }
         return true // default assumption
     }
 

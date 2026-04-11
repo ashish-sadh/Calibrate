@@ -90,11 +90,11 @@ extension DashboardView {
                 }
             }
 
-            // Target line
-            if let t = target, let goal {
-                let remaining = abs(unit.convert(fromKg: goal.totalChangeKg))
-                let isLosing = goal.totalChangeKg < 0
-                Text("Target: eat \(Int(t.calorieTarget)) kcal to \(isLosing ? "lose" : "gain") \(String(format: "%.1f", remaining)) \(unit.displayName)")
+            // Target line — uses CURRENT weight for direction, not stale startWeightKg
+            if let t = target, let goal, let cw = viewModel.currentWeight {
+                let remainingAbs = abs(unit.convert(fromKg: goal.remainingKg(currentWeightKg: cw)))
+                let losing = goal.isLosing(currentWeightKg: cw)
+                Text("Target: eat \(Int(t.calorieTarget)) kcal to \(losing ? "lose" : "gain") \(String(format: "%.1f", remainingAbs)) \(unit.displayName)")
                     .font(.caption).foregroundStyle(.secondary)
             }
 
@@ -102,7 +102,8 @@ extension DashboardView {
             if showDeficitExplainer, (goal != nil || viewModel.weeklyRate != nil) {
                 VStack(alignment: .leading, spacing: 6) {
                     if let goal {
-                        let required = goal.requiredDailyDeficit
+                        let currentKg = viewModel.currentWeight ?? goal.startWeightKg
+                        let required = goal.requiredDailyDeficit(currentWeightKg: currentKg)
                         HStack(spacing: 16) {
                             VStack(spacing: 2) {
                                 Text("Required").font(.caption2).foregroundStyle(.tertiary)
@@ -264,10 +265,12 @@ extension DashboardView {
     // MARK: - Weight + Deficit
 
     /// Is this deficit/surplus aligned with the user's goal?
+    /// Uses CURRENT weight vs target for direction — not stale startWeightKg.
     func isGoalAligned(_ deficit: Double) -> Bool {
-        let goal = WeightGoal.load()
-        let isLosing = goal.map { $0.totalChangeKg < 0 } ?? true
-        return isLosing ? deficit < 0 : deficit > 0
+        guard let goal = WeightGoal.load() else { return deficit < 0 }
+        let currentKg = viewModel.currentWeight ?? goal.startWeightKg
+        let losing = goal.isLosing(currentWeightKg: currentKg)
+        return losing ? deficit < 0 : deficit > 0
     }
 
     func macroPill(_ label: String, value: Double, color: Color) -> some View {

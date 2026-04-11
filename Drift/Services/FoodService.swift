@@ -53,8 +53,9 @@ enum FoodService {
             return max(500, Int(goalTarget))
         }
         let tdee = TDEEEstimator.shared.current?.tdee ?? 2000
-        let deficit = WeightGoal.load()?.requiredDailyDeficit ?? 0
-        return max(500, Int(tdee - deficit))
+        let currentKg = WeightTrendService.shared.latestWeightKg ?? 80
+        let deficit = WeightGoal.load()?.requiredDailyDeficit(currentWeightKg: currentKg) ?? 0
+        return max(500, Int(tdee + deficit))
     }
 
     /// Get today's nutrition totals with target and remaining.
@@ -267,7 +268,8 @@ enum FoodService {
     static func explainCalories() -> String {
         let totals = getDailyTotals()
         let tdee = TDEEEstimator.shared.current?.tdee ?? 2000
-        let deficit = WeightGoal.load()?.requiredDailyDeficit ?? 0
+        let currentKg = WeightTrendService.shared.latestWeightKg ?? 80
+        let deficit = WeightGoal.load()?.requiredDailyDeficit(currentWeightKg: currentKg) ?? 0
 
         var lines: [String] = []
         lines.append("Your estimated TDEE (total daily energy expenditure): \(Int(tdee)) cal")

@@ -66,17 +66,43 @@ struct WeightGoal: Codable, Sendable {
     var targetWeightLbs: Double { targetWeightKg * 2.20462 }
     var startWeightLbs: Double { startWeightKg * 2.20462 }
 
-    /// Total weight to lose/gain in kg (negative = lose).
+    // MARK: - Current-Weight-Based Calculations (preferred — always correct)
+
+    /// Is the user trying to lose weight? Based on CURRENT weight vs target, not start.
+    func isLosing(currentWeightKg: Double) -> Bool {
+        currentWeightKg > targetWeightKg
+    }
+
+    /// How much remains from CURRENT weight to target (negative = need to lose).
+    func remainingKg(currentWeightKg: Double) -> Double {
+        targetWeightKg - currentWeightKg
+    }
+
+    /// Required weekly rate based on CURRENT weight and remaining time.
+    func requiredWeeklyRate(currentWeightKg: Double) -> Double {
+        guard let weeks = weeksRemaining, weeks > 0 else { return 0 }
+        return remainingKg(currentWeightKg: currentWeightKg) / weeks
+    }
+
+    /// Required daily deficit based on CURRENT weight and remaining time.
+    func requiredDailyDeficit(currentWeightKg: Double) -> Double {
+        let config = WeightTrendCalculator.loadConfig()
+        return requiredWeeklyRate(currentWeightKg: currentWeightKg) * config.kcalPerKg / 7
+    }
+
+    // MARK: - Legacy (startWeightKg-based — kept for progress display only)
+
+    /// Total planned change from start (for progress bar only). Do NOT use for direction/deficit.
     var totalChangeKg: Double { targetWeightKg - startWeightKg }
     var totalChangeLbs: Double { totalChangeKg * 2.20462 }
 
-    /// Required weekly rate in kg/week.
+    /// Legacy: uses startWeightKg. Prefer requiredWeeklyRate(currentWeightKg:).
     var requiredWeeklyRateKg: Double {
         let weeks = Double(monthsToAchieve) * 4.33
         return weeks > 0 ? totalChangeKg / weeks : 0
     }
 
-    /// Required daily deficit/surplus in kcal (using configurable energy density).
+    /// Legacy: uses startWeightKg. Prefer requiredDailyDeficit(currentWeightKg:).
     var requiredDailyDeficit: Double {
         let config = WeightTrendCalculator.loadConfig()
         return requiredWeeklyRateKg * config.kcalPerKg / 7
@@ -174,16 +200,22 @@ struct WeightGoal: Codable, Sendable {
         daysRemaining.map { Double($0) / 7 }
     }
 
-    /// Weight remaining to lose/gain from current.
-    func remainingKg(currentWeightKg: Double) -> Double {
-        targetWeightKg - currentWeightKg
-    }
-
-    /// Progress percentage (0 to 1).
+    /// Progress percentage (0 to 1). Based on how close current is to target
+    /// relative to the total distance from start to target.
     func progress(currentWeightKg: Double) -> Double {
-        guard abs(totalChangeKg) > 0.01 else { return 1 }
-        let achieved = currentWeightKg - startWeightKg
-        return min(1, max(0, achieved / totalChangeKg))
+        let totalDistance = abs(targetWeightKg - startWeightKg)
+        guard totalDistance > 0.5 else { return 1 }
+        // Check if user has reached or passed target
+        let startToTarget = targetWeightKg - startWeightKg  // negative = losing goal
+        let startToCurrent = currentWeightKg - startWeightKg
+        // If moved in goal direction and passed target → 100%
+        if startToTarget < 0 && startToCurrent <= startToTarget { return 1 }  // losing: went below target
+        if startToTarget > 0 && startToCurrent >= startToTarget { return 1 }  // gaining: went above target
+        // Normal progress: how much of the journey is done
+        let achieved = abs(startToCurrent)
+        return startToTarget * startToCurrent > 0  // same direction?
+            ? min(1, achieved / totalDistance)
+            : 0  // went wrong direction
     }
 
     /// Whether on track: actual rate vs required rate.
