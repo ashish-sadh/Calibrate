@@ -14,6 +14,12 @@ enum IntentClassifier {
         let confidence: String    // "high", "medium", "low"
     }
 
+    /// Result of classification: either a tool call or a text response (follow-up question, greeting, etc.)
+    enum ClassifyResult: Sendable {
+        case toolCall(ClassifiedIntent)
+        case text(String)  // LLM chose to respond with text (follow-up question, greeting, etc.)
+    }
+
     // MARK: - System Prompt (~150 tokens)
 
     static let systemPrompt = """
@@ -31,15 +37,18 @@ enum IntentClassifier {
     "how did I sleep"→{"tool":"sleep_recovery"}
     "set goal 155"→{"tool":"set_goal","target":"155","unit":"lbs"}
     "delete last"→{"tool":"delete_food"}
+    "chipotle bowl 3000 cal 30p 45c 67f"→{"tool":"log_food","name":"chipotle bowl","calories":"3000","protein":"30","carbs":"45","fat":"67"}
+    "log lunch"→What did you have for lunch?
+    "log breakfast"→What did you have for breakfast?
     "hi"→Hi! How can I help?
-    JSON for actions/queries. Text for chat.
+    JSON when you have enough info. Ask a follow-up question if intent is clear but details are missing. Short text for chat.
     """
 
     // MARK: - Classify
 
     /// Classify user message into intent + tool call via LLM.
-    /// Returns nil if LLM times out or returns non-JSON (chat response).
-    static func classify(message: String, history: String) async -> ClassifiedIntent? {
+    /// Returns nil only on timeout. Text responses (follow-ups, greetings) are returned as .text.
+    static func classifyFull(message: String, history: String) async -> ClassifyResult? {
         let userMessage: String
         if !history.isEmpty {
             userMessage = "Chat:\n\(String(history.prefix(200)))\n\nUser: \(message)"
@@ -47,7 +56,7 @@ enum IntentClassifier {
             userMessage = message
         }
 
-        let msg = userMessage  // capture for Sendable closure
+        let msg = userMessage
         let response = await withTimeout(seconds: 10) {
             await LocalAIService.shared.respondDirect(
                 systemPrompt: systemPrompt,
@@ -56,7 +65,20 @@ enum IntentClassifier {
         }
 
         guard let response else { return nil }
-        return parseResponse(response)
+        if let intent = parseResponse(response) {
+            return .toolCall(intent)
+        }
+        // LLM returned text — a follow-up question, greeting, or conversational response
+        let cleaned = response.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty else { return nil }
+        return .text(cleaned)
+    }
+
+    /// Legacy: returns nil for text responses (backward compat)
+    static func classify(message: String, history: String) async -> ClassifiedIntent? {
+        guard let result = await classifyFull(message: message, history: history) else { return nil }
+        if case .toolCall(let intent) = result { return intent }
+        return nil
     }
 
     // MARK: - Parse Response

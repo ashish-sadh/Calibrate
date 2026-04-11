@@ -699,6 +699,27 @@ final class AIEvalHarness: XCTestCase {
         XCTAssertEqual(intent?.params["value"], "165.5")
     }
 
+    // MARK: - ClassifyResult: Text vs Tool Call
+
+    func testClassifyResultTextForFollowUp() {
+        // "log lunch" → LLM should ask follow-up, which parseResponse returns nil for
+        // The ClassifyResult.text path captures this
+        let followUp = "What did you have for lunch?"
+        let result = IntentClassifier.parseResponse(followUp)
+        XCTAssertNil(result, "Follow-up question should not parse as tool call")
+    }
+
+    func testClassifyResultToolCallWithMacros() {
+        let json = #"{"tool":"log_food","name":"chipotle bowl","calories":"3000","protein":"30","carbs":"45","fat":"67"}"#
+        let intent = IntentClassifier.parseResponse(json)
+        XCTAssertNotNil(intent)
+        XCTAssertEqual(intent?.tool, "log_food")
+        XCTAssertEqual(intent?.params["calories"], "3000")
+        XCTAssertEqual(intent?.params["protein"], "30")
+        XCTAssertEqual(intent?.params["carbs"], "45")
+        XCTAssertEqual(intent?.params["fat"], "67")
+    }
+
     // MARK: - Intent Classifier Expanded Coverage (50+ patterns)
     // Tests parseResponse with realistic LLM output formats across all tools.
 

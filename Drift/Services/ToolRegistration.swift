@@ -14,7 +14,12 @@ enum ToolRegistration {
         r.register(ToolSchema(
             id: "food.log_food", name: "log_food", service: "food",
             description: "User wants to LOG/ADD food they ate. Use this when they say 'I had', 'ate', 'log', 'add'.",
-            parameters: [ToolParam("name", "string", "Food name"), ToolParam("amount", "number", "How many servings or grams (e.g. '200g', '2')", required: false)],
+            parameters: [ToolParam("name", "string", "Food name"),
+                         ToolParam("amount", "number", "How many servings or grams (e.g. '200g', '2')", required: false),
+                         ToolParam("calories", "number", "Custom calories if specified", required: false),
+                         ToolParam("protein", "number", "Custom protein grams", required: false),
+                         ToolParam("carbs", "number", "Custom carbs grams", required: false),
+                         ToolParam("fat", "number", "Custom fat grams", required: false)],
             preHook: { params in
                 // Parse gram amounts: "paneer biryani 200g" or amount="200g"
                 guard let rawName = params.string("name") else { return params }
@@ -72,6 +77,21 @@ enum ToolRegistration {
             },
             handler: { params in
                 guard let name = params.string("name") else { return .error("Missing food name") }
+                // Custom macros: "chipotle bowl 3000 cal 30p 45c 67f" → quick-add directly
+                if let cal = params.double("calories"), cal > 0 {
+                    let vm = FoodLogViewModel()
+                    vm.quickAdd(name: name, calories: cal,
+                                proteinG: params.double("protein") ?? 0,
+                                carbsG: params.double("carbs") ?? 0,
+                                fatG: params.double("fat") ?? 0,
+                                fiberG: 0, mealType: vm.autoMealType)
+                    let macroLine = [
+                        params.double("protein").map { "\(Int($0))P" },
+                        params.double("carbs").map { "\(Int($0))C" },
+                        params.double("fat").map { "\(Int($0))F" }
+                    ].compactMap { $0 }.joined(separator: " ")
+                    return .text("Logged \(name) — \(Int(cal)) cal\(macroLine.isEmpty ? "" : " \(macroLine)").")
+                }
                 // Multi-item: open recipe builder with all items
                 if let remaining = params.string("remaining_items"), !remaining.isEmpty {
                     let allItems = [name] + remaining.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces) }

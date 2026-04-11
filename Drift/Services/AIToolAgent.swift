@@ -75,24 +75,28 @@ enum AIToolAgent {
 
             // Try LLM intent classifier first
             let classifyStart = CFAbsoluteTimeGetCurrent()
-            if let intent = await IntentClassifier.classify(message: message, history: history) {
+            if let result = await IntentClassifier.classifyFull(message: message, history: history) {
                 logTiming("Phase 2 (classify)", start: classifyStart)
-                // Strip parentheses from tool name (LLM quirk: "food_info()" → "food_info")
-                let toolName = intent.tool.replacingOccurrences(of: "()", with: "")
-                let call = ToolCall(tool: toolName, params: ToolCallParams(values: intent.params))
-                // Check if tool exists before executing
-                if isInfoTool(toolName) {
-                    // Info tools: execute and present via LLM streaming
-                    let result = await ToolRegistry.shared.execute(call)
-                    if case .text(let data) = result, !data.isEmpty {
-                        onStep("Preparing answer...")
-                        return await streamPresentation(
-                            query: message, toolData: data, screen: screen, history: history, onToken: onToken
-                        )
+                switch result {
+                case .toolCall(let intent):
+                    // Strip parentheses from tool name (LLM quirk: "food_info()" → "food_info")
+                    let toolName = intent.tool.replacingOccurrences(of: "()", with: "")
+                    let call = ToolCall(tool: toolName, params: ToolCallParams(values: intent.params))
+                    if isInfoTool(toolName) {
+                        let toolResult = await ToolRegistry.shared.execute(call)
+                        if case .text(let data) = toolResult, !data.isEmpty {
+                            onStep("Preparing answer...")
+                            return await streamPresentation(
+                                query: message, toolData: data, screen: screen, history: history, onToken: onToken
+                            )
+                        }
+                    } else {
+                        return await executeTool(call)
                     }
-                } else {
-                    // Action tools: execute directly
-                    return await executeTool(call)
+                case .text(let response):
+                    // LLM chose to respond with text (follow-up question, greeting, etc.)
+                    // Surface it directly — this enables multi-turn clarification
+                    return AgentOutput(text: response, action: nil, toolsCalled: ["classifier"])
                 }
             }
 
