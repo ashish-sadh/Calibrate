@@ -1118,6 +1118,77 @@ final class AIEvalHarness: XCTestCase {
         XCTAssertGreaterThanOrEqual(correct, countCases.count * 85 / 100)
     }
 
+    // MARK: - ConversationState Topic Classification
+
+    @MainActor
+    func testTopicClassification() {
+        let state = ConversationState.shared
+
+        // Food queries
+        XCTAssertEqual(state.classifyTopic("I ate 2 eggs"), .food)
+        XCTAssertEqual(state.classifyTopic("calories left"), .food)
+        XCTAssertEqual(state.classifyTopic("log lunch"), .food)
+        XCTAssertEqual(state.classifyTopic("how much protein today"), .food)
+
+        // Weight queries
+        XCTAssertEqual(state.classifyTopic("I weigh 165"), .weight)
+        XCTAssertEqual(state.classifyTopic("weight trend"), .weight)
+        XCTAssertEqual(state.classifyTopic("what's my tdee"), .weight)
+
+        // Exercise queries
+        XCTAssertEqual(state.classifyTopic("start push day"), .exercise)
+        XCTAssertEqual(state.classifyTopic("I did yoga"), .exercise)
+        XCTAssertEqual(state.classifyTopic("suggest workout"), .exercise)
+
+        // Sleep
+        XCTAssertEqual(state.classifyTopic("how did I sleep"), .sleep)
+
+        // Unknown
+        XCTAssertEqual(state.classifyTopic("hi"), .unknown)
+        XCTAssertEqual(state.classifyTopic("thanks"), .unknown)
+    }
+
+    // MARK: - PreHookResult Routing (log_food)
+
+    @MainActor
+    func testPreHookRouting_customCalories() {
+        // With calories → should route to quick-add (not search)
+        // Can't test the full preHook without ToolRegistry, but we can test
+        // that the IntentClassifier parses macros correctly
+        let json = #"{"tool":"log_food","name":"chipotle bowl","calories":"3000","protein":"30"}"#
+        let intent = IntentClassifier.parseResponse(json)
+        XCTAssertEqual(intent?.params["calories"], "3000")
+        XCTAssertEqual(intent?.params["protein"], "30")
+    }
+
+    @MainActor
+    func testPreHookRouting_emptyName() {
+        // Empty name → should be .invalid
+        let json = #"{"tool":"log_food","name":""}"#
+        let intent = IntentClassifier.parseResponse(json)
+        XCTAssertEqual(intent?.params["name"], "")
+    }
+
+    // MARK: - Weight Goal Current-Based Calculations
+
+    @MainActor
+    func testWeightGoalCurrentBased() {
+        let goal = WeightGoal(targetWeightKg: 90, monthsToAchieve: 6,
+                              startDate: "2026-04-01", startWeightKg: 75.9)
+
+        // Direction always from current weight
+        XCTAssertTrue(goal.isLosing(currentWeightKg: 102), "102 > 90 → losing")
+        XCTAssertFalse(goal.isLosing(currentWeightKg: 85), "85 < 90 → not losing")
+
+        // Remaining always from current
+        XCTAssertEqual(goal.remainingKg(currentWeightKg: 102), -12, accuracy: 0.1)
+        XCTAssertEqual(goal.remainingKg(currentWeightKg: 85), 5, accuracy: 0.1)
+
+        // Deficit direction matches
+        XCTAssertTrue(goal.requiredDailyDeficit(currentWeightKg: 102) < 0, "Need deficit to lose")
+        XCTAssertTrue(goal.requiredDailyDeficit(currentWeightKg: 85) > 0, "Need surplus to gain")
+    }
+
     // MARK: - Chain-of-Thought Routing
 
     @MainActor

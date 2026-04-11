@@ -65,7 +65,7 @@ When a user adds a manual entry (quick-add with custom calories/macros), it does
 ## FEAT-002: Copy food to today from past day view
 
 **Reported:** 2026-04-08
-**Status:** Open
+**Status:** Fixed
 **Priority:** Medium
 
 When viewing a past day's food log, user should be able to copy individual items (or all) to today. Should show a brief confirmation toast without navigating away. Don't show copy option when already viewing today.
@@ -75,7 +75,7 @@ When viewing a past day's food log, user should be able to copy individual items
 ## BUG-003: Plant points "Today" label doesn't update with date
 
 **Reported:** 2026-04-08
-**Status:** Open
+**Status:** Fixed
 **Severity:** Low
 
 Plant points section shows "Today" even when user navigates to a different date. Should show the actual date (e.g. "Apr 5") when not viewing today. Week and month sections are fine.
