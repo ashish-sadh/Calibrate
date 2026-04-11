@@ -285,14 +285,34 @@ enum AIToolAgent {
     /// Add a brief conversational prefix to raw tool data for SmolLM (no LLM presentation available).
     private static func addInsightPrefix(to data: String) -> String {
         let lower = data.lowercased()
-        if lower.contains("over target") || lower.contains("over") && lower.contains("cal") {
-            return "Heads up — \(data)"
-        } else if lower.contains("on track") || lower.contains("remaining") {
-            return "Looking good — \(data)"
-        } else if lower.contains("no food logged") || lower.contains("nothing logged") {
-            return data // don't prefix empty state
+        // Empty/no-data states: don't prefix
+        if lower.contains("no food logged") || lower.contains("nothing logged") || lower.contains("no data") || lower.contains("no weight") {
+            return data
         }
-        return data
+        // Negative states
+        if lower.contains("over target") || (lower.contains("over") && lower.contains("cal")) {
+            return "Heads up — \(data)"
+        }
+        if lower.contains("low recovery") || lower.contains("poor sleep") {
+            return "Take it easy — \(data)"
+        }
+        // Positive states
+        if lower.contains("on track") || lower.contains("target reached") || lower.contains("well recovered") {
+            return "Nice work! \(data)"
+        }
+        if lower.contains("remaining") || lower.contains("left") {
+            return "Looking good — \(data)"
+        }
+        // Exercise/workout
+        if lower.contains("workout") || lower.contains("streak") || lower.contains("exercise") {
+            return "Here's your activity — \(data)"
+        }
+        // Weight
+        if lower.contains("trend") || lower.contains("losing") || lower.contains("gaining") {
+            return "Here's the trend — \(data)"
+        }
+        // Default: add a light prefix
+        return "Here's what I found — \(data)"
     }
 
     // MARK: - Tool Execution

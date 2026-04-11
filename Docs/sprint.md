@@ -48,7 +48,7 @@ Execute: find each food → show confirmation UI → log
 ### P2: Presentation Quality
 - [ ] **LLM presentation for ALL responses** — Every response conversational. No raw data dumps.
 - [ ] **Streaming everywhere** — Tokens appear as LLM generates. No "thinking..." delays.
-- [ ] **Context-aware responses** — Time of day, progress vs goal influence tone.
+- [x] **Context-aware responses** — Tone hints in presentation prompt: morning=motivating, daytime=practical, evening=summary.
 
 ### P2: Salad Bowl / Custom Meal Builder
 - [x] **Salad base templates** — 5 templates seeded with ingredients.
