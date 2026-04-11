@@ -72,9 +72,11 @@ enum AIToolAgent {
 
             // Try LLM intent classifier first
             if let intent = await IntentClassifier.classify(message: message, history: history) {
-                let call = ToolCall(tool: intent.tool, params: ToolCallParams(values: intent.params))
+                // Strip parentheses from tool name (LLM quirk: "food_info()" → "food_info")
+                let toolName = intent.tool.replacingOccurrences(of: "()", with: "")
+                let call = ToolCall(tool: toolName, params: ToolCallParams(values: intent.params))
                 // Check if tool exists before executing
-                if isInfoTool(intent.tool) {
+                if isInfoTool(toolName) {
                     // Info tools: execute and present via LLM streaming
                     let result = await ToolRegistry.shared.execute(call)
                     if case .text(let data) = result, !data.isEmpty {
@@ -289,7 +291,9 @@ enum AIToolAgent {
         case .action(let action):
             return AgentOutput(text: "", action: action, toolsCalled: [toolCall.tool])
         case .error(let msg):
-            return AgentOutput(text: msg, action: nil, toolsCalled: [toolCall.tool])
+            // User-friendly error message instead of raw error
+            let friendly = "I couldn't quite do that — \(msg.lowercased()). Try rephrasing or say \"help\" to see what I can do."
+            return AgentOutput(text: friendly, action: nil, toolsCalled: [toolCall.tool])
         }
     }
 
