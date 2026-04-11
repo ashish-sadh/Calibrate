@@ -31,15 +31,27 @@ struct WeightInsightsView: View {
             // Key metrics — 2×2 compact grid
             HStack(spacing: 8) {
                 Button { onAddWeight?() } label: {
-                    metricCell(
-                        id: "current",
-                        label: "Current",
-                        labelIcon: "plus.circle.fill",
-                        value: String(format: "%.1f", unit.convert(fromKg: trend.currentEMA)),
-                        valueUnit: unit.displayName,
-                        color: .primary,
-                        tooltip: "Your true weight after smoothing out day-to-day fluctuations."
-                    )
+                    VStack(spacing: 2) {
+                        // Latest entry (raw — what user logged)
+                        if let latest = WeightTrendService.shared.latestWeightKg {
+                            HStack(alignment: .firstTextBaseline, spacing: 2) {
+                                Text(String(format: "%.1f", unit.convert(fromKg: latest)))
+                                    .font(.title3.weight(.bold).monospacedDigit())
+                                Text(unit.displayName).font(.caption2).foregroundStyle(.tertiary)
+                            }
+                            Text("Latest").font(.caption2).foregroundStyle(.secondary)
+                        }
+                        // Trend (EMA smoothed)
+                        HStack(alignment: .firstTextBaseline, spacing: 2) {
+                            Text(String(format: "%.1f", unit.convert(fromKg: trend.currentEMA)))
+                                .font(.caption.weight(.semibold).monospacedDigit())
+                                .foregroundStyle(.secondary)
+                            Text("trend").font(.caption2).foregroundStyle(.quaternary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
                 }
                 .buttonStyle(.plain)
 

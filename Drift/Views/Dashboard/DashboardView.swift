@@ -52,7 +52,7 @@ struct DashboardView: View {
                             // Left column: Weight
                             VStack(alignment: .leading, spacing: 2) {
                                 Label("Weight", systemImage: "scalemass").font(.caption).foregroundStyle(.secondary)
-                                if let w = viewModel.currentWeight {
+                                if let w = viewModel.latestWeight ?? viewModel.currentWeight {
                                     HStack(alignment: .firstTextBaseline, spacing: 3) {
                                         Text(String(format: "%.1f", Preferences.weightUnit.convert(fromKg: w)))
                                             .font(.title2.weight(.bold).monospacedDigit())
