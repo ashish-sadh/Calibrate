@@ -80,7 +80,7 @@ enum AIToolAgent {
                     if case .text(let data) = result, !data.isEmpty {
                         onStep("Preparing answer...")
                         return await streamPresentation(
-                            query: message, toolData: data, screen: screen, onToken: onToken
+                            query: message, toolData: data, screen: screen, history: history, onToken: onToken
                         )
                     }
                 } else {
@@ -123,7 +123,7 @@ enum AIToolAgent {
             if isLargeModel {
                 onStep("Preparing answer...")
                 return await streamPresentation(
-                    query: bestQuery, toolData: data, screen: screen, onToken: onToken
+                    query: bestQuery, toolData: data, screen: screen, history: history, onToken: onToken
                 )
             } else {
                 // SmolLM: add a brief insight prefix to raw data
@@ -234,7 +234,7 @@ enum AIToolAgent {
     /// Stream a natural response with pre-fetched tool data injected.
     /// ~320 token prompt. First token in ~2s. Data is real, not hallucinated.
     private static func streamPresentation(
-        query: String, toolData: String, screen: AIScreen,
+        query: String, toolData: String, screen: AIScreen, history: String = "",
         onToken: @escaping @Sendable (String) -> Void
     ) async -> AgentOutput {
         let hour = Calendar.current.component(.hour, from: Date())
@@ -245,7 +245,8 @@ enum AIToolAgent {
         Be warm and brief (2-3 sentences). Use the actual numbers. No medical advice. No repeating the question.
         Example: "You're doing well today — 1200 of 2000 cal with solid protein at 85g. A chicken dinner would close the gap nicely."
         """
-        let user = "Data:\n\(toolData)\n\nQuestion: \(query)"
+        let historyPrefix = history.isEmpty ? "" : "Recent chat:\n\(String(history.prefix(300)))\n\n"
+        let user = "\(historyPrefix)Data:\n\(toolData)\n\nQuestion: \(query)"
 
         let response = await withTimeout(seconds: 20) {
             await LocalAIService.shared.respondStreamingDirect(

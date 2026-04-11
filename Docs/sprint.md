@@ -34,7 +34,7 @@ Execute: find each food → show confirmation UI → log
 
 ### P1: Tool Quality + Prompt Engineering
 - [x] **Tool calling accuracy eval** — 42 queries across all tools, 80%+ accuracy thresholds. 4 test methods by domain (food, weight, exercise, other).
-- [ ] **Prompt compression** — Current system prompt ~500 tokens. Compress to ~200. Gemma 4 has 2048 context.
+- [x] **Prompt compression** — IntentClassifier prompt compressed 50% (35→17 lines). Tool list on one line, shorter examples.
 - [ ] **Multi-turn context** — Pass last 2-3 tool results in history so LLM can reference prior data.
 - [ ] **Error recovery** — Detect wrong tool/bad params, show "could you rephrase?" instead of wrong action.
 - [ ] **Latency optimization** — Target: first token in <2s for info queries, <1s for logging confirmations.
