@@ -144,6 +144,19 @@ enum ToolRegistration {
                     return .text("\(Int(n.fatG))g fat today.\(left.map { " Target: \(Int(targets!.fatG))g. \($0 > 0 ? "Need \($0)g more." : "Reached!")" } ?? "")")
                 }
 
+                // Sugar / fiber query
+                if query.contains("sugar") || query.contains("fiber") {
+                    let macro = query.contains("sugar") ? "carbs" : "fiber"
+                    let value = query.contains("sugar") ? n.carbsG : n.fiberG
+                    var response = "\(Int(value))g \(macro) today."
+                    if let t = targets {
+                        let target = query.contains("sugar") ? t.carbsG : 25.0 // 25g fiber default
+                        response += " Target: \(Int(target))g."
+                    }
+                    if query.contains("sugar") { response += " (Drift tracks total carbs — sugar isn't tracked separately.)" }
+                    return .text(response)
+                }
+
                 // Yesterday summary
                 if query.contains("yesterday") {
                     return .text(AIRuleEngine.yesterdaySummary())
