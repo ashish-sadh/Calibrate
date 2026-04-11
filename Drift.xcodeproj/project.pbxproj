@@ -109,6 +109,7 @@
 		A2ACB0BE8811077162EBE463 /* FoodLogViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE2809389EE890A3F01ED675 /* FoodLogViewModel.swift */; };
 		A8ACF4689ACE5AE7AB3FE4DE /* LabReportStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F4D8D947C82941F66C3E892 /* LabReportStorage.swift */; };
 		AA43792497E2FC36FF55F58C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 08E33CA6BE80D735A37ED745 /* Assets.xcassets */; };
+		AD32A3FE644C22A43CA474EF /* DebugSeedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCBE3BA3D70586AC0F3ED34E /* DebugSeedData.swift */; };
 		ADFD099AC0AEB4154AF6063B /* WeightTrendCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD5DFCD5C5ED2C0D7E5CD8EF /* WeightTrendCalculator.swift */; };
 		B2654B50471C75496A1AA0D7 /* NutritionLabelOCR.swift in Sources */ = {isa = PBXBuildFile; fileRef = 418816F51F38F19F65BC3D77 /* NutritionLabelOCR.swift */; };
 		B26EFEA29CD8570813193C98 /* WeightGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89FB0C77EA74796A1BF01D1F /* WeightGoal.swift */; };
@@ -351,6 +352,7 @@
 		F57B8BA8C0B119CF10614F14 /* HealthKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitService.swift; sourceTree = "<group>"; };
 		F78E3B6C1497F6A200DF8095 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		F7D747073BCD9310AB76B496 /* LabReportUploadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabReportUploadView.swift; sourceTree = "<group>"; };
+		FCBE3BA3D70586AC0F3ED34E /* DebugSeedData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSeedData.swift; sourceTree = "<group>"; };
 		FD5DFCD5C5ED2C0D7E5CD8EF /* WeightTrendCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTrendCalculator.swift; sourceTree = "<group>"; };
 		FD7026C3D8745999EED9478E /* foods.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = foods.json; sourceTree = "<group>"; };
 		FF0DB0809C7110E3644208F2 /* Drift.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Drift.entitlements; sourceTree = "<group>"; };
@@ -711,6 +713,7 @@
 			children = (
 				0D45209A3DCC7F6659E6E367 /* CSVParser.swift */,
 				35CA37F54FABF8B93BB278BB /* DateFormatters.swift */,
+				FCBE3BA3D70586AC0F3ED34E /* DebugSeedData.swift */,
 				99C89E28D8FBE125273FB677 /* Log.swift */,
 				24385DF0FF7F89584AE40020 /* Theme.swift */,
 				88A19640FB19F5628DC8B824 /* Units.swift */,
@@ -899,6 +902,7 @@
 				FE2EC2B62CB693DA85CD1544 /* DashboardView.swift in Sources */,
 				2CCF5E1D415E462AE9997DD4 /* DashboardViewModel.swift in Sources */,
 				DAD2FB33C19A3574C2643082 /* DateFormatters.swift in Sources */,
+				AD32A3FE644C22A43CA474EF /* DebugSeedData.swift in Sources */,
 				510B0EC55CDC176805887710 /* DefaultFoods.swift in Sources */,
 				307CDADBBCCE0A3FD121817C /* DefaultTemplates.swift in Sources */,
 				4C31E5F32057829ABAA0840A /* DriftApp.swift in Sources */,
