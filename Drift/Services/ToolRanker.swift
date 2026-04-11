@@ -406,7 +406,9 @@ enum ToolRanker {
                        ("goal", 1.5), ("how much have i lost", 4), ("weight progress", 3.5),
                        ("am i losing", 3), ("compare this week", 3),
                        ("why am i not losing", 3.5), ("plateau", 3), ("not losing weight", 3.5),
-                       ("how am i doing", 2), ("how are you doing", 2), ("daily summary", 2)],
+                       ("how am i doing", 2), ("how are you doing", 2), ("daily summary", 2),
+                       ("tdee", 3.5), ("bmr", 3.5), ("metabolism", 3), ("how many calories do i burn", 4),
+                       ("explain tdee", 4), ("explain calories", 3)],
             logBoost: -1, queryBoost: 2,
             screens: [.weight: 0.5, .goal: 0.5, .dashboard: 0.2],
             antiKeywords: ["log", "set", "target", "i weigh", "scale"]

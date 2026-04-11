@@ -47,9 +47,7 @@ final class AIEvalHarness: XCTestCase {
             // Copy
             ("copy yesterday", ""),
             // Topic continuation (macro lookups)
-            ("what about protein?", "protein"), ("what about carbs?", "carb"),
-            ("how about fat?", "fat"), ("and protein?", "protein"),
-            ("what's my protein", "protein"),
+            // Topic continuation ("what about protein?") — moved to ToolRanker (food_info tool)
             // Data entry
             ("body fat 18", "bf"), ("bf 22.5", "bf"),
             ("bmi 24", "bmi"), ("bmi 22.1", "bmi"),
@@ -76,9 +74,7 @@ final class AIEvalHarness: XCTestCase {
             ("scan barcode", "scan"), ("scan food", "scan"),
             // Undo
             ("undo", "undo"), ("undo that", "undo"), ("undo last", "undo"),
-            // TDEE/BMR
-            ("what's my tdee", "tdee"), ("explain tdee", "tdee"),
-            ("how many calories do i burn", "tdee"),
+            // TDEE/BMR — moved to ToolRanker (weight_info tool)
             // Calorie estimation
             ("calories in samosa", "estimate"),
             ("estimate calories for biryani", "estimate"),
@@ -553,7 +549,7 @@ final class AIEvalHarness: XCTestCase {
             LayerTest(query: "set goal to 160 lbs", expectedLayer: "static"),
             LayerTest(query: "bf 22", expectedLayer: "static"),
             LayerTest(query: "bmi 24", expectedLayer: "static"),
-            LayerTest(query: "what about protein?", expectedLayer: "static"),
+            LayerTest(query: "what about protein?", expectedLayer: "tool_ranker"),
             LayerTest(query: "i did yoga for 30 minutes", expectedLayer: "static"),
             LayerTest(query: "just did 20 min cardio", expectedLayer: "static"),
 

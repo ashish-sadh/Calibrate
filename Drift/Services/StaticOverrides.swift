@@ -81,67 +81,9 @@ enum StaticOverrides {
             }
         }
 
-        // TDEE / BMR / metabolism queries
-        if lower.contains("tdee") || lower.contains("bmr") || lower == "what's my metabolism"
-            || lower == "how many calories do i burn" || lower == "explain calories" || lower == "explain tdee" {
-            return .handler {
-                let tdee = TDEEEstimator.shared.current?.tdee ?? 0
-                if tdee > 0 {
-                    let deficit = WeightGoal.load()?.requiredDailyDeficit ?? 0
-                    let target = max(500, Int(tdee - deficit))
-                    return "TDEE (estimated daily burn): \(Int(tdee)) cal. Target intake: \(target) cal\(deficit > 0 ? " (\(Int(deficit)) cal deficit for weight loss)" : "")."
-                }
-                return "No TDEE estimate yet. Log your weight a few times and I'll calculate it."
-            }
-        }
-        if lower == "what did i eat today" || lower == "what did i eat" || lower == "today's food" {
-            return .handler {
-                let context = AIContextBuilder.foodContext()
-                return context.isEmpty ? "No food logged today yet." : context
-            }
-        }
-        // Topic continuation: "what about protein?", "and carbs?", "how about fat?"
-        let topicContinuationPrefixes = ["what about ", "how about ", "and ", "what's my ", "how's my ", "how is my "]
-        let macroKeywords: [(String, String)] = [
-            ("protein", "protein"), ("carbs", "carb"), ("carbohydrates", "carb"),
-            ("fat", "fat"), ("fiber", "fiber"), ("fibre", "fiber")
-        ]
-        for (keyword, macro) in macroKeywords {
-            let isTopic = topicContinuationPrefixes.contains(where: { lower.hasPrefix($0) }) && lower.contains(keyword)
-            if isTopic {
-                return .handler {
-                    let n = (try? AppDatabase.shared.fetchDailyNutrition(for: DateFormatters.todayString)) ?? .zero
-                    switch macro {
-                    case "protein":
-                        guard n.proteinG > 0 else { return "No food logged yet. Log your meals to track protein." }
-                        if let goal = WeightGoal.load(), let targets = goal.macroTargets() {
-                            let left = max(0, Int(targets.proteinG - n.proteinG))
-                            return "\(Int(n.proteinG))g protein today (\(Int(targets.proteinG))g target). \(left > 0 ? "Still need \(left)g." : "Target reached!")"
-                        }
-                        return "\(Int(n.proteinG))g protein today."
-                    case "carb":
-                        return "\(Int(n.carbsG))g carbs today."
-                    case "fat":
-                        return "\(Int(n.fatG))g fat today."
-                    case "fiber":
-                        return "\(Int(n.fiberG))g fiber today."
-                    default: return "\(Int(n.calories)) cal today."
-                    }
-                }
-            }
-        }
-        if lower == "how's my protein" || lower == "how's my protein?" || lower == "protein status"
-            || lower == "how is my protein" || lower == "how is my protein?" || lower.contains("protein") && (lower.contains("how") || lower.contains("status")) {
-            return .handler {
-                let n = (try? AppDatabase.shared.fetchDailyNutrition(for: DateFormatters.todayString)) ?? .zero
-                guard n.proteinG > 0 else { return "No food logged yet. Log your meals to track protein." }
-                if let goal = WeightGoal.load(), let targets = goal.macroTargets() {
-                    let pLeft = max(0, Int(targets.proteinG - n.proteinG))
-                    return "\(Int(n.proteinG))g protein today (\(Int(targets.proteinG))g target). \(pLeft > 0 ? "Still need \(pLeft)g." : "Target reached!")"
-                }
-                return "\(Int(n.proteinG))g protein today."
-            }
-        }
+        // Info queries (TDEE, "what did I eat", protein status, macro queries) now route
+        // through AIToolAgent → IntentClassifier / ToolRanker → food_info / weight_info tools.
+        // Removed from here to avoid duplicating logic and enable LLM presentation.
 
         // --- Deterministic overrides (both models) ---
         // These are exact-match or regex-parsed — no LLM quality benefit from Gemma handling them.
