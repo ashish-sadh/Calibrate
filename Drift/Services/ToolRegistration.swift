@@ -178,6 +178,18 @@ enum ToolRegistration {
                     return .text(lines.joined(separator: "\n"))
                 }
 
+                // Diet/fitness advice: "how to lose fat", "reduce fat", "what's a good diet"
+                let dietKeywords = ["reduce fat", "lose fat", "burn fat", "cut fat", "how to lose",
+                                     "gain muscle", "bulk", "what's a good diet", "diet tips", "diet advice"]
+                if dietKeywords.contains(where: { query.contains($0) }) {
+                    if let t = targets {
+                        let calsLeft = max(0, Int(t.calorieTarget - n.calories))
+                        let protLeft = max(0, Int(t.proteinG - n.proteinG))
+                        return .text("Focus on protein (\(protLeft)g left today), stay in calorie budget (\(calsLeft) cal left). High-protein foods: chicken, eggs, greek yogurt, paneer, dal.")
+                    }
+                    return .text("Key tips: prioritize protein, eat in a calorie deficit for fat loss (or surplus for muscle gain). Track your meals to stay on target.")
+                }
+
                 // General food info: calories, macros, meal count, suggestions, context
                 let today = DateFormatters.todayString
                 let totals = FoodService.getDailyTotals()
