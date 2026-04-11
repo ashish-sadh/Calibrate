@@ -366,7 +366,7 @@ enum AIActionExecutor {
         // Word amounts
         let wordAmounts: [String: Double] = [
             "half": 0.5, "quarter": 0.25, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5,
-            "a": 1, "an": 1, "couple": 2, "few": 3, "several": 4, "some": 1
+            "a": 1, "an": 1, "the": 1, "couple": 2, "few": 3, "several": 4, "some": 1
         ]
         if let amount = wordAmounts[firstStr] {
             let food = parts.count > 1 ? String(parts[1]) : ""

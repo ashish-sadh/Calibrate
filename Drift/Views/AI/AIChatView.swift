@@ -234,6 +234,20 @@ struct AIChatView: View {
         return parts.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
     }
 
+    /// Try to resolve a single food item string into a RecipeItem.
+    private func resolveRecipeItem(_ text: String) -> QuickAddView.RecipeItem? {
+        let (servings, foodName, gramAmount) = AIActionExecutor.extractAmount(from: text)
+        guard let match = AIActionExecutor.findFood(query: foodName, servings: servings, gramAmount: gramAmount) else { return nil }
+        let f = match.food
+        let portionText = gramAmount.map { "\(Int($0))g" } ?? "\(String(format: "%.1f", match.servings)) serving"
+        return QuickAddView.RecipeItem(
+            name: f.name, portionText: portionText,
+            calories: f.calories * match.servings, proteinG: f.proteinG * match.servings,
+            carbsG: f.carbsG * match.servings, fatG: f.fatG * match.servings,
+            fiberG: f.fiberG * match.servings,
+            servingSizeG: f.servingSize)
+    }
+
     /// Parse freeform food text into recipe items and open the recipe builder.
     /// Used by both pending-meal flow and single-message "log breakfast 2 eggs and toast".
     private func buildMealFromText(_ text: String, mealName: String) {
@@ -243,16 +257,20 @@ struct AIChatView: View {
 
         for item in items {
             let trimmed = item.trimmingCharacters(in: .whitespaces)
-            let (servings, foodName, gramAmount) = AIActionExecutor.extractAmount(from: trimmed)
-            if let match = AIActionExecutor.findFood(query: foodName, servings: servings, gramAmount: gramAmount) {
-                let f = match.food
-                let portionText = gramAmount.map { "\(Int($0))g" } ?? "\(String(format: "%.1f", match.servings)) serving"
-                recipeItems.append(QuickAddView.RecipeItem(
-                    name: f.name, portionText: portionText,
-                    calories: f.calories * match.servings, proteinG: f.proteinG * match.servings,
-                    carbsG: f.carbsG * match.servings, fatG: f.fatG * match.servings,
-                    fiberG: f.fiberG * match.servings,
-                    servingSizeG: f.servingSize))
+            if let recipe = resolveRecipeItem(trimmed) {
+                recipeItems.append(recipe)
+            } else if trimmed.lowercased().contains(" with ") {
+                // "coffee with 2% milk with protein powder" → ["coffee", "2% milk", "protein powder"]
+                let subItems = trimmed.components(separatedBy: " with ")
+                    .map { $0.trimmingCharacters(in: .whitespaces) }
+                    .filter { !$0.isEmpty }
+                for sub in subItems {
+                    if let recipe = resolveRecipeItem(sub) {
+                        recipeItems.append(recipe)
+                    } else {
+                        notFound.append(sub)
+                    }
+                }
             } else {
                 notFound.append(trimmed)
             }
@@ -580,23 +598,16 @@ struct AIChatView: View {
         // Resolve pronouns from conversation context: "log it", "log that", "add this"
         let resolved = resolvePronouns(lower)
 
-        // Multi-food intent: "log chicken and rice"
-        if let intents = AIActionExecutor.parseMultiFoodIntent(resolved) {
-            var found: [String] = []
-            for intent in intents {
-                if let match = AIActionExecutor.findFood(query: intent.query, servings: intent.servings, gramAmount: intent.gramAmount) {
-                    found.append("\(match.food.name) (\(Int(match.food.calories * match.servings))cal)")
-                }
-            }
-            if !found.isEmpty {
-                let extra = intents.count > 1 ? " Say \"log \(intents[1].query)\" after to add the rest." : ""
-                messages.append(ChatMessage(role: .assistant, text: "Found: \(found.joined(separator: ", ")). Opening first item...\(extra)"))
-            } else {
-                messages.append(ChatMessage(role: .assistant, text: "Searching for \(intents.map(\.query).joined(separator: ", "))..."))
-            }
-            foodSearchQuery = intents[0].query
-            foodSearchServings = intents[0].servings
-            showingFoodSearch = true
+        // Multi-food intent: "log chicken and rice" → recipe builder with all items
+        if let intents = AIActionExecutor.parseMultiFoodIntent(resolved), intents.count > 1 {
+            // Reconstruct text for buildMealFromText to handle all items (including "with" sub-splitting)
+            let foodText = intents.map { intent in
+                var s = intent.query
+                if let srv = intent.servings, srv != 1 { s = "\(String(format: "%g", srv)) \(s)" }
+                if let g = intent.gramAmount { s = "\(Int(g))g \(s)" }
+                return s
+            }.joined(separator: " and ")
+            buildMealFromText(foodText, mealName: "Meal")
             return
         }
 

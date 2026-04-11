@@ -1104,6 +1104,9 @@ final class AIEvalHarness: XCTestCase {
             ("half cup oats", 0.5, nil),
             ("two scoops protein", 2, nil),
             ("quarter cup rice", 0.25, nil),
+            // Article "the" treated as 1 serving
+            ("the bread", 1, nil),
+            ("the avocado", 1, nil),
         ]
         var correct = 0
         for (input, expectedServings, expectedGrams) in countCases {
@@ -1116,6 +1119,37 @@ final class AIEvalHarness: XCTestCase {
         let pct = Double(correct) / Double(countCases.count) * 100
         print("📊 Count unit extraction: \(correct)/\(countCases.count) (\(String(format: "%.0f", pct))%)")
         XCTAssertGreaterThanOrEqual(correct, countCases.count * 85 / 100)
+    }
+
+    @MainActor
+    func testArticleAndWithParsing() {
+        // "the" article strips cleanly → food name is just "bread"
+        let (theServings, theName, _) = AIActionExecutor.extractAmount(from: "the bread")
+        XCTAssertEqual(theServings, 1)
+        XCTAssertEqual(theName, "bread")
+
+        let (anServings, anName, _) = AIActionExecutor.extractAmount(from: "an apple")
+        XCTAssertEqual(anServings, 1)
+        XCTAssertEqual(anName, "apple")
+
+        // "with" items should each be parseable individually after splitting
+        let withItems = "coffee with 2% milk with protein powder"
+            .components(separatedBy: " with ")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+        XCTAssertEqual(withItems.count, 3)
+        XCTAssertEqual(withItems[0], "coffee")
+        XCTAssertEqual(withItems[1], "2% milk")
+        XCTAssertEqual(withItems[2], "protein powder")
+
+        // Each sub-item should parse cleanly through extractAmount
+        let (_, coffeeName, _) = AIActionExecutor.extractAmount(from: "coffee")
+        XCTAssertEqual(coffeeName, "coffee")
+
+        let (_, milkName, _) = AIActionExecutor.extractAmount(from: "2% milk")
+        XCTAssertEqual(milkName, "2% milk")
+
+        let (_, proteinName, _) = AIActionExecutor.extractAmount(from: "protein powder")
+        XCTAssertEqual(proteinName, "protein powder")
     }
 
     // MARK: - ConversationState Topic Classification
