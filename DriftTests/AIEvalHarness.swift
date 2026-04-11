@@ -390,6 +390,27 @@ final class AIEvalHarness: XCTestCase {
     }
 
     @MainActor
+    func testParamExtractionForKeyTools() {
+        // food_info should extract query context
+        if let tool = ToolRegistry.shared.allTools().first(where: { $0.name == "food_info" }) {
+            let params = ToolRanker.extractParamsForTool(tool, from: "how much protein today")
+            XCTAssertTrue(params["query"]?.contains("protein") ?? false, "food_info should extract 'protein' from query")
+        }
+
+        // start_workout should extract workout name
+        if let tool = ToolRegistry.shared.allTools().first(where: { $0.name == "start_workout" }) {
+            let params = ToolRanker.extractParamsForTool(tool, from: "start push day")
+            XCTAssertTrue(params["name"]?.contains("push") ?? false, "start_workout should extract 'push' from name")
+        }
+
+        // log_activity should extract activity + duration
+        if let tool = ToolRegistry.shared.allTools().first(where: { $0.name == "log_activity" }) {
+            let params = ToolRanker.extractParamsForTool(tool, from: "i did yoga for 30 min")
+            XCTAssertNotNil(params["name"], "log_activity should extract activity name")
+        }
+    }
+
+    @MainActor
     func testTryRulePickAvoidsAmbiguous() {
         // Ambiguous queries should return nil (fall through to LLM)
         let ambiguous = [
