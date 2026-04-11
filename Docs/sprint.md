@@ -36,7 +36,7 @@ Execute: find each food → show confirmation UI → log
 - [x] **Tool calling accuracy eval** — 42 queries across all tools, 80%+ accuracy thresholds. 4 test methods by domain (food, weight, exercise, other).
 - [x] **Prompt compression** — IntentClassifier prompt compressed 50% (35→17 lines). Tool list on one line, shorter examples.
 - [x] **Multi-turn context** — streamPresentation receives conversation history (300 chars). LLM can reference prior responses.
-- [ ] **Error recovery** — Detect wrong tool/bad params, show "could you rephrase?" instead of wrong action.
+- [x] **Error recovery** — Friendly error messages + tool name sanitization (strips "()" LLM quirk).
 - [ ] **Latency optimization** — Target: first token in <2s for info queries, <1s for logging confirmations.
 
 ### P1: Workout History & Editing

@@ -58,9 +58,12 @@ enum AIToolAgent {
         onToken: @escaping @Sendable (String) -> Void
     ) async -> AgentOutput {
 
+        let pipelineStart = CFAbsoluteTimeGetCurrent()
+
         // ── Phase 1: Try rules on raw input (instant, both models) ──
         // Only for high-confidence action commands (undo, delete, greetings)
         if let toolCall = ToolRanker.tryRulePick(query: message, screen: screen) {
+            logTiming("Phase 1 (rules)", start: pipelineStart)
             return await executeTool(toolCall)
         }
 
@@ -71,7 +74,9 @@ enum AIToolAgent {
             onStep(stepMessage(for: message))
 
             // Try LLM intent classifier first
+            let classifyStart = CFAbsoluteTimeGetCurrent()
             if let intent = await IntentClassifier.classify(message: message, history: history) {
+                logTiming("Phase 2 (classify)", start: classifyStart)
                 // Strip parentheses from tool name (LLM quirk: "food_info()" → "food_info")
                 let toolName = intent.tool.replacingOccurrences(of: "()", with: "")
                 let call = ToolCall(tool: toolName, params: ToolCallParams(values: intent.params))
@@ -295,6 +300,13 @@ enum AIToolAgent {
             let friendly = "I couldn't quite do that — \(msg.lowercased()). Try rephrasing or say \"help\" to see what I can do."
             return AgentOutput(text: friendly, action: nil, toolsCalled: [toolCall.tool])
         }
+    }
+
+    // MARK: - Pipeline Timing
+
+    private static func logTiming(_ label: String, start: CFAbsoluteTime) {
+        let ms = Int((CFAbsoluteTimeGetCurrent() - start) * 1000)
+        Log.app.info("⏱ AIToolAgent \(label): \(ms)ms")
     }
 
     // MARK: - Text Response Handling
