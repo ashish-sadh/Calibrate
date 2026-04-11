@@ -4,6 +4,12 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 
 ---
 
+## Cycle · 2026-04-10
+
+- **Intent classifier eval expansion**: 8→16 test methods, 50+ assertions across all 10 tools + edge cases (empty JSON, markdown wrapping, LLM quirks). Fixed empty tool string bug in parseResponse.
+
+---
+
 ## Cycle · 2026-04-08
 
 - **Fix test isolation**: 12 mutating tests got own DB (shared seededDB caused flaky failures). Fixed extractAmount to return servings for count units (slices/cups) vs grams for weight units.

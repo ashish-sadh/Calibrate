@@ -24,41 +24,31 @@ LLM tool call: {"tool": "log_food", "items": [{"name": "2% milk"}, {"name": "egg
 Execute: find each food → show confirmation UI → log
 ```
 
-- [ ] **LLM intent classifier prompt** — Design a compact (~100 token) system prompt for Gemma 4 that classifies user message into: `food_log`, `food_query`, `weight_log`, `weight_query`, `exercise_start`, `exercise_log`, `exercise_query`, `health_query`, `chat`. Returns JSON: `{"intent": "food_log", "sub_intent": "multi_item"}`. Test on 50+ synthetic queries.
-- [ ] **Synthetic training data** — Generate 200+ realistic user messages across all intents. Include: "Log breakfast with 2% milk, egg and toast", "had a salad with chicken and avocado", "can you help me log my lunch", "I ate out at Chipotle", "how's my protein looking", "did I hit my calorie goal", "start push day", "I did 30 min yoga". Test each through the pipeline.
-- [ ] **Unified tool schema prompt** — Design compact tool definitions for the LLM (~200 tokens for all tools). The model should see available tools and return JSON tool calls. Format: `{"tool": "log_food", "params": {"items": [...], "meal": "breakfast"}}`. Test tool selection accuracy on synthetic data.
-- [ ] **Remove StaticOverrides for intent routing** — Keep StaticOverrides ONLY for instant commands (undo, delete, copy, barcode scan, greetings). Move ALL intent detection to LLM. Info queries, food logging, exercise — all through LLM.
-- [ ] **Streaming intent detection** — Stream the LLM response. If first token is `{` → tool call JSON. If text → direct response. Already partially implemented in Phase 4 — extend to be the PRIMARY path, not fallback.
-- [ ] **Multi-item food logging** — LLM parses "rice with dal and chicken" as 3 items. No more hardcoded "and" splitting or compound food exclusion lists. LLM understands context.
-- [ ] **Confirmation UI for actions** — After LLM returns tool call, show brief confirmation before executing. "Log 2 eggs, toast, and milk for breakfast? ✓". Tap to confirm. Prevents wrong actions.
+- [x] **LLM intent classifier prompt** — IntentClassifier.swift implemented with Gemma 4.
+- [x] **Streaming intent detection** — Token streaming with word-by-word generation.
+- [x] **Synthetic training data** — 16 test methods, 50+ assertions covering all tools, edge cases, LLM quirks. Fixed empty tool bug.
+- [x] **Unified tool schema prompt** — 12 tools with compact function signatures (~250 tokens). 16 examples. delete_food + body_comp added.
+- [ ] **Remove StaticOverrides for intent routing** — Keep StaticOverrides ONLY for instant commands (undo, delete, copy, barcode scan, greetings). Move ALL intent detection to LLM.
+- [ ] **Multi-item food logging via LLM** — LLM parses "rice with dal and chicken" as 3 items. No more hardcoded "and" splitting.
+- [ ] **Confirmation UI for actions** — After LLM returns tool call, show brief confirmation before executing.
 
 ### P1: Tool Quality + Prompt Engineering
-- [ ] **Tool calling accuracy eval** — Run 100 synthetic queries through Gemma 4. Measure: correct tool picked? Correct params extracted? Track accuracy per tool. Target: 85%+.
-- [ ] **Prompt compression** — Current system prompt is ~500 tokens. Compress to ~200. Gemma 4 has 2048 context — every token matters. Remove redundant examples, use terse format.
-- [ ] **Multi-turn context** — Pass last 2-3 tool results in history so LLM can reference: "you mentioned protein was low" or "you logged 1200 cal so far". Currently history only has Q/A text, not tool data.
-- [ ] **Error recovery** — If LLM picks wrong tool or bad params, detect and retry. Show "I didn't understand, could you rephrase?" instead of wrong action.
-- [ ] **Latency optimization** — Measure: intent detection time, tool execution time, presentation time. Target: first token in <2s for info queries, <1s for logging confirmations.
-
-### P2: Presentation Quality
-- [ ] **LLM presentation for ALL responses** — Every response should feel conversational. No raw data dumps. Even error messages should be natural.
-- [ ] **Streaming everywhere** — User sees tokens appearing as LLM generates. No "thinking..." delays for simple queries.
-- [ ] **Context-aware responses** — Time of day, progress vs goal, recent history influence tone. Morning: encouraging. Evening: summary-oriented. Over target: gentle nudge.
-
-### P0: Weight Tab Bugs (human-reported)
-- [ ] **BUG: TDEE surplus nonsensical (+3346 kcal)** — TDEEEstimator uses all-time weight data including years-old HealthKit imports (2017, 2018). Only last 30-60 days should be used for TDEE calculation. Old outlier entries skew the algorithm massively.
-- [ ] **BUG: Weight change shows wrong comparison** — "102.1 kg → +15.0 kg" compares to entry from 2018, not previous entry. Should show change vs previous entry in the timeline, not a years-old entry.
-- [ ] **Stale weight data guardrail** — If no weight logged in last 60 days, don't show TDEE/surplus/projected. Show "Log your weight to see trends" instead. Prevents misleading calculations from old data.
-- [ ] **Weight logging not visible** — First-time users don't see how to log weight. Add a prominent "Log Weight" button or empty state on the weight tab.
-
-### P0: Workout Bugs (human-reported)
-- [ ] **BUG: Save as Template skips completion share screen** — When "Save as template" toggle is on, the workout saves and dismisses immediately without showing the "Nice work!" completion sheet with share button.
-- [ ] **Rest timer confusing / not optional** — Add a "Rest Timer" toggle at the top of active workout. Default OFF. When on, shows countdown between sets.
+- [ ] **Tool calling accuracy eval** — Run 100 synthetic queries through Gemma 4. Measure: correct tool? Correct params? Target: 85%+.
+- [ ] **Prompt compression** — Current system prompt ~500 tokens. Compress to ~200. Gemma 4 has 2048 context.
+- [ ] **Multi-turn context** — Pass last 2-3 tool results in history so LLM can reference prior data.
+- [ ] **Error recovery** — Detect wrong tool/bad params, show "could you rephrase?" instead of wrong action.
+- [ ] **Latency optimization** — Target: first token in <2s for info queries, <1s for logging confirmations.
 
 ### P1: Workout History & Editing
-- [ ] **Manual workout entry** — "Add Past Workout" button on workout tab.
-- [ ] **Edit existing workout** — Tap a workout in history → edit sets, reps, weight.
+- [ ] **Manual workout entry** — "Add Past Workout" button on workout tab. Pick date, name exercises, enter sets/reps/weight.
+- [ ] **Edit existing workout** — Tap workout in history → edit sets, reps, weight, exercise order.
 - [ ] **Edit workout name & notes** — Allow renaming from detail view.
 - [ ] **Delete individual sets** — Swipe-to-delete on individual sets.
+
+### P2: Presentation Quality
+- [ ] **LLM presentation for ALL responses** — Every response conversational. No raw data dumps.
+- [ ] **Streaming everywhere** — Tokens appear as LLM generates. No "thinking..." delays.
+- [ ] **Context-aware responses** — Time of day, progress vs goal influence tone.
 
 ### P2: Salad Bowl / Custom Meal Builder
 - [x] **Salad base templates** — 5 templates seeded with ingredients.
@@ -66,7 +56,15 @@ Execute: find each food → show confirmation UI → log
 - [x] **Category tabs in ingredient picker** — Horizontal chips for browsing.
 - [ ] **Ingredient persistence** — Store per-ingredient macros for recipe rebuilding.
 
+### Ongoing: Code Improvement Loop
+Autonomous refactoring. Run `code-improvement.md`. Principles in `Docs/principles/`. Log in `Docs/code-improvement-log.md`.
+
+- [ ] **Continue file decomposition** — Files over 700 lines still need splitting (CycleView 633, GoalView 557, StaticOverrides 533, ToolRanker 530).
+- [ ] **Deeper refactoring** — Extract logic from fat functions (AIChatView.sendMessage 491 lines). Move business logic out of views into ViewModels/Services.
+- [ ] **DDD violations** — Direct DB calls in views, business logic in UI layer.
+
 ## Done (this sprint)
+- [x] LLM intent classifier + streaming
 - [x] LLM presentation layer for info queries
 - [x] Parallel tool execution
 - [x] bestQuery flows through pipeline
@@ -74,4 +72,9 @@ Execute: find each food → show confirmation UI → log
 - [x] Data model: saved_food rename, source column, meal_log flattened, calorie target deduplicated
 - [x] Food diary: sort chips, reorder, copy all, edit time/macros, detail view
 - [x] Hevy import, workout share, save button, warmups
+- [x] Weight: 90-day trend, outlier detection, gap guard, staleness nudges, manual entry priority
+- [x] Weight: unit preference respected, WeightTrendService consolidation
+- [x] Workout: finish sheet fix, rest timer
+- [x] Profile fields in goal page + dashboard nudge
+- [x] Code improvement: 12 cycles, 12 files decomposed, ~2800 lines redistributed
 - [x] 743 tests

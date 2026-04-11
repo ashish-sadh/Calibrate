@@ -7,6 +7,16 @@ import XCTest
 /// Run: xcodebuild test -only-testing:'DriftTests/AIEvalHarness'
 final class AIEvalHarness: XCTestCase {
 
+    override func setUp() {
+        super.setUp()
+        // Ensure ToolRegistry is populated for ToolRanker tests
+        MainActor.assumeIsolated {
+            if ToolRegistry.shared.allTools().isEmpty {
+                ToolRegistration.registerAll()
+            }
+        }
+    }
+
     // MARK: - StaticOverrides Coverage
 
     @MainActor
