@@ -81,7 +81,10 @@ struct WeightGoal: Codable, Sendable {
     /// Required weekly rate based on CURRENT weight and remaining time.
     func requiredWeeklyRate(currentWeightKg: Double) -> Double {
         guard let weeks = weeksRemaining, weeks > 0 else { return 0 }
-        return remainingKg(currentWeightKg: currentWeightKg) / weeks
+        let raw = remainingKg(currentWeightKg: currentWeightKg) / weeks
+        // Cap at safe limits: max 1 kg/week loss, 0.5 kg/week gain
+        // Beyond this the math produces nonsensical calorie targets
+        return max(-1.0, min(0.5, raw))
     }
 
     /// Required daily deficit based on CURRENT weight and remaining time.
@@ -125,12 +128,17 @@ struct WeightGoal: Codable, Sendable {
         if let override = calorieTargetOverride { return override }
         let cw = currentWeightKg ?? startWeightKg
         let deficit = requiredDailyDeficit(currentWeightKg: cw)
-        if let tdee = actualTDEE { return tdee + deficit }
-        if Thread.isMainThread {
+        let raw: Double
+        if let tdee = actualTDEE {
+            raw = tdee + deficit
+        } else if Thread.isMainThread {
             let est = MainActor.assumeIsolated { TDEEEstimator.shared.cachedOrSync() }
-            return est.tdee + deficit
+            raw = est.tdee + deficit
+        } else {
+            raw = TDEEEstimator.computeBase(weightKg: cw, activityMultiplier: 29) + deficit
         }
-        return TDEEEstimator.computeBase(weightKg: cw, activityMultiplier: 29) + deficit
+        // Floor: never suggest eating less than 1200 kcal (unsafe)
+        return max(1200, raw)
     }
 
     /// Describes how the calorie target was determined.

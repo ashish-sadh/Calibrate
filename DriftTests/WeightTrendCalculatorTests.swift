@@ -338,3 +338,146 @@ func makeEntries(days: Int, startKg: Double, ratePerDay: Double) -> [(date: Stri
 @Test func configPresetOrdering() async throws {
     #expect(WeightTrendCalculator.AlgorithmConfig.conservative.kcalPerKg < WeightTrendCalculator.AlgorithmConfig.responsive.kcalPerKg)
 }
+
+// MARK: - Weight Entry DB Tests
+
+@Test func saveAndFetchWeightEntry() async throws {
+    let db = try AppDatabase.empty()
+    let today = DateFormatters.todayString
+    var entry = WeightEntry(date: today, weightKg: 75.5, source: "manual")
+    try db.saveWeightEntry(&entry)
+
+    let fetched = try db.fetchWeightEntries()
+    #expect(fetched.count == 1)
+    #expect(fetched.first?.weightKg == 75.5)
+    #expect(fetched.first?.source == "manual")
+}
+
+@Test func manualWeightPriorityOverHealthKit() async throws {
+    let db = try AppDatabase.empty()
+    let today = DateFormatters.todayString
+
+    // Save manual entry first
+    var manual = WeightEntry(date: today, weightKg: 75.0, source: "manual")
+    try db.saveWeightEntry(&manual)
+
+    // HealthKit tries to overwrite — should be ignored
+    var hk = WeightEntry(date: today, weightKg: 80.0, source: "healthkit", syncedFromHk: true)
+    try db.saveWeightEntry(&hk)
+
+    let fetched = try db.fetchWeightEntries()
+    #expect(fetched.count == 1)
+    #expect(fetched.first?.weightKg == 75.0, "Manual entry should not be overwritten by HealthKit")
+}
+
+@Test func softDeleteHidesEntry() async throws {
+    let db = try AppDatabase.empty()
+    let today = DateFormatters.todayString
+    var entry = WeightEntry(date: today, weightKg: 75.0)
+    try db.saveWeightEntry(&entry)
+
+    // Soft-delete
+    try db.deleteWeightEntry(id: entry.id!)
+
+    // Should not appear in fetch (hidden=1 filtered out)
+    let fetched = try db.fetchWeightEntries()
+    #expect(fetched.isEmpty, "Soft-deleted entry should not appear in results")
+}
+
+@Test func softDeleteBlocksHealthKitResync() async throws {
+    let db = try AppDatabase.empty()
+    let today = DateFormatters.todayString
+    var entry = WeightEntry(date: today, weightKg: 75.0, source: "manual")
+    try db.saveWeightEntry(&entry)
+
+    // Soft-delete
+    try db.deleteWeightEntry(id: entry.id!)
+
+    // HealthKit tries to re-add for same date — should be blocked
+    var hk = WeightEntry(date: today, weightKg: 76.0, source: "healthkit", syncedFromHk: true)
+    try db.saveWeightEntry(&hk)
+
+    let fetched = try db.fetchWeightEntries()
+    #expect(fetched.isEmpty, "HealthKit should not resurrect a soft-deleted entry")
+}
+
+// MARK: - Gap-Aware Outlier Detection
+
+@Test func outlierFilterAllowsLegitimateGapLoss() async throws {
+    // 80kg daily entries for 5 days, then 65kg after 60 days → should be included
+    var entries: [(date: String, weightKg: Double)] = (0..<5).map {
+        (date: String(format: "2026-01-%02d", $0 + 1), weightKg: 80.0)
+    }
+    entries.append((date: "2026-03-02", weightKg: 65.0)) // 60 days later
+    let t = WeightTrendCalculator.calculateTrend(entries: entries)!
+    // EMA should reflect the 65kg entry (not filtered out)
+    #expect(t.currentEMA < 80.0, "65kg entry should be included, pulling EMA down")
+}
+
+@Test func outlierFilterStillCatchesTypoSameDay() async throws {
+    // 80kg entries then a 6.5kg typo on the same day cluster
+    let entries: [(date: String, weightKg: Double)] = [
+        (date: "2026-03-01", weightKg: 80.0),
+        (date: "2026-03-02", weightKg: 79.5),
+        (date: "2026-03-03", weightKg: 80.2),
+        (date: "2026-03-04", weightKg: 6.5), // typo — gap = 1 day
+    ]
+    let t = WeightTrendCalculator.calculateTrend(entries: entries)!
+    // EMA should be near 80, not pulled down to 6.5
+    #expect(t.currentEMA > 75.0, "6.5kg typo should be filtered out")
+}
+
+@Test func outlierFilterCapsAt50Percent() async throws {
+    // 80kg then 30kg after 90 days — 62.5% deviation exceeds 50% cap
+    let entries: [(date: String, weightKg: Double)] = [
+        (date: "2026-01-01", weightKg: 80.0),
+        (date: "2026-04-01", weightKg: 30.0), // 90 days later, absurd
+    ]
+    let t = WeightTrendCalculator.calculateTrend(entries: entries)
+    // 30kg should be filtered (62.5% > 50% cap), leaving only 80kg
+    if let trend = t {
+        #expect(trend.currentEMA >= 75.0, "30kg entry should be filtered — too extreme even with gap")
+    }
+}
+
+@Test func outlierFilterNoGapStaysAt15Percent() async throws {
+    // Daily entries with one 20% outlier → should be filtered
+    let entries: [(date: String, weightKg: Double)] = [
+        (date: "2026-03-01", weightKg: 80.0),
+        (date: "2026-03-02", weightKg: 79.5),
+        (date: "2026-03-03", weightKg: 80.2),
+        (date: "2026-03-04", weightKg: 64.0), // 20% deviation, 1-day gap
+        (date: "2026-03-05", weightKg: 80.0),
+    ]
+    let t = WeightTrendCalculator.calculateTrend(entries: entries)!
+    #expect(t.currentEMA > 78.0, "20% outlier with 1-day gap should be filtered")
+}
+
+@Test func weightEntryUpsertOnSameDate() async throws {
+    let db = try AppDatabase.empty()
+    let today = DateFormatters.todayString
+    var e1 = WeightEntry(date: today, weightKg: 80.0)
+    try db.saveWeightEntry(&e1)
+    // Save again for same date — should update, not duplicate
+    var e2 = WeightEntry(date: today, weightKg: 75.0)
+    try db.saveWeightEntry(&e2)
+    let fetched = try db.fetchWeightEntries()
+    #expect(fetched.count == 1)
+    #expect(fetched.first?.weightKg == 75.0, "Second save should update existing entry")
+}
+
+@Test func manualEntryUnhidesSoftDeleted() async throws {
+    let db = try AppDatabase.empty()
+    let today = DateFormatters.todayString
+    var entry = WeightEntry(date: today, weightKg: 75.0, source: "manual")
+    try db.saveWeightEntry(&entry)
+    try db.deleteWeightEntry(id: entry.id!)
+
+    // Manual re-add for same date should un-hide
+    var reAdd = WeightEntry(date: today, weightKg: 74.0, source: "manual")
+    try db.saveWeightEntry(&reAdd)
+
+    let fetched = try db.fetchWeightEntries()
+    #expect(fetched.count == 1)
+    #expect(fetched.first?.weightKg == 74.0, "Manual re-add should un-hide and update weight")
+}

@@ -150,10 +150,21 @@ enum WeightTrendCalculator {
 
         guard !sorted.isEmpty else { return nil }
 
-        // Outlier removal: drop entries >15% from median weight (likely typos/glitches)
+        // Outlier removal: gap-aware threshold (allows more deviation after long gaps)
         let weights = sorted.map(\.weight)
         let median = weights.sorted()[weights.count / 2]
-        let filtered = sorted.filter { abs($0.weight - median) / median <= 0.15 }
+        let filtered = sorted.filter { entry in
+            let deviation = abs(entry.weight - median) / median
+            // Find minimum gap (days) to any other entry
+            let gapDays = sorted.compactMap { other -> Int? in
+                guard other.date != entry.date else { return nil }
+                return abs(Calendar.current.dateComponents([.day], from: entry.date, to: other.date).day ?? 0)
+            }.min() ?? 0
+            // Allow ~1.5 kg/week of legitimate change over the gap
+            let gapAllowance = (Double(gapDays) / 7.0) * (1.5 / median)
+            let threshold = min(0.15 + gapAllowance, 0.50)
+            return deviation <= threshold
+        }
         guard !filtered.isEmpty else { return nil }
 
         // Calculate EMA with configurable alpha

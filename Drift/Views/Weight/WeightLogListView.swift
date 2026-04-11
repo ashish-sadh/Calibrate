@@ -4,6 +4,7 @@ struct WeightLogListView: View {
     let entries: [WeightEntry]
     let unit: WeightUnit
     let onDelete: (Int64) -> Void
+    var onEdit: ((WeightEntry) -> Void)? = nil
     var isLosing: Bool = true
 
     private func changeColor(_ change: Double) -> Color {
@@ -107,6 +108,13 @@ struct WeightLogListView: View {
         }
         .padding(.vertical, 10)
         .contextMenu {
+            if let onEdit {
+                Button {
+                    onEdit(entry)
+                } label: {
+                    Label("Edit Weight", systemImage: "pencil")
+                }
+            }
             Button(role: .destructive) {
                 if let id = entry.id { onDelete(id) }
             } label: {

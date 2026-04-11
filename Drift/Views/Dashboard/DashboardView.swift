@@ -44,13 +44,9 @@ struct DashboardView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 4)
 
-                    // Weight + Deficit + Estimated deficit as tiles → Weight tab
+                    // Weight + Trend tile — tap to log, long-press for history
                     Button {
-                        if WeightTrendService.shared.isStale || viewModel.currentWeight == nil {
-                            showingWeightEntry = true  // stale/nil → direct log
-                        } else {
-                            selectedTab = 1  // fresh → weight tab
-                        }
+                        showingWeightEntry = true
                     } label: {
                         HStack(spacing: 12) {
                             // Left column: Weight
@@ -64,6 +60,8 @@ struct DashboardView: View {
                                     }
                                     if WeightTrendService.shared.isStale {
                                         Text("Tap to update").font(.caption2).foregroundStyle(Theme.fatYellow)
+                                    } else {
+                                        Text("Tap to update").font(.caption2).foregroundStyle(.quaternary)
                                     }
                                 } else {
                                     Text("Log weight").font(.subheadline.weight(.medium)).foregroundStyle(Theme.accent)
@@ -94,7 +92,13 @@ struct DashboardView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .card()
-                    }.buttonStyle(.plain)
+                    }
+                    .buttonStyle(.plain)
+                    .contextMenu {
+                        Button { selectedTab = 1 } label: {
+                            Label("Weight History", systemImage: "clock")
+                        }
+                    }
 
                     // Goal progress → Goal page
                     NavigationLink { GoalView() } label: { goalCard }.tint(.primary)
@@ -159,7 +163,10 @@ struct DashboardView: View {
                     }
                 }
             }
-            .onAppear { AIScreenTracker.shared.currentScreen = .dashboard }
+            .onAppear {
+                AIScreenTracker.shared.currentScreen = .dashboard
+                Task { await viewModel.loadToday() }
+            }
             .task {
                 await viewModel.loadToday()
                 // Auto-refresh every 3 minutes
@@ -172,16 +179,15 @@ struct DashboardView: View {
             .onChange(of: syncComplete) { _, done in
                 if done { Task { await viewModel.loadToday() } }
             }
-            .sheet(isPresented: $showingWeightEntry) {
+            .sheet(isPresented: $showingWeightEntry, onDismiss: {
+                Task { await viewModel.loadToday() }
+            }) {
                 WeightEntryView(unit: Preferences.weightUnit) { value, date in
-                    // Save weight to DB
                     let kg = Preferences.weightUnit == .kg ? value : value / 2.20462
                     let dateStr = DateFormatters.dateOnly.string(from: date)
                     var entry = WeightEntry(date: dateStr, weightKg: kg, source: "manual")
                     try? AppDatabase.shared.saveWeightEntry(&entry)
-                    // Refresh trend + dashboard
                     WeightTrendService.shared.refresh()
-                    Task { await viewModel.loadToday() }
                 }
             }
         }
@@ -300,6 +306,22 @@ struct DashboardView: View {
                         Spacer()
                         Text("\(String(format: "%.1f", abs(unit.convert(fromKg: remaining)))) \(unit.displayName) to go")
                             .font(.caption2).foregroundStyle(.secondary)
+                    }
+
+                    // Always show start info — user can judge if it's right
+                    NavigationLink {
+                        GoalView()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Text("Started \(String(format: "%.1f", unit.convert(fromKg: goal.startWeightKg))) \(unit.displayName)")
+                                .font(.caption2).foregroundStyle(.tertiary)
+                            if let startDate = DateFormatters.dateOnly.date(from: goal.startDate) {
+                                Text("· \(DateFormatters.shortDisplay.string(from: startDate))")
+                                    .font(.caption2).foregroundStyle(.quaternary)
+                            }
+                            Spacer()
+                            Text("Edit").font(.caption2).foregroundStyle(Theme.accent)
+                        }
                     }
                 }
                 .card()

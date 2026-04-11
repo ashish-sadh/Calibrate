@@ -15,6 +15,7 @@ struct EditFoodEntrySheet: View {
     @State private var editC: String
     @State private var editF: String
     @State private var editFb: String
+    @State private var editName: String
 
     init(entry: FoodEntry, viewModel: FoodLogViewModel, onCopiedToToday: @escaping (String) -> Void, onDone: @escaping () -> Void) {
         self.entry = entry
@@ -43,6 +44,7 @@ struct EditFoodEntrySheet: View {
         _editC = State(initialValue: "\(Int(entry.carbsG))")
         _editF = State(initialValue: "\(Int(entry.fatG))")
         _editFb = State(initialValue: "\(Int(entry.fiberG))")
+        _editName = State(initialValue: entry.foodName)
     }
 
     private var hasServingSize: Bool { entry.servingSizeG > 0 }
@@ -72,12 +74,21 @@ struct EditFoodEntrySheet: View {
             ScrollView {
                 VStack(spacing: 20) {
                     VStack(spacing: 4) {
-                        Text(entry.foodName).font(.title3.weight(.semibold))
+                        if entry.foodId == nil {
+                            TextField("Food name", text: $editName)
+                                .font(.title3.weight(.semibold))
+                                .multilineTextAlignment(.center)
+                        } else {
+                            Text(entry.foodName).font(.title3.weight(.semibold))
+                        }
                         if hasServingSize {
-                            let primaryLabel = units.first?.label ?? "serving"
-                            let perText = primaryLabel == "g" || primaryLabel == "ml"
+                            let safeIdx = min(editUnitIndex, max(units.count - 1, 0))
+                            let currentUnit = units.isEmpty ? FoodUnit(label: "serving", gramsEquivalent: max(entry.servingSizeG, 1)) : units[safeIdx]
+                            let currentLabel = currentUnit.label
+                            let scale = (currentLabel == "g" || currentLabel == "ml" || entry.servingSizeG <= 0) ? 1.0 : currentUnit.gramsEquivalent / entry.servingSizeG
+                            let perText = (currentLabel == "g" || currentLabel == "ml")
                                 ? "\(Int(entry.calories))cal per \(Int(entry.servingSizeG))g"
-                                : "\(Int(entry.calories))cal per 1 \(primaryLabel) (\(Int(entry.servingSizeG))g)"
+                                : "\(Int(entry.calories * scale))cal \(Int(entry.proteinG * scale))P \(Int(entry.carbsG * scale))C \(Int(entry.fatG * scale))F per 1 \(currentLabel) (\(Int(currentUnit.gramsEquivalent))g)"
                             Text(perText).font(.caption).foregroundStyle(.secondary)
                         } else {
                             Text("\(Int(entry.calories))cal per serving")
@@ -93,22 +104,29 @@ struct EditFoodEntrySheet: View {
                             .labelsHidden()
                     }
 
-                    // Shared serving input
-                    if !units.isEmpty {
+                    // Serving input for DB foods
+                    if entry.foodId != nil && !units.isEmpty {
                         ServingInputView(amount: $editAmount, selectedUnitIndex: $editUnitIndex,
                                          units: units, servingSize: entry.servingSizeG)
-                    } else {
-                        TextField("1", text: $editAmount)
-                            .keyboardType(.decimalPad)
-                            .font(.title2.weight(.medium).monospacedDigit())
-                            .multilineTextAlignment(.center)
-                            .frame(width: 80)
-                            .padding(.vertical, 10)
-                            .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
                     }
 
                     if entry.foodId == nil {
-                        // Custom entry — editable macros
+                        // Quick-add — serving amount (descriptive, macros are the total)
+                        VStack(spacing: 8) {
+                            HStack {
+                                Text("Servings").font(.caption).foregroundStyle(.secondary)
+                                Spacer()
+                                TextField("1", text: $editAmount)
+                                    .keyboardType(.decimalPad)
+                                    .font(.subheadline.monospacedDigit())
+                                    .multilineTextAlignment(.trailing)
+                                    .frame(width: 50)
+                            }
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 10)
+                        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
+
+                        // Editable total macros
                         VStack(spacing: 8) {
                             HStack {
                                 Text("Cal").font(.caption.weight(.medium)).foregroundStyle(.secondary).frame(width: 30)
@@ -180,6 +198,9 @@ struct EditFoodEntrySheet: View {
                     Button("Save") {
                         if let id = entry.id {
                             if entry.foodId == nil {
+                                if editName != entry.foodName {
+                                    try? AppDatabase.shared.updateFoodEntryName(id: id, name: editName)
+                                }
                                 try? AppDatabase.shared.updateFoodEntryMacros(
                                     id: id, calories: Double(editCal) ?? entry.calories,
                                     proteinG: Double(editP) ?? entry.proteinG,

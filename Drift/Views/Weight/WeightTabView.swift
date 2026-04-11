@@ -9,6 +9,8 @@ struct WeightTabView: View {
     @State private var showingAddBodyComp = false
     @State private var showLog = false
     @State private var showMilestone = false
+    @State private var editingEntry: WeightEntry?
+    @AppStorage("drift_dismissed_outlier") private var dismissedOutlierDate = ""
 
     var body: some View {
         NavigationStack {
@@ -23,9 +25,13 @@ struct WeightTabView: View {
                         WeightChartView(trend: viewModel.trend, unit: viewModel.weightUnit, granularity: viewModel.granularity)
                             .frame(height: 260)
 
+                        // Big change banner
+                        bigChangeBanner
+
                         // Compact metrics + weight changes
                         if let fullTrend = viewModel.fullTrend {
                             WeightInsightsView(trend: fullTrend, unit: viewModel.weightUnit, entries: viewModel.allEntries, isLosing: viewModel.isLosing,
+                                              onAddWeight: { showingAddWeight = true },
                                               onAddBodyComp: { showingAddBodyComp = true })
                         }
 
@@ -58,7 +64,9 @@ struct WeightTabView: View {
         }
         .scrollContentBackground(.hidden)
         .background(Theme.background.ignoresSafeArea())
-        .sheet(isPresented: $showingAddWeight) {
+        .sheet(isPresented: $showingAddWeight, onDismiss: {
+            viewModel.loadEntries()
+        }) {
             WeightEntryView(unit: viewModel.weightUnit) { value, date in
                 viewModel.addWeight(value: value, date: date)
             }
@@ -117,6 +125,55 @@ struct WeightTabView: View {
         }
         .onChange(of: syncComplete) { _, done in
             if done { viewModel.loadEntries() }
+        }
+        .sheet(item: $editingEntry) { entry in
+            WeightEntryView(unit: viewModel.weightUnit, initialWeight: entry.weightKg, initialDate: entry.date) { value, date in
+                viewModel.addWeight(value: value, date: date)
+            }
+        }
+    }
+
+    // MARK: - Big Change Banner
+
+    @ViewBuilder
+    private var bigChangeBanner: some View {
+        let entries = viewModel.allEntries
+        if entries.count >= 2 {
+            let latest = entries[0]
+            let previous = entries[1]
+            let change = latest.weightKg - previous.weightKg
+            let pctChange = abs(change) / previous.weightKg
+            if pctChange > 0.10 && dismissedOutlierDate != latest.date {
+                let unit = viewModel.weightUnit
+                VStack(spacing: 8) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Theme.fatYellow)
+                        Text("Big change: \(String(format: "%.1f", unit.convert(fromKg: previous.weightKg))) → \(String(format: "%.1f", unit.convert(fromKg: latest.weightKg))) \(unit.displayName)")
+                            .font(.caption.weight(.medium))
+                    }
+                    HStack(spacing: 12) {
+                        Button {
+                            dismissedOutlierDate = latest.date
+                        } label: {
+                            Text("That's correct").font(.caption2.weight(.medium))
+                        }.buttonStyle(.bordered).tint(Theme.deficit)
+
+                        Button {
+                            editingEntry = latest
+                        } label: {
+                            Text("Edit").font(.caption2.weight(.medium))
+                        }.buttonStyle(.bordered)
+
+                        Button {
+                            if let id = latest.id { viewModel.deleteWeight(id: id) }
+                        } label: {
+                            Text("Remove").font(.caption2.weight(.medium))
+                        }.buttonStyle(.bordered).tint(Theme.surplus)
+                    }
+                }
+                .padding(12)
+                .background(Theme.fatYellow.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+            }
         }
     }
 
@@ -191,6 +248,7 @@ struct WeightTabView: View {
                     entries: viewModel.allEntries,
                     unit: viewModel.weightUnit,
                     onDelete: { viewModel.deleteWeight(id: $0) },
+                    onEdit: { editingEntry = $0 },
                     isLosing: viewModel.isLosing
                 )
                 .transition(.opacity)

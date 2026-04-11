@@ -12,6 +12,7 @@ struct QuickAddView: View {
     @State private var showingIngredientPicker = false
     @State private var editingIndex: Int?
     @State private var recipeLogTime = Date()
+    @State private var recipeServings = "1"
     private let db = AppDatabase.shared
 
     struct RecipeItem: Identifiable {
@@ -110,6 +111,19 @@ struct QuickAddView: View {
                         }
                         .card()
 
+                        // Servings
+                        HStack {
+                            Text("Servings").font(.caption).foregroundStyle(.secondary)
+                            Spacer()
+                            TextField("1", text: $recipeServings)
+                                .keyboardType(.decimalPad)
+                                .font(.subheadline.monospacedDigit())
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 50)
+                        }
+                        .padding(.horizontal, 16).padding(.vertical, 10)
+                        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
+
                         // Time picker
                         DatePicker("Time", selection: $recipeLogTime, displayedComponents: .hourAndMinute)
                             .font(.subheadline).foregroundStyle(.secondary)
@@ -171,20 +185,29 @@ struct QuickAddView: View {
 
     private func saveAndLogRecipe() {
         let t = total
+        let servings = max(Double(recipeServings) ?? 1, 0.1)
         let name = recipeName.isEmpty ? (items.count == 1 ? items[0].name : "Recipe") : recipeName
         // Store ingredient names as JSON for plant points
         let ingredientNames = items.map(\.name)
         let ingredientsJson = (try? JSONEncoder().encode(ingredientNames))
             .flatMap { String(data: $0, encoding: .utf8) }
-        var fav = SavedFood(name: name, calories: t.cal, proteinG: t.p, carbsG: t.c,
-                               fatG: t.f, fiberG: t.fb, isRecipe: items.count > 1,
-                               ingredients: ingredientsJson)
+        // Save recipe with per-serving macros
+        let perServingCal = t.cal / servings
+        let perServingP = t.p / servings
+        let perServingC = t.c / servings
+        let perServingF = t.f / servings
+        let perServingFb = t.fb / servings
+        var fav = SavedFood(name: name, calories: perServingCal, proteinG: perServingP,
+                               carbsG: perServingC, fatG: perServingF, fiberG: perServingFb,
+                               isRecipe: items.count > 1, ingredients: ingredientsJson)
         try? db.saveFavorite(&fav)
         let totalServing = items.reduce(0.0) { $0 + $1.servingSizeG }
         let loggedAtStr = ISO8601DateFormatter().string(from: recipeLogTime)
-        viewModel.quickAdd(name: name, calories: t.cal, proteinG: t.p, carbsG: t.c,
-                           fatG: t.f, fiberG: t.fb, mealType: viewModel.autoMealType,
-                           loggedAt: loggedAtStr, servingSizeG: totalServing)
+        // Log with per-serving macros × servings
+        viewModel.quickAdd(name: name, calories: perServingCal, proteinG: perServingP,
+                           carbsG: perServingC, fatG: perServingF, fiberG: perServingFb,
+                           mealType: viewModel.autoMealType, loggedAt: loggedAtStr,
+                           servingSizeG: totalServing / servings, servings: servings)
     }
 }
 
@@ -272,6 +295,13 @@ private struct IngredientPickerView: View {
     }
 
     @State private var recentIngredients: [Food] = []
+    @State private var selectedCategory: String? = nil
+    private let categories = ["Vegetables", "Fruits", "Proteins", "Grains & Cereals", "Nuts & Seeds", "Dairy"]
+
+    private var filteredRecent: [Food] {
+        guard let cat = selectedCategory else { return recentIngredients }
+        return recentIngredients.filter { $0.category.localizedCaseInsensitiveContains(cat) }
+    }
 
     // MARK: - Ingredient List
 
@@ -282,30 +312,44 @@ private struct IngredientPickerView: View {
                     .font(.subheadline).foregroundStyle(Theme.accent)
             }
 
-            // Category quick-browse chips when search is empty
+            // Category filter chips — always visible when no search
             if query.isEmpty {
                 Section("Browse") {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
-                            ForEach(["Vegetables", "Fruits", "Proteins", "Grains & Cereals", "Nuts & Seeds", "Dairy"], id: \.self) { cat in
+                            // All chip
+                            Button {
+                                selectedCategory = nil
+                                results = []
+                            } label: {
+                                Text("All")
+                                    .font(.caption.weight(selectedCategory == nil ? .semibold : .medium))
+                                    .padding(.horizontal, 12).padding(.vertical, 6)
+                                    .background(selectedCategory == nil ? Theme.accent.opacity(0.25) : Theme.cardBackgroundElevated, in: Capsule())
+                                    .foregroundStyle(selectedCategory == nil ? .white : .secondary)
+                            }.buttonStyle(.plain)
+
+                            ForEach(categories, id: \.self) { cat in
                                 Button {
+                                    selectedCategory = cat
                                     results = (try? AppDatabase.shared.fetchFoodsByCategory(cat)) ?? []
                                 } label: {
                                     Text(cat == "Grains & Cereals" ? "Grains" : cat)
-                                        .font(.caption.weight(.medium))
+                                        .font(.caption.weight(selectedCategory == cat ? .semibold : .medium))
                                         .padding(.horizontal, 12).padding(.vertical, 6)
-                                        .background(Theme.accent.opacity(0.15), in: Capsule())
+                                        .background(selectedCategory == cat ? Theme.accent.opacity(0.25) : Theme.cardBackgroundElevated, in: Capsule())
+                                        .foregroundStyle(selectedCategory == cat ? .white : .secondary)
                                 }
-                                .tint(.primary)
+                                .buttonStyle(.plain)
                             }
                         }.padding(.horizontal, 4)
                     }
                 }
             }
 
-            if query.isEmpty && !recentIngredients.isEmpty {
+            if query.isEmpty && !filteredRecent.isEmpty {
                 Section("Recent") {
-                    ForEach(recentIngredients) { food in
+                    ForEach(filteredRecent) { food in
                         Button {
                             amount = "1"
                             selectedUnitIndex = 0
@@ -443,22 +487,26 @@ private struct IngredientPickerView: View {
         NavigationStack {
             Form {
                 TextField("Name", text: $manualName)
-                HStack {
-                    Text("Serving")
-                    Spacer()
-                    TextField("1", text: $manualServing)
-                        .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 60)
-                    Picker("", selection: $manualServingUnit) {
-                        Text("serving").tag("serving")
-                        Text("g").tag("g")
-                        Text("ml").tag("ml")
-                        Text("piece").tag("piece")
-                        Text("cup").tag("cup")
-                        Text("tbsp").tag("tbsp")
-                        Text("tsp").tag("tsp")
-                        Text("scoop").tag("scoop")
+                VStack(spacing: 8) {
+                    HStack {
+                        Text("Serving")
+                        Spacer()
+                        TextField("1", text: $manualServing)
+                            .keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 60)
                     }
-                    .pickerStyle(.menu).labelsHidden().frame(width: 80)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(["serving", "g", "ml", "piece", "cup", "tbsp", "tsp", "scoop"], id: \.self) { u in
+                                Button { manualServingUnit = u } label: {
+                                    Text(u)
+                                        .font(.caption.weight(manualServingUnit == u ? .semibold : .medium))
+                                        .padding(.horizontal, 10).padding(.vertical, 5)
+                                        .background(manualServingUnit == u ? Theme.accent.opacity(0.25) : Theme.cardBackgroundElevated, in: Capsule())
+                                        .foregroundStyle(manualServingUnit == u ? .white : .secondary)
+                                }.buttonStyle(.plain)
+                            }
+                        }
+                    }
                 }
                 HStack { Text("Calories"); Spacer(); TextField("0", text: $manualCal).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80) }
                 HStack { Text("Protein (g)"); Spacer(); TextField("0", text: $manualP).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80) }

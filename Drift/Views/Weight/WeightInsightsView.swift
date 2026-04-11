@@ -6,6 +6,7 @@ struct WeightInsightsView: View {
     let unit: WeightUnit
     let entries: [WeightEntry]
     var isLosing: Bool = true
+    var onAddWeight: (() -> Void)? = nil
     var onAddBodyComp: (() -> Void)? = nil
     @State private var bodyCompEntries: [BodyComposition] = []
     @State private var showingBodyFatChart = false
@@ -29,14 +30,18 @@ struct WeightInsightsView: View {
         VStack(spacing: 8) {
             // Key metrics — 2×2 compact grid
             HStack(spacing: 8) {
-                metricCell(
-                    id: "current",
-                    label: "Current",
-                    value: String(format: "%.1f", unit.convert(fromKg: trend.currentEMA)),
-                    valueUnit: unit.displayName,
-                    color: .primary,
-                    tooltip: "Your true weight after smoothing out day-to-day fluctuations."
-                )
+                Button { onAddWeight?() } label: {
+                    metricCell(
+                        id: "current",
+                        label: "Current",
+                        labelIcon: "plus.circle.fill",
+                        value: String(format: "%.1f", unit.convert(fromKg: trend.currentEMA)),
+                        valueUnit: unit.displayName,
+                        color: .primary,
+                        tooltip: "Your true weight after smoothing out day-to-day fluctuations."
+                    )
+                }
+                .buttonStyle(.plain)
 
                 let rate = trend.weeklyRateKg
                 metricCell(

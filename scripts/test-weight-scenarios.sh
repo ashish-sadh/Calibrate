@@ -84,6 +84,23 @@ case "${1:-help}" in
         echo "✅ Added 15 days of weight data (80.0 → 78.6 kg, slight loss)."
         echo "   Dashboard should show healthy trend."
         ;;
+    newuser)
+        echo "🆕 Scenario: NEWUSER — stale weight + goal + empty profile"
+        # Stale weight (90 days ago)
+        sqlite3 "$DB_PATH" "DELETE FROM weight_entry;"
+        sqlite3 "$DB_PATH" "INSERT INTO weight_entry (date, weight_kg, source, created_at, synced_from_hk, hidden) VALUES (date('now', '-90 days'), 80.0, 'manual', datetime('now'), 0, 0);"
+        # Clear profile (TDEEConfig)
+        PLIST_PATH=$(find "$DB_DIR" -name "com.drift.health.plist" -path "*/Library/Preferences/*" 2>/dev/null | head -1)
+        if [ -n "$PLIST_PATH" ]; then
+            defaults delete "$PLIST_PATH" drift_tdee_config 2>/dev/null
+        fi
+        # Set a weight goal via UserDefaults (target 72kg in 3 months)
+        GOAL_JSON='{"targetWeightKg":72,"monthsToAchieve":3,"startDate":"'"$(date +%Y-%m-%d)"'","startWeightKg":80}'
+        defaults write "$PLIST_PATH" drift_weight_goal -string "$GOAL_JSON"
+        echo "✅ Stale weight (80 kg, 90 days ago) + goal (72 kg in 3 mo) + empty profile."
+        echo "   Dashboard: stale weight warning, no surplus/deficit."
+        echo "   Goal page: profile auto-expands, all fields 'Not set', staleness warning on goal card."
+        ;;
     *)
         echo "Usage: $0 [scenario]"
         echo ""
@@ -95,6 +112,7 @@ case "${1:-help}" in
         echo "  hidden   Soft-delete today's entry"
         echo "  profile  Clear profile (test nudge)"
         echo "  reset    15 days of gradual weight loss"
+        echo "  newuser  Stale weight + goal + empty profile (full test)"
         echo ""
         echo "After running a scenario, relaunch the app in the simulator to see the effect."
         ;;

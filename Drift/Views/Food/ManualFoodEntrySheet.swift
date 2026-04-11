@@ -68,23 +68,29 @@ struct ManualFoodEntrySheet: View {
                     .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
 
                     // Serving size — optional
-                    HStack {
-                        Text("Serving").font(.caption).foregroundStyle(.secondary)
-                        Spacer()
-                        TextField("1", text: $serving)
-                            .keyboardType(.decimalPad)
-                            .font(.subheadline.monospacedDigit())
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 50)
-                        Picker("", selection: $servingUnit) {
-                            Text("serving").tag("serving")
-                            Text("g").tag("g")
-                            Text("ml").tag("ml")
-                            Text("piece").tag("piece")
-                            Text("cup").tag("cup")
-                            Text("tbsp").tag("tbsp")
+                    VStack(spacing: 8) {
+                        HStack {
+                            Text("Serving").font(.caption).foregroundStyle(.secondary)
+                            Spacer()
+                            TextField("1", text: $serving)
+                                .keyboardType(.decimalPad)
+                                .font(.subheadline.monospacedDigit())
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 50)
                         }
-                        .pickerStyle(.menu).labelsHidden()
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 6) {
+                                ForEach(["serving", "g", "ml", "piece", "cup", "tbsp"], id: \.self) { u in
+                                    Button { servingUnit = u } label: {
+                                        Text(u)
+                                            .font(.caption.weight(servingUnit == u ? .semibold : .medium))
+                                            .padding(.horizontal, 12).padding(.vertical, 6)
+                                            .background(servingUnit == u ? Theme.accent.opacity(0.25) : Theme.cardBackgroundElevated, in: Capsule())
+                                            .foregroundStyle(servingUnit == u ? .white : .secondary)
+                                    }.buttonStyle(.plain)
+                                }
+                            }
+                        }
                     }
                     .padding(.horizontal, 16).padding(.vertical, 10)
                     .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10))

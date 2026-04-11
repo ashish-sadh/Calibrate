@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Shared serving input component: amount field + unit picker + quick-amount buttons + conversion hint.
+/// Shared serving input component: amount field + unit pills + gram equivalence + quick-amount buttons.
 /// Used across food search, barcode scan, quick add, and food tab edit.
 struct ServingInputView: View {
     @Binding var amount: String
@@ -13,46 +13,63 @@ struct ServingInputView: View {
         return units.isEmpty ? FoodUnit(label: "g", gramsEquivalent: 1) : units[idx]
     }
 
-    var body: some View {
-        VStack(spacing: 12) {
-            // Amount + unit picker
-            HStack(spacing: 12) {
-                TextField("1", text: $amount)
-                    .keyboardType(.decimalPad)
-                    .font(.title2.weight(.medium).monospacedDigit())
-                    .multilineTextAlignment(.center)
-                    .frame(width: 80)
-                    .padding(.vertical, 10)
-                    .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
+    private var totalGrams: Double {
+        (Double(amount) ?? 0) * unit.gramsEquivalent
+    }
 
-                Picker("", selection: $selectedUnitIndex) {
+    var body: some View {
+        VStack(spacing: 10) {
+            // Amount field
+            TextField("1", text: $amount)
+                .keyboardType(.decimalPad)
+                .font(.title2.weight(.medium).monospacedDigit())
+                .multilineTextAlignment(.center)
+                .padding(.vertical, 10)
+                .padding(.horizontal, 20)
+                .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
+
+            // Unit pills
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
                     ForEach(0..<units.count, id: \.self) { i in
-                        Text(units[i].label).tag(i)
+                        Button {
+                            let oldIdx = selectedUnitIndex
+                            selectedUnitIndex = i
+                            // Auto-convert amount
+                            if oldIdx < units.count, i < units.count {
+                                let oldUnit = units[oldIdx]
+                                let newUnit = units[i]
+                                let currentAmount = Double(amount) ?? 0
+                                let grams = currentAmount * oldUnit.gramsEquivalent
+                                let converted = newUnit.gramsEquivalent > 0 ? grams / newUnit.gramsEquivalent : currentAmount
+                                amount = converted == Double(Int(converted)) ? "\(Int(converted))" : String(format: "%.1f", converted)
+                            }
+                        } label: {
+                            Text(units[i].label)
+                                .font(.caption.weight(i == selectedUnitIndex ? .semibold : .medium))
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 7)
+                                .background(
+                                    i == selectedUnitIndex
+                                        ? Theme.accent.opacity(0.25)
+                                        : Theme.cardBackgroundElevated,
+                                    in: Capsule()
+                                )
+                                .foregroundStyle(i == selectedUnitIndex ? .white : .secondary)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
-                .pickerStyle(.menu)
-                .labelsHidden()
-                .padding(.vertical, 10).padding(.horizontal, 16)
-                .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
-                .onChange(of: selectedUnitIndex) { oldIdx, newIdx in
-                    guard oldIdx < units.count, newIdx < units.count else { return }
-                    let oldUnit = units[oldIdx]
-                    let newUnit = units[newIdx]
-                    let currentAmount = Double(amount) ?? 0
-                    let grams = currentAmount * oldUnit.gramsEquivalent
-                    let converted = newUnit.gramsEquivalent > 0 ? grams / newUnit.gramsEquivalent : currentAmount
-                    amount = converted == Double(Int(converted)) ? "\(Int(converted))" : String(format: "%.1f", converted)
-                }
             }
 
-            // Conversion hint
-            if unit.label != "g" && unit.label != "ml" && unit.label != "serving" && unit.gramsEquivalent > 1 {
-                Text("1 \(unit.label) = \(Int(unit.gramsEquivalent))g")
-                    .font(.caption2)
-                    .foregroundStyle(.tertiary)
+            // Gram equivalence — always visible unless unit is already g/ml
+            if unit.label != "g" && unit.label != "ml" && totalGrams > 0 {
+                Text("= \(totalGrams < 10 ? String(format: "%.1f", totalGrams) : "\(Int(totalGrams))")g")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
             }
 
-            // Quick amount buttons — standardized across all UIs
+            // Quick amount buttons
             HStack(spacing: 5) {
                 ForEach(Array(zip([0.25, 1.0/3, 0.5, 1.0, 1.5, 2.0],
                                   ["\u{00BC}", "\u{2153}", "\u{00BD}", "1x", "1\u{00BD}", "2x"])), id: \.0) { mult, label in

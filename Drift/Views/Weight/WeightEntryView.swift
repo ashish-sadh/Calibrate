@@ -2,6 +2,8 @@ import SwiftUI
 
 struct WeightEntryView: View {
     let unit: WeightUnit
+    var initialWeight: Double? = nil
+    var initialDate: String? = nil
     let onSave: (Double, Date) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -25,7 +27,7 @@ struct WeightEntryView: View {
                     DatePicker("Date", selection: $selectedDate, displayedComponents: .date)
                 }
             }
-            .navigationTitle("Log Weight")
+            .navigationTitle(initialWeight != nil ? "Edit Weight" : "Log Weight")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -39,6 +41,14 @@ struct WeightEntryView: View {
                         }
                     }
                     .disabled((Double(weightText) ?? 0) <= 0)
+                }
+            }
+            .onAppear {
+                if let w = initialWeight {
+                    weightText = String(format: "%.1f", unit.convert(fromKg: w))
+                }
+                if let d = initialDate, let parsed = DateFormatters.dateOnly.date(from: d) {
+                    selectedDate = parsed
                 }
             }
         }

@@ -497,10 +497,11 @@ struct FoodSearchView: View {
                     // Food header
                     VStack(spacing: 4) {
                         Text(food.name).font(.title3.weight(.semibold))
-                        let primaryLabel = units.first?.label ?? "serving"
-                        let perText = primaryLabel == "g" || primaryLabel == "ml"
+                        let currentLabel = unit.label
+                        let scale = (currentLabel == "g" || currentLabel == "ml" || food.servingSize <= 0) ? 1.0 : unit.gramsEquivalent / food.servingSize
+                        let perText = (currentLabel == "g" || currentLabel == "ml")
                             ? "\(food.macroSummary) per \(Int(food.servingSize))\(food.servingUnit)"
-                            : "\(food.macroSummary) per 1 \(primaryLabel) (\(Int(food.servingSize))g)"
+                            : "\(Int(food.calories * scale))cal \(Int(food.proteinG * scale))P \(Int(food.carbsG * scale))C \(Int(food.fatG * scale))F per 1 \(currentLabel) (\(Int(unit.gramsEquivalent))g)"
                         Text(perText).font(.caption).foregroundStyle(.secondary)
                     }
                     .padding(.top, 8)
