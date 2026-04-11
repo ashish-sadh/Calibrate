@@ -403,10 +403,16 @@ enum AIToolAgent {
 
     private static func fallbackText(for screen: AIScreen) -> String {
         switch screen {
-        case .food: return "I can help you log food, check calories, or suggest meals. What would you like?"
-        case .weight: return "I can log your weight or tell you about your trend. What would you like?"
-        case .exercise: return "I can suggest a workout or check your progress. What would you like?"
-        default: return "I can help with food, weight, workouts, or health data. What would you like to know?"
+        case .food: return "I can help you log food, check calories, or suggest meals. Try \"log 2 eggs\" or \"calories left\"."
+        case .weight, .goal: return "I can log your weight or show your trend. Try \"I weigh 165\" or \"weight trend\"."
+        case .exercise: return "I can start a workout or check your history. Try \"start push day\" or \"what should I train\"."
+        case .bodyRhythm: return "I can tell you about your sleep and recovery. Try \"how did I sleep\" or \"HRV trend\"."
+        case .supplements: return "I can check your supplement status. Try \"took vitamin D\" or \"did I take everything\"."
+        case .glucose: return "I can look at your glucose patterns. Try \"any spikes today\"."
+        case .biomarkers: return "I can check your lab results. Try \"which markers are out of range\"."
+        case .bodyComposition: return "I can show your body composition data. Try \"body fat\" or \"DEXA results\"."
+        case .cycle: return "I can tell you about your cycle. Try \"what phase am I in\"."
+        default: return "I can help with food, weight, workouts, sleep, and more. Try \"log 2 eggs\", \"calories left\", or \"how am I doing\"."
         }
     }
 }
