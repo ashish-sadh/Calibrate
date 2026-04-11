@@ -150,21 +150,7 @@ enum StaticOverrides {
             return .response("No judgment! What did you have? I'll log it for you.")
         }
 
-        // Sugar query
-        if lower.contains("sugar") && (lower.contains("how much") || lower.contains("today") || lower.contains("intake")) {
-            return .handler {
-                let n = (try? AppDatabase.shared.fetchDailyNutrition(for: DateFormatters.todayString)) ?? .zero
-                var response = "\(Int(n.carbsG))g carbs today."
-                if let goal = WeightGoal.load(), let targets = goal.macroTargets() {
-                    response += " Target: \(Int(targets.carbsG))g."
-                }
-                response += " (Drift tracks total carbs — sugar isn't tracked separately.)"
-                return response
-            }
-        }
-
-        // Weekly comparison → food_info tool (has "compare this week" trigger)
-        // Workout suggestions → exercise_info tool (has "suggest workout" trigger)
+        // Sugar/carbs, weekly comparison, workout suggestions → food_info/exercise_info tools
 
         // Body comp entry
         let bfPattern = #"(?:body fat|bf|body fat %|bodyfat)\s*(?:is\s+)?(\d+\.?\d*)"#
@@ -299,21 +285,7 @@ enum StaticOverrides {
 
         // Weekly comparison + cross-domain → routed through AIToolAgent for LLM presentation
 
-        // Diet/fitness advice (prevents LLM misclassification as food logging)
-        let adviceKeywords = ["reduce fat", "lose fat", "burn fat", "cut fat", "how to lose",
-                               "tips to cut", "i need to burn", "i want to lose weight",
-                               "how to gain muscle", "how to bulk", "what's a good diet"]
-        if adviceKeywords.contains(where: { lower.contains($0) }) {
-            return .handler {
-                let n = (try? AppDatabase.shared.fetchDailyNutrition(for: DateFormatters.todayString)) ?? .zero
-                if let goal = WeightGoal.load(), let targets = goal.macroTargets() {
-                    let calsLeft = max(0, Int(targets.calorieTarget - n.calories))
-                    let protLeft = max(0, Int(targets.proteinG - n.proteinG))
-                    return "Focus on protein (\(protLeft)g left today), stay in calorie budget (\(calsLeft) cal left). High-protein foods: chicken, eggs, greek yogurt, paneer, dal."
-                }
-                return "Key tips: prioritize protein, eat in a calorie deficit for fat loss (or surplus for muscle gain). Track your meals to stay on target."
-            }
-        }
+        // Diet/fitness advice → food_info tool (LLM presents personalized advice with macro data)
 
         // Completed activity (both models)
         let activityPrefixes = ["i did ", "i went ", "just did ", "just finished ", "did "]

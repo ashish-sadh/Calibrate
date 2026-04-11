@@ -76,10 +76,7 @@ final class AIEvalHarness: XCTestCase {
             ("undo", "undo"), ("undo that", "undo"), ("undo last", "undo"),
             // TDEE/BMR — moved to ToolRanker (weight_info tool)
             // Calorie estimation — moved to food_info tool (FoodService.getNutrition)
-            // Diet/fitness advice
-            ("i want to reduce fat", "advice"),
-            ("how to lose fat", "advice"),
-            ("tips to cut fat", "advice"),
+            // Diet/fitness advice — moved to food_info tool (LLM presentation)
         ]
         for (query, _) in ruleQueries {
             let result = StaticOverrides.match(query)
