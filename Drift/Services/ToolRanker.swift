@@ -92,27 +92,7 @@ enum ToolRanker {
     /// Ultra-compact normalizer prompt (~100 tokens). LLM rewrites messy natural language
     /// into clean command form that existing Swift parsers/rules can handle.
     /// Covers ALL domains: food, weight, exercise, supplements, sleep, etc.
-    static func normalizePrompt(query: String, history: String) -> (system: String, user: String) {
-        let system = """
-        Rewrite into a clear, short command. Fix spelling. Convert word numbers to digits. Resolve pronouns from chat context.
-        If already clear, return as-is. Keep the user's intent.
-        "I had 2 to 3 banans" → log 3 banana
-        "how'd I sleep" → how is my sleep
-        "took creatine and fish oil" → took creatine and fish oil
-        "set my goal to one sixty" → set goal to 160 lbs
-        "I did yoga for like half an hour" → i did yoga 30 min
-        "what about protein?" → how is my protein
-        "bannana" → banana
-        If chat shows meal logging, treat food lists as continuation:
-        Chat: "What did you have for lunch?" User: "rice and dal" → log rice and dal
-        Chat: "Building lunch" User: "also add broccoli" → log broccoli
-        """
-        var user = query
-        if !history.isEmpty {
-            user = "Chat:\n\(String(history.prefix(200)))\n\nUser: \(query)"
-        }
-        return (system, user)
-    }
+    // Normalizer removed — merged into IntentClassifier prompt (one LLM call instead of two)
 
     // MARK: - Rule-Based Tool Picker
 

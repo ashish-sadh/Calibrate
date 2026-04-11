@@ -23,25 +23,27 @@ enum IntentClassifier {
     // MARK: - System Prompt (~150 tokens)
 
     static let systemPrompt = """
-    Health app. Reply JSON tool call or short text.
-    Tools: log_food(name,servings?) food_info(query) log_weight(value,unit?) weight_info(query?) start_workout(name?) log_activity(name,duration?) exercise_info(query?) sleep_recovery(period?) mark_supplement(name) set_goal(target,unit?) delete_food(query?) body_comp(query?)
+    Health app. Reply JSON tool call or short text. Fix typos, word numbers, slang — understand messy input.
+    Tools: log_food(name,servings?,calories?,protein?,carbs?,fat?) food_info(query) log_weight(value,unit?) weight_info(query?) start_workout(name?) log_activity(name,duration?) exercise_info(query?) sleep_recovery(period?) mark_supplement(name) set_goal(target,unit?) delete_food(query?) body_comp(query?)
     "log 2 eggs and toast"→{"tool":"log_food","name":"eggs, toast","servings":"2"}
     "had biryani"→{"tool":"log_food","name":"biryani"}
+    "I had 2 to 3 banans"→{"tool":"log_food","name":"banana","servings":"3"}
+    "chipotle bowl 3000 cal 30p 45c 67f"→{"tool":"log_food","name":"chipotle bowl","calories":"3000","protein":"30","carbs":"45","fat":"67"}
     "calories left"→{"tool":"food_info","query":"calories left"}
     "how am I doing"→{"tool":"food_info","query":"daily summary"}
+    "what about protein?"→{"tool":"food_info","query":"protein"}
     "I weigh 75 kg"→{"tool":"log_weight","value":"75","unit":"kg"}
     "weight trend"→{"tool":"weight_info","query":"trend"}
     "start push day"→{"tool":"start_workout","name":"push day"}
-    "did yoga 30 min"→{"tool":"log_activity","name":"yoga","duration":"30"}
+    "did yoga for like half an hour"→{"tool":"log_activity","name":"yoga","duration":"30"}
     "took vitamin d"→{"tool":"mark_supplement","name":"vitamin d"}
-    "how did I sleep"→{"tool":"sleep_recovery"}
-    "set goal 155"→{"tool":"set_goal","target":"155","unit":"lbs"}
+    "how'd I sleep"→{"tool":"sleep_recovery"}
+    "set my goal to one sixty"→{"tool":"set_goal","target":"160","unit":"lbs"}
     "delete last"→{"tool":"delete_food"}
-    "chipotle bowl 3000 cal 30p 45c 67f"→{"tool":"log_food","name":"chipotle bowl","calories":"3000","protein":"30","carbs":"45","fat":"67"}
     "log lunch"→What did you have for lunch?
-    "log breakfast"→What did you have for breakfast?
     "hi"→Hi! How can I help?
-    JSON when you have enough info. Ask a follow-up question if intent is clear but details are missing. Short text for chat.
+    If chat context shows "What did you have for lunch?" and user says "rice and dal"→{"tool":"log_food","name":"rice, dal"}
+    JSON when you have enough info. Ask follow-up if details missing. Short text for chat.
     """
 
     // MARK: - Classify

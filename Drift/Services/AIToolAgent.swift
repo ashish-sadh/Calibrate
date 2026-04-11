@@ -29,24 +29,6 @@ enum AIToolAgent {
         var modeDetected = false
     }
 
-    // MARK: - Query Normalizer
-
-    /// Ultra-minimal LLM call to rewrite messy natural language into clean command form.
-    /// ~80 tokens prompt, ~2-3s on device. 20s timeout.
-    static func normalizeQuery(_ query: String, history: String) async -> String? {
-        let (system, user) = ToolRanker.normalizePrompt(query: query, history: history)
-        let response = await withTimeout(seconds: 20) {
-            await LocalAIService.shared.respondDirect(systemPrompt: system, message: user)
-        }
-        guard let response else { return nil } // timed out
-        let cleaned = response.trimmingCharacters(in: .whitespacesAndNewlines)
-            .replacingOccurrences(of: "\"", with: "")
-        guard !cleaned.isEmpty,
-              cleaned.count < 200,
-              cleaned.lowercased() != query.lowercased() else { return nil }
-        return cleaned
-    }
-
     // MARK: - Main Entry Point (Tiered)
 
     static func run(
@@ -68,8 +50,7 @@ enum AIToolAgent {
         }
 
         // ── Phase 2: LLM Intent Classification (Gemma only) ──
-        // Ask the LLM to classify intent + extract tool params in one call
-        var bestQuery = message
+        // Handles: intent detection, typo fixing, word numbers, pronoun resolution — all in one call
         if isLargeModel {
             onStep(stepMessage(for: message))
 
@@ -100,27 +81,13 @@ enum AIToolAgent {
                 }
             }
 
-            // Fallback: normalizer + rule pick (if LLM classifier didn't match)
-            if let rewritten = await normalizeQuery(message, history: history) {
-                bestQuery = rewritten
-                if let toolCall = ToolRanker.tryRulePick(query: rewritten, screen: screen) {
-                    return await executeTool(toolCall)
-                }
-                if let staticResult = StaticOverrides.match(rewritten.lowercased()) {
-                    if case .response(let text) = staticResult {
-                        return AgentOutput(text: text, action: nil, toolsCalled: ["static"])
-                    }
-                    if case .handler(let fn) = staticResult {
-                        return AgentOutput(text: fn(), action: nil, toolsCalled: ["static"])
-                    }
-                }
-            }
+            // Normalizer removed — classifier now handles typos, word numbers,
+            // pronoun resolution, and multi-turn context in one LLM call.
         }
 
         // ── Phase 3: Tool-first execution → stream presentation (both models) ──
-        // Use bestQuery (possibly rewritten by normalizer) for better tool matching + presentation
-        onStep(stepMessage(for: bestQuery))
-        let toolResults = await executeRelevantTools(query: bestQuery, screen: screen)
+        onStep(stepMessage(for: message))
+        let toolResults = await executeRelevantTools(query: message, screen: screen)
 
         // If a tool returned a UI action, return it directly
         if let actionResult = toolResults.first(where: { $0.action != nil }) {
@@ -134,7 +101,7 @@ enum AIToolAgent {
             if isLargeModel {
                 onStep("Preparing answer...")
                 return await streamPresentation(
-                    query: bestQuery, toolData: data, screen: screen, history: history, onToken: onToken
+                    query: message, toolData: data, screen: screen, history: history, onToken: onToken
                 )
             } else {
                 // SmolLM: add a brief insight prefix to raw data
