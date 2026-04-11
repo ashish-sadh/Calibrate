@@ -156,7 +156,7 @@ struct WeightGoal: Codable, Sendable {
 
         let weight = currentWeightKg ?? startWeightKg
         let pref = dietPreference ?? .balanced
-        let isLosing = totalChangeKg < 0
+        let isLosing = weight > targetWeightKg  // current-based direction
 
         // Protein
         let protein = proteinTargetG ?? (weight * pref.proteinPerKg)
