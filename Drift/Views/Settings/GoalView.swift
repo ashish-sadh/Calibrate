@@ -75,11 +75,13 @@ struct GoalView: View {
                     emptyState
                 }
 
-                Button { showingSetup = true } label: {
-                    Label(goal == nil ? "Set Weight Goal" : "Update Goal", systemImage: "target")
-                        .frame(maxWidth: .infinity)
+                if goal == nil {
+                    Button { showingSetup = true } label: {
+                        Label("Set Weight Goal", systemImage: "target")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent).tint(Theme.accent)
                 }
-                .buttonStyle(.borderedProminent).tint(Theme.accent)
             }
             .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
         }
@@ -95,14 +97,6 @@ struct GoalView: View {
                     Image(systemName: "chevron.left")
                         .font(.body.weight(.semibold))
                         .foregroundStyle(Theme.accent)
-                }
-            }
-            if goal != nil {
-                ToolbarItem(placement: .primaryAction) {
-                    Button { showingSetup = true } label: {
-                        Image(systemName: "pencil.circle")
-                            .foregroundStyle(Theme.accent)
-                    }
                 }
             }
         }
