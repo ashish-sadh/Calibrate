@@ -679,6 +679,169 @@ final class AIEvalHarness: XCTestCase {
         XCTAssertEqual(intent?.params["value"], "165.5")
     }
 
+    // MARK: - Intent Classifier Expanded Coverage (50+ patterns)
+    // Tests parseResponse with realistic LLM output formats across all tools.
+
+    func testIntentClassifierAllFoodLogVariants() {
+        // Single item
+        let r1 = IntentClassifier.parseResponse(#"{"tool":"log_food","name":"banana"}"#)
+        XCTAssertEqual(r1?.tool, "log_food")
+
+        // Multi-item with array
+        let r2 = IntentClassifier.parseResponse(#"{"tool":"log_food","items":["rice","dal","chicken"],"meal":"lunch"}"#)
+        XCTAssertEqual(r2?.tool, "log_food")
+        XCTAssertTrue(r2?.params["items"]?.contains("dal") ?? false)
+
+        // With servings
+        let r3 = IntentClassifier.parseResponse(#"{"tool":"log_food","name":"eggs","servings":"3"}"#)
+        XCTAssertEqual(r3?.params["servings"], "3")
+
+        // Indian food
+        let r4 = IntentClassifier.parseResponse(#"{"tool":"log_food","name":"paneer butter masala with 2 roti"}"#)
+        XCTAssertEqual(r4?.tool, "log_food")
+
+        // With meal type
+        let r5 = IntentClassifier.parseResponse(#"{"tool":"log_food","name":"oats with milk","meal":"breakfast"}"#)
+        XCTAssertEqual(r5?.params["meal"], "breakfast")
+    }
+
+    func testIntentClassifierAllFoodInfoVariants() {
+        let queries = [
+            (#"{"tool":"food_info","query":"calories left"}"#, "calories left"),
+            (#"{"tool":"food_info","query":"daily summary"}"#, "daily summary"),
+            (#"{"tool":"food_info","query":"how much protein today"}"#, "how much protein today"),
+            (#"{"tool":"food_info","query":"what did I eat yesterday"}"#, "what did I eat yesterday"),
+            (#"{"tool":"food_info","query":"suggest dinner"}"#, "suggest dinner"),
+        ]
+        for (json, expectedQuery) in queries {
+            let intent = IntentClassifier.parseResponse(json)
+            XCTAssertEqual(intent?.tool, "food_info", "Failed for: \(expectedQuery)")
+            XCTAssertEqual(intent?.params["query"], expectedQuery)
+        }
+    }
+
+    func testIntentClassifierWeightVariants() {
+        // Log weight in lbs
+        let r1 = IntentClassifier.parseResponse(#"{"tool":"log_weight","value":"165","unit":"lbs"}"#)
+        XCTAssertEqual(r1?.tool, "log_weight")
+        XCTAssertEqual(r1?.params["value"], "165")
+
+        // Log weight in kg
+        let r2 = IntentClassifier.parseResponse(#"{"tool":"log_weight","value":"75.2","unit":"kg"}"#)
+        XCTAssertEqual(r2?.params["unit"], "kg")
+
+        // Weight query
+        let r3 = IntentClassifier.parseResponse(#"{"tool":"weight_info"}"#)
+        XCTAssertEqual(r3?.tool, "weight_info")
+        XCTAssertTrue(r3?.params.isEmpty ?? true)
+
+        // Numeric value (not string)
+        let r4 = IntentClassifier.parseResponse(#"{"tool":"log_weight","value":72.5,"unit":"kg"}"#)
+        XCTAssertEqual(r4?.params["value"], "72.5")
+    }
+
+    func testIntentClassifierExerciseVariants() {
+        // Start named workout
+        let r1 = IntentClassifier.parseResponse(#"{"tool":"start_workout","name":"leg day"}"#)
+        XCTAssertEqual(r1?.tool, "start_workout")
+        XCTAssertEqual(r1?.params["name"], "leg day")
+
+        // Log completed activity
+        let r2 = IntentClassifier.parseResponse(#"{"tool":"log_activity","name":"running","duration":"45"}"#)
+        XCTAssertEqual(r2?.tool, "log_activity")
+        XCTAssertEqual(r2?.params["duration"], "45")
+
+        // Exercise info query
+        let r3 = IntentClassifier.parseResponse(#"{"tool":"exercise_info","query":"workout history"}"#)
+        XCTAssertEqual(r3?.tool, "exercise_info")
+
+        // Smart workout (no name)
+        let r4 = IntentClassifier.parseResponse(#"{"tool":"start_workout"}"#)
+        XCTAssertEqual(r4?.tool, "start_workout")
+    }
+
+    func testIntentClassifierSleepSupplementGoal() {
+        // Sleep query
+        let r1 = IntentClassifier.parseResponse(#"{"tool":"sleep_recovery","query":"how did I sleep"}"#)
+        XCTAssertEqual(r1?.tool, "sleep_recovery")
+
+        // Sleep with period
+        let r2 = IntentClassifier.parseResponse(#"{"tool":"sleep_recovery","period":"week"}"#)
+        XCTAssertEqual(r2?.params["period"], "week")
+
+        // Mark supplement
+        let r3 = IntentClassifier.parseResponse(#"{"tool":"mark_supplement","name":"vitamin d"}"#)
+        XCTAssertEqual(r3?.tool, "mark_supplement")
+        XCTAssertEqual(r3?.params["name"], "vitamin d")
+
+        // Set goal
+        let r4 = IntentClassifier.parseResponse(#"{"tool":"set_goal","target":"155","unit":"lbs"}"#)
+        XCTAssertEqual(r4?.tool, "set_goal")
+        XCTAssertEqual(r4?.params["target"], "155")
+    }
+
+    func testIntentClassifierEdgeCases() {
+        // Empty JSON object
+        let r1 = IntentClassifier.parseResponse("{}")
+        XCTAssertNil(r1, "Empty JSON has no tool field")
+
+        // Tool with empty string
+        let r2 = IntentClassifier.parseResponse(#"{"tool":""}"#)
+        XCTAssertNil(r2, "Empty tool string should be nil")
+
+        // Markdown code block wrapping
+        let r3 = IntentClassifier.parseResponse("```json\n{\"tool\":\"food_info\",\"query\":\"calories\"}\n```")
+        XCTAssertEqual(r3?.tool, "food_info", "Should extract JSON from markdown code block")
+
+        // LLM prefixes with explanation
+        let r4 = IntentClassifier.parseResponse("Based on your request, here is the tool call: {\"tool\":\"log_food\",\"name\":\"salad\"}")
+        XCTAssertEqual(r4?.tool, "log_food", "Should extract JSON from explanation text")
+
+        // Multiple JSON objects (take first valid)
+        let r5 = IntentClassifier.parseResponse(#"{"tool":"log_food","name":"eggs"} I've logged that for you."#)
+        XCTAssertEqual(r5?.tool, "log_food")
+
+        // Boolean param (should be ignored or stringified)
+        let r6 = IntentClassifier.parseResponse(#"{"tool":"food_info","query":"summary","detailed":true}"#)
+        XCTAssertEqual(r6?.tool, "food_info")
+    }
+
+    func testIntentClassifierLLMQuirks() {
+        // LLM adds trailing comma (common Gemma quirk)
+        let r1 = IntentClassifier.parseResponse(#"{"tool":"log_food","name":"rice",}"#)
+        // May or may not parse depending on JSONSerialization tolerance — just verify no crash
+        _ = r1
+
+        // LLM uses single quotes (invalid JSON)
+        let r2 = IntentClassifier.parseResponse("{'tool':'food_info','query':'calories'}")
+        // JSONSerialization rejects single quotes — should return nil
+        XCTAssertNil(r2, "Single quotes are invalid JSON")
+
+        // LLM outputs tool name with parentheses
+        let r3 = IntentClassifier.parseResponse(#"{"tool":"food_info()","query":"macros"}"#)
+        XCTAssertEqual(r3?.tool, "food_info()", "Should preserve exact tool string for downstream handling")
+
+        // Extra whitespace in JSON
+        let r4 = IntentClassifier.parseResponse(#"  {  "tool" : "weight_info"  }  "#)
+        XCTAssertEqual(r4?.tool, "weight_info")
+
+        // Nested object in params (LLM sometimes does this)
+        let r5 = IntentClassifier.parseResponse(#"{"tool":"log_food","name":"eggs","nutrition":{"cal":155}}"#)
+        XCTAssertEqual(r5?.tool, "log_food")
+        // nutrition is an object, not a string — should be excluded from params
+    }
+
+    func testIntentClassifierChatVariants() {
+        // Greetings
+        XCTAssertNil(IntentClassifier.parseResponse("Hi there!"))
+        XCTAssertNil(IntentClassifier.parseResponse("Good morning! How can I help?"))
+        XCTAssertNil(IntentClassifier.parseResponse("I'm here to help with your health tracking."))
+
+        // Questions that aren't tool calls
+        XCTAssertNil(IntentClassifier.parseResponse("What would you like to track today?"))
+        XCTAssertNil(IntentClassifier.parseResponse("Sure, I can help with that!"))
+    }
+
     // MARK: - Workout Action Parsing (Legacy)
 
     func testCreateWorkoutParsing() {

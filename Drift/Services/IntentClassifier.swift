@@ -73,7 +73,8 @@ enum IntentClassifier {
         let jsonStr = String(trimmed[jsonStart...jsonEnd])
         guard let data = jsonStr.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let tool = json["tool"] as? String else {
+              let tool = json["tool"] as? String,
+              !tool.isEmpty else {
             return nil
         }
 
