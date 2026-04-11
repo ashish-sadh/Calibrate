@@ -28,7 +28,6 @@
 		27536FF4DD83AB95ADECF5AB /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDFFBCB3D524DCFEA822DB53 /* Persistence.swift */; };
 		2789843CBA7CA913FA86CCEB /* biomarkers.json in Resources */ = {isa = PBXBuildFile; fileRef = 059465804E239D09C0E9C1D4 /* biomarkers.json */; };
 		2789D96230755D58B91B3175 /* WorkoutPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46E22593ED4EAC860EFBF887 /* WorkoutPersistenceTests.swift */; };
-		29C556485877B9BA84899A44 /* WeightService2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98998A5705EBF13038A98C27 /* WeightService2.swift */; };
 		29FCA567A01752328CAEFFED /* ExerciseDatabase.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0653C13FD227ACE4F774C46 /* ExerciseDatabase.swift */; };
 		2CCF5E1D415E462AE9997DD4 /* DashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C555B3F9005A7C75FAAD51 /* DashboardViewModel.swift */; };
 		2DDEA9907FA6338488A8E1CD /* AITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19E7517E5B4779CBBE1C7284 /* AITests.swift */; };
@@ -50,6 +49,7 @@
 		43D1CAC12A4A29C3DE9AC385 /* WorkoutDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C004CB5B32E81B2A39730FE7 /* WorkoutDetailView.swift */; };
 		43FCEE74704AB4A0A900510A /* BarcodeScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 55F24D93872F919F1A8CB319 /* BarcodeScannerView.swift */; };
 		448C2B35142FF9B3A878D8E0 /* WorkoutService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F84469D20EBBA0BD037FBCA /* WorkoutService.swift */; };
+		4595A34B3A929843D9FBA307 /* WeightServiceAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = E38FF7C7D3E9C7AED0CC8F83 /* WeightServiceAPI.swift */; };
 		4619DED6D59EC5E38FD24EBB /* LLMIntegrationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11C8DCE5BFBE377F800CD11B /* LLMIntegrationTest.swift */; };
 		46ED8561ED2CE03CCFE4BC0F /* ExerciseService.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE0664FF9B8E28C6F853B820 /* ExerciseService.swift */; };
 		49D0426489D97845E43EA8B9 /* Supplement.swift in Sources */ = {isa = PBXBuildFile; fileRef = 790C2D3452366D6B473DE2B1 /* Supplement.swift */; };
@@ -115,6 +115,7 @@
 		B2654B50471C75496A1AA0D7 /* NutritionLabelOCR.swift in Sources */ = {isa = PBXBuildFile; fileRef = 418816F51F38F19F65BC3D77 /* NutritionLabelOCR.swift */; };
 		B26EFEA29CD8570813193C98 /* WeightGoal.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89FB0C77EA74796A1BF01D1F /* WeightGoal.swift */; };
 		B3B780A670DA8D354A057699 /* foods.json in Resources */ = {isa = PBXBuildFile; fileRef = FD7026C3D8745999EED9478E /* foods.json */; };
+		B47A39B47130D32625A50BE0 /* USDAFoodService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EEA23E4C1755C342030C667 /* USDAFoodService.swift */; };
 		B790734E4AA15AD5735C9024 /* AIResponseCleaner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 659C59EE72A777C6DEA046D9 /* AIResponseCleaner.swift */; };
 		B8666DFAC44BA801AF626FE7 /* CSVParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D45209A3DCC7F6659E6E367 /* CSVParser.swift */; };
 		BA4A49D33CF87342C8F00DCD /* SupplementLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3E0BC3660040DBB4942437D /* SupplementLog.swift */; };
@@ -219,6 +220,7 @@
 		1ACBCA936A73C1825C28C312 /* AIContextBuilder+Health.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AIContextBuilder+Health.swift"; sourceTree = "<group>"; };
 		1D783FD1AF8952C1C8CECD29 /* SupplementViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupplementViewModel.swift; sourceTree = "<group>"; };
 		1E0A2B843D779BCA23400645 /* DEXAScan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DEXAScan.swift; sourceTree = "<group>"; };
+		1EEA23E4C1755C342030C667 /* USDAFoodService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = USDAFoodService.swift; sourceTree = "<group>"; };
 		20576FEB4A7F0371596D08E6 /* QuickAddView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickAddView.swift; sourceTree = "<group>"; };
 		21311CD0AE82F339C988BDD2 /* ExerciseBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseBrowserView.swift; sourceTree = "<group>"; };
 		217B3F5DA6C6AA9BB267D9F3 /* WeightEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightEntryView.swift; sourceTree = "<group>"; };
@@ -285,7 +287,6 @@
 		8F4D8D947C82941F66C3E892 /* LabReportStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabReportStorage.swift; sourceTree = "<group>"; };
 		9317E4AADEC72D6DC385E722 /* LabReportDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabReportDetailView.swift; sourceTree = "<group>"; };
 		9887274AA907DE6C5349B2D1 /* OpenFoodFactsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenFoodFactsService.swift; sourceTree = "<group>"; };
-		98998A5705EBF13038A98C27 /* WeightService2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightService2.swift; sourceTree = "<group>"; };
 		99C89E28D8FBE125273FB677 /* Log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Log.swift; sourceTree = "<group>"; };
 		9B410A7B058246A1F98F46E9 /* DefaultFoods.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultFoods.swift; sourceTree = "<group>"; };
 		9BE85182415E10B646F68DA4 /* ParallelLLMEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParallelLLMEval.swift; sourceTree = "<group>"; };
@@ -337,6 +338,7 @@
 		E0EA24C208A1C32DB52709A4 /* SleepRecoveryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepRecoveryView.swift; sourceTree = "<group>"; };
 		E1A5DA3E3543A99260250279 /* UIFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UIFlowTests.swift; sourceTree = "<group>"; };
 		E342C8090873CF9612C8A63E /* LabReportOCR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabReportOCR.swift; sourceTree = "<group>"; };
+		E38FF7C7D3E9C7AED0CC8F83 /* WeightServiceAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightServiceAPI.swift; sourceTree = "<group>"; };
 		E4B60275240AEDD1A676B282 /* ConversationState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationState.swift; sourceTree = "<group>"; };
 		E4BD88646DFE4A17724D4407 /* AddSupplementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSupplementView.swift; sourceTree = "<group>"; };
 		E6B95CCD0C984C915051F482 /* sample_lingo_export.csv */ = {isa = PBXFileReference; path = sample_lingo_export.csv; sourceTree = "<group>"; };
@@ -700,7 +702,8 @@
 				A81CB6F88CC852F18E7809C8 /* ToolRanker.swift */,
 				7F42EA4B9416215EFE670984 /* ToolRegistration.swift */,
 				C170D4FEDFB68CA8A61E1D03 /* ToolSchema.swift */,
-				98998A5705EBF13038A98C27 /* WeightService2.swift */,
+				1EEA23E4C1755C342030C667 /* USDAFoodService.swift */,
+				E38FF7C7D3E9C7AED0CC8F83 /* WeightServiceAPI.swift */,
 				FD5DFCD5C5ED2C0D7E5CD8EF /* WeightTrendCalculator.swift */,
 				AF522FED101388047FEE98FD /* WeightTrendService.swift */,
 				6F84469D20EBBA0BD037FBCA /* WorkoutService.swift */,
@@ -977,6 +980,7 @@
 				FD04469D134154054159AA4C /* ToolRanker.swift in Sources */,
 				1CCD2D031DB1C7F7BB7E52EF /* ToolRegistration.swift in Sources */,
 				7430C66B3A1C306F1199C3FA /* ToolSchema.swift in Sources */,
+				B47A39B47130D32625A50BE0 /* USDAFoodService.swift in Sources */,
 				9CBCD31AD1998B4E5237C1A6 /* Units.swift in Sources */,
 				DFFA7CC42D60E67CB40222E8 /* WeightChartView.swift in Sources */,
 				7BDC02B8C99F8B719546A8A1 /* WeightEntry.swift in Sources */,
@@ -984,7 +988,7 @@
 				B26EFEA29CD8570813193C98 /* WeightGoal.swift in Sources */,
 				1E11E5682458FC83023281D7 /* WeightInsightsView.swift in Sources */,
 				12608375BDCD57D211C64849 /* WeightLogListView.swift in Sources */,
-				29C556485877B9BA84899A44 /* WeightService2.swift in Sources */,
+				4595A34B3A929843D9FBA307 /* WeightServiceAPI.swift in Sources */,
 				0884D534B3ADDE47643801F8 /* WeightTabView.swift in Sources */,
 				ADFD099AC0AEB4154AF6063B /* WeightTrendCalculator.swift in Sources */,
 				67E6DD4C4837E4F4EB971CB2 /* WeightTrendService.swift in Sources */,
@@ -1164,7 +1168,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Drift/Drift.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 99;
+				CURRENT_PROJECT_VERSION = 100;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1254,7 +1258,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Drift/Drift.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 99;
+				CURRENT_PROJECT_VERSION = 100;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",

@@ -392,10 +392,12 @@ import GRDB
 }
 
 @Test func goalRequiredDeficitReasonable() async throws {
-    // Lose 5kg in 3 months ≈ 13 weeks ≈ 0.38 kg/week
-    let g = WeightGoal(targetWeightKg: 55, monthsToAchieve: 3, startDate: "2026-01-01", startWeightKg: 60)
-    #expect(g.requiredDailyDeficit < 0, "Should be deficit")
-    #expect(g.requiredDailyDeficit > -800, "Should be reasonable: \(g.requiredDailyDeficit)")
+    // Lose 5kg in 3 months — use future start date so weeksRemaining > 0
+    let startDate = DateFormatters.dateOnly.string(from: Date())
+    let g = WeightGoal(targetWeightKg: 55, monthsToAchieve: 3, startDate: startDate, startWeightKg: 60)
+    let deficit = g.requiredDailyDeficit(currentWeightKg: 60)
+    #expect(deficit < 0, "Should be deficit")
+    #expect(deficit > -800, "Should be reasonable: \(deficit)")
 }
 
 @Test func goalOnTrackExact() async throws {

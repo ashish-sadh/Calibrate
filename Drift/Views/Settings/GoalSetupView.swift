@@ -151,6 +151,6 @@ struct GoalSetupView: View {
     }
 
     private func getCurrentWeight() -> Double? {
-        WeightTrendService.shared.currentWeight
+        WeightTrendService.shared.trendWeight
     }
 }

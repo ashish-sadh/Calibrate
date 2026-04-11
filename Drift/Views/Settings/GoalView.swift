@@ -49,7 +49,8 @@ struct GoalView: View {
                 if let goal {
                     GoalProgressCard(
                         goal: goal,
-                        currentWeightKg: currentWeightKg ?? goal.startWeightKg
+                        currentWeightKg: currentWeightKg ?? goal.startWeightKg,
+                        trendWeightKg: WeightTrendService.shared.trend?.currentEMA
                     )
 
                     Button { showingSetup = true } label: {
@@ -174,62 +175,58 @@ struct GoalView: View {
                         .pickerStyle(.menu)
                     }
 
-                    // Height — cm or ft/in
-                    HStack {
-                        Text("Height").font(.subheadline).foregroundStyle(.secondary)
-                        Spacer()
-                        if heightInFeet {
-                            TextField("ft", text: Binding(
-                                get: {
-                                    guard let cm = tdeeConfig.heightCm else { return "" }
-                                    return "\(Int(cm / 2.54) / 12)"
-                                },
-                                set: { ft in
-                                    updateHeightFromFtIn(ft: ft, inches: nil)
-                                }
-                            ))
-                            .keyboardType(.numberPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 30)
-                            Text("'").foregroundStyle(.tertiary)
-                            TextField("in", text: Binding(
-                                get: {
-                                    guard let cm = tdeeConfig.heightCm else { return "" }
-                                    let totalInches = Int(cm / 2.54)
-                                    return "\(totalInches % 12)"
-                                },
-                                set: { inches in
-                                    updateHeightFromFtIn(ft: nil, inches: inches)
-                                }
-                            ))
-                            .keyboardType(.numberPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 30)
-                            Text("\"").foregroundStyle(.tertiary)
-                        } else {
-                            TextField("Not set", text: Binding(
-                                get: { tdeeConfig.heightCm.map { "\(Int($0))" } ?? "" },
-                                set: { newValue in
-                                    if newValue.isEmpty { tdeeConfig.heightCm = nil }
-                                    else if let cm = Double(newValue), cm >= 50, cm <= 300 { tdeeConfig.heightCm = cm }
-                                    saveProfile(showFeedback: false)
-                                }
-                            ))
-                            .keyboardType(.numberPad)
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 60)
-                            Text("cm").font(.caption).foregroundStyle(.tertiary)
+                    // Height
+                    VStack(spacing: 6) {
+                        HStack {
+                            Text("Height").font(.subheadline).foregroundStyle(.secondary)
+                            Spacer()
+                            Picker("", selection: $heightInFeet) {
+                                Text("cm").tag(false)
+                                Text("ft/in").tag(true)
+                            }
+                            .pickerStyle(.segmented)
+                            .frame(width: 110)
                         }
-                        Button {
-                            heightInFeet.toggle()
-                        } label: {
-                            Text(heightInFeet ? "cm" : "ft")
-                                .font(.caption2.weight(.medium))
-                                .padding(.horizontal, 6).padding(.vertical, 3)
-                                .background(Theme.accent.opacity(0.15), in: RoundedRectangle(cornerRadius: 4))
-                                .foregroundStyle(Theme.accent)
+                        HStack {
+                            Spacer()
+                            if heightInFeet {
+                                TextField("ft", text: Binding(
+                                    get: {
+                                        guard let cm = tdeeConfig.heightCm else { return "" }
+                                        return "\(Int(cm / 2.54) / 12)"
+                                    },
+                                    set: { ft in updateHeightFromFtIn(ft: ft, inches: nil) }
+                                ))
+                                .keyboardType(.numberPad)
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 35)
+                                Text("ft").font(.caption).foregroundStyle(.tertiary)
+                                TextField("in", text: Binding(
+                                    get: {
+                                        guard let cm = tdeeConfig.heightCm else { return "" }
+                                        return "\(Int(cm / 2.54) % 12)"
+                                    },
+                                    set: { inches in updateHeightFromFtIn(ft: nil, inches: inches) }
+                                ))
+                                .keyboardType(.numberPad)
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 35)
+                                Text("in").font(.caption).foregroundStyle(.tertiary)
+                            } else {
+                                TextField("Not set", text: Binding(
+                                    get: { tdeeConfig.heightCm.map { "\(Int($0))" } ?? "" },
+                                    set: { newValue in
+                                        if newValue.isEmpty { tdeeConfig.heightCm = nil }
+                                        else if let cm = Double(newValue), cm >= 50, cm <= 300 { tdeeConfig.heightCm = cm }
+                                        saveProfile(showFeedback: false)
+                                    }
+                                ))
+                                .keyboardType(.numberPad)
+                                .multilineTextAlignment(.trailing)
+                                .frame(width: 60)
+                                Text("cm").font(.caption).foregroundStyle(.tertiary)
+                            }
                         }
-                        .buttonStyle(.plain)
                     }
 
                     // Weight
@@ -299,7 +296,7 @@ struct GoalView: View {
         try? database.saveWeightEntry(&entry)
         WeightTrendService.shared.refresh()
         // Update local state from refreshed service
-        currentWeightKg = WeightTrendService.shared.currentWeight
+        currentWeightKg = WeightTrendService.shared.trendWeight
         actualWeeklyRate = WeightTrendService.shared.weeklyRate
         actualDailyDeficit = WeightTrendService.shared.dailyDeficit
         withAnimation { showSaved = true }
@@ -590,7 +587,7 @@ struct GoalView: View {
     private func loadCurrentData() {
         let service = WeightTrendService.shared
         service.refresh()
-        currentWeightKg = service.currentWeight
+        currentWeightKg = service.latestWeightKg ?? service.trendWeight
         actualWeeklyRate = service.weeklyRate
         actualDailyDeficit = service.dailyDeficit
         // Initialize weight text field

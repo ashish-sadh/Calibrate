@@ -9,6 +9,7 @@ struct WeightInsightsView: View {
     var onAddWeight: (() -> Void)? = nil
     var onAddBodyComp: (() -> Void)? = nil
     @State private var bodyCompEntries: [BodyComposition] = []
+    @State private var showTrendInfo = false
     @State private var showingBodyFatChart = false
     @State private var showingBMIChart = false
     @State private var showingWaterChart = false
@@ -31,27 +32,15 @@ struct WeightInsightsView: View {
             // Key metrics — 2×2 compact grid
             HStack(spacing: 8) {
                 Button { onAddWeight?() } label: {
-                    VStack(spacing: 2) {
-                        // Latest entry (raw — what user logged)
-                        if let latest = WeightTrendService.shared.latestWeightKg {
-                            HStack(alignment: .firstTextBaseline, spacing: 2) {
-                                Text(String(format: "%.1f", unit.convert(fromKg: latest)))
-                                    .font(.title3.weight(.bold).monospacedDigit())
-                                Text(unit.displayName).font(.caption2).foregroundStyle(.tertiary)
-                            }
-                            Text("Latest").font(.caption2).foregroundStyle(.secondary)
-                        }
-                        // Trend (EMA smoothed)
-                        HStack(alignment: .firstTextBaseline, spacing: 2) {
-                            Text(String(format: "%.1f", unit.convert(fromKg: trend.currentEMA)))
-                                .font(.caption.weight(.semibold).monospacedDigit())
-                                .foregroundStyle(.secondary)
-                            Text("trend").font(.caption2).foregroundStyle(.quaternary)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 8)
-                    .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
+                    metricCell(
+                        id: "current",
+                        label: "Current",
+                        labelIcon: "plus.circle.fill",
+                        value: String(format: "%.1f", unit.convert(fromKg: WeightTrendService.shared.latestWeightKg ?? trend.currentEMA)),
+                        valueUnit: unit.displayName,
+                        color: .primary,
+                        tooltip: "Your latest logged weight. Tap to log a new entry."
+                    )
                 }
                 .buttonStyle(.plain)
 
@@ -109,6 +98,21 @@ struct WeightInsightsView: View {
                 }
             }
 
+            // Trend weight — separate row, only when meaningfully different
+            if let latest = WeightTrendService.shared.latestWeightKg, abs(latest - trend.currentEMA) > 0.5 {
+                HStack(spacing: 6) {
+                    Image(systemName: "chart.line.downtrend.xyaxis").font(.caption2).foregroundStyle(.tertiary)
+                    Text("Trend Weight: \(String(format: "%.1f", unit.convert(fromKg: trend.currentEMA))) \(unit.displayName)")
+                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                    Button { showTrendInfo = true } label: {
+                        Image(systemName: "info.circle").font(.caption2).foregroundStyle(.quaternary)
+                    }.buttonStyle(.plain)
+                    Spacer()
+                }
+                .padding(.horizontal, 8).padding(.vertical, 6)
+                .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
+            }
+
             // Compact weight-change chips
             weightChangesRow
 
@@ -120,6 +124,11 @@ struct WeightInsightsView: View {
             if trend.dataPoints.count >= 14 {
                 weekdayInsight
             }
+        }
+        .alert("Trend Weight", isPresented: $showTrendInfo) {
+            Button("OK") {}
+        } message: {
+            Text("Your trend weight uses exponential moving average (EMA) to smooth out daily fluctuations from water retention, meal timing, and scale variance. It shows your true underlying weight direction.")
         }
     }
 

@@ -146,36 +146,4 @@ final class WeightViewModel {
             .sorted { $0.weekStart > $1.weekStart }
     }
 
-    var currentMonthAverage: (average: Double, count: Int)? {
-        let now = Date()
-        let monthEntries = entries.filter { entry in
-            guard let date = DateFormatters.dateOnly.date(from: entry.date) else { return false }
-            return Calendar.current.isDate(date, equalTo: now, toGranularity: .month)
-        }
-        guard !monthEntries.isEmpty else { return nil }
-        return (monthEntries.map(\.weightKg).reduce(0, +) / Double(monthEntries.count), monthEntries.count)
-    }
-
-    // MARK: - Entries grouped by month
-
-    struct MonthGroup: Identifiable {
-        let id: String
-        let title: String
-        let entries: [WeightEntry]
-        let average: Double
-    }
-
-    var entriesByMonth: [MonthGroup] {
-        let calendar = Calendar.current
-        var groups: [String: (title: String, entries: [WeightEntry])] = [:]
-        for entry in entries {
-            guard let date = DateFormatters.dateOnly.date(from: entry.date) else { continue }
-            let key = String(format: "%04d-%02d", calendar.component(.year, from: date), calendar.component(.month, from: date))
-            let title = DateFormatters.monthYear.string(from: date)
-            groups[key, default: (title, [])].entries.append(entry)
-        }
-        return groups.map { (key, val) in
-            MonthGroup(id: key, title: val.title, entries: val.entries, average: val.entries.isEmpty ? 0 : val.entries.map(\.weightKg).reduce(0, +) / Double(val.entries.count))
-        }.sorted { $0.id > $1.id }
-    }
 }

@@ -9,7 +9,7 @@ extension DashboardView {
     var tdeeCard: some View {
         let est = TDEEEstimator.shared.cachedOrSync()
         let goal = WeightGoal.load()
-        let target = goal?.macroTargets(currentWeightKg: viewModel.currentWeight)
+        let target = goal?.macroTargets(currentWeightKg: viewModel.trendWeight)
         let unit = Preferences.weightUnit
 
         let deficit = viewModel.dailyDeficit ?? 0
@@ -90,8 +90,8 @@ extension DashboardView {
                 }
             }
 
-            // Target line — uses CURRENT weight for direction, not stale startWeightKg
-            if let t = target, let goal, let cw = viewModel.currentWeight {
+            // Target line — uses latest weight to match goal card display
+            if let t = target, let goal, let cw = viewModel.latestWeight ?? viewModel.trendWeight {
                 let remainingAbs = abs(unit.convert(fromKg: goal.remainingKg(currentWeightKg: cw)))
                 let losing = goal.isLosing(currentWeightKg: cw)
                 Text("Target: eat \(Int(t.calorieTarget)) kcal to \(losing ? "lose" : "gain") \(String(format: "%.1f", remainingAbs)) \(unit.displayName)")
@@ -102,7 +102,7 @@ extension DashboardView {
             if showDeficitExplainer, (goal != nil || viewModel.weeklyRate != nil) {
                 VStack(alignment: .leading, spacing: 6) {
                     if let goal {
-                        let currentKg = viewModel.currentWeight ?? goal.startWeightKg
+                        let currentKg = viewModel.trendWeight ?? goal.startWeightKg
                         let required = goal.requiredDailyDeficit(currentWeightKg: currentKg)
                         HStack(spacing: 16) {
                             VStack(spacing: 2) {
@@ -153,7 +153,7 @@ extension DashboardView {
     var calorieBalanceCard: some View {
         VStack(spacing: 10) {
             if hasLoggedFood {
-                if let targets = WeightGoal.load()?.macroTargets(currentWeightKg: viewModel.currentWeight) {
+                if let targets = WeightGoal.load()?.macroTargets(currentWeightKg: viewModel.trendWeight) {
                     // With goal: progress bar + remaining
                     let eaten = Int(viewModel.todayNutrition.calories)
                     let target = Int(targets.calorieTarget)
@@ -268,7 +268,7 @@ extension DashboardView {
     /// Uses CURRENT weight vs target for direction — not stale startWeightKg.
     func isGoalAligned(_ deficit: Double) -> Bool {
         guard let goal = WeightGoal.load() else { return deficit < 0 }
-        let currentKg = viewModel.currentWeight ?? goal.startWeightKg
+        let currentKg = viewModel.trendWeight ?? goal.startWeightKg
         let losing = goal.isLosing(currentWeightKg: currentKg)
         return losing ? deficit < 0 : deficit > 0
     }

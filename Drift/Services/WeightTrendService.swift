@@ -20,7 +20,8 @@ final class WeightTrendService {
 
     // MARK: - Convenience Accessors
 
-    var currentWeight: Double? { isStale ? latestWeightKg : trend?.currentEMA }
+    /// EMA-smoothed trend weight (for calculations). Falls back to latest when stale.
+    var trendWeight: Double? { isStale ? latestWeightKg : trend?.currentEMA }
     var weeklyRate: Double? { isStale ? nil : trend?.weeklyRateKg }
     var dailyDeficit: Double? { isStale ? nil : trend?.estimatedDailyDeficit }
     var weightChanges: WeightTrendCalculator.WeightChanges? { isStale ? nil : trend?.weightChanges }

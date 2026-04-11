@@ -109,7 +109,7 @@ enum AIRuleEngine {
 
         // Weight (entries sorted DESC by date, so .first = most recent)
         // Weight (from centralized service)
-        if let weightKg = WeightTrendService.shared.currentWeight {
+        if let weightKg = WeightTrendService.shared.trendWeight {
             let unit = Preferences.weightUnit
             lines.append("Weight: \(String(format: "%.1f", unit.convert(fromKg: weightKg)))\(unit.displayName)")
         }

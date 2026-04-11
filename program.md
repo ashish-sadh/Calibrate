@@ -6,7 +6,7 @@ Autonomous loop. Follow this exactly.
 
 **Re-read before every cycle.** Human may change at any time.
 
-_Directive:_ **AI chat is the showstopper. Close parity gaps from `Docs/ai-parity.md`. Make every feature reachable from conversation. Improve prompts, tools, eval, multi-turn. Work through sprint.md top-down. Bugs first.**
+_Directive:_ **Work through sprint.md top-down. Bugs first, then P0/P1 items. When finite items are done, rotate through Permanent Tasks: (1) AI chat & tool service — the showstopper, especially natural meal logging from freeform text, (2) UI polish — find rough edges, beautify across the whole app, (3) bug hunting — find bugs before users do, improve testing, (4) food DB enrichment — correct and expand. Never idle — there's always work in Permanent Tasks.**
 
 _Override:_ CONTINUE
 

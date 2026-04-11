@@ -43,7 +43,7 @@ struct FoodSearchView: View {
                             onlineResults = []
                             // Smart trigger: search online when local results are insufficient
                             onlineSearchTask?.cancel()
-                            if q.count >= 3 && results.count < 3 {
+                            if q.count >= 3 && results.count < 5 {
                                 onlineSearchTask = Task {
                                     try? await Task.sleep(for: .milliseconds(500))
                                     guard !Task.isCancelled else { return }
@@ -412,9 +412,14 @@ struct FoodSearchView: View {
                 }
             }
 
-            // Online results (from OpenFoodFacts) — deduplicated against local
-            let localNames = Set(results.map { $0.name.lowercased() })
-            let dedupedOnline = onlineResults.filter { !localNames.contains($0.name.lowercased()) }
+            // Online results — deduplicated against local AND within themselves
+            let localNames = Set(results.map { normalizeForDedup($0.name) })
+            var seenOnline = Set<String>()
+            let dedupedOnline = onlineResults.filter { food in
+                let key = normalizeForDedup(food.name)
+                guard !localNames.contains(key) else { return false }
+                return seenOnline.insert(key).inserted
+            }
             if !dedupedOnline.isEmpty {
                 Section {
                     ForEach(dedupedOnline) { food in
@@ -455,10 +460,18 @@ struct FoodSearchView: View {
     private func searchOnline(query: String) async {
         isSearchingOnline = true
         defer { isSearchingOnline = false }
-        guard let products = try? await OpenFoodFactsService.search(query: query, limit: 8) else { return }
+
+        // Search OpenFoodFacts and USDA in parallel
+        async let offProducts = (try? OpenFoodFactsService.search(query: query, limit: 8)) ?? []
+        async let usdaItems = (try? USDAFoodService.search(query: query, limit: 5)) ?? []
+
+        let products = await offProducts
+        let usda = await usdaItems
         guard !Task.isCancelled else { return }
 
         var newFoods: [Food] = []
+
+        // OpenFoodFacts results
         for p in products {
             let servingG = p.servingSizeG ?? 100
             var food = Food(
@@ -477,6 +490,26 @@ struct FoodSearchView: View {
                 newFoods.append(saved)
             }
         }
+
+        // USDA results
+        for item in usda {
+            var food = Food(
+                name: item.name,
+                category: "Online",
+                servingSize: item.servingSizeG,
+                servingUnit: "g",
+                calories: item.calories,
+                proteinG: item.proteinG,
+                carbsG: item.carbsG,
+                fatG: item.fatG,
+                fiberG: item.fiberG
+            )
+            try? AppDatabase.shared.saveScannedFood(&food)
+            if let saved = try? AppDatabase.shared.searchFoods(query: food.name).first {
+                newFoods.append(saved)
+            }
+        }
+
         guard !Task.isCancelled else { return }
         onlineResults = newFoods
     }
@@ -666,5 +699,13 @@ extension FoodSearchView {
             TextField("0", text: value).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80)
             Text(unit).font(.caption).foregroundStyle(.secondary).frame(width: 35)
         }
+    }
+
+    /// Normalize food name for deduplication: lowercase, strip brand suffix, strip parentheticals.
+    func normalizeForDedup(_ name: String) -> String {
+        name.lowercased()
+            .replacingOccurrences(of: "\\s*-\\s*[^-]+$", with: "", options: .regularExpression) // strip " - Brand"
+            .replacingOccurrences(of: "\\s*\\([^)]*\\)", with: "", options: .regularExpression) // strip "(cooked)"
+            .trimmingCharacters(in: .whitespaces)
     }
 }

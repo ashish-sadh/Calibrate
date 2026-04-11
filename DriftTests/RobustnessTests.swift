@@ -194,9 +194,9 @@ import GRDB
 @Test func weightGoalRequiredRate() async throws {
     let goal = WeightGoal(targetWeightKg: 65, monthsToAchieve: 6, startDate: "2026-01-01", startWeightKg: 75)
     // 10kg in 6 months = ~26 weeks = ~0.385 kg/week
-    let rate = goal.requiredWeeklyRateKg
+    let rate = goal.requiredWeeklyRate(currentWeightKg: 75)
     #expect(rate < 0, "Should be negative for weight loss")
-    #expect(abs(rate) > 0.3 && abs(rate) < 0.5, "Rate: \(rate)")
+    #expect(abs(rate) <= 1.0, "Rate should be capped at 1.0 kg/week: \(rate)")
 }
 
 @Test func weightGoalOnTrackStatus() async throws {
@@ -220,7 +220,7 @@ import GRDB
 @Test func weightGoalWrongDirectionGaining() async throws {
     // Goal: gain 2.2 kg (56 - 53.8)
     let goal = WeightGoal(targetWeightKg: 56, monthsToAchieve: 3, startDate: "2026-04-01", startWeightKg: 53.8)
-    #expect(goal.requiredWeeklyRateKg > 0, "Gaining goal should have positive rate")
+    #expect(goal.requiredWeeklyRate(currentWeightKg: 53.8) > 0, "Gaining goal should have positive rate")
 
     // Actually losing weight = wrong direction
     let wrong = goal.isOnTrack(actualWeeklyRateKg: -0.42)

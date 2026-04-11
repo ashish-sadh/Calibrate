@@ -22,7 +22,7 @@ struct WeightTabView: View {
                         timeRangeBar
 
                         // Chart — hero element
-                        WeightChartView(trend: viewModel.trend, unit: viewModel.weightUnit, granularity: viewModel.granularity)
+                        WeightChartView(trend: viewModel.trend, unit: viewModel.weightUnit, granularity: viewModel.granularity, rawEntries: viewModel.entries)
                             .frame(height: 260)
 
                         // Big change banner

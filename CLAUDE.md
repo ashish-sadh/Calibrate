@@ -13,6 +13,18 @@ Human drives feature work. Read `Docs/sprint.md` for current tickets. Build, tes
 ### Mode 2: Autonomous Self-Improvement
 Human says "run self-improvement" or "never stop". Read `program.md` and follow it exactly. It has steering notes, startup/recovery, LOOP FOREVER cycle, and logging.
 
+### Drift Control (Watchdog Management)
+A background watchdog (`scripts/self-improve-watchdog.sh`) may be running, alternating between self-improvement and code-improvement loops. Control it via `~/drift-control.txt`:
+
+| User says | You do |
+|-----------|--------|
+| "stop drift control" / "stop the watchdog" / "stop improvement" | `echo "STOP" > ~/drift-control.txt` |
+| "pause drift control" / "pause improvement" | `echo "PAUSE" > ~/drift-control.txt` |
+| "resume drift control" / "run improvement" / "start improvement" | `echo "RUN" > ~/drift-control.txt` |
+| "drift control status" / "is improvement running?" | `cat ~/drift-control.txt && ps aux \| grep 'claude.*self-improvement\|claude.*code-improvement' \| grep -v grep` |
+
+The watchdog checks this file every 30 minutes. Changes take effect at the next check cycle.
+
 ## Doc Map
 | Doc | What it is |
 |-----|-----------|

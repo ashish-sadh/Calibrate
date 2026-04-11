@@ -63,10 +63,7 @@ struct WeightGoal: Codable, Sendable {
 
     static let storageKey = "drift_weight_goal"
 
-    var targetWeightLbs: Double { targetWeightKg * 2.20462 }
-    var startWeightLbs: Double { startWeightKg * 2.20462 }
-
-    // MARK: - Current-Weight-Based Calculations (preferred — always correct)
+    // MARK: - Current-Weight-Based Calculations
 
     /// Is the user trying to lose weight? Based on CURRENT weight vs target, not start.
     func isLosing(currentWeightKg: Double) -> Bool {
@@ -93,23 +90,8 @@ struct WeightGoal: Codable, Sendable {
         return requiredWeeklyRate(currentWeightKg: currentWeightKg) * config.kcalPerKg / 7
     }
 
-    // MARK: - Legacy (startWeightKg-based — kept for progress display only)
-
-    /// Total planned change from start (for progress bar only). Do NOT use for direction/deficit.
+    /// Total planned change from start (for progress bar).
     var totalChangeKg: Double { targetWeightKg - startWeightKg }
-    var totalChangeLbs: Double { totalChangeKg * 2.20462 }
-
-    /// Legacy: uses startWeightKg. Prefer requiredWeeklyRate(currentWeightKg:).
-    var requiredWeeklyRateKg: Double {
-        let weeks = Double(monthsToAchieve) * 4.33
-        return weeks > 0 ? totalChangeKg / weeks : 0
-    }
-
-    /// Legacy: uses startWeightKg. Prefer requiredDailyDeficit(currentWeightKg:).
-    var requiredDailyDeficit: Double {
-        let config = WeightTrendCalculator.loadConfig()
-        return requiredWeeklyRateKg * config.kcalPerKg / 7
-    }
 
     /// Minimum fat intake — sex-aware, protects hormones, vitamin absorption, and satiety.
     /// Women need more fat for estrogen/progesterone production and bone density.
@@ -165,7 +147,7 @@ struct WeightGoal: Codable, Sendable {
             : "+ \(Int(abs(deficit))) surplus"
         let floorNote = rawTarget < 1200 ? " (floored to 1200 for safety)" : ""
         return (est.source.rawValue,
-                "\(est.source.rawValue): TDEE \(Int(est.tdee)) \(deficitStr) = \(Int(actualTarget)) kcal/day.\(floorNote) \(est.confidence == .low ? "Log weight & food for better accuracy." : "")")
+                "TDEE \(Int(est.tdee)) \(deficitStr) = \(Int(actualTarget)) kcal/day.\(floorNote)\(est.confidence == .low ? " Log weight & food for better accuracy." : "")")
     }
 
     /// Effective macro targets.

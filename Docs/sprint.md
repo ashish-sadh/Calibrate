@@ -56,6 +56,41 @@ Execute: find each food → show confirmation UI → log
 - [x] **Category tabs in ingredient picker** — Horizontal chips for browsing.
 - [ ] **Ingredient persistence** — Store per-ingredient macros for recipe rebuilding.
 
+---
+
+## Permanent Tasks (never remove — always pick from these when nothing else is queued)
+
+### AI Chat & Tool Service Improvement (always ongoing)
+The #1 priority. AI chat is the showstopper — keep making it smarter, faster, more capable.
+
+- [ ] **Natural meal logging from chat** — Users should type freeform like "log for breakfast 2 eggs and spinach and a bread and coffee with 2% milk with protein powder and creatine" or "log chipotle bowl with 800 calories" and the AI parses everything, asks clarifying questions (portion sizes, cooking method), does macro calculations, and logs it. No manual searching. Chat does the hard work.
+- [ ] **Meal planning** — "plan my meals for today" → iterative suggestions based on remaining macros + history.
+- [ ] **Workout split builder** — "build me a PPL split" → multi-turn designing across sessions.
+- [ ] **Navigate to screen** — "show me my weight chart", "go to food tab". Needs navigation tool.
+- [ ] Keep improving intent detection accuracy, tool calling reliability, multi-turn context, response quality. If no obvious gap, stress-test with real queries from `Docs/failing-queries.md` and fix what breaks.
+
+### UI Improvement (always ongoing)
+Find rough edges, polish, beautify. Theme is open — not tied to dark-only. Make it more usable and visually appealing. Feedback consistently says UI can be improved.
+
+- [ ] **Theme & visual polish** — Improve colors, spacing, typography, card styles. If changing theme, change it across the ENTIRE app — never just one view. Consistency is mandatory.
+- [ ] **Usability rough edges** — Find confusing flows, missing feedback, awkward transitions. Fix them.
+- [ ] **Layout & information density** — Better use of screen space, clearer hierarchy, scannable data.
+- [ ] UI changes must NOT change existing functionality. Refactoring only on the visual layer.
+
+### Bug Hunting (always ongoing)
+Proactively find bugs before users do. Keep improving test coverage and testing strategies.
+
+- [ ] **Find and fix bugs** — Run the app mentally through edge cases. Check error paths, empty states, boundary conditions, data corruption scenarios.
+- [ ] **Improve testing** — Find better ways to test. Add tests for uncovered paths. Stress-test AI with weird inputs. Goal: users never have to report bugs — we find them first.
+- [ ] **Regression prevention** — When fixing a bug, add a test that would have caught it.
+
+### Food Database Enrichment (always ongoing)
+Better the DB, more people will come and log. Accuracy and breadth matter.
+
+- [ ] **Correct existing entries** — Find foods with wrong macros, missing data, bad serving sizes. Fix them.
+- [ ] **Add missing foods** — Indian foods, regional dishes, restaurant items, branded products. Cross-reference with USDA/reliable sources.
+- [ ] **Improve search** — Better aliases, spelling corrections, partial matches. "paneer" should find all paneer dishes.
+
 ### Ongoing: Code Improvement Loop
 Autonomous refactoring. Run `code-improvement.md`. Principles in `Docs/principles/`. Log in `Docs/code-improvement-log.md`.
 

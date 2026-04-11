@@ -52,7 +52,7 @@ struct DashboardView: View {
                             // Left column: Weight
                             VStack(alignment: .leading, spacing: 2) {
                                 Label("Weight", systemImage: "scalemass").font(.caption).foregroundStyle(.secondary)
-                                if let w = viewModel.latestWeight ?? viewModel.currentWeight {
+                                if let w = viewModel.latestWeight ?? viewModel.trendWeight {
                                     HStack(alignment: .firstTextBaseline, spacing: 3) {
                                         Text(String(format: "%.1f", Preferences.weightUnit.convert(fromKg: w)))
                                             .font(.title2.weight(.bold).monospacedDigit())
@@ -69,7 +69,7 @@ struct DashboardView: View {
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .accessibilityElement(children: .combine)
-                            .accessibilityLabel(viewModel.currentWeight.map {
+                            .accessibilityLabel(viewModel.trendWeight.map {
                                 "Weight: \(String(format: "%.1f", Preferences.weightUnit.convert(fromKg: $0))) \(Preferences.weightUnit.displayName)"
                             } ?? "Weight: no data")
 
@@ -285,11 +285,11 @@ struct DashboardView: View {
 
     private var goalCard: some View {
         Group {
-            if let goal = WeightGoal.load(), let current = viewModel.currentWeight {
+            if let goal = WeightGoal.load(), let current = viewModel.latestWeight ?? viewModel.trendWeight {
                 NavigationLink {
                     GoalView()
                 } label: {
-                    GoalProgressCard(goal: goal, currentWeightKg: current)
+                    GoalProgressCard(goal: goal, currentWeightKg: current, trendWeightKg: viewModel.trendWeight)
                 }
                 .buttonStyle(.plain)
             } else {

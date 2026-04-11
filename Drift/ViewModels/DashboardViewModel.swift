@@ -12,8 +12,8 @@ final class DashboardViewModel {
     var basalCalories: Double = 0
     var steps: Double = 0
     var sleepHours: Double = 0
-    var currentWeight: Double? // kg (EMA — for TDEE calculations)
-    var latestWeight: Double?  // kg (raw latest entry — for display)
+    var trendWeight: Double?   // kg (EMA-smoothed — for TDEE/macro calcs, not direct display)
+    var latestWeight: Double?  // kg (raw latest entry — what user sees everywhere)
     var weeklyRate: Double? // kg/week
     var dailyDeficit: Double? // kcal (from weight trend)
     var avgDailyIntake: Double = 0 // 14-day avg calories eaten
@@ -84,7 +84,7 @@ final class DashboardViewModel {
         // Load weight trend from centralized service
         let trendService = WeightTrendService.shared
         trendService.refresh()
-        currentWeight = trendService.currentWeight
+        trendWeight = trendService.trendWeight
         latestWeight = trendService.latestWeightKg
         weeklyRate = trendService.weeklyRate
         dailyDeficit = trendService.dailyDeficit

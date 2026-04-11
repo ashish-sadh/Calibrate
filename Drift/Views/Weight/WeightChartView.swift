@@ -5,6 +5,7 @@ struct WeightChartView: View {
     let trend: WeightTrendCalculator.WeightTrend?
     let unit: WeightUnit
     let granularity: WeightViewModel.Granularity
+    var rawEntries: [WeightEntry] = []  // all entries (unfiltered) for average calculation
 
     private var displayPoints: [(date: Date, actual: Double?, ema: Double)] {
         guard let trend else { return [] }
@@ -99,9 +100,14 @@ struct WeightChartView: View {
     }
 
     private var averageWeight: Double {
+        // Use ALL raw entries (including outliers) for honest average
+        if !rawEntries.isEmpty {
+            let weights = rawEntries.map { unit.convert(fromKg: $0.weightKg) }
+            return weights.reduce(0, +) / Double(weights.count)
+        }
+        // Fallback to display points if no raw entries passed
         let a = displayPoints.compactMap(\.actual)
         if !a.isEmpty { return a.reduce(0, +) / Double(a.count) }
-        // Fallback to EMA values if no raw weights in range
         let e = displayPoints.compactMap(\.ema)
         guard !e.isEmpty else { return 0 }
         return e.reduce(0, +) / Double(e.count)

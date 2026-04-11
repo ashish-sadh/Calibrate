@@ -103,7 +103,7 @@ enum AIContextBuilder {
         // Goal — pre-computed with progress
         if let goal = WeightGoal.load() {
             let u = Preferences.weightUnit
-            let currentKg = ws.currentWeight
+            let currentKg = ws.trendWeight
             let direction = currentKg.map { goal.isLosing(currentWeightKg: $0) ? "losing" : "gaining" } ?? "targeting"
             if let currentKg {
                 let progress = goal.progress(currentWeightKg: currentKg)
