@@ -111,14 +111,22 @@ struct WeightGoal: Codable, Sendable {
         return requiredWeeklyRateKg * config.kcalPerKg / 7
     }
 
-    /// Minimum fat: research-based.
-    /// - Absolute floor: 0.3 g/kg (essential fatty acid synthesis, hormone production)
-    /// - Recommended floor: max(0.5 g/kg, 15% of calorie target)
-    /// Minimum fat intake — protects hormones, vitamin absorption, and satiety.
-    /// Sources: ISSN position stand, WHO guidelines, Helms et al. (2014).
-    /// USDA: minimum 20% of calories from fat. ISSN: 0.5-1.5 g/kg.
-    static func minimumFatG(bodyweightKg: Double, calorieTarget: Double?) -> Double {
-        let absoluteFloor = bodyweightKg * 0.7   // 0.7 g/kg — recommended minimum for hormonal health (ISSN: 0.5-1.5, most dietitians: 0.7-1.0)
+    /// Minimum fat intake — sex-aware, protects hormones, vitamin absorption, and satiety.
+    /// Women need more fat for estrogen/progesterone production and bone density.
+    /// Sources: ISSN position stand, Helms et al. (2014), WHO guidelines.
+    static func minimumFatG(bodyweightKg: Double, calorieTarget: Double?, isFemale: Bool? = nil) -> Double {
+        // Determine sex: explicit param > stored config > default to middle
+        let female: Bool? = isFemale ?? {
+            guard let data = UserDefaults.standard.data(forKey: "drift_tdee_config"),
+                  let config = try? JSONDecoder().decode(TDEEEstimator.TDEEConfig.self, from: data) else { return nil }
+            return config.sex == .female
+        }()
+        let gPerKg: Double = switch female {
+        case true:  0.8   // women: higher for hormonal health (estrogen, fertility, bone density)
+        case false: 0.6   // men: lower threshold but still needed for testosterone
+        case nil:   0.7   // unknown: middle ground
+        }
+        let absoluteFloor = bodyweightKg * gPerKg
         let twentyPct = (calorieTarget ?? 2000) * 0.20 / 9  // USDA: >=20% of calories from fat
         return max(absoluteFloor, twentyPct)
     }
