@@ -120,39 +120,39 @@ struct WeightGoal: Codable, Sendable {
         return max(absoluteFloor, twentyPct)
     }
 
-    /// Compute daily calorie target.
-    /// When called from UI (no actualTDEE passed), uses the shared TDEEEstimator.
-    /// When called from tests or with explicit TDEE, uses that directly.
-    func resolvedCalorieTarget(actualTDEE: Double? = nil) -> Double? {
+    /// Compute daily calorie target using CURRENT weight for deficit calculation.
+    func resolvedCalorieTarget(currentWeightKg: Double? = nil, actualTDEE: Double? = nil) -> Double? {
         if let override = calorieTargetOverride { return override }
-        if let tdee = actualTDEE { return tdee + requiredDailyDeficit }
-        // Use shared estimator on MainActor, or weight-based fallback
+        let cw = currentWeightKg ?? startWeightKg
+        let deficit = requiredDailyDeficit(currentWeightKg: cw)
+        if let tdee = actualTDEE { return tdee + deficit }
         if Thread.isMainThread {
             let est = MainActor.assumeIsolated { TDEEEstimator.shared.cachedOrSync() }
-            return est.tdee + requiredDailyDeficit
+            return est.tdee + deficit
         }
-        // Off main thread fallback — use the proper base formula (with soft cap)
-        return TDEEEstimator.computeBase(weightKg: startWeightKg, activityMultiplier: 29) + requiredDailyDeficit
+        return TDEEEstimator.computeBase(weightKg: cw, activityMultiplier: 29) + deficit
     }
 
     /// Describes how the calorie target was determined.
     @MainActor
-    func calorieTargetExplanation() -> (source: String, detail: String) {
+    func calorieTargetExplanation(currentWeightKg: Double? = nil) -> (source: String, detail: String) {
         if calorieTargetOverride != nil {
             return ("Manual", "You set this calorie target manually.")
         }
+        let cw = currentWeightKg ?? startWeightKg
+        let deficit = requiredDailyDeficit(currentWeightKg: cw)
         let est = TDEEEstimator.shared.cachedOrSync()
-        let target = est.tdee + requiredDailyDeficit
-        let deficitStr = requiredDailyDeficit < 0
-            ? "- \(Int(abs(requiredDailyDeficit))) deficit"
-            : "+ \(Int(abs(requiredDailyDeficit))) surplus"
+        let target = est.tdee + deficit
+        let deficitStr = deficit < 0
+            ? "- \(Int(abs(deficit))) deficit"
+            : "+ \(Int(abs(deficit))) surplus"
         return (est.source.rawValue,
                 "TDEE \(Int(est.tdee)) \(deficitStr) = \(Int(target)) kcal/day. \(est.confidence == .low ? "Log weight & food for better accuracy." : "")")
     }
 
     /// Effective macro targets.
     func macroTargets(currentWeightKg: Double? = nil, actualTDEE: Double? = nil) -> MacroTargets? {
-        guard let calTarget = resolvedCalorieTarget(actualTDEE: actualTDEE) else { return nil }
+        guard let calTarget = resolvedCalorieTarget(currentWeightKg: currentWeightKg, actualTDEE: actualTDEE) else { return nil }
 
         let weight = currentWeightKg ?? startWeightKg
         let pref = dietPreference ?? .balanced
@@ -205,17 +205,23 @@ struct WeightGoal: Codable, Sendable {
     func progress(currentWeightKg: Double) -> Double {
         let totalDistance = abs(targetWeightKg - startWeightKg)
         guard totalDistance > 0.5 else { return 1 }
-        // Check if user has reached or passed target
-        let goalDirection = targetWeightKg - startWeightKg  // negative = losing, positive = gaining
-        let currentPosition = currentWeightKg - startWeightKg
-        // Overshoot: moved past target in the goal direction → 100%
-        if goalDirection < 0 && currentPosition <= goalDirection { return 1 }  // losing goal, went below target
-        if goalDirection > 0 && currentPosition >= goalDirection { return 1 }  // gaining goal, went above target
-        // Wrong direction: moved opposite to goal → 0%
-        if goalDirection < 0 && currentPosition > 0 { return 0 }  // losing goal but gained weight past start
-        if goalDirection > 0 && currentPosition < 0 { return 0 }  // gaining goal but lost weight past start
-        // Normal progress
-        return min(1, max(0, abs(currentPosition) / totalDistance))
+        let remainingDistance = abs(targetWeightKg - currentWeightKg)
+        // Within 0.5 kg of target → done
+        if remainingDistance < 0.5 { return 1 }
+        // Ratio: how far current has moved from start toward target
+        let startToTarget = targetWeightKg - startWeightKg
+        let startToCurrent = currentWeightKg - startWeightKg
+        guard startToTarget != 0 else { return 1 }
+        let ratio = startToCurrent / startToTarget
+        // Past target in goal direction → 100% (if overshoot is reasonable)
+        if ratio >= 1.0 && remainingDistance <= totalDistance * 0.5 { return 1.0 }
+        // Wrong direction from start → 0%
+        if ratio < 0 { return 0.0 }
+        // Normal progress — but never show > remaining-based estimate
+        // This prevents 100% when start is stale and current is far from target
+        let fromRatio = min(1, ratio)
+        let fromRemaining = max(0, 1 - remainingDistance / max(totalDistance, remainingDistance))
+        return min(fromRatio, fromRemaining)
     }
 
     /// Whether on track: actual rate vs required rate.

@@ -273,13 +273,10 @@ import GRDB
 @Test func staleStartWeight_progressWithStaleStart() async throws {
     let goal = WeightGoal(targetWeightKg: 90, monthsToAchieve: 3, startDate: "2026-01-01", startWeightKg: 75.9)
 
-    // Progress is relative to start→target journey. start=75.9, target=90 = gain goal.
-    // Current=101.8 means user "surpassed" the 90 target from 75.9's perspective → 100%
-    // This is the one case where progress is misleading with stale start.
-    // BUT: direction ("lose 11.8 kg") and deficit are now correct.
-    // Progress bar resolves when user re-baselines start weight.
+    // With stale start (75.9) and current far from target (102 vs 90),
+    // progress should NOT be 100%. The remaining distance (12 kg) is too large.
     let progress = goal.progress(currentWeightKg: 101.8)
-    #expect(progress == 1.0, "Surpassed target from start's perspective")
+    #expect(progress < 0.3, "Should show low progress with 12 kg remaining, got \(progress)")
 
     // After re-baseline: start=101.8, target=90, current=101.8 → 0%
     let rebaselined = WeightGoal(targetWeightKg: 90, monthsToAchieve: 3, startDate: "2026-04-01", startWeightKg: 101.8)
