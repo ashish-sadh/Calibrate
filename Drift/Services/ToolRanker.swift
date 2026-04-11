@@ -440,7 +440,9 @@ enum ToolRanker {
         p["exercise_info"] = ToolProfile(
             triggers: [("workout", 1.5), ("train", 2), ("exercise", 1.5), ("gym", 1.5),
                        ("lift", 1.5), ("what should i train", 4), ("workout history", 3),
-                       ("suggest workout", 3), ("how many workout", 3), ("recovery", 1.5)],
+                       ("suggest workout", 3), ("how many workout", 3), ("recovery", 1.5),
+                       ("workout count", 3.5), ("workouts this week", 3.5),
+                       ("how often did i train", 4), ("how many times did i work", 4)],
             logBoost: -1, queryBoost: 2,
             screens: [.exercise: 0.5],
             antiKeywords: ["start", "begin", "let's"]

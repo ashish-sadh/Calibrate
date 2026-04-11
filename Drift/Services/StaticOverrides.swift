@@ -88,31 +88,7 @@ enum StaticOverrides {
         // --- Deterministic overrides (both models) ---
         // These are exact-match or regex-parsed — no LLM quality benefit from Gemma handling them.
 
-        // Calorie/nutrition estimation: "calories in samosa", "estimate calories for biryani"
-        let estimatePrefixes = ["calories in ", "calories for ", "estimate calories for ", "estimate calories in ",
-                                 "how many calories in ", "how many calories does ", "how many calories are in ",
-                                 "nutrition for ", "nutrition in ", "macros in ", "macros for ",
-                                 "i want to estimate calories for ", "what are the calories in ",
-                                 "protein in ", "how much protein in "]
-        if let ePrefix = estimatePrefixes.first(where: { lower.hasPrefix($0) }) {
-            var food = String(lower.dropFirst(ePrefix.count)).trimmingCharacters(in: .whitespaces)
-            // Strip trailing "have" etc: "how many calories does a samosa have" → "a samosa"
-            for suffix in [" have", " has", " contain"] {
-                if food.hasSuffix(suffix) { food = String(food.dropLast(suffix.count)) }
-            }
-            // Strip leading article
-            for prefix in ["a ", "an ", "one "] {
-                if food.hasPrefix(prefix) { food = String(food.dropFirst(prefix.count)) }
-            }
-            if !food.isEmpty {
-                return .handler {
-                    if let result = FoodService.getNutrition(name: food) {
-                        return "\(result.perServing) Say 'log \(result.food.name.lowercased())' to add it."
-                    }
-                    return "I don't have \(food) in the database. Try a similar name or log it manually."
-                }
-            }
-        }
+        // Calorie estimation ("calories in samosa") → food_info tool handles via FoodService.getNutrition()
 
         // Copy yesterday
         if lower == "copy yesterday" || lower == "same as yesterday" || lower == "repeat yesterday"
@@ -154,21 +130,7 @@ enum StaticOverrides {
             }
         }
 
-        // Workout count
-        if lower.contains("how many workout") || lower.contains("workout count") || lower.contains("how often did i train")
-            || lower.contains("workouts this week") || lower.contains("how many times did i work") {
-            return .handler {
-                let count = (try? WorkoutService.fetchWorkouts(limit: 7))?.filter {
-                    guard let d = DateFormatters.dateOnly.date(from: $0.date) else { return false }
-                    return Calendar.current.isDate(d, equalTo: Date(), toGranularity: .weekOfYear)
-                }.count ?? 0
-                var response = "\(count) workout\(count == 1 ? "" : "s") this week."
-                if let streak = try? WorkoutService.workoutStreak() {
-                    response += " Streak: \(streak.current) weeks (best: \(streak.longest))."
-                }
-                return response
-            }
-        }
+        // Workout count ("how many workouts this week") → exercise_info tool
 
         // Supplement taken
         let supplementVerbs = ["took my ", "took ", "had my ", "taken my ", "take my "]

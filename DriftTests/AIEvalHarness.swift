@@ -75,11 +75,7 @@ final class AIEvalHarness: XCTestCase {
             // Undo
             ("undo", "undo"), ("undo that", "undo"), ("undo last", "undo"),
             // TDEE/BMR — moved to ToolRanker (weight_info tool)
-            // Calorie estimation
-            ("calories in samosa", "estimate"),
-            ("estimate calories for biryani", "estimate"),
-            ("how many calories in a banana", "estimate"),
-            ("i want to estimate calories for samosa", "estimate"),
+            // Calorie estimation — moved to food_info tool (FoodService.getNutrition)
             // Diet/fitness advice
             ("i want to reduce fat", "advice"),
             ("how to lose fat", "advice"),
