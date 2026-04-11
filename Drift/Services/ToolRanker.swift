@@ -216,7 +216,11 @@ enum ToolRanker {
             else if lower.contains("yesterday") { params["query"] = "yesterday" }
             else if lower.contains("week") { params["query"] = "weekly" }
             else if lower.contains("suggest") || lower.contains("what should") || lower.contains("what to eat") { params["query"] = "suggest" }
-            else { params["query"] = lower } // pass raw query for LLM context
+            else { params["query"] = lower }
+        case "weight_info":
+            params["query"] = lower
+        case "exercise_info":
+            params["query"] = lower
         case "sleep_recovery":
             // Pass period context for weekly queries
             if lower.contains("week") || lower.contains("trend") || lower.contains("last") {
