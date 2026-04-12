@@ -28,6 +28,7 @@ final class DashboardViewModel {
     var hrvMs: Double = 0
     var restingHR: Double = 0
 
+    var behaviorInsights: [BehaviorInsight] = []
     var isLoading = false
 
     var calorieBalance: Double {
@@ -101,6 +102,9 @@ final class DashboardViewModel {
         } catch {
             Log.app.error("Failed to load avg intake: \(error.localizedDescription)")
         }
+
+        // Compute behavior insights
+        behaviorInsights = BehaviorInsightService.computeInsights()
 
         // Load HealthKit data
         let hkService = HealthKitService.shared

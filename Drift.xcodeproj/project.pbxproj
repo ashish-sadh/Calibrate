@@ -90,6 +90,7 @@
 		897722DC29F4AAF58BDA1CCF /* ActiveWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F8386EAF9FBD18F89C8C60 /* ActiveWorkoutView.swift */; };
 		8A8CF11C6A7AF26DCABECF6A /* CSVParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D6B07DD56345F8A5F5448BC /* CSVParserTests.swift */; };
 		8B4A3B20843E58F584398C79 /* LabReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5437789EE3514EE1191D392 /* LabReport.swift */; };
+		8BE56F9D4E9AE9064CCC8E15 /* BehaviorInsightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60966C6BE6E90750550B2F7 /* BehaviorInsightService.swift */; };
 		8CB8BF68CE3F11B2CFBDDB16 /* sample_lingo_export.csv in Resources */ = {isa = PBXBuildFile; fileRef = E6B95CCD0C984C915051F482 /* sample_lingo_export.csv */; };
 		8D1ED4EACC7CB2C0EEC52743 /* BodyCompEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4BC95967D2043D701CA63AB /* BodyCompEntryView.swift */; };
 		8D8FB3814300848676740EC6 /* AddSupplementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4BD88646DFE4A17724D4407 /* AddSupplementView.swift */; };
@@ -314,6 +315,7 @@
 		B3D6A44D7C25BC4956132FE8 /* FoodLoggingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodLoggingTests.swift; sourceTree = "<group>"; };
 		B58C97F6B46397BDA539E78C /* SupplementsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupplementsTabView.swift; sourceTree = "<group>"; };
 		B5ABF9F3D40318CC0238A796 /* LocalAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalAIService.swift; sourceTree = "<group>"; };
+		B60966C6BE6E90750550B2F7 /* BehaviorInsightService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BehaviorInsightService.swift; sourceTree = "<group>"; };
 		BA011B2F5DA344904EFAD4D3 /* LLMGemma4Eval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMGemma4Eval.swift; sourceTree = "<group>"; };
 		BADD153523D188C4ED89B55D /* AIEvalHarness.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIEvalHarness.swift; sourceTree = "<group>"; };
 		BC5309A92CB03534993AE5E9 /* TDEEEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TDEEEstimator.swift; sourceTree = "<group>"; };
@@ -672,6 +674,7 @@
 				659C59EE72A777C6DEA046D9 /* AIResponseCleaner.swift */,
 				237FC00B086CC3785B482588 /* AIRuleEngine.swift */,
 				2CFE343BFAFCD99118098211 /* AIToolAgent.swift */,
+				B60966C6BE6E90750550B2F7 /* BehaviorInsightService.swift */,
 				42CC554F9454FF0FC8A31F56 /* BiomarkerKnowledgeBase.swift */,
 				F36D548F9FA62D8D7E53B1C7 /* BiomarkerService.swift */,
 				9F9F051926CE39DF3E0A47DA /* BodySpecPDFParser.swift */,
@@ -894,6 +897,7 @@
 				EB2A292ED2019794749E4839 /* AppDatabase.swift in Sources */,
 				6B0CE72048898157F8BA881F /* BarcodeCache.swift in Sources */,
 				43FCEE74704AB4A0A900510A /* BarcodeScannerView.swift in Sources */,
+				8BE56F9D4E9AE9064CCC8E15 /* BehaviorInsightService.swift in Sources */,
 				4AEC72C5305BE9A0C9555627 /* BiomarkerDefinition.swift in Sources */,
 				1E41F060499A92A9EFB59BE1 /* BiomarkerDetailView.swift in Sources */,
 				1E0CA8E39AF5CE13AC703456 /* BiomarkerKnowledgeBase.swift in Sources */,

@@ -4,6 +4,13 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 
 ---
 
+## Cycle · 2026-04-12
+
+- **Product Review #1**: Competitive analysis (MFP photo scanning, Whoop behavior insights, MacroFactor adaptive algo, Boostcamp muscle visualization). Promoted Adaptive TDEE to Now, added Behavior Insights section, muscle heatmaps to Next.
+- **LB/KG unit fix (P0)**: WeightViewModel.loadEntries() now refreshes weightUnit from Preferences. Stale capture fixed. Test added.
+- **Exercise weight unit support**: All workout views respect LB/KG preference. DB stays in lbs, conversion at view boundaries. ActiveWorkoutView, WorkoutDetailView, WorkoutSet.display all updated. Tests verify both units.
+- **Adaptive TDEE**: TDEEEstimator now persists smoothed TDEE from weight trend + food intake. EMA alpha=0.2, requires 3+ data points. Applied with 0.4 dampening. GoalView shows adaptive value. 4 new tests.
+
 ## Cycle · 2026-04-11
 
 - **Ingredient persistence**: Recipes now store full per-ingredient macros as JSON. RecipeItem is Codable. Swipe-to-edit opens recipe builder with pre-populated ingredients. Backward-compatible with legacy string-array format. 3 new tests.

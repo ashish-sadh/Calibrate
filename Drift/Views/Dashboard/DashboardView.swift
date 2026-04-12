@@ -124,6 +124,11 @@ struct DashboardView: View {
                     if viewModel.supplementsTotal > 0 {
                         NavigationLink { SupplementsTabView() } label: { supplementCard }
                     }
+
+                    // Behavior Insights
+                    if !viewModel.behaviorInsights.isEmpty {
+                        insightsCard
+                    }
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 2)
@@ -398,6 +403,37 @@ struct DashboardView: View {
             Text("taken")
                 .font(.caption)
                 .foregroundStyle(.secondary)
+        }
+        .card()
+    }
+
+    // MARK: - Behavior Insights Card
+
+    private var insightsCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Image(systemName: "lightbulb.fill")
+                    .font(.caption).foregroundStyle(Theme.fatYellow)
+                Text("Insights").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                Spacer()
+            }
+            ForEach(viewModel.behaviorInsights.indices, id: \.self) { i in
+                let insight = viewModel.behaviorInsights[i]
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: insight.icon)
+                        .font(.caption)
+                        .foregroundStyle(insight.isPositive ? Theme.deficit : Theme.surplus)
+                        .frame(width: 20)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(insight.title)
+                            .font(.caption.weight(.semibold))
+                        Text(insight.detail)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(3)
+                    }
+                }
+            }
         }
         .card()
     }

@@ -9,8 +9,8 @@ _(pick from Ready)_
 ## Ready
 
 ### P0: Unit Switching (LB/KG) Broken + Missing Units
-- [ ] **LB/KG setting doesn't update UI** — Toggling between LB and KG in settings has no effect on displayed values. All weight-related views (dashboard, weight history, food macros, etc.) must respect the unit preference and convert/display accordingly. Add tests to catch unit preference regressions.
-- [ ] **Support all unit options across the app** — Body weight entry only accepts KG, should also accept LB. Audit every place units appear (body weight, food weight, exercise weight) and ensure users can input/view in their preferred unit system.
+- [x] **LB/KG setting doesn't update UI** — Fixed: WeightViewModel.loadEntries() now refreshes weightUnit from Preferences. Test added.
+- [x] **Support all unit options across the app** — Fixed: exercise weights, workout detail, volume, 1RM, body comp all respect LB/KG preference. DB stays in lbs, conversion at view boundaries.
 
 ### P0: LLM-Driven Intent + Tool Calling (CORE REDESIGN)
 
