@@ -13,12 +13,13 @@ struct BehaviorInsight: Sendable {
 @MainActor
 enum BehaviorInsightService {
 
-    /// Compute all available insights from existing data. Returns 0-3 insights.
-    static func computeInsights() -> [BehaviorInsight] {
+    /// Compute all available insights from existing data. Returns 0-4 insights.
+    static func computeInsights(sleepHistory: [(date: Date, hours: Double)] = []) -> [BehaviorInsight] {
         var insights: [BehaviorInsight] = []
         if let workout = workoutFrequencyInsight() { insights.append(workout) }
         if let protein = proteinAdherenceInsight() { insights.append(protein) }
         if let logging = loggingConsistencyInsight() { insights.append(logging) }
+        if let sleep = sleepVsCaloriesInsight(sleepHistory: sleepHistory) { insights.append(sleep) }
         return insights
     }
 
@@ -98,7 +99,7 @@ enum BehaviorInsightService {
         var missedDays = 0
         var totalDays = 0
 
-        for dayOffset in 1...14 {
+        for dayOffset in 1...30 {
             guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { continue }
             let dateStr = DateFormatters.dateOnly.string(from: date)
             guard let nutrition = try? db.fetchDailyNutrition(for: dateStr),
@@ -156,6 +157,55 @@ enum BehaviorInsightService {
                 title: "Log more to unlock insights",
                 detail: "Only \(Int(consistency * 100))% of days logged. TDEE adapts faster with consistent data.",
                 isPositive: false)
+        }
+        return nil
+    }
+
+    // MARK: - Insight 4: Sleep Duration vs Next-Day Calories
+
+    /// Compares calorie intake on days after good sleep (7+ hours) vs poor sleep (<6 hours).
+    /// Requires: 7+ days of sleep data paired with food data.
+    private static func sleepVsCaloriesInsight(sleepHistory: [(date: Date, hours: Double)]) -> BehaviorInsight? {
+        guard sleepHistory.count >= 7 else { return nil }
+
+        let db = AppDatabase.shared
+        let calendar = Calendar.current
+        var goodSleepCals: [Double] = []
+        var poorSleepCals: [Double] = []
+
+        for entry in sleepHistory {
+            // Sleep data is for the night ending on this date; look at food logged THIS day
+            let dateStr = DateFormatters.dateOnly.string(from: entry.date)
+            guard let nutrition = try? db.fetchDailyNutrition(for: dateStr),
+                  nutrition.calories > 200 else { continue }  // skip days with minimal logging
+
+            if entry.hours >= 7 {
+                goodSleepCals.append(nutrition.calories)
+            } else if entry.hours > 0 && entry.hours < 6 {
+                poorSleepCals.append(nutrition.calories)
+            }
+        }
+
+        guard goodSleepCals.count >= 3, poorSleepCals.count >= 2 else { return nil }
+
+        let goodAvg = goodSleepCals.reduce(0, +) / Double(goodSleepCals.count)
+        let poorAvg = poorSleepCals.reduce(0, +) / Double(poorSleepCals.count)
+        let diff = poorAvg - goodAvg  // positive = eat more on poor sleep days
+
+        guard abs(diff) > 50 else { return nil }  // negligible difference
+
+        if diff > 100 {
+            return BehaviorInsight(
+                icon: "moon.zzz.fill",
+                title: "Sleep affects eating",
+                detail: "After poor sleep (<6h), you eat ~\(Int(diff)) more cal than after good sleep (7h+).",
+                isPositive: false)
+        } else if diff < -50 {
+            return BehaviorInsight(
+                icon: "moon.zzz.fill",
+                title: "Sleep and food balanced",
+                detail: "Your calorie intake stays consistent regardless of sleep quality. Nice discipline.",
+                isPositive: true)
         }
         return nil
     }

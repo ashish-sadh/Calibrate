@@ -103,12 +103,11 @@ final class DashboardViewModel {
             Log.app.error("Failed to load avg intake: \(error.localizedDescription)")
         }
 
-        // Compute behavior insights
-        behaviorInsights = BehaviorInsightService.computeInsights()
-
         // Load HealthKit data
         let hkService = HealthKitService.shared
         isHealthKitAvailable = await hkService.isAvailable
+
+        var sleepHist: [(date: Date, hours: Double)] = []
 
         if isHealthKitAvailable {
             // Fetch each independently — one failure doesn't block others
@@ -126,7 +125,7 @@ final class DashboardViewModel {
             // Build baselines (same as detail page) for consistent recovery score
             let hrvHist = (try? await hkService.fetchHRVHistory(days: 14)) ?? []
             let rhrHist = (try? await hkService.fetchRestingHeartRateHistory(days: 14)) ?? []
-            let sleepHist = (try? await hkService.fetchSleepHistory(days: 14)) ?? []
+            sleepHist = (try? await hkService.fetchSleepHistory(days: 30)) ?? []
             let respHist = (try? await hkService.fetchRespiratoryRateHistory(days: 14)) ?? []
             let baselines = RecoveryEstimator.calculateBaselines(
                 hrvHistory: hrvHist, rhrHistory: rhrHist,
@@ -137,5 +136,8 @@ final class DashboardViewModel {
                 baselines: baselines
             )
         }
+
+        // Compute behavior insights (after HealthKit so sleep data is available)
+        behaviorInsights = BehaviorInsightService.computeInsights(sleepHistory: sleepHist)
     }
 }
