@@ -1,25 +1,23 @@
 #!/bin/bash
 # Hook: PreToolUse on Bash(git commit *)
-# Nags to check GitHub Issues if not checked recently (every 2 hours).
+# Every commit: checks for open bug issues and surfaces them.
 
 set -e
 
-ISSUES_FILE="$HOME/drift-state/issues-checked-this-session"
-STALE_THRESHOLD=7200  # 2 hours in seconds
+# Query open bugs directly
+BUGS=$(gh issue list --state open --label bug --json number,title,labels --jq '.[] | "#\(.number) \(.title) [\(.labels | map(.name) | join(","))]"' 2>/dev/null || echo "")
 
-NOW=$(date +%s)
-LAST_CHECK=$(cat "$ISSUES_FILE" 2>/dev/null || echo "0")
-ELAPSED=$((NOW - LAST_CHECK))
-
-if [ "$ELAPSED" -lt "$STALE_THRESHOLD" ]; then
-  exit 0  # Recently checked, don't nag
+if [ -z "$BUGS" ]; then
+  exit 0  # No bugs, proceed
 fi
+
+BUG_COUNT=$(echo "$BUGS" | wc -l | tr -d ' ')
 
 cat <<ENDJSON
 {
   "hookSpecificOutput": {
     "hookEventName": "PreToolUse",
-    "additionalContext": "REMINDER: Check GitHub Issues before continuing. Run: gh issue list --state open --label bug\nIf there are P0 bugs, fix them before other work. After checking, update the timestamp: echo \$(date +%s) > ~/drift-state/issues-checked-this-session"
+    "additionalContext": "OPEN BUGS (${BUG_COUNT}):\n${BUGS}\n\nP0 bugs must be fixed before other work. P1 bugs should be addressed soon. If you can fix any of these in your current cycle, do it."
   }
 }
 ENDJSON
