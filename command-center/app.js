@@ -58,22 +58,27 @@ async function getUser() {
   catch { return null; }
 }
 
-// Reports (use public API — no auth needed for public repos)
+// Reports (use authenticated API if available, falls back to public)
+async function smartApi(path) {
+  if (getToken()) return api(path);
+  return publicApi(path);
+}
+
 async function listReports() {
-  const contents = await publicApi(`/repos/${OWNER}/${REPO}/contents/Docs/reports`);
+  const contents = await smartApi(`/repos/${OWNER}/${REPO}/contents/Docs/reports`);
   return contents
     .filter(f => f.name.endsWith('.md'))
     .sort((a, b) => b.name.localeCompare(a.name));
 }
 
 async function getReportContent(path) {
-  const data = await publicApi(`/repos/${OWNER}/${REPO}/contents/${path}`);
+  const data = await smartApi(`/repos/${OWNER}/${REPO}/contents/${path}`);
   return atob(data.content);
 }
 
 async function getMetrics() {
   try {
-    const data = await publicApi(`/repos/${OWNER}/${REPO}/contents/command-center/metrics.json`);
+    const data = await smartApi(`/repos/${OWNER}/${REPO}/contents/command-center/metrics.json`);
     return JSON.parse(atob(data.content));
   } catch {
     return null;
