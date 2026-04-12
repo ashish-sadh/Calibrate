@@ -5,6 +5,74 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Report — Drift Command Center</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    .report-section {
+      position: relative;
+      padding: 12px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.15s;
+      margin: 2px 0;
+    }
+    .report-section:hover {
+      background: rgba(88, 166, 255, 0.06);
+    }
+    .report-section:hover .comment-btn {
+      opacity: 1;
+    }
+    .report-section.has-comments {
+      background: rgba(88, 166, 255, 0.04);
+      border-left: 3px solid var(--accent);
+      padding-left: 13px;
+    }
+    .comment-btn {
+      position: absolute;
+      right: 8px;
+      top: 8px;
+      opacity: 0;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      font-size: 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 0.15s;
+    }
+    .comment-btn:hover { background: var(--accent-hover); }
+    .comment-count {
+      display: inline-block;
+      background: rgba(88, 166, 255, 0.15);
+      color: var(--accent);
+      font-size: 12px;
+      padding: 1px 8px;
+      border-radius: 10px;
+      margin-left: 8px;
+    }
+
+    /* Pretty markdown rendering */
+    .report-rendered h1 { font-size: 28px; font-weight: 700; margin: 0 0 8px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+    .report-rendered h2 { font-size: 20px; font-weight: 600; color: var(--accent); margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .report-rendered h3 { font-size: 16px; font-weight: 600; margin: 20px 0 8px; }
+    .report-rendered p { margin: 8px 0; line-height: 1.7; }
+    .report-rendered ul, .report-rendered ol { margin: 8px 0; padding-left: 24px; }
+    .report-rendered li { margin: 4px 0; line-height: 1.6; }
+    .report-rendered table { width: 100%; border-collapse: collapse; margin: 16px 0; }
+    .report-rendered th { background: var(--bg); font-weight: 600; text-align: left; padding: 10px 14px; border: 1px solid var(--border); font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted); }
+    .report-rendered td { padding: 10px 14px; border: 1px solid var(--border); }
+    .report-rendered tr:hover td { background: rgba(88, 166, 255, 0.03); }
+    .report-rendered code { background: var(--bg); padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+    .report-rendered pre { background: var(--bg); padding: 16px; border-radius: 8px; overflow-x: auto; margin: 12px 0; }
+    .report-rendered pre code { padding: 0; background: none; }
+    .report-rendered blockquote { border-left: 3px solid var(--accent); padding: 8px 16px; margin: 12px 0; color: var(--text-muted); background: rgba(88, 166, 255, 0.03); border-radius: 0 6px 6px 0; }
+    .report-rendered strong { color: #fff; }
+    .report-rendered hr { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+    .report-rendered a { color: var(--accent); }
+  </style>
 </head>
 <body>
   <div class="header">
@@ -14,7 +82,7 @@
 
   <div class="content">
     <div class="report-header">
-      <a href="index.html" class="back-link">< Back to reports</a>
+      <a href="index.html" class="back-link">&larr; Back to reports</a>
       <div id="pr-link"></div>
     </div>
 
@@ -28,7 +96,8 @@
     const filename = params.get('file');
     let currentPR = null;
     let currentPath = `Docs/reports/${filename}`;
-    let commentsByLine = {};
+    let commentsBySection = {};
+    let rawLines = [];
 
     async function loadReport() {
       if (!filename) {
@@ -37,9 +106,8 @@
       }
 
       try {
-        // Load report content
         const content = await getReportContent(currentPath);
-        const lines = content.split('\n');
+        rawLines = content.split('\n');
 
         // Find associated PR
         currentPR = await findPRForReport(filename);
@@ -47,19 +115,20 @@
           document.getElementById('pr-link').innerHTML =
             `<a href="${currentPR.html_url}" target="_blank" class="btn">View on GitHub #${currentPR.number}</a>`;
 
-          // Load existing comments
+          // Load existing comments and map to sections
           const comments = await getPRComments(currentPR.number);
           comments.forEach(c => {
-            if (c.fileLine) {
-              if (!commentsByLine[c.fileLine]) commentsByLine[c.fileLine] = [];
-              commentsByLine[c.fileLine].push(c);
+            const line = c.fileLine;
+            if (line) {
+              // Map line to section index
+              const sectionIdx = lineToSection(line);
+              if (!commentsBySection[sectionIdx]) commentsBySection[sectionIdx] = [];
+              commentsBySection[sectionIdx].push(c);
             }
           });
         }
 
-        // Render report with clickable lines
-        const rendered = renderReportWithLines(lines);
-        document.getElementById('report-body').innerHTML = rendered;
+        renderReport(content);
 
       } catch (e) {
         document.getElementById('report-body').innerHTML =
@@ -67,85 +136,97 @@
       }
     }
 
-    function renderReportWithLines(lines) {
-      let html = '<div class="report-content">';
-      let inCodeBlock = false;
+    // Split markdown into sections by headings and major blocks
+    function splitIntoSections(content) {
+      const lines = content.split('\n');
+      const sections = [];
+      let current = { startLine: 1, lines: [] };
 
       lines.forEach((line, idx) => {
-        const lineNum = idx + 1;
-        const hasComments = commentsByLine[lineNum];
-        const commentClass = hasComments ? ' has-comments' : '';
-        const indicator = hasComments
-          ? `<span class="line-comment-indicator">${hasComments.length} comment${hasComments.length > 1 ? 's' : ''}</span>`
-          : '';
-
-        // Track code blocks
-        if (line.startsWith('```')) {
-          inCodeBlock = !inCodeBlock;
-          html += `<div class="report-line${commentClass}">${escapeHtml(line)}${indicator}</div>`;
-        } else if (inCodeBlock) {
-          html += `<div class="report-line${commentClass}" style="font-family:monospace;font-size:13px">${escapeHtml(line)}${indicator}</div>`;
-        } else {
-          // Render markdown for this line
-          const rendered = renderMarkdown(line);
-          html += `<div class="report-line${commentClass}" data-line="${lineNum}" onclick="toggleComment(${lineNum})">${rendered}${indicator}</div>`;
+        // Start new section on headings or horizontal rules
+        if ((line.match(/^#{1,3}\s/) || line.match(/^---\s*$/)) && current.lines.length > 0) {
+          sections.push(current);
+          current = { startLine: idx + 1, lines: [] };
         }
+        current.lines.push(line);
+      });
+      if (current.lines.length > 0) sections.push(current);
+      return sections;
+    }
 
-        // Show existing comments
+    function lineToSection(lineNum) {
+      const sections = splitIntoSections(rawLines.join('\n'));
+      for (let i = 0; i < sections.length; i++) {
+        const s = sections[i];
+        const endLine = s.startLine + s.lines.length - 1;
+        if (lineNum >= s.startLine && lineNum <= endLine) return i;
+      }
+      return 0;
+    }
+
+    function renderReport(content) {
+      const sections = splitIntoSections(content);
+      let html = '<div class="report-rendered">';
+
+      sections.forEach((section, idx) => {
+        const md = section.lines.join('\n');
+        const rendered = marked.parse(md);
+        const comments = commentsBySection[idx];
+        const hasComments = comments && comments.length > 0;
+
+        html += `<div class="report-section${hasComments ? ' has-comments' : ''}" data-section="${idx}" data-start-line="${section.startLine}">`;
+        html += `<button class="comment-btn" onclick="event.stopPropagation();toggleComment(${idx}, ${section.startLine})" title="Add feedback">+</button>`;
+        html += rendered;
+
         if (hasComments) {
-          html += hasComments.map(c => `
-            <div class="existing-comment">
-              <div class="comment-author">
-                <img src="${c.user.avatar_url}" alt="${c.user.login}">
-                <strong>${c.user.login}</strong>
-                <time>${new Date(c.created_at).toLocaleDateString()}</time>
-              </div>
-              <div class="comment-body">${renderMarkdown(c.body)}</div>
-            </div>
-          `).join('');
+          html += `<div style="margin-top:8px">`;
+          comments.forEach(c => {
+            html += `
+              <div class="existing-comment">
+                <div class="comment-author">
+                  <img src="${c.user.avatar_url}" alt="${c.user.login}">
+                  <strong>${c.user.login}</strong>
+                  <time>${new Date(c.created_at).toLocaleDateString()}</time>
+                </div>
+                <div class="comment-body">${marked.parse(c.body)}</div>
+              </div>`;
+          });
+          html += `</div>`;
         }
 
-        // Comment box placeholder
-        html += `<div id="comment-box-${lineNum}" style="display:none"></div>`;
+        html += `<div id="comment-box-${idx}" style="display:none"></div>`;
+        html += `</div>`;
       });
 
       html += '</div>';
-      return html;
+      document.getElementById('report-body').innerHTML = html;
     }
 
-    function toggleComment(lineNum) {
-      const box = document.getElementById(`comment-box-${lineNum}`);
+    function toggleComment(sectionIdx, startLine) {
+      const box = document.getElementById(`comment-box-${sectionIdx}`);
       if (box.style.display !== 'none') {
         box.style.display = 'none';
         box.innerHTML = '';
         return;
       }
 
-      if (!getToken()) {
-        alert('Sign in to comment');
-        return;
-      }
-
-      if (!currentPR) {
-        alert('No PR found for this report — comments require an associated PR');
-        return;
-      }
+      if (!getToken()) { alert('Sign in to comment'); return; }
+      if (!currentPR) { alert('No PR found for this report'); return; }
 
       box.style.display = 'block';
       box.innerHTML = `
         <div class="comment-box">
-          <textarea id="comment-text-${lineNum}" placeholder="Add your feedback on this line..."></textarea>
+          <textarea id="comment-text-${sectionIdx}" placeholder="Your feedback on this section..."></textarea>
           <div class="actions">
-            <button class="btn" onclick="toggleComment(${lineNum})">Cancel</button>
-            <button class="btn btn-primary" onclick="postComment(${lineNum})">Submit</button>
+            <button class="btn" onclick="toggleComment(${sectionIdx}, ${startLine})">Cancel</button>
+            <button class="btn btn-primary" onclick="postComment(${sectionIdx}, ${startLine})">Submit Feedback</button>
           </div>
-        </div>
-      `;
-      document.getElementById(`comment-text-${lineNum}`).focus();
+        </div>`;
+      document.getElementById(`comment-text-${sectionIdx}`).focus();
     }
 
-    async function postComment(lineNum) {
-      const text = document.getElementById(`comment-text-${lineNum}`).value.trim();
+    async function postComment(sectionIdx, startLine) {
+      const text = document.getElementById(`comment-text-${sectionIdx}`).value.trim();
       if (!text) return;
 
       const btn = event.target;
@@ -153,18 +234,13 @@
       btn.disabled = true;
 
       try {
-        await submitComment(currentPR.number, currentPath, lineNum, text);
-        // Reload to show the new comment
+        await submitComment(currentPR.number, currentPath, startLine, text);
         location.reload();
       } catch (e) {
         alert(`Failed to submit: ${e.message}`);
-        btn.textContent = 'Submit';
+        btn.textContent = 'Submit Feedback';
         btn.disabled = false;
       }
-    }
-
-    function escapeHtml(str) {
-      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
     // Init
