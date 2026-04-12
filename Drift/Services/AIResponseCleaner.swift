@@ -132,8 +132,10 @@ enum AIResponseCleaner {
         // Model refusing to answer or being overly cautious
         if trimmed.hasPrefix("i cannot") || trimmed.hasPrefix("i can't answer") || trimmed.hasPrefix("i don't have") { return true }
 
-        // Model just repeating the question
-        if trimmed.count < 100 && trimmed.contains("?") && !trimmed.contains(where: \.isNumber) { return true }
+        // Model just repeating the question — but allow follow-up questions with action words
+        let followUpWords = ["log", "add", "track", "want", "would", "should", "meal", "serving", "how many", "how much", "which"]
+        let isFollowUp = followUpWords.contains(where: { trimmed.contains($0) })
+        if trimmed.count < 100 && trimmed.contains("?") && !trimmed.contains(where: \.isNumber) && !isFollowUp { return true }
 
         return false
     }

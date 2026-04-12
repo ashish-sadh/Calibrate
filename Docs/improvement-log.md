@@ -16,6 +16,7 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 - **Meal continuation refactor**: "also add coffee with milk" now splits on "with" and resolves each sub-item. Continuation handler reuses `resolveRecipeItem()` — no more duplicated food resolution logic.
 - **Test coverage push**: 3 new test methods for AIActionExecutor edge cases — trailing quantities, ranges, fractions, natural prefixes, meal hints, weight sanity checks, unit detection, article parsing. 5th-cycle coverage check.
 - **Recipe builder action "with" splitting**: openRecipeBuilder action handler now uses `resolveRecipeItem()` + "with" splitting. All 3 food resolution paths are consistent.
+- **SpellCorrectService tests**: 3 test methods covering hardcoded corrections (chiken→chicken, panner→paneer), passthrough for correct/short/common words, and fuzzy matching. Coverage from 0% → tested.
 
 ## Cycle · 2026-04-10
 
