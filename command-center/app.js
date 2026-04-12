@@ -24,27 +24,19 @@ async function api(path, opts = {}) {
   return resp.json();
 }
 
-// OAuth flow
-function startOAuth() {
-  if (!CLIENT_ID) {
-    alert('Configure OAuth: open browser console and run:\nlocalStorage.setItem("drift_client_id", "YOUR_CLIENT_ID")\nlocalStorage.setItem("drift_worker_url", "YOUR_WORKER_URL")');
-    return;
+// Auth flow — PAT-based (simple, no server needed)
+// Create a token at: https://github.com/settings/tokens/new?scopes=repo&description=Drift+Command+Center
+function promptForToken() {
+  const token = prompt(
+    'Enter your GitHub Personal Access Token.\n\n' +
+    'Create one at: github.com/settings/tokens/new\n' +
+    'Scope needed: repo\n\n' +
+    'The token is stored in your browser only.'
+  );
+  if (token && token.trim()) {
+    setToken(token.trim());
+    location.reload();
   }
-  const state = Math.random().toString(36).slice(2);
-  localStorage.setItem('drift_oauth_state', state);
-  const redirect = `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, '')}callback.html`;
-  window.location.href = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect)}&scope=repo&state=${state}`;
-}
-
-async function exchangeCode(code) {
-  if (!WORKER_URL) throw new Error('Worker URL not configured');
-  const resp = await fetch(`${WORKER_URL}?code=${code}`);
-  const data = await resp.json();
-  if (data.access_token) {
-    setToken(data.access_token);
-    return data;
-  }
-  throw new Error(data.error_description || 'OAuth exchange failed');
 }
 
 async function getUser() {
@@ -131,7 +123,7 @@ function renderMarkdown(md) {
 // UI helpers
 function showAuth() {
   const el = document.getElementById('auth-area');
-  if (el) el.innerHTML = `<button class="btn btn-primary" onclick="startOAuth()">Sign in with GitHub</button>`;
+  if (el) el.innerHTML = `<button class="btn btn-primary" onclick="promptForToken()">Sign in with GitHub</button>`;
 }
 
 async function showUser() {
