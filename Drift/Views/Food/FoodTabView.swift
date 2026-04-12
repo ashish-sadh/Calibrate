@@ -490,10 +490,10 @@ struct FoodTabView: View {
         }
         .contextMenu {
             Button {
-                try? AppDatabase.shared.toggleFoodFavorite(name: entry.foodName, foodId: entry.foodId)
+                FoodService.toggleFavorite(name: entry.foodName, foodId: entry.foodId)
                 viewModel.loadSuggestions()
             } label: {
-                let isFav = (try? AppDatabase.shared.isFoodFavorite(name: entry.foodName)) ?? false
+                let isFav = FoodService.isFavorite(name: entry.foodName)
                 Label(isFav ? "Unfavorite" : "Favorite", systemImage: isFav ? "star.slash" : "star")
             }
             Button {
@@ -585,10 +585,10 @@ struct FoodTabView: View {
                         }
                         .contextMenu {
                             Button {
-                                try? AppDatabase.shared.toggleFoodFavorite(name: food.name, foodId: food.id)
+                                FoodService.toggleFavorite(name: food.name, foodId: food.id)
                                 viewModel.loadSuggestions()
                             } label: {
-                                let isFav = (try? AppDatabase.shared.isFoodFavorite(name: food.name)) ?? false
+                                let isFav = FoodService.isFavorite(name: food.name)
                                 Label(isFav ? "Unfavorite" : "Favorite", systemImage: isFav ? "star.slash" : "star")
                             }
                         }
