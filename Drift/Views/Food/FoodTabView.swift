@@ -614,7 +614,8 @@ struct FoodTabView: View {
     private func yesterdayCalories() -> Double? {
         guard let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: viewModel.selectedDate) else { return nil }
         let dateStr = DateFormatters.dateOnly.string(from: yesterday)
-        return (try? AppDatabase.shared.fetchDailyNutrition(for: dateStr))?.calories
+        let totals = FoodService.getDailyTotals(date: dateStr)
+        return totals.eaten > 0 ? Double(totals.eaten) : nil
     }
 
     private func parseTimestamp(_ str: String) -> Date? {
@@ -679,7 +680,8 @@ struct FoodTabView: View {
         defer { isCopying = false }
         guard let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: viewModel.selectedDate) else { return }
         let dateStr = DateFormatters.dateOnly.string(from: yesterday)
-        guard let logs = try? AppDatabase.shared.fetchMealLogs(for: dateStr) else { return }
+        let logs = FoodService.fetchMealLogs(for: dateStr)
+        guard !logs.isEmpty else { return }
         let iso = DateFormatters.iso8601
         let todayDate = viewModel.selectedDate
         let cal = Calendar.current
@@ -687,7 +689,8 @@ struct FoodTabView: View {
         for log in logs {
             guard let logId = log.id else { continue }
             let mealType = MealType(rawValue: log.mealType) ?? viewModel.autoMealType
-            guard let entries = try? AppDatabase.shared.fetchFoodEntries(forMealLog: logId) else { continue }
+            let entries = FoodService.fetchFoodEntries(forMealLog: logId)
+            guard !entries.isEmpty else { continue }
             for entry in entries {
                 // Map yesterday's time to today's date
                 let mappedLoggedAt: String

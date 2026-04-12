@@ -78,9 +78,7 @@ struct SupplementsTabView: View {
                                     // Delete button
                                     if let id = supplement.id {
                                         Button {
-                                            try? AppDatabase.shared.writer.write { db in
-                                                try Supplement.deleteOne(db, id: id)
-                                            }
+                                            SupplementService.deleteSupplement(id: id)
                                             viewModel.loadSupplements()
                                         } label: {
                                             Image(systemName: "xmark.circle.fill").font(.caption2).foregroundStyle(.tertiary)
@@ -106,7 +104,7 @@ struct SupplementsTabView: View {
                                         showingEditSupp = true
                                     } label: { Label("Edit", systemImage: "pencil") }
                                     Button(role: .destructive) {
-                                        try? AppDatabase.shared.writer.write { db in try Supplement.deleteOne(db, id: id) }
+                                        SupplementService.deleteSupplement(id: id)
                                         viewModel.loadSupplements()
                                     } label: { Label("Delete", systemImage: "trash") }
                                 }
@@ -300,11 +298,11 @@ private struct EditSupplementSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         if let id = supplement.id {
-                            try? AppDatabase.shared.writer.write { db in
-                                try db.execute(sql: """
-                                    UPDATE supplement SET name = ?, dosage = ?, unit = ?, daily_doses = ? WHERE id = ?
-                                    """, arguments: [name, dosage.isEmpty ? nil : dosage, unit.isEmpty ? nil : unit, dailyDoses, id])
-                            }
+                            SupplementService.updateSupplement(
+                                id: id, name: name,
+                                dosage: dosage.isEmpty ? nil : dosage,
+                                unit: unit.isEmpty ? nil : unit,
+                                dailyDoses: dailyDoses)
                         }
                         onSave(); dismiss()
                     }.disabled(name.isEmpty)

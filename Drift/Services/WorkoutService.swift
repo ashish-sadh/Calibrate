@@ -91,6 +91,19 @@ enum WorkoutService {
         }
     }
 
+    static func renameTemplate(id: Int64, name: String) {
+        try? db.writer.write { dbConn in
+            try dbConn.execute(sql: "UPDATE workout_template SET name = ? WHERE id = ?",
+                               arguments: [name, id])
+        }
+    }
+
+    static func deleteTemplate(id: Int64) {
+        try? db.writer.write { dbConn in
+            _ = try WorkoutTemplate.deleteOne(dbConn, id: id)
+        }
+    }
+
     // MARK: - History & PRs
 
     /// Get all sets for an exercise, most recent first.

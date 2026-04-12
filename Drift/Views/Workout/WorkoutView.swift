@@ -352,10 +352,7 @@ struct WorkoutView: View {
             TextField("Name", text: $renameTemplateName)
             Button("Save") {
                 if let tid = renameTemplateId {
-                    try? AppDatabase.shared.writer.write { db in
-                        try db.execute(sql: "UPDATE workout_template SET name = ? WHERE id = ?",
-                                       arguments: [renameTemplateName, tid])
-                    }
+                    WorkoutService.renameTemplate(id: tid, name: renameTemplateName)
                     loadData()
                 }
             }
@@ -365,7 +362,7 @@ struct WorkoutView: View {
             Button("Remove All", role: .destructive) {
                 for t in templates {
                     if let tid = t.id {
-                        try? AppDatabase.shared.writer.write { db in _ = try WorkoutTemplate.deleteOne(db, id: tid) }
+                        WorkoutService.deleteTemplate(id: tid)
                     }
                 }
                 loadData()
@@ -375,7 +372,7 @@ struct WorkoutView: View {
         .alert("Delete Template?", isPresented: $showingDeleteTemplate) {
             Button("Delete", role: .destructive) {
                 if let tid = deleteTemplateId {
-                    try? AppDatabase.shared.writer.write { db in _ = try WorkoutTemplate.deleteOne(db, id: tid) }
+                    WorkoutService.deleteTemplate(id: tid)
                     loadData()
                 }
             }

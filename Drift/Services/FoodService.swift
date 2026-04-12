@@ -98,6 +98,16 @@ enum FoodService {
         try? AppDatabase.shared.cacheBarcodeProduct(cache)
     }
 
+    /// Fetch meal logs for a date.
+    static func fetchMealLogs(for date: String) -> [MealLog] {
+        (try? AppDatabase.shared.fetchMealLogs(for: date)) ?? []
+    }
+
+    /// Fetch food entries for a meal log.
+    static func fetchFoodEntries(forMealLog id: Int64) -> [FoodEntry] {
+        (try? AppDatabase.shared.fetchFoodEntries(forMealLog: id)) ?? []
+    }
+
     /// Fetch a food by its database ID.
     static func fetchFoodById(_ id: Int64) -> Food? {
         try? AppDatabase.shared.reader.read { db in try Food.fetchOne(db, id: id) }

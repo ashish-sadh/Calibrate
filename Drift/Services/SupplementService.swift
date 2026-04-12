@@ -34,6 +34,22 @@ enum SupplementService {
         return "Marked \(match.name) as taken."
     }
 
+    /// Delete a supplement by ID.
+    static func deleteSupplement(id: Int64) {
+        try? AppDatabase.shared.writer.write { db in
+            try Supplement.deleteOne(db, id: id)
+        }
+    }
+
+    /// Update a supplement's properties.
+    static func updateSupplement(id: Int64, name: String, dosage: String?, unit: String?, dailyDoses: Int) {
+        try? AppDatabase.shared.writer.write { db in
+            try db.execute(sql: """
+                UPDATE supplement SET name = ?, dosage = ?, unit = ?, daily_doses = ? WHERE id = ?
+                """, arguments: [name, dosage, unit, dailyDoses, id])
+        }
+    }
+
     /// Add a new supplement to the stack.
     static func addSupplement(name: String, dosage: String? = nil) -> String {
         guard let supplements = try? AppDatabase.shared.fetchActiveSupplements() else {
