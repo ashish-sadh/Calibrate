@@ -13,10 +13,15 @@ struct AgentOutput: Sendable {
 
 /// Unified tiered pipeline for both SmolLM and Gemma 4:
 /// 1. Rules on raw input (instant, both models)
-/// 2. LLM normalize → re-run rules (Gemma only — SmolLM too small)
+/// 2. LLM classify → tool call or text (Gemma only)
 /// 3. Tool-first execution → stream presentation with real data (both)
 /// 4. LLM fallback (Gemma: direct streaming, SmolLM: AIChainOfThought)
 /// All LLM calls have a 20s timeout.
+///
+/// Token budget (2048 context, 1776 max prompt, 256 max generation):
+///   Phase 2: ~538 tokens (IntentClassifier 463 sys + 75 user)
+///   Phase 3: ~800 tokens (presentation 100 sys + 600 data + 100 history/query)
+///   Phase 4: ~875 tokens (buildPrompt 200 sys + 500 context + 150 history + 25 query)
 @MainActor
 enum AIToolAgent {
 
@@ -233,7 +238,8 @@ enum AIToolAgent {
         Example: "You're doing well today — 1200 of 2000 cal with solid protein at 85g. A chicken dinner would close the gap nicely."
         """
         let historyPrefix = history.isEmpty ? "" : "Recent chat:\n\(String(history.prefix(300)))\n\n"
-        let user = "\(historyPrefix)Data:\n\(toolData)\n\nQuestion: \(query)"
+        let truncatedData = AIContextBuilder.truncateToFit(toolData, maxTokens: 600)
+        let user = "\(historyPrefix)Data:\n\(truncatedData)\n\nQuestion: \(query)"
 
         let response = await withTimeout(seconds: 20) {
             await LocalAIService.shared.respondStreamingDirect(
