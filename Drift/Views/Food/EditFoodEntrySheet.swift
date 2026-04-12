@@ -37,7 +37,7 @@ struct EditFoodEntrySheet: View {
             _editAmount = State(initialValue: entry.servings == Double(Int(entry.servings))
                 ? "\(Int(entry.servings))" : String(format: "%.1f", entry.servings))
         }
-        _editEntryIsFav = State(initialValue: (try? AppDatabase.shared.isFoodFavorite(name: entry.foodName)) ?? false)
+        _editEntryIsFav = State(initialValue: FoodService.isFavorite(name: entry.foodName))
         _editEntryTime = State(initialValue: DateFormatters.iso8601.date(from: entry.loggedAt ?? "") ?? Date())
         _editCal = State(initialValue: "\(Int(entry.calories))")
         _editP = State(initialValue: "\(Int(entry.proteinG))")
@@ -187,7 +187,7 @@ struct EditFoodEntrySheet: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .principal) {
                     Button {
-                        try? AppDatabase.shared.toggleFoodFavorite(name: entry.foodName, foodId: entry.foodId)
+                        FoodService.toggleFavorite(name: entry.foodName, foodId: entry.foodId)
                         editEntryIsFav.toggle()
                     } label: {
                         Image(systemName: editEntryIsFav ? "star.fill" : "star")
@@ -199,9 +199,9 @@ struct EditFoodEntrySheet: View {
                         if let id = entry.id {
                             if entry.foodId == nil {
                                 if editName != entry.foodName {
-                                    try? AppDatabase.shared.updateFoodEntryName(id: id, name: editName)
+                                    FoodService.updateFoodEntryName(id: id, name: editName)
                                 }
-                                try? AppDatabase.shared.updateFoodEntryMacros(
+                                FoodService.updateFoodEntryMacros(
                                     id: id, calories: Double(editCal) ?? entry.calories,
                                     proteinG: Double(editP) ?? entry.proteinG,
                                     carbsG: Double(editC) ?? entry.carbsG,
@@ -230,9 +230,9 @@ struct EditFoodEntrySheet: View {
     private var ingredientsSection: some View {
         let dbFood: Food? = {
             if let fid = entry.foodId {
-                return try? AppDatabase.shared.reader.read { db in try Food.fetchOne(db, id: fid) }
+                return FoodService.fetchFoodById(fid)
             }
-            return (try? AppDatabase.shared.searchFoods(query: entry.foodName, limit: 1))?.first
+            return FoodService.findByName(entry.foodName)
         }()
         let nova = dbFood?.novaGroup
         let hasIngredients = dbFood.map { $0.ingredientList.count > 1 || $0.ingredientList.first != $0.name } ?? false

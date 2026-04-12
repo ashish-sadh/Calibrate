@@ -419,3 +419,125 @@ Both personas agree:
 5. **Update code-improvement steering notes** to prevent future decomposition-only drift
 6. **No roadmap changes needed** — Review #3's updates are still current (same day)
 7. **Next self-improvement sequence: coverage → dashboard → prompt consolidation → state machine**
+
+---
+
+## Review #5 — 2026-04-12 (Cycle 116)
+
+### Progress Since Review #4
+
+Since Review #4 (cycle 105→116 = 11 cycles), the code-improvement loop shifted focus per Review #4's recommendation. Steering notes updated to: `"DDD violations and design patterns only — NO more file splitting"`. Results:
+
+1. **FoodSearchView** — Routed all 22 direct AppDatabase.shared calls through FoodService. Zero database imports remain in view.
+2. **FoodTabView** — Routed 4 favorites-related DB calls through FoodService.
+3. **EditFoodEntrySheet** — Routed 6 DB calls through FoodService (3 new FoodService methods: fetchFoodById, updateFoodEntryName, updateFoodEntryMacros). In progress at time of review.
+4. **FoodService** — Grew from 11 to 19 methods as the DDD boundary for all food-domain database access.
+
+**Net effect:** 32 direct AppDatabase calls eliminated from 3 view files. FoodService is now the proper DDD boundary for food domain. This is the architectural pattern improvement Review #4 requested (not file splitting).
+
+No new features shipped. No coverage work done (still code-improvement mode).
+
+### Product Designer Persona
+_Background: 2yr each at MyFitnessPal, Whoop, MacroFactor, Strong, Boostcamp_
+
+#### Competitive Landscape Update (April 2026)
+
+| App | Moves Since Review #4 |
+|-----|----------------------|
+| **MyFitnessPal** | Winter 2026 release: redesigned **Today Screen** with weekly macro insights in new Progress Tab. Photo Upload meal logging (AI-powered) rolled out to all iOS. Improved Meal Planner with Recipes tab. Blue Check Collection (dietitian-reviewed). Instacart grocery integration. GLP-1 medication tracking. Premium $79.99/yr, Premium+ $99.99/yr. |
+| **Whoop** | WHOOP 5.0 + WHOOP MG (medical-grade) hardware tiers. New signal processing algorithm for heart rate. **AI-powered coaching** from bloodwork + wearable data. Healthspan longevity feature connects biomarkers to Sleep/Strain/Fitness pillars. FDA-cleared ECG, Blood Pressure Insights. 600+ new hires (scaling aggressively). 65 biomarkers in Advanced Labs panel. |
+| **Boostcamp** | 130+ expert programs, 1M+ lifters, 300M+ workouts. Auto-adjusting weights based on performance. No major 2026-specific announcements beyond steady growth. |
+| **Strong** | xRM estimations (Brzycki/Epley), RPE tracking, updated calendar design, Apple Health integration (calories burned), Plate Calculator, improved superset mechanics, rebuilt share links. Still the minimalist gold standard for logging speed. |
+| **MacroFactor** | **Live Activities coming** (lock screen workout data, Dynamic Island rest timer — "finishing touches" as of March 2026). Favorites feature for staple foods. Label scanner for nutrition labels. Step-informed expenditure modifier. Smart progression in Workouts app. Apple Health integration upcoming. $71.99/yr bundle. |
+
+#### Key Industry Shifts Since Last Review
+1. **AI coaching is becoming standard.** Whoop now offers AI-powered coaching that interprets bloodwork + wearable data and adapts recommendations. MFP has AI photo logging for all iOS. The bar for "AI in health apps" is rising — Drift's on-device chat is still unique but the gap narrows when competitors add cloud AI coaching.
+2. **Live Activities / lock screen presence.** MacroFactor is shipping Live Activities for workouts. This puts your tracking data on the lock screen and Dynamic Island. For meal-tracking apps, showing remaining macros on the lock screen is becoming the next expected convenience.
+3. **Healthspan / longevity framing.** Whoop is pivoting from "performance" to "healthspan" — connecting biomarkers to daily habits for longevity insights. This is a broader health narrative that resonates beyond athletes.
+
+#### Drift Strengths (Updated)
+1. **AI chat remains the strongest differentiator.** Whoop added AI coaching but it's cloud-based and limited to bloodwork interpretation. MFP's AI is photo scanning (cloud). Neither can do: "log 2 eggs and toast for breakfast, also add coffee" → parse, split, resolve, log — all locally. Drift's conversational AI for multi-domain tracking is still unmatched.
+2. **DDD architectural investment.** The FoodService boundary means food views no longer touch the database directly. This is invisible to users but enables faster, safer feature development. When dashboard redesign happens, the clean data access layer will pay dividends.
+3. **Cross-domain unification.** MacroFactor split into two apps. Whoop requires hardware. MFP is nutrition-only with add-on features. Drift covers 9 health domains in one app with no hardware dependency.
+4. **Privacy moat continues widening.** Whoop's AI coaching sends bloodwork to cloud. MFP sends photos to cloud. Drift: everything on-device. Regulatory pressure on health data (HIPAA, EU AI Act) makes this more valuable over time.
+
+#### Drift Gaps (Updated)
+1. **Dashboard redesign — now 5 reviews flagged.** This is embarrassing. MFP shipped a redesigned Today Screen. Strong has a clean calendar. MacroFactor has widgets. Our dashboard has been "the #1 product priority" for 5 consecutive reviews and zero visual changes have shipped. This is the single most urgent product gap.
+2. **Coverage debt — 5 reviews flagged.** AIToolAgent still at 0%. IntentClassifier at 36%. These block the state machine refactor. Every review flags this. It must happen.
+3. **No lock screen presence.** MacroFactor is shipping Live Activities. We have no widgets or lock screen data. For a tracking app, being invisible outside the app is a missed opportunity.
+4. **Food DB breadth.** ~1004 foods vs MFP's ever-growing DB + Cal AI acquisition + label scanner. Our AI compensates but the gap is real for search-first users.
+5. **No AI coaching narrative.** Whoop frames their AI as "coaching" — personalized plans that adapt. Our AI is "logging assistant" + "query answerer." Reframing our AI as a "health coach" that proactively suggests based on cross-domain data would elevate the product narrative.
+
+#### Proposed Roadmap Changes
+- **STOP the code-improvement loop NOW.** DDD routing work is valuable but 5 consecutive reviews flagging dashboard and coverage means the loop is not addressing the highest-priority work. Switch to self-improvement.
+- **Add "AI Health Coach" narrative** to AI Chat Later section — proactive suggestions based on cross-domain patterns (not just reactive Q&A).
+- **Promote Live Activities** from Phase 4 to late Phase 3c — MacroFactor is about to ship this. Remaining macros on lock screen is high-visibility, moderate-effort.
+
+---
+
+### Principal Engineer Persona
+_Background: 10yr each at Amazon and Google_
+
+#### Assessment of DDD Routing Work
+
+**The DDD work since Review #4 was correct and valuable.** Review #4 said "shift to DDD violations and design patterns." The loop did exactly that:
+- 32 direct DB calls eliminated from 3 view files
+- FoodService grew from 11→19 methods as proper domain boundary
+- Pattern is clean: views call FoodService, FoodService calls AppDatabase
+- No behavior changes — pure architectural improvement
+
+This is the *right kind* of code quality work. It makes the food domain testable (you can mock FoodService), maintainable (change DB schema in one place), and consistent (all food access goes through one gateway).
+
+**However: 5 reviews flagging the same 2 items (dashboard, coverage) without progress is a process failure.** The code-improvement loop *by design* cannot ship UI redesigns (refactoring only, no behavior changes). And it hasn't prioritized coverage work. The loop needs to either stop or explicitly add coverage as a focus area.
+
+#### Assessment of Designer's Proposals
+
+**Agree: Stop code-improvement loop.** The DDD routing work was the last high-value architectural improvement achievable in refactoring-only mode. Remaining DDD violations (WeightTabView 8 calls, DashboardView 5 calls, etc.) are smaller wins with diminishing returns. The highest-impact work now requires behavior changes: coverage tests, dashboard redesign, prompt consolidation.
+
+**Push back: Live Activities in Phase 3c.** MacroFactor shipping Live Activities doesn't mean we need to rush it. Live Activities requires:
+- WidgetKit extension target
+- App Groups for shared data container
+- ActivityKit configuration
+- Separate extension build/test cycle
+- XcodeGen configuration for new target
+
+This is 3-5 cycles of infrastructure work that doesn't advance our core differentiators (AI chat, cross-domain tracking). Keep it in Phase 4 Next. Our competitive advantage isn't convenience features — it's intelligence.
+
+**Push back: "AI Health Coach" reframing.** The narrative is appealing but the technical reality is: our LLM has a 2048-token context window. Proactive coaching requires: (1) background analysis of cross-domain data, (2) generating unprompted insights, (3) remembering user context across sessions. Items 2-3 are Phase 5 features (conversation memory, proactive triggering). We can add the vision to the roadmap but don't let narrative reframing create scope creep. The behavior insight cards on the dashboard already serve this purpose in a simpler way.
+
+**Agree: Dashboard is now a blocking priority.** 5 reviews is beyond "overdue" — it's a systemic failure to prioritize. The code quality investment (DashboardView decomposed to 373 lines, DDD boundaries established) means the dashboard code is now *ready* for a redesign. No technical blockers remain. This should be cycle 1 of the next self-improvement run.
+
+#### Technical Sustainability Check
+
+Architecture is in good shape for Phase 3c completion:
+- **FoodService DDD boundary** is the pattern to replicate for other domains (WeightService, WorkoutService already exist; ExerciseService, SupplementService could follow)
+- **31,510 total Swift lines** — stable, no bloat from refactoring
+- **File sizes healthy** — largest is 768 lines (FoodTabView), most files 500-650
+- **GRDB + SQLite** — no migration pressure
+- **llama.cpp** — stable, Gemma 4 E2B performing well
+
+**Concern: the code-improvement loop's "DDD violations" focus could continue indefinitely.** There are 52+ remaining AppDatabase calls across 13 view files. Routing all of them through services is theoretically correct but practically diminishing returns. The 3 files done (FoodSearchView, FoodTabView, EditFoodEntrySheet) covered the most-touched food views. The remaining files (WeightTabView, DashboardView, BarcodeScannerView, etc.) have fewer calls and are less frequently edited. Don't let perfect DDD compliance prevent shipping user-facing work.
+
+#### Sequencing Recommendation (Final)
+
+This is the 5th time both personas agree on this sequence. It should not change again until items are completed:
+
+1. **STOP code-improvement loop** — commit current EditFoodEntrySheet changes, update log
+2. **Coverage recovery** — AIToolAgent, IntentClassifier, FoodService, AIRuleEngine. Get all 8 files above threshold. (~4-6 cycles)
+3. **Dashboard redesign** — New hierarchy, progress indicators, macro display. Ship to TestFlight. (~2-3 cycles)
+4. **Prompt consolidation** — Audit token usage, compress system prompt. (~1-2 cycles)
+5. **State machine refactor** — Now safe with test coverage. (~2-3 cycles)
+
+---
+
+### Consensus & Roadmap Updates
+
+Both personas agree:
+1. **DDD routing work was correct and valuable** — 32 DB calls eliminated, FoodService is now a proper domain boundary. This was the right focus per Review #4's steering.
+2. **STOP the code-improvement loop NOW** — 5 reviews flagging dashboard and coverage without progress. The loop cannot deliver the highest-priority work (UI redesign, coverage). Commit current work, switch to self-improvement.
+3. **Dashboard redesign is 5-reviews overdue** — this is the #1 product priority and must be cycle 1 of the next self-improvement run
+4. **AIToolAgent coverage is 5-reviews flagged at 0%** — the #1 technical priority
+5. **Live Activities stays Phase 4** — infrastructure cost doesn't justify during polish phase
+6. **"AI Health Coach" vision added to roadmap Later** — aspirational narrative, not Phase 3c scope
+7. **Remaining DDD violations (52 calls across 13 files) are not blocking** — food domain is clean, other domains are lower priority. Address opportunistically, not as a dedicated sprint.
+8. **Final sequencing: STOP loop → coverage → dashboard → prompt consolidation → state machine**

@@ -73,6 +73,21 @@ enum FoodService {
         }
     }
 
+    /// Fetch a food by its database ID.
+    static func fetchFoodById(_ id: Int64) -> Food? {
+        try? AppDatabase.shared.reader.read { db in try Food.fetchOne(db, id: id) }
+    }
+
+    /// Update a food entry's name by entry ID.
+    static func updateFoodEntryName(id: Int64, name: String) {
+        try? AppDatabase.shared.updateFoodEntryName(id: id, name: name)
+    }
+
+    /// Update a food entry's macros by entry ID.
+    static func updateFoodEntryMacros(id: Int64, calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double) {
+        try? AppDatabase.shared.updateFoodEntryMacros(id: id, calories: calories, proteinG: proteinG, carbsG: carbsG, fatG: fatG, fiberG: fiberG)
+    }
+
     /// Update a food's name and macros by ID.
     static func updateFood(id: Int64, name: String, calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double) {
         try? AppDatabase.shared.writer.write { db in

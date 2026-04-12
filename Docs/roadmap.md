@@ -37,6 +37,7 @@ What's not: UI feels rough and unpolished compared to competitors, AI chat drops
 - Grammar-constrained sampling for reliable JSON
 - Conversation memory across sessions
 - On-device embeddings for semantic food/exercise search
+- **AI Health Coach mode** — Proactive suggestions based on cross-domain patterns (not just reactive Q&A). Requires conversation memory + background analysis. Aspirational vision.
 
 ## UI & Design
 
@@ -51,11 +52,11 @@ What's not: UI feels rough and unpolished compared to competitors, AI chat drops
 - iOS widgets (calories remaining, recovery score)
 - Saved meals (one-tap re-log of multi-item meals)
 - Inline diary editing (tap number to edit directly)
-- **Live Activities** — Remaining macros/calories on lock screen, Dynamic Island during active workout
 
 ### Later
 - Apple Watch companion
 - Accessibility audit (VoiceOver, Dynamic Type throughout)
+- **Live Activities** — Remaining macros on lock screen, Dynamic Island during active workout. Requires WidgetKit extension + App Groups. Phase 4 candidate.
 
 ## Weight
 
@@ -131,9 +132,9 @@ What's not: UI feels rough and unpolished compared to competitors, AI chat drops
 ## Quality & Testing
 
 ### Now
-- **Coverage recovery (P0)** — 8 files below threshold. Critical: AIToolAgent 0%, IntentClassifier 36%, AIRuleEngine 25%, FoodService 30%. Write tests before any AI refactoring. *3 reviews have flagged this — must be addressed before state machine refactor.*
+- **Coverage recovery (P0)** — 8 files below threshold. Critical: AIToolAgent 0%, IntentClassifier 36%, AIRuleEngine 25%, FoodService 30%. Write tests before any AI refactoring. *5 consecutive reviews have flagged this — MUST be addressed before state machine refactor.*
 - Coverage targets: **80%** logic, **50%** services — find and fix gaps
-- **Code quality maintenance** — File decomposition largely complete (13 refactoring cycles, 3200+ lines reorganized). Shift focus from file splitting to: test coverage, DDD violations (business logic in views), dependency injection, protocol abstractions.
+- **Code quality maintenance** — File decomposition complete (15 cycles, 3500+ lines reorganized). DDD routing done for food domain (32 DB calls eliminated from views → FoodService boundary). Remaining DDD violations in other domains are lower priority — address opportunistically.
 - ~~**Stale preference audit**~~ PARTIALLY DONE — WeightViewModel fixed, exercise views fixed. Continue auditing remaining view models.
 - AI eval harness: every tool gets 10+ eval queries
 - Integration tests for multi-step flows (parse → resolve → log → confirm)
@@ -152,8 +153,8 @@ What's not: UI feels rough and unpolished compared to competitors, AI chat drops
 | Exercise | Boostcamp | Visual exercise presentation, muscle engagement viz |
 | Workout logging | Strong | Clean, fast set/rep entry UX, muscle heat map |
 | Macro coaching | MacroFactor | ~~Adaptive calorie/macro targets~~ MATCHED (adaptive TDEE shipped) |
-| Biomarkers | Whoop | Insight quality, recovery analysis, women's health biomarker panels |
-| AI chat | None (unique advantage) | Push further — MFP bought Cal AI but still cloud-only |
+| Biomarkers | Whoop | Insight quality, recovery analysis, AI coaching from bloodwork, healthspan framing |
+| AI chat | None (unique advantage) | Push further — competitors adding cloud AI coaching (Whoop) and photo AI (MFP) but none do on-device conversational tracking |
 
 ---
 
