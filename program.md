@@ -52,7 +52,7 @@ LOOP FOREVER — do NOT stop between tickets:
 11. Pass? `git add -A && git commit -m "improve: description" && git push`. Mark `[x]` in sprint.md. One-line log to improvement-log.md.
 12. **Every 20th cycle: PRODUCT REVIEW.** (Hooks inject this reminder automatically.) Steps:
     - Read persona files: `Docs/personas/product-designer.md`, `Docs/personas/principal-engineer.md`
-    - Read feedback from open report PRs: `gh pr list --label report --state open`, then read comments on each
+    - Read feedback from open report PRs IF ANY exist: `gh pr list --label report --state open`, then read comments. If no feedback, keep going — NEVER wait for human input.
     - Read open bug issues: `gh issue list --state open`
     - **Product Designer persona** — read their persona file first, then:
       - Read `Docs/roadmap.md`, `Docs/state.md`, `git log --oneline -20`
