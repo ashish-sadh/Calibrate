@@ -7,7 +7,7 @@ AI-first local health tracker. AI chat is the primary interface — every data e
 - **Version:** 0.1.0, Build 87
 - **Tests:** 886 (19 test files, 300+ methods)
 - **AI Eval:** 380+ scenarios in eval harness + LLM eval
-- **Foods:** 1004+ (Indian, Mexican, global)
+- **Foods:** 1075 (Indian, Mexican, Asian, Mediterranean, Soups, global)
 - **Exercises:** 873 (free-exercise-db)
 - **Biomarkers:** 65 across 9 categories
 - **AI Tools:** 19 registered tools

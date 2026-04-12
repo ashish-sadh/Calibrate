@@ -12,6 +12,8 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 - **Coverage sprint — AIRuleEngine**: 6 new tests covering nextAction, caloriesLeft, weeklySummary, dailySummary format, yesterdaySummary format.
 - **Coverage sprint — FoodService**: 22 new tests covering resolvedCalorieTarget, getDailyTotals, getCaloriesLeft, explainCalories, searchFood, findByName, getNutrition, deleteEntry, copyYesterday, topProteinFoods, suggestMeal, and more.
 - **Total**: 886 tests (was 743+). +143 tests this session across 4 critical files.
+- **UI Theme Overhaul**: Deep navy background (#0C0C14), visible card surfaces (#1A1A2E) with subtle borders, vibrant accent (#7C6AFF), new text hierarchy, typography scale (6 levels), spacing constants, accent gradient. All 46 views inherit automatically.
+- **Food DB Enrichment**: 34 new foods (1041→1075). Seafood (7), Asian (9), Mediterranean (4), Soups (6), Breakfast (3), Fast Food/Bakery (5). All USDA-sourced macros.
 
 ## Cycle · 2026-04-12
 
