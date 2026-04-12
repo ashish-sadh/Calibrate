@@ -4,6 +4,20 @@ import Foundation
 @MainActor
 enum GlucoseService {
 
+    // MARK: - CRUD
+
+    /// Fetch glucose readings for a date range (ISO8601 strings).
+    static func fetchReadings(from startDate: String, to endDate: String) -> [GlucoseReading] {
+        (try? AppDatabase.shared.fetchGlucoseReadings(from: startDate, to: endDate)) ?? []
+    }
+
+    /// Import a Lingo CGM CSV file.
+    static func importLingoCSV(url: URL) throws -> CGMImportService.ImportResult {
+        try CGMImportService.importLingoCSV(url: url, database: AppDatabase.shared)
+    }
+
+    // MARK: - Queries
+
     /// Whether glucose readings exist for today.
     static func hasDataToday() -> Bool {
         let today = DateFormatters.todayString

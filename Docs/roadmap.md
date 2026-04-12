@@ -134,7 +134,7 @@ What's not: UI feels rough and unpolished compared to competitors, AI chat drops
 ### Now
 - **Coverage recovery (P0)** — 8 files below threshold. Critical: AIToolAgent 0%, IntentClassifier 36%, AIRuleEngine 25%, FoodService 30%. Write tests before any AI refactoring. *5 consecutive reviews have flagged this — MUST be addressed before state machine refactor.*
 - Coverage targets: **80%** logic, **50%** services — find and fix gaps
-- **Code quality maintenance** — File decomposition complete (15 cycles, 3500+ lines reorganized). DDD routing done for food domain (32 DB calls eliminated from views → FoodService boundary). Remaining DDD violations in other domains are lower priority — address opportunistically.
+- ~~**Code quality maintenance**~~ DDD COMPLETE — File decomposition (15 cycles, 3500+ lines reorganized) and DDD routing (83+ DB calls eliminated from 18 views → 7 domain services). Only cross-cutting factory reset remains. Architecture is clean.
 - ~~**Stale preference audit**~~ PARTIALLY DONE — WeightViewModel fixed, exercise views fixed. Continue auditing remaining view models.
 - AI eval harness: every tool gets 10+ eval queries
 - Integration tests for multi-step flows (parse → resolve → log → confirm)

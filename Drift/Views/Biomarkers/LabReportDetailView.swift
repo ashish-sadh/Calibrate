@@ -5,7 +5,6 @@ struct LabReportDetailView: View {
     @State private var results: [BiomarkerResult] = []
     @State private var showingDeleteAlert = false
     @Environment(\.dismiss) private var dismiss
-    private let database = AppDatabase.shared
 
     var body: some View {
         ScrollView {
@@ -175,7 +174,7 @@ struct LabReportDetailView: View {
 
     private func loadResults() {
         guard let id = report.id else { return }
-        results = (try? database.fetchBiomarkerResults(forReportId: id)) ?? []
+        results = BiomarkerService.fetchBiomarkerResults(forReportId: id)
     }
 
     private func deleteReport() {
@@ -183,7 +182,7 @@ struct LabReportDetailView: View {
         if !report.fileDataHash.isEmpty {
             LabReportStorage.delete(hash: report.fileDataHash)
         }
-        try? database.deleteLabReport(id: id)
+        BiomarkerService.deleteLabReport(id: id)
         dismiss()
     }
 }

@@ -10,7 +10,6 @@ struct DEXAOverviewView: View {
     @State private var isImporting = false
     @State private var importMessage: ImportMessage?
     @State private var showingDeleteAll = false
-    private let database = AppDatabase.shared
     private var wu: WeightUnit { Preferences.weightUnit }
 
     struct ImportMessage: Identifiable {
@@ -77,7 +76,7 @@ struct DEXAOverviewView: View {
         .toolbarColorScheme(.dark, for: .navigationBar)
         .fileImporter(isPresented: $showingImportPDF, allowedContentTypes: [.pdf]) { handlePDFImport($0) }
         .sheet(isPresented: $showingManualEntry) {
-            DEXAEntryView(database: database) { loadScans() }
+            DEXAEntryView { loadScans() }
         }
         .onAppear { AIScreenTracker.shared.currentScreen = .bodyComposition; loadScans() }
     }
@@ -344,7 +343,7 @@ struct DEXAOverviewView: View {
                     }
                     .alert("Delete all DEXA scans?", isPresented: $showingDeleteAll) {
                         Button("Delete All", role: .destructive) {
-                            try? database.deleteAllDEXAScans()
+                            DEXAService.deleteAllScans()
                             loadScans()
                         }
                         Button("Cancel", role: .cancel) {}
@@ -373,7 +372,7 @@ struct DEXAOverviewView: View {
                         // Delete single scan
                         if let id = scan.id {
                             Button {
-                                try? database.deleteDEXAScan(id: id)
+                                DEXAService.deleteScan(id: id)
                                 loadScans()
                             } label: {
                                 Image(systemName: "xmark.circle.fill")
@@ -447,7 +446,7 @@ struct DEXAOverviewView: View {
                     }
 
                     let scansWithData = parsedScans.filter { $0.bodyFatPct != nil || $0.fatMassLbs != nil }
-                    let count = try database.importBodySpecScans(parsedScans)
+                    let count = try DEXAService.importBodySpecScans(parsedScans)
 
                     let details = parsedScans.map { "\(formatDateShort($0.scanDate)): \($0.bodyFatPct.map { String(format: "%.1f%%", $0) } ?? "no BF%")" }.joined(separator: ", ")
 
@@ -470,9 +469,9 @@ struct DEXAOverviewView: View {
     }
 
     private func loadScans() {
-        scans = (try? database.fetchDEXAScans()) ?? []
+        scans = DEXAService.fetchScans()
         if let latestId = scans.first?.id {
-            selectedScanRegions = (try? database.fetchDEXARegions(forScanId: latestId)) ?? []
+            selectedScanRegions = DEXAService.fetchRegions(forScanId: latestId)
         } else {
             selectedScanRegions = []
         }
@@ -505,7 +504,6 @@ struct DEXAOverviewView: View {
 // MARK: - Manual Entry
 
 struct DEXAEntryView: View {
-    let database: AppDatabase
     let onSave: () -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var scanDate = Date()
@@ -557,6 +555,6 @@ struct DEXAEntryView: View {
             boneDensityTotal: Double(boneDensity)
         )
         if let fat = scan.fatMassKg, let lean = scan.leanMassKg { scan.totalMassKg = fat + lean }
-        try? database.saveDEXAScan(&scan)
+        DEXAService.saveScan(&scan)
     }
 }

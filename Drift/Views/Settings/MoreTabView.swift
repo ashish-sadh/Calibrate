@@ -438,16 +438,18 @@ struct SettingsView: View {
     }
 
     private func exportFoodLogsCSV() -> URL? {
-        let db = AppDatabase.shared
         var csv = "Date,Time,Food,Calories,Protein,Carbs,Fat,Fiber,Servings\n"
         // Export last 90 days
         let today = Date()
         for dayOffset in 0..<90 {
             guard let date = Calendar.current.date(byAdding: .day, value: -dayOffset, to: today) else { continue }
             let dateStr = DateFormatters.dateOnly.string(from: date)
-            guard let logs = try? db.fetchMealLogs(for: dateStr) else { continue }
+            let logs = FoodService.fetchMealLogs(for: dateStr)
+            guard !logs.isEmpty else { continue }
             for log in logs {
-                guard let logId = log.id, let entries = try? db.fetchFoodEntries(forMealLog: logId) else { continue }
+                guard let logId = log.id else { continue }
+                let entries = FoodService.fetchFoodEntries(forMealLog: logId)
+                guard !entries.isEmpty else { continue }
                 for e in entries {
                     let fName = e.foodName.replacingOccurrences(of: "\"", with: "\"\"")
                     let time = (DateFormatters.iso8601.date(from: e.loggedAt) ?? DateFormatters.sqliteDatetime.date(from: e.loggedAt))

@@ -8,7 +8,6 @@ struct GlucoseTabView: View {
     @State private var importResult: String?
     @State private var selectedRange: GlucoseRange = .threeDays
     @State private var dataSource: DataSource = .appleHealth
-    private let database = AppDatabase.shared
 
     enum DataSource: String, CaseIterable {
         case appleHealth = "Apple Health"
@@ -476,7 +475,7 @@ struct GlucoseTabView: View {
             } else {
                 let startStr = ISO8601DateFormatter().string(from: start)
                 let endStr = ISO8601DateFormatter().string(from: end)
-                readings = (try? database.fetchGlucoseReadings(from: startStr, to: endStr)) ?? []
+                readings = GlucoseService.fetchReadings(from: startStr, to: endStr)
             }
             Log.glucose.info("Loaded \(readings.count) glucose readings for \(selectedRange.rawValue)")
         }
@@ -486,7 +485,7 @@ struct GlucoseTabView: View {
         switch result {
         case .success(let url):
             do {
-                let r = try CGMImportService.importLingoCSV(url: url, database: database)
+                let r = try GlucoseService.importLingoCSV(url: url)
                 importResult = "Imported \(r.imported), skipped \(r.skipped), errors \(r.errors)"
                 dataSource = .imported
                 loadReadings()

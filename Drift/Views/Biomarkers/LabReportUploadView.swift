@@ -10,7 +10,6 @@ struct LabReportUploadView: View {
     @State private var extractedResults: LabReportOCR.ExtractionOutput?
     @State private var reportDate = Date()
     @State private var labName = ""
-    private let database = AppDatabase.shared
 
     var body: some View {
         NavigationStack {
@@ -255,7 +254,7 @@ struct LabReportUploadView: View {
         )
 
         do {
-            try database.saveLabReport(&report)
+            try BiomarkerService.saveLabReport(&report)
             guard let reportId = report.id else { return }
 
             let biomarkerResults = output.results.map { extracted in
@@ -276,7 +275,7 @@ struct LabReportUploadView: View {
                 )
             }
 
-            try database.saveBiomarkerResults(biomarkerResults)
+            try BiomarkerService.saveBiomarkerResults(biomarkerResults)
             Log.biomarkers.info("Saved report with \(biomarkerResults.count) biomarker results")
 
             onComplete()

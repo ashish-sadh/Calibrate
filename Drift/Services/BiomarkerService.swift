@@ -4,6 +4,50 @@ import Foundation
 @MainActor
 enum BiomarkerService {
 
+    // MARK: - CRUD
+
+    /// Fetch all lab reports.
+    static func fetchLabReports() -> [LabReport] {
+        (try? AppDatabase.shared.fetchLabReports()) ?? []
+    }
+
+    /// Fetch latest biomarker results across all reports.
+    static func fetchLatestBiomarkerResults() -> [BiomarkerResult] {
+        (try? AppDatabase.shared.fetchLatestBiomarkerResults()) ?? []
+    }
+
+    /// Fetch biomarker results for a specific report.
+    static func fetchBiomarkerResults(forReportId id: Int64) -> [BiomarkerResult] {
+        (try? AppDatabase.shared.fetchBiomarkerResults(forReportId: id)) ?? []
+    }
+
+    /// Fetch all results for a specific biomarker across reports.
+    static func fetchBiomarkerResults(forBiomarkerId id: String) -> [BiomarkerResult] {
+        (try? AppDatabase.shared.fetchBiomarkerResults(forBiomarkerId: id)) ?? []
+    }
+
+    /// Fetch the report date for a given report ID.
+    static func fetchReportDate(forId id: Int64) -> String {
+        (try? AppDatabase.shared.fetchReportDate(forId: id)) ?? ""
+    }
+
+    /// Save a lab report.
+    static func saveLabReport(_ report: inout LabReport) throws {
+        try AppDatabase.shared.saveLabReport(&report)
+    }
+
+    /// Save biomarker results.
+    static func saveBiomarkerResults(_ results: [BiomarkerResult]) throws {
+        try AppDatabase.shared.saveBiomarkerResults(results)
+    }
+
+    /// Delete a lab report.
+    static func deleteLabReport(id: Int64) {
+        try? AppDatabase.shared.deleteLabReport(id: id)
+    }
+
+    // MARK: - Queries
+
     /// Whether any biomarker results exist.
     static func hasResults() -> Bool {
         ((try? AppDatabase.shared.fetchLatestBiomarkerResults())?.isEmpty == false)

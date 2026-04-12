@@ -7,7 +7,6 @@ struct BiomarkersTabView: View {
     @State private var searchText = ""
     @State private var selectedFilter: BiomarkerStatus?
     @State private var showingUpload = false
-    private let database = AppDatabase.shared
 
     var body: some View {
         ScrollView {
@@ -299,8 +298,8 @@ struct BiomarkersTabView: View {
     }
 
     private func reload() {
-        reports = (try? database.fetchLabReports()) ?? []
-        latestResults = (try? database.fetchLatestBiomarkerResults()) ?? []
+        reports = BiomarkerService.fetchLabReports()
+        latestResults = BiomarkerService.fetchLatestBiomarkerResults()
     }
 }
 

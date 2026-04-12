@@ -6,7 +6,6 @@ struct BiomarkerDetailView: View {
     @State private var results: [BiomarkerResult] = []
     @State private var reportDates: [Int64: String] = [:]
     @State private var expandedSections: Set<String> = []
-    private let database = AppDatabase.shared
 
     private var latestResult: BiomarkerResult? { results.last }
     private var latestStatus: BiomarkerStatus? {
@@ -442,11 +441,11 @@ struct BiomarkerDetailView: View {
     }
 
     private func loadResults() {
-        results = (try? database.fetchBiomarkerResults(forBiomarkerId: definition.id)) ?? []
+        results = BiomarkerService.fetchBiomarkerResults(forBiomarkerId: definition.id)
         // Load report dates for each result
         for result in results {
             if reportDates[result.reportId] == nil {
-                reportDates[result.reportId] = (try? database.fetchReportDate(forId: result.reportId)) ?? ""
+                reportDates[result.reportId] = BiomarkerService.fetchReportDate(forId: result.reportId)
             }
         }
     }

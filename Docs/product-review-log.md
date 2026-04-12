@@ -628,3 +628,29 @@ Same day as Reviews #5-7. Competitive landscape unchanged.
 **Remaining:** ~16 calls across 12 files, all with 1-2 calls each. These are the long tail — diminishing returns.
 
 **Both personas:** Assessment unchanged for 4th consecutive review. DDD routing is near-complete. The loop should stop. Sequence: STOP → coverage → dashboard → prompt consolidation → state machine.
+
+---
+
+## Review #9 — 2026-04-12 (Cycle 160)
+
+Same day as Reviews #5-8. Competitive landscape unchanged.
+
+**Progress since Review #8 (14 cycles):** Batch of 7 view files routed through services (AIChatView+MessageHandling, GoalView, GoalView+Profile, TemplatePreviewSheet, CreateTemplateView, WeightInsightsView, PlantPointsCardView). Then tackled the final domain services: BiomarkerService (+8 CRUD methods), GlucoseService (+2 methods), new DEXAService (6 methods). Fixed BiomarkersTabView, LabReportUploadView, LabReportDetailView, BiomarkerDetailView, GlucoseTabView, DEXAOverviewView, DEXAEntryView, MoreTabView (food export). **Cumulative: ~83 DB calls eliminated from 18 view files. All domain services now have clean boundaries.**
+
+**Remaining AppDatabase.shared calls in views:** ~1 (MoreTabView factory reset — cross-cutting system operation, not a domain concern). DDD routing is effectively complete.
+
+### Both Personas — Joint Assessment
+
+The DDD routing initiative is **done**. 83+ direct database calls have been eliminated from view files across 18 views, routed through 7 domain services (FoodService, WeightServiceAPI, WorkoutService, SupplementService, GlucoseService, BiomarkerService, DEXAService). The only remaining call is factory reset in MoreTabView, which is a legitimate cross-cutting concern.
+
+**This is the correct stopping point for the code-improvement loop.** The architecture is now clean — views never touch the database directly, all access goes through typed service boundaries. Continuing the loop would find only cosmetic improvements.
+
+**The same priorities from Reviews #5-8 remain the top items:**
+1. **Coverage recovery (P0)** — AIToolAgent 0%, IntentClassifier 36%, AIRuleEngine 25%. Now flagged in 6+ consecutive reviews.
+2. **Dashboard redesign** — The most visible gap vs competitors. Flagged since Review #2.
+3. **Prompt consolidation** — Token budget is tight at 2048/1776.
+4. **State machine refactor** — Requires AIToolAgent coverage first.
+
+### Consensus
+
+**The code-improvement loop should stop now.** DDD routing is complete. Roadmap unchanged. Sequence: **STOP → coverage → dashboard → prompt consolidation → state machine.**
