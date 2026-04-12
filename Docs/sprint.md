@@ -8,63 +8,25 @@ _(pick from Ready)_
 
 ## Ready
 
-### P1: Color & Visual Harmony Pass
-- [ ] **Fix color coordination app-wide** — The current dark blue/purple palette with bright ring colors feels disjointed. Research color theory for health/fitness apps (look at Whoop, Apple Fitness, Strava). Pick a cohesive palette: background, cards, accents, ring colors, text hierarchy. Keep it simple, warm, premium — not boxy or cold. Apply across ALL views in one cycle (dashboard, food, weight, exercise, chat, settings). The rings are good but the blue-grey cards and neon accents clash. Do this properly with a color system, not piecemeal.
+### P0: Voice Input Prototype
+- [ ] **SpeechRecognizer → chat pipeline** — Add mic button to chat. iOS SFSpeechRecognizer → on-device speech-to-text → feed text into existing chat input. Don't build separate speech pipeline — reuse existing AI pipeline. Test with real spoken input (messy, partial sentences, "um", corrections). Branch first, merge when working. Go/no-go at Review #14.
 
-### P0: Revert Adaptive TDEE — Dangerous Calorie Drop
-- [x] **Adaptive TDEE dropped calories from 1960→1400** — Reverted entirely. The formula `observedTDEE = avgIntake - deficit` depends on accurate food logging (most people under-log) and crashes on early-diet water loss. Original TDEE (base + Mifflin + Apple Health + weight trend) is accurate and stable. Adaptive TDEE v2 (weight-trend-only, no food log dependency) moved to backlog for Phase 5.
+### P0: Color & Visual Harmony Pass
+- [ ] **Fix color coordination app-wide** — The dark blue/purple palette with bright ring colors feels disjointed. Research Whoop, Apple Fitness, Strava palettes. Pick 6 decisions: background, cards, accents, ring colors, text hierarchy, status colors. Keep premium, warm, not cold. Apply via `.card()` ViewModifier + Theme constants across ALL views in one cycle. Not iterative.
 
-### P0: Unit Switching (LB/KG) Broken + Missing Units
-- [x] **LB/KG setting doesn't update UI** — Fixed: WeightViewModel.loadEntries() now refreshes weightUnit from Preferences. Test added.
-- [x] **Support all unit options across the app** — Fixed: exercise weights, workout detail, volume, 1RM, body comp all respect LB/KG preference. DB stays in lbs, conversion at view boundaries.
+### P1: Chat UI Evolution
+- [ ] **Message bubbles** — Replace plain text with user/AI message bubbles. Pure view-layer change.
+- [ ] **Typing indicator** — Animated dots during AI thinking/classification phase.
+- [ ] **Tool execution feedback** — Show "Looking up food...", "Checking workout history..." during Tier 2-3 execution. Needs state machine integration.
 
-### P0: LLM-Driven Intent + Tool Calling (CORE REDESIGN)
+### P1: Food DB Enrichment to 1,500
+- [ ] **Add ~300 foods** — Focus on most-searched-but-not-found. Indian restaurant meals, fast food combos, common branded items. Cross-reference USDA. JSON-only, zero code risk.
 
-**Goal:** Replace ~1500 lines of hardcoded string matching with LLM-driven intent detection. The 2B model (Gemma 4) should decide intent and call tools via JSON — not keyword scoring.
+### P2: Meal Planning Dialogue
+- [ ] **"Plan my meals for today"** — Iterative suggestion flow: suggest breakfast → confirm → suggest lunch. Needs `awaitingMealPlan` phase in ConversationState. Top failing query.
 
-**Architecture: Intent → SubIntent → Tool → Action**
-
-```
-User: "Log breakfast with 2% milk, eggs and toast"
-  ↓
-LLM classifies: intent=food_logging, subintent=multi_item_meal
-  ↓  
-LLM tool call: {"tool": "log_food", "items": [{"name": "2% milk"}, {"name": "eggs"}, {"name": "toast"}], "meal": "breakfast"}
-  ↓
-Execute: find each food → show confirmation UI → log
-```
-
-- [x] **LLM intent classifier prompt** — IntentClassifier.swift implemented with Gemma 4.
-- [x] **Streaming intent detection** — Token streaming with word-by-word generation.
-- [x] **Synthetic training data** — 16 test methods, 50+ assertions covering all tools, edge cases, LLM quirks. Fixed empty tool bug.
-- [x] **Unified tool schema prompt** — 12 tools with compact function signatures (~250 tokens). 16 examples. delete_food + body_comp added.
-- [x] **Remove StaticOverrides for intent routing** — Migrated all info queries (TDEE, protein, macros, calories, workout count, weekly comparison, workout suggestions) to ToolRanker/IntentClassifier. StaticOverrides 533→421 lines. Remaining handlers are deterministic commands (undo, delete, regex-parsed entries) that don't benefit from LLM.
-- [x] **Multi-item food logging via LLM** — Comma-separated items from LLM now open recipe builder with all items pre-populated + DB macros.
-- [x] **Confirmation UI for actions** — log_food opens FoodSearchView/RecipeBuilder (user confirms there), log_weight opens WeightEntry, start_workout opens ActiveWorkoutView. Delete has undo. No extra confirmation needed — existing UIs serve as confirmation gates.
-
-### P1: Tool Quality + Prompt Engineering
-- [x] **Tool calling accuracy eval** — 42 queries across all tools, 80%+ accuracy thresholds. 4 test methods by domain (food, weight, exercise, other).
-- [x] **Prompt compression** — IntentClassifier prompt compressed 50% (35→17 lines). Tool list on one line, shorter examples.
-- [x] **Multi-turn context** — streamPresentation receives conversation history (300 chars). LLM can reference prior responses.
-- [x] **Error recovery** — Friendly error messages + tool name sanitization (strips "()" LLM quirk).
-- [x] **Latency optimization** — Added pipeline timing instrumentation (logTiming per phase). Phase 1 rules are instant. Actual on-device measurement requires LLM eval.
-
-### P1: Workout History & Editing
-- [x] **Manual workout entry** — "Log Past Workout" button on workout tab. Opens ActiveWorkoutView with date picker, no timer. TemplatePreviewSheet extracted to unblock type checker.
-- [x] **Edit existing workout** — Tap any set → edit weight/reps alert. WorkoutService.updateSet(). Handles duration exercises.
-- [x] **Edit workout name & notes** — Menu option in detail view, alert with pre-populated fields, WorkoutService.updateWorkout().
-- [x] **Delete individual sets** — Swipe-to-delete on sets in detail view. WorkoutService.deleteSet().
-
-### P2: Presentation Quality
-- [x] **LLM presentation for ALL responses** — Gemma: streaming LLM presentation. SmolLM: enhanced addInsightPrefix with 8 patterns. No more raw data dumps.
-- [x] **Streaming everywhere** — Gemma: all info responses stream via respondStreamingDirect. SmolLM: instant prefixed data (can't stream reliably). "Thinking..." only shows during classification phase.
-- [x] **Context-aware responses** — Tone hints in presentation prompt: morning=motivating, daytime=practical, evening=summary.
-
-### P2: Salad Bowl / Custom Meal Builder
-- [x] **Salad base templates** — 5 templates seeded with ingredients.
-- [x] **Recent ingredients in picker** — Already implemented.
-- [x] **Category tabs in ingredient picker** — Horizontal chips for browsing.
-- [x] **Ingredient persistence** — Store per-ingredient macros for recipe rebuilding.
+### P2: AIChatView ViewModel Extraction
+- [ ] **Extract logic from AIChatView (400+ lines)** — Do alongside chat UI work (bubbles, typing indicators). Move business logic to AIChatViewModel. Not standalone refactoring.
 
 ---
 

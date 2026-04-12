@@ -4,6 +4,27 @@ Periodic product + engineering reviews. Every 10 cycles of the self-improvement 
 
 ---
 
+## Review #13 — 2026-04-12 (Cycle 358)
+
+### Summary
+67 cycles since last review. 5/6 sprint items delivered: food DB to 1,201, chat food confirmation card, prompt consolidation, multi-turn reliability, coverage maintenance. Voice input deferred 3rd consecutive review — elevated to P0. Zero open bugs/issues.
+
+### Key Achievement
+Multi-turn reliability fixes (topic switch detection, stale state cleanup) + structured food confirmation card = AI chat is meaningfully better. Food DB at 1,201 reduces "not found" frustration.
+
+### Competitive Alert
+MFP acquired Cal AI (AI photo, 15M downloads) + ChatGPT Health + Intent (meal planning). Whoop launched Passive MSK (auto muscular load). MacroFactor launched Workouts app. The market is moving fast on AI.
+
+### Agreed Direction (Cycles 358–378)
+1. Voice input prototype (P0) — SpeechRecognizer → chat, go/no-go at Review #14
+2. Color harmony (P0) — App-wide palette refresh, one cycle
+3. Chat UI — bubbles, typing indicator, tool feedback (P1)
+4. Food DB to 1,500 (P1)
+5. Meal planning dialogue (P2)
+6. AIChatView ViewModel extraction alongside chat UI (P2)
+
+---
+
 ## Review #12 — 2026-04-12 (Cycle 291)
 
 ### Summary

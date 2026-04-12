@@ -43,6 +43,14 @@
 - Chat UI is the next visual frontier. Text-only responses feel dated. One structured card type (food confirmation) is the minimum viable upgrade.
 - Voice input keeps getting deferred. Set a hard deadline: research in this sprint, go/no-go at next review.
 
+### What I Learned — Review #13 (Cycle 358, 2026-04-12)
+- MFP made 3 acquisitions in 12 months (Cal AI, Intent, ChatGPT Health). They're building an AI moat with cloud + 20M DB. We can't match DB size — compete on privacy, on-device, chat quality.
+- Whoop's Passive MSK (auto-detect muscular load) removes manual logging friction. Our text→structured data pattern is the same philosophy. Double down on it.
+- MacroFactor expanding into exercise (Workouts app, Jan 2026). All-in-one is our advantage but we need to stay ahead on each vertical.
+- Voice input deferred 3 reviews is a credibility problem. Set as P0 — prototype or kill, no more research-only.
+- Food confirmation card proved structured chat UI works. The path is clear: bubbles → typing indicators → tool feedback → rich cards for every action.
+- Color harmony is the most visible remaining quality gap. Every user sees the disjointed palette on every screen.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation

@@ -12,24 +12,24 @@ Privacy-first: everything on-device, no cloud, no accounts. This is non-negotiab
 
 ## Current Phase: Polish & Depth (Phase 3c)
 
-What's working: core tracking across all domains, AI chat foundation, 19 tools, dual-model pipeline, 743+ tests.
+What's working: core tracking across all domains, AI chat foundation, 19 tools, dual-model pipeline, 886 tests, 1,201 foods, state machine, structured chat cards.
 
-What's not: UI feels rough and unpolished compared to competitors, AI chat drops context in multi-turn, test coverage has gaps, food DB is incomplete, exercise has no visual aids.
+What's not: Color palette feels disjointed (dark blue/purple + bright rings), no voice input (3 reviews deferred), chat is still mostly text-only, food DB is 0.006% of MFP's 20M.
 
 ---
 
 ## AI Chat
 
 ### Now
-- **Prompt consolidation (P1)** — Single source of truth for tool schemas, examples, context injection. Measure and compress token count. Context window is tight (2048 tokens, 1776 max prompt) — every wasted token hurts response quality.
-- ~~**State machine refactor**~~ DONE — ConversationState.Phase enum (idle/awaitingMealItems/awaitingExercises) replaces 5 scattered pending vars. Coverage gate met first.
-- **Multi-turn reliability** — Eliminate context loss bugs. Test: 3-turn meal logging, 3-turn workout building, topic switching mid-conversation.
-- ~~**Natural freeform logging**~~ DONE — "log for breakfast 2 eggs and spinach and bread and coffee with 2% milk" → AI parses, splits "with" items, resolves each, opens recipe builder.
+- **Voice input (P0)** — iOS SpeechRecognizer → on-device speech-to-text → chat input. Prototype: mic button → speech → existing pipeline. Test with real spoken input (messy, partial sentences). Go/no-go at Review #14. **3 reviews deferred — no more.**
+- ~~**Prompt consolidation (P1)**~~ DONE — Dead code removed, token budget safety added.
+- ~~**State machine refactor**~~ DONE — ConversationState.Phase enum (idle/awaitingMealItems/awaitingExercises) replaces 5 scattered pending vars.
+- ~~**Multi-turn reliability**~~ DONE — Topic switch detection, stale state cleanup. Context preservation across turns.
+- ~~**Natural freeform logging**~~ DONE — AI parses, splits "with" items, resolves each, opens recipe builder.
+- **Meal planning dialogue (P2)** — "plan my meals today" → iterative suggestions based on remaining macros + history. Needs `awaitingMealPlan` phase in state machine.
 
 ### Next
-- Meal planning dialogue — "plan my meals today" → iterative suggestions based on remaining macros + history
 - Workout split builder — "build me a PPL split" → multi-turn designing
-- **Voice input (P1 research)** — iOS SpeechRecognizer → on-device speech-to-text → chat. Higher ROI than photo. Evaluate feasibility this phase.
 - Photo food logging (Core ML classifier → DB match → chat confirmation) — deferred until on-device accuracy improves for Indian/mixed dishes
 
 ### Later
@@ -42,10 +42,11 @@ What's not: UI feels rough and unpolished compared to competitors, AI chat drops
 ## UI & Design
 
 ### Now
+- **Color harmony (P0)** — App-wide palette refresh. Background, card, accent, ring, text hierarchy. Research Whoop/Apple Fitness palettes. One cycle, not iterative.
 - ~~**Theme overhaul (P0)**~~ DONE — Premium dark refresh: navy background, accent-driven cards, consistent typography across 46 views.
 - ~~**Dashboard redesign (P1)**~~ DONE — Apple Fitness-style macro rings, section headers (Body/Activity/Recovery/Insights), ring legend.
-- **Chat food confirmation card (P1)** — Structured card when food is logged (name, calories, macros, edit link). First step toward rich chat UI.
-- **Chat UI** — Message bubbles, animated typing indicators, tool execution feedback, streaming UX.
+- ~~**Chat food confirmation card (P1)**~~ DONE — Structured card when food is logged (name, calories, macros). First structured chat UI element.
+- **Chat UI (P1)** — Message bubbles, typing indicator, tool execution feedback ("Looking up food..."). Bubbles first (pure UI), then tool feedback (needs state machine plumbing).
 - **Food diary** — Faster logging flow, better meal grouping, clearer macro display.
 
 ### Next
@@ -148,15 +149,15 @@ What's not: UI feels rough and unpolished compared to competitors, AI chat drops
 
 ## Competitive Benchmarks Summary
 
-| Domain | Benchmark App | What to match |
-|--------|--------------|---------------|
-| Food logging | MyFitnessPal | DB breadth, logging speed, photo scanning (Cal AI acquired) |
-| Exercise | Boostcamp | Visual exercise presentation, muscle engagement viz |
-| Workout logging | Strong | Clean, fast set/rep entry UX, muscle heat map |
-| Macro coaching | MacroFactor | ~~Adaptive calorie/macro targets~~ MATCHED (adaptive TDEE shipped) |
-| Biomarkers | Whoop | Insight quality, recovery analysis, AI coaching from bloodwork, healthspan framing |
-| AI workout parsing | Whoop | AI Strength Trainer — text/photo → structured workout plan with muscular load tracking |
-| AI chat | None (unique advantage) | Push further — competitors adding cloud AI coaching (Whoop) and photo AI (MFP) but none do on-device conversational tracking |
+| Domain | Benchmark App | What to match | 2026 Update |
+|--------|--------------|---------------|-------------|
+| Food logging | MyFitnessPal | DB breadth, logging speed, photo scanning | Cal AI acquired (15M downloads, $30M ARR). ChatGPT Health integrated. Intent (meal planning) acquired. 20M food DB. |
+| Exercise | Boostcamp | Visual exercise presentation, muscle engagement viz | Still the gold standard for exercise content. |
+| Workout logging | Strong / MacroFactor | Clean, fast set/rep entry UX | MacroFactor launched Workouts app (Jan 2026) — expanding into exercise. |
+| Macro coaching | MacroFactor | ~~Adaptive calorie/macro targets~~ MATCHED | MacroFactor Workouts adds personalized progression. $12/mo. |
+| Biomarkers | Whoop | Insight quality, recovery analysis | Behavior Insights now tie habits to Recovery scores. Passive MSK auto-detects muscular load. |
+| AI workout parsing | Whoop | AI Strength Trainer — text/photo → structured workout | Now accepts text prompts AND photo/screenshot → structured plan. Cloud-based. |
+| AI chat | None (unique advantage) | Push further | MFP + Whoop both adding cloud AI. Our on-device privacy moat is differentiating. |
 
 ---
 

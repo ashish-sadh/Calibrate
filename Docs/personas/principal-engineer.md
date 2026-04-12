@@ -48,6 +48,14 @@
 - Food DB additions are zero-risk high-value. JSON-only changes that don't touch code. Ideal autopilot work.
 - Adaptive TDEE revert was the right call. Lesson: features that affect user health (calorie targets) need extra validation before shipping.
 
+### What I Learned — Review #13 (Cycle 358, 2026-04-12)
+- ConversationState.Phase is proving its value — multi-turn fixes were clean because state transitions are explicit. Next: meal planning needs `awaitingMealPlan` phase.
+- Prompt consolidation + token budget safety is important infrastructure. Context window (2048) remains the hard ceiling on multi-turn quality. Voice input will add pressure.
+- Voice input via SpeechRecognizer is low technical risk. The real risk is pipeline compatibility — spoken input is messier than typed. Route speech through existing chat input, don't build separate pipeline.
+- `.card()` ViewModifier pattern continues to pay dividends for cross-cutting style changes. Color harmony should be one cycle because of this pattern.
+- Zero open bugs, zero open issues. Clean operational state. Don't break this by rushing voice input — prototype on branch.
+- AIChatView ViewModel extraction should happen alongside chat UI work (bubbles, typing indicators). Don't do it as standalone refactoring.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)
