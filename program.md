@@ -50,33 +50,14 @@ LOOP FOREVER — do NOT stop between tickets:
 9. For AI changes: `xcodebuild test ... -only-testing:'DriftTests/AIEvalHarness' > /tmp/drift-eval.log 2>&1 && echo "EVAL OK" || echo "EVAL FAILED"`. If scores drop, revert.
 10. Fail? Fix. If stuck after **2 attempts**: `git checkout -- .`, log the failure reason, move on.
 11. Pass? `git add -A && git commit -m "improve: description" && git push`. Mark `[x]` in sprint.md. One-line log to improvement-log.md.
-12. **Every 20th cycle: PRODUCT REVIEW.** (Hooks inject this reminder automatically.) Steps:
-    - Read persona files: `Docs/personas/product-designer.md`, `Docs/personas/principal-engineer.md`
-    - Read feedback from open report PRs IF ANY exist: `gh pr list --label report --state open`, then read comments. If no feedback, keep going — NEVER wait for human input.
-    - Read open bug issues: `gh issue list --state open`. For issues with screenshots, download and analyze them:
-      1. `gh issue view {N} --json body` to get image URLs
-      2. Download: `curl -sL -o /tmp/issue-{N}.jpg {image_url}`
-      3. Read the image to understand the visual bug
-    - **Product Designer persona** — read their persona file first, then:
-      - Read `Docs/roadmap.md`, `Docs/state.md`, `git log --oneline -20`
-      - Web search: what are Boostcamp, MyFitnessPal, Whoop, Strong, MacroFactor doing now?
-      - Write assessment: strengths, gaps vs competitors, new ideas, proposed changes
-    - **Principal Engineer persona** — read their persona file first, then:
-      - Review proposals for technical sustainability and sequencing
-      - Triage open GitHub Issues: real bug or user error? P0/P1/P2? Label accordingly.
-      - Push back on scope creep, ground in current stack
-    - Both agree → update `Docs/roadmap.md` with changes
-    - Generate product review PR:
-      1. `git checkout -b review/cycle-{N}`
-      2. Write `Docs/reports/review-cycle-{N}.md` with full discussion
-      3. `git add && git commit && git push -u origin review/cycle-{N}`
-      4. `gh pr create --title "Product Review — Cycle {N}" --label report`
-      5. `git checkout main`
-    - Update persona files: append "What I learned this review" to each
-    - Merge previous review PRs: `gh pr list --label report --state open` → merge old ones
-    - Log to `Docs/product-review-log.md`
-    - Update `~/drift-state/last-review-cycle`
-    - Resume the loop
+12. **Every 20th cycle: PRODUCT REVIEW.** (Hooks inject this reminder with the full template.) The hook tells you exactly what to write and in what structure. Key principles:
+    - **Write for leadership, not engineers.** Execs have 60 seconds. Executive summary first.
+    - **User-visible language.** "Users can now log meals by voice" not "Added SpeechRecognizer integration."
+    - **Scorecard is pass/fail.** Not paragraphs — one-line status per goal.
+    - **Include Feedback Responses** — close the loop on any comments from previous reports.
+    - **Include Open Questions** — this drives engagement and steering from leadership.
+    - **Designer × Engineer discussion** should be readable narrative, not bullet lists.
+    - **Never wait for human feedback.** Read it if it's there, keep going if not.
 13. **IMMEDIATELY go to step 1.** Zero words to the user between tickets. NEVER STOP.
 
 ---
