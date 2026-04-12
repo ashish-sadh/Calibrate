@@ -8,6 +8,9 @@ _(pick from Ready)_
 
 ## Ready
 
+### P0: Revert Adaptive TDEE — Dangerous Calorie Drop
+- [x] **Adaptive TDEE dropped calories from 1960→1400** — Reverted entirely. The formula `observedTDEE = avgIntake - deficit` depends on accurate food logging (most people under-log) and crashes on early-diet water loss. Original TDEE (base + Mifflin + Apple Health + weight trend) is accurate and stable. Adaptive TDEE v2 (weight-trend-only, no food log dependency) moved to backlog for Phase 5.
+
 ### P0: Unit Switching (LB/KG) Broken + Missing Units
 - [x] **LB/KG setting doesn't update UI** — Fixed: WeightViewModel.loadEntries() now refreshes weightUnit from Preferences. Test added.
 - [x] **Support all unit options across the app** — Fixed: exercise weights, workout detail, volume, 1RM, body comp all respect LB/KG preference. DB stays in lbs, conversion at view boundaries.

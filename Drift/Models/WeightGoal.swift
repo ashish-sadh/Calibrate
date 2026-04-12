@@ -146,9 +146,8 @@ struct WeightGoal: Codable, Sendable {
             ? "- \(Int(abs(deficit))) deficit"
             : "+ \(Int(abs(deficit))) surplus"
         let floorNote = rawTarget < 1200 ? " (floored to 1200 for safety)" : ""
-        let adaptiveNote = est.adaptiveTDEE.map { " Adaptive TDEE: \(Int($0)) (from your actual weight trend)." } ?? ""
         return (est.source.rawValue,
-                "TDEE \(Int(est.tdee)) \(deficitStr) = \(Int(actualTarget)) kcal/day.\(floorNote)\(adaptiveNote)\(est.confidence == .low ? " Log weight & food for better accuracy." : "")")
+                "TDEE \(Int(est.tdee)) \(deficitStr) = \(Int(actualTarget)) kcal/day.\(floorNote)\(est.confidence == .low ? " Log weight & food for better accuracy." : "")")
     }
 
     /// Effective macro targets.

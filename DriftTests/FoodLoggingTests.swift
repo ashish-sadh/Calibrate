@@ -2063,46 +2063,9 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
     #expect(abs(normalModerate - 2000) < 1, "70kg moderate should still be 2000 anchor: \(Int(normalModerate))")
 }
 
-// MARK: - Adaptive TDEE Tests
-
-@Test func adaptiveEstimateRequiresMinimumDataPoints() async throws {
-    // Less than 3 data points → no adaptive estimate
-    var config = TDEEEstimator.TDEEConfig.default
-    config.adaptiveTDEE = 2100
-    config.adaptiveDataPoints = 2
-    #expect(TDEEEstimator.adaptiveEstimate(from: config) == nil, "Should require 3+ data points")
-
-    config.adaptiveDataPoints = 3
-    let result = TDEEEstimator.adaptiveEstimate(from: config)
-    #expect(result == 2100, "Should return adaptive TDEE with 3+ data points")
-}
-
-@Test func adaptiveEstimateNilWithoutData() async throws {
-    let config = TDEEEstimator.TDEEConfig.default
-    #expect(TDEEEstimator.adaptiveEstimate(from: config) == nil, "Default config has no adaptive data")
-}
-
-@Test func adaptiveEstimateWithHighDataPoints() async throws {
-    var config = TDEEEstimator.TDEEConfig.default
-    config.adaptiveTDEE = 2350
-    config.adaptiveDataPoints = 10
-    let result = TDEEEstimator.adaptiveEstimate(from: config)
-    #expect(result == 2350, "Should return adaptive TDEE with many data points")
-}
-
-@Test func adaptiveEMASmoothing() async throws {
-    // Simulate EMA: new = old * 0.8 + observed * 0.2
-    var config = TDEEEstimator.TDEEConfig.default
-    config.adaptiveTDEE = 2000  // existing estimate
-    config.adaptiveDataPoints = 5
-
-    // If observed TDEE is 2500, after EMA: 2000 * 0.8 + 2500 * 0.2 = 2100
-    let observed = 2500.0
-    let expected = 2000 * 0.8 + observed * 0.2  // 2100
-    let alpha = 0.2
-    let result = config.adaptiveTDEE! * (1 - alpha) + observed * alpha
-    #expect(abs(result - expected) < 0.01, "EMA should blend old and new: \(result)")
-}
+// MARK: - Adaptive TDEE Tests (DISABLED — feature reverted)
+// Adaptive TDEE v1 was removed because it depended on food logging accuracy
+// and dropped calories dangerously (1960→1400). See Docs/backlog.md for v2 design.
 
 // MARK: - Serving Size Parsing Tests
 

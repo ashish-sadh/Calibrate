@@ -62,7 +62,7 @@ What's not: UI feels rough and unpolished compared to competitors, AI chat drops
 
 ### Now
 - ~~**LB/KG unit switching**~~ ✅ DONE — Fixed stale preference pattern, extended to all exercise/workout views. DB in canonical units, conversion at view boundaries.
-- ~~**Adaptive TDEE**~~ ✅ DONE — EMA-smoothed adaptive estimation from weight trend data. 3-point ramp-up, 0.4 dampening. Persists in TDEEConfig.
+- ~~**Adaptive TDEE**~~ ⛔ REVERTED — v1 depended on food logging accuracy, dropped calories dangerously (1960→1400). Original TDEE is stable and accurate. v2 (weight-trend-only, no food log) moved to Later/Phase 5.
 - Trend visualization improvements — clearer charts, milestone markers
 
 ### Next
