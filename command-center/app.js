@@ -27,7 +27,7 @@ function startOAuth() {
   const state = Math.random().toString(36).slice(2);
   localStorage.setItem('drift_oauth_state', state);
   const redirect = `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, '')}callback.html`;
-  window.location.href = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect)}&scope=repo&state=${state}`;
+  window.location.href = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect)}&scope=public_repo&state=${state}`;
 }
 
 async function exchangeCode(code) {
