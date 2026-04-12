@@ -21,10 +21,10 @@ What's not: UI feels rough and unpolished compared to competitors, AI chat drops
 ## AI Chat
 
 ### Now
-- **State machine refactor** — Replace scattered pendingMealName/pendingWorkout state vars with a proper conversation state machine (idle → classifying → executing → confirming → logging). Clear transitions, no dangling state.
-- **Prompt consolidation** — Single source of truth for tool schemas, examples, context injection. Measure and compress token count.
+- **Prompt consolidation (P1)** — Single source of truth for tool schemas, examples, context injection. Measure and compress token count. Context window is tight (2048 tokens, 1776 max prompt) — every wasted token hurts response quality.
+- **State machine refactor** — Replace scattered pendingMealName/pendingWorkout state vars with a proper conversation state machine (idle → classifying → executing → confirming → logging). Clear transitions, no dangling state. *Blocked by: AIToolAgent test coverage.*
 - **Multi-turn reliability** — Eliminate context loss bugs. Test: 3-turn meal logging, 3-turn workout building, topic switching mid-conversation.
-- **Natural freeform logging** — "log for breakfast 2 eggs and spinach and bread and coffee with 2% milk with protein powder and creatine" → AI parses everything, asks clarifying questions, does macro calculations, logs it.
+- ~~**Natural freeform logging**~~ DONE — "log for breakfast 2 eggs and spinach and bread and coffee with 2% milk" → AI parses, splits "with" items, resolves each, opens recipe builder.
 
 ### Next
 - Meal planning dialogue — "plan my meals today" → iterative suggestions based on remaining macros + history
@@ -51,6 +51,7 @@ What's not: UI feels rough and unpolished compared to competitors, AI chat drops
 - iOS widgets (calories remaining, recovery score)
 - Saved meals (one-tap re-log of multi-item meals)
 - Inline diary editing (tap number to edit directly)
+- **Live Activities** — Remaining macros/calories on lock screen, Dynamic Island during active workout
 
 ### Later
 - Apple Watch companion
@@ -112,6 +113,7 @@ What's not: UI feels rough and unpolished compared to competitors, AI chat drops
 ### Next
 - Correlation with food/exercise (cross-domain insights: "your glucose spikes after rice")
 - Lab report comparison over time
+- **Cycle-biomarker correlation** — Correlate menstrual cycle phase with iron, vitamin D, and other biomarkers. Unique cross-domain insight (Whoop's panels are separate from cycle tracking).
 
 ### Benchmark: Whoop
 - Whoop's recovery/strain insights are excellent. Match their insight quality for biomarker trends.
@@ -129,12 +131,12 @@ What's not: UI feels rough and unpolished compared to competitors, AI chat drops
 ## Quality & Testing
 
 ### Now
-- **Coverage recovery (P0)** — 8 files below threshold. Critical: AIToolAgent 0%, IntentClassifier 36%, AIRuleEngine 25%, FoodService 30%. Write tests before any AI refactoring.
+- **Coverage recovery (P0)** — 8 files below threshold. Critical: AIToolAgent 0%, IntentClassifier 36%, AIRuleEngine 25%, FoodService 30%. Write tests before any AI refactoring. *3 reviews have flagged this — must be addressed before state machine refactor.*
 - Coverage targets: **80%** logic, **50%** services — find and fix gaps
-- **Stale preference audit** — Find all view models that capture `Preferences.*` at init instead of reading dynamically. Fix the pattern, not just the LB/KG instance.
+- **Code quality maintenance** — File decomposition largely complete (13 refactoring cycles, 3200+ lines reorganized). Shift focus from file splitting to: test coverage, DDD violations (business logic in views), dependency injection, protocol abstractions.
+- ~~**Stale preference audit**~~ PARTIALLY DONE — WeightViewModel fixed, exercise views fixed. Continue auditing remaining view models.
 - AI eval harness: every tool gets 10+ eval queries
 - Integration tests for multi-step flows (parse → resolve → log → confirm)
-- Bug hunting: find bugs before users report them
 
 ### Next
 - UI snapshot tests
@@ -146,12 +148,12 @@ What's not: UI feels rough and unpolished compared to competitors, AI chat drops
 
 | Domain | Benchmark App | What to match |
 |--------|--------------|---------------|
-| Food logging | MyFitnessPal | DB breadth, logging speed |
-| Exercise | Boostcamp | Visual exercise presentation (images, videos, instructions) |
-| Workout logging | Strong | Clean, fast set/rep entry UX |
-| Macro coaching | MacroFactor | Adaptive calorie/macro targets |
-| Biomarkers | Whoop | Insight quality, recovery analysis |
-| AI chat | None (unique advantage) | Push further — no competitor has this |
+| Food logging | MyFitnessPal | DB breadth, logging speed, photo scanning (Cal AI acquired) |
+| Exercise | Boostcamp | Visual exercise presentation, muscle engagement viz |
+| Workout logging | Strong | Clean, fast set/rep entry UX, muscle heat map |
+| Macro coaching | MacroFactor | ~~Adaptive calorie/macro targets~~ MATCHED (adaptive TDEE shipped) |
+| Biomarkers | Whoop | Insight quality, recovery analysis, women's health biomarker panels |
+| AI chat | None (unique advantage) | Push further — MFP bought Cal AI but still cloud-only |
 
 ---
 

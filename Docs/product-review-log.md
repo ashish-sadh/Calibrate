@@ -202,3 +202,140 @@ Both personas agree:
 6. **Medication scheduling → Later** — monitoring MFP but not chasing their market
 7. **Voice input stays Phase 4** — confirmed as best input expansion candidate
 8. **Update state.md** with current test count, build number
+
+---
+
+## Review #3 — 2026-04-12 (Cycle 93)
+
+### Progress Since Review #2
+
+Since the last review (cycle 68→93 = 25 cycles), the focus has been **code quality improvement** — systematic refactoring of the largest, most complex files in the codebase:
+
+**Code-improvement cycles completed (13 refactoring units):**
+- **WorkoutView.swift** — 4 extractions: ActiveWorkoutView (737 lines), ExercisePickerView (194), WorkoutDetailView (142), CreateTemplateView (190). File went from 2067→800 lines.
+- **HealthKitService.swift** — Extracted cycle tracking (270 lines) to extension. 
+- **FoodTabView.swift** — 2 extractions: PlantPointsCardView (187), EditFoodEntrySheet (250). File went from 891→765 lines.
+- **AppDatabase.swift** — Extracted food usage tracking (201 lines) to extension.
+- **FoodSearchView.swift** — Extracted ManualFoodEntrySheet (136 lines). Reduced @State vars from 25→16.
+- **AIChatView.swift** — Extracted suggestions/insight/fallbacks (178 lines) to extension.
+- **AIContextBuilder.swift** — Extracted 5 health contexts (154 lines) to extension.
+- **DashboardView.swift** — Extracted TDEE + calorie balance cards (276 lines) to extension.
+- **LabReportOCR.swift** — Extracted biomarker extraction + aliases (300 lines) to extension.
+- **AIChatView.swift** — In progress: extracting 620+ lines of message handling (sendMessage + 13 intent handlers) to AIChatView+MessageHandling.swift. File going from 836→214 lines.
+
+**Net effect:** ~3,200 lines moved from monolithic files into focused, single-responsibility extensions. Largest files reduced by 40-60%. No behavior changes — all refactoring-only.
+
+No new features shipped in this window (by design — code-improvement mode).
+
+### Product Designer Persona
+_Background: 2yr each at MyFitnessPal, Whoop, MacroFactor, Strong, Boostcamp_
+
+#### Competitive Landscape (April 2026)
+
+| App | Latest Moves |
+|-----|-------------|
+| **MyFitnessPal** | **Acquired Cal AI** (March 2026) — the viral teen-built calorie app. AI Meal Scan photo logging now on all iOS (Premium+). New Today screen with streaks/habits. GLP-1 medication tracking (dose, timing, reminders). Instacart integration for meal planning. Pricing: Premium $79.99/yr, Premium+ $99.99/yr. |
+| **Whoop** | **Women's health push** — specialized female blood biomarker panel (11 markers), hormonal symptom insights with cycle predictions. Heart rate algorithm overhaul (Feb 2026). Strength training trend views. Pricing: $199-239/yr (hardware included). |
+| **Boostcamp** | Bodyweight tracker, muscle engagement visualization per program, workout notes. AI program creation. Core tracking still free. Focused on strength programming niche. |
+| **Strong** | v6.1.11 (March 2026): templates search, measurement widgets, exercise renaming, simple timers. Muscle heat map added. Still the minimalist gold standard. $4.99/mo. |
+| **MacroFactor** | Launched **MacroFactor Workouts** as separate app. Favorites feature for staple foods. Upcoming: Apple Health integration, Live Activities for lock screen workout data, photo/text recipe upload. |
+
+#### Key Industry Trends
+1. **AI consolidation** — MFP acquiring Cal AI signals that AI food logging is becoming table stakes, not a differentiator by itself. The differentiator is now *how well* the AI integrates with your data.
+2. **App splitting vs unification** — MacroFactor split into two apps (nutrition + workouts). MFP stays unified but bloated. Drift's single-app approach is a strength *if* the UI doesn't feel overwhelming.
+3. **Women's health** — Whoop's female biomarker panel is a new category. We have cycle tracking but no biomarker correlation.
+4. **Hardware bundling** — Whoop includes hardware in subscription. Strong and MFP are pure software. We're pure software — no hardware dependency is an advantage for distribution.
+
+#### Drift Strengths (Updated)
+1. **AI chat still unique and expanding.** MFP bought Cal AI for photo scanning; their chat is still cloud-based recipe Q&A. Drift's on-device AI does food logging, workouts, cross-domain queries — no competitor matches this breadth locally.
+2. **Code quality investment paying off.** 13 refactoring cycles means the codebase is now significantly more maintainable. WorkoutView went from a 2067-line monolith to 5 focused files. This makes future feature work faster and safer.
+3. **Single unified app.** MacroFactor just split into two apps. We cover 9 health domains in one app. That's a genuine UX advantage — users don't context-switch between apps.
+4. **Privacy moat widening.** MFP sends photos to cloud, acquired a company that processes food photos server-side. Whoop uploads lab results. Drift: everything on-device. As AI regulation tightens, this becomes more valuable.
+
+#### Drift Gaps (Updated)
+1. **UI polish remains the #1 product gap.** Review #2 flagged this. Still not addressed. MFP redesigned their Today tab. Strong's muscle heat map is beautiful. Our dashboard and chat UI are functional but not polished. Every cycle that passes without UI work increases this gap.
+2. **Coverage debt still blocking.** Review #2 flagged 8 files below threshold. The code-improvement cycles improved structure but didn't add tests. AIToolAgent is still at 0% coverage. This blocks the state machine refactor which is the most impactful AI architecture improvement.
+3. **Food DB breadth.** ~1004 foods vs MFP's growing DB (now with Cal AI's data). Our AI chat compensates but the search-first flow suffers.
+4. **No photo input.** MFP rolled out AI Meal Scan to all Premium+ users. Cal AI acquisition signals doubling down. We have zero photo capability.
+5. **Women's health gap opening.** Whoop added female biomarker panels and hormonal insights. We have basic cycle tracking but no biomarker-cycle correlation.
+
+#### New Ideas
+1. **Cycle-biomarker correlation** — We have both cycle tracking AND biomarker tracking. Correlating menstrual cycle phase with iron, vitamin D, and other biomarkers is a unique cross-domain insight no competitor offers (Whoop's panel is separate from their cycle tracking). Low effort: query existing data, display correlation card.
+2. **Live Activities for meal tracking** — MacroFactor is adding lock screen widgets for workouts. We could show remaining macros/calories on the lock screen. iOS Dynamic Island during active workout. High visibility, moderate effort.
+3. **"Smart search" for food DB** — Instead of growing the DB to 14M entries, invest in smarter search: fuzzy matching, common misspellings, LLM-assisted food estimation ("a plate of biryani" → estimate from known ingredients). Leverage AI to compensate for DB size.
+
+#### Proposed Roadmap Changes
+- **Elevate dashboard redesign urgency** — flagged in Reviews #1 and #2, still not shipped. This is now overdue.
+- **Add cycle-biomarker correlation** to Biomarkers Next section
+- **Add Live Activities** to UI Next section
+- Move **prompt consolidation** higher in AI Chat Now — token efficiency matters as context window is tight (2048 tokens)
+
+---
+
+### Principal Engineer Persona
+_Background: 10yr each at Amazon and Google_
+
+#### Assessment of Code Quality Investment
+
+The 13 refactoring cycles were **well-executed and valuable.** Specific wins:
+- WorkoutView decomposition (2067→800 lines across 5 files) follows the SwiftUI best practice of small, focused views
+- Extension pattern (+Suggestions, +Health, +Biomarkers, +MessageHandling) is idiomatic Swift and consistent across the codebase
+- No behavior changes — clean refactoring with build verification at each step
+
+**However, the refactoring focused on file size, not the architectural issues flagged in Review #2.** The biggest technical debts were:
+1. AIToolAgent at 0% test coverage → still 0%
+2. State machine refactor for chat → still not done (blocked by #1)
+3. Stale preference pattern audit → partially done (WeightViewModel fixed, others unknown)
+
+The code-improvement loop has been doing "outer" refactoring (extract subviews, split files) when the "inner" refactoring (test coverage, state management, architectural patterns) is more urgently needed.
+
+#### Assessment of Designer's Proposals
+
+**Agree: Dashboard redesign is overdue.** This was flagged as #1 product priority in Review #2. Three reviews in a row saying "dashboard needs work" means it's time to actually do it. The code quality investment means the dashboard code is now cleaner (DashboardView+Cards extraction), making the redesign easier.
+
+**Agree: Prompt consolidation should be elevated.** With 2048 token context and 1776 max prompt, every wasted token hurts response quality. A single pass to audit and compress the prompt could improve AI quality more than any feature addition.
+
+**Push back: Cycle-biomarker correlation now.** This is a niche feature. How many beta testers track both cycles and biomarkers? Build the correlation engine when there's user data to validate it. Log the idea, don't prioritize it.
+
+**Push back: Live Activities now.** Dynamic Island and lock screen widgets require WidgetKit extensions, App Groups for shared data, and careful state management. This is a Phase 4+ feature, not Phase 3c. The ROI doesn't justify the architectural complexity during a polish phase.
+
+**Push back: "Smart search" for food DB.** We already have spell correction, fuzzy matching, and LLM-assisted normalization in the tiered pipeline. The food DB gap is about *data*, not search quality. Adding 500 common foods (top USDA items, popular restaurant meals) would close more of the gap than any algorithm improvement.
+
+#### Technical Sustainability Check
+
+Architecture remains sound. Specific observations:
+- **AIChatView+MessageHandling extraction (in progress)** is the right move — sendMessage() at 476 lines was the single worst Clean Code violation in the codebase. The 13 handler methods follow guard-and-return-early pattern correctly.
+- **31,388 total Swift lines** is healthy for the feature set. The refactoring hasn't added bloat.
+- **GRDB + SQLite** continues to be the right persistence choice. No migration pressure.
+- **llama.cpp xcframework** is stable. Gemma 4 E2B is performing well as the large model.
+
+**Concern: the code-improvement loop has diminishing returns on file decomposition.** The largest files are now 600-800 lines — reasonable for SwiftUI views with complex business logic. Further splitting risks creating too many small files with unclear ownership. The loop should shift focus to:
+1. Test coverage for untested services
+2. DDD violations (business logic in views)
+3. Design pattern improvements (dependency injection, protocol abstractions)
+
+#### Sequencing Recommendation (Updated)
+
+Review #2's sequence was: coverage → dashboard → state machine → chat UI. This remains correct but with refinement:
+
+1. **Finish AIChatView+MessageHandling extraction** (in progress, ~1 cycle)
+2. **Coverage recovery sprint** — AIToolAgent, IntentClassifier, FoodService, AIRuleEngine. Target: all 8 files above threshold. (~4-6 cycles)
+3. **Dashboard redesign** — New hierarchy, progress rings, cleaner macro display. Ship to TestFlight, get feedback. (~2-3 cycles)
+4. **Prompt consolidation** — Audit token usage, compress system prompt, single source of truth for tool schemas. (~1-2 cycles)
+5. **State machine refactor** — Replace scattered pending* state vars with proper conversation state machine. Now safe because AIToolAgent has tests. (~2-3 cycles)
+6. **Chat UI polish** — Better bubbles, streaming UX, tool execution feedback. (~1-2 cycles)
+
+---
+
+### Consensus & Roadmap Updates
+
+Both personas agree:
+1. **Code quality investment was valuable** — 13 refactoring cycles, 3200+ lines reorganized, major files decomposed. Codebase is significantly more maintainable.
+2. **Shift code-improvement focus** from file decomposition to test coverage, DDD violations, and architectural patterns. File sizes are now reasonable.
+3. **Dashboard redesign is now 3-reviews overdue** — must be the next product priority after coverage recovery
+4. **Coverage recovery remains the #1 technical priority** — still 8 files below threshold, still blocking state machine refactor
+5. **Prompt consolidation elevated** — tight context window (2048 tokens) means every token matters. Audit and compress.
+6. **Cycle-biomarker correlation → Later** — good idea but niche; wait for user data
+7. **Live Activities → Phase 4** — architectural complexity doesn't fit Phase 3c
+8. **Food DB: add common foods** over algorithmic improvements — the gap is data, not search quality
+9. **Sequence: finish current extraction → coverage → dashboard → prompt consolidation → state machine → chat UI**
