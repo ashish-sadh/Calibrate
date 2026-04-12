@@ -10,7 +10,7 @@ _Directive:_ **Improve code quality, readability, and maintainability. Read the 
 
 _Focus:_ ALL (can be narrowed: "Views only", "Clean Code only", "Food domain only", etc.)
 
-_Override:_ CONTINUE
+_Override:_ STOP
 
 ---
 

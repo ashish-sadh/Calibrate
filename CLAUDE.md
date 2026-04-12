@@ -18,12 +18,13 @@ A background watchdog (`scripts/self-improve-watchdog.sh`) may be running, alter
 
 | User says | You do |
 |-----------|--------|
-| "stop drift control" / "stop the watchdog" / "stop improvement" | `echo "STOP" > ~/drift-control.txt` |
-| "pause drift control" / "pause improvement" | `echo "PAUSE" > ~/drift-control.txt` |
-| "resume drift control" / "run improvement" / "start improvement" | `echo "RUN" > ~/drift-control.txt` |
+| "stop drift control" / "stop the watchdog" / "stop improvement" | `echo "STOP" > ~/drift-control.txt` — kills current session immediately |
+| "pause drift control" / "pause improvement" | `echo "PAUSE" > ~/drift-control.txt` — kills current session, watchdog stays alive |
+| "graceful stop" / "finish and stop" / "drain" | `echo "DRAIN" > ~/drift-control.txt` — watchdog sets _Override: STOP in both programs, lets current cycle finish, then exits |
+| "resume drift control" / "run improvement" / "start improvement" | `echo "RUN" > ~/drift-control.txt` — watchdog sets _Override: CONTINUE in both programs and starts |
 | "drift control status" / "is improvement running?" | `cat ~/drift-control.txt && ps aux \| grep 'claude.*self-improvement\|claude.*code-improvement' \| grep -v grep` |
 
-The watchdog checks this file every 30 minutes. Changes take effect at the next check cycle.
+The watchdog checks this file every 30 minutes (DRAIN polls every 60s for faster exit).
 
 ## Doc Map
 | Doc | What it is |

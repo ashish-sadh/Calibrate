@@ -14,6 +14,7 @@ WORK_DIR="/Users/ashishsadh/workspace/Drift"
 CONTROL_FILE="$HOME/drift-control.txt"
 LOG_DIR="$HOME/drift-self-improve-logs"
 WATCHDOG_LOG="$LOG_DIR/watchdog.log"
+PID_FILE="$LOG_DIR/claude.pid"
 CHECK_INTERVAL=1800  # 30 minutes
 STALE_THRESHOLD=1500 # 25 minutes (in seconds)
 KILL_WAIT=10
@@ -67,8 +68,11 @@ start_claude() {
         --dangerously-skip-permissions \
         --model opus \
         --effort max \
+        --output-format stream-json \
+        --verbose \
         > "$CURRENT_LOG" 2>&1 &
     CLAUDE_PID=$!
+    echo "$CLAUDE_PID" > "$PID_FILE"
     log "Claude started with PID $CLAUDE_PID"
 
     # Alternate for next time
@@ -80,6 +84,11 @@ is_claude_alive() {
 }
 
 is_log_stale() {
+    is_log_stale_seconds "$STALE_THRESHOLD"
+}
+
+is_log_stale_seconds() {
+    local threshold=$1
     if [[ -z "$CURRENT_LOG" ]] || [[ ! -f "$CURRENT_LOG" ]]; then
         return 1  # No log yet, not stale
     fi
@@ -88,12 +97,18 @@ is_log_stale() {
     local last_mod
     last_mod=$(stat -f %m "$CURRENT_LOG" 2>/dev/null || echo "$now")
     local age=$(( now - last_mod ))
-    (( age > STALE_THRESHOLD ))
+    (( age > threshold ))
 }
 
 cleanup() {
-    log "Watchdog shutting down (signal received)..."
-    kill_claude
+    local state
+    state=$(read_control)
+    if [[ "$state" == "DRAIN" ]]; then
+        log "Watchdog shutting down (signal received) — DRAIN active, leaving claude running."
+    else
+        log "Watchdog shutting down (signal received)..."
+        kill_claude
+    fi
     exit 0
 }
 
@@ -110,23 +125,77 @@ log "Control file: $CONTROL_FILE"
 log "Check interval: ${CHECK_INTERVAL}s"
 log "========================================="
 
+# Adopt existing claude process from PID file if still alive
+if [[ -f "$PID_FILE" ]]; then
+    SAVED_PID=$(cat "$PID_FILE")
+    if kill -0 "$SAVED_PID" 2>/dev/null; then
+        CLAUDE_PID="$SAVED_PID"
+        # Find the most recent session log for staleness checks
+        CURRENT_LOG=$(ls -t "$LOG_DIR"/session_*.log 2>/dev/null | head -1)
+        log "Adopted existing claude process (PID $CLAUDE_PID, log: $CURRENT_LOG)"
+    else
+        log "Stale PID file (PID $SAVED_PID dead). Will start fresh."
+        rm -f "$PID_FILE"
+    fi
+fi
+
 # Initial start
 STATE=$(read_control)
 if [[ "$STATE" == "RUN" ]]; then
-    start_claude
+    if [[ -z "$CLAUDE_PID" ]]; then
+        start_claude
+    else
+        log "Claude already running (adopted). Skipping initial start."
+    fi
 elif [[ "$STATE" == "PAUSE" ]]; then
     log "Control file says PAUSE — waiting..."
 elif [[ "$STATE" == "STOP" ]]; then
     log "Control file says STOP — exiting."
     exit 0
+elif [[ "$STATE" == "DRAIN" ]]; then
+    log "Control file says DRAIN at startup."
+    sed -i '' 's/_Override:_ CONTINUE/_Override:_ STOP/' "$WORK_DIR/program.md"
+    sed -i '' 's/_Override:_ CONTINUE/_Override:_ STOP/' "$WORK_DIR/code-improvement.md"
+    DRAIN_STALE=600
+    if is_claude_alive; then
+        log "DRAIN: waiting for session to finish (PID $CLAUDE_PID)..."
+        while is_claude_alive; do
+            sleep 60
+            if is_log_stale_seconds "$DRAIN_STALE"; then
+                log "DRAIN: no log output in ${DRAIN_STALE}s — killing stalled process."
+                kill_claude
+                break
+            fi
+        done
+    fi
+    log "DRAIN: done. Exiting."
+    exit 0
 fi
 
 # Main watchdog loop
+# Sleep in 30s chunks so we pick up control file changes quickly
+# Full health check (stale log, restart) only every CHECK_INTERVAL
+ELAPSED=0
 while true; do
-    sleep "$CHECK_INTERVAL"
+    sleep 30
+    ELAPSED=$(( ELAPSED + 30 ))
 
     STATE=$(read_control)
-    log "Check cycle — control: $STATE, claude PID: ${CLAUDE_PID:-none}"
+
+    # React to STOP/PAUSE/DRAIN immediately (every 30s)
+    if [[ "$STATE" != "RUN" ]]; then
+        log "Check cycle — control: $STATE, claude PID: ${CLAUDE_PID:-none}"
+    fi
+
+    # Skip full health check until CHECK_INTERVAL elapsed
+    if [[ "$STATE" == "RUN" ]] && (( ELAPSED < CHECK_INTERVAL )); then
+        continue
+    fi
+    ELAPSED=0
+
+    if [[ "$STATE" == "RUN" ]]; then
+        log "Check cycle — control: $STATE, claude PID: ${CLAUDE_PID:-none}"
+    fi
 
     case "$STATE" in
         STOP)
@@ -142,7 +211,33 @@ while true; do
             log "Paused. Waiting for RUN..."
             continue
             ;;
+        DRAIN)
+            # Set Override to STOP in both loop programs so claude exits after current cycle
+            sed -i '' 's/_Override:_ CONTINUE/_Override:_ STOP/' "$WORK_DIR/program.md"
+            sed -i '' 's/_Override:_ CONTINUE/_Override:_ STOP/' "$WORK_DIR/code-improvement.md"
+            log "DRAIN: set _Override: STOP in both program.md and code-improvement.md"
+            if is_claude_alive; then
+                log "DRAIN: waiting for session to finish (PID $CLAUDE_PID)..."
+                DRAIN_STALE=600  # 10 minutes with no log output = stuck
+                while is_claude_alive; do
+                    sleep 60
+                    if is_log_stale_seconds "$DRAIN_STALE"; then
+                        log "DRAIN: no log output in ${DRAIN_STALE}s — killing stalled process."
+                        kill_claude
+                        break
+                    fi
+                done
+                log "DRAIN: session finished. Exiting."
+                exit 0
+            else
+                log "DRAIN: session already finished. Exiting."
+                exit 0
+            fi
+            ;;
         RUN)
+            # Ensure overrides are set to CONTINUE (in case we're resuming from DRAIN)
+            sed -i '' 's/_Override:_ STOP/_Override:_ CONTINUE/' "$WORK_DIR/program.md"
+            sed -i '' 's/_Override:_ STOP/_Override:_ CONTINUE/' "$WORK_DIR/code-improvement.md"
             # Check if claude is dead
             if ! is_claude_alive; then
                 log "Claude process exited. Restarting with next prompt..."

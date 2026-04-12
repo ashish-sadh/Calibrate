@@ -8,7 +8,7 @@ Autonomous loop. Follow this exactly.
 
 _Directive:_ **Work through sprint.md top-down. Bugs first, then P0/P1 items. When finite items are done, rotate through Permanent Tasks: (1) AI chat & tool service — the showstopper, especially natural meal logging from freeform text, (2) UI polish — find rough edges, beautify across the whole app, (3) bug hunting — find bugs before users do, improve testing, (4) food DB enrichment — correct and expand. Never idle — there's always work in Permanent Tasks.**
 
-_Override:_ CONTINUE
+_Override:_ STOP
 
 ---
 
