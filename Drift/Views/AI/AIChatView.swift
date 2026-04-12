@@ -405,9 +405,13 @@ struct AIChatView: View {
                     var workout = Workout(name: name, date: DateFormatters.todayString,
                                            durationSeconds: durationSec,
                                            notes: nil, createdAt: DateFormatters.iso8601.string(from: Date()))
-                    try? WorkoutService.saveWorkout(&workout)
-                    let durText = durationSec.map { " (\($0 / 60) min)" } ?? ""
-                    messages.append(ChatMessage(role: .assistant, text: "Logged \(name)\(durText) for today."))
+                    do {
+                        try WorkoutService.saveWorkout(&workout)
+                        let durText = durationSec.map { " (\($0 / 60) min)" } ?? ""
+                        messages.append(ChatMessage(role: .assistant, text: "Logged \(name)\(durText) for today."))
+                    } catch {
+                        messages.append(ChatMessage(role: .assistant, text: "Couldn't save workout — \(error.localizedDescription)"))
+                    }
                     return
                 }
             }
@@ -657,9 +661,13 @@ struct AIChatView: View {
         if let weightIntent = AIActionExecutor.parseWeightIntent(lower) {
             let kg = weightIntent.unit == .kg ? weightIntent.weightValue : weightIntent.weightValue / 2.20462
             var entry = WeightEntry(date: DateFormatters.todayString, weightKg: kg, source: "manual")
-            try? AppDatabase.shared.saveWeightEntry(&entry)
-            let display = String(format: "%.1f", weightIntent.weightValue)
-            messages.append(ChatMessage(role: .assistant, text: "Logged \(display) \(weightIntent.unit.displayName) for today."))
+            do {
+                try AppDatabase.shared.saveWeightEntry(&entry)
+                let display = String(format: "%.1f", weightIntent.weightValue)
+                messages.append(ChatMessage(role: .assistant, text: "Logged \(display) \(weightIntent.unit.displayName) for today."))
+            } catch {
+                messages.append(ChatMessage(role: .assistant, text: "Couldn't save weight — \(error.localizedDescription)"))
+            }
             return
         }
 
@@ -680,23 +688,17 @@ struct AIChatView: View {
             }
         }
 
-        // Multi-turn: AI asked "What did you eat?" and user replies with food name
+        // Multi-turn: AI asked "What did you eat?" and user replies with food name(s)
         if let lastAssistant = messages.last(where: { $0.role == .assistant }),
            (lastAssistant.text.contains("What did you eat") || lastAssistant.text.contains("what did you eat")
             || lastAssistant.text.contains("What did you order") || lastAssistant.text.contains("Describe it")),
            !lower.contains("summary") && !lower.contains("calorie") && lower.count > 2
            && !["yes", "no", "ok", "okay", "sure", "nah", "nope", "yeah", "yep", "thanks", "thank you"].contains(lower) {
-            if let match = AIActionExecutor.findFood(query: lower, servings: nil) {
-                messages.append(ChatMessage(role: .assistant, text: "Found \(match.food.name) (\(Int(match.food.calories)) cal). Opening to confirm..."))
-                foodSearchQuery = lower
-                showingFoodSearch = true
-                return
-            } else {
-                foodSearchQuery = lower
-                messages.append(ChatMessage(role: .assistant, text: "Searching for \(lower)..."))
-                showingFoodSearch = true
-                return
-            }
+            // Use buildMealFromText to handle multi-item responses ("pizza and salad", "coffee with milk")
+            let mealName = pendingMealName ?? "Meal"
+            pendingMealName = nil
+            buildMealFromText(text, mealName: mealName)
+            return
         }
 
         // --- Unified AI pipeline (both models) ---
