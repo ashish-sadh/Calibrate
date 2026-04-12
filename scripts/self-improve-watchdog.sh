@@ -1,11 +1,12 @@
 #!/bin/bash
-# Drift Self-Improvement Watchdog
-# Alternates between self-improvement and code-improvement loops.
-# Restarts claude if it dies or stalls. Controlled via ~/drift-control.txt.
+# Drift Control — Watchdog for Autopilot
+# Manages autonomous Autopilot sessions. Restarts on crash/stall.
+# Controlled via ~/drift-control.txt.
 #
 # Usage: ./scripts/self-improve-watchdog.sh
 # Stop:  echo "STOP" > ~/drift-control.txt
 # Pause: echo "PAUSE" > ~/drift-control.txt
+# Drain: echo "DRAIN" > ~/drift-control.txt
 # Run:   echo "RUN" > ~/drift-control.txt
 
 set -euo pipefail
@@ -19,8 +20,7 @@ CHECK_INTERVAL=1800  # 30 minutes
 STALE_THRESHOLD=1500 # 25 minutes (in seconds)
 KILL_WAIT=10
 
-PROMPTS=("run self-improvement" "run code-improvement")
-CURRENT=0
+PROMPT="run autopilot"
 CLAUDE_PID=""
 CURRENT_LOG=""
 
@@ -58,13 +58,11 @@ kill_claude() {
 }
 
 start_claude() {
-    local prompt="${PROMPTS[$CURRENT]}"
-    local label="${prompt// /-}"
-    CURRENT_LOG="$LOG_DIR/session_${label}_$(date +%s).log"
+    CURRENT_LOG="$LOG_DIR/session_autopilot_$(date +%s).log"
 
-    log "Starting claude: \"$prompt\" (log: $CURRENT_LOG)"
+    log "Starting autopilot (log: $CURRENT_LOG)"
     cd "$WORK_DIR"
-    DRIFT_AUTONOMOUS=1 claude -p "$prompt" \
+    DRIFT_AUTONOMOUS=1 claude -p "$PROMPT" \
         --dangerously-skip-permissions \
         --model opus \
         --effort max \
@@ -73,10 +71,7 @@ start_claude() {
         > "$CURRENT_LOG" 2>&1 &
     CLAUDE_PID=$!
     echo "$CLAUDE_PID" > "$PID_FILE"
-    log "Claude started with PID $CLAUDE_PID"
-
-    # Alternate for next time
-    CURRENT=$(( (CURRENT + 1) % 2 ))
+    log "Autopilot started with PID $CLAUDE_PID"
 }
 
 is_claude_alive() {
@@ -120,7 +115,7 @@ if [[ ! -f "$CONTROL_FILE" ]]; then
 fi
 
 log "========================================="
-log "Watchdog started"
+log "Drift Control watchdog started"
 log "Control file: $CONTROL_FILE"
 log "Check interval: ${CHECK_INTERVAL}s"
 log "========================================="
@@ -130,9 +125,8 @@ if [[ -f "$PID_FILE" ]]; then
     SAVED_PID=$(cat "$PID_FILE")
     if kill -0 "$SAVED_PID" 2>/dev/null; then
         CLAUDE_PID="$SAVED_PID"
-        # Find the most recent session log for staleness checks
         CURRENT_LOG=$(ls -t "$LOG_DIR"/session_*.log 2>/dev/null | head -1)
-        log "Adopted existing claude process (PID $CLAUDE_PID, log: $CURRENT_LOG)"
+        log "Adopted existing autopilot (PID $CLAUDE_PID, log: $CURRENT_LOG)"
     else
         log "Stale PID file (PID $SAVED_PID dead). Will start fresh."
         rm -f "$PID_FILE"
@@ -142,10 +136,12 @@ fi
 # Initial start
 STATE=$(read_control)
 if [[ "$STATE" == "RUN" ]]; then
+    # Ensure override is CONTINUE
+    sed -i '' 's/_Override:_ STOP/_Override:_ CONTINUE/' "$WORK_DIR/program.md" 2>/dev/null || true
     if [[ -z "$CLAUDE_PID" ]]; then
         start_claude
     else
-        log "Claude already running (adopted). Skipping initial start."
+        log "Autopilot already running (adopted). Skipping initial start."
     fi
 elif [[ "$STATE" == "PAUSE" ]]; then
     log "Control file says PAUSE — waiting..."
@@ -154,8 +150,7 @@ elif [[ "$STATE" == "STOP" ]]; then
     exit 0
 elif [[ "$STATE" == "DRAIN" ]]; then
     log "Control file says DRAIN at startup."
-    sed -i '' 's/_Override:_ CONTINUE/_Override:_ STOP/' "$WORK_DIR/program.md"
-    sed -i '' 's/_Override:_ CONTINUE/_Override:_ STOP/' "$WORK_DIR/code-improvement.md"
+    sed -i '' 's/_Override:_ CONTINUE/_Override:_ STOP/' "$WORK_DIR/program.md" 2>/dev/null || true
     DRAIN_STALE=600
     if is_claude_alive; then
         log "DRAIN: waiting for session to finish (PID $CLAUDE_PID)..."
@@ -184,7 +179,7 @@ while true; do
 
     # React to STOP/PAUSE/DRAIN immediately (every 30s)
     if [[ "$STATE" != "RUN" ]]; then
-        log "Check cycle — control: $STATE, claude PID: ${CLAUDE_PID:-none}"
+        log "Check cycle — control: $STATE, autopilot PID: ${CLAUDE_PID:-none}"
     fi
 
     # Skip full health check until CHECK_INTERVAL elapsed
@@ -194,7 +189,7 @@ while true; do
     ELAPSED=0
 
     if [[ "$STATE" == "RUN" ]]; then
-        log "Check cycle — control: $STATE, claude PID: ${CLAUDE_PID:-none}"
+        log "Check cycle — control: $STATE, autopilot PID: ${CLAUDE_PID:-none}"
     fi
 
     case "$STATE" in
@@ -205,20 +200,18 @@ while true; do
             ;;
         PAUSE)
             if is_claude_alive; then
-                log "PAUSE requested. Killing claude."
+                log "PAUSE requested. Killing autopilot."
                 kill_claude
             fi
             log "Paused. Waiting for RUN..."
             continue
             ;;
         DRAIN)
-            # Set Override to STOP in both loop programs so claude exits after current cycle
-            sed -i '' 's/_Override:_ CONTINUE/_Override:_ STOP/' "$WORK_DIR/program.md"
-            sed -i '' 's/_Override:_ CONTINUE/_Override:_ STOP/' "$WORK_DIR/code-improvement.md"
-            log "DRAIN: set _Override: STOP in both program.md and code-improvement.md"
+            sed -i '' 's/_Override:_ CONTINUE/_Override:_ STOP/' "$WORK_DIR/program.md" 2>/dev/null || true
+            log "DRAIN: set _Override: STOP in program.md"
             if is_claude_alive; then
                 log "DRAIN: waiting for session to finish (PID $CLAUDE_PID)..."
-                DRAIN_STALE=600  # 10 minutes with no log output = stuck
+                DRAIN_STALE=600
                 while is_claude_alive; do
                     sleep 60
                     if is_log_stale_seconds "$DRAIN_STALE"; then
@@ -235,20 +228,19 @@ while true; do
             fi
             ;;
         RUN)
-            # Ensure overrides are set to CONTINUE (in case we're resuming from DRAIN)
-            sed -i '' 's/_Override:_ STOP/_Override:_ CONTINUE/' "$WORK_DIR/program.md"
-            sed -i '' 's/_Override:_ STOP/_Override:_ CONTINUE/' "$WORK_DIR/code-improvement.md"
-            # Check if claude is dead
+            # Ensure override is CONTINUE
+            sed -i '' 's/_Override:_ STOP/_Override:_ CONTINUE/' "$WORK_DIR/program.md" 2>/dev/null || true
+            # Check if autopilot is dead
             if ! is_claude_alive; then
-                log "Claude process exited. Restarting with next prompt..."
+                log "Autopilot exited. Restarting..."
                 start_claude
-            # Check if claude is stalled
+            # Check if autopilot is stalled
             elif is_log_stale; then
-                log "Claude appears stalled (log not updated in ${STALE_THRESHOLD}s). Restarting..."
+                log "Autopilot stalled (log not updated in ${STALE_THRESHOLD}s). Restarting..."
                 kill_claude
                 start_claude
             else
-                log "Claude running normally (PID $CLAUDE_PID)."
+                log "Autopilot running normally (PID $CLAUDE_PID)."
             fi
             ;;
         *)

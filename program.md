@@ -1,4 +1,4 @@
-# Drift Self-Improvement
+# Drift Autopilot
 
 Autonomous loop. Follow this exactly.
 
@@ -20,8 +20,9 @@ _Override:_ CONTINUE
 3. Read `Docs/ai-parity.md` — what to build next for AI chat
 4. Read `Docs/sprint.md` — prioritized work items
 5. Read `Docs/human-reported-bugs.md` — fix these FIRST
-6. Build: `xcodebuild build -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' > /tmp/drift-build.log 2>&1 && echo "OK" || echo "FAIL"`
-7. Start the loop
+6. Check GitHub Issues: `gh issue list --state open --label bug` — fix open bugs
+7. Build: `xcodebuild build -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' > /tmp/drift-build.log 2>&1 && echo "OK" || echo "FAIL"`
+8. Start the loop
 
 **Recovery (interrupted mid-cycle):**
 - `git status && git log --oneline -5`
@@ -35,58 +36,71 @@ _Override:_ CONTINUE
 LOOP FOREVER — do NOT stop between tickets:
 
 1. Re-read steering notes above. Stop only if override says STOP.
-2. If sprint.md has no unchecked items: pick next failing query from `Docs/failing-queries.md`, or next gap from `Docs/ai-parity.md`, or next "Now" item from `Docs/roadmap.md`, and add to sprint.
-3. Pick top unchecked item from sprint.md.
-4. Make one **LOGICAL UNIT** of work. This can span multiple files if they are part of the same change (e.g., a service + its tests + the view that calls it, or a theme change across 10 views). **Before editing any file: READ it first** — understand its types, signatures, imports, and conventions. Never edit blind.
-5. **Classify your change:**
+2. Check for open bug issues: `gh issue list --state open --label bug`. If P0 bugs exist, work on those first.
+3. If sprint.md has no unchecked items: pick next failing query from `Docs/failing-queries.md`, or next gap from `Docs/ai-parity.md`, or next "Now" item from `Docs/roadmap.md`, and add to sprint.
+4. Pick top unchecked item from sprint.md.
+5. Make one **LOGICAL UNIT** of work. This can span multiple files if they are part of the same change (e.g., a service + its tests + the view that calls it, or a theme change across 10 views). **Before editing any file: READ it first** — understand its types, signatures, imports, and conventions. Never edit blind.
+6. **Boy scout rule:** When you edit a file, if you see obvious code smells in the area you touched (long function, bad naming, dead code, DDD violations, missing error handling), fix them in the same commit. Don't go looking for problems elsewhere — just clean what you touched. For bigger architectural work (ViewModel extraction, service decomposition), do it when feature work requires it.
+7. **Classify your change:**
    - **Trivial** (typo, comment, single-line fix, DB-only, docs): BUILD only — skip tests.
    - **Moderate** (new logic in 1-2 files, UI changes, prompt text): BUILD + targeted tests (`-only-testing:DriftTests/RelevantTestClass`).
    - **Substantial** (new service, multi-file refactor, AI pipeline change): BUILD + FULL test suite + eval harness if AI-related.
    Build: `xcodebuild build -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' > /tmp/drift-build.log 2>&1 && echo "BUILD OK" || (tail -20 /tmp/drift-build.log && echo "BUILD FAILED")`
-6. **If Moderate or Substantial:** `pkill -9 -f xcodebuild 2>/dev/null; sleep 2; xcodebuild test -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:DriftTests > /tmp/drift-test.log 2>&1 && echo "TESTS OK" || echo "TESTS FAILED"` then `grep "✘" /tmp/drift-test.log`
-7. For AI changes: `xcodebuild test ... -only-testing:'DriftTests/AIEvalHarness' > /tmp/drift-eval.log 2>&1 && echo "EVAL OK" || echo "EVAL FAILED"`. If scores drop, revert.
-8. Fail? Fix. If stuck after **2 attempts**: `git checkout -- .`, log the failure reason, move on. Two failures means you misunderstand the code — revert rather than dig deeper.
-9. Pass? `git add -A && git commit -m "improve: description" && git push`. Mark `[x]` in sprint.md. If it was from ai-parity.md, mark there too. One-line log to improvement-log.md.
-10. **Every 10th cycle: PRODUCT REVIEW.** Count your commits since session start. On cycles 10, 20, 30, etc:
-    - Pause feature work
-    - **Product Designer persona** (2yr each at MyFitnessPal, Whoop, MacroFactor, Strong, Boostcamp):
+8. **If Moderate or Substantial:** `pkill -9 -f xcodebuild 2>/dev/null; sleep 2; xcodebuild test -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' -only-testing:DriftTests > /tmp/drift-test.log 2>&1 && echo "TESTS OK" || echo "TESTS FAILED"` then `grep "✘" /tmp/drift-test.log`
+9. For AI changes: `xcodebuild test ... -only-testing:'DriftTests/AIEvalHarness' > /tmp/drift-eval.log 2>&1 && echo "EVAL OK" || echo "EVAL FAILED"`. If scores drop, revert.
+10. Fail? Fix. If stuck after **2 attempts**: `git checkout -- .`, log the failure reason, move on.
+11. Pass? `git add -A && git commit -m "improve: description" && git push`. Mark `[x]` in sprint.md. One-line log to improvement-log.md.
+12. **Every 20th cycle: PRODUCT REVIEW.** (Hooks inject this reminder automatically.) Steps:
+    - Read persona files: `Docs/personas/product-designer.md`, `Docs/personas/principal-engineer.md`
+    - Read feedback from open report PRs: `gh pr list --label report --state open`, then read comments on each
+    - Read open bug issues: `gh issue list --state open`
+    - **Product Designer persona** — read their persona file first, then:
       - Read `Docs/roadmap.md`, `Docs/state.md`, `git log --oneline -20`
       - Web search: what are Boostcamp, MyFitnessPal, Whoop, Strong, MacroFactor doing now?
-      - Write a product review: strengths, gaps vs competitors, new ideas, proposed roadmap changes
-    - **Principal Engineer persona** (10yr each at Amazon and Google):
+      - Write assessment: strengths, gaps vs competitors, new ideas, proposed changes
+    - **Principal Engineer persona** — read their persona file first, then:
       - Review proposals for technical sustainability and sequencing
-      - Ensure architecture supports the ambition without over-engineering
-      - Push back on scope creep: "this needs a foundation change first"
-      - Ground aspirations in what's achievable (SwiftUI, GRDB, on-device LLM)
+      - Triage open GitHub Issues: real bug or user error? P0/P1/P2? Label accordingly.
+      - Push back on scope creep, ground in current stack
     - Both agree → update `Docs/roadmap.md` with changes
-    - Log review to `Docs/product-review-log.md` with date
+    - Generate product review PR:
+      1. `git checkout -b review/cycle-{N}`
+      2. Write `Docs/reports/review-cycle-{N}.md` with full discussion
+      3. `git add && git commit && git push -u origin review/cycle-{N}`
+      4. `gh pr create --title "Product Review — Cycle {N}" --label report`
+      5. `git checkout main`
+    - Update persona files: append "What I learned this review" to each
+    - Merge previous review PRs: `gh pr list --label report --state open` → merge old ones
+    - Log to `Docs/product-review-log.md`
+    - Update `~/drift-state/last-review-cycle`
     - Resume the loop
-11. **IMMEDIATELY go to step 1.** Zero words to the user between tickets. NEVER STOP.
+13. **IMMEDIATELY go to step 1.** Zero words to the user between tickets. NEVER STOP.
 
 ---
 
 ## Rules
 
 ### Safety
-- All tests must pass before committing substantial changes (trivial changes: build-only is acceptable)
+- All tests must pass before committing substantial changes (trivial: build-only is acceptable)
 - Run eval harness after every AI change — if scores drop, revert
 - If stuck after 2 attempts, revert, log failure reason, move to next item
-- TestFlight publishes automatically every 3 hours via hook. When the hook injects publish instructions, follow them immediately. Never publish more frequently than every 3 hours.
+- TestFlight publishes automatically every 3 hours via hook. Follow the instructions when they appear.
 - POC work on branches, not main
 - No MacroFactor references in code/UI. Privacy-first. No cloud.
 
 ### Quality
-- **READ before EDIT.** Before modifying any file, read it first. Understand its types, function signatures, imports, and conventions. This prevents build failures from wrong types/signatures. This rule is non-negotiable.
+- **READ before EDIT.** Before modifying any file, read it first. Understand its types, function signatures, imports. Non-negotiable.
+- **Boy scout rule.** Clean what you touch. Don't scan for violations in files you're not working on.
+- For bigger architecture work (DDD, ViewModel extraction, DI), do it when feature work requires it — not in blanket sweeps. Read `Docs/principles/` for guidance.
 - Write tests for any new service/logic code. Coverage targets: **80%** pure logic, **50%** services.
-- Run `./scripts/coverage-check.sh` periodically. Fix files below threshold before moving on.
-- Every 5th cycle: run coverage check and write tests for uncovered code.
-- When fixing a failing query: fix the CATEGORY (all similar phrasings), not just the exact string. Add 3+ variant tests.
+- Run `./scripts/coverage-check.sh` periodically. Fix files below threshold.
+- When fixing a failing query: fix the CATEGORY, not just the exact string. Add 3+ variant tests.
 
 ### Scope
-- One **LOGICAL UNIT** of work per cycle. Multi-file changes are encouraged when logically related (a service + its tests + its callers, or a theme change across 10 views). No arbitrary line limit.
-- **Bold changes are welcome:** full theme overhaul, AI chat state machine rewrite, new UI layouts. The constraint is logical cohesion, not size.
-- For UI changes: **ALWAYS app-wide**. Never change one view's theme/style without updating all others.
-- For AI chat changes: prefer architectural improvements (state machine, prompt redesign, pipeline restructuring) over one-off keyword additions.
+- One **LOGICAL UNIT** of work per cycle. Multi-file changes encouraged when logically related. No line limit.
+- **Bold changes welcome:** full theme overhaul, AI chat state machine rewrite, new UI layouts.
+- For UI changes: **ALWAYS app-wide**. Never change one view's style without updating all others.
+- For AI chat: prefer architectural improvements over keyword additions.
 - Reference `Docs/roadmap.md` every cycle to stay aligned with product direction.
 
 ### Hygiene
@@ -94,15 +108,22 @@ LOOP FOREVER — do NOT stop between tickets:
 - Keep text responses under 3 sentences
 - New ideas go to `Docs/backlog.md`, not inline
 - Run `xcodegen generate` if you add new files to the project
+- File bugs as GitHub Issues (`gh issue create --label bug`), not just in docs
 
 ---
 
 ## For the human
 
-Start: `cd /Users/ashishsadh/workspace/Drift` → tell Claude "run self-improvement"
+Start: `cd /Users/ashishsadh/workspace/Drift` → tell Claude "run autopilot"
+
+Drift Control: `echo "RUN" > ~/drift-control.txt && ./scripts/self-improve-watchdog.sh`
 
 Steer: edit steering notes above. Agent re-reads every cycle.
 
 Stop: change override to `STOP`.
 
+Drain: `echo "DRAIN" > ~/drift-control.txt` — finishes current cycle, then stops.
+
 Priorities: edit `Docs/sprint.md`, `Docs/roadmap.md`, or `Docs/ai-parity.md`.
+
+Feedback: comment on report PRs on GitHub. Next review cycle reads and incorporates.

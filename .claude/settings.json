@@ -18,11 +18,26 @@
             "type": "command",
             "command": ".claude/hooks/guard-testflight.sh",
             "timeout": 600
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/issue-check.sh",
+            "timeout": 10
           }
         ]
       }
     ],
     "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/boy-scout.sh",
+            "timeout": 5
+          }
+        ]
+      },
       {
         "matcher": "Bash",
         "if": "Bash(git commit *)",
@@ -41,6 +56,11 @@
             "type": "command",
             "command": ".claude/hooks/coverage-gate.sh",
             "timeout": 300
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/daily-report.sh",
+            "timeout": 30
           }
         ]
       }

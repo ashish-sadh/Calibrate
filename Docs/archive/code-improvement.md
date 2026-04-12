@@ -10,7 +10,7 @@ _Directive:_ **Improve code quality, readability, and maintainability. Read the 
 
 _Focus:_ DDD violations and design patterns only — NO more file splitting. File decomposition is done (15 cycles, 3500+ lines reorganized). Focus on: business logic in views, dependency injection, protocol abstractions, testability improvements.
 
-_Override:_ CONTINUE
+_Override:_ STOP
 
 ---
 

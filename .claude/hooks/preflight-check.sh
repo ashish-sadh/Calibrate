@@ -85,6 +85,15 @@ else
   echo "  [5/5] No reverts" >&2
 fi
 
+# 6. Check for open P0 bug issues
+echo "  [6/6] No P0 bugs..." >&2
+P0_BUGS=$(gh issue list --state open --label bug --label P0 --json number,title 2>/dev/null | jq -r '.[].title' | head -3)
+if [ -n "$P0_BUGS" ]; then
+  FAILURES="${FAILURES}\n- OPEN P0 BUGS (fix before publishing):\n${P0_BUGS}"
+else
+  echo "  [6/6] No P0 bugs" >&2
+fi
+
 echo "===========================" >&2
 
 if [ -n "$FAILURES" ]; then
