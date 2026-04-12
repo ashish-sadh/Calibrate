@@ -7282,9 +7282,9 @@
     "serving_size": 100,
     "serving_unit": "g",
     "calories": 152,
-    "protein_g": 1,
-    "carbs_g": 21,
-    "fat_g": 0,
+    "protein_g": 2,
+    "carbs_g": 25,
+    "fat_g": 7,
     "fiber_g": 0,
     "ingredients": [
       "Vanilla Cake Slice, Vanilla"
@@ -10855,7 +10855,7 @@
   {
     "name": "Chipotle Chicken Burrito Bowl",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 510,
     "serving_unit": "bowl",
     "calories": 685,
     "protein_g": 50,
@@ -10870,7 +10870,7 @@
   {
     "name": "Chipotle Chicken Burrito",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 575,
     "serving_unit": "burrito",
     "calories": 1005,
     "protein_g": 53,
@@ -10885,7 +10885,7 @@
   {
     "name": "Chipotle Steak Bowl",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 510,
     "serving_unit": "bowl",
     "calories": 700,
     "protein_g": 46,
@@ -10900,7 +10900,7 @@
   {
     "name": "Chipotle Sofritas Bowl",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 510,
     "serving_unit": "bowl",
     "calories": 630,
     "protein_g": 27,
@@ -10915,7 +10915,7 @@
   {
     "name": "Chipotle Chips & Guacamole",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 200,
     "serving_unit": "serving",
     "calories": 770,
     "protein_g": 8,
@@ -10930,7 +10930,7 @@
   {
     "name": "Panda Express Orange Chicken",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 160,
     "serving_unit": "serving",
     "calories": 490,
     "protein_g": 25,
@@ -10945,7 +10945,7 @@
   {
     "name": "Panda Express Chow Mein",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 255,
     "serving_unit": "serving",
     "calories": 510,
     "protein_g": 13,
@@ -10960,7 +10960,7 @@
   {
     "name": "Panda Express Beijing Beef",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 170,
     "serving_unit": "serving",
     "calories": 480,
     "protein_g": 14,
@@ -10975,7 +10975,7 @@
   {
     "name": "Panda Express Fried Rice",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 255,
     "serving_unit": "serving",
     "calories": 520,
     "protein_g": 11,
@@ -10990,7 +10990,7 @@
   {
     "name": "Chick-fil-A Original Sandwich",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 210,
     "serving_unit": "sandwich",
     "calories": 440,
     "protein_g": 28,
@@ -11005,7 +11005,7 @@
   {
     "name": "Chick-fil-A Waffle Fries (Medium)",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 125,
     "serving_unit": "serving",
     "calories": 420,
     "protein_g": 5,
@@ -11020,7 +11020,7 @@
   {
     "name": "Chick-fil-A Spicy Chicken Sandwich",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 210,
     "serving_unit": "sandwich",
     "calories": 450,
     "protein_g": 28,
@@ -11035,7 +11035,7 @@
   {
     "name": "Popeyes Chicken Sandwich",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 225,
     "serving_unit": "sandwich",
     "calories": 700,
     "protein_g": 28,
@@ -11050,7 +11050,7 @@
   {
     "name": "Five Guys Little Cheeseburger",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 195,
     "serving_unit": "burger",
     "calories": 550,
     "protein_g": 27,
@@ -11065,7 +11065,7 @@
   {
     "name": "In-N-Out Double-Double",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 330,
     "serving_unit": "burger",
     "calories": 670,
     "protein_g": 37,
@@ -11080,7 +11080,7 @@
   {
     "name": "Domino's Cheese Pizza (1 slice, medium)",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 107,
     "serving_unit": "slice",
     "calories": 210,
     "protein_g": 9,
@@ -11095,7 +11095,7 @@
   {
     "name": "Shake Shack ShackBurger",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 260,
     "serving_unit": "burger",
     "calories": 530,
     "protein_g": 28,
@@ -11110,7 +11110,7 @@
   {
     "name": "Dunkin' Glazed Donut",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 60,
     "serving_unit": "donut",
     "calories": 240,
     "protein_g": 3,
@@ -11125,7 +11125,7 @@
   {
     "name": "Dunkin' Bacon Egg & Cheese Croissant",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 170,
     "serving_unit": "sandwich",
     "calories": 570,
     "protein_g": 22,
@@ -11140,7 +11140,7 @@
   {
     "name": "Pho (beef, large)",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 600,
     "serving_unit": "bowl",
     "calories": 520,
     "protein_g": 35,
@@ -11155,7 +11155,7 @@
   {
     "name": "General Tso's Chicken",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 200,
     "serving_unit": "cup",
     "calories": 430,
     "protein_g": 22,
@@ -11170,7 +11170,7 @@
   {
     "name": "Teriyaki Chicken Bowl",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 450,
     "serving_unit": "bowl",
     "calories": 580,
     "protein_g": 38,
@@ -11185,7 +11185,7 @@
   {
     "name": "Mac and Cheese (homemade)",
     "category": "US Staples",
-    "serving_size": 1,
+    "serving_size": 250,
     "serving_unit": "cup",
     "calories": 380,
     "protein_g": 15,
@@ -11200,7 +11200,7 @@
   {
     "name": "Kraft Mac & Cheese (prepared)",
     "category": "US Staples",
-    "serving_size": 1,
+    "serving_size": 250,
     "serving_unit": "cup",
     "calories": 350,
     "protein_g": 11,
@@ -11215,7 +11215,7 @@
   {
     "name": "Grilled Cheese Sandwich",
     "category": "US Staples",
-    "serving_size": 1,
+    "serving_size": 150,
     "serving_unit": "sandwich",
     "calories": 370,
     "protein_g": 13,
@@ -11230,7 +11230,7 @@
   {
     "name": "PB&J Sandwich",
     "category": "US Staples",
-    "serving_size": 1,
+    "serving_size": 130,
     "serving_unit": "sandwich",
     "calories": 380,
     "protein_g": 13,
@@ -11245,7 +11245,7 @@
   {
     "name": "BLT Sandwich",
     "category": "US Staples",
-    "serving_size": 1,
+    "serving_size": 170,
     "serving_unit": "sandwich",
     "calories": 350,
     "protein_g": 12,
@@ -11262,7 +11262,7 @@
   {
     "name": "Chicken Stir Fry (homemade)",
     "category": "US Staples",
-    "serving_size": 1,
+    "serving_size": 250,
     "serving_unit": "cup",
     "calories": 280,
     "protein_g": 28,
@@ -11277,7 +11277,7 @@
   {
     "name": "Beef Stew (homemade)",
     "category": "US Staples",
-    "serving_size": 1,
+    "serving_size": 300,
     "serving_unit": "cup",
     "calories": 250,
     "protein_g": 20,
@@ -11292,7 +11292,7 @@
   {
     "name": "Meatloaf (1 slice)",
     "category": "US Staples",
-    "serving_size": 1,
+    "serving_size": 150,
     "serving_unit": "slice",
     "calories": 290,
     "protein_g": 18,
@@ -11352,7 +11352,7 @@
   {
     "name": "Breakfast Sandwich (egg & cheese)",
     "category": "US Staples",
-    "serving_size": 1,
+    "serving_size": 140,
     "serving_unit": "sandwich",
     "calories": 340,
     "protein_g": 16,
@@ -11442,7 +11442,7 @@
   {
     "name": "Spring Roll (fresh)",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 100,
     "serving_unit": "roll",
     "calories": 110,
     "protein_g": 4,
@@ -11457,7 +11457,7 @@
   {
     "name": "Egg Fried Rice",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 250,
     "serving_unit": "cup",
     "calories": 310,
     "protein_g": 8,
@@ -11472,7 +11472,7 @@
   {
     "name": "Mushrooms (cooked)",
     "category": "Vegetables",
-    "serving_size": 1,
+    "serving_size": 100,
     "serving_unit": "cup",
     "calories": 44,
     "protein_g": 3,
@@ -11502,7 +11502,7 @@
   {
     "name": "Brussels Sprouts (roasted)",
     "category": "Vegetables",
-    "serving_size": 1,
+    "serving_size": 100,
     "serving_unit": "cup",
     "calories": 65,
     "protein_g": 4,
@@ -11517,7 +11517,7 @@
   {
     "name": "Samosa (1 piece)",
     "category": "Indian Staples",
-    "serving_size": 1,
+    "serving_size": 80,
     "serving_unit": "piece",
     "calories": 260,
     "protein_g": 5,
@@ -11547,7 +11547,7 @@
   {
     "name": "Bhel Puri",
     "category": "Indian Staples",
-    "serving_size": 1,
+    "serving_size": 150,
     "serving_unit": "serving",
     "calories": 220,
     "protein_g": 5,
@@ -11582,7 +11582,7 @@
   {
     "name": "Butter Naan",
     "category": "Indian Staples",
-    "serving_size": 1,
+    "serving_size": 90,
     "serving_unit": "piece",
     "calories": 310,
     "protein_g": 7,
@@ -11597,7 +11597,7 @@
   {
     "name": "Gobi Manchurian",
     "category": "Indian Staples",
-    "serving_size": 1,
+    "serving_size": 200,
     "serving_unit": "serving",
     "calories": 280,
     "protein_g": 5,
@@ -11612,7 +11612,7 @@
   {
     "name": "KIND Energy Bar",
     "category": "Snacks",
-    "serving_size": 1,
+    "serving_size": 40,
     "serving_unit": "bar",
     "calories": 210,
     "protein_g": 4,
@@ -11627,7 +11627,7 @@
   {
     "name": "Veggie Burger Patty",
     "category": "Proteins",
-    "serving_size": 1,
+    "serving_size": 113,
     "serving_unit": "patty",
     "calories": 220,
     "protein_g": 20,
@@ -11642,7 +11642,7 @@
   {
     "name": "Impossible Burger Patty",
     "category": "Proteins",
-    "serving_size": 1,
+    "serving_size": 113,
     "serving_unit": "patty",
     "calories": 240,
     "protein_g": 19,
@@ -11657,7 +11657,7 @@
   {
     "name": "Cauliflower Rice (cooked)",
     "category": "Vegetables",
-    "serving_size": 1,
+    "serving_size": 150,
     "serving_unit": "cup",
     "calories": 25,
     "protein_g": 2,
@@ -11672,7 +11672,7 @@
   {
     "name": "Zucchini Noodles (raw)",
     "category": "Vegetables",
-    "serving_size": 1,
+    "serving_size": 150,
     "serving_unit": "cup",
     "calories": 20,
     "protein_g": 1,
@@ -11777,7 +11777,7 @@
   {
     "name": "Smoothie Bowl (mixed berry)",
     "category": "US Staples",
-    "serving_size": 1,
+    "serving_size": 350,
     "serving_unit": "bowl",
     "calories": 350,
     "protein_g": 10,
@@ -11807,7 +11807,7 @@
   {
     "name": "Quesadilla (cheese)",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 200,
     "serving_unit": "quesadilla",
     "calories": 490,
     "protein_g": 20,
@@ -11822,7 +11822,7 @@
   {
     "name": "Miso Soup",
     "category": "Fast Food",
-    "serving_size": 1,
+    "serving_size": 240,
     "serving_unit": "cup",
     "calories": 40,
     "protein_g": 3,
@@ -11837,7 +11837,7 @@
   {
     "name": "Lentil Soup",
     "category": "US Staples",
-    "serving_size": 1,
+    "serving_size": 250,
     "serving_unit": "cup",
     "calories": 180,
     "protein_g": 12,
@@ -11867,7 +11867,7 @@
   {
     "name": "Baked Potato (medium)",
     "category": "Vegetables",
-    "serving_size": 1,
+    "serving_size": 173,
     "serving_unit": "potato",
     "calories": 161,
     "protein_g": 4,
@@ -11882,7 +11882,7 @@
   {
     "name": "Corn on the Cob (1 ear)",
     "category": "Vegetables",
-    "serving_size": 1,
+    "serving_size": 146,
     "serving_unit": "ear",
     "calories": 90,
     "protein_g": 3,
@@ -12197,7 +12197,7 @@
   {
     "name": "Navy Beans (cooked)",
     "category": "Proteins",
-    "serving_size": 1,
+    "serving_size": 180,
     "serving_unit": "cup",
     "calories": 255,
     "protein_g": 15,
@@ -12212,7 +12212,7 @@
   {
     "name": "Butternut Squash (cooked)",
     "category": "Vegetables",
-    "serving_size": 1,
+    "serving_size": 200,
     "serving_unit": "cup",
     "calories": 82,
     "protein_g": 2,
@@ -12287,7 +12287,7 @@
   {
     "name": "RXBAR (Chocolate Sea Salt)",
     "category": "Snacks",
-    "serving_size": 1,
+    "serving_size": 52,
     "serving_unit": "bar",
     "calories": 210,
     "protein_g": 12,
@@ -12317,7 +12317,7 @@
   {
     "name": "Papdi Chaat",
     "category": "Indian Staples",
-    "serving_size": 1,
+    "serving_size": 150,
     "serving_unit": "serving",
     "calories": 280,
     "protein_g": 6,
@@ -12512,7 +12512,7 @@
   {
     "name": "Margarita",
     "category": "Beverages",
-    "serving_size": 1,
+    "serving_size": 240,
     "serving_unit": "glass",
     "calories": 274,
     "protein_g": 0,
@@ -15816,5 +15816,27 @@
       "cumin"
     ],
     "nova_group": 1
+  },
+  {
+    "name": "Bulgur (cooked)",
+    "category": "Grains & Cereals",
+    "serving_size": 182,
+    "calories": 151,
+    "protein_g": 6,
+    "carbs_g": 34,
+    "fat_g": 0.4,
+    "fiber_g": 8,
+    "serving_unit": "g"
+  },
+  {
+    "name": "Farro (cooked)",
+    "category": "Grains & Cereals",
+    "serving_size": 170,
+    "calories": 200,
+    "protein_g": 7,
+    "carbs_g": 37,
+    "fat_g": 1.5,
+    "fiber_g": 5,
+    "serving_unit": "g"
   }
 ]
