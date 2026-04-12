@@ -40,7 +40,7 @@ struct FoodSearchView: View {
                                 localResults = FoodService.searchFood(query: String(q.dropLast()))
                             }
                             results = localResults
-                            matchingRecipes = q.isEmpty ? [] : ((try? AppDatabase.shared.searchRecipes(query: q)) ?? [])
+                            matchingRecipes = q.isEmpty ? [] : FoodService.searchRecipes(query: q)
                             onlineResults = []
                             // Smart trigger: search online when local results are insufficient
                             onlineSearchTask?.cancel()
@@ -103,7 +103,7 @@ struct FoodSearchView: View {
                 viewModel.loadSuggestions()
                 if !initialQuery.isEmpty {
                     query = initialQuery
-                    results = (try? AppDatabase.shared.searchFoodsRanked(query: initialQuery)) ?? []
+                    results = FoodService.searchFood(query: initialQuery)
                     // Auto-select best match and pre-fill servings
                     if let bestMatch = results.first {
                         if let servings = initialServings {
@@ -114,7 +114,7 @@ struct FoodSearchView: View {
                             let totalG = bestMatch.servingSize * servings
                             let inPrimary = primaryUnit.gramsEquivalent > 0 ? totalG / primaryUnit.gramsEquivalent : servings
                             amount = inPrimary == Double(Int(inPrimary)) ? "\(Int(inPrimary))" : String(format: "%.1f", inPrimary)
-                            isFoodFavorite = (try? AppDatabase.shared.isFoodFavorite(name: bestMatch.name)) ?? false
+                            isFoodFavorite = FoodService.isFavorite(name: bestMatch.name)
                             selectedFood = bestMatch
                         } else {
                             selectFood(bestMatch)
@@ -222,10 +222,10 @@ struct FoodSearchView: View {
         .padding(.horizontal, 16).padding(.vertical, 4)
         .contextMenu {
             Button {
-                try? AppDatabase.shared.toggleFoodFavorite(name: food.name, foodId: food.id)
+                FoodService.toggleFavorite(name: food.name, foodId: food.id)
                 viewModel.loadSuggestions()
             } label: {
-                let isFav = (try? AppDatabase.shared.isFoodFavorite(name: food.name)) ?? false
+                let isFav = FoodService.isFavorite(name: food.name)
                 Label(isFav ? "Unfavorite" : "Favorite", systemImage: isFav ? "star.slash" : "star")
             }
         }
@@ -236,7 +236,7 @@ struct FoodSearchView: View {
             if entry.isDBFood {
                 // DB food — tap opens log sheet with serving picker
                 Button {
-                    let foods = (try? AppDatabase.shared.searchFoods(query: entry.name, limit: 5)) ?? []
+                    let foods = FoodService.searchFood(query: entry.name).prefix(5)
                     // Prefer exact match, fall back to first result
                     if let food = foods.first(where: { $0.name == entry.name }) ?? foods.first {
                         selectFood(food)
@@ -267,7 +267,7 @@ struct FoodSearchView: View {
             }
 
             Button {
-                if entry.isDBFood, let food = (try? AppDatabase.shared.searchFoods(query: entry.name, limit: 1))?.first {
+                if entry.isDBFood, let food = FoodService.findByName(entry.name) {
                     viewModel.quickLogFood(food)
                 } else {
                     viewModel.quickAdd(name: entry.name, calories: entry.calories,
@@ -285,10 +285,10 @@ struct FoodSearchView: View {
         .padding(.horizontal, 16).padding(.vertical, 4)
         .contextMenu {
             Button {
-                try? AppDatabase.shared.toggleFoodFavorite(name: entry.name, foodId: entry.foodId)
+                FoodService.toggleFavorite(name: entry.name, foodId: entry.foodId)
                 viewModel.loadSuggestions()
             } label: {
-                let isFav = (try? AppDatabase.shared.isFoodFavorite(name: entry.name)) ?? false
+                let isFav = FoodService.isFavorite(name: entry.name)
                 Label(isFav ? "Unfavorite" : "Favorite", systemImage: isFav ? "star.slash" : "star")
             }
         }
@@ -296,8 +296,8 @@ struct FoodSearchView: View {
 
     private func refreshSearch() {
         if !query.isEmpty {
-            results = (try? AppDatabase.shared.searchFoodsRanked(query: query)) ?? []
-            matchingRecipes = (try? AppDatabase.shared.searchRecipes(query: query)) ?? []
+            results = FoodService.searchFood(query: query)
+            matchingRecipes = FoodService.searchRecipes(query: query)
         }
     }
 
@@ -319,7 +319,7 @@ struct FoodSearchView: View {
             amount = "1"
         }
 
-        isFoodFavorite = (try? AppDatabase.shared.isFoodFavorite(name: food.name)) ?? false
+        isFoodFavorite = FoodService.isFavorite(name: food.name)
         selectedFood = food
     }
 
@@ -366,7 +366,7 @@ struct FoodSearchView: View {
                         .swipeActions(edge: .trailing) {
                             if let id = recipe.id {
                                 Button(role: .destructive) {
-                                    try? AppDatabase.shared.deleteFavorite(id: id)
+                                    FoodService.deleteFavorite(id: id)
                                     matchingRecipes.removeAll { $0.id == id }
                                     viewModel.loadSuggestions()
                                 } label: { Label("Delete", systemImage: "trash") }
@@ -405,7 +405,7 @@ struct FoodSearchView: View {
                         .tint(.primary)
                         .swipeActions(edge: .leading) {
                             Button {
-                                try? AppDatabase.shared.toggleFoodFavorite(name: food.name, foodId: food.id)
+                                FoodService.toggleFavorite(name: food.name, foodId: food.id)
                                 viewModel.loadSuggestions()
                             } label: {
                                 Label("Favorite", systemImage: "star")
@@ -415,11 +415,7 @@ struct FoodSearchView: View {
                             // Only allow deleting user-added foods (Scanned category)
                             if food.category == "Scanned", let fid = food.id {
                                 Button(role: .destructive) {
-                                    try? AppDatabase.shared.writer.write { db in
-                                        _ = try Food.deleteOne(db, id: fid)
-                                        // Clean up food_usage reference
-                                        try db.execute(sql: "DELETE FROM food_usage WHERE food_name = ?", arguments: [food.name])
-                                    }
+                                    FoodService.deleteScannedFood(id: fid, name: food.name)
                                     viewModel.loadSuggestions()
                                     refreshSearch()
                                 } label: { Label("Delete", systemImage: "trash") }
@@ -502,8 +498,7 @@ struct FoodSearchView: View {
                 fatG: p.fatG * servingG / 100,
                 fiberG: p.fiberG * servingG / 100
             )
-            try? AppDatabase.shared.saveScannedFood(&food)
-            if let saved = try? AppDatabase.shared.searchFoods(query: food.name).first {
+            if let saved = FoodService.saveScannedFood(&food) {
                 newFoods.append(saved)
             }
         }
@@ -521,8 +516,7 @@ struct FoodSearchView: View {
                 fatG: item.fatG,
                 fiberG: item.fiberG
             )
-            try? AppDatabase.shared.saveScannedFood(&food)
-            if let saved = try? AppDatabase.shared.searchFoods(query: food.name).first {
+            if let saved = FoodService.saveScannedFood(&food) {
                 newFoods.append(saved)
             }
         }
@@ -595,7 +589,7 @@ struct FoodSearchView: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { selectedFood = nil } }
                 ToolbarItem(placement: .principal) {
                     Button {
-                        try? AppDatabase.shared.toggleFoodFavorite(name: food.name, foodId: food.id)
+                        FoodService.toggleFavorite(name: food.name, foodId: food.id)
                         isFoodFavorite.toggle()
                     } label: {
                         Image(systemName: isFoodFavorite ? "star.fill" : "star")
@@ -635,7 +629,7 @@ struct FoodSearchView: View {
                      "Banana", "Chicken", "Rice", "Oats", "Avocado"]
         var result: [Food] = []
         for name in names {
-            if let food = (try? AppDatabase.shared.searchFoods(query: name, limit: 1))?.first {
+            if let food = FoodService.findByName(name) {
                 result.append(food)
             }
         }
@@ -685,13 +679,10 @@ private struct EditRecipeSheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         if let id = recipe.id {
-                            try? AppDatabase.shared.writer.write { db in
-                                try db.execute(sql: """
-                                    UPDATE food SET name = ?, calories = ?, protein_g = ?,
-                                    carbs_g = ?, fat_g = ?, fiber_g = ? WHERE id = ?
-                                    """, arguments: [name, Double(calories) ?? 0, Double(protein) ?? 0,
-                                                     Double(carbs) ?? 0, Double(fat) ?? 0, Double(fiber) ?? 0, id])
-                            }
+                            FoodService.updateFood(id: id, name: name,
+                                                   calories: Double(calories) ?? 0, proteinG: Double(protein) ?? 0,
+                                                   carbsG: Double(carbs) ?? 0, fatG: Double(fat) ?? 0,
+                                                   fiberG: Double(fiber) ?? 0)
                         }
                         onSave(); dismiss()
                     }.disabled(name.isEmpty)

@@ -34,6 +34,55 @@ enum FoodService {
         return results
     }
 
+    /// Search saved recipes by name.
+    static func searchRecipes(query: String) -> [SavedFood] {
+        (try? AppDatabase.shared.searchRecipes(query: query)) ?? []
+    }
+
+    /// Check if a food is favorited.
+    static func isFavorite(name: String) -> Bool {
+        (try? AppDatabase.shared.isFoodFavorite(name: name)) ?? false
+    }
+
+    /// Toggle favorite status for a food.
+    static func toggleFavorite(name: String, foodId: Int64?) {
+        try? AppDatabase.shared.toggleFoodFavorite(name: name, foodId: foodId)
+    }
+
+    /// Delete a favorite by ID.
+    static func deleteFavorite(id: Int64) {
+        try? AppDatabase.shared.deleteFavorite(id: id)
+    }
+
+    /// Save a scanned food (from barcode or online search).
+    static func saveScannedFood(_ food: inout Food) -> Food? {
+        try? AppDatabase.shared.saveScannedFood(&food)
+        return (try? AppDatabase.shared.searchFoods(query: food.name))?.first
+    }
+
+    /// Fetch a single food by name (best match).
+    static func findByName(_ name: String) -> Food? {
+        (try? AppDatabase.shared.searchFoods(query: name, limit: 1))?.first
+    }
+
+    /// Delete a user-added (scanned) food and its usage tracking.
+    static func deleteScannedFood(id: Int64, name: String) {
+        try? AppDatabase.shared.writer.write { db in
+            _ = try Food.deleteOne(db, id: id)
+            try db.execute(sql: "DELETE FROM food_usage WHERE food_name = ?", arguments: [name])
+        }
+    }
+
+    /// Update a food's name and macros by ID.
+    static func updateFood(id: Int64, name: String, calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double) {
+        try? AppDatabase.shared.writer.write { db in
+            try db.execute(sql: """
+                UPDATE food SET name = ?, calories = ?, protein_g = ?,
+                carbs_g = ?, fat_g = ?, fiber_g = ? WHERE id = ?
+                """, arguments: [name, calories, proteinG, carbsG, fatG, fiberG, id])
+        }
+    }
+
     // MARK: - Nutrition Lookup
 
     /// Get nutrition for a food by name. Returns best match or nil.
