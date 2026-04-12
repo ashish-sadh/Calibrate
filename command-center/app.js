@@ -86,27 +86,49 @@ async function findPRForReport(filename) {
 }
 
 async function getPRComments(prNumber) {
-  return await api(`/repos/${OWNER}/${REPO}/pulls/${prNumber}/comments`);
+  // Get both PR review comments AND issue comments
+  const [reviewComments, issueComments] = await Promise.all([
+    api(`/repos/${OWNER}/${REPO}/pulls/${prNumber}/comments`),
+    api(`/repos/${OWNER}/${REPO}/issues/${prNumber}/comments`)
+  ]);
+
+  const all = [];
+
+  // PR review comments — use original_line (file line number), ignore position
+  reviewComments.forEach(c => {
+    const line = c.original_line || c.line;
+    if (line) all.push({ ...c, fileLine: line });
+  });
+
+  // Issue comments — parse line number from body "[Line 42]"
+  issueComments.forEach(c => {
+    const match = c.body.match(/\[Line (\d+)\]/);
+    if (match) all.push({ ...c, fileLine: parseInt(match[1]) });
+  });
+
+  return all;
 }
 
 async function submitComment(prNumber, path, line, body) {
-  const commitSha = await getLatestCommitOnPR(prNumber);
-  return await api(`/repos/${OWNER}/${REPO}/pulls/${prNumber}/comments`, {
+  // Use issue comment with line reference in body — works for any line, not just diff lines
+  const lineContext = await getLineContext(path, line);
+  const commentBody = `**[Line ${line}]** ${path}\n> ${lineContext}\n\n[Human Feedback] ${body}`;
+
+  return await api(`/repos/${OWNER}/${REPO}/issues/${prNumber}/comments`, {
     method: 'POST',
     headers: { ...headers(), 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      body: `[Human Feedback] ${body}`,
-      commit_id: commitSha,
-      path: path,
-      line: line,
-      side: 'RIGHT'
-    })
+    body: JSON.stringify({ body: commentBody })
   });
 }
 
-async function getLatestCommitOnPR(prNumber) {
-  const commits = await api(`/repos/${OWNER}/${REPO}/pulls/${prNumber}/commits`);
-  return commits[commits.length - 1].sha;
+async function getLineContext(path, lineNum) {
+  try {
+    const content = await getReportContent(path);
+    const lines = content.split('\n');
+    return (lines[lineNum - 1] || '').trim().substring(0, 100);
+  } catch {
+    return '...';
+  }
 }
 
 // Markdown rendering (uses marked.js from CDN)

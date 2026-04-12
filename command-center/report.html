@@ -50,10 +50,9 @@
           // Load existing comments
           const comments = await getPRComments(currentPR.number);
           comments.forEach(c => {
-            const line = c.line || c.original_line || c.position;
-            if (line) {
-              if (!commentsByLine[line]) commentsByLine[line] = [];
-              commentsByLine[line].push(c);
+            if (c.fileLine) {
+              if (!commentsByLine[c.fileLine]) commentsByLine[c.fileLine] = [];
+              commentsByLine[c.fileLine].push(c);
             }
           });
         }
