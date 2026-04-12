@@ -32,7 +32,17 @@ struct AIChatView: View {
         let id = UUID()
         let role: Role
         var text: String
+        var foodCard: FoodCardData?
         enum Role { case user, assistant }
+    }
+
+    struct FoodCardData {
+        let name: String
+        let calories: Int
+        let proteinG: Int
+        let carbsG: Int
+        let fatG: Int
+        let servingText: String
     }
 
     var isGenerating: Bool { generatingState != .idle }
@@ -195,19 +205,84 @@ struct AIChatView: View {
                     .foregroundStyle(Theme.accent).padding(.top, 4)
             }
 
-            Text(msg.text)
-                .font(.subheadline)
-                .padding(.horizontal, 12).padding(.vertical, 8)
-                .background(
-                    msg.role == .user
-                        ? Theme.accent.opacity(0.18)
-                        : Color.white.opacity(0.07),
-                    in: RoundedRectangle(cornerRadius: 14)
-                )
-                .accessibilityLabel(msg.role == .user ? "You said: \(msg.text)" : "Assistant: \(msg.text)")
+            VStack(alignment: .leading, spacing: 6) {
+                if !msg.text.isEmpty {
+                    Text(msg.text)
+                        .font(.subheadline)
+                        .padding(.horizontal, 12).padding(.vertical, 8)
+                        .background(
+                            msg.role == .user
+                                ? Theme.accent.opacity(0.18)
+                                : Color.white.opacity(0.07),
+                            in: RoundedRectangle(cornerRadius: 14)
+                        )
+                }
+
+                if let card = msg.foodCard {
+                    foodConfirmationCard(card)
+                }
+            }
+            .accessibilityLabel(msg.role == .user ? "You said: \(msg.text)" : "Assistant: \(msg.text)")
 
             if msg.role == .assistant { Spacer() }
         }
         .padding(.horizontal, 10)
+    }
+
+    // MARK: - Food Confirmation Card
+
+    private func foodConfirmationCard(_ card: FoodCardData) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "fork.knife")
+                    .font(.caption).foregroundStyle(Theme.calorieBlue)
+                Text(card.name)
+                    .font(.caption.weight(.semibold))
+                    .lineLimit(1)
+                Spacer()
+                Text(card.servingText)
+                    .font(.caption2).foregroundStyle(.tertiary)
+            }
+
+            HStack(spacing: 0) {
+                VStack(spacing: 2) {
+                    Text("\(card.calories)")
+                        .font(.subheadline.weight(.bold).monospacedDigit())
+                        .foregroundStyle(Theme.calorieBlue)
+                    Text("cal").font(.system(size: 9)).foregroundStyle(.tertiary)
+                }
+                .frame(maxWidth: .infinity)
+
+                VStack(spacing: 2) {
+                    Text("\(card.proteinG)g")
+                        .font(.caption.weight(.bold).monospacedDigit())
+                        .foregroundStyle(Theme.proteinRed)
+                    Text("protein").font(.system(size: 9)).foregroundStyle(.tertiary)
+                }
+                .frame(maxWidth: .infinity)
+
+                VStack(spacing: 2) {
+                    Text("\(card.carbsG)g")
+                        .font(.caption.weight(.bold).monospacedDigit())
+                        .foregroundStyle(Theme.carbsGreen)
+                    Text("carbs").font(.system(size: 9)).foregroundStyle(.tertiary)
+                }
+                .frame(maxWidth: .infinity)
+
+                VStack(spacing: 2) {
+                    Text("\(card.fatG)g")
+                        .font(.caption.weight(.bold).monospacedDigit())
+                        .foregroundStyle(Theme.fatYellow)
+                    Text("fat").font(.system(size: 9)).foregroundStyle(.tertiary)
+                }
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .padding(10)
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(Theme.calorieBlue.opacity(0.2), lineWidth: 0.5)
+        )
     }
 }

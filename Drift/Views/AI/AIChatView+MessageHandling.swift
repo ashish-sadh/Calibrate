@@ -489,10 +489,14 @@ extension AIChatView {
         foodSearchServings = intent.servings
         if let match = AIActionExecutor.findFood(query: intent.query, servings: intent.servings, gramAmount: intent.gramAmount) {
             let f = match.food
-            let cal = Int(f.calories * match.servings)
-            foodSearchServings = match.servings
-            let gramNote = intent.gramAmount.map { " (\(Int($0))g = \(String(format: "%.1f", match.servings)) servings)" } ?? ""
-            messages.append(ChatMessage(role: .assistant, text: "Found \(f.name) (\(cal) cal)\(gramNote). Opening to confirm..."))
+            let s = match.servings
+            foodSearchServings = s
+            let servingText = intent.gramAmount.map { "\(Int($0))g" } ?? "\(String(format: "%.1f", s)) serving"
+            let card = FoodCardData(
+                name: f.name, calories: Int(f.calories * s),
+                proteinG: Int(f.proteinG * s), carbsG: Int(f.carbsG * s),
+                fatG: Int(f.fatG * s), servingText: servingText)
+            messages.append(ChatMessage(role: .assistant, text: "Opening to confirm...", foodCard: card))
         } else {
             messages.append(ChatMessage(role: .assistant, text: "Searching for \(intent.query)..."))
         }
