@@ -19,12 +19,55 @@
   <div class="content">
     <div class="tabs">
       <div class="tab active" data-tab="reports">Reports</div>
+      <div class="tab" data-tab="bugs">File Bug</div>
+      <div class="tab" data-tab="issues">Open Issues</div>
       <div class="tab" data-tab="feedback">Feedback Trail</div>
     </div>
 
     <div id="tab-reports">
       <div class="loading" id="reports-loading"><span class="spinner"></span> Loading reports...</div>
       <ul class="report-list" id="report-list"></ul>
+    </div>
+
+    <div id="tab-bugs" style="display:none">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px 40px;max-width:640px;margin:0 auto;">
+        <h2 style="margin:0 0 20px;font-size:20px;">File a Bug</h2>
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">Title</label>
+          <input id="bug-title" type="text" placeholder="e.g. Dashboard rings overlap on iPhone SE"
+            style="width:100%;padding:10px 12px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:14px;">
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">Description</label>
+          <textarea id="bug-body" rows="5" placeholder="What happened? Steps to reproduce?"
+            style="width:100%;padding:10px 12px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:14px;resize:vertical;font-family:inherit;"></textarea>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">Priority</label>
+          <select id="bug-priority" style="padding:8px 12px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:14px;">
+            <option value="">Select...</option>
+            <option value="P0">P0 — Blocks users</option>
+            <option value="P1">P1 — Annoying but usable</option>
+            <option value="P2">P2 — Cosmetic</option>
+          </select>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">Screenshot (optional)</label>
+          <input id="bug-screenshot" type="file" accept="image/*"
+            style="font-size:14px;color:var(--text-muted);">
+          <div id="screenshot-preview" style="margin-top:8px;"></div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;">
+          <button class="btn btn-primary" onclick="submitBug()" id="bug-submit-btn">Submit Bug</button>
+        </div>
+        <div id="bug-result" style="margin-top:16px;"></div>
+      </div>
+    </div>
+
+    <div id="tab-issues" style="display:none">
+      <div id="issues-list">
+        <div class="loading"><span class="spinner"></span> Loading issues...</div>
+      </div>
     </div>
 
     <div id="tab-feedback" style="display:none">
@@ -38,15 +81,140 @@
   <script src="app.js"></script>
   <script>
     // Tabs
+    const allTabs = ['reports', 'bugs', 'issues', 'feedback'];
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         tab.classList.add('active');
-        document.getElementById('tab-reports').style.display = tab.dataset.tab === 'reports' ? '' : 'none';
-        document.getElementById('tab-feedback').style.display = tab.dataset.tab === 'feedback' ? '' : 'none';
+        allTabs.forEach(t => {
+          const el = document.getElementById('tab-' + t);
+          if (el) el.style.display = tab.dataset.tab === t ? '' : 'none';
+        });
         if (tab.dataset.tab === 'feedback') loadFeedback();
+        if (tab.dataset.tab === 'issues') loadIssues();
       });
     });
+
+    // Screenshot preview
+    document.getElementById('bug-screenshot').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        document.getElementById('screenshot-preview').innerHTML =
+          `<img src="${ev.target.result}" style="max-width:100%;max-height:300px;border-radius:8px;border:1px solid var(--border);margin-top:4px;">`;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Submit bug
+    async function submitBug() {
+      const title = document.getElementById('bug-title').value.trim();
+      const body = document.getElementById('bug-body').value.trim();
+      const priority = document.getElementById('bug-priority').value;
+      const fileInput = document.getElementById('bug-screenshot');
+      const btn = document.getElementById('bug-submit-btn');
+      const result = document.getElementById('bug-result');
+
+      if (!title) { alert('Title is required'); return; }
+      if (!getToken()) { alert('Sign in first'); return; }
+
+      btn.textContent = 'Submitting...';
+      btn.disabled = true;
+
+      try {
+        let screenshotUrl = '';
+
+        // Upload screenshot if provided
+        if (fileInput.files.length > 0) {
+          const file = fileInput.files[0];
+          const reader = new FileReader();
+          const base64 = await new Promise((resolve) => {
+            reader.onload = (e) => resolve(e.target.result.split(',')[1]);
+            reader.readAsDataURL(file);
+          });
+
+          // Upload to repo as an issue attachment via a unique filename
+          const timestamp = Date.now();
+          const ext = file.name.split('.').pop() || 'png';
+          const path = `Docs/screenshots/bug-${timestamp}.${ext}`;
+
+          await api(`/repos/${OWNER}/${REPO}/contents/${path}`, {
+            method: 'PUT',
+            headers: { ...headers(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              message: `screenshot: bug report ${timestamp}`,
+              content: base64
+            })
+          });
+
+          screenshotUrl = `https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${path}`;
+        }
+
+        // Build issue body
+        let issueBody = body || 'No description provided.';
+        if (priority) issueBody += `\n\n**Priority:** ${priority}`;
+        if (screenshotUrl) issueBody += `\n\n**Screenshot:**\n![screenshot](${screenshotUrl})`;
+        issueBody += `\n\n---\n*Filed via Drift Command Center*`;
+
+        // Create labels array
+        const labels = ['bug'];
+        if (priority) labels.push(priority);
+
+        // Create issue
+        const issue = await api(`/repos/${OWNER}/${REPO}/issues`, {
+          method: 'POST',
+          headers: { ...headers(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: `Bug: ${title}`,
+            body: issueBody,
+            labels: labels
+          })
+        });
+
+        result.innerHTML = `<div style="color:var(--green)">Bug filed: <a href="${issue.html_url}" target="_blank">#${issue.number} — ${title}</a></div>`;
+        document.getElementById('bug-title').value = '';
+        document.getElementById('bug-body').value = '';
+        document.getElementById('bug-priority').value = '';
+        fileInput.value = '';
+        document.getElementById('screenshot-preview').innerHTML = '';
+
+      } catch (e) {
+        result.innerHTML = `<div style="color:var(--red)">Failed: ${e.message}</div>`;
+      }
+
+      btn.textContent = 'Submit Bug';
+      btn.disabled = false;
+    }
+
+    // Load open issues
+    async function loadIssues() {
+      const el = document.getElementById('issues-list');
+      try {
+        const issues = await api(`/repos/${OWNER}/${REPO}/issues?state=open&labels=bug&per_page=30`);
+        if (issues.length === 0) {
+          el.innerHTML = '<div class="empty">No open bugs.</div>';
+          return;
+        }
+        el.innerHTML = `<ul class="report-list">${issues.map(i => {
+          const priority = i.labels.find(l => ['P0','P1','P2'].includes(l.name));
+          const priorityBadge = priority
+            ? `<span class="report-type" style="background:${priority.name === 'P0' ? 'rgba(248,81,73,0.15);color:var(--red)' : priority.name === 'P1' ? 'rgba(210,153,34,0.15);color:var(--yellow)' : 'rgba(139,148,158,0.15);color:var(--text-muted)'}">${priority.name}</span>`
+            : '';
+          const hasImage = i.body && i.body.includes('![');
+          return `<li class="report-item" onclick="window.open('${i.html_url}','_blank')">
+            <div>
+              <span class="report-title">#${i.number} ${i.title}</span>
+              ${priorityBadge}
+              ${hasImage ? '<span class="badge">has screenshot</span>' : ''}
+            </div>
+            <span class="report-date">${new Date(i.created_at).toLocaleDateString()}</span>
+          </li>`;
+        }).join('')}</ul>`;
+      } catch (e) {
+        el.innerHTML = `<div class="empty">Failed to load issues: ${e.message}</div>`;
+      }
+    }
 
     // Load metrics
     async function loadMetrics() {
