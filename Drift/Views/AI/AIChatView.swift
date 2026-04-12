@@ -147,7 +147,10 @@ struct AIChatView: View {
         .fullScreenCover(isPresented: $showingBarcodeScanner) {
             BarcodeLookupView(viewModel: FoodLogViewModel())
         }
-        .sheet(isPresented: $showingRecipeBuilder) {
+        .sheet(isPresented: $showingRecipeBuilder, onDismiss: {
+            pendingRecipeItems = []
+            pendingRecipeName = ""
+        }) {
             QuickAddView(viewModel: FoodLogViewModel(),
                          initialItems: pendingRecipeItems,
                          initialName: pendingRecipeName)

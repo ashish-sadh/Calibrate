@@ -363,6 +363,14 @@ extension AIChatView {
         guard (convState.phase == .awaitingExercises || detectWorkoutFromHistory()),
               !["yes", "no", "ok", "okay", "nevermind", "cancel", "thanks"].contains(lower),
               lower.count > 3 else { return false }
+        // Detect topic switches — don't treat "calories left" as exercise list
+        let topicSwitchWords: Set<String> = ["calories", "weight", "weigh", "food", "ate", "had",
+                                              "sleep", "supplement", "glucose", "trend", "summary"]
+        let words = Set(lower.split(separator: " ").map(String.init))
+        if !words.isDisjoint(with: topicSwitchWords) {
+            convState.phase = .idle
+            return false
+        }
         convState.phase = .idle
         let exercises = AIActionParser.parseWorkoutExercises(lower)
         if !exercises.isEmpty {
@@ -429,12 +437,20 @@ extension AIChatView {
         guard let mealName = resolvedMealName,
               !lower.contains("summary") && !lower.contains("calorie") && lower.count > 2
               && !["yes", "no", "ok", "okay", "sure", "nah", "nope", "yeah", "yep", "thanks", "thank you", "nevermind", "cancel"].contains(lower) else { return false }
-        convState.phase = .idle
+        // Detect topic switches — don't treat "weight trend" or "how did I sleep" as food list
+        let topicSwitchWords: Set<String> = ["weight", "weigh", "trend", "sleep", "workout", "exercise",
+                                              "supplement", "glucose", "biomarker", "tdee", "bmr", "goal"]
+        let words = Set(lower.split(separator: " ").map(String.init))
+        if !words.isDisjoint(with: topicSwitchWords) {
+            convState.phase = .idle  // Clear stale phase on topic switch
+            return false
+        }
         var cleaned = lower
         for prefix in ["i had ", "i ate ", "i made ", "we had ", "it was ", "had "] {
             if cleaned.hasPrefix(prefix) { cleaned = String(cleaned.dropFirst(prefix.count)); break }
         }
         buildMealFromText(cleaned, mealName: mealName)
+        convState.phase = .idle  // Clear after processing, not before
         return true
     }
 

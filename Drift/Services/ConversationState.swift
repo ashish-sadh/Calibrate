@@ -65,6 +65,11 @@ final class ConversationState {
         let lower = query.lowercased()
         let words = Set(lower.split(separator: " ").map(String.init))
 
+        // Multi-word phrases first (more specific than single-word matches)
+        // Body comp — "body fat" must beat "fat" triggering food
+        if lower.contains("body fat") || words.contains("dexa") || words.contains("bmi")
+            || lower.contains("lean mass") || lower.contains("muscle mass") { return .bodyComp }
+
         // Food
         if words.contains("ate") || words.contains("had") || words.contains("log") || words.contains("calories")
             || words.contains("protein") || words.contains("carbs") || words.contains("fat")
@@ -93,9 +98,6 @@ final class ConversationState {
 
         // Biomarkers
         if words.contains("biomarker") || words.contains("lab") || words.contains("blood") { return .biomarkers }
-
-        // Body comp
-        if lower.contains("body fat") || words.contains("dexa") || words.contains("bmi") { return .bodyComp }
 
         return .unknown
     }

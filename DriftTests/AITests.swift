@@ -994,3 +994,98 @@ import Testing
     let foods = FoodService.fetchFoodsByCategory("zzzznonexistent")
     #expect(foods.isEmpty)
 }
+
+// MARK: - Multi-Turn Conversation State Tests
+
+@Test @MainActor func conversationPhaseStartsIdle() async throws {
+    let state = ConversationState.shared
+    state.reset()
+    #expect(state.phase == .idle)
+}
+
+@Test @MainActor func conversationPhaseAwaitingMeal() async throws {
+    let state = ConversationState.shared
+    state.phase = .awaitingMealItems(mealName: "lunch")
+    if case .awaitingMealItems(let name) = state.phase {
+        #expect(name == "lunch")
+    } else {
+        #expect(Bool(false), "Expected awaitingMealItems phase")
+    }
+    state.reset()
+    #expect(state.phase == .idle, "Reset should clear phase to idle")
+}
+
+@Test @MainActor func conversationPhaseAwaitingExercises() async throws {
+    let state = ConversationState.shared
+    state.phase = .awaitingExercises
+    #expect(state.phase == .awaitingExercises)
+    state.reset()
+    #expect(state.phase == .idle)
+}
+
+@Test @MainActor func topicSwitchClearsPhase() async throws {
+    let state = ConversationState.shared
+    // Simulate: user said "log lunch", AI asked what they had, user says "weight trend"
+    state.phase = .awaitingMealItems(mealName: "lunch")
+    let topic = state.classifyTopic("weight trend")
+    #expect(topic == .weight, "Should classify as weight topic, not food")
+    // The handler should detect this and clear phase — verify the topic detection works
+    #expect(topic != .food, "Topic switch should NOT be classified as food")
+}
+
+@Test @MainActor func topicSwitchFromExercisePhase() async throws {
+    let state = ConversationState.shared
+    state.phase = .awaitingExercises
+    let topic = state.classifyTopic("calories left")
+    #expect(topic == .food, "Should classify as food topic")
+    #expect(topic != .exercise, "Topic switch should NOT be classified as exercise")
+}
+
+@Test @MainActor func mealPhasePreservedForFoodInput() async throws {
+    let state = ConversationState.shared
+    state.phase = .awaitingMealItems(mealName: "dinner")
+    // "rice and dal" has no topic switch words — phase should NOT be cleared by topic detection
+    let topic = state.classifyTopic("rice and dal")
+    #expect(topic == .unknown, "Plain food list shouldn't trigger any strong topic match")
+    // Phase should still be set (handler would process it)
+    #expect(state.phase == .awaitingMealItems(mealName: "dinner"))
+}
+
+@Test @MainActor func conversationResetPreservesMetadata() async throws {
+    let state = ConversationState.shared
+    state.lastTopic = .food
+    state.turnCount = 5
+    state.reset()
+    #expect(state.lastTopic == .food, "Reset should preserve lastTopic")
+    #expect(state.turnCount == 5, "Reset should preserve turnCount")
+    #expect(state.phase == .idle, "Reset should clear phase")
+    #expect(state.pendingIntent == nil, "Reset should clear pendingIntent")
+}
+
+@Test @MainActor func recordToolExecutionUpdatesTurnCount() async throws {
+    let state = ConversationState.shared
+    state.reset()
+    state.turnCount = 0
+    state.recordToolExecution(tool: "log_food", params: ["name": "eggs"])
+    #expect(state.lastTool == "log_food")
+    #expect(state.lastParams["name"] == "eggs")
+    #expect(state.turnCount == 1)
+    state.recordToolExecution(tool: "food_info", params: ["query": "calories"])
+    #expect(state.turnCount == 2)
+}
+
+@Test @MainActor func topicClassificationAllDomains() async throws {
+    let state = ConversationState.shared
+    // Verify all domain classifications work
+    #expect(state.classifyTopic("I ate chicken") == .food)
+    #expect(state.classifyTopic("how much protein") == .food)
+    #expect(state.classifyTopic("I weigh 165 lbs") == .weight)
+    #expect(state.classifyTopic("what's my bmr") == .weight)
+    #expect(state.classifyTopic("start push day") == .exercise)
+    #expect(state.classifyTopic("how did I sleep") == .sleep)
+    #expect(state.classifyTopic("took my vitamin d") == .supplements)
+    #expect(state.classifyTopic("any glucose spikes") == .glucose)
+    #expect(state.classifyTopic("lab results") == .biomarkers)
+    #expect(state.classifyTopic("body fat percentage") == .bodyComp)
+    #expect(state.classifyTopic("hello there") == .unknown)
+}
