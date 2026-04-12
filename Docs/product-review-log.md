@@ -4,6 +4,24 @@ Periodic product + engineering reviews. Every 10 cycles of the self-improvement 
 
 ---
 
+## Review #12 — 2026-04-12 (Cycle 291)
+
+### Summary
+92 cycles since last review. First sprint with 100% completion: all 6 items delivered (coverage sprint, theme overhaul, state machine refactor, food DB enrichment, dashboard redesign, behavior insights v2). Adaptive TDEE reverted (safety). TestFlight build 104 published. Zero open bugs.
+
+### Key Achievement
+Macro rings on dashboard + premium dark theme = first time the app looks premium. State machine refactor (ConversationState.Phase) eliminated invalid state combinations.
+
+### Agreed Direction (Cycles 291–311)
+1. Food DB enrichment batch 2-3 (P0) — Target 1,200+ foods
+2. Chat food confirmation card (P1) — First structured card in chat
+3. Prompt consolidation (P1) — Compress token usage
+4. Multi-turn reliability (P1) — Test and fix 3-turn flows
+5. Voice input research (P2) — SpeechRecognizer feasibility, go/no-go at next review
+6. Coverage maintenance (P2) — Boy scout rule, ongoing
+
+---
+
 ## Review #11 — 2026-04-12 (Cycle 199)
 
 ### Summary

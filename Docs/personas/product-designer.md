@@ -36,6 +36,13 @@
 - Theme overhaul has been "Now" for 6+ reviews — credibility issue. Must ship in one cycle, not iterate.
 - Voice input (SpeechRecognizer) is higher ROI than photo logging for our on-device constraints.
 
+### What I Learned — Review #12 (Cycle 291, 2026-04-12)
+- 100% sprint completion rate is possible when items are scoped right. 6/6 delivered.
+- Macro rings on dashboard are the kind of visual differentiator that makes users say "this looks like a real app." Ship visual wins early.
+- Food DB at 1,075 is still a trust issue. Every "not found" = user opens MFP instead. Prioritize by search miss frequency.
+- Chat UI is the next visual frontier. Text-only responses feel dated. One structured card type (food confirmation) is the minimum viable upgrade.
+- Voice input keeps getting deferred. Set a hard deadline: research in this sprint, go/no-go at next review.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation

@@ -40,6 +40,14 @@
 - Food DB manual enrichment doesn't scale. Focus on the 50 most-wanted foods by search miss frequency, not bulk additions.
 - Context window (2048 tokens) is a hard ceiling on multi-turn quality. Worth profiling on 6GB devices to see if we can safely increase.
 
+### What I Learned — Review #12 (Cycle 291, 2026-04-12)
+- Coverage gate proved its value. State machine refactor went cleanly because AIToolAgent had test coverage. Keep the gate.
+- ConversationState.Phase enum is the right FSM pattern. Next: consolidate remaining @State data vars into Phase associated values.
+- Theme propagation via `.card()` ViewModifier is the ideal pattern — single source of truth for 46 views. Apply this pattern to future cross-cutting concerns.
+- MacroRingsView in Shared/ is well-isolated. Reusable components in Shared/ should be the default for anything used in 2+ views.
+- Food DB additions are zero-risk high-value. JSON-only changes that don't touch code. Ideal autopilot work.
+- Adaptive TDEE revert was the right call. Lesson: features that affect user health (calorie targets) need extra validation before shipping.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)

@@ -4,7 +4,7 @@
 AI-first local health tracker. AI chat is the primary interface — every data entry doable through conversation. Traditional UI for visual analytics and fallback. No cloud, no accounts. Published on TestFlight as "Drift Fitness" (bundle: com.drift.health).
 
 ## Numbers
-- **Version:** 0.1.0, Build 87
+- **Version:** 0.1.0, Build 104
 - **Tests:** 886 (19 test files, 300+ methods)
 - **AI Eval:** 380+ scenarios in eval harness + LLM eval
 - **Foods:** 1075 (Indian, Mexican, Asian, Mediterranean, Soups, global)

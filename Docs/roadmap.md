@@ -22,7 +22,7 @@ What's not: UI feels rough and unpolished compared to competitors, AI chat drops
 
 ### Now
 - **Prompt consolidation (P1)** — Single source of truth for tool schemas, examples, context injection. Measure and compress token count. Context window is tight (2048 tokens, 1776 max prompt) — every wasted token hurts response quality.
-- **State machine refactor** — Replace scattered pendingMealName/pendingWorkout state vars with a proper conversation state machine (idle → classifying → executing → confirming → logging). Clear transitions, no dangling state. *Blocked by: AIToolAgent test coverage.*
+- ~~**State machine refactor**~~ DONE — ConversationState.Phase enum (idle/awaitingMealItems/awaitingExercises) replaces 5 scattered pending vars. Coverage gate met first.
 - **Multi-turn reliability** — Eliminate context loss bugs. Test: 3-turn meal logging, 3-turn workout building, topic switching mid-conversation.
 - ~~**Natural freeform logging**~~ DONE — "log for breakfast 2 eggs and spinach and bread and coffee with 2% milk" → AI parses, splits "with" items, resolves each, opens recipe builder.
 
@@ -42,13 +42,14 @@ What's not: UI feels rough and unpolished compared to competitors, AI chat drops
 ## UI & Design
 
 ### Now
-- **Theme overhaul (P0)** — Coherent visual language across ALL views in ONE cycle. Colors, spacing, typography, card styles. Pick a bold direction and commit app-wide. *29 cycles without visual progress — this is overdue.*
-- **Dashboard redesign (P1)** — Better information hierarchy, scannable at a glance, macro rings (Apple Fitness-style), clearer progress indicators.
+- ~~**Theme overhaul (P0)**~~ DONE — Premium dark refresh: navy background, accent-driven cards, consistent typography across 46 views.
+- ~~**Dashboard redesign (P1)**~~ DONE — Apple Fitness-style macro rings, section headers (Body/Activity/Recovery/Insights), ring legend.
+- **Chat food confirmation card (P1)** — Structured card when food is logged (name, calories, macros, edit link). First step toward rich chat UI.
 - **Chat UI** — Message bubbles, animated typing indicators, tool execution feedback, streaming UX.
 - **Food diary** — Faster logging flow, better meal grouping, clearer macro display.
 
 ### Next
-- Macro rings (Apple Fitness-style concentric rings)
+- ~~Macro rings (Apple Fitness-style concentric rings)~~ DONE
 - iOS widgets (calories remaining, recovery score)
 - Saved meals (one-tap re-log of multi-item meals)
 - Inline diary editing (tap number to edit directly)
@@ -125,14 +126,14 @@ What's not: UI feels rough and unpolished compared to competitors, AI chat drops
 - ~~**Hardcoded insight cards (3-5)**~~ ✅ DONE — 3 insights on dashboard: workout frequency vs weight, protein adherence, logging consistency. Minimum data thresholds.
 
 ### Next
-- **Behavior insights v2** — Add sleep duration vs recovery correlation (4th insight), extend window from 14→30 days
+- ~~**Behavior insights v2**~~ DONE — 4th insight: sleep vs next-day calories. Protein window extended 14→30 days. Sleep history passed from HealthKit.
 - Expanded correlations (glucose spikes after specific foods, supplement adherence vs biomarkers)
 - User-configurable insight tracking ("tell me how X affects Y")
 
 ## Quality & Testing
 
 ### Now
-- **Coverage recovery (P0 SPRINT)** — AIToolAgent 20% (target 50%, ~15 more tests), IntentClassifier 36% (target 50%, ~10 more tests), AIRuleEngine 25% (target 50%), FoodService 30% (target 50%). *6 consecutive reviews have flagged this — BLOCKING state machine refactor. Must resolve in next 3 cycles.*
+- ~~**Coverage recovery (P0 SPRINT)**~~ DONE — 886 tests (+143). AIToolAgent, IntentClassifier, AIRuleEngine, FoodService all expanded. Coverage gate unblocked state machine refactor.
 - Coverage targets: **80%** logic, **50%** services — find and fix gaps
 - ~~**Code quality maintenance**~~ DDD COMPLETE — File decomposition (15 cycles, 3500+ lines reorganized) and DDD routing (83+ DB calls eliminated from 18 views → 7 domain services). Only cross-cutting factory reset remains. Architecture is clean.
 - ~~**Stale preference audit**~~ PARTIALLY DONE — WeightViewModel fixed, exercise views fixed. Continue auditing remaining view models.
