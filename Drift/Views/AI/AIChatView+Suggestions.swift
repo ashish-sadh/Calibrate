@@ -25,15 +25,14 @@ extension AIChatView {
 
     var smartSuggestions: [String] {
         var pills: [String] = []
-        let today = DateFormatters.todayString
-        let nutrition = (try? AppDatabase.shared.fetchDailyNutrition(for: today)) ?? .zero
+        let totals = FoodService.getDailyTotals()
         let hour = Calendar.current.component(.hour, from: Date())
         let screen = screenTracker.currentScreen
 
         // --- Universal pills (always shown, regardless of screen) ---
 
         // Food: time-aware meal logging or calorie check
-        if nutrition.calories == 0 {
+        if totals.eaten == 0 {
             pills.append(hour < 11 ? "Log breakfast" : hour < 15 ? "Log lunch" : "Log dinner")
         } else {
             pills.append("Calories left")
@@ -43,7 +42,7 @@ extension AIChatView {
         pills.append("Start smart workout")
 
         // Insight: cross-domain
-        if hour >= 20 || (hour >= 18 && nutrition.calories > 0) {
+        if hour >= 20 || (hour >= 18 && totals.eaten > 0) {
             pills.append("Daily summary")
         } else {
             pills.append("How am I doing?")
@@ -59,7 +58,7 @@ extension AIChatView {
                 pills.append("Start \(first.name)")
             }
         case .food:
-            if nutrition.proteinG < 80 && hour > 14 {
+            if totals.proteinG < 80 && hour > 14 {
                 pills.append("How's my protein?")
             }
             if hour >= 17 && hour <= 21 {
@@ -102,22 +101,20 @@ extension AIChatView {
             }
             return "\(greeting) Log your weight using the + button to start tracking your progress."
         case .food:
-            let n = (try? AppDatabase.shared.fetchDailyNutrition(for: DateFormatters.todayString)) ?? .zero
-            return n.calories > 0
-                ? "\(greeting) You've logged \(Int(n.calories)) cal so far. Need to add anything?"
+            let foodTotals = FoodService.getDailyTotals()
+            return foodTotals.eaten > 0
+                ? "\(greeting) You've logged \(foodTotals.eaten) cal so far. Need to add anything?"
                 : "\(greeting) What did you have to eat? Say something like \"log 2 eggs and toast\"."
         case .exercise:
             return "\(greeting) Ask what to train, or say \"start push day\" to begin a workout."
         case .bodyRhythm:
             return "\(greeting) Ask about your sleep, HRV, recovery, or energy levels."
         case .glucose:
-            let hasGlucose = (try? AppDatabase.shared.fetchGlucoseReadings(from: DateFormatters.todayString, to: DateFormatters.todayString))?.isEmpty == false
-            return hasGlucose
+            return GlucoseService.hasDataToday()
                 ? "\(greeting) Ask about your glucose patterns, spikes, or fasting windows."
                 : "\(greeting) Import glucose data from a CGM CSV to start analyzing your patterns."
         case .biomarkers:
-            let hasLabs = (try? AppDatabase.shared.fetchLatestBiomarkerResults())?.isEmpty == false
-            return hasLabs
+            return BiomarkerService.hasResults()
                 ? "\(greeting) Ask about your lab results — which markers are out of range?"
                 : "\(greeting) Upload a lab report PDF to see your biomarker trends."
         case .cycle:
@@ -128,9 +125,9 @@ extension AIChatView {
             return "\(greeting) Ask about your body fat, lean mass, or compare DEXA scans."
         default:
             // Dashboard — show a quick stat if available
-            let n = (try? AppDatabase.shared.fetchDailyNutrition(for: DateFormatters.todayString)) ?? .zero
-            if n.calories > 0 {
-                return "\(greeting) You've logged \(Int(n.calories)) cal so far. Ask anything about your health data."
+            let dashTotals = FoodService.getDailyTotals()
+            if dashTotals.eaten > 0 {
+                return "\(greeting) You've logged \(dashTotals.eaten) cal so far. Ask anything about your health data."
             }
             return "\(greeting) Say \"log 2 eggs\" to track food, or ask about your weight, sleep, or workouts."
         }

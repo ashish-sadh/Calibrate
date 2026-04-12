@@ -4,6 +4,11 @@ import Foundation
 @MainActor
 enum BiomarkerService {
 
+    /// Whether any biomarker results exist.
+    static func hasResults() -> Bool {
+        ((try? AppDatabase.shared.fetchLatestBiomarkerResults())?.isEmpty == false)
+    }
+
     /// Get out-of-range biomarker results.
     static func getResults() -> String {
         guard let results = try? AppDatabase.shared.fetchLatestBiomarkerResults(),

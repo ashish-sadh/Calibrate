@@ -4,6 +4,12 @@ import Foundation
 @MainActor
 enum GlucoseService {
 
+    /// Whether glucose readings exist for today.
+    static func hasDataToday() -> Bool {
+        let today = DateFormatters.todayString
+        return ((try? AppDatabase.shared.fetchGlucoseReadings(from: today, to: today))?.isEmpty == false)
+    }
+
     /// Get glucose readings summary for today.
     static func getReadings() -> String {
         let today = DateFormatters.todayString
