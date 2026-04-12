@@ -195,7 +195,7 @@ extension GoalView {
 
     func saveWeight(kg: Double) {
         var entry = WeightEntry(date: DateFormatters.todayString, weightKg: kg)
-        try? database.saveWeightEntry(&entry)
+        WeightServiceAPI.saveWeightEntry(&entry)
         WeightTrendService.shared.refresh()
         currentWeightKg = WeightTrendService.shared.trendWeight
         actualWeeklyRate = WeightTrendService.shared.weeklyRate

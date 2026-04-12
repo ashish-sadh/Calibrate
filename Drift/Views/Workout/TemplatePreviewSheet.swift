@@ -97,7 +97,7 @@ struct TemplatePreviewSheet: View {
 
                         Button(role: .destructive) {
                             if let tid = template.id {
-                                try? AppDatabase.shared.writer.write { db in _ = try WorkoutTemplate.deleteOne(db, id: tid) }
+                                WorkoutService.deleteTemplate(id: tid)
                                 onDismiss()
                                 onReload()
                             }

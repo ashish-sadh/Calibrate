@@ -118,7 +118,7 @@ struct WeightInsightsView: View {
 
             // Body composition cards (from body_composition table)
             bodyCompositionSection
-                .onAppear { bodyCompEntries = (try? AppDatabase.shared.fetchBodyComposition()) ?? [] }
+                .onAppear { bodyCompEntries = WeightServiceAPI.fetchBodyComposition() }
 
             // Weekday pattern insight
             if trend.dataPoints.count >= 14 {

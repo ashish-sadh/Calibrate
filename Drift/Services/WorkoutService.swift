@@ -98,6 +98,13 @@ enum WorkoutService {
         }
     }
 
+    static func updateTemplate(id: Int64, name: String, exercisesJson: String) {
+        try? db.writer.write { dbConn in
+            try dbConn.execute(sql: "UPDATE workout_template SET name = ?, exercises_json = ? WHERE id = ?",
+                               arguments: [name, exercisesJson, id])
+        }
+    }
+
     static func deleteTemplate(id: Int64) {
         try? db.writer.write { dbConn in
             _ = try WorkoutTemplate.deleteOne(dbConn, id: id)

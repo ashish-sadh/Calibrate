@@ -37,6 +37,11 @@ enum WeightServiceAPI {
         try? AppDatabase.shared.saveWeightEntry(&entry)
     }
 
+    /// Fetch all body composition entries.
+    static func fetchBodyComposition() -> [BodyComposition] {
+        (try? AppDatabase.shared.fetchBodyComposition()) ?? []
+    }
+
     // MARK: - Trend
 
     /// Get current weight trend: current weight, weekly rate, direction, changes.

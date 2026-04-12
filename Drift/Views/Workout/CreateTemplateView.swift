@@ -60,10 +60,7 @@ struct CreateTemplateView: View {
                         if let json = try? JSONEncoder().encode(exercises), let jsonStr = String(data: json, encoding: .utf8) {
                             if let existing = existingTemplate, let id = existing.id {
                                 // Update existing template
-                                try? AppDatabase.shared.writer.write { db in
-                                    try db.execute(sql: "UPDATE workout_template SET name = ?, exercises_json = ? WHERE id = ?",
-                                                   arguments: [name.isEmpty ? "Template" : name, jsonStr, id])
-                                }
+                                WorkoutService.updateTemplate(id: id, name: name.isEmpty ? "Template" : name, exercisesJson: jsonStr)
                             } else {
                                 // Create new
                                 var t = WorkoutTemplate(name: name.isEmpty ? "Template" : name, exercisesJson: jsonStr, createdAt: ISO8601DateFormatter().string(from: Date()))

@@ -131,8 +131,8 @@ extension AIChatView {
                 .filter { $0.count > 2 && !skipWords.contains($0) }
 
             for word in words.prefix(5) { // Limit DB queries
-                if let results = try? AppDatabase.shared.searchFoodsRanked(query: word),
-                   let match = results.first,
+                let results = FoodService.searchFood(query: word)
+                if let match = results.first,
                    match.name.lowercased().contains(word) {
                     var resolved = text
                     for pronoun in [" it", " that", " this"] {
@@ -526,13 +526,9 @@ extension AIChatView {
         guard let weightIntent = AIActionExecutor.parseWeightIntent(lower) else { return false }
         let kg = weightIntent.unit == .kg ? weightIntent.weightValue : weightIntent.weightValue / 2.20462
         var entry = WeightEntry(date: DateFormatters.todayString, weightKg: kg, source: "manual")
-        do {
-            try AppDatabase.shared.saveWeightEntry(&entry)
-            let display = String(format: "%.1f", weightIntent.weightValue)
-            messages.append(ChatMessage(role: .assistant, text: "Logged \(display) \(weightIntent.unit.displayName) for today."))
-        } catch {
-            messages.append(ChatMessage(role: .assistant, text: "Couldn't save weight — \(error.localizedDescription)"))
-        }
+        WeightServiceAPI.saveWeightEntry(&entry)
+        let display = String(format: "%.1f", weightIntent.weightValue)
+        messages.append(ChatMessage(role: .assistant, text: "Logged \(display) \(weightIntent.unit.displayName) for today."))
         return true
     }
 

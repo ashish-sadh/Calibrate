@@ -14,7 +14,6 @@ struct GoalView: View {
     @State var heightInFeet = false
     @State var weightText = ""
     @FocusState var weightFocused: Bool
-    let database = AppDatabase.shared
 
     let ageRanges = ["18-24", "25-34", "35-44", "45-54", "55-64", "65+"]
     func ageFromRange(_ range: String) -> Int {

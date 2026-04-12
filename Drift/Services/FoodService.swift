@@ -108,6 +108,11 @@ enum FoodService {
         (try? AppDatabase.shared.fetchFoodEntries(forMealLog: id)) ?? []
     }
 
+    /// Fetch food items for plant points calculation.
+    static func fetchFoodItemsForPlantPoints(from startDate: String, to endDate: String) -> [PlantPointsService.FoodItem] {
+        (try? AppDatabase.shared.fetchFoodItemsForPlantPoints(from: startDate, to: endDate)) ?? []
+    }
+
     /// Fetch a food by its database ID.
     static func fetchFoodById(_ id: Int64) -> Food? {
         try? AppDatabase.shared.reader.read { db in try Food.fetchOne(db, id: id) }

@@ -158,7 +158,8 @@ struct PlantPointsCardView: View {
             endStr = DateFormatters.dateOnly.string(from: end)
         }
 
-        guard let items = try? AppDatabase.shared.fetchFoodItemsForPlantPoints(from: startStr, to: endStr) else { return }
+        let items = FoodService.fetchFoodItemsForPlantPoints(from: startStr, to: endStr)
+        guard !items.isEmpty else { return }
         periodPlantPoints = PlantPointsService.calculate(from: items)
     }
 
