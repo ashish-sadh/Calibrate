@@ -14,6 +14,7 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 - **Fix silent delete failures**: Delete/undo handlers used `try?` which silently swallowed errors — user saw "Deleted..." even when deletion failed. Now uses do/catch with visible error. Removed unreachable duplicate barcode scan block.
 - **Food DB dedup**: 42 duplicate Indian food entries removed (1072→1030). Same-name entries with conflicting macros (e.g. dal makhani 350cal vs 230cal) kept original curated version only.
 - **Meal continuation refactor**: "also add coffee with milk" now splits on "with" and resolves each sub-item. Continuation handler reuses `resolveRecipeItem()` — no more duplicated food resolution logic.
+- **Test coverage push**: 3 new test methods for AIActionExecutor edge cases — trailing quantities, ranges, fractions, natural prefixes, meal hints, weight sanity checks, unit detection, article parsing. 5th-cycle coverage check.
 
 ## Cycle · 2026-04-10
 

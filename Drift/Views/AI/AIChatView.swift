@@ -771,21 +771,20 @@ struct AIChatView: View {
                     foodSearchServings = servings
                     showingFoodSearch = true
                 case .openRecipeBuilder(let items, let mealName):
-                    pendingRecipeItems = items.compactMap { itemName in
-                        if let found = AIActionExecutor.findFood(query: itemName, servings: nil) {
-                            let cal = found.food.calories * found.servings
-                            let p = found.food.proteinG * found.servings
-                            let c = found.food.carbsG * found.servings
-                            let f = found.food.fatG * found.servings
-                            let fb = found.food.fiberG * found.servings
-                            return QuickAddView.RecipeItem(name: found.food.name,
-                                portionText: found.servings == 1 ? "1 serving" : "\(Int(found.servings)) servings",
-                                calories: cal, proteinG: p, carbsG: c, fatG: f, fiberG: fb,
-                                servingSizeG: found.food.servingSize)
+                    var resolved: [QuickAddView.RecipeItem] = []
+                    for itemName in items {
+                        if let recipe = resolveRecipeItem(itemName) {
+                            resolved.append(recipe)
+                        } else if itemName.lowercased().contains(" with ") {
+                            for sub in itemName.components(separatedBy: " with ").map({ $0.trimmingCharacters(in: .whitespaces) }).filter({ !$0.isEmpty }) {
+                                if let recipe = resolveRecipeItem(sub) { resolved.append(recipe) }
+                                else { resolved.append(QuickAddView.RecipeItem(name: sub, portionText: "1 serving", calories: 0, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0)) }
+                            }
+                        } else {
+                            resolved.append(QuickAddView.RecipeItem(name: itemName, portionText: "1 serving", calories: 0, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0))
                         }
-                        return QuickAddView.RecipeItem(name: itemName, portionText: "1 serving",
-                            calories: 0, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0)
                     }
+                    pendingRecipeItems = resolved
                     pendingRecipeName = mealName ?? currentMealType.rawValue
                     showingRecipeBuilder = true
                 case .openWorkout(let templateName):
