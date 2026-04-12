@@ -830,3 +830,167 @@ import Testing
         #expect(AIToolAgent.isInfoTool(tool) == false, "\(tool) should NOT be an info tool")
     }
 }
+
+// MARK: - FoodService Tests
+
+@Test @MainActor func foodServiceResolvedCalorieTarget() async throws {
+    let target = FoodService.resolvedCalorieTarget()
+    // Should return a reasonable calorie target (at least 1200 floor)
+    #expect(target >= 1200, "Calorie target should be at least 1200")
+    #expect(target <= 5000, "Calorie target should be reasonable (<= 5000)")
+}
+
+@Test @MainActor func foodServiceGetDailyTotals() async throws {
+    let totals = FoodService.getDailyTotals()
+    // On empty/test DB, should have valid structure
+    #expect(totals.target >= 1200)
+    #expect(totals.eaten >= 0)
+    #expect(totals.proteinG >= 0)
+    #expect(totals.carbsG >= 0)
+    #expect(totals.fatG >= 0)
+    #expect(totals.fiberG >= 0)
+    #expect(totals.remaining == totals.target - totals.eaten)
+}
+
+@Test @MainActor func foodServiceGetDailyTotalsWithDate() async throws {
+    // Querying a specific past date should work
+    let totals = FoodService.getDailyTotals(date: "2020-01-01")
+    #expect(totals.eaten == 0, "Old date should have no food logged")
+    #expect(totals.target >= 1200)
+    #expect(totals.remaining == totals.target)
+}
+
+@Test @MainActor func foodServiceGetCaloriesLeft() async throws {
+    let result = FoodService.getCaloriesLeft()
+    #expect(!result.isEmpty)
+    // Should contain calorie info
+    #expect(result.contains("cal"), "Should mention calories")
+}
+
+@Test @MainActor func foodServiceExplainCalories() async throws {
+    let explanation = FoodService.explainCalories()
+    #expect(!explanation.isEmpty)
+    #expect(explanation.contains("TDEE"), "Should mention TDEE")
+    #expect(explanation.contains("cal"), "Should mention calories")
+    #expect(explanation.contains("Eaten today"), "Should show eaten amount")
+    #expect(explanation.contains("Remaining"), "Should show remaining amount")
+    #expect(explanation.contains("Macros"), "Should show macros")
+}
+
+@Test @MainActor func foodServiceSearchFoodEmpty() async throws {
+    // Searching for nonsense should return empty or few results
+    let results = FoodService.searchFood(query: "zzzzxxxxxxxnonexistent")
+    #expect(results.count >= 0) // Should not crash
+}
+
+@Test @MainActor func foodServiceSearchFoodRealFood() async throws {
+    // "chicken" should exist in the 1041-food DB
+    let results = FoodService.searchFood(query: "chicken")
+    #expect(!results.isEmpty, "chicken should be in DB")
+    #expect(results.first?.name.lowercased().contains("chicken") == true)
+}
+
+@Test @MainActor func foodServiceSearchFoodSpellCorrection() async throws {
+    // "chiken" (misspelled) should still find chicken via SpellCorrectService
+    let results = FoodService.searchFood(query: "chiken")
+    #expect(!results.isEmpty, "SpellCorrect should fix chiken → chicken")
+}
+
+@Test @MainActor func foodServiceFindByName() async throws {
+    let found = FoodService.findByName("banana")
+    #expect(found != nil, "banana should be in DB")
+    #expect(found?.name.lowercased().contains("banana") == true)
+
+    let notFound = FoodService.findByName("zzzznonexistentfood")
+    #expect(notFound == nil)
+}
+
+@Test @MainActor func foodServiceGetNutrition() async throws {
+    let result = FoodService.getNutrition(name: "egg")
+    if let result {
+        #expect(!result.perServing.isEmpty)
+        #expect(result.perServing.contains("cal"))
+        #expect(result.food.calories > 0)
+    }
+    // Non-existent food
+    let none = FoodService.getNutrition(name: "zzzznonexistent")
+    #expect(none == nil)
+}
+
+@Test @MainActor func foodServiceIsFavorite() async throws {
+    // On empty/test DB, random food should not be favorite
+    let isFav = FoodService.isFavorite(name: "random_test_food_xyz")
+    #expect(isFav == false)
+}
+
+@Test @MainActor func foodServiceFetchRecentFoods() async throws {
+    let recents = FoodService.fetchRecentFoods()
+    #expect(recents.count >= 0) // Should not crash, may be empty on test DB
+}
+
+@Test @MainActor func foodServiceFetchMealLogs() async throws {
+    // Far past date should return empty
+    let logs = FoodService.fetchMealLogs(for: "2020-01-01")
+    #expect(logs.isEmpty)
+}
+
+@Test @MainActor func foodServiceDeleteEntryNoMatch() async throws {
+    // Deleting a non-existent food should return a friendly message
+    let result = FoodService.deleteEntry(matching: "zzzznonexistent")
+    #expect(result.contains("No food logged") || result.contains("Couldn't find"))
+}
+
+@Test @MainActor func foodServiceDeleteEntryLast() async throws {
+    // "last" on empty day should return no entries message
+    let result = FoodService.deleteEntry(matching: "last")
+    #expect(result.contains("No food") || result.contains("No entries") || result.contains("Removed"))
+}
+
+@Test @MainActor func foodServiceCopyYesterday() async throws {
+    let result = FoodService.copyYesterday()
+    #expect(!result.isEmpty)
+    // On test DB, yesterday likely has no food
+    #expect(result.contains("No food logged") || result.contains("Copied") || result.contains("No entries"))
+}
+
+@Test @MainActor func foodServiceTopProteinFoods() async throws {
+    let foods = FoodService.topProteinFoods()
+    // Should return foods from DB (even without user history)
+    #expect(foods.count >= 0) // May be empty on test DB but should not crash
+    for food in foods {
+        #expect(food.proteinG >= 15, "topProteinFoods should filter for >= 15g protein")
+    }
+}
+
+@Test @MainActor func foodServiceSuggestMeal() async throws {
+    let suggestions = FoodService.suggestMeal()
+    #expect(suggestions.count >= 0) // May be empty on test DB
+    #expect(suggestions.count <= 3, "suggestMeal should return max 3")
+}
+
+@Test @MainActor func foodServiceDailyTotalsStruct() async throws {
+    let totals = DailyTotals(eaten: 1500, target: 2000, remaining: 500,
+                             proteinG: 80, carbsG: 200, fatG: 60, fiberG: 25)
+    #expect(totals.eaten == 1500)
+    #expect(totals.target == 2000)
+    #expect(totals.remaining == 500)
+    #expect(totals.proteinG == 80)
+    #expect(totals.carbsG == 200)
+    #expect(totals.fatG == 60)
+    #expect(totals.fiberG == 25)
+}
+
+@Test @MainActor func foodServiceSearchRecipes() async throws {
+    let results = FoodService.searchRecipes(query: "zzzznonexistent")
+    #expect(results.isEmpty)
+}
+
+@Test @MainActor func foodServiceFetchCachedBarcode() async throws {
+    let cached = FoodService.fetchCachedBarcode("0000000000000")
+    #expect(cached == nil, "Non-existent barcode should return nil")
+}
+
+@Test @MainActor func foodServiceFetchFoodsByCategory() async throws {
+    let foods = FoodService.fetchFoodsByCategory("zzzznonexistent")
+    #expect(foods.isEmpty)
+}
