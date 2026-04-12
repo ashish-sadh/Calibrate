@@ -33,6 +33,13 @@
 - Build failures in autonomous loop: editing files without reading them first. Lesson: READ-before-EDIT hook was necessary.
 - Code-improvement loop ran dry after 12 meaningful cycles. Lesson: blanket refactoring has diminishing returns — do it alongside feature work.
 
+### What I Learned — Review #11 (Cycle 199, 2026-04-12)
+- DDD routing is done and clean. 83+ DB calls eliminated. No more blanket refactoring — only alongside feature work.
+- Coverage at 23.17% overall, AIToolAgent at 20%. The "coverage before refactor" gate works — it correctly blocked the state machine refactor. But 6 reviews flagging it means we need to actually close it, not just acknowledge it.
+- Autopilot consolidation removed the split-brain problem. Single loop + hooks + PR reports is the right architecture for autonomous operation.
+- Food DB manual enrichment doesn't scale. Focus on the 50 most-wanted foods by search miss frequency, not bulk additions.
+- Context window (2048 tokens) is a hard ceiling on multi-turn quality. Worth profiling on 6GB devices to see if we can safely increase.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)

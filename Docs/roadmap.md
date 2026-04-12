@@ -29,8 +29,8 @@ What's not: UI feels rough and unpolished compared to competitors, AI chat drops
 ### Next
 - Meal planning dialogue — "plan my meals today" → iterative suggestions based on remaining macros + history
 - Workout split builder — "build me a PPL split" → multi-turn designing
-- Voice input (iOS 26 SpeechAnalyzer → on-device speech-to-text → chat)
-- Photo food logging (Core ML classifier → DB match → chat confirmation)
+- **Voice input (P1 research)** — iOS SpeechRecognizer → on-device speech-to-text → chat. Higher ROI than photo. Evaluate feasibility this phase.
+- Photo food logging (Core ML classifier → DB match → chat confirmation) — deferred until on-device accuracy improves for Indian/mixed dishes
 
 ### Later
 - Fine-tuned SmolLM on Drift tool-calling dataset
@@ -42,8 +42,8 @@ What's not: UI feels rough and unpolished compared to competitors, AI chat drops
 ## UI & Design
 
 ### Now
-- **Theme overhaul** — Coherent visual language across ALL views. Colors, spacing, typography, card styles. Pick a direction and commit app-wide. Not tied to dark-only.
-- **Dashboard** — Scannable at a glance. Clear progress indicators, better hierarchy, less clutter.
+- **Theme overhaul (P0)** — Coherent visual language across ALL views in ONE cycle. Colors, spacing, typography, card styles. Pick a bold direction and commit app-wide. *29 cycles without visual progress — this is overdue.*
+- **Dashboard redesign (P1)** — Better information hierarchy, scannable at a glance, macro rings (Apple Fitness-style), clearer progress indicators.
 - **Chat UI** — Message bubbles, animated typing indicators, tool execution feedback, streaming UX.
 - **Food diary** — Faster logging flow, better meal grouping, clearer macro display.
 
@@ -132,9 +132,9 @@ What's not: UI feels rough and unpolished compared to competitors, AI chat drops
 ## Quality & Testing
 
 ### Now
-- **Coverage recovery (P0)** — 8 files below threshold. Critical: AIToolAgent 0%, IntentClassifier 36%, AIRuleEngine 25%, FoodService 30%. Write tests before any AI refactoring. *5 consecutive reviews have flagged this — MUST be addressed before state machine refactor.*
+- **Coverage recovery (P0 SPRINT)** — AIToolAgent 20% (target 50%, ~15 more tests), IntentClassifier 36% (target 50%, ~10 more tests), AIRuleEngine 25% (target 50%), FoodService 30% (target 50%). *6 consecutive reviews have flagged this — BLOCKING state machine refactor. Must resolve in next 3 cycles.*
 - Coverage targets: **80%** logic, **50%** services — find and fix gaps
-- ~~**Code quality maintenance**~~ DDD COMPLETE — File decomposition (15 cycles, 3500+ lines reorganized) and DDD routing (83+ DB calls eliminated from 18 views → 7 domain services). Only cross-cutting factory reset remains. Architecture is clean.
+- ~~**Code quality maintenance**~~ DDD COMPLETE — File decomposition (15 cycles, 3500+ lines reorganized) and DDD routing (83+ DB calls eliminated from 18 views → 7 domain services). Architecture is clean.
 - ~~**Stale preference audit**~~ PARTIALLY DONE — WeightViewModel fixed, exercise views fixed. Continue auditing remaining view models.
 - AI eval harness: every tool gets 10+ eval queries
 - Integration tests for multi-step flows (parse → resolve → log → confirm)
@@ -154,6 +154,7 @@ What's not: UI feels rough and unpolished compared to competitors, AI chat drops
 | Workout logging | Strong | Clean, fast set/rep entry UX, muscle heat map |
 | Macro coaching | MacroFactor | ~~Adaptive calorie/macro targets~~ MATCHED (adaptive TDEE shipped) |
 | Biomarkers | Whoop | Insight quality, recovery analysis, AI coaching from bloodwork, healthspan framing |
+| AI workout parsing | Whoop | AI Strength Trainer — text/photo → structured workout plan with muscular load tracking |
 | AI chat | None (unique advantage) | Push further — competitors adding cloud AI coaching (Whoop) and photo AI (MFP) but none do on-device conversational tracking |
 
 ---

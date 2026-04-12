@@ -29,6 +29,13 @@
 - Spent too many cycles on blanket code refactoring (code-improvement loop) instead of user-facing features. Merged into single autopilot loop.
 - Initial food DB was too small (1000 foods). Ongoing enrichment is critical.
 
+### What I Learned — Review #11 (Cycle 199, 2026-04-12)
+- MFP acquired Cal AI (March 2026) — photo food scanning is now table stakes for nutrition apps.
+- Whoop launched AI Strength Trainer: describe a workout in text → structured plan. Cloud-based but shows the direction.
+- 29 cycles of infrastructure with zero user-visible improvements is too long. DDD was necessary but the pendulum swung too far. Must rebalance to 80% user-facing, 20% infra.
+- Theme overhaul has been "Now" for 6+ reviews — credibility issue. Must ship in one cycle, not iterate.
+- Voice input (SpeechRecognizer) is higher ROI than photo logging for our on-device constraints.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation
