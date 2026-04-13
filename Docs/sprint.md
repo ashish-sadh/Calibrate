@@ -18,7 +18,7 @@ _(pick from Ready)_
 - [x] **Chat uses searchWithFallback when food not found** — log_food preHook + food_info handler both fall back to USDA/OpenFoodFacts. Respects toggle. 4 tests. 966 total.
 
 ### P1: Systematic Bug Hunting
-- [ ] **Run analysis on new code paths** — Focus on USDA integration, proactive alerts, exercise progress handler. Find silent bugs before users do.
+- [x] **Run analysis on new code paths** — Analyzed navigation, USDA chat, proactive alerts. Fixed: tab bounds validation, USDA API timeout (5s), concurrency safety. 10 findings, 2 P1 fixes shipped.
 
 ### P2: IntentClassifier Coverage
 - [ ] **Push from 63% toward 80%** — Add deterministic test cases for known intents. Only file below threshold.

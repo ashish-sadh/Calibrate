@@ -4,6 +4,8 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 
 ---
 
+**Cycle 808** — fix: systematic bug hunt — tab bounds check, USDA API 5s timeout, Swift 6 concurrency fix. 2 P1 bugs fixed.
+
 **Cycle 807** — feat: wire USDA into AI chat food logging. log_food + food_info both search USDA/OpenFoodFacts when local DB misses. 4 tests. 966 total.
 
 **Cycle 806** — feat: chat navigation — "show me my weight chart" switches tabs. Static overrides + LLM navigate_to tool. 16 tests. 962 total.
