@@ -97,8 +97,11 @@ enum ToolRegistration {
                     return .transform(ToolCallParams(values: enriched))
                 }
 
-                // --- Route 4: Not in local DB → try USDA/OpenFoodFacts if enabled ---
-                let onlineResults = await FoodService.searchWithFallback(query: name, localThreshold: 1)
+                // --- Route 4: Not in local DB → try USDA/OpenFoodFacts if enabled (5s timeout) ---
+                let searchName = name
+                let onlineResults = await IntentClassifier.withTimeout(seconds: 5) {
+                    await FoodService.searchWithFallback(query: searchName, localThreshold: 1)
+                } ?? []
                 if let best = onlineResults.first {
                     var enriched: [String: String] = ["name": best.name]
                     let resolvedServings: Double
@@ -162,9 +165,11 @@ enum ToolRegistration {
                     if let result = FoodService.getNutrition(name: query) {
                         return .text("\(result.perServing) Say 'log \(result.food.name.lowercased())' to add it.")
                     }
-                    // Try USDA/OpenFoodFacts if enabled and not found locally
+                    // Try USDA/OpenFoodFacts if enabled and not found locally (5s timeout)
                     let lookupQuery = foodName.isEmpty ? query : foodName
-                    let onlineResults = await FoodService.searchWithFallback(query: lookupQuery, localThreshold: 1)
+                    let onlineResults = await IntentClassifier.withTimeout(seconds: 5) {
+                        await FoodService.searchWithFallback(query: lookupQuery, localThreshold: 1)
+                    } ?? []
                     if let best = onlineResults.first {
                         let desc = "\(best.name) (per \(Int(best.servingSize))\(best.servingUnit)): \(Int(best.calories)) cal, \(Int(best.proteinG))g protein, \(Int(best.carbsG))g carbs, \(Int(best.fatG))g fat"
                         return .text("\(desc) Say 'log \(best.name.lowercased())' to add it.")

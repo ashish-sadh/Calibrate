@@ -61,7 +61,7 @@ struct ContentView: View {
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .navigateToTab)) { notification in
-            if let tab = notification.userInfo?["tab"] as? Int {
+            if let tab = notification.userInfo?["tab"] as? Int, (0...4).contains(tab) {
                 withAnimation { selectedTab = tab }
             }
         }
