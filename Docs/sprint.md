@@ -21,13 +21,13 @@ _(pick from Ready)_
 - [x] **Design the integration** — Written at Docs/usda-api-design.md. Offline-first with on-demand enrichment, opt-in toggle, usda_cache table, 4-phase implementation plan.
 
 ### P1: Proactive Insight Alerts
-- [ ] **Extend overload alert pattern** — Protein adherence alerts, supplement streak nudges. Proactive intelligence across domains.
+- [x] **Extend overload alert pattern** — Protein streak alert (3+ days below target) and supplement gap alert (3+ days missed). Shown prominently on dashboard.
 
 ### P1: Systematic Bug Hunting
-- [ ] **Run analysis every 5 cycles** — Meal hint bug was found via systematic analysis. Keep this cadence.
+- [x] **Run analysis every 5 cycles** — Found and fixed 3 P0 bugs: calcium/calorie regex, integer JSON params, undo action tracking. 942 tests.
 
 ### P2: Exercise Presentation
-- [ ] **Muscle group icons on workout cards** — Visual polish, moves toward Boostcamp parity.
+- [x] **Muscle group icons on workout cards** — Body part chips with SF Symbols on each history card. Shows up to 4 groups.
 
 ### P2: AIChatView ViewModel Extraction
 - [ ] **Extract logic from AIChatView (400+ lines)** — Do alongside chat UI work. Move business logic to AIChatViewModel. Not standalone refactoring.
