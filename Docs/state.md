@@ -5,9 +5,9 @@ AI-first local health tracker. AI chat is the primary interface — every data e
 
 ## Numbers
 - **Version:** 0.1.0, Build 104
-- **Tests:** 886 (19 test files, 300+ methods)
+- **Tests:** 935 (19 test files, 300+ methods)
 - **AI Eval:** 380+ scenarios in eval harness + LLM eval
-- **Foods:** 1201 (Indian, Mexican, Asian, Thai, Japanese, Korean, Mediterranean, global)
+- **Foods:** 1500 (Indian, Mexican, Asian, Thai, Japanese, Korean, Mediterranean, Chinese, Middle Eastern, American classics)
 - **Exercises:** 873 (free-exercise-db)
 - **Biomarkers:** 65 across 9 categories
 - **AI Tools:** 19 registered tools
@@ -27,19 +27,20 @@ AI-first local health tracker. AI chat is the primary interface — every data e
 
 ### Pipeline (Gemma 4)
 ```
-Tier 0: Instant rules (StaticOverrides + Swift parsers)     → ~60-70% of queries
-Tier 1: LLM normalizer → re-run rules (~3s)                 → ~20% more
-Tier 2: Rule-based tool pick (ToolRanker, instant)           → ~10% more
-Tier 3: Tool-first execution → stream presentation (~5-8s)   → info queries
-Tier 4: Pure streaming with context (~10-20s)                → conversation
+Phase 1: Instant rules (StaticOverrides + Swift parsers)     → ~60-70% of queries
+Phase 2: LLM intent classifier (typos, word numbers, tools)  → ~20% more
+Phase 3: Tool-first execution → stream presentation (~5-8s)   → info queries
+Phase 4: LLM fallback with context (~10-20s)                  → conversation
 ```
 
 ### Key Components
-- **ToolRanker** — Keyword scoring, 19 tool profiles, `tryRulePick()`, `normalizePrompt()`
+- **ToolRanker** — Keyword scoring, 19 tool profiles, `tryRulePick()`
+- **IntentClassifier** — LLM-based intent detection with structured JSON output
 - **AIToolAgent** — Tiered orchestrator with 20s timeout on all LLM calls
 - **StaticOverrides** — Universal deterministic handlers (no model gate)
+- **ConversationState** — State machine (idle/awaitingMealItems/awaitingExercises/planningMeals)
 - **Early JSON termination** — Bracket counting stops generation when JSON complete
-- **Spell correction** — SpellCorrectService in findFood() search chain
+- **Spell correction** — SpellCorrectService + synonym expansion in food search chain
 
 ### Backend
 - Raw llama.cpp C API, Metal GPU (all layers offloaded, ~3GB VRAM)
@@ -48,12 +49,13 @@ Tier 4: Pure streaming with context (~10-20s)                → conversation
 - Context: 2048 tokens, max prompt: 1776, max generation: 256
 
 ## AI Chat Capabilities
-- Food: log single/multi/meal/gram, nutrition lookup, calorie estimation, macro-specific, delete/undo, suggestions, copy to today
+- Food: log single/multi/meal/gram, nutrition lookup, calorie estimation, macro-specific, delete/undo, suggestions, copy to today, meal planning dialogue
 - Weight: log, trend, goal progress, set goal (word numbers), cross-domain analysis
 - Exercise: start template, smart workout, log exercises, log activity, suggestion, workout history
 - Health: sleep/recovery (weekly), supplements (status/mark/add), glucose, biomarkers, body comp
 - Meta: TDEE/BMR, daily/weekly/yesterday summary, calories left, copy yesterday, topic continuation
-- Multi-turn: meal continuation ("also add X"), history-based context, pronoun resolution
+- Multi-turn: meal continuation ("also add X"), meal planning iteration, history-based context, pronoun resolution
+- Input: voice (on-device SpeechRecognizer), text, smart suggestion pills
 - Plant points: ingredient-based counting (57 composite dishes), spice blend expansion, barcode ingredients
 
 ## Tab Structure
