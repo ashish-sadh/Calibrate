@@ -24,7 +24,7 @@
       <div class="tab" data-tab="fixed">Fixed Bugs</div>
       <div class="tab" data-tab="feedback">Feedback Trail</div>
       <div class="tab" data-tab="releases">Release Notes</div>
-      <div class="tab" data-tab="designs">Design Docs</div>
+      <div class="tab" data-tab="designs" id="designs-tab" style="display:none">Design Docs</div>
       <div class="tab" data-tab="review" id="review-tab" style="display:none">Needs Review</div>
       <div class="tab" data-tab="admin" id="admin-tab" style="display:none">Admin</div>
     </div>
@@ -850,6 +850,7 @@
       if (isOwner()) {
         document.getElementById('review-tab').style.display = '';
         document.getElementById('admin-tab').style.display = '';
+        document.getElementById('designs-tab').style.display = '';
       }
     });
   </script>
