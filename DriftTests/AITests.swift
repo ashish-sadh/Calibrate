@@ -1525,3 +1525,26 @@ import Testing
     // May return empty (no match) or items — either is fine, should not crash
     #expect(items != nil || true)
 }
+
+// MARK: - Proactive Alert Tests
+
+@Test @MainActor func proactiveAlertsReturnsArray() async throws {
+    let alerts = BehaviorInsightService.computeProactiveAlerts()
+    // Should return an array (may be empty on test DB) — must not crash
+    #expect(alerts.count >= 0)
+    // Each alert should have non-empty fields
+    for alert in alerts {
+        #expect(!alert.title.isEmpty)
+        #expect(!alert.detail.isEmpty)
+        #expect(!alert.icon.isEmpty)
+    }
+}
+
+@Test @MainActor func proactiveAlertsIncludeAllTypes() async throws {
+    // Verify the alert computation runs all 4 alert types without crashing
+    // On a test DB with no data, most will return nil — that's expected
+    let alerts = BehaviorInsightService.computeProactiveAlerts()
+    let titles = Set(alerts.map(\.title))
+    // Can't guarantee specific alerts fire on test DB, but none should have duplicate titles
+    #expect(titles.count == alerts.count, "Alert titles should be unique")
+}

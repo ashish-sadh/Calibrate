@@ -31,6 +31,8 @@ enum BehaviorInsightService {
         var alerts: [BehaviorInsight] = []
         if let protein = proteinStreakAlert() { alerts.append(protein) }
         if let supplement = supplementGapAlert() { alerts.append(supplement) }
+        if let workout = workoutConsistencyAlert() { alerts.append(workout) }
+        if let logging = loggingGapAlert() { alerts.append(logging) }
         return alerts
     }
 
@@ -96,6 +98,61 @@ enum BehaviorInsightService {
             icon: "pill.fill",
             title: "Supplements missed",
             detail: "\(names)\(extra) — not taken in 3+ days.",
+            isPositive: false)
+    }
+
+    /// Alert when no workouts logged in 5+ days.
+    private static func workoutConsistencyAlert() -> BehaviorInsight? {
+        let calendar = Calendar.current
+        guard let fiveDaysAgo = calendar.date(byAdding: .day, value: -5, to: Date()) else { return nil }
+        let dateStr = DateFormatters.dateOnly.string(from: fiveDaysAgo)
+
+        // Check if any workouts exist in the last 5 days
+        guard let recentWorkouts = try? WorkoutService.fetchWorkouts(limit: 1),
+              let latest = recentWorkouts.first else {
+            return nil // no workout history at all — don't nag new users
+        }
+
+        // Compare latest workout date to threshold
+        guard latest.date < dateStr else { return nil }
+
+        // Count days since last workout
+        let latestDate = DateFormatters.dateOnly.date(from: latest.date) ?? fiveDaysAgo
+        let daysSince = calendar.dateComponents([.day], from: latestDate, to: Date()).day ?? 5
+
+        return BehaviorInsight(
+            icon: "figure.walk",
+            title: "No workouts recently",
+            detail: "\(daysSince) days since your last workout. Even a short session helps maintain consistency.",
+            isPositive: false)
+    }
+
+    /// Alert when no food has been logged in 2+ days.
+    private static func loggingGapAlert() -> BehaviorInsight? {
+        let calendar = Calendar.current
+        let today = Date()
+
+        // Check yesterday and the day before — if both are empty, alert
+        for dayOffset in 1...2 {
+            guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { return nil }
+            let dateStr = DateFormatters.dateOnly.string(from: date)
+            if let nutrition = try? AppDatabase.shared.fetchDailyNutrition(for: dateStr),
+               nutrition.calories > 100 {
+                return nil // found food logged recently
+            }
+        }
+
+        // Also check today — if they logged today, no alert needed
+        let todayStr = DateFormatters.todayString
+        if let todayNutrition = try? AppDatabase.shared.fetchDailyNutrition(for: todayStr),
+           todayNutrition.calories > 100 {
+            return nil
+        }
+
+        return BehaviorInsight(
+            icon: "pencil.slash",
+            title: "Food logging paused",
+            detail: "No food logged in 2+ days. Consistent logging helps your calorie targets adapt.",
             isPositive: false)
     }
 
