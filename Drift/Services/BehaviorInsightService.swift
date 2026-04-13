@@ -23,6 +23,82 @@ enum BehaviorInsightService {
         return insights
     }
 
+    // MARK: - Proactive Alerts (actionable, shown prominently)
+
+    /// Urgent, actionable alerts — things that need attention right now.
+    /// Different from insights (which are correlations over time).
+    static func computeProactiveAlerts() -> [BehaviorInsight] {
+        var alerts: [BehaviorInsight] = []
+        if let protein = proteinStreakAlert() { alerts.append(protein) }
+        if let supplement = supplementGapAlert() { alerts.append(supplement) }
+        return alerts
+    }
+
+    /// Alert when protein target has been missed 3+ consecutive days.
+    private static func proteinStreakAlert() -> BehaviorInsight? {
+        guard let goal = WeightGoal.load(),
+              let targets = goal.macroTargets(),
+              targets.proteinG > 0 else { return nil }
+
+        let db = AppDatabase.shared
+        let calendar = Calendar.current
+        var missedStreak = 0
+
+        for dayOffset in 1...7 {
+            guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: Date()) else { break }
+            let dateStr = DateFormatters.dateOnly.string(from: date)
+            guard let nutrition = try? db.fetchDailyNutrition(for: dateStr),
+                  nutrition.calories > 200 else { break }  // no data = can't judge
+            if nutrition.proteinG < targets.proteinG * 0.8 {
+                missedStreak += 1
+            } else {
+                break  // streak broken
+            }
+        }
+
+        guard missedStreak >= 3 else { return nil }
+
+        return BehaviorInsight(
+            icon: "exclamationmark.triangle.fill",
+            title: "Protein below target",
+            detail: "\(missedStreak) days in a row under \(Int(targets.proteinG))g protein. Try adding a protein shake or eggs.",
+            isPositive: false)
+    }
+
+    /// Alert when a supplement hasn't been marked as taken recently.
+    private static func supplementGapAlert() -> BehaviorInsight? {
+        guard let supplements = try? AppDatabase.shared.fetchActiveSupplements(),
+              !supplements.isEmpty else { return nil }
+
+        let calendar = Calendar.current
+        var missedNames: [String] = []
+
+        for supp in supplements {
+            // Check last 3 days for this supplement
+            var takenRecently = false
+            for dayOffset in 0...2 {
+                guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: Date()) else { continue }
+                let dateStr = DateFormatters.dateOnly.string(from: date)
+                if let logs = try? AppDatabase.shared.fetchSupplementLogs(for: dateStr),
+                   logs.contains(where: { $0.supplementId == supp.id }) {
+                    takenRecently = true
+                    break
+                }
+            }
+            if !takenRecently { missedNames.append(supp.name) }
+        }
+
+        guard !missedNames.isEmpty else { return nil }
+
+        let names = missedNames.prefix(3).joined(separator: ", ")
+        let extra = missedNames.count > 3 ? " + \(missedNames.count - 3) more" : ""
+        return BehaviorInsight(
+            icon: "pill.fill",
+            title: "Supplements missed",
+            detail: "\(names)\(extra) — not taken in 3+ days.",
+            isPositive: false)
+    }
+
     // MARK: - Insight 1: Workout Frequency vs Weight Trend
 
     /// Compares weeks with 3+ workouts to weeks with fewer.

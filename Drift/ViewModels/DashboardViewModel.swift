@@ -29,6 +29,7 @@ final class DashboardViewModel {
     var restingHR: Double = 0
 
     var behaviorInsights: [BehaviorInsight] = []
+    var proactiveAlerts: [BehaviorInsight] = []
     var isLoading = false
 
     var calorieBalance: Double {
@@ -139,5 +140,6 @@ final class DashboardViewModel {
 
         // Compute behavior insights (after HealthKit so sleep data is available)
         behaviorInsights = BehaviorInsightService.computeInsights(sleepHistory: sleepHist)
+        proactiveAlerts = BehaviorInsightService.computeProactiveAlerts()
     }
 }

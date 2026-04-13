@@ -105,6 +105,25 @@ struct DashboardView: View {
                         }
                     }
 
+                    // Proactive alerts — urgent, actionable
+                    if !viewModel.proactiveAlerts.isEmpty {
+                        ForEach(viewModel.proactiveAlerts.indices, id: \.self) { i in
+                            let alert = viewModel.proactiveAlerts[i]
+                            HStack(spacing: 10) {
+                                Image(systemName: alert.icon)
+                                    .font(.body)
+                                    .foregroundStyle(Theme.fatYellow)
+                                    .frame(width: 32, height: 32)
+                                    .background(Theme.fatYellow.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(alert.title).font(.caption.weight(.semibold))
+                                    Text(alert.detail).font(.caption2).foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                            }.card()
+                        }
+                    }
+
                     // Goal progress → Goal page
                     NavigationLink { GoalView() } label: { goalCard }.tint(.primary)
 
