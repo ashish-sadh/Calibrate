@@ -16,6 +16,7 @@ struct EditFoodEntrySheet: View {
     @State private var editF: String
     @State private var editFb: String
     @State private var editName: String
+    @State private var overrideMacros = false
 
     init(entry: FoodEntry, viewModel: FoodLogViewModel, onCopiedToToday: @escaping (String) -> Void, onDone: @escaping () -> Void) {
         self.entry = entry
@@ -141,20 +142,48 @@ struct EditFoodEntrySheet: View {
                         }
                         .card()
                     } else {
-                        // DB food — read-only macros (adjusted by serving multiplier)
+                        // DB food — macros computed from servings, with manual override option
                         VStack(spacing: 8) {
-                            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                                Text("\(Int(entry.calories * multiplier))")
-                                    .font(.title.weight(.bold).monospacedDigit())
-                                Text("cal").font(.subheadline).foregroundStyle(.secondary)
-                            }
-                            HStack(spacing: 8) {
-                                macroChip("P", value: entry.proteinG * multiplier, color: Theme.proteinRed)
-                                macroChip("C", value: entry.carbsG * multiplier, color: Theme.carbsGreen)
-                                macroChip("F", value: entry.fatG * multiplier, color: Theme.fatYellow)
-                                if entry.fiberG > 0 {
-                                    macroChip("Fb", value: entry.fiberG * multiplier, color: Theme.fiberBrown)
+                            if overrideMacros {
+                                HStack {
+                                    Text("Cal").font(.caption.weight(.medium)).foregroundStyle(.secondary).frame(width: 30)
+                                    TextField("0", text: $editCal).keyboardType(.numberPad).font(.title2.weight(.bold).monospacedDigit()).multilineTextAlignment(.center)
                                 }
+                                HStack(spacing: 12) {
+                                    editableMacroField("P", text: $editP, color: Theme.proteinRed)
+                                    editableMacroField("C", text: $editC, color: Theme.carbsGreen)
+                                    editableMacroField("F", text: $editF, color: Theme.fatYellow)
+                                    editableMacroField("Fb", text: $editFb, color: Theme.fiberBrown)
+                                }
+                            } else {
+                                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                    Text("\(Int(entry.calories * multiplier))")
+                                        .font(.title.weight(.bold).monospacedDigit())
+                                    Text("cal").font(.subheadline).foregroundStyle(.secondary)
+                                }
+                                HStack(spacing: 8) {
+                                    macroChip("P", value: entry.proteinG * multiplier, color: Theme.proteinRed)
+                                    macroChip("C", value: entry.carbsG * multiplier, color: Theme.carbsGreen)
+                                    macroChip("F", value: entry.fatG * multiplier, color: Theme.fatYellow)
+                                    if entry.fiberG > 0 {
+                                        macroChip("Fb", value: entry.fiberG * multiplier, color: Theme.fiberBrown)
+                                    }
+                                }
+                            }
+
+                            Button {
+                                if !overrideMacros {
+                                    // Pre-fill with current computed values
+                                    editCal = "\(Int(entry.calories * multiplier))"
+                                    editP = "\(Int(entry.proteinG * multiplier))"
+                                    editC = "\(Int(entry.carbsG * multiplier))"
+                                    editF = "\(Int(entry.fatG * multiplier))"
+                                    editFb = "\(Int(entry.fiberG * multiplier))"
+                                }
+                                overrideMacros.toggle()
+                            } label: {
+                                Text(overrideMacros ? "Use serving calculation" : "Edit macros")
+                                    .font(.caption).foregroundStyle(Theme.accent)
                             }
                         }
                         .card()
@@ -197,8 +226,8 @@ struct EditFoodEntrySheet: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         if let id = entry.id {
-                            if entry.foodId == nil {
-                                if editName != entry.foodName {
+                            if entry.foodId == nil || overrideMacros {
+                                if entry.foodId == nil && editName != entry.foodName {
                                     FoodService.updateFoodEntryName(id: id, name: editName)
                                 }
                                 FoodService.updateFoodEntryMacros(
