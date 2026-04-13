@@ -15,7 +15,7 @@ _(pick from Ready)_
 - [x] **"Show me my weight chart" switches tabs** — Static overrides + LLM tool + tab switching. Chat collapses on navigate. 16 tests. 962 total.
 
 ### P1: Wire USDA into AI Chat Food Logging
-- [ ] **Chat uses searchWithFallback when food not found** — When user says "log quinoa" and it's not local, use FoodService.searchWithFallback() if toggle is on.
+- [x] **Chat uses searchWithFallback when food not found** — log_food preHook + food_info handler both fall back to USDA/OpenFoodFacts. Respects toggle. 4 tests. 966 total.
 
 ### P1: Systematic Bug Hunting
 - [ ] **Run analysis on new code paths** — Focus on USDA integration, proactive alerts, exercise progress handler. Find silent bugs before users do.

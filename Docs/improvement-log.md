@@ -4,6 +4,8 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 
 ---
 
+**Cycle 807** — feat: wire USDA into AI chat food logging. log_food + food_info both search USDA/OpenFoodFacts when local DB misses. 4 tests. 966 total.
+
 **Cycle 806** — feat: chat navigation — "show me my weight chart" switches tabs. Static overrides + LLM navigate_to tool. 16 tests. 962 total.
 
 ## Cycle · 2026-04-12 (Autopilot session, sprint post-review #18)
