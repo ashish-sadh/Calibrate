@@ -652,7 +652,7 @@ extension AIChatView {
         let totals = FoodService.getDailyTotals()
 
         // Number selection: "1", "2", "3" → log that suggestion
-        if let num = Int(lower), num >= 1 && num <= 3 {
+        if let num = Int(lower), num >= 1 {
             let suggestions = FoodService.suggestMeal(caloriesLeft: max(0, totals.remaining))
             if num <= suggestions.count {
                 let food = suggestions[num - 1]
@@ -666,6 +666,11 @@ extension AIChatView {
                 showingFoodSearch = true
                 // Stay in planning mode for next meal
                 convState.phase = .planningMeals(mealName: mealName, iteration: iteration + 1)
+                return true
+            } else {
+                let max = suggestions.isEmpty ? 3 : suggestions.count
+                messages.append(ChatMessage(role: .assistant,
+                    text: "Pick a number from 1-\(max), say \"more\" for other options, or \"done\" to finish."))
                 return true
             }
         }
