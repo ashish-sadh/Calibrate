@@ -100,16 +100,26 @@ final class SpeechRecognitionService {
 
         let engine = AVAudioEngine()
         let inputNode = engine.inputNode
+
+        // Prepare engine BEFORE querying format — inputNode.outputFormat can return
+        // an invalid format (sample rate 0) if the engine isn't prepared yet,
+        // which crashes installTap on real devices.
+        engine.prepare()
+
         let recordingFormat = inputNode.outputFormat(forBus: 0)
+        guard recordingFormat.sampleRate > 0 else {
+            recordingState = .unavailable("Microphone unavailable")
+            return
+        }
 
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
             request.append(buffer)
         }
 
         do {
-            engine.prepare()
             try engine.start()
         } catch {
+            inputNode.removeTap(onBus: 0)
             recordingState = .unavailable("Could not start audio engine")
             return
         }
