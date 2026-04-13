@@ -18911,5 +18911,5393 @@
       "cashews"
     ],
     "nova_group": 3
+  },
+  {
+    "name": "Korean Fried Chicken",
+    "category": "Korean",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 520,
+    "protein_g": 30,
+    "carbs_g": 32,
+    "fat_g": 30,
+    "fiber_g": 1,
+    "ingredients": [
+      "chicken",
+      "flour",
+      "oil",
+      "gochujang"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Kimchi Jjigae",
+    "category": "Korean",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 18,
+    "carbs_g": 12,
+    "fat_g": 18,
+    "fiber_g": 3,
+    "ingredients": [
+      "kimchi",
+      "tofu",
+      "pork",
+      "gochugaru"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Japchae",
+    "category": "Korean",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 340,
+    "protein_g": 10,
+    "carbs_g": 52,
+    "fat_g": 11,
+    "fiber_g": 3,
+    "ingredients": [
+      "sweet potato noodles",
+      "vegetables",
+      "soy sauce",
+      "sesame oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Bulgogi",
+    "category": "Korean",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 360,
+    "protein_g": 28,
+    "carbs_g": 18,
+    "fat_g": 20,
+    "fiber_g": 1,
+    "ingredients": [
+      "beef",
+      "soy sauce",
+      "pear",
+      "garlic",
+      "sesame oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Tteokbokki",
+    "category": "Korean",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 8,
+    "carbs_g": 72,
+    "fat_g": 6,
+    "fiber_g": 2,
+    "ingredients": [
+      "rice cakes",
+      "gochujang",
+      "sugar",
+      "fish cake"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Korean BBQ Pork Belly",
+    "category": "Korean",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 520,
+    "protein_g": 20,
+    "carbs_g": 5,
+    "fat_g": 48,
+    "fiber_g": 0,
+    "ingredients": [
+      "pork belly",
+      "ssamjang",
+      "garlic"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Kimbap",
+    "category": "Korean",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 14,
+    "carbs_g": 58,
+    "fat_g": 10,
+    "fiber_g": 3,
+    "ingredients": [
+      "rice",
+      "seaweed",
+      "vegetables",
+      "egg",
+      "pickled radish"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Sundubu Jjigae",
+    "category": "Korean",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 240,
+    "protein_g": 16,
+    "carbs_g": 10,
+    "fat_g": 15,
+    "fiber_g": 2,
+    "ingredients": [
+      "soft tofu",
+      "vegetables",
+      "egg",
+      "gochugaru"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Pho Bo (Beef Pho)",
+    "category": "Vietnamese",
+    "serving_size": 500,
+    "serving_unit": "ml",
+    "calories": 420,
+    "protein_g": 25,
+    "carbs_g": 52,
+    "fat_g": 10,
+    "fiber_g": 2,
+    "ingredients": [
+      "rice noodles",
+      "beef",
+      "broth",
+      "onion",
+      "herbs"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Banh Mi Sandwich",
+    "category": "Vietnamese",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 460,
+    "protein_g": 22,
+    "carbs_g": 52,
+    "fat_g": 18,
+    "fiber_g": 3,
+    "ingredients": [
+      "baguette",
+      "pork",
+      "pate",
+      "pickled vegetables",
+      "cilantro"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Vietnamese Spring Rolls (Fresh)",
+    "category": "Vietnamese",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 10,
+    "carbs_g": 28,
+    "fat_g": 3,
+    "fiber_g": 2,
+    "ingredients": [
+      "rice paper",
+      "shrimp",
+      "vermicelli",
+      "lettuce",
+      "herbs"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Bun Cha",
+    "category": "Vietnamese",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 28,
+    "carbs_g": 50,
+    "fat_g": 18,
+    "fiber_g": 3,
+    "ingredients": [
+      "grilled pork",
+      "vermicelli",
+      "fish sauce",
+      "herbs"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Com Tam (Broken Rice Plate)",
+    "category": "Vietnamese",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 550,
+    "protein_g": 30,
+    "carbs_g": 65,
+    "fat_g": 18,
+    "fiber_g": 2,
+    "ingredients": [
+      "broken rice",
+      "grilled pork",
+      "egg",
+      "fish sauce"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Cao Lau",
+    "category": "Vietnamese",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 20,
+    "carbs_g": 48,
+    "fat_g": 12,
+    "fiber_g": 3,
+    "ingredients": [
+      "rice noodles",
+      "pork",
+      "greens",
+      "croutons"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Vietnamese Iced Coffee",
+    "category": "Vietnamese",
+    "serving_size": 240,
+    "serving_unit": "ml",
+    "calories": 180,
+    "protein_g": 3,
+    "carbs_g": 28,
+    "fat_g": 6,
+    "fiber_g": 0,
+    "ingredients": [
+      "coffee",
+      "condensed milk",
+      "ice"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Spaghetti Bolognese",
+    "category": "Italian",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 24,
+    "carbs_g": 56,
+    "fat_g": 16,
+    "fiber_g": 4,
+    "ingredients": [
+      "spaghetti",
+      "ground beef",
+      "tomato sauce",
+      "onion",
+      "garlic"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Fettuccine Alfredo",
+    "category": "Italian",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 560,
+    "protein_g": 18,
+    "carbs_g": 52,
+    "fat_g": 30,
+    "fiber_g": 2,
+    "ingredients": [
+      "fettuccine",
+      "butter",
+      "parmesan",
+      "cream"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Margherita Pizza (slice)",
+    "category": "Italian",
+    "serving_size": 107,
+    "serving_unit": "g",
+    "calories": 270,
+    "protein_g": 12,
+    "carbs_g": 32,
+    "fat_g": 10,
+    "fiber_g": 2,
+    "ingredients": [
+      "dough",
+      "mozzarella",
+      "tomato sauce",
+      "basil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Pepperoni Pizza (slice)",
+    "category": "Italian",
+    "serving_size": 107,
+    "serving_unit": "g",
+    "calories": 310,
+    "protein_g": 14,
+    "carbs_g": 30,
+    "fat_g": 14,
+    "fiber_g": 2,
+    "ingredients": [
+      "dough",
+      "mozzarella",
+      "pepperoni",
+      "tomato sauce"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Chicken Parmesan",
+    "category": "Italian",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 520,
+    "protein_g": 38,
+    "carbs_g": 28,
+    "fat_g": 28,
+    "fiber_g": 3,
+    "ingredients": [
+      "chicken breast",
+      "breadcrumbs",
+      "mozzarella",
+      "tomato sauce"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Lasagna",
+    "category": "Italian",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 26,
+    "carbs_g": 36,
+    "fat_g": 24,
+    "fiber_g": 3,
+    "ingredients": [
+      "pasta sheets",
+      "ground beef",
+      "ricotta",
+      "mozzarella",
+      "tomato sauce"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Penne Arrabbiata",
+    "category": "Italian",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 12,
+    "carbs_g": 62,
+    "fat_g": 10,
+    "fiber_g": 4,
+    "ingredients": [
+      "penne",
+      "tomato sauce",
+      "garlic",
+      "chili flakes",
+      "olive oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Carbonara",
+    "category": "Italian",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 540,
+    "protein_g": 22,
+    "carbs_g": 50,
+    "fat_g": 28,
+    "fiber_g": 2,
+    "ingredients": [
+      "spaghetti",
+      "egg",
+      "pancetta",
+      "parmesan",
+      "black pepper"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Risotto",
+    "category": "Italian",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 420,
+    "protein_g": 12,
+    "carbs_g": 58,
+    "fat_g": 14,
+    "fiber_g": 2,
+    "ingredients": [
+      "arborio rice",
+      "broth",
+      "parmesan",
+      "butter",
+      "onion"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Caprese Salad",
+    "category": "Italian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 250,
+    "protein_g": 14,
+    "carbs_g": 6,
+    "fat_g": 18,
+    "fiber_g": 1,
+    "ingredients": [
+      "mozzarella",
+      "tomato",
+      "basil",
+      "olive oil"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Garlic Bread",
+    "category": "Italian",
+    "serving_size": 80,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 6,
+    "carbs_g": 32,
+    "fat_g": 14,
+    "fiber_g": 1.5,
+    "ingredients": [
+      "bread",
+      "butter",
+      "garlic",
+      "parsley"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Bruschetta",
+    "category": "Italian",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 5,
+    "carbs_g": 24,
+    "fat_g": 7,
+    "fiber_g": 2,
+    "ingredients": [
+      "bread",
+      "tomato",
+      "basil",
+      "olive oil",
+      "garlic"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Chick-fil-A Chicken Sandwich",
+    "category": "Fast Food",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 440,
+    "protein_g": 28,
+    "carbs_g": 40,
+    "fat_g": 19,
+    "fiber_g": 1,
+    "ingredients": [
+      "chicken breast",
+      "bun",
+      "pickles"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Chick-fil-A Nuggets (8pc)",
+    "category": "Fast Food",
+    "serving_size": 113,
+    "serving_unit": "g",
+    "calories": 250,
+    "protein_g": 27,
+    "carbs_g": 11,
+    "fat_g": 11,
+    "fiber_g": 0,
+    "ingredients": [
+      "chicken breast",
+      "breading"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Chick-fil-A Grilled Nuggets (8pc)",
+    "category": "Fast Food",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 130,
+    "protein_g": 25,
+    "carbs_g": 1,
+    "fat_g": 3,
+    "fiber_g": 0,
+    "ingredients": [
+      "chicken breast"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Starbucks Caffe Latte (Grande)",
+    "category": "Beverages",
+    "serving_size": 473,
+    "serving_unit": "ml",
+    "calories": 190,
+    "protein_g": 13,
+    "carbs_g": 19,
+    "fat_g": 7,
+    "fiber_g": 0,
+    "ingredients": [
+      "milk",
+      "espresso"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Starbucks Caramel Frappuccino (Grande)",
+    "category": "Beverages",
+    "serving_size": 473,
+    "serving_unit": "ml",
+    "calories": 380,
+    "protein_g": 5,
+    "carbs_g": 55,
+    "fat_g": 16,
+    "fiber_g": 0,
+    "ingredients": [
+      "milk",
+      "coffee",
+      "caramel syrup",
+      "whipped cream"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Starbucks Matcha Latte (Grande)",
+    "category": "Beverages",
+    "serving_size": 473,
+    "serving_unit": "ml",
+    "calories": 240,
+    "protein_g": 12,
+    "carbs_g": 34,
+    "fat_g": 7,
+    "fiber_g": 1,
+    "ingredients": [
+      "milk",
+      "matcha powder",
+      "sugar"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Starbucks Cold Brew (Grande)",
+    "category": "Beverages",
+    "serving_size": 473,
+    "serving_unit": "ml",
+    "calories": 5,
+    "protein_g": 0,
+    "carbs_g": 0,
+    "fat_g": 0,
+    "fiber_g": 0,
+    "ingredients": [
+      "coffee"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Starbucks Protein Box (Eggs & Cheese)",
+    "category": "Fast Food",
+    "serving_size": 140,
+    "serving_unit": "g",
+    "calories": 300,
+    "protein_g": 20,
+    "carbs_g": 25,
+    "fat_g": 13,
+    "fiber_g": 2,
+    "ingredients": [
+      "eggs",
+      "cheese",
+      "bread",
+      "fruit"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Subway Turkey Sub (6-inch)",
+    "category": "Fast Food",
+    "serving_size": 228,
+    "serving_unit": "g",
+    "calories": 270,
+    "protein_g": 18,
+    "carbs_g": 40,
+    "fat_g": 3.5,
+    "fiber_g": 3,
+    "ingredients": [
+      "turkey",
+      "bread",
+      "lettuce",
+      "tomato"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Subway Italian BMT (6-inch)",
+    "category": "Fast Food",
+    "serving_size": 228,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 17,
+    "carbs_g": 41,
+    "fat_g": 16,
+    "fiber_g": 3,
+    "ingredients": [
+      "salami",
+      "pepperoni",
+      "ham",
+      "bread"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Panda Express Kung Pao Chicken",
+    "category": "Fast Food",
+    "serving_size": 162,
+    "serving_unit": "g",
+    "calories": 290,
+    "protein_g": 16,
+    "carbs_g": 14,
+    "fat_g": 19,
+    "fiber_g": 2,
+    "ingredients": [
+      "chicken",
+      "peanuts",
+      "vegetables",
+      "chili"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Taco Bell Burrito Supreme",
+    "category": "Fast Food",
+    "serving_size": 248,
+    "serving_unit": "g",
+    "calories": 400,
+    "protein_g": 16,
+    "carbs_g": 52,
+    "fat_g": 14,
+    "fiber_g": 7,
+    "ingredients": [
+      "tortilla",
+      "beef",
+      "beans",
+      "cheese",
+      "sour cream"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Taco Bell Quesadilla (Chicken)",
+    "category": "Fast Food",
+    "serving_size": 184,
+    "serving_unit": "g",
+    "calories": 500,
+    "protein_g": 27,
+    "carbs_g": 37,
+    "fat_g": 27,
+    "fiber_g": 3,
+    "ingredients": [
+      "tortilla",
+      "chicken",
+      "cheese",
+      "sauce"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "In-N-Out Protein Style Burger",
+    "category": "Fast Food",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 330,
+    "protein_g": 18,
+    "carbs_g": 11,
+    "fat_g": 25,
+    "fiber_g": 3,
+    "ingredients": [
+      "beef patty",
+      "cheese",
+      "lettuce wrap",
+      "tomato"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Chipotle Chicken Bowl",
+    "category": "Fast Food",
+    "serving_size": 510,
+    "serving_unit": "g",
+    "calories": 730,
+    "protein_g": 45,
+    "carbs_g": 80,
+    "fat_g": 25,
+    "fiber_g": 12,
+    "ingredients": [
+      "rice",
+      "chicken",
+      "beans",
+      "salsa",
+      "cheese"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Chipotle Steak Burrito",
+    "category": "Fast Food",
+    "serving_size": 520,
+    "serving_unit": "g",
+    "calories": 900,
+    "protein_g": 50,
+    "carbs_g": 96,
+    "fat_g": 32,
+    "fiber_g": 11,
+    "ingredients": [
+      "tortilla",
+      "rice",
+      "steak",
+      "beans",
+      "cheese",
+      "salsa"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "McDonald's Fries (Medium)",
+    "category": "Fast Food",
+    "serving_size": 117,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 5,
+    "carbs_g": 43,
+    "fat_g": 15,
+    "fiber_g": 4,
+    "ingredients": [
+      "potato",
+      "oil",
+      "salt"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Wendy's Baconator",
+    "category": "Fast Food",
+    "serving_size": 282,
+    "serving_unit": "g",
+    "calories": 940,
+    "protein_g": 57,
+    "carbs_g": 38,
+    "fat_g": 62,
+    "fiber_g": 1,
+    "ingredients": [
+      "beef patties",
+      "bacon",
+      "cheese",
+      "bun",
+      "ketchup"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Five Guys Cheeseburger",
+    "category": "Fast Food",
+    "serving_size": 303,
+    "serving_unit": "g",
+    "calories": 840,
+    "protein_g": 47,
+    "carbs_g": 40,
+    "fat_g": 55,
+    "fiber_g": 2,
+    "ingredients": [
+      "beef patties",
+      "cheese",
+      "bun",
+      "lettuce",
+      "tomato"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Five Guys Fries (Regular)",
+    "category": "Fast Food",
+    "serving_size": 411,
+    "serving_unit": "g",
+    "calories": 950,
+    "protein_g": 15,
+    "carbs_g": 131,
+    "fat_g": 41,
+    "fiber_g": 14,
+    "ingredients": [
+      "potato",
+      "peanut oil"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Beef and Broccoli",
+    "category": "Asian",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 340,
+    "protein_g": 24,
+    "carbs_g": 18,
+    "fat_g": 18,
+    "fiber_g": 3,
+    "ingredients": [
+      "beef",
+      "broccoli",
+      "soy sauce",
+      "garlic"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Kung Pao Shrimp",
+    "category": "Asian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 260,
+    "protein_g": 20,
+    "carbs_g": 14,
+    "fat_g": 14,
+    "fiber_g": 2,
+    "ingredients": [
+      "shrimp",
+      "peanuts",
+      "chili",
+      "vegetables"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Hot and Sour Soup",
+    "category": "Asian",
+    "serving_size": 350,
+    "serving_unit": "ml",
+    "calories": 160,
+    "protein_g": 10,
+    "carbs_g": 16,
+    "fat_g": 6,
+    "fiber_g": 2,
+    "ingredients": [
+      "tofu",
+      "mushrooms",
+      "bamboo shoots",
+      "vinegar",
+      "egg"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Egg Drop Soup",
+    "category": "Asian",
+    "serving_size": 350,
+    "serving_unit": "ml",
+    "calories": 110,
+    "protein_g": 6,
+    "carbs_g": 10,
+    "fat_g": 5,
+    "fiber_g": 0,
+    "ingredients": [
+      "egg",
+      "broth",
+      "cornstarch"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Fried Rice (Chicken)",
+    "category": "Asian",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 470,
+    "protein_g": 20,
+    "carbs_g": 60,
+    "fat_g": 16,
+    "fiber_g": 2,
+    "ingredients": [
+      "rice",
+      "chicken",
+      "egg",
+      "soy sauce",
+      "vegetables"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Dim Sum Har Gow (4pc)",
+    "category": "Asian",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 160,
+    "protein_g": 10,
+    "carbs_g": 18,
+    "fat_g": 5,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "shrimp",
+      "tapioca starch",
+      "bamboo shoots"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Dim Sum Siu Mai (4pc)",
+    "category": "Asian",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 12,
+    "carbs_g": 12,
+    "fat_g": 9,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "pork",
+      "shrimp",
+      "wonton wrapper",
+      "mushroom"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Char Siu (BBQ Pork)",
+    "category": "Asian",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 28,
+    "carbs_g": 18,
+    "fat_g": 14,
+    "fiber_g": 0,
+    "ingredients": [
+      "pork",
+      "hoisin sauce",
+      "honey",
+      "soy sauce"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Congee (Rice Porridge)",
+    "category": "Asian",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 8,
+    "carbs_g": 32,
+    "fat_g": 2,
+    "fiber_g": 1,
+    "ingredients": [
+      "rice",
+      "broth",
+      "ginger"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Peking Duck (with pancakes)",
+    "category": "Asian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 440,
+    "protein_g": 22,
+    "carbs_g": 28,
+    "fat_g": 26,
+    "fiber_g": 1,
+    "ingredients": [
+      "duck",
+      "pancakes",
+      "hoisin sauce",
+      "scallion"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Chicken Teriyaki Bowl",
+    "category": "Japanese",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 520,
+    "protein_g": 32,
+    "carbs_g": 68,
+    "fat_g": 10,
+    "fiber_g": 2,
+    "ingredients": [
+      "rice",
+      "chicken",
+      "teriyaki sauce",
+      "vegetables"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Tonkotsu Ramen",
+    "category": "Japanese",
+    "serving_size": 500,
+    "serving_unit": "ml",
+    "calories": 580,
+    "protein_g": 28,
+    "carbs_g": 62,
+    "fat_g": 22,
+    "fiber_g": 3,
+    "ingredients": [
+      "ramen noodles",
+      "pork broth",
+      "chashu",
+      "egg",
+      "nori"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Salmon Sashimi (6pc)",
+    "category": "Japanese",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 210,
+    "protein_g": 26,
+    "carbs_g": 0,
+    "fat_g": 12,
+    "fiber_g": 0,
+    "ingredients": [
+      "salmon"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "California Roll (8pc)",
+    "category": "Japanese",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 260,
+    "protein_g": 9,
+    "carbs_g": 40,
+    "fat_g": 7,
+    "fiber_g": 3,
+    "ingredients": [
+      "rice",
+      "crab",
+      "avocado",
+      "cucumber",
+      "nori"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Spicy Tuna Roll (8pc)",
+    "category": "Japanese",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 290,
+    "protein_g": 16,
+    "carbs_g": 38,
+    "fat_g": 8,
+    "fiber_g": 2,
+    "ingredients": [
+      "rice",
+      "tuna",
+      "spicy mayo",
+      "nori"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Tempura Shrimp (5pc)",
+    "category": "Japanese",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 270,
+    "protein_g": 14,
+    "carbs_g": 22,
+    "fat_g": 14,
+    "fiber_g": 1,
+    "ingredients": [
+      "shrimp",
+      "tempura batter",
+      "oil"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Gyoza (6pc)",
+    "category": "Japanese",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 240,
+    "protein_g": 12,
+    "carbs_g": 24,
+    "fat_g": 10,
+    "fiber_g": 1,
+    "ingredients": [
+      "pork",
+      "cabbage",
+      "wrapper",
+      "ginger"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Katsu Curry",
+    "category": "Japanese",
+    "serving_size": 450,
+    "serving_unit": "g",
+    "calories": 680,
+    "protein_g": 30,
+    "carbs_g": 80,
+    "fat_g": 26,
+    "fiber_g": 4,
+    "ingredients": [
+      "rice",
+      "chicken katsu",
+      "curry sauce",
+      "vegetables"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Onigiri (Salmon)",
+    "category": "Japanese",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 200,
+    "protein_g": 8,
+    "carbs_g": 38,
+    "fat_g": 2,
+    "fiber_g": 1,
+    "ingredients": [
+      "rice",
+      "salmon",
+      "nori"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Green Curry (with rice)",
+    "category": "Thai",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 520,
+    "protein_g": 22,
+    "carbs_g": 58,
+    "fat_g": 22,
+    "fiber_g": 3,
+    "ingredients": [
+      "rice",
+      "chicken",
+      "coconut milk",
+      "green curry paste",
+      "basil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Thai Iced Tea",
+    "category": "Thai",
+    "serving_size": 350,
+    "serving_unit": "ml",
+    "calories": 220,
+    "protein_g": 3,
+    "carbs_g": 38,
+    "fat_g": 6,
+    "fiber_g": 0,
+    "ingredients": [
+      "thai tea",
+      "condensed milk",
+      "sugar",
+      "ice"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Papaya Salad (Som Tum)",
+    "category": "Thai",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 120,
+    "protein_g": 3,
+    "carbs_g": 18,
+    "fat_g": 4,
+    "fiber_g": 4,
+    "ingredients": [
+      "green papaya",
+      "tomato",
+      "peanuts",
+      "lime",
+      "fish sauce",
+      "chili"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Mango Sticky Rice",
+    "category": "Thai",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 5,
+    "carbs_g": 68,
+    "fat_g": 10,
+    "fiber_g": 2,
+    "ingredients": [
+      "sticky rice",
+      "mango",
+      "coconut milk",
+      "sugar"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Panang Curry",
+    "category": "Thai",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 460,
+    "protein_g": 26,
+    "carbs_g": 14,
+    "fat_g": 34,
+    "fiber_g": 3,
+    "ingredients": [
+      "chicken",
+      "coconut milk",
+      "panang curry paste",
+      "kaffir lime"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Pancakes (3 stack)",
+    "category": "Breakfast",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 420,
+    "protein_g": 10,
+    "carbs_g": 62,
+    "fat_g": 14,
+    "fiber_g": 2,
+    "ingredients": [
+      "flour",
+      "egg",
+      "milk",
+      "butter",
+      "maple syrup"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Waffle",
+    "category": "Breakfast",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 290,
+    "protein_g": 7,
+    "carbs_g": 34,
+    "fat_g": 14,
+    "fiber_g": 1,
+    "ingredients": [
+      "flour",
+      "egg",
+      "milk",
+      "butter"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Smoothie Bowl (Berry)",
+    "category": "Breakfast",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 10,
+    "carbs_g": 58,
+    "fat_g": 6,
+    "fiber_g": 8,
+    "ingredients": [
+      "mixed berries",
+      "banana",
+      "yogurt",
+      "granola"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Bagel with Cream Cheese",
+    "category": "Breakfast",
+    "serving_size": 140,
+    "serving_unit": "g",
+    "calories": 350,
+    "protein_g": 10,
+    "carbs_g": 50,
+    "fat_g": 12,
+    "fiber_g": 2,
+    "ingredients": [
+      "bagel",
+      "cream cheese"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Protein Smoothie (Whey + Banana)",
+    "category": "Breakfast",
+    "serving_size": 400,
+    "serving_unit": "ml",
+    "calories": 280,
+    "protein_g": 30,
+    "carbs_g": 36,
+    "fat_g": 4,
+    "fiber_g": 3,
+    "ingredients": [
+      "whey protein",
+      "banana",
+      "milk",
+      "ice"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Shakshuka",
+    "category": "Breakfast",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 16,
+    "carbs_g": 18,
+    "fat_g": 16,
+    "fiber_g": 4,
+    "ingredients": [
+      "eggs",
+      "tomato sauce",
+      "onion",
+      "peppers",
+      "spices"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Ham and Cheese Omelette",
+    "category": "Breakfast",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 340,
+    "protein_g": 26,
+    "carbs_g": 2,
+    "fat_g": 26,
+    "fiber_g": 0,
+    "ingredients": [
+      "eggs",
+      "ham",
+      "cheese",
+      "butter"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Quest Protein Bar",
+    "category": "Snacks",
+    "serving_size": 60,
+    "serving_unit": "g",
+    "calories": 190,
+    "protein_g": 21,
+    "carbs_g": 21,
+    "fat_g": 7,
+    "fiber_g": 14,
+    "ingredients": [
+      "protein blend",
+      "fiber",
+      "almonds",
+      "cocoa"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "RXBar",
+    "category": "Snacks",
+    "serving_size": 52,
+    "serving_unit": "g",
+    "calories": 210,
+    "protein_g": 12,
+    "carbs_g": 24,
+    "fat_g": 9,
+    "fiber_g": 5,
+    "ingredients": [
+      "egg whites",
+      "dates",
+      "nuts",
+      "chocolate"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Cauliflower Rice",
+    "category": "Vegetables",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 38,
+    "protein_g": 3,
+    "carbs_g": 6,
+    "fat_g": 0.5,
+    "fiber_g": 3,
+    "ingredients": [
+      "cauliflower"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Zucchini Noodles (Zoodles)",
+    "category": "Vegetables",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 25,
+    "protein_g": 2,
+    "carbs_g": 5,
+    "fat_g": 0.5,
+    "fiber_g": 2,
+    "ingredients": [
+      "zucchini"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Turkey Meatballs (4pc)",
+    "category": "Proteins",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 200,
+    "protein_g": 22,
+    "carbs_g": 6,
+    "fat_g": 10,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "ground turkey",
+      "breadcrumbs",
+      "egg",
+      "herbs"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Edamame",
+    "category": "Snacks",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 120,
+    "protein_g": 12,
+    "carbs_g": 8,
+    "fat_g": 5,
+    "fiber_g": 5,
+    "ingredients": [
+      "soybeans"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Cottage Cheese (1% low fat)",
+    "category": "Dairy",
+    "serving_size": 113,
+    "serving_unit": "g",
+    "calories": 80,
+    "protein_g": 14,
+    "carbs_g": 3,
+    "fat_g": 1,
+    "fiber_g": 0,
+    "ingredients": [
+      "milk",
+      "cultures"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Skyr (Icelandic Yogurt)",
+    "category": "Dairy",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 130,
+    "protein_g": 17,
+    "carbs_g": 12,
+    "fat_g": 1,
+    "fiber_g": 0,
+    "ingredients": [
+      "milk",
+      "cultures"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Rice Cakes (2pc)",
+    "category": "Snacks",
+    "serving_size": 18,
+    "serving_unit": "g",
+    "calories": 70,
+    "protein_g": 1.5,
+    "carbs_g": 15,
+    "fat_g": 0.5,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "rice"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Hyderabadi Biryani",
+    "category": "Indian Staples",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 560,
+    "protein_g": 24,
+    "carbs_g": 68,
+    "fat_g": 20,
+    "fiber_g": 3,
+    "ingredients": [
+      "basmati rice",
+      "chicken",
+      "yogurt",
+      "spices",
+      "onion",
+      "saffron"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Pani Puri (6pc)",
+    "category": "Indian Street Food",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 4,
+    "carbs_g": 32,
+    "fat_g": 4,
+    "fiber_g": 3,
+    "ingredients": [
+      "semolina puri",
+      "potato",
+      "chickpeas",
+      "tamarind water",
+      "spices"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Idli (2pc)",
+    "category": "Indian Regional",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 140,
+    "protein_g": 4,
+    "carbs_g": 28,
+    "fat_g": 1,
+    "fiber_g": 1.5,
+    "ingredients": [
+      "rice batter",
+      "urad dal"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Medu Vada (2pc)",
+    "category": "Indian Regional",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 260,
+    "protein_g": 8,
+    "carbs_g": 24,
+    "fat_g": 14,
+    "fiber_g": 3,
+    "ingredients": [
+      "urad dal",
+      "oil",
+      "spices"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Rasmalai (2pc)",
+    "category": "Indian Sweets",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 240,
+    "protein_g": 6,
+    "carbs_g": 32,
+    "fat_g": 10,
+    "fiber_g": 0,
+    "ingredients": [
+      "paneer",
+      "milk",
+      "sugar",
+      "cardamom",
+      "saffron"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Jalebi (4pc)",
+    "category": "Indian Sweets",
+    "serving_size": 80,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 2,
+    "carbs_g": 52,
+    "fat_g": 12,
+    "fiber_g": 0,
+    "ingredients": [
+      "flour",
+      "sugar syrup",
+      "oil",
+      "saffron"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "BBQ Pulled Pork Sandwich",
+    "category": "US Staples",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 28,
+    "carbs_g": 44,
+    "fat_g": 20,
+    "fiber_g": 2,
+    "ingredients": [
+      "pork",
+      "bun",
+      "bbq sauce",
+      "coleslaw"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "BBQ Ribs (half rack)",
+    "category": "US Staples",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 640,
+    "protein_g": 42,
+    "carbs_g": 16,
+    "fat_g": 46,
+    "fiber_g": 0,
+    "ingredients": [
+      "pork ribs",
+      "bbq sauce",
+      "spice rub"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Brisket (smoked)",
+    "category": "US Staples",
+    "serving_size": 170,
+    "serving_unit": "g",
+    "calories": 420,
+    "protein_g": 36,
+    "carbs_g": 0,
+    "fat_g": 30,
+    "fiber_g": 0,
+    "ingredients": [
+      "beef brisket",
+      "salt",
+      "pepper"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Coleslaw",
+    "category": "US Staples",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 160,
+    "protein_g": 1,
+    "carbs_g": 14,
+    "fat_g": 12,
+    "fiber_g": 2,
+    "ingredients": [
+      "cabbage",
+      "carrot",
+      "mayo",
+      "sugar",
+      "vinegar"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Mac and Cheese",
+    "category": "US Staples",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 14,
+    "carbs_g": 38,
+    "fat_g": 18,
+    "fiber_g": 2,
+    "ingredients": [
+      "macaroni",
+      "cheese",
+      "butter",
+      "milk"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Buffalo Wings (6pc)",
+    "category": "US Staples",
+    "serving_size": 180,
+    "serving_unit": "g",
+    "calories": 420,
+    "protein_g": 30,
+    "carbs_g": 4,
+    "fat_g": 32,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "chicken wings",
+      "butter",
+      "hot sauce"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Loaded Baked Potato",
+    "category": "US Staples",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 14,
+    "carbs_g": 56,
+    "fat_g": 22,
+    "fiber_g": 6,
+    "ingredients": [
+      "potato",
+      "cheese",
+      "sour cream",
+      "bacon",
+      "butter"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Grilled Chicken Breast",
+    "category": "Proteins",
+    "serving_size": 170,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 52,
+    "carbs_g": 0,
+    "fat_g": 6,
+    "fiber_g": 0,
+    "ingredients": [
+      "chicken breast",
+      "olive oil",
+      "salt"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Ground Turkey (cooked)",
+    "category": "Proteins",
+    "serving_size": 113,
+    "serving_unit": "g",
+    "calories": 200,
+    "protein_g": 24,
+    "carbs_g": 0,
+    "fat_g": 12,
+    "fiber_g": 0,
+    "ingredients": [
+      "turkey"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Chicken Caesar Wrap",
+    "category": "Fast Food",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 440,
+    "protein_g": 28,
+    "carbs_g": 36,
+    "fat_g": 20,
+    "fiber_g": 3,
+    "ingredients": [
+      "tortilla",
+      "chicken",
+      "romaine",
+      "parmesan",
+      "caesar dressing"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Fish Tacos (2pc)",
+    "category": "Mexican",
+    "serving_size": 240,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 22,
+    "carbs_g": 34,
+    "fat_g": 16,
+    "fiber_g": 4,
+    "ingredients": [
+      "fish",
+      "corn tortillas",
+      "cabbage",
+      "salsa",
+      "lime"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Chicken Quesadilla",
+    "category": "Mexican",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 460,
+    "protein_g": 28,
+    "carbs_g": 32,
+    "fat_g": 24,
+    "fiber_g": 2,
+    "ingredients": [
+      "tortilla",
+      "chicken",
+      "cheese",
+      "salsa"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Guacamole (1/4 cup)",
+    "category": "Mexican",
+    "serving_size": 60,
+    "serving_unit": "g",
+    "calories": 100,
+    "protein_g": 1.5,
+    "carbs_g": 6,
+    "fat_g": 8,
+    "fiber_g": 4,
+    "ingredients": [
+      "avocado",
+      "lime",
+      "onion",
+      "cilantro",
+      "jalapeno"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Boba Tea (Taro)",
+    "category": "Beverages",
+    "serving_size": 473,
+    "serving_unit": "ml",
+    "calories": 340,
+    "protein_g": 2,
+    "carbs_g": 62,
+    "fat_g": 8,
+    "fiber_g": 0,
+    "ingredients": [
+      "taro powder",
+      "milk",
+      "tapioca pearls",
+      "sugar"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Club Sandwich",
+    "category": "US Staples",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 540,
+    "protein_g": 30,
+    "carbs_g": 40,
+    "fat_g": 28,
+    "fiber_g": 3,
+    "ingredients": [
+      "bread",
+      "turkey",
+      "bacon",
+      "lettuce",
+      "tomato",
+      "mayo"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Chicken Soup",
+    "category": "Soups",
+    "serving_size": 350,
+    "serving_unit": "ml",
+    "calories": 160,
+    "protein_g": 12,
+    "carbs_g": 16,
+    "fat_g": 5,
+    "fiber_g": 2,
+    "ingredients": [
+      "chicken",
+      "noodles",
+      "vegetables",
+      "broth"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Falafel Wrap",
+    "category": "Mediterranean",
+    "serving_size": 280,
+    "serving_unit": "g",
+    "calories": 440,
+    "protein_g": 16,
+    "carbs_g": 52,
+    "fat_g": 18,
+    "fiber_g": 8,
+    "ingredients": [
+      "falafel",
+      "pita",
+      "tahini",
+      "vegetables",
+      "pickles"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Shawarma (Chicken)",
+    "category": "Mediterranean",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 520,
+    "protein_g": 32,
+    "carbs_g": 42,
+    "fat_g": 24,
+    "fiber_g": 3,
+    "ingredients": [
+      "chicken",
+      "pita",
+      "garlic sauce",
+      "vegetables",
+      "pickles"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Dakgalbi",
+    "category": "Korean",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 28,
+    "carbs_g": 20,
+    "fat_g": 20,
+    "fiber_g": 3,
+    "ingredients": [
+      "chicken",
+      "gochujang",
+      "rice cakes",
+      "cabbage",
+      "sweet potato"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Ramyeon (Korean Instant)",
+    "category": "Korean",
+    "serving_size": 500,
+    "serving_unit": "ml",
+    "calories": 460,
+    "protein_g": 10,
+    "carbs_g": 60,
+    "fat_g": 18,
+    "fiber_g": 2,
+    "ingredients": [
+      "noodles",
+      "broth",
+      "egg",
+      "vegetables"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Bingsu (Shaved Ice)",
+    "category": "Korean",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 260,
+    "protein_g": 4,
+    "carbs_g": 48,
+    "fat_g": 6,
+    "fiber_g": 1,
+    "ingredients": [
+      "shaved ice",
+      "condensed milk",
+      "red beans",
+      "fruit"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Jjajangmyeon",
+    "category": "Korean",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 520,
+    "protein_g": 16,
+    "carbs_g": 72,
+    "fat_g": 18,
+    "fiber_g": 4,
+    "ingredients": [
+      "noodles",
+      "black bean sauce",
+      "pork",
+      "onion",
+      "zucchini"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Lamb Kebab (2 skewers)",
+    "category": "Mediterranean",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 32,
+    "carbs_g": 4,
+    "fat_g": 26,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "lamb",
+      "onion",
+      "spices",
+      "olive oil"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Fattoush",
+    "category": "Mediterranean",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 4,
+    "carbs_g": 20,
+    "fat_g": 10,
+    "fiber_g": 4,
+    "ingredients": [
+      "vegetables",
+      "pita chips",
+      "sumac",
+      "lemon",
+      "olive oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Stuffed Grape Leaves (6pc)",
+    "category": "Mediterranean",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 160,
+    "protein_g": 3,
+    "carbs_g": 22,
+    "fat_g": 6,
+    "fiber_g": 3,
+    "ingredients": [
+      "grape leaves",
+      "rice",
+      "herbs",
+      "lemon",
+      "olive oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Manakeesh (Zaatar)",
+    "category": "Mediterranean",
+    "serving_size": 180,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 8,
+    "carbs_g": 48,
+    "fat_g": 16,
+    "fiber_g": 3,
+    "ingredients": [
+      "dough",
+      "zaatar",
+      "olive oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Kibbeh (3pc)",
+    "category": "Mediterranean",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 18,
+    "carbs_g": 22,
+    "fat_g": 18,
+    "fiber_g": 3,
+    "ingredients": [
+      "bulgur",
+      "lamb",
+      "onion",
+      "pine nuts",
+      "spices"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Labneh",
+    "category": "Mediterranean",
+    "serving_size": 60,
+    "serving_unit": "g",
+    "calories": 80,
+    "protein_g": 4,
+    "carbs_g": 2,
+    "fat_g": 6,
+    "fiber_g": 0,
+    "ingredients": [
+      "strained yogurt",
+      "olive oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Injera (1 piece)",
+    "category": "African",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 140,
+    "protein_g": 4,
+    "carbs_g": 28,
+    "fat_g": 1,
+    "fiber_g": 3,
+    "ingredients": [
+      "teff flour",
+      "water"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Doro Wat",
+    "category": "African",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 28,
+    "carbs_g": 12,
+    "fat_g": 24,
+    "fiber_g": 3,
+    "ingredients": [
+      "chicken",
+      "onion",
+      "berbere spice",
+      "butter",
+      "egg"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Misir Wat (Lentil Stew)",
+    "category": "African",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 220,
+    "protein_g": 14,
+    "carbs_g": 32,
+    "fat_g": 4,
+    "fiber_g": 10,
+    "ingredients": [
+      "red lentils",
+      "onion",
+      "berbere",
+      "garlic"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Kitfo",
+    "category": "African",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 340,
+    "protein_g": 24,
+    "carbs_g": 2,
+    "fat_g": 26,
+    "fiber_g": 0,
+    "ingredients": [
+      "raw beef",
+      "spiced butter",
+      "mitmita"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Panera Bread Bowl Soup",
+    "category": "Fast Food",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 660,
+    "protein_g": 22,
+    "carbs_g": 82,
+    "fat_g": 28,
+    "fiber_g": 4,
+    "ingredients": [
+      "bread bowl",
+      "broccoli cheddar soup"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Panera Caesar Salad (half)",
+    "category": "Fast Food",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 12,
+    "carbs_g": 16,
+    "fat_g": 18,
+    "fiber_g": 3,
+    "ingredients": [
+      "romaine",
+      "parmesan",
+      "croutons",
+      "caesar dressing"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Sweetgreen Harvest Bowl",
+    "category": "Fast Food",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 22,
+    "carbs_g": 48,
+    "fat_g": 22,
+    "fiber_g": 8,
+    "ingredients": [
+      "wild rice",
+      "sweet potato",
+      "kale",
+      "chicken",
+      "goat cheese"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Cava Bowl (Chicken)",
+    "category": "Fast Food",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 520,
+    "protein_g": 35,
+    "carbs_g": 48,
+    "fat_g": 20,
+    "fiber_g": 8,
+    "ingredients": [
+      "rice",
+      "chicken",
+      "hummus",
+      "vegetables",
+      "dressing"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Wingstop Lemon Pepper Wings (6pc)",
+    "category": "Fast Food",
+    "serving_size": 180,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 36,
+    "carbs_g": 6,
+    "fat_g": 34,
+    "fiber_g": 0,
+    "ingredients": [
+      "chicken wings",
+      "lemon pepper seasoning",
+      "oil"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Raising Cane's Box Combo",
+    "category": "Fast Food",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 1030,
+    "protein_g": 44,
+    "carbs_g": 88,
+    "fat_g": 56,
+    "fiber_g": 3,
+    "ingredients": [
+      "chicken fingers",
+      "texas toast",
+      "fries",
+      "cane's sauce"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Shake Shack Burger",
+    "category": "Fast Food",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 540,
+    "protein_g": 28,
+    "carbs_g": 26,
+    "fat_g": 36,
+    "fiber_g": 1,
+    "ingredients": [
+      "beef patty",
+      "potato bun",
+      "lettuce",
+      "tomato",
+      "shack sauce"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Chipotle Carnitas Bowl",
+    "category": "Fast Food",
+    "serving_size": 500,
+    "serving_unit": "g",
+    "calories": 710,
+    "protein_g": 38,
+    "carbs_g": 78,
+    "fat_g": 26,
+    "fiber_g": 12,
+    "ingredients": [
+      "rice",
+      "carnitas",
+      "beans",
+      "salsa",
+      "cheese"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Jersey Mike's Italian Sub",
+    "category": "Fast Food",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 680,
+    "protein_g": 30,
+    "carbs_g": 52,
+    "fat_g": 40,
+    "fiber_g": 3,
+    "ingredients": [
+      "sub roll",
+      "salami",
+      "ham",
+      "provolone",
+      "vegetables"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Dunkin' Donuts Glazed Donut",
+    "category": "Breakfast",
+    "serving_size": 60,
+    "serving_unit": "g",
+    "calories": 260,
+    "protein_g": 3,
+    "carbs_g": 31,
+    "fat_g": 14,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "flour",
+      "sugar",
+      "oil",
+      "glaze"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Rotisserie Chicken (breast)",
+    "category": "Proteins",
+    "serving_size": 170,
+    "serving_unit": "g",
+    "calories": 310,
+    "protein_g": 42,
+    "carbs_g": 0,
+    "fat_g": 14,
+    "fiber_g": 0,
+    "ingredients": [
+      "chicken",
+      "salt",
+      "spices"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Rotisserie Chicken (thigh)",
+    "category": "Proteins",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 240,
+    "protein_g": 26,
+    "carbs_g": 0,
+    "fat_g": 14,
+    "fiber_g": 0,
+    "ingredients": [
+      "chicken",
+      "salt",
+      "spices"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Sausage (Italian, cooked)",
+    "category": "Proteins",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 18,
+    "carbs_g": 2,
+    "fat_g": 22,
+    "fiber_g": 0,
+    "ingredients": [
+      "pork",
+      "fennel",
+      "spices"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Bacon (4 slices)",
+    "category": "Proteins",
+    "serving_size": 32,
+    "serving_unit": "g",
+    "calories": 160,
+    "protein_g": 12,
+    "carbs_g": 0,
+    "fat_g": 12,
+    "fiber_g": 0,
+    "ingredients": [
+      "pork belly",
+      "salt",
+      "smoke"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Tofu (firm, raw)",
+    "category": "Proteins",
+    "serving_size": 126,
+    "serving_unit": "g",
+    "calories": 90,
+    "protein_g": 10,
+    "carbs_g": 3,
+    "fat_g": 5,
+    "fiber_g": 1,
+    "ingredients": [
+      "soybeans",
+      "water",
+      "coagulant"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Popcorn (buttered, movie)",
+    "category": "Snacks",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 450,
+    "protein_g": 5,
+    "carbs_g": 48,
+    "fat_g": 28,
+    "fiber_g": 8,
+    "ingredients": [
+      "corn",
+      "butter",
+      "salt"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Tortilla Chips (10 chips)",
+    "category": "Snacks",
+    "serving_size": 28,
+    "serving_unit": "g",
+    "calories": 140,
+    "protein_g": 2,
+    "carbs_g": 18,
+    "fat_g": 7,
+    "fiber_g": 1.5,
+    "ingredients": [
+      "corn",
+      "oil",
+      "salt"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Ice Cream (vanilla, 1/2 cup)",
+    "category": "Desserts",
+    "serving_size": 66,
+    "serving_unit": "g",
+    "calories": 140,
+    "protein_g": 2,
+    "carbs_g": 16,
+    "fat_g": 7,
+    "fiber_g": 0,
+    "ingredients": [
+      "cream",
+      "sugar",
+      "vanilla",
+      "milk"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Frozen Yogurt (1/2 cup)",
+    "category": "Desserts",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 120,
+    "protein_g": 3,
+    "carbs_g": 22,
+    "fat_g": 2,
+    "fiber_g": 0,
+    "ingredients": [
+      "milk",
+      "sugar",
+      "yogurt cultures"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Sriracha (1 tbsp)",
+    "category": "Condiments",
+    "serving_size": 15,
+    "serving_unit": "g",
+    "calories": 15,
+    "protein_g": 0,
+    "carbs_g": 3,
+    "fat_g": 0,
+    "fiber_g": 0,
+    "ingredients": [
+      "chili",
+      "vinegar",
+      "garlic",
+      "sugar",
+      "salt"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Maple Syrup (2 tbsp)",
+    "category": "Sweeteners",
+    "serving_size": 40,
+    "serving_unit": "ml",
+    "calories": 104,
+    "protein_g": 0,
+    "carbs_g": 27,
+    "fat_g": 0,
+    "fiber_g": 0,
+    "ingredients": [
+      "maple sap"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "BBQ Sauce (2 tbsp)",
+    "category": "Condiments",
+    "serving_size": 36,
+    "serving_unit": "g",
+    "calories": 70,
+    "protein_g": 0,
+    "carbs_g": 16,
+    "fat_g": 0,
+    "fiber_g": 0,
+    "ingredients": [
+      "tomato paste",
+      "vinegar",
+      "sugar",
+      "spices",
+      "smoke"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Baked Potato (plain)",
+    "category": "Vegetables",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 190,
+    "protein_g": 4,
+    "carbs_g": 44,
+    "fat_g": 0.2,
+    "fiber_g": 4,
+    "ingredients": [
+      "potato"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Fried Plantains",
+    "category": "Latin American",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 240,
+    "protein_g": 1,
+    "carbs_g": 36,
+    "fat_g": 10,
+    "fiber_g": 2,
+    "ingredients": [
+      "plantain",
+      "oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Corn on the Cob",
+    "category": "Vegetables",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 130,
+    "protein_g": 5,
+    "carbs_g": 27,
+    "fat_g": 2,
+    "fiber_g": 3.5,
+    "ingredients": [
+      "corn",
+      "butter"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Shrimp (grilled, 10pc)",
+    "category": "Seafood",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 120,
+    "protein_g": 24,
+    "carbs_g": 1,
+    "fat_g": 2,
+    "fiber_g": 0,
+    "ingredients": [
+      "shrimp",
+      "olive oil",
+      "garlic"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Lobster Roll",
+    "category": "Seafood",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 420,
+    "protein_g": 24,
+    "carbs_g": 32,
+    "fat_g": 22,
+    "fiber_g": 1,
+    "ingredients": [
+      "lobster",
+      "butter",
+      "mayo",
+      "hot dog bun"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Crab Cakes (2pc)",
+    "category": "Seafood",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 18,
+    "carbs_g": 14,
+    "fat_g": 16,
+    "fiber_g": 1,
+    "ingredients": [
+      "crab",
+      "breadcrumbs",
+      "mayo",
+      "egg",
+      "old bay"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Coconut Shrimp (6pc)",
+    "category": "Seafood",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 340,
+    "protein_g": 16,
+    "carbs_g": 22,
+    "fat_g": 20,
+    "fiber_g": 2,
+    "ingredients": [
+      "shrimp",
+      "coconut",
+      "breadcrumbs",
+      "oil"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Empanadas (2pc)",
+    "category": "Latin American",
+    "serving_size": 160,
+    "serving_unit": "g",
+    "calories": 420,
+    "protein_g": 14,
+    "carbs_g": 38,
+    "fat_g": 24,
+    "fiber_g": 2,
+    "ingredients": [
+      "dough",
+      "beef",
+      "onion",
+      "egg",
+      "olives"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Arepas (with cheese)",
+    "category": "Latin American",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 12,
+    "carbs_g": 34,
+    "fat_g": 14,
+    "fiber_g": 2,
+    "ingredients": [
+      "corn flour",
+      "cheese",
+      "butter"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Pupusas (2pc)",
+    "category": "Latin American",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 14,
+    "carbs_g": 44,
+    "fat_g": 16,
+    "fiber_g": 3,
+    "ingredients": [
+      "corn masa",
+      "cheese",
+      "beans",
+      "pork"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Arroz con Pollo",
+    "category": "Latin American",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 460,
+    "protein_g": 28,
+    "carbs_g": 52,
+    "fat_g": 14,
+    "fiber_g": 3,
+    "ingredients": [
+      "rice",
+      "chicken",
+      "sofrito",
+      "peas",
+      "olives"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Cubano Sandwich",
+    "category": "Latin American",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 560,
+    "protein_g": 32,
+    "carbs_g": 40,
+    "fat_g": 28,
+    "fiber_g": 2,
+    "ingredients": [
+      "bread",
+      "roast pork",
+      "ham",
+      "swiss cheese",
+      "pickles",
+      "mustard"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Churros (3pc)",
+    "category": "Latin American",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 340,
+    "protein_g": 4,
+    "carbs_g": 42,
+    "fat_g": 18,
+    "fiber_g": 1,
+    "ingredients": [
+      "flour",
+      "sugar",
+      "oil",
+      "cinnamon"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Jerk Chicken",
+    "category": "Latin American",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 34,
+    "carbs_g": 6,
+    "fat_g": 16,
+    "fiber_g": 1,
+    "ingredients": [
+      "chicken",
+      "jerk seasoning",
+      "scotch bonnet",
+      "allspice"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Roasted Brussels Sprouts",
+    "category": "Vegetables",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 120,
+    "protein_g": 5,
+    "carbs_g": 14,
+    "fat_g": 6,
+    "fiber_g": 5,
+    "ingredients": [
+      "brussels sprouts",
+      "olive oil",
+      "salt"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Sauteed Spinach",
+    "category": "Vegetables",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 60,
+    "protein_g": 4,
+    "carbs_g": 4,
+    "fat_g": 4,
+    "fiber_g": 3,
+    "ingredients": [
+      "spinach",
+      "garlic",
+      "olive oil"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Grilled Asparagus",
+    "category": "Vegetables",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 40,
+    "protein_g": 3,
+    "carbs_g": 4,
+    "fat_g": 2,
+    "fiber_g": 2,
+    "ingredients": [
+      "asparagus",
+      "olive oil",
+      "salt"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Steamed Broccoli",
+    "category": "Vegetables",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 52,
+    "protein_g": 4,
+    "carbs_g": 10,
+    "fat_g": 0.5,
+    "fiber_g": 4,
+    "ingredients": [
+      "broccoli"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Coleslaw (vinegar-based)",
+    "category": "Vegetables",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 80,
+    "protein_g": 1,
+    "carbs_g": 12,
+    "fat_g": 3,
+    "fiber_g": 2,
+    "ingredients": [
+      "cabbage",
+      "carrot",
+      "vinegar",
+      "sugar"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Caesar Side Salad",
+    "category": "Vegetables",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 6,
+    "carbs_g": 8,
+    "fat_g": 14,
+    "fiber_g": 2,
+    "ingredients": [
+      "romaine",
+      "parmesan",
+      "croutons",
+      "dressing"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Mixed Green Salad (no dressing)",
+    "category": "Vegetables",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 20,
+    "protein_g": 2,
+    "carbs_g": 3,
+    "fat_g": 0.3,
+    "fiber_g": 2,
+    "ingredients": [
+      "mixed greens",
+      "tomato",
+      "cucumber"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Lamb Chops (2pc)",
+    "category": "Proteins",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 30,
+    "carbs_g": 0,
+    "fat_g": 28,
+    "fiber_g": 0,
+    "ingredients": [
+      "lamb",
+      "salt",
+      "pepper",
+      "rosemary"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Meatloaf (slice)",
+    "category": "US Staples",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 290,
+    "protein_g": 18,
+    "carbs_g": 12,
+    "fat_g": 18,
+    "fiber_g": 1,
+    "ingredients": [
+      "ground beef",
+      "breadcrumbs",
+      "egg",
+      "onion",
+      "ketchup"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Pot Roast",
+    "category": "US Staples",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 340,
+    "protein_g": 36,
+    "carbs_g": 12,
+    "fat_g": 16,
+    "fiber_g": 2,
+    "ingredients": [
+      "beef chuck",
+      "potato",
+      "carrot",
+      "onion",
+      "broth"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Chicken Fried Rice",
+    "category": "Asian",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 440,
+    "protein_g": 18,
+    "carbs_g": 58,
+    "fat_g": 14,
+    "fiber_g": 2,
+    "ingredients": [
+      "rice",
+      "chicken",
+      "egg",
+      "soy sauce",
+      "peas",
+      "carrot"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Pad Kra Pao (Thai Basil Chicken)",
+    "category": "Thai",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 420,
+    "protein_g": 26,
+    "carbs_g": 48,
+    "fat_g": 14,
+    "fiber_g": 2,
+    "ingredients": [
+      "rice",
+      "chicken",
+      "thai basil",
+      "chili",
+      "garlic",
+      "fish sauce"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Lamb Rogan Josh",
+    "category": "Indian Staples",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 360,
+    "protein_g": 28,
+    "carbs_g": 10,
+    "fat_g": 24,
+    "fiber_g": 2,
+    "ingredients": [
+      "lamb",
+      "yogurt",
+      "tomato",
+      "kashmiri chili",
+      "spices"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Whole Wheat Pasta (cooked)",
+    "category": "Grains & Cereals",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 248,
+    "protein_g": 10,
+    "carbs_g": 50,
+    "fat_g": 1.5,
+    "fiber_g": 6,
+    "ingredients": [
+      "whole wheat semolina"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Canned Tuna (in water)",
+    "category": "Proteins",
+    "serving_size": 85,
+    "serving_unit": "g",
+    "calories": 80,
+    "protein_g": 18,
+    "carbs_g": 0,
+    "fat_g": 0.5,
+    "fiber_g": 0,
+    "ingredients": [
+      "tuna",
+      "water",
+      "salt"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Canned Black Beans",
+    "category": "Grains & Cereals",
+    "serving_size": 130,
+    "serving_unit": "g",
+    "calories": 130,
+    "protein_g": 8,
+    "carbs_g": 22,
+    "fat_g": 0.5,
+    "fiber_g": 8,
+    "ingredients": [
+      "black beans",
+      "water",
+      "salt"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Canned Chickpeas",
+    "category": "Grains & Cereals",
+    "serving_size": 130,
+    "serving_unit": "g",
+    "calories": 140,
+    "protein_g": 8,
+    "carbs_g": 24,
+    "fat_g": 2,
+    "fiber_g": 6,
+    "ingredients": [
+      "chickpeas",
+      "water",
+      "salt"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Marinara Sauce (1/2 cup)",
+    "category": "Condiments",
+    "serving_size": 125,
+    "serving_unit": "g",
+    "calories": 70,
+    "protein_g": 2,
+    "carbs_g": 10,
+    "fat_g": 2.5,
+    "fiber_g": 2,
+    "ingredients": [
+      "tomato",
+      "garlic",
+      "olive oil",
+      "basil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Tortilla (flour, 10-inch)",
+    "category": "Grains & Cereals",
+    "serving_size": 72,
+    "serving_unit": "g",
+    "calories": 220,
+    "protein_g": 6,
+    "carbs_g": 36,
+    "fat_g": 6,
+    "fiber_g": 2,
+    "ingredients": [
+      "flour",
+      "oil",
+      "salt",
+      "water"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Corn Tortilla (2pc)",
+    "category": "Grains & Cereals",
+    "serving_size": 52,
+    "serving_unit": "g",
+    "calories": 110,
+    "protein_g": 3,
+    "carbs_g": 22,
+    "fat_g": 1.5,
+    "fiber_g": 3,
+    "ingredients": [
+      "corn masa",
+      "water",
+      "lime"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Naan Bread",
+    "category": "Indian Staples",
+    "serving_size": 90,
+    "serving_unit": "g",
+    "calories": 260,
+    "protein_g": 8,
+    "carbs_g": 42,
+    "fat_g": 6,
+    "fiber_g": 2,
+    "ingredients": [
+      "flour",
+      "yogurt",
+      "yeast",
+      "ghee"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Pita Bread (1 piece)",
+    "category": "Mediterranean",
+    "serving_size": 64,
+    "serving_unit": "g",
+    "calories": 170,
+    "protein_g": 6,
+    "carbs_g": 34,
+    "fat_g": 1,
+    "fiber_g": 1.5,
+    "ingredients": [
+      "flour",
+      "yeast",
+      "water",
+      "salt"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Sourdough Bread (slice)",
+    "category": "Grains & Cereals",
+    "serving_size": 50,
+    "serving_unit": "g",
+    "calories": 140,
+    "protein_g": 5,
+    "carbs_g": 26,
+    "fat_g": 1.5,
+    "fiber_g": 1.5,
+    "ingredients": [
+      "flour",
+      "sourdough starter",
+      "water",
+      "salt"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Whole Wheat Bread (slice)",
+    "category": "Grains & Cereals",
+    "serving_size": 38,
+    "serving_unit": "g",
+    "calories": 90,
+    "protein_g": 4,
+    "carbs_g": 16,
+    "fat_g": 1.5,
+    "fiber_g": 2,
+    "ingredients": [
+      "whole wheat flour",
+      "yeast",
+      "water",
+      "salt"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Feta Cheese (1 oz)",
+    "category": "Dairy",
+    "serving_size": 28,
+    "serving_unit": "g",
+    "calories": 75,
+    "protein_g": 4,
+    "carbs_g": 1,
+    "fat_g": 6,
+    "fiber_g": 0,
+    "ingredients": [
+      "sheep milk",
+      "cultures",
+      "rennet",
+      "salt"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Heavy Cream (2 tbsp)",
+    "category": "Dairy",
+    "serving_size": 30,
+    "serving_unit": "ml",
+    "calories": 100,
+    "protein_g": 1,
+    "carbs_g": 1,
+    "fat_g": 10,
+    "fiber_g": 0,
+    "ingredients": [
+      "cream"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Half and Half (2 tbsp)",
+    "category": "Dairy",
+    "serving_size": 30,
+    "serving_unit": "ml",
+    "calories": 40,
+    "protein_g": 1,
+    "carbs_g": 1,
+    "fat_g": 3.5,
+    "fiber_g": 0,
+    "ingredients": [
+      "milk",
+      "cream"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Almond Milk (1 cup, unsweetened)",
+    "category": "Dairy",
+    "serving_size": 240,
+    "serving_unit": "ml",
+    "calories": 30,
+    "protein_g": 1,
+    "carbs_g": 1,
+    "fat_g": 2.5,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "almonds",
+      "water"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Frozen Pizza (DiGiorno, 1/3)",
+    "category": "Ready Meals",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 16,
+    "carbs_g": 42,
+    "fat_g": 16,
+    "fiber_g": 2,
+    "ingredients": [
+      "dough",
+      "cheese",
+      "tomato sauce",
+      "pepperoni"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Amy's Frozen Burrito",
+    "category": "Ready Meals",
+    "serving_size": 170,
+    "serving_unit": "g",
+    "calories": 300,
+    "protein_g": 10,
+    "carbs_g": 44,
+    "fat_g": 9,
+    "fiber_g": 5,
+    "ingredients": [
+      "tortilla",
+      "beans",
+      "rice",
+      "cheese",
+      "vegetables"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Trader Joe's Cauliflower Gnocchi",
+    "category": "Trader Joe's",
+    "serving_size": 140,
+    "serving_unit": "g",
+    "calories": 140,
+    "protein_g": 2,
+    "carbs_g": 22,
+    "fat_g": 4,
+    "fiber_g": 2,
+    "ingredients": [
+      "cauliflower",
+      "cassava flour",
+      "potato starch",
+      "olive oil"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Trader Joe's Mandarin Orange Chicken",
+    "category": "Trader Joe's",
+    "serving_size": 140,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 16,
+    "carbs_g": 34,
+    "fat_g": 14,
+    "fiber_g": 1,
+    "ingredients": [
+      "chicken",
+      "orange sauce",
+      "breading"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Hot Pocket (Pepperoni Pizza)",
+    "category": "Ready Meals",
+    "serving_size": 127,
+    "serving_unit": "g",
+    "calories": 300,
+    "protein_g": 12,
+    "carbs_g": 34,
+    "fat_g": 13,
+    "fiber_g": 2,
+    "ingredients": [
+      "dough",
+      "pepperoni",
+      "cheese",
+      "sauce"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Lean Cuisine Grilled Chicken",
+    "category": "Ready Meals",
+    "serving_size": 227,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 20,
+    "carbs_g": 34,
+    "fat_g": 6,
+    "fiber_g": 3,
+    "ingredients": [
+      "chicken",
+      "rice",
+      "vegetables",
+      "sauce"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Pistachios (1 oz)",
+    "category": "Nuts & Seeds",
+    "serving_size": 28,
+    "serving_unit": "g",
+    "calories": 160,
+    "protein_g": 6,
+    "carbs_g": 8,
+    "fat_g": 13,
+    "fiber_g": 3,
+    "ingredients": [
+      "pistachios",
+      "salt"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Macadamia Nuts (1 oz)",
+    "category": "Nuts & Seeds",
+    "serving_size": 28,
+    "serving_unit": "g",
+    "calories": 200,
+    "protein_g": 2,
+    "carbs_g": 4,
+    "fat_g": 21,
+    "fiber_g": 2.5,
+    "ingredients": [
+      "macadamia nuts"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Pecans (1 oz)",
+    "category": "Nuts & Seeds",
+    "serving_size": 28,
+    "serving_unit": "g",
+    "calories": 196,
+    "protein_g": 3,
+    "carbs_g": 4,
+    "fat_g": 20,
+    "fiber_g": 3,
+    "ingredients": [
+      "pecans"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Pumpkin Seeds (1 oz)",
+    "category": "Nuts & Seeds",
+    "serving_size": 28,
+    "serving_unit": "g",
+    "calories": 160,
+    "protein_g": 8,
+    "carbs_g": 4,
+    "fat_g": 14,
+    "fiber_g": 2,
+    "ingredients": [
+      "pumpkin seeds"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Hemp Seeds (2 tbsp)",
+    "category": "Nuts & Seeds",
+    "serving_size": 20,
+    "serving_unit": "g",
+    "calories": 110,
+    "protein_g": 6,
+    "carbs_g": 2,
+    "fat_g": 9,
+    "fiber_g": 1,
+    "ingredients": [
+      "hemp seeds"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Flaxseed (ground, 2 tbsp)",
+    "category": "Nuts & Seeds",
+    "serving_size": 14,
+    "serving_unit": "g",
+    "calories": 75,
+    "protein_g": 3,
+    "carbs_g": 4,
+    "fat_g": 6,
+    "fiber_g": 4,
+    "ingredients": [
+      "flaxseed"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Blueberries (1 cup)",
+    "category": "Fruits",
+    "serving_size": 148,
+    "serving_unit": "g",
+    "calories": 85,
+    "protein_g": 1,
+    "carbs_g": 21,
+    "fat_g": 0.5,
+    "fiber_g": 3.5,
+    "ingredients": [
+      "blueberries"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Strawberries (1 cup)",
+    "category": "Fruits",
+    "serving_size": 152,
+    "serving_unit": "g",
+    "calories": 49,
+    "protein_g": 1,
+    "carbs_g": 12,
+    "fat_g": 0.5,
+    "fiber_g": 3,
+    "ingredients": [
+      "strawberries"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Raspberries (1 cup)",
+    "category": "Fruits",
+    "serving_size": 123,
+    "serving_unit": "g",
+    "calories": 64,
+    "protein_g": 1.5,
+    "carbs_g": 15,
+    "fat_g": 0.8,
+    "fiber_g": 8,
+    "ingredients": [
+      "raspberries"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Mango (1 cup, diced)",
+    "category": "Fruits",
+    "serving_size": 165,
+    "serving_unit": "g",
+    "calories": 100,
+    "protein_g": 1.4,
+    "carbs_g": 25,
+    "fat_g": 0.6,
+    "fiber_g": 2.6,
+    "ingredients": [
+      "mango"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Pineapple (1 cup)",
+    "category": "Fruits",
+    "serving_size": 165,
+    "serving_unit": "g",
+    "calories": 82,
+    "protein_g": 1,
+    "carbs_g": 22,
+    "fat_g": 0.2,
+    "fiber_g": 2.3,
+    "ingredients": [
+      "pineapple"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Watermelon (2 cups)",
+    "category": "Fruits",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 90,
+    "protein_g": 2,
+    "carbs_g": 22,
+    "fat_g": 0.5,
+    "fiber_g": 1.2,
+    "ingredients": [
+      "watermelon"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Dates (3pc)",
+    "category": "Fruits",
+    "serving_size": 36,
+    "serving_unit": "g",
+    "calories": 100,
+    "protein_g": 0.7,
+    "carbs_g": 27,
+    "fat_g": 0,
+    "fiber_g": 2.4,
+    "ingredients": [
+      "dates"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Steak (Ribeye, grilled)",
+    "category": "Proteins",
+    "serving_size": 170,
+    "serving_unit": "g",
+    "calories": 420,
+    "protein_g": 42,
+    "carbs_g": 0,
+    "fat_g": 28,
+    "fiber_g": 0,
+    "ingredients": [
+      "beef ribeye",
+      "salt",
+      "pepper"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Steak (NY Strip, grilled)",
+    "category": "Proteins",
+    "serving_size": 170,
+    "serving_unit": "g",
+    "calories": 360,
+    "protein_g": 44,
+    "carbs_g": 0,
+    "fat_g": 20,
+    "fiber_g": 0,
+    "ingredients": [
+      "beef strip",
+      "salt",
+      "pepper"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Steak (Filet Mignon)",
+    "category": "Proteins",
+    "serving_size": 170,
+    "serving_unit": "g",
+    "calories": 310,
+    "protein_g": 42,
+    "carbs_g": 0,
+    "fat_g": 16,
+    "fiber_g": 0,
+    "ingredients": [
+      "beef tenderloin",
+      "salt",
+      "pepper"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Ground Beef 80/20 (cooked)",
+    "category": "Proteins",
+    "serving_size": 113,
+    "serving_unit": "g",
+    "calories": 290,
+    "protein_g": 24,
+    "carbs_g": 0,
+    "fat_g": 20,
+    "fiber_g": 0,
+    "ingredients": [
+      "beef"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Ground Beef 90/10 (cooked)",
+    "category": "Proteins",
+    "serving_size": 113,
+    "serving_unit": "g",
+    "calories": 220,
+    "protein_g": 28,
+    "carbs_g": 0,
+    "fat_g": 12,
+    "fiber_g": 0,
+    "ingredients": [
+      "lean beef"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Chicken Thigh (boneless, grilled)",
+    "category": "Proteins",
+    "serving_size": 130,
+    "serving_unit": "g",
+    "calories": 230,
+    "protein_g": 28,
+    "carbs_g": 0,
+    "fat_g": 12,
+    "fiber_g": 0,
+    "ingredients": [
+      "chicken thigh",
+      "salt"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Turkey Breast (deli, 4 slices)",
+    "category": "Proteins",
+    "serving_size": 56,
+    "serving_unit": "g",
+    "calories": 50,
+    "protein_g": 10,
+    "carbs_g": 1,
+    "fat_g": 0.5,
+    "fiber_g": 0,
+    "ingredients": [
+      "turkey breast",
+      "salt"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Ham (deli, 4 slices)",
+    "category": "Proteins",
+    "serving_size": 56,
+    "serving_unit": "g",
+    "calories": 60,
+    "protein_g": 10,
+    "carbs_g": 2,
+    "fat_g": 1.5,
+    "fiber_g": 0,
+    "ingredients": [
+      "ham",
+      "salt",
+      "smoke"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Egg (large, whole)",
+    "category": "Proteins",
+    "serving_size": 50,
+    "serving_unit": "g",
+    "calories": 72,
+    "protein_g": 6,
+    "carbs_g": 0.4,
+    "fat_g": 5,
+    "fiber_g": 0,
+    "ingredients": [
+      "egg"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Egg Whites (3 large)",
+    "category": "Proteins",
+    "serving_size": 99,
+    "serving_unit": "g",
+    "calories": 51,
+    "protein_g": 11,
+    "carbs_g": 0.7,
+    "fat_g": 0.2,
+    "fiber_g": 0,
+    "ingredients": [
+      "egg white"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Orange Juice (1 cup)",
+    "category": "Beverages",
+    "serving_size": 240,
+    "serving_unit": "ml",
+    "calories": 110,
+    "protein_g": 2,
+    "carbs_g": 26,
+    "fat_g": 0,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "orange juice"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Apple Juice (1 cup)",
+    "category": "Beverages",
+    "serving_size": 240,
+    "serving_unit": "ml",
+    "calories": 110,
+    "protein_g": 0,
+    "carbs_g": 28,
+    "fat_g": 0,
+    "fiber_g": 0,
+    "ingredients": [
+      "apple juice"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Coca-Cola (12 oz)",
+    "category": "Beverages",
+    "serving_size": 355,
+    "serving_unit": "ml",
+    "calories": 140,
+    "protein_g": 0,
+    "carbs_g": 39,
+    "fat_g": 0,
+    "fiber_g": 0,
+    "ingredients": [
+      "carbonated water",
+      "sugar",
+      "caramel color",
+      "caffeine"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Diet Coke (12 oz)",
+    "category": "Beverages",
+    "serving_size": 355,
+    "serving_unit": "ml",
+    "calories": 0,
+    "protein_g": 0,
+    "carbs_g": 0,
+    "fat_g": 0,
+    "fiber_g": 0,
+    "ingredients": [
+      "carbonated water",
+      "aspartame",
+      "caramel color",
+      "caffeine"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Beer (12 oz, regular)",
+    "category": "Beverages",
+    "serving_size": 355,
+    "serving_unit": "ml",
+    "calories": 150,
+    "protein_g": 1.5,
+    "carbs_g": 13,
+    "fat_g": 0,
+    "fiber_g": 0,
+    "ingredients": [
+      "water",
+      "barley",
+      "hops",
+      "yeast"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Beer (12 oz, light)",
+    "category": "Beverages",
+    "serving_size": 355,
+    "serving_unit": "ml",
+    "calories": 100,
+    "protein_g": 1,
+    "carbs_g": 6,
+    "fat_g": 0,
+    "fiber_g": 0,
+    "ingredients": [
+      "water",
+      "barley",
+      "hops",
+      "yeast"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Red Wine (5 oz)",
+    "category": "Beverages",
+    "serving_size": 148,
+    "serving_unit": "ml",
+    "calories": 125,
+    "protein_g": 0,
+    "carbs_g": 4,
+    "fat_g": 0,
+    "fiber_g": 0,
+    "ingredients": [
+      "grapes",
+      "yeast"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "White Wine (5 oz)",
+    "category": "Beverages",
+    "serving_size": 148,
+    "serving_unit": "ml",
+    "calories": 121,
+    "protein_g": 0,
+    "carbs_g": 4,
+    "fat_g": 0,
+    "fiber_g": 0,
+    "ingredients": [
+      "grapes",
+      "yeast"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Whiskey/Bourbon (1.5 oz)",
+    "category": "Beverages",
+    "serving_size": 44,
+    "serving_unit": "ml",
+    "calories": 97,
+    "protein_g": 0,
+    "carbs_g": 0,
+    "fat_g": 0,
+    "fiber_g": 0,
+    "ingredients": [
+      "distilled grain"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Vodka Soda",
+    "category": "Beverages",
+    "serving_size": 240,
+    "serving_unit": "ml",
+    "calories": 97,
+    "protein_g": 0,
+    "carbs_g": 0,
+    "fat_g": 0,
+    "fiber_g": 0,
+    "ingredients": [
+      "vodka",
+      "soda water",
+      "lime"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Energy Bar (KIND)",
+    "category": "Snacks",
+    "serving_size": 40,
+    "serving_unit": "g",
+    "calories": 200,
+    "protein_g": 6,
+    "carbs_g": 17,
+    "fat_g": 13,
+    "fiber_g": 3,
+    "ingredients": [
+      "nuts",
+      "honey",
+      "oats",
+      "chocolate"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Greek Yogurt Parfait",
+    "category": "Breakfast",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 18,
+    "carbs_g": 36,
+    "fat_g": 8,
+    "fiber_g": 3,
+    "ingredients": [
+      "greek yogurt",
+      "granola",
+      "berries",
+      "honey"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Turkey Club Wrap",
+    "category": "Fast Food",
+    "serving_size": 280,
+    "serving_unit": "g",
+    "calories": 460,
+    "protein_g": 28,
+    "carbs_g": 38,
+    "fat_g": 22,
+    "fiber_g": 3,
+    "ingredients": [
+      "tortilla",
+      "turkey",
+      "bacon",
+      "lettuce",
+      "tomato",
+      "ranch"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Veggie Burger",
+    "category": "Fast Food",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 350,
+    "protein_g": 18,
+    "carbs_g": 38,
+    "fat_g": 14,
+    "fiber_g": 5,
+    "ingredients": [
+      "plant patty",
+      "bun",
+      "lettuce",
+      "tomato"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Sushi Hand Roll",
+    "category": "Japanese",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 8,
+    "carbs_g": 28,
+    "fat_g": 4,
+    "fiber_g": 1,
+    "ingredients": [
+      "rice",
+      "fish",
+      "nori",
+      "vegetables"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Spring Mix Salad (w/ dressing)",
+    "category": "Vegetables",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 160,
+    "protein_g": 3,
+    "carbs_g": 8,
+    "fat_g": 12,
+    "fiber_g": 3,
+    "ingredients": [
+      "mixed greens",
+      "tomato",
+      "cucumber",
+      "vinaigrette"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Chicken Wings (Buffalo, 6pc)",
+    "category": "Fast Food",
+    "serving_size": 180,
+    "serving_unit": "g",
+    "calories": 440,
+    "protein_g": 32,
+    "carbs_g": 4,
+    "fat_g": 32,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "chicken wings",
+      "hot sauce",
+      "butter"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Nachos (loaded)",
+    "category": "Mexican",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 560,
+    "protein_g": 18,
+    "carbs_g": 48,
+    "fat_g": 32,
+    "fiber_g": 5,
+    "ingredients": [
+      "tortilla chips",
+      "cheese",
+      "beans",
+      "sour cream",
+      "guacamole",
+      "salsa"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Corn Dog",
+    "category": "Fast Food",
+    "serving_size": 175,
+    "calories": 460,
+    "protein_g": 14,
+    "carbs_g": 56,
+    "fat_g": 19,
+    "fiber_g": 1,
+    "ingredients": [
+      "hot dog",
+      "cornmeal batter",
+      "vegetable oil"
+    ],
+    "nova_group": 4,
+    "serving_unit": "1 corn dog"
+  },
+  {
+    "name": "Funnel Cake",
+    "category": "Desserts",
+    "serving_size": 90,
+    "calories": 280,
+    "protein_g": 5,
+    "carbs_g": 29,
+    "fat_g": 16,
+    "fiber_g": 1,
+    "ingredients": [
+      "flour",
+      "milk",
+      "eggs",
+      "sugar",
+      "vegetable oil",
+      "powdered sugar"
+    ],
+    "nova_group": 4,
+    "serving_unit": "1 piece"
+  },
+  {
+    "name": "Apple Pie",
+    "category": "Desserts",
+    "serving_size": 125,
+    "calories": 296,
+    "protein_g": 2,
+    "carbs_g": 43,
+    "fat_g": 14,
+    "fiber_g": 2,
+    "ingredients": [
+      "apples",
+      "flour",
+      "butter",
+      "sugar",
+      "cinnamon"
+    ],
+    "nova_group": 4,
+    "serving_unit": "1 slice"
+  },
+  {
+    "name": "Pumpkin Pie",
+    "category": "Desserts",
+    "serving_size": 133,
+    "calories": 316,
+    "protein_g": 7,
+    "carbs_g": 41,
+    "fat_g": 14,
+    "fiber_g": 3,
+    "ingredients": [
+      "pumpkin puree",
+      "evaporated milk",
+      "eggs",
+      "sugar",
+      "flour",
+      "butter",
+      "cinnamon",
+      "nutmeg"
+    ],
+    "nova_group": 4,
+    "serving_unit": "1 slice"
+  },
+  {
+    "name": "Sweet and Sour Pork",
+    "category": "Asian",
+    "serving_size": 240,
+    "calories": 380,
+    "protein_g": 22,
+    "carbs_g": 40,
+    "fat_g": 14,
+    "fiber_g": 2,
+    "ingredients": [
+      "pork",
+      "bell peppers",
+      "pineapple",
+      "vinegar",
+      "sugar",
+      "soy sauce",
+      "cornstarch"
+    ],
+    "nova_group": 4,
+    "serving_unit": "1 cup"
+  },
+  {
+    "name": "Bao Bun (Pork)",
+    "category": "Asian",
+    "serving_size": 80,
+    "calories": 210,
+    "protein_g": 9,
+    "carbs_g": 28,
+    "fat_g": 7,
+    "fiber_g": 1,
+    "ingredients": [
+      "flour",
+      "yeast",
+      "pork belly",
+      "hoisin sauce",
+      "sugar"
+    ],
+    "nova_group": 4,
+    "serving_unit": "1 bun"
+  },
+  {
+    "name": "Char Siu Pork",
+    "category": "Asian",
+    "serving_size": 113,
+    "calories": 220,
+    "protein_g": 26,
+    "carbs_g": 12,
+    "fat_g": 8,
+    "fiber_g": 0,
+    "ingredients": [
+      "pork shoulder",
+      "soy sauce",
+      "hoisin sauce",
+      "honey",
+      "five spice"
+    ],
+    "nova_group": 4,
+    "serving_unit": "4 oz"
+  },
+  {
+    "name": "Sesame Chicken",
+    "category": "Asian",
+    "serving_size": 240,
+    "calories": 430,
+    "protein_g": 28,
+    "carbs_g": 38,
+    "fat_g": 18,
+    "fiber_g": 1,
+    "ingredients": [
+      "chicken",
+      "soy sauce",
+      "sesame seeds",
+      "sugar",
+      "cornstarch",
+      "vegetable oil"
+    ],
+    "nova_group": 4,
+    "serving_unit": "1 cup"
+  },
+  {
+    "name": "Orange Chicken",
+    "category": "Asian",
+    "serving_size": 240,
+    "calories": 420,
+    "protein_g": 24,
+    "carbs_g": 44,
+    "fat_g": 16,
+    "fiber_g": 1,
+    "ingredients": [
+      "chicken",
+      "orange juice",
+      "soy sauce",
+      "sugar",
+      "cornstarch",
+      "vegetable oil"
+    ],
+    "nova_group": 4,
+    "serving_unit": "1 cup"
+  },
+  {
+    "name": "Peking Duck",
+    "category": "Asian",
+    "serving_size": 113,
+    "calories": 340,
+    "protein_g": 24,
+    "carbs_g": 0,
+    "fat_g": 27,
+    "fiber_g": 0,
+    "ingredients": [
+      "duck",
+      "five spice",
+      "maltose"
+    ],
+    "nova_group": 3,
+    "serving_unit": "4 oz"
+  },
+  {
+    "name": "Tabouleh",
+    "category": "Mediterranean",
+    "serving_size": 160,
+    "calories": 170,
+    "protein_g": 4,
+    "carbs_g": 16,
+    "fat_g": 11,
+    "fiber_g": 4,
+    "ingredients": [
+      "bulgur wheat",
+      "parsley",
+      "tomato",
+      "mint",
+      "olive oil",
+      "lemon juice",
+      "onion"
+    ],
+    "nova_group": 1,
+    "serving_unit": "1 cup"
+  },
+  {
+    "name": "Manakish (Zaatar)",
+    "category": "Mediterranean",
+    "serving_size": 150,
+    "calories": 380,
+    "protein_g": 9,
+    "carbs_g": 48,
+    "fat_g": 17,
+    "fiber_g": 3,
+    "ingredients": [
+      "flour",
+      "yeast",
+      "olive oil",
+      "zaatar",
+      "sesame seeds",
+      "sumac",
+      "thyme"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1 piece"
+  },
+  {
+    "name": "Musakhan",
+    "category": "Mediterranean",
+    "serving_size": 300,
+    "calories": 520,
+    "protein_g": 32,
+    "carbs_g": 42,
+    "fat_g": 24,
+    "fiber_g": 4,
+    "ingredients": [
+      "chicken",
+      "flatbread",
+      "onions",
+      "sumac",
+      "olive oil",
+      "pine nuts"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1 serving"
+  },
+  {
+    "name": "Philly Cheesesteak",
+    "category": "Fast Food",
+    "serving_size": 280,
+    "calories": 620,
+    "protein_g": 38,
+    "carbs_g": 42,
+    "fat_g": 32,
+    "fiber_g": 2,
+    "ingredients": [
+      "beef sirloin",
+      "hoagie roll",
+      "provolone cheese",
+      "onion",
+      "bell pepper"
+    ],
+    "nova_group": 4,
+    "serving_unit": "1 sandwich"
+  },
+  {
+    "name": "Reuben Sandwich",
+    "category": "Fast Food",
+    "serving_size": 310,
+    "calories": 580,
+    "protein_g": 32,
+    "carbs_g": 36,
+    "fat_g": 34,
+    "fiber_g": 4,
+    "ingredients": [
+      "corned beef",
+      "rye bread",
+      "swiss cheese",
+      "sauerkraut",
+      "thousand island dressing"
+    ],
+    "nova_group": 4,
+    "serving_unit": "1 sandwich"
+  },
+  {
+    "name": "Cuban Sandwich",
+    "category": "Fast Food",
+    "serving_size": 280,
+    "calories": 540,
+    "protein_g": 36,
+    "carbs_g": 38,
+    "fat_g": 26,
+    "fiber_g": 2,
+    "ingredients": [
+      "roast pork",
+      "ham",
+      "swiss cheese",
+      "pickles",
+      "mustard",
+      "cuban bread"
+    ],
+    "nova_group": 4,
+    "serving_unit": "1 sandwich"
+  },
+  {
+    "name": "Monte Cristo Sandwich",
+    "category": "Fast Food",
+    "serving_size": 300,
+    "calories": 640,
+    "protein_g": 34,
+    "carbs_g": 48,
+    "fat_g": 34,
+    "fiber_g": 2,
+    "ingredients": [
+      "ham",
+      "turkey",
+      "swiss cheese",
+      "bread",
+      "egg batter",
+      "powdered sugar"
+    ],
+    "nova_group": 4,
+    "serving_unit": "1 sandwich"
+  },
+  {
+    "name": "Pulled Pork Sandwich",
+    "category": "Fast Food",
+    "serving_size": 250,
+    "calories": 480,
+    "protein_g": 30,
+    "carbs_g": 44,
+    "fat_g": 20,
+    "fiber_g": 2,
+    "ingredients": [
+      "pulled pork",
+      "bbq sauce",
+      "brioche bun",
+      "coleslaw"
+    ],
+    "nova_group": 4,
+    "serving_unit": "1 sandwich"
+  },
+  {
+    "name": "Waldorf Salad",
+    "category": "Salad Kits",
+    "serving_size": 150,
+    "calories": 240,
+    "protein_g": 4,
+    "carbs_g": 18,
+    "fat_g": 18,
+    "fiber_g": 3,
+    "ingredients": [
+      "apple",
+      "celery",
+      "grapes",
+      "walnuts",
+      "mayonnaise",
+      "lettuce"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1 cup"
+  },
+  {
+    "name": "Chicken Salad",
+    "category": "Proteins",
+    "serving_size": 120,
+    "calories": 210,
+    "protein_g": 18,
+    "carbs_g": 6,
+    "fat_g": 13,
+    "fiber_g": 1,
+    "ingredients": [
+      "chicken breast",
+      "mayonnaise",
+      "celery",
+      "onion",
+      "herbs"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1/2 cup"
+  },
+  {
+    "name": "Belgian Waffle",
+    "category": "Breakfast",
+    "serving_size": 120,
+    "calories": 310,
+    "protein_g": 8,
+    "carbs_g": 42,
+    "fat_g": 12,
+    "fiber_g": 1,
+    "ingredients": [
+      "flour",
+      "eggs",
+      "butter",
+      "milk",
+      "sugar",
+      "yeast"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1 waffle"
+  },
+  {
+    "name": "Crepes (Plain)",
+    "category": "Breakfast",
+    "serving_size": 100,
+    "calories": 190,
+    "protein_g": 6,
+    "carbs_g": 26,
+    "fat_g": 7,
+    "fiber_g": 1,
+    "ingredients": [
+      "flour",
+      "eggs",
+      "milk",
+      "butter",
+      "sugar"
+    ],
+    "nova_group": 3,
+    "serving_unit": "2 crepes"
+  },
+  {
+    "name": "Crepes (Nutella)",
+    "category": "Breakfast",
+    "serving_size": 140,
+    "calories": 380,
+    "protein_g": 8,
+    "carbs_g": 48,
+    "fat_g": 18,
+    "fiber_g": 2,
+    "ingredients": [
+      "flour",
+      "eggs",
+      "milk",
+      "butter",
+      "nutella",
+      "sugar"
+    ],
+    "nova_group": 4,
+    "serving_unit": "2 crepes"
+  },
+  {
+    "name": "Breakfast Sandwich (Egg McMuffin style)",
+    "category": "Breakfast",
+    "serving_size": 140,
+    "calories": 300,
+    "protein_g": 18,
+    "carbs_g": 26,
+    "fat_g": 13,
+    "fiber_g": 1,
+    "ingredients": [
+      "english muffin",
+      "egg",
+      "canadian bacon",
+      "american cheese"
+    ],
+    "nova_group": 4,
+    "serving_unit": "1 sandwich"
+  },
+  {
+    "name": "Cacio e Pepe",
+    "category": "Italian",
+    "serving_size": 250,
+    "calories": 520,
+    "protein_g": 22,
+    "carbs_g": 58,
+    "fat_g": 22,
+    "fiber_g": 2,
+    "ingredients": [
+      "spaghetti",
+      "pecorino romano",
+      "black pepper",
+      "pasta water"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1 plate"
+  },
+  {
+    "name": "Pasta Primavera",
+    "category": "Italian",
+    "serving_size": 350,
+    "calories": 380,
+    "protein_g": 14,
+    "carbs_g": 56,
+    "fat_g": 12,
+    "fiber_g": 5,
+    "ingredients": [
+      "penne",
+      "zucchini",
+      "bell pepper",
+      "cherry tomatoes",
+      "garlic",
+      "olive oil",
+      "parmesan"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1 plate"
+  },
+  {
+    "name": "Gnocchi (Marinara)",
+    "category": "Italian",
+    "serving_size": 250,
+    "calories": 310,
+    "protein_g": 8,
+    "carbs_g": 52,
+    "fat_g": 8,
+    "fiber_g": 3,
+    "ingredients": [
+      "potato gnocchi",
+      "tomato sauce",
+      "garlic",
+      "basil",
+      "olive oil"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1 cup"
+  },
+  {
+    "name": "Clam Chowder (New England)",
+    "category": "Soups",
+    "serving_size": 240,
+    "calories": 280,
+    "protein_g": 12,
+    "carbs_g": 24,
+    "fat_g": 16,
+    "fiber_g": 1,
+    "ingredients": [
+      "clams",
+      "potatoes",
+      "onion",
+      "celery",
+      "cream",
+      "butter",
+      "flour",
+      "bacon"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1 cup"
+  },
+  {
+    "name": "Protein Pancakes",
+    "category": "Breakfast",
+    "serving_size": 180,
+    "calories": 320,
+    "protein_g": 28,
+    "carbs_g": 32,
+    "fat_g": 8,
+    "fiber_g": 2,
+    "ingredients": [
+      "oats",
+      "egg whites",
+      "protein powder",
+      "banana",
+      "baking powder"
+    ],
+    "nova_group": 3,
+    "serving_unit": "3 pancakes"
+  },
+  {
+    "name": "Turkey Burger",
+    "category": "Fast Food",
+    "serving_size": 220,
+    "calories": 380,
+    "protein_g": 28,
+    "carbs_g": 32,
+    "fat_g": 16,
+    "fiber_g": 2,
+    "ingredients": [
+      "ground turkey patty",
+      "bun",
+      "lettuce",
+      "tomato",
+      "onion"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1 burger"
+  },
+  {
+    "name": "Buffalo Wings",
+    "category": "Fast Food",
+    "serving_size": 180,
+    "calories": 440,
+    "protein_g": 36,
+    "carbs_g": 2,
+    "fat_g": 32,
+    "fiber_g": 0,
+    "ingredients": [
+      "chicken wings",
+      "butter",
+      "hot sauce",
+      "garlic"
+    ],
+    "nova_group": 3,
+    "serving_unit": "6 wings"
+  },
+  {
+    "name": "Onion Rings",
+    "category": "Fast Food",
+    "serving_size": 120,
+    "calories": 340,
+    "protein_g": 5,
+    "carbs_g": 38,
+    "fat_g": 18,
+    "fiber_g": 2,
+    "ingredients": [
+      "onion",
+      "flour",
+      "breadcrumbs",
+      "egg",
+      "vegetable oil"
+    ],
+    "nova_group": 4,
+    "serving_unit": "8 rings"
+  },
+  {
+    "name": "Fish Tacos",
+    "category": "Mexican",
+    "serving_size": 220,
+    "calories": 380,
+    "protein_g": 22,
+    "carbs_g": 36,
+    "fat_g": 16,
+    "fiber_g": 4,
+    "ingredients": [
+      "white fish",
+      "corn tortillas",
+      "cabbage",
+      "lime crema",
+      "cilantro",
+      "lime"
+    ],
+    "nova_group": 3,
+    "serving_unit": "2 tacos"
+  },
+  {
+    "name": "Mozzarella Sticks",
+    "category": "Snacks",
+    "serving_size": 120,
+    "calories": 360,
+    "protein_g": 16,
+    "carbs_g": 28,
+    "fat_g": 20,
+    "fiber_g": 1,
+    "ingredients": [
+      "mozzarella cheese",
+      "breadcrumbs",
+      "flour",
+      "egg",
+      "vegetable oil"
+    ],
+    "nova_group": 4,
+    "serving_unit": "4 sticks"
+  },
+  {
+    "name": "Jalapeno Poppers",
+    "category": "Snacks",
+    "serving_size": 100,
+    "calories": 280,
+    "protein_g": 10,
+    "carbs_g": 20,
+    "fat_g": 18,
+    "fiber_g": 1,
+    "ingredients": [
+      "jalapenos",
+      "cream cheese",
+      "cheddar cheese",
+      "breadcrumbs",
+      "vegetable oil"
+    ],
+    "nova_group": 4,
+    "serving_unit": "4 poppers"
+  },
+  {
+    "name": "Loaded Potato Skins",
+    "category": "Snacks",
+    "serving_size": 160,
+    "calories": 380,
+    "protein_g": 14,
+    "carbs_g": 28,
+    "fat_g": 24,
+    "fiber_g": 3,
+    "ingredients": [
+      "potato",
+      "cheddar cheese",
+      "bacon",
+      "sour cream",
+      "chives"
+    ],
+    "nova_group": 3,
+    "serving_unit": "4 skins"
+  },
+  {
+    "name": "Spinach Artichoke Dip",
+    "category": "Snacks",
+    "serving_size": 60,
+    "calories": 140,
+    "protein_g": 4,
+    "carbs_g": 6,
+    "fat_g": 12,
+    "fiber_g": 1,
+    "ingredients": [
+      "spinach",
+      "artichoke hearts",
+      "cream cheese",
+      "parmesan",
+      "garlic",
+      "sour cream"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1/4 cup"
+  },
+  {
+    "name": "Poutine",
+    "category": "Fast Food",
+    "serving_size": 400,
+    "calories": 740,
+    "protein_g": 24,
+    "carbs_g": 68,
+    "fat_g": 42,
+    "fiber_g": 4,
+    "ingredients": [
+      "french fries",
+      "cheese curds",
+      "brown gravy"
+    ],
+    "nova_group": 4,
+    "serving_unit": "1 serving"
+  },
+  {
+    "name": "Pierogi (Potato and Cheese)",
+    "category": "Grains & Cereals",
+    "serving_size": 140,
+    "calories": 280,
+    "protein_g": 8,
+    "carbs_g": 42,
+    "fat_g": 9,
+    "fiber_g": 2,
+    "ingredients": [
+      "flour",
+      "potato",
+      "cheddar cheese",
+      "onion",
+      "butter",
+      "sour cream"
+    ],
+    "nova_group": 3,
+    "serving_unit": "4 pierogi"
+  },
+  {
+    "name": "Schnitzel (Pork)",
+    "category": "Proteins",
+    "serving_size": 180,
+    "calories": 390,
+    "protein_g": 32,
+    "carbs_g": 18,
+    "fat_g": 22,
+    "fiber_g": 1,
+    "ingredients": [
+      "pork cutlet",
+      "flour",
+      "egg",
+      "breadcrumbs",
+      "vegetable oil",
+      "lemon"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1 piece"
+  },
+  {
+    "name": "Ramen (Tonkotsu)",
+    "category": "Japanese",
+    "serving_size": 500,
+    "calories": 540,
+    "protein_g": 28,
+    "carbs_g": 56,
+    "fat_g": 22,
+    "fiber_g": 3,
+    "ingredients": [
+      "ramen noodles",
+      "pork bone broth",
+      "chashu pork",
+      "soft-boiled egg",
+      "green onion",
+      "nori"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1 bowl"
+  },
+  {
+    "name": "Ramen (Miso)",
+    "category": "Japanese",
+    "serving_size": 500,
+    "calories": 480,
+    "protein_g": 24,
+    "carbs_g": 58,
+    "fat_g": 16,
+    "fiber_g": 4,
+    "ingredients": [
+      "ramen noodles",
+      "miso broth",
+      "corn",
+      "butter",
+      "chashu pork",
+      "bean sprouts",
+      "green onion"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1 bowl"
+  },
+  {
+    "name": "Shrimp Fried Rice",
+    "category": "Asian",
+    "serving_size": 250,
+    "calories": 340,
+    "protein_g": 16,
+    "carbs_g": 48,
+    "fat_g": 9,
+    "fiber_g": 2,
+    "ingredients": [
+      "rice",
+      "shrimp",
+      "eggs",
+      "soy sauce",
+      "peas",
+      "carrots",
+      "green onion",
+      "sesame oil"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1 cup"
+  },
+  {
+    "name": "Tom Kha Gai",
+    "category": "Thai",
+    "serving_size": 300,
+    "calories": 280,
+    "protein_g": 18,
+    "carbs_g": 10,
+    "fat_g": 20,
+    "fiber_g": 1,
+    "ingredients": [
+      "chicken",
+      "coconut milk",
+      "galangal",
+      "lemongrass",
+      "mushrooms",
+      "lime juice",
+      "fish sauce"
+    ],
+    "nova_group": 1,
+    "serving_unit": "1 bowl"
+  },
+  {
+    "name": "Steak Frites",
+    "category": "Proteins",
+    "serving_size": 350,
+    "calories": 680,
+    "protein_g": 42,
+    "carbs_g": 44,
+    "fat_g": 36,
+    "fiber_g": 4,
+    "ingredients": [
+      "sirloin steak",
+      "french fries",
+      "butter",
+      "herbs"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1 plate"
+  },
+  {
+    "name": "Chicken Pot Pie",
+    "category": "US Staples",
+    "serving_size": 300,
+    "calories": 520,
+    "protein_g": 22,
+    "carbs_g": 42,
+    "fat_g": 30,
+    "fiber_g": 3,
+    "ingredients": [
+      "chicken",
+      "pie crust",
+      "peas",
+      "carrots",
+      "potatoes",
+      "cream sauce",
+      "butter"
+    ],
+    "nova_group": 4,
+    "serving_unit": "1 pie"
+  },
+  {
+    "name": "Meatloaf",
+    "category": "US Staples",
+    "serving_size": 180,
+    "calories": 340,
+    "protein_g": 24,
+    "carbs_g": 14,
+    "fat_g": 22,
+    "fiber_g": 1,
+    "ingredients": [
+      "ground beef",
+      "breadcrumbs",
+      "egg",
+      "onion",
+      "ketchup",
+      "worcestershire sauce"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1 slice"
+  },
+  {
+    "name": "Beef Stew",
+    "category": "Soups",
+    "serving_size": 240,
+    "calories": 280,
+    "protein_g": 22,
+    "carbs_g": 24,
+    "fat_g": 10,
+    "fiber_g": 3,
+    "ingredients": [
+      "beef chuck",
+      "potatoes",
+      "carrots",
+      "celery",
+      "onion",
+      "beef broth",
+      "tomato paste"
+    ],
+    "nova_group": 1,
+    "serving_unit": "1 cup"
+  },
+  {
+    "name": "Coconut Macaroon",
+    "category": "Desserts",
+    "serving_size": 40,
+    "calories": 160,
+    "protein_g": 2,
+    "carbs_g": 20,
+    "fat_g": 8,
+    "fiber_g": 1,
+    "ingredients": [
+      "shredded coconut",
+      "sweetened condensed milk",
+      "egg whites",
+      "vanilla"
+    ],
+    "nova_group": 4,
+    "serving_unit": "2 cookies"
+  },
+  {
+    "name": "Key Lime Pie",
+    "category": "Desserts",
+    "serving_size": 125,
+    "calories": 340,
+    "protein_g": 6,
+    "carbs_g": 42,
+    "fat_g": 16,
+    "fiber_g": 1,
+    "ingredients": [
+      "graham cracker crust",
+      "key lime juice",
+      "sweetened condensed milk",
+      "eggs",
+      "butter"
+    ],
+    "nova_group": 4,
+    "serving_unit": "1 slice"
+  },
+  {
+    "name": "Peach Cobbler",
+    "category": "Desserts",
+    "serving_size": 160,
+    "calories": 280,
+    "protein_g": 3,
+    "carbs_g": 46,
+    "fat_g": 10,
+    "fiber_g": 2,
+    "ingredients": [
+      "peaches",
+      "flour",
+      "butter",
+      "sugar",
+      "milk",
+      "cinnamon"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1 serving"
+  },
+  {
+    "name": "Arancini",
+    "category": "Italian",
+    "serving_size": 140,
+    "calories": 340,
+    "protein_g": 10,
+    "carbs_g": 38,
+    "fat_g": 16,
+    "fiber_g": 1,
+    "ingredients": [
+      "risotto rice",
+      "mozzarella",
+      "breadcrumbs",
+      "egg",
+      "parmesan",
+      "vegetable oil"
+    ],
+    "nova_group": 4,
+    "serving_unit": "2 balls"
+  },
+  {
+    "name": "Carnitas",
+    "category": "Mexican",
+    "serving_size": 113,
+    "calories": 280,
+    "protein_g": 28,
+    "carbs_g": 0,
+    "fat_g": 18,
+    "fiber_g": 0,
+    "ingredients": [
+      "pork shoulder",
+      "lard",
+      "orange juice",
+      "garlic",
+      "cumin",
+      "oregano"
+    ],
+    "nova_group": 3,
+    "serving_unit": "4 oz"
+  },
+  {
+    "name": "Empanadas (Beef)",
+    "category": "Latin American",
+    "serving_size": 160,
+    "calories": 420,
+    "protein_g": 16,
+    "carbs_g": 38,
+    "fat_g": 22,
+    "fiber_g": 2,
+    "ingredients": [
+      "flour",
+      "ground beef",
+      "onion",
+      "bell pepper",
+      "olives",
+      "egg",
+      "cumin"
+    ],
+    "nova_group": 4,
+    "serving_unit": "2 empanadas"
+  },
+  {
+    "name": "Bibim Naengmyeon",
+    "category": "Korean",
+    "serving_size": 400,
+    "calories": 420,
+    "protein_g": 14,
+    "carbs_g": 68,
+    "fat_g": 10,
+    "fiber_g": 4,
+    "ingredients": [
+      "buckwheat noodles",
+      "gochujang",
+      "asian pear",
+      "cucumber",
+      "egg",
+      "vinegar",
+      "sesame oil"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1 bowl"
+  },
+  {
+    "name": "Jajangmyeon",
+    "category": "Korean",
+    "serving_size": 450,
+    "calories": 560,
+    "protein_g": 18,
+    "carbs_g": 74,
+    "fat_g": 20,
+    "fiber_g": 4,
+    "ingredients": [
+      "wheat noodles",
+      "black bean paste",
+      "pork",
+      "zucchini",
+      "potato",
+      "onion",
+      "cucumber"
+    ],
+    "nova_group": 4,
+    "serving_unit": "1 bowl"
+  },
+  {
+    "name": "Chicken Shawarma Plate",
+    "category": "Mediterranean",
+    "serving_size": 350,
+    "calories": 580,
+    "protein_g": 38,
+    "carbs_g": 48,
+    "fat_g": 26,
+    "fiber_g": 4,
+    "ingredients": [
+      "chicken thigh",
+      "rice",
+      "hummus",
+      "pickled turnip",
+      "garlic sauce",
+      "pita",
+      "cumin",
+      "turmeric"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1 plate"
+  },
+  {
+    "name": "Stuffed Grape Leaves (Dolma)",
+    "category": "Mediterranean",
+    "serving_size": 125,
+    "calories": 200,
+    "protein_g": 4,
+    "carbs_g": 22,
+    "fat_g": 10,
+    "fiber_g": 3,
+    "ingredients": [
+      "grape leaves",
+      "rice",
+      "onion",
+      "pine nuts",
+      "olive oil",
+      "lemon juice",
+      "dill",
+      "mint"
+    ],
+    "nova_group": 1,
+    "serving_unit": "5 pieces"
+  },
+  {
+    "name": "Cottage Pie",
+    "category": "US Staples",
+    "serving_size": 300,
+    "calories": 380,
+    "protein_g": 22,
+    "carbs_g": 32,
+    "fat_g": 18,
+    "fiber_g": 4,
+    "ingredients": [
+      "ground beef",
+      "mashed potatoes",
+      "carrots",
+      "peas",
+      "onion",
+      "beef gravy"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1 serving"
+  },
+  {
+    "name": "Banana Bread",
+    "category": "Bakery",
+    "serving_size": 80,
+    "calories": 240,
+    "protein_g": 4,
+    "carbs_g": 36,
+    "fat_g": 10,
+    "fiber_g": 1,
+    "ingredients": [
+      "bananas",
+      "flour",
+      "butter",
+      "sugar",
+      "eggs",
+      "baking soda",
+      "vanilla"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1 slice"
+  },
+  {
+    "name": "Scone (Blueberry)",
+    "category": "Bakery",
+    "serving_size": 90,
+    "calories": 310,
+    "protein_g": 5,
+    "carbs_g": 42,
+    "fat_g": 14,
+    "fiber_g": 1,
+    "ingredients": [
+      "flour",
+      "butter",
+      "sugar",
+      "blueberries",
+      "cream",
+      "egg",
+      "baking powder"
+    ],
+    "nova_group": 3,
+    "serving_unit": "1 scone"
+  },
+  {
+    "name": "Croissant (Chocolate)",
+    "category": "Bakery",
+    "serving_size": 70,
+    "calories": 280,
+    "protein_g": 5,
+    "carbs_g": 32,
+    "fat_g": 15,
+    "fiber_g": 1,
+    "ingredients": [
+      "flour",
+      "butter",
+      "chocolate",
+      "sugar",
+      "eggs",
+      "yeast",
+      "milk"
+    ],
+    "nova_group": 4,
+    "serving_unit": "1 croissant"
+  },
+  {
+    "name": "Cannoli",
+    "category": "Desserts",
+    "serving_size": 80,
+    "calories": 260,
+    "protein_g": 6,
+    "carbs_g": 28,
+    "fat_g": 14,
+    "fiber_g": 0,
+    "ingredients": [
+      "ricotta",
+      "sugar",
+      "chocolate chips",
+      "flour shell",
+      "powdered sugar",
+      "vanilla"
+    ],
+    "nova_group": 4,
+    "serving_unit": "1 cannoli"
   }
 ]
