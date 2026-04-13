@@ -19,13 +19,11 @@
   <div class="content">
     <div class="tabs">
       <div class="tab active" data-tab="reports">Reports</div>
-      <div class="tab" data-tab="bugs">File Bug</div>
-      <div class="tab" data-tab="issues">Open Issues</div>
-      <div class="tab" data-tab="fixed">Fixed Bugs</div>
-      <div class="tab" data-tab="feedback">Feedback Trail</div>
-      <div class="tab" data-tab="releases">Release Notes</div>
-      <div class="tab" data-tab="designs" id="designs-tab" style="display:none">Design Docs</div>
-      <div class="tab" data-tab="review" id="review-tab" style="display:none">Needs Review</div>
+      <div class="tab" data-tab="bugs">Bugs</div>
+      <div class="tab" data-tab="releases">Releases</div>
+      <div class="tab" data-tab="feedback">Feedback</div>
+      <div class="tab" data-tab="designs" id="designs-tab" style="display:none">Designs</div>
+      <div class="tab" data-tab="review" id="review-tab" style="display:none">Review</div>
       <div class="tab" data-tab="admin" id="admin-tab" style="display:none">Admin</div>
     </div>
 
@@ -35,49 +33,51 @@
     </div>
 
     <div id="tab-bugs" style="display:none">
-      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px 40px;max-width:640px;margin:0 auto;">
-        <h2 style="margin:0 0 20px;font-size:20px;">File a Bug</h2>
-        <div style="margin-bottom:16px;">
-          <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">Title</label>
-          <input id="bug-title" type="text" placeholder="e.g. Dashboard rings overlap on iPhone SE"
-            style="width:100%;padding:10px 12px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:14px;">
-        </div>
-        <div style="margin-bottom:16px;">
-          <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">Description</label>
-          <textarea id="bug-body" rows="5" placeholder="What happened? Steps to reproduce?"
-            style="width:100%;padding:10px 12px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:14px;resize:vertical;font-family:inherit;"></textarea>
-        </div>
-        <div style="margin-bottom:16px;">
-          <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">Priority</label>
-          <select id="bug-priority" style="padding:8px 12px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:14px;">
-            <option value="">Select...</option>
-            <option value="P0">P0 — Blocks users</option>
-            <option value="P1">P1 — Annoying but usable</option>
-            <option value="P2">P2 — Cosmetic</option>
-          </select>
-        </div>
-        <div style="margin-bottom:20px;">
-          <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">Screenshot (optional)</label>
-          <input id="bug-screenshot" type="file" accept="image/*"
-            style="font-size:14px;color:var(--text-muted);">
+      <!-- File bug form (collapsible) -->
+      <details style="margin-bottom:24px;">
+        <summary style="cursor:pointer;color:var(--accent);font-weight:600;font-size:15px;padding:12px 0;">+ File a New Bug</summary>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px 32px;max-width:640px;margin:12px auto 0;">
+          <div style="margin-bottom:16px;">
+            <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">Title</label>
+            <input id="bug-title" type="text" placeholder="e.g. Dashboard rings overlap on iPhone SE"
+              style="width:100%;padding:10px 12px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:14px;">
+          </div>
+          <div style="margin-bottom:16px;">
+            <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">Description</label>
+            <textarea id="bug-body" rows="3" placeholder="What happened? Steps to reproduce?"
+              style="width:100%;padding:10px 12px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:14px;resize:vertical;font-family:inherit;"></textarea>
+          </div>
+          <div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;">
+            <div>
+              <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">Priority</label>
+              <select id="bug-priority" style="padding:8px 12px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:14px;">
+                <option value="">Select...</option>
+                <option value="P0">P0</option>
+                <option value="P1">P1</option>
+                <option value="P2">P2</option>
+              </select>
+            </div>
+            <div>
+              <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">Screenshot</label>
+              <input id="bug-screenshot" type="file" accept="image/*" style="font-size:13px;color:var(--text-muted);max-width:200px;">
+            </div>
+            <button class="btn btn-primary" onclick="submitBug()" id="bug-submit-btn">Submit</button>
+          </div>
           <div id="screenshot-preview" style="margin-top:8px;"></div>
+          <div id="bug-result" style="margin-top:12px;"></div>
         </div>
-        <div style="display:flex;justify-content:flex-end;">
-          <button class="btn btn-primary" onclick="submitBug()" id="bug-submit-btn">Submit Bug</button>
-        </div>
-        <div id="bug-result" style="margin-top:16px;"></div>
-      </div>
-    </div>
+      </details>
 
-    <div id="tab-issues" style="display:none">
+      <!-- Open bugs -->
+      <h3 style="color:var(--red);margin-bottom:12px;font-size:14px;text-transform:uppercase;letter-spacing:0.5px;">Open</h3>
       <div id="issues-list">
-        <div class="loading"><span class="spinner"></span> Loading issues...</div>
+        <div class="loading"><span class="spinner"></span></div>
       </div>
-    </div>
 
-    <div id="tab-fixed" style="display:none">
+      <!-- Fixed bugs -->
+      <h3 style="color:var(--green);margin:24px 0 12px;font-size:14px;text-transform:uppercase;letter-spacing:0.5px;">Fixed</h3>
       <div id="fixed-list">
-        <div class="loading"><span class="spinner"></span> Loading fixed bugs...</div>
+        <div class="loading"><span class="spinner"></span></div>
       </div>
     </div>
 
@@ -161,7 +161,7 @@
   <script src="app.js"></script>
   <script>
     // Tabs
-    const allTabs = ['reports', 'bugs', 'issues', 'fixed', 'feedback', 'releases', 'designs', 'review', 'admin'];
+    const allTabs = ['reports', 'bugs', 'feedback', 'releases', 'designs', 'review', 'admin'];
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -171,8 +171,7 @@
           if (el) el.style.display = tab.dataset.tab === t ? '' : 'none';
         });
         if (tab.dataset.tab === 'feedback') loadFeedback();
-        if (tab.dataset.tab === 'issues') loadIssues();
-        if (tab.dataset.tab === 'fixed') loadFixedBugs();
+        if (tab.dataset.tab === 'bugs') { loadIssues(); loadFixedBugs(); }
         if (tab.dataset.tab === 'releases') loadReleases();
         if (tab.dataset.tab === 'designs') loadDesignDocs();
         if (tab.dataset.tab === 'review') loadReviewItems();
