@@ -167,9 +167,15 @@ extension AIChatView {
             case .handler(let fn):
                 messages.append(ChatMessage(role: .assistant, text: fn()))
                 return
-            case .uiAction(_, let msg):
+            case .uiAction(let action, let msg):
                 if let msg { messages.append(ChatMessage(role: .assistant, text: msg)) }
-                showingBarcodeScanner = true  // Currently only barcode uses this
+                switch action {
+                case .navigate(let tab):
+                    NotificationCenter.default.post(name: .navigateToTab, object: nil, userInfo: ["tab": tab])
+                case .openBarcodeScanner:
+                    showingBarcodeScanner = true
+                default: break
+                }
                 return
             case .toolCall(let call):
                 Task {
@@ -857,7 +863,10 @@ extension AIChatView {
                         showingWorkout = true
                     }
                 case .openWeightEntry: break
-                case .navigate: break
+                case .openBarcodeScanner:
+                    showingBarcodeScanner = true
+                case .navigate(let tab):
+                    NotificationCenter.default.post(name: .navigateToTab, object: nil, userInfo: ["tab": tab])
                 }
             }
         }

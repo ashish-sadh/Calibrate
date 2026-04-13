@@ -79,6 +79,10 @@ struct FloatingAIAssistant: View {
                 aiService.cancelUnload()
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToTab)) { _ in
+            // Collapse chat so user sees the target screen
+            if isExpanded { withAnimation { isExpanded = false } }
+        }
         .onChange(of: modelManager.downloadState) { old, new in
             if case .downloading = new, isExpanded { isExpanded = false }
             if case .completed = new {

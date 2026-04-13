@@ -27,7 +27,14 @@ enum ToolAction: Sendable {
     case openRecipeBuilder(items: [String], mealName: String?)
     case openWorkout(templateName: String)
     case openWeightEntry
+    case openBarcodeScanner
     case navigate(tab: Int)
+}
+
+// MARK: - Navigation Notifications
+
+extension Notification.Name {
+    static let navigateToTab = Notification.Name("drift.navigateToTab")
 }
 
 /// Parameters passed to a tool handler, extracted from LLM JSON output.

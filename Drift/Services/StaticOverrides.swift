@@ -49,7 +49,12 @@ enum StaticOverrides {
         // Barcode scan
         if lower == "scan barcode" || lower == "scan food" || lower == "scan" || lower == "scan a product"
             || lower == "barcode" || lower.contains("scan barcode") {
-            return .uiAction(.navigate(tab: 0), "Opening barcode scanner...")
+            return .uiAction(.openBarcodeScanner, "Opening barcode scanner...")
+        }
+
+        // Navigation: "show me my weight chart", "go to food tab", "open exercise"
+        if let navAction = matchNavigation(lower) {
+            return navAction
         }
 
         // --- Gemma: only exact rule engine matches below this point ---
@@ -461,5 +466,54 @@ enum StaticOverrides {
             }
         }
         return result
+    }
+
+    // MARK: - Navigation Matching
+
+    /// Map screen keywords to tab indices.
+    /// Tab 0=Dashboard, 1=Weight, 2=Food, 3=Exercise, 4=More (supplements/glucose/biomarkers/settings)
+    private static let screenToTab: [(keywords: [String], tab: Int, label: String)] = [
+        (["dashboard", "home", "overview"], 0, "Dashboard"),
+        (["weight", "weight chart", "weight trend", "scale"], 1, "Weight"),
+        (["food", "food log", "diary", "food diary", "meals", "nutrition"], 2, "Food"),
+        (["exercise", "workout", "workouts", "gym", "training"], 3, "Exercise"),
+        (["supplements", "supplement", "vitamins"], 4, "Supplements"),
+        (["glucose", "blood sugar", "blood glucose"], 4, "Glucose"),
+        (["biomarkers", "labs", "blood work", "lab results"], 4, "Biomarkers"),
+        (["settings", "preferences", "more"], 4, "Settings"),
+    ]
+
+    private static func matchNavigation(_ lower: String) -> StaticResult? {
+        // Patterns: "show me my X", "go to X", "open X", "take me to X", "switch to X"
+        let navPrefixes = [
+            "show me my ", "show me ", "show my ", "show ",
+            "go to ", "go to the ", "go to my ",
+            "open ", "open the ", "open my ",
+            "take me to ", "take me to the ", "take me to my ",
+            "switch to ", "switch to the ", "switch to my ",
+            "navigate to ", "navigate to the ",
+        ]
+
+        var target: String? = nil
+        for prefix in navPrefixes {
+            if lower.hasPrefix(prefix) {
+                target = String(lower.dropFirst(prefix.count))
+                    .replacingOccurrences(of: " tab", with: "")
+                    .replacingOccurrences(of: " screen", with: "")
+                    .replacingOccurrences(of: " page", with: "")
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                break
+            }
+        }
+
+        guard let target, !target.isEmpty else { return nil }
+
+        for entry in screenToTab {
+            if entry.keywords.contains(target) {
+                return .uiAction(.navigate(tab: entry.tab), "Opening \(entry.label)...")
+            }
+        }
+
+        return nil
     }
 }

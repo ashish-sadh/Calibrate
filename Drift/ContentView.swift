@@ -60,8 +60,11 @@ struct ContentView: View {
                 FloatingAIAssistant(currentTab: selectedTab)
             }
         }
-
-
+        .onReceive(NotificationCenter.default.publisher(for: .navigateToTab)) { notification in
+            if let tab = notification.userInfo?["tab"] as? Int {
+                withAnimation { selectedTab = tab }
+            }
+        }
     }
 }
 

@@ -615,5 +615,32 @@ enum ToolRegistration {
                 return .text("Logged \(parts.joined(separator: ", ")).")
             }
         ))
+        // MARK: - Navigation Tool
+
+        r.register(ToolSchema(
+            id: "nav.navigate_to", name: "navigate_to", service: "nav",
+            description: "Navigate to a screen. Use when user says 'show me', 'go to', 'open', 'switch to'.",
+            parameters: [ToolParam("screen", "string", "Screen: dashboard, weight, food, exercise, supplements, glucose, biomarkers, settings")],
+            handler: { params in
+                guard let screen = params.string("screen")?.lowercased()
+                    .trimmingCharacters(in: .whitespaces) else {
+                    return .error("Which screen? Try: dashboard, weight, food, exercise, supplements, glucose, biomarkers, or settings.")
+                }
+                let tabMap: [String: (tab: Int, label: String)] = [
+                    "dashboard": (0, "Dashboard"), "home": (0, "Dashboard"),
+                    "weight": (1, "Weight"), "weight chart": (1, "Weight"), "weight trend": (1, "Weight"), "scale": (1, "Weight"),
+                    "food": (2, "Food"), "food log": (2, "Food"), "diary": (2, "Food"), "nutrition": (2, "Food"), "meals": (2, "Food"),
+                    "exercise": (3, "Exercise"), "workout": (3, "Exercise"), "workouts": (3, "Exercise"), "gym": (3, "Exercise"), "training": (3, "Exercise"),
+                    "supplements": (4, "Supplements"), "vitamins": (4, "Supplements"),
+                    "glucose": (4, "Glucose"), "blood sugar": (4, "Glucose"),
+                    "biomarkers": (4, "Biomarkers"), "labs": (4, "Biomarkers"), "blood work": (4, "Biomarkers"),
+                    "settings": (4, "Settings"), "more": (4, "Settings"), "preferences": (4, "Settings"),
+                ]
+                guard let entry = tabMap[screen] else {
+                    return .text("I can navigate to: Dashboard, Weight, Food, Exercise, Supplements, Glucose, Biomarkers, or Settings.")
+                }
+                return .action(.navigate(tab: entry.tab))
+            }
+        ))
     }
 }

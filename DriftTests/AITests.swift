@@ -1548,3 +1548,179 @@ import Testing
     // Can't guarantee specific alerts fire on test DB, but none should have duplicate titles
     #expect(titles.count == alerts.count, "Alert titles should be unique")
 }
+
+// MARK: - Navigation Tool Tests
+
+@MainActor @Test func staticOverrideNavigateWeight() {
+    let result = StaticOverrides.match("show me my weight chart")
+    if case .uiAction(let action, let msg) = result {
+        if case .navigate(let tab) = action {
+            #expect(tab == 1)
+        } else {
+            Issue.record("Expected navigate action, got \(action)")
+        }
+        #expect(msg?.contains("Weight") == true)
+    } else {
+        Issue.record("Expected uiAction for weight navigation")
+    }
+}
+
+@MainActor @Test func staticOverrideNavigateFood() {
+    let result = StaticOverrides.match("go to food tab")
+    if case .uiAction(let action, _) = result {
+        if case .navigate(let tab) = action {
+            #expect(tab == 2)
+        } else {
+            Issue.record("Expected navigate action")
+        }
+    } else {
+        Issue.record("Expected uiAction for food navigation")
+    }
+}
+
+@MainActor @Test func staticOverrideNavigateExercise() {
+    let result = StaticOverrides.match("open exercise")
+    if case .uiAction(let action, _) = result {
+        if case .navigate(let tab) = action {
+            #expect(tab == 3)
+        } else {
+            Issue.record("Expected navigate action")
+        }
+    } else {
+        Issue.record("Expected uiAction for exercise navigation")
+    }
+}
+
+@MainActor @Test func staticOverrideNavigateDashboard() {
+    let result = StaticOverrides.match("go to dashboard")
+    if case .uiAction(let action, _) = result {
+        if case .navigate(let tab) = action {
+            #expect(tab == 0)
+        } else {
+            Issue.record("Expected navigate action")
+        }
+    } else {
+        Issue.record("Expected uiAction for dashboard navigation")
+    }
+}
+
+@MainActor @Test func staticOverrideNavigateSupplements() {
+    let result = StaticOverrides.match("show me supplements")
+    if case .uiAction(let action, _) = result {
+        if case .navigate(let tab) = action {
+            #expect(tab == 4)
+        } else {
+            Issue.record("Expected navigate action")
+        }
+    } else {
+        Issue.record("Expected uiAction for supplements navigation")
+    }
+}
+
+@MainActor @Test func staticOverrideNavigateSettings() {
+    let result = StaticOverrides.match("open settings")
+    if case .uiAction(let action, _) = result {
+        if case .navigate(let tab) = action {
+            #expect(tab == 4)
+        } else {
+            Issue.record("Expected navigate action")
+        }
+    } else {
+        Issue.record("Expected uiAction for settings navigation")
+    }
+}
+
+@MainActor @Test func staticOverrideNavigateVariantPhrases() {
+    // "switch to" variant
+    let r1 = StaticOverrides.match("switch to weight")
+    if case .uiAction(let action, _) = r1 {
+        if case .navigate(let tab) = action { #expect(tab == 1) }
+    } else {
+        Issue.record("'switch to weight' should navigate")
+    }
+
+    // "take me to" variant
+    let r2 = StaticOverrides.match("take me to food")
+    if case .uiAction(let action, _) = r2 {
+        if case .navigate(let tab) = action { #expect(tab == 2) }
+    } else {
+        Issue.record("'take me to food' should navigate")
+    }
+
+    // "navigate to" variant
+    let r3 = StaticOverrides.match("navigate to exercise")
+    if case .uiAction(let action, _) = r3 {
+        if case .navigate(let tab) = action { #expect(tab == 3) }
+    } else {
+        Issue.record("'navigate to exercise' should navigate")
+    }
+}
+
+@MainActor @Test func staticOverrideNavigateIgnoresNonNavPhrases() {
+    // "show" without a valid screen should not match navigation
+    let r1 = StaticOverrides.match("show me how to cook pasta")
+    // This should NOT be a navigate action (no screen match)
+    if case .uiAction(.navigate, _) = r1 {
+        Issue.record("'show me how to cook pasta' should not navigate")
+    }
+}
+
+@MainActor @Test func staticOverrideBarcodeScannerUsesCorrectAction() {
+    let result = StaticOverrides.match("scan barcode")
+    if case .uiAction(let action, _) = result {
+        if case .openBarcodeScanner = action {
+            // Correct — uses dedicated barcode action, not navigate
+        } else {
+            Issue.record("Barcode should use .openBarcodeScanner, got \(action)")
+        }
+    } else {
+        Issue.record("Expected uiAction for barcode")
+    }
+}
+
+@MainActor @Test func navigateToToolRegistered() {
+    ToolRegistration.registerAll()
+    let tool = ToolRegistry.shared.tool(named: "navigate_to")
+    #expect(tool != nil, "navigate_to tool should be registered")
+    #expect(tool?.service == "nav")
+}
+
+@MainActor @Test func navigateToToolReturnsAction() async {
+    ToolRegistration.registerAll()
+    let call = ToolCall(tool: "navigate_to", params: ToolCallParams(values: ["screen": "weight"]))
+    let result = await ToolRegistry.shared.execute(call)
+    if case .action(let action) = result {
+        if case .navigate(let tab) = action {
+            #expect(tab == 1)
+        } else {
+            Issue.record("Expected navigate action")
+        }
+    } else {
+        Issue.record("Expected action result from navigate_to tool")
+    }
+}
+
+@MainActor @Test func navigateToToolUnknownScreen() async {
+    ToolRegistration.registerAll()
+    let call = ToolCall(tool: "navigate_to", params: ToolCallParams(values: ["screen": "nonexistent"]))
+    let result = await ToolRegistry.shared.execute(call)
+    if case .text(let msg) = result {
+        #expect(msg.contains("Dashboard"))
+    } else {
+        Issue.record("Expected text listing available screens")
+    }
+}
+
+@MainActor @Test func intentClassifierNavigateToInPrompt() {
+    // Verify navigate_to tool is in the system prompt
+    #expect(IntentClassifier.systemPrompt.contains("navigate_to"))
+    #expect(IntentClassifier.systemPrompt.contains("screen"))
+}
+
+@Test func intentClassifierParsesNavigateIntent() {
+    let response = #"{"tool":"navigate_to","screen":"weight"}"#
+    let intent = IntentClassifier.parseResponse(response)
+    #expect(intent != nil)
+    #expect(intent?.tool == "navigate_to")
+    #expect(intent?.params["screen"] == "weight")
+}
