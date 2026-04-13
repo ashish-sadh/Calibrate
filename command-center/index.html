@@ -24,6 +24,7 @@
       <div class="tab" data-tab="fixed">Fixed Bugs</div>
       <div class="tab" data-tab="feedback">Feedback Trail</div>
       <div class="tab" data-tab="releases">Release Notes</div>
+      <div class="tab" data-tab="designs">Design Docs</div>
       <div class="tab" data-tab="review" id="review-tab" style="display:none">Needs Review</div>
       <div class="tab" data-tab="admin" id="admin-tab" style="display:none">Admin</div>
     </div>
@@ -92,6 +93,32 @@
       </div>
     </div>
 
+    <div id="tab-designs" style="display:none">
+      <!-- Request form -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px 40px;max-width:640px;margin:0 auto 24px;">
+        <h2 style="margin:0 0 20px;font-size:20px;">Request a Design Doc</h2>
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">What do you want designed?</label>
+          <input id="design-title" type="text" placeholder="e.g. Voice wake word activation, Photo food logging"
+            style="width:100%;padding:10px 12px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:14px;">
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">Context, goals, constraints</label>
+          <textarea id="design-body" rows="4" placeholder="Why is this needed? What should it achieve? Any constraints?"
+            style="width:100%;padding:10px 12px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:14px;resize:vertical;font-family:inherit;"></textarea>
+        </div>
+        <div style="display:flex;justify-content:flex-end;">
+          <button class="btn btn-primary" onclick="requestDesignDoc()" id="design-submit-btn">Request Design Doc</button>
+        </div>
+        <div id="design-result" style="margin-top:16px;"></div>
+      </div>
+
+      <!-- Open design docs -->
+      <div id="designs-list">
+        <div class="loading"><span class="spinner"></span> Loading design docs...</div>
+      </div>
+    </div>
+
     <div id="tab-review" style="display:none">
       <div id="review-list">
         <div class="loading"><span class="spinner"></span> Loading items for review...</div>
@@ -134,7 +161,7 @@
   <script src="app.js"></script>
   <script>
     // Tabs
-    const allTabs = ['reports', 'bugs', 'issues', 'fixed', 'feedback', 'releases', 'review', 'admin'];
+    const allTabs = ['reports', 'bugs', 'issues', 'fixed', 'feedback', 'releases', 'designs', 'review', 'admin'];
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -147,6 +174,7 @@
         if (tab.dataset.tab === 'issues') loadIssues();
         if (tab.dataset.tab === 'fixed') loadFixedBugs();
         if (tab.dataset.tab === 'releases') loadReleases();
+        if (tab.dataset.tab === 'designs') loadDesignDocs();
         if (tab.dataset.tab === 'review') loadReviewItems();
         if (tab.dataset.tab === 'admin') loadAdmin();
       });
@@ -641,6 +669,124 @@
         btn.style.color = 'var(--green)';
         setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 1500);
       });
+    }
+
+    // Request design doc
+    async function requestDesignDoc() {
+      const title = document.getElementById('design-title').value.trim();
+      const body = document.getElementById('design-body').value.trim();
+      const btn = document.getElementById('design-submit-btn');
+      const result = document.getElementById('design-result');
+
+      if (!title) { alert('Title is required'); return; }
+      if (!getToken()) { alert('Sign in first'); return; }
+
+      btn.textContent = 'Submitting...'; btn.disabled = true;
+      try {
+        const issue = await api(`/repos/${OWNER}/${REPO}/issues`, {
+          method: 'POST',
+          headers: { ...headers(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: `Design: ${title}`,
+            body: `${body || 'No additional context.'}\n\n---\n*Design doc requested via Drift Command Center*`,
+            labels: ['design-doc']
+          })
+        });
+        result.innerHTML = `<div style="color:var(--green)">Requested: <a href="${issue.html_url}" target="_blank">#${issue.number} — ${title}</a>. PE will write the design doc in the next sprint planning.</div>`;
+        document.getElementById('design-title').value = '';
+        document.getElementById('design-body').value = '';
+      } catch (e) {
+        result.innerHTML = `<div style="color:var(--red)">Failed: ${e.message}</div>`;
+      }
+      btn.textContent = 'Request Design Doc'; btn.disabled = false;
+    }
+
+    // Load design docs
+    async function loadDesignDocs() {
+      const el = document.getElementById('designs-list');
+      try {
+        // Get design-doc PRs (contain the actual docs)
+        const prs = await api(`/repos/${OWNER}/${REPO}/pulls?labels=design-doc&state=all&per_page=30`);
+        // Get design-doc issues (requests without docs yet)
+        const issues = await api(`/repos/${OWNER}/${REPO}/issues?labels=design-doc&state=open&per_page=20`);
+        const pendingRequests = issues.filter(i => !i.pull_request);
+
+        if (prs.length === 0 && pendingRequests.length === 0) {
+          el.innerHTML = '<div class="empty">No design docs yet. Request one above.</div>';
+          return;
+        }
+
+        let html = '';
+
+        // Pending requests (no doc written yet)
+        if (pendingRequests.length > 0) {
+          html += '<h3 style="color:var(--yellow);margin-bottom:12px;">Pending Requests (awaiting PE)</h3>';
+          html += pendingRequests.map(i => `
+            <div class="report-item" onclick="window.open('${i.html_url}','_blank')">
+              <div>
+                <span class="report-title">#${i.number} ${escapeHtml(i.title)}</span>
+                <span class="report-type" style="background:rgba(210,153,34,0.15);color:var(--yellow)">Awaiting Doc</span>
+              </div>
+              <span class="report-date">${new Date(i.created_at).toLocaleDateString()}</span>
+            </div>
+          `).join('');
+        }
+
+        // Design doc PRs
+        if (prs.length > 0) {
+          html += '<h3 style="color:var(--accent);margin:20px 0 12px;">Design Documents</h3>';
+          html += prs.map(pr => {
+            const isApproved = pr.labels.some(l => l.name === 'approved');
+            const isMerged = pr.merged_at != null;
+            const status = isMerged ? 'Implemented' : isApproved ? 'Approved' : 'Pending Review';
+            const statusColor = isMerged ? 'var(--text-muted)' : isApproved ? 'var(--green)' : 'var(--yellow)';
+            const statusBg = isMerged ? 'rgba(139,148,158,0.15)' : isApproved ? 'rgba(63,185,80,0.15)' : 'rgba(210,153,34,0.15)';
+
+            // Find the design doc file in the PR
+            const designFile = pr.title.replace('Design: ', '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+            return `<div class="report-item" style="flex-direction:column;align-items:stretch;gap:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                  <span class="report-title">${escapeHtml(pr.title)}</span>
+                  <span class="report-type" style="background:${statusBg};color:${statusColor}">${status}</span>
+                  <span class="badge">${pr.comments + pr.review_comments} comments</span>
+                </div>
+                <span class="report-date">${new Date(pr.created_at).toLocaleDateString()}</span>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <a href="${pr.html_url}" target="_blank" class="btn">View on GitHub</a>
+                ${!isApproved && !isMerged ? `<button class="btn btn-primary" onclick="approveDesignDoc(${pr.number})">Approve</button>` : ''}
+                ${!isMerged ? `<button class="btn" onclick="window.open('${pr.html_url}/files','_blank')">Review Changes</button>` : ''}
+              </div>
+            </div>`;
+          }).join('');
+        }
+
+        el.innerHTML = html;
+      } catch (e) {
+        el.innerHTML = `<div class="empty">Failed to load: ${e.message}</div>`;
+      }
+    }
+
+    async function approveDesignDoc(prNumber) {
+      if (!confirm('Approve this design doc for implementation?')) return;
+      try {
+        await api(`/repos/${OWNER}/${REPO}/issues/${prNumber}/labels`, {
+          method: 'POST',
+          headers: { ...headers(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ labels: ['approved'] })
+        });
+        await api(`/repos/${OWNER}/${REPO}/issues/${prNumber}/comments`, {
+          method: 'POST',
+          headers: { ...headers(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ body: 'Approved for implementation. PE will create tasks from this design doc in the next sprint planning.' })
+        });
+        alert('Design doc approved! Implementation tasks will be created in the next sprint planning.');
+        loadDesignDocs();
+      } catch (e) {
+        alert('Failed: ' + e.message);
+      }
     }
 
     // Init

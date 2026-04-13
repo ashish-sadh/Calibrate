@@ -5,7 +5,8 @@
 set -e
 
 # Query open bugs directly
-BUGS=$(gh issue list --state open --label bug --json number,title,labels --jq '[.[] | select(.labels | map(.name) | index("needs-review") | not)] | .[] | "#\(.number) \(.title) [\(.labels | map(.name) | join(","))]"' 2>/dev/null || echo "")
+# Exclude needs-review and design-doc issues from bug list
+BUGS=$(gh issue list --state open --label bug --json number,title,labels --jq '[.[] | select((.labels | map(.name) | index("needs-review") | not) and (.labels | map(.name) | index("design-doc") | not))] | .[] | "#\(.number) \(.title) [\(.labels | map(.name) | join(","))]"' 2>/dev/null || echo "")
 
 if [ -z "$BUGS" ]; then
   exit 0  # No bugs, proceed

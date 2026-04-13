@@ -59,6 +59,10 @@ LOOP FOREVER — do NOT stop between tickets:
     - **Classify each task** as JUNIOR or SENIOR:
       - **SENIOR (Opus):** AI pipeline changes, architecture, state machines, multi-file refactors, P0 bugs
       - **JUNIOR (Sonnet + advisor):** food DB, simple UI, tests, docs, single-file fixes
+    - **Design docs:** Check for design doc requests and open design docs:
+      - `gh issue list --state open --label design-doc` → for each, PE writes a design doc to `Docs/designs/design-{name}.md`, opens a PR with `design-doc` label. Do NOT add to sprint plan — wait for human approval.
+      - `gh pr list --label design-doc --state open` → for each open design doc PR, read all comments and respond inline. Revise the doc if feedback warrants it. Push updates to the same PR. This is a conversation.
+      - `gh pr list --label design-doc --label approved` → for each approved design doc, create implementation tasks in sprint-plan.md based on the doc. Merge the PR. Close the original request issue.
     - Update `~/drift-state/last-review-time` with current timestamp
     - Then **exit the session** — the watchdog will restart with the appropriate model (Sonnet for JUNIOR, Opus for SENIOR) for the first task.
 
