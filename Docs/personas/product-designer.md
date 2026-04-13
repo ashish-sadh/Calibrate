@@ -93,6 +93,11 @@
 - USDA API design doc is solid. Phase 1 (search + cache behind opt-in toggle) is the 80/20 — implement it next sprint before spending more time on manual food DB enrichment.
 - The app is transitioning from data logger to proactive health coach. No competitor does this holistically across nutrition, exercise, and supplements on-device.
 
+### What I Learned — Review #22 (Cycle 739, 2026-04-12)
+- USDA API integration shipped behind opt-in toggle. This is the right UX pattern for any feature that sends data off-device: default OFF, clear description, privacy note visible when enabled.
+- Sprint completion was 1/5 — but that one P0 was the most impactful infrastructure change since launch. Sometimes one high-impact item is better than five small ones. Still, sprint sizing needs to be honest: if a P0 takes a full sprint, don't plan four P1s alongside it.
+- WHOOP's AI Coach now has conversation memory and contextual guidance. Our proactive alerts serve a similar user need (the app watching out for you) without the privacy cost. Extend the alert pattern to workout consistency and logging gaps.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation

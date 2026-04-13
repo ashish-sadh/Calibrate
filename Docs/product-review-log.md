@@ -4,6 +4,22 @@ Periodic product + engineering reviews. Every 10 cycles of the self-improvement 
 
 ---
 
+## Review #22 — 2026-04-12 (Cycle 739)
+
+### Summary
+20 cycles since last review. 1/5 sprint items shipped, but it was the highest-impact one: USDA API Phase 1. Online food search (USDA + OpenFoodFacts) now gated behind privacy-first opt-in toggle (default OFF). Rate limiting, FoodService.searchWithFallback() for AI chat, updated privacy notice. 946 tests. TestFlight build 106 published.
+
+### Key Achievement
+Online food search closes the biggest food DB gap — from 1,500 local foods to 300K+ on-demand via USDA. Privacy preserved with opt-in toggle, local caching, and no PII sent.
+
+### Key Concern
+Sprint completion rate dropped to 20% (1/5). Chat navigation, proactive alerts, and bug hunting all slipped. Sprint sizing needs to be more honest — one large P0 should mean fewer P1s.
+
+### Competitive Alert
+WHOOP AI Coach now has conversation memory and contextual guidance. MacroFactor Workouts adding Apple Health integration. MFP's free tier continues shrinking. Our privacy-first, on-device approach remains differentiated.
+
+---
+
 ## Review #21 — 2026-04-12 (Cycle 719)
 
 ### Summary

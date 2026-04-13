@@ -8,14 +8,14 @@ _(pick from Ready)_
 
 ## Ready
 
-### P0: USDA API Phase 1
-- [ ] **Build USDAClient + cache table + FoodService fallback** — Implement Phase 1 from Docs/usda-api-design.md. USDAClient for search, usda_cache GRDB table, searchWithFallback() in FoodService. Ship behind opt-in toggle. Key challenge: nutrient ID mapping.
+### P0: More Proactive Alerts
+- [ ] **Workout consistency + logging gap alerts** — No workouts in 5+ days → alert. No food logging in 2+ days → alert. Extend BehaviorInsightService.computeProactiveAlerts(). Completes the health coach pattern (4→6 alert types).
 
 ### P1: Navigate to Screen from Chat
-- [ ] **"Show me my weight chart" switches tabs** — Navigation tool that routes chat commands to specific screens. Closes AI parity gap (P3 in ai-parity.md).
+- [ ] **"Show me my weight chart" switches tabs** — Navigation tool that routes chat commands to specific screens. Biggest remaining AI parity gap.
 
-### P1: More Proactive Alerts
-- [ ] **Workout consistency + logging gap alerts** — No workouts in 5+ days → alert. No food logging in 2+ days → alert. Extend BehaviorInsightService.computeProactiveAlerts().
+### P1: Wire USDA into AI Chat Food Logging
+- [ ] **Chat uses searchWithFallback when food not found** — When user says "log quinoa" and it's not local, use FoodService.searchWithFallback() if toggle is on.
 
 ### P1: Systematic Bug Hunting
 - [ ] **Run analysis on new code paths** — Focus on USDA integration, proactive alerts, exercise progress handler. Find silent bugs before users do.
@@ -83,11 +83,6 @@ Autonomous refactoring. Run `code-improvement.md`. Principles in `Docs/principle
 - [ ] **DDD violations** — Direct DB calls in views, business logic in UI layer.
 
 ## Done (this sprint)
-- [x] P0: AI workout intelligence — "How's my bench?" with 1RM trend, unit-aware
-- [x] P0: USDA API design document — Docs/usda-api-design.md
-- [x] P0: Hardcoded unit audit — 7 files fixed, all use Preferences.weightUnit
-- [x] P0: Progressive overload alerts — stalling/declining exercises with suggestions
-- [x] P1: Proactive alerts — protein streak + supplement gap on dashboard
-- [x] P1: Systematic bug hunt — 3 P0 bugs fixed (calorie regex, integer JSON, undo)
-- [x] P2: Muscle group chips — body part icons on workout history cards
-- [x] 942 tests (+6 regression/feature)
+- [x] P0: USDA API Phase 1 — opt-in toggle, rate limiting, searchWithFallback, privacy notice
+- [x] TestFlight build 106
+- [x] 946 tests (+4)

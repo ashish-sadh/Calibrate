@@ -97,6 +97,11 @@
 - USDA API implementation is the next significant architectural change. Key risk is scope creep — ship Phase 1 (USDAClient + cache table + searchWithFallback) in one sprint behind the opt-in toggle. The hard part is nutrient mapping (USDA uses numeric nutrient IDs, not names).
 - Systematic bug hunting validated as a permanent every-sprint practice. Continue focusing on new code paths each sprint.
 
+### What I Learned — Review #22 (Cycle 739, 2026-04-12)
+- USDA integration was architecturally simpler than expected because the client and OpenFoodFacts service already existed — they were just ungated. The real work was the privacy layer: preference toggle, rate limiting (`@MainActor` for concurrency-safe static state), and FoodService.searchWithFallback() for the chat pipeline.
+- DEMO_KEY has lower rate limits than a registered USDA key. Low-urgency for TestFlight but should be addressed before App Store launch.
+- Swift 6 strict concurrency caught the mutable static state in USDAFoodService immediately. `@MainActor` isolation was the right fix since search is always called from MainActor contexts.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)
