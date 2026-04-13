@@ -4,6 +4,29 @@ Periodic product + engineering reviews. Every 10 cycles of the self-improvement 
 
 ---
 
+## Review #14 — 2026-04-12 (Cycle 429)
+
+### Summary
+71 cycles since last review. 2/6 sprint items shipped: voice input prototype (P0), color harmony (P0). 4 items not started — cycles diverted to Command Center tooling. Bug #5 fixed (meal logging intent). TestFlight build 105 published.
+
+### Key Achievement
+Voice input shipped — users can speak to AI chat. Color palette is cohesive across all views. Both long-overdue P0s finally delivered.
+
+### Key Concern
+33% sprint completion rate. Internal tooling (Command Center) displaced user-facing work. Chat UI remains plain text — most visible quality gap.
+
+### Agreed Direction (Cycles 429–449)
+1. Chat UI — message bubbles (P0)
+2. Chat UI — typing indicator (P0)
+3. Chat UI — tool execution feedback (P1)
+4. Food DB enrichment to 1,500 (P1)
+5. Voice input real-device validation (P1)
+6. Meal planning dialogue (P2)
+7. AIChatView ViewModel extraction alongside chat UI (P2)
+8. Intent normalizer — centralize prefix stripping (P2)
+
+---
+
 ## Review #13 — 2026-04-12 (Cycle 358)
 
 ### Summary

@@ -56,6 +56,11 @@
 - Zero open bugs, zero open issues. Clean operational state. Don't break this by rushing voice input — prototype on branch.
 - AIChatView ViewModel extraction should happen alongside chat UI work (bubbles, typing indicators). Don't do it as standalone refactoring.
 
+### What I Learned — Review #14 (Cycle 429, 2026-04-12)
+- Voice input routing through existing chat pipeline was the right call. Zero new infrastructure — speech text goes straight into sendMessage(). All intent handling works automatically.
+- Bug #5 ("Can you log lunch") exposed brittle prefix matching in intent handlers. Conversational prefix stripping fixes the immediate issue, but a centralized normalizer before all matchers would be more robust.
+- Command Center (GitHub Pages + Cloudflare Worker OAuth) consumed more cycles than expected. Simple architecture, but OAuth edge cases and deployment issues added up. Keep internal tooling minimal going forward.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)

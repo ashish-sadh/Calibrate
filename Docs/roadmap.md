@@ -42,11 +42,11 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 ## UI & Design
 
 ### Now
-- **Color harmony (P0)** — App-wide palette refresh. Background, card, accent, ring, text hierarchy. Research Whoop/Apple Fitness palettes. One cycle, not iterative.
+- ~~**Color harmony (P0)**~~ DONE — Warmer palette: #0E0E12 background, #1A1B24 cards, #8B7CF6 accent. Domain colors (cyclePink, supplementMint). All views updated.
 - ~~**Theme overhaul (P0)**~~ DONE — Premium dark refresh: navy background, accent-driven cards, consistent typography across 46 views.
 - ~~**Dashboard redesign (P1)**~~ DONE — Apple Fitness-style macro rings, section headers (Body/Activity/Recovery/Insights), ring legend.
 - ~~**Chat food confirmation card (P1)**~~ DONE — Structured card when food is logged (name, calories, macros). First structured chat UI element.
-- **Chat UI (P1)** — Message bubbles, typing indicator, tool execution feedback ("Looking up food..."). Bubbles first (pure UI), then tool feedback (needs state machine plumbing).
+- **Chat UI (P0)** — Message bubbles, typing indicator, tool execution feedback ("Looking up food..."). Bubbles first (pure UI), then tool feedback (needs state machine plumbing). **Most visible quality gap — #1 priority.**
 - **Food diary** — Faster logging flow, better meal grouping, clearer macro display.
 
 ### Next

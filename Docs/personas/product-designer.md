@@ -51,6 +51,11 @@
 - Food confirmation card proved structured chat UI works. The path is clear: bubbles → typing indicators → tool feedback → rich cards for every action.
 - Color harmony is the most visible remaining quality gap. Every user sees the disjointed palette on every screen.
 
+### What I Learned — Review #14 (Cycle 429, 2026-04-12)
+- Voice input and color harmony both shipped — 2/6 sprint items. The P0s got done but P1/P2 items were displaced by Command Center tooling. Internal tooling has diminishing returns; must resist the pull.
+- Chat UI is now the most visible quality gap. Plain text responses with no bubbles feel like a prototype. This is the #1 thing to fix for perceived quality.
+- The market is consolidating toward all-in-one platforms (MacroFactor Workouts, MFP acquisitions). Our all-in-one + on-device privacy is the differentiator, but chat polish is what makes it feel real.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation
