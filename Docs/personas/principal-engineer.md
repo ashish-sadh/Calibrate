@@ -76,6 +76,11 @@
 - Systematic bug analysis agent found real issues: greedy regex (carb/fat patterns matching "cal"/"for"), empty food queries in multi-food parser, word-number teen-hundred gap. Run this quarterly.
 - `resolveWordNumbers` is only applied before goal parsing. If we want it everywhere (quick-add, calorie targets), move it to the top of StaticOverrides.match(). Architecture note for when it matters.
 
+### What I Learned — Review #18 (Cycle 650, 2026-04-12)
+- Meal hint bug was a real data accuracy issue — AI ignored explicit "for lunch" meal specification. The `initialMealType` passthrough pattern was clean and non-invasive. Always thread user intent through the full pipeline.
+- Workout unit hardcoding was another instance of the stale preference pattern from Review #12. Recommend one final audit: grep for hardcoded "lb" or "lbs" across all views.
+- USDA API would be the first external network call in the app. Needs careful design: offline-first cache, rate limiting, privacy implications (search queries leave the device). Architecturally significant — design doc before code.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)

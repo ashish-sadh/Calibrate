@@ -94,7 +94,8 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 
 ### Now
 - ~~Workout history polish~~ DONE — Weight unit preference respected in history cards.
-- Progressive overload tracking improvements
+- **Progressive overload alerts (P0)** — "You've been at 135 lbs for 3 weeks — try 140." Trend visualization in workout history.
+- **Hardcoded unit audit (P0)** — grep "lb"/"lbs" across all views, fix remaining instances of stale preference pattern.
 
 ### Next
 - **Exercise presentation** — Images, muscle group icons, exercise instructions. Match Boostcamp quality.

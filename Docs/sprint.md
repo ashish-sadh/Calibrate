@@ -8,30 +8,26 @@ _(pick from Ready)_
 
 ## Ready
 
-### P0: Voice Input Prototype
-- [x] **SpeechRecognizer → chat pipeline** — Mic button in chat input bar. SpeechRecognitionService with on-device recognition (requiresOnDeviceRecognition). Streams partial results into text field. Pulse animation while recording. 6 unit tests. Go/no-go at Review #14 after real-device testing.
+### P0: Progressive Overload Alerts
+- [ ] **Overload alerts in workout history** — "You've been at 135 lbs for 3 weeks — try 140." Trend visualization for each exercise. Weakest vertical vs MacroFactor/Strong.
 
-### P0: Color & Visual Harmony Pass
-- [x] **Fix color coordination app-wide** — Warmer palette: background #0E0E12, cards #1A1B24, accent #8B7CF6. New domain colors (cyclePink, supplementMint). Fixed hardcoded colors in BiomarkersTabView, MoreTabView, DashboardView. Separator softened to 0.06. All via Theme constants.
+### P0: Hardcoded Unit Audit
+- [ ] **Grep "lb"/"lbs" across all views** — Fix remaining instances of stale preference pattern. One pass to close this out.
 
-### P1: Chat UI Evolution
-- [x] **Message bubbles** — Replace plain text with user/AI message bubbles. Pure view-layer change.
-- [x] **Typing indicator** — Animated dots during AI thinking/classification phase.
-- [x] **Tool execution feedback** — Show "Looking up food...", "Checking workout history..." during Tier 2-3 execution. Needs state machine integration.
-- [x] **Typewriter text animation** — Instant AI responses reveal character-by-character.
-- [x] **Structured confirmation cards** — Weight and workout logged confirmations as rich cards.
+### P1: AI Chat Workout Intelligence
+- [ ] **"How's my bench progress?"** — Show trend data in chat. Leverage existing progressive overload service. Low effort, high value.
 
-### P1: Food DB Enrichment to 1,500
-- [x] **Add ~300 foods** — Chinese, Middle Eastern, American classics, sandwiches, soups, healthy options.
+### P1: USDA API Design Document
+- [ ] **Design the integration** — Caching, offline-first, privacy (search queries leave device). First external network call — design before code.
 
-### P1: Food Search Quality
-- [x] **Synonym expansion** — "curd" → yogurt, "aloo" → potato, regional/colloquial terms.
+### P1: Systematic Bug Hunting
+- [ ] **Run analysis every 5 cycles** — Meal hint bug was found via systematic analysis. Keep this cadence.
 
-### P2: Meal Planning Dialogue
-- [x] **"Plan my meals for today"** — Iterative suggestion flow with planningMeals state phase, number selection, smart pills.
+### P2: Exercise Presentation
+- [ ] **Muscle group icons on workout cards** — Visual polish, moves toward Boostcamp parity.
 
 ### P2: AIChatView ViewModel Extraction
-- [ ] **Extract logic from AIChatView (400+ lines)** — Do alongside chat UI work (bubbles, typing indicators). Move business logic to AIChatViewModel. Not standalone refactoring.
+- [ ] **Extract logic from AIChatView (400+ lines)** — Do alongside chat UI work. Move business logic to AIChatViewModel. Not standalone refactoring.
 
 ---
 

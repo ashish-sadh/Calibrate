@@ -71,6 +71,11 @@
 - Systematic bug hunting (running an analysis agent across pipeline files) found 4 silent data-accuracy bugs. This should be a quarterly ritual, not just reactive.
 - Whoop's $10.1B valuation and MFP's GLP-1 tracking show the health market is consolidating around data density + AI. Our moat is privacy + on-device chat quality — double down on that.
 
+### What I Learned — Review #18 (Cycle 650, 2026-04-12)
+- Food diary now has a complete editing story (inline macro editing + meal re-log + copy from past days). This is table stakes and we finally have it. The "I do this every day" features are what build habits.
+- Exercise is our weakest vertical — MacroFactor launched Workouts with progressive overload automation and Jeff Nippard videos. We can't compete on content volume, but AI-powered workout intelligence (progressive overload alerts, form tips in chat) is our angle.
+- Food DB gap (1,500 vs MFP's 20M) is less concerning with chat-first logging — users type "chicken biryani 300g" and it works. USDA API integration is the right next investment, not manual enrichment.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation

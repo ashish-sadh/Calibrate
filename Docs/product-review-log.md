@@ -4,6 +4,31 @@ Periodic product + engineering reviews. Every 10 cycles of the self-improvement 
 
 ---
 
+## Review #18 — 2026-04-12 (Cycle 650)
+
+### Summary
+20 cycles since last review. 4/6 sprint items shipped (67%): food diary inline editing, meal re-log, AI meal categorization fix, workout unit fix. Food search partial matching verified as already working — no code change needed. 936 tests (+1).
+
+### Key Achievement
+Food diary has a complete editing story — inline macro editing, meal re-log, copy from past days. Table stakes achieved.
+
+### Key Concern
+Exercise is our weakest vertical. MacroFactor launched Workouts with progressive overload automation. Our 873 exercises are text-only with no visual guidance or overload tracking.
+
+### Competitive Alert
+MFP acquired Cal AI for photo scanning. Whoop raised $575M for AI coaching. Boostcamp added AI-generated programs. MacroFactor launched Workouts app with progressive overload automation.
+
+### Agreed Direction (Cycles 650–670)
+1. Progressive overload alerts in workout history (P0)
+2. Hardcoded unit audit — grep "lb"/"lbs" across all views (P0)
+3. AI chat workout intelligence — "how's my bench?" (P1)
+4. USDA API design document (P1)
+5. Systematic bug hunting every 5 cycles (P1)
+6. Exercise presentation — muscle group icons (P2)
+7. Coverage maintenance via boy scout rule (P2)
+
+---
+
 ## Review #17 — 2026-04-12 (Cycle 620)
 
 ### Summary
