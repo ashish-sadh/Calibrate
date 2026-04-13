@@ -21,7 +21,9 @@
       <div class="tab active" data-tab="reports">Reports</div>
       <div class="tab" data-tab="bugs">File Bug</div>
       <div class="tab" data-tab="issues">Open Issues</div>
+      <div class="tab" data-tab="fixed">Fixed Bugs</div>
       <div class="tab" data-tab="feedback">Feedback Trail</div>
+      <div class="tab" data-tab="releases">Release Notes</div>
     </div>
 
     <div id="tab-reports">
@@ -70,9 +72,21 @@
       </div>
     </div>
 
+    <div id="tab-fixed" style="display:none">
+      <div id="fixed-list">
+        <div class="loading"><span class="spinner"></span> Loading fixed bugs...</div>
+      </div>
+    </div>
+
     <div id="tab-feedback" style="display:none">
       <div id="feedback-list">
         <div class="loading"><span class="spinner"></span> Loading feedback...</div>
+      </div>
+    </div>
+
+    <div id="tab-releases" style="display:none">
+      <div id="releases-list">
+        <div class="loading"><span class="spinner"></span> Loading release notes...</div>
       </div>
     </div>
   </div>
@@ -81,7 +95,7 @@
   <script src="app.js"></script>
   <script>
     // Tabs
-    const allTabs = ['reports', 'bugs', 'issues', 'feedback'];
+    const allTabs = ['reports', 'bugs', 'issues', 'fixed', 'feedback', 'releases'];
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -92,6 +106,8 @@
         });
         if (tab.dataset.tab === 'feedback') loadFeedback();
         if (tab.dataset.tab === 'issues') loadIssues();
+        if (tab.dataset.tab === 'fixed') loadFixedBugs();
+        if (tab.dataset.tab === 'releases') loadReleases();
       });
     });
 
@@ -216,6 +232,38 @@
       }
     }
 
+    // Load fixed (closed) bugs
+    async function loadFixedBugs() {
+      const el = document.getElementById('fixed-list');
+      try {
+        const issues = await api(`/repos/${OWNER}/${REPO}/issues?state=closed&labels=bug&per_page=100&sort=updated&direction=desc`);
+        if (issues.length === 0) {
+          el.innerHTML = '<div class="empty">No fixed bugs yet.</div>';
+          return;
+        }
+        el.innerHTML = `<ul class="report-list">${issues.map(i => {
+          const priority = i.labels.find(l => ['P0','P1','P2'].includes(l.name));
+          const priorityBadge = priority
+            ? `<span class="report-type" style="background:${priority.name === 'P0' ? 'rgba(248,81,73,0.15);color:var(--red)' : priority.name === 'P1' ? 'rgba(210,153,34,0.15);color:var(--yellow)' : 'rgba(139,148,158,0.15);color:var(--text-muted)'}">${priority.name}</span>`
+            : '';
+          const hasImage = i.body && i.body.includes('![');
+          const closedDate = new Date(i.closed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          const filedDate = new Date(i.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          return `<li class="report-item" onclick="window.open('${i.html_url}','_blank')">
+            <div>
+              <span class="report-title">#${i.number} ${i.title}</span>
+              ${priorityBadge}
+              <span class="report-type" style="background:rgba(63,185,80,0.15);color:var(--green);">Fixed</span>
+              ${hasImage ? '<span class="badge">has screenshot</span>' : ''}
+            </div>
+            <span class="report-date">Filed ${filedDate} · Fixed ${closedDate}</span>
+          </li>`;
+        }).join('')}</ul>`;
+      } catch (e) {
+        el.innerHTML = `<div class="empty">Failed to load fixed bugs: ${e.message}</div>`;
+      }
+    }
+
     // Load metrics
     async function loadMetrics() {
       const el = document.getElementById('metrics');
@@ -324,6 +372,107 @@
       } catch (e) {
         el.innerHTML = `<div class="empty">Failed to load feedback: ${e.message}</div>`;
       }
+    }
+
+    // Load release notes from pre-generated releases.json
+    async function loadReleases() {
+      const el = document.getElementById('releases-list');
+      try {
+        // Try local file first (works on localhost), then GitHub
+        let builds;
+        try {
+          const resp = await fetch('releases.json');
+          if (!resp.ok) throw new Error('local fetch failed');
+          builds = await resp.json();
+        } catch {
+          const data = await smartApi(`/repos/${OWNER}/${REPO}/contents/command-center/releases.json`);
+          builds = JSON.parse(atob(data.content));
+        }
+
+        if (!builds || builds.length === 0) {
+          el.innerHTML = '<div class="empty">No published builds found.</div>';
+          return;
+        }
+
+        // Sort newest first
+        builds.sort((a, b) => b.build - a.build);
+
+        // "Copy All" for full release notes
+        let allCopyText = 'Drift Release Notes\n====================\n';
+        const cards = builds.map(b => {
+          const date = new Date(b.date).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+          const fixes = b.fixes || [];
+          const features = b.features || [];
+          const desc = b.description || '';
+          const hasContent = fixes.length > 0 || features.length > 0 || desc;
+
+          // Plain text for copy
+          let copyText = `Build ${b.build} (${date})`;
+          if (desc) copyText += `\n${desc}`;
+          if (fixes.length > 0) copyText += `\n\nBug Fixes:\n${fixes.map(f => `  - ${f}`).join('\n')}`;
+          if (features.length > 0) copyText += `\n\nNew:\n${features.map(f => `  - ${f}`).join('\n')}`;
+          copyText += '\n';
+          allCopyText += `\n${copyText}\n`;
+
+          return `
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px 28px;margin-bottom:16px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:${hasContent ? '12' : '0'}px;">
+                <div>
+                  <span style="font-size:18px;font-weight:600;">Build ${b.build}</span>
+                  <span style="color:var(--text-muted);margin-left:12px;font-size:14px;">${date}</span>
+                  ${fixes.length > 0 ? `<span style="margin-left:8px;font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(63,185,80,0.15);color:var(--green);">${fixes.length} fix${fixes.length > 1 ? 'es' : ''}</span>` : ''}
+                  ${features.length > 0 ? `<span style="margin-left:4px;font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(130,80,223,0.15);color:var(--accent);">${features.length} new</span>` : ''}
+                </div>
+                <button class="btn" onclick="copyRelease(this)" data-text="${encodeURIComponent(copyText)}" style="font-size:12px;padding:4px 12px;">Copy</button>
+              </div>
+              ${desc && !fixes.length && !features.length ? `<div style="color:var(--text-muted);font-size:14px;">${escapeHtml(desc)}</div>` : ''}
+              ${fixes.length > 0 ? `
+                <div style="margin-bottom:${features.length > 0 ? '12' : '0'}px;">
+                  <div style="font-size:12px;font-weight:600;color:var(--green);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Bug Fixes</div>
+                  <ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.7;color:var(--text);">
+                    ${fixes.map(f => `<li>${escapeHtml(f)}</li>`).join('')}
+                  </ul>
+                </div>
+              ` : ''}
+              ${features.length > 0 ? `
+                <div>
+                  <div style="font-size:12px;font-weight:600;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">New</div>
+                  <ul style="margin:0;padding-left:18px;font-size:14px;line-height:1.7;color:var(--text);">
+                    ${features.map(f => `<li>${escapeHtml(f)}</li>`).join('')}
+                  </ul>
+                </div>
+              ` : ''}
+            </div>
+          `;
+        });
+
+        // Header with Copy All button
+        const header = `
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <div style="font-size:14px;color:var(--text-muted);">${builds.length} published builds</div>
+            <button class="btn btn-primary" onclick="copyRelease(this)" data-text="${encodeURIComponent(allCopyText)}" style="font-size:13px;padding:6px 16px;">Copy All Release Notes</button>
+          </div>
+        `;
+        el.innerHTML = header + cards.join('');
+      } catch (e) {
+        el.innerHTML = `<div class="empty">Failed to load releases: ${e.message}</div>`;
+      }
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function copyRelease(btn) {
+      const text = decodeURIComponent(btn.dataset.text);
+      navigator.clipboard.writeText(text).then(() => {
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.style.color = 'var(--green)';
+        setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 1500);
+      });
     }
 
     // Init
