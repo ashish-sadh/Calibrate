@@ -33,7 +33,7 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 
 ### Now
 - ~~**Chat navigation (P0)**~~ DONE — "Show me my weight chart" switches tabs. Static overrides + LLM tool. Chat collapses on navigate.
-- **Wire USDA into AI chat (P1)** — Chat uses searchWithFallback when local food not found. API exists, needs chat integration.
+- ~~**Wire USDA into AI chat (P1)**~~ DONE — Chat uses searchWithFallback when local food not found. log_food preHook + food_info handler both fall back to USDA/OpenFoodFacts.
 
 ### Next
 - ~~**USDA API Phase 1**~~ DONE — Opt-in toggle, rate limiting, searchWithFallback, privacy notice. Behind toggle (default OFF).

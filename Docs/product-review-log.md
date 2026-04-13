@@ -4,6 +4,38 @@ Periodic product + engineering reviews. Every 10 cycles of the self-improvement 
 
 ---
 
+## Review #26 — 2026-04-12 (Cycle 849)
+
+### Summary
+20 cycles since last review. Zero new user-facing features shipped — all cycles consumed by review process and documentation. Sprint from Reviews #24–#25 fully delivered (3/4 items, 75% velocity). Sprint refreshed: workout split builder (P0), chat UI improvements (P1), bug hunting (P1), food DB enrichment (P2). IntentClassifier 63% coverage formally accepted as floor.
+
+### Key Achievement
+Previous sprint delivery was strong (chat navigation, USDA chat integration, bug fixes). Review process caught the velocity stall and refreshed sprint immediately.
+
+### Key Concern
+Review-to-feature ratio inverted. The review mechanism (every 20 commits) counts review commits toward next trigger, creating a feedback loop. Recommend time-based or milestone-based review cadence.
+
+### Competitive Alert
+Whoop launched Women's Health panel (11 biomarkers, cycle-hormone integration). MFP integrated ChatGPT for nutrition Q&A. MacroFactor added Live Activities and cardio tracking. Our on-device conversational AI remains unique but competitors are closing gaps.
+
+---
+
+## Review #25 — 2026-04-12 (Cycle 829)
+
+### Summary
+23 cycles since last review. 3/4 sprint items shipped (75% — best since Review #21). Chat navigation, USDA chat integration, and systematic bug hunting all complete. 966 tests (+4). AI-first vision complete: log + query + navigate + plan — all conversational.
+
+### Key Achievement
+USDA food search works through AI chat. Users type "log acai bowl" and get USDA results automatically. AI-first promise extends to food discovery.
+
+### Key Concern
+IntentClassifier coverage deferred 4 consecutive reviews. Accepted 63% as floor for LLM-dependent code.
+
+### Competitive Alert
+Full conversational app control entirely on-device remains unique. Privacy moat deepens with each on-device capability.
+
+---
+
 ## Review #24 — 2026-04-12 (Cycle 806)
 
 ### Summary

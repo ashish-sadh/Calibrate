@@ -111,6 +111,11 @@
 - NotificationCenter for cross-overlay tab switching validated in practice. The navigate notification fires from AIChatView, ContentView updates selectedTab, FloatingAIAssistant collapses. Three components, zero shared state, one notification.
 - ToolAction enum growing (6 cases) is manageable because Swift compiler enforces exhaustive switches. No missed callsites. The enum is the right abstraction for UI actions triggered by AI tools.
 
+### What I Learned — Review #26 (Cycle 849, 2026-04-12)
+- Review-to-feature ratio was inverted this window: 20 cycles of process, 0 of product. The review mechanism (trigger every 20 commits) counts review commits toward the next trigger. This creates a feedback loop where reviews beget reviews. Fix: time-based or milestone-based triggers.
+- IntentClassifier 63% coverage is formally accepted as floor. LLM-dependent code where deterministic tests have diminishing returns past ~65%. Remove from all sprint and review tracking.
+- Workout split builder should reuse `ConversationState.Phase` pattern from meal planning. Add `planningWorkout` phase, follow the same state machine transitions. Minimal new infrastructure.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)

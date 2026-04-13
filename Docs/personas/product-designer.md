@@ -107,6 +107,11 @@
 - Chat navigation shipped and closes the AI-first loop. Every major app action is now conversational. This is what "AI-first" means — not just logging through chat, but navigating, querying, and controlling the entire app through conversation.
 - The layered approach (static overrides for speed, LLM tool for flexibility) is the pattern to replicate for future AI features. Users get instant response for common phrases and intelligent handling for edge cases.
 
+### What I Learned — Review #26 (Cycle 849, 2026-04-12)
+- Twenty cycles of zero user-visible output is a red flag. Reviews are important but they shouldn't consume the cycles they're meant to measure. Consider time-based or milestone-based review cadence instead of cycle-count-based.
+- Whoop's Women's Health panel (11 biomarkers, cycle-hormone integration) is the cross-domain insight pattern we should be doing. They're connecting menstrual cycle data to recovery and training readiness. Our biomarker + cycle tracking data exists — we just need the correlation layer.
+- Workout split builder should be the next sticky feature. "Plan my meals today" proved multi-turn dialogue drives daily engagement. "Build me a PPL split" is the same pattern for exercise.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation
