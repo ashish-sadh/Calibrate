@@ -1795,3 +1795,99 @@ import Testing
     case .text, .action, .error: break  // All acceptable
     }
 }
+
+// MARK: - Workout Split Builder Tests
+
+@Test @MainActor func splitResolvePPL() {
+    #expect(ExerciseService.resolveSplitType("build me a ppl split") == "ppl")
+    #expect(ExerciseService.resolveSplitType("push pull legs") == "ppl")
+}
+
+@Test @MainActor func splitResolveUpperLower() {
+    #expect(ExerciseService.resolveSplitType("upper lower split") == "upper/lower")
+    #expect(ExerciseService.resolveSplitType("upper/lower") == "upper/lower")
+}
+
+@Test @MainActor func splitResolveFullBody() {
+    #expect(ExerciseService.resolveSplitType("full body program") == "full body")
+}
+
+@Test @MainActor func splitResolveBroSplit() {
+    #expect(ExerciseService.resolveSplitType("bro split") == "bro split")
+}
+
+@Test @MainActor func splitResolveUnknownReturnsNil() {
+    #expect(ExerciseService.resolveSplitType("something random") == nil)
+}
+
+@Test @MainActor func splitDefinitionsPPLHasThreeDays() {
+    let days = ExerciseService.splitDefinitions["ppl"]
+    #expect(days != nil)
+    #expect(days?.count == 3)
+    #expect(days?[0].name == "Push")
+    #expect(days?[1].name == "Pull")
+    #expect(days?[2].name == "Legs")
+}
+
+@Test @MainActor func splitDefinitionsUpperLowerHasTwoDays() {
+    let days = ExerciseService.splitDefinitions["upper/lower"]
+    #expect(days != nil)
+    #expect(days?.count == 2)
+}
+
+@Test @MainActor func splitSuggestForDayReturnsExercises() {
+    let suggestions = ExerciseService.suggestForSplitDay(splitType: "ppl", dayIndex: 0)
+    #expect(!suggestions.isEmpty)
+    #expect(suggestions.count <= 6)
+    // Push day should include chest/shoulders exercises
+    let parts = Set(suggestions.map(\.bodyPart))
+    #expect(parts.contains("Chest") || parts.contains("Shoulders"))
+}
+
+@Test @MainActor func splitSuggestForInvalidDayReturnsEmpty() {
+    let suggestions = ExerciseService.suggestForSplitDay(splitType: "ppl", dayIndex: 99)
+    #expect(suggestions.isEmpty)
+}
+
+@Test @MainActor func splitSuggestForInvalidTypeReturnsEmpty() {
+    let suggestions = ExerciseService.suggestForSplitDay(splitType: "nonexistent", dayIndex: 0)
+    #expect(suggestions.isEmpty)
+}
+
+@Test @MainActor func splitBuildTemplateCreatesValid() {
+    let template = ExerciseService.buildSplitTemplate(name: "Test Push", exerciseNames: ["Bench Press", "Shoulder Press"])
+    #expect(template != nil)
+    #expect(template?.name == "Test Push")
+    #expect(template?.exercises.count == 2)
+}
+
+@Test @MainActor func splitBuildTemplateEmptyExercises() {
+    let template = ExerciseService.buildSplitTemplate(name: "Empty", exerciseNames: [])
+    #expect(template != nil)
+    #expect(template?.exercises.isEmpty == true)
+}
+
+@Test @MainActor func splitPhaseInConversationState() {
+    let state = ConversationState.shared
+    state.phase = .planningWorkout(splitType: "ppl", currentDay: 0, totalDays: 3)
+    if case .planningWorkout(let type, let day, let total) = state.phase {
+        #expect(type == "ppl")
+        #expect(day == 0)
+        #expect(total == 3)
+    } else {
+        #expect(Bool(false), "Expected planningWorkout phase")
+    }
+    state.phase = .idle
+}
+
+@Test @MainActor func splitTopicClassifiesSplitAsExercise() {
+    let state = ConversationState.shared
+    #expect(state.classifyTopic("build me a ppl split") == .exercise)
+    #expect(state.classifyTopic("design my workout split") == .exercise)
+}
+
+@Test @MainActor func splitSuggestionsNoDuplicates() {
+    let suggestions = ExerciseService.suggestForSplitDay(splitType: "ppl", dayIndex: 0)
+    let names = suggestions.map(\.name)
+    #expect(Set(names).count == names.count, "Suggestions should have no duplicates")
+}

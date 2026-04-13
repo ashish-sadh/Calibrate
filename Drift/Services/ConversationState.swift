@@ -57,6 +57,8 @@ final class ConversationState {
         case awaitingExercises
         /// Iterative meal planning: suggesting foods to fill remaining macros
         case planningMeals(mealName: String, iteration: Int)
+        /// Iterative workout split builder: designing a multi-day program
+        case planningWorkout(splitType: String, currentDay: Int, totalDays: Int)
     }
 
     var phase: Phase = .idle
@@ -86,6 +88,7 @@ final class ConversationState {
         // Exercise
         if words.contains("workout") || words.contains("exercise") || words.contains("train")
             || words.contains("gym") || words.contains("yoga") || words.contains("running")
+            || words.contains("split") || words.contains("ppl")
             || lower.contains("push day") || lower.contains("leg day") { return .exercise }
 
         // Sleep

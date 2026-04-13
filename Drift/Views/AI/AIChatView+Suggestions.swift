@@ -29,6 +29,11 @@ extension AIChatView {
             return ["1", "2", "3", "More options", "Done planning"]
         }
 
+        // During workout split building, show split-specific pills
+        if case .planningWorkout = convState.phase {
+            return ["All", "1 2 3", "Skip", "Done"]
+        }
+
         var pills: [String] = []
         let totals = FoodService.getDailyTotals()
         let hour = Calendar.current.component(.hour, from: Date())

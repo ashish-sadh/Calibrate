@@ -216,6 +216,90 @@ enum ExerciseService {
         (try? WorkoutService.recentExerciseNames(limit: limit)) ?? []
     }
 
+    // MARK: - Workout Split Builder
+
+    /// Known split types with their day→body-part mappings.
+    static let splitDefinitions: [String: [(name: String, parts: [String])]] = [
+        "ppl": [
+            (name: "Push", parts: ["Chest", "Shoulders", "Arms"]),
+            (name: "Pull", parts: ["Back", "Arms"]),
+            (name: "Legs", parts: ["Legs", "Core"]),
+        ],
+        "upper/lower": [
+            (name: "Upper", parts: ["Chest", "Back", "Shoulders", "Arms"]),
+            (name: "Lower", parts: ["Legs", "Core"]),
+        ],
+        "full body": [
+            (name: "Full Body", parts: ["Chest", "Back", "Legs", "Shoulders", "Core"]),
+        ],
+        "bro split": [
+            (name: "Chest", parts: ["Chest"]),
+            (name: "Back", parts: ["Back"]),
+            (name: "Shoulders", parts: ["Shoulders"]),
+            (name: "Legs", parts: ["Legs"]),
+            (name: "Arms", parts: ["Arms"]),
+        ],
+    ]
+
+    /// Resolve a user phrase to a known split type key.
+    static func resolveSplitType(_ input: String) -> String? {
+        let lower = input.lowercased()
+        if lower.contains("ppl") || lower.contains("push pull leg") { return "ppl" }
+        if lower.contains("upper") && lower.contains("lower") { return "upper/lower" }
+        if lower.contains("full body") || lower.contains("fullbody") { return "full body" }
+        if lower.contains("bro") { return "bro split" }
+        return nil
+    }
+
+    /// Suggest exercises for a given day of a split.
+    /// Returns 4-6 exercises: user history prioritized, then DB exercises for the target body parts.
+    static func suggestForSplitDay(splitType: String, dayIndex: Int) -> [ExerciseDatabase.ExerciseInfo] {
+        guard let days = splitDefinitions[splitType], dayIndex < days.count else { return [] }
+        let dayParts = days[dayIndex].parts
+        let userExercises = Set((try? WorkoutService.recentExerciseNames(limit: 100)) ?? [])
+
+        // Gather candidates from each body part
+        var candidates: [ExerciseDatabase.ExerciseInfo] = []
+        for part in dayParts {
+            let partExercises = ExerciseDatabase.byBodyPart(part)
+            // User's exercises first, then others
+            let sorted = partExercises.sorted { a, b in
+                let aUsed = userExercises.contains(a.name)
+                let bUsed = userExercises.contains(b.name)
+                if aUsed && !bUsed { return true }
+                if !aUsed && bUsed { return false }
+                return a.name < b.name
+            }
+            candidates.append(contentsOf: sorted.prefix(4))
+        }
+
+        // Deduplicate and limit to 6
+        var seen: Set<String> = []
+        return candidates.filter { seen.insert($0.name).inserted }.prefix(6).map { $0 }
+    }
+
+    /// Build a WorkoutTemplate from a list of exercise names.
+    static func buildSplitTemplate(name: String, exerciseNames: [String]) -> WorkoutTemplate? {
+        let exercises = exerciseNames.map { exerciseName in
+            let lastWeight = (try? WorkoutService.lastWeight(for: exerciseName)).flatMap { $0 }
+            var notes: String? = nil
+            if let w = lastWeight {
+                notes = "3x8-12 @ \(Int(w)) lbs"
+            }
+            if let tip = formTip(for: exerciseName) {
+                notes = (notes ?? "3x8-12") + " | \(tip)"
+            }
+            return WorkoutTemplate.TemplateExercise(name: exerciseName, sets: 3, notes: notes)
+        }
+        guard let json = try? JSONEncoder().encode(exercises),
+              let jsonStr = String(data: json, encoding: .utf8) else { return nil }
+        return WorkoutTemplate(
+            name: name,
+            exercisesJson: jsonStr,
+            createdAt: DateFormatters.iso8601.string(from: Date())
+        )
+    }
+
     // MARK: - Helpers
 
     /// Days since a muscle group was last trained. Returns 99 if never.

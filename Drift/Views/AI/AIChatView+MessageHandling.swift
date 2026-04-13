@@ -217,6 +217,9 @@ extension AIChatView {
         // Pending workout log: user listing exercises after "What exercises did you do?"
         if handlePendingWorkout(lower) { return }
 
+        // Workout split builder: user responding during split design session
+        if handlePendingWorkoutSplit(lower) { return }
+
         // Meal planning: user responding during iterative meal plan session
         if handlePendingMealPlan(lower) { return }
 
@@ -229,7 +232,10 @@ extension AIChatView {
         // Workout logging trigger: "log exercise", "log workout", "add exercise"
         if handleWorkoutLoggingTrigger(lower) { return }
 
-        // --- Meal planning trigger ---
+        // --- Planning triggers ---
+
+        // "build me a PPL split", "design a workout split" → iterative workout design
+        if handleWorkoutSplitTrigger(lower) { return }
 
         // "plan my meals", "what should I eat today" → iterative suggestions
         if handleMealPlanningTrigger(lower) { return }
@@ -734,6 +740,170 @@ extension AIChatView {
         }
 
         return false
+    }
+
+    // MARK: - Workout Split Builder
+
+    private func handleWorkoutSplitTrigger(_ lower: String) -> Bool {
+        let splitPhrases = ["build me a split", "build a split", "design a split", "create a split",
+                            "build me a workout", "design a workout", "create a workout program",
+                            "build me a ppl", "build a ppl", "ppl split", "push pull legs",
+                            "upper lower split", "upper/lower split", "full body split",
+                            "bro split", "workout split", "design my training"]
+        guard splitPhrases.contains(where: { lower.contains($0) }) else { return false }
+
+        // Resolve split type from user input, default to PPL
+        let splitType = ExerciseService.resolveSplitType(lower) ?? "ppl"
+        guard let days = ExerciseService.splitDefinitions[splitType] else { return false }
+
+        // Show the split overview and first day's suggestions
+        let splitLabel = splitType == "ppl" ? "Push/Pull/Legs" :
+                         splitType == "upper/lower" ? "Upper/Lower" :
+                         splitType == "full body" ? "Full Body" :
+                         splitType == "bro split" ? "Bro Split" : splitType
+
+        var msg = "Let's build a **\(splitLabel)** split (\(days.count) days).\n\n"
+        msg += "**Day 1 — \(days[0].name):**\n"
+
+        let suggestions = ExerciseService.suggestForSplitDay(splitType: splitType, dayIndex: 0)
+        if suggestions.isEmpty {
+            msg += "No exercises found for this day. Try a different split type."
+            messages.append(ChatMessage(role: .assistant, text: msg))
+            return true
+        }
+
+        for (i, ex) in suggestions.enumerated() {
+            let tip = ExerciseService.formTip(for: ex.name).map { " — \($0)" } ?? ""
+            msg += "\(i + 1). **\(ex.name)** (\(ex.bodyPart))\(tip)\n"
+        }
+        msg += "\nSay numbers to pick exercises (e.g. \"1 3 5\"), \"all\" to take them all, or \"skip\" to move to the next day."
+
+        convState.phase = .planningWorkout(splitType: splitType, currentDay: 0, totalDays: days.count)
+        messages.append(ChatMessage(role: .assistant, text: msg))
+        return true
+    }
+
+    private func handlePendingWorkoutSplit(_ lower: String) -> Bool {
+        guard case .planningWorkout(let splitType, let currentDay, let totalDays) = convState.phase else { return false }
+        guard let days = ExerciseService.splitDefinitions[splitType] else {
+            convState.phase = .idle
+            return false
+        }
+
+        // Exit commands
+        if ["done", "cancel", "nevermind", "stop", "no thanks"].contains(lower) {
+            convState.phase = .idle
+            messages.append(ChatMessage(role: .assistant,
+                text: "No problem! Say \"build me a split\" anytime to start over."))
+            return true
+        }
+
+        // Topic switch detection
+        let topicSwitchWords: Set<String> = ["weight", "weigh", "calories", "protein", "food", "log",
+                                              "sleep", "supplement", "glucose", "biomarker", "tdee", "bmr"]
+        let words = Set(lower.split(separator: " ").map(String.init))
+        if !words.isDisjoint(with: topicSwitchWords) {
+            convState.phase = .idle
+            return false
+        }
+
+        let suggestions = ExerciseService.suggestForSplitDay(splitType: splitType, dayIndex: currentDay)
+
+        // "all" — take all suggested exercises
+        if lower == "all" || lower == "all of them" || lower == "take all" {
+            let picked = suggestions.map(\.name)
+            return saveDayAndAdvance(splitType: splitType, dayName: days[currentDay].name,
+                                    picked: picked, currentDay: currentDay, totalDays: totalDays, days: days)
+        }
+
+        // "skip" — skip this day entirely
+        if lower == "skip" || lower == "next" || lower == "next day" {
+            return saveDayAndAdvance(splitType: splitType, dayName: days[currentDay].name,
+                                    picked: [], currentDay: currentDay, totalDays: totalDays, days: days)
+        }
+
+        // Number selection: "1 3 5" or "1, 3, 5" or just "2"
+        let numbers = lower.components(separatedBy: CharacterSet.decimalDigits.inverted)
+            .compactMap { Int($0) }
+            .filter { $0 >= 1 && $0 <= suggestions.count }
+        if !numbers.isEmpty {
+            let picked = numbers.map { suggestions[$0 - 1].name }
+            return saveDayAndAdvance(splitType: splitType, dayName: days[currentDay].name,
+                                    picked: picked, currentDay: currentDay, totalDays: totalDays, days: days)
+        }
+
+        // Freeform exercise name — search and add
+        if lower.count > 2 {
+            if let resolved = ExerciseService.resolveExerciseName(lower) {
+                return saveDayAndAdvance(splitType: splitType, dayName: days[currentDay].name,
+                                        picked: [resolved], currentDay: currentDay, totalDays: totalDays, days: days)
+            }
+        }
+
+        // Unrecognized input
+        messages.append(ChatMessage(role: .assistant,
+            text: "Say numbers to pick exercises (e.g. \"1 3 5\"), \"all\", \"skip\", or \"done\" to cancel."))
+        return true
+    }
+
+    /// Save picked exercises for the current day and advance to the next day or finish.
+    private func saveDayAndAdvance(splitType: String, dayName: String, picked: [String],
+                                   currentDay: Int, totalDays: Int, days: [(name: String, parts: [String])]) -> Bool {
+        // Store picked exercises as a template for this day
+        if !picked.isEmpty {
+            let templateName = "\(splitType.uppercased()) — \(dayName)"
+            if var template = ExerciseService.buildSplitTemplate(name: templateName, exerciseNames: picked) {
+                try? WorkoutService.saveTemplate(&template)
+            }
+        }
+
+        let nextDay = currentDay + 1
+        if nextDay >= totalDays {
+            // All days done
+            convState.phase = .idle
+            let savedCount = (0...currentDay).filter { dayIdx in
+                // Check if this day had exercises (current day uses picked, previous days already saved)
+                dayIdx < currentDay || !picked.isEmpty
+            }.count
+
+            if savedCount == 0 {
+                messages.append(ChatMessage(role: .assistant,
+                    text: "Split cancelled — no exercises selected. Say \"build me a split\" to try again."))
+            } else {
+                var msg = "Your split is ready! Saved \(savedCount) template\(savedCount == 1 ? "" : "s"):\n"
+                if let templates = try? WorkoutService.fetchTemplates() {
+                    let splitPrefix = splitType.uppercased()
+                    let splitTemplates = templates.filter { $0.name.hasPrefix(splitPrefix) }
+                    for t in splitTemplates.suffix(totalDays) {
+                        let count = t.exercises.count
+                        msg += "• **\(t.name)** — \(count) exercise\(count == 1 ? "" : "s")\n"
+                    }
+                }
+                msg += "\nSay \"start \(days[0].name)\" to begin your first workout!"
+                messages.append(ChatMessage(role: .assistant, text: msg))
+            }
+            return true
+        }
+
+        // Show next day
+        var msg = ""
+        if !picked.isEmpty {
+            msg += "Added \(picked.count) exercise\(picked.count == 1 ? "" : "s") to **\(dayName)**.\n\n"
+        } else {
+            msg += "Skipped \(dayName).\n\n"
+        }
+
+        msg += "**Day \(nextDay + 1) — \(days[nextDay].name):**\n"
+        let nextSuggestions = ExerciseService.suggestForSplitDay(splitType: splitType, dayIndex: nextDay)
+        for (i, ex) in nextSuggestions.enumerated() {
+            let tip = ExerciseService.formTip(for: ex.name).map { " — \($0)" } ?? ""
+            msg += "\(i + 1). **\(ex.name)** (\(ex.bodyPart))\(tip)\n"
+        }
+        msg += "\nPick numbers, \"all\", \"skip\", or \"done\"."
+
+        convState.phase = .planningWorkout(splitType: splitType, currentDay: nextDay, totalDays: totalDays)
+        messages.append(ChatMessage(role: .assistant, text: msg))
+        return true
     }
 
     private func handleCheatMeal(_ lower: String) -> Bool {
