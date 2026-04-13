@@ -321,6 +321,9 @@ enum FoodService {
             var entry = FoodEntry(mealLogId: mlId, foodName: foodName, servingSizeG: 0, servings: 1,
                                    calories: Double(calories), proteinG: 0, carbsG: 0, fatG: 0)
             try AppDatabase.shared.saveFoodEntry(&entry)
+            if let eid = entry.id {
+                await ConversationState.shared.lastWriteAction = .foodLogged(entryId: eid, name: foodName, calories: Double(calories))
+            }
             return "Logged \(foodName) (\(calories) cal) for \(mealType)."
         } catch {
             return "Failed: \(error.localizedDescription)"

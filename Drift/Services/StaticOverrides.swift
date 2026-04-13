@@ -61,9 +61,36 @@ enum StaticOverrides {
 
         // Meal suggestions, general status, weight progress → routed through AIToolAgent for LLM presentation
 
-        // Undo: "undo", "undo that", "undo last" — same as "delete last entry"
+        // Undo: "undo", "undo that", "undo last" — uses lastWriteAction when available
         if lower == "undo" || lower == "undo that" || lower == "undo last" {
             return .handler {
+                let state = ConversationState.shared
+                if let action = state.lastWriteAction {
+                    state.lastWriteAction = nil
+                    switch action {
+                    case .foodLogged(let entryId, let name, let cal):
+                        do {
+                            try AppDatabase.shared.deleteFoodEntry(id: entryId)
+                            return "Undone: removed \(name) (\(Int(cal)) cal)."
+                        } catch { return "Couldn't undo — try again." }
+                    case .weightLogged(let entryId, let value):
+                        do {
+                            try AppDatabase.shared.deleteWeightEntry(id: entryId)
+                            let wu = Preferences.weightUnit
+                            return "Undone: removed \(String(format: "%.1f", wu.convertFromLbs(value))) \(wu.displayName) weight entry."
+                        } catch { return "Couldn't undo — try again." }
+                    case .supplementMarked(_, _, let name):
+                        return "Can't undo supplement — mark it again tomorrow."
+                    case .activityLogged(let workoutId, let name):
+                        do {
+                            try WorkoutService.deleteWorkout(id: workoutId)
+                            return "Undone: removed \(name) activity."
+                        } catch { return "Couldn't undo — try again." }
+                    case .goalSet, .foodDeleted:
+                        return "Can't undo this action."
+                    }
+                }
+                // Fallback: delete most recent food entry (legacy behavior)
                 let today = DateFormatters.todayString
                 guard let entries = try? AppDatabase.shared.fetchFoodEntries(for: today),
                       let last = entries.first, let id = last.id else {
@@ -271,6 +298,9 @@ enum StaticOverrides {
                         var entry = FoodEntry(mealLogId: mlId, foodName: "Quick Add", servingSizeG: 0, servings: 1,
                                                calories: Double(cal), proteinG: Double(prot), carbsG: carbs, fatG: fat)
                         try AppDatabase.shared.saveFoodEntry(&entry)
+                        if let eid = entry.id {
+                            ConversationState.shared.lastWriteAction = .foodLogged(entryId: eid, name: "Quick Add", calories: Double(cal))
+                        }
                         return "Logged \(cal) cal, \(prot)P\(carbs > 0 ? " \(Int(carbs))C" : "")\(fat > 0 ? " \(Int(fat))F" : "") for \(mealType)."
                     }
                 } catch {}
@@ -279,7 +309,7 @@ enum StaticOverrides {
         }
 
         // Quick-add raw calories: "log 500 cal", "log chipotle bowl 800 calories"
-        let calPattern = #"(\d+)\s*(?:cal(?:ories?)?|kcal)"#
+        let calPattern = #"(\d+)\s*(?:cal(?:ories?)?|kcal)\b"#
         if let regex = try? NSRegularExpression(pattern: calPattern),
            let match = regex.firstMatch(in: lower, range: NSRange(lower.startIndex..., in: lower)),
            let numRange = Range(match.range(at: 1), in: lower),

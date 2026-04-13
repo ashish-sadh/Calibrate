@@ -1412,6 +1412,33 @@ import Testing
     #expect(result!.lowercased().contains("squat"))
 }
 
+// MARK: - Bug Regression Tests
+
+@MainActor @Test func calPatternDoesNotMatchCalcium() {
+    // P0 regression: "1000 calcium" should NOT match calorie quick-add
+    let result = StaticOverrides.match("log 1000 calcium mg")
+    // Should not produce a quick-add handler (calcium != calories)
+    // If it matches, it would be a .handler that logs 1000 cal
+    if case .handler = result {
+        Issue.record("'1000 calcium' should not match calorie pattern")
+    }
+}
+
+@MainActor @Test func intentClassifierParsesIntegerParams() {
+    // P0 regression: integer JSON params should not be silently dropped
+    let response = #"{"tool":"log_food","name":"eggs","servings":2}"#
+    let intent = IntentClassifier.parseResponse(response)
+    #expect(intent != nil)
+    #expect(intent?.params["servings"] == "2", "Integer servings should be preserved as string")
+}
+
+@MainActor @Test func intentClassifierParsesDoubleParams() {
+    let response = #"{"tool":"log_food","name":"eggs","servings":1.5}"#
+    let intent = IntentClassifier.parseResponse(response)
+    #expect(intent != nil)
+    #expect(intent?.params["servings"] == "1.5")
+}
+
 // MARK: - SupplementService
 
 @MainActor @Test func supplementGetStatus() {

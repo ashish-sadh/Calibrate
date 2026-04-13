@@ -110,6 +110,8 @@ enum IntentClassifier {
                 params[key] = str
             } else if let arr = value as? [String] {
                 params[key] = arr.joined(separator: ", ")
+            } else if let num = value as? Int {
+                params[key] = "\(num)"
             } else if let num = value as? Double {
                 params[key] = "\(num)"
             }
