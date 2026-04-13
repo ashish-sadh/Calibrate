@@ -24,6 +24,7 @@
       <div class="tab" data-tab="fixed">Fixed Bugs</div>
       <div class="tab" data-tab="feedback">Feedback Trail</div>
       <div class="tab" data-tab="releases">Release Notes</div>
+      <div class="tab" data-tab="review" id="review-tab" style="display:none">Needs Review</div>
     </div>
 
     <div id="tab-reports">
@@ -89,13 +90,19 @@
         <div class="loading"><span class="spinner"></span> Loading release notes...</div>
       </div>
     </div>
+
+    <div id="tab-review" style="display:none">
+      <div id="review-list">
+        <div class="loading"><span class="spinner"></span> Loading items for review...</div>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="app.js"></script>
   <script>
     // Tabs
-    const allTabs = ['reports', 'bugs', 'issues', 'fixed', 'feedback', 'releases'];
+    const allTabs = ['reports', 'bugs', 'issues', 'fixed', 'feedback', 'releases', 'review'];
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -108,6 +115,7 @@
         if (tab.dataset.tab === 'issues') loadIssues();
         if (tab.dataset.tab === 'fixed') loadFixedBugs();
         if (tab.dataset.tab === 'releases') loadReleases();
+        if (tab.dataset.tab === 'review') loadReviewItems();
       });
     });
 
@@ -176,6 +184,7 @@
         // Create labels array
         const labels = ['bug'];
         if (priority) labels.push(priority);
+        if (!isOwner() && priority !== 'P0') labels.push('needs-review');
 
         // Create issue
         const issue = await api(`/repos/${OWNER}/${REPO}/issues`, {
@@ -262,6 +271,80 @@
       } catch (e) {
         el.innerHTML = `<div class="empty">Failed to load fixed bugs: ${e.message}</div>`;
       }
+    }
+
+    // Load items needing owner review
+    async function loadReviewItems() {
+      const el = document.getElementById('review-list');
+      try {
+        const issues = await api(`/repos/${OWNER}/${REPO}/issues?state=open&labels=needs-review&per_page=50`);
+        if (issues.length === 0) {
+          el.innerHTML = '<div class="empty">No items need review. All clear.</div>';
+          return;
+        }
+        el.innerHTML = issues.map(i => {
+          const isBug = i.labels.some(l => l.name === 'bug');
+          const priority = i.labels.find(l => ['P0','P1','P2'].includes(l.name));
+          const typeBadge = isBug ? 'Bug Report' : 'Suggestion';
+          const typeClass = isBug ? 'type-exec' : 'type-review';
+          const priorityBadge = priority
+            ? `<span class="report-type" style="background:${priority.name === 'P0' ? 'rgba(248,81,73,0.15);color:var(--red)' : priority.name === 'P1' ? 'rgba(210,153,34,0.15);color:var(--yellow)' : 'rgba(139,148,158,0.15);color:var(--text-muted)'}">${priority.name}</span>`
+            : '';
+          return `<div class="review-item" data-issue="${i.number}">
+            <div class="review-header">
+              <span class="report-title">#${i.number} ${escapeHtml(i.title)}</span>
+              <span class="report-type ${typeClass}">${typeBadge}</span>
+              ${priorityBadge}
+              <span style="color:var(--text-muted);font-size:13px;">by ${escapeHtml(i.user.login)} · ${new Date(i.created_at).toLocaleDateString()}</span>
+            </div>
+            <div class="review-body">${renderMarkdown(i.body || '')}</div>
+            <div class="review-actions">
+              <button class="btn btn-primary" onclick="approveItem(${i.number})">Approve</button>
+              <button class="btn" onclick="dismissItem(${i.number})">Dismiss</button>
+              <a href="${i.html_url}" target="_blank" class="btn">View on GitHub</a>
+            </div>
+          </div>`;
+        }).join('');
+      } catch (e) {
+        el.innerHTML = `<div class="empty">Failed to load: ${e.message}</div>`;
+      }
+    }
+
+    async function approveItem(issueNumber) {
+      try {
+        await api(`/repos/${OWNER}/${REPO}/issues/${issueNumber}/labels/needs-review`, {
+          method: 'DELETE', headers: headers()
+        });
+        await api(`/repos/${OWNER}/${REPO}/issues/${issueNumber}/labels`, {
+          method: 'POST',
+          headers: { ...headers(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ labels: ['approved'] })
+        });
+        const card = document.querySelector(`[data-issue="${issueNumber}"]`);
+        if (card) card.remove();
+        if (!document.querySelector('.review-item')) {
+          document.getElementById('review-list').innerHTML = '<div class="empty">No items need review. All clear.</div>';
+        }
+      } catch (e) { alert('Failed: ' + e.message); }
+    }
+
+    async function dismissItem(issueNumber) {
+      if (!confirm('Dismiss this item? It will be closed.')) return;
+      try {
+        await api(`/repos/${OWNER}/${REPO}/issues/${issueNumber}/labels/needs-review`, {
+          method: 'DELETE', headers: headers()
+        });
+        await api(`/repos/${OWNER}/${REPO}/issues/${issueNumber}`, {
+          method: 'PATCH',
+          headers: { ...headers(), 'Content-Type': 'application/json' },
+          body: JSON.stringify({ state: 'closed' })
+        });
+        const card = document.querySelector(`[data-issue="${issueNumber}"]`);
+        if (card) card.remove();
+        if (!document.querySelector('.review-item')) {
+          document.getElementById('review-list').innerHTML = '<div class="empty">No items need review. All clear.</div>';
+        }
+      } catch (e) { alert('Failed: ' + e.message); }
     }
 
     // Load metrics
@@ -479,6 +562,13 @@
     showUser();
     loadMetrics();
     loadReports();
+
+    // Show owner-only tabs after auth resolves
+    userReady.then(() => {
+      if (isOwner()) {
+        document.getElementById('review-tab').style.display = '';
+      }
+    });
   </script>
 </body>
 </html>

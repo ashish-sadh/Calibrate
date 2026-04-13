@@ -220,6 +220,35 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
 .feedback-original { color: var(--text-muted); font-style: italic; }
 .feedback-response { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
 
+/* Needs Review */
+.review-item {
+  margin: 0 0 12px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.review-item:hover { border-color: var(--accent); }
+.review-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.review-body {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+  max-height: 200px;
+  overflow: auto;
+}
+.review-body img { max-width: 100%; border-radius: 6px; margin-top: 8px; }
+.review-actions {
+  display: flex;
+  gap: 8px;
+}
+
 /* Nav tabs */
 .tabs {
   display: flex;

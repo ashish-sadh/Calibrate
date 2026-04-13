@@ -8,7 +8,7 @@ Autonomous loop. Follow this exactly.
 
 _Directive:_ **Read `Docs/roadmap.md` to understand product direction. Pick work that advances the current phase. Work through sprint.md top-down — bugs first, then P0/P1 items. When finite items are done, rotate through Permanent Tasks guided by the roadmap's "Now" items. Be bold — a full UI redesign or AI chat state machine rewrite is fine. The goal is visible, meaningful progress every cycle.**
 
-_Override:_ STOP
+_Override:_ CONTINUE
 
 ---
 
@@ -20,7 +20,7 @@ _Override:_ STOP
 3. Read `Docs/ai-parity.md` — what to build next for AI chat
 4. Read `Docs/sprint.md` — prioritized work items
 5. Read `Docs/human-reported-bugs.md` — fix these FIRST
-6. Check GitHub Issues: `gh issue list --state open --label bug` — fix open bugs
+6. Check GitHub Issues: `gh issue list --state open --label bug --json number,title,labels --jq '[.[] | select(.labels | map(.name) | index("needs-review") | not)]'` — fix open bugs (skip `needs-review` items, those need owner triage first)
 7. Build: `xcodebuild build -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' > /tmp/drift-build.log 2>&1 && echo "OK" || echo "FAIL"`
 8. Start the loop
 
@@ -36,7 +36,7 @@ _Override:_ STOP
 LOOP FOREVER — do NOT stop between tickets:
 
 1. Re-read steering notes above. Stop only if override says STOP.
-2. Check for open bug issues: `gh issue list --state open --label bug`. If P0 bugs exist, work on those first.
+2. Check for open bug issues: `gh issue list --state open --label bug --json number,title,labels --jq '[.[] | select(.labels | map(.name) | index("needs-review") | not)]'`. If P0 bugs exist, work on those first. Items labeled `needs-review` are pending owner triage — skip them.
 3. If sprint.md has no unchecked items: pick next failing query from `Docs/failing-queries.md`, or next gap from `Docs/ai-parity.md`, or next "Now" item from `Docs/roadmap.md`, and add to sprint.
 4. Pick top unchecked item from sprint.md.
 5. Make one **LOGICAL UNIT** of work. This can span multiple files if they are part of the same change (e.g., a service + its tests + the view that calls it, or a theme change across 10 views). **Before editing any file: READ it first** — understand its types, signatures, imports, and conventions. Never edit blind.

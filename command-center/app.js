@@ -4,6 +4,12 @@ const API = 'https://api.github.com';
 const WORKER_URL = 'https://drift-command-center-auth.asheesh-sadh.workers.dev';
 const CLIENT_ID = 'Ov23liSpSMfDtbMAiMdf';
 
+// Current user state
+let currentUser = null;
+let _resolveUserReady;
+const userReady = new Promise(r => { _resolveUserReady = r; });
+function isOwner() { return currentUser && currentUser.login === OWNER; }
+
 // Auth
 function getToken() { return localStorage.getItem('drift_gh_token'); }
 function setToken(t) { localStorage.setItem('drift_gh_token', t); }
@@ -169,11 +175,12 @@ function showAuth() {
 
 async function showUser() {
   const el = document.getElementById('auth-area');
-  if (!el) return;
-  if (!getToken()) { showAuth(); return; }
+  if (!el) { _resolveUserReady(); return; }
+  if (!getToken()) { showAuth(); _resolveUserReady(); return; }
   try {
     const user = await getUser();
     if (user && user.login) {
+      currentUser = user;
       el.innerHTML = `
         <div class="user-info">
           <img src="${user.avatar_url}" alt="${user.login}">
@@ -181,7 +188,6 @@ async function showUser() {
           <button class="btn" onclick="clearToken();location.reload()">Sign out</button>
         </div>`;
     } else {
-      // Token exists but user fetch failed — token may be bad
       clearToken();
       showAuth();
     }
@@ -189,6 +195,7 @@ async function showUser() {
     clearToken();
     showAuth();
   }
+  _resolveUserReady();
 }
 
 function formatDate(filename) {

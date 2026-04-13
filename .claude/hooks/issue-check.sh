@@ -5,7 +5,7 @@
 set -e
 
 # Query open bugs directly
-BUGS=$(gh issue list --state open --label bug --json number,title,labels --jq '.[] | "#\(.number) \(.title) [\(.labels | map(.name) | join(","))]"' 2>/dev/null || echo "")
+BUGS=$(gh issue list --state open --label bug --json number,title,labels --jq '[.[] | select(.labels | map(.name) | index("needs-review") | not)] | .[] | "#\(.number) \(.title) [\(.labels | map(.name) | join(","))]"' 2>/dev/null || echo "")
 
 if [ -z "$BUGS" ]; then
   exit 0  # No bugs, proceed

@@ -28,3 +28,4 @@ build/
 *.tmp
 *.log
 *.gguf
+command-center/worker/.wrangler/
