@@ -26,10 +26,13 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 - ~~**State machine refactor**~~ DONE — ConversationState.Phase enum (idle/awaitingMealItems/awaitingExercises) replaces 5 scattered pending vars.
 - ~~**Multi-turn reliability**~~ DONE — Topic switch detection, stale state cleanup. Context preservation across turns.
 - ~~**Natural freeform logging**~~ DONE — AI parses, splits "with" items, resolves each, opens recipe builder.
-- **Meal planning dialogue (P0)** — "plan my meals today" → iterative suggestions based on remaining macros + history. `planningMeals` phase in state machine. Implementation complete, awaiting final validation.
+- ~~**Meal planning dialogue (P0)**~~ DONE — "plan my meals today" → iterative suggestions based on remaining macros + history. `planningMeals` phase in state machine.
+- ~~**Workout intelligence in chat (P0)**~~ DONE — "How's my bench?" returns trend, last weight, unit-respecting display.
+- **AI pipeline bug fixes (P0)** — 3 confirmed silent data-accuracy bugs: integer servings dropped, calcium→calorie regex, undo cross-domain. Fix before next feature.
+- **Proactive insight alerts (P0)** — Protein adherence and supplement streak nudges. Extend overload alert pattern to nutrition/recovery.
 
 ### Next
-- **Workout intelligence in chat (P0)** — "How's my bench progress?" → trend data from progressive overload service. Connect existing service to chat pipeline.
+- **USDA API Phase 1** — Design doc written. Implement: cache table + fetch on miss. Unlocks food DB scale without manual entry.
 - Workout split builder — "build me a PPL split" → multi-turn designing
 - Photo food logging (Core ML classifier → DB match → chat confirmation) — deferred until on-device accuracy improves for Indian/mixed dishes
 

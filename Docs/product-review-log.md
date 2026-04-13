@@ -4,6 +4,30 @@ Periodic product + engineering reviews. Every 10 cycles of the self-improvement 
 
 ---
 
+## Review #20 — 2026-04-12 (Cycle 699)
+
+### Summary
+29 cycles since last review. 4/4 P0s shipped: AI workout intelligence in chat, USDA API design document, hardcoded unit audit (7 files), progressive overload alerts. Plus systematic AI pipeline bug hunt found 3 silent P0 data-accuracy bugs. 936 tests, no open user-reported bugs.
+
+### Key Achievement
+Systematic bug hunt found three live data-accuracy issues before users did: integer servings silently dropped by AI intent classifier, "calcium" matching the calorie regex, and undo always deleting food regardless of last action. All documented and queued as P0 fixes.
+
+### Key Concern
+Product review hook fired 10+ times in one session due to counter being written at end of process rather than start. Fixed: counter now written as first step. Also: `ConversationState.lastWriteAction` is declared but never used — dead infrastructure that needs resolution.
+
+### Competitive Alert
+No major new competitor moves observed this sprint. MFP + Whoop continue cloud AI expansion. Our on-device privacy moat remains the primary differentiator.
+
+### Agreed Direction (Cycles 699–719)
+1. Fix 3 AI pipeline P0 bugs (integer servings, calcium regex, undo cross-domain) — one-day fixes, do first
+2. Proactive insight alerts — protein adherence, supplement streaks (P0)
+3. USDA API Phase 1 — cache table + fetch on miss (P1)
+4. Bug hunting pass — food logging + weight pipeline (P1)
+5. Exercise presentation — muscle group icons (P2)
+6. Tests for all three fixed bugs (P2)
+
+---
+
 ## Review #19 — 2026-04-12 (Cycle 670)
 
 ### Summary

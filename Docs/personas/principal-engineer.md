@@ -86,6 +86,11 @@
 - Progressive overload implementation reuses existing service cleanly. Potential concern: 20+ DB queries on tab load for users with many exercises. SQLite is fast enough now but worth monitoring.
 - AI chat workout intelligence is ideal next task — connects existing service to chat pipeline, no new infrastructure needed.
 
+### What I Learned — Review #20 (Cycle 699, 2026-04-12)
+- Systematic bug hunting found three P0 data-accuracy bugs live in production: integer JSON params silently dropped by intent classifier (servings always defaulted to 1), "calcium" matching the calorie regex (phantom calorie logs), and undo always deleting food regardless of what was last logged. These are one-line fixes each — the hard part was finding them.
+- `ConversationState.lastWriteAction` is declared but never written — dead infrastructure. Either implement it properly (set at each write point, use in undo handler) or remove it. Dead code that looks live is the most dangerous kind.
+- The product review hook fired 10+ times in one session because `last-review-cycle` was written at the END of the process. Fix: write the counter as the very first step of the review, before any git operations that re-trigger the hook.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)

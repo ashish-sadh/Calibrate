@@ -81,6 +81,11 @@
 - AI-powered workout intelligence in chat is more aligned with our AI-first identity than static exercise images. "How's my bench?" is a natural user behavior.
 - Two P0s in 20 cycles is modest but high-quality. P1 items keep slipping — keep sprint scope tight.
 
+### What I Learned — Review #20 (Cycle 699, 2026-04-12)
+- All four P0s from the last sprint shipped: workout intelligence in chat, USDA API design, unit audit, overload alerts. 100% on P0s is the bar — hold it.
+- The systematic bug hunt found three silent data-accuracy issues that were live in production. This ritual belongs in every sprint, not just quarterly. Assign it as a named P1 task.
+- Proactive alerts (protein adherence, supplement streaks) have been deferred twice. The pattern is proven with overload alerts — the next step is applying it to nutrition and recovery. This is the difference between a data logger and a health coach.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation
