@@ -122,6 +122,10 @@
 - IntentClassifier 63% formally accepted as floor. LLM-dependent code has diminishing returns past ~65%. Remove from all sprint and review tracking.
 - Workout split builder should reuse `ConversationState.Phase` pattern. Add `planningWorkout` phase, follow meal planning state machine transitions. Minimal new infrastructure.
 
+### What I Learned — Review #27 (Cycle 869, 2026-04-12)
+- Review hook's commit-based trigger is a design flaw when reviews generate commits. Fix options: (1) skip until feature ships, (2) milestone-based trigger, (3) exclude doc-only commits from counter. Chose option 1 for now.
+- Three reviews with zero features proves process overhead can exceed product output. The hook should be modified to only count `.swift` file commits long-term.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)

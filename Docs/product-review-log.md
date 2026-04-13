@@ -4,6 +4,16 @@ Periodic product + engineering reviews. Every 10 cycles of the self-improvement 
 
 ---
 
+## Review #27 — 2026-04-12 (Cycle 869)
+
+### Summary
+Third consecutive review with zero features. Review loop is self-reinforcing — documentation commits trigger the next review. Agreed: suspend reviews until workout split builder ships, then switch to milestone-based cadence (every 2 features, not every 20 commits).
+
+### Key Decision
+Reviews suspended until next feature delivery. Sprint plan unchanged from Review #26.
+
+---
+
 ## Review #26 — 2026-04-12 (Cycle 849)
 
 ### Summary

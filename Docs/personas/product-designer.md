@@ -118,6 +118,10 @@
 - Whoop's Women's Health panel (11 biomarkers, cycle-hormone integration) is the cross-domain insight pattern we should be doing. Our biomarker + cycle tracking data exists — we need the correlation layer.
 - Workout split builder should be the next sticky feature. "Plan my meals today" proved multi-turn dialogue drives daily engagement. "Build me a PPL split" is the same pattern for exercise.
 
+### What I Learned — Review #27 (Cycle 869, 2026-04-12)
+- Three consecutive zero-feature reviews proved the review loop is broken. Reviews suspended until next feature ships. Process must serve product, not the reverse.
+- Sprint plan from Review #26 is solid and untouched. Execute it — don't re-plan.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation
