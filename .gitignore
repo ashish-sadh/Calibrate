@@ -29,3 +29,4 @@ build/
 *.log
 *.gguf
 command-center/worker/.wrangler/
+*.xcuserstate
