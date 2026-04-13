@@ -4,6 +4,22 @@ Periodic product + engineering reviews. Every 10 cycles of the self-improvement 
 
 ---
 
+## Review #33 — 2026-04-13 (Cycle 1180)
+
+### Summary
+Food diary reorder fixes shipped (cross-meal-group, direction, meal type picker). IntentClassifier coverage pushed 63→78%. P0 bug #30 surfaced: reorder no-op on same timestamps. Sprint: fix bug #30 (P0), IntentClassifier to 80%+ (P0), muscle group heatmap (P1), food DB search miss telemetry (P2).
+
+### Key Achievement
+IntentClassifier pure-function extraction approach reversed a 4-review assumption that 63% was the coverage ceiling.
+
+### Key Concern
+Exercise visual presentation remains text-only. Muscle group heatmap deferred twice — credibility risk.
+
+### Sprint Plan (next 20 cycles)
+P0: Fix bug #30 (same-timestamp reorder). P0: IntentClassifier to 80%+. P1: Muscle group heatmap. P2: Food DB search miss telemetry.
+
+---
+
 ## Review #32 — 2026-04-13 (Cycle 1120)
 
 ### Summary

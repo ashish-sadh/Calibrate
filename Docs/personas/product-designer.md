@@ -147,6 +147,11 @@
 - 100% sprint completion on P0/P1 items (4/4 shipped, only P2 deferred). The formula holds: 4 items max, clear priority tiers. This is the third perfect sprint in a row.
 - Food search quality is the highest-friction user moment. Every "not found" = user opens MFP. Prefix matching ("chick" → "chicken") is the minimum viable fix.
 
+### What I Learned — Review #33 (Cycle 1180, 2026-04-13)
+- Food diary reorder bugs surfacing means users are actually using diary daily. Fix reliability issues in "every day" interactions immediately — they compound trust.
+- Muscle group heatmap deferred twice is a credibility issue. Exercise remains our weakest visual vertical while competitors (Boostcamp, MacroFactor) invest heavily. Ship it or cut it.
+- Whoop's proactive push nudges (AI detects stress/sleep debt → notification) are gaining traction. Our dashboard alerts are passive. Local push notifications for health patterns could be high-impact without compromising privacy.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation

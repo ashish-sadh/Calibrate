@@ -151,6 +151,11 @@
 - `attachToolCards` pattern scaled cleanly to 4 more card types (supplement, sleep, glucose, biomarker). The 6 optional card fields on ChatMessage are at threshold — next card type addition should migrate to `ConfirmationCard` enum.
 - Dual-model cost optimization is a good infrastructure investment. Automatic RAM-based model selection reduces battery impact on lower-end devices without losing capability on capable ones.
 
+### What I Learned — Review #33 (Cycle 1180, 2026-04-13)
+- Timestamp-swapping for food reorder is architecturally fragile — same-timestamp entries (common in AI multi-item logging) cause no-op swaps. A `sortOrder` column is the clean fix: explicit ordering independent of timestamps. Small migration, permanent fix.
+- IntentClassifier pure-function extraction approach validated: 63→78% in one sprint. The pattern "don't test stochastic code, test deterministic wrappers" reversed a 4-review-old assumption that 63% was the ceiling.
+- Design doc workflow (issue → PR → review → approved label → sprint) is good process infrastructure. Prevents unreviewed features from landing in sprint.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)
