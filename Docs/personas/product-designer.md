@@ -113,6 +113,11 @@
 - IntentClassifier at 63% has been deferred 4 consecutive reviews. Accept it. LLM-dependent code has a natural coverage ceiling — deterministic tests can't meaningfully cover stochastic behavior. Remove from sprint, stop tracking.
 - Sprint refreshes should happen more often. 3/4 items shipped in the first ~8 cycles; the remaining 21 cycles had no sprint-level direction. Refresh the sprint as soon as the last P0/P1 ships, don't wait for the P2 to drag.
 
+### What I Learned — Review #26 (Cycle 849, 2026-04-12)
+- Twenty cycles of zero user-visible output is a red flag. Reviews are important but they shouldn't consume the cycles they're meant to measure. Consider time-based or milestone-based review cadence.
+- Whoop's Women's Health panel (11 biomarkers, cycle-hormone integration) is the cross-domain insight pattern we should be doing. Our biomarker + cycle tracking data exists — we need the correlation layer.
+- Workout split builder should be the next sticky feature. "Plan my meals today" proved multi-turn dialogue drives daily engagement. "Build me a PPL split" is the same pattern for exercise.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation

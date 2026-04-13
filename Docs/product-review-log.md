@@ -4,6 +4,22 @@ Periodic product + engineering reviews. Every 10 cycles of the self-improvement 
 
 ---
 
+## Review #26 — 2026-04-12 (Cycle 849)
+
+### Summary
+20 cycles since last review. Zero new user-facing features — all cycles consumed by review process overhead. Previous sprint fully delivered (3/4, 75%). Sprint refreshed: workout split builder (P0), chat UI (P1), bug hunting (P1), food DB (P2). IntentClassifier 63% formally accepted as floor. Review cadence under question.
+
+### Key Achievement
+Honest velocity audit: identified review-to-feature ratio inversion and refreshed sprint immediately.
+
+### Key Concern
+Review mechanism (every 20 commits) counts review commits toward next trigger, creating a self-reinforcing loop. Recommend time-based or milestone-based cadence.
+
+### Competitive Alert
+Whoop launched Women's Health panel (11 biomarkers, cycle-hormone integration). MFP integrated ChatGPT. MacroFactor added Live Activities. All cloud-dependent — our on-device privacy moat holds.
+
+---
+
 ## Review #25 — 2026-04-12 (Cycle 829)
 
 ### Summary

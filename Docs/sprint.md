@@ -8,23 +8,17 @@ _(pick from Ready)_
 
 ## Ready
 
-### P0: More Proactive Alerts
-- [x] **Workout consistency + logging gap alerts** — No workouts in 5+ days → alert. No food logging in 2+ days → alert. 6 alert types total. 948 tests.
+### P0: Workout Split Builder
+- [ ] **"Build me a PPL split" → multi-turn workout design** — New `planningWorkout` phase in ConversationState. Reuse meal planning dialogue pattern. Multi-turn: suggest split → pick days → pick exercises → confirm. Tests for each phase.
 
-### P1: Navigate to Screen from Chat
-- [x] **"Show me my weight chart" switches tabs** — Static overrides + LLM tool + tab switching. Chat collapses on navigate. 16 tests. 962 total.
+### P1: Chat UI Improvements
+- [ ] **Rich confirmation cards for more actions** — Workout logging, weight logging, and navigation should all show structured confirmation cards (not just text). Typing indicator improvements.
 
-### P1: Wire USDA into AI Chat Food Logging
-- [x] **Chat uses searchWithFallback when food not found** — log_food preHook + food_info handler both fall back to USDA/OpenFoodFacts. Respects toggle. 4 tests. 966 total.
+### P1: Bug Hunting on Current Code Paths
+- [ ] **Systematic analysis of recent features** — Run analysis agent on workout split builder, chat UI, any new code. Find silent issues before users do.
 
-### P1: Systematic Bug Hunting
-- [x] **Run analysis on new code paths** — Analyzed navigation, USDA chat, proactive alerts. Fixed: tab bounds validation, USDA API timeout (5s), concurrency safety. 10 findings, 2 P1 fixes shipped.
-
-### P2: IntentClassifier Coverage
-- [ ] **Push from 63% toward 80%** — Add deterministic test cases for known intents. Only file below threshold.
-
-### P2: AIChatView ViewModel Extraction
-- [ ] **Extract logic from AIChatView (400+ lines)** — Do alongside chat UI work. Move business logic to AIChatViewModel. Not standalone refactoring.
+### P2: Food DB Enrichment
+- [ ] **Focus on search miss frequency** — Add most-searched missing foods. Cross-reference with USDA. Prioritize by user search patterns.
 
 ---
 

@@ -117,6 +117,11 @@
 - Swift 6 strict concurrency caught `var name` captured in `@Sendable` closure. The fix (`let searchName = name`) is trivial but the compiler catch prevents a real data race. Swift 6 is earning its keep.
 - IntentClassifier coverage at 63% should be accepted as floor. Four reviews of deferral is a signal — the file contains LLM-dependent code where deterministic testing has diminishing returns past ~65%.
 
+### What I Learned — Review #26 (Cycle 849, 2026-04-12)
+- Review-to-feature ratio inverted: 20 cycles of process, 0 of product. Review mechanism counts review commits toward next trigger — self-reinforcing loop. Fix: time-based or milestone-based triggers.
+- IntentClassifier 63% formally accepted as floor. LLM-dependent code has diminishing returns past ~65%. Remove from all sprint and review tracking.
+- Workout split builder should reuse `ConversationState.Phase` pattern. Add `planningWorkout` phase, follow meal planning state machine transitions. Minimal new infrastructure.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)
