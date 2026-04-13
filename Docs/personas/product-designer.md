@@ -127,6 +127,11 @@
 - Whoop's AI Coach now does photo-to-workout parsing and proactive push nudges. MFP integrated ChatGPT Health. The cloud AI gap is widening — our privacy moat must be paired with experience quality to matter.
 - Workout split builder proves the multi-turn dialogue pattern drives engagement. Two sticky daily-use features (meal planning + workout design) entirely on-device — no competitor matches this.
 
+### What I Learned — Review #29 (Cycle 983, 2026-04-13)
+- Confirmation cards complete the "chat feels like a real messaging app" story. Every major action type now has structured visual feedback. The card pattern is extensible — supplements, sleep, glucose can follow.
+- The all-in-one market positioning is being externally validated. Industry roundups in 2026 call out that "most serious fitness people run three apps that don't talk to each other." That's our pitch — but polish must match.
+- P1/P2 slip pattern persists (1/4 items shipped). Sprint scope of 4 items is right, but we need to protect P1 time by finishing P0s faster.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation

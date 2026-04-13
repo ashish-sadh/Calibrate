@@ -34,7 +34,7 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 ### Now
 - ~~**Chat navigation (P0)**~~ DONE — "Show me my weight chart" switches tabs. Static overrides + LLM tool. Chat collapses on navigate.
 - ~~**Wire USDA into AI chat (P1)**~~ DONE — Chat uses searchWithFallback when local food not found. log_food preHook + food_info handler both fall back to USDA/OpenFoodFacts.
-- **Rich confirmation cards (P0)** — Workout logging, weight logging, navigation should all show structured confirmation cards (not just text). Extends food confirmation card pattern to all actions.
+- ~~**Rich confirmation cards (P0)**~~ DONE — Navigation cards, activity preview cards, weight/workout cards. All chat actions show structured visual feedback.
 
 ### Next
 - ~~**USDA API Phase 1**~~ DONE — Opt-in toggle, rate limiting, searchWithFallback, privacy notice. Behind toggle (default OFF).

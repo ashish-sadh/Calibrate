@@ -131,6 +131,11 @@
 - Voice UX bug (eaten words) was a partial-vs-final transcription result handling issue in SpeechRecognizer. Simulator doesn't surface audio pipeline bugs — real-device testing is mandatory for voice features.
 - AIChatView is approaching the complexity threshold where ViewModel extraction becomes necessary. Rich confirmation cards across all action types will likely force it. Plan proactively.
 
+### What I Learned — Review #29 (Cycle 983, 2026-04-13)
+- NavigationCardData addition was clean — optional card fields on ChatMessage scale well. But 4 card types is the threshold; adding 2-3 more means ViewModel extraction is no longer optional.
+- Pre-existing SpeechRecognition test failure (method rename not caught in test target) is a process gap. Test target should be built even when tests aren't run, to catch compile errors.
+- Cost at $0.06/cycle with 94% cache read ratio shows prompt caching is working optimally for iterative development patterns.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)

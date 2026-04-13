@@ -8,14 +8,14 @@ _(pick from Ready)_
 
 ## Ready
 
-### P0: Chat Confirmation Cards
-- [ ] **Rich confirmation cards for all chat actions** — Workout logging, weight logging, and navigation should all show structured confirmation cards (not just text). Extend the food confirmation card pattern to every action type.
-
-### P1: Bug Hunting on Recent Features
-- [ ] **Systematic analysis of workout split builder + voice UX** — Run analysis agent on new code. Find silent issues before testers do.
+### P0: Bug Hunting on Recent Features
+- [ ] **Systematic analysis of workout split builder + voice UX + confirmation cards** — Run analysis agent on new code. Find silent issues before testers do.
 
 ### P1: AIChatView ViewModel Extraction
-- [ ] **Extract ViewModel from AIChatView** — File is approaching complexity threshold. Confirmation cards will add more state — extract now to keep manageable.
+- [ ] **Extract ViewModel from AIChatView** — File has 4 card types, voice state, conversation state. Extract before adding more card types.
+
+### P1: Supplement/Sleep Confirmation Cards
+- [ ] **Extend card pattern to remaining actions** — Supplement logging, sleep queries, glucose readings should show structured cards. Do after ViewModel extraction.
 
 ### P2: Food DB Quality
 - [ ] **Search miss analysis + targeted additions** — Identify most-searched missing foods. Cross-reference with USDA. Every "not found" = user opens MFP.
@@ -77,6 +77,7 @@ Autonomous refactoring. Run `code-improvement.md`. Principles in `Docs/principle
 - [ ] **DDD violations** — Direct DB calls in views, business logic in UI layer.
 
 ## Done (this sprint)
+- [x] P0: Rich Confirmation Cards — Navigation cards (new), activity preview cards (new). All chat actions now have structured visual feedback.
 - [x] P0: Workout Split Builder — "build me a PPL split" multi-turn dialogue. 4 split types, template saving. 15 tests.
 - [x] Voice Input UX Overhaul — fixed eaten-words bug (partial vs final transcription). Build 107.
 - [x] P1: Navigate to Screen from Chat — static overrides + LLM navigate_to tool + tab switching. 16 tests.
