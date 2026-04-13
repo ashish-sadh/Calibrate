@@ -9,7 +9,7 @@ _(pick from Ready)_
 ## Ready
 
 ### P0: More Proactive Alerts
-- [ ] **Workout consistency + logging gap alerts** — No workouts in 5+ days → alert. No food logging in 2+ days → alert. Extend BehaviorInsightService.computeProactiveAlerts(). Completes the health coach pattern (4→6 alert types).
+- [x] **Workout consistency + logging gap alerts** — No workouts in 5+ days → alert. No food logging in 2+ days → alert. 6 alert types total. 948 tests.
 
 ### P1: Navigate to Screen from Chat
 - [ ] **"Show me my weight chart" switches tabs** — Navigation tool that routes chat commands to specific screens. Biggest remaining AI parity gap.
