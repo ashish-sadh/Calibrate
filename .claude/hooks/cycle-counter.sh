@@ -4,6 +4,20 @@
 
 set -e
 
+# Check DRAIN — if active, tell the model to stop after this commit
+DRIFT_STATE=$(cat "$HOME/drift-control.txt" 2>/dev/null | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')
+if [ "$DRIFT_STATE" = "DRAIN" ]; then
+  cat <<ENDJSON
+{
+  "hookSpecificOutput": {
+    "hookEventName": "PostToolUse",
+    "additionalContext": "DRAIN ACTIVE. This was your last commit. Do NOT start new work. Push and exit now."
+  }
+}
+ENDJSON
+  exit 0
+fi
+
 COUNTER_FILE="$HOME/drift-state/cycle-counter"
 LAST_REVIEW_FILE="$HOME/drift-state/last-review-cycle"
 
