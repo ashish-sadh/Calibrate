@@ -277,12 +277,62 @@
     async function loadReviewItems() {
       const el = document.getElementById('review-list');
       try {
+        // 1. Issues needing review
         const issues = await api(`/repos/${OWNER}/${REPO}/issues?state=open&labels=needs-review&per_page=50`);
-        if (issues.length === 0) {
+
+        // 2. PR feedback from non-owners on report PRs
+        let prFeedback = [];
+        try {
+          const reportPRs = await api(`/repos/${OWNER}/${REPO}/pulls?labels=report&state=all&per_page=20`);
+          for (const pr of reportPRs) {
+            const comments = await api(`/repos/${OWNER}/${REPO}/issues/${pr.number}/comments`);
+            const external = comments.filter(c => c.user.login !== OWNER);
+            external.forEach(c => {
+              prFeedback.push({
+                type: 'pr-feedback',
+                user: c.user,
+                body: c.body,
+                created_at: c.created_at,
+                prTitle: pr.title,
+                prNumber: pr.number,
+                prUrl: pr.html_url
+              });
+            });
+          }
+        } catch (e) { /* PR feedback is best-effort */ }
+
+        if (issues.length === 0 && prFeedback.length === 0) {
           el.innerHTML = '<div class="empty">No items need review. All clear.</div>';
           return;
         }
-        el.innerHTML = issues.map(i => {
+
+        let html = '';
+
+        // Render PR feedback first
+        if (prFeedback.length > 0) {
+          html += '<h3 style="color:var(--accent);margin-bottom:12px;">Report Feedback (from external reviewers)</h3>';
+          html += prFeedback.map(f => `
+            <div class="review-item" style="margin-bottom:12px;">
+              <div class="review-header">
+                <img src="${f.user.avatar_url}" style="width:20px;height:20px;border-radius:50%;vertical-align:middle;margin-right:6px;">
+                <strong>${escapeHtml(f.user.login)}</strong>
+                <span style="color:var(--text-muted);font-size:13px;margin-left:8px;">on ${escapeHtml(f.prTitle)} · ${new Date(f.created_at).toLocaleDateString()}</span>
+                <span class="report-type type-review">Report Feedback</span>
+              </div>
+              <div class="review-body">${renderMarkdown(f.body || '')}</div>
+              <div class="review-actions" style="margin-top:8px;">
+                <a href="${f.prUrl}" target="_blank" class="btn">View PR</a>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        // Render issues
+        if (issues.length > 0) {
+          html += '<h3 style="color:var(--accent);margin:20px 0 12px;">Bug Reports & Suggestions (needs triage)</h3>';
+        }
+
+        html += issues.map(i => {
           const isBug = i.labels.some(l => l.name === 'bug');
           const priority = i.labels.find(l => ['P0','P1','P2'].includes(l.name));
           const typeBadge = isBug ? 'Bug Report' : 'Suggestion';
@@ -305,6 +355,8 @@
             </div>
           </div>`;
         }).join('');
+
+        el.innerHTML = html;
       } catch (e) {
         el.innerHTML = `<div class="empty">Failed to load: ${e.message}</div>`;
       }
