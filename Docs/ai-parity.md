@@ -54,13 +54,13 @@ The self-improvement loop picks from the **Gap** section to close parity.
 
 ### P2 — Multi-Turn Intelligence (Gemma 4 Only)
 - [x] **Meal planning** — "plan my meals for today" → iterative suggestions based on remaining macros + history. planningMeals state phase.
-- [ ] **Workout split builder** — "build me a PPL split" → multi-turn designing across sessions.
+- [x] **Workout split builder** — "build me a PPL split" → multi-turn designing across sessions. planningWorkout state phase, 4 split types.
 - [x] **Cross-domain analysis** — "why am I not losing weight?" → combines food + weight + exercise data. StaticOverrides handler.
 - [x] **Weekly comparison** — "compare this week to last" → week-over-week calorie average comparison.
 - [x] **Coaching dialogue** — "am I eating enough protein for my workouts?" → cross-domain handler with contextual advice using real data.
 
 ### P3 — Nice to Have
-- [ ] **Navigate to screen** — "show me my weight chart", "go to food tab". Needs: navigation tool.
+- [x] **Navigate to screen** — "show me my weight chart", "go to food tab". Static overrides + LLM navigate_to tool + tab switching.
 - [ ] **Export data** — "export my food log". Needs: CSV generation + share sheet.
 - [ ] **Import workout** — "import from Strong". Needs: file picker from chat.
 
