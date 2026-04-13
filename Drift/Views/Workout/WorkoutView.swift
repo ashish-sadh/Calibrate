@@ -6,6 +6,7 @@ import AudioToolbox
 struct WorkoutView: View {
     @Binding var selectedTab: Int
     @State private var workouts: [WorkoutSummary] = []
+    @State private var overloadAlerts: [ProgressiveOverloadInfo] = []
     @State private var weeklyCounts: [(weekStart: Date, count: Int)] = []
     @State private var templates: [WorkoutTemplate] = []
     @State private var showingNewWorkout = false
@@ -108,6 +109,11 @@ struct WorkoutView: View {
                     WorkoutService.clearSession()
                     selectedTemplate = template
                     showingNewWorkout = true
+                }
+
+                // Progressive overload alerts
+                if !overloadAlerts.isEmpty {
+                    overloadCard
                 }
 
                 if !weeklyCounts.isEmpty {
@@ -435,6 +441,35 @@ struct WorkoutView: View {
         .card()
     }
 
+    private var overloadCard: some View {
+        let wu = Preferences.weightUnit
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: "chart.line.uptrend.xyaxis").font(.caption).foregroundStyle(Theme.accent)
+                Text("Progressive Overload").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+            }
+
+            ForEach(overloadAlerts, id: \.exercise) { info in
+                HStack(spacing: 8) {
+                    Image(systemName: info.status == .stalling ? "exclamationmark.triangle.fill" : "arrow.down.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(info.status == .stalling ? Theme.fatYellow : Theme.surplus)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(info.exercise).font(.caption.weight(.semibold))
+                        if info.status == .stalling, let current = info.sessions.first {
+                            let suggestion = Int(wu.convertFromLbs(current * 1.025))
+                            Text("Same weight for \(info.sessions.count) sessions — try \(suggestion) \(wu.displayName)")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        } else {
+                            Text(info.trend).font(.caption2).foregroundStyle(.secondary)
+                        }
+                    }
+                    Spacer()
+                }
+            }
+        }.card()
+    }
+
     private func workoutCard(_ s: WorkoutSummary) -> some View {
         let wu = Preferences.weightUnit
         return VStack(alignment: .leading, spacing: 8) {
@@ -496,6 +531,11 @@ struct WorkoutView: View {
         do {
             templates = try WorkoutService.fetchTemplates()
         } catch { Log.app.error("Templates load: \(error.localizedDescription)") }
+        // Progressive overload: check unique exercises from recent workouts
+        let recentExercises = Array(Set(workouts.prefix(10).flatMap(\.exercises))).prefix(20)
+        overloadAlerts = recentExercises.compactMap { ExerciseService.getProgressiveOverload(exercise: $0) }
+            .filter { $0.status == .stalling || $0.status == .declining }
+            .sorted { $0.status == .stalling && $1.status != .stalling }
         isLoading = false
     }
 }
