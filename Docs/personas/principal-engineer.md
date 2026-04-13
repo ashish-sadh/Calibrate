@@ -61,6 +61,11 @@
 - Bug #5 ("Can you log lunch") exposed brittle prefix matching in intent handlers. Conversational prefix stripping fixes the immediate issue, but a centralized normalizer before all matchers would be more robust.
 - Command Center (GitHub Pages + Cloudflare Worker OAuth) consumed more cycles than expected. Simple architecture, but OAuth edge cases and deployment issues added up. Keep internal tooling minimal going forward.
 
+### What I Learned — Review #15 (Cycle 450, 2026-04-12)
+- UnevenRoundedRectangle + onStep callback = chat UI shipped without new infrastructure. Reusing existing hooks is always the right first move.
+- ViewModel extraction was correctly deferred — it wasn't needed for bubbles/feedback. Do it when meal planning adds new state phases.
+- Product review hook fired every cycle once triggered. The hook checks `cycle > last-review + 20` but the counter increments per tool call, not per commit. Need to update last-review-cycle promptly.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)

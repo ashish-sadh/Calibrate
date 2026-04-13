@@ -56,6 +56,11 @@
 - Chat UI is now the most visible quality gap. Plain text responses with no bubbles feel like a prototype. This is the #1 thing to fix for perceived quality.
 - The market is consolidating toward all-in-one platforms (MacroFactor Workouts, MFP acquisitions). Our all-in-one + on-device privacy is the differentiator, but chat polish is what makes it feel real.
 
+### What I Learned — Review #15 (Cycle 450, 2026-04-12)
+- Chat bubble UI closed the biggest perceived-quality gap. The app went from "prototype" to "could be a real product" in one sprint. Ship visual wins aggressively — they compound.
+- 50% sprint completion (4/8) is better than 33% but the P1/P2 slip pattern persists. Scope sprints tighter — 5 items max.
+- MFP making barcode scanning paid-only is an opportunity signal. Free on-device barcode scanning could be a differentiator, but not until chat-first features are complete.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation

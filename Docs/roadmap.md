@@ -46,7 +46,8 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 - ~~**Theme overhaul (P0)**~~ DONE — Premium dark refresh: navy background, accent-driven cards, consistent typography across 46 views.
 - ~~**Dashboard redesign (P1)**~~ DONE — Apple Fitness-style macro rings, section headers (Body/Activity/Recovery/Insights), ring legend.
 - ~~**Chat food confirmation card (P1)**~~ DONE — Structured card when food is logged (name, calories, macros). First structured chat UI element.
-- **Chat UI (P0)** — Message bubbles, typing indicator, tool execution feedback ("Looking up food..."). Bubbles first (pure UI), then tool feedback (needs state machine plumbing). **Most visible quality gap — #1 priority.**
+- ~~**Chat UI (P0)**~~ DONE — Message bubbles with asymmetric corners, sparkle avatar, typing indicator with step labels, tool execution feedback ("Looking up food..."). Chat now feels like a real messaging interface.
+- **Chat UI polish (P1)** — Streaming text animation (character-by-character), richer cards for workout/weight confirmations.
 - **Food diary** — Faster logging flow, better meal grouping, clearer macro display.
 
 ### Next
