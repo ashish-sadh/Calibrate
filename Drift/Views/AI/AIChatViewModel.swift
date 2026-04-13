@@ -69,6 +69,7 @@ final class AIChatViewModel {
         let name: String
         let durationMin: Int?
         let exerciseCount: Int?
+        var muscleGroups: [String] = []
         var confirmed: Bool = true
     }
 

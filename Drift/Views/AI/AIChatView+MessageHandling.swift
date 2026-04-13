@@ -331,7 +331,8 @@ extension AIChatViewModel {
             do {
                 try WorkoutService.saveWorkout(&workout)
                 let durText = durationSec.map { " (\($0 / 60) min)" } ?? ""
-                let card = WorkoutCardData(name: name, durationMin: durationSec.map { $0 / 60 }, exerciseCount: nil)
+                let muscles = [ExerciseDatabase.bodyPart(for: name)].filter { $0 != "Full Body" && $0 != "Other" }
+                let card = WorkoutCardData(name: name, durationMin: durationSec.map { $0 / 60 }, exerciseCount: nil, muscleGroups: muscles)
                 messages.append(ChatMessage(role: .assistant, text: "Logged \(name)\(durText) for today.", workoutCard: card))
             } catch {
                 messages.append(ChatMessage(role: .assistant, text: "Couldn't save workout — \(error.localizedDescription)"))
@@ -596,7 +597,8 @@ extension AIChatViewModel {
         guard !activity.isEmpty && activity.count > 2 else { return false }
         let name = activity.capitalized
         let durText = durationMin.map { " (\($0) min)" } ?? ""
-        let card = WorkoutCardData(name: name, durationMin: durationMin, exerciseCount: nil, confirmed: false)
+        let muscles = [ExerciseDatabase.bodyPart(for: name)].filter { $0 != "Full Body" && $0 != "Other" }
+        let card = WorkoutCardData(name: name, durationMin: durationMin, exerciseCount: nil, muscleGroups: muscles, confirmed: false)
         messages.append(ChatMessage(role: .assistant, text: "Log \(name)\(durText) for today? Say yes to confirm.", workoutCard: card))
         return true
     }

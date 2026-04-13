@@ -426,30 +426,44 @@ struct AIChatView: View {
     // MARK: - Workout Confirmation Card
 
     private func workoutConfirmationCard(_ card: AIChatViewModel.WorkoutCardData) -> some View {
-        HStack(spacing: 12) {
-            Image(systemName: "figure.run")
-                .font(.title3).foregroundStyle(Theme.accentSecondary)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(card.name)
-                    .font(.subheadline.weight(.bold))
-                HStack(spacing: 8) {
-                    if let mins = card.durationMin {
-                        Label("\(mins) min", systemImage: "clock")
-                            .font(.caption2).foregroundStyle(.secondary)
-                    }
-                    if let count = card.exerciseCount {
-                        Label("\(count) exercises", systemImage: "list.bullet")
-                            .font(.caption2).foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 12) {
+                Image(systemName: "figure.run")
+                    .font(.title3).foregroundStyle(Theme.accentSecondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(card.name)
+                        .font(.subheadline.weight(.bold))
+                    HStack(spacing: 8) {
+                        if let mins = card.durationMin {
+                            Label("\(mins) min", systemImage: "clock")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        }
+                        if let count = card.exerciseCount {
+                            Label("\(count) exercises", systemImage: "list.bullet")
+                                .font(.caption2).foregroundStyle(.secondary)
+                        }
                     }
                 }
+                Spacer()
+                if card.confirmed {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green).font(.title3)
+                } else {
+                    Image(systemName: "questionmark.circle")
+                        .foregroundStyle(Theme.accentSecondary.opacity(0.5)).font(.title3)
+                }
             }
-            Spacer()
-            if card.confirmed {
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green).font(.title3)
-            } else {
-                Image(systemName: "questionmark.circle")
-                    .foregroundStyle(Theme.accentSecondary.opacity(0.5)).font(.title3)
+
+            if !card.muscleGroups.isEmpty {
+                HStack(spacing: 6) {
+                    ForEach(card.muscleGroups, id: \.self) { group in
+                        Label(group, systemImage: muscleIcon(group))
+                            .font(.caption2)
+                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .background(Theme.accentSecondary.opacity(0.12), in: Capsule())
+                            .foregroundStyle(Theme.accentSecondary)
+                    }
+                }
             }
         }
         .padding(10)
@@ -458,6 +472,18 @@ struct AIChatView: View {
             RoundedRectangle(cornerRadius: 12)
                 .strokeBorder(Theme.accentSecondary.opacity(0.2), lineWidth: 0.5)
         )
+    }
+
+    private func muscleIcon(_ group: String) -> String {
+        switch group {
+        case "Chest": "figure.arms.open"
+        case "Back": "figure.walk"
+        case "Shoulders": "figure.flexibility"
+        case "Arms": "figure.boxing"
+        case "Core": "figure.core.training"
+        case "Legs": "figure.run"
+        default: "figure.stand"
+        }
     }
 
     // MARK: - Navigation Confirmation Card
