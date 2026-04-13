@@ -156,6 +156,11 @@
 - IntentClassifier pure-function extraction approach validated: 63→78% in one sprint. The pattern "don't test stochastic code, test deterministic wrappers" reversed a 4-review-old assumption that 63% was the ceiling.
 - Design doc workflow (issue → PR → review → approved label → sprint) is good process infrastructure. Prevents unreviewed features from landing in sprint.
 
+### What I Learned — Review #34 (Cycle 1248, 2026-04-13)
+- IntentClassifier at 99% validates: test the deterministic wrappers, not stochastic LLM behavior. This pattern should be applied to any future ML-adjacent code — pure functions are always testable.
+- AIChatView.sendMessage at 491 lines is past the maintainability threshold. Every AI feature added now makes it worse. One decomposition cycle now prevents three times the work later.
+- Push notifications via local UserNotifications framework (no cloud) is architecturally clean. Risk is permission UX — prompt timing matters. One wrong prompt = permission denied forever.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)

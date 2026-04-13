@@ -152,6 +152,11 @@
 - Muscle group heatmap deferred twice is a credibility issue. Exercise remains our weakest visual vertical while competitors (Boostcamp, MacroFactor) invest heavily. Ship it or cut it.
 - Whoop's proactive push nudges (AI detects stress/sleep debt → notification) are gaining traction. Our dashboard alerts are passive. Local push notifications for health patterns could be high-impact without compromising privacy.
 
+### What I Learned — Review #34 (Cycle 1248, 2026-04-13)
+- Muscle group heatmap deferred three times is a credibility collapse. "Ship it or cut it" rule set last review — it must ship this sprint. Credibility requires follow-through.
+- Push notifications are the difference between "health tracker" and "health coach." Passive dashboard alerts are invisible to users who don't open the app. Three timely nudges (protein, supplements, workouts) on-device and free is a genuine competitive differentiator.
+- Exercise remains the weakest visual vertical. Boostcamp and MacroFactor users see diagrams and videos; Drift users see text. The heatmap is step one — not the destination.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation

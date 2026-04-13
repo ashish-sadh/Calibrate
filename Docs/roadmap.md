@@ -106,9 +106,12 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 - ~~**Progressive overload alerts (P0)**~~ DONE — Stalling/declining exercises shown with weight suggestions in workout tab.
 - ~~**Hardcoded unit audit (P0)**~~ DONE — 7 files fixed. All weight display paths now use Preferences.weightUnit.
 
+### Now
+- **Muscle group heatmaps (P0)** — Visualize which muscle groups were hit this week. Data exists in exercise DB muscle tags. Deferred 3 sprints — ships this sprint.
+- **Exercise instructions via chat** — "How do I do a deadlift?" → form tips + muscles targeted from existing exercise DB.
+
 ### Next
 - **Exercise presentation** — Images, muscle group icons, exercise instructions. Match Boostcamp quality.
-- **Muscle group heatmaps** — Visualize which muscle groups were hit this week based on workout history. Data exists in exercise DB muscle tags.
 - Training programming across weeks
 - Exercise alternatives/substitutions
 
@@ -137,6 +140,9 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 
 ### Now
 - ~~**Hardcoded insight cards (3-5)**~~ ✅ DONE — 3 insights on dashboard: workout frequency vs weight, protein adherence, logging consistency. Minimum data thresholds.
+
+### Now
+- **Proactive push notifications (P0)** — Passive dashboard alerts → active nudges. Protein streak, supplement gap, workout gap. On-device scheduling, no cloud.
 
 ### Next
 - ~~**Behavior insights v2**~~ DONE — 4th insight: sleep vs next-day calories. Protein window extended 14→30 days. Sleep history passed from HealthKit.
