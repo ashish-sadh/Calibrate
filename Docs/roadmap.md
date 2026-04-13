@@ -48,14 +48,14 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 - ~~**Chat food confirmation card (P1)**~~ DONE — Structured card when food is logged (name, calories, macros). First structured chat UI element.
 - ~~**Chat UI (P0)**~~ DONE — Message bubbles with asymmetric corners, sparkle avatar, typing indicator with step labels, tool execution feedback ("Looking up food..."). Chat now feels like a real messaging interface.
 - ~~**Chat UI polish (P1)**~~ DONE — Typewriter text animation for instant responses, structured confirmation cards for weight/workout logging.
-- **Food diary** — ~~Meal grouping~~ DONE. Remaining: inline editing (tap to edit macros), saved meals.
+- **Food diary** — ~~Meal grouping~~ DONE. ~~Inline editing~~ DONE (DB food macro override + quick-add editing). ~~Saved meals~~ DONE (meal group re-log via context menu).
 
 ### Next
 - ~~Macro rings (Apple Fitness-style concentric rings)~~ DONE
 - iOS widgets (calories remaining, recovery score)
-- Saved meals (one-tap re-log of multi-item meals)
-- Inline diary editing (tap number to edit directly)
-- Food diary inline editing (tap to edit calories/macros directly)
+- ~~Saved meals (one-tap re-log of multi-item meals)~~ DONE
+- ~~Inline diary editing (tap number to edit directly)~~ DONE
+- ~~Food diary inline editing (tap to edit calories/macros directly)~~ DONE
 
 ### Later
 - Apple Watch companion
@@ -93,7 +93,7 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 ## Exercise
 
 ### Now
-- Workout history polish
+- ~~Workout history polish~~ DONE — Weight unit preference respected in history cards.
 - Progressive overload tracking improvements
 
 ### Next
