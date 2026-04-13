@@ -705,11 +705,10 @@
     async function loadDesignDocs() {
       const el = document.getElementById('designs-list');
       try {
-        // Get design-doc PRs (contain the actual docs)
-        const prs = await api(`/repos/${OWNER}/${REPO}/pulls?labels=design-doc&state=all&per_page=30`);
-        // Get design-doc issues (requests without docs yet)
-        const issues = await api(`/repos/${OWNER}/${REPO}/issues?labels=design-doc&state=open&per_page=20`);
-        const pendingRequests = issues.filter(i => !i.pull_request);
+        // Get design-doc PRs — use Issues API (supports label filter) then filter for PRs
+        const allDesignItems = await api(`/repos/${OWNER}/${REPO}/issues?labels=design-doc&state=all&per_page=30`);
+        const prs = allDesignItems.filter(i => i.pull_request);
+        const pendingRequests = allDesignItems.filter(i => !i.pull_request && i.state === 'open');
 
         if (prs.length === 0 && pendingRequests.length === 0) {
           el.innerHTML = '<div class="empty">No design docs yet. Request one above.</div>';
@@ -737,7 +736,8 @@
           html += '<h3 style="color:var(--accent);margin:20px 0 12px;">Design Documents</h3>';
           html += prs.map(pr => {
             const isApproved = pr.labels.some(l => l.name === 'approved');
-            const isMerged = pr.merged_at != null;
+            const isMerged = pr.state === 'closed' && isApproved;  // Approximation via Issues API
+            const prUrl = pr.pull_request ? pr.pull_request.html_url : pr.html_url;
             const status = isMerged ? 'Implemented' : isApproved ? 'Approved' : 'Pending Review';
             const statusColor = isMerged ? 'var(--text-muted)' : isApproved ? 'var(--green)' : 'var(--yellow)';
             const statusBg = isMerged ? 'rgba(139,148,158,0.15)' : isApproved ? 'rgba(63,185,80,0.15)' : 'rgba(210,153,34,0.15)';
@@ -755,9 +755,9 @@
                 <span class="report-date">${new Date(pr.created_at).toLocaleDateString()}</span>
               </div>
               <div style="display:flex;gap:8px;">
-                <a href="${pr.html_url}" target="_blank" class="btn">View on GitHub</a>
+                <a href="${prUrl}" target="_blank" class="btn">View on GitHub</a>
                 ${!isApproved && !isMerged ? `<button class="btn btn-primary" onclick="approveDesignDoc(${pr.number})">Approve</button>` : ''}
-                ${!isMerged ? `<button class="btn" onclick="window.open('${pr.html_url}/files','_blank')">Review Changes</button>` : ''}
+                ${!isMerged ? `<button class="btn" onclick="window.open('${prUrl}/files','_blank')">Review Changes</button>` : ''}
               </div>
             </div>`;
           }).join('');
