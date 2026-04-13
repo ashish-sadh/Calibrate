@@ -212,3 +212,56 @@ function reportType(filename) {
   if (filename.startsWith('review-')) return { label: 'Product Review', cls: 'type-review' };
   return { label: 'Report', cls: '' };
 }
+
+// Force TestFlight release via GitHub Issue
+async function forceRelease() {
+  if (!getToken()) { alert('Sign in first'); return; }
+  if (!confirm('Force a TestFlight release? Preflight checks will still run.')) return;
+
+  try {
+    const issue = await api(`/repos/${OWNER}/${REPO}/issues`, {
+      method: 'POST',
+      headers: { ...headers(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: 'Force TestFlight Release',
+        body: 'Triggered from Drift Command Center.\nThe autopilot will publish on its next commit cycle. Preflight checks will still run.',
+        labels: ['force-release']
+      })
+    });
+    alert(`Release triggered! Issue #${issue.number} created. The autopilot will pick it up on next commit (~2-3 min). Preflight still runs.`);
+    // Refresh admin tab if visible
+    if (typeof loadAdmin === 'function') loadAdmin();
+  } catch (e) {
+    alert(`Failed: ${e.message}`);
+  }
+}
+
+// Get TestFlight status
+async function getTestFlightStatus() {
+  // Try metrics.json first
+  const metrics = await getMetrics();
+  if (metrics && metrics.lastTestFlight) {
+    return { timestamp: new Date(metrics.lastTestFlight).getTime() / 1000 };
+  }
+  // Fallback: check git log for TestFlight commits
+  try {
+    const commits = await smartApi(`/repos/${OWNER}/${REPO}/commits?per_page=20`);
+    const tfCommit = commits.find(c => c.commit.message.includes('TestFlight build'));
+    if (tfCommit) {
+      return { timestamp: new Date(tfCommit.commit.committer.date).getTime() / 1000 };
+    }
+  } catch {}
+  return null;
+}
+
+function timeAgo(timestamp) {
+  const now = Date.now() / 1000;
+  const diff = now - timestamp;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}

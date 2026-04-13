@@ -25,6 +25,7 @@
       <div class="tab" data-tab="feedback">Feedback Trail</div>
       <div class="tab" data-tab="releases">Release Notes</div>
       <div class="tab" data-tab="review" id="review-tab" style="display:none">Needs Review</div>
+      <div class="tab" data-tab="admin" id="admin-tab" style="display:none">Admin</div>
     </div>
 
     <div id="tab-reports">
@@ -96,13 +97,44 @@
         <div class="loading"><span class="spinner"></span> Loading items for review...</div>
       </div>
     </div>
+
+    <div id="tab-admin" style="display:none">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:32px 40px;max-width:640px;margin:0 auto;">
+        <h2 style="margin:0 0 24px;font-size:20px;">Drift Control Panel</h2>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+          <div style="background:var(--bg);padding:16px;border-radius:8px;border:1px solid var(--border);">
+            <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Last TestFlight</div>
+            <div id="admin-last-tf" style="font-size:18px;font-weight:600;">Loading...</div>
+          </div>
+          <div style="background:var(--bg);padding:16px;border-radius:8px;border:1px solid var(--border);">
+            <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Next Scheduled</div>
+            <div id="admin-next-tf" style="font-size:18px;font-weight:600;">Loading...</div>
+          </div>
+          <div style="background:var(--bg);padding:16px;border-radius:8px;border:1px solid var(--border);">
+            <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Cycle Count</div>
+            <div id="admin-cycles" style="font-size:18px;font-weight:600;">-</div>
+          </div>
+          <div style="background:var(--bg);padding:16px;border-radius:8px;border:1px solid var(--border);">
+            <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Pending Force Release</div>
+            <div id="admin-pending-force" style="font-size:18px;font-weight:600;">-</div>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid var(--border);padding-top:20px;">
+          <h3 style="margin:0 0 12px;font-size:16px;">TestFlight</h3>
+          <p style="color:var(--text-muted);font-size:14px;margin-bottom:16px;">Force an immediate TestFlight release. Preflight checks (build, tests, AI eval, no P0 bugs) will still run. Minimum 3-hour interval is bypassed.</p>
+          <button class="btn btn-primary" onclick="forceRelease()" id="force-release-btn" style="background:var(--red);border-color:var(--red);">Force Release Now</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="app.js"></script>
   <script>
     // Tabs
-    const allTabs = ['reports', 'bugs', 'issues', 'fixed', 'feedback', 'releases', 'review'];
+    const allTabs = ['reports', 'bugs', 'issues', 'fixed', 'feedback', 'releases', 'review', 'admin'];
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -116,6 +148,7 @@
         if (tab.dataset.tab === 'fixed') loadFixedBugs();
         if (tab.dataset.tab === 'releases') loadReleases();
         if (tab.dataset.tab === 'review') loadReviewItems();
+        if (tab.dataset.tab === 'admin') loadAdmin();
       });
     });
 
@@ -615,10 +648,45 @@
     loadMetrics();
     loadReports();
 
+    // Admin tab loader
+    async function loadAdmin() {
+      const tf = await getTestFlightStatus();
+      const now = Date.now() / 1000;
+      if (tf) {
+        const ago = timeAgo(tf.timestamp);
+        const elapsed = now - tf.timestamp;
+        const remaining = Math.max(0, 10800 - elapsed);
+        const nextStr = remaining <= 0 ? 'Overdue — next commit triggers it' : `in ${Math.floor(remaining / 3600)}h ${Math.floor((remaining % 3600) / 60)}m`;
+        document.getElementById('admin-last-tf').textContent = ago;
+        document.getElementById('admin-last-tf').title = new Date(tf.timestamp * 1000).toLocaleString();
+        document.getElementById('admin-next-tf').textContent = nextStr;
+        document.getElementById('admin-next-tf').style.color = remaining <= 0 ? 'var(--yellow)' : 'var(--green)';
+      } else {
+        document.getElementById('admin-last-tf').textContent = 'Unknown';
+        document.getElementById('admin-next-tf').textContent = 'Unknown';
+      }
+
+      // Check for pending force-release issues
+      try {
+        const forceIssues = await api(`/repos/${OWNER}/${REPO}/issues?state=open&labels=force-release`);
+        document.getElementById('admin-pending-force').textContent = forceIssues.length > 0 ? `Yes (#${forceIssues[0].number})` : 'None';
+        document.getElementById('admin-pending-force').style.color = forceIssues.length > 0 ? 'var(--yellow)' : 'var(--green)';
+      } catch {
+        document.getElementById('admin-pending-force').textContent = '-';
+      }
+
+      // Cycle count from metrics
+      const metrics = await getMetrics();
+      if (metrics) {
+        document.getElementById('admin-cycles').textContent = metrics.cycle || '-';
+      }
+    }
+
     // Show owner-only tabs after auth resolves
     userReady.then(() => {
       if (isOwner()) {
         document.getElementById('review-tab').style.display = '';
+        document.getElementById('admin-tab').style.display = '';
       }
     });
   </script>

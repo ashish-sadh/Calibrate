@@ -17,6 +17,13 @@ NOW=$(date +%s)
 LAST_PUBLISH=$(cat "$LAST_PUBLISH_FILE" 2>/dev/null || echo "0")
 ELAPSED=$((NOW - LAST_PUBLISH))
 
+# Check for force-release signal from Command Center (GitHub Issue)
+FORCE=$(gh issue list --state open --label force-release --json number --jq '.[0].number' 2>/dev/null || echo "")
+if [ -n "$FORCE" ]; then
+  gh issue close "$FORCE" --comment "Force release triggered. Preflight will run before publish." 2>/dev/null || true
+  ELAPSED=$MIN_INTERVAL  # Skip the timer, fall through to publish
+fi
+
 if [ "$ELAPSED" -ge "$MIN_INTERVAL" ]; then
   # Calculate hours since last publish for the message
   HOURS=$((ELAPSED / 3600))
