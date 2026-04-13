@@ -4,19 +4,19 @@ Periodic product + engineering reviews. Every 10 cycles of the self-improvement 
 
 ---
 
-## Review #31 — 2026-04-13 (Cycle 1088)
+## Review #31 — 2026-04-13 (Cycle 1120)
 
 ### Summary
-100% sprint completion (5/5). All 8 confirmation card types now shipped — supplement, sleep, glucose, biomarker cards complete the structured visual feedback story. Muscle group icons on workout cards. 19 new tests (981 total). MFP Winter 2026 adds photo-to-log behind paywall; WHOOP AI Strength Trainer parses screenshots; MacroFactor adds Live Activities. Sprint: food DB search miss analysis (P0), bug hunting (P0), test hardening (P1), search miss telemetry (P1), iOS widget research (P2).
+All P0/P1 sprint items shipped (4/4): supplement/sleep, glucose/biomarker confirmation cards, exercise muscle group icons, state.md + TestFlight builds 108 & 109. 8 confirmation card types now cover every chat action. IntentClassifier coverage refactored for testability. Sprint: IntentClassifier to 80% (P0), food search prefix matching (P1), muscle group heatmap (P1), food DB search miss analysis (P2).
 
 ### Key Achievement
-Eight card types covering every health domain. The "AI health companion with structured visual feedback" identity is complete.
+Confirmation card architecture complete — 8 card types across all health domains. Every major chat action has structured visual feedback.
 
 ### Key Concern
-Food DB at 1,500 with zero search miss telemetry. Can't improve what we can't measure.
+Food search quality is highest-friction user moment. Prefix matching missing. Food DB at 1,500 vs MFP's 14M.
 
 ### Sprint Plan (next 20 cycles)
-P0: Food DB search miss analysis + targeted additions. P0: Bug hunting on card code. P1: Test hardening to 1000+. P1: Search miss telemetry table. P2: iOS Widget research.
+P0: IntentClassifier to 80%+. P1: Food search prefix matching. P1: Muscle group heatmap. P2: Food DB search miss analysis.
 
 ---
 

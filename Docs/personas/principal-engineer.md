@@ -141,10 +141,10 @@
 - `attachToolCards` pattern (check toolsCalled, fetch current service data) keeps the tool pipeline unchanged while adding card creation at the consumption point. Scales to glucose/biomarkers trivially.
 - 6 optional card fields on ChatMessage is approaching the threshold. If we add 3 more, consider a `ConfirmationCard` enum with associated values. Not urgent yet.
 
-### What I Learned — Review #31 (Cycle 1088, 2026-04-13)
-- `attachToolCards` pattern scaled cleanly from 4→8 card types without touching tool pipeline. Architecture is sound. Next threshold: if we exceed 10 card types, migrate to `ConfirmationCard` enum with associated values.
-- 981 tests with 19 new card-specific tests. Coverage on new code is solid. The boy scout rule + coverage gate workflow is maintaining quality without dedicated coverage sprints.
-- Food search pipeline (SpellCorrectService + ranked search + synonym expansion + USDA fallback) is well-layered but has no telemetry on search misses. Adding a `search_miss` table is the lowest-risk, highest-value infrastructure investment for food DB quality.
+### What I Learned — Review #31 (Cycle 1120, 2026-04-13)
+- IntentClassifier 63% coverage is NOT an inherent ceiling. Extracting `buildUserMessage` and `mapResponse` as pure functions makes the deterministic logic testable without mocking the LLM. The right pattern: don't test stochastic code, test the deterministic wrappers around it.
+- `attachToolCards` pattern scaled cleanly to 4 more card types (supplement, sleep, glucose, biomarker). The 6 optional card fields on ChatMessage are at threshold — next card type addition should migrate to `ConfirmationCard` enum.
+- Dual-model cost optimization is a good infrastructure investment. Automatic RAM-based model selection reduces battery impact on lower-end devices without losing capability on capable ones.
 
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions

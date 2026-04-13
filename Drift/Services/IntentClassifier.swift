@@ -51,32 +51,36 @@ enum IntentClassifier {
 
     // MARK: - Classify
 
+    /// Build the user message with optional history context. Public for testing.
+    nonisolated static func buildUserMessage(message: String, history: String) -> String {
+        if !history.isEmpty {
+            return "Chat:\n\(String(history.prefix(200)))\n\nUser: \(message)"
+        }
+        return message
+    }
+
+    /// Map raw LLM response string to a ClassifyResult. Public for testing.
+    nonisolated static func mapResponse(_ response: String?) -> ClassifyResult? {
+        guard let response else { return nil }
+        if let intent = parseResponse(response) {
+            return .toolCall(intent)
+        }
+        let cleaned = response.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty else { return nil }
+        return .text(cleaned)
+    }
+
     /// Classify user message into intent + tool call via LLM.
     /// Returns nil only on timeout. Text responses (follow-ups, greetings) are returned as .text.
     static func classifyFull(message: String, history: String) async -> ClassifyResult? {
-        let userMessage: String
-        if !history.isEmpty {
-            userMessage = "Chat:\n\(String(history.prefix(200)))\n\nUser: \(message)"
-        } else {
-            userMessage = message
-        }
-
-        let msg = userMessage
+        let msg = buildUserMessage(message: message, history: history)
         let response = await withTimeout(seconds: 10) {
             await LocalAIService.shared.respondDirect(
                 systemPrompt: systemPrompt,
                 message: msg
             )
         }
-
-        guard let response else { return nil }
-        if let intent = parseResponse(response) {
-            return .toolCall(intent)
-        }
-        // LLM returned text — a follow-up question, greeting, or conversational response
-        let cleaned = response.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !cleaned.isEmpty else { return nil }
-        return .text(cleaned)
+        return mapResponse(response)
     }
 
     /// Legacy: returns nil for text responses (backward compat)

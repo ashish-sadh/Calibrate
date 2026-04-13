@@ -207,6 +207,74 @@ import Testing
     }
 }
 
+// MARK: - IntentClassifier buildUserMessage Tests
+
+@Test func intentClassifierBuildUserMessageNoHistory() {
+    let msg = IntentClassifier.buildUserMessage(message: "log 2 eggs", history: "")
+    #expect(msg == "log 2 eggs")
+}
+
+@Test func intentClassifierBuildUserMessageWithHistory() {
+    let msg = IntentClassifier.buildUserMessage(message: "rice and dal", history: "What did you have for lunch?")
+    #expect(msg.contains("Chat:"))
+    #expect(msg.contains("What did you have for lunch?"))
+    #expect(msg.hasSuffix("User: rice and dal"))
+}
+
+@Test func intentClassifierBuildUserMessageTruncatesLongHistory() {
+    let longHistory = String(repeating: "a", count: 500)
+    let msg = IntentClassifier.buildUserMessage(message: "test", history: longHistory)
+    // History should be truncated to 200 chars
+    let historyPart = msg.components(separatedBy: "Chat:\n")[1].components(separatedBy: "\n\nUser:")[0]
+    #expect(historyPart.count == 200)
+}
+
+// MARK: - IntentClassifier mapResponse Tests
+
+@Test func intentClassifierMapResponseNil() {
+    let result = IntentClassifier.mapResponse(nil)
+    #expect(result == nil)
+}
+
+@Test func intentClassifierMapResponseToolCall() {
+    let result = IntentClassifier.mapResponse(#"{"tool":"log_food","name":"eggs"}"#)
+    if case .toolCall(let intent) = result {
+        #expect(intent.tool == "log_food")
+        #expect(intent.params["name"] == "eggs")
+    } else {
+        #expect(Bool(false), "Expected toolCall")
+    }
+}
+
+@Test func intentClassifierMapResponseText() {
+    let result = IntentClassifier.mapResponse("What did you have for lunch?")
+    if case .text(let t) = result {
+        #expect(t == "What did you have for lunch?")
+    } else {
+        #expect(Bool(false), "Expected text")
+    }
+}
+
+@Test func intentClassifierMapResponseEmptyString() {
+    let result = IntentClassifier.mapResponse("")
+    #expect(result == nil)
+}
+
+@Test func intentClassifierMapResponseWhitespaceOnly() {
+    let result = IntentClassifier.mapResponse("   \n  \t  ")
+    #expect(result == nil)
+}
+
+@Test func intentClassifierMapResponseTextWithJSON() {
+    // JSON tool call embedded in text — should still extract as toolCall
+    let result = IntentClassifier.mapResponse("Sure! {\"tool\":\"food_info\",\"query\":\"protein\"}")
+    if case .toolCall(let intent) = result {
+        #expect(intent.tool == "food_info")
+    } else {
+        #expect(Bool(false), "Expected toolCall from embedded JSON")
+    }
+}
+
 // MARK: - More AIActionParser Tests
 
 @Test func aiParseShowWeight() async throws {
