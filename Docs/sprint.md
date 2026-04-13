@@ -83,6 +83,10 @@ Autonomous refactoring. Run `code-improvement.md`. Principles in `Docs/principle
 - [ ] **DDD violations** — Direct DB calls in views, business logic in UI layer.
 
 ## Done (this sprint)
+- [x] P1: Navigate to Screen from Chat — static overrides + LLM navigate_to tool + tab switching. 16 tests.
+- [x] P1: Wire USDA into AI Chat — log_food preHook + food_info handler USDA/OpenFoodFacts fallback. 4 tests.
+- [x] P1: Systematic Bug Hunting — tab bounds check, USDA API 5s timeout, Swift 6 concurrency fix.
+- [x] P0: Proactive Alerts — workout consistency + logging gap alerts. 6 alert types.
 - [x] P0: USDA API Phase 1 — opt-in toggle, rate limiting, searchWithFallback, privacy notice
 - [x] TestFlight build 106
-- [x] 946 tests (+4)
+- [x] 966 tests
