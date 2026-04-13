@@ -9,7 +9,7 @@ _(pick from Ready)_
 ## Ready
 
 ### P0: Bug Hunting on Recent Features
-- [ ] **Systematic analysis of workout split builder + voice UX + confirmation cards** — Run analysis agent on new code. Find silent issues before testers do.
+- [x] **Systematic analysis of workout split builder + voice UX + confirmation cards** — Ran analysis agent. Fixed: misleading checkmark on unconfirmed workout card, force unwrap in duration regex. Fixed pre-existing SpeechRecognition test compile error. Most flagged issues were false positives (code already guarded).
 
 ### P1: AIChatView ViewModel Extraction
 - [ ] **Extract ViewModel from AIChatView** — File has 4 card types, voice state, conversation state. Extract before adding more card types.

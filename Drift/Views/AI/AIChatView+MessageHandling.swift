@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Message Handling (conversation history, intent parsing, send flow)
 
-extension AIChatView {
+extension AIChatViewModel {
 
     // MARK: - Tab Metadata
 
@@ -995,14 +995,15 @@ extension AIChatView {
             let output = await AIToolAgent.run(
                 message: text, screen: screen, history: history,
                 isLargeModel: isLarge,
-                onStep: { step in
-                    Task { @MainActor in generatingState = .thinking(step: step) }
+                onStep: { [weak self] step in
+                    Task { @MainActor in self?.generatingState = .thinking(step: step) }
                 },
-                onToken: { token in
+                onToken: { [weak self] token in
                     Task { @MainActor in
-                        if case .thinking = generatingState { generatingState = .generating }
-                        if let idx = messages.firstIndex(where: { $0.id == responseId }) {
-                            messages[idx].text += token
+                        guard let self else { return }
+                        if case .thinking = self.generatingState { self.generatingState = .generating }
+                        if let idx = self.messages.firstIndex(where: { $0.id == responseId }) {
+                            self.messages[idx].text += token
                         }
                     }
                 }

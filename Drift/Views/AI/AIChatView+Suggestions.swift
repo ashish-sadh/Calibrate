@@ -2,26 +2,7 @@ import SwiftUI
 
 // MARK: - Smart Suggestions, Page Insight, Fallback Responses
 
-extension AIChatView {
-
-    var suggestionsRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(smartSuggestions, id: \.self) { suggestion in
-                    Button {
-                        inputText = suggestion
-                        sendMessage()
-                    } label: {
-                        Text(suggestion)
-                            .font(.caption)
-                            .padding(.horizontal, 12).padding(.vertical, 6)
-                            .background(Color.white.opacity(0.08), in: Capsule())
-                    }.buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, 12).padding(.vertical, 6)
-        }
-    }
+extension AIChatViewModel {
 
     var smartSuggestions: [String] {
         // During meal planning, show planning-specific pills

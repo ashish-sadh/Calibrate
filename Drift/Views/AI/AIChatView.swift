@@ -3,74 +3,8 @@ import PhotosUI
 
 /// Chat-style AI assistant with chain-of-thought reasoning and smart suggestion pills.
 struct AIChatView: View {
-    @State var aiService = LocalAIService.shared
-    @State var screenTracker = AIScreenTracker.shared
-    @State var messages: [ChatMessage] = []
-    @State var inputText = ""
-    @State var generatingState: GeneratingState = .idle
-    @State var streamingMessageId: UUID? = nil
-    @State var showingFoodSearch = false
-    @State var foodSearchQuery = ""
-    @State var foodSearchServings: Double? = nil
-    @State var foodSearchMealType: MealType? = nil
-    @State var showingWorkout = false
-    @State var workoutTemplate: WorkoutTemplate? = nil
-    @State var convState = ConversationState.shared
-    @State var speechService = SpeechRecognitionService.shared
-    @State var pendingExercises: [AIActionParser.WorkoutExercise] = []
-    @State var showingRecipeBuilder = false
-    @State var pendingRecipeItems: [QuickAddView.RecipeItem] = []
-    @State var pendingRecipeName = ""
-    @State var showingBarcodeScanner = false
+    @State var vm = AIChatViewModel()
     @FocusState var inputFocused: Bool
-
-    enum GeneratingState: Equatable {
-        case idle
-        case thinking(step: String)
-        case generating
-    }
-
-    struct ChatMessage: Identifiable {
-        let id = UUID()
-        let role: Role
-        var text: String
-        var foodCard: FoodCardData?
-        var weightCard: WeightCardData?
-        var workoutCard: WorkoutCardData?
-        var navigationCard: NavigationCardData?
-        let createdAt = Date()
-        enum Role { case user, assistant }
-    }
-
-    struct FoodCardData {
-        let name: String
-        let calories: Int
-        let proteinG: Int
-        let carbsG: Int
-        let fatG: Int
-        let servingText: String
-    }
-
-    struct WeightCardData {
-        let value: Double
-        let unit: String
-        let trend: String?     // e.g. "↓ 0.3 lbs this week"
-    }
-
-    struct WorkoutCardData {
-        let name: String
-        let durationMin: Int?
-        let exerciseCount: Int?
-        var confirmed: Bool = true
-    }
-
-    struct NavigationCardData {
-        let destination: String
-        let icon: String
-        let tab: Int
-    }
-
-    var isGenerating: Bool { generatingState != .idle }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -78,30 +12,29 @@ struct AIChatView: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 10) {
-                        ForEach(messages) { msg in
+                        ForEach(vm.messages) { msg in
                             messageBubble(msg).id(msg.id)
                         }
-                        if isGenerating {
+                        if vm.isGenerating {
                             thinkingIndicator
                         }
                     }
                     .padding(.top, 6)
                 }
-                .onChange(of: messages.count) { _, _ in
-                    if let last = messages.last {
+                .onChange(of: vm.messages.count) { _, _ in
+                    if let last = vm.messages.last {
                         withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
                     }
                 }
-                .onChange(of: messages.last?.text) { _, _ in
-                    // Also scroll during streaming as text grows
-                    if streamingMessageId != nil, let last = messages.last {
+                .onChange(of: vm.messages.last?.text) { _, _ in
+                    if vm.streamingMessageId != nil, let last = vm.messages.last {
                         proxy.scrollTo(last.id, anchor: .bottom)
                     }
                 }
             }
 
-            // Model loading indicator — shown when model is reloading after idle unload
-            if case .loading = aiService.state {
+            // Model loading indicator
+            if case .loading = vm.aiService.state {
                 HStack(spacing: 6) {
                     ProgressView().scaleEffect(0.6)
                     Text("Preparing AI assistant...")
@@ -113,7 +46,7 @@ struct AIChatView: View {
             }
 
             // Smart suggestion pills
-            if !isGenerating {
+            if !vm.isGenerating {
                 suggestionsRow
             }
 
@@ -139,16 +72,14 @@ struct AIChatView: View {
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.accent.opacity(0.6))
 
-                TextField(speechService.isRecording ? "Listening..." : "Ask anything...", text: $inputText, axis: .vertical)
+                TextField(vm.speechService.isRecording ? "Listening..." : "Ask anything...", text: $vm.inputText, axis: .vertical)
                     .textFieldStyle(.plain).font(.subheadline)
                     .lineLimit(1...3).focused($inputFocused)
-                    .onSubmit { sendMessage() }
+                    .onSubmit { vm.sendMessage() }
 
-                if speechService.isRecording {
-                    // While recording: stop button to edit, send button to send
+                if vm.speechService.isRecording {
                     Button {
-                        speechService.forceStop()
-                        // Text stays in inputText for editing
+                        vm.speechService.forceStop()
                     } label: {
                         Image(systemName: "stop.circle.fill")
                             .font(.title2)
@@ -156,22 +87,21 @@ struct AIChatView: View {
                     }
 
                     Button {
-                        speechService.gracefulStop()
+                        vm.speechService.gracefulStop()
                     } label: {
                         Image(systemName: "arrow.up.circle.fill")
                             .font(.title2)
                             .foregroundStyle(Theme.accent)
                     }
                 } else {
-                    // Idle: mic button + send button
                     Button {
-                        speechService.toggleRecording(
-                            onTranscript: { [self] text in
-                                inputText = text
+                        vm.speechService.toggleRecording(
+                            onTranscript: { text in
+                                self.vm.inputText = text
                             },
-                            onDone: { [self] finalText in
-                                inputText = finalText
-                                sendMessage()
+                            onDone: { finalText in
+                                self.vm.inputText = finalText
+                                self.vm.sendMessage()
                             }
                         )
                     } label: {
@@ -179,13 +109,13 @@ struct AIChatView: View {
                             .font(.system(size: 18))
                             .foregroundStyle(Color.gray.opacity(0.6))
                     }
-                    .disabled(isGenerating)
+                    .disabled(vm.isGenerating)
 
-                    Button { sendMessage() } label: {
+                    Button { vm.sendMessage() } label: {
                         Image(systemName: "arrow.up.circle.fill").font(.title2)
-                            .foregroundStyle(inputText.isEmpty ? Color.gray.opacity(0.5) : Theme.accent)
+                            .foregroundStyle(vm.inputText.isEmpty ? Color.gray.opacity(0.5) : Theme.accent)
                     }
-                    .disabled(inputText.isEmpty || isGenerating)
+                    .disabled(vm.inputText.isEmpty || vm.isGenerating)
                 }
             }
             .padding(.horizontal, 12).padding(.vertical, 10)
@@ -194,49 +124,70 @@ struct AIChatView: View {
                     .fill(Color.white.opacity(0.05))
                     .overlay(
                         RoundedRectangle(cornerRadius: 20)
-                            .stroke(speechService.isRecording ? Color.red.opacity(0.6) : Color.clear, lineWidth: 1.5)
+                            .stroke(vm.speechService.isRecording ? Color.red.opacity(0.6) : Color.clear, lineWidth: 1.5)
                     )
             )
-            .animation(.easeInOut(duration: 0.3), value: speechService.isRecording)
+            .animation(.easeInOut(duration: 0.3), value: vm.speechService.isRecording)
             .padding(.horizontal, 8).padding(.bottom, 4)
         }
-        .sheet(isPresented: $showingFoodSearch) {
+        .sheet(isPresented: $vm.showingFoodSearch) {
             NavigationStack {
-                FoodSearchView(viewModel: FoodLogViewModel(), initialQuery: foodSearchQuery, initialServings: foodSearchServings, initialMealType: foodSearchMealType)
+                FoodSearchView(viewModel: FoodLogViewModel(), initialQuery: vm.foodSearchQuery, initialServings: vm.foodSearchServings, initialMealType: vm.foodSearchMealType)
             }
         }
-        .sheet(isPresented: $showingWorkout) {
-            if let template = workoutTemplate {
+        .sheet(isPresented: $vm.showingWorkout) {
+            if let template = vm.workoutTemplate {
                 NavigationStack {
                     ActiveWorkoutView(template: template) {
-                        showingWorkout = false
-                        workoutTemplate = nil
+                        vm.showingWorkout = false
+                        vm.workoutTemplate = nil
                     }
                 }
             }
         }
-        .fullScreenCover(isPresented: $showingBarcodeScanner) {
+        .fullScreenCover(isPresented: $vm.showingBarcodeScanner) {
             BarcodeLookupView(viewModel: FoodLogViewModel())
         }
-        .sheet(isPresented: $showingRecipeBuilder, onDismiss: {
-            pendingRecipeItems = []
-            pendingRecipeName = ""
+        .sheet(isPresented: $vm.showingRecipeBuilder, onDismiss: {
+            vm.pendingRecipeItems = []
+            vm.pendingRecipeName = ""
         }) {
             QuickAddView(viewModel: FoodLogViewModel(),
-                         initialItems: pendingRecipeItems,
-                         initialName: pendingRecipeName)
+                         initialItems: vm.pendingRecipeItems,
+                         initialName: vm.pendingRecipeName)
         }
         .onAppear {
-            aiService.cancelUnload()  // User is here — don't unload
-            if messages.isEmpty {
-                messages.append(ChatMessage(role: .assistant, text: pageInsight))
+            vm.aiService.cancelUnload()
+            if vm.messages.isEmpty {
+                vm.messages.append(AIChatViewModel.ChatMessage(role: .assistant, text: vm.pageInsight))
             }
-            if !aiService.isModelLoaded && aiService.state == .ready {
-                aiService.loadModel()
+            if !vm.aiService.isModelLoaded && vm.aiService.state == .ready {
+                vm.aiService.loadModel()
             }
         }
         .onDisappear {
-            aiService.scheduleUnload(delay: 60)  // Unload after 60s away — frees ~3GB GPU
+            vm.aiService.scheduleUnload(delay: 60)
+        }
+    }
+
+    // MARK: - Suggestions Row
+
+    var suggestionsRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(vm.smartSuggestions, id: \.self) { suggestion in
+                    Button {
+                        vm.inputText = suggestion
+                        vm.sendMessage()
+                    } label: {
+                        Text(suggestion)
+                            .font(.caption)
+                            .padding(.horizontal, 12).padding(.vertical, 6)
+                            .background(Color.white.opacity(0.08), in: Capsule())
+                    }.buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 12).padding(.vertical, 6)
         }
     }
 
@@ -252,7 +203,7 @@ struct AIChatView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 TypingDotsView()
-                switch generatingState {
+                switch vm.generatingState {
                 case .thinking(let step):
                     Text(step).font(.caption2).foregroundStyle(.tertiary)
                 case .generating:
@@ -273,13 +224,8 @@ struct AIChatView: View {
         .transition(.opacity)
     }
 
-    // Message handling, conversation history, and intent parsing in AIChatView+MessageHandling.swift
-    // Smart suggestions, page insight, and fallback responses in AIChatView+Suggestions.swift
-
     // MARK: - Typewriter Text
 
-    /// Reveals text character-by-character for non-streamed assistant messages.
-    /// Streamed messages already animate via token callbacks — this handles instant responses.
     private struct TypewriterText: View {
         let text: String
         @State private var revealed: Int = 0
@@ -304,7 +250,7 @@ struct AIChatView: View {
 
     // MARK: - Message Bubble
 
-    private func messageBubble(_ msg: ChatMessage) -> some View {
+    private func messageBubble(_ msg: AIChatViewModel.ChatMessage) -> some View {
         HStack(alignment: .bottom, spacing: 6) {
             if msg.role == .user {
                 Spacer(minLength: 60)
@@ -321,7 +267,7 @@ struct AIChatView: View {
             VStack(alignment: msg.role == .user ? .trailing : .leading, spacing: 6) {
                 if !msg.text.isEmpty {
                     let isNewInstant = msg.role == .assistant
-                        && msg.id != streamingMessageId
+                        && msg.id != vm.streamingMessageId
                         && Date().timeIntervalSince(msg.createdAt) < 1.0
                     Group {
                         if isNewInstant {
@@ -384,7 +330,7 @@ struct AIChatView: View {
 
     // MARK: - Food Confirmation Card
 
-    private func foodConfirmationCard(_ card: FoodCardData) -> some View {
+    private func foodConfirmationCard(_ card: AIChatViewModel.FoodCardData) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: "fork.knife")
@@ -441,7 +387,7 @@ struct AIChatView: View {
 
     // MARK: - Weight Confirmation Card
 
-    private func weightConfirmationCard(_ card: WeightCardData) -> some View {
+    private func weightConfirmationCard(_ card: AIChatViewModel.WeightCardData) -> some View {
         HStack(spacing: 12) {
             Image(systemName: "scalemass.fill")
                 .font(.title3).foregroundStyle(Theme.accent)
@@ -467,7 +413,7 @@ struct AIChatView: View {
 
     // MARK: - Workout Confirmation Card
 
-    private func workoutConfirmationCard(_ card: WorkoutCardData) -> some View {
+    private func workoutConfirmationCard(_ card: AIChatViewModel.WorkoutCardData) -> some View {
         HStack(spacing: 12) {
             Image(systemName: "figure.run")
                 .font(.title3).foregroundStyle(Theme.accentSecondary)
@@ -504,7 +450,7 @@ struct AIChatView: View {
 
     // MARK: - Navigation Confirmation Card
 
-    private func navigationConfirmationCard(_ card: NavigationCardData) -> some View {
+    private func navigationConfirmationCard(_ card: AIChatViewModel.NavigationCardData) -> some View {
         HStack(spacing: 12) {
             Image(systemName: card.icon)
                 .font(.title3).foregroundStyle(Theme.accent)
