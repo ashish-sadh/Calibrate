@@ -741,12 +741,25 @@ struct FoodTabView: View {
 
     /// Swap entries to reorder them, using the provided list for index lookup.
     /// Swaps timestamps so time-based sort reflects the new order.
+    /// When entries share the same timestamp, offsets by 1 second to break the tie.
     /// When entries cross meal group boundaries, the moved entry adopts the target's meal type.
     private func swapVisualEntries(_ movedIndex: Int, _ targetIndex: Int, in entries: [FoodEntry]) {
         guard movedIndex >= 0, movedIndex < entries.count, targetIndex >= 0, targetIndex < entries.count,
               let movedId = entries[movedIndex].id, let targetId = entries[targetIndex].id else { return }
-        let timeMoved = entries[movedIndex].loggedAt
-        let timeTarget = entries[targetIndex].loggedAt
+        var timeMoved = entries[movedIndex].loggedAt
+        var timeTarget = entries[targetIndex].loggedAt
+        // When timestamps are identical, offset by 1 second so the swap is not a no-op.
+        // Query sorts DESC, so lower index = later time. Move Up = later, Move Down = earlier.
+        if timeMoved == timeTarget, let date = parseTimestamp(timeMoved) {
+            let iso = DateFormatters.iso8601
+            if targetIndex < movedIndex {
+                // Move Up: moved entry needs a later timestamp
+                timeMoved = iso.string(from: date.addingTimeInterval(-1))
+            } else {
+                // Move Down: moved entry needs an earlier timestamp
+                timeMoved = iso.string(from: date.addingTimeInterval(1))
+            }
+        }
         viewModel.updateEntryLoggedAt(id: movedId, loggedAt: timeTarget)
         viewModel.updateEntryLoggedAt(id: targetId, loggedAt: timeMoved)
         // Cross meal group boundary: reassign moved entry's meal type
