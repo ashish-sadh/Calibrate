@@ -66,6 +66,11 @@
 - MFP acquired Cal AI (photo scanning + body comp from photos) and integrated with ChatGPT Health. They're building a cloud AI moat. Our counter: on-device privacy + chat quality + all-in-one experience.
 - Meal planning dialogue ("plan my meals today") is exactly the kind of sticky daily-use feature that differentiates. Iterative meal-by-meal based on remaining macros — no competitor does this on-device.
 
+### What I Learned — Review #17 (Cycle 620, 2026-04-12)
+- 100% sprint completion is achievable when items are scoped right (5 items, all shipped). The pattern: clear scope, no P1/P2 overcommit.
+- Systematic bug hunting (running an analysis agent across pipeline files) found 4 silent data-accuracy bugs. This should be a quarterly ritual, not just reactive.
+- Whoop's $10.1B valuation and MFP's GLP-1 tracking show the health market is consolidating around data density + AI. Our moat is privacy + on-device chat quality — double down on that.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation

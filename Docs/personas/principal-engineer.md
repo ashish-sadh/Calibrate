@@ -71,6 +71,11 @@
 - Voice crash (`AVAudioEngine.prepare()` required before `inputNode.outputFormat`) only surfaces on real hardware. Simulator stubs audio. Real-device testing is non-negotiable for hardware features.
 - Meal planning is 7 distinct behaviors (state phase, suggestion loop, number selection, pagination, topic switch, food search fallback, smart pills). Break complex features into independently shippable pieces.
 
+### What I Learned — Review #17 (Cycle 620, 2026-04-12)
+- Coverage sprint paid off: 3→1 files below threshold. ExerciseService 47%→92% via formTip/buildSmartSession/progressiveOverload tests. Coverage maintenance via boy scout rule is now sufficient.
+- Systematic bug analysis agent found real issues: greedy regex (carb/fat patterns matching "cal"/"for"), empty food queries in multi-food parser, word-number teen-hundred gap. Run this quarterly.
+- `resolveWordNumbers` is only applied before goal parsing. If we want it everywhere (quick-add, calorie targets), move it to the top of StaticOverrides.match(). Architecture note for when it matters.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)

@@ -48,13 +48,14 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 - ~~**Chat food confirmation card (P1)**~~ DONE — Structured card when food is logged (name, calories, macros). First structured chat UI element.
 - ~~**Chat UI (P0)**~~ DONE — Message bubbles with asymmetric corners, sparkle avatar, typing indicator with step labels, tool execution feedback ("Looking up food..."). Chat now feels like a real messaging interface.
 - ~~**Chat UI polish (P1)**~~ DONE — Typewriter text animation for instant responses, structured confirmation cards for weight/workout logging.
-- **Food diary** — Faster logging flow, better meal grouping, clearer macro display.
+- **Food diary** — ~~Meal grouping~~ DONE. Remaining: inline editing (tap to edit macros), saved meals.
 
 ### Next
 - ~~Macro rings (Apple Fitness-style concentric rings)~~ DONE
 - iOS widgets (calories remaining, recovery score)
 - Saved meals (one-tap re-log of multi-item meals)
 - Inline diary editing (tap number to edit directly)
+- Food diary inline editing (tap to edit calories/macros directly)
 
 ### Later
 - Apple Watch companion
@@ -77,7 +78,7 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 
 ### Now
 - ~~**DB enrichment to 1,500**~~ DONE — 1,500+ foods. Chinese, Middle Eastern, American classics, sandwiches, soups, healthy options. Manual enrichment paused — next investment should be USDA API or search quality.
-- **Search quality (P1)** — Better aliases, spelling corrections, partial matches. "paneer" finds all paneer dishes. Higher ROI than adding more foods.
+- ~~**Search quality (P1)**~~ PARTIALLY DONE — Synonym expansion (40+ regional/colloquial terms), spell correction hardened. Remaining: prefix matching for incomplete typing ("chick" → "chicken").
 - Ingredient persistence for recipe rebuilding
 
 ### Next

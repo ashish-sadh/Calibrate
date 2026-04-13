@@ -4,6 +4,29 @@ Periodic product + engineering reviews. Every 10 cycles of the self-improvement 
 
 ---
 
+## Review #17 — 2026-04-12 (Cycle 620)
+
+### Summary
+85 cycles since last review. 5/5 sprint items shipped (100%): meal planning dialogue, typewriter animation, confirmation cards, food search synonyms, food diary meal grouping. 4 silent data-accuracy bugs fixed via systematic analysis. 935 tests, all services above coverage threshold except IntentClassifier (LLM-dependent).
+
+### Key Achievement
+First 100% sprint completion in several reviews. Every item shipped is user-visible.
+
+### Key Concern
+Exercise tab has zero visual content (no images, no muscle diagrams). Structural gap vs Boostcamp.
+
+### Competitive Alert
+Whoop closed $575M Series G at $10.1B. MFP added AI photo logging + GLP-1 tracking. MacroFactor Workouts added Live Activity timers + cardio.
+
+### Agreed Direction (Cycles 620–640)
+1. Food diary inline editing (P0) — tap to edit macros
+2. AI chat bug hardening (P0) — systematic analysis every 5 cycles
+3. Saved meals / quick re-log (P1)
+4. Food search prefix matching (P1)
+5. Workout history polish (P2)
+
+---
+
 ## Review #16 — 2026-04-12 (Cycle 535)
 
 ### Summary
