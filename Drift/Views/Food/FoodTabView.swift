@@ -52,6 +52,12 @@ struct FoodTabView: View {
         }
     }
 
+    /// Entries in visual display order (grouped: breakfast→lunch→dinner→snack, then by time within each).
+    /// Used for Move Up/Down to match visual position instead of flat time order.
+    private var visualEntries: [FoodEntry] {
+        groupedEntries.flatMap(\.entries)
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -592,19 +598,23 @@ struct FoodTabView: View {
                 }
             }
             // Reorder (only in time sort mode)
-            if foodSortMode == .time, let entryIndex = sortedEntries.firstIndex(where: { $0.id == entry.id }) {
-                if entryIndex > 0 {
-                    Button {
-                        swapEntryTimestamps(entryIndex, entryIndex - 1)
-                    } label: {
-                        Label("Move Up", systemImage: "arrow.up")
+            if foodSortMode == .time {
+                // Use visual order (grouped) when multiple meal groups, flat order otherwise
+                let reorderList = groupedEntries.count > 1 ? visualEntries : sortedEntries
+                if let entryIndex = reorderList.firstIndex(where: { $0.id == entry.id }) {
+                    if entryIndex > 0 {
+                        Button {
+                            swapVisualEntries(entryIndex, entryIndex - 1, in: reorderList)
+                        } label: {
+                            Label("Move Up", systemImage: "arrow.up")
+                        }
                     }
-                }
-                if entryIndex < sortedEntries.count - 1 {
-                    Button {
-                        swapEntryTimestamps(entryIndex, entryIndex + 1)
-                    } label: {
-                        Label("Move Down", systemImage: "arrow.down")
+                    if entryIndex < reorderList.count - 1 {
+                        Button {
+                            swapVisualEntries(entryIndex, entryIndex + 1, in: reorderList)
+                        } label: {
+                            Label("Move Down", systemImage: "arrow.down")
+                        }
                     }
                 }
             }
@@ -729,10 +739,10 @@ struct FoodTabView: View {
         return DateFormatters.shortTime.string(from: date)
     }
 
-    /// Swap timestamps of two entries to reorder them.
+    /// Swap entries to reorder them, using the provided list for index lookup.
+    /// Swaps timestamps so time-based sort reflects the new order.
     /// When entries cross meal group boundaries, the moved entry adopts the target's meal type.
-    private func swapEntryTimestamps(_ movedIndex: Int, _ targetIndex: Int) {
-        let entries = sortedEntries
+    private func swapVisualEntries(_ movedIndex: Int, _ targetIndex: Int, in entries: [FoodEntry]) {
         guard movedIndex >= 0, movedIndex < entries.count, targetIndex >= 0, targetIndex < entries.count,
               let movedId = entries[movedIndex].id, let targetId = entries[targetIndex].id else { return }
         let timeMoved = entries[movedIndex].loggedAt
