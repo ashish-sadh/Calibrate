@@ -275,6 +275,42 @@ import Testing
     }
 }
 
+@Test func intentClassifierParseResponseNumericToolIgnored() {
+    // Tool name must be a string — numeric tool should return nil
+    let intent = IntentClassifier.parseResponse(#"{"tool":123,"query":"test"}"#)
+    #expect(intent == nil)
+}
+
+@Test func intentClassifierParseResponseNoToolKey() {
+    // JSON with no "tool" key should return nil
+    let intent = IntentClassifier.parseResponse(#"{"action":"log_food","name":"eggs"}"#)
+    #expect(intent == nil)
+}
+
+@Test func intentClassifierParseResponseToolOnlyNoParams() {
+    // Tool with no other params — empty params dict
+    let intent = IntentClassifier.parseResponse(#"{"tool":"sleep_recovery"}"#)
+    #expect(intent != nil)
+    #expect(intent?.tool == "sleep_recovery")
+    #expect(intent?.params.isEmpty == true)
+}
+
+@Test func intentClassifierBuildUserMessageExactHistoryLength() {
+    // History exactly 200 chars — should not truncate
+    let history = String(repeating: "x", count: 200)
+    let msg = IntentClassifier.buildUserMessage(message: "test", history: history)
+    let historyPart = msg.components(separatedBy: "Chat:\n")[1].components(separatedBy: "\n\nUser:")[0]
+    #expect(historyPart.count == 200)
+}
+
+@Test @MainActor func intentClassifierWithTimeoutFastOperation() async throws {
+    // Operation that completes instantly — result should be returned, not nil
+    let result = await IntentClassifier.withTimeout(seconds: 1) {
+        return 42
+    }
+    #expect(result == 42)
+}
+
 // MARK: - More AIActionParser Tests
 
 @Test func aiParseShowWeight() async throws {

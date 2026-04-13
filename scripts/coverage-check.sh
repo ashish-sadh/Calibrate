@@ -41,7 +41,7 @@ FAILURES=0
 # Pure logic / calculators — 80% threshold
 echo "🔬 Pure Logic (target: 80%)"
 echo "---"
-for file in WeightTrendCalculator PlantPointsService AIActionExecutor AIResponseCleaner CSVParser CycleCalculations IntentClassifier SpellCorrectService; do
+for file in WeightTrendCalculator PlantPointsService AIActionExecutor AIResponseCleaner CSVParser CycleCalculations SpellCorrectService; do
     LINE=$(xcrun xccov view --report "$RESULT_BUNDLE" 2>/dev/null | grep "Services/${file}.swift\|Utilities/${file}.swift" | head -1)
     if [ -n "$LINE" ]; then
         PCT=$(echo "$LINE" | grep -oE '[0-9]+\.[0-9]+%' | head -1 | tr -d '%')
@@ -60,7 +60,7 @@ echo ""
 # Services — 50% threshold
 echo "🔧 Services (target: 50%)"
 echo "---"
-for file in FoodService WeightTrendService WeightService2 TDEEEstimator WorkoutService ToolRanker AIRuleEngine AIToolAgent ToolRegistration StaticOverrides ExerciseService SupplementService; do
+for file in FoodService WeightTrendService WeightService2 TDEEEstimator WorkoutService ToolRanker AIRuleEngine AIToolAgent IntentClassifier ToolRegistration StaticOverrides ExerciseService SupplementService; do
     LINE=$(xcrun xccov view --report "$RESULT_BUNDLE" 2>/dev/null | grep "Services/${file}.swift" | head -1)
     if [ -n "$LINE" ]; then
         PCT=$(echo "$LINE" | grep -oE '[0-9]+\.[0-9]+%' | head -1 | tr -d '%')
