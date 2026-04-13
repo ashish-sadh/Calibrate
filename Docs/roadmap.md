@@ -21,7 +21,7 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 ## AI Chat
 
 ### Now
-- ~~**Voice input (P0)**~~ SHIPPED — Mic button, on-device SpeechRecognizer, streams into chat. Real-device crash fixed (audio engine prepare). Needs systematic ambient noise/accent testing.
+- ~~**Voice input (P0)**~~ SHIPPED — Mic button, on-device SpeechRecognizer, streams into chat. Real-device crash fixed (audio engine prepare). Voice UX overhaul fixed eaten-words bug (partial vs final transcription handling). Build 107.
 - ~~**Prompt consolidation (P1)**~~ DONE — Dead code removed, token budget safety added.
 - ~~**State machine refactor**~~ DONE — ConversationState.Phase enum (idle/awaitingMealItems/awaitingExercises) replaces 5 scattered pending vars.
 - ~~**Multi-turn reliability**~~ DONE — Topic switch detection, stale state cleanup. Context preservation across turns.
@@ -34,6 +34,7 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 ### Now
 - ~~**Chat navigation (P0)**~~ DONE — "Show me my weight chart" switches tabs. Static overrides + LLM tool. Chat collapses on navigate.
 - ~~**Wire USDA into AI chat (P1)**~~ DONE — Chat uses searchWithFallback when local food not found. log_food preHook + food_info handler both fall back to USDA/OpenFoodFacts.
+- **Rich confirmation cards (P0)** — Workout logging, weight logging, navigation should all show structured confirmation cards (not just text). Extends food confirmation card pattern to all actions.
 
 ### Next
 - ~~**USDA API Phase 1**~~ DONE — Opt-in toggle, rate limiting, searchWithFallback, privacy notice. Behind toggle (default OFF).

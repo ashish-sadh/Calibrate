@@ -126,6 +126,11 @@
 - Review hook's commit-based trigger is a design flaw when reviews generate commits. Fix options: (1) skip until feature ships, (2) milestone-based trigger, (3) exclude doc-only commits from counter. Chose option 1 for now.
 - Three reviews with zero features proves process overhead can exceed product output. The hook should be modified to only count `.swift` file commits long-term.
 
+### What I Learned — Review #28 (Cycle 918, 2026-04-13)
+- Workout split builder validated `ConversationState.Phase` architecture — `planningWorkout` phase followed the exact pattern from meal planning. Architecture investment pays off when new features slot in cleanly.
+- Voice UX bug (eaten words) was a partial-vs-final transcription result handling issue in SpeechRecognizer. Simulator doesn't surface audio pipeline bugs — real-device testing is mandatory for voice features.
+- AIChatView is approaching the complexity threshold where ViewModel extraction becomes necessary. Rich confirmation cards across all action types will likely force it. Plan proactively.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)

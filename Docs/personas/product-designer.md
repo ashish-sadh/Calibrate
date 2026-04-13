@@ -122,6 +122,11 @@
 - Three consecutive zero-feature reviews proved the review loop is broken. Reviews suspended until next feature ships. Process must serve product, not the reverse.
 - Sprint plan from Review #26 is solid and untouched. Execute it — don't re-plan.
 
+### What I Learned — Review #28 (Cycle 918, 2026-04-13)
+- Suspending reviews until features shipped was the right call. Two features delivered in 49 cycles vs zero in the previous 70. Process must serve product velocity, not substitute for it.
+- Whoop's AI Coach now does photo-to-workout parsing and proactive push nudges. MFP integrated ChatGPT Health. The cloud AI gap is widening — our privacy moat must be paired with experience quality to matter.
+- Workout split builder proves the multi-turn dialogue pattern drives engagement. Two sticky daily-use features (meal planning + workout design) entirely on-device — no competitor matches this.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation

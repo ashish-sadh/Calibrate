@@ -4,6 +4,22 @@ Periodic product + engineering reviews. Every 10 cycles of the self-improvement 
 
 ---
 
+## Review #28 — 2026-04-13 (Cycle 918)
+
+### Summary
+Two features shipped after 3 consecutive zero-feature reviews: workout split builder (multi-turn PPL/upper-lower/full-body design) and voice input UX overhaul (fixed eaten-words bug). TestFlight build 107. Review cadence changed to milestone-based. Sprint: chat confirmation cards (P0), bug hunting (P1), ViewModel extraction (P1), food DB quality (P2).
+
+### Key Achievement
+Workout split builder is the second multi-turn dialogue feature (after meal planning), proving the conversational design pattern for daily engagement.
+
+### Key Concern
+Competitive gap widening — Whoop has AI Coach with photo parsing, MFP has ChatGPT integration + 20M foods. Privacy moat must be paired with experience quality.
+
+### Competitive Alert
+Whoop AI Coach: photo-to-workout, proactive nudges (OpenAI-powered). MFP acquired Cal AI, integrated ChatGPT Health. MacroFactor Workouts app at $72/yr. Boostcamp added muscle engagement viz. All cloud-dependent — our on-device privacy moat holds but experience gap grows.
+
+---
+
 ## Review #27 — 2026-04-12 (Cycle 869)
 
 ### Summary

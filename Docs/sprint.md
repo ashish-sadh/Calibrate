@@ -8,17 +8,17 @@ _(pick from Ready)_
 
 ## Ready
 
-### P0: Workout Split Builder
-- [x] **"Build me a PPL split" → multi-turn workout design** — `planningWorkout` phase in ConversationState. 4 split types (PPL, upper/lower, full body, bro). Multi-turn: suggest → pick/all/skip → save templates. Smart pills. 15 tests. 981 total.
+### P0: Chat Confirmation Cards
+- [ ] **Rich confirmation cards for all chat actions** — Workout logging, weight logging, and navigation should all show structured confirmation cards (not just text). Extend the food confirmation card pattern to every action type.
 
-### P1: Chat UI Improvements
-- [ ] **Rich confirmation cards for more actions** — Workout logging, weight logging, and navigation should all show structured confirmation cards (not just text). Typing indicator improvements.
+### P1: Bug Hunting on Recent Features
+- [ ] **Systematic analysis of workout split builder + voice UX** — Run analysis agent on new code. Find silent issues before testers do.
 
-### P1: Bug Hunting on Current Code Paths
-- [ ] **Systematic analysis of recent features** — Run analysis agent on workout split builder, chat UI, any new code. Find silent issues before users do.
+### P1: AIChatView ViewModel Extraction
+- [ ] **Extract ViewModel from AIChatView** — File is approaching complexity threshold. Confirmation cards will add more state — extract now to keep manageable.
 
-### P2: Food DB Enrichment
-- [ ] **Focus on search miss frequency** — Add most-searched missing foods. Cross-reference with USDA. Prioritize by user search patterns.
+### P2: Food DB Quality
+- [ ] **Search miss analysis + targeted additions** — Identify most-searched missing foods. Cross-reference with USDA. Every "not found" = user opens MFP.
 
 ---
 
@@ -77,10 +77,12 @@ Autonomous refactoring. Run `code-improvement.md`. Principles in `Docs/principle
 - [ ] **DDD violations** — Direct DB calls in views, business logic in UI layer.
 
 ## Done (this sprint)
+- [x] P0: Workout Split Builder — "build me a PPL split" multi-turn dialogue. 4 split types, template saving. 15 tests.
+- [x] Voice Input UX Overhaul — fixed eaten-words bug (partial vs final transcription). Build 107.
 - [x] P1: Navigate to Screen from Chat — static overrides + LLM navigate_to tool + tab switching. 16 tests.
 - [x] P1: Wire USDA into AI Chat — log_food preHook + food_info handler USDA/OpenFoodFacts fallback. 4 tests.
 - [x] P1: Systematic Bug Hunting — tab bounds check, USDA API 5s timeout, Swift 6 concurrency fix.
 - [x] P0: Proactive Alerts — workout consistency + logging gap alerts. 6 alert types.
 - [x] P0: USDA API Phase 1 — opt-in toggle, rate limiting, searchWithFallback, privacy notice
-- [x] TestFlight build 106
-- [x] 966 tests
+- [x] TestFlight build 106, 107
+- [x] 981 tests
