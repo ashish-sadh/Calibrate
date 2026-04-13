@@ -4,6 +4,8 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 
 ---
 
+**Cycle 909** — feat: workout split builder — "build me a PPL split" multi-turn dialogue. 4 split types, exercise suggestions, template creation. 15 tests. 981 total.
+
 **Cycle 808** — fix: systematic bug hunt — tab bounds check, USDA API 5s timeout, Swift 6 concurrency fix. 2 P1 bugs fixed.
 
 **Cycle 807** — feat: wire USDA into AI chat food logging. log_food + food_info both search USDA/OpenFoodFacts when local DB misses. 4 tests. 966 total.

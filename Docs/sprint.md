@@ -9,7 +9,7 @@ _(pick from Ready)_
 ## Ready
 
 ### P0: Workout Split Builder
-- [ ] **"Build me a PPL split" → multi-turn workout design** — New `planningWorkout` phase in ConversationState. Reuse meal planning dialogue pattern. Multi-turn: suggest split → pick days → pick exercises → confirm. Tests for each phase.
+- [x] **"Build me a PPL split" → multi-turn workout design** — `planningWorkout` phase in ConversationState. 4 split types (PPL, upper/lower, full body, bro). Multi-turn: suggest → pick/all/skip → save templates. Smart pills. 15 tests. 981 total.
 
 ### P1: Chat UI Improvements
 - [ ] **Rich confirmation cards for more actions** — Workout logging, weight logging, and navigation should all show structured confirmation cards (not just text). Typing indicator improvements.

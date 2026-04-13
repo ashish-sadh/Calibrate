@@ -37,7 +37,7 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 
 ### Next
 - ~~**USDA API Phase 1**~~ DONE — Opt-in toggle, rate limiting, searchWithFallback, privacy notice. Behind toggle (default OFF).
-- Workout split builder — "build me a PPL split" → multi-turn designing
+- ~~**Workout split builder**~~ DONE — "Build me a PPL split" → multi-turn workout design. 4 split types, exercise suggestions, template creation.
 - Photo food logging (Core ML classifier → DB match → chat confirmation) — deferred until on-device accuracy improves for Indian/mixed dishes
 
 ### Later
