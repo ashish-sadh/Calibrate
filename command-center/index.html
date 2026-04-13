@@ -656,29 +656,46 @@
         const ago = timeAgo(tf.timestamp);
         const elapsed = now - tf.timestamp;
         const remaining = Math.max(0, 10800 - elapsed);
-        const nextStr = remaining <= 0 ? 'Overdue — next commit triggers it' : `in ${Math.floor(remaining / 3600)}h ${Math.floor((remaining % 3600) / 60)}m`;
-        document.getElementById('admin-last-tf').textContent = ago;
-        document.getElementById('admin-last-tf').title = new Date(tf.timestamp * 1000).toLocaleString();
+        const nextStr = remaining <= 0
+          ? 'Overdue — next commit triggers it'
+          : `in ${Math.floor(remaining / 3600)}h ${Math.floor((remaining % 3600) / 60)}m`;
+        const buildInfo = tf.message || '';
+        document.getElementById('admin-last-tf').innerHTML = `${ago}<br><span style="font-size:12px;color:var(--text-muted)">${new Date(tf.timestamp * 1000).toLocaleString()}</span>${buildInfo ? '<br><span style="font-size:12px;color:var(--text-muted)">' + escapeHtml(buildInfo.split('\n')[0]) + '</span>' : ''}`;
         document.getElementById('admin-next-tf').textContent = nextStr;
         document.getElementById('admin-next-tf').style.color = remaining <= 0 ? 'var(--yellow)' : 'var(--green)';
       } else {
-        document.getElementById('admin-last-tf').textContent = 'Unknown';
-        document.getElementById('admin-next-tf').textContent = 'Unknown';
+        document.getElementById('admin-last-tf').textContent = 'No builds found';
+        document.getElementById('admin-next-tf').textContent = 'Will trigger on next commit';
       }
 
       // Check for pending force-release issues
       try {
         const forceIssues = await api(`/repos/${OWNER}/${REPO}/issues?state=open&labels=force-release`);
-        document.getElementById('admin-pending-force').textContent = forceIssues.length > 0 ? `Yes (#${forceIssues[0].number})` : 'None';
-        document.getElementById('admin-pending-force').style.color = forceIssues.length > 0 ? 'var(--yellow)' : 'var(--green)';
+        if (forceIssues.length > 0) {
+          const issue = forceIssues[0];
+          document.getElementById('admin-pending-force').innerHTML = `Pending <a href="${issue.html_url}" target="_blank" style="color:var(--accent)">#${issue.number}</a>`;
+          document.getElementById('admin-pending-force').style.color = 'var(--yellow)';
+          document.getElementById('force-release-btn').textContent = 'Force Release Pending...';
+          document.getElementById('force-release-btn').disabled = true;
+          document.getElementById('force-release-btn').style.opacity = '0.5';
+        } else {
+          document.getElementById('admin-pending-force').textContent = 'None';
+          document.getElementById('admin-pending-force').style.color = 'var(--green)';
+          document.getElementById('force-release-btn').textContent = 'Force Release Now';
+          document.getElementById('force-release-btn').disabled = false;
+          document.getElementById('force-release-btn').style.opacity = '1';
+        }
       } catch {
-        document.getElementById('admin-pending-force').textContent = '-';
+        document.getElementById('admin-pending-force').textContent = 'Error checking';
       }
 
-      // Cycle count from metrics
+      // Cycle count — try metrics, fallback to counting TestFlight commits
       const metrics = await getMetrics();
-      if (metrics) {
-        document.getElementById('admin-cycles').textContent = metrics.cycle || '-';
+      if (metrics && metrics.cycle) {
+        document.getElementById('admin-cycles').textContent = metrics.cycle;
+      } else {
+        // No metrics.json — show dash
+        document.getElementById('admin-cycles').textContent = '-';
       }
     }
 

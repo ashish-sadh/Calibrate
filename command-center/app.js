@@ -245,14 +245,23 @@ async function getTestFlightStatus() {
   if (metrics && metrics.lastTestFlight) {
     return { timestamp: new Date(metrics.lastTestFlight).getTime() / 1000 };
   }
-  // Fallback: check git log for TestFlight commits
+  // Fallback: search commits for TestFlight builds (check more commits)
   try {
-    const commits = await smartApi(`/repos/${OWNER}/${REPO}/commits?per_page=20`);
-    const tfCommit = commits.find(c => c.commit.message.includes('TestFlight build'));
+    const commits = await smartApi(`/repos/${OWNER}/${REPO}/commits?per_page=100`);
+    const tfCommit = commits.find(c =>
+      c.commit.message.includes('TestFlight build') ||
+      c.commit.message.includes('TestFlight Build') ||
+      c.commit.message.includes('chore: TestFlight')
+    );
     if (tfCommit) {
-      return { timestamp: new Date(tfCommit.commit.committer.date).getTime() / 1000 };
+      return {
+        timestamp: new Date(tfCommit.commit.committer.date).getTime() / 1000,
+        message: tfCommit.commit.message
+      };
     }
-  } catch {}
+  } catch (e) {
+    console.error('TestFlight status error:', e);
+  }
   return null;
 }
 
