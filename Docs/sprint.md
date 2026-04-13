@@ -8,26 +8,20 @@ _(pick from Ready)_
 
 ## Ready
 
-### P0: Progressive Overload Alerts
-- [x] **Overload alerts in workout history** — Stalling/declining exercises shown with weight suggestions. Checks last 10 workouts' exercises.
+### P0: USDA API Phase 1
+- [ ] **Build USDAClient + cache table + FoodService fallback** — Implement Phase 1 from Docs/usda-api-design.md. USDAClient for search, usda_cache GRDB table, searchWithFallback() in FoodService. Ship behind opt-in toggle. Key challenge: nutrient ID mapping.
 
-### P0: Hardcoded Unit Audit
-- [x] **Grep "lb"/"lbs" across all views** — Fixed 7 files. All now use Preferences.weightUnit.
+### P1: Navigate to Screen from Chat
+- [ ] **"Show me my weight chart" switches tabs** — Navigation tool that routes chat commands to specific screens. Closes AI parity gap (P3 in ai-parity.md).
 
-### P0: AI Chat Workout Intelligence
-- [x] **"How's my bench progress?"** — Static handler + ToolRanker triggers + resolveExerciseName. Shows 1RM trend, last weight, respects unit pref. 939 tests.
-
-### P0: USDA API Design Document
-- [x] **Design the integration** — Written at Docs/usda-api-design.md. Offline-first with on-demand enrichment, opt-in toggle, usda_cache table, 4-phase implementation plan.
-
-### P1: Proactive Insight Alerts
-- [x] **Extend overload alert pattern** — Protein streak alert (3+ days below target) and supplement gap alert (3+ days missed). Shown prominently on dashboard.
+### P1: More Proactive Alerts
+- [ ] **Workout consistency + logging gap alerts** — No workouts in 5+ days → alert. No food logging in 2+ days → alert. Extend BehaviorInsightService.computeProactiveAlerts().
 
 ### P1: Systematic Bug Hunting
-- [x] **Run analysis every 5 cycles** — Found and fixed 3 P0 bugs: calcium/calorie regex, integer JSON params, undo action tracking. 942 tests.
+- [ ] **Run analysis on new code paths** — Focus on USDA integration, proactive alerts, exercise progress handler. Find silent bugs before users do.
 
-### P2: Exercise Presentation
-- [x] **Muscle group icons on workout cards** — Body part chips with SF Symbols on each history card. Shows up to 4 groups.
+### P2: IntentClassifier Coverage
+- [ ] **Push from 63% toward 80%** — Add deterministic test cases for known intents. Only file below threshold.
 
 ### P2: AIChatView ViewModel Extraction
 - [ ] **Extract logic from AIChatView (400+ lines)** — Do alongside chat UI work. Move business logic to AIChatViewModel. Not standalone refactoring.
@@ -89,17 +83,11 @@ Autonomous refactoring. Run `code-improvement.md`. Principles in `Docs/principle
 - [ ] **DDD violations** — Direct DB calls in views, business logic in UI layer.
 
 ## Done (this sprint)
-- [x] LLM intent classifier + streaming
-- [x] LLM presentation layer for info queries
-- [x] Parallel tool execution
-- [x] bestQuery flows through pipeline
-- [x] Plant points: NOVA, aliases, processed exclusion, spice blends, 75 dishes
-- [x] Data model: saved_food rename, source column, meal_log flattened, calorie target deduplicated
-- [x] Food diary: sort chips, reorder, copy all, edit time/macros, detail view
-- [x] Hevy import, workout share, save button, warmups
-- [x] Weight: 90-day trend, outlier detection, gap guard, staleness nudges, manual entry priority
-- [x] Weight: unit preference respected, WeightTrendService consolidation
-- [x] Workout: finish sheet fix, rest timer
-- [x] Profile fields in goal page + dashboard nudge
-- [x] Code improvement: 12 cycles, 12 files decomposed, ~2800 lines redistributed
-- [x] 743 tests
+- [x] P0: AI workout intelligence — "How's my bench?" with 1RM trend, unit-aware
+- [x] P0: USDA API design document — Docs/usda-api-design.md
+- [x] P0: Hardcoded unit audit — 7 files fixed, all use Preferences.weightUnit
+- [x] P0: Progressive overload alerts — stalling/declining exercises with suggestions
+- [x] P1: Proactive alerts — protein streak + supplement gap on dashboard
+- [x] P1: Systematic bug hunt — 3 P0 bugs fixed (calorie regex, integer JSON, undo)
+- [x] P2: Muscle group chips — body part icons on workout history cards
+- [x] 942 tests (+6 regression/feature)

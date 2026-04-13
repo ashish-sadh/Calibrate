@@ -86,6 +86,13 @@
 - The systematic bug hunt found three silent data-accuracy issues that were live in production. This ritual belongs in every sprint, not just quarterly. Assign it as a named P1 task.
 - Proactive alerts (protein adherence, supplement streaks) have been deferred twice. The pattern is proven with overload alerts — the next step is applying it to nutrition and recovery. This is the difference between a data logger and a health coach.
 
+### What I Learned — Review #21 (Cycle 719, 2026-04-12)
+- 100% sprint completion (6/6) — every P0, P1, and P2 shipped. This is the second consecutive perfect sprint. The formula: tight scope (6 items max), clear priority tiers, no mid-sprint additions.
+- Proactive alerts shipped and they change how the app feels. Opening the dashboard and seeing "You've missed protein 3 days in a row" is the health coach pattern I've been pushing since Review #19. This is what separates Drift from data loggers.
+- Muscle group chips on workout cards add visual information density without clutter. Small UI wins compound — users can now see at a glance what they trained.
+- USDA API design doc is solid. Phase 1 (search + cache behind opt-in toggle) is the 80/20 — implement it next sprint before spending more time on manual food DB enrichment.
+- The app is transitioning from data logger to proactive health coach. No competitor does this holistically across nutrition, exercise, and supplements on-device.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation

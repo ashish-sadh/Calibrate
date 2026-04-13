@@ -4,6 +4,22 @@ Periodic product + engineering reviews. Every 10 cycles of the self-improvement 
 
 ---
 
+## Review #21 — 2026-04-12 (Cycle 719)
+
+### Summary
+20 cycles since last review. 100% sprint completion — all 6 planned items shipped (3 P0, 2 P1, 1 P2). AI workout intelligence in chat, proactive protein/supplement alerts on dashboard, 3 P0 data-accuracy bugs fixed with regression tests, muscle group chips on workout cards, USDA API design doc, 942 tests.
+
+### Key Achievement
+Proactive alerts (protein streak + supplement gap) shipped on dashboard, marking Drift's transition from data logger to proactive health coach. No competitor does this holistically across nutrition, exercise, and supplements on-device.
+
+### Key Concern
+Food DB gap (1,500 vs MFP 20M+) remains. USDA API Phase 1 is agreed as next P0 to close this gap. IntentClassifier at 63% is the only file below coverage threshold.
+
+### Competitive Alert
+Drift moving into proactive health coaching space — Whoop occupies this for recovery but nobody does it holistically across nutrition/exercise/supplements on-device. Main remaining gaps: food DB breadth and exercise content (text-only vs Boostcamp videos).
+
+---
+
 ## Review #20 — 2026-04-12 (Cycle 699)
 
 ### Summary
