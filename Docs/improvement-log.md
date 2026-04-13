@@ -4,6 +4,14 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 
 ---
 
+## Cycle · 2026-04-12 (Autopilot session, sprint post-review #17)
+
+- **Food diary inline editing**: DB food entries now allow macro override. "Edit macros" toggle pre-fills with computed values from servings, saves via updateFoodEntryMacros.
+- **Meal hint passthrough fix**: parseFoodIntent correctly parsed mealHint ("log eggs for lunch" → lunch) but handleSingleFoodIntent never passed it to FoodSearchView. Added initialMealType param, threaded through all food search open sites.
+- **Meal group re-log**: Long-press meal section header (Breakfast/Lunch/Dinner) → "Log All Again" or "Copy All to Today". Quick re-logging of recurring multi-item meals.
+- **Workout unit fix**: History cards hardcoded "lb" for volume and best sets. Now uses Preferences.weightUnit with convertFromLbs.
+- 936 total tests (+1 meal hint regression test).
+
 ## Cycle · 2026-04-12 (Autopilot session, continued)
 
 - **Coverage sprint**: CycleCalculations 76.6%→93.6%, ExerciseService 47%→92%, AIToolAgent 48%→52.3%. Only IntentClassifier (63%) remains below threshold. 935 total tests.
