@@ -6,6 +6,8 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 
 ## Cycle · 2026-04-12 (Autopilot session, continued)
 
+- **Coverage sprint**: CycleCalculations 76.6%→93.6%, ExerciseService 47%→92%, AIToolAgent 48%→52.3%. Only IntentClassifier (63%) remains below threshold. 935 total tests.
+- **Bug fixes**: Meal planning out-of-range number selection (was falling through to LLM), parseMultiFoodIntent empty query filter (was matching random DB entries for numeric-only parts like "2").
 - **Chat typewriter animation**: Instant AI responses (Tier 0/1/2) now reveal text character-by-character. Streamed LLM responses unaffected. Uses creation timestamp to distinguish new vs existing messages.
 - **Meal planning dialogue**: "plan my meals today" → iterative suggestions based on remaining calories/protein. planningMeals state phase, number selection, "more" pagination, topic switch detection, smart pills. 4 tests.
 - **Product Review #16 (Cycle 535)**: Food DB to 1,500 shipped, meal planning built. 21% sprint velocity due to meal planning complexity. MFP acquired Cal AI, MacroFactor launched Workouts app. PR #9.
