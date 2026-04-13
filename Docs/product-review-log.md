@@ -4,6 +4,22 @@ Periodic product + engineering reviews. Every 10 cycles of the self-improvement 
 
 ---
 
+## Review #25 — 2026-04-12 (Cycle 829)
+
+### Summary
+23 cycles since last review. 3/4 sprint items shipped (75% — best since Review #21). Chat navigation, USDA chat integration, and systematic bug hunting all complete. 966 tests (+4). AI-first vision complete: every major app action is now conversational (log + query + navigate + plan). Only IntentClassifier coverage (63%) remains unshipped — accepted as LLM code ceiling.
+
+### Key Achievement
+USDA food search now works through AI chat, not just the Food tab UI. Users can type "log acai bowl" in chat and get results from USDA/OpenFoodFacts even if it's not in local DB. The AI-first promise extends to food discovery.
+
+### Key Concern
+IntentClassifier coverage has been deferred 4 consecutive reviews. Recommend accepting 63% as floor for LLM-dependent code and removing from sprint scope.
+
+### Competitive Alert
+Full conversational app control (log + query + navigate + plan) entirely on-device remains unique. MFP and Whoop require cloud for AI features. Privacy moat deepens with each on-device capability.
+
+---
+
 ## Review #24 — 2026-04-12 (Cycle 806)
 
 ### Summary
