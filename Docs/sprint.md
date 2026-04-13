@@ -15,10 +15,10 @@ _(pick from Ready)_
 - [x] **Grep "lb"/"lbs" across all views** — Fixed 7 files. All now use Preferences.weightUnit.
 
 ### P0: AI Chat Workout Intelligence
-- [ ] **"How's my bench progress?"** — Show trend data in chat. Leverage existing progressive overload service. Low effort, high value.
+- [x] **"How's my bench progress?"** — Static handler + ToolRanker triggers + resolveExerciseName. Shows 1RM trend, last weight, respects unit pref. 939 tests.
 
 ### P0: USDA API Design Document
-- [ ] **Design the integration** — Caching, offline-first, privacy (search queries leave device). First external network call — design before code.
+- [x] **Design the integration** — Written at Docs/usda-api-design.md. Offline-first with on-demand enrichment, opt-in toggle, usda_cache table, 4-phase implementation plan.
 
 ### P1: Proactive Insight Alerts
 - [ ] **Extend overload alert pattern** — Protein adherence alerts, supplement streak nudges. Proactive intelligence across domains.

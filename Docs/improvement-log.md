@@ -6,6 +6,8 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 
 ## Cycle · 2026-04-12 (Autopilot session, sprint post-review #18)
 
+- **USDA API design doc (P0)**: Written at Docs/usda-api-design.md. Architecture: offline-first + on-demand enrichment, opt-in toggle, usda_cache table, privacy analysis. Awaiting leadership decision on timeline.
+- **AI chat workout intelligence (P0)**: "How's my bench progress?" now works via StaticOverrides + resolveExerciseName. Shows 1RM trend, session history, last weight. ToolRanker triggers added for progress/bench/squat/deadlift. exercise_info tool also enhanced. 939 tests.
 - **Hardcoded unit audit (P0)**: Grep'd all .swift files for "lb"/"lbs". Fixed 7 files (6 views + 1 service) to use Preferences.weightUnit.convertFromLbs() instead of hardcoded lb. Closes stale preference pattern permanently.
 
 ---
