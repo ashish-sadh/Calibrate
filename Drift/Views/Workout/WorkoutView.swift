@@ -436,7 +436,8 @@ struct WorkoutView: View {
     }
 
     private func workoutCard(_ s: WorkoutSummary) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        let wu = Preferences.weightUnit
+        return VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(s.workout.name).font(.subheadline.weight(.semibold))
                 Spacer()
@@ -444,7 +445,7 @@ struct WorkoutView: View {
             }
             HStack(spacing: 12) {
                 if !s.workout.durationDisplay.isEmpty { Label(s.workout.durationDisplay, systemImage: "clock").font(.caption).foregroundStyle(.secondary) }
-                Label("\(Int(s.totalVolume)) lb", systemImage: "scalemass").font(.caption).foregroundStyle(.secondary)
+                Label("\(Int(wu.convertFromLbs(s.totalVolume))) \(wu.displayName)", systemImage: "scalemass").font(.caption).foregroundStyle(.secondary)
                 Label("\(s.exercises.count) exercises", systemImage: "dumbbell").font(.caption).foregroundStyle(.secondary)
             }
             if let notes = s.workout.notes, !notes.isEmpty {
@@ -454,7 +455,7 @@ struct WorkoutView: View {
                 HStack {
                     Text(abbreviate(best.exercise)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                     Spacer()
-                    Text("\(Int(best.weight)) lb × \(best.reps)").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
+                    Text("\(Int(wu.convertFromLbs(best.weight))) \(wu.displayName) × \(best.reps)").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
                 }
             }
         }.card()
