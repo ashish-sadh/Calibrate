@@ -4,6 +4,20 @@ import SwiftUI
 
 extension AIChatView {
 
+    // MARK: - Tab Metadata
+
+    /// Map tab index to (label, SF Symbol) for confirmation cards.
+    static func tabMeta(_ tab: Int) -> (String, String) {
+        switch tab {
+        case 0: ("Dashboard", "chart.line.uptrend.xyaxis")
+        case 1: ("Weight", "scalemass")
+        case 2: ("Food", "fork.knife")
+        case 3: ("Exercise", "dumbbell.fill")
+        case 4: ("More", "ellipsis")
+        default: ("Screen", "rectangle.portrait")
+        }
+    }
+
     // MARK: - Conversation History
 
     func buildConversationHistory() -> String {
@@ -168,13 +182,17 @@ extension AIChatView {
                 messages.append(ChatMessage(role: .assistant, text: fn()))
                 return
             case .uiAction(let action, let msg):
-                if let msg { messages.append(ChatMessage(role: .assistant, text: msg)) }
                 switch action {
                 case .navigate(let tab):
+                    let (label, icon) = Self.tabMeta(tab)
+                    let card = NavigationCardData(destination: label, icon: icon, tab: tab)
+                    messages.append(ChatMessage(role: .assistant, text: msg ?? "Opening \(label)...", navigationCard: card))
                     NotificationCenter.default.post(name: .navigateToTab, object: nil, userInfo: ["tab": tab])
                 case .openBarcodeScanner:
+                    if let msg { messages.append(ChatMessage(role: .assistant, text: msg)) }
                     showingBarcodeScanner = true
-                default: break
+                default:
+                    if let msg { messages.append(ChatMessage(role: .assistant, text: msg)) }
                 }
                 return
             case .toolCall(let call):
@@ -577,7 +595,8 @@ extension AIChatView {
         guard !activity.isEmpty && activity.count > 2 else { return false }
         let name = activity.capitalized
         let durText = durationMin.map { " (\($0) min)" } ?? ""
-        messages.append(ChatMessage(role: .assistant, text: "Log \(name)\(durText) for today? Say yes to confirm."))
+        let card = WorkoutCardData(name: name, durationMin: durationMin, exerciseCount: nil)
+        messages.append(ChatMessage(role: .assistant, text: "Log \(name)\(durText) for today? Say yes to confirm.", workoutCard: card))
         return true
     }
 
@@ -1036,6 +1055,9 @@ extension AIChatView {
                 case .openBarcodeScanner:
                     showingBarcodeScanner = true
                 case .navigate(let tab):
+                    let (label, icon) = Self.tabMeta(tab)
+                    let card = NavigationCardData(destination: label, icon: icon, tab: tab)
+                    messages.append(ChatMessage(role: .assistant, text: "Opening \(label)...", navigationCard: card))
                     NotificationCenter.default.post(name: .navigateToTab, object: nil, userInfo: ["tab": tab])
                 }
             }

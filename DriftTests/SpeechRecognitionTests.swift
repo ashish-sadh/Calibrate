@@ -26,7 +26,7 @@ final class SpeechRecognitionTests: XCTestCase {
     func testStopRecordingWhenIdle() {
         let service = SpeechRecognitionService.shared
         // Stopping when not recording should not crash or change state
-        service.stopRecording()
+        service.forceStop()
         XCTAssertEqual(service.recordingState, .idle)
     }
 

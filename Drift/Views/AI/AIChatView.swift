@@ -37,6 +37,7 @@ struct AIChatView: View {
         var foodCard: FoodCardData?
         var weightCard: WeightCardData?
         var workoutCard: WorkoutCardData?
+        var navigationCard: NavigationCardData?
         let createdAt = Date()
         enum Role { case user, assistant }
     }
@@ -60,6 +61,12 @@ struct AIChatView: View {
         let name: String
         let durationMin: Int?
         let exerciseCount: Int?
+    }
+
+    struct NavigationCardData {
+        let destination: String
+        let icon: String
+        let tab: Int
     }
 
     var isGenerating: Bool { generatingState != .idle }
@@ -361,6 +368,9 @@ struct AIChatView: View {
                 if let card = msg.workoutCard {
                     workoutConfirmationCard(card)
                 }
+                if let card = msg.navigationCard {
+                    navigationConfirmationCard(card)
+                }
             }
             .accessibilityLabel(msg.role == .user ? "You said: \(msg.text)" : "Assistant: \(msg.text)")
 
@@ -483,6 +493,26 @@ struct AIChatView: View {
         .overlay(
             RoundedRectangle(cornerRadius: 12)
                 .strokeBorder(Theme.accentSecondary.opacity(0.2), lineWidth: 0.5)
+        )
+    }
+
+    // MARK: - Navigation Confirmation Card
+
+    private func navigationConfirmationCard(_ card: NavigationCardData) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: card.icon)
+                .font(.title3).foregroundStyle(Theme.accent)
+            Text(card.destination)
+                .font(.subheadline.weight(.bold))
+            Spacer()
+            Image(systemName: "arrow.right.circle.fill")
+                .foregroundStyle(Theme.accent.opacity(0.6)).font(.title3)
+        }
+        .padding(10)
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .strokeBorder(Theme.accent.opacity(0.2), lineWidth: 0.5)
         )
     }
 }
