@@ -274,9 +274,55 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
 /* Empty state */
 .empty { text-align: center; padding: 48px; color: var(--text-muted); }
 
-/* Responsive */
-@media (max-width: 600px) {
-  .metrics { gap: 16px; }
+/* Responsive — Mobile */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px 16px;
+  }
+  .header h1 { font-size: 18px; }
+  .metrics {
+    gap: 12px;
+    padding: 12px 16px;
+    flex-wrap: wrap;
+  }
+  .metric { min-width: 60px; }
   .metric-value { font-size: 18px; }
-  .content { padding: 16px; }
+  .metric-label { font-size: 10px; }
+  .content { padding: 12px; }
+  .tabs {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    flex-wrap: nowrap;
+    gap: 0;
+  }
+  .tab {
+    padding: 10px 14px;
+    font-size: 13px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .report-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 12px;
+  }
+  .report-title { font-size: 14px; }
+  .review-header { flex-direction: column; align-items: flex-start; }
+  .review-actions { flex-wrap: wrap; }
+  .btn { padding: 6px 12px; font-size: 13px; }
+  .user-info span { max-width: 80px; overflow: hidden; text-overflow: ellipsis; }
+}
+
+/* Responsive — Report view on mobile */
+@media (max-width: 768px) {
+  .report-rendered { padding: 20px 16px !important; }
+  .report-rendered h1 { font-size: 22px !important; }
+  .report-rendered h2 { font-size: 13px !important; }
+  .report-rendered table { font-size: 13px; }
+  .report-rendered th, .report-rendered td { padding: 8px 10px; }
+  .report-section { padding: 10px 12px; margin: 2px -12px; }
+  .comment-btn { width: 26px; height: 26px; font-size: 14px; }
 }

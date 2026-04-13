@@ -79,7 +79,9 @@ async function listReports() {
 
 async function getReportContent(path) {
   const data = await smartApi(`/repos/${OWNER}/${REPO}/contents/${path}`);
-  return atob(data.content);
+  // Proper UTF-8 decoding (atob mangles unicode like em-dashes)
+  const bytes = Uint8Array.from(atob(data.content), c => c.charCodeAt(0));
+  return new TextDecoder('utf-8').decode(bytes);
 }
 
 async function getMetrics() {
