@@ -325,16 +325,21 @@
         if (priority) labels.push(priority);
         if (!isOwner() && priority !== 'P0') labels.push('needs-review');
 
-        // Create issue
-        const issue = await api(`/repos/${OWNER}/${REPO}/issues`, {
-          method: 'POST',
-          headers: { ...headers(), 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: `Bug: ${title}`,
-            body: issueBody,
-            labels: labels
-          })
-        });
+        // Create issue — retry without labels if permission denied
+        let issue;
+        try {
+          issue = await api(`/repos/${OWNER}/${REPO}/issues`, {
+            method: 'POST',
+            headers: { ...headers(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: `Bug: ${title}`, body: issueBody, labels })
+          });
+        } catch (labelErr) {
+          issue = await api(`/repos/${OWNER}/${REPO}/issues`, {
+            method: 'POST',
+            headers: { ...headers(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: `Bug: ${title}`, body: issueBody })
+          });
+        }
 
         result.innerHTML = `<div style="color:var(--green)">Bug filed: <a href="${issue.html_url}" target="_blank">#${issue.number} — ${title}</a></div>`;
         document.getElementById('bug-title').value = '';
@@ -808,15 +813,21 @@
         const labels = ['feature-request'];
         if (priority) labels.push(priority);
 
-        const issue = await api(`/repos/${OWNER}/${REPO}/issues`, {
-          method: 'POST',
-          headers: { ...headers(), 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            title: `Feature: ${title}`,
-            body: `${body || 'No additional context.'}\n\n---\n*Feature request submitted via Drift Command Center*`,
-            labels
-          })
-        });
+        const featureBody = `${body || 'No additional context.'}\n\n---\n*Feature request submitted via Drift Command Center*`;
+        let issue;
+        try {
+          issue = await api(`/repos/${OWNER}/${REPO}/issues`, {
+            method: 'POST',
+            headers: { ...headers(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: `Feature: ${title}`, body: featureBody, labels })
+          });
+        } catch (labelErr) {
+          issue = await api(`/repos/${OWNER}/${REPO}/issues`, {
+            method: 'POST',
+            headers: { ...headers(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: `Feature: ${title}`, body: featureBody })
+          });
+        }
         result.innerHTML = `<div style="color:var(--green)">Submitted: <a href="${issue.html_url}" target="_blank">#${issue.number} — ${title}</a>${priority === 'P0' ? '. P0 — will be picked up by the next senior session.' : priority === 'P1' ? '. P1 — will be planned in next sprint.' : '. Will be reviewed during next sprint planning.'}</div>`;
         document.getElementById('feature-title').value = '';
         document.getElementById('feature-body').value = '';
