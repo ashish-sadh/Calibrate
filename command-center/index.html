@@ -80,7 +80,7 @@
                 <option value="P2">P2</option>
               </select>
             </div>
-            <div>
+            <div id="screenshot-section">
               <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">Screenshot</label>
               <input id="bug-screenshot" type="file" accept="image/*" multiple style="font-size:13px;color:var(--text-muted);max-width:200px;">
             </div>
@@ -924,6 +924,11 @@
       document.querySelectorAll('.loading').forEach(el => {
         el.innerHTML = '<div class="empty">Sign in to view this content</div>';
       });
+      // Replace screenshot upload with sign-in nudge
+      const ss = document.getElementById('screenshot-section');
+      if (ss) {
+        ss.innerHTML = `<a href="#" onclick="event.preventDefault();startOAuth()" style="font-size:13px;color:var(--accent);">Sign in to attach screenshots</a>`;
+      }
     }
 
     showUser();
