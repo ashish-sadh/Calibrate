@@ -220,13 +220,20 @@ enum AIActionExecutor {
 
         for searchQuery in searchQueries {
             if let results = try? AppDatabase.shared.searchFoodsRanked(query: searchQuery),
-               let best = results.first {
-                // Prefer foods whose name closely matches the query (not just contains)
-                let queryWords = searchQuery.lowercased().split(separator: " ")
-                let nameWords = best.name.lowercased()
-                let matchCount = queryWords.filter { nameWords.contains($0) }.count
+               !results.isEmpty {
+                let q = searchQuery.lowercased()
+                // Prefer tight name matches: "egg" → "Egg" not "Eggs Benedict"
+                // Tight = name equals query, starts with "query ", or first word equals query
+                let tightMatch = results.prefix(15).first(where: { r in
+                    let name = r.name.lowercased()
+                    let firstWord = name.split(separator: " ").first.map(String.init) ?? name
+                    return name == q || name.hasPrefix(q + " ") || name.hasPrefix(q + ",") || firstWord == q
+                })
+                let candidate = tightMatch ?? results[0]
+                let queryWords = q.split(separator: " ")
+                let matchCount = queryWords.filter { candidate.name.lowercased().contains($0) }.count
                 if matchCount > 0 {
-                    return FoodMatch(food: best, servings: resolveServings(for: best))
+                    return FoodMatch(food: candidate, servings: resolveServings(for: candidate))
                 }
             }
         }
