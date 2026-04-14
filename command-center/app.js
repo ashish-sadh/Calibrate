@@ -8,7 +8,7 @@ const CLIENT_ID = 'Ov23liSpSMfDtbMAiMdf';
 let currentUser = null;
 let _resolveUserReady;
 const userReady = new Promise(r => { _resolveUserReady = r; });
-const ADMINS = [OWNER, 'nimisha-26'];
+const ADMINS = [OWNER, 'nimisha-26', 'rajatsadh24'];
 function isOwner() { return currentUser && ADMINS.includes(currentUser.login); }
 
 // Auth
