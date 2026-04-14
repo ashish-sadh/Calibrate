@@ -91,16 +91,13 @@
         </div>
       </details>
 
-      <!-- Open bugs -->
-      <h3 style="color:var(--red);margin-bottom:12px;font-size:14px;text-transform:uppercase;letter-spacing:0.5px;">Open</h3>
-      <div id="issues-list">
-        <div class="loading"><span class="spinner"></span></div>
-      </div>
+      <!-- Open/Fixed bugs — only shown when signed in -->
+      <div id="bugs-authed" style="display:none;">
+        <h3 style="color:var(--red);margin-bottom:12px;font-size:14px;text-transform:uppercase;letter-spacing:0.5px;">Open</h3>
+        <div id="issues-list"></div>
 
-      <!-- Fixed bugs -->
-      <h3 style="color:var(--green);margin:24px 0 12px;font-size:14px;text-transform:uppercase;letter-spacing:0.5px;">Fixed</h3>
-      <div id="fixed-list">
-        <div class="loading"><span class="spinner"></span></div>
+        <h3 style="color:var(--green);margin:24px 0 12px;font-size:14px;text-transform:uppercase;letter-spacing:0.5px;">Fixed</h3>
+        <div id="fixed-list"></div>
       </div>
     </div>
 
@@ -919,18 +916,22 @@
 
     // (Quick bug banner removed — Bugs tab is now the default landing page)
 
-    // Show sign-in prompt if not authenticated — replace all spinners
+    // Not signed in: show only bug form + sign-in prompt. Hide everything else.
     if (!getToken()) {
       document.getElementById('signin-prompt').style.display = 'block';
-      document.getElementById('metrics').innerHTML = '';
-      document.querySelectorAll('.loading').forEach(el => {
-        el.innerHTML = '<div class="empty">Sign in to view this content</div>';
+      document.getElementById('metrics').style.display = 'none';
+      // Hide all tabs except Bugs
+      document.querySelectorAll('.tab').forEach(t => {
+        if (t.dataset.tab !== 'bugs') t.style.display = 'none';
       });
-      // Replace screenshot upload with sign-in nudge
+      // Replace screenshot with sign-in link
       const ss = document.getElementById('screenshot-section');
       if (ss) {
         ss.innerHTML = `<a href="#" onclick="event.preventDefault();startOAuth()" style="font-size:13px;color:var(--accent);">Sign in to attach screenshots</a>`;
       }
+    } else {
+      // Signed in: show everything
+      document.getElementById('bugs-authed').style.display = 'block';
     }
 
     showUser();
