@@ -12,9 +12,9 @@
     <div id="auth-area"></div>
   </div>
 
-  <!-- Sign-in prompt (shown when not authenticated) -->
-  <div id="signin-prompt" style="display:none;background:linear-gradient(135deg, rgba(88,166,255,0.1), rgba(88,166,255,0.03));border-bottom:1px solid rgba(88,166,255,0.2);padding:16px 24px;text-align:center;">
-    <p style="margin:0 0 10px;font-size:15px;">Sign in with GitHub to file bugs, view reports, and give feedback</p>
+  <!-- Sign-in prompt — visible by default, JS hides when signed in -->
+  <div id="signin-prompt" style="background:linear-gradient(135deg, rgba(88,166,255,0.1), rgba(88,166,255,0.03));border-bottom:1px solid rgba(88,166,255,0.2);padding:16px 24px;text-align:center;">
+    <p style="margin:0 0 10px;font-size:15px;">Sign in with GitHub to view reports, sprint, and more</p>
     <button class="btn btn-primary" onclick="startOAuth()">Sign in with GitHub</button>
   </div>
 
@@ -23,10 +23,10 @@
   <div class="content">
     <div class="tabs">
       <div class="tab active" data-tab="bugs">Bugs</div>
-      <div class="tab" data-tab="sprint">Sprint</div>
-      <div class="tab" data-tab="reports">Reports</div>
-      <div class="tab" data-tab="releases">Releases</div>
-      <div class="tab" data-tab="feedback">Feedback Trail</div>
+      <div class="tab authed-only" data-tab="sprint" style="display:none">Sprint</div>
+      <div class="tab authed-only" data-tab="reports" style="display:none">Reports</div>
+      <div class="tab authed-only" data-tab="releases" style="display:none">Releases</div>
+      <div class="tab authed-only" data-tab="feedback" style="display:none">Feedback Trail</div>
       <div class="tab" data-tab="designs" id="designs-tab" style="display:none">Designs</div>
       <div class="tab" data-tab="review" id="review-tab" style="display:none">Review</div>
       <div class="tab" data-tab="admin" id="admin-tab" style="display:none">Admin</div>
@@ -79,8 +79,7 @@
               </select>
             </div>
             <div id="screenshot-section">
-              <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">Screenshot</label>
-              <input id="bug-screenshot" type="file" accept="image/*" multiple style="font-size:13px;color:var(--text-muted);max-width:200px;">
+              <a href="#" onclick="event.preventDefault();startOAuth()" style="font-size:13px;color:var(--accent);">Sign in to attach screenshots</a>
             </div>
             <button class="btn btn-primary" onclick="submitBug()" id="bug-submit-btn">Submit</button>
           </div>
@@ -914,23 +913,18 @@
 
     // (Quick bug banner removed — Bugs tab is now the default landing page)
 
-    // Not signed in: show only bug form + sign-in prompt. Hide everything else.
-    if (!getToken()) {
-      document.getElementById('signin-prompt').style.display = 'block';
-      document.getElementById('metrics').style.display = 'none';
-      // Hide all tabs except Bugs
-      document.querySelectorAll('.tab').forEach(t => {
-        if (t.dataset.tab !== 'bugs') t.style.display = 'none';
-      });
-      // Replace screenshot with sign-in link
+    // HTML defaults: sign-in visible, tabs hidden, screenshot = sign-in link
+    // JS only runs to SHOW things when signed in
+    if (getToken()) {
+      document.getElementById('signin-prompt').style.display = 'none';
+      document.getElementById('metrics').style.display = '';
+      document.getElementById('bugs-authed').style.display = 'block';
+      document.querySelectorAll('.authed-only').forEach(t => t.style.display = '');
+      // Restore screenshot file input
       const ss = document.getElementById('screenshot-section');
       if (ss) {
-        ss.innerHTML = `<a href="#" onclick="event.preventDefault();startOAuth()" style="font-size:13px;color:var(--accent);">Sign in to attach screenshots</a>`;
+        ss.innerHTML = '<div><label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">Screenshot</label><input id="bug-screenshot" type="file" accept="image/*" multiple style="font-size:13px;color:var(--text-muted);max-width:200px;"></div>';
       }
-    } else {
-      // Signed in: show everything
-      document.getElementById('bugs-authed').style.display = 'block';
-      document.getElementById('metrics').style.display = '';
     }
 
     showUser();
