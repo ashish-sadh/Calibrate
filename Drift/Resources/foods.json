@@ -5098,7 +5098,7 @@
     "nova_group": 3
   },
   {
-    "name": "Açaí Bowl (medium)",
+    "name": "A\u00e7a\u00ed Bowl (medium)",
     "category": "US Staples",
     "serving_size": 300,
     "serving_unit": "g",
@@ -5108,7 +5108,7 @@
     "fat_g": 18,
     "fiber_g": 8,
     "ingredients": [
-      "Açaí Bowl (medium)"
+      "A\u00e7a\u00ed Bowl (medium)"
     ],
     "nova_group": 3
   },
@@ -9788,7 +9788,7 @@
     "nova_group": 3
   },
   {
-    "name": "Costco Açaí Bowl (food court)",
+    "name": "Costco A\u00e7a\u00ed Bowl (food court)",
     "category": "Costco",
     "serving_size": 355,
     "serving_unit": "g",
@@ -9798,7 +9798,7 @@
     "fat_g": 19,
     "fiber_g": 7,
     "ingredients": [
-      "Costco Açaí Bowl (food court)"
+      "Costco A\u00e7a\u00ed Bowl (food court)"
     ],
     "nova_group": 3
   },
@@ -10493,7 +10493,7 @@
     "nova_group": 4
   },
   {
-    "name": "Starbucks Caffè Latte (Grande, 2% milk)",
+    "name": "Starbucks Caff\u00e8 Latte (Grande, 2% milk)",
     "category": "Beverages",
     "serving_size": 473,
     "serving_unit": "ml",
@@ -10503,7 +10503,7 @@
     "fat_g": 7,
     "fiber_g": 0,
     "ingredients": [
-      "Starbucks Caffè Latte (Grande, 2% milk)"
+      "Starbucks Caff\u00e8 Latte (Grande, 2% milk)"
     ],
     "nova_group": 3
   },
@@ -24868,5 +24868,240 @@
       "modified food starch"
     ],
     "nova_group": 4
+  },
+  {
+    "name": "Fried Egg",
+    "category": "Dairy & Eggs",
+    "serving_size": 50,
+    "serving_unit": "1 large",
+    "calories": 90,
+    "protein_g": 6,
+    "carbs_g": 0,
+    "fat_g": 7,
+    "fiber_g": 0,
+    "ingredients": [
+      "egg",
+      "butter"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Hard Boiled Egg",
+    "category": "Dairy & Eggs",
+    "serving_size": 50,
+    "serving_unit": "1 large",
+    "calories": 78,
+    "protein_g": 6,
+    "carbs_g": 1,
+    "fat_g": 5,
+    "fiber_g": 0,
+    "ingredients": [
+      "egg"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Sweet Potato Fries (Baked)",
+    "category": "Vegetables",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 148,
+    "protein_g": 2,
+    "carbs_g": 22,
+    "fat_g": 6,
+    "fiber_g": 2,
+    "ingredients": [
+      "sweet potato",
+      "olive oil",
+      "salt"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Tuna Steak (Grilled)",
+    "category": "Proteins",
+    "serving_size": 170,
+    "serving_unit": "1 steak",
+    "calories": 218,
+    "protein_g": 40,
+    "carbs_g": 0,
+    "fat_g": 5,
+    "fiber_g": 0,
+    "ingredients": [
+      "tuna",
+      "olive oil",
+      "lemon",
+      "salt",
+      "pepper"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Pasta Salad",
+    "category": "Grains & Cereals",
+    "serving_size": 180,
+    "serving_unit": "1 cup",
+    "calories": 358,
+    "protein_g": 12,
+    "carbs_g": 52,
+    "fat_g": 12,
+    "fiber_g": 2,
+    "ingredients": [
+      "pasta",
+      "olive oil",
+      "bell pepper",
+      "olives",
+      "feta cheese",
+      "italian dressing"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Vegetable Soup",
+    "category": "Indian Staples",
+    "serving_size": 240,
+    "serving_unit": "1 cup",
+    "calories": 72,
+    "protein_g": 4,
+    "carbs_g": 12,
+    "fat_g": 2,
+    "fiber_g": 3,
+    "ingredients": [
+      "broth",
+      "carrots",
+      "celery",
+      "onion",
+      "tomatoes",
+      "green beans",
+      "peas",
+      "garlic"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Beef Chili",
+    "category": "US Staples",
+    "serving_size": 250,
+    "serving_unit": "1 cup",
+    "calories": 340,
+    "protein_g": 25,
+    "carbs_g": 30,
+    "fat_g": 12,
+    "fiber_g": 8,
+    "ingredients": [
+      "ground beef",
+      "kidney beans",
+      "tomatoes",
+      "onion",
+      "chili powder",
+      "cumin",
+      "garlic"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Turkey Chili",
+    "category": "US Staples",
+    "serving_size": 250,
+    "serving_unit": "1 cup",
+    "calories": 280,
+    "protein_g": 22,
+    "carbs_g": 30,
+    "fat_g": 8,
+    "fiber_g": 8,
+    "ingredients": [
+      "ground turkey",
+      "kidney beans",
+      "tomatoes",
+      "onion",
+      "chili powder",
+      "cumin",
+      "garlic"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Black Bean Soup",
+    "category": "US Staples",
+    "serving_size": 240,
+    "serving_unit": "1 cup",
+    "calories": 218,
+    "protein_g": 12,
+    "carbs_g": 40,
+    "fat_g": 2,
+    "fiber_g": 10,
+    "ingredients": [
+      "black beans",
+      "onion",
+      "garlic",
+      "cumin",
+      "vegetable broth",
+      "lime"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Haleem",
+    "category": "Indian Staples",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 290,
+    "protein_g": 20,
+    "carbs_g": 25,
+    "fat_g": 12,
+    "fiber_g": 4,
+    "ingredients": [
+      "mutton",
+      "wheat",
+      "lentils",
+      "barley",
+      "onion",
+      "ginger",
+      "garlic",
+      "spices"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Nihari",
+    "category": "Indian Staples",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 350,
+    "protein_g": 25,
+    "carbs_g": 8,
+    "fat_g": 24,
+    "fiber_g": 1,
+    "ingredients": [
+      "beef shank",
+      "onion",
+      "ginger",
+      "garlic",
+      "nihari masala",
+      "ghee",
+      "whole wheat flour"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Shrimp Curry",
+    "category": "Indian Staples",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 220,
+    "protein_g": 20,
+    "carbs_g": 12,
+    "fat_g": 10,
+    "fiber_g": 1,
+    "ingredients": [
+      "shrimp",
+      "coconut milk",
+      "tomatoes",
+      "onion",
+      "garlic",
+      "ginger",
+      "curry powder"
+    ],
+    "nova_group": 2
   }
 ]

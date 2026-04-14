@@ -1554,14 +1554,16 @@ import Testing
 }
 
 @MainActor @Test func progressiveOverloadWithHistory() {
-    // Bench Press likely has history in test DB — verify it returns valid data
+    // Test structural invariants — sessions and trend assertions only apply when data exists
     let result = ExerciseService.getProgressiveOverload(exercise: "Bench Press")
     if let result {
         #expect(result.exercise == "Bench Press")
         #expect(!result.trend.isEmpty)
-        #expect(!result.sessions.isEmpty)
-        // Status should be one of the valid values
         #expect([.improving, .stalling, .declining, .insufficientData].contains(result.status))
+        // Only assert non-empty sessions when we actually have sufficient data
+        if result.status != .insufficientData {
+            #expect(!result.sessions.isEmpty)
+        }
     }
 }
 

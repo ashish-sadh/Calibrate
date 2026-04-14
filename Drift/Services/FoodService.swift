@@ -42,6 +42,11 @@ enum FoodService {
             return false // preserve existing order
         }
 
+        // Track queries that return no local results — used for food DB prioritization
+        if results.isEmpty {
+            try? AppDatabase.shared.trackSearchMiss(query: query)
+        }
+
         return results
     }
 

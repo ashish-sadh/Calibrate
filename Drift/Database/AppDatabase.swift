@@ -631,3 +631,31 @@ extension AppDatabase {
         }
     }
 }
+
+// MARK: - Search Miss Tracking
+
+extension AppDatabase {
+    /// Record a food search query that returned zero local results.
+    /// Deduplicates by normalizing (lowercase, trimmed). Increments count on repeat.
+    /// Skips short queries (<3 chars) or single punctuation that aren't real food names.
+    func trackSearchMiss(query: String) throws {
+        let normalized = query.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        guard normalized.count >= 3, normalized.first?.isLetter == true else { return }
+        try dbWriter.write { db in
+            if let existing = try Row.fetchOne(db, sql: "SELECT id, miss_count FROM search_miss WHERE query = ?", arguments: [normalized]) {
+                let newCount = (existing["miss_count"] as Int64? ?? 1) + 1
+                try db.execute(sql: "UPDATE search_miss SET miss_count = ?, last_seen = date('now') WHERE query = ?", arguments: [newCount, normalized])
+            } else {
+                try db.execute(sql: "INSERT INTO search_miss (query, miss_count, last_seen) VALUES (?, 1, date('now'))", arguments: [normalized])
+            }
+        }
+    }
+
+    /// Returns the top N most-searched missing foods, ordered by search count descending.
+    func topSearchMisses(limit: Int = 20) throws -> [(query: String, count: Int)] {
+        try dbWriter.read { db in
+            let rows = try Row.fetchAll(db, sql: "SELECT query, miss_count FROM search_miss ORDER BY miss_count DESC LIMIT ?", arguments: [limit])
+            return rows.map { (query: $0["query"] as String? ?? "", count: Int(exactly: $0["miss_count"] as Int64? ?? 0) ?? 0) }
+        }
+    }
+}

@@ -483,5 +483,15 @@ enum Migrations {
                 t.add(column: "hidden", .boolean).notNull().defaults(to: false)
             }
         }
+
+        // v29: Search miss tracking — log queries that return zero local results
+        migrator.registerMigration("v29_search_miss") { db in
+            try db.create(table: "search_miss") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("query", .text).notNull().unique()
+                t.column("miss_count", .integer).notNull().defaults(to: 1)
+                t.column("last_seen", .text).notNull().defaults(sql: "(date('now'))")
+            }
+        }
     }
 }

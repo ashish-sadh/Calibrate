@@ -2637,3 +2637,118 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
 }
 
 enum TestError: Error { case msg(String); init(_ s: String) { self = .msg(s) } }
+
+// MARK: - Search Miss Tracking Tests
+
+@Test func searchMissTrackedOnEmptyResult() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    let query = "xyzunknownfooditem"
+    try db.trackSearchMiss(query: query)
+    let misses = try db.topSearchMisses(limit: 10)
+    #expect(misses.contains(where: { $0.query == query && $0.count == 1 }), "Miss should be recorded with count 1")
+}
+
+@Test func searchMissDeduplicated() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    let query = "anotherxyzfood"
+    try db.trackSearchMiss(query: query)
+    try db.trackSearchMiss(query: query)
+    try db.trackSearchMiss(query: query)
+    let misses = try db.topSearchMisses(limit: 10)
+    let entry = misses.first(where: { $0.query == query })
+    #expect(entry?.count == 3, "Repeated searches should increment count, not add duplicate rows")
+}
+
+@Test func searchMissNormalizesCase() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    try db.trackSearchMiss(query: "Paneer Tikka Masala")
+    try db.trackSearchMiss(query: "paneer tikka masala")
+    let misses = try db.topSearchMisses(limit: 10)
+    let entries = misses.filter { $0.query.contains("paneer tikka masala") }
+    #expect(entries.count == 1, "Case-different searches should be deduplicated")
+    #expect(entries.first?.count == 2)
+}
+
+@Test func searchMissSkipsShortQueries() async throws {
+    let db = try AppDatabase.empty()
+    try db.seedFoodsFromJSON()
+    try db.trackSearchMiss(query: "ab")   // too short
+    try db.trackSearchMiss(query: "?")    // punctuation
+    let misses = try db.topSearchMisses(limit: 10)
+    #expect(!misses.contains(where: { $0.query == "ab" }), "Queries < 3 chars should not be tracked")
+    #expect(!misses.contains(where: { $0.query == "?" }), "Punctuation queries should not be tracked")
+}
+
+@Test func searchMissRankedByCount() async throws {
+    let db = try AppDatabase.empty()
+    let rareQuery = "uniquerarexfood"
+    let popularQuery = "verypopularxfood"
+    try db.trackSearchMiss(query: rareQuery)
+    for _ in 0..<5 { try db.trackSearchMiss(query: popularQuery) }
+    let misses = try db.topSearchMisses(limit: 10)
+    let rareIdx = misses.firstIndex(where: { $0.query == rareQuery }) ?? Int.max
+    let popularIdx = misses.firstIndex(where: { $0.query == popularQuery }) ?? Int.max
+    #expect(popularIdx < rareIdx, "More-searched foods should rank higher in topSearchMisses")
+}
+
+// MARK: - New Food Additions Search Tests
+
+@Test func newFoodFriedEggFound() async throws {
+    let db = seededDB()
+    let results = try db.searchFoods(query: "fried egg")
+    #expect(!results.isEmpty, "Fried Egg should be findable")
+    #expect(results.first?.name.lowercased().contains("fried egg") == true)
+}
+
+@Test func newFoodHardBoiledEggFound() async throws {
+    let db = seededDB()
+    #expect(!(try db.searchFoods(query: "hard boiled egg")).isEmpty)
+    #expect(!(try db.searchFoods(query: "hard boiled")).isEmpty)
+    #expect(!(try db.searchFoods(query: "boiled egg")).isEmpty)
+}
+
+@Test func newFoodSweetPotatoFriesFound() async throws {
+    let db = seededDB()
+    #expect(!(try db.searchFoods(query: "sweet potato fries")).isEmpty)
+    #expect(!(try db.searchFoods(query: "sweet fries")).isEmpty)
+}
+
+@Test func newFoodTunaSteak() async throws {
+    let db = seededDB()
+    let results = try db.searchFoods(query: "tuna steak")
+    #expect(!results.isEmpty, "Tuna steak should be findable")
+    let tuna = results.first(where: { $0.name.lowercased().contains("tuna steak") })
+    #expect(tuna != nil)
+    #expect((tuna?.proteinG ?? 0) >= 35, "Tuna steak should have high protein (35g+)")
+}
+
+@Test func newFoodBeefChili() async throws {
+    let db = seededDB()
+    #expect(!(try db.searchFoods(query: "beef chili")).isEmpty)
+    #expect(!(try db.searchFoods(query: "chili")).isEmpty)
+}
+
+@Test func newFoodBlackBeanSoup() async throws {
+    let db = seededDB()
+    #expect(!(try db.searchFoods(query: "black bean soup")).isEmpty)
+    #expect(!(try db.searchFoods(query: "black bean")).isEmpty)
+}
+
+@Test func newFoodHaleem() async throws {
+    let db = seededDB()
+    #expect(!(try db.searchFoods(query: "haleem")).isEmpty)
+}
+
+@Test func newFoodNihari() async throws {
+    let db = seededDB()
+    #expect(!(try db.searchFoods(query: "nihari")).isEmpty)
+}
+
+@Test func newFoodShrimpCurry() async throws {
+    let db = seededDB()
+    #expect(!(try db.searchFoods(query: "shrimp curry")).isEmpty)
+    #expect(!(try db.searchFoods(query: "shrimp")).isEmpty)
+}
