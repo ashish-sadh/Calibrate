@@ -247,7 +247,7 @@ struct BarcodeLookupView: View {
     // MARK: - Product View (from barcode lookup)
 
     private func productView(_ p: OpenFoodFactsService.Product) -> some View {
-        let servingG = p.servingSizeG ?? 100
+        let servingG = (p.servingSizeG ?? 100) / Double(p.piecesPerServing ?? 1)
         let food = Food(name: [p.name, p.brand].compactMap { $0 }.joined(separator: " - "),
                         category: "Scanned", servingSize: servingG, servingUnit: "g",
                         calories: p.calories * servingG / 100,
@@ -330,6 +330,7 @@ struct BarcodeLookupView: View {
                     proteinG: cached.proteinGPer100g, carbsG: cached.carbsGPer100g,
                     fatG: cached.fatGPer100g, fiberG: cached.fiberGPer100g,
                     servingSizeG: cached.servingSizeG,
+                    piecesPerServing: OpenFoodFactsService.parsePieceCount(cached.servingDescription),
                     ingredientsText: nil,
                     novaGroup: nil
                 )
@@ -355,7 +356,7 @@ struct BarcodeLookupView: View {
     }
 
     private func logProduct(_ p: OpenFoodFactsService.Product) {
-        let servingG = p.servingSizeG ?? 100
+        let servingG = (p.servingSizeG ?? 100) / Double(p.piecesPerServing ?? 1)
         // Create food with actual serving size (not hardcoded 100g)
         // Macros stored per-serving (scaled from per-100g)
         // Parse ingredients from OpenFoodFacts (comma-separated text → JSON array)

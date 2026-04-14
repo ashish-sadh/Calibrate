@@ -15,7 +15,8 @@ enum OpenFoodFactsService {
         let carbsG: Double
         let fatG: Double
         let fiberG: Double
-        let servingSizeG: Double?  // parsed serving size in grams
+        let servingSizeG: Double?  // parsed serving size in grams (total serving, not per-piece)
+        let piecesPerServing: Int? // e.g. "3 pieces (85g)" → 3; nil if not a multi-piece serving
         let ingredientsText: String?  // raw ingredients string from OpenFoodFacts
         let novaGroup: Int?           // NOVA 1-4 processing level
     }
@@ -81,6 +82,7 @@ enum OpenFoodFactsService {
         }
 
         let servingG = parseServingSize(servingStr)
+        let pieces = parsePieceCount(servingStr)
         let ingredientsText = product["ingredients_text"] as? String
         let novaGroup = product["nova_group"] as? Int
 
@@ -97,6 +99,7 @@ enum OpenFoodFactsService {
             fatG: fat,
             fiberG: fiber,
             servingSizeG: servingG,
+            piecesPerServing: pieces,
             ingredientsText: ingredientsText,
             novaGroup: novaGroup
         )
@@ -137,9 +140,24 @@ enum OpenFoodFactsService {
             return Product(barcode: barcode, name: name, brand: brand, servingSize: servingStr,
                            calories: calories, proteinG: protein, carbsG: carbs, fatG: fat,
                            fiberG: fiber, servingSizeG: parseServingSize(servingStr),
+                           piecesPerServing: parsePieceCount(servingStr),
                            ingredientsText: product["ingredients_text"] as? String,
                            novaGroup: product["nova_group"] as? Int)
         }
+    }
+
+    /// Parse piece/unit count from serving strings like "3 pieces (85g)" → 3, "2 bars (60g)" → 2.
+    /// Returns nil if no multi-piece pattern found or count is 1.
+    static func parsePieceCount(_ str: String?) -> Int? {
+        guard let str else { return nil }
+        let cleaned = str.lowercased()
+        let pattern = #"(\d+)\s*(?:pieces?|pcs?|bars?|pastries|cookies?|crackers?|sticks?|slices?|wafers?|biscuits?|rolls?|tablets?|capsules?|scoops?)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern),
+              let match = regex.firstMatch(in: cleaned, range: NSRange(cleaned.startIndex..., in: cleaned)),
+              let range = Range(match.range(at: 1), in: cleaned),
+              let count = Int(String(cleaned[range])),
+              count > 1 else { return nil }
+        return count
     }
 
     /// Try to parse serving size like "30g", "100 ml", "8 fl oz", "1 cup (240g)" into grams.

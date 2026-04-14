@@ -297,7 +297,7 @@ import GRDB
 
 @Test func barcodeCacheSaveAndFetch() async throws {
     let db = try AppDatabase.empty()
-    let product = OpenFoodFactsService.Product(barcode: "1234567890", name: "Test Bar", brand: "Brand", servingSize: "30g", calories: 200, proteinG: 20, carbsG: 25, fatG: 8, fiberG: 3, servingSizeG: 30, ingredientsText: nil, novaGroup: nil)
+    let product = OpenFoodFactsService.Product(barcode: "1234567890", name: "Test Bar", brand: "Brand", servingSize: "30g", calories: 200, proteinG: 20, carbsG: 25, fatG: 8, fiberG: 3, servingSizeG: 30, piecesPerServing: nil, ingredientsText: nil, novaGroup: nil)
     try db.cacheBarcodeProduct(BarcodeCache(from: product))
     let cached = try db.fetchCachedBarcode("1234567890")
     #expect(cached != nil)
@@ -313,7 +313,7 @@ import GRDB
 @Test func barcodeCacheRecentOrder() async throws {
     let db = try AppDatabase.empty()
     for i in 1...5 {
-        let p = OpenFoodFactsService.Product(barcode: "000\(i)", name: "Item \(i)", brand: nil, servingSize: nil, calories: Double(i * 100), proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0, servingSizeG: nil, ingredientsText: nil, novaGroup: nil)
+        let p = OpenFoodFactsService.Product(barcode: "000\(i)", name: "Item \(i)", brand: nil, servingSize: nil, calories: Double(i * 100), proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0, servingSizeG: nil, piecesPerServing: nil, ingredientsText: nil, novaGroup: nil)
         try db.cacheBarcodeProduct(BarcodeCache(from: p))
     }
     let recent = try db.fetchRecentBarcodes(limit: 3)
@@ -321,13 +321,41 @@ import GRDB
 }
 
 @Test func barcodeCacheDisplayName() async throws {
-    let c = BarcodeCache(from: OpenFoodFactsService.Product(barcode: "123", name: "Oats", brand: "Quaker", servingSize: nil, calories: 100, proteinG: 3, carbsG: 20, fatG: 1, fiberG: 2, servingSizeG: nil, ingredientsText: nil, novaGroup: nil))
+    let c = BarcodeCache(from: OpenFoodFactsService.Product(barcode: "123", name: "Oats", brand: "Quaker", servingSize: nil, calories: 100, proteinG: 3, carbsG: 20, fatG: 1, fiberG: 2, servingSizeG: nil, piecesPerServing: nil, ingredientsText: nil, novaGroup: nil))
     #expect(c.displayName == "Oats - Quaker")
 }
 
 @Test func barcodeCacheNoBrand() async throws {
-    let c = BarcodeCache(from: OpenFoodFactsService.Product(barcode: "123", name: "Generic", brand: nil, servingSize: nil, calories: 50, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0, servingSizeG: nil, ingredientsText: nil, novaGroup: nil))
+    let c = BarcodeCache(from: OpenFoodFactsService.Product(barcode: "123", name: "Generic", brand: nil, servingSize: nil, calories: 50, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0, servingSizeG: nil, piecesPerServing: nil, ingredientsText: nil, novaGroup: nil))
     #expect(c.displayName == "Generic")
+}
+
+// MARK: - Piece Count Parsing (5 tests)
+
+@Test func parsePieceCountThreePieces() async throws {
+    let count = OpenFoodFactsService.parsePieceCount("3 pieces (85g)")
+    #expect(count == 3)
+}
+
+@Test func parsePieceCountTwoBars() async throws {
+    let count = OpenFoodFactsService.parsePieceCount("2 bars (60g)")
+    #expect(count == 2)
+}
+
+@Test func parsePieceCountSinglePiece() async throws {
+    // 1 piece should return nil (no division needed)
+    let count = OpenFoodFactsService.parsePieceCount("1 piece (30g)")
+    #expect(count == nil)
+}
+
+@Test func parsePieceCountNoPattern() async throws {
+    let count = OpenFoodFactsService.parsePieceCount("100g")
+    #expect(count == nil)
+}
+
+@Test func parsePieceCountNilInput() async throws {
+    let count = OpenFoodFactsService.parsePieceCount(nil)
+    #expect(count == nil)
 }
 
 // MARK: - Serving Unit Conversions (8 tests)
