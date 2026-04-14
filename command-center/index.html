@@ -299,7 +299,7 @@
           el.innerHTML = '<div class="empty">No open bugs.</div>';
           return;
         }
-        el.innerHTML = `<ul class="report-list">${issues.map(i => {
+        const renderBug = i => {
           const priority = i.labels.find(l => ['P0','P1','P2'].includes(l.name));
           const priorityBadge = priority
             ? `<span class="report-type" style="background:${priority.name === 'P0' ? 'rgba(248,81,73,0.15);color:var(--red)' : priority.name === 'P1' ? 'rgba(210,153,34,0.15);color:var(--yellow)' : 'rgba(139,148,158,0.15);color:var(--text-muted)'}">${priority.name}</span>`
@@ -309,11 +309,12 @@
             <div>
               <span class="report-title">#${i.number} ${i.title}</span>
               ${priorityBadge}
-              ${hasImage ? '<span class="badge">has screenshot</span>' : ''}
+              ${hasImage ? '<span class="badge">screenshot</span>' : ''}
             </div>
             <span class="report-date">${new Date(i.created_at).toLocaleDateString()}</span>
           </li>`;
-        }).join('')}</ul>`;
+        };
+        el.innerHTML = `<ul class="report-list">${renderWithShowMore(issues, renderBug, 3, 'open-bugs')}</ul>`;
       } catch (e) {
         el.innerHTML = `<div class="empty">Failed to load issues: ${e.message}</div>`;
       }
@@ -328,24 +329,22 @@
           el.innerHTML = '<div class="empty">No fixed bugs yet.</div>';
           return;
         }
-        el.innerHTML = `<ul class="report-list">${issues.map(i => {
+        const renderFixed = i => {
           const priority = i.labels.find(l => ['P0','P1','P2'].includes(l.name));
           const priorityBadge = priority
             ? `<span class="report-type" style="background:${priority.name === 'P0' ? 'rgba(248,81,73,0.15);color:var(--red)' : priority.name === 'P1' ? 'rgba(210,153,34,0.15);color:var(--yellow)' : 'rgba(139,148,158,0.15);color:var(--text-muted)'}">${priority.name}</span>`
             : '';
-          const hasImage = i.body && i.body.includes('![');
           const closedDate = new Date(i.closed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-          const filedDate = new Date(i.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
           return `<li class="report-item" onclick="window.open('${i.html_url}','_blank')">
             <div>
               <span class="report-title">#${i.number} ${i.title}</span>
               ${priorityBadge}
               <span class="report-type" style="background:rgba(63,185,80,0.15);color:var(--green);">Fixed</span>
-              ${hasImage ? '<span class="badge">has screenshot</span>' : ''}
             </div>
-            <span class="report-date">Filed ${filedDate} · Fixed ${closedDate}</span>
+            <span class="report-date">Fixed ${closedDate}</span>
           </li>`;
-        }).join('')}</ul>`;
+        };
+        el.innerHTML = `<ul class="report-list">${renderWithShowMore(issues, renderFixed, 3, 'fixed-bugs')}</ul>`;
       } catch (e) {
         el.innerHTML = `<div class="empty">Failed to load fixed bugs: ${e.message}</div>`;
       }
