@@ -50,7 +50,6 @@ function startOAuth() {
   // public_repo = minimum scope for commenting on PRs, filing issues on public repos
   window.location.href = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect)}&scope=public_repo&state=${state}`;
 }
-}
 
 async function exchangeCode(code) {
   const resp = await fetch(`${WORKER_URL}?code=${code}`);
