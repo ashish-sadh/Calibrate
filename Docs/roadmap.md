@@ -59,9 +59,11 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 - ~~**Chat UI polish (P1)**~~ DONE — Typewriter text animation for instant responses, structured confirmation cards for weight/workout logging.
 - **Food diary** — ~~Meal grouping~~ DONE. ~~Inline editing~~ DONE (DB food macro override + quick-add editing). ~~Saved meals~~ DONE (meal group re-log via context menu).
 
+### Now
+- **iOS widgets (P0)** — Calories remaining + recovery score on home screen. WidgetKit + App Groups. Phase 4 surface expansion. Sprint task #59.
+
 ### Next
 - ~~Macro rings (Apple Fitness-style concentric rings)~~ DONE
-- iOS widgets (calories remaining, recovery score)
 - ~~Saved meals (one-tap re-log of multi-item meals)~~ DONE
 - ~~Inline diary editing (tap number to edit directly)~~ DONE
 - ~~Food diary inline editing (tap to edit calories/macros directly)~~ DONE
@@ -185,6 +187,6 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 - **Phase 2: AI Chat Foundation** (DONE) — On-device inference, dual-model, 19 tools, eval harness.
 - **Phase 3a: Tiered Pipeline** (DONE) — ToolRanker, AIToolAgent, StaticOverrides, LLM normalizer.
 - **Phase 3b: Parity Gaps** (DONE) — All high-impact chat features implemented.
-- **Phase 3c: Polish & Depth** (CURRENT) — UI overhaul, AI reliability, test coverage, food DB.
-- **Phase 4: Input Expansion** (NEXT) — Voice (SpeechRecognizer, highest ROI), photo, widgets, Apple Watch.
+- **Phase 3c: Polish & Depth** (DONE) — UI overhaul, AI reliability, test coverage, food DB. All "Now" items complete.
+- **Phase 4: Surface Expansion** (CURRENT) — Widgets, Live Activities, Apple Watch. Voice already shipped in 3c.
 - **Phase 5: Deep Intelligence** (FUTURE) — Fine-tuned models, conversation memory, training programming.

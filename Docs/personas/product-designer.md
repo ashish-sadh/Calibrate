@@ -172,6 +172,12 @@
 - All Phase 3c "Now" items are complete. The product is at a natural inflection point — decide whether to deepen polish or expand to new surfaces (widgets, Apple Watch).
 - Exercise query bug (plurals, trailing phrases failing silently) is a reminder that AI-first products must handle natural language gracefully. Silent failures erode trust more than visible errors.
 
+### What I Learned — Review #39 (Cycle 1750, 2026-04-14)
+- Infrastructure displacing user features is a persistent pattern. 30+ commits, zero changes to what users see when opening Drift. Sprint lifecycle v2 and Command Center are good plumbing but don't move the product forward.
+- iOS widgets carried once. The "isolate as sole P0" pattern (proven with push notifications) must be applied again. Widgets are the single highest-impact investment for daily engagement.
+- Food search miss analysis carried twice is the muscle-heatmap/push-notification pattern repeating. Name it, isolate it, ship it.
+- The market is consolidating around "always present" — Whoop's lock screen complications, Apple Fitness widgets, MFP's notification nudges. Drift lives only inside itself. Widgets break this ceiling.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation

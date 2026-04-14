@@ -176,6 +176,13 @@
 - Regex-based exercise name extraction has a natural ceiling for natural language. The retry-with-singular-fallback is pragmatic for now, but long-term, routing through LLM intent classifier is the answer if edge cases proliferate.
 - Tests 981→1,037 (+56). NotificationService and BehaviorInsightService alert logic have zero dedicated tests — harden in next sprint.
 
+### What I Learned — Review #39 (Cycle 1750, 2026-04-14)
+- sendMessage decomposition shipped cleanly — 491 lines → 8 named phase handlers. The architecture is now ready for any chat feature without touching a monolith. This was the last major tech debt item.
+- Sprint lifecycle v2 (Issue-based, SENIOR/JUNIOR, human takeover) is significant infrastructure. Multi-model autonomous operation with human handoff is now production-ready.
+- NotificationService and BehaviorInsightService still have zero dedicated tests (flagged Review #37, now overdue). Must ship this sprint.
+- For iOS widgets: WidgetKit + App Groups is the canonical approach. Shared GRDB read-only connection or UserDefaults suite. Main app writes, widget reads. `WidgetCenter.shared.reloadAllTimelines()` on food log. Low architectural risk, high user visibility.
+- State.md drift (Build 113 vs actual 116, 996 vs 1131 tests) shows documentation automation gap. Consider generating state.md from build artifacts.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)
