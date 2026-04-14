@@ -171,6 +171,11 @@
 - Push notifications via `UserNotifications` framework is architecturally trivial. The only real risk is permission UX — prompt after first food log, not on launch. One wrong prompt = denied forever.
 - sendMessage at 491 lines is past threshold but not actively blocking. Defer decomposition until a feature requires touching that code. Don't refactor for its own sake.
 
+### What I Learned — Review #37 (Cycle 1404, 2026-04-13)
+- NotificationService reusing `BehaviorInsightService.computeProactiveAlerts()` is the right pattern — no duplicated detection logic. Permission deferred until user has data AND there's something to notify about.
+- Review hook at 20-cycle cadence creates self-reinforcing overhead when reviews generate commits. Increasing to 40-cycle minimum, or switching to time-based triggers, is necessary.
+- Context recovery from conversation restarts adds hidden overhead. Partial implementations (files written but not wired up) are harder to resume than fresh starts.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)

@@ -167,6 +167,11 @@
 - Push notifications deferred a 4th time is a systemic prioritization failure, not a scoping problem. Making it the ONLY P0 with no competing priorities is the fix.
 - Exercise instructions via chat ("how do I deadlift?") is more aligned with our AI-first identity than static images. Lean into conversational exercise coaching over Boostcamp-style media content.
 
+### What I Learned — Review #37 (Cycle 1404, 2026-04-13)
+- Push notifications deferred/delayed across 5 reviews is beyond a credibility issue — it's a process failure. The implementation is 60% done; finishing it is a 2-cycle task, not a 20-cycle project.
+- Review overhead consumed 80%+ of this sprint's cycles. Increasing review cadence to 40 cycles is the minimum fix. Process that outweighs product output is broken process.
+- Whoop's paid AI nudges ($30/mo) make our free on-device push notifications an even stronger competitive differentiator — but only if we ship them.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation

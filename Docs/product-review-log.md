@@ -4,6 +4,22 @@ Periodic product + engineering reviews. Every 10 cycles of the self-improvement 
 
 ---
 
+## Review #37 — 2026-04-13 (Cycle 1404)
+
+### Summary
+Push notifications in progress (60% complete — service written, preference added, not wired up). 0 new user-facing features shipped. 24 cycles consumed by housekeeping (TestFlight, exec briefing, reviews, context recovery). Review cadence increased to 40 cycles.
+
+### Key Achievement
+NotificationService implementation approach: reuses BehaviorInsightService detection, deferred permission request, single combined notification at 6pm.
+
+### Key Concern
+5th consecutive review where push notifications haven't fully shipped. Overhead ratio (process vs. features) is inverted.
+
+### Sprint Plan (next 40 cycles)
+P0: Finish push notifications. P1: Exercise instructions via chat. P1: Systematic bug hunt. P2: sendMessage decomposition. P2: Update state.md.
+
+---
+
 ## Review #36 — 2026-04-13 (Cycle 1380)
 
 ### Summary
