@@ -24635,5 +24635,238 @@
       "strawberry filling"
     ],
     "nova_group": 4
+  },
+  {
+    "name": "Ras Malai",
+    "category": "Indian Sweets",
+    "serving_size": 150,
+    "serving_unit": "2 pieces",
+    "calories": 285,
+    "protein_g": 10,
+    "carbs_g": 32,
+    "fat_g": 13,
+    "fiber_g": 0,
+    "ingredients": [
+      "cottage cheese",
+      "milk",
+      "sugar",
+      "saffron",
+      "cardamom",
+      "rose water",
+      "pistachios"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Mishti Doi",
+    "category": "Indian Sweets",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 145,
+    "protein_g": 5,
+    "carbs_g": 22,
+    "fat_g": 4.5,
+    "fiber_g": 0,
+    "ingredients": [
+      "full-fat milk",
+      "jaggery",
+      "yogurt culture"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Rice Payasam",
+    "category": "Indian Sweets",
+    "serving_size": 200,
+    "serving_unit": "ml",
+    "calories": 245,
+    "protein_g": 6,
+    "carbs_g": 42,
+    "fat_g": 7,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "rice",
+      "milk",
+      "sugar",
+      "cardamom",
+      "cashews",
+      "raisins",
+      "ghee"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Seviyan Kheer",
+    "category": "Indian Sweets",
+    "serving_size": 200,
+    "serving_unit": "ml",
+    "calories": 230,
+    "protein_g": 7,
+    "carbs_g": 35,
+    "fat_g": 7,
+    "fiber_g": 1,
+    "ingredients": [
+      "vermicelli",
+      "milk",
+      "sugar",
+      "cardamom",
+      "almonds",
+      "raisins",
+      "ghee"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Seekh Kebab",
+    "category": "Indian Staples",
+    "serving_size": 140,
+    "serving_unit": "2 skewers",
+    "calories": 265,
+    "protein_g": 28,
+    "carbs_g": 6,
+    "fat_g": 14,
+    "fiber_g": 1,
+    "ingredients": [
+      "ground lamb",
+      "onion",
+      "garlic",
+      "ginger",
+      "green chili",
+      "coriander",
+      "cumin",
+      "garam masala",
+      "mint"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Dahi Puri",
+    "category": "Indian Street Food",
+    "serving_size": 200,
+    "serving_unit": "6 pieces",
+    "calories": 225,
+    "protein_g": 6,
+    "carbs_g": 38,
+    "fat_g": 6,
+    "fiber_g": 3,
+    "ingredients": [
+      "puri",
+      "yogurt",
+      "tamarind chutney",
+      "green chutney",
+      "chaat masala",
+      "onion",
+      "potato",
+      "sev"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Tofu Scramble",
+    "category": "Proteins",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 16,
+    "carbs_g": 8,
+    "fat_g": 10,
+    "fiber_g": 2,
+    "ingredients": [
+      "firm tofu",
+      "onion",
+      "bell pepper",
+      "turmeric",
+      "nutritional yeast",
+      "olive oil",
+      "salt"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Collagen Peptides",
+    "category": "Supplements",
+    "serving_size": 11,
+    "serving_unit": "1 scoop",
+    "calories": 40,
+    "protein_g": 9,
+    "carbs_g": 0,
+    "fat_g": 0,
+    "fiber_g": 0,
+    "ingredients": [
+      "hydrolyzed bovine collagen peptides"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Miso Paste",
+    "category": "Condiments",
+    "serving_size": 17,
+    "serving_unit": "1 tbsp",
+    "calories": 35,
+    "protein_g": 2,
+    "carbs_g": 4,
+    "fat_g": 1,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "fermented soybeans",
+      "rice",
+      "salt",
+      "water"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Coconut Aminos",
+    "category": "Condiments",
+    "serving_size": 15,
+    "serving_unit": "1 tbsp",
+    "calories": 25,
+    "protein_g": 0,
+    "carbs_g": 6,
+    "fat_g": 0,
+    "fiber_g": 0,
+    "ingredients": [
+      "organic coconut blossom nectar",
+      "sea salt"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Kale Chips",
+    "category": "Snacks",
+    "serving_size": 30,
+    "serving_unit": "g",
+    "calories": 110,
+    "protein_g": 4,
+    "carbs_g": 10,
+    "fat_g": 6,
+    "fiber_g": 2,
+    "ingredients": [
+      "kale",
+      "olive oil",
+      "nutritional yeast",
+      "garlic powder",
+      "salt"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Low Carb Tortilla",
+    "category": "Grains & Cereals",
+    "serving_size": 45,
+    "serving_unit": "1 large",
+    "calories": 80,
+    "protein_g": 5,
+    "carbs_g": 13,
+    "fat_g": 3,
+    "fiber_g": 10,
+    "ingredients": [
+      "whole wheat flour",
+      "wheat gluten",
+      "wheat fiber",
+      "oat fiber",
+      "modified food starch"
+    ],
+    "nova_group": 4
   }
 ]
