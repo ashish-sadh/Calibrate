@@ -34,6 +34,8 @@ targets:
       - package: GRDB
       - framework: Frameworks/llama.xcframework
         embed: true
+      - target: DriftWidget
+        embed: true
 
     entitlements:
       path: Drift/Drift.entitlements
@@ -41,6 +43,28 @@ targets:
         com.apple.developer.healthkit: true
         com.apple.developer.healthkit.background-delivery: true
         com.apple.developer.kernel.increased-memory-limit: true
+        com.apple.security.application-groups:
+          - group.com.drift.health
+
+  DriftWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: DriftWidget
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.drift.health.widget
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "116"
+        SWIFT_VERSION: "6.0"
+        INFOPLIST_FILE: DriftWidget/Info.plist
+        DEVELOPMENT_TEAM: ZJ5H5XH82A
+        CODE_SIGN_ENTITLEMENTS: DriftWidget/DriftWidget.entitlements
+    entitlements:
+      path: DriftWidget/DriftWidget.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.drift.health
 
   DriftTests:
     type: bundle.unit-test

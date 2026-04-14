@@ -1,4 +1,5 @@
 import SwiftUI
+import WidgetKit
 
 @main
 struct DriftApp: App {
@@ -34,6 +35,7 @@ struct DriftApp: App {
                         await TDEEEstimator.shared.refresh()
                         // Schedule health nudge notifications (protein, supplements, workouts)
                         await NotificationService.refreshScheduledAlerts()
+                        WidgetDataProvider.refreshWidgetData()
                         syncComplete = true
                     }
                 }

@@ -76,6 +76,7 @@ enum StaticOverrides {
                     case .foodLogged(let entryId, let name, let cal):
                         do {
                             try AppDatabase.shared.deleteFoodEntry(id: entryId)
+                            WidgetDataProvider.refreshWidgetData()
                             return "Undone: removed \(name) (\(Int(cal)) cal)."
                         } catch { return "Couldn't undo — try again." }
                     case .weightLogged(let entryId, let value):
@@ -103,6 +104,7 @@ enum StaticOverrides {
                 }
                 do {
                     try AppDatabase.shared.deleteFoodEntry(id: id)
+                    WidgetDataProvider.refreshWidgetData()
                     return "Undone: removed \(last.foodName) (\(Int(last.calories * last.servings)) cal)."
                 } catch {
                     return "Couldn't undo — try again."
@@ -138,6 +140,7 @@ enum StaticOverrides {
                     }
                     do {
                         try AppDatabase.shared.deleteFoodEntry(id: id)
+                        WidgetDataProvider.refreshWidgetData()
                         return "Deleted \(last.foodName) (\(Int(last.calories * last.servings)) cal)."
                     } catch {
                         return "Couldn't delete \(last.foodName) — try again."
@@ -157,6 +160,7 @@ enum StaticOverrides {
                        let id = match.id {
                         do {
                             try AppDatabase.shared.deleteFoodEntry(id: id)
+                            WidgetDataProvider.refreshWidgetData()
                             return "Deleted \(match.foodName) (\(Int(match.calories * match.servings)) cal)."
                         } catch {
                             return "Couldn't delete \(match.foodName) — try again."
@@ -334,6 +338,7 @@ enum StaticOverrides {
                         if let eid = entry.id {
                             ConversationState.shared.lastWriteAction = .foodLogged(entryId: eid, name: "Quick Add", calories: Double(cal))
                         }
+                        WidgetDataProvider.refreshWidgetData()
                         return "Logged \(cal) cal, \(prot)P\(carbs > 0 ? " \(Int(carbs))C" : "")\(fat > 0 ? " \(Int(fat))F" : "") for \(mealType)."
                     }
                 } catch {}

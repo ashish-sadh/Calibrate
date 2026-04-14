@@ -142,6 +142,7 @@ enum FoodService {
     /// Update a food entry's macros by entry ID.
     static func updateFoodEntryMacros(id: Int64, calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double) {
         try? AppDatabase.shared.updateFoodEntryMacros(id: id, calories: calories, proteinG: proteinG, carbsG: carbsG, fatG: fatG, fiberG: fiberG)
+        WidgetDataProvider.refreshWidgetData()
     }
 
     /// Update a food's name and macros by ID.
@@ -342,11 +343,13 @@ enum FoodService {
                     return "No food entries today."
                 }
                 try? AppDatabase.shared.deleteFoodEntry(id: lastId)
+                WidgetDataProvider.refreshWidgetData()
                 return "Removed \(last.foodName) (\(Int(last.entry.calories)) cal)."
             }
             return "Couldn't find '\(name)' in today's food log."
         }
         try? AppDatabase.shared.deleteFoodEntry(id: entryId)
+        WidgetDataProvider.refreshWidgetData()
         return "Removed \(found.foodName) (\(Int(found.entry.calories)) cal)."
     }
 
@@ -375,6 +378,7 @@ enum FoodService {
             if let eid = entry.id {
                 await ConversationState.shared.lastWriteAction = .foodLogged(entryId: eid, name: foodName, calories: Double(calories))
             }
+            WidgetDataProvider.refreshWidgetData()
             return "Logged \(foodName) (\(calories) cal) for \(mealType)."
         } catch {
             return "Failed: \(error.localizedDescription)"
@@ -429,6 +433,7 @@ enum FoodService {
         let cal = mealLogs.flatMap { ml in
             (try? AppDatabase.shared.fetchFoodEntries(forMealLog: ml.id ?? 0)) ?? []
         }.reduce(0.0) { $0 + $1.calories }
+        WidgetDataProvider.refreshWidgetData()
         return "Copied \(copied) items from yesterday (\(Int(cal)) cal total)."
     }
 

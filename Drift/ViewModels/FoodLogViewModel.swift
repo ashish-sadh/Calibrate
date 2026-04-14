@@ -143,6 +143,10 @@ final class FoodLogViewModel {
             todayMeals = grouped
             todayEntries = entries.sorted { $0.loggedAt.replacingOccurrences(of: "T", with: " ") < $1.loggedAt.replacingOccurrences(of: "T", with: " ") }
             todayNutrition = try database.fetchDailyNutrition(for: date)
+            // Keep widget in sync with latest nutrition data
+            if Calendar.current.isDateInToday(selectedDate) {
+                WidgetDataProvider.refreshWidgetData()
+            }
         } catch {
             Log.foodLog.error("Failed to load meals: \(error.localizedDescription)")
         }
