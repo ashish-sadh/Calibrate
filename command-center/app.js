@@ -211,11 +211,12 @@ async function showUser() {
 // Sprint: sprint-task Issues + permanent-task Issues + recently closed
 async function getSprintPlan() {
   try {
-    const [sprintOpen, sprintClosed, permanent, p0Bugs] = await Promise.all([
+    const [sprintOpen, sprintClosed, permanent, p0Bugs, p0Closed] = await Promise.all([
       smartApi(`/repos/${OWNER}/${REPO}/issues?labels=sprint-task&state=open&per_page=30`),
       smartApi(`/repos/${OWNER}/${REPO}/issues?labels=sprint-task&state=closed&per_page=10&sort=updated&direction=desc`),
       smartApi(`/repos/${OWNER}/${REPO}/issues?labels=permanent-task&state=open&per_page=10`),
-      smartApi(`/repos/${OWNER}/${REPO}/issues?labels=bug,P0&state=open&per_page=10`)
+      smartApi(`/repos/${OWNER}/${REPO}/issues?labels=bug,P0&state=open&per_page=10`),
+      smartApi(`/repos/${OWNER}/${REPO}/issues?labels=bug,P0&state=closed&per_page=10&sort=updated&direction=desc`)
     ]);
 
     const mapIssue = i => ({
@@ -235,10 +236,17 @@ async function getSprintPlan() {
     const sprintNumbers = new Set(sprintOpen.map(i => i.number));
     const dedupedP0 = p0Bugs.filter(i => !sprintNumbers.has(i.number));
 
+    // Merge closed sprint-tasks and closed P0 bugs into one completed list, deduped
+    const closedNumbers = new Set(sprintClosed.map(i => i.number));
+    const dedupedP0Closed = p0Closed.filter(i => !closedNumbers.has(i.number));
+    const allCompleted = [...sprintClosed, ...dedupedP0Closed]
+      .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+      .slice(0, 10);
+
     return {
       p0Bugs: dedupedP0.map(mapIssue),
       sprintTasks: sprintOpen.map(mapIssue),
-      completedTasks: sprintClosed.map(mapIssue),
+      completedTasks: allCompleted.map(mapIssue),
       permanentTasks: permanent.map(mapIssue)
     };
   } catch (e) {
