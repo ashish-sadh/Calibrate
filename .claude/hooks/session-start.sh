@@ -14,6 +14,7 @@ echo "Cycle count: $COUNT"
 echo "Last product review: cycle $LAST_REVIEW"
 echo "Next product review due: cycle $NEXT_REVIEW"
 echo "Read Docs/roadmap.md first to understand product direction."
+echo "REMINDER: Mark your target issue in-progress BEFORE starting work: gh issue edit {N} --add-label in-progress"
 echo "========================"
 
 exit 0

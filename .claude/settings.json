@@ -61,6 +61,11 @@
             "type": "command",
             "command": ".claude/hooks/daily-report.sh",
             "timeout": 30
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/mark-in-progress.sh",
+            "timeout": 15
           }
         ]
       }

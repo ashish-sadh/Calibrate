@@ -48,6 +48,7 @@ Sprint tasks are GitHub Issues with `sprint-task` + `SENIOR`/`JUNIOR` labels. So
 | **TestFlight check** | PostToolUse git commit (3h) | No | Drift Control only | Auto TestFlight publish with pre-flight |
 | **TestFlight guard** | PreToolUse xcodebuild archive | Yes | Drift Control only | Blocks unauthorized publishes |
 | **Pre-flight** | Before archive | Yes | Drift Control only | Build + tests + eval + no P0 bugs |
+| **Mark in-progress** | PostToolUse git commit | No | All modes | Auto-adds in-progress label when commit references #N |
 | **Daily exec report** | PostToolUse git commit (24h) | No | Drift Control only | Exec report PR + wiki refresh |
 | **Clean state** | Stop | Yes | All modes | Blocks stop with uncommitted/unpushed + persona check |
 | **Session start** | SessionStart | No | All modes | Cycle count + roadmap reminder |
