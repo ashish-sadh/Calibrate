@@ -60,10 +60,10 @@ enum NotificationService {
         try? await center.add(request)
     }
 
-    // MARK: - Private
+    // MARK: - Composition (internal for testability)
 
     /// Compose a single notification from multiple alerts.
-    private static func composeNotification(from alerts: [BehaviorInsight]) -> (title: String, body: String) {
+    static func composeNotification(from alerts: [BehaviorInsight]) -> (title: String, body: String) {
         if alerts.count == 1 {
             return (alerts[0].title, alerts[0].detail)
         }
@@ -76,8 +76,7 @@ enum NotificationService {
     }
 
     /// Returns a calendar trigger for 6pm today if before 6pm, otherwise 6pm tomorrow.
-    /// Respects quiet hours: never schedules between 9pm and 8am.
-    private static func nextEveningTrigger() -> UNCalendarNotificationTrigger {
+    static func nextEveningTrigger() -> UNCalendarNotificationTrigger {
         var components = DateComponents()
         components.hour = 18
         components.minute = 0
