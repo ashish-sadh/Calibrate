@@ -252,8 +252,24 @@ while true; do
             ;;
         PAUSE)
             if is_claude_alive; then
-                log "PAUSE requested. Killing autopilot."
-                kill_claude
+                log "PAUSE requested. Setting override and waiting for graceful exit..."
+                sed -i '' 's/_Override:_ CONTINUE/_Override:_ STOP/' "$WORK_DIR/program.md" 2>/dev/null || true
+                PAUSE_WAIT=0
+                PAUSE_TIMEOUT=300
+                while is_claude_alive && (( PAUSE_WAIT < PAUSE_TIMEOUT )); do
+                    sleep 30
+                    (( PAUSE_WAIT += 30 ))
+                    if is_log_stale_seconds 120; then
+                        log "PAUSE: session stalled (no output in 120s). Force killing."
+                        break
+                    fi
+                done
+                if is_claude_alive; then
+                    log "PAUSE: graceful timeout (${PAUSE_TIMEOUT}s). Force killing."
+                    kill_claude
+                else
+                    log "PAUSE: session exited gracefully."
+                fi
             fi
             log "Paused. Waiting for RUN..."
             continue
