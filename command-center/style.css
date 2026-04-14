@@ -249,6 +249,13 @@ a:hover { color: var(--accent-hover); text-decoration: underline; }
   gap: 8px;
 }
 
+/* Sprint items */
+.sprint-items { font-size: 14px; line-height: 1.8; }
+.sprint-items ul { padding-left: 20px; list-style: none; }
+.sprint-items li { position: relative; padding-left: 4px; }
+.sprint-items h3 { color: var(--text); font-size: 15px; margin: 16px 0 8px; }
+.sprint-items strong { color: var(--text); }
+
 /* Nav tabs */
 .tabs {
   display: flex;
