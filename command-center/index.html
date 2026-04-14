@@ -832,11 +832,12 @@
       const el = document.getElementById('features-list');
       try {
         const isHuman = i => (i.body || '').includes('Feature request submitted via Drift Command Center');
+        const hasDesignDoc = i => i.labels.some(l => l.name === 'design-doc');
         const [openRaw, closedRaw] = await Promise.all([
           api(`/repos/${OWNER}/${REPO}/issues?labels=feature-request&state=open&per_page=30`),
           api(`/repos/${OWNER}/${REPO}/issues?labels=feature-request&state=closed&per_page=10&sort=updated&direction=desc`)
         ]);
-        const open = openRaw.filter(isHuman);
+        const open = openRaw.filter(i => isHuman(i) && !hasDesignDoc(i));
         const closed = closedRaw.filter(isHuman);
 
         if (open.length === 0 && closed.length === 0) {
