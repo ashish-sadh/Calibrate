@@ -65,38 +65,56 @@ kill_claude() {
 }
 
 start_claude() {
-    # Determine model: Opus for reviews/planning + senior tasks, Sonnet for junior tasks
     local MODEL="sonnet"
     local SESSION_TYPE="junior"
-
-    # Check if review is due (time-based: every 3 hours)
-    local LAST_REVIEW_TIME=$(cat "$HOME/drift-state/last-review-time" 2>/dev/null || echo "0")
+    local SESSION_PROMPT="$PROMPT"
     local NOW=$(date +%s)
-    local HOURS_SINCE=$(( (NOW - LAST_REVIEW_TIME) / 3600 ))
+
+    # 1. Sprint planning due? (every 3 hours)
+    local LAST_REVIEW=$(cat "$HOME/drift-state/last-review-time" 2>/dev/null || echo "0")
+    local HOURS_SINCE=$(( (NOW - LAST_REVIEW) / 3600 ))
 
     if [[ "$HOURS_SINCE" -ge 3 ]]; then
         MODEL="opus"
-        SESSION_TYPE="review+planning"
-        log "Review due (${HOURS_SINCE}h since last) — using Opus"
+        SESSION_TYPE="planning"
+        SESSION_PROMPT="run sprint planning"
+        echo "$NOW" > "$HOME/drift-state/last-review-time"  # Guaranteed update
+        log "Sprint planning due (${HOURS_SINCE}h since last) — Opus"
+
+    # 2. SENIOR sprint-tasks or P0 bugs? → Opus (alternating with Sonnet)
     else
-        # Check sprint plan for next task type
-        local NEXT_LINE=$(grep -B1 'Status: \[ \] pending' "$HOME/drift-state/sprint-plan.md" 2>/dev/null | grep -i "SENIOR\|JUNIOR" | head -1)
-        if echo "$NEXT_LINE" | grep -qi "SENIOR"; then
-            MODEL="opus"
-            SESSION_TYPE="senior"
-            log "Next task is SENIOR — using Opus"
+        local SENIOR=$(gh issue list --state open --label sprint-task --label SENIOR --json number --jq 'length' 2>/dev/null || echo "0")
+        local P0=$(gh issue list --state open --label P0 --json number --jq 'length' 2>/dev/null || echo "0")
+        local LAST_MODEL=$(cat "$HOME/drift-state/last-model" 2>/dev/null || echo "sonnet")
+
+        if [[ "$SENIOR" -gt 0 ]] || [[ "$P0" -gt 0 ]]; then
+            if [[ "$LAST_MODEL" == "opus" ]]; then
+                # Opus just ran — give Sonnet a turn
+                MODEL="sonnet"
+                SESSION_TYPE="junior"
+                SESSION_PROMPT="execute junior tasks"
+                log "Alternating to Sonnet (${SENIOR} senior, ${P0} P0 remaining)"
+            else
+                MODEL="opus"
+                SESSION_TYPE="senior"
+                SESSION_PROMPT="execute senior tasks and P0 bugs"
+                log "SENIOR/P0 work available (${SENIOR} senior, ${P0} P0) — Opus"
+            fi
         else
+            # 3. Default: Sonnet always-on (junior tasks + permanent tasks)
             MODEL="sonnet"
             SESSION_TYPE="junior"
-            log "Next task is JUNIOR — using Sonnet + Opus advisor"
+            SESSION_PROMPT="execute junior tasks"
+            log "No senior/P0 work — Sonnet (always-on)"
         fi
     fi
 
+    echo "$MODEL" > "$HOME/drift-state/last-model"
     CURRENT_LOG="$LOG_DIR/session_${SESSION_TYPE}_$(date +%s).log"
 
     log "Starting autopilot ($SESSION_TYPE, model=$MODEL, log: $CURRENT_LOG)"
     cd "$WORK_DIR"
-    DRIFT_AUTONOMOUS=1 claude -p "$PROMPT" \
+    DRIFT_AUTONOMOUS=1 claude -p "$SESSION_PROMPT" \
         --dangerously-skip-permissions \
         --model "$MODEL" \
         --effort max \

@@ -8,7 +8,7 @@ Autonomous loop. Follow this exactly.
 
 _Directive:_ **Read `Docs/roadmap.md` to understand product direction. Pick work that advances the current phase. Work through sprint.md top-down — bugs first, then P0/P1 items. When finite items are done, rotate through Permanent Tasks guided by the roadmap's "Now" items. Be bold — a full UI redesign or AI chat state machine rewrite is fine. The goal is visible, meaningful progress every cycle.**
 
-_Override:_ CONTINUE
+_Override:_ STOP
 
 ---
 
