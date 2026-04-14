@@ -12,10 +12,14 @@ enum NotificationService {
     static func refreshScheduledAlerts() async {
         let center = UNUserNotificationCenter.current()
 
-        // Remove all pending Drift notifications — we reschedule fresh each launch
-        center.removeAllPendingNotificationRequests()
+        guard Preferences.healthNudgesEnabled else {
+            // Disabled — just clear any previously scheduled notifications
+            center.removeAllPendingNotificationRequests()
+            return
+        }
 
-        guard Preferences.healthNudgesEnabled else { return }
+        // Remove all pending — we reschedule fresh
+        center.removeAllPendingNotificationRequests()
 
         // Check if there are any alerts worth sending
         let alerts = BehaviorInsightService.computeProactiveAlerts()
