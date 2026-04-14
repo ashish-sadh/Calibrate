@@ -45,7 +45,8 @@ You are the Product Designer + Principal Engineer. This is a replanning session.
    - **JUNIOR:** Food DB, single-file UI, tests, docs, simple fixes, well-specified work
 7. **Update personas** — append "What I learned this review"
 8. **Update roadmap** — apply agreed changes
-9. **Exit** — watchdog restarts with appropriate model for first task
+9. **Close the planning Issue** — if the prompt says "close Issue #N", run: `gh issue close N --comment "Sprint planning complete. Created X sprint-task issues. Review PR: #Y."` and `gh issue edit N --remove-label in-progress`
+10. **Exit** — watchdog restarts with appropriate model for first task
 
 ---
 

@@ -77,9 +77,23 @@ start_claude() {
     if [[ "$HOURS_SINCE" -ge 3 ]]; then
         MODEL="opus"
         SESSION_TYPE="planning"
-        SESSION_PROMPT="run sprint planning"
         echo "$NOW" > "$HOME/drift-state/last-review-time"  # Guaranteed update
         log "Sprint planning due (${HOURS_SINCE}h since last) — Opus"
+
+        # Create tracking Issue so Command Center shows planning in progress
+        local CYCLE=$(cat "$HOME/drift-state/cycle-counter" 2>/dev/null || echo "?")
+        local PLAN_ISSUE=$(gh issue create \
+            --title "Sprint Planning — Cycle $CYCLE" \
+            --label sprint-task --label SENIOR --label in-progress \
+            --body "Automated sprint planning session. Includes: product review, competitive analysis, sprint-task creation, persona updates, roadmap updates." \
+            --json number --jq '.number' 2>/dev/null || echo "")
+        if [[ -n "$PLAN_ISSUE" ]]; then
+            log "Created planning tracking Issue #$PLAN_ISSUE"
+            SESSION_PROMPT="run sprint planning — close Issue #$PLAN_ISSUE when done"
+        else
+            log "Warning: failed to create planning tracking Issue"
+            SESSION_PROMPT="run sprint planning"
+        fi
 
     # 2. SENIOR sprint-tasks or P0 bugs? → Opus (alternating with Sonnet)
     else
