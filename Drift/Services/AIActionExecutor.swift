@@ -149,6 +149,14 @@ enum AIActionExecutor {
         for suffix in [" for me", " please", " today", " for breakfast", " for lunch", " for dinner", " for snack"] {
             if remainder.hasSuffix(suffix) { remainder = String(remainder.dropLast(suffix.count)) }
         }
+
+        // Strip trailing conversational noise: "eggs and coffee can you help me log" → "eggs and coffee"
+        for brk in [" can you ", " please help ", " help me ", " could you "] {
+            if let range = remainder.range(of: brk) {
+                remainder = String(remainder[..<range.lowerBound])
+                break
+            }
+        }
         guard !remainder.isEmpty else { return nil }
 
         // Check for compound foods that contain "and" (don't split these)
@@ -164,6 +172,20 @@ enum AIActionExecutor {
             parts = parts.flatMap { $0.components(separatedBy: sep) }
         }
         parts = parts.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+
+        // Secondary split: "one avocado two eggs" → ["one avocado", "two eggs"]
+        // Handles implicit lists without "and" where a word-number appears mid-string
+        let implicitCountWords = ["two ", "three ", "four ", "five ", "six ", "seven ", "eight ", "nine ", "ten "]
+        parts = parts.flatMap { part -> [String] in
+            for num in implicitCountWords {
+                if let range = part.range(of: " \(num)") {
+                    let before = String(part[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
+                    let after = (num + String(part[range.upperBound...])).trimmingCharacters(in: .whitespaces)
+                    if !before.isEmpty && !after.isEmpty { return [before, after] }
+                }
+            }
+            return [part]
+        }
 
         guard parts.count > 1 else { return nil } // Single item — use parseFoodIntent instead
 

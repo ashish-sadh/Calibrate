@@ -69,7 +69,21 @@ extension AIChatViewModel {
         for sep in [", and ", " and ", ", "] {
             parts = parts.flatMap { $0.components(separatedBy: sep) }
         }
-        return parts.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        parts = parts.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+
+        // Secondary split: "one avocado two eggs" → ["one avocado", "two eggs"]
+        let implicitCountWords = ["two ", "three ", "four ", "five ", "six ", "seven ", "eight ", "nine ", "ten "]
+        parts = parts.flatMap { part -> [String] in
+            for num in implicitCountWords {
+                if let range = part.range(of: " \(num)") {
+                    let before = String(part[..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
+                    let after = (num + String(part[range.upperBound...])).trimmingCharacters(in: .whitespaces)
+                    if !before.isEmpty && !after.isEmpty { return [before, after] }
+                }
+            }
+            return [part]
+        }
+        return parts
     }
 
     /// Try to resolve a single food item string into a RecipeItem.

@@ -668,6 +668,36 @@ import Testing
     #expect(names.contains("toast"))
 }
 
+// MARK: - Multi-Food Conversational Tail + Implicit List Parsing (Bug #68)
+
+@Test func aiMultiFoodStripsConversationalTail() async throws {
+    // "can you please help me lock" noise at end should not pollute food search
+    let intents = AIActionExecutor.parseMultiFoodIntent("i just had one avocado two eggs and a cup of coffee can you please help me lock")
+    #expect(intents != nil, "Should parse multi-food despite conversational tail")
+    let names = intents?.map { $0.query } ?? []
+    #expect(names.contains(where: { $0.contains("avocado") }), "Should find avocado: \(names)")
+    #expect(names.contains(where: { $0.contains("egg") }), "Should find eggs: \(names)")
+    #expect(names.contains(where: { $0.contains("coffee") || $0.contains("cup") }), "Should find coffee: \(names)")
+    // Must NOT contain "lock" or "help" as food names
+    #expect(!names.contains(where: { $0.contains("lock") || $0.contains("help") }), "Should strip noise: \(names)")
+}
+
+@Test func aiMultiFoodImplicitListSplit() async throws {
+    // "one avocado two eggs" — no "and", implicit boundary at word-number
+    let intents = AIActionExecutor.parseMultiFoodIntent("had one avocado two eggs")
+    #expect(intents != nil, "Should split implicit list")
+    let names = intents?.map { $0.query } ?? []
+    #expect(names.contains(where: { $0.contains("avocado") }), "Should find avocado: \(names)")
+    #expect(names.contains(where: { $0.contains("egg") }), "Should find eggs: \(names)")
+}
+
+@Test func aiMultiFoodHelpMeTailStripped() async throws {
+    let intents = AIActionExecutor.parseMultiFoodIntent("i ate rice and dal help me log")
+    #expect(intents != nil)
+    let names = intents?.map { $0.query } ?? []
+    #expect(!names.contains(where: { $0.contains("help") || $0.contains("log") }))
+}
+
 // MARK: - Natural Food Phrasing
 
 @Test func aiNaturalPhrasing_IJustHad() async throws {
