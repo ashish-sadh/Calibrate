@@ -1,114 +1,114 @@
-# Sprint Plan — Review #37 (Cycles 1483–1503)
+# Sprint Plan — Review #39 (Cycles 1627–1647)
 
-Created: 2026-04-13
+Created: 2026-04-14
 
 ---
 
 ## Task 1: sendMessage decomposition
 **Priority:** P0
-**Classification:** JUNIOR (Sonnet + advisor)
-**Status:** [x] done (already decomposed — 128 lines, 21 extracted handle* methods)
+**Classification:** SENIOR (Opus)
+**Status:** [x] done — 128→28 lines, 4 phase methods extracted, 1131 tests pass
 
-**Goal:** Break 491-line sendMessage into focused named methods. Pure refactor, no behavior change.
+**Goal:** Organize the 25+ handler methods in AIChatView+MessageHandling.swift into clearly named phase groups. The main sendMessage dispatcher (128 lines) calls handlers across 1,168 lines. Group handlers by phase, clarify ownership of ConversationState transitions, make each phase independently testable.
 
 **Files:**
-- `Drift/ViewModels/AIChatViewModel.swift`
+- Drift/Views/AI/AIChatView+MessageHandling.swift (1,168 lines — main target)
+- Drift/Views/AI/AIChatViewModel.swift (class definition, types)
+- Drift/Services/ConversationState.swift (Phase enum)
 
 **Approach:**
-1. Read full sendMessage, identify logical sections (input validation, state prep, static overrides, LLM pipeline, response handling, card attachment, cleanup)
-2. Extract each into private methods with clear names
-3. Keep public interface identical — `sendMessage()` becomes a coordinator that calls private methods
-4. Run all 1,037 tests to verify zero behavior change
+1. Read sendMessage dispatcher (lines 164-292) — understand the 9 dispatch phases
+2. Group handlers by phase: static overrides, workout quick paths, confirmations, view-state handlers, multi-turn continuations, planning triggers, food intent parsing, AI pipeline
+3. Extract each phase group into a clearly named extension method (e.g., `handleStaticOverrides`, `handleMultiTurnContinuation`)
+4. The main sendMessage becomes a clean sequential dispatcher calling phase methods
+5. Ensure ConversationState phase transitions remain sequential — never reorder or parallelize
+6. Run full test suite after each extraction step
 
-**Edge cases:**
-- Early returns in nested conditions must be preserved (guard statements)
-- Shared mutable state between sections (conversation state, pending vars)
-- Error handling paths must remain identical
+**Edge cases:** ConversationState.phase must be set AFTER handler processing completes (line 494 pattern). weak self in closures. Async/await boundaries between phases.
 
-**Tests:**
-- All existing 1,037 tests must pass unchanged
-- No new tests needed (pure refactor)
+**Tests:** All 996+ existing tests must pass. Add focused tests for individual phase handlers if coverage gaps found.
 
-**Acceptance:** sendMessage under 100 lines, all tests pass, zero behavior change.
+**Acceptance:** sendMessage is a clean dispatcher under 50 lines. Each phase group is a named method. All tests pass.
 
 ---
 
-## Task 2: Food search miss analysis + targeted additions
-**Priority:** P1
-**Classification:** JUNIOR (Sonnet + advisor)
-**Status:** [x] done — 20 high-value foods added (protein snacks, supplements, fitness staples). DB at 1,520.
-
-**Goal:** Identify the most-searched missing foods and add them. Every "not found" = user opens MFP.
-
-**Files:**
-- `Drift/Resources/foods.json`
-- Possibly `Drift/Services/SpellCorrectService.swift` for new synonyms
-
-**Approach:**
-1. Review common food queries from eval harness and failing-queries.md
-2. Cross-reference with USDA for accurate nutrition data
-3. Add 20-30 high-value missing foods (focus on frequently searched items)
-4. Add synonyms for regional variants
-
-**Tests:**
-- Search tests for each added food
-- Verify existing foods not broken
-
-**Acceptance:** Top 20 search misses addressed. Build passes.
-
----
-
-## Task 3: Notification + behavior alert test coverage
-**Priority:** P1
-**Classification:** JUNIOR (Sonnet + advisor)
+## Task 2: Systematic bug hunt
+**Priority:** P0
+**Classification:** SENIOR (Opus)
 **Status:** [ ] pending
 
-**Goal:** NotificationService and BehaviorInsightService alert detection have zero dedicated unit tests. Add edge-case coverage.
+**Goal:** Proactive quality pass. Carried 3 sprints — must ship. Focus on notification scheduling edge cases, food diary boundary conditions, and recent AI pipeline changes.
 
 **Files:**
-- `DriftTests/` — new test file or extend existing
+- Drift/Services/NotificationService.swift (scheduling, permission, toggle edge cases)
+- Drift/ViewModels/FoodLogViewModel.swift (diary copy/reorder/delete edge cases)
+- Drift/Views/AI/AIChatView+MessageHandling.swift (recent card attachment paths)
 
 **Approach:**
-1. Test proteinStreakAlert edge cases: exactly 3 days, 2 days (no alert), data gaps
-2. Test supplementGapAlert: new supplement (no history), all taken, mixed
-3. Test workoutConsistencyAlert: 4 days vs 5 days threshold
-4. Test loggingGapAlert: logged today only, logged yesterday only
-5. Test composeNotification: single alert, multiple alerts
+1. Trace NotificationService: permission revoked mid-session, toggle race conditions, schedule after midnight, duplicate scheduling
+2. Trace food diary: same-timestamp entries, copy from empty day, delete last item, edit zero-calorie entry
+3. Check recent card attachment code for nil/empty state handling
+4. File any bugs found as GitHub Issues with regression tests
+5. If bugs found, fix them with tests in the same cycle
 
-**Acceptance:** All alert detection methods have dedicated tests. Coverage for BehaviorInsightService above 50%.
+**Edge cases:** Permission state changes between check and schedule. Timer firing during app background.
+
+**Tests:** Add regression tests for every bug found. Target: 5+ new tests minimum.
+
+**Acceptance:** Analysis complete, all found bugs fixed with tests. If clean, document what was checked.
 
 ---
 
-## Task 4: Systematic bug hunt
+## Task 3: iOS widget prototype
 **Priority:** P1
-**Classification:** JUNIOR (Sonnet + advisor)
+**Classification:** SENIOR (Opus)
 **Status:** [ ] pending
 
-**Goal:** Quarterly practice. Focus on notification scheduling, food diary edge cases, recent AI changes.
+**Goal:** Create a "Calories Remaining" home screen widget using WidgetKit. First Phase 4 surface — makes Drift visible throughout the day without opening the app.
+
+**Files:**
+- New: DriftWidget/ extension target
+- project.yml (add widget extension target)
+- Shared data: App Groups for data sharing between main app and widget
 
 **Approach:**
-1. Review NotificationService for edge cases (permission revoked mid-session, toggle race)
-2. Review food diary copy/reorder for timestamp edge cases
-3. Trace data paths through recent features
-4. Add regression tests for anything found
+1. Add App Group capability to main app and create widget extension target in project.yml
+2. Run xcodegen generate
+3. Create shared UserDefaults suite for App Group data sharing
+4. Write today's calorie data to shared UserDefaults on each food log
+5. Create TimelineProvider that reads shared calorie data
+6. Design small/medium widget: calories remaining number, progress ring, date
+7. Static timeline with refresh on app foreground (not live-updating — battery concern)
+8. Test on simulator
 
-**Acceptance:** Analysis complete, any bugs found are fixed with regression tests.
+**Edge cases:** No data state (user hasn't logged today). Widget timeline refresh frequency. GRDB concurrent reads from widget process — use shared UserDefaults instead for simplicity.
+
+**Tests:** Widget provider unit tests with mock data. Main app data-sharing tests.
+
+**Acceptance:** Widget appears on home screen showing today's remaining calories. Updates when app is opened after logging food.
 
 ---
 
-## Task 5: State.md refresh
+## Task 4: Food search miss analysis
 **Priority:** P2
 **Classification:** JUNIOR (Sonnet + advisor)
 **Status:** [ ] pending
 
-**Goal:** State.md is stale — tests show 981 (actual: 1,037), build 108 (actual: 112), capabilities incomplete.
+**Goal:** Track zero-result food searches to make DB improvements data-driven. Every "not found" = user opens competitor.
 
 **Files:**
-- `Docs/state.md`
+- Drift/Services/FoodService.swift (add search miss logging)
+- Drift/Database/AppDatabase.swift (add search_misses table)
 
 **Approach:**
-1. Update all numbers: tests, build, foods, exercises, tools, card types
-2. Update AI chat capabilities list
-3. Update tech stack notes if changed
+1. Add a `search_misses` table: query text, timestamp, count
+2. On zero-result local search (before USDA fallback), log the query
+3. Dedup similar queries (lowercase, trim whitespace)
+4. Don't log if USDA fallback succeeds (user got a result)
+5. After data accumulates, analyze top misses for targeted food additions
 
-**Acceptance:** State.md accurately reflects current build.
+**Edge cases:** Privacy — search misses stay local only. Don't log partial typing (only completed searches). Dedup "chicken" and "chickens" variants.
+
+**Tests:** Test miss logging, dedup logic, query counting.
+
+**Acceptance:** search_misses table exists, logging works, initial analysis documented.

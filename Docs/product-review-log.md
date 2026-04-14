@@ -4,6 +4,22 @@ Periodic product + engineering reviews. Every 10 cycles of the self-improvement 
 
 ---
 
+## Review #40 — 2026-04-14 (Cycle 1647)
+
+### Summary
+sendMessage decomposition shipped (128→28 lines, 4 phase methods). 1/4 sprint items complete. Single feature commit in 20-cycle window — tool-call-based cycle counting inflates review frequency.
+
+### Key Achievement
+Chat architecture cleanup closes a 6-review-old tech debt item. Future AI features are now easier to add safely.
+
+### Key Concern
+Review cadence tied to tool calls, not commits — two reviews in one session. Systematic bug hunt carried 4th time.
+
+### Sprint Plan (next 20 cycles)
+P0: Systematic bug hunt. P1: iOS widget prototype. P2: Food search miss analysis.
+
+---
+
 ## Review #37 — 2026-04-13 (Cycle 1483)
 
 ### Summary

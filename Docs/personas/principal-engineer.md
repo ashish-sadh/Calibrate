@@ -171,6 +171,10 @@
 - Push notifications via `UserNotifications` framework is architecturally trivial. The only real risk is permission UX — prompt after first food log, not on launch. One wrong prompt = denied forever.
 - sendMessage at 491 lines is past threshold but not actively blocking. Defer decomposition until a feature requires touching that code. Don't refactor for its own sake.
 
+### What I Learned — Review #40 (Cycle 1647, 2026-04-14)
+- sendMessage decomposition was net negative lines (78 added, 109 removed). Phase-based grouping with named methods is the right pattern for large dispatchers. Sequential ConversationState transitions preserved without issue.
+- NotificationService + BehaviorInsightService at zero dedicated tests is the highest-risk untested code path. Prioritize in bug hunt.
+
 ### What I Learned — Review #37 (Cycle 1483, 2026-04-13)
 - Push notification architecture was clean — BehaviorInsightService detection reused directly, UserNotifications framework is the right local-only approach. Zero new infrastructure needed.
 - Regex-based exercise name extraction has a natural ceiling for natural language. The retry-with-singular-fallback is pragmatic for now, but long-term, routing through LLM intent classifier is the answer if edge cases proliferate.

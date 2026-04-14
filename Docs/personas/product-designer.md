@@ -167,6 +167,10 @@
 - Push notifications deferred a 4th time is a systemic prioritization failure, not a scoping problem. Making it the ONLY P0 with no competing priorities is the fix.
 - Exercise instructions via chat ("how do I deadlift?") is more aligned with our AI-first identity than static images. Lean into conversational exercise coaching over Boostcamp-style media content.
 
+### What I Learned — Review #40 (Cycle 1647, 2026-04-14)
+- sendMessage decomposition closing a 6-review-old tech debt item proves the "isolate as sole P0" pattern works for infrastructure too, not just features.
+- Two same-day reviews with 1 feature commit between them is pure process overhead. Review cadence needs to be time-based or commit-based, not tool-call-based.
+
 ### What I Learned — Review #37 (Cycle 1483, 2026-04-13)
 - Push notifications shipped after 4 reviews of deferral. Making it the ONLY P0 with zero competing priorities was the fix. Apply this pattern to any feature that keeps slipping: isolate it, remove distractions.
 - All Phase 3c "Now" items are complete. The product is at a natural inflection point — decide whether to deepen polish or expand to new surfaces (widgets, Apple Watch).
