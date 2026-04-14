@@ -18,9 +18,7 @@
     <button class="btn btn-primary" onclick="startOAuth()">Sign in with GitHub</button>
   </div>
 
-  <div class="metrics" id="metrics">
-    <div class="loading"><span class="spinner"></span> Loading metrics...</div>
-  </div>
+  <div class="metrics" id="metrics" style="display:none;"></div>
 
   <div class="content">
     <div class="tabs">
@@ -932,6 +930,7 @@
     } else {
       // Signed in: show everything
       document.getElementById('bugs-authed').style.display = 'block';
+      document.getElementById('metrics').style.display = '';
     }
 
     showUser();
