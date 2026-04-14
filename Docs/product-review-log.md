@@ -4,6 +4,22 @@ Periodic product + engineering reviews. Every 10 cycles of the self-improvement 
 
 ---
 
+## Review #36 — 2026-04-13 (Cycle 1380)
+
+### Summary
+Muscle group heatmap shipped with full opacity-intensity shading (1/5 sprint items). Push notifications deferred a 4th time — now the ONLY P0 for next sprint. Exercise instructions via chat is P1.
+
+### Key Achievement
+Muscle heatmap with volume-driven opacity. Users see at a glance which muscles are overworked vs. neglected.
+
+### Key Concern
+Push notifications deferred 4 consecutive reviews. Making it the sole P0 with no competing priorities.
+
+### Sprint Plan (next 20 cycles)
+P0: Push notifications (protein/supplement/workout). P1: Exercise instructions via chat. P1: Systematic bug hunt. P2: sendMessage decomposition.
+
+---
+
 ## Review #35 — 2026-04-13 (Cycle 1289)
 
 ### Summary

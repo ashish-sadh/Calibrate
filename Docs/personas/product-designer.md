@@ -162,6 +162,11 @@
 - Whoop's Behavior Trends (habits → Recovery correlation after 5+ entries) is the cross-domain intelligence pattern we should aspire to. We have the data — hardcoded insights are the current ceiling.
 - Push notifications cannot slip again. "3 days low protein" as a notification vs. a dashboard card is the difference between a tool and a coach. This is the #1 product gap right now.
 
+### What I Learned — Review #36 (Cycle 1380, 2026-04-13)
+- Muscle heatmap with opacity intensity finally shipped after 4 reviews of pushing. Volume as visual weight is the right pattern — apply to all data-heavy views.
+- Push notifications deferred a 4th time is a systemic prioritization failure, not a scoping problem. Making it the ONLY P0 with no competing priorities is the fix.
+- Exercise instructions via chat ("how do I deadlift?") is more aligned with our AI-first identity than static images. Lean into conversational exercise coaching over Boostcamp-style media content.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation

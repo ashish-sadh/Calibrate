@@ -166,6 +166,11 @@
 - BodyMapView set count enhancement was ~20 lines, single file, zero architectural risk. Small UI data wins like this are ideal autopilot work — low risk, visible user value.
 - For muscle heatmap intensity, `volumeIntensity(for:)` as a computed property (sets/week normalized 0–1 against max across groups) keeps data logic in the view since it's presentation-only. No service layer needed.
 
+### What I Learned — Review #36 (Cycle 1380, 2026-04-13)
+- `volumeIntensity(for:)` normalized 0–1 driving opacity is the right presentation-layer pattern. No service layer needed for view-only computed data.
+- Push notifications via `UserNotifications` framework is architecturally trivial. The only real risk is permission UX — prompt after first food log, not on launch. One wrong prompt = denied forever.
+- sendMessage at 491 lines is past threshold but not actively blocking. Defer decomposition until a feature requires touching that code. Don't refactor for its own sake.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)
