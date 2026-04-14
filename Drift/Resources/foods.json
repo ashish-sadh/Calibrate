@@ -24299,5 +24299,341 @@
     ],
     "nova_group": 4,
     "serving_unit": "1 cannoli"
+  },
+  {
+    "name": "Ground Turkey (93% lean, cooked)",
+    "category": "Protein",
+    "serving_size": 113,
+    "serving_unit": "g",
+    "calories": 170,
+    "protein_g": 21,
+    "carbs_g": 0,
+    "fat_g": 9,
+    "fiber_g": 0,
+    "ingredients": [
+      "turkey"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Chickpea Pasta (cooked)",
+    "category": "Grains & Pasta",
+    "serving_size": 170,
+    "serving_unit": "g",
+    "calories": 240,
+    "protein_g": 12,
+    "carbs_g": 40,
+    "fat_g": 3,
+    "fiber_g": 8,
+    "ingredients": [
+      "chickpea flour"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Whey Protein Isolate (scoop)",
+    "category": "Supplements",
+    "serving_size": 30,
+    "serving_unit": "g",
+    "calories": 120,
+    "protein_g": 25,
+    "carbs_g": 2,
+    "fat_g": 0.5,
+    "fiber_g": 0,
+    "ingredients": [
+      "whey protein isolate"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Creatine Monohydrate (scoop)",
+    "category": "Supplements",
+    "serving_size": 5,
+    "serving_unit": "g",
+    "calories": 0,
+    "protein_g": 0,
+    "carbs_g": 0,
+    "fat_g": 0,
+    "fiber_g": 0,
+    "ingredients": [
+      "creatine monohydrate"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Protein Cookie",
+    "category": "Protein Snacks",
+    "serving_size": 55,
+    "serving_unit": "1 cookie",
+    "calories": 220,
+    "protein_g": 16,
+    "carbs_g": 24,
+    "fat_g": 8,
+    "fiber_g": 3,
+    "ingredients": [
+      "protein blend",
+      "oat flour",
+      "sugar",
+      "butter"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Protein Brownie",
+    "category": "Protein Snacks",
+    "serving_size": 60,
+    "serving_unit": "1 brownie",
+    "calories": 200,
+    "protein_g": 15,
+    "carbs_g": 22,
+    "fat_g": 7,
+    "fiber_g": 4,
+    "ingredients": [
+      "protein blend",
+      "cocoa",
+      "flour",
+      "sugar"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Protein Chips (BBQ)",
+    "category": "Protein Snacks",
+    "serving_size": 28,
+    "serving_unit": "g",
+    "calories": 130,
+    "protein_g": 20,
+    "carbs_g": 5,
+    "fat_g": 3.5,
+    "fiber_g": 0,
+    "ingredients": [
+      "whey protein",
+      "tapioca starch",
+      "seasoning"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Quest Protein Chips",
+    "category": "Protein Snacks",
+    "serving_size": 32,
+    "serving_unit": "1 bag",
+    "calories": 140,
+    "protein_g": 19,
+    "carbs_g": 5,
+    "fat_g": 5,
+    "fiber_g": 1,
+    "ingredients": [
+      "protein blend",
+      "corn starch",
+      "seasoning"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Clif Bar (Chocolate Chip)",
+    "category": "Protein Bars",
+    "serving_size": 68,
+    "serving_unit": "1 bar",
+    "calories": 250,
+    "protein_g": 9,
+    "carbs_g": 44,
+    "fat_g": 5,
+    "fiber_g": 4,
+    "ingredients": [
+      "oat flour",
+      "brown rice syrup",
+      "protein blend",
+      "chocolate chips"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Larabar (Peanut Butter Chocolate Chip)",
+    "category": "Protein Bars",
+    "serving_size": 48,
+    "serving_unit": "1 bar",
+    "calories": 220,
+    "protein_g": 7,
+    "carbs_g": 24,
+    "fat_g": 12,
+    "fiber_g": 4,
+    "ingredients": [
+      "dates",
+      "peanuts",
+      "chocolate chips"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "PB2 Powdered Peanut Butter",
+    "category": "Spreads & Butters",
+    "serving_size": 12,
+    "serving_unit": "2 tbsp",
+    "calories": 50,
+    "protein_g": 5,
+    "carbs_g": 5,
+    "fat_g": 1.5,
+    "fiber_g": 1,
+    "ingredients": [
+      "peanuts"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Shirataki Noodles",
+    "category": "Grains & Pasta",
+    "serving_size": 113,
+    "serving_unit": "g",
+    "calories": 10,
+    "protein_g": 0,
+    "carbs_g": 3,
+    "fat_g": 0,
+    "fiber_g": 2,
+    "ingredients": [
+      "konjac flour",
+      "water"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Protein Waffle",
+    "category": "Protein Snacks",
+    "serving_size": 70,
+    "serving_unit": "1 waffle",
+    "calories": 180,
+    "protein_g": 13,
+    "carbs_g": 20,
+    "fat_g": 6,
+    "fiber_g": 1,
+    "ingredients": [
+      "protein blend",
+      "flour",
+      "eggs",
+      "butter"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Electrolyte Drink (zero sugar)",
+    "category": "Beverages",
+    "serving_size": 500,
+    "serving_unit": "ml",
+    "calories": 10,
+    "protein_g": 0,
+    "carbs_g": 2,
+    "fat_g": 0,
+    "fiber_g": 0,
+    "ingredients": [
+      "sodium",
+      "potassium",
+      "magnesium"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Pre-Workout Powder (scoop)",
+    "category": "Supplements",
+    "serving_size": 10,
+    "serving_unit": "g",
+    "calories": 10,
+    "protein_g": 0,
+    "carbs_g": 2,
+    "fat_g": 0,
+    "fiber_g": 0,
+    "ingredients": [
+      "caffeine",
+      "beta-alanine",
+      "citrulline"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Meal Replacement Shake",
+    "category": "Supplements",
+    "serving_size": 330,
+    "serving_unit": "ml",
+    "calories": 350,
+    "protein_g": 30,
+    "carbs_g": 35,
+    "fat_g": 11,
+    "fiber_g": 3,
+    "ingredients": [
+      "protein blend",
+      "oat flour",
+      "mct oil",
+      "vitamins"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Protein Ice Cream (vanilla)",
+    "category": "Desserts",
+    "serving_size": 88,
+    "serving_unit": "g",
+    "calories": 100,
+    "protein_g": 8,
+    "carbs_g": 14,
+    "fat_g": 2,
+    "fiber_g": 3,
+    "ingredients": [
+      "milk",
+      "protein concentrate",
+      "sugar",
+      "vanilla"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Arctic Zero Ice Cream (chocolate)",
+    "category": "Desserts",
+    "serving_size": 66,
+    "serving_unit": "g",
+    "calories": 35,
+    "protein_g": 2,
+    "carbs_g": 7,
+    "fat_g": 0,
+    "fiber_g": 2,
+    "ingredients": [
+      "water",
+      "whey protein",
+      "cane sugar",
+      "cocoa"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Sugar Free Jello",
+    "category": "Desserts",
+    "serving_size": 96,
+    "serving_unit": "1 cup",
+    "calories": 10,
+    "protein_g": 1,
+    "carbs_g": 0,
+    "fat_g": 0,
+    "fiber_g": 0,
+    "ingredients": [
+      "gelatin",
+      "artificial sweetener"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Pop-Tart (Frosted Strawberry)",
+    "category": "Snacks",
+    "serving_size": 50,
+    "serving_unit": "1 pastry",
+    "calories": 200,
+    "protein_g": 2,
+    "carbs_g": 37,
+    "fat_g": 5,
+    "fiber_g": 0,
+    "ingredients": [
+      "flour",
+      "sugar",
+      "corn syrup",
+      "strawberry filling"
+    ],
+    "nova_group": 4
   }
 ]

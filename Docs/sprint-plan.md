@@ -7,7 +7,7 @@ Created: 2026-04-13
 ## Task 1: sendMessage decomposition
 **Priority:** P0
 **Classification:** JUNIOR (Sonnet + advisor)
-**Status:** [ ] pending
+**Status:** [x] done (already decomposed — 128 lines, 21 extracted handle* methods)
 
 **Goal:** Break 491-line sendMessage into focused named methods. Pure refactor, no behavior change.
 
