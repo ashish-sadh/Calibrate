@@ -1138,5 +1138,18 @@
     "fixes": [
       "Sonnet was skipping TestFlight — removed misleading except text"
     ]
+  },
+  {
+    "build": 113,
+    "date": "2026-04-13T23:30:00-07:00",
+    "description": "chore: TestFlight build 113",
+    "features": [
+      "Behavior alert + notification test coverage (5 tests)",
+      "Command Center: Feedback Trail links to source reports, hash navigation, Sprint tab"
+    ],
+    "fixes": [
+      "Barcode calorie calculation for multi-piece servings (Bug #40)",
+      "Command Center: stray backtick breaking JS, duplicate Sprint tab, sign-in prompt"
+    ]
   }
 ]
