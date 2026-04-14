@@ -12,62 +12,14 @@
     <div id="auth-area"></div>
   </div>
 
-  <!-- Prominent File Bug banner — always visible, no sign-in needed -->
-  <div style="background:linear-gradient(135deg, rgba(248,81,73,0.12), rgba(248,81,73,0.04));border-bottom:1px solid rgba(248,81,73,0.2);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;" onclick="document.getElementById('quick-bug-form').style.display=document.getElementById('quick-bug-form').style.display==='none'?'block':'none'">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <span style="font-size:20px;">🐛</span>
-      <span style="font-weight:600;font-size:15px;">Found a bug? Report it here</span>
-      <span style="font-size:13px;color:var(--text-muted);">— screenshot + description, takes 30 seconds</span>
-    </div>
-    <span style="font-size:12px;color:var(--text-muted);">▼</span>
-  </div>
-  <div id="quick-bug-form" style="display:none;background:var(--surface);border-bottom:1px solid var(--border);padding:16px 24px;">
-    <div style="max-width:640px;margin:0 auto;" id="quick-bug-inner">
-      <!-- Shows sign-in or form based on auth state -->
-    </div>
-  </div>
-  <script>
-    // Render bug form after auth resolves
-    function renderQuickBugForm() {
-      const el = document.getElementById('quick-bug-inner');
-      if (!localStorage.getItem('drift_gh_token')) {
-        el.innerHTML = `
-          <div style="text-align:center;padding:12px 0;">
-            <p style="margin-bottom:12px;color:var(--text-muted);">Sign in with GitHub to file a bug report</p>
-            <button class="btn btn-primary" onclick="startOAuth()">Sign in with GitHub</button>
-          </div>`;
-      } else {
-        el.innerHTML = `
-          <div style="display:flex;flex-direction:column;gap:12px;">
-            <input id="quick-bug-title" type="text" placeholder="What went wrong? (e.g. App crashes when tapping voice button)"
-              style="width:100%;padding:10px 12px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:14px;">
-            <div style="display:flex;gap:12px;align-items:end;flex-wrap:wrap;">
-              <textarea id="quick-bug-body" rows="2" placeholder="Steps to reproduce (optional)"
-                style="flex:1;min-width:200px;padding:10px 12px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;font-size:14px;resize:none;font-family:inherit;"></textarea>
-              <div style="display:flex;gap:8px;align-items:center;">
-                <label style="cursor:pointer;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text-muted);">
-                  📷 <input id="quick-bug-screenshot" type="file" accept="image/*" style="display:none;" onchange="this.parentElement.textContent='📷 '+this.files[0]?.name?.slice(0,15)">
-                </label>
-                <button class="btn btn-primary" onclick="submitQuickBug()" id="quick-bug-btn" style="background:var(--red);border-color:var(--red);white-space:nowrap;">Submit Bug</button>
-              </div>
-            </div>
-            <div id="quick-bug-result"></div>
-          </div>`;
-      }
-    }
-    // Render on page load and when form is opened
-    document.querySelector('[onclick*="quick-bug-form"]').addEventListener('click', () => setTimeout(renderQuickBugForm, 10));
-    renderQuickBugForm();
-  </script>
-
   <div class="metrics" id="metrics">
     <div class="loading"><span class="spinner"></span> Loading metrics...</div>
   </div>
 
   <div class="content">
     <div class="tabs">
-      <div class="tab active" data-tab="reports">Reports</div>
-      <div class="tab" data-tab="bugs">Bugs</div>
+      <div class="tab" data-tab="reports">Reports</div>
+      <div class="tab active" data-tab="bugs">Bugs</div>
       <div class="tab" data-tab="releases">Releases</div>
       <div class="tab" data-tab="feedback">Feedback</div>
       <div class="tab" data-tab="sprint">Sprint</div>
@@ -76,7 +28,7 @@
       <div class="tab" data-tab="admin" id="admin-tab" style="display:none">Admin</div>
     </div>
 
-    <div id="tab-reports">
+    <div id="tab-reports" style="display:none">
       <!-- Current Sprint -->
       <div id="sprint-section" style="margin-bottom:24px;"></div>
 
@@ -85,10 +37,10 @@
       <ul class="report-list" id="report-list"></ul>
     </div>
 
-    <div id="tab-bugs" style="display:none">
+    <div id="tab-bugs">
       <!-- File bug form (collapsible) -->
-      <details style="margin-bottom:24px;">
-        <summary style="cursor:pointer;color:var(--accent);font-weight:600;font-size:15px;padding:12px 0;">+ File a New Bug</summary>
+      <details open style="margin-bottom:24px;">
+        <summary style="cursor:pointer;color:var(--accent);font-weight:600;font-size:15px;padding:12px 0;">File a Bug</summary>
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px 32px;max-width:640px;margin:12px auto 0;">
           <div style="margin-bottom:16px;">
             <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">Title</label>
@@ -961,58 +913,11 @@
       `;
     }
 
-    // Quick bug submit (from the prominent banner)
-    async function submitQuickBug() {
-      const title = document.getElementById('quick-bug-title').value.trim();
-      const body = document.getElementById('quick-bug-body').value.trim();
-      const fileInput = document.getElementById('quick-bug-screenshot');
-      const btn = document.getElementById('quick-bug-btn');
-      const result = document.getElementById('quick-bug-result');
-
-      if (!title) { alert('Please describe the bug'); return; }
-      if (!getToken()) { alert('Sign in to submit (top right)'); return; }
-
-      btn.textContent = 'Submitting...'; btn.disabled = true;
-      try {
-        let screenshotUrl = '';
-        if (fileInput.files.length > 0) {
-          const file = fileInput.files[0];
-          const reader = new FileReader();
-          const base64 = await new Promise(r => { reader.onload = e => r(e.target.result.split(',')[1]); reader.readAsDataURL(file); });
-          const ts = Date.now();
-          const ext = file.name.split('.').pop() || 'png';
-          const path = `Docs/screenshots/bug-${ts}.${ext}`;
-          await api(`/repos/${OWNER}/${REPO}/contents/${path}`, {
-            method: 'PUT',
-            headers: { ...headers(), 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: `screenshot: bug report ${ts}`, content: base64 })
-          });
-          screenshotUrl = `https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${path}`;
-        }
-
-        let issueBody = body || 'No additional details.';
-        if (screenshotUrl) issueBody += `\n\n**Screenshot:**\n![screenshot](${screenshotUrl})`;
-        issueBody += `\n\n---\n*Filed via Drift Command Center*`;
-
-        const labels = ['bug'];
-        if (!isOwner()) labels.push('needs-review');
-
-        const issue = await api(`/repos/${OWNER}/${REPO}/issues`, {
-          method: 'POST',
-          headers: { ...headers(), 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title: `Bug: ${title}`, body: issueBody, labels })
-        });
-        result.innerHTML = `<span style="color:var(--green)">Filed <a href="${issue.html_url}" target="_blank">#${issue.number}</a> — thanks!</span>`;
-        document.getElementById('quick-bug-title').value = '';
-        document.getElementById('quick-bug-body').value = '';
-      } catch (e) {
-        result.innerHTML = `<span style="color:var(--red)">Failed: ${e.message}</span>`;
-      }
-      btn.textContent = 'Submit Bug'; btn.disabled = false;
-    }
+    // (Quick bug banner removed — Bugs tab is now the default landing page)
 
     showUser();
     loadMetrics();
+    loadIssues(); loadFixedBugs();  // Bugs tab is default
     loadSprint();
     loadReports();
 
