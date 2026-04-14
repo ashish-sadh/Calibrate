@@ -47,17 +47,9 @@ function startOAuth() {
   const state = Math.random().toString(36).slice(2);
   localStorage.setItem('drift_oauth_state', state);
   const redirect = `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, '')}callback.html`;
-  // No scope = read-only (identity + public data). Users can file bugs anonymously via worker.
-  window.location.href = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect)}&state=${state}`;
-}
-
-// Upgrade to write access (admins)
-function upgradePermissions() {
-  clearToken();
-  const state = Math.random().toString(36).slice(2);
-  localStorage.setItem('drift_oauth_state', state);
-  const redirect = `${window.location.origin}${window.location.pathname.replace(/[^/]*$/, '')}callback.html`;
+  // public_repo = minimum scope for commenting on PRs, filing issues on public repos
   window.location.href = `https://github.com/login/oauth/authorize?client_id=${CLIENT_ID}&redirect_uri=${encodeURIComponent(redirect)}&scope=public_repo&state=${state}`;
+}
 }
 
 async function exchangeCode(code) {
