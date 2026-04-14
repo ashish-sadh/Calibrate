@@ -839,41 +839,57 @@
     }
 
     // Init
+    function renderTask(t) {
+      const isDone = t.status === 'done';
+      const isSenior = t.classification.includes('SENIOR');
+      const classColor = isSenior ? 'rgba(248,81,73,0.15)' : 'rgba(88,166,255,0.15)';
+      const classTextColor = isSenior ? 'var(--red)' : 'var(--accent)';
+      const classLabel = isSenior ? 'Opus' : 'Sonnet';
+      return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border);">
+        <span style="font-size:16px;">${isDone ? '✅' : t.isPermanent ? '🔄' : '⏳'}</span>
+        <a href="${t.url || '#'}" target="_blank" style="flex:1;font-size:14px;color:var(--text);${isDone ? 'text-decoration:line-through;opacity:0.5;' : ''}">${t.number ? '#'+t.number+' ' : ''}${escapeHtml(t.name)}</a>
+        <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:${classColor};color:${classTextColor}">${classLabel}</span>
+        ${t.priority ? `<span style="font-size:11px;color:var(--text-muted)">${t.priority}</span>` : ''}
+        ${t.comments > 0 ? `<span style="font-size:11px;color:var(--text-muted)">${t.comments} updates</span>` : ''}
+      </div>`;
+    }
+
     async function loadSprint() {
       const el = document.getElementById('sprint-section');
-      const sprint = await getSprintPlan();
-      if (!sprint || sprint.tasks.length === 0) {
-        el.innerHTML = '';
+      const data = await getSprintPlan();
+      if (!data) {
+        el.innerHTML = '<div class="empty">No sprint tasks yet. Next planning session will create them.</div>';
         return;
       }
 
-      const pct = sprint.total > 0 ? Math.round(sprint.done / sprint.total * 100) : 0;
-      el.innerHTML = `
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 24px;margin-bottom:8px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <h3 style="margin:0;font-size:16px;">${escapeHtml(sprint.title)}</h3>
-            <span style="font-size:13px;color:var(--text-muted)">${sprint.done}/${sprint.total} done</span>
-          </div>
-          <div style="background:var(--bg);border-radius:4px;height:6px;margin-bottom:16px;overflow:hidden;">
-            <div style="background:var(--green);height:100%;width:${pct}%;border-radius:4px;transition:width 0.3s;"></div>
-          </div>
-          ${sprint.tasks.map(t => {
-            const isDone = t.status === 'done';
-            const statusColor = isDone ? 'var(--green)' : 'var(--yellow)';
-            const statusText = isDone ? 'Done' : 'In Progress';
-            const isSenior = t.classification.includes('SENIOR');
-            const classColor = isSenior ? 'rgba(248,81,73,0.15)' : 'rgba(88,166,255,0.15)';
-            const classTextColor = isSenior ? 'var(--red)' : 'var(--accent)';
-            const classLabel = isSenior ? 'Opus' : 'Sonnet';
-            return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--border);${isDone ? 'opacity:0.6;' : ''}">
-              <span style="font-size:16px;">${isDone ? '✅' : '⏳'}</span>
-              <a href="${t.url || '#'}" target="_blank" style="flex:1;font-size:14px;color:var(--text);${isDone ? 'text-decoration:line-through;opacity:0.6;' : ''}">${t.number ? '#'+t.number+' ' : ''}${escapeHtml(t.name)}</a>
-              <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:${classColor};color:${classTextColor}">${classLabel}</span>
-              ${t.priority ? `<span style="font-size:11px;color:var(--text-muted)">${t.priority}</span>` : ''}
-            </div>`;
-          }).join('')}
-        </div>
-      `;
+      let html = '';
+
+      // Sprint tasks (open)
+      if (data.sprintTasks.length > 0) {
+        html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:12px;">
+          <h3 style="margin:0 0 8px;font-size:14px;color:var(--accent);text-transform:uppercase;letter-spacing:0.5px;">Sprint Tasks</h3>
+          ${data.sprintTasks.map(renderTask).join('')}
+        </div>`;
+      }
+
+      // Permanent tasks (always open)
+      if (data.permanentTasks.length > 0) {
+        html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;margin-bottom:12px;">
+          <h3 style="margin:0 0 8px;font-size:14px;color:rgb(111,66,193);text-transform:uppercase;letter-spacing:0.5px;">Ongoing Work</h3>
+          ${data.permanentTasks.map(renderTask).join('')}
+        </div>`;
+      }
+
+      // Recently completed
+      if (data.completedTasks.length > 0) {
+        html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 20px;">
+          <h3 style="margin:0 0 8px;font-size:14px;color:var(--green);text-transform:uppercase;letter-spacing:0.5px;">Recently Completed</h3>
+          ${data.completedTasks.map(renderTask).join('')}
+        </div>`;
+      }
+
+      if (!html) html = '<div class="empty">No sprint tasks yet. Next planning session will create them.</div>';
+      el.innerHTML = html;
     }
 
     // (Quick bug banner removed — Bugs tab is now the default landing page)

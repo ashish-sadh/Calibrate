@@ -207,28 +207,31 @@ async function showUser() {
   _resolveUserReady();
 }
 
-// Sprint tasks from GitHub Issues
+// Sprint: sprint-task Issues + permanent-task Issues + recently closed
 async function getSprintPlan() {
   try {
-    const issues = await smartApi(`/repos/${OWNER}/${REPO}/issues?labels=sprint-task&state=all&per_page=50&sort=created&direction=desc`);
+    const [sprintOpen, sprintClosed, permanent] = await Promise.all([
+      smartApi(`/repos/${OWNER}/${REPO}/issues?labels=sprint-task&state=open&per_page=30`),
+      smartApi(`/repos/${OWNER}/${REPO}/issues?labels=sprint-task&state=closed&per_page=10&sort=updated&direction=desc`),
+      smartApi(`/repos/${OWNER}/${REPO}/issues?labels=permanent-task&state=open&per_page=10`)
+    ]);
 
-    const openTasks = issues.filter(i => i.state === 'open');
-    const closedTasks = issues.filter(i => i.state === 'closed').slice(0, 10);
-    const allTasks = [...openTasks, ...closedTasks];
-
-    if (allTasks.length === 0) return null;
-
-    const tasks = allTasks.map(i => ({
-      name: i.title.replace(/^Sprint:\s*/i, ''),
+    const mapIssue = i => ({
+      name: i.title.replace(/^(Sprint|Permanent):\s*/i, ''),
       status: i.state === 'closed' ? 'done' : 'pending',
       classification: i.labels.some(l => l.name === 'SENIOR') ? 'SENIOR (Opus)' : 'JUNIOR (Sonnet)',
       priority: i.labels.find(l => ['P0','P1','P2'].includes(l.name))?.name || '',
+      isPermanent: i.labels.some(l => l.name === 'permanent-task'),
       url: i.html_url,
-      number: i.number
-    }));
+      number: i.number,
+      comments: i.comments
+    });
 
-    const done = tasks.filter(t => t.status === 'done').length;
-    return { title: 'Current Sprint', tasks, done, total: tasks.length };
+    return {
+      sprintTasks: sprintOpen.map(mapIssue),
+      completedTasks: sprintClosed.map(mapIssue),
+      permanentTasks: permanent.map(mapIssue)
+    };
   } catch (e) {
     console.error('[Sprint] Error:', e);
     return null;

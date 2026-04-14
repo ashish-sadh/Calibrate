@@ -76,12 +76,10 @@ You are the junior engineer with a senior advisor. Execute well-specified tasks.
 5. **Before editing: READ first.** Boy scout rule applies.
 6. Build → test → commit → push
 7. **Close Issue with comment:** what was done + commit hash.
-8. **When no JUNIOR sprint-tasks left → don't idle.** Pick from permanent tasks:
-   - Test coverage gaps (`./scripts/coverage-check.sh`)
-   - Food DB enrichment
-   - Minor refactoring (boy scout on recently touched files)
-   - Bug hunting from `Docs/failing-queries.md`
-   - UI polish on recently changed views
+8. **When no JUNIOR sprint-tasks left → work on permanent-task Issues:**
+   - `gh issue list --state open --label permanent-task` → pick one
+   - Do the work, then **comment on the Issue** with what you did (don't close it — permanent tasks stay open)
+   - Rotate between: Food DB (#49), Test Coverage (#50), Bug Hunting (#51), UI Polish (#52), AI Chat (#53)
 9. Repeat forever. Sonnet never idles.
 
 ---
