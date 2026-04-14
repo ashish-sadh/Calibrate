@@ -879,35 +879,19 @@
 
     // (Quick bug banner removed — Bugs tab is now the default landing page)
 
-    // Handle hash-based tab navigation (e.g. index.html#reports)
-    const hashTab = location.hash.replace('#', '');
-    if (hashTab && allTabs.includes(hashTab)) {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      const target = document.querySelector(`[data-tab="${hashTab}"]`);
-      if (target) target.classList.add('active');
-      allTabs.forEach(t => {
-        const el = document.getElementById('tab-' + t);
-        if (el) el.style.display = t === hashTab ? '' : 'none';
-      });
-    }
-
     // Show sign-in prompt if not authenticated
     if (!getToken()) {
       document.getElementById('signin-prompt').style.display = 'block';
       document.getElementById('metrics').innerHTML = '';
     }
 
-    // Determine which tab is active and load its data
-    const activeTab = document.querySelector('.tab.active')?.dataset.tab || 'bugs';
-
     showUser();
-    if (getToken()) loadMetrics();
-    if (activeTab === 'bugs') { loadIssues(); loadFixedBugs(); }
-    if (activeTab === 'reports') { loadReports(); loadSprint(); }
-    if (activeTab === 'sprint') loadSprint();
-    if (activeTab === 'feedback') loadFeedback();
-    if (activeTab === 'releases') loadReleases();
-    loadReports();  // Always preload for quick tab switch
+    if (getToken()) {
+      loadMetrics();
+      loadIssues();
+      loadFixedBugs();
+      loadReports();
+    }
 
     // Admin tab loader
     async function loadAdmin() {
