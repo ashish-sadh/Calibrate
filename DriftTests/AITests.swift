@@ -2124,3 +2124,42 @@ import Testing
         Issue.record("Expected handler for 'how to bench press'")
     }
 }
+
+// Plural exercise queries — "deadlifts" should match "Deadlift"
+@MainActor @Test func staticOverridePluralDeadlifts() {
+    let result = StaticOverrides.match("how do I do deadlifts?")
+    if case .handler = result {
+        // Matched — good
+    } else {
+        Issue.record("Expected handler for plural 'deadlifts'")
+    }
+}
+
+@MainActor @Test func staticOverridePluralSquats() {
+    let result = StaticOverrides.match("how to do squats?")
+    if case .handler = result {
+        // Matched — good
+    } else {
+        Issue.record("Expected handler for plural 'squats'")
+    }
+}
+
+// Trailing punctuation/clauses stripped — "deadlift, please?" should match
+@MainActor @Test func staticOverrideTrailingClause() {
+    let result = StaticOverrides.match("form tips for squat, please?")
+    if case .handler = result {
+        // Matched — good
+    } else {
+        Issue.record("Expected handler for query with trailing clause")
+    }
+}
+
+// Regression: "bench press" ends in 's' but is not a plural — must still match
+@MainActor @Test func staticOverrideBenchPressNotStripped() {
+    let result = StaticOverrides.match("how do I do a bench press?")
+    if case .handler = result {
+        // Matched — good
+    } else {
+        Issue.record("Expected handler for 'bench press' (trailing 's' must not be stripped)")
+    }
+}

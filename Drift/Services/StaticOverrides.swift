@@ -217,9 +217,21 @@ enum StaticOverrides {
         if let instrRegex = try? NSRegularExpression(pattern: instructionPattern),
            let instrMatch = instrRegex.firstMatch(in: lower, range: NSRange(lower.startIndex..., in: lower)),
            let nameRange = Range(instrMatch.range(at: 1), in: lower) {
-            let exerciseQuery = String(lower[nameRange]).trimmingCharacters(in: .whitespaces)
+            // Clean query: strip text after comma ("deadlift, please" → "deadlift"),
+            // trim trailing punctuation, then retry without trailing 's' for plurals
+            var exerciseQuery = String(lower[nameRange]).trimmingCharacters(in: .whitespaces)
+            if let commaIdx = exerciseQuery.firstIndex(of: ",") {
+                exerciseQuery = String(exerciseQuery[..<commaIdx]).trimmingCharacters(in: .whitespaces)
+            }
+            exerciseQuery = exerciseQuery.trimmingCharacters(in: CharacterSet(charactersIn: ".,;!"))
             if !exerciseQuery.isEmpty {
-                let results = ExerciseDatabase.search(query: exerciseQuery)
+                var results = ExerciseDatabase.search(query: exerciseQuery)
+                // Retry with trailing 's' removed for plurals ("deadlifts" → "deadlift")
+                // but not "ss" endings like "press"
+                if results.isEmpty, exerciseQuery.hasSuffix("s"), !exerciseQuery.hasSuffix("ss") {
+                    let singular = String(exerciseQuery.dropLast())
+                    results = ExerciseDatabase.search(query: singular)
+                }
                 if let exercise = results.first {
                     return .handler {
                         ExerciseService.exerciseInstructions(exercise)

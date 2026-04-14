@@ -7,7 +7,7 @@ Created: 2026-04-13
 ## Task 1: Proactive push notifications (protein / supplement / workout)
 **Priority:** P0
 **Classification:** SENIOR (Opus)
-**Status:** [ ] pending
+**Status:** [x] done (commit cf6782a)
 
 **Goal:** Extend proactive dashboard alerts to active push notifications. Three patterns: protein streak (3+ days low), supplement gap (missed 2+ days), workout gap (4+ days without training). This transforms Drift from passive data logger to active health coach.
 
@@ -42,7 +42,7 @@ Created: 2026-04-13
 ## Task 2: Exercise instructions via AI chat
 **Priority:** P1
 **Classification:** JUNIOR (Sonnet + advisor)
-**Status:** [ ] pending
+**Status:** [x] done (commit 859b5ff)
 
 **Goal:** "How do I do a deadlift?" returns form tips and muscle group info from the existing 873-exercise DB.
 
