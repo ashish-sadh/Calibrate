@@ -121,6 +121,43 @@ import Testing
             "Yesterday summary should reference yesterday or contain calorie data")
 }
 
+@Test @MainActor func aiRuleEngineCaloriesLeftMentionsTarget() async throws {
+    let result = AIRuleEngine.caloriesLeft()
+    #expect(result.contains("cal") || result.contains("target"), "caloriesLeft should mention calories or target")
+}
+
+@Test @MainActor func aiRuleEngineWeeklySummaryMentionsWorkouts() async throws {
+    let summary = AIRuleEngine.weeklySummary()
+    #expect(summary.contains("Workouts:"), "Weekly summary should include workout count line")
+}
+
+@Test @MainActor func aiRuleEngineNextActionIsNilOrNonEmpty() async throws {
+    let action = AIRuleEngine.nextAction()
+    if let action {
+        #expect(!action.isEmpty, "nextAction should return a non-empty string if non-nil")
+        #expect(action.count > 10, "nextAction should be a meaningful suggestion")
+    }
+}
+
+@Test @MainActor func aiRuleEngineWithFoodDataReachesWorkoutCheck() async throws {
+    // Seed today's food so AIRuleEngine skips zero-calorie branch → reaches workout check
+    let today = DateFormatters.todayString
+    var entry = FoodEntry(
+        foodName: "Test Coverage Food", servingSizeG: 100, servings: 1,
+        calories: 400, proteinG: 80, carbsG: 30, fatG: 10,
+        date: today, mealType: "lunch"
+    )
+    try? AppDatabase.shared.saveFoodEntry(&entry)
+    defer { if let id = entry.id { try? AppDatabase.shared.deleteFoodEntry(id: id) } }
+
+    let action = AIRuleEngine.nextAction()
+    // With 80g protein and food logged, action may suggest workout or return nil
+    if let action { #expect(!action.isEmpty) }
+
+    let insight = AIRuleEngine.quickInsight()
+    if let insight { #expect(!insight.isEmpty) }
+}
+
 // MARK: - IntentClassifier Extended Tests
 
 @Test @MainActor func intentClassifierWithTimeoutCompletes() async throws {

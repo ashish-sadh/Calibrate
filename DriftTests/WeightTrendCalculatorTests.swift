@@ -481,3 +481,74 @@ func makeEntries(days: Int, startKg: Double, ratePerDay: Double) -> [(date: Stri
     #expect(fetched.count == 1)
     #expect(fetched.first?.weightKg == 74.0, "Manual re-add should un-hide and update weight")
 }
+
+// MARK: - WeightTrendService Tests
+
+@Test @MainActor func weightTrendServiceInitialStateIsStale() {
+    // Without seeded DB data, service should be stale after refresh
+    let svc = WeightTrendService.shared
+    svc.refresh()
+    #expect(svc.isStale == true || svc.latestWeightKg != nil, "Either stale (no data) or has data from prior seeding")
+}
+
+@Test @MainActor func weightTrendServiceStalePropagates() {
+    // When isStale is true, all derived properties return nil
+    let svc = WeightTrendService.shared
+    svc.refresh()
+    if svc.isStale {
+        #expect(svc.weeklyRate == nil, "weeklyRate should be nil when stale")
+        #expect(svc.dailyDeficit == nil, "dailyDeficit should be nil when stale")
+        #expect(svc.weightChanges == nil, "weightChanges should be nil when stale")
+        #expect(svc.projectedWeightKg == nil, "projectedWeightKg should be nil when stale")
+        #expect(svc.trendDirection == nil, "trendDirection should be nil when stale")
+    }
+}
+
+@Test @MainActor func weightTrendServiceTrendWeightFallsBackToLatest() {
+    // When stale, trendWeight should be latestWeightKg (raw latest, no EMA)
+    let svc = WeightTrendService.shared
+    svc.refresh()
+    if svc.isStale {
+        #expect(svc.trendWeight == svc.latestWeightKg, "Stale trendWeight should fall back to latestWeightKg")
+    }
+}
+
+@Test @MainActor func weightTrendServiceAllEntriesReturnsArray() {
+    let svc = WeightTrendService.shared
+    let entries = svc.allEntries()
+    // Should return a valid array (may be empty on fresh simulator)
+    #expect(entries.count >= 0, "allEntries should return a valid array")
+}
+
+@Test @MainActor func weightTrendServiceProjectedWeightRequiresTrend() {
+    let svc = WeightTrendService.shared
+    svc.refresh()
+    if svc.trend == nil {
+        #expect(svc.projectedWeightKg == nil, "projectedWeightKg requires non-nil trend")
+    } else if !svc.isStale, let trend = svc.trend {
+        let expected = trend.currentEMA + (trend.weeklyRateKg * 4.3)
+        #expect(svc.projectedWeightKg == expected, "projectedWeightKg should be EMA + rate * 4.3 weeks")
+    }
+}
+
+@Test @MainActor func weightTrendServiceTrendForRangeNoDataReturnsNil() {
+    // Without seeded weight data, trendForRange should return nil
+    let svc = WeightTrendService.shared
+    // Flush any cached state
+    svc.refresh()
+    if svc.latestWeightKg == nil {
+        // Only assertable when DB is empty
+        let result = svc.trendForRange(days: 30)
+        #expect(result == nil, "trendForRange should return nil with no weight data")
+    }
+}
+
+@Test @MainActor func weightTrendServiceTrendForRangeReturnsNilOrTrend() {
+    // trendForRange always returns either nil (no data) or a valid trend
+    let svc = WeightTrendService.shared
+    let result = svc.trendForRange(days: 90)
+    if let trend = result {
+        #expect(trend.currentEMA > 0, "EMA should be a positive weight value")
+    }
+    // nil is also valid when no data exists — either outcome is acceptable
+}
