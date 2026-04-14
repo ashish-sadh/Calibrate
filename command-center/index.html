@@ -77,7 +77,7 @@
             </div>
             <div>
               <label style="display:block;font-size:13px;color:var(--text-muted);margin-bottom:4px;">Screenshot</label>
-              <input id="bug-screenshot" type="file" accept="image/*" style="font-size:13px;color:var(--text-muted);max-width:200px;">
+              <input id="bug-screenshot" type="file" accept="image/*" multiple style="font-size:13px;color:var(--text-muted);max-width:200px;">
             </div>
             <button class="btn btn-primary" onclick="submitBug()" id="bug-submit-btn">Submit</button>
           </div>
@@ -204,16 +204,17 @@
       });
     });
 
-    // Screenshot preview
+    // Screenshot preview (multiple)
     document.getElementById('bug-screenshot').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        document.getElementById('screenshot-preview').innerHTML =
-          `<img src="${ev.target.result}" style="max-width:100%;max-height:300px;border-radius:8px;border:1px solid var(--border);margin-top:4px;">`;
-      };
-      reader.readAsDataURL(file);
+      const preview = document.getElementById('screenshot-preview');
+      preview.innerHTML = '';
+      for (const file of e.target.files) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          preview.innerHTML += `<img src="${ev.target.result}" style="max-width:48%;max-height:200px;border-radius:8px;border:1px solid var(--border);margin:4px 4px 0 0;display:inline-block;">`;
+        };
+        reader.readAsDataURL(file);
+      }
     });
 
     // Submit bug
@@ -232,38 +233,30 @@
       btn.disabled = true;
 
       try {
-        let screenshotUrl = '';
+        let screenshotUrls = [];
 
-        // Upload screenshot if provided
-        if (fileInput.files.length > 0) {
-          const file = fileInput.files[0];
+        // Upload screenshots if provided (supports multiple)
+        for (const file of fileInput.files) {
           const reader = new FileReader();
           const base64 = await new Promise((resolve) => {
             reader.onload = (e) => resolve(e.target.result.split(',')[1]);
             reader.readAsDataURL(file);
           });
-
-          // Upload to repo as an issue attachment via a unique filename
-          const timestamp = Date.now();
+          const timestamp = Date.now() + Math.random().toString(36).slice(2, 6);
           const ext = file.name.split('.').pop() || 'png';
           const path = `Docs/screenshots/bug-${timestamp}.${ext}`;
-
           await api(`/repos/${OWNER}/${REPO}/contents/${path}`, {
             method: 'PUT',
             headers: { ...headers(), 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              message: `screenshot: bug report ${timestamp}`,
-              content: base64
-            })
+            body: JSON.stringify({ message: `screenshot: bug report`, content: base64 })
           });
-
-          screenshotUrl = `https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${path}`;
+          screenshotUrls.push(`https://raw.githubusercontent.com/${OWNER}/${REPO}/main/${path}`);
         }
 
         // Build issue body
         let issueBody = body || 'No description provided.';
         if (priority) issueBody += `\n\n**Priority:** ${priority}`;
-        if (screenshotUrl) issueBody += `\n\n**Screenshot:**\n![screenshot](${screenshotUrl})`;
+        if (screenshotUrls.length > 0) issueBody += `\n\n**Screenshots:**\n${screenshotUrls.map(u => `![screenshot](${u})`).join('\n')}`;
         issueBody += `\n\n---\n*Filed via Drift Command Center*`;
 
         // Create labels array
@@ -554,8 +547,8 @@
           </li>`;
         }
 
-        execList.innerHTML = execs.length > 0 ? execs.map(renderReportItem).join('') : '<div class="empty">No daily briefings yet.</div>';
-        reviewList.innerHTML = reviews.length > 0 ? reviews.map(renderReportItem).join('') : '<div class="empty">No product reviews yet.</div>';
+        execList.innerHTML = execs.length > 0 ? renderWithShowMore(execs, renderReportItem, 2, 'exec') : '<div class="empty">No daily briefings yet.</div>';
+        reviewList.innerHTML = reviews.length > 0 ? renderWithShowMore(reviews, renderReportItem, 2, 'review') : '<div class="empty">No product reviews yet.</div>';
       } catch (e) {
         loading.innerHTML = `<div class="empty">Failed to load reports. ${getToken() ? e.message : 'Sign in to view reports.'}</div>`;
       }
@@ -815,6 +808,20 @@
       } catch (e) {
         alert('Failed: ' + e.message);
       }
+    }
+
+    // Show More helper — renders first N items, rest hidden with "Show more" link
+    function renderWithShowMore(items, renderFn, initialCount, id) {
+      if (items.length <= initialCount) return items.map(renderFn).join('');
+      const visible = items.slice(0, initialCount).map(renderFn).join('');
+      const hidden = items.slice(initialCount).map(renderFn).join('');
+      return `${visible}
+        <div id="more-${id}" style="display:none">${hidden}</div>
+        <div id="toggle-${id}" style="text-align:center;padding:8px;">
+          <a href="#" style="color:var(--accent);font-size:13px;" onclick="event.preventDefault();document.getElementById('more-${id}').style.display='block';this.parentElement.style.display='none';">
+            Show ${items.length - initialCount} more
+          </a>
+        </div>`;
     }
 
     // Init
