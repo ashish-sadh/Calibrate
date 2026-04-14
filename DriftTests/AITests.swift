@@ -2329,3 +2329,41 @@ import Testing
         Issue.record("Expected handler for 'bench press' (trailing 's' must not be stripped)")
     }
 }
+
+// MARK: - Bug #72: "add my dinner" should be recognized as meal logging
+
+@Test func parseFoodIntentRejectsMealWordsForAddVerb() {
+    let intent = AIActionExecutor.parseFoodIntent("add my dinner")
+    #expect(intent == nil, "'add my dinner' should not parse as food — dinner is a meal word")
+}
+
+@Test func parseFoodIntentRejectsMealWordsForAddBreakfast() {
+    let intent = AIActionExecutor.parseFoodIntent("add breakfast")
+    #expect(intent == nil, "'add breakfast' should not parse as food — breakfast is a meal word")
+}
+
+// MARK: - Bug #73: "muscle recovery" should NOT route to sleep_recovery
+
+@Test @MainActor func toolRankerMuscleRecoveryNotSleep() {
+    let result = ToolRanker.tryRulePick(query: "how's my muscle recovery", screen: .exercise)
+    if let call = result {
+        #expect(call.tool != "sleep_recovery", "Muscle recovery should not route to sleep_recovery")
+    }
+}
+
+@Test @MainActor func intentClassifierPromptHasMuscleRecoveryExample() {
+    let prompt = IntentClassifier.systemPrompt
+    #expect(prompt.contains("muscle recovery"), "Prompt should include muscle recovery → exercise_info example")
+}
+
+// MARK: - Bug #71: Conversational text should not be food names
+
+@Test @MainActor func intentClassifierPromptHasConversationalExamples() {
+    let prompt = IntentClassifier.systemPrompt
+    #expect(prompt.contains("i just love breakfast"), "Prompt should include conversational rejection example")
+}
+
+@Test @MainActor func intentClassifierPromptHasAddDinnerExample() {
+    let prompt = IntentClassifier.systemPrompt
+    #expect(prompt.contains("add my dinner"), "Prompt should include 'add my dinner' → follow-up example")
+}

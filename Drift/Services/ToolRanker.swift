@@ -458,7 +458,7 @@ enum ToolRanker {
                        ("sleep score", 3), ("how was my sleep", 3.5)],
             logBoost: 0, queryBoost: 1.5,
             screens: [.bodyRhythm: 0.5],
-            antiKeywords: ["food", "ate", "weight"]
+            antiKeywords: ["food", "ate", "weight", "muscle"]
         )
 
         p["supplements"] = ToolProfile(

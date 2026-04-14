@@ -510,7 +510,7 @@ extension AIChatViewModel {
         stripped = stripped.trimmingCharacters(in: .whitespaces)
         // Strip trailing punctuation so "log lunch?" → "log lunch" (prevents "?" leaking as food search)
         while let last = stripped.last, "?!.,;:".contains(last) { stripped = String(stripped.dropLast()) }
-        guard let verb = ["log ", "ate ", "had ", "log for ", "ate for ", "had for "].first(where: { stripped.hasPrefix($0) }) else { return false }
+        guard let verb = ["log ", "ate ", "had ", "add ", "track ", "log for ", "ate for ", "had for ", "add for "].first(where: { stripped.hasPrefix($0) }) else { return false }
         var remainder = String(stripped.dropFirst(verb.count)).trimmingCharacters(in: .whitespaces)
         if remainder.hasPrefix("for ") { remainder = String(remainder.dropFirst(4)).trimmingCharacters(in: .whitespaces) }
         // Strip possessive: "my lunch" → "lunch"

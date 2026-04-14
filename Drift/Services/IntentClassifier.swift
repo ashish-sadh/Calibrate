@@ -38,13 +38,17 @@ enum IntentClassifier {
     "did yoga for like half an hour"→{"tool":"log_activity","name":"yoga","duration":"30"}
     "took vitamin d"→{"tool":"mark_supplement","name":"vitamin d"}
     "how'd I sleep"→{"tool":"sleep_recovery"}
+    "how's my muscle recovery"→{"tool":"exercise_info","query":"muscle recovery"}
     "set my goal to one sixty"→{"tool":"set_goal","target":"160","unit":"lbs"}
     "delete last"→{"tool":"delete_food"}
     "show me my weight chart"→{"tool":"navigate_to","screen":"weight"}
     "go to food tab"→{"tool":"navigate_to","screen":"food"}
     "open exercise"→{"tool":"navigate_to","screen":"exercise"}
     "log lunch"→What did you have for lunch?
+    "add my dinner"→What did you have for dinner?
     "hi"→Hi! How can I help?
+    "i just love breakfast"→That's great! What did you have?
+    "i love eating healthy"→Nice! Want to log something?
     If chat context shows "What did you have for lunch?" and user says "rice and dal"→{"tool":"log_food","name":"rice, dal"}
     JSON when you have enough info. Ask follow-up if details missing. Short text for chat.
     """

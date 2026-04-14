@@ -30,8 +30,17 @@ enum ToolRegistration {
 
                 // Meal words aren't foods — ask follow-up instead of searching
                 let mealWords: Set<String> = ["breakfast", "lunch", "dinner", "snack", "meal", "food", "brunch"]
-                if mealWords.contains(rawName.lowercased()) {
-                    return .invalid(reason: "What did you have for \(rawName.lowercased())?")
+                let lowerName = rawName.lowercased()
+                if mealWords.contains(lowerName) {
+                    return .invalid(reason: "What did you have for \(lowerName)?")
+                }
+
+                // Conversational phrases aren't food names — reject gracefully
+                let conversationalVerbs = ["love", "hate", "prefer", "enjoy", "like", "want", "need", "miss"]
+                if conversationalVerbs.contains(where: { lowerName.contains(" \($0) ") || lowerName.contains(" \($0)s ") || lowerName.hasPrefix("\($0) ") }),
+                   mealWords.contains(where: { lowerName.contains($0) }) {
+                    let meal = mealWords.first(where: { lowerName.contains($0) }) ?? "food"
+                    return .invalid(reason: "What did you have for \(meal)?")
                 }
 
                 var name = rawName
