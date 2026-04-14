@@ -209,7 +209,9 @@ async function showUser() {
 // Sprint plan parsing
 async function getSprintPlan() {
   try {
+    console.log('[Sprint] Fetching sprint plan...');
     const content = await getReportContent('Docs/sprint-plan.md');
+    console.log('[Sprint] Got content, length:', content.length);
     const lines = content.split('\n');
     const title = lines[0]?.replace(/^#\s*/, '') || 'Current Sprint';
 
@@ -233,8 +235,10 @@ async function getSprintPlan() {
     if (current) tasks.push(current);
 
     const done = tasks.filter(t => t.status === 'done').length;
+    console.log('[Sprint] Parsed:', tasks.length, 'tasks');
     return { title, tasks, done, total: tasks.length };
-  } catch {
+  } catch (e) {
+    console.error('[Sprint] Error:', e);
     return null;
   }
 }
