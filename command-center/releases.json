@@ -1151,5 +1151,17 @@
       "Barcode calorie calculation for multi-piece servings (Bug #40)",
       "Command Center: stray backtick breaking JS, duplicate Sprint tab, sign-in prompt"
     ]
+  },
+  {
+    "build": 115,
+    "date": "2026-04-14T12:00:00-07:00",
+    "description": "chore: TestFlight build 115",
+    "features": [
+      "State.md refresh + sprint plan sync"
+    ],
+    "fixes": [
+      "Recovery score mismatch (#41)",
+      "Progressive overload spacing (#42)"
+    ]
   }
 ]
