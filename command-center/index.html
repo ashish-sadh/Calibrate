@@ -30,14 +30,24 @@
     </div>
 
     <div id="tab-sprint" style="display:none">
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px;">Current sprint plan from the latest product review. Tasks are assigned to Opus (complex) or Sonnet (routine). Updated after each review cycle.</p>
       <div id="sprint-section">
-        <div class="loading"><span class="spinner"></span> Loading sprint...</div>
+        <div class="empty">Click to load sprint plan.</div>
       </div>
     </div>
 
     <div id="tab-reports" style="display:none">
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px;">Autopilot generates two types of reports. Comment on any line to steer direction.</p>
+
+      <h3 style="color:var(--accent);font-size:13px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Daily Briefings</h3>
+      <p style="color:var(--text-muted);font-size:12px;margin-bottom:12px;">High-level strategic view. Key metrics, what shipped, risks, investment priorities.</p>
+      <ul class="report-list" id="exec-report-list"></ul>
+
+      <h3 style="color:var(--green);font-size:13px;text-transform:uppercase;letter-spacing:0.5px;margin:24px 0 8px;">Product Reviews</h3>
+      <p style="color:var(--text-muted);font-size:12px;margin-bottom:12px;">Every 3 hours. Designer + Engineer personas debate direction. Sprint scorecard, competitive analysis.</p>
+      <ul class="report-list" id="review-report-list"></ul>
+
       <div class="loading" id="reports-loading"><span class="spinner"></span> Loading reports...</div>
-      <ul class="report-list" id="report-list"></ul>
     </div>
 
     <div id="tab-bugs">
@@ -520,14 +530,16 @@
         }
 
         loading.style.display = 'none';
-        if (reports.length === 0) {
-          list.innerHTML = '<div class="empty">No reports yet. Start Drift Control to generate the first report.</div>';
-          return;
-        }
-        list.innerHTML = reports.map(r => {
+
+        const execList = document.getElementById('exec-report-list');
+        const reviewList = document.getElementById('review-report-list');
+
+        const execs = reports.filter(r => r.name.startsWith('exec-'));
+        const reviews = reports.filter(r => r.name.startsWith('review-'));
+
+        function renderReportItem(r) {
           const type = reportType(r.name);
           const date = formatDate(r.name);
-          // Find comment count
           let branch = '';
           if (r.name.startsWith('review-cycle-')) branch = `review/cycle-${r.name.replace('review-cycle-','').replace('.md','')}`;
           else if (r.name.startsWith('exec-')) branch = `report/exec-${r.name.replace('exec-','').replace('.md','')}`;
@@ -536,12 +548,14 @@
           return `<li class="report-item" onclick="location.href='report.html?file=${encodeURIComponent(r.name)}'">
             <div>
               <span class="report-title">${r.name.replace('.md','').replace(/-/g,' ')}</span>
-              <span class="report-type ${type.cls}">${type.label}</span>
               ${comments > 0 ? `<span class="badge">${comments} comment${comments > 1 ? 's' : ''}</span>` : ''}
             </div>
             <span class="report-date">${date}</span>
           </li>`;
-        }).join('');
+        }
+
+        execList.innerHTML = execs.length > 0 ? execs.map(renderReportItem).join('') : '<div class="empty">No daily briefings yet.</div>';
+        reviewList.innerHTML = reviews.length > 0 ? reviews.map(renderReportItem).join('') : '<div class="empty">No product reviews yet.</div>';
       } catch (e) {
         loading.innerHTML = `<div class="empty">Failed to load reports. ${getToken() ? e.message : 'Sign in to view reports.'}</div>`;
       }
@@ -803,82 +817,7 @@
       }
     }
 
-    // Load sprint board
-    async function loadSprint() {
-      const el = document.getElementById('sprint-content');
-      try {
-        const [sprintMd, roadmapMd] = await Promise.all([
-          getReportContent('Docs/sprint.md'),
-          getReportContent('Docs/roadmap.md')
-        ]);
-
-        // Parse sprint into sections
-        const sections = [];
-        let current = null;
-        for (const line of sprintMd.split('\n')) {
-          if (line.startsWith('## ')) {
-            current = { title: line.replace('## ', ''), items: [], raw: '' };
-            sections.push(current);
-          } else if (current) {
-            current.raw += line + '\n';
-          }
-        }
-
-        // Count tasks
-        const todoCount = (sprintMd.match(/- \[ \]/g) || []).length;
-        const doneCount = (sprintMd.match(/- \[x\]/g) || []).length;
-
-        // Extract roadmap "Now" items
-        const nowMatch = roadmapMd.match(/## Now[\s\S]*?(?=## Next|## Later|$)/i);
-        const nowSection = nowMatch ? nowMatch[0] : '';
-
-        let html = `
-          <div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap;">
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 20px;flex:1;min-width:140px;">
-              <div style="font-size:24px;font-weight:700;color:var(--green);">${doneCount}</div>
-              <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;">Done</div>
-            </div>
-            <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 20px;flex:1;min-width:140px;">
-              <div style="font-size:24px;font-weight:700;color:var(--accent);">${todoCount}</div>
-              <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;">Remaining</div>
-            </div>
-          </div>
-        `;
-
-        // Render each sprint section
-        for (const section of sections) {
-          const isDone = section.title.toLowerCase().includes('done');
-          const isCollapsed = isDone || section.title.toLowerCase().includes('permanent');
-          html += `
-            <details ${isCollapsed ? '' : 'open'} style="margin-bottom:16px;">
-              <summary style="cursor:pointer;font-size:16px;font-weight:600;color:${isDone ? 'var(--green)' : 'var(--accent)'};padding:8px 0;">${escapeHtml(section.title)}</summary>
-              <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-top:4px;">
-                <div class="sprint-items">${renderMarkdown(section.raw)}</div>
-              </div>
-            </details>
-          `;
-        }
-
-        // Roadmap "Now" section
-        if (nowSection) {
-          html += `
-            <details style="margin-bottom:16px;">
-              <summary style="cursor:pointer;font-size:16px;font-weight:600;color:var(--yellow);padding:8px 0;">Roadmap — Now</summary>
-              <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin-top:4px;">
-                <div class="sprint-items">${renderMarkdown(nowSection)}</div>
-              </div>
-            </details>
-          `;
-        }
-
-        el.innerHTML = html;
-      } catch (e) {
-        el.innerHTML = `<div class="empty">Failed to load sprint: ${e.message}</div>`;
-      }
-    }
-
     // Init
-    // Load sprint board
     async function loadSprint() {
       const el = document.getElementById('sprint-section');
       const sprint = await getSprintPlan();
