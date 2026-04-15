@@ -5098,7 +5098,7 @@
     "nova_group": 3
   },
   {
-    "name": "Açaí Bowl (medium)",
+    "name": "A\u00e7a\u00ed Bowl (medium)",
     "category": "US Staples",
     "serving_size": 300,
     "serving_unit": "g",
@@ -5108,7 +5108,7 @@
     "fat_g": 18,
     "fiber_g": 8,
     "ingredients": [
-      "Açaí Bowl (medium)"
+      "A\u00e7a\u00ed Bowl (medium)"
     ],
     "nova_group": 3
   },
@@ -9788,7 +9788,7 @@
     "nova_group": 3
   },
   {
-    "name": "Costco Açaí Bowl (food court)",
+    "name": "Costco A\u00e7a\u00ed Bowl (food court)",
     "category": "Costco",
     "serving_size": 355,
     "serving_unit": "g",
@@ -9798,7 +9798,7 @@
     "fat_g": 19,
     "fiber_g": 7,
     "ingredients": [
-      "Costco Açaí Bowl (food court)"
+      "Costco A\u00e7a\u00ed Bowl (food court)"
     ],
     "nova_group": 3
   },
@@ -10493,7 +10493,7 @@
     "nova_group": 4
   },
   {
-    "name": "Starbucks Caffè Latte (Grande, 2% milk)",
+    "name": "Starbucks Caff\u00e8 Latte (Grande, 2% milk)",
     "category": "Beverages",
     "serving_size": 473,
     "serving_unit": "ml",
@@ -10503,7 +10503,7 @@
     "fat_g": 7,
     "fiber_g": 0,
     "ingredients": [
-      "Starbucks Caffè Latte (Grande, 2% milk)"
+      "Starbucks Caff\u00e8 Latte (Grande, 2% milk)"
     ],
     "nova_group": 3
   },
@@ -25045,5 +25045,522 @@
       "salt"
     ],
     "nova_group": 2
+  },
+  {
+    "name": "McDonald's McDouble",
+    "category": "Fast Food",
+    "serving_size": 166,
+    "serving_unit": "g",
+    "calories": 400,
+    "protein_g": 23,
+    "carbs_g": 35,
+    "fat_g": 18,
+    "fiber_g": 2,
+    "nova_group": 4
+  },
+  {
+    "name": "McDonald's Filet-O-Fish",
+    "category": "Fast Food",
+    "serving_size": 141,
+    "serving_unit": "g",
+    "calories": 378,
+    "protein_g": 15,
+    "carbs_g": 38,
+    "fat_g": 18,
+    "fiber_g": 1,
+    "nova_group": 4
+  },
+  {
+    "name": "McDonald's McNuggets (10 pc)",
+    "category": "Fast Food",
+    "serving_size": 170,
+    "serving_unit": "g",
+    "calories": 430,
+    "protein_g": 25,
+    "carbs_g": 27,
+    "fat_g": 25,
+    "fiber_g": 1,
+    "nova_group": 4
+  },
+  {
+    "name": "Burger King Whopper",
+    "category": "Fast Food",
+    "serving_size": 291,
+    "serving_unit": "g",
+    "calories": 657,
+    "protein_g": 28,
+    "carbs_g": 49,
+    "fat_g": 40,
+    "fiber_g": 2,
+    "nova_group": 4
+  },
+  {
+    "name": "Subway Meatball Marinara (6-inch)",
+    "category": "Fast Food",
+    "serving_size": 257,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 22,
+    "carbs_g": 60,
+    "fat_g": 17,
+    "fiber_g": 4,
+    "nova_group": 4
+  },
+  {
+    "name": "Smash Burger",
+    "category": "Fast Food",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 540,
+    "protein_g": 28,
+    "carbs_g": 36,
+    "fat_g": 32,
+    "fiber_g": 1,
+    "nova_group": 4
+  },
+  {
+    "name": "Taco Bell Chalupa Supreme (Beef)",
+    "category": "Fast Food",
+    "serving_size": 153,
+    "serving_unit": "g",
+    "calories": 390,
+    "protein_g": 16,
+    "carbs_g": 39,
+    "fat_g": 18,
+    "fiber_g": 3,
+    "nova_group": 4
+  },
+  {
+    "name": "Panera Turkey Sandwich",
+    "category": "Fast Food",
+    "serving_size": 256,
+    "serving_unit": "g",
+    "calories": 440,
+    "protein_g": 30,
+    "carbs_g": 50,
+    "fat_g": 14,
+    "fiber_g": 3,
+    "nova_group": 3
+  },
+  {
+    "name": "Loaded Fries",
+    "category": "Fast Food",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 12,
+    "carbs_g": 55,
+    "fat_g": 24,
+    "fiber_g": 4,
+    "ingredients": [
+      "fries",
+      "cheese sauce",
+      "jalape\u00f1os",
+      "sour cream"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Saag Paneer",
+    "category": "Indian Staples",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 14,
+    "carbs_g": 12,
+    "fat_g": 25,
+    "fiber_g": 4,
+    "ingredients": [
+      "paneer",
+      "spinach",
+      "cream",
+      "onion",
+      "tomato",
+      "spices"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Lamb Korma",
+    "category": "Indian Staples",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 22,
+    "carbs_g": 12,
+    "fat_g": 28,
+    "fiber_g": 2,
+    "ingredients": [
+      "lamb",
+      "yogurt",
+      "cream",
+      "cashews",
+      "onion",
+      "spices"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Keema Matar",
+    "category": "Indian Staples",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 290,
+    "protein_g": 22,
+    "carbs_g": 14,
+    "fat_g": 16,
+    "fiber_g": 4,
+    "ingredients": [
+      "minced lamb",
+      "peas",
+      "tomato",
+      "onion",
+      "spices"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Stuffed Paratha",
+    "category": "Indian Staples",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 7,
+    "carbs_g": 40,
+    "fat_g": 10,
+    "fiber_g": 3,
+    "ingredients": [
+      "wheat flour",
+      "potato",
+      "ghee",
+      "spices"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Veg Biryani",
+    "category": "Indian Staples",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 350,
+    "protein_g": 9,
+    "carbs_g": 62,
+    "fat_g": 8,
+    "fiber_g": 5,
+    "ingredients": [
+      "basmati rice",
+      "mixed vegetables",
+      "ghee",
+      "spices",
+      "saffron"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Prawn Biryani",
+    "category": "Indian Staples",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 20,
+    "carbs_g": 55,
+    "fat_g": 9,
+    "fiber_g": 3,
+    "ingredients": [
+      "basmati rice",
+      "prawns",
+      "ghee",
+      "spices",
+      "fried onion"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Khandvi",
+    "category": "Indian Staples",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 7,
+    "carbs_g": 22,
+    "fat_g": 7,
+    "fiber_g": 3,
+    "ingredients": [
+      "chickpea flour",
+      "yogurt",
+      "turmeric",
+      "mustard seeds",
+      "coconut"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Gol Gappa / Pani Puri (6 pieces)",
+    "category": "Indian Street Food",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 4,
+    "carbs_g": 35,
+    "fat_g": 4,
+    "fiber_g": 3,
+    "ingredients": [
+      "semolina",
+      "potato",
+      "chickpea",
+      "tamarind water",
+      "spices"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Chana Chaat",
+    "category": "Indian Street Food",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 240,
+    "protein_g": 12,
+    "carbs_g": 38,
+    "fat_g": 5,
+    "fiber_g": 8,
+    "ingredients": [
+      "chickpeas",
+      "onion",
+      "tomato",
+      "chaat masala",
+      "tamarind",
+      "coriander"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Chili Chicken (Indo-Chinese)",
+    "category": "Asian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 290,
+    "protein_g": 25,
+    "carbs_g": 14,
+    "fat_g": 15,
+    "fiber_g": 2,
+    "ingredients": [
+      "chicken",
+      "bell pepper",
+      "onion",
+      "soy sauce",
+      "chili",
+      "cornstarch"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Schezwan Fried Rice",
+    "category": "Asian",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 350,
+    "protein_g": 10,
+    "carbs_g": 58,
+    "fat_g": 9,
+    "fiber_g": 3,
+    "ingredients": [
+      "rice",
+      "vegetables",
+      "egg",
+      "schezwan sauce",
+      "soy sauce"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Veg Hakka Noodles",
+    "category": "Asian",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 310,
+    "protein_g": 9,
+    "carbs_g": 52,
+    "fat_g": 8,
+    "fiber_g": 4,
+    "ingredients": [
+      "noodles",
+      "cabbage",
+      "carrot",
+      "bell pepper",
+      "soy sauce",
+      "vinegar"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Dragon Roll (8 pcs)",
+    "category": "Japanese",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 330,
+    "protein_g": 14,
+    "carbs_g": 50,
+    "fat_g": 8,
+    "fiber_g": 2,
+    "ingredients": [
+      "shrimp tempura",
+      "avocado",
+      "cucumber",
+      "sushi rice",
+      "nori",
+      "eel sauce"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Rainbow Roll (8 pcs)",
+    "category": "Japanese",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 310,
+    "protein_g": 17,
+    "carbs_g": 42,
+    "fat_g": 7,
+    "fiber_g": 2,
+    "ingredients": [
+      "crab",
+      "avocado",
+      "cucumber",
+      "tuna",
+      "salmon",
+      "sushi rice",
+      "nori"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Spicy Salmon Roll (8 pcs)",
+    "category": "Japanese",
+    "serving_size": 180,
+    "serving_unit": "g",
+    "calories": 290,
+    "protein_g": 15,
+    "carbs_g": 40,
+    "fat_g": 8,
+    "fiber_g": 1,
+    "ingredients": [
+      "salmon",
+      "sriracha mayo",
+      "cucumber",
+      "sushi rice",
+      "nori"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Rice and Chicken Bowl (Meal Prep)",
+    "category": "Proteins",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 500,
+    "protein_g": 45,
+    "carbs_g": 55,
+    "fat_g": 8,
+    "fiber_g": 2,
+    "ingredients": [
+      "chicken breast",
+      "white rice",
+      "olive oil",
+      "salt",
+      "pepper"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Protein Bowl (Chicken, Rice & Veggies)",
+    "category": "Proteins",
+    "serving_size": 450,
+    "serving_unit": "g",
+    "calories": 520,
+    "protein_g": 48,
+    "carbs_g": 52,
+    "fat_g": 10,
+    "fiber_g": 6,
+    "ingredients": [
+      "chicken breast",
+      "brown rice",
+      "broccoli",
+      "bell pepper",
+      "olive oil"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Beyond Burger (Patty)",
+    "category": "Proteins",
+    "serving_size": 113,
+    "serving_unit": "g",
+    "calories": 260,
+    "protein_g": 20,
+    "carbs_g": 9,
+    "fat_g": 18,
+    "fiber_g": 2,
+    "ingredients": [
+      "pea protein",
+      "coconut oil",
+      "potato starch",
+      "beet juice"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Peanut Butter Toast",
+    "category": "Breakfast",
+    "serving_size": 80,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 10,
+    "carbs_g": 30,
+    "fat_g": 14,
+    "fiber_g": 3,
+    "ingredients": [
+      "bread",
+      "peanut butter"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Buddha Bowl",
+    "category": "US Staples",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 430,
+    "protein_g": 16,
+    "carbs_g": 55,
+    "fat_g": 16,
+    "fiber_g": 10,
+    "ingredients": [
+      "quinoa",
+      "chickpeas",
+      "avocado",
+      "roasted vegetables",
+      "tahini",
+      "lemon"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Huevos Rancheros",
+    "category": "Mexican",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 18,
+    "carbs_g": 35,
+    "fat_g": 18,
+    "fiber_g": 7,
+    "ingredients": [
+      "eggs",
+      "corn tortilla",
+      "salsa ranchera",
+      "black beans",
+      "queso fresco"
+    ],
+    "nova_group": 3
   }
 ]
