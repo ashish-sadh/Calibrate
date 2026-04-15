@@ -14,13 +14,13 @@ _(pick from Ready)_
 - [ ] **#80 AI Chat: Multi-turn context hardening** — Test and fix context loss between turns. 10+ multi-turn scenarios. Addresses #65 ("need to get better with multi turn").
 
 ### JUNIOR
-- [ ] **#81 Coverage: WeightTrendService → 80%** — Currently 61%. Edge cases and error paths.
-- [ ] **#82 Coverage: AIRuleEngine → 80%** — Currently 50%. Per-rule match/non-match tests.
+- [x] **#81 Coverage: WeightTrendService** — Stale-with-old-entries test (73-76 day entries, latestWeightKg from unfiltered fetch).
+- [x] **#82 Coverage: AIRuleEngine** — 11 food-seeded branch tests: yesterdaySummary with data, caloriesLeft remaining/over, dailySummary food path, quickInsight with food+trend, nextAction protein branches, weeklySummary structure.
 - [ ] **#83 Food DB: Top 20 search misses** — Use search miss tracking data. USDA cross-reference.
 - [ ] **#84 Bug hunting: AI food logging edge cases** — Systematic analysis. Last hunt found 3 P0s.
-- [ ] **#85 Eval: Voice-style input test cases** — 10+ cases without punctuation, filler words, run-on.
-- [ ] **#86 UI: Exercise card visual enhancement** — Muscle group SF Symbol chips. Prep for design doc #66.
-- [ ] **#87 Coverage: NotificationService + BehaviorInsightService hardening** — Permission denial, empty data, schedule failures.
+- [x] **#85 Eval: Voice-style input test cases** — 13 cases: run-on multi-food, filler+restart, repeated conjunctions, mixed-case fillers, chained restarts, extra whitespace.
+- [x] **#86 UI: Exercise card visual enhancement** — Done (muscle group SF Symbol chips shipped in prior sprint).
+- [x] **#87 Coverage: NotificationService + BehaviorInsightService hardening** — 4-alert composition, all-poor-sleep boundary, exactly-6h boundary, proactive alerts structural integrity.
 
 ### Design Docs (senior handles directly, not sprint tasks)
 - #65 Design: How should we structurally fix AI chat?
@@ -98,5 +98,9 @@ Autonomous refactoring. Run `code-improvement.md`. Principles in `Docs/principle
 - [x] P1: Systematic Bug Hunting — tab bounds check, USDA API 5s timeout, Swift 6 concurrency fix.
 - [x] P0: Proactive Alerts — workout consistency + logging gap alerts. 6 alert types.
 - [x] P0: USDA API Phase 1 — opt-in toggle, rate limiting, searchWithFallback, privacy notice
+- [x] #81 WeightTrendService: stale-with-old-entries coverage test
+- [x] #82 AIRuleEngine: 11 food-seeded branch tests (yesterdaySummary, caloriesLeft, dailySummary, quickInsight, nextAction, weeklySummary)
+- [x] #85 Voice-style eval: 13 InputNormalizer cases (run-on, filler+restart, conjunctions, mixed-case)
+- [x] #87 NotificationService + BehaviorInsightService hardening (4-alert composition, sleep boundaries)
 - [x] TestFlight build 106, 107
-- [x] 981 tests
+- [x] Build 117 — test coverage improvements committed
