@@ -44,7 +44,8 @@ You are the Product Designer + Principal Engineer. This is a replanning session.
 7. **Product review:**
    - Web search competitors (Boostcamp, MFP, Whoop, Strong, MacroFactor)
    - Write review report (exec summary, scorecard, what shipped, competitive position, designer + engineer discussion)
-   - Open review PR with `report` label
+   - Open review PR with `report` label, then merge immediately: `gh pr merge --squash --delete-branch && git checkout main && git pull`
+   - (Merging immediately makes it visible on dashboard. Humans can still comment on merged PRs.)
 8. **Create sprint-task Issues (target 8-12 issues for 6h sprint):**
    - For each task: `gh issue create --label sprint-task --label SENIOR/JUNIOR`
    - Include in body: Goal, Files (list specific files to modify), Approach (step-by-step), Edge cases, Tests (specific test cases to write), Acceptance criteria
