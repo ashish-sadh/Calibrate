@@ -24,7 +24,7 @@ You are the Product Designer + Principal Engineer. This is a replanning session.
 
 1. **Read persona files:** `Docs/personas/product-designer.md`, `Docs/personas/principal-engineer.md`
 2. **Read product focus:** `gh issue list --state open --label product-focus --json title,body`
-   - If set: ALL sprint tasks must align with this focus. Create tasks that advance it. Deprioritize unrelated work.
+   - If set: bias sprint tasks toward this focus. P0 bugs, feature requests, and design docs are ALWAYS valid regardless of focus. The focus shapes which new tasks to create and how to prioritize the backlog — it doesn't block existing commitments.
    - If not set: use roadmap and own judgment.
 3. **Read admin feedback from report PRs:**
    - `gh pr list --label report --state all` → for each PR with comments:

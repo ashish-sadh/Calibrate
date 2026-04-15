@@ -30,7 +30,7 @@ FOCUS=$(gh issue list --state open --label product-focus --json title --jq '.[0]
 if [ -n "$FOCUS" ]; then
   echo ""
   echo "PRODUCT FOCUS: $FOCUS"
-  echo "All work this session should align with this focus. Deprioritize unrelated work."
+  echo "Bias work toward this focus. P0 bugs, feature requests, and design docs are still valid."
 fi
 
 # Surface unreplied admin comments on report PRs
