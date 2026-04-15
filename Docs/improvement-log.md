@@ -4,6 +4,22 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 
 ---
 
+## Cycle · 2026-04-15 (Human-shepherded junior tasks, continued)
+
+- **Smart Units major expansion** (product focus: #1 complaint): primaryUnit() now covers 10+ new food categories:
+  - Indian sweets (gulab jamun, laddu, barfi, jalebi, etc.) → piece
+  - Batter/dough foods (dosa batter, idli batter) → cup; doughnut/cookie-dough excluded
+  - Bread/toast → slice; sourdough correctly handled
+  - Pizza → slice
+  - Soups/stews/chowder/bisque/rasam/sambar → bowl
+  - Yogurt/curd/dahi → cup
+  - Oats/oatmeal/porridge/granola → cup
+  - 9 regression tests added covering all new rules + edge cases
+- **Spell correction fix**: Synonym keys (e.g. "anda") are now excluded from fuzzy spell correction — "anda" was being corrected to "kanda" (Kanda Poha edit-distance-1) before synonym expansion ran. testHindiSynonymFoodSearch now passes.
+- **Food DB +14**: Rye Bread, Brioche Bun, Baguette (Bakery); Pumpkin Soup, Cream of Mushroom, Split Pea Soup (Soups); Tilapia, Sardines, Shrimp Cocktail, Crab, Scallops, Trout, Oysters, Mussels (Seafood). Total: 1866→1880.
+- **Data fix**: French Toast (2 slices) serving_size corrected from count-2 to 130g.
+- **Recipe builder bug fix**: IngredientPicker was not passing servingSizeG when adding from food DB — total recipe serving calc was 0. Also fixed portionText spacing ("15tbsp" → "15 tbsp").
+
 ## Cycle · 2026-04-15 (Human-shepherded junior tasks)
 
 - **Food DB +44 foods**: Added 26 Indian foods (Chana/Moong/Masoor Dal, Rajma Masala, Mutton Biryani, Chicken Korma/Saag, Prawn Masala, Pani Puri, Sev Puri, Poori Bhaji, Egg/Onion Dosa, Idli Sambar, Batata/Kanda Poha, Masala Chai, Chaas, Masala Milk, Haldi Doodh, Rice Kheer, Gajar/Lauki Halwa, Gujiya) + 18 global foods (Greek Yogurt 2%, Turkey Meatballs, Smoked Salmon, Avocado Toast with Egg, Smoothie Bowl, Quinoa Salad, Farro Bowl, Caesar Salad, Burrito Bowl, Chicken Fajitas, Green Curry, Hummus with Pita, etc.). Total: 1822→1866.
