@@ -309,7 +309,8 @@ struct FoodUnit: Hashable {
             return FoodUnit(label: "piece", gramsEquivalent: ss)
         }
         if name.contains("dosa") || name.contains("idli") || name.contains("vada") ||
-           name.contains("samosa") || name.contains("pakora") || name.contains("momo") {
+           name.contains("samosa") || name.contains("pakora") || name.contains("momo") ||
+           name.contains("uttapam") || name.contains("kachori") {
             return FoodUnit(label: "piece", gramsEquivalent: ss)
         }
 
@@ -378,10 +379,10 @@ struct FoodUnit: Hashable {
             return FoodUnit(label: "cup", gramsEquivalent: cupGrams(for: name))
         }
 
-        // Soups, stews, broths — served by bowl
+        // Soups, stews, broths, liquid desserts — served by bowl
         if name.contains("soup") || name.contains("stew") || name.contains("chowder") ||
            name.contains("bisque") || name.contains("broth") || name.contains("rasam") ||
-           name.contains("sambar") {
+           name.contains("sambar") || name.contains("payasam") {
             return FoodUnit(label: "bowl", gramsEquivalent: ss)
         }
 
