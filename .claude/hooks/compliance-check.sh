@@ -40,6 +40,13 @@ if [ "$DRIFT_CONTROL" = "RUN" ]; then
         CONTEXT="${CONTEXT}3. git add project.yml Drift.xcodeproj && git commit -m 'chore: TestFlight build' && git push\n"
         CONTEXT="${CONTEXT}4. The testflight-check hook will inject archive+upload steps on the commit.\n\n"
     fi
+
+    # Check if releases.json is out of date (published but not logged)
+    BUILD_NUM=$(grep 'CURRENT_PROJECT_VERSION' "$HOME/workspace/Drift/project.yml" 2>/dev/null | grep -oE '[0-9]+' | head -1 || echo "0")
+    LATEST_RELEASE=$(python3 -c "import json; d=json.load(open('$HOME/workspace/Drift/command-center/releases.json')); print(d[-1].get('build',0) if d else 0)" 2>/dev/null || echo "0")
+    if [ "$BUILD_NUM" != "$LATEST_RELEASE" ] && [ "$BUILD_NUM" -gt "$LATEST_RELEASE" ] 2>/dev/null; then
+        CONTEXT="${CONTEXT}RELEASES.JSON OUTDATED: build $BUILD_NUM published but releases.json shows build $LATEST_RELEASE. Update releases.json with the latest build info.\n\n"
+    fi
 fi
 
 # === SENIOR ONLY (Opus) ===
