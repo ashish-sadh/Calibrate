@@ -59,7 +59,11 @@ fi
 # === PLANNING ONLY ===
 
 if [ "$SESSION_TYPE" = "planning" ]; then
-    CONTEXT="${CONTEXT}PLANNING CHECKLIST: Reply to ALL admin feedback. Create 8-12 sprint tasks. Write product review report + merge PR.\n\n"
+    CONTEXT="${CONTEXT}PLANNING DELIVERABLES (session BLOCKED from exiting until complete):\n"
+    CONTEXT="${CONTEXT}1. Read + reply to ALL admin feedback on report PRs (gh api repos/OWNER/REPO/issues/N/comments)\n"
+    CONTEXT="${CONTEXT}2. Write product review report + merge PR\n"
+    CONTEXT="${CONTEXT}3. Create 8-12 sprint-task Issues (SENIOR + JUNIOR)\n"
+    CONTEXT="${CONTEXT}4. Update personas + roadmap\n\n"
 fi
 
 # Output

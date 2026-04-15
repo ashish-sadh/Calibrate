@@ -78,4 +78,32 @@ if [ -n "$ISSUES" ]; then
   exit 2
 fi
 
+# Planning session validation — check deliverables before allowing exit
+SESSION_TYPE=$(cat "$HOME/drift-state/cache-session-type" 2>/dev/null || echo "")
+if [ "$SESSION_TYPE" = "planning" ]; then
+  PLAN_ISSUES=""
+
+  # Were sprint-task issues created in this session?
+  TASK_COUNT=$(gh issue list --state open --label sprint-task --json number --jq 'length' 2>/dev/null || echo "0")
+  if [ "$TASK_COUNT" -lt 4 ]; then
+    PLAN_ISSUES="${PLAN_ISSUES}Only $TASK_COUNT sprint-task issues open (target 8-12). Create more before stopping.\n\n"
+  fi
+
+  # Was a product review report committed recently?
+  RECENT_REPORT=$(git log --oneline --since="2 hours ago" -- Docs/reports/review-*.md 2>/dev/null | head -1)
+  if [ -z "$RECENT_REPORT" ]; then
+    PLAN_ISSUES="${PLAN_ISSUES}No product review report committed this session. Write it before stopping.\n\n"
+  fi
+
+  # Were admin feedback comments replied to?
+  if [ -s "$HOME/drift-state/cache-admin-feedback" ]; then
+    PLAN_ISSUES="${PLAN_ISSUES}Admin feedback on report PRs still needs replies:\n$(cat "$HOME/drift-state/cache-admin-feedback")\nReply to every comment before stopping.\n\n"
+  fi
+
+  if [ -n "$PLAN_ISSUES" ]; then
+    echo -e "BLOCKED: Planning session incomplete.\n\n${PLAN_ISSUES}" >&2
+    exit 2
+  fi
+fi
+
 exit 0
