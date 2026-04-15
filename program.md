@@ -150,6 +150,11 @@ Human says "run autopilot" in a session. No watchdog, no model switching.
 - Run `xcodegen generate` if adding files
 - File bugs as GitHub Issues, not just in docs
 
+### GitHub API Budget
+- Reads = 1pt, writes = 5pts. Budget: 900pts/min. See `Docs/principles/github-api-hygiene.md`
+- Never poll GitHub in a loop. Batch issue edits.
+- If `gh` returns 403/429, wait 60s before retrying — do NOT retry immediately
+
 ---
 
 ## For the human

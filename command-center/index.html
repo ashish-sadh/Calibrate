@@ -206,6 +206,10 @@
             <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">Pending Force Release</div>
             <div id="admin-pending-force" style="font-size:18px;font-weight:600;">-</div>
           </div>
+          <div style="background:var(--bg);padding:16px;border-radius:8px;border:1px solid var(--border);">
+            <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">API Rate Limit</div>
+            <div id="admin-rate-limit" style="font-size:18px;font-weight:600;">-</div>
+          </div>
         </div>
 
         <div style="border-top:1px solid var(--border);padding-top:20px;margin-bottom:24px;">
@@ -1210,6 +1214,16 @@
       } else {
         document.getElementById('admin-cycles').textContent = '-';
       }
+
+      // API Rate Limit
+      try {
+        const rate = await api('/rate_limit');
+        const remaining = rate.resources.core.remaining;
+        const limit = rate.resources.core.limit;
+        const el = document.getElementById('admin-rate-limit');
+        el.textContent = `${remaining} / ${limit}`;
+        el.style.color = remaining > 2000 ? 'var(--green)' : remaining > 500 ? 'var(--yellow)' : 'var(--red)';
+      } catch { document.getElementById('admin-rate-limit').textContent = '-'; }
 
       // Product Focus
       loadProductFocus();

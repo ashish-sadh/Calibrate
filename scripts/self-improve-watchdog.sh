@@ -179,6 +179,16 @@ start_claude() {
     echo "$MODEL" > "$HOME/drift-state/last-model"
     CURRENT_LOG="$LOG_DIR/session_${SESSION_TYPE}_$(date +%s).log"
 
+    # Check rate limit before starting
+    local RATE_MSG=$("$WORK_DIR/scripts/check-rate-limit.sh" 2>/dev/null)
+    local RATE_EXIT=$?
+    if [[ "$RATE_EXIT" -eq 2 ]]; then
+        log "Rate limit critical: $RATE_MSG. Delaying 5 min."
+        sleep 300
+    elif [[ "$RATE_EXIT" -eq 1 ]]; then
+        log "Rate limit warning: $RATE_MSG"
+    fi
+
     log "Starting autopilot ($SESSION_TYPE, model=$MODEL, log: $CURRENT_LOG)"
     cd "$WORK_DIR"
 
