@@ -4,6 +4,16 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 
 ---
 
+## Cycle · 2026-04-15 (Human-shepherded junior tasks)
+
+- **Food DB +44 foods**: Added 26 Indian foods (Chana/Moong/Masoor Dal, Rajma Masala, Mutton Biryani, Chicken Korma/Saag, Prawn Masala, Pani Puri, Sev Puri, Poori Bhaji, Egg/Onion Dosa, Idli Sambar, Batata/Kanda Poha, Masala Chai, Chaas, Masala Milk, Haldi Doodh, Rice Kheer, Gajar/Lauki Halwa, Gujiya) + 18 global foods (Greek Yogurt 2%, Turkey Meatballs, Smoked Salmon, Avocado Toast with Egg, Smoothie Bowl, Quinoa Salad, Farro Bowl, Caesar Salad, Burrito Bowl, Chicken Fajitas, Green Curry, Hummus with Pita, etc.). Total: 1822→1866.
+- **Hindi synonym expansion**: SpellCorrectService now covers 35+ Hindi food terms — murgh/chicken, gosht/mutton, anda/egg, doodh/milk, kela/banana, aam/mango, lauki, karela, matar, tamatar, pyaz, makki, methi, shimla mirch, capsicum. Additive search merging.
+- **Confirm-first regression tests (4)**: Added tests for all log_food routes — multi-item→RecipeBuilder, unknown food→FoodSearch, known DB food→FoodSearch, bare meal words→error. Guards against confirm-first policy regressions.
+- **UI Polish**: WeightLogListView.formatDate now uses cached DateFormatters.dateOnly (avoids DateFormatter allocation per row).
+- **Comment fix**: Corrected misleading "log directly" comment in meal planning handler.
+
+---
+
 **Cycle 909** — feat: workout split builder — "build me a PPL split" multi-turn dialogue. 4 split types, exercise suggestions, template creation. 15 tests. 981 total.
 
 **Cycle 808** — fix: systematic bug hunt — tab bounds check, USDA API 5s timeout, Swift 6 concurrency fix. 2 P1 bugs fixed.
