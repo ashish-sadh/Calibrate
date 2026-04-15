@@ -18,6 +18,7 @@ struct FoodTabView: View {
     @State private var showingConfirmLog = false
     @State private var confirmPrefill: AIChatViewModel.ManualFoodPrefill?
     @State private var copyToTodayEntry: FoodEntry?
+    @State private var showingCopyYesterdayAlert = false
 
     enum FoodSortMode: String, CaseIterable {
         case time, protein, carbs, fat, plantPoints
@@ -129,6 +130,17 @@ struct FoodTabView: View {
             } message: {
                 if let entry = copyToTodayEntry {
                     Text("\(entry.foodName) — \(Int(entry.totalCalories)) cal, \(Int(entry.totalProtein))g protein")
+                }
+            }
+            .alert("Copy Previous Day?", isPresented: $showingCopyYesterdayAlert) {
+                Button("Cancel", role: .cancel) {}
+                Button("Copy") {
+                    copyFromYesterday()
+                    reload()
+                }
+            } message: {
+                if let cal = yesterdayCalories() {
+                    Text("This will copy all \(Int(cal)) cal from yesterday to today.")
                 }
             }
             .onAppear { AIScreenTracker.shared.currentScreen = .food; weekOffset = 0; reload() }
@@ -581,8 +593,7 @@ struct FoodTabView: View {
             // Copy from yesterday
             if let yesterdayCal = yesterdayCalories(), yesterdayCal > 0 {
                 Button {
-                    copyFromYesterday()
-                    reload()
+                    showingCopyYesterdayAlert = true
                 } label: {
                     HStack(spacing: 4) {
                         Label("Copy previous day", systemImage: "doc.on.doc")
