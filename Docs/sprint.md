@@ -23,7 +23,7 @@ _(pick from Ready)_
 
 ### SENIOR — Independent (no approval needed)
 
-- [x] **#121 Food logging: confirm-first on all paths** — Fixed. All 4 bypass paths now require confirmation: Log Again and Quick + open ManualFoodEntrySheet prefilled, Copy to Today shows confirmation alert, copy-yesterday in chat shows preview before copying. 4 tests added. Note: "Copy previous day" button in empty diary (5th path) not in original scope — follow-up.
+- [x] **#121 Food logging: confirm-first on all paths** — Fixed all 5 paths. 4 bypass paths fixed in original PR (Log Again + Quick open ManualFoodEntrySheet prefilled, Copy to Today alert, copy-yesterday in chat preview). 5th path (Copy previous day button in empty diary) fixed in follow-up commit 13dbfbe — now shows alert with calorie count before copying.
 - [ ] **#122 AI Chat: research multi-stage pipeline patterns** — Research how production LLM chat systems handle intent → extraction → confirmation flows. Look at function-calling patterns, chain-of-thought extraction, multi-prompt architectures. Document findings in design doc #65 revision. This feeds directly into the doc revision.
 
 ### SENIOR — Contingent on Revised #65 Approval
@@ -39,7 +39,7 @@ These implement the revised design doc #65. Do not start until the revised PR #1
 
 - [ ] **#96 Coverage: Pipeline refactor tests** — After pipeline changes land, ensure coverage targets hold (80% logic, 50% services).
 - [ ] **#97 Bug hunting: Voice + chat end-to-end** — Exercise the new pipeline with voice transcription output. Focus on food logging confirmation flow.
-- [ ] **#123 Docs: Update state.md** — Build 120, foods 1616, tests 1321+, 35 test files. Reflect any pipeline architecture changes post-refactor.
+- [x] **#123 Docs: Update state.md** — Verified: build 120, foods 1641 (json count), tests 1321+ (35 files), pipeline description current. Pipeline section update deferred until refactor lands.
 
 ### Design Docs (pending review)
 - #65 Design: How should we structurally fix AI chat? — PR #112, `doc-ready`, **3 review comments unaddressed → revision needed**
@@ -104,7 +104,8 @@ Autonomous refactoring. Run `code-improvement.md`. Principles in `Docs/principle
 
 ## Done (this sprint)
 
-_(nothing yet)_
+- [x] #121 (follow-up) Copy-previous-day button in empty diary now shows confirmation alert (13dbfbe)
+- [x] #123 state.md verified accurate: build 120, foods 1641, tests 1321+ (35 files)
 
 ## Done (previous sprint)
 
