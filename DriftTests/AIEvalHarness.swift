@@ -1903,4 +1903,71 @@ final class AIEvalHarness: XCTestCase {
                 "'\(query)' → top tool should be \(expectedTool), got \(tools.first?.name ?? "nil")")
         }
     }
+
+    // MARK: - Confirm-First Policy: All log_food paths open UI, never log directly
+
+    @MainActor
+    func testPreHookRouting_multiItem_opensRecipeBuilder() async {
+        // Multi-item food ("rice, dal, sabzi") must open RecipeBuilder for review — NOT log directly.
+        // Regression: previously multi-item could bypass confirm-first via direct quickAdd.
+        ToolRegistration.registerAll()
+        let call = ToolCall(tool: "log_food", params: ToolCallParams(values: [
+            "name": "rice, dal, sabzi"
+        ]))
+        let result = await ToolRegistry.shared.execute(call)
+        if case .action(let action) = result, case .openRecipeBuilder(let items, _) = action {
+            XCTAssertTrue(items.count >= 2, "Should have at least 2 items, got \(items.count)")
+            XCTAssertTrue(items.contains(where: { $0.lowercased().contains("rice") }), "Should contain rice")
+        } else {
+            XCTFail("Multi-item log_food must open RecipeBuilder for review, got \(result)")
+        }
+    }
+
+    @MainActor
+    func testPreHookRouting_unknownFood_opensFoodSearch() async {
+        // Single food not in DB must open FoodSearch for review — user can correct or confirm.
+        // The name is passed as the search query so user sees what the AI parsed.
+        ToolRegistration.registerAll()
+        let call = ToolCall(tool: "log_food", params: ToolCallParams(values: [
+            "name": "xyzunknownfood99999"
+        ]))
+        let result = await ToolRegistry.shared.execute(call)
+        if case .action(let action) = result, case .openFoodSearch(let query, _) = action {
+            XCTAssertEqual(query, "xyzunknownfood99999")
+        } else {
+            XCTFail("Unknown food must open FoodSearch for review, got \(result)")
+        }
+    }
+
+    @MainActor
+    func testPreHookRouting_knownFood_opensFoodSearch() async {
+        // Single known food (e.g. banana) must still open FoodSearch prefilled — never log directly.
+        // Confirm-first: user reviews serving size before committing.
+        ToolRegistration.registerAll()
+        let call = ToolCall(tool: "log_food", params: ToolCallParams(values: [
+            "name": "banana"
+        ]))
+        let result = await ToolRegistry.shared.execute(call)
+        if case .action(let action) = result, case .openFoodSearch(let query, _) = action {
+            XCTAssertFalse(query.isEmpty, "FoodSearch query should not be empty")
+        } else {
+            XCTFail("Known food must open FoodSearch for review, got \(result)")
+        }
+    }
+
+    @MainActor
+    func testPreHookRouting_mealWord_returnsInvalid() async {
+        // Bare meal words ("breakfast", "lunch") must return invalid, asking what the user ate.
+        // They are not food names — AI should ask a follow-up.
+        ToolRegistration.registerAll()
+        for mealWord in ["breakfast", "lunch", "dinner", "snack"] {
+            let call = ToolCall(tool: "log_food", params: ToolCallParams(values: ["name": mealWord]))
+            let result = await ToolRegistry.shared.execute(call)
+            if case .error = result {
+                // correct — meal word returns .error (from PreHookResult.invalid), prompting follow-up
+            } else {
+                XCTFail("'\(mealWord)' should return .error (invalid meal word), got \(result)")
+            }
+        }
+    }
 }
