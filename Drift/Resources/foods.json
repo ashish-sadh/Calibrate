@@ -3854,7 +3854,7 @@
     "nova_group": 3
   },
   {
-    "name": "Breakfast Burrito",
+    "name": "Breakfast Burrito (Fast Food)",
     "category": "Fast Food",
     "serving_size": 200,
     "serving_unit": "g",
@@ -5098,7 +5098,7 @@
     "nova_group": 3
   },
   {
-    "name": "A\u00e7a\u00ed Bowl (medium)",
+    "name": "Açaí Bowl (medium)",
     "category": "US Staples",
     "serving_size": 300,
     "serving_unit": "g",
@@ -5108,7 +5108,7 @@
     "fat_g": 18,
     "fiber_g": 8,
     "ingredients": [
-      "A\u00e7a\u00ed Bowl (medium)"
+      "Açaí Bowl (medium)"
     ],
     "nova_group": 3
   },
@@ -9788,7 +9788,7 @@
     "nova_group": 3
   },
   {
-    "name": "Costco A\u00e7a\u00ed Bowl (food court)",
+    "name": "Costco Açaí Bowl (food court)",
     "category": "Costco",
     "serving_size": 355,
     "serving_unit": "g",
@@ -9798,7 +9798,7 @@
     "fat_g": 19,
     "fiber_g": 7,
     "ingredients": [
-      "Costco A\u00e7a\u00ed Bowl (food court)"
+      "Costco Açaí Bowl (food court)"
     ],
     "nova_group": 3
   },
@@ -10493,7 +10493,7 @@
     "nova_group": 4
   },
   {
-    "name": "Starbucks Caff\u00e8 Latte (Grande, 2% milk)",
+    "name": "Starbucks Caffè Latte (Grande, 2% milk)",
     "category": "Beverages",
     "serving_size": 473,
     "serving_unit": "ml",
@@ -10503,7 +10503,7 @@
     "fat_g": 7,
     "fiber_g": 0,
     "ingredients": [
-      "Starbucks Caff\u00e8 Latte (Grande, 2% milk)"
+      "Starbucks Caffè Latte (Grande, 2% milk)"
     ],
     "nova_group": 3
   },
@@ -25155,7 +25155,7 @@
     "ingredients": [
       "fries",
       "cheese sauce",
-      "jalape\u00f1os",
+      "jalapeños",
       "sour cream"
     ],
     "nova_group": 4
@@ -28726,7 +28726,7 @@
       "beef",
       "onion",
       "tomato",
-      "jalape\u00f1o",
+      "jalapeño",
       "rosemary",
       "Ethiopian spices",
       "butter"
@@ -31217,5 +31217,329 @@
     "carbs_g": 22,
     "fat_g": 4,
     "fiber_g": 1
+  },
+  {
+    "name": "Uttapam (plain)",
+    "category": "South Indian",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 185,
+    "protein_g": 5,
+    "carbs_g": 28,
+    "fat_g": 6,
+    "fiber_g": 3,
+    "ingredients": [
+      "rice",
+      "urad dal",
+      "onion",
+      "tomato",
+      "green chili"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Set Dosa",
+    "category": "South Indian",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 200,
+    "protein_g": 5,
+    "carbs_g": 33,
+    "fat_g": 5,
+    "fiber_g": 2,
+    "ingredients": [
+      "rice",
+      "urad dal",
+      "poha"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Chettinad Chicken Curry",
+    "category": "South Indian",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 385,
+    "protein_g": 36,
+    "carbs_g": 10,
+    "fat_g": 22,
+    "fiber_g": 3,
+    "ingredients": [
+      "chicken",
+      "onion",
+      "tomato",
+      "coconut",
+      "kalpasi",
+      "marathi mokku",
+      "garam masala"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Paal Payasam",
+    "category": "South Indian",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 220,
+    "protein_g": 6,
+    "carbs_g": 36,
+    "fat_g": 7,
+    "fiber_g": 0,
+    "ingredients": [
+      "milk",
+      "rice",
+      "sugar",
+      "cardamom",
+      "saffron"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Filter Coffee",
+    "category": "Indian Drinks",
+    "serving_size": 200,
+    "serving_unit": "ml",
+    "calories": 90,
+    "protein_g": 3,
+    "carbs_g": 12,
+    "fat_g": 3.5,
+    "fiber_g": 0,
+    "ingredients": [
+      "coffee decoction",
+      "milk",
+      "sugar"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Chakli / Murukku",
+    "category": "Indian Snacks",
+    "serving_size": 30,
+    "serving_unit": "g",
+    "calories": 150,
+    "protein_g": 3,
+    "carbs_g": 17,
+    "fat_g": 8,
+    "fiber_g": 1,
+    "ingredients": [
+      "rice flour",
+      "urad dal",
+      "sesame seeds",
+      "cumin",
+      "oil"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Roasted Makhana",
+    "category": "Indian Snacks",
+    "serving_size": 30,
+    "serving_unit": "g",
+    "calories": 105,
+    "protein_g": 3.5,
+    "carbs_g": 20,
+    "fat_g": 0.5,
+    "fiber_g": 0.3,
+    "ingredients": [
+      "lotus seeds",
+      "salt"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Bhakarwadi",
+    "category": "Indian Snacks",
+    "serving_size": 30,
+    "serving_unit": "g",
+    "calories": 140,
+    "protein_g": 3,
+    "carbs_g": 17,
+    "fat_g": 7,
+    "fiber_g": 2,
+    "ingredients": [
+      "wheat flour",
+      "coconut",
+      "poppy seeds",
+      "sesame",
+      "tamarind"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Sev",
+    "category": "Indian Snacks",
+    "serving_size": 30,
+    "serving_unit": "g",
+    "calories": 155,
+    "protein_g": 4,
+    "carbs_g": 18,
+    "fat_g": 8,
+    "fiber_g": 1,
+    "ingredients": [
+      "chickpea flour",
+      "oil",
+      "turmeric",
+      "cumin"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Raj Kachori",
+    "category": "Indian Snacks",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 7,
+    "carbs_g": 38,
+    "fat_g": 11,
+    "fiber_g": 4,
+    "ingredients": [
+      "wheat flour",
+      "chickpeas",
+      "potatoes",
+      "yogurt",
+      "tamarind chutney",
+      "sev"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Golgappa / Pani Puri (6 pieces)",
+    "category": "Indian Snacks",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 4,
+    "carbs_g": 30,
+    "fat_g": 5,
+    "fiber_g": 3,
+    "ingredients": [
+      "semolina",
+      "potatoes",
+      "chickpeas",
+      "tamarind water",
+      "cumin water"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Hummus (plain)",
+    "category": "Middle Eastern",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 165,
+    "protein_g": 8,
+    "carbs_g": 14,
+    "fat_g": 10,
+    "fiber_g": 6,
+    "ingredients": [
+      "chickpeas",
+      "tahini",
+      "lemon juice",
+      "garlic",
+      "olive oil"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Baba Ghanoush",
+    "category": "Middle Eastern",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 90,
+    "protein_g": 2,
+    "carbs_g": 7,
+    "fat_g": 7,
+    "fiber_g": 3,
+    "ingredients": [
+      "eggplant",
+      "tahini",
+      "lemon juice",
+      "garlic",
+      "olive oil"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Tzatziki",
+    "category": "Middle Eastern",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 75,
+    "protein_g": 5,
+    "carbs_g": 4,
+    "fat_g": 5,
+    "fiber_g": 0.3,
+    "ingredients": [
+      "yogurt",
+      "cucumber",
+      "garlic",
+      "dill",
+      "olive oil",
+      "lemon juice"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Fattoush Salad",
+    "category": "Middle Eastern",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 150,
+    "protein_g": 3,
+    "carbs_g": 16,
+    "fat_g": 9,
+    "fiber_g": 4,
+    "ingredients": [
+      "romaine",
+      "tomato",
+      "cucumber",
+      "radish",
+      "pita chips",
+      "sumac",
+      "lemon dressing"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Lamb Kofta (2 pieces)",
+    "category": "Middle Eastern",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 20,
+    "carbs_g": 4,
+    "fat_g": 21,
+    "fiber_g": 1,
+    "ingredients": [
+      "ground lamb",
+      "onion",
+      "parsley",
+      "cumin",
+      "coriander",
+      "cinnamon"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Lentil Soup (Middle Eastern)",
+    "category": "Middle Eastern",
+    "serving_size": 250,
+    "serving_unit": "ml",
+    "calories": 190,
+    "protein_g": 10,
+    "carbs_g": 30,
+    "fat_g": 4,
+    "fiber_g": 8,
+    "ingredients": [
+      "red lentils",
+      "onion",
+      "tomato",
+      "cumin",
+      "turmeric",
+      "lemon juice",
+      "olive oil"
+    ],
+    "nova_group": 1
   }
 ]
