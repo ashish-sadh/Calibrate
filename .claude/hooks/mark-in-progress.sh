@@ -14,10 +14,16 @@ fi
 
 MARKED=""
 SCREENSHOT_CHECK=""
+OPEN_NUMS=""
 
 for NUM in $ISSUE_NUMS; do
   INFO=$(gh issue view "$NUM" --json state,labels --jq 'select(.state == "OPEN") | .labels | map(.name) | join(",")' 2>/dev/null || true)
-  [ -z "$INFO" ] && continue
+  if [ -z "$INFO" ]; then
+    # Issue is closed or doesn't exist — remove from cache
+    sed -i '' "/^$NUM$/d" "$HOME/drift-state/cache-in-progress" 2>/dev/null || true
+    continue
+  fi
+  OPEN_NUMS="$OPEN_NUMS $NUM"
 
   # Mark in-progress if not already
   if ! echo "$INFO" | grep -q "in-progress"; then
@@ -40,17 +46,10 @@ CONTEXT=""
 [ -n "$MARKED" ] && CONTEXT="Marked in-progress:${MARKED}\n\n"
 [ -n "$SCREENSHOT_CHECK" ] && CONTEXT="${CONTEXT}SCREENSHOT VERIFICATION REQUIRED:\n${SCREENSHOT_CHECK}"
 
-# Maintain in-progress cache — hook has API data, so keep cache accurate
+# Maintain in-progress cache — reuse state from loop above (zero extra API calls)
 CACHE_FILE="$HOME/drift-state/cache-in-progress"
-# Add current commit's issues if OPEN (we already queried state above)
-for NUM in $ISSUE_NUMS; do
-  INFO=$(gh issue view "$NUM" --json state --jq '.state' 2>/dev/null || echo "")
-  if [ "$INFO" = "OPEN" ]; then
-    grep -q "^$NUM$" "$CACHE_FILE" 2>/dev/null || echo "$NUM" >> "$CACHE_FILE" 2>/dev/null
-  else
-    # Issue is closed — remove from cache
-    sed -i '' "/^$NUM$/d" "$CACHE_FILE" 2>/dev/null || true
-  fi
+for NUM in $OPEN_NUMS; do
+  grep -q "^$NUM$" "$CACHE_FILE" 2>/dev/null || echo "$NUM" >> "$CACHE_FILE" 2>/dev/null
 done
 # Check if other cached issues are stale (not in current commit)
 if [ -f "$CACHE_FILE" ]; then
