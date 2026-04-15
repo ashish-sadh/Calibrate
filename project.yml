@@ -23,7 +23,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.drift.health
         MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "119"
+        CURRENT_PROJECT_VERSION: "120"
         SWIFT_VERSION: "6.0"
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_FILE: Drift/Info.plist
@@ -55,7 +55,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.drift.health.widget
         MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: "119"
+        CURRENT_PROJECT_VERSION: "120"
         SWIFT_VERSION: "6.0"
         INFOPLIST_FILE: DriftWidget/Info.plist
         DEVELOPMENT_TEAM: ZJ5H5XH82A
