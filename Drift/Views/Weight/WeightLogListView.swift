@@ -125,10 +125,7 @@ struct WeightLogListView: View {
     }
 
     private func formatDate(_ s: String) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "yyyy-MM-dd"
-        f.locale = Locale(identifier: "en_US_POSIX")
-        guard let d = f.date(from: s) else { return s }
+        guard let d = DateFormatters.dateOnly.date(from: s) else { return s }
         return DateFormatters.dayDisplay.string(from: d)
     }
 }
