@@ -120,11 +120,15 @@ You are the junior engineer with a senior advisor. Execute well-specified tasks.
 4. If task is too complex (same criteria as P0 above) → `gh issue edit {N} --add-label SENIOR` → skip
 5. Build → test → commit (reference #N in message) → push
 6. **Close Issue with comment:** what was done + commit hash. Never close silently.
-7. **ONLY when ALL sprint-tasks are done → work on permanent tasks:**
+7. **ONLY when ALL sprint-tasks are done → work on product focus:**
+   - Read the product focus from the compliance hook output
+   - Create a sprint-task issue FIRST: `gh issue create --label sprint-task --title "Focus: {description}"`
+   - Then work on it. This makes the work visible on the Sprint tab.
+8. **ONLY when sprint-tasks AND product focus work are done → permanent tasks:**
    - `gh issue list --state open --label permanent-task` → pick the one you haven't worked on most recently
    - Do the work, then **comment on the Issue** with what you did (don't close it — permanent tasks stay open)
    - Before running tests: `pkill -9 -f xcodebuild 2>/dev/null; sleep 2`
-8. Repeat forever. Sonnet never idles.
+9. Repeat forever. Sonnet never idles. Priority order: sprint tasks → product focus → permanent tasks.
 
 ---
 

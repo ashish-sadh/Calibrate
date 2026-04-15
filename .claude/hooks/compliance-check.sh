@@ -20,7 +20,13 @@ fi
 # Product focus
 if [ -s "$STATE_DIR/cache-product-focus" ]; then
     FOCUS=$(head -1 "$STATE_DIR/cache-product-focus")
-    [ -n "$FOCUS" ] && CONTEXT="${CONTEXT}PRODUCT FOCUS: ${FOCUS}\n\n"
+    if [ -n "$FOCUS" ]; then
+        if [ "$SESSION_TYPE" = "planning" ]; then
+            CONTEXT="${CONTEXT}PRODUCT FOCUS — create sprint tasks aligned with this:\n${FOCUS}\n\n"
+        else
+            CONTEXT="${CONTEXT}PRODUCT FOCUS — work on this AFTER sprint tasks are done (create issue first):\n${FOCUS}\n\n"
+        fi
+    fi
 fi
 
 # Bugs with screenshots (all sessions — must view before fixing)
