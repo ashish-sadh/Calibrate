@@ -143,10 +143,22 @@ check_compliance() {
         fi
         if ! $WORKING_ON_P0; then
             local P0_LIST=$(gh issue list --state open --label P0 --json number,title --jq '.[] | "#\(.number) \(.title)"' 2>/dev/null || true)
-            log "COMPLIANCE: Session ignoring P0 bugs after ${AGE}s. Killing and refocusing."
-            kill_claude
+            log "COMPLIANCE: Session ignoring P0 bugs after ${AGE}s. Draining and refocusing."
+            # Drain gracefully — set override to STOP so session finishes current commit
+            sed -i '' 's/_Override:_ CONTINUE/_Override:_ STOP/' "$WORK_DIR/program.md" 2>/dev/null || true
+            # Wait for session to exit cleanly (up to 2 min)
+            local DRAIN_WAIT=0
+            while is_claude_alive && (( DRAIN_WAIT < 120 )); do
+                sleep 10
+                (( DRAIN_WAIT += 10 ))
+            done
+            if is_claude_alive; then
+                log "COMPLIANCE: Drain timeout. Force killing."
+                kill_claude
+            fi
             cleanup_dirty_state
-            # Override prompt to focus on P0 bugs only
+            sed -i '' 's/_Override:_ STOP/_Override:_ CONTINUE/' "$WORK_DIR/program.md" 2>/dev/null || true
+            # Restart with P0-focused prompt
             PROMPT="Fix these P0 bugs FIRST, do nothing else: ${P0_LIST}"
             start_claude
             return
