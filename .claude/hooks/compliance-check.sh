@@ -54,16 +54,23 @@ if [ "$MODEL" = "opus" ]; then
     if [ -s "$STATE_DIR/cache-p0-features" ]; then
         CONTEXT="${CONTEXT}P0 FEATURE REQUESTS — create sprint-task:\n$(cat "$STATE_DIR/cache-p0-features")\n\n"
     fi
+
+    # Approved design docs needing implementation tasks
+    if [ -s "$STATE_DIR/cache-approved-designs" ]; then
+        CONTEXT="${CONTEXT}APPROVED DESIGNS — create implementation tasks (design-impl-{N} label):\n$(cat "$STATE_DIR/cache-approved-designs")\n\n"
+    fi
 fi
 
 # === PLANNING ONLY ===
 
 if [ "$SESSION_TYPE" = "planning" ]; then
     CONTEXT="${CONTEXT}PLANNING DELIVERABLES (session BLOCKED from exiting until complete):\n"
-    CONTEXT="${CONTEXT}1. Read + reply to ALL admin feedback on report PRs (gh api repos/OWNER/REPO/issues/N/comments)\n"
+    CONTEXT="${CONTEXT}1. Read + reply to ALL admin feedback on report PRs\n"
     CONTEXT="${CONTEXT}2. Write product review report + merge PR\n"
     CONTEXT="${CONTEXT}3. Create 8-12 sprint-task Issues (SENIOR + JUNIOR)\n"
-    CONTEXT="${CONTEXT}4. Update personas + roadmap\n\n"
+    CONTEXT="${CONTEXT}4. Review ALL open feature requests — P0: sprint-task now, P1: plan in sprint, rest: defer/close\n"
+    CONTEXT="${CONTEXT}5. Create implementation tasks for approved design docs (design-impl-{N} label)\n"
+    CONTEXT="${CONTEXT}6. Update personas + roadmap\n\n"
 fi
 
 # Output

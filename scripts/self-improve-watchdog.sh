@@ -144,12 +144,13 @@ refresh_compliance_cache() {
         --jq '.[] | select(.comments > 0) | "#\(.number) \(.title) (\(.comments) comments)"' \
         | head -5 > "$SD/cache-admin-feedback" 2>/dev/null || true
 
+    # Approved design docs without implementation tasks (senior/planning cares)
+    gh issue list --state open --label design-doc --label approved --json number,title \
+        --jq '.[] | "#\(.number) \(.title)"' > "$SD/cache-approved-designs" 2>/dev/null || true
+
     # Product focus
     gh issue list --state open --label product-focus --json body \
         --jq '.[0].body // empty' | head -1 > "$SD/cache-product-focus" 2>/dev/null || true
-
-    # Session type (written by start_claude, but refresh here too)
-    # last-model is already written by start_claude
 }
 
 start_claude() {

@@ -100,6 +100,19 @@ if [ "$SESSION_TYPE" = "planning" ]; then
     PLAN_ISSUES="${PLAN_ISSUES}Admin feedback on report PRs still needs replies:\n$(cat "$HOME/drift-state/cache-admin-feedback")\nReply to every comment before stopping.\n\n"
   fi
 
+  # Were open feature requests reviewed and planned?
+  FR_COUNT=$(gh issue list --state open --label feature-request --json number --jq 'length' 2>/dev/null || echo "0")
+  if [ "$FR_COUNT" -gt 0 ]; then
+    FR_LIST=$(gh issue list --state open --label feature-request --json number,title,labels --jq '.[] | "#\(.number) \(.title) [\(.labels | map(.name) | join(", "))]"' 2>/dev/null || true)
+    PLAN_ISSUES="${PLAN_ISSUES}Open feature requests ($FR_COUNT) — review and plan these:\n${FR_LIST}\nP0: create sprint-task now. P1: include in sprint. Others: defer or close.\n\n"
+  fi
+
+  # Were approved design docs given implementation tasks?
+  APPROVED_DESIGNS=$(gh issue list --state open --label design-doc --label approved --json number,title --jq '.[] | "#\(.number) \(.title)"' 2>/dev/null || true)
+  if [ -n "$APPROVED_DESIGNS" ]; then
+    PLAN_ISSUES="${PLAN_ISSUES}Approved design docs need implementation tasks:\n${APPROVED_DESIGNS}\nCreate sprint-task Issues with design-impl-{N} label for each.\n\n"
+  fi
+
   if [ -n "$PLAN_ISSUES" ]; then
     echo -e "BLOCKED: Planning session incomplete.\n\n${PLAN_ISSUES}" >&2
     exit 2
