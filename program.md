@@ -54,10 +54,10 @@ You are the Product Designer + Principal Engineer. This is a replanning session.
    - The report MUST include: Designer Assessment, Engineer Assessment, and The Debate section where personas discuss and disagree
    - Open review PR with `report` label, then merge immediately: `gh pr merge --squash --delete-branch && git checkout main && git pull`
 9. **Create sprint-task Issues (target 8-12 issues for 6h sprint):**
-   - For each task: `gh issue create --label sprint-task --label SENIOR/JUNIOR`
+   - For each task: `gh issue create --label sprint-task` (add `--label SENIOR` only for complex/architecture tasks)
    - Include in body: Goal, Files (list specific files to modify), Approach (step-by-step), Edge cases, Tests (specific test cases to write), Acceptance criteria
    - Break large features into multiple Issues — prefer 3 small Issues over 1 big one
-   - Mix of sizes: ~2-3 SENIOR (architecture, AI, multi-file) + ~6-8 JUNIOR (UI, tests, food DB, fixes)
+   - Mix of sizes: ~2-3 SENIOR (architecture, AI, multi-file) + ~6-8 regular (UI, tests, food DB, fixes)
    - **SENIOR:** AI pipeline, architecture, multi-file refactors, P0 bugs, design doc implementation
    - **JUNIOR:** Food DB, single-file UI, tests, docs, simple fixes, well-specified work
    - Prioritize: P0 bugs > **product focus** > admin feedback > roadmap "Now" items > parity gaps > polish
@@ -99,7 +99,7 @@ You are the senior engineer AND the PE (Principal Engineer). Execute complex tas
 5. **Pick next SENIOR sprint-task:** `gh issue list --state open --label sprint-task --label SENIOR` → read the spec → execute
 6. Build → test → commit (reference #N in message) → push
 7. **Close the Issue with a comment:** what was fixed + commit hash. Never close silently.
-11. **Can create max 3 new Issues per session** (SENIOR or JUNIOR) when discovering work.
+11. **Can create max 3 new Issues per session** when discovering work. Add SENIOR label if complex.
 12. Repeat until no SENIOR/P0/design-doc issues left → exit. Watchdog restarts with Sonnet.
 
 ---
@@ -116,8 +116,8 @@ You are the junior engineer with a senior advisor. Execute well-specified tasks.
    - You're unsure after reading the code for 5 minutes
    - Otherwise fix it: `gh issue edit {N} --add-label SENIOR` → skip if escalating.
    - **Always check for screenshots** in the issue body. If present, download and view them before fixing — they show the actual broken behavior.
-3. **Pick next JUNIOR sprint-task:** `gh issue list --state open --label sprint-task --label JUNIOR` → read spec → execute
-4. If task is too complex (same criteria as P0 above) → `gh issue edit {N} --add-label SENIOR --remove-label JUNIOR` → skip
+3. **Pick next sprint-task (any without SENIOR label):** `gh issue list --state open --label sprint-task --json number,title,labels --jq '.[] | select(.labels | map(.name) | index("SENIOR") | not)'` → read spec → execute
+4. If task is too complex (same criteria as P0 above) → `gh issue edit {N} --add-label SENIOR` → skip
 5. Build → test → commit (reference #N in message) → push
 6. **Close Issue with comment:** what was done + commit hash. Never close silently.
 7. **When no JUNIOR sprint-tasks left → work on permanent tasks:**
