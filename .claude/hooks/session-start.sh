@@ -45,7 +45,7 @@ fi
 
 # Surface product focus (cached)
 FOCUS=$(cached_query "$CACHE_DIR/cache-product-focus" \
-  gh issue list --state open --label product-focus --json title --jq "'.[0].title'")
+  gh issue list --state open --label product-focus --json body --jq "'.[0].body // empty'" | head -1)
 if [ -n "$FOCUS" ]; then
   echo ""
   echo "PRODUCT FOCUS: $FOCUS"
