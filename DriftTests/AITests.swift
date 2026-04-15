@@ -1374,6 +1374,18 @@ import Testing
     }
 }
 
+@Test @MainActor func copyYesterdayToolShowsPreviewNotDirectCopy() async throws {
+    // Regression: copy_yesterday tool must show preview, not directly copy
+    ToolRegistration.registerAll()
+    let call = ToolCall(tool: "copy_yesterday", params: ToolCallParams(values: [:]))
+    let result = await ToolRegistry.shared.execute(call)
+    if case .text(let response) = result {
+        // Preview says "confirm copy" or "No food logged" — never a bare "Copied N items"
+        let directlyCopied = response.lowercased().hasPrefix("copied")
+        #expect(!directlyCopied, "copy_yesterday tool should show preview, not directly copy. Got: \(response)")
+    }
+}
+
 @Test @MainActor func foodServiceTopProteinFoods() async throws {
     let foods = FoodService.topProteinFoods()
     // Should return foods from DB (even without user history)

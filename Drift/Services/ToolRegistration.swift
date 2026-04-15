@@ -319,7 +319,7 @@ enum ToolRegistration {
             id: "food.copy_yesterday", name: "copy_yesterday", service: "food",
             description: "User wants to COPY or REPEAT yesterday's food. Use when they say 'same as yesterday', 'copy yesterday'.",
             parameters: [],
-            handler: { _ in .text(FoodService.copyYesterday()) }
+            handler: { _ in .text(FoodService.previewYesterday()) }
         ))
 
         r.register(ToolSchema(
