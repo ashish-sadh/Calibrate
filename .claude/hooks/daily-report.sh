@@ -5,9 +5,9 @@
 
 set -e
 
-# Only for autonomous sessions (env var may not propagate to hooks)
-SESSION_TYPE=$(cat "$HOME/drift-state/cache-session-type" 2>/dev/null || echo "")
-if [ -z "$SESSION_TYPE" ]; then
+# Only for autonomous sessions
+DRIFT_CONTROL=$(cat "$HOME/drift-control.txt" 2>/dev/null | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')
+if [ "$DRIFT_CONTROL" != "RUN" ]; then
   exit 0
 fi
 
