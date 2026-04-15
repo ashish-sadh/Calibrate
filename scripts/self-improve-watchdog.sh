@@ -202,6 +202,7 @@ start_claude() {
         $FALLBACK \
         --effort max \
         --output-format stream-json \
+        --verbose \
         > "$CURRENT_LOG" 2>&1 &
     CLAUDE_PID=$!
     echo "$CLAUDE_PID" > "$PID_FILE"
