@@ -76,7 +76,7 @@ You are the senior engineer AND the PE (Principal Engineer). Execute complex tas
 2. **P0 bugs first — MANDATORY, before anything else:** `gh issue list --state open --label P0` → fix ALL of these before touching design docs, sprint-tasks, or features. Add SENIOR label if missing: `gh issue edit {N} --add-label SENIOR`
    - Read the full issue body. If it contains screenshots (`![screenshot]`), **download and view them** — the image shows the actual broken UI/behavior. Use the Read tool on the image URL or local path (`Docs/screenshots/`). Don't guess from text alone.
    - Do NOT proceed to step 3 until all P0 bugs are fixed or escalated.
-3. **P0 feature requests:** `gh issue list --state open --label feature-request --label P0` → create sprint-task Issue (SENIOR) for it immediately, add to current sprint
+3. **P0 feature requests:** `gh issue list --state open --label feature-request --label P0` → add `sprint-task` label directly: `gh issue edit {N} --add-label sprint-task`. Add SENIOR if complex. Don't create a separate issue — the feature request IS the sprint task.
 4. **Design docs (label-driven lifecycle):** `gh issue list --state open --label design-doc` → for each:
    - **No `doc-ready` label** (pending): write the doc.
      1. `git checkout -b design/{N}-SHORT-NAME`

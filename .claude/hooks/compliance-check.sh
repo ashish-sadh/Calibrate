@@ -98,7 +98,7 @@ if [ "$SESSION_TYPE" = "planning" ]; then
     CONTEXT="${CONTEXT}1. Read + reply to ALL admin feedback on report PRs\n"
     CONTEXT="${CONTEXT}2. Write product review (MUST use branch + PR): git checkout -b review/cycle-{N}, write review-cycle-{N}.md using REVIEW-TEMPLATE.md, commit, push, gh pr create --label report, gh pr merge --squash --delete-branch, git checkout main && git pull\n"
     CONTEXT="${CONTEXT}3. Create 8-12 sprint-task Issues (add SENIOR only for complex tasks)\n"
-    CONTEXT="${CONTEXT}4. Review ALL open feature requests — P0: sprint-task now, P1: plan in sprint, rest: defer/close\n"
+    CONTEXT="${CONTEXT}4. Review ALL open feature requests — add sprint-task label directly to plan them (add SENIOR if complex). Keep all open.\n"
     CONTEXT="${CONTEXT}5. Create implementation tasks for approved design docs (design-impl-{N} label)\n"
     CONTEXT="${CONTEXT}6. Update personas + roadmap\n\n"
 fi
