@@ -194,6 +194,12 @@ enum SpellCorrectService {
                 continue
             }
 
+            // Skip if word is a known synonym key — expandSynonyms handles it later
+            if synonyms[lower] != nil {
+                result.append(word)
+                continue
+            }
+
             // Fuzzy match against food DB names (edit distance 1)
             if let match = closestFoodWord(lower) {
                 result.append(match)

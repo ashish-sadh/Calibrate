@@ -1739,6 +1739,29 @@ final class AIEvalHarness: XCTestCase {
         }
     }
 
+    @MainActor
+    func testHindiSynonymFoodSearch() {
+        // Hindi synonym expansion: murgh→chicken, anda→egg, aloo→potato, kela→banana
+        // Tests that SpellCorrectService.expandSynonyms feeds into searchFood results.
+        let murgh = FoodService.searchFood(query: "murgh")
+        XCTAssertFalse(murgh.isEmpty, "murgh (chicken) should return results via synonym expansion")
+        XCTAssertTrue(murgh.contains(where: { $0.name.lowercased().contains("chicken") }),
+                      "murgh results should include a chicken entry")
+
+        let anda = FoodService.searchFood(query: "anda")
+        XCTAssertFalse(anda.isEmpty, "anda (egg) should return results via synonym expansion")
+        XCTAssertTrue(anda.contains(where: { $0.name.lowercased().contains("egg") }),
+                      "anda results should include an egg entry")
+
+        let kela = FoodService.searchFood(query: "kela")
+        XCTAssertFalse(kela.isEmpty, "kela (banana) should return results via synonym expansion")
+        XCTAssertTrue(kela.contains(where: { $0.name.lowercased().contains("banana") }),
+                      "kela results should include a banana entry")
+
+        let aloo = FoodService.searchFood(query: "aloo")
+        XCTAssertFalse(aloo.isEmpty, "aloo (potato) should return results via synonym expansion")
+    }
+
     func testNutritionEstimationPrompt() {
         // Cover nutritionEstimationPrompt
         let prompt = AIActionExecutor.nutritionEstimationPrompt(food: "samosa", servings: 2)
