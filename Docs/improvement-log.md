@@ -350,3 +350,12 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 16. Fix "what's healthy for dinner" (meal suggestions + macros)
 17. Fix "I had a cheat meal" (ask what they ate)
 18. Handle "how much sugar today" (carbs proxy)
+
+## 2026-04-15 Junior Cycle 3 (continued from prior context)
+1. Fix WorkoutView streak pluralization — extracted streakRow helper to avoid Swift type-checker timeout
+2. Food DB +16 (1880→1896): Chicken Malai Tikka, Shammi Kebab, Cucumber/Mixed Raita, Bread Upma, Fish Tikka, Pomfret/Rohu/Katla/Hilsa, Black Tea, Tuna/Veggie Wrap, Beef Meatballs, Wheat Bran, Poha Chiwda
+3. Smart Units — pasta/noodles→cup, cereals/muesli (bar excluded)→cup, smoothies/shakes→cup
+4. Smart Units — protein powder→scoop, dal/beans/lentils→cup
+5. portionText — bread→slices, pizza→slices, soup/broth→bowls, protein powder→scoops, momos/vadas/pakoras/Indian sweets→pieces
+6. Synonyms — Bengali (ilish→hilsa, rui→rohu, maach→fish), Tamil (kozhi→chicken, thayir→yogurt), Indian (gur→jaggery, imli→tamarind, suji/rava→semolina, besan→chickpea flour)
+7. Eval tests — Bengali/Tamil synonym coverage, new food DB verification (1384→1429 tests)
