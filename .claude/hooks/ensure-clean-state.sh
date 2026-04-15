@@ -116,6 +116,15 @@ if [ "$SESSION_TYPE" = "planning" ]; then
         PLAN_ISSUES="${PLAN_ISSUES}Product review missing required sections: ${MISSING%. }. Use REVIEW-TEMPLATE.md.\n\n"
       fi
     fi
+
+    # Check if a report PR was created (not just committed to main)
+    REPORT_NAME=$(basename "$REPORT_FILE" .md 2>/dev/null || echo "")
+    if [ -n "$REPORT_NAME" ]; then
+      REPORT_PR=$(gh pr list --label report --state all --json title,number --jq ".[] | select(.title | test(\"$REPORT_NAME\")) | .number" 2>/dev/null | head -1 || true)
+      if [ -z "$REPORT_PR" ]; then
+        PLAN_ISSUES="${PLAN_ISSUES}Product review committed but NO PR created. Human needs a PR to comment line-by-line.\nCreate branch, push, create PR with --label report, then merge: gh pr merge --squash --delete-branch\n\n"
+      fi
+    fi
   fi
 
   # Were admin feedback comments replied to?
