@@ -11,17 +11,23 @@ struct AgentOutput: Sendable {
 
 // MARK: - AI Tool Agent
 
-/// Unified tiered pipeline for both SmolLM and Gemma 4:
-/// 1. Rules on raw input (instant, both models)
-/// 2. LLM classify → tool call or text (Gemma only)
-/// 3. Tool-first execution → stream presentation with real data (both)
-/// 4. LLM fallback (Gemma: direct streaming, SmolLM: AIChainOfThought)
+/// Dual pipeline for SmolLM and Gemma 4:
+///
+/// **Gemma 4 (multi-stage pipeline, design doc #65):**
+/// Stage 0: Input normalization (instant) → Stage 1: Thin rules (instant) →
+/// Stage 2: Intent classification (LLM) → Stage 3: Domain extraction (stub) →
+/// Stage 3b: Swift validation (stub) → Stage 4-5: Confirm + Execute
+/// Fallback: tool-first execution → LLM streaming
+///
+/// **SmolLM (legacy pipeline, unchanged):**
+/// Phase 1: Rules → Phase 3: Tool-first → Phase 4: AIChainOfThought
+///
 /// All LLM calls have a 20s timeout.
 ///
 /// Token budget (2048 context, 1776 max prompt, 256 max generation):
-///   Phase 2: ~538 tokens (IntentClassifier 463 sys + 75 user)
-///   Phase 3: ~800 tokens (presentation 100 sys + 600 data + 100 history/query)
-///   Phase 4: ~875 tokens (buildPrompt 200 sys + 500 context + 150 history + 25 query)
+///   Stage 2: ~538 tokens (IntentClassifier 463 sys + 75 user)
+///   Presentation: ~800 tokens (100 sys + 600 data + 100 history/query)
+///   Fallback: ~875 tokens (buildPrompt 200 sys + 500 context + 150 history + 25 query)
 @MainActor
 enum AIToolAgent {
 
@@ -47,129 +53,186 @@ enum AIToolAgent {
 
         let pipelineStart = CFAbsoluteTimeGetCurrent()
 
-        // ── Step 0: Input normalization (instant, no LLM) ──
-        // Strips filler words, voice artifacts, repeated words, collapses whitespace.
-        // All subsequent phases see clean input.
+        // ── Stage 0: Input normalization (instant, no LLM) ──
         let normalized = InputNormalizer.normalize(message)
 
-        // ── Phase 1: Try rules on raw input (instant, both models) ──
-        // Only for high-confidence action commands (undo, delete, greetings)
+        // Route by model capability
+        if isLargeModel {
+            return await runGemmaPipeline(
+                normalized: normalized,
+                originalMessage: message,
+                screen: screen,
+                history: history,
+                pipelineStart: pipelineStart,
+                onStep: onStep,
+                onToken: onToken
+            )
+        }
+
+        // ── SmolLM path (unchanged legacy pipeline) ──
+
+        // Phase 1: Rules on raw input (instant)
         if let toolCall = ToolRanker.tryRulePick(query: normalized, screen: screen) {
             logTiming("Phase 1 (rules)", start: pipelineStart)
             return await executeTool(toolCall)
         }
 
-        // ── Phase 2: LLM Intent Classification (Gemma only) ──
-        // Handles: intent detection, typo fixing, word numbers, pronoun resolution — all in one call
-        if isLargeModel {
-            onStep(stepMessage(for: message))
-
-            // Try LLM intent classifier first
-            let classifyStart = CFAbsoluteTimeGetCurrent()
-            if let result = await IntentClassifier.classifyFull(message: normalized, history: history) {
-                logTiming("Phase 2 (classify)", start: classifyStart)
-                switch result {
-                case .toolCall(let intent):
-                    // Strip parentheses from tool name (LLM quirk: "food_info()" → "food_info")
-                    let toolName = intent.tool.replacingOccurrences(of: "()", with: "")
-                    let call = ToolCall(tool: toolName, params: ToolCallParams(values: intent.params))
-                    onStep(toolStepMessage(for: toolName))
-                    if isInfoTool(toolName) {
-                        let toolResult = await ToolRegistry.shared.execute(call)
-                        if case .text(let data) = toolResult, !data.isEmpty {
-                            onStep("Preparing answer...")
-                            return await streamPresentation(
-                                query: message, toolData: data, screen: screen, history: history, onToken: onToken
-                            )
-                        }
-                    } else {
-                        return await executeTool(call)
-                    }
-                case .text(let response):
-                    // LLM chose to respond with text (follow-up question, greeting, etc.)
-                    // Surface it directly — this enables multi-turn clarification
-                    return AgentOutput(text: response, action: nil, toolsCalled: ["classifier"])
-                }
-            }
-
-            // Normalizer removed — classifier now handles typos, word numbers,
-            // pronoun resolution, and multi-turn context in one LLM call.
-        }
-
-        // ── Phase 3: Tool-first execution → stream presentation (both models) ──
+        // Phase 3: Tool-first execution
         onStep(stepMessage(for: normalized))
         let toolResults = await executeRelevantTools(query: normalized, screen: screen)
 
-        // If a tool returned a UI action, return it directly
         if let actionResult = toolResults.first(where: { $0.action != nil }) {
             return actionResult
         }
 
-        // If we got data, stream a natural presentation with it (large model)
-        // or return raw data directly (small model — LLM presentation unreliable)
         if !toolResults.isEmpty {
             let data = toolResults.map(\.text).joined(separator: "\n")
-            if isLargeModel {
-                onStep("Preparing answer...")
-                return await streamPresentation(
-                    query: normalized, toolData: data, screen: screen, history: history, onToken: onToken
-                )
-            } else {
-                // SmolLM: add a brief insight prefix to raw data
-                let prefixed = addInsightPrefix(to: data)
-                return AgentOutput(text: prefixed, action: nil, toolsCalled: toolResults.flatMap(\.toolsCalled))
-            }
+            let prefixed = addInsightPrefix(to: data)
+            return AgentOutput(text: prefixed, action: nil, toolsCalled: toolResults.flatMap(\.toolsCalled))
         }
 
-        // ── Phase 4: LLM fallback ──
+        // Phase 4: LLM fallback (AIChainOfThought)
         onStep("Thinking...")
-        if isLargeModel {
-            // Gemma: direct streaming with tool-call detection
-            let context = gatherContext(query: normalized, screen: screen)
-            let (systemPrompt, userMessage) = ToolRanker.buildPrompt(
-                query: normalized, screen: screen, context: context, history: history
-            )
+        let response = await AIChainOfThought.execute(
+            query: normalized, screen: screen, history: history,
+            onStep: onStep, onToken: onToken
+        )
 
-            let state = StreamState()
-
-            let response = await withTimeout(seconds: 20) {
-                await LocalAIService.shared.respondStreamingDirect(
-                    systemPrompt: systemPrompt,
-                    message: userMessage,
-                    onToken: { token in
-                        state.buffer += token
-                        if !state.modeDetected {
-                            let trimmed = state.buffer.trimmingCharacters(in: .whitespacesAndNewlines)
-                            guard !trimmed.isEmpty else { return }
-                            state.modeDetected = true
-                            if trimmed.hasPrefix("{") { state.isToolCall = true; return }
-                        }
-                        if !state.isToolCall { onToken(token) }
-                    }
-                )
-            }
-
-            guard let response else {
-                return AgentOutput(text: fallbackText(for: screen), action: nil, toolsCalled: ["timeout"])
-            }
-
-            if state.isToolCall, let toolCall = parseToolCallJSON(response) {
-                return await executeTool(toolCall)
-            }
-            return handleTextResponse(response, screen: screen)
-        } else {
-            // SmolLM: context-enriched streaming via AIChainOfThought
-            let response = await AIChainOfThought.execute(
-                query: normalized, screen: screen, history: history,
-                onStep: onStep, onToken: onToken
-            )
-
-            // Check for tool call in response
-            if let toolCall = parseToolCallJSON(response) {
-                return await executeTool(toolCall)
-            }
-            return handleTextResponse(response, screen: screen)
+        if let toolCall = parseToolCallJSON(response) {
+            return await executeTool(toolCall)
         }
+        return handleTextResponse(response, screen: screen)
+    }
+
+    // MARK: - Gemma Multi-Stage Pipeline (#129)
+
+    /// Multi-stage pipeline for Gemma 4 per design doc #65:
+    /// Stage 1: Thin static rules → Stage 2: Intent classification (LLM) →
+    /// Stage 3: Domain extraction (stub) → Stage 3b: Validation (stub) →
+    /// Stage 4-5: Confirm + Execute
+    private static func runGemmaPipeline(
+        normalized: String,
+        originalMessage: String,
+        screen: AIScreen,
+        history: String,
+        pipelineStart: CFAbsoluteTime,
+        onStep: (String) -> Void,
+        onToken: @escaping @Sendable (String) -> Void
+    ) async -> AgentOutput {
+
+        // ── Stage 1: Thin static rules (instant) ──
+        // Currently: ToolRanker.tryRulePick. Future (#93): trimmed StaticOverrides.
+        if let toolCall = ToolRanker.tryRulePick(query: normalized, screen: screen) {
+            logTiming("Stage 1 (rules)", start: pipelineStart)
+            return await executeTool(toolCall)
+        }
+
+        // ── Stage 2: Intent classification (LLM, ~2s) ──
+        onStep(stepMessage(for: originalMessage))
+        let classifyStart = CFAbsoluteTimeGetCurrent()
+        if let result = await IntentClassifier.classifyFull(message: normalized, history: history) {
+            logTiming("Stage 2 (classify)", start: classifyStart)
+            switch result {
+            case .toolCall(let intent):
+                let toolName = intent.tool.replacingOccurrences(of: "()", with: "")
+
+                // ── Stage 3: Domain extraction (stub) ──
+                // Future (#95): per-domain extraction prompts replace classifier's combined result.
+                let extractedCall = extractDomain(intent: intent, toolName: toolName, message: normalized)
+
+                // ── Stage 3b: Swift validation (stub) ──
+                // Future (#130): parseFoodIntent/regex as validation fallback + sanity checks.
+                let validatedCall = validateExtraction(extractedCall, message: normalized)
+
+                // ── Stage 4-5: Confirm + Execute ──
+                onStep(toolStepMessage(for: toolName))
+                if isInfoTool(toolName) {
+                    let toolResult = await ToolRegistry.shared.execute(validatedCall)
+                    if case .text(let data) = toolResult, !data.isEmpty {
+                        onStep("Preparing answer...")
+                        return await streamPresentation(
+                            query: originalMessage, toolData: data, screen: screen,
+                            history: history, onToken: onToken
+                        )
+                    }
+                } else {
+                    return await executeTool(validatedCall)
+                }
+
+            case .text(let response):
+                return AgentOutput(text: response, action: nil, toolsCalled: ["classifier"])
+            }
+        }
+
+        // ── Fallback: Tool-first execution ──
+        onStep(stepMessage(for: normalized))
+        let toolResults = await executeRelevantTools(query: normalized, screen: screen)
+
+        if let actionResult = toolResults.first(where: { $0.action != nil }) {
+            return actionResult
+        }
+
+        if !toolResults.isEmpty {
+            let data = toolResults.map(\.text).joined(separator: "\n")
+            onStep("Preparing answer...")
+            return await streamPresentation(
+                query: normalized, toolData: data, screen: screen,
+                history: history, onToken: onToken
+            )
+        }
+
+        // ── Fallback: LLM streaming with tool-call detection ──
+        onStep("Thinking...")
+        let context = gatherContext(query: normalized, screen: screen)
+        let (systemPrompt, userMessage) = ToolRanker.buildPrompt(
+            query: normalized, screen: screen, context: context, history: history
+        )
+
+        let state = StreamState()
+
+        let response = await withTimeout(seconds: 20) {
+            await LocalAIService.shared.respondStreamingDirect(
+                systemPrompt: systemPrompt,
+                message: userMessage,
+                onToken: { token in
+                    state.buffer += token
+                    if !state.modeDetected {
+                        let trimmed = state.buffer.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !trimmed.isEmpty else { return }
+                        state.modeDetected = true
+                        if trimmed.hasPrefix("{") { state.isToolCall = true; return }
+                    }
+                    if !state.isToolCall { onToken(token) }
+                }
+            )
+        }
+
+        guard let response else {
+            return AgentOutput(text: fallbackText(for: screen), action: nil, toolsCalled: ["timeout"])
+        }
+
+        if state.isToolCall, let toolCall = parseToolCallJSON(response) {
+            return await executeTool(toolCall)
+        }
+        return handleTextResponse(response, screen: screen)
+    }
+
+    // MARK: - Stage 3: Domain Extraction (stub for #95)
+
+    /// Uses IntentClassifier's combined result. Future: per-domain extraction prompts.
+    private static func extractDomain(
+        intent: IntentClassifier.ClassifiedIntent,
+        toolName: String,
+        message: String
+    ) -> ToolCall {
+        ToolCall(tool: toolName, params: ToolCallParams(values: intent.params))
+    }
+
+    // MARK: - Stage 3b: Swift Validation (stub for #130)
+
+    /// Passes through unchanged. Future: parseFoodIntent/regex sanity checks.
+    private static func validateExtraction(_ call: ToolCall, message: String) -> ToolCall {
+        call
     }
 
     // MARK: - Tool-First Execution
