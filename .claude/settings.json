@@ -18,6 +18,11 @@
             "type": "command",
             "command": ".claude/hooks/guard-testflight.sh",
             "timeout": 600
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/compliance-check.sh",
+            "timeout": 5
           }
         ]
       }
@@ -48,16 +53,6 @@
         "matcher": "Bash",
         "if": "Bash(git commit *)",
         "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/issue-check.sh",
-            "timeout": 10
-          },
-          {
-            "type": "command",
-            "command": ".claude/hooks/enforce-p0-first.sh",
-            "timeout": 10
-          },
           {
             "type": "command",
             "command": ".claude/hooks/cycle-counter.sh",

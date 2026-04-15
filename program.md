@@ -140,6 +140,12 @@ Human says "run autopilot" in a session. No watchdog, no model switching.
 - Run eval harness after AI changes — revert if scores drop
 - If stuck after 2 attempts → revert, log, move on
 - **TestFlight publishing is MANDATORY** when the hook injects instructions. Do NOT skip.
+- **Daily exec briefing is MANDATORY** when the daily-report hook injects instructions. Follow the template exactly.
+
+### Compliance
+- Hooks enforce priorities via local cache files — see `Docs/principles/compliance-pattern.md`
+- The compliance-check hook fires on EVERY Bash command. It reads `~/drift-state/cache-*` files (zero API calls)
+- If it says P0 bugs are open, fix them first. If it says design docs need reply, reply. Don't ignore it.
 
 ### Quality
 - Write tests for new code. Coverage: 80% logic, 50% services.

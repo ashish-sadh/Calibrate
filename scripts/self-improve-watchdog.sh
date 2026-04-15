@@ -117,79 +117,49 @@ stop_monitor() {
     MONITOR_PID=""
 }
 
-check_compliance() {
-    # Only check if session has been running for at least 10 minutes
-    if [[ -z "$CURRENT_LOG" ]] || [[ ! -f "$CURRENT_LOG" ]]; then return; fi
-    local NOW=$(date +%s)
-    local LOG_START=$(stat -f %B "$CURRENT_LOG" 2>/dev/null || echo "$NOW")
-    local AGE=$(( NOW - LOG_START ))
-    if (( AGE < 600 )); then return; fi  # Give session 10 min to start
+refresh_compliance_cache() {
+    local SD="$HOME/drift-state"
+    cd "$WORK_DIR"
 
-    # Check P0 bugs — if they exist and session isn't working on them, kill and refocus
-    local P0_BUGS=$(gh issue list --state open --label P0 --json number,title --jq '.[].number' 2>/dev/null || true)
-    if [[ -n "$P0_BUGS" ]]; then
-        # Check if recent commits reference any P0 bug
-        local RECENT_COMMITS=$(git log --oneline --since="10 minutes ago" 2>/dev/null || true)
-        local WORKING_ON_P0=false
-        for NUM in $P0_BUGS; do
-            echo "$RECENT_COMMITS" | grep -q "#$NUM" && WORKING_ON_P0=true
-        done
-        if ! $WORKING_ON_P0; then
-            # Check if log mentions P0 bug numbers (even if not committed yet)
-            local LOG_TAIL=$(tail -50 "$CURRENT_LOG" 2>/dev/null || true)
-            for NUM in $P0_BUGS; do
-                echo "$LOG_TAIL" | grep -q "#$NUM\|issue.*$NUM\|bug.*$NUM" && WORKING_ON_P0=true
-            done
-        fi
-        if ! $WORKING_ON_P0; then
-            local P0_LIST=$(gh issue list --state open --label P0 --json number,title --jq '.[] | "#\(.number) \(.title)"' 2>/dev/null || true)
-            log "COMPLIANCE: Session ignoring P0 bugs after ${AGE}s. Draining and refocusing."
-            # Drain gracefully — set override to STOP so session finishes current commit
-            sed -i '' 's/_Override:_ CONTINUE/_Override:_ STOP/' "$WORK_DIR/program.md" 2>/dev/null || true
-            # Wait for session to exit cleanly (up to 2 min)
-            local DRAIN_WAIT=0
-            while is_claude_alive && (( DRAIN_WAIT < 120 )); do
-                sleep 10
-                (( DRAIN_WAIT += 10 ))
-            done
-            if is_claude_alive; then
-                log "COMPLIANCE: Drain timeout. Force killing."
-                kill_claude
-            fi
-            cleanup_dirty_state
-            sed -i '' 's/_Override:_ STOP/_Override:_ CONTINUE/' "$WORK_DIR/program.md" 2>/dev/null || true
-            # Restart with P0-focused prompt (passes override, skips planning/model selection)
-            start_claude "Fix these P0 bugs FIRST, do nothing else: ${P0_LIST}"
-            return
-        fi
-    fi
+    # P0 bugs (all sessions care)
+    gh issue list --state open --label P0 --json number,title \
+        --jq '.[] | "#\(.number) \(.title)"' > "$SD/cache-p0-bugs" 2>/dev/null || true
 
-    # Check TestFlight — if overdue and session hasn't started publishing
-    local LAST_TF=$(cat "$HOME/drift-state/last-testflight-publish" 2>/dev/null || echo "0")
-    local TF_ELAPSED=$(( NOW - LAST_TF ))
-    if (( TF_ELAPSED > 14400 )); then  # 4 hours (1h grace beyond 3h cadence)
-        local TF_AUTH=$(test -f "$HOME/drift-state/testflight-publish-authorized" && echo "yes" || echo "no")
-        if [[ "$TF_AUTH" == "no" ]]; then
-            log "COMPLIANCE: TestFlight ${TF_ELAPSED}s overdue. Will be enforced on next commit via hook."
-        fi
-    fi
+    # P0 feature requests without sprint tasks (senior cares)
+    gh issue list --state open --label feature-request --label P0 --json number,title \
+        --jq '.[] | "#\(.number) \(.title)"' > "$SD/cache-p0-features" 2>/dev/null || true
+
+    # Design doc PRs with comments needing reply (senior cares)
+    gh pr list --label design-doc --state open --json number,title,comments \
+        --jq '.[] | select(.comments > 0) | "#\(.number) \(.title) (\(.comments) comments)"' \
+        > "$SD/cache-design-reviews" 2>/dev/null || true
+
+    # Pending design docs — issues with design-doc label but no doc-ready (senior cares)
+    gh issue list --state open --label design-doc --json number,title,labels \
+        --jq '[.[] | select(.labels | map(.name) | index("doc-ready") | not)] | .[] | "#\(.number) \(.title)"' \
+        > "$SD/cache-pending-designs" 2>/dev/null || true
+
+    # Admin feedback on report PRs (senior/planning cares)
+    gh pr list --label report --state all --json number,title,comments \
+        --jq '.[] | select(.comments > 0) | "#\(.number) \(.title) (\(.comments) comments)"' \
+        | head -5 > "$SD/cache-admin-feedback" 2>/dev/null || true
+
+    # Product focus
+    gh issue list --state open --label product-focus --json body \
+        --jq '.[0].body // empty' | head -1 > "$SD/cache-product-focus" 2>/dev/null || true
+
+    # Session type (written by start_claude, but refresh here too)
+    # last-model is already written by start_claude
 }
 
 start_claude() {
-    local OVERRIDE_PROMPT="${1:-}"  # Optional: compliance override prompt
     local MODEL="sonnet"
     local SESSION_TYPE="junior"
     local SESSION_PROMPT="$PROMPT"
     local NOW=$(date +%s)
 
-    # If compliance override — skip all selection, go straight to Opus with the override prompt
-    if [[ -n "$OVERRIDE_PROMPT" ]]; then
-        MODEL="opus"
-        SESSION_TYPE="senior"
-        SESSION_PROMPT="$OVERRIDE_PROMPT"
-        log "Compliance override: $SESSION_PROMPT"
     # 1. Sprint planning due? (every 6 hours)
-    elif [[ "$(( (NOW - $(cat "$HOME/drift-state/last-review-time" 2>/dev/null || echo "0")) / 3600 ))" -ge 6 ]]; then
+    if [[ "$(( (NOW - $(cat "$HOME/drift-state/last-review-time" 2>/dev/null || echo "0")) / 3600 ))" -ge 6 ]]; then
         local LAST_REVIEW=$(cat "$HOME/drift-state/last-review-time" 2>/dev/null || echo "0")
         local HOURS_SINCE=$(( (NOW - LAST_REVIEW) / 3600 ))
         MODEL="opus"
@@ -241,6 +211,7 @@ start_claude() {
     fi
 
     echo "$MODEL" > "$HOME/drift-state/last-model"
+    echo "$SESSION_TYPE" > "$HOME/drift-state/cache-session-type"
     CURRENT_LOG="$LOG_DIR/session_${SESSION_TYPE}_$(date +%s).log"
 
     # Check rate limit before starting
@@ -252,6 +223,9 @@ start_claude() {
     elif [[ "$RATE_EXIT" -eq 1 ]]; then
         log "Rate limit warning: $RATE_MSG"
     fi
+
+    # Warm compliance cache before session starts
+    refresh_compliance_cache
 
     log "Starting autopilot ($SESSION_TYPE, model=$MODEL, log: $CURRENT_LOG)"
     cd "$WORK_DIR"
@@ -475,8 +449,8 @@ while true; do
                 start_claude
             else
                 log "Autopilot running normally (PID $CLAUDE_PID)."
-                # Compliance check — is the session addressing priorities?
-                check_compliance
+                # Refresh compliance cache for the PreToolUse hook to read
+                refresh_compliance_cache
             fi
             ;;
         *)
