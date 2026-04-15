@@ -89,10 +89,23 @@ if [ "$SESSION_TYPE" = "planning" ]; then
     PLAN_ISSUES="${PLAN_ISSUES}Only $TASK_COUNT sprint-task issues open (target 8-12). Create more before stopping.\n\n"
   fi
 
-  # Was a product review report committed recently?
-  RECENT_REPORT=$(git log --oneline --since="2 hours ago" -- Docs/reports/review-*.md 2>/dev/null | head -1)
+  # Was a product review report committed recently? Must be review-cycle-*.md format
+  RECENT_REPORT=$(git log --oneline --since="2 hours ago" -- Docs/reports/review-cycle-*.md 2>/dev/null | head -1)
   if [ -z "$RECENT_REPORT" ]; then
-    PLAN_ISSUES="${PLAN_ISSUES}No product review report committed this session. Write it before stopping.\n\n"
+    PLAN_ISSUES="${PLAN_ISSUES}No product review report committed this session. Write review-cycle-{N}.md using REVIEW-TEMPLATE.md.\n\n"
+  else
+    # Check report has required sections
+    REPORT_FILE=$(git log --since="2 hours ago" --name-only --pretty=format: -- Docs/reports/review-cycle-*.md 2>/dev/null | head -1)
+    if [ -n "$REPORT_FILE" ] && [ -f "$REPORT_FILE" ]; then
+      MISSING=""
+      grep -q "Product Designer Assessment" "$REPORT_FILE" || MISSING="${MISSING}Product Designer Assessment, "
+      grep -q "Principal Engineer Assessment" "$REPORT_FILE" || MISSING="${MISSING}Principal Engineer Assessment, "
+      grep -q "The Debate" "$REPORT_FILE" || MISSING="${MISSING}The Debate, "
+      grep -q "Competitive Analysis" "$REPORT_FILE" || MISSING="${MISSING}Competitive Analysis, "
+      if [ -n "$MISSING" ]; then
+        PLAN_ISSUES="${PLAN_ISSUES}Product review missing required sections: ${MISSING%. }. Use REVIEW-TEMPLATE.md.\n\n"
+      fi
+    fi
   fi
 
   # Were admin feedback comments replied to?
