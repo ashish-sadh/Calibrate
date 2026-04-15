@@ -5098,7 +5098,7 @@
     "nova_group": 3
   },
   {
-    "name": "A\u00e7a\u00ed Bowl (medium)",
+    "name": "Açaí Bowl (medium)",
     "category": "US Staples",
     "serving_size": 300,
     "serving_unit": "g",
@@ -5108,7 +5108,7 @@
     "fat_g": 18,
     "fiber_g": 8,
     "ingredients": [
-      "A\u00e7a\u00ed Bowl (medium)"
+      "Açaí Bowl (medium)"
     ],
     "nova_group": 3
   },
@@ -9788,7 +9788,7 @@
     "nova_group": 3
   },
   {
-    "name": "Costco A\u00e7a\u00ed Bowl (food court)",
+    "name": "Costco Açaí Bowl (food court)",
     "category": "Costco",
     "serving_size": 355,
     "serving_unit": "g",
@@ -9798,7 +9798,7 @@
     "fat_g": 19,
     "fiber_g": 7,
     "ingredients": [
-      "Costco A\u00e7a\u00ed Bowl (food court)"
+      "Costco Açaí Bowl (food court)"
     ],
     "nova_group": 3
   },
@@ -10493,7 +10493,7 @@
     "nova_group": 4
   },
   {
-    "name": "Starbucks Caff\u00e8 Latte (Grande, 2% milk)",
+    "name": "Starbucks Caffè Latte (Grande, 2% milk)",
     "category": "Beverages",
     "serving_size": 473,
     "serving_unit": "ml",
@@ -10503,7 +10503,7 @@
     "fat_g": 7,
     "fiber_g": 0,
     "ingredients": [
-      "Starbucks Caff\u00e8 Latte (Grande, 2% milk)"
+      "Starbucks Caffè Latte (Grande, 2% milk)"
     ],
     "nova_group": 3
   },
@@ -25155,7 +25155,7 @@
     "ingredients": [
       "fries",
       "cheese sauce",
-      "jalape\u00f1os",
+      "jalapeños",
       "sour cream"
     ],
     "nova_group": 4
@@ -25562,5 +25562,481 @@
       "queso fresco"
     ],
     "nova_group": 3
+  },
+  {
+    "name": "Lamb Curry",
+    "category": "Indian Staples",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 420,
+    "protein_g": 28,
+    "carbs_g": 8,
+    "fat_g": 30,
+    "fiber_g": 2,
+    "ingredients": [
+      "lamb",
+      "tomatoes",
+      "onion",
+      "yogurt",
+      "oil",
+      "spices"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Cutting Chai",
+    "category": "Beverages",
+    "serving_size": 100,
+    "serving_unit": "ml",
+    "calories": 45,
+    "protein_g": 1.5,
+    "carbs_g": 5,
+    "fat_g": 2,
+    "fiber_g": 0,
+    "ingredients": [
+      "tea",
+      "milk",
+      "sugar",
+      "cardamom",
+      "ginger"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Keema Pav",
+    "category": "Indian Street Food",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 450,
+    "protein_g": 25,
+    "carbs_g": 42,
+    "fat_g": 18,
+    "fiber_g": 3,
+    "ingredients": [
+      "minced meat",
+      "pav",
+      "peas",
+      "onion",
+      "tomato",
+      "spices"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Pop Tart Frosted Strawberry",
+    "category": "Snacks",
+    "serving_size": 52,
+    "serving_unit": "g",
+    "calories": 200,
+    "protein_g": 2,
+    "carbs_g": 37,
+    "fat_g": 5,
+    "fiber_g": 1,
+    "ingredients": [
+      "enriched flour",
+      "sugar",
+      "strawberry filling",
+      "frosting",
+      "palm oil"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Rice Krispie Treat",
+    "category": "Snacks",
+    "serving_size": 40,
+    "serving_unit": "g",
+    "calories": 150,
+    "protein_g": 1,
+    "carbs_g": 32,
+    "fat_g": 3,
+    "fiber_g": 0,
+    "ingredients": [
+      "rice cereal",
+      "marshmallow",
+      "butter"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Golden Milk",
+    "category": "Beverages",
+    "serving_size": 240,
+    "serving_unit": "ml",
+    "calories": 120,
+    "protein_g": 4,
+    "carbs_g": 12,
+    "fat_g": 6,
+    "fiber_g": 1,
+    "ingredients": [
+      "turmeric",
+      "milk",
+      "honey",
+      "ginger",
+      "black pepper",
+      "cinnamon"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Seaweed Salad",
+    "category": "Japanese",
+    "serving_size": 85,
+    "serving_unit": "g",
+    "calories": 70,
+    "protein_g": 1,
+    "carbs_g": 11,
+    "fat_g": 2,
+    "fiber_g": 3,
+    "ingredients": [
+      "seaweed",
+      "sesame oil",
+      "rice vinegar",
+      "soy sauce",
+      "sesame seeds"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Raw Oysters (6 pcs)",
+    "category": "Seafood",
+    "serving_size": 170,
+    "serving_unit": "g",
+    "calories": 80,
+    "protein_g": 9,
+    "carbs_g": 4,
+    "fat_g": 2,
+    "fiber_g": 0,
+    "ingredients": [
+      "oysters"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Stuffed Bell Pepper",
+    "category": "US Staples",
+    "serving_size": 220,
+    "serving_unit": "g",
+    "calories": 290,
+    "protein_g": 18,
+    "carbs_g": 28,
+    "fat_g": 10,
+    "fiber_g": 4,
+    "ingredients": [
+      "bell pepper",
+      "ground beef",
+      "rice",
+      "tomato sauce",
+      "cheese"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Lobster Bisque",
+    "category": "Soups",
+    "serving_size": 240,
+    "serving_unit": "ml",
+    "calories": 200,
+    "protein_g": 9,
+    "carbs_g": 12,
+    "fat_g": 13,
+    "fiber_g": 1,
+    "ingredients": [
+      "lobster",
+      "heavy cream",
+      "tomato",
+      "butter",
+      "sherry",
+      "vegetables"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Vegetable Broth",
+    "category": "Soups",
+    "serving_size": 240,
+    "serving_unit": "ml",
+    "calories": 10,
+    "protein_g": 1,
+    "carbs_g": 2,
+    "fat_g": 0,
+    "fiber_g": 0,
+    "ingredients": [
+      "vegetables",
+      "water",
+      "herbs",
+      "salt"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Chicken Caesar Wrap",
+    "category": "Fast Food",
+    "serving_size": 280,
+    "serving_unit": "g",
+    "calories": 490,
+    "protein_g": 34,
+    "carbs_g": 42,
+    "fat_g": 19,
+    "fiber_g": 4,
+    "ingredients": [
+      "flour tortilla",
+      "grilled chicken",
+      "romaine",
+      "parmesan",
+      "caesar dressing"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Birria Tacos",
+    "category": "Mexican",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 24,
+    "carbs_g": 30,
+    "fat_g": 18,
+    "fiber_g": 3,
+    "ingredients": [
+      "corn tortillas",
+      "beef birria",
+      "onion",
+      "cilantro",
+      "consome"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Beer Battered Fish",
+    "category": "Seafood",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 360,
+    "protein_g": 20,
+    "carbs_g": 28,
+    "fat_g": 16,
+    "fiber_g": 1,
+    "ingredients": [
+      "white fish",
+      "flour",
+      "beer batter",
+      "oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Jeera Aloo",
+    "category": "Indian Staples",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 200,
+    "protein_g": 3,
+    "carbs_g": 28,
+    "fat_g": 8,
+    "fiber_g": 3,
+    "ingredients": [
+      "potato",
+      "cumin seeds",
+      "oil",
+      "coriander",
+      "spices"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Rose Lassi",
+    "category": "Beverages",
+    "serving_size": 240,
+    "serving_unit": "ml",
+    "calories": 180,
+    "protein_g": 5,
+    "carbs_g": 28,
+    "fat_g": 5,
+    "fiber_g": 0,
+    "ingredients": [
+      "yogurt",
+      "rose syrup",
+      "milk",
+      "sugar",
+      "cardamom"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Chicken Haleem",
+    "category": "Indian Staples",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 340,
+    "protein_g": 28,
+    "carbs_g": 30,
+    "fat_g": 12,
+    "fiber_g": 6,
+    "ingredients": [
+      "chicken",
+      "lentils",
+      "wheat",
+      "barley",
+      "spices",
+      "ghee"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Shepherd's Pie",
+    "category": "US Staples",
+    "serving_size": 280,
+    "serving_unit": "g",
+    "calories": 340,
+    "protein_g": 18,
+    "carbs_g": 30,
+    "fat_g": 16,
+    "fiber_g": 4,
+    "ingredients": [
+      "lamb mince",
+      "mashed potato",
+      "peas",
+      "carrots",
+      "gravy"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Paneer Wrap",
+    "category": "Indian Street Food",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 14,
+    "carbs_g": 44,
+    "fat_g": 16,
+    "fiber_g": 4,
+    "ingredients": [
+      "whole wheat roti",
+      "paneer",
+      "capsicum",
+      "onion",
+      "mint chutney"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Chicken Wrap",
+    "category": "Fast Food",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 28,
+    "carbs_g": 40,
+    "fat_g": 12,
+    "fiber_g": 3,
+    "ingredients": [
+      "flour tortilla",
+      "grilled chicken",
+      "lettuce",
+      "tomato",
+      "mayo"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Steamed Bao Bun",
+    "category": "Asian",
+    "serving_size": 80,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 6,
+    "carbs_g": 32,
+    "fat_g": 4,
+    "fiber_g": 1,
+    "ingredients": [
+      "enriched flour",
+      "sugar",
+      "baking powder",
+      "water",
+      "filling"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Egg Biryani",
+    "category": "Indian Staples",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 430,
+    "protein_g": 14,
+    "carbs_g": 62,
+    "fat_g": 14,
+    "fiber_g": 3,
+    "ingredients": [
+      "basmati rice",
+      "egg",
+      "biryani spices",
+      "onion",
+      "yogurt",
+      "ghee"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Daal Bati",
+    "category": "Indian Regional",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 560,
+    "protein_g": 18,
+    "carbs_g": 65,
+    "fat_g": 24,
+    "fiber_g": 10,
+    "ingredients": [
+      "lentils",
+      "wheat flour",
+      "ghee",
+      "spices",
+      "churma"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Miso Ramen",
+    "category": "Japanese",
+    "serving_size": 500,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 22,
+    "carbs_g": 62,
+    "fat_g": 14,
+    "fiber_g": 4,
+    "ingredients": [
+      "ramen noodles",
+      "miso broth",
+      "pork",
+      "egg",
+      "nori",
+      "corn",
+      "green onion"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Phirni",
+    "category": "Indian Sweets",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 220,
+    "protein_g": 6,
+    "carbs_g": 38,
+    "fat_g": 6,
+    "fiber_g": 1,
+    "ingredients": [
+      "rice flour",
+      "milk",
+      "sugar",
+      "cardamom",
+      "saffron",
+      "rose water"
+    ],
+    "nova_group": 2
   }
 ]

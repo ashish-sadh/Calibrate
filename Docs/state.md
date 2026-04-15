@@ -7,7 +7,7 @@ AI-first local health tracker. AI chat is the primary interface — every data e
 - **Version:** 0.1.0, Build 119
 - **Tests:** 1077+ (24 test files)
 - **AI Eval:** 380+ scenarios in eval harness + LLM eval
-- **Foods:** 1,571 (Indian, Mexican, Asian, Thai, Japanese, Korean, Mediterranean, Chinese, Middle Eastern, American classics, fitness staples, coffee drinks, seeds, Indo-Chinese, sushi rolls, meal prep bowls)
+- **Foods:** 1,596 (Indian, Mexican, Asian, Thai, Japanese, Korean, Mediterranean, Chinese, Middle Eastern, American classics, fitness staples, coffee drinks, seeds, Indo-Chinese, sushi rolls, meal prep bowls)
 - **Exercises:** 960 (free-exercise-db)
 - **Biomarkers:** 65 across 9 categories
 - **AI Tools:** 20 registered tools
