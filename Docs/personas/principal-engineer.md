@@ -183,6 +183,12 @@
 - The user's request for a "gold set" (#65) aligns with the PE principle: measure before you optimize. Build the eval framework, get pass rates per category, then fix the worst categories systematically.
 - Tests 1077, foods 1532, 20 AI tools, 8 card types. The codebase is mature enough that the primary risk is regression, not missing features. Coverage investment pays dividends.
 
+### What I Learned — Review #41 (Cycle 3200, 2026-04-15)
+- Owner's feedback on PR #112 is architecturally sound: "Break prompt and have highly specialized prompts, even if you have to run multiple." For a 2B on-device model with 2048 token context, smaller focused prompts outperform one large multi-task prompt. Two 3s calls (6s total) for correct results beats one 3s call for wrong results.
+- Gold set eval at 55 queries with 100% baseline is the safety net for the pipeline refactor. Run before AND after every change. If accuracy drops, revert — no exceptions.
+- sendMessage decomposition from Review #39 (491→8 handlers) means the pipeline refactor has a clean code surface to work with. No monolithic code blocking the change.
+- The `mark-in-progress.sh` hook re-adds `in-progress` labels via PostToolUse on every Bash call (not just git commit as intended). The `if` condition doesn't filter properly. Technical debt in the hook system — low priority but causes friction.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)

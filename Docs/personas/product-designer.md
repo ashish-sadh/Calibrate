@@ -178,6 +178,12 @@
 - iOS widget shipped (Phase 4 begins) but the user's attention is on AI chat quality, not surface expansion. Product direction follows user pain, not roadmap sequence.
 - "Have a gold set and see what works or not" (#65) — the user wants measurement before action. Build the eval framework first, then fix based on data.
 
+### What I Learned — Review #41 (Cycle 3200, 2026-04-15)
+- Food confirmation flow (prefilled review before logging) is the right UX pattern for AI-first apps. Every AI action that writes data should show a confirmation step. This prevents the trust erosion that happens when wrong data gets logged silently.
+- Gold set eval (55 queries, 100% baseline) is the first real measurement of chat quality. "Have a gold set and see what works" was the owner's ask — now we have it. Every pipeline change must show before/after delta.
+- Design doc #65 owner feedback is the strongest product signal: multi-stage specialized prompts, not one unified classifier. The owner sees wrong data extraction even on clear input. The fix is domain-specific extraction (food prompt, exercise prompt) — not better generic classification.
+- Feature request #74 (lab reports + LLM) benefits from the same multi-stage architecture. Defer implementation until the pipeline pattern is proven on food/exercise.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation
