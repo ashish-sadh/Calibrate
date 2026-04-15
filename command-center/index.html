@@ -1279,6 +1279,9 @@
       const focus = document.getElementById('focus-input').value.trim();
       if (!focus) { alert('Enter a focus direction'); return; }
       if (!getToken()) { alert('Sign in first'); return; }
+      const btn = document.getElementById('set-focus-btn');
+      const el = document.getElementById('current-focus');
+      btn.textContent = 'Saving...'; btn.disabled = true;
       try {
         const issue = await getFocusIssue();
         await api(`/repos/${OWNER}/${REPO}/issues/${issue.number}`, {
@@ -1286,14 +1289,20 @@
           headers: { ...headers(), 'Content-Type': 'application/json' },
           body: JSON.stringify({ body: `${focus}\n\n---\n*Updated by ${currentUser?.login || 'admin'} at ${new Date().toISOString()}*` })
         });
-        loadProductFocus();
+        // Flash success
+        el.innerHTML = `<div style="padding:10px 14px;background:rgba(63,185,80,0.15);border:1px solid rgba(63,185,80,0.3);border-radius:8px;color:var(--green);font-size:14px;font-weight:600;">Focus updated!</div>`;
+        setTimeout(() => loadProductFocus(), 1000);
       } catch (e) {
-        alert('Failed: ' + e.message);
+        el.innerHTML = `<div style="padding:10px 14px;background:rgba(248,81,73,0.15);border-radius:8px;color:var(--red);font-size:13px;">Failed: ${e.message}</div>`;
       }
+      btn.textContent = 'Update Focus'; btn.disabled = false;
     }
 
     async function clearProductFocus() {
       if (!confirm('Clear product focus? Autopilot will have liberty to choose priorities.')) return;
+      const el = document.getElementById('current-focus');
+      const clearBtn = document.getElementById('clear-focus-btn');
+      clearBtn.textContent = 'Clearing...'; clearBtn.disabled = true;
       try {
         const issue = await getFocusIssue();
         await api(`/repos/${OWNER}/${REPO}/issues/${issue.number}`, {
@@ -1301,10 +1310,12 @@
           headers: { ...headers(), 'Content-Type': 'application/json' },
           body: JSON.stringify({ body: '' })
         });
-        loadProductFocus();
+        el.innerHTML = `<div style="padding:10px 14px;background:rgba(63,185,80,0.15);border-radius:8px;color:var(--green);font-size:14px;">Focus cleared.</div>`;
+        setTimeout(() => loadProductFocus(), 1000);
       } catch (e) {
-        alert('Failed: ' + e.message);
+        el.innerHTML = `<div style="padding:10px 14px;background:rgba(248,81,73,0.15);border-radius:8px;color:var(--red);font-size:13px;">Failed: ${e.message}</div>`;
       }
+      clearBtn.textContent = 'Clear Focus'; clearBtn.disabled = false;
     }
 
     // Show owner-only tabs after auth resolves
