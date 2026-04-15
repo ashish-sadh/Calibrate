@@ -79,3 +79,22 @@ When viewing a past day's food log, user should be able to copy individual items
 **Severity:** Low
 
 Plant points section shows "Today" even when user navigates to a different date. Should show the actual date (e.g. "Apr 5") when not viewing today. Week and month sections are fine.
+
+---
+
+## BUG-004: Food logging confirmation bypassed on 4 paths
+
+**Reported:** 2026-04-15 (found via audit)
+**Status:** Open — tracked under sprint task #121
+**Severity:** High (product focus: always confirm before logging food)
+
+Four paths in FoodTabView and StaticOverrides log food directly without showing the prefilled review form or recipe builder:
+
+1. **"Log Again" context menu** (`FoodTabView.swift:499`) — calls `viewModel.quickAdd(...)` directly. No confirmation.
+2. **"Copy to Today" context menu** (`FoodTabView.swift:511`) — calls `viewModel.copyEntryToToday(entry)` directly. No confirmation.
+3. **Quick "+" button in Suggestions** (`FoodTabView.swift:584`) — calls `viewModel.quickLogFood(food)` directly. No confirmation.
+4. **"copy yesterday" chat command** (`StaticOverrides.swift:126-128`) — calls `FoodService.copyYesterday()` directly, bulk-copies entire day with no review.
+
+**Expected behavior:** All four should show a confirmation before committing — at minimum a toast with undo, ideally opening the prefilled food search view (single items) or a summary sheet (copy-yesterday bulk).
+
+**Where to fix:** `FoodTabView.swift` context menus + quick-log button, `StaticOverrides.swift` copy_yesterday handler. Linked to sprint task #121.
