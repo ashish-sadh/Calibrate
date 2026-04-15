@@ -594,6 +594,9 @@ extension AIChatViewModel {
                 .trimmingCharacters(in: .whitespaces)
         }
         guard !activity.isEmpty && activity.count > 2 else { return false }
+        // Skip structured workout exercises (e.g. "bench press 3x10 at 135") —
+        // route to AI pipeline where log_activity properly handles sets/reps/weight.
+        if StaticOverrides.containsWorkoutSetPattern(activity) { return false }
         let name = activity.capitalized
         let durText = durationMin.map { " (\($0) min)" } ?? ""
         let muscles = [ExerciseDatabase.bodyPart(for: name)].filter { $0 != "Full Body" && $0 != "Other" }

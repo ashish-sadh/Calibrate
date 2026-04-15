@@ -180,6 +180,67 @@ final class AIEvalHarness: XCTestCase {
         }
     }
 
+    // MARK: - Workout Set Pattern Detection
+
+    @MainActor
+    func testWorkoutSetPatternNotCaughtByActivityHandler() {
+        // Structured workout exercises must fall through StaticOverrides to the AI pipeline.
+        // The help text explicitly tells users "I did bench press 3x10 at 135" — it must work.
+        let workoutSetQueries = [
+            "i did bench press 3x10 at 135",    // NxN + at N lbs
+            "i did bench press 3x10 at 135 lbs",
+            "i did squats 4x8 at 225 lbs",
+            "i did pull ups 3x12",               // NxN only
+            "just did deadlifts 3x5 at 315",
+            "did push ups 3x20",
+            "i did bench press 3x10@135",        // @N weight format
+            "i did overhead press 4 sets of 10 at 95 lbs",  // "N sets of M"
+        ]
+        for query in workoutSetQueries {
+            let result = StaticOverrides.match(query)
+            XCTAssertNil(result, "'\(query)' should fall through (nil) — not treated as generic activity")
+        }
+    }
+
+    @MainActor
+    func testContainsWorkoutSetPattern() {
+        // Patterns that ARE workout sets
+        XCTAssertTrue(StaticOverrides.containsWorkoutSetPattern("bench press 3x10 at 135"))
+        XCTAssertTrue(StaticOverrides.containsWorkoutSetPattern("squats 4x8"))
+        XCTAssertTrue(StaticOverrides.containsWorkoutSetPattern("pull ups 3x12"))
+        XCTAssertTrue(StaticOverrides.containsWorkoutSetPattern("overhead press 4 sets of 10 at 95 lbs"))
+        XCTAssertTrue(StaticOverrides.containsWorkoutSetPattern("bench@135"))
+        XCTAssertTrue(StaticOverrides.containsWorkoutSetPattern("deadlift at 315 lbs"))
+        XCTAssertTrue(StaticOverrides.containsWorkoutSetPattern("squat at 225 kg"))
+
+        // Patterns that are NOT workout sets (should remain as activities)
+        XCTAssertFalse(StaticOverrides.containsWorkoutSetPattern("yoga"))
+        XCTAssertFalse(StaticOverrides.containsWorkoutSetPattern("running"))
+        XCTAssertFalse(StaticOverrides.containsWorkoutSetPattern("cardio for 30 min"))
+        XCTAssertFalse(StaticOverrides.containsWorkoutSetPattern("push ups"))
+        XCTAssertFalse(StaticOverrides.containsWorkoutSetPattern("hiit workout"))
+    }
+
+    @MainActor
+    func testSimpleActivitiesStillCaughtByStaticOverrides() {
+        // Plain activities (no sets/reps/weight) must still be handled by StaticOverrides
+        let plainActivities = [
+            "i did yoga",
+            "i did push ups",
+            "just did 20 min cardio",
+            "i did yoga for 30 minutes",
+            "i went for a run",
+        ]
+        for query in plainActivities {
+            let result = StaticOverrides.match(query)
+            XCTAssertNotNil(result, "'\(query)' should still be caught by StaticOverrides")
+            if case .response(let text) = result {
+                XCTAssertTrue(text.contains("Log") && text.contains("confirm"),
+                    "'\(query)' should produce activity confirmation")
+            }
+        }
+    }
+
     // MARK: - Food Intent Detection (Precision & Recall)
 
     func testFoodLoggingIntents() {

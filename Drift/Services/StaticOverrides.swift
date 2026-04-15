@@ -462,6 +462,9 @@ enum StaticOverrides {
                 }
             }
             if !activity.isEmpty && activity.count > 2 {
+                // Skip structured workout exercises (e.g. "bench press 3x10 at 135") —
+                // the activity name would be mangled. Route to AI pipeline where log_activity handles it.
+                if containsWorkoutSetPattern(activity) { return nil }
                 let name = activity.capitalized
                 let durText = durationMin.map { " (\($0) min)" } ?? ""
                 return .response("Log \(name)\(durText) for today? Say yes to confirm.")
@@ -469,6 +472,16 @@ enum StaticOverrides {
         }
 
         return nil
+    }
+
+    /// Detect structured workout exercise patterns: "3x10", "3 sets of 10", "@135", "at 135 lbs".
+    /// Used to skip activity-confirmation flow and route to proper exercise logging pipeline.
+    static func containsWorkoutSetPattern(_ text: String) -> Bool {
+        let lower = text.lowercased()
+        return lower.range(of: #"\d+x\d+"#, options: .regularExpression) != nil               // "3x10", "4x8"
+            || lower.range(of: #"\d+\s+sets?\s+(?:of\s+)?\d+"#, options: .regularExpression) != nil // "3 sets of 10"
+            || lower.range(of: #"@\d+"#, options: .regularExpression) != nil                   // "@135"
+            || lower.range(of: #"\bat\s+\d+\s*(?:lbs?|kg|pounds?)\b"#, options: .regularExpression) != nil // "at 135 lbs"
     }
 
     /// Convert word numbers to digits: "one sixty" → "160", "seventy five" → "75"
