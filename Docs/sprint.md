@@ -16,8 +16,7 @@ _(pick from Ready)_
 
 ### SENIOR — Ready Now (no approval needed)
 
-- [ ] **#116 AI Chat: Expand gold set eval to 50+ queries** — Current gold set has 13 tests. Expand to 50+ covering: voice-style input (run-on, filler words), multi-food meals, Indian foods, vague quantities ("a couple bananas"), exercise logging, health queries, multi-turn chains (3+ turns). This is the measurement framework for the refactor — captures baseline before pipeline changes.
-- [ ] **#117 AI Chat: Voice input edge case hardening** — Voice-specific failures: run-on sentences without punctuation, mid-sentence corrections ("no wait I mean"), background noise artifacts, number/unit ambiguity ("one fifty" = 150 or 1 x 50?), repeated words from speech recognition stutters. Add InputNormalizer rules + eval tests.
+_(all tasks completed)_
 
 ### SENIOR — Contingent on #65 Approval
 
@@ -98,7 +97,8 @@ Autonomous refactoring. Run `code-improvement.md`. Principles in `Docs/principle
 
 ## Done (this sprint)
 
-_(new sprint -- nothing yet)_
+- [x] #116 AI Chat: Expand gold set eval to 55 queries (cross-domain: food, weight, exercise, navigation, health, multi-turn, negatives. 100% baseline accuracy)
+- [x] #117 AI Chat: Voice input edge case hardening (mid-sentence correction handling in InputNormalizer, 10 new tests)
 
 ## Done (previous sprint)
 - [x] #78 Input normalization pipeline (centralized at sendMessage entry point)
