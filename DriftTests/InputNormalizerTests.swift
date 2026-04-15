@@ -282,3 +282,60 @@ import Testing
     let logCount = result.components(separatedBy: " ").filter { $0.lowercased() == "log" }.count
     #expect(logCount <= 1)
 }
+
+// MARK: - Mid-Sentence Corrections (#117)
+// Voice users correct themselves mid-sentence. Strip everything before the correction marker.
+
+@Test func normalizerCorrection_noWaitIMean() {
+    let result = InputNormalizer.removeMidSentenceCorrections("chicken no wait I mean rice")
+    #expect(result == "rice")
+}
+
+@Test func normalizerCorrection_actuallyNo() {
+    let result = InputNormalizer.removeMidSentenceCorrections("log eggs actually no pancakes")
+    #expect(result == "pancakes")
+}
+
+@Test func normalizerCorrection_iMeant() {
+    let result = InputNormalizer.removeMidSentenceCorrections("I had 2 eggs i meant 3 eggs")
+    #expect(result == "3 eggs")
+}
+
+@Test func normalizerCorrection_waitNo() {
+    let result = InputNormalizer.removeMidSentenceCorrections("had rice wait no I had chicken")
+    #expect(result.lowercased().contains("chicken"))
+}
+
+@Test func normalizerCorrection_noIMean() {
+    let result = InputNormalizer.removeMidSentenceCorrections("log biryani no I mean butter chicken")
+    #expect(result == "butter chicken")
+}
+
+@Test func normalizerCorrection_noMatchPreservesOriginal() {
+    let result = InputNormalizer.removeMidSentenceCorrections("log 2 eggs and toast")
+    #expect(result == "log 2 eggs and toast")
+}
+
+@Test func normalizerCorrection_fullPipeline() {
+    // Through full normalize: filler + correction + conjunction
+    let result = InputNormalizer.normalize("umm so log chicken no wait I mean rice and dal")
+    #expect(result.contains("rice"))
+    #expect(result.contains("dal"))
+    #expect(!result.contains("chicken"))
+}
+
+@Test func normalizerCorrection_actuallyIMeant() {
+    let result = InputNormalizer.removeMidSentenceCorrections("two eggs actually i meant three eggs")
+    #expect(result == "three eggs")
+}
+
+@Test func normalizerCorrection_sorryIMean() {
+    let result = InputNormalizer.removeMidSentenceCorrections("log dal sorry i mean rajma")
+    #expect(result == "rajma")
+}
+
+@Test func normalizerCorrection_emptyAfterMarkerPreservesOriginal() {
+    // If correction marker is at the end with nothing after, keep original
+    let result = InputNormalizer.removeMidSentenceCorrections("rice no wait I mean ")
+    #expect(!result.isEmpty)
+}

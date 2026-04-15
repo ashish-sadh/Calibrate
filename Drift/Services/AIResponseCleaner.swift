@@ -88,6 +88,8 @@ enum AIResponseCleaner {
             if let lastPeriod = trimmed.lastIndex(of: ".") {
                 return String(trimmed[...lastPeriod])
             }
+            // Single complete thought with no punctuation — add period
+            return trimmed + "."
         }
 
         return trimmed

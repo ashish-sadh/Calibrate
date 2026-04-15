@@ -17,6 +17,7 @@ enum InputNormalizer {
         var text = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return input }
 
+        text = removeMidSentenceCorrections(text)
         text = removeFillerWords(text)
         text = removePartialRestarts(text)
         text = collapseRepeatedWords(text)
@@ -27,6 +28,35 @@ enum InputNormalizer {
         // Never return empty — fall back to original
         let result = text.trimmingCharacters(in: .whitespacesAndNewlines)
         return result.isEmpty ? input.trimmingCharacters(in: .whitespacesAndNewlines) : result
+    }
+
+    // MARK: - Mid-Sentence Corrections
+
+    /// Voice users often correct themselves: "chicken no wait I mean rice" → "rice"
+    /// Strip everything before the correction marker.
+    private static let correctionMarkers = [
+        "no wait i mean ", "no i mean ", "no i meant ",
+        "actually no ", "actually i meant ", "actually i mean ",
+        "wait no ", "no wait ", "i meant ", "sorry i mean ",
+    ]
+
+    static func removeMidSentenceCorrections(_ text: String) -> String {
+        let lower = text.lowercased()
+        // Find the last correction marker (user may correct multiple times)
+        var bestIndex: String.Index? = nil
+        var bestMarkerLen = 0
+        for marker in correctionMarkers {
+            if let range = lower.range(of: marker, options: .backwards) {
+                if bestIndex == nil || range.lowerBound > bestIndex! {
+                    bestIndex = range.lowerBound
+                    bestMarkerLen = marker.count
+                }
+            }
+        }
+        guard let idx = bestIndex else { return text }
+        let afterMarker = String(text[text.index(idx, offsetBy: bestMarkerLen)...])
+            .trimmingCharacters(in: .whitespaces)
+        return afterMarker.isEmpty ? text : afterMarker
     }
 
     // MARK: - Filler Words
