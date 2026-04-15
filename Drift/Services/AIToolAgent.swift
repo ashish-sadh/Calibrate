@@ -72,8 +72,10 @@ enum AIToolAgent {
                 case .toolCall(let intent):
                     // Strip parentheses from tool name (LLM quirk: "food_info()" → "food_info")
                     let toolName = intent.tool.replacingOccurrences(of: "()", with: "")
-                    let call = ToolCall(tool: toolName, params: ToolCallParams(values: intent.params))
-                    onStep(toolStepMessage(for: toolName))
+                    let rawCall = ToolCall(tool: toolName, params: ToolCallParams(values: intent.params))
+                    // Stage 3b: Validate LLM-extracted params with Swift checks
+                    let call = validateExtraction(rawCall, message: message)
+                    onStep(toolStepMessage(for: call.tool))
                     if isInfoTool(toolName) {
                         let toolResult = await ToolRegistry.shared.execute(call)
                         if case .text(let data) = toolResult, !data.isEmpty {
@@ -216,6 +218,89 @@ enum AIToolAgent {
 
     static func isInfoTool(_ name: String) -> Bool {
         infoTools.contains(name)
+    }
+
+    // MARK: - Stage 3b: Swift Validation
+
+    /// Validate LLM-extracted params before execution. Catches obvious errors
+    /// (bad names, out-of-range values) and falls back to Swift extraction.
+    /// Always returns a ToolCall — let preHook handle nuanced edge cases.
+    private static func validateExtraction(_ call: ToolCall, message: String) -> ToolCall {
+        switch call.tool {
+        case "log_food":
+            return validateFoodParams(call, message: message)
+        case "log_weight":
+            return validateWeightParams(call, message: message)
+        case "log_activity":
+            return validateActivityParams(call)
+        default:
+            return call
+        }
+    }
+
+    private static func validateFoodParams(_ call: ToolCall, message: String) -> ToolCall {
+        var values = call.params.values
+
+        // Fix param name mismatch: IntentClassifier sends "servings", tool expects "amount"
+        if let servings = values["servings"], values["amount"] == nil {
+            values["amount"] = servings
+            values.removeValue(forKey: "servings")
+        }
+
+        let name = values["name"]?.trimmingCharacters(in: .whitespaces) ?? ""
+        let nameLooksBad = name.isEmpty || name.count <= 1 || name.allSatisfy(\.isNumber)
+
+        if nameLooksBad, let foodIntent = AIActionExecutor.parseFoodIntent(message) {
+            values["name"] = foodIntent.query
+            if let g = foodIntent.gramAmount {
+                values["amount"] = "\(Int(g))g"
+            } else if let s = foodIntent.servings {
+                values["amount"] = "\(s)"
+            }
+            if let m = foodIntent.mealHint { values["meal"] = m }
+            return ToolCall(tool: call.tool, params: ToolCallParams(values: values))
+        }
+
+        // Clamp out-of-range servings — let preHook apply defaults
+        if let amountStr = values["amount"], let amount = Double(amountStr),
+           amount <= 0 || amount >= 100 {
+            values.removeValue(forKey: "amount")
+        }
+
+        // Strip obviously bad calories/macros
+        if let calStr = values["calories"], let cal = Double(calStr), cal > 10000 {
+            values.removeValue(forKey: "calories")
+        }
+        for key in ["protein", "carbs", "fat"] {
+            if let str = values[key], let val = Double(str), val < 0 {
+                values.removeValue(forKey: key)
+            }
+        }
+
+        return ToolCall(tool: call.tool, params: ToolCallParams(values: values))
+    }
+
+    private static func validateWeightParams(_ call: ToolCall, message: String) -> ToolCall {
+        if let valueStr = call.params.values["value"], let value = Double(valueStr),
+           value < 20 || value > 500 {
+            // LLM extracted nonsense weight — try Swift extraction
+            if let w = AIActionExecutor.parseWeightIntent(message) {
+                return ToolCall(tool: call.tool, params: ToolCallParams(values: [
+                    "value": "\(w.weightValue)",
+                    "unit": w.unit == .kg ? "kg" : "lbs"
+                ]))
+            }
+        }
+        return call
+    }
+
+    private static func validateActivityParams(_ call: ToolCall) -> ToolCall {
+        var values = call.params.values
+        if let durStr = values["duration"], let dur = Double(durStr),
+           dur < 1 || dur > 600 {
+            values.removeValue(forKey: "duration")
+        }
+        return ToolCall(tool: call.tool, params: ToolCallParams(values: values))
     }
 
     // MARK: - Streaming Presentation
