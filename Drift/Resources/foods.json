@@ -31041,5 +31041,181 @@
     "carbs_g": 7,
     "fat_g": 5,
     "fiber_g": 0
+  },
+  {
+    "name": "Chicken Malai Tikka",
+    "category": "Indian",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 210,
+    "protein_g": 24,
+    "carbs_g": 4,
+    "fat_g": 11,
+    "fiber_g": 0
+  },
+  {
+    "name": "Shammi Kebab (1 piece)",
+    "category": "Indian",
+    "serving_size": 80,
+    "serving_unit": "g",
+    "calories": 170,
+    "protein_g": 14,
+    "carbs_g": 8,
+    "fat_g": 9,
+    "fiber_g": 1
+  },
+  {
+    "name": "Cucumber Raita",
+    "category": "Indian",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 62,
+    "protein_g": 3,
+    "carbs_g": 5,
+    "fat_g": 3,
+    "fiber_g": 0
+  },
+  {
+    "name": "Mixed Raita",
+    "category": "Indian",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 70,
+    "protein_g": 3,
+    "carbs_g": 7,
+    "fat_g": 3,
+    "fiber_g": 1
+  },
+  {
+    "name": "Bread Upma",
+    "category": "Indian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 250,
+    "protein_g": 8,
+    "carbs_g": 42,
+    "fat_g": 7,
+    "fiber_g": 3
+  },
+  {
+    "name": "Fish Tikka",
+    "category": "Indian",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 148,
+    "protein_g": 22,
+    "carbs_g": 3,
+    "fat_g": 5,
+    "fiber_g": 0
+  },
+  {
+    "name": "Pomfret Fry",
+    "category": "Seafood",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 195,
+    "protein_g": 21,
+    "carbs_g": 5,
+    "fat_g": 10,
+    "fiber_g": 0
+  },
+  {
+    "name": "Rohu Fish (cooked)",
+    "category": "Seafood",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 111,
+    "protein_g": 19,
+    "carbs_g": 0,
+    "fat_g": 3,
+    "fiber_g": 0
+  },
+  {
+    "name": "Katla Fish (cooked)",
+    "category": "Seafood",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 120,
+    "protein_g": 20,
+    "carbs_g": 0,
+    "fat_g": 4,
+    "fiber_g": 0
+  },
+  {
+    "name": "Hilsa Fish (cooked)",
+    "category": "Seafood",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 310,
+    "protein_g": 23,
+    "carbs_g": 0,
+    "fat_g": 22,
+    "fiber_g": 0
+  },
+  {
+    "name": "Black Tea (brewed)",
+    "category": "Beverages",
+    "serving_size": 240,
+    "serving_unit": "ml",
+    "calories": 2,
+    "protein_g": 0,
+    "carbs_g": 1,
+    "fat_g": 0,
+    "fiber_g": 0
+  },
+  {
+    "name": "Tuna Wrap",
+    "category": "Sandwiches & Wraps",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 28,
+    "carbs_g": 38,
+    "fat_g": 12,
+    "fiber_g": 3
+  },
+  {
+    "name": "Veggie Wrap",
+    "category": "Sandwiches & Wraps",
+    "serving_size": 220,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 11,
+    "carbs_g": 48,
+    "fat_g": 10,
+    "fiber_g": 6
+  },
+  {
+    "name": "Beef Meatballs",
+    "category": "Meat",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 245,
+    "protein_g": 18,
+    "carbs_g": 8,
+    "fat_g": 16,
+    "fiber_g": 0
+  },
+  {
+    "name": "Wheat Bran",
+    "category": "Grains",
+    "serving_size": 30,
+    "serving_unit": "g",
+    "calories": 63,
+    "protein_g": 5,
+    "carbs_g": 19,
+    "fat_g": 1,
+    "fiber_g": 13
+  },
+  {
+    "name": "Poha Chiwda",
+    "category": "Indian",
+    "serving_size": 30,
+    "serving_unit": "g",
+    "calories": 125,
+    "protein_g": 3,
+    "carbs_g": 22,
+    "fat_g": 4,
+    "fiber_g": 1
   }
 ]
