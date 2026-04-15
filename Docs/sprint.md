@@ -1,6 +1,12 @@
 # Sprint Board
 
-Priority: AI chat reliability + coverage hardening. Addresses design doc #65 (brittle AI chat) and voice input edge cases.
+Focus: **AI Chat LLM-First Pipeline.** Flip from rules-first to LLM-first on Gemma 4 devices. Addresses product focus and design doc #65.
+
+## Decision Required
+
+**Design doc #65 (PR #112) needs your approval.** It proposes making IntentClassifier the primary routing path — shrinking StaticOverrides from ~50 hardcoded patterns to ~10 essentials, and retiring ToolRanker keyword scoring on Gemma 4. Every query goes through the LLM instead of brittle regex matching. Latency tradeoff: ~3s correct answer beats instant wrong answer.
+
+Review PR #112 and add `approved` label to unblock the refactor tasks below.
 
 ## In Progress
 
@@ -8,99 +14,102 @@ _(pick from Ready)_
 
 ## Ready
 
-### SENIOR
-- [ ] **#78 AI Chat: Input normalization pipeline** — Centralized preprocessing before all matchers. Strip filler words, normalize whitespace, handle voice artifacts. Root cause fix for P0s #67-69.
-- [ ] **#79 AI Chat: Food logging gold set eval** — 30+ comprehensive eval queries covering voice-style, multi-food, Indian foods, vague quantities. Measurement framework for design doc #65.
-- [ ] **#80 AI Chat: Multi-turn context hardening** — Test and fix context loss between turns. 10+ multi-turn scenarios. Addresses #65 ("need to get better with multi turn").
+### SENIOR — Ready Now (no approval needed)
+
+- [ ] **#116 AI Chat: Expand gold set eval to 50+ queries** — Current gold set has 13 tests. Expand to 50+ covering: voice-style input (run-on, filler words), multi-food meals, Indian foods, vague quantities ("a couple bananas"), exercise logging, health queries, multi-turn chains (3+ turns). This is the measurement framework for the refactor — captures baseline before pipeline changes.
+- [ ] **#117 AI Chat: Voice input edge case hardening** — Voice-specific failures: run-on sentences without punctuation, mid-sentence corrections ("no wait I mean"), background noise artifacts, number/unit ambiguity ("one fifty" = 150 or 1 x 50?), repeated words from speech recognition stutters. Add InputNormalizer rules + eval tests.
+
+### SENIOR — Contingent on #65 Approval
+
+These implement design doc #65. Do not start until PR #112 is approved.
+
+- [ ] **#92 AI Chat: Reorder AIToolAgent pipeline (LLM-first)** — Core pipeline change. Gemma 4 path becomes: normalizer -> thin static (~10 patterns) -> IntentClassifier -> tool execution -> streaming fallback. SmolLM path stays unchanged. Run gold set eval before AND after to measure delta.
+- [ ] **#93 AI Chat: Prune StaticOverrides to essential patterns** — Remove all intent-classification rules. Keep only: greetings, thanks, help, undo, barcode scan (~10 patterns). These are interaction patterns, not intent classification. ~40 handlers removed.
+- [ ] **#94 AI Chat: Retire ToolRanker keyword scoring (Gemma path)** — Remove `tryRulePick()` and keyword scoring for Gemma 4 devices. Keep `buildPrompt()` for SmolLM fallback and `rank()` for suggestion pill display.
+- [ ] **#95 AI Chat: Extend IntentClassifier for primary routing** — Add voice-style examples to system prompt. Implement confidence-based fallback (confused/short responses fall to streaming). Increase history window 200->400 chars for better multi-turn. Add 5+ new in-context examples covering food, exercise, health queries.
 
 ### JUNIOR
-- [x] **#81 Coverage: WeightTrendService** — Stale-with-old-entries test (73-76 day entries, latestWeightKg from unfiltered fetch).
-- [x] **#82 Coverage: AIRuleEngine** — 11 food-seeded branch tests: yesterdaySummary with data, caloriesLeft remaining/over, dailySummary food path, quickInsight with food+trend, nextAction protein branches, weeklySummary structure.
-- [x] **#83 Food DB: Top 20 search misses** — Added 20 missing foods (chana masala, rajma chawal, dal chawal, kadhi chawal, kati rolls x4, chivda, chakli, guava, garden salad, etc). DB: 1544→1564.
-- [x] **#84 Bug hunting: AI food logging edge cases** — Fixed P1: multi-food meal hint lost ('log eggs and toast for breakfast' → 'Meal' not 'breakfast'). Found 8 bugs total, fixed highest impact one.
-- [x] **#85 Eval: Voice-style input test cases** — 13 cases: run-on multi-food, filler+restart, repeated conjunctions, mixed-case fillers, chained restarts, extra whitespace.
-- [x] **#86 UI: Exercise card visual enhancement** — Done (muscle group SF Symbol chips shipped in prior sprint).
-- [x] **#87 Coverage: NotificationService + BehaviorInsightService hardening** — 4-alert composition, all-poor-sleep boundary, exactly-6h boundary, proactive alerts structural integrity.
 
-### Design Docs (senior handles directly, not sprint tasks)
-- #65 Design: How should we structurally fix AI chat?
-- #66 Design: How to enrich images and youtube in exercises
-- #74 Feature: Improve lab reports upload and try to use LLM when available to parse values
+- [ ] **#96 Coverage: Pipeline refactor tests** — After pipeline changes land, ensure AIToolAgent, IntentClassifier, and StaticOverrides maintain coverage targets (80% logic, 50% services). Write new tests for LLM-first routing path.
+- [ ] **#97 Bug hunting: Voice + chat end-to-end** — Exercise the new pipeline with realistic voice transcription output. Focus on food logging (most common action) and multi-turn flows.
+- [ ] **#118 Food DB: +30 missing foods (voice-friendly)** — Continue enrichment toward USDA API integration. Focus on commonly spoken foods (voice users say "burger" not "hamburger patty"). Cross-reference search misses.
+- [ ] **#99 Docs: Update state.md** — Reflect pipeline architecture changes post-refactor.
+
+### Design Docs (pending review)
+- #65 Design: How should we structurally fix AI chat? -- PR #112, `doc-ready`, **awaiting approval**
+- #66 Design: How to enrich images and youtube in exercises -- `doc-ready`
+- #74 Feature: Improve lab reports upload + LLM parsing -- `doc-ready`
 
 ---
 
-## Permanent Tasks (never remove — always pick from these when nothing else is queued)
+## Permanent Tasks (never remove -- always pick from these when nothing else is queued)
 
-**Before picking a task, read `Docs/roadmap.md` → "Now" items in the relevant domain. Work on what advances the current phase.**
+**Before picking a task, read `Docs/roadmap.md` -> "Now" items in the relevant domain. Work on what advances the current phase.**
 
 ### AI Chat Architecture & Quality (always ongoing)
 Equally important pillar. Prefer architectural improvements over keyword additions.
 
-- [ ] **State machine refactor** — Replace scattered pendingMealName/pendingWorkout state vars with a proper conversation state machine. States: idle → classifying → executing_tool → confirming → logging. Clear transitions, no dangling state.
-- [ ] **Prompt consolidation** — Single source of truth for tool schemas, examples, context injection. Measure token count, compress.
-- [ ] **Multi-turn reliability** — Eliminate bugs where context is lost between turns. Test: 3-turn meal logging, 3-turn workout building, topic switching mid-conversation.
-- [ ] **Natural freeform logging** — "log for breakfast 2 eggs and spinach and bread and coffee with 2% milk with protein powder and creatine" or "log chipotle bowl with 800 calories" → AI parses everything, asks clarifying questions, does macro calculations, logs it.
-- [ ] **Meal planning** — "plan my meals for today" → iterative suggestions based on remaining macros + history.
-- [ ] **Workout split builder** — "build me a PPL split" → multi-turn designing across sessions.
-- [ ] **Navigate to screen** — "show me my weight chart", "go to food tab". Needs navigation tool.
+- [ ] **State machine refactor** -- Replace scattered pendingMealName/pendingWorkout state vars with a proper conversation state machine. States: idle -> classifying -> executing_tool -> confirming -> logging. Clear transitions, no dangling state.
+- [ ] **Prompt consolidation** -- Single source of truth for tool schemas, examples, context injection. Measure token count, compress.
+- [ ] **Multi-turn reliability** -- Eliminate bugs where context is lost between turns. Test: 3-turn meal logging, 3-turn workout building, topic switching mid-conversation.
+- [ ] **Natural freeform logging** -- "log for breakfast 2 eggs and spinach and bread and coffee with 2% milk with protein powder and creatine" or "log chipotle bowl with 800 calories" -> AI parses everything, asks clarifying questions, does macro calculations, logs it.
+- [ ] **Meal planning** -- "plan my meals for today" -> iterative suggestions based on remaining macros + history.
+- [ ] **Workout split builder** -- "build me a PPL split" -> multi-turn designing across sessions.
+- [ ] **Navigate to screen** -- "show me my weight chart", "go to food tab". Needs navigation tool.
 - [ ] When no obvious gap: stress-test with real queries from `Docs/failing-queries.md` and fix what breaks.
 
 ### UI Overhaul (always ongoing)
-Equally important pillar. Bold changes encouraged — a full theme redesign overnight is fine. New card styles, new color palette, new typography — go for it. The only rule: app-wide consistency.
+Equally important pillar. Bold changes encouraged -- a full theme redesign overnight is fine. New card styles, new color palette, new typography -- go for it. The only rule: app-wide consistency.
 
-- [ ] **Theme overhaul** — Pick a direction and execute across ALL views in one cycle. Dark+accent, light+minimal, glassmorphism — any coherent vision. Touch every view.
-- [ ] **Dashboard redesign** — Better information hierarchy, scannable at a glance, clearer progress indicators.
-- [ ] **Chat UI polish** — Message bubbles, typing indicators, tool execution feedback, streaming UX.
-- [ ] **Food diary UX** — Faster logging flow, better meal grouping, clearer macro display.
-- [ ] **Usability rough edges** — Find confusing flows, missing feedback, awkward transitions. Fix them.
+- [ ] **Theme overhaul** -- Pick a direction and execute across ALL views in one cycle. Dark+accent, light+minimal, glassmorphism -- any coherent vision. Touch every view.
+- [ ] **Dashboard redesign** -- Better information hierarchy, scannable at a glance, clearer progress indicators.
+- [ ] **Chat UI polish** -- Message bubbles, typing indicators, tool execution feedback, streaming UX.
+- [ ] **Food diary UX** -- Faster logging flow, better meal grouping, clearer macro display.
+- [ ] **Usability rough edges** -- Find confusing flows, missing feedback, awkward transitions. Fix them.
 - [ ] UI changes must NOT break existing functionality. Visual-layer refactoring only.
 
 ### Test Coverage Improvement (always ongoing)
 Ship quality. Coverage is a forcing function for finding bugs and understanding code.
 
-- [ ] **Run coverage-check.sh** — Identify files below 80% (logic) or 50% (services) threshold. Fix them.
-- [ ] **Write tests for uncovered paths** — Focus on error paths, edge cases, empty states, boundary conditions. Not just happy paths.
-- [ ] **AI eval harness expansion** — Add test cases for every new capability. Target: every tool has 10+ eval queries.
-- [ ] **Integration-style tests** — Test multi-step flows (parse → resolve → log → confirm) end-to-end.
+- [ ] **Run coverage-check.sh** -- Identify files below 80% (logic) or 50% (services) threshold. Fix them.
+- [ ] **Write tests for uncovered paths** -- Focus on error paths, edge cases, empty states, boundary conditions. Not just happy paths.
+- [ ] **AI eval harness expansion** -- Add test cases for every new capability. Target: every tool has 10+ eval queries.
+- [ ] **Integration-style tests** -- Test multi-step flows (parse -> resolve -> log -> confirm) end-to-end.
 
 ### Bug Hunting (always ongoing)
 Proactively find bugs before users do.
 
-- [ ] **Find and fix bugs** — Run the app mentally through edge cases. Check error paths, empty states, boundary conditions, data corruption scenarios.
-- [ ] **Regression prevention** — When fixing a bug, add a test that would have caught it.
+- [ ] **Find and fix bugs** -- Run the app mentally through edge cases. Check error paths, empty states, boundary conditions, data corruption scenarios.
+- [ ] **Regression prevention** -- When fixing a bug, add a test that would have caught it.
 
 ### Food Database Enrichment (always ongoing)
 Better the DB, more people will come and log. Benchmark: MyFitnessPal has 14M+ foods.
 
-- [ ] **Correct existing entries** — Find foods with wrong macros, missing data, bad serving sizes. Fix them.
-- [ ] **Add missing foods** — Indian foods, regional dishes, restaurant items, branded products. Cross-reference with USDA/reliable sources.
-- [ ] **Improve search** — Better aliases, spelling corrections, partial matches. "paneer" should find all paneer dishes.
+- [ ] **Correct existing entries** -- Find foods with wrong macros, missing data, bad serving sizes. Fix them.
+- [ ] **Add missing foods** -- Indian foods, regional dishes, restaurant items, branded products. Cross-reference with USDA/reliable sources.
+- [ ] **Improve search** -- Better aliases, spelling corrections, partial matches. "paneer" should find all paneer dishes.
 
 ### Ongoing: Code Improvement Loop
 Autonomous refactoring. Run `code-improvement.md`. Principles in `Docs/principles/`. Log in `Docs/code-improvement-log.md`.
 
-- [x] **Continue file decomposition** — GoalSetupView, LabsAndScans, Sleep, TemplatePreviewSheet extracted. Only 3 files over 700 remain (AIChatView, FoodTabView, ActiveWorkoutView) — these need ViewModel extraction.
-- [ ] **Deeper refactoring** — Extract logic from fat functions (AIChatView.sendMessage 491 lines). Move business logic out of views into ViewModels/Services.
-- [ ] **DDD violations** — Direct DB calls in views, business logic in UI layer.
+- [x] **Continue file decomposition** -- GoalSetupView, LabsAndScans, Sleep, TemplatePreviewSheet extracted. Only 3 files over 700 remain (AIChatView, FoodTabView, ActiveWorkoutView) -- these need ViewModel extraction.
+- [ ] **Deeper refactoring** -- Extract logic from fat functions (AIChatView.sendMessage 491 lines). Move business logic out of views into ViewModels/Services.
+- [ ] **DDD violations** -- Direct DB calls in views, business logic in UI layer.
 
 ## Done (this sprint)
-- [x] P0: Supplement/Sleep Confirmation Cards — Status card with taken/remaining, sleep card with HRV/recovery/readiness.
-- [x] P0: Glucose + Biomarker Confirmation Cards — Glucose avg/range/spikes/zone, biomarker optimal/out-of-range.
-- [x] P1: AIChatView ViewModel Extraction — Separated state+logic from rendering. @Observable class + extensions.
-- [x] P1: Exercise Visual Polish — Muscle group SF Symbol chips on workout cards.
-- [x] P1: State.md Update — Build 108, 8 card types documented.
-- [x] P0: Bug Hunting — Misleading checkmark on unconfirmed workout card, force unwrap crash.
-- [x] P0: Rich Confirmation Cards — Navigation cards (new), activity preview cards (new). All chat actions now have structured visual feedback.
-- [x] P0: Workout Split Builder — "build me a PPL split" multi-turn dialogue. 4 split types, template saving. 15 tests.
-- [x] Voice Input UX Overhaul — fixed eaten-words bug (partial vs final transcription). Build 107.
-- [x] P1: Navigate to Screen from Chat — static overrides + LLM navigate_to tool + tab switching. 16 tests.
-- [x] P1: Wire USDA into AI Chat — log_food preHook + food_info handler USDA/OpenFoodFacts fallback. 4 tests.
-- [x] P1: Systematic Bug Hunting — tab bounds check, USDA API 5s timeout, Swift 6 concurrency fix.
-- [x] P0: Proactive Alerts — workout consistency + logging gap alerts. 6 alert types.
-- [x] P0: USDA API Phase 1 — opt-in toggle, rate limiting, searchWithFallback, privacy notice
-- [x] #81 WeightTrendService: stale-with-old-entries coverage test
-- [x] #82 AIRuleEngine: 11 food-seeded branch tests (yesterdaySummary, caloriesLeft, dailySummary, quickInsight, nextAction, weeklySummary)
-- [x] #85 Voice-style eval: 13 InputNormalizer cases (run-on, filler+restart, conjunctions, mixed-case)
-- [x] #87 NotificationService + BehaviorInsightService hardening (4-alert composition, sleep boundaries)
-- [x] TestFlight build 106, 107
-- [x] Build 117 — test coverage improvements committed
+
+_(new sprint -- nothing yet)_
+
+## Done (previous sprint)
+- [x] #78 Input normalization pipeline (centralized at sendMessage entry point)
+- [x] #79 Food logging gold set eval (13 voice-style tests)
+- [x] #80 Multi-turn context hardening (18 multi-turn tests)
+- [x] #81 Coverage: WeightTrendService (stale-with-old-entries)
+- [x] #82 Coverage: AIRuleEngine (11 food-seeded branch tests)
+- [x] #83 Food DB: +20 foods (chana masala, rajma chawal, dal chawal, etc. 1544->1564)
+- [x] #84 Bug hunting: AI food logging edge cases (multi-food meal hint fix)
+- [x] #85 Eval: Voice-style input test cases (13 InputNormalizer cases)
+- [x] #86 UI: Exercise card visual enhancement (muscle group SF Symbol chips)
+- [x] #87 Coverage: NotificationService + BehaviorInsightService hardening
+- [x] P0 #77: Remove meal category grouping from food diary
+- [x] P0 #88: Fix AI food logging (extract food name, macro sanity check)
