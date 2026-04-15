@@ -106,11 +106,13 @@
 		8D1ED4EACC7CB2C0EEC52743 /* BodyCompEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4BC95967D2043D701CA63AB /* BodyCompEntryView.swift */; };
 		8D8FB3814300848676740EC6 /* AddSupplementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4BD88646DFE4A17724D4407 /* AddSupplementView.swift */; };
 		900DFB12EECDD2D618FEC253 /* OpenFoodFactsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9887274AA907DE6C5349B2D1 /* OpenFoodFactsService.swift */; };
+		91B0C2175B94011D76DDFFAB /* SupplementServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71EB5C65191BD3C3D1168D29 /* SupplementServiceTests.swift */; };
 		923230686AD033F5F7025F94 /* TDEEEstimatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40634DDEB9C53BD0146A628A /* TDEEEstimatorTests.swift */; };
 		92B596C732C7784167EC8CDE /* WorkoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A884AC137C46CE932FEE1C9 /* WorkoutTests.swift */; };
 		92F6CD33F11BF82738AAF81C /* LabReportOCRTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D1E187818C8B9D2196B4B9D /* LabReportOCRTests.swift */; };
 		93791225B1B385B9611CB503 /* DEXAService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 706EF63B663E60DF825752E3 /* DEXAService.swift */; };
 		940612EB003CCC2F1FF36DD1 /* AIEvalHarness.swift in Sources */ = {isa = PBXBuildFile; fileRef = BADD153523D188C4ED89B55D /* AIEvalHarness.swift */; };
+		96A4FE9ADE8FF47326F95FBE /* FoodServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DAC7F3DE02D237C91936A3C /* FoodServiceTests.swift */; };
 		96B6BBB4C02D93E14F28C043 /* AIChatView+Suggestions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 188A69D621CC2DF63ADFB21F /* AIChatView+Suggestions.swift */; };
 		9870D7B4B5A001CA244B3785 /* SpellCorrectService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C93A5EC7AC72AD0108FAC30 /* SpellCorrectService.swift */; };
 		98D72BF25E0ACD62C871A4CD /* ParallelLLMEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BE85182415E10B646F68DA4 /* ParallelLLMEval.swift */; };
@@ -310,6 +312,7 @@
 		5CCD0417471E3FC0DED921F5 /* PlantPointsServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlantPointsServiceTests.swift; sourceTree = "<group>"; };
 		5D1E187818C8B9D2196B4B9D /* LabReportOCRTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabReportOCRTests.swift; sourceTree = "<group>"; };
 		5D4BF27A41CD9659EFF50036 /* DefaultTemplates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultTemplates.swift; sourceTree = "<group>"; };
+		5DAC7F3DE02D237C91936A3C /* FoodServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodServiceTests.swift; sourceTree = "<group>"; };
 		5F6D2AA89F46A33EAE39DEAC /* MoreTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoreTabView.swift; sourceTree = "<group>"; };
 		62E7E108AC25A8262DC23EB7 /* AppDatabase+FoodUsage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppDatabase+FoodUsage.swift"; sourceTree = "<group>"; };
 		647116F9E4F78CE702CB870C /* RobustnessTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RobustnessTests.swift; sourceTree = "<group>"; };
@@ -326,6 +329,7 @@
 		6E7AB5CF548B4E61C45C1485 /* GoalSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalSetupView.swift; sourceTree = "<group>"; };
 		6F84469D20EBBA0BD037FBCA /* WorkoutService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutService.swift; sourceTree = "<group>"; };
 		706EF63B663E60DF825752E3 /* DEXAService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DEXAService.swift; sourceTree = "<group>"; };
+		71EB5C65191BD3C3D1168D29 /* SupplementServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupplementServiceTests.swift; sourceTree = "<group>"; };
 		72ADCE850F5C06D2C23A57DC /* SpeechRecognitionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognitionService.swift; sourceTree = "<group>"; };
 		733818AD9667283F81C5D1C5 /* DashboardView+Cards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DashboardView+Cards.swift"; sourceTree = "<group>"; };
 		7392F1C1953721F1AD362662 /* LlamaCppBackend.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LlamaCppBackend.swift; sourceTree = "<group>"; };
@@ -541,6 +545,7 @@
 				47334FA11098E0172ED4A19A /* EdgeCaseTests.swift */,
 				01D12135182651E611071EA0 /* FoodLoggingGoldSetTests.swift */,
 				B3D6A44D7C25BC4956132FE8 /* FoodLoggingTests.swift */,
+				5DAC7F3DE02D237C91936A3C /* FoodServiceTests.swift */,
 				BFE22713392456FC18BE0CC9 /* InputNormalizerTests.swift */,
 				24EBC73AF46E92F7FF6A10FF /* IntegrationTests.swift */,
 				5D1E187818C8B9D2196B4B9D /* LabReportOCRTests.swift */,
@@ -552,6 +557,7 @@
 				647116F9E4F78CE702CB870C /* RobustnessTests.swift */,
 				B39F11EC4CFD7DA3C49DA882 /* SpeechRecognitionTests.swift */,
 				336137D03363020741FFC5BA /* SpellCorrectServiceTests.swift */,
+				71EB5C65191BD3C3D1168D29 /* SupplementServiceTests.swift */,
 				40634DDEB9C53BD0146A628A /* TDEEEstimatorTests.swift */,
 				E1A5DA3E3543A99260250279 /* UIFlowTests.swift */,
 				3F51E9EC49412B4F96068D35 /* WeightTrendCalculatorTests.swift */,
@@ -1179,6 +1185,7 @@
 				F29E79872466C7556AC9D549 /* EdgeCaseTests.swift in Sources */,
 				D45468A5C7B2A9C18304ED83 /* FoodLoggingGoldSetTests.swift in Sources */,
 				5D88D4133DC583D407E81955 /* FoodLoggingTests.swift in Sources */,
+				96A4FE9ADE8FF47326F95FBE /* FoodServiceTests.swift in Sources */,
 				6FE85F07DEFE790804EA1A6B /* InputNormalizerTests.swift in Sources */,
 				E220B46BAB957B8242ABA44A /* IntegrationTests.swift in Sources */,
 				92F6CD33F11BF82738AAF81C /* LabReportOCRTests.swift in Sources */,
@@ -1190,6 +1197,7 @@
 				C6533AEBED5F6D1F5387F98A /* RobustnessTests.swift in Sources */,
 				C29B1BD9EF5C4235CA2FDBDC /* SpeechRecognitionTests.swift in Sources */,
 				B1A5192F28B88B54A43209B3 /* SpellCorrectServiceTests.swift in Sources */,
+				91B0C2175B94011D76DDFFAB /* SupplementServiceTests.swift in Sources */,
 				923230686AD033F5F7025F94 /* TDEEEstimatorTests.swift in Sources */,
 				98FF97CFE71A6BBCFF976259 /* UIFlowTests.swift in Sources */,
 				DF025680665178535364944C /* WeightTrendCalculatorTests.swift in Sources */,
@@ -1298,7 +1306,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = DriftWidget/DriftWidget.entitlements;
-				CURRENT_PROJECT_VERSION = 120;
+				CURRENT_PROJECT_VERSION = 122;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				INFOPLIST_FILE = DriftWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1318,7 +1326,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = DriftWidget/DriftWidget.entitlements;
-				CURRENT_PROJECT_VERSION = 120;
+				CURRENT_PROJECT_VERSION = 122;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				INFOPLIST_FILE = DriftWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1376,7 +1384,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Drift/Drift.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 120;
+				CURRENT_PROJECT_VERSION = 122;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1466,7 +1474,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Drift/Drift.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 120;
+				CURRENT_PROJECT_VERSION = 122;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",

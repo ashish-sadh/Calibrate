@@ -60,7 +60,7 @@
       "Escape LIKE wildcards in recipe search too",
       "Escape SQL LIKE wildcards (% _) in food search queries",
       "Factory reset clears workout sessions and template seed flags",
-      "Template preview → Start Workout race condition",
+      "Template preview \u2192 Start Workout race condition",
       "Template preview duplicate exercise ID bug, 525 tests",
       "More tab resets to root when switching away, body map template clickable",
       "Robust session lifecycle, contextual body map, 520 tests",
@@ -76,7 +76,7 @@
     "date": "2026-03-31T09:00:11-07:00",
     "description": "chore: Build 34",
     "fixes": [
-      "Shorten 17 long food names, remove 7 duplicates (497→490)",
+      "Shorten 17 long food names, remove 7 duplicates (497\u2192490)",
       "Copy previous day uses selected date, works on all dates",
       "Refresh suggestions after recipe builder or barcode scanner dismiss",
       "Barcode scanned foods now saved to food DB for future search",
@@ -90,9 +90,9 @@
     "features": [
       "Delete recipes via context menu and swipe",
       "Pre-seed food favorites and recipes from MacroFactor history",
-      "Import 160 foods from MacroFactor logs (337 → 497 total)",
+      "Import 160 foods from MacroFactor logs (337 \u2192 497 total)",
       "Finish workout prompts Save vs Save + Template",
-      "Expand food DB from 289 → 337 with US grocery items"
+      "Expand food DB from 289 \u2192 337 with US grocery items"
     ]
   },
   {
@@ -119,7 +119,7 @@
       "Swipe right to favorite in search results (yellow star)"
     ],
     "features": [
-      "Proper food favorites system — separate from recents/recipes"
+      "Proper food favorites system \u2014 separate from recents/recipes"
     ]
   },
   {
@@ -133,10 +133,10 @@
     ],
     "features": [
       "Food DB hits 600! Added 29 more items",
-      "Edit supplements — long-press → Edit (name, dosage, daily doses)",
+      "Edit supplements \u2014 long-press \u2192 Edit (name, dosage, daily doses)",
       "Rename workout templates via context menu",
       "Expand food DB to 571 items (+81 common grocery foods)",
-      "Edit recipe — long-press recipe → Edit Recipe sheet"
+      "Edit recipe \u2014 long-press recipe \u2192 Edit Recipe sheet"
     ]
   },
   {
@@ -145,8 +145,8 @@
     "description": "chore: Build 38",
     "fixes": [
       "Systemic data integrity and cleanup fixes",
-      "Remove separate RECIPES section — recents includes everything",
-      "Food search shows Favorites → Recent → Recipes → Frequent",
+      "Remove separate RECIPES section \u2014 recents includes everything",
+      "Food search shows Favorites \u2192 Recent \u2192 Recipes \u2192 Frequent",
       "MCT oil and all oils now show tsp and ml options alongside tbsp",
       "Add nugget, wing, strip, link, bar to portion text",
       "5 user-reported issues - almonds, timer, favorites, health, templates",
@@ -174,12 +174,12 @@
   {
     "build": 49,
     "date": "2026-04-01T17:11:58-07:00",
-    "description": "chore: Build 49 — self-improvement session (29 commits)",
+    "description": "chore: Build 49 \u2014 self-improvement session (29 commits)",
     "fixes": [
       "Add LaunchBackground color asset to prevent white flash on launch",
-      "Correct Mango Lassi nutrition (180→230 cal, updated macros per USDA)",
+      "Correct Mango Lassi nutrition (180\u2192230 cal, updated macros per USDA)",
       "Show calorie count on \"Copy previous day\" button for context",
-      "Merge duplicate food categories (Grains→Grains & Cereals, etc.)",
+      "Merge duplicate food categories (Grains\u2192Grains & Cereals, etc.)",
       "Add edit button in GoalView toolbar for quicker goal updates",
       "Correct broken food entries (pistachio, biryani, strawberries)",
       "Remove force unwrap in GlucoseTabView deduplication",
@@ -187,39 +187,39 @@
       "Manual food entry validates calories are numeric before enabling Log"
     ],
     "features": [
-      "Add 11 fast food items — McDonald's, Starbucks, Taco Bell, Wendy's (699 total)",
+      "Add 11 fast food items \u2014 McDonald's, Starbucks, Taco Bell, Wendy's (699 total)",
       "Show last-used weight in template preview for each exercise",
-      "Add 7 foods (688 total) — Clif Bar, mango lassi, gulab jamun, pav bhaji, more",
+      "Add 7 foods (688 total) \u2014 Clif Bar, mango lassi, gulab jamun, pav bhaji, more",
       "Add burpee, box jump, jump squat to exercise database (877 total)"
     ]
   },
   {
     "build": 50,
     "date": "2026-04-01T19:04:09-07:00",
-    "description": "chore: Build 50 — TDEE overhaul, Algorithm redesign, 716 foods, 595 tests",
+    "description": "chore: Build 50 \u2014 TDEE overhaul, Algorithm redesign, 716 foods, 595 tests",
     "fixes": [
-      "Algorithm page cleanup — keyboard, hero card, labels",
+      "Algorithm page cleanup \u2014 keyboard, hero card, labels",
       "Algorithm page TDEE now reads from shared estimator (matches Dashboard)",
       "Profile section stays open when dismissing keyboard via Done button",
       "Add Done button to keyboard + scroll-to-dismiss on Algorithm page",
-      "Improved profile UI — larger fields, sex has \"—\" option, height shows ft/in"
+      "Improved profile UI \u2014 larger fields, sex has \"\u2014\" option, height shows ft/in"
     ],
     "features": [
       "Add piece/count units for vegetables + spray unit for oils",
       "Show Apple Health resting/active/steps breakdown on Algorithm page",
-      "Algorithm UI redesign — hero + accordion + hidden advanced",
+      "Algorithm UI redesign \u2014 hero + accordion + hidden advanced",
       "Auto-fill profile (age/height/sex) from Apple Health",
-      "Partial Mifflin — works with any subset of age/height/sex",
-      "TDEE formula overhaul — sqrt scaling + Mifflin-St Jeor + dampened corrections",
-      "Add 7 exercises — Turkish get-up, farmer's walk, battle ropes, more (884 total)",
-      "Add 8 snacks & drinks — Celsius, boba, Goldfish, RX Bar, açaí bowl (714 total)",
-      "Add 7 Indian foods — dahi, korma, vindaloo, medu vada, rava dosa, jalebi (706 total)"
+      "Partial Mifflin \u2014 works with any subset of age/height/sex",
+      "TDEE formula overhaul \u2014 sqrt scaling + Mifflin-St Jeor + dampened corrections",
+      "Add 7 exercises \u2014 Turkish get-up, farmer's walk, battle ropes, more (884 total)",
+      "Add 8 snacks & drinks \u2014 Celsius, boba, Goldfish, RX Bar, a\u00e7a\u00ed bowl (714 total)",
+      "Add 7 Indian foods \u2014 dahi, korma, vindaloo, medu vada, rava dosa, jalebi (706 total)"
     ]
   },
   {
     "build": 51,
     "date": "2026-04-02T00:16:50-07:00",
-    "description": "chore: Build 51 — TDEE soft cap, 767 foods, 907 exercises, 614 tests",
+    "description": "chore: Build 51 \u2014 TDEE soft cap, 767 foods, 907 exercises, 614 tests",
     "fixes": [
       "Barcode scanner now parses ml serving sizes (liquids/beverages)",
       "MoreTabView missing dark background + update session log",
@@ -228,8 +228,8 @@
       "HRV trend detection logic + flaky workout session test",
       "TDEE base formula soft-capped at 2700 to prevent extreme estimates",
       "Biomarkers empty state centered vertically (was stuck at top)",
-      "Soften projection wording — trend will catch up, not a mistake",
-      "Projection now detects wrong direction — no more \"52 days early\" when losing",
+      "Soften projection wording \u2014 trend will catch up, not a mistake",
+      "Projection now detects wrong direction \u2014 no more \"52 days early\" when losing",
       "Goal page colors now goal-aware + Algorithm deficit/target separated"
     ],
     "features": [
@@ -242,31 +242,31 @@
   {
     "build": 52,
     "date": "2026-04-02T00:43:19-07:00",
-    "description": "chore: Build 52 — 780 foods, accessibility labels, batch query perf",
+    "description": "chore: Build 52 \u2014 780 foods, accessibility labels, batch query perf",
     "fixes": [
-      "Clean up food database — remove dupes, fix capitalization (758→756)",
-      "Remove 9 duplicate food entries (767 → 758 foods)",
+      "Clean up food database \u2014 remove dupes, fix capitalization (758\u2192756)",
+      "Remove 9 duplicate food entries (767 \u2192 758 foods)",
       "Normalize exercise equipment/category capitalization (21 fixes)",
       "Factory reset now clears exercise favorites + TDEE cache"
     ],
     "features": [
       "Add VoiceOver accessibility to muscle recovery map",
-      "Add 12 more popular foods — tacos, soups, condiments, breakfast",
+      "Add 12 more popular foods \u2014 tacos, soups, condiments, breakfast",
       "Add VoiceOver accessibility labels to food diary entries",
-      "Add 12 more foods — plant-based, fermented, and popular items",
+      "Add 12 more foods \u2014 plant-based, fermented, and popular items",
       "Add VoiceOver accessibility labels to Dashboard"
     ]
   },
   {
     "build": 53,
     "date": "2026-04-02T08:47:31-07:00",
-    "description": "chore: Build 53 — energy balance bar, deficit explainer, smart intake",
+    "description": "chore: Build 53 \u2014 energy balance bar, deficit explainer, smart intake",
     "fixes": [
       "Smart intake estimation with food log confidence check",
       "Energy balance bar now shows estimated intake from weight trend",
-      "Three flow-traced bugs — wrong direction detection, baseline sync, trend fallback",
+      "Three flow-traced bugs \u2014 wrong direction detection, baseline sync, trend fallback",
       "Algorithm page shows goal context + syncs data sources with Dashboard",
-      "Recovery score handles missing HRV gracefully (55 → 88 for real case)",
+      "Recovery score handles missing HRV gracefully (55 \u2192 88 for real case)",
       "Remove Whey Protein auto-seed entirely",
       "Stop auto-seeding Whey Protein supplement for new users",
       "Favorites ranked first in both food and exercise search",
@@ -276,7 +276,7 @@
     ],
     "features": [
       "Add deficit explainer (?) button on TDEE card",
-      "Redesign TDEE card — energy balance bar, dedup deficit, fix sync",
+      "Redesign TDEE card \u2014 energy balance bar, dedup deficit, fix sync",
       "Dashboard TDEE card shows Required vs Current deficit/surplus",
       "\"Favorite all exercises\" toggle + 53 basic exercise names added",
       "Add VoiceOver accessibility to supplement checklist"
@@ -285,22 +285,22 @@
   {
     "build": 54,
     "date": "2026-04-03T01:39:56-07:00",
-    "description": "chore: Build 54 — UI polish, Apple Health chart, day strip, true black",
+    "description": "chore: Build 54 \u2014 UI polish, Apple Health chart, day strip, true black",
     "fixes": [
       "Food log sheet now opens as half-sheet, not full screen",
       "\"Return to today\" banner now resets week navigation too",
       "Day strip dots show food logged days + larger dot for selected",
       "Day strip now fixed-position with week navigation arrows",
       "Remove unnatural tap-to-expand tooltips from weight insights",
-      "Bump card opacity 0.06→0.08 — cards were nearly invisible",
+      "Bump card opacity 0.06\u21920.08 \u2014 cards were nearly invisible",
       "Lighten Weight tab to match new card style",
-      "Three bugs from UI redesign — elevated cards, zero deficit, chart labels",
+      "Three bugs from UI redesign \u2014 elevated cards, zero deficit, chart labels",
       "Barcode scan defaults to actual serving size, not 100g"
     ],
     "features": [
       "Replace date arrows with 7-day strip + past-date warning banner",
       "Apple Health style chart + true black background",
-      "Full UI polish — lighter cards, font fixes, Renpho-style TDEE ring",
+      "Full UI polish \u2014 lighter cards, font fixes, Renpho-style TDEE ring",
       "Replace energy balance bar with donut ring + clear deficit label",
       "Add 15 dry dal/lentil entries + dal dish variants (795 foods)"
     ]
@@ -308,11 +308,11 @@
   {
     "build": 55,
     "date": "2026-04-03T01:59:56-07:00",
-    "description": "chore: Build 55 — bug fixes, food data, accessibility, duration parsing",
+    "description": "chore: Build 55 \u2014 bug fixes, food data, accessibility, duration parsing",
     "fixes": [
       "Strong CSV duration parsing handles \"1h\" without minutes",
       "TDEE card shows estimate even without weight trend data",
-      "Barcode scanner serving display — always shows 100g units, total grams",
+      "Barcode scanner serving display \u2014 always shows 100g units, total grams",
       "Food tab resets to current week when tab reappears",
       "Fix Ginger Tea macros + remove Ranch Dressing duplicate (802 foods)",
       "Last 8pt font in day strip + update project state doc"
@@ -325,7 +325,7 @@
   {
     "build": 56,
     "date": "2026-04-03T02:16:17-07:00",
-    "description": "chore: Build 56 — milestone toasts, supplement copy, bug fixes",
+    "description": "chore: Build 56 \u2014 milestone toasts, supplement copy, bug fixes",
     "fixes": [
       "Bump macro field contrast for true black background"
     ],
@@ -339,14 +339,14 @@
   {
     "build": 57,
     "date": "2026-04-03T07:11:45-07:00",
-    "description": "chore: Build 57 — Hevy import, smart servings, weekday insight, 817 foods",
+    "description": "chore: Build 57 \u2014 Hevy import, smart servings, weekday insight, 817 foods",
     "fixes": [
       "Update empty state text to mention Hevy alongside Strong"
     ],
     "features": [
       "Import from Hevy CSV (auto-detected alongside Strong format)",
       "Strong CSV import now parses RPE and Weight Unit",
-      "Smart serving defaults — remembers last-used amount per food",
+      "Smart serving defaults \u2014 remembers last-used amount per food",
       "Auto-extract workout templates from Strong CSV import",
       "Add 11 foods for better search coverage (817 total)",
       "Weekday weight pattern insight"
@@ -355,22 +355,22 @@
   {
     "build": 58,
     "date": "2026-04-03T09:09:48-07:00",
-    "description": "chore: Build 58 — workout overhaul, import fixes, template redesign",
+    "description": "chore: Build 58 \u2014 workout overhaul, import fixes, template redesign",
     "fixes": [
       "Use full timestamp as workout key, not date+name",
       "Same-day workouts no longer merge during import",
-      "Three bugs from agent audit — CSV escaping, pipe delimiter, threshold",
-      "guessBodyPart \"Lateral Raise\" → Shoulders + 10 new tests (640 total)",
+      "Three bugs from agent audit \u2014 CSV escaping, pipe delimiter, threshold",
+      "guessBodyPart \"Lateral Raise\" \u2192 Shoulders + 10 new tests (640 total)",
       "Export skips empty workouts + adds date to filename",
       "Export now uses UIActivityViewController directly, no blank sheet",
       "Smarter template extraction + cleaner template list",
-      "Food log sheet — taller detent, matching background, clean corners",
+      "Food log sheet \u2014 taller detent, matching background, clean corners",
       "Hevy import marks warmup sets from set_type column"
     ],
     "features": [
       "Tap template opens preview sheet with actions, not instant start",
       "\"Remove All Templates\" option in templates menu",
-      "Workout section overhaul — import, curated templates, export",
+      "Workout section overhaul \u2014 import, curated templates, export",
       "Template list shows exercise names preview",
       "Quick-log uses last serving size + food logging streak counter"
     ]
@@ -378,32 +378,32 @@
   {
     "build": 59,
     "date": "2026-04-03T12:45:10-07:00",
-    "description": "chore: Build 59 — cycle tracking, food ordering, 847 foods, 662 tests",
+    "description": "chore: Build 59 \u2014 cycle tracking, food ordering, 847 foods, 662 tests",
     "fixes": [
-      "Shredded Cabbage nutrition corrected (was 4 cal → 15 cal per 60g, added fiber)",
+      "Shredded Cabbage nutrition corrected (was 4 cal \u2192 15 cal per 60g, added fiber)",
       "7 food database corrections from USDA audit",
       "Copy-from-yesterday double-tap guard + mixed timestamp sort fix",
       "Ovulation estimate uses standard avg-14 formula (not avg/2)",
       "Remove duplicate shortDate formatter, use existing shortDisplay",
       "copyFromYesterday uses shared formatters + handles old timestamp formats",
       "Cycle fertile range bug + deduplicate cycle lengths + perf fix formatters",
-      "Systematic food database audit — 23 serving size + accuracy fixes"
+      "Systematic food database audit \u2014 23 serving size + accuracy fixes"
     ],
     "features": [
-      "Add 30 common foods — berries, condiments, seafood, beverages, grains",
+      "Add 30 common foods \u2014 berries, condiments, seafood, beverages, grains",
       "Add countable portion text for tortilla, pancake, waffle, muffin, bagel, cup",
       "Food log CSV export now includes Time column from loggedAt",
-      "Full simulator mock data for HealthKit — dashboard now populated",
+      "Full simulator mock data for HealthKit \u2014 dashboard now populated",
       "Food diary time-ordered entries + copy-from-yesterday preserves order",
-      "Cycle tracking from Apple Health — full view with biometric correlation",
+      "Cycle tracking from Apple Health \u2014 full view with biometric correlation",
       "Exercise tab shows Apple Health workouts (last 7 days)",
-      "Apple Health workout integration — dashboard card + workout fetch"
+      "Apple Health workout integration \u2014 dashboard card + workout fetch"
     ]
   },
   {
     "build": 60,
     "date": "2026-04-03T16:46:18-07:00",
-    "description": "chore: Build 60 — hotfix heavy flow excluded from cycle tracking",
+    "description": "chore: Build 60 \u2014 hotfix heavy flow excluded from cycle tracking",
     "fixes": [
       "Heavy flow (HK value 4) was excluded from cycle tracking"
     ],
@@ -412,13 +412,13 @@
   {
     "build": 61,
     "date": "2026-04-04T20:15:24-07:00",
-    "description": "chore: Build 61 — workout improvements, food search, serving size, templates scroll",
+    "description": "chore: Build 61 \u2014 workout improvements, food search, serving size, templates scroll",
     "fixes": [
       "Templates section now scrollable within 250px max height",
       "Add food button moved to top of diary, weight sync error logging",
-      "Template list capped at 5 with \"Show all\", workout history 50→500, sync error detail",
+      "Template list capped at 5 with \"Show all\", workout history 50\u2192500, sync error detail",
       "Duration exercises show \"Time (s)\" in UI, manual entry improvements",
-      "5 fixes — serving size in quick add, delete button, weight sync, refresh, popular",
+      "5 fixes \u2014 serving size in quick add, delete button, weight sync, refresh, popular",
       "Workout set delete via long-press, + Set prefills from last set",
       "Switch to search.openfoodfacts.org endpoint (old cgi endpoint unreliable)",
       "6 bugs across supplements, glucose, goal, weight, biomarkers",
@@ -430,25 +430,25 @@
       "Scanned foods now use smart unit picker (ml, cup, g, tbsp, serving)"
     ],
     "features": [
-      "Smart background search — OpenFoodFacts fills gaps in local database",
-      "Add chicken, veggie/bean, and pork taco variants — 1005 foods",
-      "Add 23 Mexican/Latin foods — 1002 total foods",
+      "Smart background search \u2014 OpenFoodFacts fills gaps in local database",
+      "Add chicken, veggie/bean, and pork taco variants \u2014 1005 foods",
+      "Add 23 Mexican/Latin foods \u2014 1002 total foods",
       "Manual food entry now has optional serving size (g, ml, cup, tbsp, piece)",
-      "7 workout improvements — duration, copy set, delete set, share, milestones, order",
-      "Add 5 spirits (vodka, whiskey, rum, gin, tequila) — 979 foods total",
-      "Add 127 Indian foods — comprehensive regional coverage"
+      "7 workout improvements \u2014 duration, copy set, delete set, share, milestones, order",
+      "Add 5 spirits (vodka, whiskey, rum, gin, tequila) \u2014 979 foods total",
+      "Add 127 Indian foods \u2014 comprehensive regional coverage"
     ]
   },
   {
     "build": 62,
     "date": "2026-04-04T20:52:13-07:00",
-    "description": "chore: Build 62 — weight sync fix, device bugs, tile nudges, OpenFoodFacts search",
+    "description": "chore: Build 62 \u2014 weight sync fix, device bugs, tile nudges, OpenFoodFacts search",
     "fixes": [
-      "Simplify tile nudges — just show \"Based on last 21 days\"",
-      "3 critical device-only bugs — main thread block, crash recovery, anchor save",
+      "Simplify tile nudges \u2014 just show \"Based on last 21 days\"",
+      "3 critical device-only bugs \u2014 main thread block, crash recovery, anchor save",
       "Guard writeNutrition with simulator check (prevents HK write failure)",
-      "Remove duplicate Raspberries entry (1005 → 1004 foods)",
-      "Weight sync crash — corrupted/empty anchor data now handled gracefully"
+      "Remove duplicate Raspberries entry (1005 \u2192 1004 foods)",
+      "Weight sync crash \u2014 corrupted/empty anchor data now handled gracefully"
     ],
     "features": [
       "Subtle nudges on Weekly rate + Est. Deficit tiles (removed sparkline)",
@@ -458,15 +458,15 @@
   {
     "build": 63,
     "date": "2026-04-05T10:00:34-07:00",
-    "description": "chore: Build 63 — AI overhaul published to TestFlight",
+    "description": "chore: Build 63 \u2014 AI overhaul published to TestFlight",
     "fixes": [
       "Improved pronoun resolution for multi-turn food logging",
-      "AI backend — raw llama.cpp C API, bypass Metal crash on A19 Pro",
+      "AI backend \u2014 raw llama.cpp C API, bypass Metal crash on A19 Pro",
       "Auto-load model after download completes (was never loading)",
       "Use 1.5B via llama.cpp for 8GB devices (MLX deferred)",
       "Switch 8GB devices to Qwen2.5-1.5B (Qwen3-VL incompatible with llama.cpp)",
-      "Tiny custom toggle — sparkles icon + \"beta\" + mini switch (28x16px)",
-      "Toggle says \"✦ beta\" with full-size switch (no more tiny dot)",
+      "Tiny custom toggle \u2014 sparkles icon + \"beta\" + mini switch (28x16px)",
+      "Toggle says \"\u2726 beta\" with full-size switch (no more tiny dot)",
       "3 action buttons only (Log Food, Summary, Workout) + no \"model not loaded\"",
       "Replace broken progress bar with pulsing spinner during AI download",
       "All AI models now on GitHub Releases (vision model uploaded)",
@@ -474,8 +474,8 @@
       "Download follows redirects natively (no HEAD), delete recreates dir, sparkles+beta toggle",
       "Clean small toggle + fast download via URLSessionDownloadTask",
       "AI toggle now shows \"AI\" + \"beta\" stacked text next to switch",
-      "6 AI UX fixes — toggle, download speed, actions persist, fuzzy search, settings",
-      "AI chat panel redesigned — dimmed background, proper sheet, clean toggle",
+      "6 AI UX fixes \u2014 toggle, download speed, actions persist, fuzzy search, settings",
+      "AI chat panel redesigned \u2014 dimmed background, proper sheet, clean toggle",
       "AI toggle shows sparkles icon + \"Beta\" label next to switch",
       "AI download follows redirects, proper toggle, auto-minimize + ready banner",
       "Floating AI bubble now uses .overlay instead of ZStack",
@@ -485,313 +485,313 @@
       "Model download URLs point to HuggingFace (fallback until GitHub Releases)",
       "Remove deprecated UserDefaults.synchronize() calls",
       "Cycle phase day range labels bumped from 9pt to 10pt (min readability)",
-      "Lazy model loading — don't block chat view opening",
+      "Lazy model loading \u2014 don't block chat view opening",
       "AI model download uses URLSession.download for proper progress + speed"
     ],
     "features": [
       "Multi-turn context + experimental warning",
-      "Token streaming — LLM output appears word-by-word in chat",
-      "AI Phase 5 — response cleaner, token budget, timeout, expanded rules",
-      "AI Phase 4 — AI-enhanced lab report parsing + food name normalization",
-      "AI Phase 3 — multi-food logging, weight entry, refined system prompt",
-      "AI Phase 2 — full feature coverage with sleep, glucose, biomarker, DEXA, cycle context",
-      "AI Phase 1 — chain-of-thought, thinking UI, conversation memory, screen awareness",
+      "Token streaming \u2014 LLM output appears word-by-word in chat",
+      "AI Phase 5 \u2014 response cleaner, token budget, timeout, expanded rules",
+      "AI Phase 4 \u2014 AI-enhanced lab report parsing + food name normalization",
+      "AI Phase 3 \u2014 multi-food logging, weight entry, refined system prompt",
+      "AI Phase 2 \u2014 full feature coverage with sleep, glucose, biomarker, DEXA, cycle context",
+      "AI Phase 1 \u2014 chain-of-thought, thinking UI, conversation memory, screen awareness",
       "Chat-style AI with smart contextual suggestion pills",
       "Comprehensive AI prompt engineering + device gating + free text to LLM",
-      "Page-aware AI — shows tab-specific context + insight",
-      "AI UX overhaul — action buttons first, no free-form LLM chat",
-      "AI food logging — DB match first, LLM nutrition estimate fallback",
+      "Page-aware AI \u2014 shows tab-specific context + insight",
+      "AI UX overhaul \u2014 action buttons first, no free-form LLM chat",
+      "AI food logging \u2014 DB match first, LLM nutrition estimate fallback",
       "AI auto-selects food from DB with pre-filled servings",
-      "AI as smart launcher — intent parsing auto-opens native views pre-filled",
-      "Vision model image upload — camera button in AI chat when VLM active",
-      "Floating AI assistant — dashboard toggle, overlay chat, model upload",
+      "AI as smart launcher \u2014 intent parsing auto-opens native views pre-filled",
+      "Vision model image upload \u2014 camera button in AI chat when VLM active",
+      "Floating AI assistant \u2014 dashboard toggle, overlay chat, model upload",
       "AI help command, supplements query, time-based suggestion chips",
-      "AI \"calories\"/\"protein\"/\"macros\" — instant nutrition status",
-      "AI \"weight\" command — instant weight trend without LLM",
-      "AI \"yesterday\" command — shows yesterday's food log with items",
-      "More instant commands — \"log food\" opens search, \"today\" shows summary",
-      "AI model bundled with app — no download needed",
+      "AI \"calories\"/\"protein\"/\"macros\" \u2014 instant nutrition status",
+      "AI \"weight\" command \u2014 instant weight trend without LLM",
+      "AI \"yesterday\" command \u2014 shows yesterday's food log with items",
+      "More instant commands \u2014 \"log food\" opens search, \"today\" shows summary",
+      "AI model bundled with app \u2014 no download needed",
       "Daily summary + smart fallback when AI model not downloaded",
-      "Rule-based AI insights — works without model download",
+      "Rule-based AI insights \u2014 works without model download",
       "Improved AI system prompt with examples for better 0.5B model responses",
-      "AI chat toolbar — New Chat + Delete Model options",
+      "AI chat toolbar \u2014 New Chat + Delete Model options",
       "AI \"Log food\" action opens FoodSearchView sheet",
       "AI context includes 7-day average calorie intake",
-      "AI chat suggestion chips — quick-tap common queries",
-      "AI action parser — chat responses trigger food logging + workout start",
-      "Drift AI — on-device health assistant foundation (LLM.swift + Qwen2.5-0.5B)"
+      "AI chat suggestion chips \u2014 quick-tap common queries",
+      "AI action parser \u2014 chat responses trigger food logging + workout start",
+      "Drift AI \u2014 on-device health assistant foundation (LLM.swift + Qwen2.5-0.5B)"
     ]
   },
   {
     "build": 64,
     "date": "2026-04-05T11:31:55-07:00",
-    "description": "chore: Build 64 — AI quality improvements published to TestFlight",
+    "description": "chore: Build 64 \u2014 AI quality improvements published to TestFlight",
     "fixes": [],
     "features": [
-      "AI quality — pre-computed insights, compact context, cleaner output",
-      "AI quality — research-backed optimizations for small models",
-      "AI quality — few-shot examples, calorie targets, smarter routing"
+      "AI quality \u2014 pre-computed insights, compact context, cleaner output",
+      "AI quality \u2014 research-backed optimizations for small models",
+      "AI quality \u2014 few-shot examples, calorie targets, smarter routing"
     ]
   },
   {
     "build": 65,
     "date": "2026-04-05T11:50:52-07:00",
-    "description": "chore: Build 65 — AI quality + context improvements published to TestFlight",
+    "description": "chore: Build 65 \u2014 AI quality + context improvements published to TestFlight",
     "fixes": [
-      "Prevent context overflow crash — token-level truncation in backend",
+      "Prevent context overflow crash \u2014 token-level truncation in backend",
       "Screen context no longer wastes tokens on feature descriptions"
     ],
     "features": [
-      "AI — screen-aware fallback context + expanded keyword detection",
-      "AI — protein-aware food suggestions + context overflow protection",
-      "AI context — remaining macro targets for meal suggestions",
-      "AI quality — smarter contexts, workout insights, conversational handling"
+      "AI \u2014 screen-aware fallback context + expanded keyword detection",
+      "AI \u2014 protein-aware food suggestions + context overflow protection",
+      "AI context \u2014 remaining macro targets for meal suggestions",
+      "AI quality \u2014 smarter contexts, workout insights, conversational handling"
     ]
   },
   {
     "build": 66,
     "date": "2026-04-05T12:13:15-07:00",
-    "description": "chore: Build 66 — AI quality gate, enriched contexts, tighter prompts",
+    "description": "chore: Build 66 \u2014 AI quality gate, enriched contexts, tighter prompts",
     "fixes": [],
     "features": [
-      "AI — quality gate filters low-quality LLM responses",
-      "AI — enriched DEXA context with body fat classification + RMR",
-      "AI — enriched biomarker context with optimal ranges and direction",
-      "AI — tighter system prompt + compact conversation history",
-      "AI — comparison context for \"this week vs last week\" queries"
+      "AI \u2014 quality gate filters low-quality LLM responses",
+      "AI \u2014 enriched DEXA context with body fat classification + RMR",
+      "AI \u2014 enriched biomarker context with optimal ranges and direction",
+      "AI \u2014 tighter system prompt + compact conversation history",
+      "AI \u2014 comparison context for \"this week vs last week\" queries"
     ]
   },
   {
     "build": 67,
     "date": "2026-04-05T12:31:52-07:00",
-    "description": "chore: Build 67 — natural food phrasing, nutrition lookup, quality improvements",
+    "description": "chore: Build 67 \u2014 natural food phrasing, nutrition lookup, quality improvements",
     "fixes": [
       "Cap user input to 300 chars to preserve LLM context budget"
     ],
     "features": [
-      "AI — data-aware greetings guide users to get started",
-      "AI — expanded keyword detection for workout and food queries",
-      "AI — natural food phrasing + nutrition DB lookup",
-      "AI — food nutrition lookup from DB before LLM estimation"
+      "AI \u2014 data-aware greetings guide users to get started",
+      "AI \u2014 expanded keyword detection for workout and food queries",
+      "AI \u2014 natural food phrasing + nutrition DB lookup",
+      "AI \u2014 food nutrition lookup from DB before LLM estimation"
     ]
   },
   {
     "build": 68,
     "date": "2026-04-05T12:53:04-07:00",
-    "description": "chore: Build 68 — instant food logging, quality improvements",
+    "description": "chore: Build 68 \u2014 instant food logging, quality improvements",
     "fixes": [],
     "features": [
-      "AI — multi-food instant logging (\"log chicken and rice\" → both logged)",
-      "AI — instant food logging for known foods (no search sheet)",
-      "AI — screen-aware fallback responses with actionable suggestions",
-      "AI — multi-food intent shows DB matches before opening search"
+      "AI \u2014 multi-food instant logging (\"log chicken and rice\" \u2192 both logged)",
+      "AI \u2014 instant food logging for known foods (no search sheet)",
+      "AI \u2014 screen-aware fallback responses with actionable suggestions",
+      "AI \u2014 multi-food intent shows DB matches before opening search"
     ]
   },
   {
     "build": 69,
     "date": "2026-04-05T13:09:50-07:00",
-    "description": "chore: Build 69 — bug fixes, workout suggestions, yesterday context",
+    "description": "chore: Build 69 \u2014 bug fixes, workout suggestions, yesterday context",
     "fixes": [
-      "Critical AI bugs — division by zero, empty food name, query storm"
+      "Critical AI bugs \u2014 division by zero, empty food name, query storm"
     ],
     "features": [
-      "AI — enriched yesterday context with target comparison",
-      "AI — workout template suggestions based on recent training",
-      "AI — smarter suggestion pills based on time and nutrition state"
+      "AI \u2014 enriched yesterday context with target comparison",
+      "AI \u2014 workout template suggestions based on recent training",
+      "AI \u2014 smarter suggestion pills based on time and nutrition state"
     ]
   },
   {
     "build": 70,
     "date": "2026-04-05T13:31:17-07:00",
-    "description": "chore: Build 70 — compound food fix, daily summary, preamble stripping, goal direction",
+    "description": "chore: Build 70 \u2014 compound food fix, daily summary, preamble stripping, goal direction",
     "fixes": [
       "Don't split compound foods like \"mac and cheese\" in multi-food parser"
     ],
     "features": [
-      "AI — improved daily summary with calorie target and compact format",
-      "AI — calories left now includes protein reminder when relevant",
-      "AI — strip mechanical preambles from LLM responses",
-      "AI — goal direction in context (\"losing to 155lbs\" vs just \"155lbs\")"
+      "AI \u2014 improved daily summary with calorie target and compact format",
+      "AI \u2014 calories left now includes protein reminder when relevant",
+      "AI \u2014 strip mechanical preambles from LLM responses",
+      "AI \u2014 goal direction in context (\"losing to 155lbs\" vs just \"155lbs\")"
     ]
   },
   {
     "build": 71,
     "date": "2026-04-05T13:51:41-07:00",
-    "description": "chore: Build 71 — LOG_WEIGHT action, auto-dependencies, help command, expanded tests",
+    "description": "chore: Build 71 \u2014 LOG_WEIGHT action, auto-dependencies, help command, expanded tests",
     "fixes": [],
     "features": [
-      "AI — LLM can now trigger weight logging via [LOG_WEIGHT: value unit]",
-      "AI — automatic dependency injection in chain-of-thought",
-      "AI — structured help response + improved greeting",
-      "AI — expanded weight logging triggers for natural language",
-      "AI — biomarker improvement tips in context for out-of-range markers"
+      "AI \u2014 LLM can now trigger weight logging via [LOG_WEIGHT: value unit]",
+      "AI \u2014 automatic dependency injection in chain-of-thought",
+      "AI \u2014 structured help response + improved greeting",
+      "AI \u2014 expanded weight logging triggers for natural language",
+      "AI \u2014 biomarker improvement tips in context for out-of-range markers"
     ]
   },
   {
     "build": 72,
     "date": "2026-04-05T14:08:17-07:00",
-    "description": "chore: Build 72 — filler stripping, undo handling, sleep in overview, yesterday comparison",
+    "description": "chore: Build 72 \u2014 filler stripping, undo handling, sleep in overview, yesterday comparison",
     "fixes": [],
     "features": [
-      "AI — graceful undo handling with helpful redirection",
-      "AI — strip filler phrases from LLM responses",
-      "AI — full day context now includes sleep/recovery data",
-      "AI — yesterday summary with calorie target comparison",
-      "AI — workout queries now include recovery/sleep context"
+      "AI \u2014 graceful undo handling with helpful redirection",
+      "AI \u2014 strip filler phrases from LLM responses",
+      "AI \u2014 full day context now includes sleep/recovery data",
+      "AI \u2014 yesterday summary with calorie target comparison",
+      "AI \u2014 workout queries now include recovery/sleep context"
     ]
   },
   {
     "build": 73,
     "date": "2026-04-05T14:23:48-07:00",
-    "description": "chore: Build 73 — glucose/recovery assessments, meal groups, food name fix",
+    "description": "chore: Build 73 \u2014 glucose/recovery assessments, meal groups, food name fix",
     "fixes": [
-      "AI — smarter food name extraction for compound nutrition queries"
+      "AI \u2014 smarter food name extraction for compound nutrition queries"
     ],
     "features": [
-      "AI — recovery assessment in sleep context for training readiness",
-      "AI — glucose context with pre-computed health assessment",
-      "AI — food context grouped by meal type for specific meal queries"
+      "AI \u2014 recovery assessment in sleep context for training readiness",
+      "AI \u2014 glucose context with pre-computed health assessment",
+      "AI \u2014 food context grouped by meal type for specific meal queries"
     ]
   },
   {
     "build": 74,
     "date": "2026-04-05T14:42:00-07:00",
-    "description": "chore: Build 74 — weekly summary, scroll fix, warning persistence, system prompt",
+    "description": "chore: Build 74 \u2014 weekly summary, scroll fix, warning persistence, system prompt",
     "fixes": [
-      "AI — auto-scroll during streaming text generation",
-      "AI — experimental warning shows only once (not every chat open)"
+      "AI \u2014 auto-scroll during streaming text generation",
+      "AI \u2014 experimental warning shows only once (not every chat open)"
     ],
     "features": [
-      "AI — weekly summary rule (\"how was my week?\")",
-      "AI — system prompt guides to add data instead of just saying \"no data\""
+      "AI \u2014 weekly summary rule (\"how was my week?\")",
+      "AI \u2014 system prompt guides to add data instead of just saying \"no data\""
     ]
   },
   {
     "build": 75,
     "date": "2026-04-05T14:58:28-07:00",
-    "description": "chore: Build 75 — multi-food natural phrasing, garbage detection, format echo stripping",
+    "description": "chore: Build 75 \u2014 multi-food natural phrasing, garbage detection, format echo stripping",
     "fixes": [
-      "AI — strip format echoes (\"A: \" / \"Assistant: \") from responses",
-      "AI — garbage detection in response quality gate"
+      "AI \u2014 strip format echoes (\"A: \" / \"Assistant: \") from responses",
+      "AI \u2014 garbage detection in response quality gate"
     ],
     "features": [
-      "AI — multi-food natural phrasing support",
-      "AI — weekly summary pill shown on weekends and evenings"
+      "AI \u2014 multi-food natural phrasing support",
+      "AI \u2014 weekly summary pill shown on weekends and evenings"
     ]
   },
   {
     "build": 76,
     "date": "2026-04-05T15:13:12-07:00",
-    "description": "chore: Build 76 — emoji handling, regurgitation detection, general health advice",
+    "description": "chore: Build 76 \u2014 emoji handling, regurgitation detection, general health advice",
     "fixes": [
-      "AI — detect context regurgitation as low-quality response"
+      "AI \u2014 detect context regurgitation as low-quality response"
     ],
     "features": [
-      "AI — system prompt allows general health advice for non-data questions",
-      "AI — handle emoji-only messages gracefully"
+      "AI \u2014 system prompt allows general health advice for non-data questions",
+      "AI \u2014 handle emoji-only messages gracefully"
     ]
   },
   {
     "build": 77,
     "date": "2026-04-05T15:30:07-07:00",
-    "description": "chore: Build 77 — calorie warnings, meal types, restaurant guidance",
+    "description": "chore: Build 77 \u2014 calorie warnings, meal types, restaurant guidance",
     "fixes": [],
     "features": [
-      "AI — multi-food log confirmation shows meal type",
-      "AI — food log confirmation shows meal type",
-      "AI — time-aware calorie warnings in instant answers",
-      "AI — restaurant/eating out guidance + better food logging prompt"
+      "AI \u2014 multi-food log confirmation shows meal type",
+      "AI \u2014 food log confirmation shows meal type",
+      "AI \u2014 time-aware calorie warnings in instant answers",
+      "AI \u2014 restaurant/eating out guidance + better food logging prompt"
     ]
   },
   {
     "build": 78,
     "date": "2026-04-05T15:46:27-07:00",
-    "description": "chore: Build 78 — remaining calories after logging, weight sanity check, sparkles indicator",
+    "description": "chore: Build 78 \u2014 remaining calories after logging, weight sanity check, sparkles indicator",
     "fixes": [
-      "AI — weight logging sanity check (20-500 range)",
-      "AI — thinking indicator has sparkles icon for visual consistency"
+      "AI \u2014 weight logging sanity check (20-500 range)",
+      "AI \u2014 thinking indicator has sparkles icon for visual consistency"
     ],
     "features": [
-      "AI — multi-food log also shows remaining calories",
-      "AI — show remaining calories after food logging"
+      "AI \u2014 multi-food log also shows remaining calories",
+      "AI \u2014 show remaining calories after food logging"
     ]
   },
   {
     "build": 79,
     "date": "2026-04-05T16:02:37-07:00",
-    "description": "chore: Build 79 — better greetings, loading message, weight sanity, lost/gained keywords",
+    "description": "chore: Build 79 \u2014 better greetings, loading message, weight sanity, lost/gained keywords",
     "fixes": [],
     "features": [
-      "AI — dashboard greeting shows today's calories + actionable hint",
-      "AI — better loading message with what works while waiting",
-      "AI — \"how much have I lost?\" now triggers weight context"
+      "AI \u2014 dashboard greeting shows today's calories + actionable hint",
+      "AI \u2014 better loading message with what works while waiting",
+      "AI \u2014 \"how much have I lost?\" now triggers weight context"
     ]
   },
   {
     "build": 80,
     "date": "2026-04-05T16:19:40-07:00",
-    "description": "chore: Build 80 — qualifier stripping, amount parsing, serving size fix, dashboard greeting",
+    "description": "chore: Build 80 \u2014 qualifier stripping, amount parsing, serving size fix, dashboard greeting",
     "fixes": [
-      "AI — food logging includes correct serving size from DB"
+      "AI \u2014 food logging includes correct serving size from DB"
     ],
     "features": [
-      "AI — expanded amount parsing: \"couple\", \"few\", \"several\", multi-word",
-      "AI — food search strips qualifiers (\"2 slices of pizza\" → finds pizza)"
+      "AI \u2014 expanded amount parsing: \"couple\", \"few\", \"several\", multi-word",
+      "AI \u2014 food search strips qualifiers (\"2 slices of pizza\" \u2192 finds pizza)"
     ]
   },
   {
     "build": 81,
     "date": "2026-04-05T16:39:27-07:00",
-    "description": "chore: Build 81 — meal hint, qualifier expansion, amount parsing, high-cal safety",
+    "description": "chore: Build 81 \u2014 meal hint, qualifier expansion, amount parsing, high-cal safety",
     "fixes": [
-      "AI — safety check for unreasonably high calorie entries"
+      "AI \u2014 safety check for unreasonably high calorie entries"
     ],
     "features": [
-      "AI — meal type hint from natural language (\"log eggs for dinner\")",
-      "AI — expanded qualifier stripping with singular forms"
+      "AI \u2014 meal type hint from natural language (\"log eggs for dinner\")",
+      "AI \u2014 expanded qualifier stripping with singular forms"
     ]
   },
   {
     "build": 82,
     "date": "2026-04-06T01:03:24-07:00",
-    "description": "chore: Build 82 — GPU fallback, source-built xcframework, unit overhaul, AI improvements",
+    "description": "chore: Build 82 \u2014 GPU fallback, source-built xcframework, unit overhaul, AI improvements",
     "fixes": [
-      "AI note — added 'Thank you for testing! Next release will be faster and smarter.'",
-      "AI disclaimer more prominent — shield icon, larger text, background",
+      "AI note \u2014 added 'Thank you for testing! Next release will be faster and smarter.'",
+      "AI disclaimer more prominent \u2014 shield icon, larger text, background",
       "AI disclaimer as permanent note above input bar with settings path",
       "Show AI disclaimer every time chat opens (not just once)",
-      "Updated AI disclaimer — mentions small model, local, improvements coming",
+      "Updated AI disclaimer \u2014 mentions small model, local, improvements coming",
       "GPU fallback reloads model fully CPU-only (no Metal init at all)",
-      "GPU context fallback — try Metal first, fall back to CPU if fails",
-      "Embed llama.xcframework directly — no local SPM package needed",
-      "AI — strip markdown bold/headers from LLM responses",
-      "ServingInputView — hide conversion hint for ml and spray (1g = 1g is useless)",
+      "GPU context fallback \u2014 try Metal first, fall back to CPU if fails",
+      "Embed llama.xcframework directly \u2014 no local SPM package needed",
+      "AI \u2014 strip markdown bold/headers from LLM responses",
+      "ServingInputView \u2014 hide conversion hint for ml and spray (1g = 1g is useless)",
       "Multi-turn follow-up excludes yes/no/ok/thanks from food search",
-      "Merge Settings into Health card — Algorithm moved inside Settings",
-      "Revert KV cache quantization — degraded response quality",
+      "Merge Settings into Health card \u2014 Algorithm moved inside Settings",
+      "Revert KV cache quantization \u2014 degraded response quality",
       "8 customer-reported issues from beta testing",
-      "AI — never log food without user confirmation",
-      "AI — handle 'a lot of rice' amount parsing (2 servings, not 'lot of rice')",
-      "AI — remove redundant per-supplement list (saves ~50 tokens)"
+      "AI \u2014 never log food without user confirmation",
+      "AI \u2014 handle 'a lot of rice' amount parsing (2 servings, not 'lot of rice')",
+      "AI \u2014 remove redundant per-supplement list (saves ~50 tokens)"
     ],
     "features": [
-      "AI input bar redesign — sparkles icon, pill shape, larger send button",
-      "GPU acceleration — source-built llama.cpp xcframework with Metal",
-      "GPU acceleration via Metal — b7310 xcframework with A19 Pro support",
-      "AI — instant \"how's my protein?\" with target comparison",
-      "AI — biomarker pills show specific out-of-range marker name",
-      "AI — exercise screen shows first template as quick-start pill",
-      "AI — instant \"what did I eat today?\" with meal-grouped food list",
-      "Fuzzy food search — drops last char when no results found",
-      "AI — handle START_WORKOUT action from LLM response",
-      "AI — nutrition lookup suggests logging the food",
-      "AI — handle corrections + fix undo message for weight",
-      "AI — multi-turn food logging follow-up",
-      "AI — show what was found before opening food log sheet",
-      "AI evaluation harness — gold-standard precision/recall benchmarks",
-      "Systematic unit picker overhaul — shared ServingInputView component",
+      "AI input bar redesign \u2014 sparkles icon, pill shape, larger send button",
+      "GPU acceleration \u2014 source-built llama.cpp xcframework with Metal",
+      "GPU acceleration via Metal \u2014 b7310 xcframework with A19 Pro support",
+      "AI \u2014 instant \"how's my protein?\" with target comparison",
+      "AI \u2014 biomarker pills show specific out-of-range marker name",
+      "AI \u2014 exercise screen shows first template as quick-start pill",
+      "AI \u2014 instant \"what did I eat today?\" with meal-grouped food list",
+      "Fuzzy food search \u2014 drops last char when no results found",
+      "AI \u2014 handle START_WORKOUT action from LLM response",
+      "AI \u2014 nutrition lookup suggests logging the food",
+      "AI \u2014 handle corrections + fix undo message for weight",
+      "AI \u2014 multi-turn food logging follow-up",
+      "AI \u2014 show what was found before opening food log sheet",
+      "AI evaluation harness \u2014 gold-standard precision/recall benchmarks",
+      "Systematic unit picker overhaul \u2014 shared ServingInputView component",
       "Privacy banner on Dashboard + AI chat disclaimers",
-      "AI — \"how am I doing?\" now goes to LLM for personalized response"
+      "AI \u2014 \"how am I doing?\" now goes to LLM for personalized response"
     ]
   },
   {
@@ -799,25 +799,25 @@
     "date": "2026-04-06T09:41:47-07:00",
     "description": "chore: Bump build 84 (TestFlight upload hit daily limit, retry tomorrow)",
     "fixes": [
-      "'energy'→'energy level' to avoid false matches; added insomnia, nap for sleep",
-      "'run' keyword too broad — now 'went running', 'go run', 'mile run'",
-      "Tighten comparison keywords — 'better'→'better than', 'worse'→'worse than'",
-      "Tighten 'doing' keyword — only match 'how am i doing', not standalone 'doing'",
-      "Numbered list regex only matches at line start — prevents '1500. Good' → '1500) Good'",
+      "'energy'\u2192'energy level' to avoid false matches; added insomnia, nap for sleep",
+      "'run' keyword too broad \u2014 now 'went running', 'go run', 'mile run'",
+      "Tighten comparison keywords \u2014 'better'\u2192'better than', 'worse'\u2192'worse than'",
+      "Tighten 'doing' keyword \u2014 only match 'how am i doing', not standalone 'doing'",
+      "Numbered list regex only matches at line start \u2014 prevents '1500. Good' \u2192 '1500) Good'",
       "Sync multi-food parser verbs with single-food parser",
-      "Tighten keyword matching — 'fast'→'fasting', 'rest'→'rest day'/'resting'",
-      "'press' keyword now requires leading space — prevents false matches on 'express', 'impress'",
-      "Bullet point replacement only at line start — preserves '-300kcal' in text",
+      "Tighten keyword matching \u2014 'fast'\u2192'fasting', 'rest'\u2192'rest day'/'resting'",
+      "'press' keyword now requires leading space \u2014 prevents false matches on 'express', 'impress'",
+      "Bullet point replacement only at line start \u2014 preserves '-300kcal' in text",
       "Comparison routing now includes domain context (workout/food) when mentioned"
     ],
     "features": [
-      "Direct template start from chat — 'start push day', 'let's do legs'",
+      "Direct template start from chat \u2014 'start push day', 'let's do legs'",
       "Inject current screen state into every LLM call",
-      "Screen-specific action hints — narrow tool surface per turn",
+      "Screen-specific action hints \u2014 narrow tool surface per turn",
       "Exercise pill \"Log a workout\" + workout logging prompt",
       "Help menu shows workout capabilities (log workout, start template)",
       "Workout creation shows summary before opening",
-      "GPU Metal fix — rebuilt xcframework from llama.cpp b7400",
+      "GPU Metal fix \u2014 rebuilt xcframework from llama.cpp b7400",
       "Exercise names trigger workout context + eval test",
       "Workout context shows template exercises + START_WORKOUT hint",
       "Conversational workout builder + CREATE_WORKOUT action"
@@ -826,172 +826,172 @@
   {
     "build": 85,
     "date": "2026-04-07T00:21:25-07:00",
-    "description": "chore: Build 85 published to TestFlight — tool-calling, 200 eval tests, body comp, streaks",
+    "description": "chore: Build 85 published to TestFlight \u2014 tool-calling, 200 eval tests, body comp, streaks",
     "fixes": [
-      "Non-food blocklist (log exercise→no food), double-execution bug, eval tool names updated",
-      "Flaky session tests — handle concurrent UserDefaults access gracefully",
-      "program.md — zero text output between tickets, no summaries",
-      "program.md — stronger NEVER STOP, no pausing between tickets, immediate next step",
-      "Parse actions from original response, not cleaned — prevents tag stripping",
-      "Remove 'glucose' from biomarker keywords — already in glucose domain",
-      "Floor calorie target at 500 in caloriesLeft() — matches baseContext() behavior",
-      "BUG-001 — Clarify calorie context to prevent LLM confusion"
+      "Non-food blocklist (log exercise\u2192no food), double-execution bug, eval tool names updated",
+      "Flaky session tests \u2014 handle concurrent UserDefaults access gracefully",
+      "program.md \u2014 zero text output between tickets, no summaries",
+      "program.md \u2014 stronger NEVER STOP, no pausing between tickets, immediate next step",
+      "Parse actions from original response, not cleaned \u2014 prevents tag stripping",
+      "Remove 'glucose' from biomarker keywords \u2014 already in glucose domain",
+      "Floor calorie target at 500 in caloriesLeft() \u2014 matches baseContext() behavior",
+      "BUG-001 \u2014 Clarify calorie context to prevent LLM confusion"
     ],
     "features": [
-      "Food search uses FoodService — time-of-day boost + spell correction in search",
-      "Workout streak display on Exercise tab — flame icon, current + best streak",
-      "WeightService + tool updated with body composition — body fat, BMI, water in trend + new get_body_composition tool",
-      "Body composition tracking — body fat %, BMI, water % on weight entries",
-      "Workout streak tracking — current + longest consecutive weeks with workouts",
-      "Multi-turn workout accumulation — exercises accumulate, 'done' opens workout",
-      "TC-12 Post-tool hooks — follow-up suggestions after tool execution",
-      "TC-11 Pre-tool validation hooks — weight range check before logging",
-      "WIRE-5 Smart workout fallback — builds session from ExerciseService when no template matches",
+      "Food search uses FoodService \u2014 time-of-day boost + spell correction in search",
+      "Workout streak display on Exercise tab \u2014 flame icon, current + best streak",
+      "WeightService + tool updated with body composition \u2014 body fat, BMI, water in trend + new get_body_composition tool",
+      "Body composition tracking \u2014 body fat %, BMI, water % on weight entries",
+      "Workout streak tracking \u2014 current + longest consecutive weeks with workouts",
+      "Multi-turn workout accumulation \u2014 exercises accumulate, 'done' opens workout",
+      "TC-12 Post-tool hooks \u2014 follow-up suggestions after tool execution",
+      "TC-11 Pre-tool validation hooks \u2014 weight range check before logging",
+      "WIRE-5 Smart workout fallback \u2014 builds session from ExerciseService when no template matches",
       "WIRE-3 AIChatView uses ToolRegistry.execute() for JSON tool calls, action tags as fallback",
       "WIRE-2 System prompt injects tool schemas + registers tools at startup",
-      "WIRE-1 Register all 20 tools in ToolRegistry — food, weight, exercise, sleep, supplements, glucose, biomarkers",
-      "SVC-4/5/6/7 — SleepRecovery, Supplement, Glucose, Biomarker services",
-      "SVC-3 ExerciseService — smart session builder, progressive overload, muscle group lookup",
-      "SVC-2 WeightServiceAPI — unified weight service with log, trend, history, goal progress",
-      "SVC-1 FoodService — unified food service with search, nutrition, totals, suggestions, calorie explainer",
-      "TC-3 JSON tool-call parser — AIActionParser now handles {\"tool\":\"name\",\"params\":{}} alongside action tags",
-      "TC-2 SpellCorrectService — dictionary-based food/fitness spell correction",
-      "TC-1 ToolSchema + ToolRegistry — foundation for tool-calling SLM",
-      "FEAT-001 — Instant nutrition lookup from chat (no LLM needed for DB matches)",
-      "FEAT-001 — Expand calorie estimation routing + eval tests"
+      "WIRE-1 Register all 20 tools in ToolRegistry \u2014 food, weight, exercise, sleep, supplements, glucose, biomarkers",
+      "SVC-4/5/6/7 \u2014 SleepRecovery, Supplement, Glucose, Biomarker services",
+      "SVC-3 ExerciseService \u2014 smart session builder, progressive overload, muscle group lookup",
+      "SVC-2 WeightServiceAPI \u2014 unified weight service with log, trend, history, goal progress",
+      "SVC-1 FoodService \u2014 unified food service with search, nutrition, totals, suggestions, calorie explainer",
+      "TC-3 JSON tool-call parser \u2014 AIActionParser now handles {\"tool\":\"name\",\"params\":{}} alongside action tags",
+      "TC-2 SpellCorrectService \u2014 dictionary-based food/fitness spell correction",
+      "TC-1 ToolSchema + ToolRegistry \u2014 foundation for tool-calling SLM",
+      "FEAT-001 \u2014 Instant nutrition lookup from chat (no LLM needed for DB matches)",
+      "FEAT-001 \u2014 Expand calorie estimation routing + eval tests"
     ]
   },
   {
     "build": 86,
     "date": "2026-04-07T08:30:31-07:00",
-    "description": "chore: Build 86 — new llama.cpp xcframework, fl oz unit, liquid food fixes. Uploaded to TestFlight.",
+    "description": "chore: Build 86 \u2014 new llama.cpp xcframework, fl oz unit, liquid food fixes. Uploaded to TestFlight.",
     "fixes": [
-      "31 liquid foods fixed — milk/juice/shake/broth/latte units changed from grams to ml, protein shakes to scoop"
+      "31 liquid foods fixed \u2014 milk/juice/shake/broth/latte units changed from grams to ml, protein shakes to scoop"
     ],
     "features": [
-      "Add fl oz unit — liquids now show ml, fl oz, cup options. Barcode scanner parses fl oz from products.",
-      "Rebuild llama.cpp xcframework from latest source — supports Gemma 4, Qwen3, new architectures",
+      "Add fl oz unit \u2014 liquids now show ml, fl oz, cup options. Barcode scanner parses fl oz from products.",
+      "Rebuild llama.cpp xcframework from latest source \u2014 supports Gemma 4, Qwen3, new architectures",
       "'Yes' after weight confirmation actually logs the weight"
     ]
   },
   {
     "build": 87,
     "date": "2026-04-07T09:37:44-07:00",
-    "description": "chore: Build 87 — Gemma 4, fl oz, macro fixes, new llama.cpp. Published to TestFlight.",
+    "description": "chore: Build 87 \u2014 Gemma 4, fl oz, macro fixes, new llama.cpp. Published to TestFlight.",
     "fixes": [
-      "Macro ratios updated per nutrition research — balanced fat 25%→30%, low-fat 15%→20%, low-carb 40%→45%"
+      "Macro ratios updated per nutrition research \u2014 balanced fat 25%\u219230%, low-fat 15%\u219220%, low-carb 40%\u219245%"
     ],
     "features": [
       "Gemma 4 downloads from HuggingFace (2.9GB > GitHub 2GB limit). Added customURL per model file.",
-      "Switch to Gemma 4 E2B as default model — 90% food, 70% questions, 80% exercise tool calling"
+      "Switch to Gemma 4 E2B as default model \u2014 90% food, 70% questions, 80% exercise tool calling"
     ]
   },
   {
     "build": 92,
     "date": "2026-04-08T06:55:25-07:00",
-    "description": "chore: Build 92 — 33 AI improvements, all P0/P1 parity gaps closed. Published to TestFlight.",
+    "description": "chore: Build 92 \u2014 33 AI improvements, all P0/P1 parity gaps closed. Published to TestFlight.",
     "fixes": [
       "daily summary showed oldest weight instead of most recent",
-      "\"I did yoga for like half an hour\" — trailing duration parsing",
-      "calorie estimation from chat — \"calories in samosa\", \"estimate calories for biryani\"",
-      "\"set my goal to one sixty\" — word number resolver for weight goals",
-      "\"How is my sleep quality last week\" — weekly sleep data via HealthKit",
-      "\"Tell me my workout history\" — exercise_info now shows recent workouts",
-      "\"and yesterday?\", word numbers, diet advice — 3 failing queries fixed",
+      "\"I did yoga for like half an hour\" \u2014 trailing duration parsing",
+      "calorie estimation from chat \u2014 \"calories in samosa\", \"estimate calories for biryani\"",
+      "\"set my goal to one sixty\" \u2014 word number resolver for weight goals",
+      "\"How is my sleep quality last week\" \u2014 weekly sleep data via HealthKit",
+      "\"Tell me my workout history\" \u2014 exercise_info now shows recent workouts",
+      "\"and yesterday?\", word numbers, diet advice \u2014 3 failing queries fixed",
       "\"I want to reduce fat\" no longer misclassified as food logging",
-      "test isolation — mutating tests get own DB, count units return servings not grams",
+      "test isolation \u2014 mutating tests get own DB, count units return servings not grams",
       "Copy yesterday preserves meal times + ordering + fiber data",
-      "AI chat calorie target matches Food tab — use WeightGoal.macroTargets()",
+      "AI chat calorie target matches Food tab \u2014 use WeightGoal.macroTargets()",
       "Gemma 4 native chat template + mid-string amount parsing",
-      "SQLite DEFAULT datetime needs parens — (datetime('now')) not datetime('now')",
-      "Lower RAM threshold for Gemma 4 from 7.5→6.5GB — iPhone 16 Pro (8GB) was getting SmolLM2"
+      "SQLite DEFAULT datetime needs parens \u2014 (datetime('now')) not datetime('now')",
+      "Lower RAM threshold for Gemma 4 from 7.5\u21926.5GB \u2014 iPhone 16 Pro (8GB) was getting SmolLM2"
     ],
     "features": [
-      "barcode scan from chat — \"scan barcode\", \"scan food\"",
-      "weekly comparison — \"compare this week to last\" with calorie averages",
-      "meal suggestions from chat — \"what should I eat\", \"food ideas\"",
-      "weight progress queries — \"how much have I lost\", \"am I on track\"",
-      "\"undo\" command — removes last food entry from today",
-      "cross-domain analysis — \"why am I not losing weight?\" combines food + weight + exercise",
-      "delete/remove food entry from chat — \"delete last entry\", \"remove the rice\"",
-      "\"piece\" available as unit for ALL foods — no more missing units",
-      "Time picker on all food logging paths — search, recipe, barcode",
-      "AI chat overhaul — dual-model, parity gaps, Coach Me, meal builder",
+      "barcode scan from chat \u2014 \"scan barcode\", \"scan food\"",
+      "weekly comparison \u2014 \"compare this week to last\" with calorie averages",
+      "meal suggestions from chat \u2014 \"what should I eat\", \"food ideas\"",
+      "weight progress queries \u2014 \"how much have I lost\", \"am I on track\"",
+      "\"undo\" command \u2014 removes last food entry from today",
+      "cross-domain analysis \u2014 \"why am I not losing weight?\" combines food + weight + exercise",
+      "delete/remove food entry from chat \u2014 \"delete last entry\", \"remove the rice\"",
+      "\"piece\" available as unit for ALL foods \u2014 no more missing units",
+      "Time picker on all food logging paths \u2014 search, recipe, barcode",
+      "AI chat overhaul \u2014 dual-model, parity gaps, Coach Me, meal builder",
       "Auto-refresh HealthKit data every 3 min on Dashboard + Exercise tab",
-      "Extended body comp — muscle mass, bone mass, visceral fat, metabolic age behind 'More Measurements'",
-      "Sync body fat % and BMI from Apple Health → body_composition table on app launch",
-      "Body comp entry includes optional weight — one form for scale readings (weight + fat% + BMI + water%)",
-      "Auto-unload AI model when not in chat — frees ~3GB GPU after 60s away",
-      "Separate body composition tracking — own table, own entry sheet, independent of weight entries"
+      "Extended body comp \u2014 muscle mass, bone mass, visceral fat, metabolic age behind 'More Measurements'",
+      "Sync body fat % and BMI from Apple Health \u2192 body_composition table on app launch",
+      "Body comp entry includes optional weight \u2014 one form for scale readings (weight + fat% + BMI + water%)",
+      "Auto-unload AI model when not in chat \u2014 frees ~3GB GPU after 60s away",
+      "Separate body composition tracking \u2014 own table, own entry sheet, independent of weight entries"
     ]
   },
   {
     "build": 93,
     "date": "2026-04-08T07:40:24-07:00",
-    "description": "chore: Build 93 — natural LLM-presented responses for info queries. Published to TestFlight.",
+    "description": "chore: Build 93 \u2014 natural LLM-presented responses for info queries. Published to TestFlight.",
     "fixes": [],
     "features": []
   },
   {
     "build": 95,
     "date": "2026-04-09T08:21:47-07:00",
-    "description": "chore: Build 95 — plant points NOVA, data model cleanup, UI fixes. Published to TestFlight.",
+    "description": "chore: Build 95 \u2014 plant points NOVA, data model cleanup, UI fixes. Published to TestFlight.",
     "fixes": [
-      "workout finish sheet — larger detent (75%) + SwiftUI ShareLink",
+      "workout finish sheet \u2014 larger detent (75%) + SwiftUI ShareLink",
       "food sort resets to time on date change or any UI reload",
-      "2 workout bugs — warmups in share + save button hidden behind keyboard",
-      "move Copy All to past-day banner area — away from food diary list",
-      "compact time picker — small clock icon + picker, no label",
-      "consistent Food Diary header — Copy All moved to inline row",
-      "rename \"Empty Workout\" → \"Start Workout\" — less confusing",
-      "food entry detail sheet uses adaptive height — medium + large detents",
+      "2 workout bugs \u2014 warmups in share + save button hidden behind keyboard",
+      "move Copy All to past-day banner area \u2014 away from food diary list",
+      "compact time picker \u2014 small clock icon + picker, no label",
+      "consistent Food Diary header \u2014 Copy All moved to inline row",
+      "rename \"Empty Workout\" \u2192 \"Start Workout\" \u2014 less confusing",
+      "food entry detail sheet uses adaptive height \u2014 medium + large detents",
       "PlantPointsCardView detail sheet now uses NOVA-aware ingredient query",
-      "entry detail respects NOVA — Avocado Toast shows \"2 plant ingredients\" not \"Plant (1 pt)\"",
-      "plant points name fallback — match food DB by name when food_id is NULL",
-      "plant list shows ingredients not food names — \"avocado\" not \"avocado toast\"",
-      "processed foods excluded from plant points — bread, pasta, roti, naan",
+      "entry detail respects NOVA \u2014 Avocado Toast shows \"2 plant ingredients\" not \"Plant (1 pt)\"",
+      "plant points name fallback \u2014 match food DB by name when food_id is NULL",
+      "plant list shows ingredients not food names \u2014 \"avocado\" not \"avocado toast\"",
+      "processed foods excluded from plant points \u2014 bread, pasta, roti, naan",
       "avocado variants deduplicate to 1 plant point",
-      "Hevy import weight — read weight_lbs column (not weight_kg)",
+      "Hevy import weight \u2014 read weight_lbs column (not weight_kg)",
       "make sessionSaveAndLoad test resilient to concurrent UserDefaults",
-      "BUG-003 — plant points \"Today\" label updates with date navigation",
-      "BUG-002 — recent foods now store macros, manual entries no longer show 0 cal"
+      "BUG-003 \u2014 plant points \"Today\" label updates with date navigation",
+      "BUG-002 \u2014 recent foods now store macros, manual entries no longer show 0 cal"
     ],
     "features": [
-      "edit macros on custom food entries — cal, P, C, F, Fiber all editable",
-      "edit time in food entry detail — time picker + save updates loggedAt",
+      "edit macros on custom food entries \u2014 cal, P, C, F, Fiber all editable",
+      "edit time in food entry detail \u2014 time picker + save updates loggedAt",
       "drag reorder food entries via Move Up/Down in context menu",
       "food diary sort chips + Copy All preserves meal times",
-      "food entry detail — plant indicator, ingredients, fiber, copy to today",
-      "Copy All to Today + 🌱 leaf per food entry",
+      "food entry detail \u2014 plant indicator, ingredients, fiber, copy to today",
+      "Copy All to Today + \ud83c\udf31 leaf per food entry",
       "NOVA processing levels + Hindi alias normalization for plant points",
-      "add source column to food table — unified food storage foundation",
+      "add source column to food table \u2014 unified food storage foundation",
       "salad/bowl base templates + ingredients on seeded recipes",
-      "category browse chips in ingredient picker — Vegetables, Fruits, Proteins, etc.",
+      "category browse chips in ingredient picker \u2014 Vegetables, Fruits, Proteins, etc.",
       "barcode scan saves ingredients from OpenFoodFacts API",
       "precomputed ingredients for 40 composite dishes in foods.json",
-      "spice blend expansion — Garam Masala = 5 individual spices = 1.25 pts",
+      "spice blend expansion \u2014 Garam Masala = 5 individual spices = 1.25 pts",
       "plant points now counts ingredients, not just food names",
       "ingredients column on food + favorite_food for plant points",
-      "FEAT-002 — \"Copy to Today\" from past day food entries"
+      "FEAT-002 \u2014 \"Copy to Today\" from past day food entries"
     ]
   },
   {
     "build": 96,
     "date": "2026-04-09T08:36:27-07:00",
-    "description": "chore: Build 96 — sort reset fix, sheet height fix, workout bugs. Published to TestFlight.",
+    "description": "chore: Build 96 \u2014 sort reset fix, sheet height fix, workout bugs. Published to TestFlight.",
     "fixes": [
-      "sort resets to time on ANY date change — onChange on selectedDate",
-      "food entry detail sheet starts at 85% height — copy button no longer cut off"
+      "sort resets to time on ANY date change \u2014 onChange on selectedDate",
+      "food entry detail sheet starts at 85% height \u2014 copy button no longer cut off"
     ],
     "features": []
   },
   {
     "build": 99,
     "date": "2026-04-11T11:06:18-07:00",
-    "description": "chore: Build 99 — weight goal fixes, shared GoalProgressCard, hook pipeline",
+    "description": "chore: Build 99 \u2014 weight goal fixes, shared GoalProgressCard, hook pipeline",
     "fixes": [
       "single Update Goal button on weight goal page",
-      "clean GoalProgressCard — no edit button, same on both screens",
+      "clean GoalProgressCard \u2014 no edit button, same on both screens",
       "isOnTrack + calorieTargetExplanation use current weight, not startWeightKg",
       "calorie target floor (1200), rate cap (1 kg/wk), transparent goal info",
       "resolvedCalorieTarget + progress use current weight, not startWeightKg",
@@ -1001,27 +1001,27 @@
       "eval harness setUp registers tools + unified tool schema prompt",
       "dashboard weight entry actually saves to DB",
       "test script finds DB in Application Support/Drift/ (not Documents)",
-      "respect user's weight unit preference — no more hardcoded \"lbs\"",
+      "respect user's weight unit preference \u2014 no more hardcoded \"lbs\"",
       "outlier detection + weight change gap guard",
-      "weight trend uses last 90 days only — no more nonsensical TDEE/surplus",
-      "macro bar keeps its own color when over target — only text turns red",
-      "macro progress bar capped at 100% — no more overflow on over-target",
+      "weight trend uses last 90 days only \u2014 no more nonsensical TDEE/surplus",
+      "macro bar keeps its own color when over target \u2014 only text turns red",
+      "macro progress bar capped at 100% \u2014 no more overflow on over-target",
       "\"Copy All to Today\" now copies to today, not the viewed past day"
     ],
     "features": [
-      "hook-based pipeline — ConversationState + PreHookResult + PostHookResult",
+      "hook-based pipeline \u2014 ConversationState + PreHookResult + PostHookResult",
       "follow-up questions + custom macro logging via LLM",
       "Log Past Workout button + extract TemplatePreviewSheet",
       "past workout support + set editing infrastructure",
-      "edit existing workout sets — tap to edit weight/reps",
+      "edit existing workout sets \u2014 tap to edit weight/reps",
       "swipe-to-delete individual sets in workout detail",
       "edit workout name & notes from detail view",
       "multi-item food logging opens recipe builder",
       "profile fields in Goal page + dashboard nudge for incomplete profile",
-      "weight staleness nudges — dashboard direct log + goal page warning",
+      "weight staleness nudges \u2014 dashboard direct log + goal page warning",
       "soft-delete weight entries + manual entries priority over HealthKit",
       "coverage check script + enforcement rules",
-      "LLM intent classifier — first step toward removing hardcoded strings"
+      "LLM intent classifier \u2014 first step toward removing hardcoded strings"
     ]
   },
   {
@@ -1031,23 +1031,23 @@
     "fixes": [
       "WeightServiceAPI.logWeight returns nil on DB failure + error feedback",
       "silent save failures + multi-turn uses buildMealFromText",
-      "food DB — correct 55 serving sizes from 1g to real weights",
+      "food DB \u2014 correct 55 serving sizes from 1g to real weights",
       "isLowQuality false positive on LLM follow-up questions",
       "silent delete failures now report errors + remove dead barcode code",
-      "minimum fat is sex-aware — 0.8 g/kg women, 0.6 g/kg men",
+      "minimum fat is sex-aware \u2014 0.8 g/kg women, 0.6 g/kg men",
       "raise minimum fat from 0.5 to 0.7 g/kg bodyweight",
       "calorie explanation shows floored value + remove dead goalProgressCard",
-      "clarify weight display — Latest (raw entry) vs Trend (EMA smoothed)",
+      "clarify weight display \u2014 Latest (raw entry) vs Trend (EMA smoothed)",
       "all macroTargets() calls now pass currentWeightKg",
       "FoodService.resolvedCalorieTarget passes currentWeight to macroTargets"
     ],
     "features": [
       "product-driven autonomous loop with hooks enforcement",
-      "drift control watchdog — auto-restart, DRAIN graceful stop, PID adoption",
+      "drift control watchdog \u2014 auto-restart, DRAIN graceful stop, PID adoption",
       "single-message meal logging + named calorie entries",
-      "ingredient persistence — store per-ingredient macros in recipes",
+      "ingredient persistence \u2014 store per-ingredient macros in recipes",
       "height input supports both cm and ft/in with toggle",
-      "unified WeightEntryView — weight + body composition in one screen"
+      "unified WeightEntryView \u2014 weight + body composition in one screen"
     ]
   },
   {
@@ -1058,12 +1058,12 @@
       "product review never blocks on human feedback",
       "issue-check hook now runs every commit with inline bug list",
       "LB/KG unit preference now updates weight views on toggle",
-      "move hook state files to ~/drift-state/ — .claude/ is sensitive"
+      "move hook state files to ~/drift-state/ \u2014 .claude/ is sensitive"
     ],
     "features": [
       "merge loops into Drift Autopilot + reports via GitHub PRs",
-      "behavior insight cards on dashboard — workout, protein, logging",
-      "adaptive TDEE — learns your true expenditure from weight trend",
+      "behavior insight cards on dashboard \u2014 workout, protein, logging",
+      "adaptive TDEE \u2014 learns your true expenditure from weight trend",
       "exercise weights respect LB/KG preference across all workout views"
     ]
   },
@@ -1072,13 +1072,13 @@
     "date": "2026-04-12T12:23:17-07:00",
     "description": "chore: TestFlight build 104",
     "fixes": [
-      "revert adaptive TDEE — dropped calories dangerously (1960→1400)"
+      "revert adaptive TDEE \u2014 dropped calories dangerously (1960\u21921400)"
     ],
     "features": [
-      "dashboard redesign — macro rings hero, section headers, tighter hierarchy",
-      "behavior insights v2 — sleep vs calories + wider protein window",
-      "add 34 foods — seafood, Asian, Mediterranean, soups, breakfast",
-      "bold UI theme overhaul — premium dark refresh"
+      "dashboard redesign \u2014 macro rings hero, section headers, tighter hierarchy",
+      "behavior insights v2 \u2014 sleep vs calories + wider protein window",
+      "add 34 foods \u2014 seafood, Asian, Mediterranean, soups, breakfast",
+      "bold UI theme overhaul \u2014 premium dark refresh"
     ]
   },
   {
@@ -1087,15 +1087,15 @@
     "description": "chore: TestFlight build 105",
     "fixes": [
       "watchdog 15-min check interval + kill duplicate on startup",
-      "multi-turn reliability — topic switch detection, stale state cleanup"
+      "multi-turn reliability \u2014 topic switch detection, stale state cleanup"
     ],
     "features": [
-      "color harmony pass — warmer palette, fix hardcoded colors",
-      "voice input prototype — SpeechRecognizer mic button in AI chat",
+      "color harmony pass \u2014 warmer palette, fix hardcoded colors",
+      "voice input prototype \u2014 SpeechRecognizer mic button in AI chat",
       "color harmony sprint task + screenshot analysis in product reviews",
       "structured food confirmation card in AI chat",
-      "food DB to 1,201 — fruits, breakfast, bakery, Asian, Indian, global",
-      "add 31 foods — beverages, Thai, Japanese, Indian proteins, snacks"
+      "food DB to 1,201 \u2014 fruits, breakfast, bakery, Asian, Indian, global",
+      "add 31 foods \u2014 beverages, Thai, Japanese, Indian proteins, snacks"
     ]
   },
   {
@@ -1103,7 +1103,7 @@
     "date": "2026-04-12T21:46:10-07:00",
     "description": "chore: TestFlight build 106",
     "features": [
-      "USDA API Phase 1 — opt-in toggle, rate limiting, chat fallback"
+      "USDA API Phase 1 \u2014 opt-in toggle, rate limiting, chat fallback"
     ],
     "fixes": [
       "force-release issue stays open until publish succeeds"
@@ -1112,10 +1112,10 @@
   {
     "build": 107,
     "date": "2026-04-13T00:30:18-07:00",
-    "description": "chore: TestFlight build 107 — voice UX overhaul",
+    "description": "chore: TestFlight build 107 \u2014 voice UX overhaul",
     "features": [],
     "fixes": [
-      "voice input UX overhaul — no more eaten words"
+      "voice input UX overhaul \u2014 no more eaten words"
     ]
   },
   {
@@ -1132,11 +1132,11 @@
     "date": "2026-04-13T18:30:00-07:00",
     "description": "chore: TestFlight build 112",
     "features": [
-      "Muscle group heatmap — volume intensity shading shows workout emphasis",
-      "Muscle group heatmap — weekly set counts per muscle group"
+      "Muscle group heatmap \u2014 volume intensity shading shows workout emphasis",
+      "Muscle group heatmap \u2014 weekly set counts per muscle group"
     ],
     "fixes": [
-      "Sonnet was skipping TestFlight — removed misleading except text"
+      "Sonnet was skipping TestFlight \u2014 removed misleading except text"
     ]
   },
   {
@@ -1177,9 +1177,9 @@
       "Sprint tab shows sprint tasks + permanent tasks + completed"
     ],
     "fixes": [
-      "Health Nudges default OFF — no notification prompt unless enabled",
+      "Health Nudges default OFF \u2014 no notification prompt unless enabled",
       "Voice input: committed + live text model, no more lost words on pauses",
-      "Command Center JS crash — null check on bug-screenshot element",
+      "Command Center JS crash \u2014 null check on bug-screenshot element",
       "Command Center: stray closing brace breaking all JS",
       "Command Center: HTML-first auth state, no JS needed for anonymous view",
       "3 bugs from systematic hunt (#46, #47, #48)"
@@ -1203,7 +1203,7 @@
     "date": "2026-04-14T23:00:00-07:00",
     "description": "feat: food DB +20 foods, fix multi-food meal hint (#83 #84)",
     "features": [
-      "Food DB: +20 foods — chana masala, rajma chawal, dal chawal, kadhi chawal, kati rolls (chicken/paneer/egg/veg), chivda, chakli, salted lassi, masala omelette, guava, garden salad, idiyappam (1544→1564 foods)"
+      "Food DB: +20 foods \u2014 chana masala, rajma chawal, dal chawal, kadhi chawal, kati rolls (chicken/paneer/egg/veg), chivda, chakli, salted lassi, masala omelette, guava, garden salad, idiyappam (1544\u21921564 foods)"
     ],
     "fixes": [
       "P1: multi-food with meal suffix always logged under Meal instead of breakfast/lunch/dinner/snack",
@@ -1215,12 +1215,32 @@
     "date": "2026-04-15T00:00:00-07:00",
     "description": "fix: workout-set routing, P0 prefilled food form, food DB +45 foods",
     "features": [
-      "Food DB: +45 voice-friendly foods — South Indian, Indian street food, Indian drinks, fitness foods, exotic fruits, grains, condiments, bowls, breakfast (1571→1616 foods)"
+      "Food DB: +45 voice-friendly foods \u2014 South Indian, Indian street food, Indian drinks, fitness foods, exotic fruits, grains, condiments, bowls, breakfast (1571\u21921616 foods)"
     ],
     "fixes": [
       "P0 #119: chat-triggered food logging now opens prefilled review form instead of silently logging",
       "Workout-set queries (e.g. \"bench 3x10 at 135 lbs\") now correctly route to AI pipeline instead of activity handler",
       "Quick-add food name extraction no longer includes macro text in the name"
+    ]
+  },
+  {
+    "build": 122,
+    "date": "2026-04-15T06:00:00-07:00",
+    "description": "AI chat confirmation flow + food DB expansion + Drift Control system overhaul",
+    "features": [
+      "Food logging now confirms before saving \u2014 opens prefilled search instead of direct log",
+      "Copy-previous-day requires confirmation on empty diary",
+      "Food DB expanded to 1729 foods (100+ Indian/regional additions)",
+      "Product review with Designer + Engineer persona debate",
+      "Live autopilot monitoring on Sprint tab",
+      "Product Focus control in Admin tab",
+      "Design doc review workflow with approve/comment"
+    ],
+    "fixes": [
+      "AI food logging confirmation on all bypass paths (#121)",
+      "Workout set display flaky test stabilized",
+      "Approved design docs no longer duplicate in Designs tab",
+      "Sprint tasks must complete before permanent tasks"
     ]
   }
 ]
