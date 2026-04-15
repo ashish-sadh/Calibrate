@@ -30551,5 +30551,337 @@
       "oil"
     ],
     "nova_group": 3
+  },
+  {
+    "name": "Greek Yogurt (2% fat)",
+    "category": "Dairy & Eggs",
+    "serving_size": 170,
+    "serving_unit": "g",
+    "calories": 100,
+    "protein_g": 17,
+    "carbs_g": 7,
+    "fat_g": 0,
+    "fiber_g": 0,
+    "ingredients": [
+      "milk",
+      "live cultures"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Quark",
+    "category": "Dairy & Eggs",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 115,
+    "protein_g": 20,
+    "carbs_g": 5,
+    "fat_g": 1,
+    "fiber_g": 0,
+    "ingredients": [
+      "skimmed milk",
+      "live cultures"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Turkey Meatballs",
+    "category": "Proteins",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 195,
+    "protein_g": 21,
+    "carbs_g": 6,
+    "fat_g": 10,
+    "fiber_g": 0,
+    "ingredients": [
+      "ground turkey",
+      "breadcrumbs",
+      "egg",
+      "garlic",
+      "herbs"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Chicken Sausage",
+    "category": "Proteins",
+    "serving_size": 85,
+    "serving_unit": "g",
+    "calories": 140,
+    "protein_g": 17,
+    "carbs_g": 2,
+    "fat_g": 7,
+    "fiber_g": 0,
+    "ingredients": [
+      "chicken",
+      "spices"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Turkey Bacon (2 strips)",
+    "category": "Proteins",
+    "serving_size": 28,
+    "serving_unit": "g",
+    "calories": 60,
+    "protein_g": 8,
+    "carbs_g": 1,
+    "fat_g": 3,
+    "fiber_g": 0,
+    "ingredients": [
+      "turkey",
+      "salt",
+      "spices"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Smoked Salmon",
+    "category": "Proteins",
+    "serving_size": 85,
+    "serving_unit": "g",
+    "calories": 100,
+    "protein_g": 16,
+    "carbs_g": 0,
+    "fat_g": 4,
+    "fiber_g": 0,
+    "ingredients": [
+      "salmon",
+      "salt",
+      "smoke"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Tuna Salad Sandwich",
+    "category": "Proteins",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 350,
+    "protein_g": 25,
+    "carbs_g": 32,
+    "fat_g": 12,
+    "fiber_g": 2,
+    "ingredients": [
+      "tuna",
+      "mayonnaise",
+      "bread",
+      "celery",
+      "onion"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Avocado Toast with Egg",
+    "category": "Breakfast",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 350,
+    "protein_g": 14,
+    "carbs_g": 28,
+    "fat_g": 20,
+    "fiber_g": 6,
+    "ingredients": [
+      "avocado",
+      "bread",
+      "egg",
+      "salt",
+      "pepper",
+      "lemon"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Smoothie Bowl",
+    "category": "Breakfast",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 310,
+    "protein_g": 8,
+    "carbs_g": 55,
+    "fat_g": 7,
+    "fiber_g": 6,
+    "ingredients": [
+      "frozen berries",
+      "banana",
+      "coconut milk",
+      "granola",
+      "seeds"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Quinoa Salad",
+    "category": "Grains",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 10,
+    "carbs_g": 40,
+    "fat_g": 9,
+    "fiber_g": 5,
+    "ingredients": [
+      "quinoa",
+      "cucumber",
+      "tomato",
+      "olive oil",
+      "lemon",
+      "herbs"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Farro Bowl",
+    "category": "Grains",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 350,
+    "protein_g": 14,
+    "carbs_g": 55,
+    "fat_g": 8,
+    "fiber_g": 7,
+    "ingredients": [
+      "farro",
+      "roasted vegetables",
+      "olive oil",
+      "lemon"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Tomato Basil Soup",
+    "category": "Soups",
+    "serving_size": 300,
+    "serving_unit": "ml",
+    "calories": 150,
+    "protein_g": 4,
+    "carbs_g": 18,
+    "fat_g": 7,
+    "fiber_g": 3,
+    "ingredients": [
+      "tomatoes",
+      "basil",
+      "onion",
+      "cream",
+      "olive oil"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Grilled Chicken Caesar Salad",
+    "category": "Proteins",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 40,
+    "carbs_g": 12,
+    "fat_g": 18,
+    "fiber_g": 3,
+    "ingredients": [
+      "chicken",
+      "romaine",
+      "caesar dressing",
+      "croutons",
+      "parmesan"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Kale Salad",
+    "category": "Vegetables",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 6,
+    "carbs_g": 16,
+    "fat_g": 10,
+    "fiber_g": 4,
+    "ingredients": [
+      "kale",
+      "lemon",
+      "olive oil",
+      "parmesan",
+      "nuts"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Burrito Bowl",
+    "category": "Mexican",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 520,
+    "protein_g": 30,
+    "carbs_g": 58,
+    "fat_g": 15,
+    "fiber_g": 10,
+    "ingredients": [
+      "rice",
+      "beans",
+      "chicken",
+      "salsa",
+      "sour cream",
+      "guacamole"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Taco Salad",
+    "category": "Mexican",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 490,
+    "protein_g": 28,
+    "carbs_g": 38,
+    "fat_g": 22,
+    "fiber_g": 8,
+    "ingredients": [
+      "ground beef",
+      "lettuce",
+      "cheese",
+      "salsa",
+      "tortilla chips",
+      "sour cream"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Green Curry (chicken)",
+    "category": "Asian",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 390,
+    "protein_g": 28,
+    "carbs_g": 15,
+    "fat_g": 26,
+    "fiber_g": 3,
+    "ingredients": [
+      "chicken",
+      "coconut milk",
+      "green curry paste",
+      "vegetables",
+      "basil"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Hummus with Pita",
+    "category": "Middle Eastern",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 10,
+    "carbs_g": 38,
+    "fat_g": 14,
+    "fiber_g": 6,
+    "ingredients": [
+      "hummus",
+      "pita bread",
+      "chickpeas",
+      "tahini",
+      "olive oil"
+    ],
+    "nova_group": 1
   }
 ]
