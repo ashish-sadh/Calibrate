@@ -352,6 +352,14 @@ struct FoodUnit: Hashable {
             return FoodUnit(label: "tbsp", gramsEquivalent: 14)
         }
 
+        // Rice — measured in cups (servingSize in DB is ~158g = 1 cup cooked)
+        // Exclude rice cakes, rice paper, rice wine, rice crackers, rice noodles
+        if name.contains("rice") && !name.contains("cake") && !name.contains("paper") &&
+           !name.contains("wine") && !name.contains("cracker") && !name.contains("noodle") &&
+           !name.contains("pudding") && !name.contains("crisp") {
+            return FoodUnit(label: "cup", gramsEquivalent: cupGrams(for: name))
+        }
+
         // Soups, stews, broths — served by bowl
         if name.contains("soup") || name.contains("stew") || name.contains("chowder") ||
            name.contains("bisque") || name.contains("broth") || name.contains("rasam") ||

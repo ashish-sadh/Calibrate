@@ -300,12 +300,16 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
     #expect(units.contains(where: { $0.label == "cup" }), "Milk should also have cup option")
 }
 
-@Test func smartUnitRiceShowsServingAndCup() async throws {
+@Test func smartUnitRiceShowsCupPrimary() async throws {
     let food = Food(name: "Rice (cooked)", category: "Grains", servingSize: 200, servingUnit: "g", calories: 260)
     let units = FoodUnit.smartUnits(for: food)
-    #expect(units.first?.label == "serving", "Rice should show 'serving' as primary")
-    #expect(units.contains(where: { $0.label == "g" }), "Rice should have grams option")
-    #expect(units.contains(where: { $0.label == "cup" }), "Rice should have cup option")
+    #expect(units.first?.label == "cup", "Rice should default to cup as primary unit")
+    #expect(units.contains(where: { $0.label == "g" }), "Rice should still have grams option")
+
+    // Excluded: rice cakes, rice paper, rice crackers should NOT default to cup
+    let riceCake = Food(name: "Rice Cake", category: "Snacks", servingSize: 9, servingUnit: "g", calories: 35)
+    #expect(FoodUnit.smartUnits(for: riceCake).first?.label != "cup",
+            "Rice cake should not default to cup")
 }
 
 @Test func smartUnitRotiShowsPiece() async throws {
