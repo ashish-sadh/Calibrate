@@ -21,6 +21,11 @@ if [ -s "$STATE_DIR/cache-product-focus" ]; then
     [ -n "$FOCUS" ] && CONTEXT="${CONTEXT}PRODUCT FOCUS: ${FOCUS}\n\n"
 fi
 
+# Bugs with screenshots (all sessions — must view before fixing)
+if [ -s "$STATE_DIR/cache-bugs-with-screenshots" ]; then
+    CONTEXT="${CONTEXT}BUGS WITH SCREENSHOTS (download + view before fixing):\n$(cat "$STATE_DIR/cache-bugs-with-screenshots")\n\n"
+fi
+
 # TestFlight (autonomous only)
 if [ "${DRIFT_AUTONOMOUS:-0}" = "1" ]; then
     LAST_TF=$(cat "$STATE_DIR/last-testflight-publish" 2>/dev/null || echo "0")

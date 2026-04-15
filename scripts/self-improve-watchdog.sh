@@ -125,6 +125,11 @@ refresh_compliance_cache() {
     gh issue list --state open --label P0 --json number,title \
         --jq '.[] | "#\(.number) \(.title)"' > "$SD/cache-p0-bugs" 2>/dev/null || true
 
+    # Open bugs with screenshots (all sessions — must view before fixing)
+    gh issue list --state open --label bug --json number,title,body \
+        --jq '[.[] | select(.body | test("!\\["))] | .[] | "#\(.number) \(.title) — HAS SCREENSHOT"' \
+        > "$SD/cache-bugs-with-screenshots" 2>/dev/null || true
+
     # P0 feature requests without sprint tasks (senior cares)
     gh issue list --state open --label feature-request --label P0 --json number,title \
         --jq '.[] | "#\(.number) \(.title)"' > "$SD/cache-p0-features" 2>/dev/null || true
