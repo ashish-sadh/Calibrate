@@ -114,7 +114,7 @@ import GRDB
     #expect(s.estimated1RM == nil)
 }
 
-@Test func workoutSetDisplayFormatted() async throws {
+@Test @MainActor func workoutSetDisplayFormatted() async throws {
     let saved = Preferences.weightUnit; defer { Preferences.weightUnit = saved }
     Preferences.weightUnit = .lbs
     let s1 = WorkoutSet(workoutId: 1, exerciseName: "Bench", setOrder: 1, weightLbs: 225, reps: 5, isWarmup: false)
