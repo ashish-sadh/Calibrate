@@ -80,7 +80,7 @@ struct WorkoutView: View {
                             Image(systemName: "heart.fill").font(.caption).foregroundStyle(Theme.heartRed)
                             Text("Apple Health").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
                             Spacer()
-                            Text("\(healthWorkouts.count) this week").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
+                            Text("\(healthWorkouts.count) \(healthWorkouts.count == 1 ? "workout" : "workouts") this week").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
                         }
 
                         ForEach(healthWorkouts.prefix(5)) { w in
@@ -120,16 +120,7 @@ struct WorkoutView: View {
                 if !weeklyCounts.isEmpty {
                     // Streak display
                     if let streak = try? WorkoutService.workoutStreak(), streak.current > 0 {
-                        HStack {
-                            Image(systemName: "flame.fill").foregroundStyle(.orange)
-                            Text("\(streak.current) week streak")
-                                .font(.subheadline.weight(.semibold))
-                            Spacer()
-                            Text("Best: \(streak.longest)w")
-                                .font(.caption).foregroundStyle(.secondary)
-                        }
-                        .padding(.horizontal, 12).padding(.vertical, 8)
-                        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+                        streakRow(current: streak.current, longest: streak.longest)
                     }
                     consistencyChart
                 }
@@ -226,9 +217,15 @@ struct WorkoutView: View {
                                             }
                                             VStack(alignment: .leading, spacing: 2) {
                                                 Text(t.name).font(.subheadline.weight(.medium)).foregroundStyle(.primary)
-                                                let working = t.exercises.filter { !$0.isWarmup }
-                                                let warmups = t.exercises.filter { $0.isWarmup }
-                                                Text("\(working.count) exercises\(warmups.isEmpty ? "" : " · \(warmups.count) warmup")")
+                                                let exerciseText: String = {
+                                                    let w = t.exercises.filter { !$0.isWarmup }
+                                                    let wm = t.exercises.filter { $0.isWarmup }
+                                                    let base = "\(w.count) exercises"
+                                                    guard !wm.isEmpty else { return base }
+                                                    let label = wm.count == 1 ? "warmup" : "warmups"
+                                                    return base + " · \(wm.count) \(label)"
+                                                }()
+                                                Text(exerciseText)
                                                     .font(.caption2).foregroundStyle(.tertiary)
                                             }
                                             Spacer()
@@ -582,6 +579,20 @@ struct WorkoutView: View {
             .filter { $0.status == .stalling || $0.status == .declining }
             .sorted { $0.status == .stalling && $1.status != .stalling }
         isLoading = false
+    }
+
+    private func streakRow(current: Int, longest: Int) -> some View {
+        let label = current == 1 ? "week" : "weeks"
+        return HStack {
+            Image(systemName: "flame.fill").foregroundStyle(.orange)
+            Text("\(current) \(label) streak")
+                .font(.subheadline.weight(.semibold))
+            Spacer()
+            Text("Best: \(longest)w")
+                .font(.caption).foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
     }
 }
 
