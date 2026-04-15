@@ -40,7 +40,7 @@ if [ -n "$DESIGN_DOCS" ]; then
   echo ""
   echo "PENDING DESIGN DOCS ($DESIGN_COUNT):"
   echo "$DESIGN_DOCS"
-  echo "Senior: write/revise these BEFORE sprint-tasks. Use Docs/designs/TEMPLATE.md."
+  echo "Senior: create branch design/SHORT-NAME, write doc using Docs/designs/TEMPLATE.md, push, create PR with --label design-doc. Do NOT commit design docs to main."
 fi
 
 # Surface product focus (cached)

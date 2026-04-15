@@ -55,6 +55,11 @@
           },
           {
             "type": "command",
+            "command": ".claude/hooks/enforce-p0-first.sh",
+            "timeout": 10
+          },
+          {
+            "type": "command",
             "command": ".claude/hooks/cycle-counter.sh",
             "timeout": 10
           },

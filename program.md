@@ -36,7 +36,7 @@ You are the Product Designer + Principal Engineer. This is a replanning session.
      - Deferred → "Noted — adding to backlog. Will revisit in Review #N."
    - Create sprint-task Issues from actionable feedback
 4. **Read open bugs:** `gh issue list --state open --label bug`
-5. **Design docs:** Review open design-doc Issues and PRs (senior handles these directly during execution, no separate sprint-task needed)
+5. **Design docs:** Review status of open design-doc Issues and PRs. Do NOT write docs here — senior execution handles writing. Just note which ones need attention.
 6. **Feature requests** — capture ideas the PE/Product Designer personas generate during review:
    - Create Issues for promising features: `gh issue create --label feature-request --title "Feature: ..." --body "Problem: ...\nProposal: ...\nPriority rationale: ..."`
    - Only create for ideas worth exploring — not every thought, just the ones that advance the roadmap
@@ -75,7 +75,7 @@ You are the senior engineer AND the PE (Principal Engineer). Execute complex tas
    - Read the full issue body. If it contains screenshots (`![screenshot]`), **download and view them** — the image shows the actual broken UI/behavior. Use the Read tool on the image URL or local path (`Docs/screenshots/`). Don't guess from text alone.
 3. **P0 feature requests:** `gh issue list --state open --label feature-request --label P0` → create sprint-task Issue (SENIOR) for it immediately, add to current sprint
 4. **Design docs (steward until fully implemented):** `gh issue list --state open --label design-doc` → for each:
-   - If no PR exists yet: write the doc using `Docs/designs/TEMPLATE.md` as the format, branch `design/SHORT-NAME`, create PR with `--label design-doc`, reference the original Issue
+   - If no PR exists yet: `git checkout -b design/SHORT-NAME`, write the doc using `Docs/designs/TEMPLATE.md`, commit, push, `gh pr create --label design-doc --body "Design doc for #N"`, `git checkout main`. NEVER commit design docs directly to main.
    - If PR exists and not yet approved: read the full design doc first, then check for human comments (`gh api repos/OWNER/REPO/issues/{N}/comments`). Comments include line numbers — read the doc at those lines to understand context. Respond to every comment, revise the doc to address feedback, push updates. Keep iterating every session until human adds `approved` label.
    - If PR has `approved` label and no implementation tasks yet: create sprint-task Issues with label `design-impl-{N}` (where N is the design-doc issue number) so tasks are linked back to the design. Merge the design PR.
    - If implementation tasks exist (`gh issue list --label design-impl-{N}`): check if ALL are closed. Only close the original design-doc issue when every implementation task is done.
