@@ -457,7 +457,8 @@ private struct IngredientPickerView: View {
                         proteinG: food.proteinG * multiplier,
                         carbsG: food.carbsG * multiplier,
                         fatG: food.fatG * multiplier,
-                        fiberG: food.fiberG * multiplier
+                        fiberG: food.fiberG * multiplier,
+                        servingSizeG: totalGrams
                     ))
                     dismiss()
                 } label: {
@@ -529,7 +530,7 @@ private struct IngredientPickerView: View {
                         default: servingG = servingVal > 0 ? servingVal : 0 // serving/piece — use as-is or 0
                         }
                         let portionText = servingVal > 0 && manualServingUnit != "serving"
-                            ? "\(Int(servingVal))\(manualServingUnit)" : ""
+                            ? "\(Int(servingVal)) \(manualServingUnit)" : ""
                         onAdd(QuickAddView.RecipeItem(
                             name: manualName.isEmpty ? "Item" : manualName,
                             portionText: portionText,
