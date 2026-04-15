@@ -8,7 +8,6 @@ final class FoodLogViewModel {
 
     var searchQuery: String = ""
     var searchResults: [Food] = []
-    var todayMeals: [MealType: [FoodEntry]] = [:]
     var todayNutrition: DailyNutrition = .zero
     var todayEntries: [FoodEntry] = []
     var selectedDate: Date = Date()
@@ -132,15 +131,6 @@ final class FoodLogViewModel {
         do {
             let date = dateString
             let entries = try database.fetchFoodEntries(for: date)
-            var grouped: [MealType: [FoodEntry]] = [:]
-
-            for entry in entries {
-                if let mt = entry.mealType, let mealType = MealType(rawValue: mt) {
-                    grouped[mealType, default: []].append(entry)
-                }
-            }
-
-            todayMeals = grouped
             todayEntries = entries.sorted { $0.loggedAt.replacingOccurrences(of: "T", with: " ") < $1.loggedAt.replacingOccurrences(of: "T", with: " ") }
             todayNutrition = try database.fetchDailyNutrition(for: date)
             // Keep widget in sync with latest nutrition data

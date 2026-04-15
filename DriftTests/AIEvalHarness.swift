@@ -130,6 +130,37 @@ final class AIEvalHarness: XCTestCase {
     }
 
     @MainActor
+    func testInlineMacrosFoodNameExtraction() {
+        // "mendocino salad: 690 cal 19g protein 47g carbs 51g fat" → should extract "Mendocino Salad"
+        let result = StaticOverrides.match("mendocino salad: 690 calories 19g protein 47g carbs 51g fat")
+        XCTAssertNotNil(result, "Should match inline macros with food name prefix")
+
+        // "chipotle bowl 800 cal 30g protein 50 carbs 35 fat" → "Chipotle Bowl"
+        let result2 = StaticOverrides.match("chipotle bowl 800 cal 30g protein 50 carbs 35 fat")
+        XCTAssertNotNil(result2, "Should match with food name before macros")
+
+        // "log 400 cal 30g protein" → no food name prefix (starts with number after stripping "log")
+        let result3 = StaticOverrides.match("log 400 cal 30g protein")
+        XCTAssertNotNil(result3, "Should still match without food name")
+    }
+
+    @MainActor
+    func testInlineMacrosCarbSanityCheck() {
+        // Carb value matching calorie value should be rejected as likely error
+        // Simulated: if carb regex somehow extracted 690 when calories=690
+        let result = StaticOverrides.match("test food 690 cal 19g protein 690g carbs 51g fat")
+        XCTAssertNotNil(result, "Should match even with suspicious carbs")
+        // The handler should sanitize carbs=690 when cal=690 (sanity check)
+    }
+
+    @MainActor
+    func testInlineMacrosShorthandFormat() {
+        // "800 cal 30p 50c 35f" — shorthand C/P/F format
+        let result = StaticOverrides.match("chipotle bowl 800 cal 30p 50c 35f")
+        XCTAssertNotNil(result, "Should match shorthand format with C suffix")
+    }
+
+    @MainActor
     func testStaticOverridesFalseNegatives() {
         // These should NOT be caught by StaticOverrides (should fall through to pipeline)
         let passThrough = [

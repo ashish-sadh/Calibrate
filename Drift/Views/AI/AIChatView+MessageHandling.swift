@@ -180,9 +180,13 @@ extension AIChatViewModel {
         if text.count > 300 { text = String(text.prefix(300)) }
         guard !text.isEmpty, !isGenerating else { return }
         inputText = ""
-        messages.append(ChatMessage(role: .user, text: text))
 
-        let lower = text.lowercased()
+        // Phase 0: Normalize input (strip filler words, voice artifacts, repeated words)
+        // All subsequent phases see clean input consistently.
+        let normalized = InputNormalizer.normalize(text)
+        messages.append(ChatMessage(role: .user, text: normalized))
+
+        let lower = normalized.lowercased()
 
         // Phase 1: Static overrides (greetings, help, rule engine)
         if dispatchStaticOverride(lower) { return }
@@ -195,14 +199,14 @@ extension AIChatViewModel {
         if handleSmartWorkout(lower) { return }
         if handleTemplateStart(lower) { return }
         // Phase 5: Multi-turn conversation state
-        if handleMultiTurnState(lower, originalText: text) { return }
+        if handleMultiTurnState(lower, originalText: normalized) { return }
         // Phase 6: Planning triggers (split builder, meal planning)
         if handleWorkoutSplitTrigger(lower) { return }
         if handleMealPlanningTrigger(lower) { return }
         // Phase 7: Food & activity intent parsing
-        if handleFoodIntentParsing(lower, originalText: text) { return }
+        if handleFoodIntentParsing(lower, originalText: normalized) { return }
         // Phase 8: AI pipeline fallback
-        handleAIPipeline(text)
+        handleAIPipeline(normalized)
     }
 
     // MARK: - Phase Handlers

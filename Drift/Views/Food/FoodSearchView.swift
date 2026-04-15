@@ -24,9 +24,8 @@ struct FoodSearchView: View {
     @State private var isSearchingOnline = false
     @State private var onlineSearchTask: Task<Void, Never>?
     @FocusState private var searchFocused: Bool
-    @State private var selectedMealType: MealType = .breakfast
 
-    private var effectiveMealType: MealType { selectedMealType }
+    private var effectiveMealType: MealType { initialMealType ?? viewModel.autoMealType }
 
     var body: some View {
         NavigationStack {
@@ -64,27 +63,6 @@ struct FoodSearchView: View {
                 }
                 .padding()
                 .background(.ultraThinMaterial)
-
-                // Meal type picker
-                HStack(spacing: 6) {
-                    ForEach(MealType.allCases, id: \.self) { meal in
-                        Button {
-                            selectedMealType = meal
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: meal.icon).font(.caption2)
-                                Text(meal.displayName).font(.caption2.weight(.medium))
-                            }
-                            .padding(.horizontal, 10).padding(.vertical, 5)
-                            .background(selectedMealType == meal ? Theme.accent.opacity(0.2) : Color.clear)
-                            .foregroundStyle(selectedMealType == meal ? Theme.accent : .secondary)
-                            .clipShape(Capsule())
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    Spacer()
-                }
-                .padding(.horizontal, 16).padding(.vertical, 6)
 
                 if query.isEmpty {
                     suggestionsView
@@ -125,7 +103,6 @@ struct FoodSearchView: View {
                              initialName: recipe.name)
             }
             .onAppear {
-                selectedMealType = initialMealType ?? viewModel.autoMealType
                 viewModel.loadSuggestions()
                 if !initialQuery.isEmpty {
                     query = initialQuery

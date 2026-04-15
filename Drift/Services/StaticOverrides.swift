@@ -298,7 +298,7 @@ enum StaticOverrides {
             }
         }
 
-        // Inline macros: "log 400 cal 30g protein lunch"
+        // Inline macros: "log 400 cal 30g protein lunch" or "chipotle bowl: 690 cal — 19g protein, 47g carbs, 51g fat"
         let macroPattern = #"(\d+)\s*(?:cal|kcal).*?(\d+)\s*(?:g\s*)?(?:p(?:rotein)?)"#
         if let macroRegex = try? NSRegularExpression(pattern: macroPattern),
            let macroMatch = macroRegex.firstMatch(in: lower, range: NSRange(lower.startIndex..., in: lower)),
@@ -306,10 +306,10 @@ enum StaticOverrides {
            let protRange = Range(macroMatch.range(at: 2), in: lower),
            let cal = Int(String(lower[calRange])), let prot = Int(String(lower[protRange])),
            cal >= 50 && cal <= 5000 {
-            // Extract optional carbs and fat
+            // Extract optional carbs and fat — patterns support "47g carbs", "47 carbs", "47c"
             var carbs = 0.0
             var fat = 0.0
-            let carbPat = #"(\d+)\s*(?:g\s*)?carbs?"#
+            let carbPat = #"(\d+)\s*(?:g\s*)?(?:carbs?|c(?:\b|(?=\s|,|\.|\)|$)))"#
             if let cRegex = try? NSRegularExpression(pattern: carbPat),
                let cMatch = cRegex.firstMatch(in: lower, range: NSRange(lower.startIndex..., in: lower)),
                let cRange = Range(cMatch.range(at: 1), in: lower) { carbs = Double(String(lower[cRange])) ?? 0 }
@@ -317,13 +317,30 @@ enum StaticOverrides {
             if let fRegex = try? NSRegularExpression(pattern: fatPat),
                let fMatch = fRegex.firstMatch(in: lower, range: NSRange(lower.startIndex..., in: lower)),
                let fRange = Range(fMatch.range(at: 1), in: lower) { fat = Double(String(lower[fRange])) ?? 0 }
+            // Sanity check: macro grams shouldn't equal the calorie value (common LLM/copy error)
+            if Int(carbs) == cal && cal > 100 { carbs = 0 }
+            if Int(fat) == cal && cal > 100 { fat = 0 }
+            // Meal: check input keywords, then ConversationState, then time-of-day
             var meal: String? = nil
             for (kw, m) in [("breakfast", "breakfast"), ("lunch", "lunch"), ("dinner", "dinner"), ("snack", "snack")] {
                 if lower.contains(kw) { meal = m; break }
             }
+            // Extract food name from text before the first number
+            let foodName = extractFoodName(from: query, beforeFirstNumberIn: lower)
             return .handler {
                 let today = DateFormatters.todayString
-                let mealType = meal ?? { let h = Calendar.current.component(.hour, from: Date()); return h < 11 ? "breakfast" : h < 15 ? "lunch" : h < 21 ? "dinner" : "snack" }()
+                // Meal priority: explicit keyword > ConversationState pending meal > time-of-day
+                let mealType: String
+                if let m = meal {
+                    mealType = m
+                } else if case .awaitingMealItems(let pendingMeal) = ConversationState.shared.phase {
+                    mealType = pendingMeal
+                    ConversationState.shared.phase = .idle
+                } else {
+                    let h = Calendar.current.component(.hour, from: Date())
+                    mealType = h < 11 ? "breakfast" : h < 15 ? "lunch" : h < 21 ? "dinner" : "snack"
+                }
+                let displayName = foodName ?? "Quick Add"
                 do {
                     var mealLogs = try AppDatabase.shared.fetchMealLogs(for: today)
                     var mealLog = mealLogs.first { $0.mealType == mealType }
@@ -333,14 +350,16 @@ enum StaticOverrides {
                         mealLog = newLog
                     }
                     if let mlId = mealLog?.id {
-                        var entry = FoodEntry(mealLogId: mlId, foodName: "Quick Add", servingSizeG: 0, servings: 1,
+                        var entry = FoodEntry(mealLogId: mlId, foodName: displayName, servingSizeG: 0, servings: 1,
                                                calories: Double(cal), proteinG: Double(prot), carbsG: carbs, fatG: fat)
                         try AppDatabase.shared.saveFoodEntry(&entry)
                         if let eid = entry.id {
-                            ConversationState.shared.lastWriteAction = .foodLogged(entryId: eid, name: "Quick Add", calories: Double(cal))
+                            ConversationState.shared.lastWriteAction = .foodLogged(entryId: eid, name: displayName, calories: Double(cal))
                         }
                         WidgetDataProvider.refreshWidgetData()
-                        return "Logged \(cal) cal, \(prot)P\(carbs > 0 ? " \(Int(carbs))C" : "")\(fat > 0 ? " \(Int(fat))F" : "") for \(mealType)."
+                        let macroLine = ["\(prot)P", carbs > 0 ? "\(Int(carbs))C" : nil, fat > 0 ? "\(Int(fat))F" : nil]
+                            .compactMap { $0 }.joined(separator: " ")
+                        return "Logged \(displayName) — \(cal) cal \(macroLine) for \(mealType)."
                     }
                 } catch {}
                 return "Couldn't log macros. Try again."
@@ -559,5 +578,21 @@ enum StaticOverrides {
         }
 
         return nil
+    }
+
+    // MARK: - Helpers
+
+    /// Extract food name from text before the first number/macro block.
+    /// "mendocino salad: 690 cal..." → "Mendocino Salad"
+    /// "log chipotle bowl 400 cal..." → "Chipotle Bowl"
+    private static func extractFoodName(from original: String, beforeFirstNumberIn lower: String) -> String? {
+        guard let firstDigit = lower.firstIndex(where: { $0.isNumber }) else { return nil }
+        var name = String(original[original.startIndex..<firstDigit])
+        for strip in ["log ", "ate ", "had ", "add ", "just ", "for ", "with ", "i ",
+                      "breakfast", "lunch", "dinner", "snack"] {
+            name = name.replacingOccurrences(of: strip, with: "", options: .caseInsensitive)
+        }
+        name = name.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines.union(CharacterSet(charactersIn: ":—-,")))
+        return name.isEmpty ? nil : name.capitalized
     }
 }

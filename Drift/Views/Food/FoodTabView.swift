@@ -43,21 +43,6 @@ struct FoodTabView: View {
         }
     }
 
-    /// Entries grouped by meal type, ordered breakfast → lunch → dinner → snack.
-    private var groupedEntries: [(meal: MealType, entries: [FoodEntry])] {
-        let order: [MealType] = [.breakfast, .lunch, .dinner, .snack]
-        return order.compactMap { meal in
-            let entries = sortedEntries.filter { ($0.mealType ?? "snack") == meal.rawValue }
-            return entries.isEmpty ? nil : (meal: meal, entries: entries)
-        }
-    }
-
-    /// Entries in visual display order (grouped: breakfast→lunch→dinner→snack, then by time within each).
-    /// Used for Move Up/Down to match visual position instead of flat time order.
-    private var visualEntries: [FoodEntry] {
-        groupedEntries.flatMap(\.entries)
-    }
-
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -440,82 +425,15 @@ struct FoodTabView: View {
 
                 Divider().padding(.vertical, 2)
 
-                let groups = groupedEntries
-                if groups.count > 1 {
-                    // Grouped by meal type
-                    ForEach(Array(groups.enumerated()), id: \.element.meal) { gi, group in
-                        mealSection(group.meal, entries: group.entries)
-                        if gi < groups.count - 1 {
-                            Divider().padding(.vertical, 4)
-                        }
-                    }
-                } else {
-                    // Single meal or no meal types — flat list
-                    ForEach(Array(sortedEntries.enumerated()), id: \.element.id) { index, entry in
-                        entryRow(entry)
-                        if index < sortedEntries.count - 1 {
-                            Divider().padding(.leading, 0)
-                        }
+                ForEach(Array(sortedEntries.enumerated()), id: \.element.id) { index, entry in
+                    entryRow(entry)
+                    if index < sortedEntries.count - 1 {
+                        Divider().padding(.leading, 0)
                     }
                 }
             }
         }
         .card()
-    }
-
-    private func mealSection(_ meal: MealType, entries: [FoodEntry]) -> some View {
-        let totalCal = entries.reduce(0.0) { $0 + $1.totalCalories }
-        let totalProt = entries.reduce(0.0) { $0 + $1.totalProtein }
-
-        return VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 6) {
-                Image(systemName: meal.icon)
-                    .font(.caption).foregroundStyle(Theme.accent)
-                Text(meal.displayName)
-                    .font(.caption.weight(.semibold))
-                Spacer()
-                Text("\(Int(totalCal)) cal")
-                    .font(.caption.weight(.medium).monospacedDigit())
-                    .foregroundStyle(.secondary)
-                Text("\u{00B7}").font(.caption2).foregroundStyle(.quaternary)
-                Text("\(Int(totalProt))g P")
-                    .font(.caption2.monospacedDigit())
-                    .foregroundStyle(.tertiary)
-            }
-            .padding(.bottom, 6)
-            .contextMenu {
-                Button {
-                    for entry in entries {
-                        viewModel.quickAdd(name: entry.foodName, calories: entry.totalCalories,
-                                           proteinG: entry.totalProtein, carbsG: entry.totalCarbs,
-                                           fatG: entry.totalFat, fiberG: entry.totalFiber,
-                                           mealType: viewModel.autoMealType,
-                                           servingSizeG: entry.servingSizeG)
-                    }
-                    reload()
-                } label: {
-                    Label("Log All Again", systemImage: "arrow.counterclockwise")
-                }
-                if !viewModel.isToday {
-                    Button {
-                        for entry in entries {
-                            viewModel.copyEntryToToday(entry)
-                        }
-                        copiedToTodayName = "\(entries.count) \(meal.displayName.lowercased()) items"
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedToTodayName = nil }
-                    } label: {
-                        Label("Copy All to Today", systemImage: "doc.on.doc")
-                    }
-                }
-            }
-
-            ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
-                entryRow(entry)
-                if index < entries.count - 1 {
-                    Divider().padding(.leading, 0)
-                }
-            }
-        }
     }
 
     private func entryRow(_ entry: FoodEntry) -> some View {
@@ -599,41 +517,20 @@ struct FoodTabView: View {
             }
             // Reorder (only in time sort mode)
             if foodSortMode == .time {
-                // Use visual order (grouped) when multiple meal groups, flat order otherwise
-                let reorderList = groupedEntries.count > 1 ? visualEntries : sortedEntries
-                if let entryIndex = reorderList.firstIndex(where: { $0.id == entry.id }) {
+                if let entryIndex = sortedEntries.firstIndex(where: { $0.id == entry.id }) {
                     if entryIndex > 0 {
                         Button {
-                            swapVisualEntries(entryIndex, entryIndex - 1, in: reorderList)
+                            swapEntries(entryIndex, entryIndex - 1)
                         } label: {
                             Label("Move Up", systemImage: "arrow.up")
                         }
                     }
-                    if entryIndex < reorderList.count - 1 {
+                    if entryIndex < sortedEntries.count - 1 {
                         Button {
-                            swapVisualEntries(entryIndex, entryIndex + 1, in: reorderList)
+                            swapEntries(entryIndex, entryIndex + 1)
                         } label: {
                             Label("Move Down", systemImage: "arrow.down")
                         }
-                    }
-                }
-            }
-            // Move to different meal group
-            if let id = entry.id {
-                let currentMeal = MealType(rawValue: entry.mealType ?? "") ?? .snack
-                let otherMeals = MealType.allCases.filter { $0 != currentMeal }
-                if !otherMeals.isEmpty {
-                    Menu {
-                        ForEach(otherMeals, id: \.self) { meal in
-                            Button {
-                                viewModel.updateEntryMealType(id: id, mealType: meal)
-                                reload()
-                            } label: {
-                                Label(meal.displayName, systemImage: meal.icon)
-                            }
-                        }
-                    } label: {
-                        Label("Move to...", systemImage: "arrow.right.circle")
                     }
                 }
             }
@@ -739,35 +636,24 @@ struct FoodTabView: View {
         return DateFormatters.shortTime.string(from: date)
     }
 
-    /// Swap entries to reorder them, using the provided list for index lookup.
-    /// Swaps timestamps so time-based sort reflects the new order.
+    /// Swap two entries by exchanging their timestamps so time-based sort reflects the new order.
     /// When entries share the same timestamp, offsets by 1 second to break the tie.
-    /// When entries cross meal group boundaries, the moved entry adopts the target's meal type.
-    private func swapVisualEntries(_ movedIndex: Int, _ targetIndex: Int, in entries: [FoodEntry]) {
+    private func swapEntries(_ movedIndex: Int, _ targetIndex: Int) {
+        let entries = sortedEntries
         guard movedIndex >= 0, movedIndex < entries.count, targetIndex >= 0, targetIndex < entries.count,
               let movedId = entries[movedIndex].id, let targetId = entries[targetIndex].id else { return }
         var timeMoved = entries[movedIndex].loggedAt
         var timeTarget = entries[targetIndex].loggedAt
-        // When timestamps are identical, offset by 1 second so the swap is not a no-op.
-        // Query sorts DESC, so lower index = later time. Move Up = later, Move Down = earlier.
         if timeMoved == timeTarget, let date = parseTimestamp(timeMoved) {
             let iso = DateFormatters.iso8601
             if targetIndex < movedIndex {
-                // Move Up: moved entry needs a later timestamp
                 timeMoved = iso.string(from: date.addingTimeInterval(-1))
             } else {
-                // Move Down: moved entry needs an earlier timestamp
                 timeMoved = iso.string(from: date.addingTimeInterval(1))
             }
         }
         viewModel.updateEntryLoggedAt(id: movedId, loggedAt: timeTarget)
         viewModel.updateEntryLoggedAt(id: targetId, loggedAt: timeMoved)
-        // Cross meal group boundary: reassign moved entry's meal type
-        let movedMeal = entries[movedIndex].mealType ?? "snack"
-        let targetMeal = entries[targetIndex].mealType ?? "snack"
-        if movedMeal != targetMeal, let mealType = MealType(rawValue: targetMeal) {
-            viewModel.updateEntryMealType(id: movedId, mealType: mealType)
-        }
         reload()
     }
 
