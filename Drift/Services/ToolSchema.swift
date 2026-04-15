@@ -29,6 +29,8 @@ enum ToolAction: Sendable {
     case openWeightEntry
     case openBarcodeScanner
     case navigate(tab: Int)
+    /// Open ManualFoodEntrySheet prefilled with AI-extracted values for user review.
+    case openManualFoodEntry(name: String, calories: Int, proteinG: Double, carbsG: Double, fatG: Double)
 }
 
 // MARK: - Navigation Notifications

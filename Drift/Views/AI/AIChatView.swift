@@ -156,6 +156,13 @@ struct AIChatView: View {
                          initialItems: vm.pendingRecipeItems,
                          initialName: vm.pendingRecipeName)
         }
+        .sheet(isPresented: $vm.showingManualFoodEntry, onDismiss: {
+            vm.pendingManualFoodEntry = nil
+        }) {
+            ManualFoodEntrySheet(viewModel: FoodLogViewModel(),
+                                 prefill: vm.pendingManualFoodEntry,
+                                 onLogged: { vm.showingManualFoodEntry = false })
+        }
         .onAppear {
             vm.aiService.cancelUnload()
             if vm.messages.isEmpty {

@@ -229,6 +229,11 @@ extension AIChatViewModel {
             case .openBarcodeScanner:
                 if let msg { messages.append(ChatMessage(role: .assistant, text: msg)) }
                 showingBarcodeScanner = true
+            case .openManualFoodEntry(let name, let calories, let proteinG, let carbsG, let fatG):
+                if let msg { messages.append(ChatMessage(role: .assistant, text: msg)) }
+                pendingManualFoodEntry = AIChatViewModel.ManualFoodPrefill(
+                    name: name, calories: calories, proteinG: proteinG, carbsG: carbsG, fatG: fatG)
+                showingManualFoodEntry = true
             default:
                 if let msg { messages.append(ChatMessage(role: .assistant, text: msg)) }
             }
@@ -1066,6 +1071,10 @@ extension AIChatViewModel {
                     let card = NavigationCardData(destination: label, icon: icon, tab: tab)
                     messages.append(ChatMessage(role: .assistant, text: "Opening \(label)...", navigationCard: card))
                     NotificationCenter.default.post(name: .navigateToTab, object: nil, userInfo: ["tab": tab])
+                case .openManualFoodEntry(let name, let calories, let proteinG, let carbsG, let fatG):
+                    pendingManualFoodEntry = AIChatViewModel.ManualFoodPrefill(
+                        name: name, calories: calories, proteinG: proteinG, carbsG: carbsG, fatG: fatG)
+                    showingManualFoodEntry = true
                 }
             }
         }

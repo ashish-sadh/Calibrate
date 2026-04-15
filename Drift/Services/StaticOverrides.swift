@@ -326,44 +326,12 @@ enum StaticOverrides {
                 if lower.contains(kw) { meal = m; break }
             }
             // Extract food name from text before the first number
-            let foodName = extractFoodName(from: query, beforeFirstNumberIn: lower)
-            return .handler {
-                let today = DateFormatters.todayString
-                // Meal priority: explicit keyword > ConversationState pending meal > time-of-day
-                let mealType: String
-                if let m = meal {
-                    mealType = m
-                } else if case .awaitingMealItems(let pendingMeal) = ConversationState.shared.phase {
-                    mealType = pendingMeal
-                    ConversationState.shared.phase = .idle
-                } else {
-                    let h = Calendar.current.component(.hour, from: Date())
-                    mealType = h < 11 ? "breakfast" : h < 15 ? "lunch" : h < 21 ? "dinner" : "snack"
-                }
-                let displayName = foodName ?? "Quick Add"
-                do {
-                    var mealLogs = try AppDatabase.shared.fetchMealLogs(for: today)
-                    var mealLog = mealLogs.first { $0.mealType == mealType }
-                    if mealLog == nil {
-                        var newLog = MealLog(date: today, mealType: mealType)
-                        try AppDatabase.shared.saveMealLog(&newLog)
-                        mealLog = newLog
-                    }
-                    if let mlId = mealLog?.id {
-                        var entry = FoodEntry(mealLogId: mlId, foodName: displayName, servingSizeG: 0, servings: 1,
-                                               calories: Double(cal), proteinG: Double(prot), carbsG: carbs, fatG: fat)
-                        try AppDatabase.shared.saveFoodEntry(&entry)
-                        if let eid = entry.id {
-                            ConversationState.shared.lastWriteAction = .foodLogged(entryId: eid, name: displayName, calories: Double(cal))
-                        }
-                        WidgetDataProvider.refreshWidgetData()
-                        let macroLine = ["\(prot)P", carbs > 0 ? "\(Int(carbs))C" : nil, fat > 0 ? "\(Int(fat))F" : nil]
-                            .compactMap { $0 }.joined(separator: " ")
-                        return "Logged \(displayName) — \(cal) cal \(macroLine) for \(mealType)."
-                    }
-                } catch {}
-                return "Couldn't log macros. Try again."
-            }
+            let foodName = extractFoodName(from: query, beforeFirstNumberIn: lower) ?? "Quick Add"
+            let macroLine = ["\(prot)P", carbs > 0 ? "\(Int(carbs))C" : nil, fat > 0 ? "\(Int(fat))F" : nil]
+                .compactMap { $0 }.joined(separator: " ")
+            let preview = macroLine.isEmpty ? "\(cal) cal" : "\(cal) cal · \(macroLine)"
+            return .uiAction(.openManualFoodEntry(name: foodName, calories: cal, proteinG: Double(prot), carbsG: carbs, fatG: fat),
+                             "Review \(foodName) (\(preview)) before logging:")
         }
 
         // Quick-add raw calories: "log 500 cal", "log chipotle bowl 800 calories"
@@ -372,20 +340,10 @@ enum StaticOverrides {
            let match = regex.firstMatch(in: lower, range: NSRange(lower.startIndex..., in: lower)),
            let numRange = Range(match.range(at: 1), in: lower),
            let cal = Int(String(lower[numRange])), cal >= 50 && cal <= 5000 {
-            var meal: String? = nil
-            for (suffix, m) in [("breakfast", "breakfast"), ("lunch", "lunch"), ("dinner", "dinner"), ("snack", "snack")] {
-                if lower.contains(suffix) { meal = m; break }
-            }
-            // Extract food name: remove calorie amount, verbs, meal words, prepositions
-            let fullRange = Range(match.range, in: lower)!
-            var nameText = lower.replacingCharacters(in: fullRange, with: "")
-            for strip in ["log ", "ate ", "had ", "add ", "just ", "for ", "with ",
-                          "breakfast", "lunch", "dinner", "snack"] {
-                nameText = nameText.replacingOccurrences(of: strip, with: "")
-            }
-            nameText = nameText.trimmingCharacters(in: .whitespacesAndNewlines)
-            let foodName = nameText.isEmpty ? nil : nameText.capitalized
-            return .handler { FoodService.quickAddCalories(cal, meal: meal, name: foodName) }
+            // Use text-before-first-number for clean name (avoids including macro text in name)
+            let foodName = extractFoodName(from: query, beforeFirstNumberIn: lower) ?? "Quick Add"
+            return .uiAction(.openManualFoodEntry(name: foodName, calories: cal, proteinG: 0, carbsG: 0, fatG: 0),
+                             "Review \(foodName) (\(cal) cal) before logging:")
         }
 
         // Add supplement: "add vitamin D", "add creatine 5g"

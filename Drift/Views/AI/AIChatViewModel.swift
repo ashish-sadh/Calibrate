@@ -23,8 +23,18 @@ final class AIChatViewModel {
     var pendingRecipeItems: [QuickAddView.RecipeItem] = []
     var pendingRecipeName = ""
     var showingBarcodeScanner = false
+    var showingManualFoodEntry = false
+    var pendingManualFoodEntry: ManualFoodPrefill? = nil
 
     var isGenerating: Bool { generatingState != .idle }
+
+    struct ManualFoodPrefill {
+        let name: String
+        let calories: Int
+        let proteinG: Double
+        let carbsG: Double
+        let fatG: Double
+    }
 
     // MARK: - Types
 

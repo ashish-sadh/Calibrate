@@ -4,15 +4,25 @@ struct ManualFoodEntrySheet: View {
     @Bindable var viewModel: FoodLogViewModel
     let onLogged: () -> Void
     @Environment(\.dismiss) private var dismiss
-    @State private var name = ""
-    @State private var cal = ""
-    @State private var protein = ""
-    @State private var carbs = ""
-    @State private var fat = ""
+    @State private var name: String
+    @State private var cal: String
+    @State private var protein: String
+    @State private var carbs: String
+    @State private var fat: String
     @State private var fiber = ""
     @State private var serving = "1"
     @State private var servingUnit = "serving"
     @State private var logTime = Date()
+
+    init(viewModel: FoodLogViewModel, prefill: AIChatViewModel.ManualFoodPrefill? = nil, onLogged: @escaping () -> Void) {
+        self.viewModel = viewModel
+        self.onLogged = onLogged
+        _name = State(initialValue: prefill?.name ?? "")
+        _cal = State(initialValue: prefill.map { $0.calories > 0 ? "\($0.calories)" : "" } ?? "")
+        _protein = State(initialValue: prefill.map { $0.proteinG > 0 ? "\(Int($0.proteinG))" : "" } ?? "")
+        _carbs = State(initialValue: prefill.map { $0.carbsG > 0 ? "\(Int($0.carbsG))" : "" } ?? "")
+        _fat = State(initialValue: prefill.map { $0.fatG > 0 ? "\(Int($0.fatG))" : "" } ?? "")
+    }
 
     private var macroCalories: Int {
         let p = Double(protein) ?? 0, c = Double(carbs) ?? 0, f = Double(fat) ?? 0
