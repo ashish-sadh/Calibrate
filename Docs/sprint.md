@@ -38,7 +38,7 @@ These implement the revised design doc #65. Do not start until the revised PR #1
 ### JUNIOR
 
 - [ ] **#96 Coverage: Pipeline refactor tests** — After pipeline changes land, ensure coverage targets hold (80% logic, 50% services).
-- [ ] **#97 Bug hunting: Voice + chat end-to-end** — Exercise the new pipeline with voice transcription output. Focus on food logging confirmation flow.
+- [x] **#97 Bug hunting: Voice + chat end-to-end** — Found 2 bugs: (1) copy_yesterday LLM tool bypassed confirm-first flow, now shows preview; (2) workoutSetDisplayFormatted flaky due to concurrent UserDefaults writes, fixed with @MainActor.
 - [x] **#123 Docs: Update state.md** — Verified: build 120, foods 1641 (json count), tests 1321+ (35 files), pipeline description current. Pipeline section update deferred until refactor lands.
 
 ### Design Docs (pending review)
@@ -105,7 +105,8 @@ Autonomous refactoring. Run `code-improvement.md`. Principles in `Docs/principle
 ## Done (this sprint)
 
 - [x] #121 (follow-up) Copy-previous-day button in empty diary now shows confirmation alert (13dbfbe)
-- [x] #123 state.md verified accurate: build 120, foods 1641, tests 1321+ (35 files)
+- [x] #123 state.md verified accurate: build 120, foods 1641, tests 1324+ (35 files)
+- [x] #97 Bug hunting: 2 confirm-first bugs found and fixed — copy_yesterday tool bypassed preview (5fa3ce4), flaky test stabilized with @MainActor (0882b9b)
 
 ## Done (previous sprint)
 
