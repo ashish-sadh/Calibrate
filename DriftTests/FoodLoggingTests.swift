@@ -1596,6 +1596,32 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
             "Pizza should default to slice")
 }
 
+@Test func smartUnitsSoupBowl() async throws {
+    let soup = Food(name: "Chicken Noodle Soup", category: "Soups", servingSize: 250, servingUnit: "g", calories: 150)
+    #expect(FoodUnit.smartUnits(for: soup).first?.label == "bowl",
+            "Soup should default to bowl")
+
+    let stew = Food(name: "Beef Stew", category: "Soups", servingSize: 300, servingUnit: "g", calories: 280)
+    #expect(FoodUnit.smartUnits(for: stew).first?.label == "bowl",
+            "Stew should default to bowl")
+}
+
+@Test func smartUnitsYogurtCup() async throws {
+    let yogurt = Food(name: "Greek Yogurt", category: "Dairy", servingSize: 170, servingUnit: "g", calories: 100)
+    let units = FoodUnit.smartUnits(for: yogurt)
+    #expect(units.first?.label == "cup", "Yogurt should default to cup")
+    // 1 cup yogurt ≈ 245g
+    #expect(units.first!.gramsEquivalent == 245)
+}
+
+@Test func smartUnitsOatsCup() async throws {
+    let oats = Food(name: "Oats (dry)", category: "Grains & Cereals", servingSize: 40, servingUnit: "g", calories: 156)
+    let units = FoodUnit.smartUnits(for: oats)
+    #expect(units.first?.label == "cup", "Oats should default to cup")
+    // 1 cup dry oats ≈ 80g
+    #expect(units.first!.gramsEquivalent == 80)
+}
+
 // MARK: - Factory Reset Safety Test
 
 @Test func factoryResetClearsAllData() async throws {
