@@ -5098,7 +5098,7 @@
     "nova_group": 3
   },
   {
-    "name": "Açaí Bowl (medium)",
+    "name": "A\u00e7a\u00ed Bowl (medium)",
     "category": "US Staples",
     "serving_size": 300,
     "serving_unit": "g",
@@ -5108,7 +5108,7 @@
     "fat_g": 18,
     "fiber_g": 8,
     "ingredients": [
-      "Açaí Bowl (medium)"
+      "A\u00e7a\u00ed Bowl (medium)"
     ],
     "nova_group": 3
   },
@@ -9788,7 +9788,7 @@
     "nova_group": 3
   },
   {
-    "name": "Costco Açaí Bowl (food court)",
+    "name": "Costco A\u00e7a\u00ed Bowl (food court)",
     "category": "Costco",
     "serving_size": 355,
     "serving_unit": "g",
@@ -9798,7 +9798,7 @@
     "fat_g": 19,
     "fiber_g": 7,
     "ingredients": [
-      "Costco Açaí Bowl (food court)"
+      "Costco A\u00e7a\u00ed Bowl (food court)"
     ],
     "nova_group": 3
   },
@@ -10493,7 +10493,7 @@
     "nova_group": 4
   },
   {
-    "name": "Starbucks Caffè Latte (Grande, 2% milk)",
+    "name": "Starbucks Caff\u00e8 Latte (Grande, 2% milk)",
     "category": "Beverages",
     "serving_size": 473,
     "serving_unit": "ml",
@@ -10503,7 +10503,7 @@
     "fat_g": 7,
     "fiber_g": 0,
     "ingredients": [
-      "Starbucks Caffè Latte (Grande, 2% milk)"
+      "Starbucks Caff\u00e8 Latte (Grande, 2% milk)"
     ],
     "nova_group": 3
   },
@@ -25155,7 +25155,7 @@
     "ingredients": [
       "fries",
       "cheese sauce",
-      "jalapeños",
+      "jalape\u00f1os",
       "sour cream"
     ],
     "nova_group": 4
@@ -28726,7 +28726,7 @@
       "beef",
       "onion",
       "tomato",
-      "jalapeño",
+      "jalape\u00f1o",
       "rosemary",
       "Ethiopian spices",
       "butter"
@@ -30883,5 +30883,163 @@
       "olive oil"
     ],
     "nova_group": 1
+  },
+  {
+    "name": "Rye Bread",
+    "category": "Bakery",
+    "serving_size": 32,
+    "serving_unit": "g",
+    "calories": 83,
+    "protein_g": 3,
+    "carbs_g": 15,
+    "fat_g": 1,
+    "fiber_g": 2,
+    "nova_group": 3
+  },
+  {
+    "name": "Brioche Bun",
+    "category": "Bakery",
+    "serving_size": 45,
+    "serving_unit": "g",
+    "calories": 145,
+    "protein_g": 4,
+    "carbs_g": 22,
+    "fat_g": 5,
+    "fiber_g": 1,
+    "nova_group": 4
+  },
+  {
+    "name": "Baguette",
+    "category": "Bakery",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 270,
+    "protein_g": 9,
+    "carbs_g": 55,
+    "fat_g": 1,
+    "fiber_g": 3,
+    "nova_group": 3
+  },
+  {
+    "name": "Pumpkin Soup",
+    "category": "Soups",
+    "serving_size": 240,
+    "serving_unit": "g",
+    "calories": 140,
+    "protein_g": 3,
+    "carbs_g": 20,
+    "fat_g": 6,
+    "fiber_g": 3
+  },
+  {
+    "name": "Cream of Mushroom Soup",
+    "category": "Soups",
+    "serving_size": 244,
+    "serving_unit": "g",
+    "calories": 166,
+    "protein_g": 5,
+    "carbs_g": 22,
+    "fat_g": 7,
+    "fiber_g": 1,
+    "nova_group": 4
+  },
+  {
+    "name": "Split Pea Soup",
+    "category": "Soups",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 12,
+    "carbs_g": 28,
+    "fat_g": 3,
+    "fiber_g": 8
+  },
+  {
+    "name": "Tilapia (grilled)",
+    "category": "Seafood",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 128,
+    "protein_g": 26,
+    "carbs_g": 0,
+    "fat_g": 3,
+    "fiber_g": 0
+  },
+  {
+    "name": "Sardines (canned in oil)",
+    "category": "Seafood",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 208,
+    "protein_g": 25,
+    "carbs_g": 0,
+    "fat_g": 11,
+    "fiber_g": 0
+  },
+  {
+    "name": "Shrimp Cocktail (6pc)",
+    "category": "Seafood",
+    "serving_size": 90,
+    "serving_unit": "g",
+    "calories": 90,
+    "protein_g": 18,
+    "carbs_g": 5,
+    "fat_g": 1,
+    "fiber_g": 0
+  },
+  {
+    "name": "Crab (steamed)",
+    "category": "Seafood",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 97,
+    "protein_g": 19,
+    "carbs_g": 0,
+    "fat_g": 2,
+    "fiber_g": 0
+  },
+  {
+    "name": "Scallops (seared)",
+    "category": "Seafood",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 111,
+    "protein_g": 20,
+    "carbs_g": 5,
+    "fat_g": 1,
+    "fiber_g": 0
+  },
+  {
+    "name": "Trout (baked)",
+    "category": "Seafood",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 190,
+    "protein_g": 27,
+    "carbs_g": 0,
+    "fat_g": 8,
+    "fiber_g": 0
+  },
+  {
+    "name": "Oysters (raw, 6pc)",
+    "category": "Seafood",
+    "serving_size": 84,
+    "serving_unit": "g",
+    "calories": 57,
+    "protein_g": 6,
+    "carbs_g": 3,
+    "fat_g": 2,
+    "fiber_g": 0
+  },
+  {
+    "name": "Mussels (steamed)",
+    "category": "Seafood",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 172,
+    "protein_g": 24,
+    "carbs_g": 7,
+    "fat_g": 5,
+    "fiber_g": 0
   }
 ]
