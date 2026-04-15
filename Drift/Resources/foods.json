@@ -25713,25 +25713,6 @@
     "nova_group": 1
   },
   {
-    "name": "Stuffed Bell Pepper",
-    "category": "US Staples",
-    "serving_size": 220,
-    "serving_unit": "g",
-    "calories": 290,
-    "protein_g": 18,
-    "carbs_g": 28,
-    "fat_g": 10,
-    "fiber_g": 4,
-    "ingredients": [
-      "bell pepper",
-      "ground beef",
-      "rice",
-      "tomato sauce",
-      "cheese"
-    ],
-    "nova_group": 1
-  },
-  {
     "name": "Lobster Bisque",
     "category": "Soups",
     "serving_size": 240,
@@ -25768,25 +25749,6 @@
       "salt"
     ],
     "nova_group": 1
-  },
-  {
-    "name": "Chicken Caesar Wrap",
-    "category": "Fast Food",
-    "serving_size": 280,
-    "serving_unit": "g",
-    "calories": 490,
-    "protein_g": 34,
-    "carbs_g": 42,
-    "fat_g": 19,
-    "fiber_g": 4,
-    "ingredients": [
-      "flour tortilla",
-      "grilled chicken",
-      "romaine",
-      "parmesan",
-      "caesar dressing"
-    ],
-    "nova_group": 3
   },
   {
     "name": "Birria Tacos",
@@ -26548,29 +26510,6 @@
     "nova_group": 1
   },
   {
-    "name": "Dal Tadka",
-    "category": "Indian",
-    "serving_size": 250,
-    "serving_unit": "g",
-    "calories": 200,
-    "protein_g": 11,
-    "carbs_g": 28,
-    "fat_g": 6,
-    "fiber_g": 6,
-    "ingredients": [
-      "yellow lentils",
-      "onion",
-      "tomato",
-      "ghee",
-      "cumin",
-      "garlic",
-      "ginger",
-      "turmeric",
-      "red chilli"
-    ],
-    "nova_group": 1
-  },
-  {
     "name": "Shakarpara",
     "category": "Indian Snacks",
     "serving_size": 50,
@@ -26675,23 +26614,6 @@
     "fiber_g": 1,
     "ingredients": [
       "whey protein",
-      "water",
-      "milk"
-    ],
-    "nova_group": 4
-  },
-  {
-    "name": "Casein Protein Shake",
-    "category": "Fitness Foods",
-    "serving_size": 300,
-    "serving_unit": "ml",
-    "calories": 170,
-    "protein_g": 24,
-    "carbs_g": 10,
-    "fat_g": 3,
-    "fiber_g": 1,
-    "ingredients": [
-      "casein protein",
       "water",
       "milk"
     ],
@@ -28064,7 +27986,14 @@
     "carbs_g": 4,
     "fat_g": 9,
     "fiber_g": 1,
-    "ingredients": ["prawns", "vinegar", "onion", "tomato", "dry red chillies", "spices"],
+    "ingredients": [
+      "prawns",
+      "vinegar",
+      "onion",
+      "tomato",
+      "dry red chillies",
+      "spices"
+    ],
     "nova_group": 2
   },
   {
@@ -28077,7 +28006,14 @@
     "carbs_g": 5,
     "fat_g": 20,
     "fiber_g": 1,
-    "ingredients": ["pork", "pork liver", "vinegar", "onion", "spices", "dry red chillies"],
+    "ingredients": [
+      "pork",
+      "pork liver",
+      "vinegar",
+      "onion",
+      "spices",
+      "dry red chillies"
+    ],
     "nova_group": 2
   },
   {
@@ -28090,7 +28026,14 @@
     "carbs_g": 8,
     "fat_g": 11,
     "fiber_g": 2,
-    "ingredients": ["prawns", "coconut", "onion", "dry red chillies", "poppy seeds", "spices"],
+    "ingredients": [
+      "prawns",
+      "coconut",
+      "onion",
+      "dry red chillies",
+      "poppy seeds",
+      "spices"
+    ],
     "nova_group": 2
   },
   {
@@ -28103,7 +28046,14 @@
     "carbs_g": 40,
     "fat_g": 12,
     "fiber_g": 0,
-    "ingredients": ["coconut milk", "eggs", "sugar", "flour", "butter", "nutmeg"],
+    "ingredients": [
+      "coconut milk",
+      "eggs",
+      "sugar",
+      "flour",
+      "butter",
+      "nutmeg"
+    ],
     "nova_group": 3
   },
   {
@@ -28116,7 +28066,14 @@
     "carbs_g": 5,
     "fat_g": 10,
     "fiber_g": 2,
-    "ingredients": ["pearl spot fish", "coconut oil", "shallots", "tomato", "banana leaf", "spices"],
+    "ingredients": [
+      "pearl spot fish",
+      "coconut oil",
+      "shallots",
+      "tomato",
+      "banana leaf",
+      "spices"
+    ],
     "nova_group": 2
   },
   {
@@ -28129,7 +28086,14 @@
     "carbs_g": 8,
     "fat_g": 11,
     "fiber_g": 2,
-    "ingredients": ["prawns", "coconut milk", "raw mango", "shallots", "coconut oil", "spices"],
+    "ingredients": [
+      "prawns",
+      "coconut milk",
+      "raw mango",
+      "shallots",
+      "coconut oil",
+      "spices"
+    ],
     "nova_group": 2
   },
   {
@@ -28142,7 +28106,14 @@
     "carbs_g": 5,
     "fat_g": 8,
     "fiber_g": 1,
-    "ingredients": ["fish", "coconut milk", "onion", "green chilli", "turmeric", "coconut oil"],
+    "ingredients": [
+      "fish",
+      "coconut milk",
+      "onion",
+      "green chilli",
+      "turmeric",
+      "coconut oil"
+    ],
     "nova_group": 2
   },
   {
@@ -28155,34 +28126,14 @@
     "carbs_g": 55,
     "fat_g": 9,
     "fiber_g": 1,
-    "ingredients": ["wheat", "sugar", "coconut oil", "cardamom", "cashews"],
+    "ingredients": [
+      "wheat",
+      "sugar",
+      "coconut oil",
+      "cardamom",
+      "cashews"
+    ],
     "nova_group": 4
-  },
-  {
-    "name": "Kuzhi Paniyaram",
-    "category": "Indian Regional",
-    "serving_size": 100,
-    "serving_unit": "g",
-    "calories": 190,
-    "protein_g": 5,
-    "carbs_g": 32,
-    "fat_g": 5,
-    "fiber_g": 1,
-    "ingredients": ["idli rice", "urad dal", "sesame oil", "mustard seeds", "curry leaves"],
-    "nova_group": 1
-  },
-  {
-    "name": "Kozhukattai",
-    "category": "Indian Regional",
-    "serving_size": 100,
-    "serving_unit": "g",
-    "calories": 150,
-    "protein_g": 3,
-    "carbs_g": 30,
-    "fat_g": 2,
-    "fiber_g": 1,
-    "ingredients": ["rice flour", "coconut", "jaggery", "cardamom", "sesame"],
-    "nova_group": 1
   },
   {
     "name": "Dham",
@@ -28194,7 +28145,14 @@
     "carbs_g": 55,
     "fat_g": 9,
     "fiber_g": 6,
-    "ingredients": ["rice", "dal", "rajma", "boor ki kadi", "meetha chawal", "ghee"],
+    "ingredients": [
+      "rice",
+      "dal",
+      "rajma",
+      "boor ki kadi",
+      "meetha chawal",
+      "ghee"
+    ],
     "nova_group": 2
   },
   {
@@ -28207,7 +28165,13 @@
     "carbs_g": 45,
     "fat_g": 7,
     "fiber_g": 2,
-    "ingredients": ["wheat flour", "poppy seeds", "walnuts", "ghee", "yeast"],
+    "ingredients": [
+      "wheat flour",
+      "poppy seeds",
+      "walnuts",
+      "ghee",
+      "yeast"
+    ],
     "nova_group": 2
   },
   {
@@ -28220,7 +28184,14 @@
     "carbs_g": 6,
     "fat_g": 18,
     "fiber_g": 1,
-    "ingredients": ["lamb", "yogurt", "gram flour", "onion", "ginger", "spices"],
+    "ingredients": [
+      "lamb",
+      "yogurt",
+      "gram flour",
+      "onion",
+      "ginger",
+      "spices"
+    ],
     "nova_group": 2
   },
   {
@@ -28233,7 +28204,14 @@
     "carbs_g": 45,
     "fat_g": 10,
     "fiber_g": 1,
-    "ingredients": ["red rice", "pork", "onion", "ginger", "turmeric", "black sesame"],
+    "ingredients": [
+      "red rice",
+      "pork",
+      "onion",
+      "ginger",
+      "turmeric",
+      "black sesame"
+    ],
     "nova_group": 2
   },
   {
@@ -28246,7 +28224,12 @@
     "carbs_g": 5,
     "fat_g": 3,
     "fiber_g": 2,
-    "ingredients": ["fermented fish", "vegetables", "chilli", "mustard oil"],
+    "ingredients": [
+      "fermented fish",
+      "vegetables",
+      "chilli",
+      "mustard oil"
+    ],
     "nova_group": 2
   },
   {
@@ -28259,7 +28242,13 @@
     "carbs_g": 38,
     "fat_g": 6,
     "fiber_g": 3,
-    "ingredients": ["rice", "smoked pork", "bamboo shoots", "beans", "leafy greens"],
+    "ingredients": [
+      "rice",
+      "smoked pork",
+      "bamboo shoots",
+      "beans",
+      "leafy greens"
+    ],
     "nova_group": 2
   },
   {
@@ -28272,7 +28261,12 @@
     "carbs_g": 38,
     "fat_g": 6,
     "fiber_g": 1,
-    "ingredients": ["rice flour", "sugar", "cardamom", "oil"],
+    "ingredients": [
+      "rice flour",
+      "sugar",
+      "cardamom",
+      "oil"
+    ],
     "nova_group": 3
   },
   {
@@ -28285,7 +28279,14 @@
     "carbs_g": 42,
     "fat_g": 20,
     "fiber_g": 3,
-    "ingredients": ["wheat flour", "ghee", "sugar", "almonds", "dry fruits", "fennel seeds"],
+    "ingredients": [
+      "wheat flour",
+      "ghee",
+      "sugar",
+      "almonds",
+      "dry fruits",
+      "fennel seeds"
+    ],
     "nova_group": 3
   },
   {
@@ -28298,7 +28299,14 @@
     "carbs_g": 32,
     "fat_g": 4,
     "fiber_g": 3,
-    "ingredients": ["corn", "milk", "onion", "green chilli", "mustard seeds", "coconut"],
+    "ingredients": [
+      "corn",
+      "milk",
+      "onion",
+      "green chilli",
+      "mustard seeds",
+      "coconut"
+    ],
     "nova_group": 1
   },
   {
@@ -28311,7 +28319,14 @@
     "carbs_g": 52,
     "fat_g": 9,
     "fiber_g": 7,
-    "ingredients": ["wheat flour", "chana dal", "ghee", "turmeric", "onion", "spices"],
+    "ingredients": [
+      "wheat flour",
+      "chana dal",
+      "ghee",
+      "turmeric",
+      "onion",
+      "spices"
+    ],
     "nova_group": 2
   },
   {
@@ -28324,7 +28339,14 @@
     "carbs_g": 5,
     "fat_g": 20,
     "fiber_g": 1,
-    "ingredients": ["pork", "kachampuli vinegar", "onion", "cinnamon", "cloves", "pepper"],
+    "ingredients": [
+      "pork",
+      "kachampuli vinegar",
+      "onion",
+      "cinnamon",
+      "cloves",
+      "pepper"
+    ],
     "nova_group": 2
   },
   {
@@ -28337,20 +28359,14 @@
     "carbs_g": 28,
     "fat_g": 8,
     "fiber_g": 4,
-    "ingredients": ["chickpea flour", "tomato", "cluster beans", "drumstick", "potato", "tamarind"],
-    "nova_group": 1
-  },
-  {
-    "name": "Idli (2 pieces)",
-    "category": "South Indian",
-    "serving_size": 120,
-    "serving_unit": "g",
-    "calories": 158,
-    "protein_g": 5,
-    "carbs_g": 32,
-    "fat_g": 1,
-    "fiber_g": 2,
-    "ingredients": ["rice", "urad dal"],
+    "ingredients": [
+      "chickpea flour",
+      "tomato",
+      "cluster beans",
+      "drumstick",
+      "potato",
+      "tamarind"
+    ],
     "nova_group": 1
   },
   {
@@ -28363,177 +28379,12 @@
     "carbs_g": 32,
     "fat_g": 3,
     "fiber_g": 1,
-    "ingredients": ["rice", "urad dal", "oil"],
+    "ingredients": [
+      "rice",
+      "urad dal",
+      "oil"
+    ],
     "nova_group": 1
-  },
-  {
-    "name": "Masala Dosa",
-    "category": "South Indian",
-    "serving_size": 220,
-    "serving_unit": "g",
-    "calories": 350,
-    "protein_g": 9,
-    "carbs_g": 57,
-    "fat_g": 10,
-    "fiber_g": 4,
-    "ingredients": ["rice", "urad dal", "potato", "onion", "mustard seeds", "turmeric", "oil"],
-    "nova_group": 1
-  },
-  {
-    "name": "Uttapam",
-    "category": "South Indian",
-    "serving_size": 150,
-    "serving_unit": "g",
-    "calories": 210,
-    "protein_g": 6,
-    "carbs_g": 38,
-    "fat_g": 4,
-    "fiber_g": 3,
-    "ingredients": ["rice", "urad dal", "onion", "tomato", "green chili", "oil"],
-    "nova_group": 1
-  },
-  {
-    "name": "Rasam",
-    "category": "South Indian",
-    "serving_size": 200,
-    "serving_unit": "g",
-    "calories": 62,
-    "protein_g": 2,
-    "carbs_g": 10,
-    "fat_g": 1,
-    "fiber_g": 1,
-    "ingredients": ["tamarind", "tomato", "toor dal", "pepper", "cumin", "mustard seeds"],
-    "nova_group": 1
-  },
-  {
-    "name": "Sambar",
-    "category": "South Indian",
-    "serving_size": 200,
-    "serving_unit": "g",
-    "calories": 118,
-    "protein_g": 6,
-    "carbs_g": 20,
-    "fat_g": 2,
-    "fiber_g": 6,
-    "ingredients": ["toor dal", "tamarind", "drumstick", "tomato", "onion", "sambar powder"],
-    "nova_group": 1
-  },
-  {
-    "name": "Coconut Chutney",
-    "category": "South Indian",
-    "serving_size": 30,
-    "serving_unit": "g",
-    "calories": 60,
-    "protein_g": 1,
-    "carbs_g": 3,
-    "fat_g": 5,
-    "fiber_g": 1,
-    "ingredients": ["coconut", "green chili", "ginger", "mustard seeds", "curry leaves"],
-    "nova_group": 1
-  },
-  {
-    "name": "Curd Rice",
-    "category": "South Indian",
-    "serving_size": 200,
-    "serving_unit": "g",
-    "calories": 238,
-    "protein_g": 7,
-    "carbs_g": 42,
-    "fat_g": 4,
-    "fiber_g": 0,
-    "ingredients": ["rice", "curd", "mustard seeds", "curry leaves", "green chili"],
-    "nova_group": 1
-  },
-  {
-    "name": "Bisi Bele Bath",
-    "category": "South Indian",
-    "serving_size": 250,
-    "serving_unit": "g",
-    "calories": 312,
-    "protein_g": 11,
-    "carbs_g": 54,
-    "fat_g": 7,
-    "fiber_g": 7,
-    "ingredients": ["rice", "toor dal", "vegetables", "tamarind", "bisi bele bath powder", "ghee"],
-    "nova_group": 1
-  },
-  {
-    "name": "Pesarattu",
-    "category": "South Indian",
-    "serving_size": 100,
-    "serving_unit": "g",
-    "calories": 188,
-    "protein_g": 9,
-    "carbs_g": 30,
-    "fat_g": 4,
-    "fiber_g": 4,
-    "ingredients": ["whole moong dal", "green chili", "ginger", "onion", "oil"],
-    "nova_group": 1
-  },
-  {
-    "name": "Bhel Puri",
-    "category": "Indian Street Food",
-    "serving_size": 100,
-    "serving_unit": "g",
-    "calories": 172,
-    "protein_g": 4,
-    "carbs_g": 28,
-    "fat_g": 5,
-    "fiber_g": 2,
-    "ingredients": ["puffed rice", "sev", "onion", "tomato", "chutney", "peanuts"],
-    "nova_group": 3
-  },
-  {
-    "name": "Sev Puri (4 pieces)",
-    "category": "Indian Street Food",
-    "serving_size": 80,
-    "serving_unit": "g",
-    "calories": 188,
-    "protein_g": 4,
-    "carbs_g": 27,
-    "fat_g": 7,
-    "fiber_g": 2,
-    "ingredients": ["puri", "potato", "sev", "onion", "chutney", "coriander"],
-    "nova_group": 3
-  },
-  {
-    "name": "Misal Pav",
-    "category": "Indian Street Food",
-    "serving_size": 250,
-    "serving_unit": "g",
-    "calories": 380,
-    "protein_g": 14,
-    "carbs_g": 58,
-    "fat_g": 9,
-    "fiber_g": 10,
-    "ingredients": ["sprouted moth beans", "pav bread", "farsan", "onion", "tomato", "spices"],
-    "nova_group": 3
-  },
-  {
-    "name": "Vada Pav",
-    "category": "Indian Street Food",
-    "serving_size": 130,
-    "serving_unit": "g",
-    "calories": 290,
-    "protein_g": 7,
-    "carbs_g": 44,
-    "fat_g": 10,
-    "fiber_g": 3,
-    "ingredients": ["pav bread", "potato", "chickpea batter", "green chutney", "tamarind chutney"],
-    "nova_group": 3
-  },
-  {
-    "name": "Dahi Vada (2 pieces)",
-    "category": "Indian Street Food",
-    "serving_size": 150,
-    "serving_unit": "g",
-    "calories": 218,
-    "protein_g": 8,
-    "carbs_g": 32,
-    "fat_g": 6,
-    "fiber_g": 2,
-    "ingredients": ["urad dal", "curd", "tamarind chutney", "cumin powder", "red chili powder"],
-    "nova_group": 3
   },
   {
     "name": "Pad Thai (chicken)",
@@ -28545,7 +28396,16 @@
     "carbs_g": 59,
     "fat_g": 12,
     "fiber_g": 2,
-    "ingredients": ["rice noodles", "chicken", "egg", "bean sprouts", "spring onion", "peanuts", "fish sauce", "tamarind"],
+    "ingredients": [
+      "rice noodles",
+      "chicken",
+      "egg",
+      "bean sprouts",
+      "spring onion",
+      "peanuts",
+      "fish sauce",
+      "tamarind"
+    ],
     "nova_group": 3
   },
   {
@@ -28558,20 +28418,14 @@
     "carbs_g": 60,
     "fat_g": 14,
     "fiber_g": 3,
-    "ingredients": ["rice", "chicken", "coconut milk", "red curry paste", "bell pepper", "bamboo shoots"],
-    "nova_group": 3
-  },
-  {
-    "name": "Massaman Curry",
-    "category": "Thai",
-    "serving_size": 300,
-    "serving_unit": "g",
-    "calories": 380,
-    "protein_g": 18,
-    "carbs_g": 38,
-    "fat_g": 18,
-    "fiber_g": 4,
-    "ingredients": ["beef", "coconut milk", "potato", "massaman curry paste", "peanuts", "onion"],
+    "ingredients": [
+      "rice",
+      "chicken",
+      "coconut milk",
+      "red curry paste",
+      "bell pepper",
+      "bamboo shoots"
+    ],
     "nova_group": 3
   },
   {
@@ -28584,7 +28438,14 @@
     "carbs_g": 22,
     "fat_g": 9,
     "fiber_g": 2,
-    "ingredients": ["spring roll wrapper", "vermicelli", "carrot", "cabbage", "mushroom", "oil"],
+    "ingredients": [
+      "spring roll wrapper",
+      "vermicelli",
+      "carrot",
+      "cabbage",
+      "mushroom",
+      "oil"
+    ],
     "nova_group": 3
   },
   {
@@ -28597,7 +28458,14 @@
     "carbs_g": 42,
     "fat_g": 8,
     "fiber_g": 2,
-    "ingredients": ["round rice noodles", "beef", "pork", "lemongrass", "shrimp paste", "bean sprouts"],
+    "ingredients": [
+      "round rice noodles",
+      "beef",
+      "pork",
+      "lemongrass",
+      "shrimp paste",
+      "bean sprouts"
+    ],
     "nova_group": 2
   },
   {
@@ -28610,7 +28478,14 @@
     "carbs_g": 18,
     "fat_g": 2,
     "fiber_g": 1,
-    "ingredients": ["rice paper", "shrimp", "vermicelli", "lettuce", "mint", "bean sprouts"],
+    "ingredients": [
+      "rice paper",
+      "shrimp",
+      "vermicelli",
+      "lettuce",
+      "mint",
+      "bean sprouts"
+    ],
     "nova_group": 1
   },
   {
@@ -28623,7 +28498,15 @@
     "carbs_g": 40,
     "fat_g": 4,
     "fiber_g": 2,
-    "ingredients": ["rice noodles", "chicken", "ginger", "star anise", "cinnamon", "bean sprouts", "basil"],
+    "ingredients": [
+      "rice noodles",
+      "chicken",
+      "ginger",
+      "star anise",
+      "cinnamon",
+      "bean sprouts",
+      "basil"
+    ],
     "nova_group": 1
   },
   {
@@ -28636,21 +28519,13 @@
     "carbs_g": 52,
     "fat_g": 12,
     "fiber_g": 4,
-    "ingredients": ["masa flour", "cheese", "refried beans", "oil"],
+    "ingredients": [
+      "masa flour",
+      "cheese",
+      "refried beans",
+      "oil"
+    ],
     "nova_group": 3
-  },
-  {
-    "name": "Arroz con Pollo",
-    "category": "Latin American",
-    "serving_size": 300,
-    "serving_unit": "g",
-    "calories": 420,
-    "protein_g": 30,
-    "carbs_g": 48,
-    "fat_g": 10,
-    "fiber_g": 3,
-    "ingredients": ["chicken", "rice", "tomato", "onion", "bell pepper", "garlic", "cumin"],
-    "nova_group": 2
   },
   {
     "name": "Chicken Tamale",
@@ -28662,7 +28537,510 @@
     "carbs_g": 38,
     "fat_g": 10,
     "fiber_g": 3,
-    "ingredients": ["masa flour", "chicken", "lard", "red chili sauce"],
+    "ingredients": [
+      "masa flour",
+      "chicken",
+      "lard",
+      "red chili sauce"
+    ],
     "nova_group": 3
+  },
+  {
+    "name": "Jollof Rice",
+    "category": "African",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 330,
+    "protein_g": 6,
+    "carbs_g": 60,
+    "fat_g": 7,
+    "fiber_g": 2,
+    "ingredients": [
+      "rice",
+      "tomatoes",
+      "tomato paste",
+      "onion",
+      "vegetable oil",
+      "seasoning",
+      "bay leaf"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Egusi Soup",
+    "category": "African",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 360,
+    "protein_g": 18,
+    "carbs_g": 8,
+    "fat_g": 28,
+    "fiber_g": 3,
+    "ingredients": [
+      "egusi seeds",
+      "palm oil",
+      "leafy greens",
+      "stockfish",
+      "onion",
+      "crayfish",
+      "chili"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Suya (Beef Skewer)",
+    "category": "African",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 215,
+    "protein_g": 28,
+    "carbs_g": 3,
+    "fat_g": 10,
+    "fiber_g": 1,
+    "ingredients": [
+      "beef",
+      "groundnut powder",
+      "suya spice",
+      "ginger",
+      "garlic",
+      "onion"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Fufu",
+    "category": "African",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 330,
+    "protein_g": 1,
+    "carbs_g": 80,
+    "fat_g": 0.5,
+    "fiber_g": 2,
+    "ingredients": [
+      "cassava",
+      "plantain"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Pounded Yam",
+    "category": "African",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 275,
+    "protein_g": 3,
+    "carbs_g": 64,
+    "fat_g": 0.5,
+    "fiber_g": 4,
+    "ingredients": [
+      "yam"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Ugali",
+    "category": "African",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 5,
+    "carbs_g": 60,
+    "fat_g": 1,
+    "fiber_g": 2,
+    "ingredients": [
+      "maize flour",
+      "water"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Akara (Bean Cakes)",
+    "category": "African",
+    "serving_size": 90,
+    "serving_unit": "g",
+    "calories": 250,
+    "protein_g": 12,
+    "carbs_g": 20,
+    "fat_g": 13,
+    "fiber_g": 3,
+    "ingredients": [
+      "black-eyed peas",
+      "onion",
+      "pepper",
+      "palm oil"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Banga Soup",
+    "category": "African",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 18,
+    "carbs_g": 8,
+    "fat_g": 24,
+    "fiber_g": 3,
+    "ingredients": [
+      "palm nut extract",
+      "beef",
+      "fish",
+      "crayfish",
+      "onion",
+      "seasoning"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Shiro Wat",
+    "category": "African",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 190,
+    "protein_g": 10,
+    "carbs_g": 27,
+    "fat_g": 5,
+    "fiber_g": 7,
+    "ingredients": [
+      "chickpea powder",
+      "berbere",
+      "onion",
+      "garlic",
+      "ginger",
+      "vegetable oil"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Tibs (Ethiopian Stir-Fry)",
+    "category": "African",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 285,
+    "protein_g": 30,
+    "carbs_g": 8,
+    "fat_g": 15,
+    "fiber_g": 2,
+    "ingredients": [
+      "beef",
+      "onion",
+      "tomato",
+      "jalape\u00f1o",
+      "rosemary",
+      "Ethiopian spices",
+      "butter"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Ndole (Cameroonian Stew)",
+    "category": "African",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 22,
+    "carbs_g": 10,
+    "fat_g": 18,
+    "fiber_g": 5,
+    "ingredients": [
+      "bitterleaf",
+      "groundnuts",
+      "beef",
+      "crayfish",
+      "onion",
+      "garlic",
+      "palm oil"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Jollof Spaghetti",
+    "category": "African",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 420,
+    "protein_g": 14,
+    "carbs_g": 65,
+    "fat_g": 12,
+    "fiber_g": 4,
+    "ingredients": [
+      "spaghetti",
+      "tomatoes",
+      "tomato paste",
+      "onion",
+      "red bell pepper",
+      "vegetable oil",
+      "seasoning"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Calzone",
+    "category": "Italian",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 560,
+    "protein_g": 24,
+    "carbs_g": 60,
+    "fat_g": 24,
+    "fiber_g": 3,
+    "ingredients": [
+      "pizza dough",
+      "ricotta",
+      "mozzarella",
+      "tomato sauce",
+      "salami"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Pesto Pasta",
+    "category": "Italian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 420,
+    "protein_g": 14,
+    "carbs_g": 52,
+    "fat_g": 18,
+    "fiber_g": 3,
+    "ingredients": [
+      "pasta",
+      "basil",
+      "pine nuts",
+      "parmesan",
+      "garlic",
+      "olive oil"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Ribollita (Tuscan Bean Soup)",
+    "category": "Italian",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 240,
+    "protein_g": 10,
+    "carbs_g": 38,
+    "fat_g": 6,
+    "fiber_g": 8,
+    "ingredients": [
+      "cannellini beans",
+      "kale",
+      "stale bread",
+      "carrot",
+      "celery",
+      "onion",
+      "tomato",
+      "olive oil"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Doenjang Jjigae (Soybean Paste Stew)",
+    "category": "Korean",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 175,
+    "protein_g": 14,
+    "carbs_g": 12,
+    "fat_g": 7,
+    "fiber_g": 3,
+    "ingredients": [
+      "doenjang",
+      "tofu",
+      "zucchini",
+      "mushrooms",
+      "onion",
+      "anchovy stock",
+      "garlic"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Haemul Pajeon (Seafood Pancake)",
+    "category": "Korean",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 340,
+    "protein_g": 18,
+    "carbs_g": 32,
+    "fat_g": 15,
+    "fiber_g": 2,
+    "ingredients": [
+      "flour",
+      "egg",
+      "green onion",
+      "squid",
+      "shrimp",
+      "sesame oil"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Samgyetang (Ginseng Chicken Soup)",
+    "category": "Korean",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 355,
+    "protein_g": 40,
+    "carbs_g": 25,
+    "fat_g": 10,
+    "fiber_g": 1,
+    "ingredients": [
+      "whole young chicken",
+      "glutinous rice",
+      "garlic",
+      "ginseng",
+      "jujube",
+      "green onion"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Takoyaki (6 pieces)",
+    "category": "Japanese",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 290,
+    "protein_g": 12,
+    "carbs_g": 36,
+    "fat_g": 11,
+    "fiber_g": 1,
+    "ingredients": [
+      "flour batter",
+      "octopus",
+      "pickled ginger",
+      "green onion",
+      "bonito flakes",
+      "mayo",
+      "takoyaki sauce"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Yakitori (5 skewers)",
+    "category": "Japanese",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 28,
+    "carbs_g": 10,
+    "fat_g": 14,
+    "fiber_g": 0,
+    "ingredients": [
+      "chicken thigh",
+      "soy sauce",
+      "mirin",
+      "sake",
+      "sugar",
+      "green onion"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Okonomiyaki",
+    "category": "Japanese",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 340,
+    "protein_g": 14,
+    "carbs_g": 40,
+    "fat_g": 14,
+    "fiber_g": 3,
+    "ingredients": [
+      "flour",
+      "egg",
+      "cabbage",
+      "bacon",
+      "mayo",
+      "okonomiyaki sauce",
+      "bonito flakes",
+      "seaweed"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Granola Parfait",
+    "category": "Breakfast",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 12,
+    "carbs_g": 58,
+    "fat_g": 12,
+    "fiber_g": 4,
+    "ingredients": [
+      "granola",
+      "Greek yogurt",
+      "mixed berries",
+      "honey"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Bun Thit Nuong (Grilled Pork Vermicelli)",
+    "category": "Vietnamese",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 520,
+    "protein_g": 32,
+    "carbs_g": 62,
+    "fat_g": 16,
+    "fiber_g": 3,
+    "ingredients": [
+      "rice vermicelli",
+      "grilled pork",
+      "lettuce",
+      "cucumber",
+      "bean sprouts",
+      "mint",
+      "fish sauce dressing",
+      "crushed peanuts"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Banh Xeo (Vietnamese Sizzling Crepe)",
+    "category": "Vietnamese",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 375,
+    "protein_g": 20,
+    "carbs_g": 38,
+    "fat_g": 16,
+    "fiber_g": 2,
+    "ingredients": [
+      "rice flour",
+      "coconut milk",
+      "turmeric",
+      "shrimp",
+      "pork belly",
+      "bean sprouts",
+      "green onion"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Mi Quang (Turmeric Noodles)",
+    "category": "Vietnamese",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 450,
+    "protein_g": 28,
+    "carbs_g": 54,
+    "fat_g": 14,
+    "fiber_g": 3,
+    "ingredients": [
+      "rice noodles",
+      "turmeric",
+      "pork",
+      "shrimp",
+      "peanuts",
+      "sesame crackers",
+      "herbs",
+      "shrimp paste broth"
+    ],
+    "nova_group": 2
   }
 ]
