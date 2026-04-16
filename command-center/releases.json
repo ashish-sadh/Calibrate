@@ -1260,5 +1260,27 @@
       "primaryUnit \u2014 uttapam/kachori default to piece, payasam to bowl",
       "cupGrams accuracy \u2014 pasta 140g, granola 120g, muesli 85g, beans 172g, quinoa 185g"
     ]
+  },
+  {
+    "build": 124,
+    "date": "2026-04-15T16:00:00-07:00",
+    "description": "Smart Units major expansion + food DB to 2,025 + LLM lab reports + custom macros",
+    "features": [
+      "Smart Units: 7 new rules \u2014 tofu\u2192cup, mushrooms\u2192cup, portobello\u2192piece, parmesan/feta\u2192tbsp, shredded cheese\u2192cup, fish fillets\u2192piece, steak\u2192piece",
+      "Smart Units: 3 more rules \u2014 salads\u2192bowl, polenta/grits/risotto\u2192cup, chicken/pork/lamb cuts\u2192piece",
+      "Smart Units: Indian street food rules \u2014 dhokla, khakhra, pav bhaji, chilla, rabri, shrikhand\u2192correct units",
+      "Smart Units: honey, jam, seeds, spices, cream, chai, sprouts all get natural units",
+      "Smart Units: AI chat confirmation card now shows smart units (piece/ml/cup) not 'serving'",
+      "Food DB expanded to 2,025 foods (+112 since build 123) \u2014 mushroom varieties, cheese varieties, Greek/Kashmiri/Filipino/Turkish/Ethiopian cuisines",
+      "LLM-powered lab report parsing \u2014 chunked extraction with accuracy warning (#139)",
+      "Custom macro targets in goal setup \u2014 set protein/carb/fat independently (#144)"
+    ],
+    "fixes": [
+      "#144: custom macro calorie calculation and timeline UX fixes",
+      "#144: fat fills remaining when carbs are fixed in custom macro mode",
+      "#143: edit ingredient now shows correct servings count (was always showing 1)",
+      "#142: fiber always showing 0g for recent/favorite non-DB foods \u2014 fixed SQL + RecentEntry model",
+      "RecipeItem.servingSizeG now stores total grams (not per-serving grams)"
+    ]
   }
 ]
