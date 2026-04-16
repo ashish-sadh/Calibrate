@@ -122,7 +122,7 @@ You are the junior engineer with a senior advisor. Execute well-specified tasks.
 6. **Close Issue with comment:** what was done + commit hash. Never close silently.
 7. **ONLY when ALL sprint-tasks are done → work on product focus:**
    - Read the product focus from the compliance hook output
-   - **AI chat quality is always #1 product focus** — every session must run `xcodebuild test -only-testing:DriftTests/FoodLoggingGoldSetTests`, fix failures, then improve routing/eval. Also run `xcodebuild test -scheme DriftLLMEvalMacOS -destination 'platform=macOS'` to verify LLM routing. No session ends without AI chat being better.
+   - **AI chat quality is always #1 product focus — 50% of every sprint goes here.** Run `xcodebuild test -only-testing:DriftTests/FoodLoggingGoldSetTests`, fix failures. Run `xcodebuild test -scheme DriftLLMEvalMacOS -destination 'platform=macOS'`, fix any routing failure via prompt engineering first. Then add 3+ new eval cases. No session ends without the eval larger and greener than when it started.
    - Create a sprint-task issue FIRST: `gh issue create --label sprint-task --title "Focus: {description}"`
    - Then work on it. This makes the work visible on the Sprint tab.
 8. **ONLY when sprint-tasks AND product focus work are done → permanent tasks:**

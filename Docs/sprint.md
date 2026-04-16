@@ -1,6 +1,6 @@
 # Sprint Board
 
-Focus: **AI Chat Quality (every sprint until excellent).** AI chat is the entire product. Every session must improve it. Primary: per-component eval gold sets + LLM-loaded macOS eval + voice reliability. Secondary: Smart Units cross-interface + food DB enrichment.
+Focus: **LLM Eval Quality Loop (50%) + AI Chat Quality (50%).** AI chat is the entire product. Half of every sprint goes to running IntentRoutingEval, fixing failures via prompt engineering, and expanding the gold set. The other half goes to features, voice, UI. Eval first — no session ends without the eval better than when it started.
 
 ## Regression Gate
 
@@ -43,6 +43,17 @@ _(pick from Ready)_
 **AI chat quality is the product's core value. Every session must improve it. No sprint is complete without AI chat being better than when it started.**
 
 **Before picking a task, read `Docs/roadmap.md` → "Now" items in the relevant domain. Work on what advances the current phase.**
+
+### LLM Eval Quality Loop (50% of every sprint — non-negotiable)
+The eval is the product's immune system. It must grow every sprint or regressions will silently accumulate.
+
+- [ ] **Every sprint: run → fix → expand → audit**
+  1. **Run** `xcodebuild test -scheme DriftLLMEvalMacOS -destination 'platform=macOS'` — any failure is a P0, fix it now
+  2. **Fix via prompt first** — change an example, reorder, tighten the RULES line. StaticOverride only if prompt tuning fails twice
+  3. **Expand** — add 3+ new test cases from real user phrasings (not keywords). Pick a domain with <5 cases and add variants
+  4. **Audit** — pick one domain (sleep, exercise, supplements, etc.) and add 3 edge-case variants: messy spelling, implicit intent, slang. Run eval after each
+  5. **Retire** — check if any StaticOverride is now handled by the LLM at 100%. Remove it if so
+  6. **Track** in PR description: cases added this sprint, failures fixed, overrides removed. Eval case count must never decrease
 
 ### AI Chat Architecture & Quality (always ongoing)
 Equally important pillar. Prefer architectural improvements over keyword additions.
