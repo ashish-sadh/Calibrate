@@ -28,7 +28,7 @@ final class SpeechRecognitionService: @unchecked Sendable {
 
     private var committedText = ""  // Locked-in text from completed segments
     private static let maxChars = 500
-    private static let silenceTimeout: TimeInterval = 15.0
+    private static let silenceTimeout: TimeInterval = 30.0
 
     private init() {}
 
@@ -83,27 +83,29 @@ final class SpeechRecognitionService: @unchecked Sendable {
     func gracefulStop() {
         silenceTimer?.cancel(); silenceTimer = nil
         let text = transcript.trimmingCharacters(in: .whitespaces)
-        cleanup()
+        // Set idle BEFORE cleanup so any stale recognition callbacks are rejected
         recordingState = .idle
         let cb = onDoneCallback; onDoneCallback = nil
+        cleanup()
         if !text.isEmpty { cb?(text) }
     }
 
-    /// Stop for editing — keeps text, doesn't send
+    /// Stop for editing — keeps text in inputField, doesn't send.
+    /// Sets idle BEFORE cleanup to prevent stale callbacks from overwriting user edits.
     @MainActor
     func forceStop() {
         silenceTimer?.cancel(); silenceTimer = nil
         onDoneCallback = nil
-        cleanup()
         recordingState = .idle
+        cleanup()
     }
 
     @MainActor
     private func autoSend(text: String) {
         silenceTimer?.cancel(); silenceTimer = nil
-        cleanup()
         recordingState = .idle
         let cb = onDoneCallback; onDoneCallback = nil
+        cleanup()
         if !text.trimmingCharacters(in: .whitespaces).isEmpty { cb?(text) }
     }
 

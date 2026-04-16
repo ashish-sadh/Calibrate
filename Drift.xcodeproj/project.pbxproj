@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		003CB6FDCE086F14216F74AC /* LlamaCppBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7392F1C1953721F1AD362662 /* LlamaCppBackend.swift */; };
 		07703998EC9E02AD418576E8 /* TypingDotsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2771DB577C8DC7CD66E79ED /* TypingDotsView.swift */; };
 		0884D534B3ADDE47643801F8 /* WeightTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E96402659F73046846B409D5 /* WeightTabView.swift */; };
 		0BECBF8EA607FB3FE10DC3FE /* DriftWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 145534F72860C9C345156102 /* DriftWidget.swift */; };
@@ -89,8 +90,10 @@
 		7430C66B3A1C306F1199C3FA /* ToolSchema.swift in Sources */ = {isa = PBXBuildFile; fileRef = C170D4FEDFB68CA8A61E1D03 /* ToolSchema.swift */; };
 		7821B033A6CDE13D6ED6040C /* DashboardView+Cards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 733818AD9667283F81C5D1C5 /* DashboardView+Cards.swift */; };
 		7888BCE3E091DCE6F3CD5AA2 /* GoalProgressCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0362D19A4F7D1ABB43FB48F8 /* GoalProgressCard.swift */; };
+		7A1465FD81F0693EB2B9F112 /* llama.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4101CD9171B652C6B8D1BB4E /* llama.xcframework */; };
 		7AD6304B58DBD8DA0BE88BC3 /* MacroRingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A411F4544692EA6196F07C9C /* MacroRingsView.swift */; };
 		7BDC02B8C99F8B719546A8A1 /* WeightEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = F237A2E1C7747DBE102B665C /* WeightEntry.swift */; };
+		7DF0B917D6C991089AC975A5 /* llama.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4101CD9171B652C6B8D1BB4E /* llama.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		7FF64D8FECEB7302909982E6 /* LLMQwen3Eval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C100ED24DAB0D032BD8C5BD /* LLMQwen3Eval.swift */; };
 		80D8EEFDC7564433E3DEC4E3 /* PlantPointsServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CCD0417471E3FC0DED921F5 /* PlantPointsServiceTests.swift */; };
 		813BBE938E8D3E2FF5A34A60 /* AppDatabase+FoodUsage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62E7E108AC25A8262DC23EB7 /* AppDatabase+FoodUsage.swift */; };
@@ -184,8 +187,10 @@
 		EDBADA2C372F712D791B9CB3 /* LabReportDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9317E4AADEC72D6DC385E722 /* LabReportDetailView.swift */; };
 		EE6A23C25BA80D02C16DFC47 /* TemplatePreviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF5558013233863F54F6915F /* TemplatePreviewSheet.swift */; };
 		EE7CBD2147B65BED5FC0047C /* MealLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = C182889F4730B18DE0244F02 /* MealLog.swift */; };
+		F0C8CC093DF982FE0DBD0C3E /* AIBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64BFDDB952907C50869B4078 /* AIBackend.swift */; };
 		F1E4DA4DB8A18FEE2C6A4413 /* TDEEEstimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BC5309A92CB03534993AE5E9 /* TDEEEstimator.swift */; };
 		F29E79872466C7556AC9D549 /* EdgeCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47334FA11098E0172ED4A19A /* EdgeCaseTests.swift */; };
+		F2DAD90846C1E28C0DBBB863 /* IntentRoutingEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = A048685BCBAD258ADEEB3E22 /* IntentRoutingEval.swift */; };
 		F3F76111AABE3827018AE984 /* AIChatView+MessageHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 483437CB4AFE28505FCFE44A /* AIChatView+MessageHandling.swift */; };
 		F5D75205618898612BC57C04 /* RecoveryEstimatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE8784E04AE612EE26E7AFE5 /* RecoveryEstimatorTests.swift */; };
 		F7AAF9024EB0E5FDC7108D99 /* AIChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE2EAA783326D96D5029FC28 /* AIChatViewModel.swift */; };
@@ -221,6 +226,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		4A13FB9AC40C115935976C1C /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				7DF0B917D6C991089AC975A5 /* llama.xcframework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		6D0E33BD7AB89B601B6F2462 /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -292,6 +308,7 @@
 		377CCA5F9E895164E95EC65E /* AIModelManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIModelManager.swift; sourceTree = "<group>"; };
 		37D1FB1A43791483D88EC4BC /* CycleCalculations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleCalculations.swift; sourceTree = "<group>"; };
 		39A9E88135361C3B6F2AE538 /* PlantPointsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlantPointsService.swift; sourceTree = "<group>"; };
+		3F480CCAF91EFD799E6B5B8C /* DriftLLMEvalMacOS.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DriftLLMEvalMacOS.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3F51E9EC49412B4F96068D35 /* WeightTrendCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTrendCalculatorTests.swift; sourceTree = "<group>"; };
 		40634DDEB9C53BD0146A628A /* TDEEEstimatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TDEEEstimatorTests.swift; sourceTree = "<group>"; };
 		4101CD9171B652C6B8D1BB4E /* llama.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = llama.xcframework; path = Frameworks/llama.xcframework; sourceTree = "<group>"; };
@@ -358,6 +375,7 @@
 		9FA2C56E731BE5610FDC5B12 /* AIChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatView.swift; sourceTree = "<group>"; };
 		9FDCCAED76696ACF2A89F445 /* Migrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Migrations.swift; sourceTree = "<group>"; };
 		A039993077E4BE9F83149249 /* WeightInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightInsightsView.swift; sourceTree = "<group>"; };
+		A048685BCBAD258ADEEB3E22 /* IntentRoutingEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentRoutingEval.swift; sourceTree = "<group>"; };
 		A1AB1D48F6D71EC9854629ED /* DriftTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriftTests.swift; sourceTree = "<group>"; };
 		A411F4544692EA6196F07C9C /* MacroRingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroRingsView.swift; sourceTree = "<group>"; };
 		A4BC95967D2043D701CA63AB /* BodyCompEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyCompEntryView.swift; sourceTree = "<group>"; };
@@ -450,6 +468,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		C2BF149259441E0F54DF2FBF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7A1465FD81F0693EB2B9F112 /* llama.xcframework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -498,6 +524,7 @@
 			isa = PBXGroup;
 			children = (
 				552F5AE6789DA294DDB91E8B /* Drift.app */,
+				3F480CCAF91EFD799E6B5B8C /* DriftLLMEvalMacOS.xctest */,
 				7395A23088568B416917E2A6 /* DriftLLMEvalTests.xctest */,
 				668D8D5951EB119A1624DDB2 /* DriftTests.xctest */,
 				0F759FA8F6D800CE5BAD454A /* DriftWidget.appex */,
@@ -509,6 +536,7 @@
 			isa = PBXGroup;
 			children = (
 				DF13210FEF8ED80B93DD4A50 /* Drift */,
+				F4B015D112A49ACBB40A883E /* DriftLLMEvalMacOS */,
 				230C4300561292D969C89B4E /* DriftTests */,
 				F48F3B458C8C99C4F6107636 /* DriftWidget */,
 				5C5A33109C9BA8C6F1F9ED8F /* LLMEval */,
@@ -839,6 +867,14 @@
 			path = DriftWidget;
 			sourceTree = "<group>";
 		};
+		F4B015D112A49ACBB40A883E /* DriftLLMEvalMacOS */ = {
+			isa = PBXGroup;
+			children = (
+				A048685BCBAD258ADEEB3E22 /* IntentRoutingEval.swift */,
+			);
+			path = DriftLLMEvalMacOS;
+			sourceTree = "<group>";
+		};
 		F9B297018B5B54AC793D14FB /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
@@ -917,6 +953,25 @@
 			productReference = 7395A23088568B416917E2A6 /* DriftLLMEvalTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		BBE0CA657695217E1CA887C3 /* DriftLLMEvalMacOS */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 65073EAAAF9DB51DAEF69970 /* Build configuration list for PBXNativeTarget "DriftLLMEvalMacOS" */;
+			buildPhases = (
+				A1E945263FEBB22F529CBB7B /* Sources */,
+				C2BF149259441E0F54DF2FBF /* Frameworks */,
+				4A13FB9AC40C115935976C1C /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = DriftLLMEvalMacOS;
+			packageProductDependencies = (
+			);
+			productName = DriftLLMEvalMacOS;
+			productReference = 3F480CCAF91EFD799E6B5B8C /* DriftLLMEvalMacOS.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		CAEDCE34417A91D973F68377 /* Drift */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F406649AF13D92F90944A7F1 /* Build configuration list for PBXNativeTarget "Drift" */;
@@ -975,6 +1030,7 @@
 			projectRoot = "";
 			targets = (
 				CAEDCE34417A91D973F68377 /* Drift */,
+				BBE0CA657695217E1CA887C3 /* DriftLLMEvalMacOS */,
 				7E479E55896BA83608D55D3B /* DriftLLMEvalTests */,
 				50A0CCC2E8C96C468D93CEF8 /* DriftTests */,
 				5C564ED11782E91848719970 /* DriftWidget */,
@@ -1211,6 +1267,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A1E945263FEBB22F529CBB7B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F0C8CC093DF982FE0DBD0C3E /* AIBackend.swift in Sources */,
+				F2DAD90846C1E28C0DBBB863 /* IntentRoutingEval.swift in Sources */,
+				003CB6FDCE086F14216F74AC /* LlamaCppBackend.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -1299,7 +1365,6 @@
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
@@ -1409,6 +1474,50 @@
 			};
 			name = Release;
 		};
+		B2D9B778B0232FE3099FD409 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"Frameworks\"",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.drift.DriftLLMEvalMacOS;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		C2158EA03C5D1517FA299E44 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				COMBINE_HIDPI_IMAGES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"\"Frameworks\"",
+				);
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+				);
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.drift.DriftLLMEvalMacOS;
+				SDKROOT = macosx;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
 		D2C48B12CC940FCA05A8E07F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1465,7 +1574,6 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -1534,6 +1642,15 @@
 			buildConfigurations = (
 				2F9515DC845B8780F5762A42 /* Debug */,
 				2951B50D01E4E3573A1042D6 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		65073EAAAF9DB51DAEF69970 /* Build configuration list for PBXNativeTarget "DriftLLMEvalMacOS" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C2158EA03C5D1517FA299E44 /* Debug */,
+				B2D9B778B0232FE3099FD409 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;

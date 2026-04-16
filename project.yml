@@ -91,3 +91,19 @@ targets:
       base:
         SWIFT_VERSION: "6.0"
         GENERATE_INFOPLIST_FILE: YES
+
+  DriftLLMEvalMacOS:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "14.0"
+    sources:
+      - path: DriftLLMEvalMacOS
+      - path: Drift/Services/LlamaCppBackend.swift
+      - path: Drift/Services/AIBackend.swift
+    dependencies:
+      - framework: Frameworks/llama.xcframework
+    settings:
+      base:
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+        MACOSX_DEPLOYMENT_TARGET: "14.0"

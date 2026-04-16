@@ -353,6 +353,45 @@ final class FoodLoggingGoldSetTests: XCTestCase {
         XCTAssertLessThanOrEqual(falsePositives, 1, "Normalizer should not create false positives")
     }
 
+    /// Regression gate: these queries must NEVER be detected as food logging intent.
+    /// If any of these fire as food, something broke in the pipeline routing.
+    func testNonFoodQueriesMustNotBeFood() {
+        let nonFoodQueries = [
+            // Sleep domain
+            "how was my sleep last night",
+            "how'd I sleep",
+            "show me my sleep quality",
+            // Supplement domain
+            "did I take my creatine today",
+            "did I take my supplements",
+            // Exercise domain
+            "how much did I bench last week",
+            "how many pushups last week",
+            "start push day",
+            // Weight/goal domain
+            "what's my weight trend",
+            "am I on track for my goal",
+            "I weigh 165 lbs",
+            // Health domain
+            "how's my body fat",
+            "show me my biomarkers",
+            // Meta queries
+            "daily summary",
+            "weekly summary",
+            "how am I doing today",
+            "calories left",
+        ]
+        var falsePositives: [String] = []
+        for query in nonFoodQueries {
+            if detectsFoodIntent(query) {
+                falsePositives.append(query)
+                print("❌ FALSE POSITIVE (non-food routed to food): '\(query)'")
+            }
+        }
+        XCTAssertTrue(falsePositives.isEmpty,
+            "These queries must NOT be food intent:\n\(falsePositives.joined(separator: "\n"))")
+    }
+
     // MARK: - Weight Intent Detection
 
     func testWeightIntents() {
