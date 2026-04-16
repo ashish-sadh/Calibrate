@@ -116,7 +116,8 @@ struct LabReportUploadView: View {
     }
 
     private func previewSection(_ output: LabReportOCR.ExtractionOutput) -> some View {
-        VStack(spacing: 14) {
+        let hasAIParsed = output.results.contains(where: \.isAIParsed)
+        return VStack(spacing: 14) {
             // Extracted count
             VStack(spacing: 4) {
                 Text("\(output.results.count)")
@@ -124,6 +125,11 @@ struct LabReportUploadView: View {
                 Text("biomarkers extracted")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
+            }
+
+            // Accuracy warning — shown whenever AI parsing contributed any results
+            if hasAIParsed {
+                aiAccuracyWarning
             }
 
             // Date picker
@@ -159,6 +165,11 @@ struct LabReportUploadView: View {
                     HStack {
                         Text(BiomarkerKnowledgeBase.byId[result.biomarkerId]?.name ?? result.biomarkerId)
                             .font(.caption)
+                        if result.isAIParsed {
+                            Image(systemName: "cpu")
+                                .font(.system(size: 8))
+                                .foregroundStyle(Theme.surplus.opacity(0.8))
+                        }
                         Spacer()
                         Text(formatValue(result.value))
                             .font(.caption.weight(.bold).monospacedDigit())
@@ -189,6 +200,21 @@ struct LabReportUploadView: View {
                     .foregroundStyle(.white)
             }
         }
+    }
+
+    private var aiAccuracyWarning: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(Theme.surplus)
+                .font(.subheadline)
+            Text("Some values were extracted by AI. Verify against your original report before saving.")
+                .font(.caption)
+                .foregroundStyle(.primary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Theme.surplus.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.surplus.opacity(0.3), lineWidth: 1))
     }
 
     private var privacyNote: some View {

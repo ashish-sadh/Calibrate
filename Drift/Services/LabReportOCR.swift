@@ -13,6 +13,17 @@ enum LabReportOCR {
         let unit: String
         let referenceLow: Double?
         let referenceHigh: Double?
+        /// True if value was found by LLM enhancement, not regex. Shown as a warning in preview.
+        let isAIParsed: Bool
+
+        init(biomarkerId: String, value: Double, unit: String, referenceLow: Double? = nil, referenceHigh: Double? = nil, isAIParsed: Bool = false) {
+            self.biomarkerId = biomarkerId
+            self.value = value
+            self.unit = unit
+            self.referenceLow = referenceLow
+            self.referenceHigh = referenceHigh
+            self.isAIParsed = isAIParsed
+        }
     }
 
     struct ExtractionOutput: Sendable {
@@ -42,12 +53,7 @@ enum LabReportOCR {
         guard !text.isEmpty else { throw OCRError.noTextFound }
         Log.biomarkers.info("PDF OCR: \(text.count) chars extracted")
         let regexResult = parseLabReport(text: text)
-
-        // AI fallback: if regex found few results and AI is available, try to find more
-        if regexResult.results.count < 10, Preferences.aiEnabled, await LocalAIService.shared.isModelLoaded {
-            return await enhanceWithAI(regexResult: regexResult, rawText: text)
-        }
-        return regexResult
+        return await maybeEnhanceWithAI(regexResult: regexResult, rawText: text)
     }
 
     /// Extract biomarkers from a photo of a lab report.
@@ -58,51 +64,67 @@ enum LabReportOCR {
         let text = lines.joined(separator: "\n")
         Log.biomarkers.info("Image OCR: \(lines.count) lines recognized")
         let regexResult = parseLabReport(text: text)
+        return await maybeEnhanceWithAI(regexResult: regexResult, rawText: text)
+    }
 
-        if regexResult.results.count < 10, Preferences.aiEnabled, await LocalAIService.shared.isModelLoaded {
-            return await enhanceWithAI(regexResult: regexResult, rawText: text)
-        }
-        return regexResult
+    /// Run AI enhancement when available. Gemma (large model): always run to catch what regex misses.
+    /// SmolLM (small model): only run when regex found few results — it's less capable.
+    private static func maybeEnhanceWithAI(regexResult: ExtractionOutput, rawText: String) async -> ExtractionOutput {
+        guard Preferences.aiEnabled, await LocalAIService.shared.isModelLoaded else { return regexResult }
+        let isLargeModel = await LocalAIService.shared.isLargeModel
+        guard isLargeModel || regexResult.results.count < 10 else { return regexResult }
+        return await enhanceWithAI(regexResult: regexResult, rawText: rawText)
     }
 
     // MARK: - AI Enhancement
 
-    /// Use LLM to find biomarkers that regex missed. Regex results take priority.
+    /// Use LLM to find biomarkers missed by regex. Runs on all Gemma uploads (not just <10 results).
+    /// Processes OCR text in chunks to fit within the 1776-token prompt limit.
+    /// Regex results always take priority on conflicts.
     private static func enhanceWithAI(regexResult: ExtractionOutput, rawText: String) async -> ExtractionOutput {
         let existingIds = Set(regexResult.results.map(\.biomarkerId))
+        let allLines = rawText.components(separatedBy: .newlines).filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+        guard !allLines.isEmpty else { return regexResult }
 
-        // Find lines that look like they contain results (have numbers + potential units)
-        let candidateLines = rawText.components(separatedBy: .newlines).filter { line in
-            line.contains(where: \.isNumber) && line.count > 5 && line.count < 200
-        }
-        guard !candidateLines.isEmpty else { return regexResult }
-
-        // Send small batch to LLM
-        let batch = candidateLines.prefix(15).joined(separator: "\n")
-        let knownIds = BiomarkerKnowledgeBase.all.prefix(30).map { "\($0.id)=\($0.name)" }.joined(separator: ", ")
-
-        let prompt = """
-        Extract biomarker values from these lab report lines. \
-        Known biomarkers: \(knownIds). \
-        Reply ONLY in format: id|value|unit (one per line). Nothing else. \
-        Lines:\n\(batch)
+        // Compact schema: id:unit — fits in ~400 tokens for all 65 biomarkers
+        let schema = BiomarkerKnowledgeBase.all.map { "\($0.id):\($0.unit)" }.joined(separator: ",")
+        let systemPrompt = """
+        Extract lab test results from the text. \
+        Reply ONLY as lines: id|value|unit. One per line. No explanation. \
+        Known IDs(unit): \(schema)
         """
 
-        let response = await LocalAIService.shared.respond(to: prompt)
-        let aiResults = parseAIBiomarkerResponse(response, excluding: existingIds)
+        // ~100 lines per chunk leaves ~1200 tokens for OCR content within the 1776-token limit
+        let chunkSize = 100
+        let maxChunks = 5
+        var aiResults: [ExtractedResult] = []
 
-        if aiResults.isEmpty { return regexResult }
-        Log.biomarkers.info("AI found \(aiResults.count) additional biomarkers")
+        for chunkStart in stride(from: 0, to: min(allLines.count, chunkSize * maxChunks), by: chunkSize) {
+            let chunk = allLines[chunkStart..<min(chunkStart + chunkSize, allLines.count)].joined(separator: "\n")
+            let response = await LocalAIService.shared.respondDirect(systemPrompt: systemPrompt, message: chunk)
+            let chunkResults = parseAIBiomarkerResponse(response, excluding: existingIds)
+            aiResults.append(contentsOf: chunkResults)
+        }
 
-        var merged = regexResult.results + aiResults
-        // Deduplicate by biomarkerId (regex wins)
-        var seen = Set<String>()
-        merged = merged.filter { seen.insert($0.biomarkerId).inserted }
+        // Deduplicate AI results by biomarkerId (first occurrence wins across chunks)
+        var seenAI = Set<String>()
+        let dedupedAI = aiResults.filter { seenAI.insert($0.biomarkerId).inserted }
 
-        return ExtractionOutput(results: merged, labName: regexResult.labName, reportDate: regexResult.reportDate)
+        if dedupedAI.isEmpty { return regexResult }
+        Log.biomarkers.info("AI found \(dedupedAI.count) additional biomarkers across \((allLines.count / chunkSize) + 1) chunks")
+
+        // Merge: regex results first (they win on conflicts), then AI-only additions
+        var seen = Set(existingIds)
+        let additions = dedupedAI.filter { seen.insert($0.biomarkerId).inserted }
+
+        return ExtractionOutput(
+            results: regexResult.results + additions,
+            labName: regexResult.labName,
+            reportDate: regexResult.reportDate
+        )
     }
 
-    /// Parse "id|value|unit" lines from LLM response.
+    /// Parse "id|value|unit" lines from LLM response. Marks results as AI-parsed.
     private static func parseAIBiomarkerResponse(_ response: String, excluding existingIds: Set<String>) -> [ExtractedResult] {
         response.components(separatedBy: .newlines).compactMap { line in
             let parts = line.split(separator: "|")
@@ -111,7 +133,7 @@ enum LabReportOCR {
             guard BiomarkerKnowledgeBase.byId[id] != nil, !existingIds.contains(id) else { return nil }
             guard let value = Double(String(parts[1]).trimmingCharacters(in: .whitespaces)) else { return nil }
             let unit = String(parts[2]).trimmingCharacters(in: .whitespaces)
-            return ExtractedResult(biomarkerId: id, value: value, unit: unit, referenceLow: nil, referenceHigh: nil)
+            return ExtractedResult(biomarkerId: id, value: value, unit: unit, isAIParsed: true)
         }
     }
 
