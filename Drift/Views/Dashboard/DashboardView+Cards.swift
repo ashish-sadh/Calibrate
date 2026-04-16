@@ -94,7 +94,12 @@ extension DashboardView {
             if let t = target, let goal, let cw = viewModel.latestWeight ?? viewModel.trendWeight {
                 let remainingAbs = abs(unit.convert(fromKg: goal.remainingKg(currentWeightKg: cw)))
                 let losing = goal.isLosing(currentWeightKg: cw)
-                Text("Target: eat \(Int(t.calorieTarget)) kcal to \(losing ? "lose" : "gain") \(String(format: "%.1f", remainingAbs)) \(unit.displayName)")
+                let hasCustomMacros = goal.proteinTargetG != nil || goal.carbsTargetG != nil || goal.fatTargetG != nil
+                // When custom macros are set, calorie target is user-chosen — don't imply it directly causes the weight change
+                let targetText = hasCustomMacros
+                    ? "Target: \(Int(t.calorieTarget)) kcal/day · \(String(format: "%.1f", remainingAbs)) \(unit.displayName) to \(losing ? "lose" : "gain")"
+                    : "Target: eat \(Int(t.calorieTarget)) kcal/day to \(losing ? "lose" : "gain") \(String(format: "%.1f", remainingAbs)) \(unit.displayName)"
+                Text(targetText)
                     .font(.caption).foregroundStyle(.secondary)
             }
 
