@@ -372,7 +372,8 @@ struct FoodUnit: Hashable {
            name.contains("fish sauce") || name.contains("oyster sauce") || name.contains("hoisin") ||
            name.contains("teriyaki sauce") || name.contains("vinaigrette") || name.contains("relish") ||
            name.contains("aioli") || name.contains("mayo") || name.contains("mayonnaise") ||
-           name.contains("ranch") || name.contains("pesto") || name.contains("chili sauce") {
+           name.contains("ranch") || name.contains("pesto") || name.contains("chili sauce") ||
+           name.contains("chutney") || name.contains("tamarind sauce") || name.contains("tzatziki") {
             return FoodUnit(label: "tbsp", gramsEquivalent: 15)
         }
 
@@ -380,6 +381,37 @@ struct FoodUnit: Hashable {
         if words.contains("oil") || words.contains("ghee") { return FoodUnit(label: "tbsp", gramsEquivalent: 15) }
         if words.contains("butter") && !name.contains("peanut") && !name.contains("almond") && !name.contains("paneer") {
             return FoodUnit(label: "tbsp", gramsEquivalent: 14)
+        }
+
+        // Honey, jam, jelly, marmalade — tablespoon
+        if name.contains("honey") ||
+           (name.contains("jam") && !name.contains("jamun")) ||
+           (name.contains("jelly") && !name.contains("jellyfish")) ||
+           name.contains("marmalade") {
+            return FoodUnit(label: "tbsp", gramsEquivalent: 21)
+        }
+
+        // Seeds — tablespoon (chia, flax, hemp, sesame, sunflower, pumpkin, til)
+        if name.contains("chia seed") || name.contains("flax seed") || name.contains("flaxseed") ||
+           name.contains("hemp seed") || name.contains("sesame seed") ||
+           name.contains("sunflower seed") || name.contains("pumpkin seed") ||
+           (words.contains("til") && !name.contains("tilgul")) {
+            return FoodUnit(label: "tbsp", gramsEquivalent: 10)
+        }
+
+        // Cream — tablespoon for heavy/cooking/fresh; cup for sour/whipped
+        if name.contains("heavy cream") || name.contains("cooking cream") ||
+           name.contains("fresh cream") || name.contains("double cream") ||
+           name.contains("cream cheese") || name.contains("whipping cream") {
+            return FoodUnit(label: "tbsp", gramsEquivalent: 15)
+        }
+        if name.contains("sour cream") || name.contains("whipped cream") {
+            return FoodUnit(label: "cup", gramsEquivalent: 230)
+        }
+
+        // Ice cream, gelato, sorbet — scoop
+        if name.contains("ice cream") || name.contains("gelato") || name.contains("sorbet") {
+            return FoodUnit(label: "scoop", gramsEquivalent: ss)
         }
 
         // Papad — always by piece (roasted or fried crisp)
@@ -434,11 +466,25 @@ struct FoodUnit: Hashable {
             return FoodUnit(label: "bowl", gramsEquivalent: ss)
         }
 
+        // Spice powders and blends — teaspoon (ss ≤ 15 distinguishes a spice from a dish)
+        if ss <= 15 &&
+           (name.contains("powder") || name.contains("garam masala") || name.contains("chaat masala") ||
+            name.contains("turmeric") || name.contains("cumin") || name.contains("coriander powder") ||
+            name.contains("paprika") || name.contains("cayenne") || name.contains("cardamom") ||
+            name.contains("cinnamon") || name.contains("ginger powder") || name.contains("garlic powder") ||
+            name.contains("onion powder") || name.contains("curry powder") || name.contains("seasoning") ||
+            name.contains("oregano") || name.contains("thyme") || name.contains("rosemary") ||
+            name.contains("chili powder") || name.contains("pepper powder") || name.contains("spice blend")) {
+            return FoodUnit(label: "tsp", gramsEquivalent: 3)
+        }
+
         // Indian curries, sabzis, biryanis — served by bowl (ss > 50 to avoid spice blends)
+        // Exclude beverages like masala chai, masala tea
         if (name.contains("curry") || name.contains("sabzi") || name.contains("sabji") ||
             name.contains("saag") || name.contains("makhani") || name.contains("biryani") ||
             name.contains("pulao") || name.contains("pilaf") || name.contains("khichdi") ||
-            name.contains("masala") || name.contains("kheer") || name.contains("halwa")) && ss > 50 {
+            name.contains("masala") || name.contains("kheer") || name.contains("halwa")) && ss > 50
+           && !words.contains("chai") && !words.contains("tea") {
             return FoodUnit(label: "bowl", gramsEquivalent: ss)
         }
 
@@ -475,9 +521,22 @@ struct FoodUnit: Hashable {
             return FoodUnit(label: "cup", gramsEquivalent: cupGrams(for: name))
         }
 
+        // Chai and tea — cup (natural serving for hot beverages, before ml catch-all)
+        if words.contains("chai") || words.contains("tea") {
+            return FoodUnit(label: "cup", gramsEquivalent: 240)
+        }
+
+        // Sprouts — piece for Brussels, cup for bean/lentil/mung sprouts
+        if name.contains("brussels sprout") {
+            return FoodUnit(label: "piece", gramsEquivalent: ss)
+        }
+        if name.contains("sprout") || name.contains("sprouted") {
+            return FoodUnit(label: "cup", gramsEquivalent: 90)
+        }
+
         // Liquid items (word boundaries to avoid "steak"→"tea", "classic"→"lassi")
         if words.contains("milk") || words.contains("juice") || words.contains("lassi") ||
-           words.contains("chai") || words.contains("tea") || words.contains("coffee") ||
+           words.contains("coffee") ||
            name.contains("buttermilk") ||
            // Alcoholic and other beverages
            words.contains("wine") || words.contains("beer") || words.contains("lager") ||

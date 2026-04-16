@@ -3209,3 +3209,63 @@ enum TestError: Error { case msg(String); init(_ s: String) { self = .msg(s) } }
     let units = FoodUnit.smartUnits(for: food)
     #expect(units.first?.label == "cup", "Lentils primary unit should be cup")
 }
+
+@Test func smartUnitsHoneyShowsTbsp() {
+    let food = Food(name: "Honey", category: "Condiments", servingSize: 21, servingUnit: "g", calories: 64)
+    let units = FoodUnit.smartUnits(for: food)
+    #expect(units.first?.label == "tbsp", "Honey primary unit should be tbsp")
+}
+
+@Test func smartUnitsJamShowsTbsp() {
+    let food = Food(name: "Strawberry Jam", category: "Condiments", servingSize: 20, servingUnit: "g", calories: 52)
+    let units = FoodUnit.smartUnits(for: food)
+    #expect(units.first?.label == "tbsp", "Jam primary unit should be tbsp")
+}
+
+@Test func smartUnitsChutneyShowsTbsp() {
+    let food = Food(name: "Mint Chutney", category: "Indian", servingSize: 15, servingUnit: "g", calories: 12)
+    let units = FoodUnit.smartUnits(for: food)
+    #expect(units.first?.label == "tbsp", "Chutney primary unit should be tbsp")
+}
+
+@Test func smartUnitsChiaSeedsShowsTbsp() {
+    let food = Food(name: "Chia Seeds", category: "Seeds", servingSize: 10, servingUnit: "g", calories: 49)
+    let units = FoodUnit.smartUnits(for: food)
+    #expect(units.first?.label == "tbsp", "Chia seeds primary unit should be tbsp")
+}
+
+@Test func smartUnitsGaramMasalaShowsTsp() {
+    let food = Food(name: "Garam Masala", category: "Spices", servingSize: 3, servingUnit: "g", calories: 8)
+    let units = FoodUnit.smartUnits(for: food)
+    #expect(units.first?.label == "tsp", "Garam masala primary unit should be tsp")
+}
+
+@Test func smartUnitsTurmericShowsTsp() {
+    let food = Food(name: "Turmeric Powder", category: "Spices", servingSize: 3, servingUnit: "g", calories: 9)
+    let units = FoodUnit.smartUnits(for: food)
+    #expect(units.first?.label == "tsp", "Turmeric powder primary unit should be tsp")
+}
+
+@Test func smartUnitsHeavyCreamShowsTbsp() {
+    let food = Food(name: "Heavy Cream", category: "Dairy", servingSize: 15, servingUnit: "ml", calories: 51)
+    let units = FoodUnit.smartUnits(for: food)
+    #expect(units.first?.label == "tbsp", "Heavy cream primary unit should be tbsp")
+}
+
+@Test func smartUnitsIceCreamShowsScoop() {
+    let food = Food(name: "Vanilla Ice Cream", category: "Desserts", servingSize: 100, servingUnit: "g", calories: 207)
+    let units = FoodUnit.smartUnits(for: food)
+    #expect(units.first?.label == "scoop", "Ice cream primary unit should be scoop")
+}
+
+@Test func smartUnitsChaiShowsCup() {
+    let food = Food(name: "Masala Chai", category: "Beverages", servingSize: 240, servingUnit: "ml", calories: 80)
+    let units = FoodUnit.smartUnits(for: food)
+    #expect(units.first?.label == "cup", "Chai primary unit should be cup")
+}
+
+@Test func smartUnitsBeanSproutsShowsCup() {
+    let food = Food(name: "Bean Sprouts", category: "Vegetables", servingSize: 90, servingUnit: "g", calories: 30)
+    let units = FoodUnit.smartUnits(for: food)
+    #expect(units.first?.label == "cup", "Bean sprouts primary unit should be cup")
+}
