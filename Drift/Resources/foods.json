@@ -5098,7 +5098,7 @@
     "nova_group": 3
   },
   {
-    "name": "A\u00e7a\u00ed Bowl (medium)",
+    "name": "Açaí Bowl (medium)",
     "category": "US Staples",
     "serving_size": 300,
     "serving_unit": "g",
@@ -5108,7 +5108,7 @@
     "fat_g": 18,
     "fiber_g": 8,
     "ingredients": [
-      "A\u00e7a\u00ed Bowl (medium)"
+      "Açaí Bowl (medium)"
     ],
     "nova_group": 3
   },
@@ -9788,7 +9788,7 @@
     "nova_group": 3
   },
   {
-    "name": "Costco A\u00e7a\u00ed Bowl (food court)",
+    "name": "Costco Açaí Bowl (food court)",
     "category": "Costco",
     "serving_size": 355,
     "serving_unit": "g",
@@ -9798,7 +9798,7 @@
     "fat_g": 19,
     "fiber_g": 7,
     "ingredients": [
-      "Costco A\u00e7a\u00ed Bowl (food court)"
+      "Costco Açaí Bowl (food court)"
     ],
     "nova_group": 3
   },
@@ -10493,7 +10493,7 @@
     "nova_group": 4
   },
   {
-    "name": "Starbucks Caff\u00e8 Latte (Grande, 2% milk)",
+    "name": "Starbucks Caffè Latte (Grande, 2% milk)",
     "category": "Beverages",
     "serving_size": 473,
     "serving_unit": "ml",
@@ -10503,7 +10503,7 @@
     "fat_g": 7,
     "fiber_g": 0,
     "ingredients": [
-      "Starbucks Caff\u00e8 Latte (Grande, 2% milk)"
+      "Starbucks Caffè Latte (Grande, 2% milk)"
     ],
     "nova_group": 3
   },
@@ -25155,7 +25155,7 @@
     "ingredients": [
       "fries",
       "cheese sauce",
-      "jalape\u00f1os",
+      "jalapeños",
       "sour cream"
     ],
     "nova_group": 4
@@ -28726,7 +28726,7 @@
       "beef",
       "onion",
       "tomato",
-      "jalape\u00f1o",
+      "jalapeño",
       "rosemary",
       "Ethiopian spices",
       "butter"
@@ -32341,7 +32341,12 @@
     "carbs_g": 18,
     "fat_g": 3,
     "fiber_g": 1,
-    "ingredients": ["chickpea flour", "yogurt", "mustard seeds", "curry leaves"]
+    "ingredients": [
+      "chickpea flour",
+      "yogurt",
+      "mustard seeds",
+      "curry leaves"
+    ]
   },
   {
     "name": "Khakhra (Plain)",
@@ -32353,7 +32358,10 @@
     "carbs_g": 20,
     "fat_g": 4,
     "fiber_g": 2,
-    "ingredients": ["whole wheat flour", "oil"]
+    "ingredients": [
+      "whole wheat flour",
+      "oil"
+    ]
   },
   {
     "name": "Khakhra (Masala)",
@@ -32365,7 +32373,11 @@
     "carbs_g": 21,
     "fat_g": 4.5,
     "fiber_g": 2,
-    "ingredients": ["whole wheat flour", "oil", "spices"]
+    "ingredients": [
+      "whole wheat flour",
+      "oil",
+      "spices"
+    ]
   },
   {
     "name": "Besan Chilla",
@@ -32377,7 +32389,13 @@
     "carbs_g": 20,
     "fat_g": 4,
     "fiber_g": 3,
-    "ingredients": ["chickpea flour", "onion", "tomato", "green chili", "oil"]
+    "ingredients": [
+      "chickpea flour",
+      "onion",
+      "tomato",
+      "green chili",
+      "oil"
+    ]
   },
   {
     "name": "Moong Dal Chilla",
@@ -32389,7 +32407,12 @@
     "carbs_g": 18,
     "fat_g": 2.5,
     "fiber_g": 2,
-    "ingredients": ["moong dal", "ginger", "green chili", "oil"]
+    "ingredients": [
+      "moong dal",
+      "ginger",
+      "green chili",
+      "oil"
+    ]
   },
   {
     "name": "Pav Bhaji",
@@ -32401,7 +32424,14 @@
     "carbs_g": 62,
     "fat_g": 14,
     "fiber_g": 8,
-    "ingredients": ["potato", "tomato", "onion", "capsicum", "butter", "pav"]
+    "ingredients": [
+      "potato",
+      "tomato",
+      "onion",
+      "capsicum",
+      "butter",
+      "pav"
+    ]
   },
   {
     "name": "Misal Pav",
@@ -32413,7 +32443,14 @@
     "carbs_g": 55,
     "fat_g": 11,
     "fiber_g": 9,
-    "ingredients": ["moth beans", "potato", "onion", "tomato", "pav", "farsan"]
+    "ingredients": [
+      "moth beans",
+      "potato",
+      "onion",
+      "tomato",
+      "pav",
+      "farsan"
+    ]
   },
   {
     "name": "Batata Vada",
@@ -32425,7 +32462,13 @@
     "carbs_g": 22,
     "fat_g": 8,
     "fiber_g": 2,
-    "ingredients": ["potato", "chickpea flour", "mustard seeds", "turmeric", "oil"]
+    "ingredients": [
+      "potato",
+      "chickpea flour",
+      "mustard seeds",
+      "turmeric",
+      "oil"
+    ]
   },
   {
     "name": "Dal Makhani",
@@ -32437,7 +32480,14 @@
     "carbs_g": 28,
     "fat_g": 10,
     "fiber_g": 7,
-    "ingredients": ["black lentils", "kidney beans", "butter", "cream", "tomato", "onion"]
+    "ingredients": [
+      "black lentils",
+      "kidney beans",
+      "butter",
+      "cream",
+      "tomato",
+      "onion"
+    ]
   },
   {
     "name": "Palak Paneer",
@@ -32449,7 +32499,14 @@
     "carbs_g": 12,
     "fat_g": 20,
     "fiber_g": 4,
-    "ingredients": ["spinach", "paneer", "onion", "tomato", "cream", "garam masala"]
+    "ingredients": [
+      "spinach",
+      "paneer",
+      "onion",
+      "tomato",
+      "cream",
+      "garam masala"
+    ]
   },
   {
     "name": "Kadai Paneer",
@@ -32461,7 +32518,14 @@
     "carbs_g": 14,
     "fat_g": 22,
     "fiber_g": 3,
-    "ingredients": ["paneer", "capsicum", "onion", "tomato", "oil", "spices"]
+    "ingredients": [
+      "paneer",
+      "capsicum",
+      "onion",
+      "tomato",
+      "oil",
+      "spices"
+    ]
   },
   {
     "name": "Paneer Bhurji",
@@ -32473,7 +32537,14 @@
     "carbs_g": 8,
     "fat_g": 20,
     "fiber_g": 1,
-    "ingredients": ["paneer", "onion", "tomato", "capsicum", "oil", "spices"]
+    "ingredients": [
+      "paneer",
+      "onion",
+      "tomato",
+      "capsicum",
+      "oil",
+      "spices"
+    ]
   },
   {
     "name": "Sabudana Khichdi",
@@ -32485,7 +32556,14 @@
     "carbs_g": 56,
     "fat_g": 9,
     "fiber_g": 1,
-    "ingredients": ["sabudana", "peanuts", "potato", "ghee", "cumin", "green chili"]
+    "ingredients": [
+      "sabudana",
+      "peanuts",
+      "potato",
+      "ghee",
+      "cumin",
+      "green chili"
+    ]
   },
   {
     "name": "Sabudana Vada",
@@ -32497,7 +32575,12 @@
     "carbs_g": 18,
     "fat_g": 7,
     "fiber_g": 0.5,
-    "ingredients": ["sabudana", "peanuts", "potato", "oil"]
+    "ingredients": [
+      "sabudana",
+      "peanuts",
+      "potato",
+      "oil"
+    ]
   },
   {
     "name": "Lemon Rice",
@@ -32509,7 +32592,15 @@
     "carbs_g": 42,
     "fat_g": 6,
     "fiber_g": 1,
-    "ingredients": ["rice", "lemon", "mustard seeds", "curry leaves", "peanuts", "turmeric", "oil"]
+    "ingredients": [
+      "rice",
+      "lemon",
+      "mustard seeds",
+      "curry leaves",
+      "peanuts",
+      "turmeric",
+      "oil"
+    ]
   },
   {
     "name": "Dahi Puri",
@@ -32521,7 +32612,14 @@
     "carbs_g": 30,
     "fat_g": 7,
     "fiber_g": 2,
-    "ingredients": ["puri", "potato", "yogurt", "tamarind chutney", "sev", "chaat masala"]
+    "ingredients": [
+      "puri",
+      "potato",
+      "yogurt",
+      "tamarind chutney",
+      "sev",
+      "chaat masala"
+    ]
   },
   {
     "name": "Keema Matar",
@@ -32533,7 +32631,14 @@
     "carbs_g": 12,
     "fat_g": 18,
     "fiber_g": 3,
-    "ingredients": ["minced mutton", "peas", "onion", "tomato", "garam masala", "oil"]
+    "ingredients": [
+      "minced mutton",
+      "peas",
+      "onion",
+      "tomato",
+      "garam masala",
+      "oil"
+    ]
   },
   {
     "name": "Overnight Oats",
@@ -32545,7 +32650,13 @@
     "carbs_g": 55,
     "fat_g": 11,
     "fiber_g": 6,
-    "ingredients": ["oats", "milk", "chia seeds", "honey", "banana"]
+    "ingredients": [
+      "oats",
+      "milk",
+      "chia seeds",
+      "honey",
+      "banana"
+    ]
   },
   {
     "name": "Chia Seed Pudding",
@@ -32557,7 +32668,12 @@
     "carbs_g": 25,
     "fat_g": 10,
     "fiber_g": 10,
-    "ingredients": ["chia seeds", "almond milk", "honey", "vanilla"]
+    "ingredients": [
+      "chia seeds",
+      "almond milk",
+      "honey",
+      "vanilla"
+    ]
   },
   {
     "name": "Spanakopita",
@@ -32569,7 +32685,14 @@
     "carbs_g": 23,
     "fat_g": 15,
     "fiber_g": 2,
-    "ingredients": ["spinach", "feta cheese", "phyllo dough", "olive oil", "onion", "dill"]
+    "ingredients": [
+      "spinach",
+      "feta cheese",
+      "phyllo dough",
+      "olive oil",
+      "onion",
+      "dill"
+    ]
   },
   {
     "name": "Moussaka",
@@ -32581,7 +32704,15 @@
     "carbs_g": 22,
     "fat_g": 22,
     "fiber_g": 4,
-    "ingredients": ["eggplant", "ground lamb", "tomato", "bechamel sauce", "onion", "cinnamon", "olive oil"]
+    "ingredients": [
+      "eggplant",
+      "ground lamb",
+      "tomato",
+      "bechamel sauce",
+      "onion",
+      "cinnamon",
+      "olive oil"
+    ]
   },
   {
     "name": "Saganaki",
@@ -32593,7 +32724,12 @@
     "carbs_g": 5,
     "fat_g": 17,
     "fiber_g": 0,
-    "ingredients": ["kasseri cheese", "flour", "olive oil", "lemon"]
+    "ingredients": [
+      "kasseri cheese",
+      "flour",
+      "olive oil",
+      "lemon"
+    ]
   },
   {
     "name": "Kahwa",
@@ -32605,7 +32741,14 @@
     "carbs_g": 11,
     "fat_g": 0,
     "fiber_g": 0,
-    "ingredients": ["green tea", "saffron", "cardamom", "cinnamon", "almonds", "honey"]
+    "ingredients": [
+      "green tea",
+      "saffron",
+      "cardamom",
+      "cinnamon",
+      "almonds",
+      "honey"
+    ]
   },
   {
     "name": "Rista",
@@ -32617,7 +32760,13 @@
     "carbs_g": 8,
     "fat_g": 19,
     "fiber_g": 1,
-    "ingredients": ["minced mutton", "fennel", "cardamom", "red chili", "oil"]
+    "ingredients": [
+      "minced mutton",
+      "fennel",
+      "cardamom",
+      "red chili",
+      "oil"
+    ]
   },
   {
     "name": "Aloo Tikki Chaat",
@@ -32629,7 +32778,15 @@
     "carbs_g": 38,
     "fat_g": 8,
     "fiber_g": 4,
-    "ingredients": ["potato", "chickpeas", "yogurt", "tamarind chutney", "green chutney", "sev", "chaat masala"]
+    "ingredients": [
+      "potato",
+      "chickpeas",
+      "yogurt",
+      "tamarind chutney",
+      "green chutney",
+      "sev",
+      "chaat masala"
+    ]
   },
   {
     "name": "Ram Laddoo",
@@ -32641,7 +32798,14 @@
     "carbs_g": 28,
     "fat_g": 11,
     "fiber_g": 3,
-    "ingredients": ["moong dal", "chana dal", "radish", "green chutney", "chaat masala", "oil"]
+    "ingredients": [
+      "moong dal",
+      "chana dal",
+      "radish",
+      "green chutney",
+      "chaat masala",
+      "oil"
+    ]
   },
   {
     "name": "Kachori Sabzi",
@@ -32653,7 +32817,14 @@
     "carbs_g": 48,
     "fat_g": 18,
     "fiber_g": 5,
-    "ingredients": ["kachori", "potato curry", "chickpeas", "tamarind chutney", "green chutney", "sev"]
+    "ingredients": [
+      "kachori",
+      "potato curry",
+      "chickpeas",
+      "tamarind chutney",
+      "green chutney",
+      "sev"
+    ]
   },
   {
     "name": "Sarson Da Saag",
@@ -32665,7 +32836,15 @@
     "carbs_g": 15,
     "fat_g": 13,
     "fiber_g": 5,
-    "ingredients": ["mustard greens", "spinach", "ghee", "onion", "garlic", "ginger", "cornmeal"]
+    "ingredients": [
+      "mustard greens",
+      "spinach",
+      "ghee",
+      "onion",
+      "garlic",
+      "ginger",
+      "cornmeal"
+    ]
   },
   {
     "name": "Pindi Chole",
@@ -32677,7 +32856,15 @@
     "carbs_g": 38,
     "fat_g": 10,
     "fiber_g": 8,
-    "ingredients": ["chickpeas", "onion", "tomato", "garam masala", "amchur", "oil", "ginger"]
+    "ingredients": [
+      "chickpeas",
+      "onion",
+      "tomato",
+      "garam masala",
+      "amchur",
+      "oil",
+      "ginger"
+    ]
   },
   {
     "name": "Sundal",
@@ -32689,7 +32876,14 @@
     "carbs_g": 26,
     "fat_g": 4,
     "fiber_g": 7,
-    "ingredients": ["chickpeas", "coconut", "mustard seeds", "curry leaves", "oil", "chili"]
+    "ingredients": [
+      "chickpeas",
+      "coconut",
+      "mustard seeds",
+      "curry leaves",
+      "oil",
+      "chili"
+    ]
   },
   {
     "name": "Olan",
@@ -32701,7 +32895,13 @@
     "carbs_g": 12,
     "fat_g": 7,
     "fiber_g": 2,
-    "ingredients": ["ash gourd", "black-eyed peas", "coconut milk", "coconut oil", "green chili"]
+    "ingredients": [
+      "ash gourd",
+      "black-eyed peas",
+      "coconut milk",
+      "coconut oil",
+      "green chili"
+    ]
   },
   {
     "name": "Kootu",
@@ -32713,7 +32913,15 @@
     "carbs_g": 18,
     "fat_g": 9,
     "fiber_g": 4,
-    "ingredients": ["yam", "chana dal", "coconut", "cumin", "mustard seeds", "curry leaves", "oil"]
+    "ingredients": [
+      "yam",
+      "chana dal",
+      "coconut",
+      "cumin",
+      "mustard seeds",
+      "curry leaves",
+      "oil"
+    ]
   },
   {
     "name": "Falooda",
@@ -32725,7 +32933,14 @@
     "carbs_g": 52,
     "fat_g": 9,
     "fiber_g": 2,
-    "ingredients": ["milk", "rose syrup", "vermicelli", "basil seeds", "ice cream", "rose water"]
+    "ingredients": [
+      "milk",
+      "rose syrup",
+      "vermicelli",
+      "basil seeds",
+      "ice cream",
+      "rose water"
+    ]
   },
   {
     "name": "Thandai",
@@ -32737,7 +32952,16 @@
     "carbs_g": 38,
     "fat_g": 7,
     "fiber_g": 1,
-    "ingredients": ["milk", "almonds", "poppy seeds", "fennel", "peppercorn", "cardamom", "sugar", "rose water"]
+    "ingredients": [
+      "milk",
+      "almonds",
+      "poppy seeds",
+      "fennel",
+      "peppercorn",
+      "cardamom",
+      "sugar",
+      "rose water"
+    ]
   },
   {
     "name": "Rose Milk",
@@ -32749,7 +32973,11 @@
     "carbs_g": 26,
     "fat_g": 3,
     "fiber_g": 0,
-    "ingredients": ["milk", "rose syrup", "sugar"]
+    "ingredients": [
+      "milk",
+      "rose syrup",
+      "sugar"
+    ]
   },
   {
     "name": "Grits (Cooked)",
@@ -32761,7 +32989,11 @@
     "carbs_g": 31,
     "fat_g": 1,
     "fiber_g": 1,
-    "ingredients": ["corn grits", "water", "salt"]
+    "ingredients": [
+      "corn grits",
+      "water",
+      "salt"
+    ]
   },
   {
     "name": "Veggie Stir Fry",
@@ -32773,7 +33005,16 @@
     "carbs_g": 22,
     "fat_g": 10,
     "fiber_g": 5,
-    "ingredients": ["broccoli", "bell pepper", "snap peas", "carrot", "soy sauce", "sesame oil", "garlic", "ginger"]
+    "ingredients": [
+      "broccoli",
+      "bell pepper",
+      "snap peas",
+      "carrot",
+      "soy sauce",
+      "sesame oil",
+      "garlic",
+      "ginger"
+    ]
   },
   {
     "name": "Grain Bowl",
@@ -32785,7 +33026,14 @@
     "carbs_g": 65,
     "fat_g": 14,
     "fiber_g": 8,
-    "ingredients": ["farro", "roasted vegetables", "chickpeas", "avocado", "tahini", "lemon"]
+    "ingredients": [
+      "farro",
+      "roasted vegetables",
+      "chickpeas",
+      "avocado",
+      "tahini",
+      "lemon"
+    ]
   },
   {
     "name": "Chicken Lollipop",
@@ -32797,7 +33045,14 @@
     "carbs_g": 8,
     "fat_g": 6,
     "fiber_g": 0,
-    "ingredients": ["chicken wings", "soy sauce", "chili sauce", "ginger", "garlic", "oil"]
+    "ingredients": [
+      "chicken wings",
+      "soy sauce",
+      "chili sauce",
+      "ginger",
+      "garlic",
+      "oil"
+    ]
   },
   {
     "name": "Chimichurri",
@@ -32809,7 +33064,14 @@
     "carbs_g": 1,
     "fat_g": 6,
     "fiber_g": 0,
-    "ingredients": ["parsley", "olive oil", "garlic", "red wine vinegar", "oregano", "chili flakes"]
+    "ingredients": [
+      "parsley",
+      "olive oil",
+      "garlic",
+      "red wine vinegar",
+      "oregano",
+      "chili flakes"
+    ]
   },
   {
     "name": "Portobello Mushroom",
@@ -32821,7 +33083,9 @@
     "carbs_g": 5,
     "fat_g": 0,
     "fiber_g": 2,
-    "ingredients": ["portobello mushroom"]
+    "ingredients": [
+      "portobello mushroom"
+    ]
   },
   {
     "name": "Shiitake Mushrooms (cooked)",
@@ -32833,7 +33097,9 @@
     "carbs_g": 21,
     "fat_g": 0,
     "fiber_g": 3,
-    "ingredients": ["shiitake mushrooms"]
+    "ingredients": [
+      "shiitake mushrooms"
+    ]
   },
   {
     "name": "Cremini Mushrooms",
@@ -32845,7 +33111,9 @@
     "carbs_g": 2,
     "fat_g": 0,
     "fiber_g": 0,
-    "ingredients": ["cremini mushrooms"]
+    "ingredients": [
+      "cremini mushrooms"
+    ]
   },
   {
     "name": "Enoki Mushrooms",
@@ -32857,7 +33125,9 @@
     "carbs_g": 5,
     "fat_g": 0,
     "fiber_g": 1,
-    "ingredients": ["enoki mushrooms"]
+    "ingredients": [
+      "enoki mushrooms"
+    ]
   },
   {
     "name": "Oyster Mushrooms (cooked)",
@@ -32869,7 +33139,9 @@
     "carbs_g": 6,
     "fat_g": 1,
     "fiber_g": 2,
-    "ingredients": ["oyster mushrooms"]
+    "ingredients": [
+      "oyster mushrooms"
+    ]
   },
   {
     "name": "Gouda Cheese",
@@ -32881,7 +33153,12 @@
     "carbs_g": 1,
     "fat_g": 8,
     "fiber_g": 0,
-    "ingredients": ["pasteurized milk", "cheese cultures", "salt", "enzymes"]
+    "ingredients": [
+      "pasteurized milk",
+      "cheese cultures",
+      "salt",
+      "enzymes"
+    ]
   },
   {
     "name": "Provolone Cheese",
@@ -32893,7 +33170,12 @@
     "carbs_g": 1,
     "fat_g": 7,
     "fiber_g": 0,
-    "ingredients": ["pasteurized milk", "cheese cultures", "salt", "enzymes"]
+    "ingredients": [
+      "pasteurized milk",
+      "cheese cultures",
+      "salt",
+      "enzymes"
+    ]
   },
   {
     "name": "Pepper Jack Cheese",
@@ -32905,7 +33187,13 @@
     "carbs_g": 0,
     "fat_g": 9,
     "fiber_g": 0,
-    "ingredients": ["pasteurized milk", "jalapeno peppers", "cheese cultures", "salt", "enzymes"]
+    "ingredients": [
+      "pasteurized milk",
+      "jalapeno peppers",
+      "cheese cultures",
+      "salt",
+      "enzymes"
+    ]
   },
   {
     "name": "Monterey Jack Cheese",
@@ -32917,7 +33205,12 @@
     "carbs_g": 0,
     "fat_g": 8,
     "fiber_g": 0,
-    "ingredients": ["pasteurized milk", "cheese cultures", "salt", "enzymes"]
+    "ingredients": [
+      "pasteurized milk",
+      "cheese cultures",
+      "salt",
+      "enzymes"
+    ]
   },
   {
     "name": "Colby Jack Cheese",
@@ -32929,7 +33222,12 @@
     "carbs_g": 1,
     "fat_g": 9,
     "fiber_g": 0,
-    "ingredients": ["pasteurized milk", "cheese cultures", "salt", "enzymes"]
+    "ingredients": [
+      "pasteurized milk",
+      "cheese cultures",
+      "salt",
+      "enzymes"
+    ]
   },
   {
     "name": "Cheddar Cheese (Shredded)",
@@ -32941,7 +33239,13 @@
     "carbs_g": 0,
     "fat_g": 9,
     "fiber_g": 0,
-    "ingredients": ["pasteurized milk", "cheese cultures", "salt", "enzymes", "annatto"]
+    "ingredients": [
+      "pasteurized milk",
+      "cheese cultures",
+      "salt",
+      "enzymes",
+      "annatto"
+    ]
   },
   {
     "name": "Mozzarella (Shredded)",
@@ -32953,7 +33257,12 @@
     "carbs_g": 1,
     "fat_g": 5,
     "fiber_g": 0,
-    "ingredients": ["pasteurized milk", "cheese cultures", "salt", "enzymes"]
+    "ingredients": [
+      "pasteurized milk",
+      "cheese cultures",
+      "salt",
+      "enzymes"
+    ]
   },
   {
     "name": "Blue Cheese (crumbled)",
@@ -32965,7 +33274,12 @@
     "carbs_g": 1,
     "fat_g": 8,
     "fiber_g": 0,
-    "ingredients": ["pasteurized milk", "blue mold cultures", "salt", "enzymes"]
+    "ingredients": [
+      "pasteurized milk",
+      "blue mold cultures",
+      "salt",
+      "enzymes"
+    ]
   },
   {
     "name": "Gruyere Cheese",
@@ -32977,7 +33291,12 @@
     "carbs_g": 0,
     "fat_g": 9,
     "fiber_g": 0,
-    "ingredients": ["pasteurized milk", "cheese cultures", "salt", "enzymes"]
+    "ingredients": [
+      "pasteurized milk",
+      "cheese cultures",
+      "salt",
+      "enzymes"
+    ]
   },
   {
     "name": "Turkey Sausage",
@@ -32989,7 +33308,13 @@
     "carbs_g": 1,
     "fat_g": 8,
     "fiber_g": 0,
-    "ingredients": ["ground turkey", "salt", "spices", "garlic powder", "onion powder"]
+    "ingredients": [
+      "ground turkey",
+      "salt",
+      "spices",
+      "garlic powder",
+      "onion powder"
+    ]
   },
   {
     "name": "Pork Sausage",
@@ -33001,7 +33326,12 @@
     "carbs_g": 1,
     "fat_g": 17,
     "fiber_g": 0,
-    "ingredients": ["ground pork", "salt", "spices", "sugar"]
+    "ingredients": [
+      "ground pork",
+      "salt",
+      "spices",
+      "sugar"
+    ]
   },
   {
     "name": "Chicken Liver (cooked)",
@@ -33013,7 +33343,11 @@
     "carbs_g": 1,
     "fat_g": 5,
     "fiber_g": 0,
-    "ingredients": ["chicken liver", "oil", "salt"]
+    "ingredients": [
+      "chicken liver",
+      "oil",
+      "salt"
+    ]
   },
   {
     "name": "Til Ladoo",
@@ -33025,7 +33359,12 @@
     "carbs_g": 15,
     "fat_g": 9,
     "fiber_g": 1,
-    "ingredients": ["sesame seeds", "jaggery", "ghee", "cardamom"]
+    "ingredients": [
+      "sesame seeds",
+      "jaggery",
+      "ghee",
+      "cardamom"
+    ]
   },
   {
     "name": "Gond ke Ladoo",
@@ -33037,7 +33376,14 @@
     "carbs_g": 25,
     "fat_g": 12,
     "fiber_g": 1,
-    "ingredients": ["edible gum", "whole wheat flour", "ghee", "sugar", "dry fruits", "cardamom"]
+    "ingredients": [
+      "edible gum",
+      "whole wheat flour",
+      "ghee",
+      "sugar",
+      "dry fruits",
+      "cardamom"
+    ]
   },
   {
     "name": "Moringa Leaves",
@@ -33049,7 +33395,9 @@
     "carbs_g": 8,
     "fat_g": 1,
     "fiber_g": 2,
-    "ingredients": ["moringa leaves"]
+    "ingredients": [
+      "moringa leaves"
+    ]
   },
   {
     "name": "Ragi Roti",
@@ -33061,6 +33409,243 @@
     "carbs_g": 30,
     "fat_g": 2,
     "fiber_g": 3,
-    "ingredients": ["ragi flour", "water", "salt", "onion", "coriander leaves"]
+    "ingredients": [
+      "ragi flour",
+      "water",
+      "salt",
+      "onion",
+      "coriander leaves"
+    ]
+  },
+  {
+    "name": "Italian Sausage (1 link)",
+    "category": "Proteins",
+    "serving_size": 84,
+    "serving_unit": "g",
+    "calories": 220,
+    "protein_g": 13,
+    "carbs_g": 2,
+    "fat_g": 18,
+    "fiber_g": 0
+  },
+  {
+    "name": "Biscuits and Gravy",
+    "category": "American",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 340,
+    "protein_g": 9,
+    "carbs_g": 37,
+    "fat_g": 17,
+    "fiber_g": 1
+  },
+  {
+    "name": "Chicken Tortilla Soup",
+    "category": "Soups",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 200,
+    "protein_g": 18,
+    "carbs_g": 22,
+    "fat_g": 5,
+    "fiber_g": 4
+  },
+  {
+    "name": "Chimichanga (1 piece)",
+    "category": "Mexican",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 18,
+    "carbs_g": 38,
+    "fat_g": 17,
+    "fiber_g": 2
+  },
+  {
+    "name": "Snap Peas (1 cup)",
+    "category": "Vegetables",
+    "serving_size": 63,
+    "serving_unit": "g",
+    "calories": 27,
+    "protein_g": 1.8,
+    "carbs_g": 4.8,
+    "fat_g": 0.1,
+    "fiber_g": 1.6
+  },
+  {
+    "name": "Burrata (1 ball)",
+    "category": "Dairy",
+    "serving_size": 125,
+    "serving_unit": "g",
+    "calories": 310,
+    "protein_g": 18,
+    "carbs_g": 2,
+    "fat_g": 25,
+    "fiber_g": 0
+  },
+  {
+    "name": "Mascarpone (2 tbsp)",
+    "category": "Dairy",
+    "serving_size": 29,
+    "serving_unit": "g",
+    "calories": 120,
+    "protein_g": 1.5,
+    "carbs_g": 1,
+    "fat_g": 12,
+    "fiber_g": 0
+  },
+  {
+    "name": "Nasi Goreng (Indonesian Fried Rice)",
+    "category": "Asian",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 330,
+    "protein_g": 14,
+    "carbs_g": 45,
+    "fat_g": 10,
+    "fiber_g": 2
+  },
+  {
+    "name": "Lamb Stew",
+    "category": "Proteins",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 28,
+    "carbs_g": 18,
+    "fat_g": 14,
+    "fiber_g": 3
+  },
+  {
+    "name": "Butternut Squash Soup",
+    "category": "Soups",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 130,
+    "protein_g": 2,
+    "carbs_g": 22,
+    "fat_g": 4,
+    "fiber_g": 3
+  },
+  {
+    "name": "Beef Stir Fry (with vegetables)",
+    "category": "Asian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 24,
+    "carbs_g": 12,
+    "fat_g": 14,
+    "fiber_g": 2
+  },
+  {
+    "name": "Tofu Stir Fry (with vegetables)",
+    "category": "Healthy Options",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 14,
+    "carbs_g": 12,
+    "fat_g": 8,
+    "fiber_g": 3
+  },
+  {
+    "name": "Chicken Piccata",
+    "category": "Italian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 28,
+    "carbs_g": 8,
+    "fat_g": 18,
+    "fiber_g": 0.5
+  },
+  {
+    "name": "Beef Bulgogi (Korean BBQ Beef)",
+    "category": "Korean",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 26,
+    "carbs_g": 8,
+    "fat_g": 15,
+    "fiber_g": 0
+  },
+  {
+    "name": "Saag Aloo (Spinach Potato Curry)",
+    "category": "Indian Curries",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 5,
+    "carbs_g": 24,
+    "fat_g": 7,
+    "fiber_g": 4
+  },
+  {
+    "name": "Spaghetti Squash (1 cup cooked)",
+    "category": "Vegetables",
+    "serving_size": 155,
+    "serving_unit": "g",
+    "calories": 42,
+    "protein_g": 1,
+    "carbs_g": 10,
+    "fat_g": 0.4,
+    "fiber_g": 2.2
+  },
+  {
+    "name": "Acorn Squash (roasted)",
+    "category": "Vegetables",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 83,
+    "protein_g": 1.8,
+    "carbs_g": 21.5,
+    "fat_g": 0.3,
+    "fiber_g": 3
+  },
+  {
+    "name": "Swiss Chard (cooked, 1 cup)",
+    "category": "Vegetables",
+    "serving_size": 175,
+    "serving_unit": "g",
+    "calories": 35,
+    "protein_g": 3.3,
+    "carbs_g": 7,
+    "fat_g": 0.1,
+    "fiber_g": 3.7
+  },
+  {
+    "name": "Ricotta Cheese (1/2 cup)",
+    "category": "Dairy",
+    "serving_size": 124,
+    "serving_unit": "g",
+    "calories": 216,
+    "protein_g": 14,
+    "carbs_g": 3.8,
+    "fat_g": 16,
+    "fiber_g": 0
+  },
+  {
+    "name": "Freekeh (cooked, 1 cup)",
+    "category": "Grains",
+    "serving_size": 160,
+    "serving_unit": "g",
+    "calories": 220,
+    "protein_g": 8,
+    "carbs_g": 45,
+    "fat_g": 1.5,
+    "fiber_g": 8
+  },
+  {
+    "name": "Paniyaram (2 pieces)",
+    "category": "South Indian",
+    "serving_size": 80,
+    "serving_unit": "g",
+    "calories": 130,
+    "protein_g": 4,
+    "carbs_g": 20,
+    "fat_g": 4,
+    "fiber_g": 1
   }
 ]

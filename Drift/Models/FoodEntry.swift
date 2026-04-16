@@ -123,6 +123,7 @@ extension FoodEntry {
         if lower.contains("omelette") || lower.contains("omelet") || lower.contains("frittata") {
             return fmt(servings, "omelette", "omelettes")
         }
+        if lower.contains("scrambled") || lower.contains("bhurji") { return fmt(servings, "piece", "pieces") }
         if lower.contains("khakhra") { return fmt(servings, "khakhra", "khakhras") }
         if lower.contains("dhokla") || lower.contains("khaman") || lower.contains("fafda") ||
            lower.contains("handvo") || lower.contains("chilla") || lower.contains("cheela") {
@@ -143,6 +144,9 @@ extension FoodEntry {
         }
         if lower.contains("steak") && !lower.contains("sauce") { return fmt(servings, "piece", "pieces") }
         if lower.contains("slice") { return fmt(servings, "slice", "slices") }
+        if lower.contains("french toast") || lower.contains("croissant") || lower.contains("danish") {
+            return fmt(servings, "piece", "pieces")
+        }
         // Bread/toast → slice (exclude breadfruit, breadstick, per-slice entries already caught above)
         if (lower.contains("bread") || lower.contains("toast")) &&
            !lower.contains("breadfruit") && !lower.contains("breadstick") && servingSizeG < 80 {
@@ -153,6 +157,13 @@ extension FoodEntry {
         if lower.contains("scoop") { return fmt(servings, "scoop", "scoops") }
         // Protein powder → scoop (food name doesn't contain "scoop")
         if lower.contains("protein powder") { return fmt(servings, "scoop", "scoops") }
+        if lower.contains("whey protein") || lower.contains("protein isolate") || lower.contains("protein concentrate") {
+            return fmt(servings, "scoop", "scoops")
+        }
+        if lower.contains("almond butter") { return fmt(servings, "tbsp", "tbsp") }
+        if (lower.contains("syrup") && !lower.contains("cough")) || lower.contains("agave") {
+            return fmt(servings, "tbsp", "tbsp")
+        }
         if lower.contains("patty") || lower.contains("pattie") { return fmt(servings, "patty", "patties") }
         if lower.contains("bar") && !lower.contains("barley") && servingSizeG < 80 { return fmt(servings, "bar", "bars") }
         if lower.contains("tortilla") && servingSizeG < 80 { return fmt(servings, "tortilla", "tortillas") }
@@ -163,6 +174,10 @@ extension FoodEntry {
         if lower.contains("cup") && servingSizeG > 200 { return fmt(servings, "cup", "cups") }
         // Tofu — measured by cup
         if lower.contains("tofu") { return fmt(servings, "cup", "cups") }
+        if lower.contains("paneer") { return fmt(servings, "cup", "cups") }
+        if lower.contains("bacon") { return fmt(servings, "strip", "strips") }
+        if lower.contains("sausage") && !lower.contains("roll") { return fmt(servings, "link", "links") }
+        if lower.contains("turkey") { return fmt(servings, "piece", "pieces") }
         // Shredded or grated — measured by cup
         if lower.contains("shredded") || lower.contains("grated") { return fmt(servings, "cup", "cups") }
         // Mushrooms: portobello by piece, others by cup
@@ -182,6 +197,20 @@ extension FoodEntry {
         if servingSizeG > 50 && (lower.contains("pudding") || lower.contains("custard") || lower.contains("mousse")) {
             return fmt(servings, "bowl", "bowls")
         }
+        if lower.contains("mashed potato") { return fmt(servings, "cup", "cups") }
+        if lower.contains("cottage cheese") { return fmt(servings, "cup", "cups") }
+        if lower.contains("couscous") { return fmt(servings, "cup", "cups") }
+        if lower.contains("bowl") { return fmt(servings, "bowl", "bowls") }
+        if lower.contains("potato") && !lower.contains("chip") && !lower.contains("fries") &&
+           !lower.contains("mashed") && !lower.contains("sweet") {
+            return fmt(servings, "piece", "pieces")
+        }
+        if lower.contains("broccoli") || lower.contains("cauliflower") || lower.contains("asparagus") ||
+           lower.contains("green bean") || lower.contains("edamame") ||
+           lower.contains("kale") || (lower.contains("spinach") && !lower.contains("artichoke") && !lower.contains("dip")) {
+            return fmt(servings, "cup", "cups")
+        }
+        if lower.contains("zucchini") || lower.contains("courgette") { return fmt(servings, "piece", "pieces") }
         // Salads — bowl (dressings already matched by condiment rules and show as grams)
         if lower.contains("salad") && !lower.contains("dressing") {
             return fmt(servings, "bowl", "bowls")

@@ -4,6 +4,25 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 
 ---
 
+## Cycle · 2026-04-15 (Human-shepherded junior tasks, session 6)
+
+- **Smart Units expansion** (primaryUnit + portionText): 12 new rules — 815→~680 foods still at "serving":
+  - Scrambled eggs / bhurji → piece (like omelette)
+  - French toast / croissant / danish → piece (before bread→slice rule)
+  - Almond butter → tbsp (bug fix: was falling through both almond and butter exclusions)
+  - Maple syrup / agave → tbsp (added to honey/jam rule)
+  - Bacon → strip; sausage (not roll) → link; turkey → piece
+  - Broccoli, cauliflower, asparagus, green beans, edamame, kale, spinach → cup
+  - Poke bowl / acai bowl / any "bowl" in name → bowl
+  - Potato (boiled/baked, not chips/fries/mashed/sweet) → piece
+  - Mashed potato → cup; cottage cheese → cup; couscous → cup
+  - Expanded Indian curry rule: palak, bharta, kofta, korma added alongside masala/curry/sabzi
+  - Paneer standalone → cup (after curry rule exits for dish forms)
+  - Zucchini → piece (added to whole vegetable list)
+  - Whey protein / protein isolate / concentrate → scoop
+- **Food DB +21** (2025→2046): Italian Sausage, Biscuits and Gravy, Chicken Tortilla Soup, Chimichanga, Snap Peas, Burrata, Mascarpone, Nasi Goreng, Lamb Stew, Butternut Squash Soup, Beef Stir Fry, Tofu Stir Fry, Chicken Piccata, Beef Bulgogi, Saag Aloo, Spaghetti Squash, Acorn Squash, Swiss Chard, Ricotta Cheese, Freekeh, Paniyaram.
+- **Tests +31** (1508→1539): smartUnit tests for all 12 new rules + portionText tests for scrambled eggs, bacon, sausage, broccoli, poke bowl. All 1539 unit tests passing.
+
 ## Cycle · 2026-04-15 (Human-shepherded junior tasks, session 5)
 
 - **Smart Units expansion** (primaryUnit + portionText): 7 new rules covering categories with "serving" fallback:
