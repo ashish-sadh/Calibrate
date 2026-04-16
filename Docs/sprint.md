@@ -1,10 +1,10 @@
 # Sprint Board
 
-Focus: **Implement Multi-Stage LLM Pipeline (Design Doc #65).** Design doc merged (PR #112). Build the 6-stage pipeline: normalize → intent classify → domain extract → Swift validate → confirm → execute. Gemma path only — SmolLM keeps current rules-first pipeline unchanged.
+Focus: **Smart Units Saturation + Pipeline Wrap-Up.** Multi-stage pipeline is shipped (6/8 tasks complete). This sprint: fix the P0 bug, merge remaining pipeline work, and saturate Smart Units per product focus. Smart Units is the #1 user complaint — every food needs natural default units (dosa→piece, milk→ml, rice→cup, eggs→piece).
 
 ## Regression Gate
 
-**55-query gold set at 100% baseline.** Every pipeline task MUST run gold set eval before AND after. If accuracy drops, the task is not done.
+**55-query gold set at 100% baseline.** Any AI change MUST run gold set eval before AND after.
 
 ## In Progress
 
@@ -12,48 +12,27 @@ _(pick from Ready)_
 
 ## Ready
 
-### Phase 1 — Foundation (start here)
+### P0 — Bug Fix (do first)
 
-- [ ] **#92 Stage 2: Intent classifier (classification-only prompt)** — Replace unified IntentClassifier with a focused prompt that returns `{domain, intent}` ONLY. No extraction. Domains: food/exercise/weight/supplement/health/navigation/chat. Run gold set eval before AND after. Reference: `Docs/designs/65-fix-ai-chat.md` Stage 2.
-- [ ] **#129 Stage 0+1: Wire pipeline skeleton** — Create the multi-stage pipeline orchestrator in AIToolAgent for Gemma path. Stage 0 (InputNormalizer, exists) → Stage 1 (trimmed StaticOverrides, ~10 patterns: greetings, undo, help, barcode, navigation) → Stage 2 (intent classifier) → routing to Stage 3. SmolLM path unchanged.
+- [ ] **#135 Bug: "How many calories left" answers random food search** — P0. The query "how many calories left" returns a food search result instead of calculating remaining calories. Diagnose and fix the intent routing. Run gold set eval after.
 
-### Phase 2 — Domain Extractors (after #92 is stable)
+### P1 — Pipeline Wrap-Up (finish the old sprint)
 
-- [ ] **#95 Stage 3: Domain-specific extraction prompts** — One specialized prompt per domain (food, exercise, weight, supplement). Each extracts only the params relevant to its domain. Food extractor: multi-item split, portions, meal type. Exercise extractor: sets/reps/weight, duration. Run gold set eval before AND after.
-- [ ] **#130 Stage 3b: Swift validation between stages** — Wire existing parseFoodIntent/regex extraction as validation fallback after LLM extraction. Reject nonsense, fix types, sanity-check extracted params before confirmation.
+- [ ] **#130 Merge PR #136** — Swift validation between stages is implemented (branch `130-swift-validation-between-stages`, PR #136). Review, merge, close issue.
+- [ ] **#131 Update state.md + roadmap** — Reflect new pipeline architecture (6-stage), updated test counts (1424+), food count (1,913), build number. Mark pipeline items DONE in roadmap.
 
-### Phase 3 — Cleanup (after Phase 2 passes eval)
+### P1 — Smart Units Saturation (product focus)
 
-- [ ] **#93 Prune StaticOverrides to ~10 essential patterns (Gemma path)** — Only after #92+#95 prove they handle what StaticOverrides currently catches. Keep all StaticOverrides for SmolLM path. Run gold set eval before AND after.
-- [ ] **#94 Retire ToolRanker keyword scoring (Gemma path)** — Remove `tryRulePick()` for Gemma. Keep `rank()` for SmolLM and `buildPrompt()` for streaming fallback. Last cleanup step. Run gold set eval before AND after.
+- [ ] **Smart Units audit: all 1,913 foods** — Audit every food category for correct `primaryUnit` and `portionText`. Categories to verify: liquids→ml/cups, countables→pieces, powders→grams/scoops, batters→cups, breads→slices, soups→bowls. Fix any food still defaulting to grams when a natural unit exists. Deliverable: zero foods with wrong default units.
+- [ ] **Smart Units in AI chat** — Verify AI chat uses smart units when logging. "log 2 dosas" should use pieces, not grams. "log a bowl of dal" should use cups. Test across food categories and fix any gaps in the extraction/confirmation pipeline.
 
-### Phase 4 — Stabilize
+### P2 — Design Docs
 
-- [ ] **#96 Coverage: Pipeline refactor tests** — After pipeline changes land, ensure coverage targets hold (80% logic, 50% services). New files (intent classifier, domain extractors) need unit tests.
-- [ ] **#131 Update state.md + roadmap** — Reflect new pipeline architecture, updated test counts, build number after pipeline ships.
+- [ ] **#74 Design doc: Lab reports + LLM parsing** — Create branch, write design doc, create PR with `--label design-doc`, add `doc-ready` label to issue. Reference: `Docs/designs/` for format.
 
-### Design Docs (pending review — not this sprint)
+### Design Docs (approved — not this sprint)
 - #66 Design: How to enrich images and youtube in exercises — `doc-ready`, `approved`
-- #74 Feature: Improve lab reports upload + LLM parsing — `doc-ready`
-
----
-
-## Dependency Chain
-
-```
-#92 (intent classifier) + #129 (pipeline skeleton)
-        │
-        ▼
-#95 (domain extractors) + #130 (Swift validation)
-        │
-        ▼
-#93 (prune StaticOverrides) + #94 (retire ToolRanker)
-        │
-        ▼
-#96 (coverage) + #131 (docs)
-```
-
-Do NOT start a later phase until the previous phase passes gold set eval at 100%.
+- #133 Design-impl: Exercise image/video enrichment — research task
 
 ---
 
@@ -115,11 +94,15 @@ Autonomous refactoring. Run `code-improvement.md`. Principles in `Docs/principle
 
 _(new sprint — nothing yet)_
 
-## Done (previous sprint)
+## Done (previous sprint — Multi-Stage LLM Pipeline)
 
-- [x] #121 Food confirm-first on all 5 paths (13dbfbe)
-- [x] #123 state.md verified accurate: build 120, foods 1641, tests 1324+
-- [x] #97 Bug hunting: 2 confirm-first bugs fixed (5fa3ce4, 0882b9b)
-- [x] #120 Revised design doc #65 (PR #112) — all 3 owner comments addressed (98c06ab)
-- [x] #122 Multi-stage pipeline research — documented in #65 revision
-- [x] #65 Design doc merged (PR #112). Implementation unblocked.
+- [x] #129 Stage 0+1: Wire pipeline skeleton in AIToolAgent
+- [x] #92 Stage 2: Intent classifier (classification-only prompt)
+- [x] #95 Stage 3: Domain-specific extraction prompts
+- [x] #93 Prune StaticOverrides to ~10 essential patterns (Gemma path)
+- [x] #94 Retire ToolRanker keyword scoring (Gemma path)
+- [x] #96 Coverage: Pipeline refactor tests
+- [x] Smart Units: rice→cup, protein powder→scoop, pasta/noodles→cup, dal/beans→cup
+- [x] Smart Units: portionText fixes (bread→slices, pizza→slices, soup→bowls, momos→pieces)
+- [x] Food DB: 1,641→1,913 (+272 foods across 4 junior cycles)
+- [x] Synonym expansion: +24 South Indian, Middle Eastern, Bengali, Tamil terms
