@@ -279,13 +279,13 @@ private struct IngredientPickerView: View {
                     results = FoodService.searchFood(query: item.name)
                     if let food = results.first, food.name.lowercased() == item.name.lowercased() {
                         selectedFood = food
-                        // Derive servings from calories (reliable for both AI-created and
-                        // picker-added items; servingSizeG may be per-serving or total).
+                        // Derive servings from total grams (primary) or calories (fallback for
+                        // items logged before servingSizeG was stored as total grams).
                         let servings: Double
-                        if food.calories > 0 {
-                            servings = item.calories / food.calories
-                        } else if food.servingSize > 0 && item.servingSizeG > 0 {
+                        if food.servingSize > 0 && item.servingSizeG > 0 {
                             servings = item.servingSizeG / food.servingSize
+                        } else if food.calories > 0 {
+                            servings = item.calories / food.calories
                         } else {
                             servings = 1
                         }

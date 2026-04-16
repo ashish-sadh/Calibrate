@@ -115,7 +115,7 @@ extension AIChatViewModel {
             calories: f.calories * match.servings, proteinG: f.proteinG * match.servings,
             carbsG: f.carbsG * match.servings, fatG: f.fatG * match.servings,
             fiberG: f.fiberG * match.servings,
-            servingSizeG: f.servingSize)
+            servingSizeG: f.servingSize * match.servings)
     }
 
     /// Parse freeform food text into recipe items and open the recipe builder.
