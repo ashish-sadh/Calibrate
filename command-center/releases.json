@@ -1312,5 +1312,23 @@
       "#143: edit ingredient now shows correct servings (was always 1)",
       "#135: calories-left query no longer misfires food search"
     ]
+  },
+  {
+    "build": 127,
+    "date": "2026-04-16T07:19:00-07:00",
+    "description": "feat: LLM-first lab report parsing — Gemma 4 as primary extractor with confidence scoring",
+    "features": [
+      "Lab report parsing now uses Gemma 4 as the primary extractor (not just fallback) for higher accuracy on non-standard formats",
+      "Confidence scoring per biomarker — LLM confidence ≥0.85 wins over regex, ≥0.6 threshold for LLM-only results",
+      "Report date extraction with LLM fallback when regex can't find the date",
+      "AI-parsed badge on individual biomarkers in lab report detail view",
+      "Accuracy warning banner now shown whenever Gemma was involved in parsing (not just per-result AI flag)",
+      "20 new foods added to the database"
+    ],
+    "fixes": [
+      "Smart Units: dosa, milk, eggs, rice, chicken now default to natural units across all interfaces",
+      "AI chat intent routing fixed for 'daily summary' and 'weekly summary' queries",
+      "Food search ranking improved — '2 eggs' no longer suggests egg benedict"
+    ]
   }
 ]
