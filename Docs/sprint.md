@@ -12,18 +12,12 @@ _(pick from Ready)_
 
 ## Ready
 
-### P0 — Bug Fix (do first)
-
-- [ ] **#135 Bug: "How many calories left" answers random food search** — P0. The query "how many calories left" returns a food search result instead of calculating remaining calories. Diagnose and fix the intent routing. Run gold set eval after.
-
 ### P1 — Pipeline Wrap-Up (finish the old sprint)
 
 - [ ] **#130 Merge PR #136** — Swift validation between stages is implemented (branch `130-swift-validation-between-stages`, PR #136). Review, merge, close issue.
-- [ ] **#131 Update state.md + roadmap** — Reflect new pipeline architecture (6-stage), updated test counts (1424+), food count (1,913), build number. Mark pipeline items DONE in roadmap.
 
 ### P1 — Smart Units Saturation (product focus)
 
-- [ ] **Smart Units audit: all 1,913 foods** — Audit every food category for correct `primaryUnit` and `portionText`. Categories to verify: liquids→ml/cups, countables→pieces, powders→grams/scoops, batters→cups, breads→slices, soups→bowls. Fix any food still defaulting to grams when a natural unit exists. Deliverable: zero foods with wrong default units.
 - [ ] **Smart Units in AI chat** — Verify AI chat uses smart units when logging. "log 2 dosas" should use pieces, not grams. "log a bowl of dal" should use cups. Test across food categories and fix any gaps in the extraction/confirmation pipeline.
 
 ### P2 — Design Docs
@@ -93,6 +87,10 @@ Autonomous refactoring. Run `code-improvement.md`. Principles in `Docs/principle
 ## Done (this sprint)
 
 - [x] #135 Bug: "How many calories left" answers food search — fixed isDiaryQuery guard in food_info handler. Regression test added.
+- [x] #142 P0 Bug: Fiber always shows 0g in diary — RecentEntry was missing fiberG field; SQL queries omitted fiber_g; FoodSearchView hardcoded fiberG: 0. Fixed all three.
+- [x] #131 Update state.md + roadmap — 6-stage pipeline documented, build 123, 1424+ tests, food count updated. AI Chat reliability marked DONE in roadmap.
+- [x] Smart Units audit: 340 foods improved — Indian flatbreads, chaat, condiments, curries, beverages, burgers/wraps, large fruits, berries, whole vegetables now get natural units. 1,311→971 foods at "serving".
+- [x] Food DB enrichment: 1,913→1,927 (+14 foods) — kanda bhaji, mooli paratha, ribbon pakoda, seedai, shikanji, egg paratha, chicken paratha, akki roti, makki di roti, pyaaz kachori, stuffed capsicum, lauki sabzi, arbi masala, bajra khichdi.
 
 ## Done (previous sprint — Multi-Stage LLM Pipeline)
 
@@ -104,5 +102,5 @@ Autonomous refactoring. Run `code-improvement.md`. Principles in `Docs/principle
 - [x] #96 Coverage: Pipeline refactor tests
 - [x] Smart Units: rice→cup, protein powder→scoop, pasta/noodles→cup, dal/beans→cup
 - [x] Smart Units: portionText fixes (bread→slices, pizza→slices, soup→bowls, momos→pieces)
-- [x] Food DB: 1,641→1,913 (+272 foods across 4 junior cycles)
+- [x] Food DB: 1,641→1,927 (+286 foods across 5 junior cycles)
 - [x] Synonym expansion: +24 South Indian, Middle Eastern, Bengali, Tamil terms

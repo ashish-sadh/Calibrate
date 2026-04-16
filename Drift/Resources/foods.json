@@ -31541,5 +31541,278 @@
       "olive oil"
     ],
     "nova_group": 1
+  },
+  {
+    "name": "Kanda Bhaji",
+    "category": "Indian Snacks",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 252,
+    "protein_g": 5.2,
+    "carbs_g": 30.0,
+    "fat_g": 12.5,
+    "fiber_g": 3.0,
+    "ingredients": [
+      "onion",
+      "chickpea flour",
+      "green chilli",
+      "cumin seeds",
+      "oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Mooli Paratha",
+    "category": "Indian",
+    "serving_size": 80,
+    "serving_unit": "g",
+    "calories": 185,
+    "protein_g": 5.0,
+    "carbs_g": 27.0,
+    "fat_g": 6.5,
+    "fiber_g": 2.5,
+    "ingredients": [
+      "whole wheat flour",
+      "radish",
+      "ginger",
+      "green chilli",
+      "cumin",
+      "ghee"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Ribbon Pakoda",
+    "category": "Indian Snacks",
+    "serving_size": 30,
+    "serving_unit": "g",
+    "calories": 147,
+    "protein_g": 3.0,
+    "carbs_g": 20.0,
+    "fat_g": 6.5,
+    "fiber_g": 1.5,
+    "ingredients": [
+      "rice flour",
+      "chickpea flour",
+      "butter",
+      "sesame seeds",
+      "oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Seedai",
+    "category": "Indian Snacks",
+    "serving_size": 30,
+    "serving_unit": "g",
+    "calories": 135,
+    "protein_g": 2.5,
+    "carbs_g": 20.0,
+    "fat_g": 5.0,
+    "fiber_g": 0.8,
+    "ingredients": [
+      "rice flour",
+      "urad dal flour",
+      "coconut",
+      "sesame seeds",
+      "butter",
+      "oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Shikanji",
+    "category": "Indian Drinks",
+    "serving_size": 300,
+    "serving_unit": "ml",
+    "calories": 115,
+    "protein_g": 0.3,
+    "carbs_g": 28.0,
+    "fat_g": 0.1,
+    "fiber_g": 0.2,
+    "ingredients": [
+      "lemon juice",
+      "sugar",
+      "black salt",
+      "cumin powder",
+      "water"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Egg Paratha",
+    "category": "Indian",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 238,
+    "protein_g": 10.5,
+    "carbs_g": 27.0,
+    "fat_g": 10.0,
+    "fiber_g": 2.0,
+    "ingredients": [
+      "whole wheat flour",
+      "egg",
+      "onion",
+      "green chilli",
+      "coriander",
+      "oil"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Chicken Paratha",
+    "category": "Indian",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 285,
+    "protein_g": 18.0,
+    "carbs_g": 28.0,
+    "fat_g": 10.5,
+    "fiber_g": 2.0,
+    "ingredients": [
+      "whole wheat flour",
+      "chicken mince",
+      "onion",
+      "ginger",
+      "garlic",
+      "spices",
+      "oil"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Akki Roti",
+    "category": "Karnataka",
+    "serving_size": 80,
+    "serving_unit": "g",
+    "calories": 162,
+    "protein_g": 3.0,
+    "carbs_g": 33.0,
+    "fat_g": 2.5,
+    "fiber_g": 1.2,
+    "ingredients": [
+      "rice flour",
+      "onion",
+      "coconut",
+      "coriander",
+      "green chilli",
+      "oil"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Makki di Roti",
+    "category": "Indian",
+    "serving_size": 75,
+    "serving_unit": "g",
+    "calories": 165,
+    "protein_g": 3.5,
+    "carbs_g": 33.0,
+    "fat_g": 3.0,
+    "fiber_g": 2.5,
+    "ingredients": [
+      "cornmeal",
+      "water",
+      "ghee"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Pyaaz Kachori",
+    "category": "Indian Snacks",
+    "serving_size": 70,
+    "serving_unit": "g",
+    "calories": 228,
+    "protein_g": 4.5,
+    "carbs_g": 26.0,
+    "fat_g": 12.0,
+    "fiber_g": 2.2,
+    "ingredients": [
+      "all-purpose flour",
+      "onion",
+      "spices",
+      "fennel seeds",
+      "oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Stuffed Capsicum (Indian)",
+    "category": "Indian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 185,
+    "protein_g": 6.0,
+    "carbs_g": 22.0,
+    "fat_g": 8.5,
+    "fiber_g": 4.5,
+    "ingredients": [
+      "capsicum",
+      "potato",
+      "onion",
+      "paneer",
+      "spices",
+      "oil"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Lauki Sabzi",
+    "category": "Indian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 95,
+    "protein_g": 3.0,
+    "carbs_g": 12.0,
+    "fat_g": 4.0,
+    "fiber_g": 3.5,
+    "ingredients": [
+      "bottle gourd",
+      "onion",
+      "tomato",
+      "cumin",
+      "turmeric",
+      "oil"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Arbi Masala",
+    "category": "Indian",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 168,
+    "protein_g": 3.5,
+    "carbs_g": 28.0,
+    "fat_g": 5.5,
+    "fiber_g": 4.0,
+    "ingredients": [
+      "taro root",
+      "onion",
+      "tomato",
+      "amchur",
+      "spices",
+      "oil"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Bajra Khichdi",
+    "category": "Indian",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 272,
+    "protein_g": 9.0,
+    "carbs_g": 46.0,
+    "fat_g": 6.0,
+    "fiber_g": 5.5,
+    "ingredients": [
+      "pearl millet",
+      "moong dal",
+      "ghee",
+      "cumin",
+      "garlic"
+    ],
+    "nova_group": 1
   }
 ]
