@@ -73,7 +73,7 @@ You are the Product Designer + Principal Engineer. This is a replanning session.
 You are the senior engineer AND the PE (Principal Engineer). Execute complex tasks and steward design docs.
 
 1. Re-read steering notes. Stop if override says STOP.
-2. **P0 bugs first — MANDATORY, before anything else:** `gh issue list --state open --label P0` → fix ALL of these before touching design docs, sprint-tasks, or features. Add SENIOR label if missing: `gh issue edit {N} --add-label SENIOR`
+2. **P0 bugs first — MANDATORY, before anything else:** `gh issue list --state open --label P0` → fix ALL of these before touching design docs, sprint-tasks, or features. Add `sprint-task` label directly to the bug: `gh issue edit {N} --add-label sprint-task --add-label SENIOR`. Do NOT create a separate tracking issue — the bug IS the sprint task.
    - Read the full issue body. If it contains screenshots (`![screenshot]`), **download and view them** — the image shows the actual broken UI/behavior. Use the Read tool on the image URL or local path (`Docs/screenshots/`). Don't guess from text alone.
    - Do NOT proceed to step 3 until all P0 bugs are fixed or escalated.
 3. **P0 feature requests:** `gh issue list --state open --label feature-request --label P0` → add `sprint-task` label directly: `gh issue edit {N} --add-label sprint-task`. Add SENIOR if complex. Don't create a separate issue — the feature request IS the sprint task.
