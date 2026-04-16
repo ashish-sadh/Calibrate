@@ -314,17 +314,18 @@ struct FoodUnit: Hashable {
             return FoodUnit(label: "piece", gramsEquivalent: ss)
         }
 
+        // Chaat and Indian snack mixes — served by bowl (must precede puri/poori flatbread check)
+        if name.contains("bhel") || name.contains("sev puri") || name.contains("papdi chaat") ||
+           name.contains("dahi puri") || name.contains("pani puri") ||
+           (name.contains("chaat") && !name.contains("chaat masala")) {
+            return FoodUnit(label: "bowl", gramsEquivalent: ss)
+        }
+
         // Additional Indian flatbreads
         if name.contains("puri") || name.contains("poori") || name.contains("bhatura") ||
            name.contains("bhatoora") || name.contains("thepla") || name.contains("phulka") ||
            name.contains("appam") || name.contains("pesarattu") || name.contains("adai") {
             return FoodUnit(label: "piece", gramsEquivalent: ss)
-        }
-
-        // Chaat and Indian snack mixes — served by bowl (must precede the puri check above)
-        if name.contains("bhel") || name.contains("sev puri") || name.contains("papdi chaat") ||
-           (name.contains("chaat") && !name.contains("chaat masala")) {
-            return FoodUnit(label: "bowl", gramsEquivalent: ss)
         }
 
         // Indian sweets — always countable by piece
@@ -336,9 +337,37 @@ struct FoodUnit: Hashable {
             return FoodUnit(label: "piece", gramsEquivalent: ss)
         }
 
-        // Sliceable foods
+        // Indian milk-based desserts — bowl (must precede generic soup/stew check)
+        if name.contains("rabri") || name.contains("shrikhand") || name.contains("basundi") ||
+           name.contains("phirni") || name.contains("seviyan") || name.contains("sevai") {
+            return FoodUnit(label: "bowl", gramsEquivalent: ss)
+        }
+
+        // Omelette / frittata — single-serve egg dish
+        if name.contains("omelette") || name.contains("omelet") || name.contains("frittata") {
+            return FoodUnit(label: "piece", gramsEquivalent: ss)
+        }
+
+        // Indian snack pieces: dhokla, khakhra, chilla, fafda, handvo
+        if name.contains("dhokla") || name.contains("khaman") || name.contains("fafda") ||
+           name.contains("handvo") {
+            return FoodUnit(label: "piece", gramsEquivalent: ss)
+        }
+        if name.contains("khakhra") { return FoodUnit(label: "piece", gramsEquivalent: ss) }
+        if name.contains("chilla") || name.contains("cheela") {
+            return FoodUnit(label: "piece", gramsEquivalent: ss)
+        }
+
+        // Pav bhaji (dish) — bowl; standalone pav (bread roll) — piece
+        if name.contains("pav bhaji") || name.contains("misal") {
+            return FoodUnit(label: "bowl", gramsEquivalent: ss)
+        }
+        if words.contains("pav") { return FoodUnit(label: "piece", gramsEquivalent: ss) }
+
+        // Sliceable foods ("Bread Pudding" excluded — it's a dessert bowl, not sliceable bread)
         if (name.contains("bread") || name.contains("toast")) &&
-           !name.contains("breadfruit") && !name.contains("breadstick") {
+           !name.contains("breadfruit") && !name.contains("breadstick") &&
+           !name.contains("pudding") {
             return FoodUnit(label: "slice", gramsEquivalent: ss)
         }
         if name.contains("pizza") { return FoodUnit(label: "slice", gramsEquivalent: ss) }
@@ -459,10 +488,20 @@ struct FoodUnit: Hashable {
             return FoodUnit(label: "cup", gramsEquivalent: cupGrams(for: name))
         }
 
-        // Soups, stews, broths, liquid desserts — served by bowl
+        // Soups, stews, broths, liquid desserts, chili (dish) — served by bowl
+        // ss > 15 guard keeps spice powders (chili powder, chili flakes) from matching
         if name.contains("soup") || name.contains("stew") || name.contains("chowder") ||
            name.contains("bisque") || name.contains("broth") || name.contains("rasam") ||
            name.contains("sambar") || name.contains("payasam") {
+            return FoodUnit(label: "bowl", gramsEquivalent: ss)
+        }
+        if (words.contains("chili") || words.contains("chilli")) && ss > 15 &&
+           !name.contains("chili powder") && !name.contains("chili sauce") && !name.contains("chili oil") {
+            return FoodUnit(label: "bowl", gramsEquivalent: ss)
+        }
+
+        // Pudding, custard, mousse — bowl (ss > 50 excludes tiny spice-quantity items)
+        if ss > 50 && (name.contains("pudding") || name.contains("custard") || name.contains("mousse")) {
             return FoodUnit(label: "bowl", gramsEquivalent: ss)
         }
 

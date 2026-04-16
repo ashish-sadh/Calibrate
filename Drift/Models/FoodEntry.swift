@@ -119,6 +119,18 @@ extension FoodEntry {
            lower.contains("burfi") || lower.contains("jalebi") || lower.contains("rasgulla") ||
            lower.contains("modak") || lower.contains("peda") || lower.contains("gujiya") ||
            lower.contains("kaju katli") { return fmt(servings, "piece", "pieces") }
+        // Indian snack pieces
+        if lower.contains("omelette") || lower.contains("omelet") || lower.contains("frittata") {
+            return fmt(servings, "omelette", "omelettes")
+        }
+        if lower.contains("khakhra") { return fmt(servings, "khakhra", "khakhras") }
+        if lower.contains("dhokla") || lower.contains("khaman") || lower.contains("fafda") ||
+           lower.contains("handvo") || lower.contains("chilla") || lower.contains("cheela") {
+            return fmt(servings, "piece", "pieces")
+        }
+        if lower.contains("pav bhaji") || lower.contains("misal") {
+            return fmt(servings, "bowl", "bowls")
+        }
         if lower.contains("nugget") { return fmt(servings, "nugget", "nuggets") }
         if lower.contains("wing") && servingSizeG < 100 { return fmt(servings, "wing", "wings") }
         if lower.contains("strip") && servingSizeG < 50 { return fmt(servings, "strip", "strips") }
@@ -142,10 +154,20 @@ extension FoodEntry {
         if lower.contains("muffin") && servingSizeG < 120 { return fmt(servings, "muffin", "muffins") }
         if lower.contains("bagel") && servingSizeG < 130 { return fmt(servings, "bagel", "bagels") }
         if lower.contains("cup") && servingSizeG > 200 { return fmt(servings, "cup", "cups") }
-        // Soups, stews, broths, liquid desserts → bowl
+        // Standalone pav (bread roll)
+        let lowerWords = Set(lower.split(whereSeparator: { !$0.isLetter }).map(String.init))
+        if lowerWords.contains("pav") { return fmt(servings, "pav", "pavs") }
+        // Soups, stews, broths, liquid desserts, chili (dish), pudding → bowl
         if lower.contains("soup") || lower.contains("stew") || lower.contains("chowder") ||
            lower.contains("broth") || lower.contains("bisque") || lower.contains("payasam") ||
            lower.contains("rasam") { return fmt(servings, "bowl", "bowls") }
+        if (lowerWords.contains("chili") || lowerWords.contains("chilli")) && servingSizeG > 15 &&
+           !lower.contains("chili powder") && !lower.contains("chili sauce") {
+            return fmt(servings, "bowl", "bowls")
+        }
+        if servingSizeG > 50 && (lower.contains("pudding") || lower.contains("custard") || lower.contains("mousse")) {
+            return fmt(servings, "bowl", "bowls")
+        }
 
         return "\(Int(totalG))g"
     }

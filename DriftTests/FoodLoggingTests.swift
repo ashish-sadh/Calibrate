@@ -364,6 +364,62 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
     #expect(units.first?.gramsEquivalent == 185)
 }
 
+@Test func smartUnitOmeletteShowsPiece() {
+    let food = Food(name: "Masala Omelette", category: "Protein", servingSize: 120, servingUnit: "g", calories: 180)
+    #expect(FoodUnit.smartUnits(for: food).first?.label == "piece", "Omelette should default to piece")
+    let omelet = Food(name: "Veggie Omelet", category: "Protein", servingSize: 100, servingUnit: "g", calories: 150)
+    #expect(FoodUnit.smartUnits(for: omelet).first?.label == "piece", "Omelet (US spelling) should default to piece")
+}
+
+@Test func smartUnitDhoklaShowsPiece() {
+    let food = Food(name: "Dhokla (Khaman Dhokla)", category: "Indian Snacks", servingSize: 60, servingUnit: "g", calories: 120)
+    #expect(FoodUnit.smartUnits(for: food).first?.label == "piece", "Dhokla should default to piece")
+    let khaman = Food(name: "Khaman", category: "Indian Snacks", servingSize: 60, servingUnit: "g", calories: 115)
+    #expect(FoodUnit.smartUnits(for: khaman).first?.label == "piece", "Khaman should default to piece")
+}
+
+@Test func smartUnitKhakhraShowsPiece() {
+    let food = Food(name: "Khakhra (Masala)", category: "Indian Snacks", servingSize: 30, servingUnit: "g", calories: 135)
+    #expect(FoodUnit.smartUnits(for: food).first?.label == "piece", "Khakhra should default to piece")
+}
+
+@Test func smartUnitChillaShowsPiece() {
+    let besan = Food(name: "Besan Chilla", category: "Indian Snacks", servingSize: 80, servingUnit: "g", calories: 145)
+    #expect(FoodUnit.smartUnits(for: besan).first?.label == "piece", "Besan Chilla should default to piece")
+    let moong = Food(name: "Moong Dal Cheela", category: "Indian Snacks", servingSize: 80, servingUnit: "g", calories: 120)
+    #expect(FoodUnit.smartUnits(for: moong).first?.label == "piece", "Cheela should default to piece")
+}
+
+@Test func smartUnitPavBhajiShowsBowl() {
+    let food = Food(name: "Pav Bhaji", category: "Indian Street Food", servingSize: 300, servingUnit: "g", calories: 420)
+    #expect(FoodUnit.smartUnits(for: food).first?.label == "bowl", "Pav Bhaji should default to bowl")
+    let misal = Food(name: "Misal Pav", category: "Indian Street Food", servingSize: 300, servingUnit: "g", calories: 380)
+    #expect(FoodUnit.smartUnits(for: misal).first?.label == "bowl", "Misal Pav should default to bowl")
+}
+
+@Test func smartUnitChiliDishShowsBowl() {
+    let food = Food(name: "Chili Con Carne", category: "Mains", servingSize: 250, servingUnit: "g", calories: 320)
+    #expect(FoodUnit.smartUnits(for: food).first?.label == "bowl", "Chili (dish) should default to bowl")
+    // Chili powder must NOT become a bowl
+    let spice = Food(name: "Chili Powder", category: "Spices", servingSize: 3, servingUnit: "g", calories: 9)
+    #expect(FoodUnit.smartUnits(for: spice).first?.label != "bowl", "Chili powder should not be a bowl")
+}
+
+@Test func smartUnitPuddingShowsBowl() {
+    let mousse = Food(name: "Chocolate Mousse", category: "Desserts", servingSize: 120, servingUnit: "g", calories: 280)
+    #expect(FoodUnit.smartUnits(for: mousse).first?.label == "bowl", "Mousse should default to bowl")
+    let pudding = Food(name: "Bread Pudding", category: "Desserts", servingSize: 150, servingUnit: "g", calories: 310)
+    #expect(FoodUnit.smartUnits(for: pudding).first?.label == "bowl", "Pudding should default to bowl")
+}
+
+@Test func smartUnitSevPuriIsChaat() {
+    // "Sev Puri" contains "puri" but is a chaat — must return bowl, not piece
+    let sevPuri = Food(name: "Sev Puri", category: "Indian Street Food", servingSize: 100, servingUnit: "g", calories: 200)
+    #expect(FoodUnit.smartUnits(for: sevPuri).first?.label == "bowl", "Sev Puri is chaat — should be bowl not piece")
+    let dahiPuri = Food(name: "Dahi Puri", category: "Indian Street Food", servingSize: 120, servingUnit: "g", calories: 210)
+    #expect(FoodUnit.smartUnits(for: dahiPuri).first?.label == "bowl", "Dahi Puri is chaat — should be bowl")
+}
+
 // MARK: - Portion Text Tests (6 tests)
 
 @Test func portionTextEgg() async throws {
@@ -420,6 +476,38 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
 @Test func portionTextBroth() {
     let entry = FoodEntry(mealLogId: 1, foodName: "Chicken Broth", servingSizeG: 240, servings: 2, calories: 15)
     #expect(entry.portionText == "2 bowls", "Broth should show bowls")
+}
+
+@Test func portionTextOmelette() {
+    let entry = FoodEntry(mealLogId: 1, foodName: "Masala Omelette", servingSizeG: 120, servings: 1, calories: 180)
+    #expect(entry.portionText == "1 omelette")
+    let two = FoodEntry(mealLogId: 1, foodName: "Masala Omelette", servingSizeG: 120, servings: 2, calories: 180)
+    #expect(two.portionText == "2 omelettes")
+}
+
+@Test func portionTextKhakhra() {
+    let entry = FoodEntry(mealLogId: 1, foodName: "Khakhra (Masala)", servingSizeG: 30, servings: 3, calories: 135)
+    #expect(entry.portionText == "3 khakhras")
+}
+
+@Test func portionTextDhokla() {
+    let entry = FoodEntry(mealLogId: 1, foodName: "Dhokla (Khaman Dhokla)", servingSizeG: 60, servings: 2, calories: 120)
+    #expect(entry.portionText == "2 pieces")
+}
+
+@Test func portionTextChilla() {
+    let entry = FoodEntry(mealLogId: 1, foodName: "Besan Chilla", servingSizeG: 80, servings: 1, calories: 145)
+    #expect(entry.portionText == "1 piece")
+}
+
+@Test func portionTextPavBhaji() {
+    let entry = FoodEntry(mealLogId: 1, foodName: "Pav Bhaji", servingSizeG: 300, servings: 1, calories: 420)
+    #expect(entry.portionText == "1 bowl")
+}
+
+@Test func portionTextChiliDish() {
+    let entry = FoodEntry(mealLogId: 1, foodName: "Chili Con Carne", servingSizeG: 250, servings: 2, calories: 320)
+    #expect(entry.portionText == "2 bowls", "Chili dish should show bowls")
 }
 
 // MARK: - Food Usage Tracking Tests (6 tests)
@@ -3282,7 +3370,8 @@ enum TestError: Error { case msg(String); init(_ s: String) { self = .msg(s) } }
 
 @MainActor
 @Test func smartServingTextDalShowsCup() {
-    let dal = Food(name: "Dal (toor/arhar)", category: "Lentils", servingSize: 240, servingUnit: "g", calories: 298)
+    // servingSize: 200 = exactly 1 cup (cupGrams for dal = 200g)
+    let dal = Food(name: "Dal (toor/arhar)", category: "Lentils", servingSize: 200, servingUnit: "g", calories: 249)
     let text = AIChatViewModel.smartServingText(food: dal, servings: 1, gramAmount: nil)
     #expect(text == "1 cup", "1 serving of dal should show '1 cup', got: \(text)")
 }
