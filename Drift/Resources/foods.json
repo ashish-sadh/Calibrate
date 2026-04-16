@@ -5098,7 +5098,7 @@
     "nova_group": 3
   },
   {
-    "name": "Açaí Bowl (medium)",
+    "name": "A\u00e7a\u00ed Bowl (medium)",
     "category": "US Staples",
     "serving_size": 300,
     "serving_unit": "g",
@@ -5108,7 +5108,7 @@
     "fat_g": 18,
     "fiber_g": 8,
     "ingredients": [
-      "Açaí Bowl (medium)"
+      "A\u00e7a\u00ed Bowl (medium)"
     ],
     "nova_group": 3
   },
@@ -9788,7 +9788,7 @@
     "nova_group": 3
   },
   {
-    "name": "Costco Açaí Bowl (food court)",
+    "name": "Costco A\u00e7a\u00ed Bowl (food court)",
     "category": "Costco",
     "serving_size": 355,
     "serving_unit": "g",
@@ -9798,7 +9798,7 @@
     "fat_g": 19,
     "fiber_g": 7,
     "ingredients": [
-      "Costco Açaí Bowl (food court)"
+      "Costco A\u00e7a\u00ed Bowl (food court)"
     ],
     "nova_group": 3
   },
@@ -10493,7 +10493,7 @@
     "nova_group": 4
   },
   {
-    "name": "Starbucks Caffè Latte (Grande, 2% milk)",
+    "name": "Starbucks Caff\u00e8 Latte (Grande, 2% milk)",
     "category": "Beverages",
     "serving_size": 473,
     "serving_unit": "ml",
@@ -10503,7 +10503,7 @@
     "fat_g": 7,
     "fiber_g": 0,
     "ingredients": [
-      "Starbucks Caffè Latte (Grande, 2% milk)"
+      "Starbucks Caff\u00e8 Latte (Grande, 2% milk)"
     ],
     "nova_group": 3
   },
@@ -25155,7 +25155,7 @@
     "ingredients": [
       "fries",
       "cheese sauce",
-      "jalapeños",
+      "jalape\u00f1os",
       "sour cream"
     ],
     "nova_group": 4
@@ -28726,7 +28726,7 @@
       "beef",
       "onion",
       "tomato",
-      "jalapeño",
+      "jalape\u00f1o",
       "rosemary",
       "Ethiopian spices",
       "butter"
@@ -32055,5 +32055,280 @@
       "soy sauce"
     ],
     "nova_group": 1
+  },
+  {
+    "name": "Chicken Adobo",
+    "category": "Filipino",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 430,
+    "protein_g": 50,
+    "carbs_g": 6,
+    "fat_g": 24,
+    "fiber_g": 0
+  },
+  {
+    "name": "Pork Adobo",
+    "category": "Filipino",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 570,
+    "protein_g": 40,
+    "carbs_g": 6,
+    "fat_g": 42,
+    "fiber_g": 0
+  },
+  {
+    "name": "Sinigang (Pork)",
+    "category": "Filipino",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 360,
+    "protein_g": 36,
+    "carbs_g": 24,
+    "fat_g": 15,
+    "fiber_g": 3
+  },
+  {
+    "name": "Pancit Bihon",
+    "category": "Filipino",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 330,
+    "protein_g": 16,
+    "carbs_g": 50,
+    "fat_g": 8,
+    "fiber_g": 2
+  },
+  {
+    "name": "Lumpia Shanghai",
+    "category": "Filipino",
+    "serving_size": 50,
+    "serving_unit": "g",
+    "calories": 110,
+    "protein_g": 5,
+    "carbs_g": 9,
+    "fat_g": 7,
+    "fiber_g": 0
+  },
+  {
+    "name": "Lechon (Roast Pork)",
+    "category": "Filipino",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 465,
+    "protein_g": 33,
+    "carbs_g": 0,
+    "fat_g": 36,
+    "fiber_g": 0
+  },
+  {
+    "name": "Tocino (Filipino Cured Pork)",
+    "category": "Filipino",
+    "serving_size": 80,
+    "serving_unit": "g",
+    "calories": 224,
+    "protein_g": 13,
+    "carbs_g": 16,
+    "fat_g": 13,
+    "fiber_g": 0
+  },
+  {
+    "name": "Longganisa (Filipino Sausage)",
+    "category": "Filipino",
+    "serving_size": 60,
+    "serving_unit": "g",
+    "calories": 210,
+    "protein_g": 8,
+    "carbs_g": 11,
+    "fat_g": 15,
+    "fiber_g": 0
+  },
+  {
+    "name": "Kare-Kare",
+    "category": "Filipino",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 463,
+    "protein_g": 40,
+    "carbs_g": 20,
+    "fat_g": 25,
+    "fiber_g": 3
+  },
+  {
+    "name": "Sisig",
+    "category": "Filipino",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 590,
+    "protein_g": 44,
+    "carbs_g": 10,
+    "fat_g": 42,
+    "fiber_g": 0
+  },
+  {
+    "name": "Halo-Halo",
+    "category": "Filipino",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 630,
+    "protein_g": 14,
+    "carbs_g": 123,
+    "fat_g": 14,
+    "fiber_g": 2
+  },
+  {
+    "name": "Adobong Kangkong (Water Spinach Adobo)",
+    "category": "Filipino",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 120,
+    "protein_g": 4,
+    "carbs_g": 8,
+    "fat_g": 8,
+    "fiber_g": 2
+  },
+  {
+    "name": "Doner Kebab",
+    "category": "Turkish",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 625,
+    "protein_g": 55,
+    "carbs_g": 13,
+    "fat_g": 40,
+    "fiber_g": 1
+  },
+  {
+    "name": "Adana Kebab",
+    "category": "Turkish",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 398,
+    "protein_g": 36,
+    "carbs_g": 3,
+    "fat_g": 27,
+    "fiber_g": 0
+  },
+  {
+    "name": "Menemen (Turkish Scrambled Eggs)",
+    "category": "Turkish",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 270,
+    "protein_g": 16,
+    "carbs_g": 12,
+    "fat_g": 18,
+    "fiber_g": 2
+  },
+  {
+    "name": "Ayran (Turkish Yogurt Drink)",
+    "category": "Turkish",
+    "serving_size": 250,
+    "serving_unit": "ml",
+    "calories": 113,
+    "protein_g": 8,
+    "carbs_g": 10,
+    "fat_g": 5,
+    "fiber_g": 0
+  },
+  {
+    "name": "Lahmacun (Turkish Flatbread)",
+    "category": "Turkish",
+    "serving_size": 130,
+    "serving_unit": "g",
+    "calories": 286,
+    "protein_g": 13,
+    "carbs_g": 36,
+    "fat_g": 10,
+    "fiber_g": 2
+  },
+  {
+    "name": "Simit (Turkish Sesame Bread Ring)",
+    "category": "Turkish",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 354,
+    "protein_g": 12,
+    "carbs_g": 67,
+    "fat_g": 5,
+    "fiber_g": 3
+  },
+  {
+    "name": "Gozleme (Stuffed Flatbread)",
+    "category": "Turkish",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 323,
+    "protein_g": 14,
+    "carbs_g": 39,
+    "fat_g": 14,
+    "fiber_g": 2
+  },
+  {
+    "name": "Injera",
+    "category": "Ethiopian",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 167,
+    "protein_g": 6,
+    "carbs_g": 33,
+    "fat_g": 1,
+    "fiber_g": 4
+  },
+  {
+    "name": "Doro Wot",
+    "category": "Ethiopian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 330,
+    "protein_g": 40,
+    "carbs_g": 10,
+    "fat_g": 16,
+    "fiber_g": 2
+  },
+  {
+    "name": "Tibs (Ethiopian Sauteed Beef)",
+    "category": "Ethiopian",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 345,
+    "protein_g": 33,
+    "carbs_g": 6,
+    "fat_g": 21,
+    "fiber_g": 1
+  },
+  {
+    "name": "Kitfo (Ethiopian Beef Tartare)",
+    "category": "Ethiopian",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 310,
+    "protein_g": 28,
+    "carbs_g": 0,
+    "fat_g": 22,
+    "fiber_g": 0
+  },
+  {
+    "name": "Misir Wot (Red Lentil Stew)",
+    "category": "Ethiopian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 240,
+    "protein_g": 14,
+    "carbs_g": 36,
+    "fat_g": 4,
+    "fiber_g": 7
+  },
+  {
+    "name": "Shiro Wot (Chickpea Stew)",
+    "category": "Ethiopian",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 195,
+    "protein_g": 12,
+    "carbs_g": 27,
+    "fat_g": 5,
+    "fiber_g": 5
   }
 ]
