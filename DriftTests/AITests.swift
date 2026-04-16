@@ -439,7 +439,7 @@ import Testing
 @Test func aiExecutorParseFoodLog() async throws {
     let intent = AIActionExecutor.parseFoodIntent("log 2 eggs")
     #expect(intent != nil)
-    #expect(intent?.query == "eggs")
+    #expect(intent?.query == "egg")  // singularized for better food DB match
     #expect(intent?.servings == 2)
 }
 
@@ -549,7 +549,7 @@ import Testing
 @Test func aiFoodIntentMealHintAllMeals() async throws {
     let lunch = AIActionExecutor.parseFoodIntent("log eggs for lunch")
     #expect(lunch?.mealHint == "lunch")
-    #expect(lunch?.query == "eggs")
+    #expect(lunch?.query == "egg")  // singularized
 
     let snack = AIActionExecutor.parseFoodIntent("had chips for snack")
     #expect(snack?.mealHint == "snack")
@@ -655,7 +655,7 @@ import Testing
 @Test func aiConversationalPrefix_IWantToLogWithServings() async throws {
     let intent = AIActionExecutor.parseFoodIntent("i want to log 2 eggs")
     #expect(intent != nil, "'i want to log N X' should work")
-    #expect(intent?.query == "eggs")
+    #expect(intent?.query == "egg")  // singularized
     #expect(intent?.servings == 2)
 }
 

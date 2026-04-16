@@ -2035,14 +2035,14 @@ final class AIEvalHarness: XCTestCase {
         }
     }
 
-    /// #149 regression: parseFoodIntent("log 2 eggs") must parse query as "eggs" (not "eggs benedict" etc.).
+    /// #149 regression: parseFoodIntent("log 2 eggs") must singularize to "egg" so FoodSearch
+    /// finds plain "Egg" before "Eggs Benedict" via the LENGTH sort.
     func testParseFoodIntent_logEggs_extractsEgg() {
         let intent = AIActionExecutor.parseFoodIntent("log 2 eggs")
         XCTAssertNotNil(intent, "parseFoodIntent should detect 'log 2 eggs'")
         if let i = intent {
-            let q = i.query.lowercased()
-            XCTAssertTrue(q == "eggs" || q == "egg",
-                "#149 regression: parseFoodIntent query should be 'eggs', got '\(i.query)'")
+            XCTAssertEqual(i.query.lowercased(), "egg",
+                "#149 regression: parseFoodIntent must singularize 'eggs'→'egg', got '\(i.query)'")
             XCTAssertEqual(i.servings, 2, "parseFoodIntent should extract servings=2")
         }
     }

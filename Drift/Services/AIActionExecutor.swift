@@ -81,7 +81,10 @@ enum AIActionExecutor {
         ]
         if nonFoodWords.contains(food.lowercased()) { return nil }
 
-        return FoodIntent(query: food, servings: amount, mealHint: mealHint, gramAmount: grams)
+        // Singularize food name for better DB matching: "eggs"→"egg", "bananas"→"banana"
+        // Prevents "Eggs Benedict" from ranking above plain "Egg" in food search.
+        let foodQuery = food.hasSuffix("s") && food.count > 3 ? String(food.dropLast()) : food
+        return FoodIntent(query: foodQuery, servings: amount, mealHint: mealHint, gramAmount: grams)
     }
 
     /// Try to parse a weight logging intent.
