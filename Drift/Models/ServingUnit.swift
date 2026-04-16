@@ -382,12 +382,34 @@ struct FoodUnit: Hashable {
             return FoodUnit(label: "tbsp", gramsEquivalent: 14)
         }
 
+        // Papad — always by piece (roasted or fried crisp)
+        if name.contains("papad") || name.contains("pappad") || name.contains("appalam") {
+            return FoodUnit(label: "piece", gramsEquivalent: ss)
+        }
+
+        // Bars — measured by piece (protein bar, granola bar, energy bar, cereal bar)
+        if name.contains("protein bar") || name.contains("granola bar") ||
+           name.contains("energy bar") || name.contains("cereal bar") ||
+           name.contains("snack bar") || (name.contains("bar") && name.contains("nut")) {
+            return FoodUnit(label: "piece", gramsEquivalent: ss)
+        }
+
+        // Pickle / achar — tablespoon (condiment portion)
+        if name.contains("pickle") || name.contains("achar") || name.contains("achaar") {
+            return FoodUnit(label: "tbsp", gramsEquivalent: 15)
+        }
+
         // Rice — measured in cups (servingSize in DB is ~158g = 1 cup cooked)
         // Exclude rice cakes, rice paper, rice wine, rice crackers, rice noodles
         if name.contains("rice") && !name.contains("cake") && !name.contains("paper") &&
            !name.contains("wine") && !name.contains("cracker") && !name.contains("noodle") &&
            !name.contains("pudding") && !name.contains("crisp") {
             return FoodUnit(label: "cup", gramsEquivalent: cupGrams(for: name))
+        }
+
+        // Quinoa — measured in cups (like rice)
+        if name.contains("quinoa") {
+            return FoodUnit(label: "cup", gramsEquivalent: 185)
         }
 
         // Dal and cooked legumes — measured in cups
