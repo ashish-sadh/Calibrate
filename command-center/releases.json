@@ -1262,6 +1262,19 @@
     ]
   },
   {
+    "build": 125,
+    "date": "2026-04-15T20:00:00-07:00",
+    "description": "Smart Units expansion + food DB to 2,046 + custom macro fixes",
+    "features": [
+      "Smart Units: 12 new rules \u2014 scrambled eggs\u2192piece, french toast/croissant\u2192piece, almond butter\u2192tbsp, whey protein/isolate\u2192scoop, syrup/agave\u2192tbsp, palak/bharta/kofta/korma\u2192bowl, bacon\u2192strip, sausage\u2192link, turkey\u2192piece, paneer\u2192cup, mashed potato\u2192cup, cottage cheese\u2192cup, couscous\u2192cup, bowl foods\u2192bowl, potato\u2192piece, broccoli/cauliflower/asparagus\u2192cup, zucchini\u2192piece",
+      "Food DB expanded to 2,046 foods (+21) \u2014 Italian sausage, squash varieties, stir-fry dishes, international grains, cheeses, Vietnamese, Korean, South Indian additions"
+    ],
+    "fixes": [
+      "Dashboard target line respects custom macro mode",
+      "Show all auto-computed macros (carbs + fat) in custom macros footer"
+    ]
+  },
+  {
     "build": 124,
     "date": "2026-04-15T16:00:00-07:00",
     "description": "Smart Units major expansion + food DB to 2,025 + LLM lab reports + custom macros",
