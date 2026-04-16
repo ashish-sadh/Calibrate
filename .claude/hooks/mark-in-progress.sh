@@ -5,6 +5,12 @@
 
 set -e
 
+# Skip for planning sessions — planning creates/manages issues, not works on them
+SESSION_TYPE=$(cat "$HOME/drift-state/cache-session-type" 2>/dev/null || echo "")
+if [ "$SESSION_TYPE" = "planning" ]; then
+  exit 0
+fi
+
 COMMIT_MSG=$(git log -1 --pretty=%B 2>/dev/null || true)
 ISSUE_NUMS=$(echo "$COMMIT_MSG" | grep -oE '#[0-9]+' | grep -oE '[0-9]+' | sort -u)
 
