@@ -42,7 +42,7 @@ You are the Product Designer + Principal Engineer. This is a replanning session.
    - Only create for ideas worth exploring — not every thought, just the ones that advance the roadmap
    - These show up on Command Center's Feature Requests tab for human review
 7. **Assess current state deeply:**
-   - Read `Docs/roadmap.md`, `Docs/state.md`, `Docs/ai-parity.md`, `Docs/failing-queries.md`
+   - Read `Docs/roadmap.md`, `Docs/state.md`, `Docs/ai-parity.md`
    - `git log --oneline -40` (more history since longer sprint)
    - Review closed issues since last planning: `gh issue list --state closed --label sprint-task --json number,title,closedAt --jq '.[] | select(.closedAt > "LAST_PLAN_DATE")'`
    - Check test count, coverage snapshot, eval results
@@ -122,7 +122,7 @@ You are the junior engineer with a senior advisor. Execute well-specified tasks.
 6. **Close Issue with comment:** what was done + commit hash. Never close silently.
 7. **ONLY when ALL sprint-tasks are done → work on product focus:**
    - Read the product focus from the compliance hook output
-   - **AI chat quality is always #1 product focus** — every session must run `xcodebuild test -only-testing:DriftTests/FoodLoggingGoldSetTests`, fix failures, then improve routing/eval. No session ends without AI chat being better.
+   - **AI chat quality is always #1 product focus** — every session must run `xcodebuild test -only-testing:DriftTests/FoodLoggingGoldSetTests`, fix failures, then improve routing/eval. Also run `xcodebuild test -scheme DriftLLMEvalMacOS -destination 'platform=macOS'` to verify LLM routing. No session ends without AI chat being better.
    - Create a sprint-task issue FIRST: `gh issue create --label sprint-task --title "Focus: {description}"`
    - Then work on it. This makes the work visible on the Sprint tab.
 8. **ONLY when sprint-tasks AND product focus work are done → permanent tasks:**

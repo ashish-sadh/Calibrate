@@ -189,6 +189,14 @@
 - sendMessage decomposition from Review #39 (491→8 handlers) means the pipeline refactor has a clean code surface to work with. No monolithic code blocking the change.
 - The `mark-in-progress.sh` hook re-adds `in-progress` labels via PostToolUse on every Bash call (not just git commit as intended). The `if` condition doesn't filter properly. Technical debt in the hook system — low priority but causes friction.
 
+### What I Learned — Review #42 (Cycle 3250, 2026-04-16)
+- **LLM eval principles for on-device 2B models**: Static overrides (StaticOverrides.swift) should be used sparingly — they grow without bound and mask routing failures instead of fixing them. The right fix order: (1) improve the prompt (examples, RULES wording, example placement), (2) improve the pipeline structure (decompose into multiple focused prompts), (3) as last resort, add a StaticOverride. Never add a static override as the first response to a routing failure.
+- **Prompt example placement matters**: For short bare-keyword phrases ("daily summary", "lab results"), placing the example immediately after RULES dramatically improves routing reliability. Gemma 4 attention is front-loaded — early examples outweigh later ones for ambiguous inputs.
+- **Eval as source of truth**: `DriftLLMEvalMacOS/IntentRoutingEval.swift` is the canonical eval. Any routing regression must be caught here before it reaches users. Run before AND after every IntentClassifier change. Test cases should use natural phrasings, not bare keywords, since users type naturally.
+- **Duplicate examples confuse models**: Adding an example at the top without removing from the middle creates two competing signals. Always remove from original position when relocating an example.
+- **Pipeline structure principle**: For complex multi-domain classification, consider multi-stage prompts — a domain router first ("is this food/weight/exercise/sleep/supplement?"), then domain-specific extraction. Fewer tokens per prompt = higher accuracy per token for 2B models.
+- **PipelineE2EEval is the integration gate**: IntentRoutingEval tests routing in isolation; PipelineE2EEval (InputNormalizer → LLM classify → MockToolExecutor → Presentation LLM) tests the full chain. Both must be 100% before any AI merge.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)

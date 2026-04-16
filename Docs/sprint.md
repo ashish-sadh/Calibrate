@@ -18,7 +18,7 @@ _(pick from Ready)_
 
 - [ ] **#158 LLM-loaded macOS eval: expand routing gold set** — `DriftLLMEvalMacOS` target is wired and builds. Download models (`bash scripts/download-models.sh`), run eval, find any routing failures, fix them in the pipeline (IntentClassifier prompt or validateExtraction). Target: 100% on IntentRoutingEval tests. Run after every IntentClassifier/AIToolAgent change.
 - [ ] **#159 Voice input: investigate remaining bugs** — Silence timeout fixed (15s→30s). Race condition in forceStop/gracefulStop fixed (idle set before cleanup). Test on device: natural pauses, edit-after-stop, multi-sentence dictation. Fix any remaining issues found.
-- [ ] **#160 AI chat: fix misrouted queries from failing-queries.md** — Read `Docs/failing-queries.md`, pick unfixed categories, fix + add regression tests. Run gold set after each fix.
+- [ ] **#160 AI chat: expand eval gold set and fix routing gaps** — Run `DriftLLMEvalMacOS` eval. For each failure: fix in IntentClassifier prompt first (preferred), fall back to StaticOverrides only if LLM cannot be taught. Add regression test to IntentRoutingEval.swift. Target 100% routing accuracy. Do NOT grow StaticOverrides unless prompt engineering fails after 2 attempts.
 
 ### P1 — Senior Implementation
 
@@ -54,7 +54,7 @@ Equally important pillar. Prefer architectural improvements over keyword additio
 - [ ] **Meal planning** — "plan my meals for today" -> iterative suggestions based on remaining macros + history.
 - [ ] **Workout split builder** — "build me a PPL split" -> multi-turn designing across sessions.
 - [ ] **Navigate to screen** — "show me my weight chart", "go to food tab". Needs navigation tool.
-- [ ] When no obvious gap: stress-test with real queries from `Docs/failing-queries.md` and fix what breaks.
+- [ ] When no obvious gap: stress-test with 10 real-world queries per domain in IntentRoutingEval.swift, run eval, fix what fails.
 
 ### UI Overhaul (always ongoing)
 Equally important pillar. Bold changes encouraged — a full theme redesign overnight is fine. New card styles, new color palette, new typography — go for it. The only rule: app-wide consistency.

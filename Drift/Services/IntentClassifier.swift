@@ -43,7 +43,6 @@ enum IntentClassifier {
     "log 2 eggs"→{"tool":"log_food","name":"egg","servings":"2"}
     "had 3 eggs"→{"tool":"log_food","name":"egg","servings":"3"}
     "I weigh 75 kg"→{"tool":"log_weight","value":"75","unit":"kg"}
-    "weight trend"→{"tool":"weight_info","query":"trend"}
     "am I on track for my goal"→{"tool":"weight_info","query":"goal progress"}
     "how close am I to my goal"→{"tool":"weight_info","query":"goal progress"}
     "start push day"→{"tool":"start_workout","name":"push day"}

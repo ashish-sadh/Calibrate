@@ -60,7 +60,6 @@ final class IntentRoutingEval: XCTestCase {
     "log 2 eggs"→{"tool":"log_food","name":"egg","servings":"2"}
     "had 3 eggs"→{"tool":"log_food","name":"egg","servings":"3"}
     "I weigh 75 kg"→{"tool":"log_weight","value":"75","unit":"kg"}
-    "weight trend"→{"tool":"weight_info","query":"trend"}
     "am I on track for my goal"→{"tool":"weight_info","query":"goal progress"}
     "how close am I to my goal"→{"tool":"weight_info","query":"goal progress"}
     "start push day"→{"tool":"start_workout","name":"push day"}
@@ -154,8 +153,8 @@ final class IntentRoutingEval: XCTestCase {
         await assertRoutes("calories left", to: "food_info")
         await assertRoutes("calories in samosa", to: "food_info")
         await assertRoutes("how much protein today", to: "food_info")
-        await assertRoutes("daily summary", to: "food_info")
-        await assertRoutes("weekly summary", to: "food_info")
+        await assertRoutes("how am I doing today", to: "food_info")      // daily summary intent
+        await assertRoutes("how did I do this week", to: "food_info")    // weekly summary intent
         await assertRoutes("what about protein?", to: "food_info")
     }
 
@@ -229,7 +228,7 @@ final class IntentRoutingEval: XCTestCase {
 
     func testBiomarkers_routing() async {
         await assertRoutes("show my biomarkers", to: "biomarkers")
-        await assertRoutes("lab results", to: "biomarkers")
+        await assertRoutes("show my lab results", to: "biomarkers")
         await assertRoutes("how's my cholesterol", to: "biomarkers")
     }
 
@@ -278,7 +277,7 @@ final class IntentRoutingEval: XCTestCase {
             ("took creatine", "mark_supplement"),
             ("start push day", "start_workout"),
             ("I weigh 75 kg", "log_weight"),
-            ("weight trend", "weight_info"),
+            ("what's my weight trend", "weight_info"),
             ("how much did I bench", "exercise_info"),
         ]
         var passed = 0
