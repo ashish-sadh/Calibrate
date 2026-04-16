@@ -35519,5 +35519,364 @@
       "egg"
     ],
     "nova_group": 1
+  },
+  {
+    "name": "Kadhi",
+    "category": "Indian Staples",
+    "serving_size": 200,
+    "serving_unit": "bowl",
+    "calories": 150,
+    "protein_g": 6,
+    "carbs_g": 18,
+    "fat_g": 6,
+    "fiber_g": 1,
+    "ingredients": [
+      "yogurt",
+      "besan",
+      "ghee",
+      "spices"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Ada Pradhaman",
+    "category": "Indian Sweets",
+    "serving_size": 150,
+    "serving_unit": "bowl",
+    "calories": 270,
+    "protein_g": 3,
+    "carbs_g": 48,
+    "fat_g": 8,
+    "fiber_g": 1.5,
+    "ingredients": [
+      "rice ada",
+      "jaggery",
+      "coconut milk",
+      "cardamom"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Tinde Ki Sabzi",
+    "category": "Indian Staples",
+    "serving_size": 150,
+    "serving_unit": "bowl",
+    "calories": 75,
+    "protein_g": 2,
+    "carbs_g": 10,
+    "fat_g": 3,
+    "fiber_g": 1.5,
+    "ingredients": [
+      "round gourd",
+      "oil",
+      "onion",
+      "spices"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Karela Sabzi",
+    "category": "Indian Staples",
+    "serving_size": 150,
+    "serving_unit": "bowl",
+    "calories": 68,
+    "protein_g": 3,
+    "carbs_g": 9,
+    "fat_g": 2,
+    "fiber_g": 3,
+    "ingredients": [
+      "bitter gourd",
+      "oil",
+      "onion",
+      "spices"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Sem Ki Sabzi",
+    "category": "Indian Staples",
+    "serving_size": 150,
+    "serving_unit": "bowl",
+    "calories": 82,
+    "protein_g": 4,
+    "carbs_g": 12,
+    "fat_g": 2.5,
+    "fiber_g": 4,
+    "ingredients": [
+      "flat beans",
+      "oil",
+      "tomato",
+      "spices"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Aloo Shimla Mirch",
+    "category": "Indian Staples",
+    "serving_size": 150,
+    "serving_unit": "bowl",
+    "calories": 120,
+    "protein_g": 2,
+    "carbs_g": 20,
+    "fat_g": 4,
+    "fiber_g": 2,
+    "ingredients": [
+      "potato",
+      "capsicum",
+      "oil",
+      "spices"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Sprouts Salad",
+    "category": "Healthy Options",
+    "serving_size": 150,
+    "serving_unit": "bowl",
+    "calories": 98,
+    "protein_g": 7,
+    "carbs_g": 12,
+    "fat_g": 1.5,
+    "fiber_g": 4,
+    "ingredients": [
+      "mixed sprouts",
+      "tomato",
+      "onion",
+      "lemon",
+      "chaat masala"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Moong Sprouts",
+    "category": "Proteins",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 30,
+    "protein_g": 3,
+    "carbs_g": 4,
+    "fat_g": 0.2,
+    "fiber_g": 1,
+    "ingredients": [
+      "sprouted mung beans"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Sattu Paratha",
+    "category": "Indian Staples",
+    "serving_size": 100,
+    "serving_unit": "piece",
+    "calories": 200,
+    "protein_g": 7,
+    "carbs_g": 32,
+    "fat_g": 5,
+    "fiber_g": 3,
+    "ingredients": [
+      "wheat flour",
+      "sattu",
+      "ghee",
+      "spices"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Balushahi",
+    "category": "Indian Sweets",
+    "serving_size": 50,
+    "serving_unit": "piece",
+    "calories": 225,
+    "protein_g": 2.5,
+    "carbs_g": 30,
+    "fat_g": 11,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "maida",
+      "ghee",
+      "sugar",
+      "yogurt"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Rava Kesari",
+    "category": "Indian Sweets",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 200,
+    "protein_g": 3,
+    "carbs_g": 35,
+    "fat_g": 6,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "semolina",
+      "ghee",
+      "sugar",
+      "saffron",
+      "cardamom"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Kara Pongal",
+    "category": "South Indian",
+    "serving_size": 200,
+    "serving_unit": "bowl",
+    "calories": 240,
+    "protein_g": 8,
+    "carbs_g": 40,
+    "fat_g": 6,
+    "fiber_g": 2,
+    "ingredients": [
+      "rice",
+      "moong dal",
+      "ghee",
+      "pepper",
+      "cumin"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "More Kuzhambu",
+    "category": "South Indian",
+    "serving_size": 200,
+    "serving_unit": "bowl",
+    "calories": 120,
+    "protein_g": 5,
+    "carbs_g": 14,
+    "fat_g": 4,
+    "fiber_g": 1,
+    "ingredients": [
+      "buttermilk",
+      "coconut",
+      "turmeric",
+      "vegetables"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Erissery",
+    "category": "Indian Regional",
+    "serving_size": 150,
+    "serving_unit": "bowl",
+    "calories": 120,
+    "protein_g": 4,
+    "carbs_g": 18,
+    "fat_g": 4.5,
+    "fiber_g": 4.5,
+    "ingredients": [
+      "pumpkin",
+      "cowpeas",
+      "coconut",
+      "spices"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Thoran",
+    "category": "South Indian",
+    "serving_size": 100,
+    "serving_unit": "bowl",
+    "calories": 80,
+    "protein_g": 2.5,
+    "carbs_g": 8,
+    "fat_g": 4.5,
+    "fiber_g": 3,
+    "ingredients": [
+      "vegetables",
+      "coconut",
+      "mustard seeds",
+      "curry leaves"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Pachadi",
+    "category": "South Indian",
+    "serving_size": 100,
+    "serving_unit": "bowl",
+    "calories": 55,
+    "protein_g": 2.5,
+    "carbs_g": 6,
+    "fat_g": 2,
+    "fiber_g": 1,
+    "ingredients": [
+      "yogurt",
+      "vegetables",
+      "coconut",
+      "mustard"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Kalan",
+    "category": "Indian Regional",
+    "serving_size": 150,
+    "serving_unit": "bowl",
+    "calories": 135,
+    "protein_g": 4.5,
+    "carbs_g": 15,
+    "fat_g": 6,
+    "fiber_g": 3,
+    "ingredients": [
+      "yam",
+      "raw banana",
+      "yogurt",
+      "coconut",
+      "spices"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Greek Yogurt",
+    "category": "Dairy",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 89,
+    "protein_g": 15,
+    "carbs_g": 6,
+    "fat_g": 0.6,
+    "fiber_g": 0,
+    "ingredients": [
+      "milk"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Larabar (Apple Pie)",
+    "category": "Protein Bars",
+    "serving_size": 45,
+    "serving_unit": "1 bar",
+    "calories": 190,
+    "protein_g": 3,
+    "carbs_g": 29,
+    "fat_g": 8,
+    "fiber_g": 4,
+    "ingredients": [
+      "dates",
+      "almonds",
+      "unsweetened apples",
+      "walnuts",
+      "cinnamon"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Larabar (Blueberry Muffin)",
+    "category": "Protein Bars",
+    "serving_size": 45,
+    "serving_unit": "1 bar",
+    "calories": 195,
+    "protein_g": 3,
+    "carbs_g": 30,
+    "fat_g": 8,
+    "fiber_g": 4,
+    "ingredients": [
+      "dates",
+      "almonds",
+      "blueberries",
+      "cashews"
+    ],
+    "nova_group": 2
   }
 ]
