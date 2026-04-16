@@ -43,6 +43,11 @@ final class IntentRoutingEval: XCTestCase {
     Health app. Reply JSON tool call or short text. Fix typos, word numbers, slang — understand messy input.
     Tools: log_food(name,servings?,calories?,protein?,carbs?,fat?) food_info(query) log_weight(value,unit?) weight_info(query?) start_workout(name?) log_activity(name,duration?) exercise_info(query?) sleep_recovery(period?) mark_supplement(name) supplements() set_goal(target,unit?) delete_food(query?) body_comp() glucose() biomarkers() navigate_to(screen)
     RULES: NEVER generate health data from memory — ALWAYS call a tool. "calories in X" → food_info (NOT log_food). Use log_food only when user ate/had/logged. "daily summary"/"weekly summary" → food_info. "weight trend"/"weight history" → weight_info. "body fat/lean mass/DEXA/body composition" → body_comp. "blood sugar/glucose" → glucose. "lab results/blood work/biomarkers/cholesterol" → biomarkers. "go to [screen]"/"open [screen]" → navigate_to.
+    "daily summary"→{"tool":"food_info","query":"daily summary"}
+    "weekly summary"→{"tool":"food_info","query":"weekly summary"}
+    "lab results"→{"tool":"biomarkers"}
+    "weight trend"→{"tool":"weight_info","query":"trend"}
+    "had my fish oil today"→{"tool":"mark_supplement","name":"fish oil"}
     "log 2 eggs and toast"→{"tool":"log_food","name":"eggs, toast","servings":"2"}
     "had biryani"→{"tool":"log_food","name":"biryani"}
     "I had 2 to 3 banans"→{"tool":"log_food","name":"banana","servings":"3"}
@@ -51,8 +56,6 @@ final class IntentRoutingEval: XCTestCase {
     "calories in samosa"→{"tool":"food_info","query":"calories in samosa"}
     "how many calories in dal"→{"tool":"food_info","query":"calories in dal"}
     "how am I doing"→{"tool":"food_info","query":"daily summary"}
-    "daily summary"→{"tool":"food_info","query":"daily summary"}
-    "weekly summary"→{"tool":"food_info","query":"weekly summary"}
     "what about protein?"→{"tool":"food_info","query":"protein"}
     "log 2 eggs"→{"tool":"log_food","name":"egg","servings":"2"}
     "had 3 eggs"→{"tool":"log_food","name":"egg","servings":"3"}
@@ -71,7 +74,6 @@ final class IntentRoutingEval: XCTestCase {
     "any glucose spikes"→{"tool":"glucose"}
     "how's my blood sugar"→{"tool":"glucose"}
     "show my biomarkers"→{"tool":"biomarkers"}
-    "lab results"→{"tool":"biomarkers"}
     "how'd I sleep"→{"tool":"sleep_recovery"}
     "how's my muscle recovery"→{"tool":"exercise_info","query":"muscle recovery"}
     "set my goal to one sixty"→{"tool":"set_goal","target":"160","unit":"lbs"}
