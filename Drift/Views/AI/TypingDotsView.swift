@@ -3,6 +3,7 @@ import SwiftUI
 /// Animated three-dot typing indicator (chat bubble style).
 struct TypingDotsView: View {
     @State private var phase = 0
+    @State private var timer: Timer?
 
     var body: some View {
         HStack(spacing: 4) {
@@ -15,9 +16,13 @@ struct TypingDotsView: View {
             }
         }
         .onAppear {
-            Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) { _ in
+            timer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: true) { _ in
                 phase = (phase + 1) % 3
             }
+        }
+        .onDisappear {
+            timer?.invalidate()
+            timer = nil
         }
     }
 }
