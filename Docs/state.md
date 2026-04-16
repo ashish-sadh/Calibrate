@@ -4,7 +4,7 @@
 AI-first local health tracker. AI chat is the primary interface — every data entry doable through conversation. Traditional UI for visual analytics and fallback. No cloud, no accounts. Published on TestFlight as "Drift Fitness" (bundle: com.drift.health).
 
 ## Numbers
-- **Version:** 0.1.0, Build 120
+- **Version:** 0.1.0, Build 123
 - **Tests:** 1424+ (35 test files)
 - **AI Eval:** 380+ scenarios in eval harness + LLM eval (55-query gold set)
 - **Foods:** 1,913 (Indian, Mexican, Asian, Thai, Japanese, Korean, Mediterranean, Chinese, Middle Eastern, American classics, fitness staples, coffee drinks, seeds, Indo-Chinese, sushi rolls, meal prep bowls, South Indian, Indian street food, bowls, Kerala dishes, fast food India, Indian fruits, Indian regional, Maharashtrian, Odia, Assamese, Bihari, Rajasthani, Andhra, Karnataka, Goan, Himachal Pradesh, Northeast India, Sindhi, Madhya Pradesh, Coorg, Vietnamese, Latin American, African, Italian expanded, branded protein bars/shakes, bakery, soups, seafood, Bengali fish, Indian snacks, Indian drinks)
@@ -26,18 +26,19 @@ AI-first local health tracker. AI chat is the primary interface — every data e
 - **SmolLM2-360M Q8** (368MB) — 6GB devices. Rule-based harness.
 - **Gemma 4 E2B Q4_K_M** (2900MB) — 8GB+ devices. Tiered pipeline with normalizer.
 
-### Pipeline (Gemma 4)
+### Pipeline (Gemma 4) — 6-Stage
 ```
-Phase 1: Instant rules (StaticOverrides + Swift parsers)     → ~60-70% of queries
-Phase 2: LLM intent classifier (typos, word numbers, tools)  → ~20% more
-Phase 3: Tool-first execution → stream presentation (~5-8s)   → info queries
-Phase 4: LLM fallback with context (~10-20s)                  → conversation
+Stage 0: Input normalization (InputNormalizer — filler, conjunctions, run-on)
+Stage 1: Instant rules (StaticOverrides + Swift parsers)     → ~60-70% of queries
+Stage 2: LLM intent classifier (typos, word numbers, tools)  → ~20% more
+Stage 3: Domain-specific LLM extraction (food/weight/exercise params)
+Stage 4: Tool execution → stream presentation (~5-8s)         → info queries
+Stage 5: LLM fallback with context (~10-20s)                  → conversation
 ```
 
 ### Key Components
-- **ToolRanker** — Keyword scoring, 19 tool profiles, `tryRulePick()`
 - **IntentClassifier** — LLM-based intent detection with structured JSON output
-- **AIToolAgent** — Tiered orchestrator with 20s timeout on all LLM calls
+- **AIToolAgent** — 6-stage orchestrator with 20s timeout on all LLM calls
 - **StaticOverrides** — Universal deterministic handlers (no model gate)
 - **ConversationState** — State machine (idle/awaitingMealItems/awaitingExercises/planningMeals)
 - **Early JSON termination** — Bracket counting stops generation when JSON complete

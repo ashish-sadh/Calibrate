@@ -37,7 +37,7 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 - ~~**Rich confirmation cards (P0)**~~ DONE — Navigation cards, activity preview cards, weight/workout cards. All chat actions show structured visual feedback.
 
 ### Now
-- **AI Chat reliability (P0)** — Input normalization pipeline, food logging gold set eval, multi-turn hardening. Design doc #65. Sprint tasks #78-80.
+- ~~**AI Chat reliability (P0)**~~ DONE — 6-stage pipeline shipped: input normalization, LLM intent classifier, domain extraction, Swift validation, streaming presentation. 55-query gold set at 100% baseline.
 
 ### Next
 - ~~**USDA API Phase 1**~~ DONE — Opt-in toggle, rate limiting, searchWithFallback, privacy notice. Behind toggle (default OFF).
