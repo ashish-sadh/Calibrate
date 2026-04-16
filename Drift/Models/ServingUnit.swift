@@ -314,6 +314,19 @@ struct FoodUnit: Hashable {
             return FoodUnit(label: "piece", gramsEquivalent: ss)
         }
 
+        // Additional Indian flatbreads
+        if name.contains("puri") || name.contains("poori") || name.contains("bhatura") ||
+           name.contains("bhatoora") || name.contains("thepla") || name.contains("phulka") ||
+           name.contains("appam") || name.contains("pesarattu") || name.contains("adai") {
+            return FoodUnit(label: "piece", gramsEquivalent: ss)
+        }
+
+        // Chaat and Indian snack mixes — served by bowl (must precede the puri check above)
+        if name.contains("bhel") || name.contains("sev puri") || name.contains("papdi chaat") ||
+           (name.contains("chaat") && !name.contains("chaat masala")) {
+            return FoodUnit(label: "bowl", gramsEquivalent: ss)
+        }
+
         // Indian sweets — always countable by piece
         if name.contains("gulab") || name.contains("jamun") || name.contains("laddu") ||
            name.contains("laddoo") || name.contains("barfi") || name.contains("burfi") ||
@@ -352,6 +365,17 @@ struct FoodUnit: Hashable {
             return FoodUnit(label: "scoop", gramsEquivalent: ss)
         }
 
+        // Condiments and dips — tablespoon (before oil/ghee to avoid double-matching)
+        if name.contains("ketchup") || name.contains("salsa") || name.contains("guacamole") ||
+           name.contains("hummus") || name.contains("tahini") || name.contains("sriracha") ||
+           name.contains("hot sauce") || name.contains("soy sauce") || name.contains("bbq sauce") ||
+           name.contains("fish sauce") || name.contains("oyster sauce") || name.contains("hoisin") ||
+           name.contains("teriyaki sauce") || name.contains("vinaigrette") || name.contains("relish") ||
+           name.contains("aioli") || name.contains("mayo") || name.contains("mayonnaise") ||
+           name.contains("ranch") || name.contains("pesto") || name.contains("chili sauce") {
+            return FoodUnit(label: "tbsp", gramsEquivalent: 15)
+        }
+
         // Tablespoon items (word boundaries: "boiled" contains "oil", "butternut" contains "butter")
         if words.contains("oil") || words.contains("ghee") { return FoodUnit(label: "tbsp", gramsEquivalent: 15) }
         if words.contains("butter") && !name.contains("peanut") && !name.contains("almond") && !name.contains("paneer") {
@@ -369,13 +393,15 @@ struct FoodUnit: Hashable {
         // Dal and cooked legumes — measured in cups
         // Word boundary on "dal"/"daal" prevents false matches on unrelated words.
         // Exclude coffee beans, jelly beans, cocoa beans.
-        if words.contains("dal") || words.contains("daal") {
+        if words.contains("dal") || words.contains("daal") || words.contains("rajma") {
             return FoodUnit(label: "cup", gramsEquivalent: cupGrams(for: name))
         }
         if (name.contains("black bean") || name.contains("kidney bean") ||
             name.contains("pinto bean") || name.contains("navy bean") ||
-            name.contains("chickpea") || name.contains("lentil")) &&
-           !name.contains("jelly") && !name.contains("cocoa") && !name.contains("coffee") {
+            name.contains("chickpea") || name.contains("lentil") ||
+            name.contains("chole") || name.contains("chana")) &&
+           !name.contains("jelly") && !name.contains("cocoa") && !name.contains("coffee") &&
+           !name.contains("masala") && !name.contains("curry") {
             return FoodUnit(label: "cup", gramsEquivalent: cupGrams(for: name))
         }
 
@@ -386,9 +412,25 @@ struct FoodUnit: Hashable {
             return FoodUnit(label: "bowl", gramsEquivalent: ss)
         }
 
+        // Indian curries, sabzis, biryanis — served by bowl (ss > 50 to avoid spice blends)
+        if (name.contains("curry") || name.contains("sabzi") || name.contains("sabji") ||
+            name.contains("saag") || name.contains("makhani") || name.contains("biryani") ||
+            name.contains("pulao") || name.contains("pilaf") || name.contains("khichdi") ||
+            name.contains("masala") || name.contains("kheer") || name.contains("halwa")) && ss > 50 {
+            return FoodUnit(label: "bowl", gramsEquivalent: ss)
+        }
+
+        // Tikka — pieces of meat/paneer (not tikka masala curry, which the masala rule above catches)
+        if name.contains("tikka") { return FoodUnit(label: "piece", gramsEquivalent: ss) }
+
         // Yogurt / curd — measured in cups
         if words.contains("yogurt") || words.contains("curd") || words.contains("dahi") ||
-           name.contains("yoghurt") {
+           name.contains("yoghurt") || name.contains("raita") {
+            return FoodUnit(label: "cup", gramsEquivalent: cupGrams(for: name))
+        }
+
+        // Indian grain dishes — measured by cup
+        if name.contains("upma") || (name.contains("poha") && !name.contains("chivda")) {
             return FoodUnit(label: "cup", gramsEquivalent: cupGrams(for: name))
         }
 
@@ -414,8 +456,57 @@ struct FoodUnit: Hashable {
         // Liquid items (word boundaries to avoid "steak"→"tea", "classic"→"lassi")
         if words.contains("milk") || words.contains("juice") || words.contains("lassi") ||
            words.contains("chai") || words.contains("tea") || words.contains("coffee") ||
-           name.contains("buttermilk") {
+           name.contains("buttermilk") ||
+           // Alcoholic and other beverages
+           words.contains("wine") || words.contains("beer") || words.contains("lager") ||
+           words.contains("ale") || words.contains("cider") ||
+           name.contains("kombucha") || name.contains("coconut water") ||
+           name.contains("sparkling water") || name.contains("tonic water") ||
+           name.contains("club soda") || name.contains("energy drink") ||
+           name.contains("sports drink") || name.contains("lemonade") ||
+           name.contains("limeade") || name.contains("soda water") ||
+           name.contains("cola") || name.contains("gatorade") || name.contains("powerade") {
             return FoodUnit(label: "ml", gramsEquivalent: 1)
+        }
+
+        // Sandwiches, burgers, tacos, and similar handheld foods — piece
+        if name.contains("burger") || name.contains("taco") || name.contains("burrito") ||
+           name.contains("hot dog") || name.contains("hotdog") || name.contains("frank") ||
+           name.contains("sandwich") || name.contains("kebab") || name.contains("shawarma") ||
+           name.contains("falafel") || name.contains("crepe") || name.contains("sushi") ||
+           name.contains("maki") || name.contains("dumpling") && !name.contains("soup") ||
+           words.contains("roll") && !name.contains("spring roll") {
+            return FoodUnit(label: "piece", gramsEquivalent: ss)
+        }
+        // Spring rolls are also piece — catch after the words.contains("roll") exclusion above
+        if name.contains("spring roll") || name.contains("egg roll") {
+            return FoodUnit(label: "piece", gramsEquivalent: ss)
+        }
+
+        // Large fruits — by piece
+        if (name.contains("mango") && !name.contains("chutney") && !name.contains("lassi") && !name.contains("juice")) ||
+           (name.contains("papaya") && !name.contains("juice")) ||
+           (name.contains("watermelon") && !name.contains("juice")) ||
+           (name.contains("pineapple") && !name.contains("juice")) ||
+           name.contains("jackfruit") || name.contains("litchi") || name.contains("lychee") ||
+           (name.contains("pomegranate") && !name.contains("juice")) {
+            return FoodUnit(label: "piece", gramsEquivalent: ss)
+        }
+
+        // Small fruits and berries — by cup
+        if name.contains("strawberr") || name.contains("blueberr") ||
+           name.contains("raspberr") || name.contains("blackberr") ||
+           name.contains("grapes") || (name.contains("cherr") && !name.contains("tomato")) {
+            return FoodUnit(label: "cup", gramsEquivalent: 150)
+        }
+
+        // Whole vegetables — by piece
+        if name.contains("sweet potato") ||
+           (name.contains("carrot") && !name.contains("cake") && !name.contains("juice")) ||
+           (name.contains("cucumber") && !name.contains("pickle")) ||
+           (name.contains("avocado") && !name.contains("ranch") && !name.contains("toast")) ||
+           name.contains("capsicum") || name.contains("bell pepper") {
+            return FoodUnit(label: "piece", gramsEquivalent: ss)
         }
 
         return FoodUnit(label: "serving", gramsEquivalent: ss)
