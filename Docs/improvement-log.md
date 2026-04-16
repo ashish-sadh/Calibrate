@@ -367,3 +367,13 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 5. portionText — bread→slices, pizza→slices, soup/broth→bowls, protein powder→scoops, momos/vadas/pakoras/Indian sweets→pieces
 6. Synonyms — Bengali (ilish→hilsa, rui→rohu, maach→fish), Tamil (kozhi→chicken, thayir→yogurt), Indian (gur→jaggery, imli→tamarind, suji/rava→semolina, besan→chickpea flour)
 7. Eval tests — Bengali/Tamil synonym coverage, new food DB verification (1384→1429 tests)
+
+## 2026-04-15 Junior Cycle 4 (this session)
+1. Fix #142 P0: fiber always 0g — RecentEntry struct missing fiberG, SQL omitted fiber_g, FoodSearchView hardcoded 0
+2. Smart Units audit: 340 foods improved — Indian flatbreads, chaat, condiments, curries, beverages, burgers/wraps, large fruits, berries, vegetables
+3. Smart Units in AI chat: smartServingText() added — confirmation card + recipe builder show piece/ml/cup instead of "N.0 serving"
+4. Fix #143 P0: edit ingredient shows wrong amount — calories-based servings derivation replaces broken servingSizeG/food.servingSize
+5. Merge PR #136 (#130): Stage 3b Swift validation between LLM extraction and execution
+6. Food DB 1913→1927 (+14): kanda bhaji, mooli paratha, ribbon pakoda, seedai, shikanji, egg paratha, chicken paratha, akki roti, makki di roti, pyaaz kachori, stuffed capsicum, lauki sabzi, arbi masala, bajra khichdi
+7. Smart Units: papad→piece, protein bars→piece, pickle/achar→tbsp, quinoa→cup
+8. Tests: +12 (4 Smart Units, 8 Stage 3b validation); validateExtraction() made internal for testability

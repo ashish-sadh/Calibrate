@@ -31814,5 +31814,246 @@
       "garlic"
     ],
     "nova_group": 1
+  },
+  {
+    "name": "Freekeh (cooked)",
+    "category": "Middle Eastern",
+    "serving_size": 185,
+    "serving_unit": "g",
+    "calories": 200,
+    "protein_g": 8.0,
+    "carbs_g": 38.0,
+    "fat_g": 2.0,
+    "fiber_g": 6.0,
+    "ingredients": [
+      "freekeh",
+      "water",
+      "salt"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Piri Piri Chicken",
+    "category": "African",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 248,
+    "protein_g": 32.0,
+    "carbs_g": 3.0,
+    "fat_g": 12.0,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "chicken",
+      "piri piri chilli",
+      "garlic",
+      "lemon juice",
+      "olive oil",
+      "paprika"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Bunny Chow",
+    "category": "African",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 578,
+    "protein_g": 22.0,
+    "carbs_g": 70.0,
+    "fat_g": 24.0,
+    "fiber_g": 6.0,
+    "ingredients": [
+      "white bread",
+      "lamb curry",
+      "potato",
+      "onion",
+      "spices"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Bobotie",
+    "category": "African",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 318,
+    "protein_g": 22.0,
+    "carbs_g": 14.0,
+    "fat_g": 20.0,
+    "fiber_g": 2.0,
+    "ingredients": [
+      "minced beef",
+      "onion",
+      "apricot jam",
+      "curry powder",
+      "egg",
+      "milk",
+      "bread"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Za'atar Spice Blend",
+    "category": "Middle Eastern",
+    "serving_size": 5,
+    "serving_unit": "g",
+    "calories": 15,
+    "protein_g": 0.7,
+    "carbs_g": 1.5,
+    "fat_g": 0.8,
+    "fiber_g": 0.8,
+    "ingredients": [
+      "thyme",
+      "sumac",
+      "sesame seeds",
+      "oregano",
+      "salt"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Maafe (Peanut Stew)",
+    "category": "African",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 362,
+    "protein_g": 18.0,
+    "carbs_g": 20.0,
+    "fat_g": 24.0,
+    "fiber_g": 5.0,
+    "ingredients": [
+      "peanut butter",
+      "beef",
+      "tomato",
+      "onion",
+      "sweet potato",
+      "scotch bonnet",
+      "palm oil"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Larb Gai (Thai Chicken Salad)",
+    "category": "Thai",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 188,
+    "protein_g": 22.0,
+    "carbs_g": 8.0,
+    "fat_g": 8.0,
+    "fiber_g": 2.0,
+    "ingredients": [
+      "chicken mince",
+      "fish sauce",
+      "lime juice",
+      "shallots",
+      "mint",
+      "toasted rice powder",
+      "chilli"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Khao Pad (Thai Fried Rice)",
+    "category": "Thai",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 318,
+    "protein_g": 10.0,
+    "carbs_g": 52.0,
+    "fat_g": 9.0,
+    "fiber_g": 1.5,
+    "ingredients": [
+      "jasmine rice",
+      "egg",
+      "soy sauce",
+      "oyster sauce",
+      "garlic",
+      "green onion",
+      "oil"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Chicken Satay with Peanut Sauce",
+    "category": "Asian",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 282,
+    "protein_g": 22.0,
+    "carbs_g": 10.0,
+    "fat_g": 18.0,
+    "fiber_g": 1.5,
+    "ingredients": [
+      "chicken",
+      "peanut butter",
+      "coconut milk",
+      "lemongrass",
+      "turmeric",
+      "soy sauce"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Beef Rendang",
+    "category": "Asian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 378,
+    "protein_g": 32.0,
+    "carbs_g": 8.0,
+    "fat_g": 25.0,
+    "fiber_g": 2.0,
+    "ingredients": [
+      "beef",
+      "coconut milk",
+      "lemongrass",
+      "galangal",
+      "kaffir lime leaves",
+      "chillis",
+      "shallots"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Nasi Lemak",
+    "category": "Asian",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 428,
+    "protein_g": 14.0,
+    "carbs_g": 62.0,
+    "fat_g": 15.0,
+    "fiber_g": 2.5,
+    "ingredients": [
+      "coconut rice",
+      "anchovies",
+      "peanuts",
+      "boiled egg",
+      "cucumber",
+      "sambal"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Hainanese Chicken Rice",
+    "category": "Asian",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 478,
+    "protein_g": 35.0,
+    "carbs_g": 55.0,
+    "fat_g": 12.0,
+    "fiber_g": 1.0,
+    "ingredients": [
+      "chicken",
+      "jasmine rice",
+      "chicken broth",
+      "ginger",
+      "garlic",
+      "sesame oil",
+      "soy sauce"
+    ],
+    "nova_group": 1
   }
 ]
