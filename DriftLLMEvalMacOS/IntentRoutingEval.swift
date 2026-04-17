@@ -197,7 +197,11 @@ final class IntentRoutingEval: XCTestCase {
     func testNonFood_health() async {
         await assertNotFood("how's my body fat")
         await assertNotFood("show me my biomarkers")
+        await assertNotFood("what's my lean mass")
+        await assertNotFood("check my DEXA results")
         await assertRoutes("how's my body fat", to: "body_comp")
+        await assertRoutes("what's my lean mass", to: "body_comp")
+        await assertRoutes("show me my biomarkers", to: "biomarkers")
     }
 
     // MARK: - Body Composition (body_comp)
@@ -282,9 +286,14 @@ final class IntentRoutingEval: XCTestCase {
     // MARK: - Multi-Turn Context
 
     func testMultiTurn_mealContinuation() async {
-        let history = "Assistant: What did you have for lunch?"
-        await assertRoutes("rice and dal", to: "log_food", history: history)
-        await assertRoutes("just had a bowl of soup", to: "log_food", history: history)
+        let lunchHistory = "Assistant: What did you have for lunch?"
+        await assertRoutes("rice and dal", to: "log_food", history: lunchHistory)
+        await assertRoutes("just had a bowl of soup", to: "log_food", history: lunchHistory)
+        await assertRoutes("paneer and roti", to: "log_food", history: lunchHistory)
+
+        let dinnerHistory = "Assistant: What did you have for dinner?"
+        await assertRoutes("pasta with chicken", to: "log_food", history: dinnerHistory)
+        await assertRoutes("biryani", to: "log_food", history: dinnerHistory)
     }
 
     func testMultiTurn_followUp() async {
@@ -318,6 +327,39 @@ final class IntentRoutingEval: XCTestCase {
         // Implicit phrasing
         await assertRoutes("my target is 68 kg", to: "set_goal")
         await assertRoutes("my goal weight is 160 pounds", to: "set_goal")
+    }
+
+    // MARK: - Delete Food (delete_food)
+
+    func testDelete_routing() async {
+        await assertRoutes("delete last entry", to: "delete_food")
+        await assertRoutes("delete that food", to: "delete_food")
+        await assertRoutes("undo last food entry", to: "delete_food")
+        await assertRoutes("undo that food log", to: "delete_food")
+        await assertRoutes("delete what I just added", to: "delete_food")
+    }
+
+    // MARK: - Exercise Info (exercise_info edge cases)
+
+    func testExercise_edgeCases() async {
+        // Slang + messy spelling
+        await assertRoutes("how many pushups last wk", to: "exercise_info")
+        await assertRoutes("wat did I lift yest", to: "exercise_info")
+        // Implicit workout history
+        await assertRoutes("am I overtraining", to: "exercise_info")
+        await assertRoutes("when was my last leg day", to: "exercise_info")
+        await assertRoutes("how's my muscle recovery looking", to: "exercise_info")
+    }
+
+    // MARK: - Food Logging (Indian food slang + casual phrasings)
+
+    func testFoodLogging_indianSlang() async {
+        // Casual Indian-English phrasings
+        await assertRoutes("had dal chawal for lunch", to: "log_food")
+        await assertRoutes("ate roti sabzi", to: "log_food")
+        await assertRoutes("took 2 parathas", to: "log_food")
+        await assertRoutes("had some khichdi", to: "log_food")
+        await assertRoutes("finished my thali", to: "log_food")
     }
 
     // MARK: - Ambiguous (should ask, not blindly log)
