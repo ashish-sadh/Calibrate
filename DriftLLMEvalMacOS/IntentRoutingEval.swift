@@ -115,7 +115,7 @@ final class IntentRoutingEval: XCTestCase {
         return tool
     }
 
-    private func assertRoutes(_ query: String, to expectedTool: String, history: String = "", file: StaticString = #file, line: UInt = #line) async {
+    private func assertRoutes(_ query: String, to expectedTool: String, history: String = "", file: StaticString = #filePath, line: UInt = #line) async {
         guard let response = await classify(query, history: history) else {
             XCTFail("No response for '\(query)'", file: file, line: line); return
         }
@@ -125,7 +125,7 @@ final class IntentRoutingEval: XCTestCase {
             file: file, line: line)
     }
 
-    private func assertNotFood(_ query: String, file: StaticString = #file, line: UInt = #line) async {
+    private func assertNotFood(_ query: String, file: StaticString = #filePath, line: UInt = #line) async {
         guard let response = await classify(query) else {
             XCTFail("No response for '\(query)'", file: file, line: line); return
         }
@@ -360,6 +360,46 @@ final class IntentRoutingEval: XCTestCase {
         await assertRoutes("took 2 parathas", to: "log_food")
         await assertRoutes("had some khichdi", to: "log_food")
         await assertRoutes("finished my thali", to: "log_food")
+    }
+
+    // MARK: - Start Workout (start_workout)
+
+    func testStartWorkout_routing() async {
+        await assertRoutes("start push day", to: "start_workout")
+        await assertRoutes("begin chest day", to: "start_workout")
+        await assertRoutes("start my upper body workout", to: "start_workout")
+        await assertRoutes("kick off leg day", to: "start_workout")
+        await assertRoutes("begin pull day", to: "start_workout")
+    }
+
+    // MARK: - Log Weight (log_weight)
+
+    func testLogWeight_routing() async {
+        await assertRoutes("I weigh 75 kg", to: "log_weight")
+        await assertRoutes("my weight is 68.5 kg", to: "log_weight")
+        await assertRoutes("just weighed in at 80 kg", to: "log_weight")
+        await assertRoutes("I'm 162 pounds now", to: "log_weight")
+        await assertRoutes("weighed myself — 73.2 kg", to: "log_weight")
+    }
+
+    // MARK: - Log Activity (log_activity)
+
+    func testLogActivity_routing() async {
+        await assertRoutes("did yoga for 30 minutes", to: "log_activity")
+        await assertRoutes("ran 5k this morning", to: "log_activity")
+        await assertRoutes("went for a 45 min walk", to: "log_activity")
+        await assertRoutes("biked for an hour", to: "log_activity")
+        await assertRoutes("swam laps for 30 min", to: "log_activity")
+    }
+
+    // MARK: - Weight Info (extended edge cases)
+
+    func testWeightInfo_extended() async {
+        await assertRoutes("how close am I to my goal weight", to: "weight_info")
+        await assertRoutes("when will I reach my target", to: "weight_info")
+        await assertRoutes("weight history this month", to: "weight_info")
+        await assertRoutes("how much have I lost this week", to: "weight_info")
+        await assertRoutes("what's my weight history", to: "weight_info")
     }
 
     // MARK: - Ambiguous (should ask, not blindly log)
