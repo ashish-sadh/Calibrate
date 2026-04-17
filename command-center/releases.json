@@ -1316,10 +1316,10 @@
   {
     "build": 127,
     "date": "2026-04-16T07:19:00-07:00",
-    "description": "feat: LLM-first lab report parsing — Gemma 4 as primary extractor with confidence scoring",
+    "description": "feat: LLM-first lab report parsing \u2014 Gemma 4 as primary extractor with confidence scoring",
     "features": [
       "Lab report parsing now uses Gemma 4 as the primary extractor (not just fallback) for higher accuracy on non-standard formats",
-      "Confidence scoring per biomarker — LLM confidence ≥0.85 wins over regex, ≥0.6 threshold for LLM-only results",
+      "Confidence scoring per biomarker \u2014 LLM confidence \u22650.85 wins over regex, \u22650.6 threshold for LLM-only results",
       "Report date extraction with LLM fallback when regex can't find the date",
       "AI-parsed badge on individual biomarkers in lab report detail view",
       "Accuracy warning banner now shown whenever Gemma was involved in parsing (not just per-result AI flag)",
@@ -1328,7 +1328,7 @@
     "fixes": [
       "Smart Units: dosa, milk, eggs, rice, chicken now default to natural units across all interfaces",
       "AI chat intent routing fixed for 'daily summary' and 'weekly summary' queries",
-      "Food search ranking improved — '2 eggs' no longer suggests egg benedict"
+      "Food search ranking improved \u2014 '2 eggs' no longer suggests egg benedict"
     ]
   },
   {
@@ -1348,7 +1348,7 @@
     ],
     "fixes": [
       "fix(ai): 'supplement status' query now correctly routes to supplements() tool instead of returning text",
-      "test: messy food parser now correctly expects singularized query ('egg' not 'eggs') — 19/21 → 21/21"
+      "test: messy food parser now correctly expects singularized query ('egg' not 'eggs') \u2014 19/21 \u2192 21/21"
     ]
   },
   {
@@ -1358,13 +1358,13 @@
     "features": [
       "IntentRoutingEval expanded +41 cases across sleep (slang, HRV, implicit), goal-setting, multi-turn, freeform food, and exercise domains",
       "Per-component isolated gold sets: IntentClassifierGoldSetTests, FoodSearchGoldSetTests, SmartUnitsGoldSetTests (all deterministic, <1s)",
-      "Food DB 2,167→2,187 (+20 foods)"
+      "Food DB 2,167\u21922,187 (+20 foods)"
     ],
     "fixes": [
-      "Voice: error-203 detection hardened — no-speech pauses now always restart segment instead of sometimes auto-sending",
-      "Voice: audio engine leak on fast stop guarded — engine stopped immediately if user cancelled during startup",
+      "Voice: error-203 detection hardened \u2014 no-speech pauses now always restart segment instead of sometimes auto-sending",
+      "Voice: audio engine leak on fast stop guarded \u2014 engine stopped immediately if user cancelled during startup",
       "Voice: retry on all recognition errors (not just error-203) up to 3 times before auto-sending",
-      "AIChatView.sendMessage extracted to AIChatViewModel — view is now pure SwiftUI, business logic in ViewModel"
+      "AIChatView.sendMessage extracted to AIChatViewModel \u2014 view is now pure SwiftUI, business logic in ViewModel"
     ]
   },
   {
@@ -1372,17 +1372,17 @@
     "date": "2026-04-17T06:45:00-07:00",
     "description": "Auto-research optimization loop + AI routing fixes + eval hard set",
     "features": [
-      "Auto-research pipeline optimizer — fixed-budget loop finds best prompt/pipeline config, auto-applies if held-out improves ≥1% with zero regressions, pushes",
-      "HardEvalSet — 100 E2E eval cases across 7 categories: foodRouting, regression, multiTurn, supplement, navigation, contextSwitch, quickReplyPills",
-      "PromptOptimizer — mutation engine for classifier prompt, presentation prompt, StaticOverrides; full pipeline is fair game",
-      "Presentation prompt extracted to static var — enables optimizer mutations without code changes",
-      "Design doc: Docs/ai-autoresearch.md — architecture preserved for future reference",
+      "Auto-research pipeline optimizer \u2014 fixed-budget loop finds best prompt/pipeline config, auto-applies if held-out improves \u22651% with zero regressions, pushes",
+      "HardEvalSet \u2014 100 E2E eval cases across 7 categories: foodRouting, regression, multiTurn, supplement, navigation, contextSwitch, quickReplyPills",
+      "PromptOptimizer \u2014 mutation engine for classifier prompt, presentation prompt, StaticOverrides; full pipeline is fair game",
+      "Presentation prompt extracted to static var \u2014 enables optimizer mutations without code changes",
+      "Design doc: Docs/ai-autoresearch.md \u2014 architecture preserved for future reference",
       "Sprint integration: auto-research loop added as permanent sprint task"
     ],
     "fixes": [
-      "fix(ai): 'a cup of dal' parsing — extractAmount now handles 'a/an + unit + of + food' correctly",
-      "fix(ai): meal re-request in awaitingMealItems — strips 'can you log', 'I had' prefixes before meal keyword detection",
-      "fix(ai): protein shake no longer routes to mark_supplement — classifier prompt hardened",
+      "fix(ai): 'a cup of dal' parsing \u2014 extractAmount now handles 'a/an + unit + of + food' correctly",
+      "fix(ai): meal re-request in awaitingMealItems \u2014 strips 'can you log', 'I had' prefixes before meal keyword detection",
+      "fix(ai): protein shake no longer routes to mark_supplement \u2014 classifier prompt hardened",
       "fix(eval): IntentRoutingEval synced with IntentClassifier prompt + 8 new protein shake / macro intake tests"
     ]
   },
@@ -1399,6 +1399,24 @@
       "Fixed CoT routing false positive: 'start tracking today' no longer incorrectly triggered workout data fetch",
       "Fixed TypingDotsView timer resource leak: timer now properly invalidated when view disappears",
       "IntentClassifier prompt improvements for better routing accuracy"
+    ]
+  },
+  {
+    "build": 133,
+    "date": "2026-04-17T11:30:00-07:00",
+    "description": "Bug fixes: stuck chat indicator, voice pause losing utterances, spurious protein/workout alerts",
+    "features": [
+      "Auto-research pipeline optimizer (HardEvalSet 100 cases, PromptOptimizer, auto-apply/revert)",
+      "Presentation prompt extracted to static var \u2014 enables optimizer mutations",
+      "Alert deduplication \u2014 proactive alerts no longer re-animate on every dashboard refresh"
+    ],
+    "fixes": [
+      "fix(chat): 'Looking up food...' stuck after response \u2014 stale onStep Task raced with defer clearing generatingState",
+      "fix(voice): earlier utterances lost on pause \u2014 partial segment transcription now committed before restart on error 203",
+      "fix(dashboard): protein below target shown when food not logged \u2014 now requires proteinG > 0",
+      "fix(dashboard): 'No workouts recently' shown despite Apple Health workouts \u2014 now checks HK last 7 days",
+      "fix(program.md): P0 bugs not picked by Junior Execution \u2014 explicit gh issue list --label P0 check added",
+      "fix(program.md): in-progress label not removed on close \u2014 all three close steps now explicit"
     ]
   }
 ]
