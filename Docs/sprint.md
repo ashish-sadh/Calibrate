@@ -1,6 +1,6 @@
 # Sprint Board
 
-Focus: **LLM Eval Quality Loop (50%) + AI Chat Quality (50%).** AI chat is the entire product. Half of every sprint goes to running IntentRoutingEval, fixing failures via prompt engineering, and expanding the gold set. The other half goes to features, voice, UI. Eval first — no session ends without the eval better than when it started.
+Focus: **Per-Component Gold Sets + LLM Eval Quality (60%) + Features (40%).** Human feedback: AI chat is buggy, regressions happen, we evaluate poorly. This sprint: every pipeline stage gets its own isolated gold set. Then run end-to-end LLM eval, fix failures, expand coverage. AI chat is the entire product — evaluation is our immune system.
 
 ## Regression Gate
 
@@ -14,11 +14,23 @@ _(pick from Ready)_
 
 ## Ready
 
-### P0 — AI Chat Quality (pick first, every sprint)
+### P0 — Per-Component Gold Sets (NEW — human feedback priority)
+
+- [ ] **#161 Per-component isolated gold sets** — Human feedback: "each component of AI pipeline should be individually tested on a gold set." Build isolated deterministic test suites for: (1) IntentClassifier — 20+ queries mapped to expected intents, (2) FoodSearch — 20+ food name → expected result+rank, (3) SmartUnits — 20+ food+amount → expected unit output. Each suite must be fully deterministic (no LLM), run in <5s, and be in `DriftTests` target. These gate every future AI change alongside `FoodLoggingGoldSetTests`.
+
+### P0 — AI Chat Quality
 
 - [ ] **#158 LLM-loaded macOS eval: expand routing gold set** — `DriftLLMEvalMacOS` target is wired and builds. Download models (`bash scripts/download-models.sh`), run eval, find any routing failures, fix them in the pipeline (IntentClassifier prompt or validateExtraction). Target: 100% on IntentRoutingEval tests. Run after every IntentClassifier/AIToolAgent change.
-- [ ] **#159 Voice input: investigate remaining bugs** — Silence timeout fixed (15s→30s). Race condition in forceStop/gracefulStop fixed (idle set before cleanup). Test on device: natural pauses, edit-after-stop, multi-sentence dictation. Fix any remaining issues found.
 - [ ] **#160 AI chat: expand eval gold set and fix routing gaps** — Run `DriftLLMEvalMacOS` eval. For each failure: fix in IntentClassifier prompt first (preferred), fall back to StaticOverrides only if LLM cannot be taught. Add regression test to IntentRoutingEval.swift. Target 100% routing accuracy. Do NOT grow StaticOverrides unless prompt engineering fails after 2 attempts.
+
+### P1 — Voice + Features
+
+- [ ] **#159 Voice input: investigate remaining bugs** — Silence timeout fixed (15s→30s). Race condition in forceStop/gracefulStop fixed (idle set before cleanup). Test on device: natural pauses, edit-after-stop, multi-sentence dictation. Fix any remaining issues found.
+- [ ] **#162 AIChatView.sendMessage refactor** — sendMessage is 491 lines. Extract to AIChatViewModel. No behavior change — pure reorganization. Tests must still pass. This is a precondition for future multi-turn improvements.
+
+### P1 — Junior Tasks
+
+- [ ] **Food DB enrichment: +20 foods** — Focus: branded products (protein bars, supplements, Greek yogurt brands), common restaurant chains (Subway, Domino's, Burger King India), and missing staples found via `Docs/failing-queries.md`. Cross-reference macros with USDA/reliable sources.
 
 ### P1 — Senior Implementation
 
@@ -107,7 +119,11 @@ Autonomous refactoring. Run `code-improvement.md`. Principles in `Docs/principle
 
 ## Done (this sprint)
 
-_(empty — sprint just started)_
+- [x] **#151 LLM-first lab report parsing** — Shipped (cycle 5228). Gemma 4 primary extractor, chunked inference, confidence scoring (≥0.85 LLM wins), regex validation layer, AI-parsed badge.
+- [x] **#156 Smart Units cross-interface consistency** — 4 bugs fixed, 5 regression tests added.
+- [x] **#157 Food DB enrichment: +20 foods** — 2,067→2,087.
+- [x] **Food DB enrichment: +20 foods** — 2,087→2,107 (Maharashtrian/Goan/seafood batch).
+- [x] **#153 Test coverage** — All files pass thresholds._
 
 ## Done (previous sprint — AI Chat P0 Fixes + Smart Units Audit)
 
