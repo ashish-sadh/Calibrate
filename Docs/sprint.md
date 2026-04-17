@@ -16,7 +16,7 @@ _(pick from Ready)_
 
 ### P0 — Per-Component Gold Sets (NEW — human feedback priority)
 
-- [ ] **#161 Per-component isolated gold sets** — Human feedback: "each component of AI pipeline should be individually tested on a gold set." Build isolated deterministic test suites for: (1) IntentClassifier — 20+ queries mapped to expected intents, (2) FoodSearch — 20+ food name → expected result+rank, (3) SmartUnits — 20+ food+amount → expected unit output. Each suite must be fully deterministic (no LLM), run in <5s, and be in `DriftTests` target. These gate every future AI change alongside `FoodLoggingGoldSetTests`.
+- [x] **#161 Per-component isolated gold sets** — IntentClassifierGoldSetTests (22 cases: parseResponse/mapResponse JSON parsing + StaticOverrides routing), FoodSearchGoldSetTests (20+ cases: exact, Indian foods, synonyms, spell correction, partial match), SmartUnitsGoldSetTests (20+ cases: eggs, flatbreads, oils, proteins, liquids, grains, meats, vegetables). All deterministic, <1s, 1,577 tests pass. Commit baa492a.
 
 ### P0 — AI Chat Quality
 
