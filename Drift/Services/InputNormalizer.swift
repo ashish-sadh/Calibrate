@@ -69,7 +69,9 @@ enum InputNormalizer {
 
     /// Multi-word fillers removed via substring replacement.
     private static let multiFillers = [
-        "you know", "i mean", "sort of", "kind of",
+        "you know what", "you know",
+        "i mean", "sort of", "kind of",
+        "so like", "so basically",
         "so yeah", "well yeah", "oh yeah",
         "let me see", "let me think"
     ]

@@ -89,6 +89,7 @@
 		6F12940B946478A79A718648 /* MultiTurnContextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48395DCDA65A417FF1BCC401 /* MultiTurnContextTests.swift */; };
 		6FE85F07DEFE790804EA1A6B /* InputNormalizerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFE22713392456FC18BE0CC9 /* InputNormalizerTests.swift */; };
 		70F621B0C5089E738C2DEA5E /* FoodTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A981E37D718D28A6679F9C8 /* FoodTabView.swift */; };
+		7136ECEEF216184765516FE5 /* NormalizerGoldSetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C87F6B55BFF5055B77C57C1 /* NormalizerGoldSetTests.swift */; };
 		7227D719E8F916D30696BDE1 /* BiomarkerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = F36D548F9FA62D8D7E53B1C7 /* BiomarkerService.swift */; };
 		72F5D9C470D2FE034CE2094E /* LLMGemma4Eval.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA011B2F5DA344904EFAD4D3 /* LLMGemma4Eval.swift */; };
 		737105D5DE25A898AC31BEA8 /* AIContextBuilder+Health.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1ACBCA936A73C1825C28C312 /* AIContextBuilder+Health.swift */; };
@@ -384,6 +385,7 @@
 		99C89E28D8FBE125273FB677 /* Log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Log.swift; sourceTree = "<group>"; };
 		9B410A7B058246A1F98F46E9 /* DefaultFoods.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultFoods.swift; sourceTree = "<group>"; };
 		9BE85182415E10B646F68DA4 /* ParallelLLMEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ParallelLLMEval.swift; sourceTree = "<group>"; };
+		9C87F6B55BFF5055B77C57C1 /* NormalizerGoldSetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NormalizerGoldSetTests.swift; sourceTree = "<group>"; };
 		9F9F051926CE39DF3E0A47DA /* BodySpecPDFParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodySpecPDFParser.swift; sourceTree = "<group>"; };
 		9FA2C56E731BE5610FDC5B12 /* AIChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatView.swift; sourceTree = "<group>"; };
 		9FDCCAED76696ACF2A89F445 /* Migrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Migrations.swift; sourceTree = "<group>"; };
@@ -598,6 +600,7 @@
 				64C160A33FFEF2C185DA06ED /* IntentClassifierGoldSetTests.swift */,
 				5D1E187818C8B9D2196B4B9D /* LabReportOCRTests.swift */,
 				48395DCDA65A417FF1BCC401 /* MultiTurnContextTests.swift */,
+				9C87F6B55BFF5055B77C57C1 /* NormalizerGoldSetTests.swift */,
 				F86B648E00469832A2C8FB56 /* NotificationServiceTests.swift */,
 				1575030FD9A7BEF5BC9E0612 /* NutritionOCRTests.swift */,
 				5CCD0417471E3FC0DED921F5 /* PlantPointsServiceTests.swift */,
@@ -1274,6 +1277,7 @@
 				33E700814E964120B5BDDBC9 /* IntentClassifierGoldSetTests.swift in Sources */,
 				92F6CD33F11BF82738AAF81C /* LabReportOCRTests.swift in Sources */,
 				6F12940B946478A79A718648 /* MultiTurnContextTests.swift in Sources */,
+				7136ECEEF216184765516FE5 /* NormalizerGoldSetTests.swift in Sources */,
 				2CF22C2420F9E22D2F989C70 /* NotificationServiceTests.swift in Sources */,
 				FC725819F735636B40300619 /* NutritionOCRTests.swift in Sources */,
 				80D8EEFDC7564433E3DEC4E3 /* PlantPointsServiceTests.swift in Sources */,

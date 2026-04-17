@@ -5098,7 +5098,7 @@
     "nova_group": 3
   },
   {
-    "name": "Açaí Bowl (medium)",
+    "name": "A\u00e7a\u00ed Bowl (medium)",
     "category": "US Staples",
     "serving_size": 300,
     "serving_unit": "g",
@@ -5108,7 +5108,7 @@
     "fat_g": 18,
     "fiber_g": 8,
     "ingredients": [
-      "Açaí Bowl (medium)"
+      "A\u00e7a\u00ed Bowl (medium)"
     ],
     "nova_group": 3
   },
@@ -9788,7 +9788,7 @@
     "nova_group": 3
   },
   {
-    "name": "Costco Açaí Bowl (food court)",
+    "name": "Costco A\u00e7a\u00ed Bowl (food court)",
     "category": "Costco",
     "serving_size": 355,
     "serving_unit": "g",
@@ -9798,7 +9798,7 @@
     "fat_g": 19,
     "fiber_g": 7,
     "ingredients": [
-      "Costco Açaí Bowl (food court)"
+      "Costco A\u00e7a\u00ed Bowl (food court)"
     ],
     "nova_group": 3
   },
@@ -10493,7 +10493,7 @@
     "nova_group": 4
   },
   {
-    "name": "Starbucks Caffè Latte (Grande, 2% milk)",
+    "name": "Starbucks Caff\u00e8 Latte (Grande, 2% milk)",
     "category": "Beverages",
     "serving_size": 473,
     "serving_unit": "ml",
@@ -10503,7 +10503,7 @@
     "fat_g": 7,
     "fiber_g": 0,
     "ingredients": [
-      "Starbucks Caffè Latte (Grande, 2% milk)"
+      "Starbucks Caff\u00e8 Latte (Grande, 2% milk)"
     ],
     "nova_group": 3
   },
@@ -25155,7 +25155,7 @@
     "ingredients": [
       "fries",
       "cheese sauce",
-      "jalapeños",
+      "jalape\u00f1os",
       "sour cream"
     ],
     "nova_group": 4
@@ -28726,7 +28726,7 @@
       "beef",
       "onion",
       "tomato",
-      "jalapeño",
+      "jalape\u00f1o",
       "rosemary",
       "Ethiopian spices",
       "butter"
@@ -36118,5 +36118,395 @@
     "fat_g": 26,
     "fiber_g": 12,
     "nova_group": 3
+  },
+  {
+    "name": "Gomen (Ethiopian Collard Greens)",
+    "category": "Ethiopian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 120,
+    "protein_g": 4,
+    "carbs_g": 14,
+    "fat_g": 6,
+    "fiber_g": 4,
+    "ingredients": [
+      "collard greens",
+      "onion",
+      "garlic",
+      "ginger",
+      "turmeric",
+      "oil"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Firfir (Injera in Berbere)",
+    "category": "Ethiopian",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 8,
+    "carbs_g": 46,
+    "fat_g": 7,
+    "fiber_g": 3,
+    "ingredients": [
+      "injera",
+      "berbere spice",
+      "onion",
+      "oil"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Sambusa (Ethiopian Pastry)",
+    "category": "Ethiopian",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 220,
+    "protein_g": 8,
+    "carbs_g": 24,
+    "fat_g": 10,
+    "fiber_g": 2,
+    "ingredients": [
+      "pastry dough",
+      "lentils",
+      "onion",
+      "cumin",
+      "oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Kategna (Roasted Injera)",
+    "category": "Ethiopian",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 4,
+    "carbs_g": 32,
+    "fat_g": 4,
+    "fiber_g": 2,
+    "ingredients": [
+      "injera",
+      "berbere",
+      "oil"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Gomen Be Sega (Greens with Beef)",
+    "category": "Ethiopian",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 250,
+    "protein_g": 18,
+    "carbs_g": 14,
+    "fat_g": 14,
+    "fiber_g": 4,
+    "ingredients": [
+      "collard greens",
+      "beef",
+      "onion",
+      "garlic",
+      "ginger",
+      "oil"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Pide (Turkish Flatbread)",
+    "category": "Turkish",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 420,
+    "protein_g": 22,
+    "carbs_g": 52,
+    "fat_g": 13,
+    "fiber_g": 2,
+    "ingredients": [
+      "flatbread dough",
+      "ground lamb",
+      "tomato",
+      "pepper",
+      "egg"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Borek (Turkish Pastry)",
+    "category": "Turkish",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 12,
+    "carbs_g": 28,
+    "fat_g": 18,
+    "fiber_g": 2,
+    "ingredients": [
+      "phyllo dough",
+      "feta cheese",
+      "spinach",
+      "egg",
+      "butter"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Manti (Turkish Dumplings)",
+    "category": "Turkish",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 18,
+    "carbs_g": 44,
+    "fat_g": 14,
+    "fiber_g": 2,
+    "ingredients": [
+      "pasta dough",
+      "ground beef",
+      "onion",
+      "yogurt",
+      "tomato sauce"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Cacik (Turkish Yogurt Dip)",
+    "category": "Turkish",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 80,
+    "protein_g": 5,
+    "carbs_g": 6,
+    "fat_g": 4,
+    "fiber_g": 0,
+    "ingredients": [
+      "yogurt",
+      "cucumber",
+      "garlic",
+      "dill",
+      "olive oil",
+      "mint"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Baklava (2 pieces)",
+    "category": "Turkish",
+    "serving_size": 80,
+    "serving_unit": "g",
+    "calories": 290,
+    "protein_g": 4,
+    "carbs_g": 38,
+    "fat_g": 14,
+    "fiber_g": 1,
+    "ingredients": [
+      "phyllo dough",
+      "walnuts",
+      "butter",
+      "honey",
+      "sugar syrup"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Banh Cuon (Steamed Rice Rolls)",
+    "category": "Vietnamese",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 14,
+    "carbs_g": 38,
+    "fat_g": 7,
+    "fiber_g": 1,
+    "ingredients": [
+      "rice flour",
+      "ground pork",
+      "wood ear mushroom",
+      "shallots",
+      "fish sauce"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Bo Luc Lac (Shaking Beef)",
+    "category": "Vietnamese",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 28,
+    "carbs_g": 8,
+    "fat_g": 26,
+    "fiber_g": 1,
+    "ingredients": [
+      "beef tenderloin",
+      "garlic",
+      "soy sauce",
+      "oyster sauce",
+      "onion"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Che Ba Mau (Three Color Dessert)",
+    "category": "Vietnamese",
+    "serving_size": 300,
+    "serving_unit": "ml",
+    "calories": 220,
+    "protein_g": 4,
+    "carbs_g": 48,
+    "fat_g": 2,
+    "fiber_g": 3,
+    "ingredients": [
+      "mung beans",
+      "red beans",
+      "pandan jelly",
+      "coconut milk",
+      "sugar"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Ceviche (Peruvian)",
+    "category": "Latin American",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 24,
+    "carbs_g": 12,
+    "fat_g": 4,
+    "fiber_g": 2,
+    "ingredients": [
+      "fish",
+      "lime juice",
+      "red onion",
+      "cilantro",
+      "chili",
+      "sweet potato"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Lomo Saltado (Peruvian Stir-Fry)",
+    "category": "Latin American",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 420,
+    "protein_g": 28,
+    "carbs_g": 38,
+    "fat_g": 16,
+    "fiber_g": 3,
+    "ingredients": [
+      "beef",
+      "french fries",
+      "tomato",
+      "onion",
+      "soy sauce",
+      "rice"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Chicken Curry (Punjabi)",
+    "category": "Indian Curries",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 28,
+    "carbs_g": 12,
+    "fat_g": 18,
+    "fiber_g": 2,
+    "ingredients": [
+      "chicken",
+      "tomato",
+      "onion",
+      "yogurt",
+      "ginger",
+      "garlic",
+      "spices",
+      "oil"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Aloo Matar (Potato Pea Curry)",
+    "category": "Indian Curries",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 230,
+    "protein_g": 6,
+    "carbs_g": 34,
+    "fat_g": 8,
+    "fiber_g": 5,
+    "ingredients": [
+      "potato",
+      "peas",
+      "tomato",
+      "onion",
+      "cumin",
+      "spices",
+      "oil"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Methi Malai Paneer",
+    "category": "Indian Curries",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 16,
+    "carbs_g": 14,
+    "fat_g": 28,
+    "fiber_g": 2,
+    "ingredients": [
+      "paneer",
+      "fenugreek leaves",
+      "cream",
+      "onion",
+      "cashews",
+      "spices"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Bulalo (Beef Bone Marrow Soup)",
+    "category": "Filipino",
+    "serving_size": 500,
+    "serving_unit": "ml",
+    "calories": 420,
+    "protein_g": 32,
+    "carbs_g": 14,
+    "fat_g": 26,
+    "fiber_g": 2,
+    "ingredients": [
+      "beef shank",
+      "bone marrow",
+      "corn",
+      "cabbage",
+      "peppercorn",
+      "fish sauce"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Giniling (Filipino Ground Pork)",
+    "category": "Filipino",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 310,
+    "protein_g": 22,
+    "carbs_g": 16,
+    "fat_g": 18,
+    "fiber_g": 2,
+    "ingredients": [
+      "ground pork",
+      "potato",
+      "carrot",
+      "bell pepper",
+      "tomato",
+      "soy sauce"
+    ],
+    "nova_group": 2
   }
 ]
