@@ -42,7 +42,7 @@ final class IntentRoutingEval: XCTestCase {
     static let systemPrompt = """
     Health app. Reply JSON tool call or short text. Fix typos, word numbers, slang — understand messy input.
     Tools: log_food(name,servings?,calories?,protein?,carbs?,fat?) food_info(query) log_weight(value,unit?) weight_info(query?) start_workout(name?) log_activity(name,duration?) exercise_info(query?) sleep_recovery(period?) mark_supplement(name) supplements() set_goal(target,unit?) delete_food(query?) body_comp() glucose() biomarkers() navigate_to(screen)
-    RULES: NEVER generate health data from memory — ALWAYS call a tool. "calories in X" → food_info (NOT log_food). Use log_food only when user ate/had/logged. "daily summary"/"weekly summary" → food_info. "weight trend"/"weight history" → weight_info. "body fat/lean mass/DEXA/body composition" → body_comp. "blood sugar/glucose" → glucose. "lab results/blood work/biomarkers/cholesterol" → biomarkers. "go to [screen]"/"open [screen]" → navigate_to. supplements() queries supplement tracking — ALWAYS call supplements() for any supplement status/history question, NEVER respond with text. mark_supplement(name) logs intake when user says they TOOK/HAD something.
+    RULES: NEVER generate health data from memory — ALWAYS call a tool. "calories in X" → food_info (NOT log_food). Use log_food only when user ate/had/logged. "log lunch"/"log breakfast"/"log dinner" alone (no food named) → ask what they had, do NOT call log_food. "daily summary"/"weekly summary" → food_info. "weight trend"/"weight history" → weight_info. "body fat/lean mass/DEXA/body composition" → body_comp. "blood sugar/glucose" → glucose. "lab results/blood work/biomarkers/cholesterol" → biomarkers. "go to [screen]"/"open [screen]" → navigate_to. supplements() queries supplement tracking — ALWAYS call supplements() for any supplement status/history question, NEVER respond with text. mark_supplement(name) logs intake when user says they TOOK/HAD something. HRV/heart rate variability → sleep_recovery.
     "daily summary"→{"tool":"food_info","query":"daily summary"}
     "weekly summary"→{"tool":"food_info","query":"weekly summary"}
     "lab results"→{"tool":"biomarkers"}
@@ -76,6 +76,7 @@ final class IntentRoutingEval: XCTestCase {
     "how's my blood sugar"→{"tool":"glucose"}
     "show my biomarkers"→{"tool":"biomarkers"}
     "how'd I sleep"→{"tool":"sleep_recovery"}
+    "my hrv today"→{"tool":"sleep_recovery","query":"hrv"}
     "how's my muscle recovery"→{"tool":"exercise_info","query":"muscle recovery"}
     "set my goal to one sixty"→{"tool":"set_goal","target":"160","unit":"lbs"}
     "delete last"→{"tool":"delete_food"}
@@ -93,6 +94,7 @@ final class IntentRoutingEval: XCTestCase {
     "i just love breakfast"→That's great! What did you have?
     "i love eating healthy"→Nice! Want to log something?
     If chat context shows "What did you have for lunch?" and user says "rice and dal"→{"tool":"log_food","name":"rice, dal"}
+    If chat context shows sleep data and user says "what about last week"→{"tool":"sleep_recovery","period":"week"}
     JSON when you have enough info. Ask follow-up if details missing. Short text for chat.
     """
 
@@ -259,6 +261,12 @@ final class IntentRoutingEval: XCTestCase {
         await assertRoutes("grabbed a coffee", to: "log_food")
         await assertRoutes("snacked on almonds", to: "log_food")
         await assertRoutes("breakfast was 2 idlis", to: "log_food")
+        // Slang / casual
+        await assertRoutes("just had some roti with sabzi", to: "log_food")
+        await assertRoutes("my dinner was pasta", to: "log_food")
+        await assertRoutes("finished a bowl of oats", to: "log_food")
+        // Implicit past tense
+        await assertRoutes("ate at chipotle for lunch", to: "log_food")
     }
 
     // MARK: - Navigation (extended screens)
@@ -280,8 +288,15 @@ final class IntentRoutingEval: XCTestCase {
     }
 
     func testMultiTurn_followUp() async {
-        let history = "User: log 2 eggs\nAssistant: Logged 2 eggs (148 cal)"
-        await assertRoutes("also add toast", to: "log_food", history: history)
+        let eggHistory = "User: log 2 eggs\nAssistant: Logged 2 eggs (148 cal)"
+        await assertRoutes("also add toast", to: "log_food", history: eggHistory)
+        await assertRoutes("and a coffee", to: "log_food", history: eggHistory)
+
+        let weightHistory = "User: I weigh 74 kg\nAssistant: Logged weight: 74 kg"
+        await assertRoutes("how's my progress", to: "weight_info", history: weightHistory)
+
+        let sleepHistory = "User: how'd I sleep\nAssistant: You slept 7h 20m last night."
+        await assertRoutes("what about last week", to: "sleep_recovery", history: sleepHistory)
     }
 
     // MARK: - Sleep (extended edge cases: slang, implicit, messy)
@@ -300,6 +315,9 @@ final class IntentRoutingEval: XCTestCase {
         await assertRoutes("set my goal to 150 lbs", to: "set_goal")
         await assertRoutes("change my weight goal to 70 kg", to: "set_goal")
         await assertRoutes("I want to reach 165", to: "set_goal")
+        // Implicit phrasing
+        await assertRoutes("my target is 68 kg", to: "set_goal")
+        await assertRoutes("my goal weight is 160 pounds", to: "set_goal")
     }
 
     // MARK: - Ambiguous (should ask, not blindly log)
