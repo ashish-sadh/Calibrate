@@ -14,7 +14,7 @@ struct BehaviorInsight: Sendable {
 enum BehaviorInsightService {
 
     /// Compute all available insights from existing data. Returns 0-4 insights.
-    static func computeInsights(sleepHistory: [(date: Date, hours: Double)] = []) -> [BehaviorInsight] {
+    static func computeInsights(sleepHistory: [(date: Date, hours: Double)] = [], recentAppleWorkouts: [Date] = []) -> [BehaviorInsight] {
         var insights: [BehaviorInsight] = []
         if let workout = workoutFrequencyInsight() { insights.append(workout) }
         if let protein = proteinAdherenceInsight() { insights.append(protein) }
@@ -27,11 +27,11 @@ enum BehaviorInsightService {
 
     /// Urgent, actionable alerts — things that need attention right now.
     /// Different from insights (which are correlations over time).
-    static func computeProactiveAlerts() -> [BehaviorInsight] {
+    static func computeProactiveAlerts(recentAppleWorkouts: [Date] = []) -> [BehaviorInsight] {
         var alerts: [BehaviorInsight] = []
         if let protein = proteinStreakAlert() { alerts.append(protein) }
         if let supplement = supplementGapAlert() { alerts.append(supplement) }
-        if let workout = workoutConsistencyAlert() { alerts.append(workout) }
+        if let workout = workoutConsistencyAlert(recentAppleWorkouts: recentAppleWorkouts) { alerts.append(workout) }
         if let logging = loggingGapAlert() { alerts.append(logging) }
         return alerts
     }
@@ -50,11 +50,12 @@ enum BehaviorInsightService {
             guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: Date()) else { break }
             let dateStr = DateFormatters.dateOnly.string(from: date)
             guard let nutrition = try? db.fetchDailyNutrition(for: dateStr),
-                  nutrition.calories > 200 else { break }  // no data = can't judge
+                  nutrition.calories > 200,
+                  nutrition.proteinG > 0 else { break }  // no logging or no protein data = can't judge
             if nutrition.proteinG < targets.proteinG * 0.8 {
                 missedStreak += 1
             } else {
-                break  // streak broken
+                break
             }
         }
 
@@ -101,29 +102,30 @@ enum BehaviorInsightService {
             isPositive: false)
     }
 
-    /// Alert when no workouts logged in 5+ days.
-    private static func workoutConsistencyAlert() -> BehaviorInsight? {
+    /// Alert when no workouts logged in 5+ days and no Apple Health workouts in that window.
+    private static func workoutConsistencyAlert(recentAppleWorkouts: [Date] = []) -> BehaviorInsight? {
         let calendar = Calendar.current
         guard let fiveDaysAgo = calendar.date(byAdding: .day, value: -5, to: Date()) else { return nil }
-        let dateStr = DateFormatters.dateOnly.string(from: fiveDaysAgo)
 
-        // Check if any workouts exist in the last 5 days
+        // Apple Health workout in the window → no alert
+        if recentAppleWorkouts.contains(where: { $0 >= fiveDaysAgo }) { return nil }
+
+        // Drift-logged workouts
         guard let recentWorkouts = try? WorkoutService.fetchWorkouts(limit: 1),
               let latest = recentWorkouts.first else {
             return nil // no workout history at all — don't nag new users
         }
 
-        // Compare latest workout date to threshold
+        let dateStr = DateFormatters.dateOnly.string(from: fiveDaysAgo)
         guard latest.date < dateStr else { return nil }
 
-        // Count days since last workout
         let latestDate = DateFormatters.dateOnly.date(from: latest.date) ?? fiveDaysAgo
         let daysSince = calendar.dateComponents([.day], from: latestDate, to: Date()).day ?? 5
 
         return BehaviorInsight(
             icon: "figure.walk",
             title: "No workouts recently",
-            detail: "\(daysSince) days since your last workout. Even a short session helps maintain consistency.",
+            detail: "\(daysSince) days since your last logged workout. Even a short session helps.",
             isPositive: false)
     }
 

@@ -23,6 +23,7 @@ final class DashboardViewModel {
     var isHealthKitAvailable: Bool = false
     // Apple Health Workouts
     var todayWorkouts: [HealthKitService.HealthWorkout] = []
+    var recentAppleWorkoutDates: [Date] = []
     // Recovery
     var recoveryScore: Int = 0
     var hrvMs: Double = 0
@@ -119,6 +120,7 @@ final class DashboardViewModel {
             }
             steps = (try? await hkService.fetchSteps(for: Date())) ?? 0
             todayWorkouts = (try? await hkService.fetchWorkouts(for: Date())) ?? []
+            recentAppleWorkoutDates = ((try? await hkService.fetchRecentWorkouts(days: 7)) ?? []).map { $0.date }
             sleepHours = (try? await hkService.fetchSleepHours(for: Date())) ?? 0
             hrvMs = (try? await hkService.fetchHRV(for: Date())) ?? 0
             restingHR = (try? await hkService.fetchRestingHeartRate(for: Date())) ?? 0
@@ -142,6 +144,6 @@ final class DashboardViewModel {
 
         // Compute behavior insights (after HealthKit so sleep data is available)
         behaviorInsights = BehaviorInsightService.computeInsights(sleepHistory: sleepHist)
-        proactiveAlerts = BehaviorInsightService.computeProactiveAlerts()
+        proactiveAlerts = BehaviorInsightService.computeProactiveAlerts(recentAppleWorkouts: recentAppleWorkoutDates)
     }
 }
