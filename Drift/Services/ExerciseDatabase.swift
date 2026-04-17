@@ -11,6 +11,8 @@ enum ExerciseDatabase {
         let equipment: String
         let category: String
         let level: String
+        var imageUrl: String? = nil
+        var youtubeUrl: String? = nil
     }
 
     nonisolated(unsafe) private static var _exercises: [ExerciseInfo]?

@@ -20,10 +20,8 @@ struct TemplatePreviewSheet: View {
                             NavigationLink {
                                 ExerciseDetailView(exerciseName: ex.name, info: ExerciseDatabase.info(for: ex.name))
                             } label: {
-                                HStack {
-                                    Text("W").font(.caption2.weight(.bold)).foregroundStyle(Theme.fatYellow)
-                                        .padding(.horizontal, 3).padding(.vertical, 1)
-                                        .background(Theme.fatYellow.opacity(0.2), in: RoundedRectangle(cornerRadius: 3))
+                                HStack(spacing: 8) {
+                                    ExerciseThumbnail(info: ExerciseDatabase.info(for: ex.name), size: 40)
                                     VStack(alignment: .leading, spacing: 1) {
                                         Text(ex.name).font(.subheadline)
                                         if let notes = ex.notes { Text(notes).font(.caption2).foregroundStyle(.secondary).italic() }
@@ -42,8 +40,8 @@ struct TemplatePreviewSheet: View {
                             NavigationLink {
                                 ExerciseDetailView(exerciseName: ex.name, info: ExerciseDatabase.info(for: ex.name))
                             } label: {
-                                HStack {
-                                    Text("\(i + 1)").font(.caption.weight(.bold)).foregroundStyle(.secondary).frame(width: 20)
+                                HStack(spacing: 8) {
+                                    ExerciseThumbnail(info: ExerciseDatabase.info(for: ex.name), size: 40)
                                     VStack(alignment: .leading, spacing: 1) {
                                         Text(ex.name).font(.subheadline)
                                         HStack(spacing: 4) {

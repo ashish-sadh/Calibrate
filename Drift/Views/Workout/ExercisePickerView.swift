@@ -124,24 +124,28 @@ struct ExercisePickerView: View {
     }
 
     private func exerciseRow(name: String, bodyPart: String, equipment: String? = nil) -> some View {
-        Button { onSelect(name); dismiss() } label: {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack {
-                    if favs.contains(name) {
-                        Image(systemName: "star.fill").font(.caption2).foregroundStyle(Theme.fatYellow)
+        let info = ExerciseDatabase.info(for: name)
+        return Button { onSelect(name); dismiss() } label: {
+            HStack(spacing: 10) {
+                ExerciseThumbnail(info: info, size: 44)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack {
+                        if favs.contains(name) {
+                            Image(systemName: "star.fill").font(.caption2).foregroundStyle(Theme.fatYellow)
+                        }
+                        Text(name).font(.subheadline)
+                        Spacer()
+                        if let lastW = try? WorkoutService.lastWeight(for: name) {
+                            Text("\(Int(Preferences.weightUnit.convertFromLbs(lastW))) \(Preferences.weightUnit.displayName)").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                        }
                     }
-                    Text(name).font(.subheadline)
-                    Spacer()
-                    if let lastW = try? WorkoutService.lastWeight(for: name) {
-                        Text("\(Int(Preferences.weightUnit.convertFromLbs(lastW))) \(Preferences.weightUnit.displayName)").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
-                    }
-                }
-                HStack(spacing: 4) {
-                    if !bodyPart.isEmpty {
-                        muscleChip(bodyPart)
-                    }
-                    if let equipment, !equipment.isEmpty && equipment.lowercased() != "other" {
-                        equipmentChip(equipment)
+                    HStack(spacing: 4) {
+                        if !bodyPart.isEmpty {
+                            muscleChip(bodyPart)
+                        }
+                        if let equipment, !equipment.isEmpty && equipment.lowercased() != "other" {
+                            equipmentChip(equipment)
+                        }
                     }
                 }
             }

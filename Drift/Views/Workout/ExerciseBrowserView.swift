@@ -1,5 +1,50 @@
 import SwiftUI
 
+// MARK: - Exercise Thumbnail
+
+struct ExerciseThumbnail: View {
+    let info: ExerciseDatabase.ExerciseInfo?
+    let size: CGFloat
+
+    var body: some View {
+        Group {
+            if let urlStr = info?.imageUrl, let url = URL(string: urlStr) {
+                AsyncImage(url: url) { phase in
+                    if let image = phase.image {
+                        image.resizable().aspectRatio(contentMode: .fill)
+                    } else {
+                        fallback
+                    }
+                }
+            } else {
+                fallback
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(RoundedRectangle(cornerRadius: size * 0.18))
+    }
+
+    private var fallback: some View {
+        Image(systemName: bodyPartIcon(info?.bodyPart ?? ""))
+            .font(.system(size: size * 0.38))
+            .foregroundStyle(Theme.accent)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Theme.accent.opacity(0.1))
+    }
+
+    private func bodyPartIcon(_ bodyPart: String) -> String {
+        switch bodyPart.lowercased() {
+        case "chest": return "figure.strengthtraining.traditional"
+        case "back": return "figure.rowing"
+        case "legs": return "figure.run"
+        case "shoulders": return "figure.boxing"
+        case "arms": return "figure.cooldown"
+        case "core": return "figure.core.training"
+        default: return "figure.mixed.cardio"
+        }
+    }
+}
+
 // MARK: - Exercise Browser (873 exercises)
 
 struct ExerciseBrowserView: View {
@@ -44,16 +89,19 @@ struct ExerciseBrowserView: View {
                         NavigationLink {
                             ExerciseDetailView(exerciseName: ex.name, info: ex)
                         } label: {
-                            VStack(alignment: .leading, spacing: 5) {
-                                Text(ex.name).font(.subheadline)
-                                HStack(spacing: 4) {
-                                    muscleChip(ex.bodyPart)
-                                    if !ex.equipment.isEmpty && ex.equipment.lowercased() != "other" {
-                                        equipmentChip(ex.equipment)
-                                    }
-                                    if !ex.primaryMuscles.isEmpty {
-                                        Text(ex.primaryMuscles.prefix(2).map(\.capitalized).joined(separator: ", "))
-                                            .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                            HStack(spacing: 10) {
+                                ExerciseThumbnail(info: ex, size: 52)
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text(ex.name).font(.subheadline)
+                                    HStack(spacing: 4) {
+                                        muscleChip(ex.bodyPart)
+                                        if !ex.equipment.isEmpty && ex.equipment.lowercased() != "other" {
+                                            equipmentChip(ex.equipment)
+                                        }
+                                        if !ex.primaryMuscles.isEmpty {
+                                            Text(ex.primaryMuscles.prefix(2).map(\.capitalized).joined(separator: ", "))
+                                                .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                                        }
                                     }
                                 }
                             }
@@ -144,6 +192,19 @@ struct ExerciseDetailView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
+                // Hero image
+                if let info, let urlStr = info.imageUrl, let url = URL(string: urlStr) {
+                    AsyncImage(url: url) { phase in
+                        if let image = phase.image {
+                            image.resizable().aspectRatio(contentMode: .fill)
+                        } else {
+                            Color.clear
+                        }
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 200, maxHeight: 200)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                }
+
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
                         Text(exerciseName).font(.title3.weight(.bold))
@@ -163,6 +224,16 @@ struct ExerciseDetailView: View {
                             detailTag(info.bodyPart, icon: "figure.strengthtraining.traditional", color: Theme.accent)
                             detailTag(info.equipment, icon: "wrench.and.screwdriver", color: .secondary)
                             detailTag(info.level.capitalized, icon: "chart.bar", color: .secondary)
+                        }
+
+                        if let youtubeUrl = info.youtubeUrl, let url = URL(string: youtubeUrl) {
+                            Link(destination: url) {
+                                Label("Form Tutorial", systemImage: "play.circle.fill")
+                                    .font(.caption.weight(.semibold))
+                                    .padding(.horizontal, 10).padding(.vertical, 6)
+                                    .background(Color.red.opacity(0.12), in: Capsule())
+                                    .foregroundStyle(.red)
+                            }
                         }
 
                         if !info.primaryMuscles.isEmpty {
