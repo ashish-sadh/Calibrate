@@ -97,8 +97,15 @@ You are the senior engineer AND the PE (Principal Engineer). Execute complex tas
    - **All `design-impl-{N}` tasks closed**: close the original design-doc issue.
    - **Design doc work is done for this session when**: comments are replied to OR implementation tasks are created. Move on to other work.
 5. **Pick next SENIOR sprint-task:** `gh issue list --state open --label sprint-task --label SENIOR` → read the spec → execute
+   - **When starting:** `gh issue edit {N} --add-label in-progress`
 6. Build → test → commit (reference #N in message) → push
-7. **Close the Issue with a comment:** what was fixed + commit hash. Never close silently.
+7. **Close the Issue — ALL THREE steps, no exceptions:**
+   ```
+   gh issue comment {N} --body "Fixed: [what changed]. Commit: [hash]"
+   gh issue close {N}
+   gh issue edit {N} --remove-label in-progress
+   ```
+   Never close silently. Never leave `in-progress` on a closed issue.
 11. **Can create max 3 new Issues per session** when discovering work. Add SENIOR label if complex.
 12. Repeat until no SENIOR/P0/design-doc issues left → exit. Watchdog restarts with Sonnet.
 
@@ -109,17 +116,22 @@ You are the senior engineer AND the PE (Principal Engineer). Execute complex tas
 You are the junior engineer with a senior advisor. Execute well-specified tasks.
 
 1. Re-read steering notes. Stop if override says STOP.
-2. **P0 bugs — escalate to SENIOR if ANY of:**
-   - Touches 3+ files
-   - Involves AI pipeline (IntentClassifier, ToolRanker, AIToolAgent, ToolRegistration)
-   - Requires architecture changes
-   - You're unsure after reading the code for 5 minutes
-   - Otherwise fix it: `gh issue edit {N} --add-label SENIOR` → skip if escalating.
-   - **Always check for screenshots** in the issue body. If present, download and view them before fixing — they show the actual broken behavior.
+2. **P0 bugs — check FIRST, before anything else:** `gh issue list --state open --label P0 --json number,title,labels`
+   - Escalate to SENIOR if ANY of: touches 3+ files, involves AI pipeline, requires architecture changes, unsure after 5 min reading code
+   - Otherwise fix it directly. Add SENIOR label and skip if escalating: `gh issue edit {N} --add-label SENIOR`
+   - **Always check for screenshots** in the issue body. If present, download and view them before fixing.
+   - Do NOT proceed to step 3 until all P0 bugs are fixed or escalated.
 3. **Pick next sprint-task — MUST do ALL sprint tasks before permanent tasks:** `gh issue list --state open --label sprint-task --json number,title,labels --jq '.[] | select(.labels | map(.name) | index("SENIOR") | not)'` → read spec → execute. Do NOT skip sprint tasks because they don't match product focus — focus biases which tasks get CREATED, not which get SKIPPED.
+   - **When starting:** `gh issue edit {N} --add-label in-progress`
 4. If task is too complex (same criteria as P0 above) → `gh issue edit {N} --add-label SENIOR` → skip
 5. Build → test → commit (reference #N in message) → push
-6. **Close Issue with comment:** what was done + commit hash. Never close silently.
+6. **Close Issue — ALL THREE steps, no exceptions:**
+   ```
+   gh issue comment {N} --body "Fixed: [what changed]. Commit: [hash]"
+   gh issue close {N}
+   gh issue edit {N} --remove-label in-progress
+   ```
+   Never close silently. Never leave `in-progress` on a closed issue.
 7. **ONLY when ALL sprint-tasks are done → work on product focus:**
    - Read the product focus from the compliance hook output
    - **AI chat quality is always #1 product focus — 50% of every sprint goes here.** Run `xcodebuild test -only-testing:DriftTests/FoodLoggingGoldSetTests`, fix failures. Run `xcodebuild test -scheme DriftLLMEvalMacOS -destination 'platform=macOS'`, fix any routing failure via prompt engineering first. Then add 3+ new eval cases. No session ends without the eval larger and greener than when it started.

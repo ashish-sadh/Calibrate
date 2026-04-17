@@ -144,6 +144,12 @@ final class DashboardViewModel {
 
         // Compute behavior insights (after HealthKit so sleep data is available)
         behaviorInsights = BehaviorInsightService.computeInsights(sleepHistory: sleepHist)
-        proactiveAlerts = BehaviorInsightService.computeProactiveAlerts(recentAppleWorkouts: recentAppleWorkoutDates)
+
+        // Only update alerts if content changed — loadToday() fires frequently (appear, 3min loop,
+        // pull-to-refresh) and unchanged alerts should not re-trigger SwiftUI diffing/animation.
+        let newAlerts = BehaviorInsightService.computeProactiveAlerts(recentAppleWorkouts: recentAppleWorkoutDates)
+        if newAlerts.map(\.title) != proactiveAlerts.map(\.title) {
+            proactiveAlerts = newAlerts
+        }
     }
 }
