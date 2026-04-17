@@ -304,7 +304,7 @@ extension AIChatViewModel {
     // MARK: - Intent Handlers
 
     private func handleConfirmation(_ lower: String) -> Bool {
-        guard lower == "yes" || lower == "yeah" || lower == "yep" || lower == "confirm" else { return false }
+        guard lower == "yes" || lower == "yeah" || lower == "yep" || lower == "confirm" || lower == "sure" else { return false }
         guard let lastAssistant = messages.last(where: { $0.role == .assistant }),
               lastAssistant.text.contains("Log") && (lastAssistant.text.contains("Say yes") || lastAssistant.text.contains("Say 'yes'")) else { return false }
 

@@ -177,7 +177,8 @@ final class SpeechRecognitionService: @unchecked Sendable {
     private func startSegment(
         recognizer: SFSpeechRecognizer,
         supportsOnDevice: Bool,
-        onTranscript: @escaping @MainActor (String) -> Void
+        onTranscript: @escaping @MainActor (String) -> Void,
+        retryCount: Int = 0
     ) {
         guard recordingState == .recording else { return }
 
@@ -229,12 +230,18 @@ final class SpeechRecognitionService: @unchecked Sendable {
                     self.recognitionTask?.cancel()
                     self.recognitionTask = nil
                     self.startSegment(recognizer: unsafeRec, supportsOnDevice: supportsOnDevice, onTranscript: onTranscript)
-                } else if error != nil {
-                    let desc = error?.localizedDescription ?? ""
-                    if desc.contains("203") || desc.contains("no speech") {
-                        self.recognitionTask?.cancel()
-                        self.recognitionTask = nil
-                        self.startSegment(recognizer: unsafeRec, supportsOnDevice: supportsOnDevice, onTranscript: onTranscript)
+                } else if let error {
+                    let desc = error.localizedDescription
+                    self.recognitionTask?.cancel()
+                    self.recognitionTask = nil
+                    // 203 / "no speech" are normal pauses — always restart
+                    // Other errors: retry up to 3 times, then auto-send what we have
+                    let isNormalPause = desc.contains("203") || desc.contains("no speech")
+                    if isNormalPause || retryCount < 3 {
+                        self.startSegment(recognizer: unsafeRec, supportsOnDevice: supportsOnDevice,
+                                          onTranscript: onTranscript, retryCount: isNormalPause ? 0 : retryCount + 1)
+                    } else {
+                        self.autoSend(text: self.transcript)
                     }
                 }
             }

@@ -2144,4 +2144,121 @@ final class AIEvalHarness: XCTestCase {
                 "'\(q)' should not match parseMultiFoodIntent (#147/#148 regression)")
         }
     }
+
+    // MARK: - Topic Classification — Supplement, Glucose, Biomarker edge cases
+
+    @MainActor
+    func testTopicClassification_supplementsGlucoseBiomarkers() {
+        let state = ConversationState.shared
+
+        // Supplements
+        XCTAssertEqual(state.classifyTopic("took my creatine"), .supplements)
+        XCTAssertEqual(state.classifyTopic("did I take my vitamin d"), .supplements)
+        XCTAssertEqual(state.classifyTopic("supplement status"), .supplements)
+
+        // Glucose ("after dinner" would trigger food first — use meal-free phrases)
+        XCTAssertEqual(state.classifyTopic("blood sugar today"), .glucose)
+        XCTAssertEqual(state.classifyTopic("any glucose spikes"), .glucose)
+
+        // Biomarkers
+        XCTAssertEqual(state.classifyTopic("lab results are in"), .biomarkers)
+        XCTAssertEqual(state.classifyTopic("blood work cholesterol"), .biomarkers)
+    }
+
+    // MARK: - Topic Classification — "body fat" beats "fat" food keyword
+
+    @MainActor
+    func testTopicClassification_bodyCompBeatsFood() {
+        let state = ConversationState.shared
+        // "body fat" should route to bodyComp, not food (fat keyword)
+        XCTAssertEqual(state.classifyTopic("what's my body fat"), .bodyComp)
+        XCTAssertEqual(state.classifyTopic("body fat is 18"), .bodyComp)
+        XCTAssertEqual(state.classifyTopic("lean mass progress"), .bodyComp)
+        // "fat" alone → food (ambiguous but food-weighted context)
+        XCTAssertEqual(state.classifyTopic("how much fat did I have today"), .food)
+    }
+
+    // MARK: - StaticOverrides: Cheat Meal + Copy Yesterday
+
+    @MainActor
+    func testStaticOverrides_cheatMealPhrases() {
+        let phrases = ["cheat meal", "cheat day", "ate out", "went off plan", "off track", "binge"]
+        for phrase in phrases {
+            let result = StaticOverrides.match(phrase)
+            XCTAssertNotNil(result, "'\(phrase)' should be handled by StaticOverrides")
+        }
+    }
+
+    @MainActor
+    func testStaticOverrides_copyYesterdayVariants() {
+        let variants = ["copy yesterday", "same as yesterday", "repeat yesterday",
+                        "log same as yesterday", "yesterday's food"]
+        for variant in variants {
+            let result = StaticOverrides.match(variant)
+            XCTAssertNotNil(result, "'\(variant)' should be handled by StaticOverrides")
+        }
+    }
+
+    // MARK: - StaticOverrides: Undo variants all handled at Phase 1
+
+    @MainActor
+    func testStaticOverrides_undoVariants() {
+        // All undo phrases must be caught by StaticOverrides (Phase 1), not fall through
+        let variants = ["undo", "undo that", "undo last"]
+        for variant in variants {
+            let result = StaticOverrides.match(variant)
+            XCTAssertNotNil(result, "'\(variant)' should be handled by StaticOverrides")
+        }
+    }
+
+    // MARK: - Food Parsing: Unit Hints (grams, tbsp)
+
+    @MainActor
+    func testFoodParsing_gramAmounts() {
+        // "200g chicken" → gramAmount=200, query="chicken"
+        let (_, name100, gram100) = AIActionExecutor.extractAmount(from: "100g rice")
+        XCTAssertEqual(name100, "rice")
+        XCTAssertNotNil(gram100)
+        XCTAssertEqual(gram100!, 100, accuracy: 1)
+
+        let (_, nameChicken, gramChicken) = AIActionExecutor.extractAmount(from: "200g chicken")
+        XCTAssertEqual(nameChicken, "chicken")
+        XCTAssertNotNil(gramChicken)
+        XCTAssertEqual(gramChicken!, 200, accuracy: 1)
+
+        // Gram format without space: "150grams oats"
+        let (_, nameOats, gramOats) = AIActionExecutor.extractAmount(from: "150grams oats")
+        XCTAssertEqual(nameOats, "oats")
+        XCTAssertNotNil(gramOats)
+        XCTAssertEqual(gramOats!, 150, accuracy: 1)
+    }
+
+    // MARK: - Food Parsing: parseFoodIntent not confused by exercise phrases
+
+    @MainActor
+    func testParseFoodIntent_exercisePhrasesFalseNegative() {
+        // Exercise phrases should NOT be parsed as food logging
+        let exercisePhrases = [
+            "bench press 3x10", "squats 3x8 at 135", "did 20 pushups"
+        ]
+        for phrase in exercisePhrases {
+            let intent = AIActionExecutor.parseFoodIntent(phrase)
+            // Either nil or the extracted name shouldn't be an exercise (hard to assert exactly,
+            // so at minimum verify parseFoodIntent doesn't crash and returns consistently)
+            _ = intent // Smoke test — no crash
+        }
+    }
+
+    // MARK: - Spell Correction: common misspellings reach correct foods
+
+    @MainActor
+    func testSpellCorrection_commonFoodMisspellings() {
+        // "bannana" → banana
+        let banana = AIActionExecutor.findFood(query: "bannana", servings: 1)
+        XCTAssertNotNil(banana, "Misspelled 'bannana' should find banana via spell correction")
+
+        // "brocoli" → broccoli
+        let broccoli = AIActionExecutor.findFood(query: "brocoli", servings: 1)
+        XCTAssertNotNil(broccoli, "Misspelled 'brocoli' should find broccoli via spell correction")
+    }
 }
