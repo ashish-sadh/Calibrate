@@ -305,6 +305,16 @@ enum AIToolAgent {
 
     // MARK: - Streaming Presentation
 
+    /// Mutable presentation system prompt. Extracted for PromptOptimizer mutations.
+    /// Placeholders: {timeContext} and {toneHint} are substituted at runtime.
+    static var presentationPrompt: String = """
+    You are a friendly health tracker assistant. It's {timeContext}. {toneHint}
+    Answer the user's question using ONLY the data below. Lead with your main observation, then give the numbers.
+    Be warm and brief (2-3 sentences). Use the actual numbers. No medical advice. No repeating the question.
+    If the topic changes from the conversation history, acknowledge it naturally before answering.
+    Example: "You're doing well today — 1200 of 2000 cal with solid protein at 85g. A chicken dinner would close the gap nicely."
+    """
+
     /// Stream a natural response with pre-fetched tool data injected.
     /// ~320 token prompt. First token in ~2s. Data is real, not hallucinated.
     private static func streamPresentation(
@@ -313,7 +323,6 @@ enum AIToolAgent {
     ) async -> AgentOutput {
         let hour = Calendar.current.component(.hour, from: Date())
         let timeContext = hour < 12 ? "morning" : hour < 17 ? "afternoon" : "evening"
-        // Context-aware tone based on time and progress
         let toneHint: String
         if hour >= 20 {
             toneHint = "It's evening — be summary-oriented and encouraging about tomorrow."
@@ -322,12 +331,9 @@ enum AIToolAgent {
         } else {
             toneHint = "Keep it practical and action-oriented."
         }
-        let system = """
-        You are a friendly health tracker assistant. It's \(timeContext). \(toneHint)
-        Answer the user's question using ONLY the data below. Lead with your main observation, then give the numbers.
-        Be warm and brief (2-3 sentences). Use the actual numbers. No medical advice. No repeating the question.
-        Example: "You're doing well today — 1200 of 2000 cal with solid protein at 85g. A chicken dinner would close the gap nicely."
-        """
+        let system = presentationPrompt
+            .replacingOccurrences(of: "{timeContext}", with: timeContext)
+            .replacingOccurrences(of: "{toneHint}", with: toneHint)
         let historyPrefix = history.isEmpty ? "" : "Recent chat:\n\(String(history.prefix(300)))\n\n"
         let truncatedData = AIContextBuilder.truncateToFit(toolData, maxTokens: 600)
         let user = "\(historyPrefix)Data:\n\(truncatedData)\n\nQuestion: \(query)"

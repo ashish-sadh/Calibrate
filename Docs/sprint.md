@@ -56,6 +56,28 @@ _(pick from Ready)_
 
 **Before picking a task, read `Docs/roadmap.md` → "Now" items in the relevant domain. Work on what advances the current phase.**
 
+### Auto-Research Loop (every sprint — automated, run at sprint start AND end)
+The optimizer finds the best pipeline config, applies it, and pushes if regression-free. See `Docs/ai-autoresearch.md`.
+
+- [ ] **Sprint start — record baseline:**
+  ```
+  xcodebuild test -scheme DriftLLMEvalMacOS -destination 'platform=macOS' \
+    -only-testing:AutoResearchTests/testBaseline
+  ```
+  Record score in sprint notes (routing %, params %, response %, per-category).
+
+- [ ] **Run optimization loop (~40 min, gated):**
+  ```
+  DRIFT_AUTORESEARCH=1 xcodebuild test -scheme DriftLLMEvalMacOS -destination 'platform=macOS' \
+    -only-testing:AutoResearchTests/testAutoResearch
+  ```
+  Auto-applies winner if held-out ≥+1% with zero IntentRoutingEval regressions. Auto-reverts otherwise. Auto-pushes.
+
+- [ ] **Eval enrichment (manual, separate PR):**
+  Add 3–5 new `HardCase` entries to `DriftLLMEvalMacOS/HardEvalSet.swift` (isTrainSet: true).
+  Sources: weakest perCategory from last run, new capability gaps observed in practice.
+  Run `testHardEvalSetSanity` to confirm structure, then commit.
+
 ### LLM Eval Quality Loop (50% of every sprint — non-negotiable)
 The eval is the product's immune system. It must grow every sprint or regressions will silently accumulate.
 

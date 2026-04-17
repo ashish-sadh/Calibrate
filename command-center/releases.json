@@ -1368,6 +1368,25 @@
     ]
   },
   {
+    "build": 132,
+    "date": "2026-04-17T06:45:00-07:00",
+    "description": "Auto-research optimization loop + AI routing fixes + eval hard set",
+    "features": [
+      "Auto-research pipeline optimizer — fixed-budget loop finds best prompt/pipeline config, auto-applies if held-out improves ≥1% with zero regressions, pushes",
+      "HardEvalSet — 100 E2E eval cases across 7 categories: foodRouting, regression, multiTurn, supplement, navigation, contextSwitch, quickReplyPills",
+      "PromptOptimizer — mutation engine for classifier prompt, presentation prompt, StaticOverrides; full pipeline is fair game",
+      "Presentation prompt extracted to static var — enables optimizer mutations without code changes",
+      "Design doc: Docs/ai-autoresearch.md — architecture preserved for future reference",
+      "Sprint integration: auto-research loop added as permanent sprint task"
+    ],
+    "fixes": [
+      "fix(ai): 'a cup of dal' parsing — extractAmount now handles 'a/an + unit + of + food' correctly",
+      "fix(ai): meal re-request in awaitingMealItems — strips 'can you log', 'I had' prefixes before meal keyword detection",
+      "fix(ai): protein shake no longer routes to mark_supplement — classifier prompt hardened",
+      "fix(eval): IntentRoutingEval synced with IntentClassifier prompt + 8 new protein shake / macro intake tests"
+    ]
+  },
+  {
     "build": 128,
     "date": "2026-04-16T10:30:00-07:00",
     "description": "AI chat routing improvements, +60 foods, bug fixes",
