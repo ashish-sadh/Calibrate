@@ -20,8 +20,8 @@ _(pick from Ready)_
 
 ### P0 — AI Chat Quality
 
-- [ ] **#158 LLM-loaded macOS eval: expand routing gold set** — `DriftLLMEvalMacOS` target is wired and builds. Download models (`bash scripts/download-models.sh`), run eval, find any routing failures, fix them in the pipeline (IntentClassifier prompt or validateExtraction). Target: 100% on IntentRoutingEval tests. Run after every IntentClassifier/AIToolAgent change.
-- [ ] **#160 AI chat: expand eval gold set and fix routing gaps** — Run `DriftLLMEvalMacOS` eval. For each failure: fix in IntentClassifier prompt first (preferred), fall back to StaticOverrides only if LLM cannot be taught. Add regression test to IntentRoutingEval.swift. Target 100% routing accuracy. Do NOT grow StaticOverrides unless prompt engineering fails after 2 attempts.
+- [x] **#158 LLM-loaded macOS eval: expand routing gold set** — 100% on all 27 test groups. Commit 7a0fbd0.
+- [x] **#160 AI chat: expand eval gold set and fix routing gaps** — +5 new test groups (delete, exercise edge cases, Indian food slang, health negatives, multi-turn continuations). ~120 cases total (up from ~95). Key learning: Gemma 2B Q4 prompt capacity limit ~1 extra example before supplement/nav routing degrades. Commit 7a0fbd0.
 
 ### P1 — Voice + Features
 
