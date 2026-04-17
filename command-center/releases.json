@@ -1352,6 +1352,22 @@
     ]
   },
   {
+    "build": 131,
+    "date": "2026-04-16T21:30:00-07:00",
+    "description": "Eval gold set expansion +41 cases, voice hardening, food DB to 2,187",
+    "features": [
+      "IntentRoutingEval expanded +41 cases across sleep (slang, HRV, implicit), goal-setting, multi-turn, freeform food, and exercise domains",
+      "Per-component isolated gold sets: IntentClassifierGoldSetTests, FoodSearchGoldSetTests, SmartUnitsGoldSetTests (all deterministic, <1s)",
+      "Food DB 2,167→2,187 (+20 foods)"
+    ],
+    "fixes": [
+      "Voice: error-203 detection hardened — no-speech pauses now always restart segment instead of sometimes auto-sending",
+      "Voice: audio engine leak on fast stop guarded — engine stopped immediately if user cancelled during startup",
+      "Voice: retry on all recognition errors (not just error-203) up to 3 times before auto-sending",
+      "AIChatView.sendMessage extracted to AIChatViewModel — view is now pure SwiftUI, business logic in ViewModel"
+    ]
+  },
+  {
     "build": 128,
     "date": "2026-04-16T10:30:00-07:00",
     "description": "AI chat routing improvements, +60 foods, bug fixes",
