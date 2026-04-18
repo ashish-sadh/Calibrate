@@ -4,6 +4,22 @@ Periodic product + engineering reviews. Every 10 cycles of the self-improvement 
 
 ---
 
+## Review #48 — 2026-04-18 (Cycle 6046)
+
+### Summary
+Since Review #47 (cycle 5374): per-component gold sets shipped (#161 — IntentClassifier 22 cases, FoodSearch 20+, SmartUnits 20+), AIChatView.sendMessage ViewModel extraction complete (#162), FoodTabView ViewModel extraction done (#179), auto-research pipeline optimizer (Karpathy-style HardEvalSet) added, IntentRoutingEval ~100→130 cases, 4 P0 bugs fixed (#170/#171 dal+awaitingMealItems, voice stuck, #182 hallucination), voice filler word stripping, food DB 2,107→2,187. Full report: Docs/reports/review-cycle-6046.md.
+
+### Key Achievement
+Eval infrastructure is now the strongest it's ever been: per-component gates for all three pipeline stages, auto-research optimizer, and 130+ case IntentRoutingEval gold set. Human feedback from cycle 4805 (per-component gold sets) is fully actioned. Architecture is clean: AIChatView and FoodTabView both extracted, only ActiveWorkoutView remains fat.
+
+### Key Concern
+No user-visible AI improvement shipped this sprint — all work was infrastructure. Context window (2048 tokens) is the next real barrier to multi-turn quality. Implicit food intent gap ("had rice" vs "log rice") is a real naturalness gap users hit every session.
+
+### Sprint Plan
+P0: Auto-research baseline (#181) → context window expansion (#176, profile first). P1: Conversation context pass-through (#184). Junior: Implicit intent eval coverage (#183), LLM eval to 175 cases (#177), prompt token audit (#167).
+
+---
+
 ## Review #45 — 2026-04-16 (Cycle 4805)
 
 ### Summary
