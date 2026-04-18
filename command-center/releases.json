@@ -1413,6 +1413,18 @@
     "fixes": []
   },
   {
+    "build": 135,
+    "date": "2026-04-18T12:00:00-07:00",
+    "description": "chore: TestFlight build 135 — eval gold set expansion + sprint 5904 planning",
+    "features": [
+      "LLM eval gold set expanded: non-food negative assertions (exercise instructions, protein-status queries)",
+      "Supplement intent disambiguation: testSupplementSubIntents_MarkVsStatus — mark vs status routing",
+      "Multi-turn food logging reliability: 3-turn breakfast test (oatmeal → banana → black coffee)",
+      "StaticOverrides audit: all 20 rules enumerated and annotated, 0 removals"
+    ],
+    "fixes": []
+  },
+  {
     "build": 133,
     "date": "2026-04-17T11:30:00-07:00",
     "description": "Bug fixes: stuck chat indicator, voice pause losing utterances, spurious protein/workout alerts",
