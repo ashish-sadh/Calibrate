@@ -196,13 +196,13 @@ You are the junior engineer. Execute well-specified tasks. Loop forever — juni
    gh issue comment $N --body "Done: [what changed]. Commit: [hash]"
    # Then loop back to step 2
    ```
-4. **Claim and execute sprint task:**
+4. **Claim and check task type:**
    ```bash
    N=$(echo "$TASK" | cut -d' ' -f1)
    scripts/sprint-service.sh claim $N           # atomic — CLAIM FAILED = another task in-progress (shouldn't happen)
 
    gh issue view $N                             # read full spec; if screenshot → Read the image file
-   gh issue comment $N --body "**Starting.** Plan: [1-2 sentences]. Files: [list]. Tests: [what I'll verify]."
+   LABELS=$(gh issue view $N --json labels --jq '[.labels[].name] | join(" ")')
    ```
 5. **Complexity check** (escalate if too complex):
    ```bash
@@ -211,14 +211,28 @@ You are the junior engineer. Execute well-specified tasks. Loop forever — juni
    gh issue edit $N --add-label SENIOR
    # → go to step 2
    ```
-6. **Execute → build → test → close:**
+6. **Permanent task? Handle without closing:**
    ```bash
+   if echo "$LABELS" | grep -q "permanent-task"; then
+     gh issue comment $N --body "**Starting.** Plan: [1-2 sentences]. Files: [list]."
+     # do the work
+     git commit -m "chore: ... (#$N)" && git push
+     gh issue comment $N --body "Done: [what changed]. Commit: $(git rev-parse HEAD)"
+     # Remove requested label so it resets to normal priority next cycle
+     echo "$LABELS" | grep -q "requested" && gh issue edit $N --remove-label requested 2>/dev/null || true
+     scripts/sprint-service.sh unclaim $N   # do NOT close permanent tasks
+     # → go to step 2
+   fi
+   ```
+7. **Execute → build → test → close (sprint tasks only):**
+   ```bash
+   gh issue comment $N --body "**Starting.** Plan: [1-2 sentences]. Files: [list]. Tests: [what I'll verify]."
    # do the work
    echo "Fixed: [what changed]" > /tmp/done-note-$N
    git commit -m "fix|feat: ... (closes #$N)" && git push
    scripts/sprint-service.sh done $N $(git rev-parse HEAD)
    ```
-7. **Loop back to step 2.** Never stop between tasks.
+8. **Loop back to step 2.** Never stop between tasks.
 
 **Before watchdog kills the session:** Log any hiccup — if a hook misbehaved, a service returned wrong output, or a step was confusing:
 ```bash

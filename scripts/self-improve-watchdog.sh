@@ -193,6 +193,21 @@ start_claude() {
     log "Refreshing sprint state..."
     "$WORK_DIR/scripts/sprint-service.sh" refresh 2>/dev/null || log "Warning: sprint-service refresh failed, using stale state"
 
+    # 0. Resume interrupted planning session (crash recovery — takes priority over all routing)
+    local EXISTING_PLAN
+    EXISTING_PLAN=$(cat "$HOME/drift-state/planning-issue" 2>/dev/null | tr -d '[:space:]')
+    if [[ -n "$EXISTING_PLAN" ]]; then
+        local PLAN_STATE
+        PLAN_STATE=$(gh issue view "$EXISTING_PLAN" --json state --jq '.state' 2>/dev/null || echo "CLOSED")
+        if [[ "$PLAN_STATE" == "OPEN" ]]; then
+            MODEL=$(get_model planning opus)
+            SESSION_TYPE="planning"
+            SESSION_PROMPT="run sprint planning — close Issue #$EXISTING_PLAN when done"
+            log "Resuming interrupted planning (Issue #$EXISTING_PLAN) — $MODEL"
+        fi
+    fi
+
+    if [[ "$SESSION_TYPE" != "planning" ]]; then
     # 1. Planning due?
     if "$WORK_DIR/scripts/sprint-service.sh" planning-due 2>/dev/null; then
         local NOW=$(date +%s)
@@ -205,7 +220,7 @@ start_claude() {
         rm -f "$HOME/drift-state/planning-issue"
         local PLAN_ISSUE=$(gh issue create \
             --title "Sprint Planning — Cycle $CYCLE" \
-            --label sprint-task --label SENIOR --label in-progress \
+            --label planning --label SENIOR --label in-progress \
             --body "## Planning Checklist
 - [ ] Feedback drained — process-feedback.log reviewed, infra issues created
 - [ ] Admin replies — responded to all admin comments on report PRs
@@ -223,13 +238,14 @@ start_claude() {
             SESSION_PROMPT="run sprint planning"
         fi
 
-    # 2. P0s or SENIOR tasks? → senior session
+    # 2. P0s, SENIOR tasks, or unhandled P1/P2 bugs? → senior session
     elif [[ "$("$WORK_DIR/scripts/sprint-service.sh" count --p0 2>/dev/null || echo 0)" -gt 0 ]] || \
-         [[ "$("$WORK_DIR/scripts/sprint-service.sh" count --senior 2>/dev/null || echo 0)" -gt 0 ]]; then
+         [[ "$("$WORK_DIR/scripts/sprint-service.sh" count --senior 2>/dev/null || echo 0)" -gt 0 ]] || \
+         [[ "$("$WORK_DIR/scripts/sprint-service.sh" count --bugs 2>/dev/null || echo 0)" -gt 0 ]]; then
         MODEL=$(get_model senior opus)
         SESSION_TYPE="senior"
         SESSION_PROMPT="execute senior tasks and P0 bugs"
-        log "P0/SENIOR work available — $MODEL"
+        log "P0/SENIOR/bug work available — $MODEL"
 
     # 3. Default: junior (sprint tasks → permanent tasks, loops forever)
     else
@@ -238,6 +254,7 @@ start_claude() {
         SESSION_PROMPT="execute junior tasks"
         log "No P0/SENIOR work — junior ($MODEL)"
     fi
+    fi  # end if not resuming planning
 
     echo "$MODEL" > "$HOME/drift-state/last-model"
     echo "$SESSION_TYPE" > "$HOME/drift-state/cache-session-type"

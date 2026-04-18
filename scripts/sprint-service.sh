@@ -137,7 +137,7 @@ state_file  = sys.argv[2]
 
 try:
     state = json.load(open(state_file))
-except:
+except Exception:
     print("none"); sys.exit(0)
 
 tasks       = state.get("tasks", [])
@@ -301,7 +301,7 @@ try:
         if t["number"] == num:
             t["status"] = "done"; break
     with open(state_file, "w") as f: json.dump(d, f, indent=2)
-except: pass
+except Exception: pass
 PYEOF
 
     echo "Closed #$NUM"
@@ -402,8 +402,15 @@ try:
     elif filt == "--junior":   print(len([t for t in av if has(t,"sprint-task") and not has(t,"SENIOR")]))
     elif filt == "--sprint":   print(len([t for t in av if has(t,"sprint-task")]))
     elif filt == "--permanent":print(len([t for t in av if has(t,"permanent-task")]))
+    elif filt == "--bugs":
+        # P1/P2 bugs not yet approved (no sprint-task) and not already waiting for review
+        def needs_investigation(t):
+            lbls = t.get("labels", [])
+            return ("bug" in lbls and ("P1" in lbls or "P2" in lbls)
+                    and "sprint-task" not in lbls and "needs-review" not in lbls)
+        print(len([t for t in av if needs_investigation(t)]))
     else:                      print(len(av))
-except: print(0)
+except Exception: print(0)
 PYEOF
 }
 
