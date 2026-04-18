@@ -22,6 +22,17 @@ _Override:_ CONTINUE
 
 You are the Product Designer + Principal Engineer. This is a replanning session. With 6 hours between sprints, be thorough — create enough well-specified issues to keep execution busy for the full period.
 
+**RESUME AWARENESS — check before each step if it was already done this cycle:**
+```bash
+CYCLE=$(cat ~/drift-state/cycle-counter 2>/dev/null || echo "0")
+# Review done? Check if review-cycle-{CYCLE} report merged to main this cycle
+git log main --oneline --since="6 hours ago" | grep -q "review-cycle" && REVIEW_DONE=1 || REVIEW_DONE=0
+# Sprint tasks done? Check count from today
+TASKS_TODAY=$(gh issue list --label sprint-task --state open --json createdAt \
+  --jq '[.[] | select(.createdAt > (now - 21600 | strftime("%Y-%m-%dT%H:%M:%SZ")))] | length' 2>/dev/null || echo 0)
+```
+Skip steps already completed. Always re-do admin replies (idempotent). Always re-do sprint-service refresh.
+
 1. **Read persona files:** `Docs/personas/product-designer.md`, `Docs/personas/principal-engineer.md`
 2. **Read product focus:** `gh issue list --state open --label product-focus --json body --jq '.[0].body'`
    - If set: bias sprint tasks toward this focus. P0 bugs, feature requests, and design docs are ALWAYS valid regardless of focus. The focus shapes which new tasks to create and how to prioritize the backlog — it doesn't block existing commitments.
@@ -46,14 +57,14 @@ You are the Product Designer + Principal Engineer. This is a replanning session.
    - `git log --oneline -40` (more history since longer sprint)
    - Review closed issues since last planning: `gh issue list --state closed --label sprint-task --json number,title,closedAt --jq '.[] | select(.closedAt > "LAST_PLAN_DATE")'`
    - Check test count, coverage snapshot, eval results
-8. **Product review — MUST follow template exactly:**
+8. **Product review — skip if REVIEW_DONE=1 (already merged this cycle):**
    - Read both persona files FIRST: `Docs/personas/product-designer.md` and `Docs/personas/principal-engineer.md`
    - Web search ALL competitors (Boostcamp, MFP, Whoop, Strong, MacroFactor) for recent updates
    - Write report using `Docs/reports/REVIEW-TEMPLATE.md` — every section is REQUIRED
    - Filename MUST be `review-cycle-{CYCLE_NUMBER}.md` (e.g., `review-cycle-2855.md`)
    - The report MUST include: Designer Assessment, Engineer Assessment, and The Debate section where personas discuss and disagree
    - Open review PR with `report` label, then merge immediately: `gh pr merge --squash --delete-branch && git checkout main && git pull`
-9. **Create sprint-task Issues (target 8-12 issues for 6h sprint):**
+9. **Create sprint-task Issues — skip if TASKS_TODAY >= 8 (already created this cycle):**
    - For each task: `gh issue create --label sprint-task` (add `--label SENIOR` only for complex/architecture tasks)
    - Include in body: Goal, Files (list specific files to modify), Approach (step-by-step), Edge cases, Tests (specific test cases to write), Acceptance criteria
    - Break large features into multiple Issues — prefer 3 small Issues over 1 big one

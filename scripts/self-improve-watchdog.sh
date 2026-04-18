@@ -451,7 +451,7 @@ while true; do
                     log "Autopilot completed normally. Restarting..."
                     echo "0" > "$CRASH_FILE"
                 else
-                    local CRASHES=$(cat "$CRASH_FILE" 2>/dev/null || echo "0")
+                        CRASHES=$(cat "$CRASH_FILE" 2>/dev/null || echo "0")
                     CRASHES=$((CRASHES + 1))
                     echo "$CRASHES" > "$CRASH_FILE"
                     log "Autopilot CRASHED (no result event). Crash #$CRASHES. Restarting..."
@@ -473,10 +473,8 @@ while true; do
                 # Refresh compliance cache for the PreToolUse hook to read
                 refresh_compliance_cache
                 # P0 interrupt: if a new P0 appears mid-junior-session, restart as senior
-                local CURRENT_TYPE
                 CURRENT_TYPE=$(cat "$HOME/drift-state/cache-session-type" 2>/dev/null || echo "junior")
                 if [[ "$CURRENT_TYPE" == "junior" ]]; then
-                    local NEW_P0
                     NEW_P0=$("$WORK_DIR/scripts/sprint-service.sh" count --p0 2>/dev/null || echo "0")
                     if [[ "$NEW_P0" -gt 0 ]]; then
                         log "New P0 detected mid-junior-session — interrupting to handle P0"
