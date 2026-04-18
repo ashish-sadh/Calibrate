@@ -22,6 +22,18 @@ cached_query() {
   fi
 }
 
+# Reset stale session type — the watchdog writes this just before launching Claude (<10s).
+# If it's older than 2 minutes it's leftover from a previous autonomous session; human
+# sessions should not inherit it and get blocked on planning deliverables.
+SESSION_TYPE_FILE="$HOME/drift-state/cache-session-type"
+if [ -f "$SESSION_TYPE_FILE" ]; then
+  NOW=$(date +%s)
+  MOD=$(stat -f %m "$SESSION_TYPE_FILE" 2>/dev/null || echo "0")
+  if (( NOW - MOD > 120 )); then
+    echo "human" > "$SESSION_TYPE_FILE"
+  fi
+fi
+
 COUNT=$(cat "$COUNTER_FILE" 2>/dev/null || echo "0")
 LAST_REVIEW=$(cat "$LAST_REVIEW_FILE" 2>/dev/null || echo "0")
 NEXT_REVIEW=$((LAST_REVIEW + 10))

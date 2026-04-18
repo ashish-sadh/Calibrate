@@ -88,9 +88,9 @@ if [ "$DRIFT_CONTROL" = "RUN" ]; then
   fi
 fi
 
-# Planning session validation — check deliverables before allowing exit
+# Planning session validation — only for autonomous planning sessions (watchdog sets both)
 SESSION_TYPE=$(cat "$HOME/drift-state/cache-session-type" 2>/dev/null || echo "")
-if [ "$SESSION_TYPE" = "planning" ]; then
+if [ "$SESSION_TYPE" = "planning" ] && [ "$DRIFT_CONTROL" = "RUN" ]; then
   PLAN_ISSUES=""
 
   # Were sprint-task issues created in this session?
