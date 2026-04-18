@@ -1,6 +1,6 @@
 # Sprint Board
 
-Focus: **AI Chat Quality (60%) + Code Architecture (40%).** All eval backlog (#163–#169) shipped. This sprint: carry prompt token audit + multi-stage prompt experiment forward, expand LLM eval toward 175-case milestone, context window experiment, FoodTabView extraction.
+Focus: **AI Chat Quality (60%) + Code Architecture (40%).** Sprint: prompt token audit + multi-stage prompt experiment, expand LLM eval toward 175-case milestone, context window experiment, implicit intent coverage, conversation context pass-through.
 
 ## Regression Gate
 
@@ -30,7 +30,9 @@ _(pick from Ready)_
 
 ### P1 — Junior Tasks
 
-- [ ] **#179 FoodTabView ViewModel extraction** — FoodTabView is still a fat view with business logic. Follow the AIChatView pattern (#162): extract business logic to FoodTabViewModel. This eliminates DDD violations (direct DB calls in view layer). Permanent task.
+- [ ] **#183 AI eval: implicit food intent coverage** — Add 20+ IntentRoutingEval cases for food logging without "log" keyword (natural phrasing: "had rice", "ate oatmeal", "drank a protein shake"). Mix in 5+ negative cases (nutrition queries vs log intent). All must pass at 100%.
+
+- [ ] **#184 AI chat: pass last tool result as context** — When user logs food then asks a follow-up ("how many calories was that?"), pass the last tool result as `[LAST ACTION: ...]` context in the next LLM call. Add 3+ multi-turn eval cases. Token budget must not exceed 2048.
 
 - [ ] **Food DB enrichment: +20 foods** — Target next cuisine gap. Check `Docs/backlog.md` for gaps. Verify macros via reliable source before adding.
 
@@ -123,11 +125,16 @@ Autonomous refactoring. Run `code-improvement.md`. Principles in `Docs/principle
 
 - [x] **Continue file decomposition** — GoalSetupView, LabsAndScans, Sleep, TemplatePreviewSheet extracted. Only 3 files over 700 remain (AIChatView, FoodTabView, ActiveWorkoutView) — these need ViewModel extraction.
 - [x] **AIChatView.sendMessage ViewModel extraction** — sendMessage extracted to AIChatViewModel (AIChatView+MessageHandling.swift, extension AIChatViewModel). 491-line monolith decomposed into 20+ private handlers. AIChatView.swift is now pure SwiftUI view code.
-- [ ] **Deeper refactoring** — FoodTabView and ActiveWorkoutView still fat. Move business logic out of views into ViewModels/Services.
+- [x] **FoodTabView ViewModel extraction** — Done (#179, commit a0390be). ActiveWorkoutView still fat.
+- [ ] **Deeper refactoring** — ActiveWorkoutView still fat. Move business logic out of views into ViewModels/Services.
 - [ ] **DDD violations** — Direct DB calls in views, business logic in UI layer.
 
-## Done (this sprint — cycle 5820→5904)
+## Done (this sprint — cycle 5820→6046)
 
+- [x] **#179 FoodTabView ViewModel extraction** — FoodTabView business logic extracted to FoodTabViewModel, eliminating DDD violations (direct DB calls in view). Commit a0390be.
+- [x] **#180 Food DB +20** — Indian bread, eggs, Indian vegetables, grains, chicken, salads batch. Commit ac2b980.
+- [x] **#182 P0 Bug: AI chat hallucinating food when diary is empty** — Fixed. Commit c978e89.
+- [x] **TestFlight build 136** — Commit 87432e3.
 - [x] **#169 Non-food negative assertions** — Added exercise instruction queries ("how do I do a deadlift", "form tips for squats") and protein-status queries ("am I on track for protein") to FoodLoggingGoldSetTests. Gold set 100%. Cycle 5892.
 - [x] **#168 Supplement intent disambiguation** — Added testSupplementSubIntents_MarkVsStatus() to IntentClassifierGoldSetTests: 3 status cases (→ supplements) + 3 mark cases (→ mark_supplement). Deterministic gold sets 100%. Cycle 5892.
 - [x] **#166 Multi-turn food logging reliability** — Added testMultiTurn_3TurnFoodLogging() to IntentRoutingEval: 3-turn breakfast test (oatmeal → banana → black coffee) with history context at each turn. Cycle 5892.
