@@ -1441,5 +1441,15 @@
       "fix(program.md): P0 bugs not picked by Junior Execution \u2014 explicit gh issue list --label P0 check added",
       "fix(program.md): in-progress label not removed on close \u2014 all three close steps now explicit"
     ]
+  },
+  {
+    "build": 136,
+    "date": "2026-04-18T09:55:00-07:00",
+    "description": "fix(ai): #182 AI chat hallucinating food on empty diary",
+    "features": [],
+    "fixes": [
+      "fix(ai): #182 AI chat hallucinating logged food — empty diary now explicitly says 'Nothing logged yet' instead of showing misleading past suggestions",
+      "fix(ai): Renamed 'Recent:' context label to 'Suggestions from past days (not today\u2019s log):' to prevent LLM from treating past foods as today\u2019s log"
+    ]
   }
 ]
