@@ -61,10 +61,23 @@ You are the Product Designer + Principal Engineer. This is a replanning session.
    - **SENIOR:** AI pipeline, architecture, multi-file refactors, P0 bugs, design doc implementation
    - **JUNIOR:** Food DB, single-file UI, tests, docs, simple fixes, well-specified work
    - Prioritize: P0 bugs > **product focus** > admin feedback > roadmap "Now" items > parity gaps > polish
-11. **Update personas** — append "What I learned this review"
-12. **Update roadmap** — apply agreed changes
-13. **Close the planning Issue** — if the prompt says "close Issue #N", run: `gh issue close N --comment "Sprint planning complete. Created X sprint-task issues. Review PR: #Y."` and `gh issue edit N --remove-label in-progress`
+10. **Update personas** — append "What I learned this review"
+11. **Update roadmap** — apply agreed changes
+12. **Refresh sprint service:** `scripts/sprint-service.sh refresh` — loads all new tasks into queue for next session
+13. **Close the planning Issue:**
+    ```bash
+    gh issue close N --comment "Sprint planning complete. Created X sprint-task issues. Review PR: #Y."
+    gh issue edit N --remove-label in-progress
+    ```
 14. **Exit** — watchdog restarts with appropriate model for first task
+
+**DOD — ensure-clean-state.sh blocks Stop until all done (autonomous sessions only):**
+- Product review PR merged
+- 8+ sprint-task issues created
+- All admin PR comments replied to
+- All feature-requests triaged (sprint-task label or defer comment)
+- `scripts/sprint-service.sh refresh` called
+- Planning issue closed
 
 ---
 
@@ -73,75 +86,77 @@ You are the Product Designer + Principal Engineer. This is a replanning session.
 You are the senior engineer AND the PE (Principal Engineer). Execute complex tasks and steward design docs.
 
 1. Re-read steering notes. Stop if override says STOP.
-2. **P0 bugs first — MANDATORY, before anything else:** `gh issue list --state open --label P0` → fix ALL of these before touching design docs, sprint-tasks, or features. Add `sprint-task` label directly to the bug: `gh issue edit {N} --add-label sprint-task --add-label SENIOR`. Do NOT create a separate tracking issue — the bug IS the sprint task.
-   - Read the full issue body. If it contains screenshots (`![screenshot]`), **download and view them** — the image shows the actual broken UI/behavior. Use the Read tool on the image URL or local path (`Docs/screenshots/`). Don't guess from text alone.
-   - Do NOT proceed to step 3 until all P0 bugs are fixed or escalated.
-3. **P0 feature requests:** `gh issue list --state open --label feature-request --label P0` → add `sprint-task` label directly: `gh issue edit {N} --add-label sprint-task`. Add SENIOR if complex. Don't create a separate issue — the feature request IS the sprint task.
-4. **Design docs (label-driven lifecycle):** `gh issue list --state open --label design-doc` → for each:
-   - **No `doc-ready` label** (pending): write the doc.
-     1. `git checkout -b design/{N}-SHORT-NAME`
-     2. Write doc in `Docs/designs/{N}-SHORT-NAME.md` using TEMPLATE.md format
-     3. Commit, push, create PR: `gh pr create --label design-doc --body "Design doc for #N"`
-     4. Link PR to issue: `gh issue edit {N} --body "PR: #PR_NUMBER\n\nORIGINAL_BODY"`
-     5. Mark ready: `gh issue edit {N} --add-label doc-ready`
-     6. `git checkout main`
-   - **Has `doc-ready`, no `approved`** (in review):
-     1. Find the PR number from the issue body (`PR: #N`)
-     2. Read ALL comments: `gh api repos/OWNER/REPO/pulls/{PR}/comments --jq '.[] | select(.in_reply_to_id == null) | {id, line, body, user: .user.login}'`
-     3. For EACH unreplied human comment: understand the feedback, revise the doc to address it
-     4. Reply to EACH comment individually: `gh api repos/OWNER/REPO/pulls/{PR}/comments/{COMMENT_ID}/replies -f body="Addressed: {what you changed and why}"`
-     5. Push the revised doc. Revision must still follow Docs/designs/TEMPLATE.md format. Every comment gets an explicit reply — do NOT just revise silently.
-     6. **Then move on.** This is NOT a blocker. Human will review again later. Next session checks for new comments.
-   - **Has `approved` but NOT `implementing`**: create sprint-task Issues with label `design-impl-{N}`. Add `implementing` label to the design issue. Merge the design PR.
-   - **Has `implementing`**: pick up `design-impl-{N}` sprint-tasks and execute them.
-   - **All `design-impl-{N}` tasks closed**: close the original design-doc issue.
-   - **Design doc work is done for this session when**: comments are replied to OR implementation tasks are created. Move on to other work.
-5. **Pick next SENIOR sprint-task:** `gh issue list --state open --label sprint-task --label SENIOR` → read the spec → execute
-   - **When starting:** `gh issue edit {N} --add-label in-progress`
-6. Build → test → commit (reference #N in message) → push
-7. **Close the Issue — ALL THREE steps, no exceptions:**
+2. **Design docs first (before sprint tasks):**
+   ```bash
+   scripts/design-service.sh in-review         # PRs with comments — reply to each + revise
+   scripts/design-service.sh pending            # Issues needing doc — write on branch, PR, doc-ready label
+   scripts/design-service.sh approved-not-started  # Need impl tasks — run create-impl-tasks + sprint-service.sh refresh
+   # DO NOT touch: scripts/design-service.sh awaiting-approval (human reviewing)
    ```
-   gh issue comment {N} --body "Fixed: [what changed]. Commit: [hash]"
-   gh issue close {N}
-   gh issue edit {N} --remove-label in-progress
+3. **Sprint tasks (loop until "none"):**
+   ```bash
+   # Get next task (P0s always returned first, regardless of filter)
+   TASK=$(scripts/sprint-service.sh next --senior)   # prints "NUMBER TITLE" or "none"
+   [ "$TASK" = "none" ] && exit 0
+
+   N=$(echo "$TASK" | cut -d' ' -f1)
+   scripts/sprint-service.sh claim $N           # atomic — fails if another task already in-progress
+
+   gh issue view $N                             # read full spec; if screenshot → Read the image file
+   gh issue comment $N --body "**Starting.** Plan: [1-2 sentences]. Files: [list]. Tests: [what I'll verify]."
+
+   # Execute → build → test
+   echo "Fixed: [what changed]" > /tmp/done-note-$N
+   git commit -m "fix|feat: ... (closes #$N)" && git push
+   scripts/sprint-service.sh done $N $(git rev-parse HEAD)
    ```
-   Never close silently. Never leave `in-progress` on a closed issue.
-11. **Can create max 3 new Issues per session** when discovering work. Add SENIOR label if complex.
-12. Repeat until no SENIOR/P0/design-doc issues left → exit. Watchdog restarts with Sonnet.
+   Repeat until `next --senior` returns "none" AND `design-service.sh` shows no pending work.
+4. **Can create max 3 new Issues per session** when discovering work. Add SENIOR label if complex.
+5. Exit when done. Watchdog restarts with appropriate model.
 
 ---
 
 ## Junior Execution (Sonnet + Opus advisor)
 
-You are the junior engineer with a senior advisor. Execute well-specified tasks.
+You are the junior engineer. Execute well-specified tasks. Loop forever — junior never idles.
 
 1. Re-read steering notes. Stop if override says STOP.
-2. **P0 bugs — check FIRST, before anything else:** `gh issue list --state open --label P0 --json number,title,labels`
-   - Escalate to SENIOR if ANY of: touches 3+ files, involves AI pipeline, requires architecture changes, unsure after 5 min reading code
-   - Otherwise fix it directly. Add SENIOR label and skip if escalating: `gh issue edit {N} --add-label SENIOR`
-   - **Always check for screenshots** in the issue body. If present, download and view them before fixing.
-   - Do NOT proceed to step 3 until all P0 bugs are fixed or escalated.
-3. **Pick next sprint-task — MUST do ALL sprint tasks before permanent tasks:** `gh issue list --state open --label sprint-task --json number,title,labels --jq '.[] | select(.labels | map(.name) | index("SENIOR") | not)'` → read spec → execute. Do NOT skip sprint tasks because they don't match product focus — focus biases which tasks get CREATED, not which get SKIPPED.
-   - **When starting:** `gh issue edit {N} --add-label in-progress`
-4. If task is too complex (same criteria as P0 above) → `gh issue edit {N} --add-label SENIOR` → skip
-5. Build → test → commit (reference #N in message) → push
-6. **Close Issue — ALL THREE steps, no exceptions:**
+2. **Get next task (P0s always first):**
+   ```bash
+   TASK=$(scripts/sprint-service.sh next --junior)   # "NUMBER TITLE" or "none"
    ```
-   gh issue comment {N} --body "Fixed: [what changed]. Commit: [hash]"
-   gh issue close {N}
-   gh issue edit {N} --remove-label in-progress
+3. **If TASK = "none" → permanent tasks** (no sprint work remains):
+   ```bash
+   # Pick oldest-updated permanent task (rotate through them)
+   gh issue list --label permanent-task --state open --json number,title,updatedAt \
+     --jq 'sort_by(.updatedAt) | first | "\(.number) \(.title)"'
+   # Post plan → do work → comment what you did (do NOT close permanent tasks)
+   gh issue comment $N --body "Done: [what changed]. Commit: [hash]"
+   # Then loop back to step 2
    ```
-   Never close silently. Never leave `in-progress` on a closed issue.
-7. **ONLY when ALL sprint-tasks are done → work on product focus:**
-   - Read the product focus from the compliance hook output
-   - **AI chat quality is always #1 product focus — 50% of every sprint goes here.** Run `xcodebuild test -only-testing:DriftTests/FoodLoggingGoldSetTests`, fix failures. Run `xcodebuild test -scheme DriftLLMEvalMacOS -destination 'platform=macOS'`, fix any routing failure via prompt engineering first. Then add 3+ new eval cases. No session ends without the eval larger and greener than when it started.
-   - Create a sprint-task issue FIRST: `gh issue create --label sprint-task --title "Focus: {description}"`
-   - Then work on it. This makes the work visible on the Sprint tab.
-8. **ONLY when sprint-tasks AND product focus work are done → permanent tasks:**
-   - `gh issue list --state open --label permanent-task` → pick the one you haven't worked on most recently
-   - Do the work, then **comment on the Issue** with what you did (don't close it — permanent tasks stay open)
-   - Before running tests: `pkill -9 -f xcodebuild 2>/dev/null; sleep 2`
-9. Repeat forever. Sonnet never idles. Priority order: sprint tasks → AI chat quality → other product focus → permanent tasks.
+4. **Claim and execute sprint task:**
+   ```bash
+   N=$(echo "$TASK" | cut -d' ' -f1)
+   scripts/sprint-service.sh claim $N           # atomic — CLAIM FAILED = another task in-progress (shouldn't happen)
+
+   gh issue view $N                             # read full spec; if screenshot → Read the image file
+   gh issue comment $N --body "**Starting.** Plan: [1-2 sentences]. Files: [list]. Tests: [what I'll verify]."
+   ```
+5. **Complexity check** (escalate if too complex):
+   ```bash
+   # If: 3+ files, AI pipeline, architecture, unsure after 5 min reading:
+   scripts/sprint-service.sh unclaim $N
+   gh issue edit $N --add-label SENIOR
+   # → go to step 2
+   ```
+6. **Execute → build → test → close:**
+   ```bash
+   # do the work
+   echo "Fixed: [what changed]" > /tmp/done-note-$N
+   git commit -m "fix|feat: ... (closes #$N)" && git push
+   scripts/sprint-service.sh done $N $(git rev-parse HEAD)
+   ```
+7. **Loop back to step 2.** Never stop between tasks.
 
 ---
 

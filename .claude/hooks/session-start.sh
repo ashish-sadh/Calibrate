@@ -44,6 +44,17 @@ echo "Last product review: cycle $LAST_REVIEW"
 echo "Next product review due: cycle $NEXT_REVIEW"
 echo "Read Docs/roadmap.md first to understand product direction."
 
+# Sprint service status (shows queue + in-progress at session start)
+SPRINT_STATUS=$("${CLAUDE_PROJECT_DIR:-.}/scripts/sprint-service.sh" status 2>/dev/null || echo "Sprint service not initialized")
+echo ""
+echo "=== Sprint Queue ==="
+echo "$SPRINT_STATUS"
+SESSION_TYPE=$(cat "$HOME/drift-state/cache-session-type" 2>/dev/null || echo "junior")
+NEXT_TASK=$("${CLAUDE_PROJECT_DIR:-.}/scripts/sprint-service.sh" next --"${SESSION_TYPE}" 2>/dev/null || echo "none")
+echo "Your next task (${SESSION_TYPE}): $NEXT_TASK"
+echo "Commands: scripts/sprint-service.sh claim <N> | done <N> <commit> | unclaim <N>"
+echo "Design: scripts/design-service.sh summary"
+
 # Surface pending design-doc issues (cached)
 DESIGN_DOCS=$(cached_query "$CACHE_DIR/cache-design-docs" \
   gh issue list --state open --label design-doc --json number,title --jq "'.[] | \"#\\(.number) \\(.title)\"'")

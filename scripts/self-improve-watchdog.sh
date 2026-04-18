@@ -77,15 +77,9 @@ cleanup_dirty_state() {
     fi
 
     # Remove stale in-progress labels — no session is running, nothing is in-progress
-    local IN_PROGRESS=$(gh issue list --state open --label in-progress --json number --jq '.[].number' 2>/dev/null || true)
-    if [[ -n "$IN_PROGRESS" ]]; then
-        for NUM in $IN_PROGRESS; do
-            gh issue edit "$NUM" --remove-label in-progress 2>/dev/null || true
-        done
-        log "Removed in-progress from: $IN_PROGRESS"
-    fi
-    # Clear in-progress cache (session will rebuild it)
-    > "$HOME/drift-state/cache-in-progress" 2>/dev/null || true
+    # Sprint service atomically clears all in-progress (state file + GitHub labels)
+    "$WORK_DIR/scripts/sprint-service.sh" clear 2>/dev/null || true
+    log "Sprint service: cleared in-progress state"
 }
 
 kill_claude() {
@@ -194,18 +188,19 @@ start_claude() {
     local MODEL="sonnet"
     local SESSION_TYPE="junior"
     local SESSION_PROMPT="$PROMPT"
-    local NOW=$(date +%s)
 
-    # 1. Sprint planning due? (every 6 hours)
-    if [[ "$(( (NOW - $(cat "$HOME/drift-state/last-review-time" 2>/dev/null || echo "0")) / 3600 ))" -ge 6 ]]; then
-        local LAST_REVIEW=$(cat "$HOME/drift-state/last-review-time" 2>/dev/null || echo "0")
-        local HOURS_SINCE=$(( (NOW - LAST_REVIEW) / 3600 ))
+    # Refresh sprint state (single source of truth for session type)
+    log "Refreshing sprint state..."
+    "$WORK_DIR/scripts/sprint-service.sh" refresh 2>/dev/null || log "Warning: sprint-service refresh failed, using stale state"
+
+    # 1. Planning due?
+    if "$WORK_DIR/scripts/sprint-service.sh" planning-due 2>/dev/null; then
+        local NOW=$(date +%s)
         MODEL=$(get_model planning opus)
         SESSION_TYPE="planning"
-        echo "$NOW" > "$HOME/drift-state/last-review-time"  # Guaranteed update
-        log "Sprint planning due (${HOURS_SINCE}h since last) — $MODEL"
+        echo "$NOW" > "$HOME/drift-state/last-review-time"
+        log "Sprint planning due — $MODEL"
 
-        # Create tracking Issue so Command Center shows planning in progress
         local CYCLE=$(cat "$HOME/drift-state/cycle-counter" 2>/dev/null || echo "?")
         local PLAN_ISSUE=$(gh issue create \
             --title "Sprint Planning — Cycle $CYCLE" \
@@ -216,36 +211,23 @@ start_claude() {
             log "Created planning tracking Issue #$PLAN_ISSUE"
             SESSION_PROMPT="run sprint planning — close Issue #$PLAN_ISSUE when done"
         else
-            log "Warning: failed to create planning tracking Issue"
             SESSION_PROMPT="run sprint planning"
         fi
 
-    # 2. SENIOR sprint-tasks or P0 bugs? → Opus (alternating with Sonnet)
-    else
-        local SENIOR=$(gh issue list --state open --label sprint-task --label SENIOR --json number --jq 'length' 2>/dev/null || echo "0")
-        local P0=$(gh issue list --state open --label P0 --json number --jq 'length' 2>/dev/null || echo "0")
-        local LAST_SESSION=$(cat "$HOME/drift-state/cache-session-type" 2>/dev/null || echo "junior")
+    # 2. P0s or SENIOR tasks? → senior session
+    elif [[ "$("$WORK_DIR/scripts/sprint-service.sh" count --p0 2>/dev/null || echo 0)" -gt 0 ]] || \
+         [[ "$("$WORK_DIR/scripts/sprint-service.sh" count --senior 2>/dev/null || echo 0)" -gt 0 ]]; then
+        MODEL=$(get_model senior opus)
+        SESSION_TYPE="senior"
+        SESSION_PROMPT="execute senior tasks and P0 bugs"
+        log "P0/SENIOR work available — $MODEL"
 
-        if [[ "$SENIOR" -gt 0 ]] || [[ "$P0" -gt 0 ]]; then
-            if [[ "$LAST_SESSION" == "senior" ]] && [[ "$P0" -eq 0 ]]; then
-                # Senior just ran and no P0s left — give junior a turn
-                MODEL=$(get_model junior sonnet)
-                SESSION_TYPE="junior"
-                SESSION_PROMPT="execute junior tasks"
-                log "Alternating to junior (${SENIOR} senior, no P0s remaining) — $MODEL"
-            else
-                MODEL=$(get_model senior opus)
-                SESSION_TYPE="senior"
-                SESSION_PROMPT="execute senior tasks and P0 bugs"
-                log "SENIOR/P0 work available (${SENIOR} senior, ${P0} P0) — $MODEL"
-            fi
-        else
-            # 3. Default: junior always-on (junior tasks + permanent tasks)
-            MODEL=$(get_model junior sonnet)
-            SESSION_TYPE="junior"
-            SESSION_PROMPT="execute junior tasks"
-            log "No senior/P0 work — junior ($MODEL)"
-        fi
+    # 3. Default: junior (sprint tasks → permanent tasks, loops forever)
+    else
+        MODEL=$(get_model junior sonnet)
+        SESSION_TYPE="junior"
+        SESSION_PROMPT="execute junior tasks"
+        log "No P0/SENIOR work — junior ($MODEL)"
     fi
 
     echo "$MODEL" > "$HOME/drift-state/last-model"
@@ -262,7 +244,7 @@ start_claude() {
         log "Rate limit warning: $RATE_MSG"
     fi
 
-    # Warm compliance cache before session starts
+    # Refresh compliance cache (P0 cache used by compliance-check.sh hook)
     refresh_compliance_cache
 
     log "Starting autopilot ($SESSION_TYPE, model=$MODEL, log: $CURRENT_LOG)"
@@ -490,6 +472,19 @@ while true; do
                 log "Autopilot running normally (PID $CLAUDE_PID)."
                 # Refresh compliance cache for the PreToolUse hook to read
                 refresh_compliance_cache
+                # P0 interrupt: if a new P0 appears mid-junior-session, restart as senior
+                local CURRENT_TYPE
+                CURRENT_TYPE=$(cat "$HOME/drift-state/cache-session-type" 2>/dev/null || echo "junior")
+                if [[ "$CURRENT_TYPE" == "junior" ]]; then
+                    local NEW_P0
+                    NEW_P0=$("$WORK_DIR/scripts/sprint-service.sh" count --p0 2>/dev/null || echo "0")
+                    if [[ "$NEW_P0" -gt 0 ]]; then
+                        log "New P0 detected mid-junior-session — interrupting to handle P0"
+                        kill_claude
+                        cleanup_dirty_state
+                        start_claude
+                    fi
+                fi
             fi
             ;;
         *)
