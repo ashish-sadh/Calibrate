@@ -1402,6 +1402,17 @@
     ]
   },
   {
+    "build": 134,
+    "date": "2026-04-17T12:00:00-07:00",
+    "description": "feat: #164 filler word stripping + NormalizerGoldSetTests + food DB +20",
+    "features": [
+      "Voice filler word normalization — strips 'um', 'uh', 'like', 'you know', 'so' from voice input before AI pipeline",
+      "NormalizerGoldSetTests — deterministic gold set for InputNormalizer (filler, conjunctions, run-on sentences)",
+      "Food DB +20 foods"
+    ],
+    "fixes": []
+  },
+  {
     "build": 133,
     "date": "2026-04-17T11:30:00-07:00",
     "description": "Bug fixes: stuck chat indicator, voice pause losing utterances, spurious protein/workout alerts",
