@@ -41142,5 +41142,542 @@
       "spices"
     ],
     "nova_group": 2
+  },
+  {
+    "name": "Gravlax",
+    "category": "Scandinavian",
+    "serving_size": 80,
+    "serving_unit": "g",
+    "calories": 134,
+    "protein_g": 18,
+    "carbs_g": 0,
+    "fat_g": 7,
+    "fiber_g": 0,
+    "ingredients": [
+      "salmon",
+      "salt",
+      "sugar",
+      "dill"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Swedish Meatballs",
+    "category": "Scandinavian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 420,
+    "protein_g": 26,
+    "carbs_g": 16,
+    "fat_g": 28,
+    "fiber_g": 1,
+    "ingredients": [
+      "ground beef",
+      "ground pork",
+      "breadcrumbs",
+      "egg",
+      "cream",
+      "allspice",
+      "nutmeg",
+      "cream sauce"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Lefse",
+    "category": "Scandinavian",
+    "serving_size": 60,
+    "serving_unit": "g",
+    "calories": 120,
+    "protein_g": 3,
+    "carbs_g": 25,
+    "fat_g": 2,
+    "fiber_g": 1,
+    "ingredients": [
+      "potatoes",
+      "flour",
+      "butter",
+      "cream"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Frikadeller",
+    "category": "Scandinavian",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 340,
+    "protein_g": 22,
+    "carbs_g": 10,
+    "fat_g": 24,
+    "fiber_g": 1,
+    "ingredients": [
+      "ground pork",
+      "onion",
+      "egg",
+      "flour",
+      "milk",
+      "butter"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Smorrebr\u00f8d",
+    "category": "Scandinavian",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 14,
+    "carbs_g": 24,
+    "fat_g": 14,
+    "fiber_g": 2,
+    "ingredients": [
+      "rye bread",
+      "butter",
+      "herring or shrimp",
+      "cucumber",
+      "dill"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Pierogi",
+    "category": "Polish",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 340,
+    "protein_g": 12,
+    "carbs_g": 50,
+    "fat_g": 10,
+    "fiber_g": 3,
+    "ingredients": [
+      "flour",
+      "potato",
+      "cheese",
+      "onion",
+      "butter"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Kielbasa",
+    "category": "Polish",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 310,
+    "protein_g": 14,
+    "carbs_g": 2,
+    "fat_g": 28,
+    "fiber_g": 0,
+    "ingredients": [
+      "pork",
+      "garlic",
+      "marjoram",
+      "salt",
+      "pepper"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Goulash",
+    "category": "Hungarian",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 350,
+    "protein_g": 28,
+    "carbs_g": 18,
+    "fat_g": 18,
+    "fiber_g": 3,
+    "ingredients": [
+      "beef",
+      "onion",
+      "paprika",
+      "tomatoes",
+      "bell pepper",
+      "caraway seeds"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Schnitzel",
+    "category": "Austrian",
+    "serving_size": 180,
+    "serving_unit": "g",
+    "calories": 420,
+    "protein_g": 34,
+    "carbs_g": 18,
+    "fat_g": 24,
+    "fiber_g": 1,
+    "ingredients": [
+      "veal or pork",
+      "breadcrumbs",
+      "egg",
+      "flour",
+      "butter"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Bigos",
+    "category": "Polish",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 18,
+    "carbs_g": 14,
+    "fat_g": 16,
+    "fiber_g": 5,
+    "ingredients": [
+      "sauerkraut",
+      "fresh cabbage",
+      "pork",
+      "kielbasa",
+      "mushrooms",
+      "tomatoes",
+      "bay leaf"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Bangers and Mash",
+    "category": "British",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 22,
+    "carbs_g": 40,
+    "fat_g": 26,
+    "fiber_g": 3,
+    "ingredients": [
+      "pork sausages",
+      "mashed potato",
+      "onion gravy",
+      "butter",
+      "milk"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Full English Breakfast",
+    "category": "British",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 720,
+    "protein_g": 38,
+    "carbs_g": 40,
+    "fat_g": 44,
+    "fiber_g": 4,
+    "ingredients": [
+      "eggs",
+      "bacon",
+      "sausages",
+      "baked beans",
+      "grilled tomato",
+      "mushrooms",
+      "toast"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Scones",
+    "category": "British",
+    "serving_size": 60,
+    "serving_unit": "g",
+    "calories": 200,
+    "protein_g": 4,
+    "carbs_g": 32,
+    "fat_g": 7,
+    "fiber_g": 1,
+    "ingredients": [
+      "flour",
+      "butter",
+      "sugar",
+      "baking powder",
+      "milk",
+      "egg"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Eton Mess",
+    "category": "British",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 290,
+    "protein_g": 3,
+    "carbs_g": 40,
+    "fat_g": 14,
+    "fiber_g": 1,
+    "ingredients": [
+      "meringue",
+      "whipped cream",
+      "strawberries"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Beef Noodle Soup",
+    "category": "Taiwanese",
+    "serving_size": 500,
+    "serving_unit": "g",
+    "calories": 560,
+    "protein_g": 36,
+    "carbs_g": 60,
+    "fat_g": 18,
+    "fiber_g": 3,
+    "ingredients": [
+      "beef shank",
+      "wheat noodles",
+      "soy sauce",
+      "bean paste",
+      "star anise",
+      "chili",
+      "bok choy"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Scallion Pancake",
+    "category": "Taiwanese",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 310,
+    "protein_g": 6,
+    "carbs_g": 40,
+    "fat_g": 14,
+    "fiber_g": 2,
+    "ingredients": [
+      "flour",
+      "scallions",
+      "sesame oil",
+      "salt"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Lu Rou Fan",
+    "category": "Taiwanese",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 520,
+    "protein_g": 24,
+    "carbs_g": 58,
+    "fat_g": 22,
+    "fiber_g": 1,
+    "ingredients": [
+      "pork belly",
+      "soy sauce",
+      "Shaoxing wine",
+      "rock sugar",
+      "five-spice",
+      "rice"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Oyster Vermicelli",
+    "category": "Taiwanese",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 16,
+    "carbs_g": 55,
+    "fat_g": 10,
+    "fiber_g": 2,
+    "ingredients": [
+      "oysters",
+      "sweet potato noodles",
+      "sweet potato starch",
+      "basil",
+      "soy sauce",
+      "chili"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Pineapple Cake",
+    "category": "Taiwanese",
+    "serving_size": 50,
+    "serving_unit": "g",
+    "calories": 195,
+    "protein_g": 2,
+    "carbs_g": 32,
+    "fat_g": 7,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "flour",
+      "butter",
+      "sugar",
+      "egg",
+      "pineapple jam"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Churros",
+    "category": "Spanish",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 330,
+    "protein_g": 5,
+    "carbs_g": 45,
+    "fat_g": 15,
+    "fiber_g": 1,
+    "ingredients": [
+      "flour",
+      "water",
+      "salt",
+      "oil",
+      "cinnamon sugar"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Profiteroles",
+    "category": "French",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 5,
+    "carbs_g": 28,
+    "fat_g": 17,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "choux pastry",
+      "cream",
+      "chocolate sauce"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Sfogliatelle",
+    "category": "Italian",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 7,
+    "carbs_g": 42,
+    "fat_g": 14,
+    "fiber_g": 1,
+    "ingredients": [
+      "puff pastry",
+      "ricotta",
+      "semolina",
+      "sugar",
+      "cinnamon",
+      "candied citrus"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Millefeuille",
+    "category": "French",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 390,
+    "protein_g": 5,
+    "carbs_g": 42,
+    "fat_g": 23,
+    "fiber_g": 1,
+    "ingredients": [
+      "puff pastry",
+      "pastry cream",
+      "icing sugar"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Eclair",
+    "category": "French",
+    "serving_size": 80,
+    "serving_unit": "g",
+    "calories": 240,
+    "protein_g": 4,
+    "carbs_g": 28,
+    "fat_g": 13,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "choux pastry",
+      "pastry cream",
+      "chocolate glaze"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Pani Puri",
+    "category": "Indian",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 190,
+    "protein_g": 4,
+    "carbs_g": 32,
+    "fat_g": 5,
+    "fiber_g": 3,
+    "ingredients": [
+      "semolina puri",
+      "chickpeas",
+      "tamarind water",
+      "mint water",
+      "potato",
+      "chutney"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Dahi Vada",
+    "category": "Indian",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 240,
+    "protein_g": 10,
+    "carbs_g": 34,
+    "fat_g": 7,
+    "fiber_g": 3,
+    "ingredients": [
+      "urad dal vada",
+      "yogurt",
+      "tamarind chutney",
+      "mint chutney",
+      "chaat masala"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Aloo Tikki",
+    "category": "Indian",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 230,
+    "protein_g": 5,
+    "carbs_g": 36,
+    "fat_g": 8,
+    "fiber_g": 3,
+    "ingredients": [
+      "potato",
+      "peas",
+      "spices",
+      "breadcrumbs",
+      "oil"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Congee",
+    "category": "Chinese",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 210,
+    "protein_g": 8,
+    "carbs_g": 38,
+    "fat_g": 3,
+    "fiber_g": 1,
+    "ingredients": [
+      "rice",
+      "water or broth",
+      "ginger",
+      "scallion",
+      "soy sauce"
+    ],
+    "nova_group": 1
   }
 ]
