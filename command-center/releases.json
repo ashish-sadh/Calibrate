@@ -1451,5 +1451,18 @@
       "fix(ai): #182 AI chat hallucinating logged food — empty diary now explicitly says 'Nothing logged yet' instead of showing misleading past suggestions",
       "fix(ai): Renamed 'Recent:' context label to 'Suggestions from past days (not today\u2019s log):' to prevent LLM from treating past foods as today\u2019s log"
     ]
+  },
+  {
+    "build": 137,
+    "date": "2026-04-18T13:00:00-07:00",
+    "description": "chore: TestFlight build 137 — drift-control infra hardening (no user-facing changes)",
+    "features": [],
+    "fixes": [
+      "fix(watchdog): prevent crash when planning-issue file is missing",
+      "fix(hooks): persona check uses git log timestamp instead of file mtime",
+      "fix(watchdog): compliance before cleanup in all 4 stall paths + clean TF auth on crash",
+      "fix(testflight): 3h timer now marks due in watchdog and fires on next commit",
+      "feat(hooks): role-specific session output for senior, junior, and planning sessions"
+    ]
   }
 ]
