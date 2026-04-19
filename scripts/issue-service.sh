@@ -56,12 +56,11 @@ cmd_need_review() {
         exit 1
     fi
 
-    # Admin-filed bugs don't need approval — add sprint-task directly
-    local AUTHOR
-    AUTHOR=$(gh issue view "$N" --json author --jq '.author.login' 2>/dev/null || echo "")
-    if [ "$AUTHOR" = "ashish-sadh" ]; then
-        gh issue edit "$N" --add-label sprint-task 2>/dev/null || true
-        echo "Issue #$N filed by admin — added sprint-task directly (no review needed)"
+    # Admin-filed bugs already have sprint-task — skip approval gate
+    local HAS_SPRINT
+    HAS_SPRINT=$(gh issue view "$N" --json labels --jq '[.labels[].name] | index("sprint-task") != null' 2>/dev/null || echo "false")
+    if [ "$HAS_SPRINT" = "true" ]; then
+        echo "Issue #$N already has sprint-task — no review needed"
         return
     fi
 

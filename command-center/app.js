@@ -295,11 +295,11 @@ async function getSprintPlan() {
       .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
       .slice(0, 10);
 
-    // Bugs awaiting approval: needs-review + bug + plan-posted, excluding admin-filed
+    // Bugs awaiting approval: needs-review + bug + plan-posted (no sprint-task yet)
     const awaitingApproval = needsReview.filter(i =>
       i.labels.some(l => l.name === 'bug') &&
       i.labels.some(l => l.name === 'plan-posted') &&
-      i.user?.login !== OWNER
+      !i.labels.some(l => l.name === 'sprint-task')
     );
 
     return {
