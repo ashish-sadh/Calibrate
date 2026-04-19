@@ -167,6 +167,19 @@ struct FoodUnit: Hashable {
     let label: String
     let gramsEquivalent: Double
 
+    /// Default amount to prefill when a user selects this food in a picker.
+    /// For fine-grained units (ml, g) a "1" default renders as 0 calories; prefill the
+    /// food's own serving size instead so Coffee (240ml/5cal) shows 5cal, not 0cal.
+    static func defaultAmount(for food: Food) -> String {
+        let units = smartUnits(for: food)
+        guard let primary = units.first else { return "1" }
+        if primary.gramsEquivalent <= 1.01 && food.servingSize > 0 {
+            let ss = food.servingSize
+            return ss == ss.rounded() ? String(format: "%.0f", ss) : String(format: "%.1f", ss)
+        }
+        return "1"
+    }
+
     /// Returns food-appropriate units. First unit is the most natural for this food.
     static func smartUnits(for food: Food) -> [FoodUnit] {
         let lower = food.name.lowercased()

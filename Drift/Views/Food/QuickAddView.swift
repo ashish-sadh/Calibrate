@@ -420,7 +420,7 @@ private struct IngredientPickerView: View {
                 Section("Recent") {
                     ForEach(filteredRecent) { food in
                         Button {
-                            amount = "1"
+                            amount = FoodUnit.defaultAmount(for: food)
                             selectedUnitIndex = 0
                             selectedFood = food
                         } label: {
@@ -437,7 +437,7 @@ private struct IngredientPickerView: View {
                 Section("Foods") {
                     ForEach(results) { food in
                         Button {
-                            amount = "1"
+                            amount = FoodUnit.defaultAmount(for: food)
                             selectedUnitIndex = 0
                             selectedFood = food
                         } label: {
@@ -463,7 +463,7 @@ private struct IngredientPickerView: View {
                                             carbsG: ing.carbsPer100g * scale,
                                             fatG: ing.fatPer100g * scale,
                                             fiberG: ing.fiberPer100g * scale)
-                            amount = "1"
+                            amount = FoodUnit.defaultAmount(for: food)
                             selectedUnitIndex = 0
                             selectedFood = food
                         } label: {

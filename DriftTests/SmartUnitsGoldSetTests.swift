@@ -185,4 +185,39 @@ final class SmartUnitsGoldSetTests: XCTestCase {
             XCTAssertTrue(hasGrams, "'\(f.name)' should always include 'g' as a unit option")
         }
     }
+
+    // MARK: - Default Amount (bug #195: Coffee shows 0 cal on quick-add)
+
+    func testDefaultAmountForLiquidsIsServingSize() {
+        // Liquid foods with primary unit "ml" (gramsEquivalent=1) must prefill the full
+        // serving size, otherwise a default of "1" → 1ml → 0 cal displayed.
+        let liquids: [(String, Double, String)] = [
+            ("Coffee (black)", 240, "240"),
+            ("Whole Milk", 240, "240"),
+            ("Orange Juice", 250, "250"),
+            ("Coke", 330, "330"),
+            ("Beer", 355, "355"),
+        ]
+        for (name, size, expected) in liquids {
+            let f = food(name, size: size)
+            let got = FoodUnit.defaultAmount(for: f)
+            XCTAssertEqual(got, expected, "'\(name)' default should be \(expected), got \(got)")
+        }
+    }
+
+    func testDefaultAmountForDiscreteUnitsIsOne() {
+        // Discrete units (egg/piece/cup/scoop) should keep default of "1"
+        let discrete: [(String, Double)] = [
+            ("Whole Egg", 50),
+            ("Roti", 40),
+            ("Samosa", 60),
+            ("Whey Protein", 30),
+            ("Basmati Rice", 100),  // cup unit (cupFoods)
+        ]
+        for (name, size) in discrete {
+            let f = food(name, size: size)
+            let got = FoodUnit.defaultAmount(for: f)
+            XCTAssertEqual(got, "1", "'\(name)' default should be '1', got '\(got)'")
+        }
+    }
 }

@@ -319,10 +319,8 @@ struct FoodSearchView: View {
             let totalG = food.servingSize * last
             let inPrimary = primaryUnit.gramsEquivalent > 0 ? totalG / primaryUnit.gramsEquivalent : last
             amount = inPrimary == Double(Int(inPrimary)) ? "\(Int(inPrimary))" : String(format: "%.1f", inPrimary)
-        } else if units.first?.label == "g" && food.servingSize > 0 {
-            amount = String(format: "%.0f", food.servingSize)
         } else {
-            amount = "1"
+            amount = FoodUnit.defaultAmount(for: food)
         }
 
         isFoodFavorite = FoodService.isFavorite(name: food.name)
