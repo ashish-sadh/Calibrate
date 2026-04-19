@@ -21,6 +21,7 @@ struct FoodTabView: View {
     @State private var showingCopyAllAlert = false
     @State private var searchMealType: MealType? = nil
     @State private var showingCombos = false
+    @State private var comboToLog: Food? = nil
     @AppStorage("foodDiaryMealGrouped") private var mealGrouped = true
 
     enum FoodSortMode: String, CaseIterable {
@@ -110,6 +111,13 @@ struct FoodTabView: View {
             .sheet(isPresented: $showingSearch) { FoodSearchView(viewModel: viewModel, initialMealType: searchMealType) }
             .sheet(isPresented: $showingRecipeBuilder) { QuickAddView(viewModel: viewModel) }
             .sheet(isPresented: $showingCombos) { CombosView(viewModel: viewModel) }
+            .sheet(item: $comboToLog) { combo in
+                ComboLogSheet(combo: combo, viewModel: viewModel) {
+                    copiedToTodayName = combo.name
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedToTodayName = nil }
+                    reload()
+                }
+            }
             .sheet(isPresented: $showingGoalSetup) {
                 NavigationStack {
                     GoalSetupView(existingGoal: WeightGoal.load()) { goal in
@@ -464,49 +472,59 @@ struct FoodTabView: View {
         return groups
     }
 
-    private func quickAddChip(name: String, calories: Int) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(name).font(.caption.weight(.medium)).lineLimit(1)
-            Text("\(calories) cal").font(.caption2).foregroundStyle(.secondary)
+    // Combo chip: accent-tinted with fork icon — opens confirm/edit sheet
+    private func comboChip(name: String, calories: Int) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            HStack(spacing: 3) {
+                Image(systemName: "fork.knife").font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(Theme.accent)
+                Text(name).font(.caption.weight(.semibold)).lineLimit(1).foregroundStyle(Theme.accent)
+            }
+            Text("\(calories) cal").font(.system(size: 10)).foregroundStyle(Theme.accent.opacity(0.6))
         }
-        .padding(.horizontal, 10).padding(.vertical, 6)
-        .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Color.secondary.opacity(0.2)))
+        .padding(.horizontal, 9).padding(.vertical, 5)
+        .background(Theme.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+    }
+
+    // Recent chip: ghost outline — opens quick-add confirm sheet
+    private func recentChip(name: String, calories: Int) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(name).font(.caption.weight(.medium)).lineLimit(1)
+            Text("\(calories) cal").font(.system(size: 10)).foregroundStyle(.secondary)
+        }
+        .padding(.horizontal, 9).padding(.vertical, 5)
+        .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.secondary.opacity(0.25), lineWidth: 1))
     }
 
     private var quickAddStrips: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             if !viewModel.combos.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        Text("COMBOS").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
-                        Spacer()
-                        Button { showingCombos = true } label: {
-                            Text("Manage").font(.caption2).foregroundStyle(Theme.accent)
-                        }.buttonStyle(.plain)
-                    }
+                HStack(alignment: .center, spacing: 8) {
+                    Text("Combos").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                        .frame(width: 48, alignment: .leading)
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 6) {
                             ForEach(viewModel.combos) { combo in
                                 let totalCal = combo.recipeItems?.reduce(0) { $0 + $1.calories } ?? combo.calories
-                                Button {
-                                    viewModel.logCombo(combo)
-                                    copiedToTodayName = combo.name
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedToTodayName = nil }
-                                } label: {
-                                    quickAddChip(name: combo.name, calories: Int(totalCal))
+                                Button { comboToLog = combo } label: {
+                                    comboChip(name: combo.name, calories: Int(totalCal))
                                 }
                                 .buttonStyle(.plain)
                             }
+                            Button { showingCombos = true } label: {
+                                Text("···").font(.subheadline).foregroundStyle(Theme.accent.opacity(0.6))
+                                    .frame(width: 28, height: 28)
+                            }.buttonStyle(.plain)
                         }
                     }
                 }
             }
             if !viewModel.recentFoods.isEmpty {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("RECENT").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                HStack(alignment: .center, spacing: 8) {
+                    Text("Recent").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                        .frame(width: 48, alignment: .leading)
                     ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
+                        HStack(spacing: 6) {
                             ForEach(viewModel.recentFoods.prefix(8)) { food in
                                 Button {
                                     confirmPrefill = AIChatViewModel.ManualFoodPrefill(
@@ -515,7 +533,7 @@ struct FoodTabView: View {
                                         fatG: food.fatG, fiberG: food.fiberG)
                                     showingConfirmLog = true
                                 } label: {
-                                    quickAddChip(name: food.name, calories: Int(food.calories))
+                                    recentChip(name: food.name, calories: Int(food.calories))
                                 }
                                 .buttonStyle(.plain)
                             }
@@ -802,30 +820,51 @@ struct FoodTabView: View {
     }
 
     private var emptyDiaryView: some View {
-        VStack(spacing: 14) {
-            Text("No food logged").font(.subheadline).foregroundStyle(.tertiary)
-            Button { showingSearch = true } label: {
-                Label("Add food", systemImage: "plus.circle")
-                    .font(.subheadline).foregroundStyle(Theme.accent)
-            }
-            if let yesterdayCal = viewModel.yesterdayCalories(), yesterdayCal > 0 {
-                Button { showingCopyYesterdayAlert = true } label: {
-                    HStack(spacing: 4) {
-                        Label("Copy previous day", systemImage: "doc.on.doc")
-                        Text("(\(Int(yesterdayCal)) cal)").foregroundStyle(.tertiary)
-                    }
-                    .font(.caption).foregroundStyle(Theme.accent)
+        VStack(spacing: 0) {
+            Spacer().frame(height: 20)
+            Image(systemName: "fork.knife.circle")
+                .font(.system(size: 44))
+                .foregroundStyle(Theme.accent.opacity(0.18))
+            Spacer().frame(height: 10)
+            Text("Nothing logged yet")
+                .font(.subheadline.weight(.medium)).foregroundStyle(.tertiary)
+            Spacer().frame(height: 4)
+            Text("Use a combo above or tap + to start")
+                .font(.caption2).foregroundStyle(.quaternary)
+                .multilineTextAlignment(.center)
+            Spacer().frame(height: 16)
+            HStack(spacing: 10) {
+                Button { showingSearch = true } label: {
+                    Label("Add food", systemImage: "plus")
+                        .font(.caption.weight(.semibold))
+                        .padding(.horizontal, 14).padding(.vertical, 7)
+                        .background(Theme.accent.opacity(0.1), in: Capsule())
+                        .foregroundStyle(Theme.accent)
                 }
-                .padding(.top, 2)
+                .buttonStyle(.plain)
+                if let cal = viewModel.yesterdayCalories(), cal > 0 {
+                    Button { showingCopyYesterdayAlert = true } label: {
+                        Label("Copy yesterday", systemImage: "doc.on.doc")
+                            .font(.caption.weight(.semibold))
+                            .padding(.horizontal, 14).padding(.vertical, 7)
+                            .background(Color.secondary.opacity(0.08), in: Capsule())
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
+            #if DEBUG
             Button {
                 try? AppDatabase.shared.seedTestData()
                 reload()
             } label: {
                 Text("Seed sample data").font(.caption2).foregroundStyle(.quaternary)
             }
-            .padding(.top, 4)
+            .padding(.top, 12)
+            #endif
+            Spacer().frame(height: 20)
         }
+        .frame(maxWidth: .infinity)
     }
 
     private func quickAction(_ label: String, icon: String, action: @escaping () -> Void) -> some View {
