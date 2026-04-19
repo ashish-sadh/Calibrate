@@ -1406,8 +1406,8 @@
     "date": "2026-04-17T12:00:00-07:00",
     "description": "feat: #164 filler word stripping + NormalizerGoldSetTests + food DB +20",
     "features": [
-      "Voice filler word normalization — strips 'um', 'uh', 'like', 'you know', 'so' from voice input before AI pipeline",
-      "NormalizerGoldSetTests — deterministic gold set for InputNormalizer (filler, conjunctions, run-on sentences)",
+      "Voice filler word normalization \u2014 strips 'um', 'uh', 'like', 'you know', 'so' from voice input before AI pipeline",
+      "NormalizerGoldSetTests \u2014 deterministic gold set for InputNormalizer (filler, conjunctions, run-on sentences)",
       "Food DB +20 foods"
     ],
     "fixes": []
@@ -1415,11 +1415,11 @@
   {
     "build": 135,
     "date": "2026-04-18T12:00:00-07:00",
-    "description": "chore: TestFlight build 135 — eval gold set expansion + sprint 5904 planning",
+    "description": "chore: TestFlight build 135 \u2014 eval gold set expansion + sprint 5904 planning",
     "features": [
       "LLM eval gold set expanded: non-food negative assertions (exercise instructions, protein-status queries)",
-      "Supplement intent disambiguation: testSupplementSubIntents_MarkVsStatus — mark vs status routing",
-      "Multi-turn food logging reliability: 3-turn breakfast test (oatmeal → banana → black coffee)",
+      "Supplement intent disambiguation: testSupplementSubIntents_MarkVsStatus \u2014 mark vs status routing",
+      "Multi-turn food logging reliability: 3-turn breakfast test (oatmeal \u2192 banana \u2192 black coffee)",
       "StaticOverrides audit: all 20 rules enumerated and annotated, 0 removals"
     ],
     "fixes": []
@@ -1448,14 +1448,14 @@
     "description": "fix(ai): #182 AI chat hallucinating food on empty diary",
     "features": [],
     "fixes": [
-      "fix(ai): #182 AI chat hallucinating logged food — empty diary now explicitly says 'Nothing logged yet' instead of showing misleading past suggestions",
+      "fix(ai): #182 AI chat hallucinating logged food \u2014 empty diary now explicitly says 'Nothing logged yet' instead of showing misleading past suggestions",
       "fix(ai): Renamed 'Recent:' context label to 'Suggestions from past days (not today\u2019s log):' to prevent LLM from treating past foods as today\u2019s log"
     ]
   },
   {
     "build": 137,
     "date": "2026-04-18T13:00:00-07:00",
-    "description": "chore: TestFlight build 137 — drift-control infra hardening (no user-facing changes)",
+    "description": "chore: TestFlight build 137 \u2014 drift-control infra hardening (no user-facing changes)",
     "features": [],
     "fixes": [
       "fix(watchdog): prevent crash when planning-issue file is missing",
@@ -1468,7 +1468,7 @@
   {
     "build": 138,
     "date": "2026-04-18T22:00:00-07:00",
-    "description": "chore: TestFlight build 138 — drift-control watchdog launch + infra backfill",
+    "description": "chore: TestFlight build 138 \u2014 drift-control watchdog launch + infra backfill",
     "features": [],
     "fixes": [
       "chore: backfill P0 bug labels and overhead GitHub label for watchdog routing",
@@ -1480,13 +1480,13 @@
     "date": "2026-04-19T01:00:00-07:00",
     "description": "Food logging meal-name visibility + recipes-as-meal-groups",
     "features": [
-      "feat(recipes): #190 recipes can now expand into individual ingredient entries on log, doubling as 'meal groups' — toggle in recipe editor, shown with 'group · N' badge in search",
+      "feat(recipes): #190 recipes can now expand into individual ingredient entries on log, doubling as 'meal groups' \u2014 toggle in recipe editor, shown with 'group \u00b7 N' badge in search",
       "feat(food-log): #189 food diary gains a 'Meal' sort mode that groups entries into Breakfast/Lunch/Dinner/Snack sections with time range and total calories",
       "feat(food-log): meal-type icon now shown next to each food name in macro-sort modes so you can see which meal an entry belongs to even when sorted by protein/fiber/etc."
     ],
     "fixes": [
-      "fix(food-log): #189 EditFoodEntrySheet now has a 4-chip meal-type picker (Breakfast/Lunch/Dinner/Snack) — users can change an entry's meal after logging",
-      "fix(food-log): #189 auto meal detection now inherits from a recent log (within 3h) instead of only using hour ranges — second bowl at 10am after a 7am breakfast correctly stays breakfast"
+      "fix(food-log): #189 EditFoodEntrySheet now has a 4-chip meal-type picker (Breakfast/Lunch/Dinner/Snack) \u2014 users can change an entry's meal after logging",
+      "fix(food-log): #189 auto meal detection now inherits from a recent log (within 3h) instead of only using hour ranges \u2014 second bowl at 10am after a 7am breakfast correctly stays breakfast"
     ]
   },
   {
@@ -1494,18 +1494,41 @@
     "date": "2026-04-19T03:55:00-07:00",
     "description": "AI quality sprint: nutrition cards, time-aware pills, meal-period detection, streamed labels, +45 foods",
     "features": [
-      "Nutrition lookup card — 'calories in X' queries now show structured macro breakdown card (#196)",
-      "Time-aware suggestion pills with per-meal tracking — pills adapt to time of day and what's already been logged (#200)",
-      "Meal-period auto-detect in food parser — AI correctly infers breakfast/lunch/dinner from time context (#201)",
-      "Streamed stage-label indicator during info queries — users see 'Looking up...' label while AI fetches data (#202)",
-      "Implicit food intent coverage — 23 new routing cases for natural phrasing without 'log' keyword (#183)",
-      "Multi-turn regression suite — 25 sequential query chains for reliability testing (#199)",
+      "Nutrition lookup card \u2014 'calories in X' queries now show structured macro breakdown card (#196)",
+      "Time-aware suggestion pills with per-meal tracking \u2014 pills adapt to time of day and what's already been logged (#200)",
+      "Meal-period auto-detect in food parser \u2014 AI correctly infers breakfast/lunch/dinner from time context (#201)",
+      "Streamed stage-label indicator during info queries \u2014 users see 'Looking up...' label while AI fetches data (#202)",
+      "Implicit food intent coverage \u2014 23 new routing cases for natural phrasing without 'log' keyword (#183)",
+      "Multi-turn regression suite \u2014 25 sequential query chains for reliability testing (#199)",
       "Food DB +45 South Indian regional dishes (#188)"
     ],
     "fixes": [
       "Coffee/liquid quick-add now defaults to full serving size instead of 1g (#195)",
       "AI intent routing: simpler classifier prompt improves routing from 44/47 to 46/47 (+4.3%)",
       "Auto-research optimizer: +2.0% held-out score improvement"
+    ]
+  },
+  {
+    "build": 141,
+    "date": "2026-04-19T07:10:00-07:00",
+    "description": "Food DB +30, TTFT benchmark, AI improvements, food diary fixes",
+    "features": [
+      "30 new foods: South Indian (Semiya Upma, Rava Upma, Puliogare, Akki Rotti, Benne Dosa, Tomato Bath, Ambali, Paal Pongal, Kaima Idli, Idiappam, Paruppu Podi Rice, Ellu Sadam, Manga Pachadi)",
+      "30 new foods: Regional (Jolada Rotti, Sajje Rotti, Chole Kulche, Zunka Bhakri, Sol Kadhi, Chumchum, Kulfi Falooda, Nippattu, Chakkli, Mandakki Oggarane, Churmuri)",
+      "30 new foods: Protein shakes (Optimum Nutrition, True Basics, Nakpro, Fast&Up, Muscleblaze Biozyme Advanced)",
+      "Food DB now 2,302 items",
+      "TTFT latency benchmark with regression guard (opt-in, macOS)",
+      "ComposedFoodParser: 'X with Y' splits into separate food intents",
+      "AI multi-item progressive disclosure \u2014 streams food results as each resolves",
+      "Context window expanded 2048\u21924096 tokens for richer multi-turn",
+      "Meal grouping as persistent toggle, default ON",
+      "Edit meal: ingredient list editable when editing recipe/meal entry"
+    ],
+    "fixes": [
+      "P0: meal grouping persists correctly across sessions",
+      "P0: per-section add buttons, time-based copy reclassification",
+      "Prevent permanent task closing in sprint service",
+      "Guard permanent-close only fires on gh issue close"
     ]
   }
 ]
