@@ -90,12 +90,18 @@ cmd_validate() {
 
     local FAILURES=""
 
-    # review_merged — mechanical: check git log
-    # Note: capture to variable first — pipefail + grep -q causes SIGPIPE on git log
-    local REVIEW_LOG
-    REVIEW_LOG=$(git -C "$WORK_DIR" log main --oneline --since="7 hours ago" 2>/dev/null || true)
-    if ! echo "$REVIEW_LOG" | grep -qE "review[-/]cycle"; then
-        FAILURES="${FAILURES}review_merged: no review-cycle commit found on main in last 7 hours\n"
+    # review_merged — mechanical: check git log, but only if review is actually due.
+    # report-service.sh review-due exits 0 when DUE, 1 when not due.
+    # Skipping the check when not due avoids false-positive blocks on routine planning
+    # sessions that legitimately don't need a review.
+    if "$WORK_DIR/scripts/report-service.sh" review-due > /dev/null 2>&1; then
+        # Review is due — require a recent review-cycle commit on main.
+        # Note: capture to variable first — pipefail + grep -q causes SIGPIPE on git log
+        local REVIEW_LOG
+        REVIEW_LOG=$(git -C "$WORK_DIR" log main --oneline --since="7 hours ago" 2>/dev/null || true)
+        if ! echo "$REVIEW_LOG" | grep -qE "review[-/]cycle"; then
+            FAILURES="${FAILURES}review_merged: no review-cycle commit found on main in last 7 hours\n"
+        fi
     fi
 
     # tasks_created — mechanical: check sprint-service count
