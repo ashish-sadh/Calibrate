@@ -23,6 +23,16 @@ EXIT_REASON="${3:-normal}"
 TS=$(date '+%Y-%m-%d %H:%M:%S')
 TODAY=$(date '+%Y-%m-%d')
 
+# Close overhead tracking issue (created by session-start.sh hook at session start)
+OVERHEAD_N=$(cat "$STATE_DIR/current-overhead-issue" 2>/dev/null | tr -d '[:space:]')
+if [[ -n "$OVERHEAD_N" ]]; then
+    LAST_COMMIT=$(cd "$WORK_DIR" && git rev-parse HEAD 2>/dev/null || echo "no-commit")
+    gh issue comment "$OVERHEAD_N" \
+      --body "Session ended ($EXIT_REASON). Last commit: $LAST_COMMIT" 2>/dev/null || true
+    gh issue close "$OVERHEAD_N" 2>/dev/null || true
+    rm -f "$STATE_DIR/current-overhead-issue"
+fi
+
 # Recent commits from this session (last 2 hours)
 COMMITS=$(cd "$WORK_DIR" && git log --oneline --since="2 hours ago" 2>/dev/null | head -10 || true)
 

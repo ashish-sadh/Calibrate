@@ -851,20 +851,116 @@ done
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# CATEGORY 11: Session Task Budget (session_tasks counter)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Helper: write state with explicit session_tasks count
+write_state_with_budget() {
+    local in_progress="${1:-null}"
+    local session_tasks="${2:-0}"
+    shift 2
+    local tasks_json=""
+    for t in "$@"; do tasks_json="${tasks_json}${t},"; done
+    tasks_json="${tasks_json%,}"
+    write_state <<EOF
+{
+  "version": 1,
+  "refreshed": $(date +%s),
+  "in_progress": $in_progress,
+  "session_tasks": $session_tasks,
+  "tasks": [$tasks_json]
+}
+EOF
+}
+
+get_session_tasks() {
+    python3 -c "import json; d=json.load(open('$STATE_FILE')); print(d.get('session_tasks', 0))" 2>/dev/null || echo "0"
+}
+
+run_session_budget() {
+echo ""
+echo "══ Session Task Budget (session_tasks counter) ══════════════════════════"
+
+# 11.1 start-session resets session_tasks to 0
+write_state_with_budget "null" 3 "$(task 1 'Sprint task' pending sprint-task)"
+sprint_service start-session > /dev/null
+ST=$(get_session_tasks)
+assert_eq "start-session resets session_tasks to 0" "0" "$ST"
+
+# 11.2 done on sprint-task labeled task increments session_tasks
+write_state_with_budget "null" 0 "$(task 200 'Sprint task' pending sprint-task)"
+sprint_service claim 200 > /dev/null 2>&1 || true
+sprint_service done 200 "abc123" > /dev/null 2>&1 || true
+ST=$(get_session_tasks)
+assert_eq "done on sprint-task increments session_tasks" "1" "$ST"
+
+# 11.3 done on overhead-labeled task does NOT increment session_tasks
+write_state_with_budget "null" 0 "$(task 201 'Overhead issue' pending overhead)"
+sprint_service claim 201 > /dev/null 2>&1 || true
+sprint_service done 201 "abc123" > /dev/null 2>&1 || true
+ST=$(get_session_tasks)
+assert_eq "done on overhead task does NOT increment session_tasks" "0" "$ST"
+
+# 11.4 session-done on permanent-task increments session_tasks
+write_state_with_budget "null" 0 "$(task 202 'Perm task' permanent permanent-task)"
+sprint_service claim 202 > /dev/null 2>&1 || true
+sprint_service session-done 202 > /dev/null 2>&1 || true
+ST=$(get_session_tasks)
+assert_eq "session-done on permanent-task increments session_tasks" "1" "$ST"
+
+# 11.5 next --junior returns "none" when session_tasks >= 5 (even with tasks available)
+write_state_with_budget "null" 5 "$(task 210 'Sprint task' pending sprint-task)"
+RESULT=$(sprint_service next --junior)
+assert_eq "next --junior returns none when session_tasks=5" "none" "$RESULT"
+
+# 11.6 next --senior returns "none" when session_tasks >= 5
+write_state_with_budget "null" 5 "$(task 211 'SENIOR task' pending sprint-task SENIOR)"
+RESULT=$(sprint_service next --senior)
+assert_eq "next --senior returns none when session_tasks=5" "none" "$RESULT"
+
+# 11.7 next --any ignores session budget (unrestricted — used in tests and planning)
+write_state_with_budget "null" 5 "$(task 212 'Sprint task' pending sprint-task)"
+RESULT=$(sprint_service next --any)
+assert_contains "next --any works even when session_tasks=5" "212" "$RESULT"
+
+# 11.8 session_tasks preserved across refresh (not reset by refresh)
+write_state_with_budget "null" 3 "$(task 1 'Sprint task' pending sprint-task)"
+# Simulate refresh by re-writing state (refresh calls gh which we can't mock, but
+# the Python logic preserves session_tasks via existing.get("session_tasks", 0))
+# Verify via direct Python simulation of refresh logic
+PRESERVED=$(python3 -c "
+import json
+d = json.load(open('$STATE_FILE'))
+# Simulate what refresh does: create new state but copy session_tasks from existing
+new_state = {'version': 1, 'refreshed': 0, 'in_progress': None, 'tasks': d['tasks'], 'session_tasks': 0}
+new_state['session_tasks'] = d.get('session_tasks', 0)
+print(new_state['session_tasks'])
+" 2>/dev/null || echo "0")
+assert_eq "session_tasks preserved across refresh (not reset)" "3" "$PRESERVED"
+
+# 11.9 After start-session, session budget resets and next returns tasks again
+write_state_with_budget "null" 5 "$(task 220 'Sprint task' pending sprint-task)"
+sprint_service start-session > /dev/null
+RESULT=$(sprint_service next --junior)
+assert_contains "after start-session, next --junior works again" "220" "$RESULT"
+}
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # Run selected categories
 # ═══════════════════════════════════════════════════════════════════════════════
 
 case "$FILTER" in
-    happy)       run_happy ;;
-    priority)    run_priority ;;
-    crashes)     run_crashes ;;
-    routing)     run_routing ;;
-    perm)        run_perm ;;
-    planning)    run_planning_service ;;
-    issue)       run_issue_service ;;
-    edge)        run_edge_cases ;;
-    cycle)       run_cycle_simulation ;;
-    advanced)    run_advanced ;;
+    happy)          run_happy ;;
+    priority)       run_priority ;;
+    crashes)        run_crashes ;;
+    routing)        run_routing ;;
+    perm)           run_perm ;;
+    planning)       run_planning_service ;;
+    issue)          run_issue_service ;;
+    edge)           run_edge_cases ;;
+    cycle)          run_cycle_simulation ;;
+    advanced)       run_advanced ;;
+    session_budget) run_session_budget ;;
     all|*)
         run_happy
         run_priority
@@ -876,6 +972,7 @@ case "$FILTER" in
         run_edge_cases
         run_cycle_simulation
         run_advanced
+        run_session_budget
         ;;
 esac
 

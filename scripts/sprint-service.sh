@@ -99,10 +99,11 @@ for t in p0_bugs + p1_bugs + p2_bugs + senior + junior + perm:
         seen.add(t["number"])
         tasks.append(t)
 
-state = {"version": 1, "refreshed": $NOW, "in_progress": None, "tasks": tasks}
+state = {"version": 1, "refreshed": $NOW, "in_progress": None, "tasks": tasks, "session_tasks": 0}
 try:
     existing = json.load(open("$STATE_FILE"))
     state["in_progress"] = existing.get("in_progress")
+    state["session_tasks"] = existing.get("session_tasks", 0)
     # Preserve per-task sprint_done flags across refreshes (senior once-per-sprint budget)
     old_by_num = {t["number"]: t for t in existing.get("tasks", [])}
     for t in state["tasks"]:
@@ -150,6 +151,11 @@ tasks       = state.get("tasks", [])
 in_progress = state.get("in_progress")
 
 def has(t, label): return label in t.get("labels", [])
+
+# Session budget: max 5 implementation tasks per session (not enforced for --any / planning)
+if filter_mode in ("--senior", "--junior"):
+    if state.get("session_tasks", 0) >= 5:
+        print("none"); sys.exit(0)
 
 # Skip done and currently claimed
 available = [t for t in tasks
@@ -307,7 +313,12 @@ try:
     d["in_progress"] = None
     for t in d["tasks"]:
         if t["number"] == num:
-            t["status"] = "done"; break
+            t["status"] = "done"
+            # Count implementation tasks toward session budget
+            labels = t.get("labels", [])
+            if "sprint-task" in labels or "permanent-task" in labels:
+                d["session_tasks"] = d.get("session_tasks", 0) + 1
+            break
     with open(state_file, "w") as f: json.dump(d, f, indent=2)
 except Exception: pass
 PYEOF
@@ -361,12 +372,27 @@ try:
             t["status"] = "done"
             if "permanent-task" in t.get("labels", []):
                 t["sprint_done"] = True  # blocks senior re-selection until planning resets
+                d["session_tasks"] = d.get("session_tasks", 0) + 1
             break
     with open(state_file, "w") as f: json.dump(d, f, indent=2)
 except Exception: pass
 PYEOF
 
     echo "Session-done #$NUM (not closed on GitHub)"
+}
+
+cmd_start_session() {
+    python3 - "$STATE_FILE" <<'PYEOF'
+import json, sys
+state_file = sys.argv[1]
+try:
+    d = json.load(open(state_file))
+except Exception:
+    d = {"version": 1, "refreshed": 0, "in_progress": None, "tasks": []}
+d["session_tasks"] = 0
+with open(state_file, "w") as f: json.dump(d, f, indent=2)
+print("Session started: task counter reset to 0")
+PYEOF
 }
 
 cmd_reset_sprint_done() {
@@ -499,6 +525,7 @@ case "$CMD" in
     done)           cmd_done "$1" "${2:-}" ;;
     unclaim)        cmd_unclaim "$1" ;;
     session-done)      cmd_session_done "$1" ;;
+    start-session)     cmd_start_session ;;
     reset-sprint-done) cmd_reset_sprint_done ;;
     clear)             cmd_clear ;;
     status)            cmd_status ;;

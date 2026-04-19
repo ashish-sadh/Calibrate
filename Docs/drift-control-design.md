@@ -61,45 +61,47 @@ Priority order for deciding which session to start next:
 
 ### Startup (every session type)
 
-1. Read `program.md` — get session-type-specific instructions
-2. Read `~/drift-state/last-session-summary.md` — understand what the previous session did and where it left off
-3. Check state: `sprint-service status`, `git status`
-4. Create a short overhead tracking issue:
-   ```bash
-   gh issue create --label overhead --title "Session [type] — [date/time] overhead" \
-     --body "Overhead: bug investigations, session setup, context gathering"
-   ```
-   Claim it immediately. This issue is closed at session end. Does **not** count toward the 5-task limit.
-5. Proceed with session-type-specific work
+**Mechanically handled by hooks — sessions do not need to do this manually:**
+
+1. `session-start.sh` hook fires automatically at session start:
+   - Calls `sprint-service.sh start-session` → resets `session_tasks` counter to 0
+   - Creates + claims an overhead tracking issue → stores number in `~/drift-state/current-overhead-issue`
+   - Injects `~/drift-state/last-session-summary.md` content into session context
+   - Injects sprint queue state, next task, product focus, design docs, report feedback
+2. Session reads `program.md` for the decision flow for its session type
 
 ### Task Loop (all implementation sessions)
 
 - Maximum **5 tasks per session** (implementation tasks only)
-- Session tracks count internally in context
-- After 5 tasks: update Obsidian `/Sessions/YYYY-MM-DD.md`, close overhead issue, exit cleanly
-- Watchdog monitors commits-since-session-start for observability (never interrupts based on count)
+- **Mechanically enforced:** `sprint-service.sh next --senior/--junior` returns `"none"` automatically when `session_tasks >= 5` (counter increments in `done` and `session-done`)
+- Session does not need to track a counter — just loop on `next` until it returns `"none"`
+- `done` on overhead/planning-labeled tasks does NOT increment the counter
 
 ### Exit (all sessions)
 
-1. Update Obsidian `/Sessions/YYYY-MM-DD.md` — brief log of what was worked on and any interruptions
-2. Close overhead tracking issue with summary
-3. Exit — watchdog runs `session-compliance.sh` then decides next session
+**Mechanically handled by session-compliance.sh — sessions just exit:**
+
+1. Watchdog calls `session-compliance.sh` after every exit (clean or crash)
+2. `session-compliance.sh` closes the overhead tracking issue from `~/drift-state/current-overhead-issue`
+3. Writes `~/drift-state/last-session-summary.md` with recent commits and interrupted task
+4. Appends to Obsidian `Sessions/YYYY-MM-DD.md`
+5. Watchdog then calls `cleanup_dirty_state` → `start_claude` for next session
 
 ---
 
 ## Post-Session Compliance
 
-**`scripts/session-compliance.sh`** — called by watchdog after every session exit (clean or crash):
+**`scripts/session-compliance.sh`** — called by watchdog BEFORE `cleanup_dirty_state` after every session exit (clean, crash, or stall):
 
-1. Checks git state (dirty? discards via `cleanup_dirty_state`)
-2. Unclaims any stale in-progress tasks
-3. Writes `~/drift-state/last-session-summary.md`:
-   - Session type + model
-   - Tasks completed (from state diff)
-   - Any tasks interrupted mid-work
-   - Timestamp
-4. Appends to Obsidian `Sessions/YYYY-MM-DD.md`
-5. Logs abnormalities to `process-feedback.log`
+1. Closes overhead tracking issue (`~/drift-state/current-overhead-issue`) with exit summary comment
+2. Writes `~/drift-state/last-session-summary.md`:
+   - Session type + model + exit reason (normal/crash/stall)
+   - Recent commits from this session (last 2 hours)
+   - Interrupted task (read from sprint-state before clear)
+3. Appends to Obsidian `Sessions/YYYY-MM-DD.md`
+4. Logs crash/stall exits to `process-feedback.log` (planning drains this each cycle)
+
+Called BEFORE `cleanup_dirty_state` so the interrupted in-progress task is still readable in state. After compliance, `cleanup_dirty_state` clears all in-progress and resets git.
 
 This ensures the next session always has a clear picture of where to pick up, even after a crash.
 
