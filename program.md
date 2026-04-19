@@ -84,7 +84,7 @@ You are the senior engineer and PE. session-start.sh has injected your context, 
 
 4. **Sprint task loop:**
    `TASK=$(scripts/sprint-service.sh next --senior)` — returns "none" when 5 tasks done or queue empty. If "none", exit immediately. **Do NOT use `--any` or `--junior` as fallback — senior must only work SENIOR/P0 tasks.**
-   When you get a task: `scripts/sprint-service.sh claim $N` → read full issue + all comments + screenshots → post plan comment → implement → build → test → commit → `scripts/sprint-service.sh done $N $(git rev-parse HEAD)`.
+   When you get a task: `scripts/sprint-service.sh claim $N` → read full issue + all comments → **post a plan comment on the GitHub issue BEFORE writing any code** (root cause + fix approach + files to change) → implement → build → test → commit → `scripts/sprint-service.sh done $N $(git rev-parse HEAD)`.
    - **Stale task** (issue already closed on GitHub): `scripts/sprint-service.sh session-done $N` → loop.
    - **Breaking change** (would touch 5+ public APIs or protocol files): unclaim + `gh issue edit $N --add-label blocked` + comment describing needed design → loop.
    - **Bug close:** write `echo "Resolution: ..." > /tmp/done-note-$N` before calling `done` — hook enforces non-empty resolution.
@@ -103,9 +103,9 @@ You are the junior engineer. session-start.sh has injected your context, created
 
 2. **Task loop:**
    `TASK=$(scripts/sprint-service.sh next --junior)` — returns sprint tasks, then permanent tasks when sprint is empty, then "none" after 5 implementation tasks. If "none", exit.
-   When you get a task: `scripts/sprint-service.sh claim $N` → read full issue + all comments + screenshots → post plan comment.
+   When you get a task: `scripts/sprint-service.sh claim $N` → read full issue + all comments → **post a plan comment on the GitHub issue BEFORE writing any code** (what you'll do + which files) → then:
    - **Sprint task:** implement → build → test → commit → `scripts/sprint-service.sh done $N $(git rev-parse HEAD)`
-   - **Permanent task:** implement → commit → comment progress → `scripts/sprint-service.sh session-done $N` (do NOT close the GitHub issue). Remove `requested` label if set.
+   - **Permanent task:** implement → commit → `gh issue comment $N --body "Progress: ..."` → `scripts/sprint-service.sh session-done $N`. **NEVER run `gh issue close` on a permanent task — they are recurring and must stay open forever.**
    - **Stale task** (issue already closed on GitHub): `scripts/sprint-service.sh session-done $N` → loop.
 
 3. **Too complex?** Unclaim + `gh issue edit $N --add-label SENIOR` → back to step 2.
