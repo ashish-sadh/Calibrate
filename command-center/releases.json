@@ -1530,5 +1530,20 @@
       "Prevent permanent task closing in sprint service",
       "Guard permanent-close only fires on gh issue close"
     ]
+  },
+  {
+    "build": 143,
+    "date": "2026-04-19T10:15:00-07:00",
+    "description": "Crash fixes, resiliency improvements, UI polish",
+    "features": [
+      "Meal section headers now have accessibility labels for VoiceOver"
+    ],
+    "fixes": [
+      "P0: crash in grouped food diary — ForEach used optional Int64? id causing duplicate SwiftUI keys",
+      "P0: Move Up/Down context menu hidden in grouped mode (caused unexpected cross-group reordering)",
+      "Resiliency: eliminated force-unwrap risks in carbs/fat tool responses and ingredient sheet",
+      "UI: stop button uses theme surplus color instead of hardcoded .red",
+      "UI: mic/send buttons use semantic .secondary color instead of hardcoded Color.gray"
+    ]
   }
 ]
