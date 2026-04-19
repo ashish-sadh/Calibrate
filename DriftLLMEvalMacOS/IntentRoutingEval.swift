@@ -96,6 +96,7 @@ final class IntentRoutingEval: XCTestCase {
     "hi"→Hi! How can I help?
     "i just love breakfast"→That's great! What did you have?
     "i love eating healthy"→Nice! Want to log something?
+    "I love eating rajma chawal"→Sounds tasty! Want to log it?
     If chat context shows "What did you have for lunch?" and user says "rice and dal"→{"tool":"log_food","name":"rice, dal"}
     If chat context shows sleep data and user says "what about last week"→{"tool":"sleep_recovery","period":"week"}
     JSON when you have enough info. Ask follow-up if details missing. Short text for chat.

@@ -4,6 +4,15 @@ Track of autonomous improvement cycles. Each entry = one cycle of the loop.
 
 ---
 
+## Cycle · 2026-04-19 (AI auto-research, session 9)
+
+- **AutoResearch loop** (#193): Ran `testAutoResearch` with DRIFT_AUTORESEARCH=1 (budget 20, plateau 3). Baseline held-out 74.0% (routing 67%, params 86%, response 69%) — navigation worst at 30%, contextSwitch perfect at 100%.
+- **Winner**: `addExample("I love eating rajma chawal" → chat)` — classifier few-shot teaching the model that food-sentiment phrases aren't logging intents. Round 1 accepted (+1.7% held-out). Round 2 (addRule variant) rejected. Round 3 terminated (no new candidates). Regression guard 100%→100%, no routing regressions.
+- **Applied** as text-style variant (`"I love eating rajma chawal"→Sounds tasty! Want to log it?`) to match existing prompt conventions at IntentClassifier.swift:81 and IntentRoutingEval.swift mirror. Avoids production regression from tool="chat" JSON output (not handled by `isInfoTool`/ToolRegistry). Re-validated: held-out 76% (+2.0% vs baseline; routing 71%, regression category 67%→74%).
+- **Tests**: DriftTests 1634/1634 ✓.
+
+---
+
 ## Cycle · 2026-04-16 (Human-shepherded senior tasks, session 8)
 
 - **LLM eval expansion**: +28 cases across 4 new test groups + expanded ambiguous test — testFoodLogging_drinksAndLiquids (5 cases: beverage logging), testWorkoutProgression_queries (5 cases: exercise_info for progress), testFoodInfo_dailyProgress (5 cases: macro status), testSupplements_adviceVsStatus (5 cases: advice vs intake vs status), testAmbiguous_mealWithoutItems (expanded 1→5 cases with correctness assertion). Fixed bug: last 2 cases in advice test incorrectly expected mark_supplement, corrected to supplements(). Total IntentRoutingEval: 35 test groups, ~145 cases.
