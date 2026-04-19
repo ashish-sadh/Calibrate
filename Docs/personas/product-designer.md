@@ -197,6 +197,13 @@
 - Nutrition lookup card (#196) is the first structured info-only card (no logging involved). Gives users an instant answer without forcing a commit. Build more read-only cards for "how many steps today", "weight trend this month", etc. — conversational glanceable answers.
 - User hasn't filed new bugs this cycle despite 14 feature commits since cycle 341. Either dogfooding paused or the recent fixes stuck. Next cycle, proactively solicit feedback — don't assume silence = satisfaction.
 - `edit_meal` tool is the most overdue chat capability. Today a user who logs the wrong item must leave chat and edit in the diary — breaking the chat-first promise on the most common mutation.
+
+### What I Learned — Planning Cycle 2000 (2026-04-19)
+- Two silent failure modes remain the biggest trust-erosion risks even after a strong sprint: (1) ambiguous input where the app silently picks one interpretation, (2) delete/edit that removes the *wrong* entry because it matched by name. Both produce a worse outcome than a one-tap "Did you mean X or Y?" — users accept friction when it prevents mistakes. Sprint adds clarification dialogue (#226) and entry-reference resolution (#227) to plug both.
+- Restaurant chain foods are the hardest-to-log meals and the fastest to drive drop-off. USDA can't fill this gap — we curate. Adding Starbucks/Chipotle/Subway (#231) directly addresses the "I can't find my breakfast" moment.
+- A stable FoodLoggingGoldSetTests matters more than a big one. Product focus makes it a per-session gate; a flaky gate teaches the team to ignore it. Audit before growth (#235).
+- Accessibility is still frame-by-frame polish work. AIChatView icons are the primary interaction surface; missing labels mean VO users can't drive the product at all (#234). Ship this cycle.
+- Per-tool reliability (#228) is a product-quality metric, not just an engineering metric. If `edit_meal` works 60% of the time, the entire "chat-first" promise cracks. A public per-tool number forces focus.
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation
 - Prefer clean, scannable dashboards over dense data displays

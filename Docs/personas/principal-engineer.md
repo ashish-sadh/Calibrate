@@ -210,6 +210,14 @@
 - Progressive multi-item disclosure (#178) is the first pipeline-level UX win from streaming per-item resolution. Perceived latency dropped materially; the pattern should extend to multi-step confirmations (edit_meal result, workout split builder).
 - The "no new StaticOverrides" directive continues to shape task design — every AI task this sprint is prompt/stage/tool-level, not keyword-rule. Confidence calibration (#209) is the natural next layer: the LLM should admit uncertainty rather than be force-routed by overrides.
 
+### What I Learned — Planning Cycle 2000 (2026-04-19)
+- Cycle 1159 sprint fully landed (threading #208, edit_meal #207, persistent state #210, confidence calibration #209, per-stage eval #212). The calibration ticket shipped the confidence *signal* but did not wire it to behavior — we still guess on low-confidence input. New ticket #226 closes that loop. Shipping a signal without a response to it is an incomplete feature.
+- Per-stage isolated eval (#212) gives us the harness but no *per-tool* success rate. You can still regress one tool behind aggregate pass rate. Ticket #228 adds a 10-query gold set per top-5 tool — this is the missing granularity for routing/extraction trust.
+- Delete/edit by reference is the real trust gap now that `edit_meal` has shipped. A user who logs "chicken" twice today and says "delete the first one" gets the wrong row. Named-lookup is insufficient once multi-item logging is common. Ticket #227 treats entry references as first-class state, not strings.
+- Compression round 1 (intent, -16%) left room in the other stages that we haven't measured since context window doubled to 4096. More tokens ≠ more prompt — bigger window is for *conversation* context, not larger instructions. Round 2 (#229) should keep the stage prompts tight.
+- Food DB growth is still zero-risk high-value work for junior sessions (#230, #231). Restaurant chains are a new axis — USDA doesn't cover Starbucks/Chipotle, and those are the meals users log most often.
+- Flake hygiene matters now that FoodLoggingGoldSetTests is a session-start gate (#235). A flaky gate becomes ignored; a stable gate becomes trusted. Audit before adding more fixtures.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)

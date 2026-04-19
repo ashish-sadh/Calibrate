@@ -39,7 +39,8 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 ### Now
 - ~~**AI Chat reliability (P0)**~~ DONE — 6-stage pipeline shipped: input normalization, LLM intent classifier, domain extraction, Swift validation, streaming presentation. 55-query gold set at 100% baseline.
 - ~~**AI Chat depth (P0, cycle 341 sprint)**~~ MOSTLY DONE — Time-aware pills, meal-period auto-detect, streamed stage-label indicator, nutrition-lookup card, 25-turn multi-turn regression suite all shipped. Context window doubled 2048→4096 with long-context eval. Prompt token audit 16% compression. Routing +4.3% from simpler intent prompt.
-- **AI Chat depth — final three (P0, cycle 1159 sprint)** — Pipeline threading (last 3 turns into LLM context, #208), `edit_meal` tool for multi-item mutations via chat (#207), session-persistent conversation state across app relaunch (#210). Plus intent confidence calibration (#209) and per-stage isolated LLM eval (#212). All must preserve FoodLoggingGoldSet at 100%. No new StaticOverrides — tools, prompt, and pipeline stages only.
+- ~~**AI Chat depth — final three (P0, cycle 1159 sprint)**~~ DONE — #207/#208/#209/#210/#212 all merged. Threading, `edit_meal`, session-persistent state, confidence calibration, per-stage eval harness.
+- **AI Chat depth — trust & precision (P0, cycle 2000 sprint)** — Low-confidence clarification dialogue (#226), multi-turn entry reference resolution (#227), per-tool reliability audit (#228), prompt compression round 2 (#229). Goal: ask instead of guess on ambiguity; delete/edit the *right* entry; every top tool ≥80% reliability; ≥10% token cost reduction per stage. No new StaticOverrides.
 
 ### Next
 - ~~**USDA API Phase 1**~~ DONE — Opt-in toggle, rate limiting, searchWithFallback, privacy notice. Behind toggle (default OFF).
