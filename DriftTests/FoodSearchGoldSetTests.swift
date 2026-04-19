@@ -153,4 +153,73 @@ final class FoodSearchGoldSetTests: XCTestCase {
             // Ranking depends on time-of-day boost — informational, not a hard failure
         }
     }
+
+    // MARK: - New Foods Sprint #215 (30 items)
+
+    /// Returns count of queries where keyword appears in top-5 search results.
+    private func searchHitCount(_ cases: [(query: String, keyword: String)], label: String) -> Int {
+        var correct = 0
+        for (query, keyword) in cases {
+            let results = FoodService.searchFood(query: query)
+            if results.prefix(5).contains(where: { $0.name.lowercased().contains(keyword.lowercased()) }) {
+                correct += 1
+            } else {
+                print("MISS (\(label)): '\(query)' → top3=[\(results.prefix(3).map(\.name).joined(separator: ", "))]")
+            }
+        }
+        return correct
+    }
+
+    func testNewFoodsSprintSouthIndian() {
+        let cases: [(query: String, keyword: String)] = [
+            ("semiya upma", "semiya"),
+            ("rava upma", "rava upma"),
+            ("puliogare", "puliogare"),
+            ("akki rotti", "akki rotti"),
+            ("kaima idli", "kaima"),
+            ("idiappam", "idiappam"),
+            ("masala dosa potato", "masala dosa potato"),
+            ("benne dosa", "benne"),
+            ("tomato bath", "tomato bath"),
+            ("ambali", "ambali"),
+            ("paal pongal", "paal pongal"),
+            ("paruppu podi rice", "paruppu podi"),
+            ("ellu sadam", "ellu sadam"),
+            ("manga pachadi", "manga pachadi"),
+        ]
+        let correct = searchHitCount(cases, label: "south-indian")
+        print("📊 South Indian new foods: \(correct)/\(cases.count)")
+        XCTAssertGreaterThanOrEqual(correct, cases.count - 1, "At most 1 south Indian new food miss")
+    }
+
+    func testNewFoodsSprintRegionalAndSweets() {
+        let cases: [(query: String, keyword: String)] = [
+            ("jolada rotti", "jolada"),
+            ("sajje rotti", "sajje"),
+            ("chole kulche", "chole kulche"),
+            ("zunka bhakri", "zunka"),
+            ("sol kadhi", "sol kadhi"),
+            ("chumchum", "chumchum"),
+            ("kulfi falooda", "kulfi falooda"),
+        ]
+        let correct = searchHitCount(cases, label: "regional-sweets")
+        print("📊 Regional & sweets new foods: \(correct)/\(cases.count)")
+        XCTAssertGreaterThanOrEqual(correct, cases.count - 1, "At most 1 regional/sweet new food miss")
+    }
+
+    func testNewFoodsSprintSnacksAndShakes() {
+        let cases: [(query: String, keyword: String)] = [
+            ("nippattu", "nippattu"),
+            ("chakkli", "chakkli"),
+            ("mandakki oggarane", "mandakki"),
+            ("churmuri", "churmuri"),
+            ("optimum nutrition whey", "optimum nutrition"),
+            ("true basics protein", "true basics"),
+            ("nakpro whey", "nakpro"),
+            ("muscleblaze biozyme advanced", "muscleblaze biozyme advanced"),
+        ]
+        let correct = searchHitCount(cases, label: "snacks-shakes")
+        print("📊 Snacks & shakes new foods: \(correct)/\(cases.count)")
+        XCTAssertGreaterThanOrEqual(correct, cases.count - 1, "At most 1 snack/shake new food miss")
+    }
 }

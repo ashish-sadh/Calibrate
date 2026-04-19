@@ -37717,5 +37717,559 @@
       "asafoetida"
     ],
     "nova_group": 3
+  },
+  {
+    "name": "Semiya Upma",
+    "category": "South Indian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 235,
+    "protein_g": 6,
+    "carbs_g": 40,
+    "fat_g": 6,
+    "fiber_g": 2,
+    "ingredients": [
+      "vermicelli",
+      "onion",
+      "mustard seeds",
+      "curry leaves",
+      "oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Rava Upma",
+    "category": "South Indian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 220,
+    "protein_g": 5,
+    "carbs_g": 35,
+    "fat_g": 7,
+    "fiber_g": 2,
+    "ingredients": [
+      "semolina",
+      "onion",
+      "mustard seeds",
+      "curry leaves",
+      "ghee"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Puliogare",
+    "category": "South Indian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 5,
+    "carbs_g": 48,
+    "fat_g": 8,
+    "fiber_g": 3,
+    "ingredients": [
+      "rice",
+      "tamarind",
+      "peanuts",
+      "mustard seeds",
+      "curry leaves",
+      "sesame"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Akki Rotti",
+    "category": "South Indian",
+    "serving_size": 80,
+    "serving_unit": "g",
+    "calories": 155,
+    "protein_g": 3,
+    "carbs_g": 28,
+    "fat_g": 4,
+    "fiber_g": 1,
+    "ingredients": [
+      "rice flour",
+      "onion",
+      "cumin",
+      "green chilli",
+      "oil"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Kaima Idli",
+    "category": "South Indian",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 285,
+    "protein_g": 9,
+    "carbs_g": 50,
+    "fat_g": 5,
+    "fiber_g": 4,
+    "ingredients": [
+      "idli",
+      "sambar",
+      "ghee",
+      "curry leaves"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Idiappam",
+    "category": "South Indian",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 140,
+    "protein_g": 3,
+    "carbs_g": 28,
+    "fat_g": 2,
+    "fiber_g": 1,
+    "ingredients": [
+      "rice flour",
+      "water",
+      "salt"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Masala Dosa Potato Filling",
+    "category": "South Indian",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 120,
+    "protein_g": 2,
+    "carbs_g": 18,
+    "fat_g": 5,
+    "fiber_g": 2,
+    "ingredients": [
+      "potato",
+      "onion",
+      "turmeric",
+      "mustard seeds",
+      "oil"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Benne Dosa",
+    "category": "South Indian",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 230,
+    "protein_g": 5,
+    "carbs_g": 34,
+    "fat_g": 8,
+    "fiber_g": 1,
+    "ingredients": [
+      "rice",
+      "urad dal",
+      "butter",
+      "fenugreek"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Tomato Bath",
+    "category": "South Indian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 255,
+    "protein_g": 5,
+    "carbs_g": 44,
+    "fat_g": 7,
+    "fiber_g": 3,
+    "ingredients": [
+      "rice",
+      "tomato",
+      "onion",
+      "ghee",
+      "spices"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Jolada Rotti",
+    "category": "Indian Regional",
+    "serving_size": 80,
+    "serving_unit": "g",
+    "calories": 155,
+    "protein_g": 4,
+    "carbs_g": 30,
+    "fat_g": 3,
+    "fiber_g": 3,
+    "ingredients": [
+      "jowar flour",
+      "water",
+      "salt"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Ambali",
+    "category": "South Indian",
+    "serving_size": 200,
+    "serving_unit": "ml",
+    "calories": 145,
+    "protein_g": 3,
+    "carbs_g": 28,
+    "fat_g": 1,
+    "fiber_g": 4,
+    "ingredients": [
+      "ragi flour",
+      "water",
+      "buttermilk"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Sajje Rotti",
+    "category": "Indian Regional",
+    "serving_size": 60,
+    "serving_unit": "g",
+    "calories": 115,
+    "protein_g": 3,
+    "carbs_g": 20,
+    "fat_g": 2,
+    "fiber_g": 3,
+    "ingredients": [
+      "bajra flour",
+      "water",
+      "salt"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Paal Pongal",
+    "category": "South Indian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 240,
+    "protein_g": 7,
+    "carbs_g": 42,
+    "fat_g": 5,
+    "fiber_g": 1,
+    "ingredients": [
+      "rice",
+      "milk",
+      "sugar",
+      "cashew",
+      "ghee",
+      "cardamom"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Paruppu Podi Rice",
+    "category": "South Indian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 310,
+    "protein_g": 8,
+    "carbs_g": 50,
+    "fat_g": 9,
+    "fiber_g": 3,
+    "ingredients": [
+      "rice",
+      "lentil powder",
+      "ghee",
+      "curry leaves",
+      "sesame"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Ellu Sadam",
+    "category": "South Indian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 290,
+    "protein_g": 7,
+    "carbs_g": 46,
+    "fat_g": 9,
+    "fiber_g": 3,
+    "ingredients": [
+      "rice",
+      "sesame seeds",
+      "dry coconut",
+      "dry red chilli",
+      "mustard seeds",
+      "oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Manga Pachadi",
+    "category": "South Indian",
+    "serving_size": 50,
+    "serving_unit": "g",
+    "calories": 65,
+    "protein_g": 1,
+    "carbs_g": 12,
+    "fat_g": 2,
+    "fiber_g": 1,
+    "ingredients": [
+      "raw mango",
+      "jaggery",
+      "neem flowers",
+      "mustard seeds",
+      "oil"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Chole Kulche",
+    "category": "Indian Street Food",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 14,
+    "carbs_g": 80,
+    "fat_g": 12,
+    "fiber_g": 10,
+    "ingredients": [
+      "chickpeas",
+      "kulcha bread",
+      "onion",
+      "spices",
+      "oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Zunka Bhakri",
+    "category": "Indian Regional",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 8,
+    "carbs_g": 42,
+    "fat_g": 9,
+    "fiber_g": 6,
+    "ingredients": [
+      "besan",
+      "onion",
+      "jowar bhakri",
+      "oil",
+      "spices"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Sol Kadhi",
+    "category": "Indian Regional",
+    "serving_size": 200,
+    "serving_unit": "ml",
+    "calories": 60,
+    "protein_g": 2,
+    "carbs_g": 8,
+    "fat_g": 3,
+    "fiber_g": 1,
+    "ingredients": [
+      "kokum",
+      "coconut milk",
+      "garlic",
+      "coriander"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Chumchum",
+    "category": "Indian Sweets",
+    "serving_size": 50,
+    "serving_unit": "g",
+    "calories": 130,
+    "protein_g": 4,
+    "carbs_g": 22,
+    "fat_g": 3,
+    "fiber_g": 0,
+    "ingredients": [
+      "chena",
+      "sugar",
+      "rose water",
+      "coconut"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Kulfi Falooda",
+    "category": "Indian Sweets",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 8,
+    "carbs_g": 55,
+    "fat_g": 14,
+    "fiber_g": 2,
+    "ingredients": [
+      "kulfi",
+      "falooda sev",
+      "rose syrup",
+      "sabja seeds",
+      "milk"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Nippattu",
+    "category": "Indian Snacks",
+    "serving_size": 40,
+    "serving_unit": "g",
+    "calories": 175,
+    "protein_g": 4,
+    "carbs_g": 24,
+    "fat_g": 8,
+    "fiber_g": 1,
+    "ingredients": [
+      "rice flour",
+      "peanuts",
+      "sesame",
+      "curry leaves",
+      "oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Chakkli",
+    "category": "Indian Snacks",
+    "serving_size": 40,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 3,
+    "carbs_g": 25,
+    "fat_g": 8,
+    "fiber_g": 1,
+    "ingredients": [
+      "rice flour",
+      "urad dal",
+      "butter",
+      "cumin",
+      "sesame"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Mandakki Oggarane",
+    "category": "Indian Snacks",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 4,
+    "carbs_g": 32,
+    "fat_g": 5,
+    "fiber_g": 2,
+    "ingredients": [
+      "puffed rice",
+      "onion",
+      "peanuts",
+      "curry leaves",
+      "mustard seeds",
+      "oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Churmuri",
+    "category": "Indian Snacks",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 160,
+    "protein_g": 3,
+    "carbs_g": 30,
+    "fat_g": 4,
+    "fiber_g": 2,
+    "ingredients": [
+      "puffed rice",
+      "onion",
+      "tomato",
+      "green chilli",
+      "coriander",
+      "lemon"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Optimum Nutrition Gold Standard Whey",
+    "category": "Supplements & Shakes",
+    "serving_size": 31,
+    "serving_unit": "g",
+    "calories": 120,
+    "protein_g": 24,
+    "carbs_g": 3,
+    "fat_g": 1,
+    "fiber_g": 1,
+    "ingredients": [
+      "whey protein isolate",
+      "whey protein concentrate",
+      "cocoa",
+      "sunflower lecithin"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "True Basics Plant Protein",
+    "category": "Supplements & Shakes",
+    "serving_size": 33,
+    "serving_unit": "g",
+    "calories": 118,
+    "protein_g": 20,
+    "carbs_g": 8,
+    "fat_g": 2,
+    "fiber_g": 1,
+    "ingredients": [
+      "pea protein isolate",
+      "brown rice protein",
+      "sunflower lecithin"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Nakpro Performance Whey",
+    "category": "Supplements & Shakes",
+    "serving_size": 33,
+    "serving_unit": "g",
+    "calories": 130,
+    "protein_g": 25,
+    "carbs_g": 4,
+    "fat_g": 2,
+    "fiber_g": 0,
+    "ingredients": [
+      "whey protein concentrate",
+      "cocoa powder",
+      "sunflower lecithin"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Fast&Up Whey Protein",
+    "category": "Supplements & Shakes",
+    "serving_size": 30,
+    "serving_unit": "g",
+    "calories": 115,
+    "protein_g": 22,
+    "carbs_g": 4,
+    "fat_g": 1.5,
+    "fiber_g": 0,
+    "ingredients": [
+      "whey protein concentrate",
+      "whey protein isolate",
+      "vanilla flavour"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Muscleblaze Biozyme Advanced Whey",
+    "category": "Supplements & Shakes",
+    "serving_size": 35,
+    "serving_unit": "g",
+    "calories": 135,
+    "protein_g": 26,
+    "carbs_g": 4,
+    "fat_g": 2,
+    "fiber_g": 1,
+    "ingredients": [
+      "whey protein isolate",
+      "whey protein concentrate",
+      "digestive enzymes"
+    ],
+    "nova_group": 4
   }
 ]
