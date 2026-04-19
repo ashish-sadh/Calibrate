@@ -14,6 +14,7 @@ struct FoodSearchView: View {
     @State private var matchingRecipes: [SavedFood] = []
     @State private var showingManual = false
     @State private var logTime = Date()
+    @State private var selectedMealType: MealType? = nil
     @State private var loggedCount = 0
     @State private var showingRecipeBuilder = false
     @State private var showingScanner = false
@@ -26,6 +27,7 @@ struct FoodSearchView: View {
     @FocusState private var searchFocused: Bool
 
     private var effectiveMealType: MealType { initialMealType ?? viewModel.autoMealType }
+    private var logMealType: MealType { selectedMealType ?? effectiveMealType }
 
     var body: some View {
         NavigationStack {
@@ -86,7 +88,9 @@ struct FoodSearchView: View {
                     Button(loggedCount > 0 ? "Done" : "Cancel") { dismiss() }
                 }
             }
-            .sheet(item: $selectedFood) { food in logFoodSheet(food) }
+            .sheet(item: $selectedFood) { food in
+                logFoodSheet(food).onDisappear { selectedMealType = nil }
+            }
             .sheet(isPresented: $showingManual) {
                 ManualFoodEntrySheet(viewModel: viewModel) { loggedCount += 1 }
             }
@@ -594,6 +598,29 @@ struct FoodSearchView: View {
                 DatePicker("Time", selection: $logTime, displayedComponents: .hourAndMinute)
                     .font(.subheadline).foregroundStyle(.secondary)
                     .padding(.horizontal, 16).padding(.vertical, 8)
+
+                // Meal type picker
+                HStack {
+                    Text("Meal").font(.subheadline).foregroundStyle(.secondary)
+                    Spacer()
+                    Menu {
+                        ForEach(MealType.allCases, id: \.self) { type in
+                            Button {
+                                selectedMealType = type
+                            } label: {
+                                Label(type.displayName, systemImage: type.icon)
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: logMealType.icon)
+                            Text(logMealType.displayName)
+                        }
+                        .font(.subheadline)
+                        .foregroundStyle(Theme.accent)
+                    }
+                }
+                .padding(.horizontal, 16).padding(.vertical, 8)
             }
             .scrollDismissesKeyboard(.interactively)
             .background(Theme.background)
@@ -611,7 +638,7 @@ struct FoodSearchView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Log") {
-                        viewModel.logFood(food, servings: multiplier, mealType: viewModel.autoMealType, loggedAt: logTime)
+                        viewModel.logFood(food, servings: multiplier, mealType: logMealType, loggedAt: logTime)
                         viewModel.loadSuggestions()
                         refreshSearch()
                         loggedCount += 1
