@@ -40502,5 +40502,645 @@
       "pork fat"
     ],
     "nova_group": 1
+  },
+  {
+    "name": "Rendang",
+    "category": "Malaysian",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 350,
+    "protein_g": 28,
+    "carbs_g": 8,
+    "fat_g": 24,
+    "fiber_g": 2,
+    "ingredients": [
+      "beef",
+      "coconut milk",
+      "lemongrass",
+      "galangal",
+      "turmeric",
+      "chilies",
+      "shallots"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Char Kway Teow",
+    "category": "Singaporean",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 520,
+    "protein_g": 22,
+    "carbs_g": 65,
+    "fat_g": 18,
+    "fiber_g": 3,
+    "ingredients": [
+      "flat rice noodles",
+      "eggs",
+      "shrimp",
+      "Chinese sausage",
+      "bean sprouts",
+      "soy sauce",
+      "dark soy sauce"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Laksa",
+    "category": "Malaysian",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 490,
+    "protein_g": 18,
+    "carbs_g": 58,
+    "fat_g": 22,
+    "fiber_g": 4,
+    "ingredients": [
+      "rice noodles",
+      "coconut milk",
+      "shrimp",
+      "chicken",
+      "laksa paste",
+      "bean sprouts",
+      "tofu puffs"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Satay",
+    "category": "Southeast Asian",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 195,
+    "protein_g": 22,
+    "carbs_g": 4,
+    "fat_g": 10,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "chicken",
+      "peanut sauce",
+      "lemongrass",
+      "turmeric",
+      "soy sauce",
+      "coconut milk"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Nasi Goreng",
+    "category": "Indonesian",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 14,
+    "carbs_g": 55,
+    "fat_g": 12,
+    "fiber_g": 2,
+    "ingredients": [
+      "rice",
+      "egg",
+      "shrimp paste",
+      "kecap manis",
+      "vegetables",
+      "chicken",
+      "garlic",
+      "shallots"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Pastitsio",
+    "category": "Greek",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 420,
+    "protein_g": 22,
+    "carbs_g": 38,
+    "fat_g": 20,
+    "fiber_g": 2,
+    "ingredients": [
+      "penne pasta",
+      "ground beef",
+      "bechamel sauce",
+      "tomatoes",
+      "cinnamon",
+      "kefalotyri cheese",
+      "butter"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Souvlaki",
+    "category": "Greek",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 260,
+    "protein_g": 28,
+    "carbs_g": 5,
+    "fat_g": 14,
+    "fiber_g": 1,
+    "ingredients": [
+      "pork",
+      "olive oil",
+      "lemon juice",
+      "oregano",
+      "garlic",
+      "salt"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Tiropita",
+    "category": "Greek",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 310,
+    "protein_g": 11,
+    "carbs_g": 22,
+    "fat_g": 20,
+    "fiber_g": 1,
+    "ingredients": [
+      "phyllo pastry",
+      "feta cheese",
+      "eggs",
+      "butter",
+      "ricotta"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Fasolada",
+    "category": "Greek",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 210,
+    "protein_g": 10,
+    "carbs_g": 30,
+    "fat_g": 6,
+    "fiber_g": 9,
+    "ingredients": [
+      "white beans",
+      "tomatoes",
+      "carrots",
+      "celery",
+      "olive oil",
+      "garlic",
+      "parsley"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Horiatiki Salad",
+    "category": "Greek",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 6,
+    "carbs_g": 8,
+    "fat_g": 14,
+    "fiber_g": 2,
+    "ingredients": [
+      "tomatoes",
+      "cucumber",
+      "feta cheese",
+      "kalamata olives",
+      "red onion",
+      "olive oil",
+      "oregano"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Paella",
+    "category": "Spanish",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 28,
+    "carbs_g": 55,
+    "fat_g": 14,
+    "fiber_g": 3,
+    "ingredients": [
+      "rice",
+      "saffron",
+      "shrimp",
+      "mussels",
+      "chicken",
+      "tomatoes",
+      "olive oil",
+      "paprika",
+      "garlic"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Tortilla Espa\u00f1ola",
+    "category": "Spanish",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 270,
+    "protein_g": 10,
+    "carbs_g": 22,
+    "fat_g": 16,
+    "fiber_g": 2,
+    "ingredients": [
+      "eggs",
+      "potatoes",
+      "onion",
+      "olive oil",
+      "salt"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Albondigas",
+    "category": "Spanish",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 350,
+    "protein_g": 24,
+    "carbs_g": 12,
+    "fat_g": 24,
+    "fiber_g": 1,
+    "ingredients": [
+      "ground beef",
+      "pork",
+      "bread",
+      "egg",
+      "garlic",
+      "tomato sauce",
+      "paprika"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Croquetas",
+    "category": "Spanish",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 10,
+    "carbs_g": 25,
+    "fat_g": 16,
+    "fiber_g": 1,
+    "ingredients": [
+      "bechamel",
+      "ham",
+      "breadcrumbs",
+      "eggs",
+      "butter",
+      "flour"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "G\u00f6zleme",
+    "category": "Turkish",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 12,
+    "carbs_g": 38,
+    "fat_g": 14,
+    "fiber_g": 2,
+    "ingredients": [
+      "thin flatbread dough",
+      "feta cheese",
+      "spinach",
+      "olive oil"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Ackee and Saltfish",
+    "category": "Jamaican",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 340,
+    "protein_g": 22,
+    "carbs_g": 8,
+    "fat_g": 24,
+    "fiber_g": 3,
+    "ingredients": [
+      "ackee",
+      "saltfish",
+      "onions",
+      "scotch bonnet pepper",
+      "tomatoes",
+      "scallions",
+      "thyme"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Doubles",
+    "category": "Trinidadian",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 290,
+    "protein_g": 9,
+    "carbs_g": 45,
+    "fat_g": 9,
+    "fiber_g": 5,
+    "ingredients": [
+      "bara",
+      "curried chickpeas",
+      "cucumber chutney",
+      "tamarind sauce",
+      "pepper sauce"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Callaloo",
+    "category": "Caribbean",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 120,
+    "protein_g": 5,
+    "carbs_g": 10,
+    "fat_g": 6,
+    "fiber_g": 4,
+    "ingredients": [
+      "callaloo leaves",
+      "coconut milk",
+      "onion",
+      "garlic",
+      "scotch bonnet",
+      "crab",
+      "salt pork"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Pelau",
+    "category": "Caribbean",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 450,
+    "protein_g": 20,
+    "carbs_g": 60,
+    "fat_g": 14,
+    "fiber_g": 4,
+    "ingredients": [
+      "chicken",
+      "rice",
+      "pigeon peas",
+      "coconut milk",
+      "brown sugar",
+      "pumpkin",
+      "vegetables"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Oxtail Stew",
+    "category": "Jamaican",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 34,
+    "carbs_g": 18,
+    "fat_g": 30,
+    "fiber_g": 3,
+    "ingredients": [
+      "oxtail",
+      "butter beans",
+      "allspice",
+      "scotch bonnet",
+      "soy sauce",
+      "thyme",
+      "garlic"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Tibs",
+    "category": "Ethiopian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 28,
+    "carbs_g": 8,
+    "fat_g": 20,
+    "fiber_g": 2,
+    "ingredients": [
+      "beef",
+      "berbere spice",
+      "niter kibbeh",
+      "onions",
+      "garlic",
+      "rosemary",
+      "jalape\u00f1o"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Shiro",
+    "category": "Ethiopian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 230,
+    "protein_g": 12,
+    "carbs_g": 32,
+    "fat_g": 7,
+    "fiber_g": 6,
+    "ingredients": [
+      "chickpea flour",
+      "berbere",
+      "niter kibbeh",
+      "onions",
+      "garlic",
+      "tomatoes"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Ful Medames",
+    "category": "Ethiopian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 190,
+    "protein_g": 12,
+    "carbs_g": 28,
+    "fat_g": 5,
+    "fiber_g": 8,
+    "ingredients": [
+      "fava beans",
+      "olive oil",
+      "lemon juice",
+      "garlic",
+      "cumin",
+      "parsley"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Char Siu",
+    "category": "Chinese",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 22,
+    "carbs_g": 14,
+    "fat_g": 14,
+    "fiber_g": 0,
+    "ingredients": [
+      "pork shoulder",
+      "honey",
+      "soy sauce",
+      "hoisin sauce",
+      "five-spice",
+      "Shaoxing wine",
+      "red food coloring"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Hong Shao Rou",
+    "category": "Chinese",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 450,
+    "protein_g": 18,
+    "carbs_g": 12,
+    "fat_g": 36,
+    "fiber_g": 0,
+    "ingredients": [
+      "pork belly",
+      "soy sauce",
+      "Shaoxing wine",
+      "rock sugar",
+      "star anise",
+      "ginger",
+      "scallions"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Xiaolongbao",
+    "category": "Chinese",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 215,
+    "protein_g": 12,
+    "carbs_g": 24,
+    "fat_g": 8,
+    "fiber_g": 1,
+    "ingredients": [
+      "flour",
+      "pork",
+      "ginger",
+      "soy sauce",
+      "Shaoxing wine",
+      "pork aspic",
+      "sesame oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Khao Man Gai",
+    "category": "Thai",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 32,
+    "carbs_g": 52,
+    "fat_g": 14,
+    "fiber_g": 1,
+    "ingredients": [
+      "chicken",
+      "jasmine rice",
+      "chicken broth",
+      "ginger",
+      "garlic",
+      "cucumber",
+      "dipping sauce"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "B\u00f6rek",
+    "category": "Turkish",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 310,
+    "protein_g": 9,
+    "carbs_g": 26,
+    "fat_g": 19,
+    "fiber_g": 1,
+    "ingredients": [
+      "phyllo dough",
+      "feta cheese",
+      "eggs",
+      "butter",
+      "sesame seeds"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Manti",
+    "category": "Turkish",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 360,
+    "protein_g": 18,
+    "carbs_g": 42,
+    "fat_g": 14,
+    "fiber_g": 2,
+    "ingredients": [
+      "flour",
+      "ground beef",
+      "onion",
+      "spices",
+      "yogurt",
+      "butter",
+      "paprika",
+      "mint"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Dolma",
+    "category": "Turkish",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 230,
+    "protein_g": 6,
+    "carbs_g": 30,
+    "fat_g": 10,
+    "fiber_g": 3,
+    "ingredients": [
+      "grape leaves",
+      "rice",
+      "olive oil",
+      "lemon juice",
+      "dill",
+      "mint",
+      "pine nuts",
+      "currants"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Lahmacun",
+    "category": "Turkish",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 310,
+    "protein_g": 14,
+    "carbs_g": 40,
+    "fat_g": 10,
+    "fiber_g": 3,
+    "ingredients": [
+      "thin dough",
+      "minced lamb",
+      "tomatoes",
+      "peppers",
+      "onion",
+      "parsley",
+      "spices"
+    ],
+    "nova_group": 2
   }
 ]
