@@ -73,16 +73,45 @@ async function smartApi(path) {
 }
 
 async function listReports() {
-  const contents = await smartApi(`/repos/${OWNER}/${REPO}/contents/Docs/reports`);
-  return contents
-    .filter(f => f.name.endsWith('.md'))
+  const [prs, contents] = await Promise.all([
+    smartApi(`/repos/${OWNER}/${REPO}/issues?labels=report&state=closed&sort=created&direction=desc&per_page=100`),
+    smartApi(`/repos/${OWNER}/${REPO}/contents/Docs/reports`)
+  ]);
+
+  const fileSet = new Set(contents.filter(f => f.name.endsWith('.md')).map(f => f.name));
+  const fileByName = Object.fromEntries(contents.filter(f => f.name.endsWith('.md')).map(f => [f.name, f]));
+
+  function titleToFilename(title) {
+    const reviewMatch = title.match(/^(review-cycle-\d+)/i);
+    if (reviewMatch) return `${reviewMatch[1].toLowerCase()}.md`;
+    const dateMatch = title.match(/(\d{4}-\d{2}-\d{2})/);
+    if (dateMatch) return `exec-${dateMatch[1]}.md`;
+    return null;
+  }
+
+  const seen = new Set();
+  const result = [];
+
+  for (const pr of prs) {
+    if (!pr.pull_request) continue;
+    const filename = titleToFilename(pr.title);
+    if (filename && fileSet.has(filename) && !seen.has(filename)) {
+      seen.add(filename);
+      result.push({ ...fileByName[filename], _date: pr.created_at });
+    }
+  }
+
+  // Append any files not covered by a PR (oldest fallback, sorted by cycle desc)
+  const remaining = contents
+    .filter(f => f.name.endsWith('.md') && !seen.has(f.name))
     .sort((a, b) => {
-      // Numeric sort for cycle numbers, date sort for exec reports
       const numA = a.name.match(/cycle-(\d+)/)?.[1];
       const numB = b.name.match(/cycle-(\d+)/)?.[1];
       if (numA && numB) return parseInt(numB) - parseInt(numA);
       return b.name.localeCompare(a.name);
     });
+
+  return [...result, ...remaining];
 }
 
 async function getReportContent(path) {
