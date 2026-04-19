@@ -83,7 +83,7 @@ You are the senior engineer and PE. session-start.sh has injected your context, 
    - `scripts/design-service.sh approved-not-started` → `scripts/design-service.sh create-impl-tasks $N` → `scripts/sprint-service.sh refresh`
 
 4. **Sprint task loop:**
-   `TASK=$(scripts/sprint-service.sh next --senior)` — returns "none" when 5 tasks done or queue empty. If "none", exit.
+   `TASK=$(scripts/sprint-service.sh next --senior)` — returns "none" when 5 tasks done or queue empty. If "none", exit immediately. **Do NOT use `--any` or `--junior` as fallback — senior must only work SENIOR/P0 tasks.**
    When you get a task: `scripts/sprint-service.sh claim $N` → read full issue + all comments + screenshots → post plan comment → implement → build → test → commit → `scripts/sprint-service.sh done $N $(git rev-parse HEAD)`.
    - **Stale task** (issue already closed on GitHub): `scripts/sprint-service.sh session-done $N` → loop.
    - **Breaking change** (would touch 5+ public APIs or protocol files): unclaim + `gh issue edit $N --add-label blocked` + comment describing needed design → loop.
