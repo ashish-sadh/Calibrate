@@ -20,6 +20,7 @@ struct FoodTabView: View {
     @State private var showingCopyYesterdayAlert = false
     @State private var showingCopyAllAlert = false
     @State private var searchMealType: MealType? = nil
+    @AppStorage("foodDiaryMealGrouped") private var mealGrouped = true
 
     enum FoodSortMode: String, CaseIterable {
         case time, meal, protein, carbs, fat, fiber, plantPoints
@@ -53,7 +54,7 @@ struct FoodTabView: View {
     }
 
     /// Entries grouped by meal type, ordered breakfast → lunch → dinner → snack.
-    /// Only used when `foodSortMode == .meal`.
+    /// Only used when `mealGrouped == true`.
     private var mealGroups: [(mealType: MealType, entries: [FoodEntry])] {
         let buckets: [MealType: [FoodEntry]] = Dictionary(grouping: viewModel.todayEntries) { entry in
             MealType(rawValue: entry.mealType ?? "") ?? .snack
@@ -444,20 +445,38 @@ struct FoodTabView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text("Food Diary").font(.subheadline.weight(.semibold))
-                // Sort chips
+                // Meal grouping toggle + sort chips
                 if viewModel.todayEntries.count > 1 {
                     HStack(spacing: 2) {
-                        ForEach(FoodSortMode.allCases, id: \.self) { mode in
-                            Button {
-                                withAnimation(.easeInOut(duration: 0.2)) { foodSortMode = mode }
-                            } label: {
-                                Text(mode.label)
-                                    .font(.caption2.weight(.medium))
-                                    .foregroundStyle(foodSortMode == mode ? .white : .secondary)
-                                    .padding(.horizontal, 6).padding(.vertical, 3)
-                                    .background(foodSortMode == mode ? Theme.accent.opacity(0.4) : Color.clear, in: Capsule())
+                        // 🍽 persists via AppStorage — always visible, defaults ON
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                mealGrouped.toggle()
+                                if !mealGrouped { foodSortMode = .time }
                             }
-                            .buttonStyle(.plain)
+                        } label: {
+                            Text(FoodSortMode.meal.label)
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(mealGrouped ? .white : .secondary)
+                                .padding(.horizontal, 6).padding(.vertical, 3)
+                                .background(mealGrouped ? Theme.accent.opacity(0.4) : Color.clear, in: Capsule())
+                        }
+                        .buttonStyle(.plain)
+
+                        // Flat-sort options — only when meal grouping is OFF
+                        if !mealGrouped {
+                            ForEach(FoodSortMode.allCases.filter { $0 != .meal }, id: \.self) { mode in
+                                Button {
+                                    withAnimation(.easeInOut(duration: 0.2)) { foodSortMode = mode }
+                                } label: {
+                                    Text(mode.label)
+                                        .font(.caption2.weight(.medium))
+                                        .foregroundStyle(foodSortMode == mode ? .white : .secondary)
+                                        .padding(.horizontal, 6).padding(.vertical, 3)
+                                        .background(foodSortMode == mode ? Theme.accent.opacity(0.4) : Color.clear, in: Capsule())
+                                }
+                                .buttonStyle(.plain)
+                            }
                         }
                     }
                 }
@@ -483,7 +502,7 @@ struct FoodTabView: View {
 
                 Divider().padding(.vertical, 2)
 
-                if foodSortMode == .meal {
+                if mealGrouped {
                     ForEach(Array(mealGroups.enumerated()), id: \.element.mealType) { groupIdx, group in
                         mealSectionHeader(group.mealType, entries: group.entries)
                         ForEach(Array(group.entries.enumerated()), id: \.element.id) { idx, entry in
@@ -535,9 +554,7 @@ struct FoodTabView: View {
     private func entryRow(_ entry: FoodEntry) -> some View {
         let dayTotal = max(viewModel.todayNutrition.calories, 1)
         let fraction = min(entry.totalCalories / dayTotal, 1.0)
-        // Show meal badge in any flat-sort mode EXCEPT .time (time is chronological, meal is implicit)
-        // and .meal (already grouped).
-        let showMealBadge = foodSortMode != .meal
+        let showMealBadge = !mealGrouped
         let mealType = MealType(rawValue: entry.mealType ?? "")
 
         return HStack(alignment: .center, spacing: 8) {
