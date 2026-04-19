@@ -303,6 +303,7 @@ extension AIChatViewModel {
         if handleMealLogging(lower) { return true }
         let resolved = resolvePronouns(lower)
         if handleMultiFoodIntent(resolved) { return true }
+        if handleComposedFoodIntent(resolved) { return true }
         if handleSingleFoodIntent(resolved) { return true }
         if handleActivityLogging(lower) { return true }
         if handleWeightIntent(lower) { return true }
@@ -582,7 +583,17 @@ extension AIChatViewModel {
 
     private func handleMultiFoodIntent(_ resolved: String) -> Bool {
         guard let intents = AIActionExecutor.parseMultiFoodIntent(resolved), intents.count > 1 else { return false }
-        // Capture meal hint from suffix BEFORE parseMultiFoodIntent strips it
+        buildMealFromIntents(intents, resolved: resolved)
+        return true
+    }
+
+    private func handleComposedFoodIntent(_ resolved: String) -> Bool {
+        guard let intents = ComposedFoodParser.parse(resolved), intents.count > 1 else { return false }
+        buildMealFromIntents(intents, resolved: resolved)
+        return true
+    }
+
+    private func buildMealFromIntents(_ intents: [AIActionExecutor.FoodIntent], resolved: String) {
         var mealName = "Meal"
         let lower = resolved.lowercased()
         for (suffix, meal) in [(" for breakfast", "breakfast"), (" for lunch", "lunch"),
@@ -596,7 +607,6 @@ extension AIChatViewModel {
             return s
         }.joined(separator: " and ")
         buildMealFromText(foodText, mealName: mealName)
-        return true
     }
 
     private func handleSingleFoodIntent(_ resolved: String) -> Bool {

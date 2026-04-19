@@ -24,6 +24,7 @@
 		1A6ADB53D0145027371ACD73 /* InputNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE3ADA1EC70838D9C144B5AA /* InputNormalizer.swift */; };
 		1BF24E5EFE0ECE537D36EA2E /* FloatingAIAssistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFF155F20FB2EF069D634C95 /* FloatingAIAssistant.swift */; };
 		1CCD2D031DB1C7F7BB7E52EF /* ToolRegistration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F42EA4B9416215EFE670984 /* ToolRegistration.swift */; };
+		1D4B4658B68B40350E20F753 /* ComposedFoodEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6EEDE4BB88D55A2579A27D /* ComposedFoodEval.swift */; };
 		1E0CA8E39AF5CE13AC703456 /* BiomarkerKnowledgeBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42CC554F9454FF0FC8A31F56 /* BiomarkerKnowledgeBase.swift */; };
 		1E11E5682458FC83023281D7 /* WeightInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A039993077E4BE9F83149249 /* WeightInsightsView.swift */; };
 		1E41F060499A92A9EFB59BE1 /* BiomarkerDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 155E590DFD0A95014B993B9D /* BiomarkerDetailView.swift */; };
@@ -137,6 +138,7 @@
 		98D72BF25E0ACD62C871A4CD /* ParallelLLMEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9BE85182415E10B646F68DA4 /* ParallelLLMEval.swift */; };
 		98FBDD66D792C10086005407 /* AIBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64BFDDB952907C50869B4078 /* AIBackend.swift */; };
 		98FF97CFE71A6BBCFF976259 /* UIFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A5DA3E3543A99260250279 /* UIFlowTests.swift */; };
+		996C54EF6E0D83A471E38721 /* ComposedFoodParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E0A2C87F8D529FFB6B0A2E2 /* ComposedFoodParser.swift */; };
 		9ACECC13D2365A3DF7F2C28C /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F78E3B6C1497F6A200DF8095 /* ContentView.swift */; };
 		9B11BE8782BE0D44DD4D4816 /* GoalSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7AB5CF548B4E61C45C1485 /* GoalSetupView.swift */; };
 		9BDC062DA33278D9CE34EFC3 /* exercises.json in Resources */ = {isa = PBXBuildFile; fileRef = C10970FB3ED143760EC6C8C5 /* exercises.json */; };
@@ -168,6 +170,7 @@
 		C29B1BD9EF5C4235CA2FDBDC /* SpeechRecognitionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39F11EC4CFD7DA3C49DA882 /* SpeechRecognitionTests.swift */; };
 		C2CAF32E19EB6A66F3C6554E /* AIModelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377CCA5F9E895164E95EC65E /* AIModelManager.swift */; };
 		C4412538AE3E1E269685CB2A /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99C89E28D8FBE125273FB677 /* Log.swift */; };
+		C4714D3A48A3B723EE018B44 /* ComposedFoodParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F7B91A7052D8347083F577A /* ComposedFoodParserTests.swift */; };
 		C4B459EA365A74DF9ED1330A /* SavedFood.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B9BADD02A9760A82C60DE4E /* SavedFood.swift */; };
 		C6533AEBED5F6D1F5387F98A /* RobustnessTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 647116F9E4F78CE702CB870C /* RobustnessTests.swift */; };
 		C7666848928C7210A8CE6BD6 /* PromptOptimizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBF19C358E700091486400DD /* PromptOptimizer.swift */; };
@@ -310,6 +313,7 @@
 		1A884AC137C46CE932FEE1C9 /* WorkoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutTests.swift; sourceTree = "<group>"; };
 		1ABDC86BA4516AA3699FE080 /* WeightChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightChartView.swift; sourceTree = "<group>"; };
 		1ACBCA936A73C1825C28C312 /* AIContextBuilder+Health.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AIContextBuilder+Health.swift"; sourceTree = "<group>"; };
+		1D6EEDE4BB88D55A2579A27D /* ComposedFoodEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposedFoodEval.swift; sourceTree = "<group>"; };
 		1D783FD1AF8952C1C8CECD29 /* SupplementViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupplementViewModel.swift; sourceTree = "<group>"; };
 		1E0A2B843D779BCA23400645 /* DEXAScan.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DEXAScan.swift; sourceTree = "<group>"; };
 		1EEA23E4C1755C342030C667 /* USDAFoodService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = USDAFoodService.swift; sourceTree = "<group>"; };
@@ -339,6 +343,7 @@
 		39A9E88135361C3B6F2AE538 /* PlantPointsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlantPointsService.swift; sourceTree = "<group>"; };
 		3F480CCAF91EFD799E6B5B8C /* DriftLLMEvalMacOS.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DriftLLMEvalMacOS.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3F51E9EC49412B4F96068D35 /* WeightTrendCalculatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTrendCalculatorTests.swift; sourceTree = "<group>"; };
+		3F7B91A7052D8347083F577A /* ComposedFoodParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposedFoodParserTests.swift; sourceTree = "<group>"; };
 		40634DDEB9C53BD0146A628A /* TDEEEstimatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TDEEEstimatorTests.swift; sourceTree = "<group>"; };
 		4101CD9171B652C6B8D1BB4E /* llama.xcframework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcframework; name = llama.xcframework; path = Frameworks/llama.xcframework; sourceTree = "<group>"; };
 		418816F51F38F19F65BC3D77 /* NutritionLabelOCR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NutritionLabelOCR.swift; sourceTree = "<group>"; };
@@ -396,6 +401,7 @@
 		8A5D8C6A1BAF376B6F58EAB7 /* SleepRecoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepRecoveryService.swift; sourceTree = "<group>"; };
 		8B0FF829D1EAEEF0257163CC /* AIResponseCleanerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIResponseCleanerTests.swift; sourceTree = "<group>"; };
 		8C1323C593FD4D57F250E362 /* AIActionExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIActionExecutor.swift; sourceTree = "<group>"; };
+		8E0A2C87F8D529FFB6B0A2E2 /* ComposedFoodParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposedFoodParser.swift; sourceTree = "<group>"; };
 		8E78D132A90B0FDC35353646 /* WeightLogListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightLogListView.swift; sourceTree = "<group>"; };
 		8F4D8D947C82941F66C3E892 /* LabReportStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabReportStorage.swift; sourceTree = "<group>"; };
 		9317E4AADEC72D6DC385E722 /* LabReportDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabReportDetailView.swift; sourceTree = "<group>"; };
@@ -611,6 +617,7 @@
 				19E7517E5B4779CBBE1C7284 /* AITests.swift */,
 				3406F79A46B85F01DC0010FB /* AIToolAgentStageTests.swift */,
 				E9FA0E48A2845CFA85AB7395 /* ChatSuggestionPillsTests.swift */,
+				3F7B91A7052D8347083F577A /* ComposedFoodParserTests.swift */,
 				0BFC0D10ECB1BBDADD1D1CCB /* ConfirmationCardTests.swift */,
 				AC6101DFE9E2C3B0CE1F69F4 /* ConversationHistoryBuilderTests.swift */,
 				E6C4AF4636637C2EF46CD085 /* ConversationStatePersistenceTests.swift */,
@@ -856,6 +863,7 @@
 				F36D548F9FA62D8D7E53B1C7 /* BiomarkerService.swift */,
 				9F9F051926CE39DF3E0A47DA /* BodySpecPDFParser.swift */,
 				16A8D46F9E08C1960010A695 /* CGMImportService.swift */,
+				8E0A2C87F8D529FFB6B0A2E2 /* ComposedFoodParser.swift */,
 				97443F553C4834DE8344C9F8 /* ConversationHistoryBuilder.swift */,
 				E4B60275240AEDD1A676B282 /* ConversationState.swift */,
 				87905A31DE15D664CC66E343 /* ConversationStatePersistence.swift */,
@@ -928,6 +936,7 @@
 			children = (
 				CB66CE8222D505237BF36996 /* AmbiguityEval.swift */,
 				3053C86565C8B26D3B16A0A2 /* AutoResearchTests.swift */,
+				1D6EEDE4BB88D55A2579A27D /* ComposedFoodEval.swift */,
 				2DEC3049742676C1201A6847 /* HardEvalSet.swift */,
 				A048685BCBAD258ADEEB3E22 /* IntentRoutingEval.swift */,
 				C1D0EF86656667CEF40EB779 /* MultiTurnContextEval.swift */,
@@ -1164,6 +1173,7 @@
 				BFA019F024F4E73B203B8975 /* BodySpecPDFParser.swift in Sources */,
 				33EC5B66DF492493925C24CA /* CGMImportService.swift in Sources */,
 				B8666DFAC44BA801AF626FE7 /* CSVParser.swift in Sources */,
+				996C54EF6E0D83A471E38721 /* ComposedFoodParser.swift in Sources */,
 				9ACECC13D2365A3DF7F2C28C /* ContentView.swift in Sources */,
 				87D41671B48C76809CA2ACB0 /* ConversationHistoryBuilder.swift in Sources */,
 				D02CC9A4CB338DCF9AF743EC /* ConversationState.swift in Sources */,
@@ -1304,6 +1314,7 @@
 				ABD8DD6A5F55642129836B7B /* AIToolAgentStageTests.swift in Sources */,
 				8A8CF11C6A7AF26DCABECF6A /* CSVParserTests.swift in Sources */,
 				64BFF27391CC32B927344BA1 /* ChatSuggestionPillsTests.swift in Sources */,
+				C4714D3A48A3B723EE018B44 /* ComposedFoodParserTests.swift in Sources */,
 				0E9D1FE15EFC96D35A4D6CBC /* ConfirmationCardTests.swift in Sources */,
 				F48B724B0FCDD5F1CE751D00 /* ConversationHistoryBuilderTests.swift in Sources */,
 				94F5CD3A73D0EAA80DCEA612 /* ConversationStatePersistenceTests.swift in Sources */,
@@ -1350,6 +1361,7 @@
 				F0C8CC093DF982FE0DBD0C3E /* AIBackend.swift in Sources */,
 				261CF4F6663AA435756483F5 /* AmbiguityEval.swift in Sources */,
 				23BF8720FC949BA82AFA68B2 /* AutoResearchTests.swift in Sources */,
+				1D4B4658B68B40350E20F753 /* ComposedFoodEval.swift in Sources */,
 				E63F9BB35572B3EF11BF9DE5 /* HardEvalSet.swift in Sources */,
 				2215DF726E90983BDFBFB842 /* InputNormalizer.swift in Sources */,
 				F2DAD90846C1E28C0DBBB863 /* IntentRoutingEval.swift in Sources */,
