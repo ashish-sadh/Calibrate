@@ -95,6 +95,10 @@ cleanup_dirty_state() {
     # Sprint service atomically clears all in-progress (state file + GitHub labels)
     "$WORK_DIR/scripts/sprint-service.sh" clear 2>/dev/null || true
     log "Sprint service: cleared in-progress state"
+
+    # Remove stale TestFlight authorization — a crashed session may have left this set
+    # without completing the publish. Next session gets a fresh authorization flow.
+    rm -f "$HOME/drift-state/testflight-publish-authorized"
 }
 
 kill_claude() {
@@ -398,8 +402,8 @@ elif [[ "$STATE" == "DRAIN" ]]; then
             if is_log_stale_seconds "$DRAIN_STALE"; then
                 log "DRAIN: no log output in ${DRAIN_STALE}s — killing stalled process."
                 kill_claude
-                cleanup_dirty_state
                 run_compliance "stall"
+                cleanup_dirty_state
                 log "DRAIN: done. Exiting."
                 exit 0
             fi
@@ -482,8 +486,8 @@ while true; do
                     if is_log_stale_seconds "$DRAIN_STALE"; then
                         log "DRAIN: no log output in ${DRAIN_STALE}s — killing stalled process."
                         kill_claude
-                        cleanup_dirty_state
                         run_compliance "stall"
+                        cleanup_dirty_state
                         log "DRAIN: killed stalled session. Exiting."
                         exit 0
                     fi
@@ -525,8 +529,8 @@ while true; do
             elif is_log_stale; then
                 log "Autopilot stalled (log not updated in ${STALE_THRESHOLD}s). Restarting..."
                 kill_claude
-                cleanup_dirty_state
                 run_compliance "stall"
+                cleanup_dirty_state
                 start_claude
             else
                 log "Autopilot running normally (PID $CLAUDE_PID)."
@@ -559,8 +563,8 @@ while true; do
                         log "Session still stalled after nudge window — killing and restarting."
                         rm -f "$NUDGE_FILE"
                         kill_claude
-                        cleanup_dirty_state
                         run_compliance "stall"
+                        cleanup_dirty_state
                         start_claude
                     else
                         log "Nudge window active — waiting for session to respond (type=$CURRENT_TYPE)."
