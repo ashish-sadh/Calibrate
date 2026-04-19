@@ -13,6 +13,7 @@ if pgrep -f 'claude.*-p.*(execute|run.*autopilot|sprint)' > /dev/null 2>&1; then
 fi
 
 DRIFT_CONTROL=$(cat "$HOME/drift-control.txt" 2>/dev/null | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')
+SESSION_TYPE=$(cat "$HOME/drift-state/cache-session-type" 2>/dev/null || echo "")
 
 # Check for uncommitted changes (staged or unstaged)
 DIRTY=$(git status --porcelain 2>/dev/null | grep -v '^??' | head -5)
@@ -35,8 +36,8 @@ if [ -n "$UNPUSHED" ]; then
   ISSUES="${ISSUES}Unpushed commits:\n${UNPUSHED}\n\n"
 fi
 
-# Check if persona files were updated after a product review (autonomous sessions only)
-if [ "$DRIFT_CONTROL" = "RUN" ]; then
+# Check if persona files were updated after a product review (planning sessions only)
+if [ "$DRIFT_CONTROL" = "RUN" ] && [ "$SESSION_TYPE" = "planning" ]; then
   CYCLE_COUNT=$(cat "$HOME/drift-state/cycle-counter" 2>/dev/null || echo "0")
   LAST_REVIEW=$(cat "$HOME/drift-state/last-review-cycle" 2>/dev/null || echo "0")
   if [ "$CYCLE_COUNT" -eq "$LAST_REVIEW" ] && [ "$CYCLE_COUNT" -gt 0 ]; then
@@ -82,7 +83,6 @@ if [ -n "$ISSUES" ]; then
 fi
 
 # Check for in-progress issues that weren't closed (autonomous sessions only)
-SESSION_TYPE=$(cat "$HOME/drift-state/cache-session-type" 2>/dev/null || echo "")
 if [ "$DRIFT_CONTROL" = "RUN" ]; then
   IN_PROGRESS=$(gh issue list --state open --label in-progress --json number,title --jq '.[] | "#\(.number) \(.title)"' 2>/dev/null || true)
   if [ -n "$IN_PROGRESS" ]; then

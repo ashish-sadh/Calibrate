@@ -16,6 +16,12 @@ if [ $((COUNT % 5)) -ne 0 ]; then
   exit 0
 fi
 
+# Skip for planning sessions — they don't write code
+SESSION_TYPE=$(cat "$HOME/drift-state/cache-session-type" 2>/dev/null || echo "junior")
+if [[ "$SESSION_TYPE" == "planning" ]]; then
+  exit 0
+fi
+
 cd "$PROJECT_DIR"
 
 # Run tests with coverage (redirect all output to /tmp)
@@ -66,7 +72,7 @@ if [ "$DROPPED" = true ] || [ "$BELOW_THRESHOLD" -gt 0 ]; then
 {
   "hookSpecificOutput": {
     "hookEventName": "PostToolUse",
-    "additionalContext": "COVERAGE ALERT (cycle $COUNT). ${DROP_MSG}${BELOW_THRESHOLD} file(s) below threshold.\n\nYour NEXT cycle must be writing tests. Not happy-path tests — tests that catch REAL bugs:\n\n1. Think like a user: what inputs would break this? What state transitions are untested?\n2. Test BOUNDARIES: unit conversions (kg/lb — this was broken and no test caught it), empty states, nil values, zero amounts, negative numbers\n3. Test ERROR PATHS: what happens when the DB save fails? When the API returns garbage? When the user enters emoji?\n4. Test STATE TRANSITIONS: multi-turn chat losing context, pendingMealName not being cleared, workout state leaking between sessions\n5. Test REAL SCENARIOS from Docs/human-reported-bugs.md — every bug there should have a regression test\n\nCoverage report:\n${COVERAGE_REPORT}\n\nDo NOT continue feature work until you've written tests that would catch bugs like kg/lb conversion being silently broken."
+    "additionalContext": "COVERAGE ALERT (cycle $COUNT). ${DROP_MSG}${BELOW_THRESHOLD} file(s) below threshold.\n\nYour NEXT cycle must be writing tests. Not happy-path tests — tests that catch REAL bugs:\n\n1. Think like a user: what inputs would break this? What state transitions are untested?\n2. Test BOUNDARIES: unit conversions (kg/lb — this was broken and no test caught it), empty states, nil values, zero amounts, negative numbers\n3. Test ERROR PATHS: what happens when the DB save fails? When the API returns garbage? When the user enters emoji?\n4. Test STATE TRANSITIONS: multi-turn chat losing context, pendingMealName not being cleared, workout state leaking between sessions\n5. Test REAL SCENARIOS from git log — every recent bug fix should have a regression test\n\nCoverage report:\n${COVERAGE_REPORT}\n\nDo NOT continue feature work until you've written tests that would catch bugs like kg/lb conversion being silently broken."
   }
 }
 ENDJSON

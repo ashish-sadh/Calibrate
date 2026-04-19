@@ -34,40 +34,55 @@ if [ -f "$SESSION_TYPE_FILE" ]; then
   fi
 fi
 
+# Read session type early — used throughout for role-specific output
+SESSION_TYPE=$(cat "$HOME/drift-state/cache-session-type" 2>/dev/null || echo "junior")
+
 COUNT=$(cat "$COUNTER_FILE" 2>/dev/null || echo "0")
 LAST_REVIEW=$(cat "$LAST_REVIEW_FILE" 2>/dev/null || echo "0")
 NEXT_REVIEW=$((LAST_REVIEW + 10))
 
-echo "=== Drift Loop State ==="
+echo "=== Drift Session: $SESSION_TYPE ==="
 echo "Cycle count: $COUNT"
 echo "Last product review: cycle $LAST_REVIEW"
 echo "Next product review due: cycle $NEXT_REVIEW"
-echo "Read Docs/roadmap.md first to understand product direction."
 echo "Read program.md for your operating instructions (autopilot loop, sprint lifecycle, commands)."
+echo "Read Docs/roadmap.md first to understand product direction."
 
-# Sprint service status (shows queue + in-progress at session start)
+# Sprint queue — visible to all roles (planning needs visibility to avoid duplicates)
 SPRINT_STATUS=$("${CLAUDE_PROJECT_DIR:-.}/scripts/sprint-service.sh" status 2>/dev/null || echo "Sprint service not initialized")
 echo ""
 echo "=== Sprint Queue ==="
 echo "$SPRINT_STATUS"
-SESSION_TYPE=$(cat "$HOME/drift-state/cache-session-type" 2>/dev/null || echo "junior")
-NEXT_TASK=$("${CLAUDE_PROJECT_DIR:-.}/scripts/sprint-service.sh" next --"${SESSION_TYPE}" 2>/dev/null || echo "none")
-echo "Your next task (${SESSION_TYPE}): $NEXT_TASK"
-echo "Commands: scripts/sprint-service.sh claim <N> | done <N> <commit> | unclaim <N>"
-echo "Design: scripts/design-service.sh summary"
 
-# Surface pending design-doc issues (cached)
-DESIGN_DOCS=$(cached_query "$CACHE_DIR/cache-design-docs" \
-  gh issue list --state open --label design-doc --json number,title --jq "'.[] | \"#\\(.number) \\(.title)\"'")
-if [ -n "$DESIGN_DOCS" ]; then
-  DESIGN_COUNT=$(echo "$DESIGN_DOCS" | wc -l | tr -d ' ')
-  echo ""
-  echo "PENDING DESIGN DOCS ($DESIGN_COUNT):"
-  echo "$DESIGN_DOCS"
-  echo "Senior: create branch, write doc, create PR with --label design-doc, then add doc-ready label to the issue."
+if [[ "$SESSION_TYPE" != "planning" ]]; then
+  # Implementor sessions: show next task + claim commands
+  NEXT_TASK=$("${CLAUDE_PROJECT_DIR:-.}/scripts/sprint-service.sh" next --"${SESSION_TYPE}" 2>/dev/null || echo "none")
+  echo "Your next task (${SESSION_TYPE}): $NEXT_TASK"
+  echo "Commands: scripts/sprint-service.sh claim <N> | done <N> <commit> | unclaim <N>"
+else
+  # Planning: create tasks, don't claim them
+  echo "Planning session: you CREATE sprint tasks (8+ required), not claim them."
+  echo "End with: scripts/sprint-service.sh refresh"
 fi
 
-# Surface product focus (cached)
+# Pending design docs — senior (action required) and planning (status awareness)
+if [[ "$SESSION_TYPE" == "senior" || "$SESSION_TYPE" == "planning" ]]; then
+  DESIGN_DOCS=$(cached_query "$CACHE_DIR/cache-design-docs" \
+    gh issue list --state open --label design-doc --json number,title --jq "'.[] | \"#\\(.number) \\(.title)\"'")
+  if [ -n "$DESIGN_DOCS" ]; then
+    DESIGN_COUNT=$(echo "$DESIGN_DOCS" | wc -l | tr -d ' ')
+    echo ""
+    echo "PENDING DESIGN DOCS ($DESIGN_COUNT):"
+    echo "$DESIGN_DOCS"
+    if [[ "$SESSION_TYPE" == "senior" ]]; then
+      echo "Senior: create branch, write doc, create PR with --label design-doc, then add doc-ready label to the issue."
+    else
+      echo "Planning: note status only — senior handles all design work."
+    fi
+  fi
+fi
+
+# Product focus — all roles
 FOCUS=$(cached_query "$CACHE_DIR/cache-product-focus" \
   gh issue list --state open --label product-focus --json body --jq "'.[0].body // empty'" | head -1)
 if [ -n "$FOCUS" ]; then
@@ -76,18 +91,19 @@ if [ -n "$FOCUS" ]; then
   echo "Bias work toward this focus. P0 bugs, feature requests, and design docs are still valid."
 fi
 
-# Surface unreplied admin comments on report PRs (cached)
-UNREPLIED=$(cached_query "$CACHE_DIR/cache-report-comments" \
-  gh pr list --label report --state all --json number,title,comments --jq "'.[] | select(.comments > 0) | \"#\\(.number) \\(.title) (\\(.comments) comments)\"'" | head -5)
-if [ -n "$UNREPLIED" ]; then
-  echo ""
-  echo "REPORT PRs WITH COMMENTS (check for unreplied admin feedback):"
-  echo "$UNREPLIED"
-  echo "Read the full report, then reply to every admin comment."
+# Report PRs with admin comments — senior and planning only (they reply; junior doesn't)
+if [[ "$SESSION_TYPE" == "senior" || "$SESSION_TYPE" == "planning" ]]; then
+  UNREPLIED=$(cached_query "$CACHE_DIR/cache-report-comments" \
+    gh pr list --label report --state all --json number,title,comments --jq "'.[] | select(.comments > 0) | \"#\\(.number) \\(.title) (\\(.comments) comments)\"'" | head -5)
+  if [ -n "$UNREPLIED" ]; then
+    echo ""
+    echo "REPORT PRs WITH COMMENTS (check for unreplied admin feedback):"
+    echo "$UNREPLIED"
+    echo "Read the full report, then reply to every admin comment."
+  fi
 fi
 
-SESSION_TYPE=$(cat "$HOME/drift-state/cache-session-type" 2>/dev/null || echo "junior")
-
+# Senior-specific additions
 if [[ "$SESSION_TYPE" == "senior" ]]; then
   # Design service summary
   DESIGN_SUMMARY=$("${CLAUDE_PROJECT_DIR:-.}/scripts/design-service.sh" summary 2>/dev/null || echo "")
@@ -106,6 +122,7 @@ if [[ "$SESSION_TYPE" == "senior" ]]; then
   fi
 fi
 
+# Planning-specific additions
 if [[ "$SESSION_TYPE" == "planning" ]]; then
   PLAN_ISSUE=$(cat "$HOME/drift-state/planning-issue" 2>/dev/null || echo "")
   if [[ -n "$PLAN_ISSUE" ]]; then
@@ -134,18 +151,16 @@ fi
 echo "========================"
 
 # ── Autonomous session init (watchdog-managed sessions only) ──────────────────
-DRIFT_CONTROL=$(cat "$HOME/drift-control.txt" 2>/dev/null | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')
-WORK_DIR="${CLAUDE_PROJECT_DIR:-.}"
+# DRIFT_AUTONOMOUS=1 is exported by the watchdog before launching Claude.
 
 if [[ "${DRIFT_AUTONOMOUS:-}" == "1" ]]; then
     # Reset session task counter (sprint-service enforces 5-task limit via this)
-    "$WORK_DIR/scripts/sprint-service.sh" start-session 2>/dev/null || true
+    "${CLAUDE_PROJECT_DIR:-.}/scripts/sprint-service.sh" start-session 2>/dev/null || true
 
     # Create overhead tracking issue (session bookkeeping — not an impl task)
     # NOTE: We do NOT claim via sprint-service.sh — that would set in_progress and block
     # all subsequent task claims for the session. We just track the issue number for
     # session-compliance.sh to close, and add the in-progress label on GitHub only.
-    SESSION_TYPE=$(cat "$HOME/drift-state/cache-session-type" 2>/dev/null || echo "junior")
     OVERHEAD_N=$(gh issue create \
       --label overhead \
       --title "Session $SESSION_TYPE — $(date '+%Y-%m-%d %H:%M') overhead" \

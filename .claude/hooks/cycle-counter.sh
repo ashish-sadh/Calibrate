@@ -24,16 +24,19 @@ COUNT=$(cat "$COUNTER_FILE" 2>/dev/null || echo "0")
 COUNT=$((COUNT + 1))
 echo "$COUNT" > "$COUNTER_FILE"
 
-# 3. Build context injection based on what's needed
+# 3. Build context injection based on session role
+SESSION_TYPE=$(cat "$HOME/drift-state/cache-session-type" 2>/dev/null || echo "junior")
 CONTEXT=""
 
-# Always: remind to reply to bug issues when closing them
+# All roles: close bugs with a comment
 CONTEXT="${CONTEXT}ALWAYS: When closing a bug Issue, reply with a comment: what was fixed + commit hash. Never close silently.\n\n"
 
-# Always: remind to reply to admin feedback on report PRs
-CONTEXT="${CONTEXT}ALWAYS: If you see admin (ashish-sadh, nimisha-26) comments on report PRs that haven't been replied to, reply with what action was taken or will be taken. Every admin comment gets a response.\n\n"
+# Senior + planning only: reply to admin report PR comments
+if [[ "$SESSION_TYPE" == "senior" || "$SESSION_TYPE" == "planning" ]]; then
+  CONTEXT="${CONTEXT}ALWAYS: If you see admin (ashish-sadh, nimisha-26) comments on report PRs that haven't been replied to, reply with what action was taken or will be taken. Every admin comment gets a response.\n\n"
+fi
 
-# Always: remind about P0 handling
+# All roles: P0 escalation
 CONTEXT="${CONTEXT}P0 BUGS: If you encounter a P0 bug that's too complex for your current session, relabel it SENIOR: gh issue edit {N} --add-label SENIOR\n\n"
 
 echo "Cycle $COUNT."
