@@ -19,6 +19,7 @@ struct FoodTabView: View {
     @State private var copyToTodayEntry: FoodEntry?
     @State private var showingCopyYesterdayAlert = false
     @State private var showingCopyAllAlert = false
+    @State private var searchMealType: MealType? = nil
 
     enum FoodSortMode: String, CaseIterable {
         case time, meal, protein, carbs, fat, fiber, plantPoints
@@ -103,7 +104,7 @@ struct FoodTabView: View {
                 }
             }
             .animation(.easeInOut(duration: 0.3), value: copiedToTodayName)
-            .sheet(isPresented: $showingSearch) { FoodSearchView(viewModel: viewModel) }
+            .sheet(isPresented: $showingSearch) { FoodSearchView(viewModel: viewModel, initialMealType: searchMealType) }
             .sheet(isPresented: $showingRecipeBuilder) { QuickAddView(viewModel: viewModel) }
             .sheet(isPresented: $showingGoalSetup) {
                 NavigationStack {
@@ -171,7 +172,7 @@ struct FoodTabView: View {
                 Text("Copy \(viewModel.todayEntries.count) items (\(Int(totalCal)) cal) to today?")
             }
             .onAppear { AIScreenTracker.shared.currentScreen = .food; weekOffset = 0; reload() }
-            .onChange(of: showingSearch) { _, showing in if !showing { reload() } }
+            .onChange(of: showingSearch) { _, showing in if !showing { searchMealType = nil; reload() } }
             .onChange(of: showingRecipeBuilder) { _, showing in if !showing { reload() } }
             .onChange(of: showingScanner) { _, showing in if !showing { reload() } }
             .onChange(of: showingConfirmLog) { _, showing in if !showing { reload() } }
@@ -520,6 +521,13 @@ struct FoodTabView: View {
             }
             Spacer()
             Text("\(Int(totalCal)) cal").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+            Button {
+                searchMealType = meal
+                showingSearch = true
+            } label: {
+                Image(systemName: "plus").font(.caption2.weight(.semibold)).foregroundStyle(Theme.accent)
+            }
+            .buttonStyle(.plain)
         }
         .padding(.vertical, 6)
     }
@@ -529,7 +537,7 @@ struct FoodTabView: View {
         let fraction = min(entry.totalCalories / dayTotal, 1.0)
         // Show meal badge in any flat-sort mode EXCEPT .time (time is chronological, meal is implicit)
         // and .meal (already grouped).
-        let showMealBadge = foodSortMode != .time && foodSortMode != .meal
+        let showMealBadge = foodSortMode != .meal
         let mealType = MealType(rawValue: entry.mealType ?? "")
 
         return HStack(alignment: .center, spacing: 8) {

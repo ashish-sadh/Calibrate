@@ -380,19 +380,22 @@ final class FoodLogViewModel {
             let cal = Calendar.current
             for log in logs {
                 guard let logId = log.id else { continue }
-                let mealType = MealType(rawValue: log.mealType) ?? autoMealType
                 let entries = try database.fetchFoodEntries(forMealLog: logId)
                 guard !entries.isEmpty else { continue }
                 for entry in entries {
                     let mappedLoggedAt: String
+                    var entryHour: Int = cal.component(.hour, from: todayDate)
                     if let original = iso.date(from: entry.loggedAt) ?? DateFormatters.sqliteDatetime.date(from: entry.loggedAt) {
                         let time = cal.dateComponents([.hour, .minute, .second], from: original)
+                        entryHour = time.hour ?? entryHour
                         var today = cal.dateComponents([.year, .month, .day], from: todayDate)
                         today.hour = time.hour; today.minute = time.minute; today.second = time.second
                         mappedLoggedAt = iso.string(from: cal.date(from: today) ?? todayDate)
                     } else {
                         mappedLoggedAt = iso.string(from: todayDate)
                     }
+                    // Reclassify by the entry's actual hour — don't carry over yesterday's meal category
+                    let mealType = MealType.fromHour(entryHour)
                     quickAdd(name: entry.foodName, calories: entry.totalCalories,
                              proteinG: entry.totalProtein, carbsG: entry.totalCarbs,
                              fatG: entry.totalFat, fiberG: entry.totalFiber,
