@@ -6,6 +6,25 @@ options:
   xcodeVersion: "16.0"
   generateEmptyDirectories: true
 
+schemes:
+  Drift:
+    build:
+      targets:
+        Drift: all
+        DriftTests: [test]
+        DriftLLMEvalTests: [test]
+    test:
+      targets:
+        - DriftTests
+        - DriftLLMEvalTests
+  DriftLLMEvalMacOS:
+    build:
+      targets:
+        DriftLLMEvalMacOS: all
+    test:
+      targets:
+        - DriftLLMEvalMacOS
+
 packages:
   GRDB:
     url: https://github.com/groue/GRDB.swift.git
