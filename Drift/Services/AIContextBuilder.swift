@@ -366,7 +366,7 @@ enum AIContextBuilder {
     static func featureContext() -> String {
         """
         Drift: local-first health tracker, all data on-device. \
-        Food: 2300+ foods, barcode scan, "log 2 eggs" or Food tab. \
+        Food: 2400+ foods, barcode scan, "log 2 eggs" or Food tab. \
         Weight: daily weigh-ins, EMA trend, goal projection, Apple Health sync. \
         Exercise: templates, Strong/Hevy import, sets/reps/weight. \
         Also: sleep/HRV, cycle tracking, supplements, DEXA, glucose, biomarkers — all from Apple Health. \
