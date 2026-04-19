@@ -82,7 +82,9 @@ struct SupplementsTabView: View {
                                             viewModel.loadSupplements()
                                         } label: {
                                             Image(systemName: "xmark.circle.fill").font(.caption2).foregroundStyle(.tertiary)
-                                        }.buttonStyle(.plain)
+                                        }
+                                        .buttonStyle(.plain)
+                                        .accessibilityLabel("Delete \(supplement.name)")
                                     }
 
                                     if viewModel.isTaken(supplement.id ?? 0),
@@ -145,6 +147,7 @@ struct SupplementsTabView: View {
                     Button { showingAdd = true } label: {
                         Image(systemName: "plus.circle.fill").foregroundStyle(Theme.accent)
                     }
+                    .accessibilityLabel("Add supplement")
                 }
             }
             .sheet(isPresented: $showingAdd) {

@@ -193,6 +193,8 @@ struct DashboardView: View {
                             }
                             .foregroundStyle(aiEnabled ? Theme.accent : .secondary)
                         }
+                        .accessibilityLabel("AI beta, \(aiEnabled ? "on" : "off")")
+                        .accessibilityHint("Double tap to toggle")
                     }
                 }
             }
