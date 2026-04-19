@@ -10,6 +10,7 @@ import XCTest
 ///   xcodebuild test -project Drift.xcodeproj -scheme Drift \
 ///     -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
 ///     -only-testing:'DriftLLMEvalTests/MultiTurnEvalTests' 2>&1 | grep -E "📊|❌|✔"
+@MainActor
 final class MultiTurnEvalTests: XCTestCase {
 
     nonisolated(unsafe) static var backend: LlamaCppBackend?
@@ -72,7 +73,7 @@ final class MultiTurnEvalTests: XCTestCase {
             let historySection = history.isEmpty ? "" : "Conversation so far:\n\(history)\n\n"
             let prompt = "\(userContext())\n\n\(historySection)User: \(turn.query)"
             let response = await backend.respond(to: prompt, systemPrompt: systemPrompt())
-            let call = AIToolAgent.parseToolCallJSON(response)
+            let call = parseToolCallJSON(response)
 
             let passed: Bool
             if let expected = turn.expectedTool {

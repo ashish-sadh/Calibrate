@@ -275,8 +275,8 @@ enum ToolRanker {
     enum Intent { case log, query, chat }
 
     private static func classifyIntent(_ lower: String, words: Set<String>) -> Intent {
-        let logVerbs: Set<String> = ["ate", "had", "log", "add", "ate", "took", "did", "went",
-                                      "finished", "drank", "eaten", "logged", "track", "weigh"]
+        let logVerbs: Set<String> = ["ate", "had", "log", "add", "took", "did", "went",
+                                      "finished", "drank", "eaten", "logged", "track", "weigh", "grabbed"]
         let logPhrases = ["i had", "i ate", "i did", "i went", "just had", "just did",
                           "just finished", "log ", "took my", "had my"]
         let queryWords: Set<String> = ["how", "what", "show", "calories", "much", "many",
@@ -327,12 +327,15 @@ enum ToolRanker {
         p["log_food"] = ToolProfile(
             triggers: [("ate", 3), ("had", 2.5), ("log", 2), ("add", 1.5), ("eating", 2),
                        ("drank", 2), ("i had", 3), ("i ate", 3), ("just had", 3),
+                       ("grabbed", 2), ("just finished", 3),
                        ("eggs", 2), ("chicken", 2), ("rice", 2), ("banana", 2), ("roti", 2),
-                       ("dal", 2), ("paneer", 2), ("oatmeal", 2), ("protein shake", 2),
+                       ("dal", 2), ("paneer", 2), ("oatmeal", 2),
+                       ("protein shake", 3.5), ("protein bar", 3),
                        ("breakfast", 1), ("lunch", 1), ("dinner", 1), ("snack", 1)],
             logBoost: 2, queryBoost: -1,
-            screens: [.food: 0.5, .dashboard: 0.3],
-            antiKeywords: ["sleep", "workout", "supplement", "weight", "weigh", "how", "what", "calories in"]
+            // Slightly higher food-screen boost than food_info so bare food names default to log
+            screens: [.food: 0.6, .dashboard: 0.3],
+            antiKeywords: ["sleep", "supplement", "weight", "weigh", "how", "what", "calories in", "healthy"]
         )
 
         p["food_info"] = ToolProfile(
@@ -347,6 +350,7 @@ enum ToolRanker {
                        ("sugar", 2), ("carbs today", 3), ("fat today", 3),
                        ("fiber", 2), ("how much protein", 3.5), ("how much fat", 3.5),
                        ("calories in", 3), ("estimate calories", 3.5),
+                       ("protein in", 3), ("healthy", 2),
                        ("reduce fat", 2.5), ("lose fat", 2.5), ("burn fat", 2.5),
                        ("how to lose", 2.5), ("what's a good diet", 3)],
             logBoost: -1, queryBoost: 2,
