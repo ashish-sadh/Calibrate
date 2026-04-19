@@ -192,3 +192,125 @@ import Testing
     let result = AIToolAgent.addInsightPrefix(to: "Your BMR is 1650 kcal.")
     #expect(result.hasPrefix("Here's what I found"))
 }
+
+// MARK: - stepMessage
+
+@Test @MainActor func stepMessage_ateKeyword_loggingFood() {
+    #expect(AIToolAgent.stepMessage(for: "I ate chicken") == "Logging food...")
+}
+
+@Test @MainActor func stepMessage_logKeyword_loggingFood() {
+    #expect(AIToolAgent.stepMessage(for: "log 2 eggs") == "Logging food...")
+}
+
+@Test @MainActor func stepMessage_workoutKeyword_settingUp() {
+    #expect(AIToolAgent.stepMessage(for: "start chest workout") == "Setting up workout...")
+}
+
+@Test @MainActor func stepMessage_supplementKeyword_updatingSupplements() {
+    #expect(AIToolAgent.stepMessage(for: "took vitamin D") == "Updating supplements...")
+}
+
+@Test @MainActor func stepMessage_glucoseKeyword_checkingGlucose() {
+    #expect(AIToolAgent.stepMessage(for: "any glucose spikes today") == "Checking glucose...")
+}
+
+@Test @MainActor func stepMessage_mealPlanKeyword_planningMeals() {
+    #expect(AIToolAgent.stepMessage(for: "plan my meals for today") == "Planning meals...")
+}
+
+@Test @MainActor func stepMessage_caloriesKeyword_checkingData() {
+    #expect(AIToolAgent.stepMessage(for: "how many calories left") == "Checking your data...")
+}
+
+@Test @MainActor func stepMessage_unknown_lookingThatUp() {
+    #expect(AIToolAgent.stepMessage(for: "random query xyz") == "Looking that up...")
+}
+
+// MARK: - toolFoundMessage
+
+@Test @MainActor func toolFoundMessage_foodInfo_findingMacros() {
+    #expect(AIToolAgent.toolFoundMessage(for: "food_info") == "Finding macros...")
+}
+
+@Test @MainActor func toolFoundMessage_weightInfo_readingTrends() {
+    #expect(AIToolAgent.toolFoundMessage(for: "weight_info") == "Reading your trends...")
+}
+
+@Test @MainActor func toolFoundMessage_sleepRecovery_checkingRecovery() {
+    #expect(AIToolAgent.toolFoundMessage(for: "sleep_recovery") == "Checking your recovery...")
+}
+
+@Test @MainActor func toolFoundMessage_exerciseInfo_reviewingHistory() {
+    #expect(AIToolAgent.toolFoundMessage(for: "exercise_info") == "Reviewing your history...")
+}
+
+@Test @MainActor func toolFoundMessage_unknown_puttingItTogether() {
+    #expect(AIToolAgent.toolFoundMessage(for: "unknown_tool") == "Putting it together...")
+}
+
+// MARK: - toolStepMessage
+
+@Test @MainActor func toolStepMessage_logFood_lookingUpFood() {
+    #expect(AIToolAgent.toolStepMessage(for: "log_food") == "Looking up food...")
+}
+
+@Test @MainActor func toolStepMessage_logWeight_checkingWeightData() {
+    #expect(AIToolAgent.toolStepMessage(for: "log_weight") == "Checking weight data...")
+}
+
+@Test @MainActor func toolStepMessage_startWorkout_checkingWorkoutHistory() {
+    #expect(AIToolAgent.toolStepMessage(for: "start_workout") == "Checking workout history...")
+}
+
+@Test @MainActor func toolStepMessage_sleepRecovery_checkingRecovery() {
+    #expect(AIToolAgent.toolStepMessage(for: "sleep_recovery") == "Checking recovery...")
+}
+
+@Test @MainActor func toolStepMessage_copyYesterday_copyingFood() {
+    #expect(AIToolAgent.toolStepMessage(for: "copy_yesterday") == "Copying yesterday's food...")
+}
+
+@Test @MainActor func toolStepMessage_unknown_processing() {
+    #expect(AIToolAgent.toolStepMessage(for: "mystery_tool") == "Processing...")
+}
+
+// MARK: - fallbackText
+
+@Test @MainActor func fallbackText_food_mentionsLogFood() {
+    let text = AIToolAgent.fallbackText(for: .food)
+    #expect(text.contains("log food") || text.contains("log 2 eggs"))
+}
+
+@Test @MainActor func fallbackText_weight_mentionsWeight() {
+    let text = AIToolAgent.fallbackText(for: .weight)
+    #expect(text.contains("weight"))
+}
+
+@Test @MainActor func fallbackText_exercise_mentionsWorkout() {
+    let text = AIToolAgent.fallbackText(for: .exercise)
+    #expect(text.contains("workout"))
+}
+
+@Test @MainActor func fallbackText_supplements_mentionsSupplements() {
+    let text = AIToolAgent.fallbackText(for: .supplements)
+    #expect(text.contains("supplement"))
+}
+
+// MARK: - isInfoTool
+
+@Test @MainActor func isInfoTool_foodInfo_isTrue() {
+    #expect(AIToolAgent.isInfoTool("food_info") == true)
+}
+
+@Test @MainActor func isInfoTool_weightInfo_isTrue() {
+    #expect(AIToolAgent.isInfoTool("weight_info") == true)
+}
+
+@Test @MainActor func isInfoTool_logFood_isFalse() {
+    #expect(AIToolAgent.isInfoTool("log_food") == false)
+}
+
+@Test @MainActor func isInfoTool_unknown_isFalse() {
+    #expect(AIToolAgent.isInfoTool("unknown") == false)
+}
