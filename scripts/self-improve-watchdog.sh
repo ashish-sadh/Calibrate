@@ -64,6 +64,16 @@ read_control() {
     fi
 }
 
+run_compliance() {
+    local EXIT_REASON="${1:-normal}"  # normal | crash | stall
+    local COMP_TYPE
+    COMP_TYPE=$(cat "$HOME/drift-state/cache-session-type" 2>/dev/null || echo "unknown")
+    local COMP_MODEL
+    COMP_MODEL=$(cat "$HOME/drift-state/last-model" 2>/dev/null || echo "unknown")
+    "$WORK_DIR/scripts/session-compliance.sh" "$COMP_TYPE" "$COMP_MODEL" "$EXIT_REASON" 2>/dev/null || true
+    log "Session compliance: $COMP_TYPE ($COMP_MODEL, $EXIT_REASON)"
+}
+
 cleanup_dirty_state() {
     cd "$WORK_DIR"
     # Abort interrupted merges/rebases
@@ -481,11 +491,13 @@ while true; do
                 if [[ -n "$CURRENT_LOG" ]] && grep -q '"type":"result"' "$CURRENT_LOG" 2>/dev/null; then
                     log "Autopilot completed normally. Restarting..."
                     echo "0" > "$CRASH_FILE"
+                    run_compliance "normal"
                 else
                         CRASHES=$(cat "$CRASH_FILE" 2>/dev/null || echo "0")
                     CRASHES=$((CRASHES + 1))
                     echo "$CRASHES" > "$CRASH_FILE"
                     log "Autopilot CRASHED (no result event). Crash #$CRASHES. Restarting..."
+                    run_compliance "crash"
                     if [[ "$CRASHES" -ge 3 ]]; then
                         log "WARNING: $CRASHES consecutive crashes. Backing off 5 min."
                         sleep 300
@@ -497,6 +509,7 @@ while true; do
             elif is_log_stale; then
                 log "Autopilot stalled (log not updated in ${STALE_THRESHOLD}s). Restarting..."
                 kill_claude
+                run_compliance "stall"
                 cleanup_dirty_state
                 start_claude
             else
@@ -522,6 +535,7 @@ while true; do
                         log "Session still stalled after nudge window — killing and restarting."
                         rm -f "$NUDGE_FILE"
                         kill_claude
+                        run_compliance "stall"
                         cleanup_dirty_state
                         start_claude
                     else

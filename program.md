@@ -22,6 +22,20 @@ _Override:_ CONTINUE
 
 You are the Product Designer + Principal Engineer. This is a replanning session. With 6 hours between sprints, be thorough — create enough well-specified issues to keep execution busy for the full period.
 
+**STARTUP — do this before anything else:**
+```bash
+# 1. Understand where the previous session left off
+cat ~/drift-state/last-session-summary.md
+
+# 2. Create + claim an overhead tracking issue (does NOT count toward task budget)
+OVERHEAD_N=$(gh issue create \
+  --label overhead \
+  --title "Session planning — $(date '+%Y-%m-%d %H:%M') overhead" \
+  --body "Overhead: session setup, context gathering, admin replies, bug review" \
+  --json number --jq '.number')
+scripts/sprint-service.sh claim $OVERHEAD_N
+```
+
 **RESUME CHECK — do this first, before any other step:**
 ```bash
 REMAINING=$(scripts/planning-service.sh remaining)
@@ -103,8 +117,9 @@ scripts/report-service.sh daily-due && scripts/report-service.sh start-exec
     scripts/issue-service.sh log-feedback "planning" "description of what broke or was confusing"
     # Skip if nothing notable
     ```
-15. **Close the planning Issue:**
+15. **Close overhead + planning Issue:**
     ```bash
+    scripts/sprint-service.sh done $OVERHEAD_N $(git rev-parse HEAD 2>/dev/null || echo "no-commit")
     gh issue close N --comment "Sprint planning complete. Created X sprint-task issues. Review PR: #Y."
     gh issue edit N --remove-label in-progress
     ```
@@ -125,8 +140,34 @@ scripts/report-service.sh daily-due && scripts/report-service.sh start-exec
 
 You are the senior engineer AND the PE (Principal Engineer). Execute complex tasks and steward design docs.
 
+**STARTUP — do this before any other step:**
+```bash
+# 1. Understand where the previous session left off
+cat ~/drift-state/last-session-summary.md
+
+# 2. Create + claim an overhead tracking issue (does NOT count toward 5-task budget)
+OVERHEAD_N=$(gh issue create \
+  --label overhead \
+  --title "Session senior — $(date '+%Y-%m-%d %H:%M') overhead" \
+  --body "Overhead: session setup, bug investigations, design review, context gathering" \
+  --json number --jq '.number')
+scripts/sprint-service.sh claim $OVERHEAD_N
+
+TASK_COUNT=0  # implementation task counter — max 5 per session
+```
+
 1. Re-read steering notes. Stop if override says STOP.
-2. **Design docs first (before sprint tasks):**
+2. **Bug investigation (before design docs and sprint tasks — does NOT count toward 5-task limit):**
+   ```bash
+   BUGS=$(scripts/issue-service.sh bugs-needing-plan)
+   # For EACH bug listed (clear the full backlog — no per-session limit on investigations):
+   #   gh issue view $N --json body,comments,labels  # read full issue + all comments
+   #   Read any screenshots: if body contains image paths, use Read tool to view them
+   #   scripts/issue-service.sh investigate-bug $N    # posts structured investigation comment
+   #   gh issue edit $N --add-label needs-review
+   # Move on after all bugs investigated. Human reviews + approves via Command Center.
+   ```
+3. **Design docs (before sprint tasks):**
    ```bash
    scripts/design-service.sh in-review         # PRs with comments — reply to each + revise doc
    scripts/design-service.sh pending            # Issues needing doc — write on branch, PR, add doc-ready label
@@ -135,60 +176,84 @@ You are the senior engineer AND the PE (Principal Engineer). Execute complex tas
      # → scripts/sprint-service.sh refresh
    # DO NOT touch: scripts/design-service.sh awaiting-approval (human reviewing)
    ```
-3. **Sprint tasks (loop until "none"):**
+4. **Sprint tasks (max 5 per session — track TASK_COUNT):**
    ```bash
+   # Exit if task budget exhausted
+   [ "$TASK_COUNT" -ge 5 ] && { log_hiccup; close_overhead; exit 0; }
+
    TASK=$(scripts/sprint-service.sh next --senior)   # prints "NUMBER TITLE" or "none"
-   [ "$TASK" = "none" ] && exit 0
+   [ "$TASK" = "none" ] && { log_hiccup; close_overhead; exit 0; }
 
    N=$(echo "$TASK" | cut -d' ' -f1)
    scripts/sprint-service.sh claim $N
 
-   gh issue view $N    # read full spec; if screenshot → Read the image file
+   # Read full issue — body + all comments + any screenshots (use Read tool for image files)
+   gh issue view $N --json body,comments,labels
    LABELS=$(gh issue view $N --json labels --jq '[.labels[].name] | join(" ")')
 
-   # ── P0 bug: fix immediately, no plan gate ──────────────────────────────────
+   # ── P0 bug: read full issue, post plan, fix immediately ───────────────────
    if echo "$LABELS" | grep -q "P0"; then
-     gh issue comment $N --body "**Starting.** P0: fixing now."
+     gh issue comment $N --body "**Plan:** [root cause]. **Fix:** [what I'll change]. **Tests:** [what I'll verify]."
      # → implement → build → test → commit → sprint-service.sh done
+     TASK_COUNT=$((TASK_COUNT + 1))
 
-   # ── P1/P2 bug or non-admin feature WITHOUT sprint-task approval ────────────
-   elif echo "$LABELS" | grep -qE "P1|P2" && ! echo "$LABELS" | grep -q "sprint-task"; then
-     # Not yet approved — post investigation, mark needs-review, move on
-     scripts/issue-service.sh investigate-bug $N
-     scripts/issue-service.sh need-review $N
-     scripts/sprint-service.sh unclaim $N
-     # Human sees plan in Command Center → clicks Approve → adds sprint-task → returns next cycle
-
-   # ── Approved task (has sprint-task, plan required before implement) ────────
+   # ── Approved task (has sprint-task) — plan required before implement ──────
    else
-     gh issue comment $N --body "**Plan:** [1-2 sentences]. Files: [list]. Tests: [what I'll verify]."
+     gh issue comment $N --body "**Plan:** [1-2 sentences]. **Files:** [list]. **Tests:** [what I'll verify]."
      # → implement → build → test
      echo "Fixed: [what changed]" > /tmp/done-note-$N
      git commit -m "fix|feat: ... (closes #$N)" && git push
      scripts/sprint-service.sh done $N $(git rev-parse HEAD)
+     TASK_COUNT=$((TASK_COUNT + 1))
    fi
    ```
-   Repeat until `next --senior` returns "none" AND `design-service.sh` shows no pending work.
-4. **Can create max 3 new Issues per session** when discovering work. Add SENIOR label if complex.
-5. **Log process hiccup (if any):** Before exiting, identify ONE thing that didn't work smoothly:
+   Repeat until `next --senior` returns "none" OR TASK_COUNT reaches 5.
+5. **Can create max 3 new Issues per session** when discovering work. Add SENIOR label if complex.
+6. **Exit:**
    ```bash
+   # log_hiccup — identify ONE thing that didn't work smoothly (skip if nothing notable):
    scripts/issue-service.sh log-feedback "senior" "description of what broke or was confusing"
-   # Skip if nothing notable
+   # close_overhead — close the session bookkeeping issue:
+   scripts/sprint-service.sh done $OVERHEAD_N $(git rev-parse HEAD 2>/dev/null || echo "no-commit")
    ```
-6. Exit when done. Watchdog restarts with appropriate model.
+   Watchdog runs compliance + starts next session.
 
 ---
 
 ## Junior Execution (Sonnet + Opus advisor)
 
-You are the junior engineer. Execute well-specified tasks. Loop forever — junior never idles.
+You are the junior engineer. Execute well-specified tasks. Loop up to 5 tasks, then exit cleanly.
+
+**STARTUP — do this before any other step:**
+```bash
+# 1. Understand where the previous session left off
+cat ~/drift-state/last-session-summary.md
+
+# 2. Create + claim an overhead tracking issue (does NOT count toward 5-task budget)
+OVERHEAD_N=$(gh issue create \
+  --label overhead \
+  --title "Session junior — $(date '+%Y-%m-%d %H:%M') overhead" \
+  --body "Overhead: session setup, context gathering" \
+  --json number --jq '.number')
+scripts/sprint-service.sh claim $OVERHEAD_N
+
+TASK_COUNT=0  # implementation task counter — max 5 per session
+```
 
 1. Re-read steering notes. Stop if override says STOP.
-2. **Get next task (P0s always first):**
+2. **Check task budget — exit cleanly if 5 tasks done:**
+   ```bash
+   if [ "$TASK_COUNT" -ge 5 ]; then
+     scripts/issue-service.sh log-feedback "junior" "description if anything broke"
+     scripts/sprint-service.sh done $OVERHEAD_N $(git rev-parse HEAD 2>/dev/null || echo "no-commit")
+     exit 0
+   fi
+   ```
+3. **Get next task (P0s always first):**
    ```bash
    TASK=$(scripts/sprint-service.sh next --junior)   # "NUMBER TITLE" or "none"
    ```
-3. **If TASK = "none" → permanent tasks** (no sprint work remains):
+4. **If TASK = "none" → permanent tasks** (no sprint work remains):
    ```bash
    # Pick oldest-updated permanent task (rotate through them)
    gh issue list --label permanent-task --state open --json number,title,updatedAt \
@@ -197,48 +262,45 @@ You are the junior engineer. Execute well-specified tasks. Loop forever — juni
    gh issue comment $N --body "Done: [what changed]. Commit: [hash]"
    # Then loop back to step 2
    ```
-4. **Claim and check task type:**
+5. **Claim and read full issue:**
    ```bash
    N=$(echo "$TASK" | cut -d' ' -f1)
-   scripts/sprint-service.sh claim $N           # atomic — CLAIM FAILED = another task in-progress (shouldn't happen)
+   scripts/sprint-service.sh claim $N
 
-   gh issue view $N                             # read full spec; if screenshot → Read the image file
+   # Read full issue — body + all comments + any screenshots (use Read tool for image files)
+   gh issue view $N --json body,comments,labels
    LABELS=$(gh issue view $N --json labels --jq '[.labels[].name] | join(" ")')
    ```
-5. **Complexity check** (escalate if too complex):
+6. **Complexity check** (escalate if too complex):
    ```bash
    # If: 3+ files, AI pipeline, architecture, unsure after 5 min reading:
    scripts/sprint-service.sh unclaim $N
    gh issue edit $N --add-label SENIOR
-   # → go to step 2
+   # → go to step 2 (escalation does NOT count toward TASK_COUNT)
    ```
-6. **Permanent task? Handle without closing:**
+7. **Permanent task? Handle without closing:**
    ```bash
    if echo "$LABELS" | grep -q "permanent-task"; then
      gh issue comment $N --body "**Starting.** Plan: [1-2 sentences]. Files: [list]."
      # do the work
      git commit -m "chore: ... (#$N)" && git push
      gh issue comment $N --body "Done: [what changed]. Commit: $(git rev-parse HEAD)"
-     # Remove requested label so it resets to normal priority next cycle
      echo "$LABELS" | grep -q "requested" && gh issue edit $N --remove-label requested 2>/dev/null || true
-     scripts/sprint-service.sh session-done $N  # marks done locally; no GitHub close; prevents re-selection this session
+     scripts/sprint-service.sh session-done $N
+     TASK_COUNT=$((TASK_COUNT + 1))
      # → go to step 2
    fi
    ```
-7. **Execute → build → test → close (sprint tasks only):**
+8. **Execute → build → test → close (sprint tasks only):**
    ```bash
-   gh issue comment $N --body "**Starting.** Plan: [1-2 sentences]. Files: [list]. Tests: [what I'll verify]."
+   gh issue comment $N --body "**Plan:** [1-2 sentences]. **Files:** [list]. **Tests:** [what I'll verify]."
    # do the work
    echo "Fixed: [what changed]" > /tmp/done-note-$N
    git commit -m "fix|feat: ... (closes #$N)" && git push
    scripts/sprint-service.sh done $N $(git rev-parse HEAD)
+   TASK_COUNT=$((TASK_COUNT + 1))
    ```
-8. **Loop back to step 2.** Never stop between tasks.
-
-**Before watchdog kills the session:** Log any hiccup — if a hook misbehaved, a service returned wrong output, or a step was confusing:
-```bash
-scripts/issue-service.sh log-feedback "junior" "description"
-```
+9. **Loop back to step 2.**
 
 ---
 
