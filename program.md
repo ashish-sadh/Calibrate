@@ -150,3 +150,8 @@ Start Drift Control: `echo "RUN" > ~/drift-control.txt && ./scripts/self-improve
 Pause/resume via Command Center or: `echo "PAUSE" > ~/drift-control.txt` / `echo "RUN" > ~/drift-control.txt`
 
 Drain (finish current task then stop): `echo "DRAIN" > ~/drift-control.txt`
+
+**Human takeover:**
+1. `echo "PAUSE" > ~/drift-control.txt` — watchdog tells current session to stop after its task (~5min)
+2. Open Claude normally and work. The session-start hook resets the session type to "human" so auto-publish hooks are suppressed.
+3. When done: `echo "RUN" > ~/drift-control.txt` — watchdog resumes autonomous operation.

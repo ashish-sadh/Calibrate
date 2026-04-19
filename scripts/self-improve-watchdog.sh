@@ -534,6 +534,14 @@ while true; do
                 "$WORK_DIR/scripts/sprint-service.sh" refresh 2>/dev/null || true
                 refresh_compliance_cache
 
+                # Mark TestFlight due when 3h elapsed — hook publishes on next commit
+                _TF_LAST=$(cat "$HOME/drift-state/last-testflight-publish" 2>/dev/null || echo "0")
+                _TF_ELAPSED=$(( $(date +%s) - _TF_LAST ))
+                if [[ "$_TF_ELAPSED" -ge 10800 ]] && [[ ! -f "$HOME/drift-state/testflight-due" ]]; then
+                    echo "$(date +%s)" > "$HOME/drift-state/testflight-due"
+                    log "TestFlight publish due (${_TF_ELAPSED}s since last) — marked for next commit"
+                fi
+
                 # Check per-session stall threshold (no commits/progress)
                 # Nudge first, then kill after NUDGE_WAIT seconds
                 CURRENT_TYPE=$(cat "$HOME/drift-state/cache-session-type" 2>/dev/null || echo "junior")
