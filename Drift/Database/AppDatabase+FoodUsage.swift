@@ -188,6 +188,130 @@ extension AppDatabase {
         }
     }
 
+    /// Fetch combos (recipes with isRecipe=true) ranked by pinned → use_count → last_used.
+    func fetchCombos(limit: Int = 8) throws -> [Food] {
+        try reader.read { db in
+            try Food.fetchAll(db, sql: """
+                SELECT f.* FROM food f
+                LEFT JOIN food_usage fu ON LOWER(fu.food_name) = LOWER(f.name)
+                WHERE f.source = 'recipe' AND f.is_recipe = 1
+                GROUP BY f.id
+                ORDER BY
+                    COALESCE(fu.is_favorite, 0) DESC,
+                    COALESCE(fu.use_count, 0) DESC,
+                    COALESCE(fu.last_used, '') DESC,
+                    f.name
+                LIMIT ?
+                """, arguments: [limit])
+        }
+    }
+
+    /// Scan food_entry history and auto-save frequently co-logged groups as combos.
+    /// Groups entries logged within 25 minutes on the same date into sessions;
+    /// signatures appearing on 2+ distinct dates become saved recipe combos.
+    func detectAndSaveCombos() throws {
+        struct EntryRow {
+            let date: String; let name: String
+            let calories: Double; let proteinG: Double
+            let carbsG: Double; let fatG: Double; let fiberG: Double
+            let servingSizeG: Double; let servings: Double; let loggedAt: String
+        }
+
+        let entries: [EntryRow] = try reader.read { db in
+            try Row.fetchAll(db, sql: """
+                SELECT date, food_name, calories, protein_g, carbs_g, fat_g, fiber_g,
+                       serving_size_g, servings, logged_at
+                FROM food_entry
+                WHERE date IS NOT NULL AND logged_at IS NOT NULL AND food_name IS NOT NULL
+                ORDER BY date, logged_at
+                """).compactMap { row in
+                guard let date = row["date"] as String?,
+                      let name = row["food_name"] as String?,
+                      let loggedAt = row["logged_at"] as String?,
+                      !name.isEmpty else { return nil }
+                return EntryRow(
+                    date: date, name: name,
+                    calories: row["calories"] ?? 0, proteinG: row["protein_g"] ?? 0,
+                    carbsG: row["carbs_g"] ?? 0, fatG: row["fat_g"] ?? 0,
+                    fiberG: row["fiber_g"] ?? 0,
+                    servingSizeG: row["serving_size_g"] ?? 0,
+                    servings: row["servings"] ?? 1, loggedAt: loggedAt
+                )
+            }
+        }
+
+        let iso = ISO8601DateFormatter()
+        let window: TimeInterval = 25 * 60
+
+        // Group into 25-min sessions per date
+        typealias SessionItem = (name: String, cal: Double, p: Double, c: Double, f: Double, fb: Double, ss: Double, sv: Double)
+        var sessions: [(date: String, items: [SessionItem])] = []
+        var cur: [SessionItem] = []
+        var curDate = ""
+        var sessionStart: Date? = nil
+
+        func flush() {
+            if cur.count >= 2 && cur.count <= 6 { sessions.append((date: curDate, items: cur)) }
+        }
+
+        for e in entries {
+            guard let ts = iso.date(from: e.loggedAt) else { continue }
+            let isNewSession = e.date != curDate || sessionStart == nil || ts.timeIntervalSince(sessionStart!) > window
+            if isNewSession { flush(); cur = []; curDate = e.date; sessionStart = ts }
+            cur.append((e.name, e.calories * e.servings, e.proteinG * e.servings,
+                        e.carbsG * e.servings, e.fatG * e.servings, e.fiberG * e.servings,
+                        e.servingSizeG * e.servings, e.servings))
+        }
+        flush()
+
+        // Count distinct dates per signature
+        var sigDates: [String: Set<String>] = [:]
+        var sigItems: [String: [SessionItem]] = [:]
+        for s in sessions {
+            let sig = s.items.map { $0.name.lowercased() }.sorted().joined(separator: "||")
+            sigDates[sig, default: []].insert(s.date)
+            sigItems[sig] = s.items
+        }
+
+        for (sig, dates) in sigDates where dates.count >= 2 {
+            guard let items = sigItems[sig] else { continue }
+            let recipeItems = items.map { item in
+                QuickAddView.RecipeItem(
+                    name: item.name,
+                    portionText: item.ss > 0 ? "\(Int(item.ss))g" : "",
+                    calories: item.cal, proteinG: item.p, carbsG: item.c,
+                    fatG: item.f, fiberG: item.fb, servingSizeG: item.ss
+                )
+            }
+            guard let json = try? JSONEncoder().encode(recipeItems),
+                  let ingredientsJson = String(data: json, encoding: .utf8) else { continue }
+
+            let comboName = items.prefix(4)
+                .map { $0.name.split(separator: " ").prefix(2).joined(separator: " ") }
+                .joined(separator: " + ")
+            let totalCal = items.reduce(0) { $0 + $1.cal }
+            let totalP = items.reduce(0) { $0 + $1.p }
+            let totalC = items.reduce(0) { $0 + $1.c }
+            let totalF = items.reduce(0) { $0 + $1.f }
+            let totalFb = items.reduce(0) { $0 + $1.fb }
+            let totalSS = items.reduce(0) { $0 + $1.ss }
+            _ = try? writer.write { db in
+                let exists = try (Int.fetchOne(db, sql: """
+                    SELECT COUNT(*) FROM food WHERE LOWER(name) = ? AND source = 'recipe'
+                    """, arguments: [comboName.lowercased()]) ?? 0) > 0
+                guard !exists else { return }
+                var food = Food(name: comboName, category: "Combo",
+                                servingSize: max(totalSS, 1), servingUnit: "serving",
+                                calories: totalCal, proteinG: totalP, carbsG: totalC,
+                                fatG: totalF, fiberG: totalFb,
+                                ingredients: ingredientsJson, source: "recipe",
+                                isRecipe: true, defaultServings: 1, expandOnLog: true)
+                try food.insert(db)
+                Log.app.info("Auto-saved combo: \(comboName)")
+            }
+        }
+    }
+
     /// Search saved recipes/favorites by name.
     func searchRecipes(query: String) throws -> [SavedFood] {
         try reader.read { db in

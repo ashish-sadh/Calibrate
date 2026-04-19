@@ -18,6 +18,7 @@ final class FoodLogViewModel {
     var favoriteFoods: [RecentEntry] = []
     var weeklyPlantPoints: PlantPointsService.PlantPoints = .init(uniquePlants: [], uniqueHerbsSpices: [])
     var dailyNewPlants: Int = 0
+    var combos: [Food] = []
 
     var dateString: String {
         DateFormatters.dateOnly.string(from: selectedDate)
@@ -147,6 +148,33 @@ final class FoodLogViewModel {
         frequentFoods = (try? database.fetchFrequentFoods()) ?? []
         savedRecipes = (try? database.fetchFavorites()) ?? []
         favoriteFoods = (try? database.fetchFavoriteEntryNames()) ?? []
+        combos = (try? database.fetchCombos()) ?? []
+        Task.detached(priority: .background) { [weak self] in
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            try? AppDatabase.shared.detectAndSaveCombos()
+            await MainActor.run { self?.combos = (try? AppDatabase.shared.fetchCombos()) ?? [] }
+        }
+    }
+
+    /// Log all ingredients of a combo as individual food entries.
+    func logCombo(_ combo: Food) {
+        guard let items = combo.recipeItems else { return }
+        let mealType = autoMealType
+        for item in items {
+            quickAdd(name: item.name, calories: item.calories, proteinG: item.proteinG,
+                     carbsG: item.carbsG, fatG: item.fatG, fiberG: item.fiberG,
+                     mealType: mealType, servingSizeG: item.servingSizeG, servings: 1)
+        }
+        try? database.trackFoodUsage(name: combo.name, foodId: combo.id, servings: 1,
+                                     calories: combo.calories, proteinG: combo.proteinG,
+                                     carbsG: combo.carbsG, fatG: combo.fatG, fiberG: combo.fiberG,
+                                     servingSizeG: combo.servingSize)
+    }
+
+    /// Copy a group of past-day entries to today (one-tap combo copy from history).
+    func copyGroupToToday(_ entries: [FoodEntry]) {
+        entries.forEach { copyEntryToToday($0) }
+        loadTodayMeals()
     }
 
     func logFood(_ food: Food, servings: Double, mealType: MealType, loggedAt: Date = Date()) {

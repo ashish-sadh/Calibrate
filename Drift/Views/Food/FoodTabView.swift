@@ -20,6 +20,7 @@ struct FoodTabView: View {
     @State private var showingCopyYesterdayAlert = false
     @State private var showingCopyAllAlert = false
     @State private var searchMealType: MealType? = nil
+    @State private var showingCombos = false
     @AppStorage("foodDiaryMealGrouped") private var mealGrouped = true
 
     enum FoodSortMode: String, CaseIterable {
@@ -108,6 +109,7 @@ struct FoodTabView: View {
             .animation(.easeInOut(duration: 0.3), value: copiedToTodayName)
             .sheet(isPresented: $showingSearch) { FoodSearchView(viewModel: viewModel, initialMealType: searchMealType) }
             .sheet(isPresented: $showingRecipeBuilder) { QuickAddView(viewModel: viewModel) }
+            .sheet(isPresented: $showingCombos) { CombosView(viewModel: viewModel) }
             .sheet(isPresented: $showingGoalSetup) {
                 NavigationStack {
                     GoalSetupView(existingGoal: WeightGoal.load()) { goal in
@@ -440,6 +442,92 @@ struct FoodTabView: View {
 
     // MARK: - Plant Points
 
+    // MARK: - Combos
+
+    /// Entries in `sortedEntries` grouped into 25-min time windows (past days only).
+    private var timeGroups: [[FoodEntry]] {
+        let iso = ISO8601DateFormatter()
+        let window: TimeInterval = 25 * 60
+        var groups: [[FoodEntry]] = []
+        var current: [FoodEntry] = []
+        var start: Date? = nil
+        for entry in sortedEntries {
+            let ts = iso.date(from: entry.loggedAt)
+            if let ts, let s = start, ts.timeIntervalSince(s) <= window {
+                current.append(entry)
+            } else {
+                if !current.isEmpty { groups.append(current) }
+                current = [entry]; start = ts
+            }
+        }
+        if !current.isEmpty { groups.append(current) }
+        return groups
+    }
+
+    private var comboChipStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(viewModel.combos) { combo in
+                    let totalCal = combo.recipeItems?.reduce(0) { $0 + $1.calories } ?? combo.calories
+                    Button {
+                        viewModel.logCombo(combo)
+                        copiedToTodayName = combo.name
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedToTodayName = nil }
+                    } label: {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(combo.name)
+                                .font(.caption.weight(.medium))
+                                .lineLimit(1)
+                            Text("\(Int(totalCal)) cal")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal, 10).padding(.vertical, 6)
+                        .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
+                        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Color.secondary.opacity(0.2)))
+                    }
+                    .buttonStyle(.plain)
+                }
+                Button { showingCombos = true } label: {
+                    Text("See All →")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Theme.accent)
+                        .padding(.horizontal, 10).padding(.vertical, 6)
+                        .background(Theme.accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private func groupedEntryBlock(_ entries: [FoodEntry]) -> some View {
+        let totalCal = entries.reduce(0) { $0 + $1.totalCalories }
+        return VStack(spacing: 0) {
+            ForEach(Array(entries.enumerated()), id: \.element.id) { idx, entry in
+                entryRow(entry)
+                if idx < entries.count - 1 { Divider().padding(.leading, 12) }
+            }
+            Button {
+                viewModel.copyGroupToToday(entries)
+                copiedToTodayName = "\(entries.count) items"
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedToTodayName = nil }
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "doc.on.doc").font(.caption2)
+                    Text("Copy group to today · \(Int(totalCal)) cal")
+                        .font(.caption2.weight(.medium))
+                    Spacer()
+                }
+                .foregroundStyle(Theme.accent)
+                .padding(.horizontal, 12).padding(.vertical, 6)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.vertical, 4)
+        .background(Color.secondary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
+        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.secondary.opacity(0.15)))
+    }
+
     // MARK: - Food Diary
 
     private var foodDiary: some View {
@@ -489,6 +577,12 @@ struct FoodTabView: View {
             }
             .padding(.bottom, 10)
 
+            // Combo chips — today only, shown regardless of whether entries exist
+            if viewModel.isToday && !viewModel.combos.isEmpty {
+                comboChipStrip
+                Divider().padding(.vertical, 4)
+            }
+
             if viewModel.todayEntries.isEmpty {
                 emptyDiaryView
             } else {
@@ -512,12 +606,20 @@ struct FoodTabView: View {
                         }
                         if groupIdx < mealGroups.count - 1 { Divider().padding(.vertical, 4) }
                     }
-                } else {
+                } else if viewModel.isToday {
                     ForEach(Array(sortedEntries.enumerated()), id: \.element.id) { index, entry in
                         entryRow(entry)
-                        if index < sortedEntries.count - 1 {
-                            Divider().padding(.leading, 0)
+                        if index < sortedEntries.count - 1 { Divider() }
+                    }
+                } else {
+                    // Past day: group time-adjacent entries into copyable combo blocks
+                    ForEach(Array(timeGroups.enumerated()), id: \.offset) { gi, group in
+                        if group.count >= 2 {
+                            groupedEntryBlock(group)
+                        } else if let entry = group.first {
+                            entryRow(entry)
                         }
+                        if gi < timeGroups.count - 1 { Divider() }
                     }
                 }
             }
