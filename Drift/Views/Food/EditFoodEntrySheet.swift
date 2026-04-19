@@ -319,8 +319,8 @@ struct EditFoodEntrySheet: View {
                 }
                 .padding(.horizontal, 4)
             }
-        } else if hasIngredients {
-            let plantIngredients = dbFood!.ingredientList.filter { PlantPointsService.classify($0) != .notPlant }
+        } else if hasIngredients, let dbFood {
+            let plantIngredients = dbFood.ingredientList.filter { PlantPointsService.classify($0) != .notPlant }
             if !plantIngredients.isEmpty {
                 HStack(spacing: 6) {
                     Image(systemName: "leaf.fill").foregroundStyle(Theme.plantGreen)

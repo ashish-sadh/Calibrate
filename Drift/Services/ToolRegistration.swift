@@ -211,12 +211,18 @@ enum ToolRegistration {
                     return .text("\(Int(n.proteinG))g protein today.")
                 }
                 if query.contains("carb") {
-                    let left = targets.map { max(0, Int($0.carbsG - n.carbsG)) }
-                    return .text("\(Int(n.carbsG))g carbs today.\(left.map { " Target: \(Int(targets!.carbsG))g. \($0 > 0 ? "Need \($0)g more." : "Reached!")" } ?? "")")
+                    if let t = targets {
+                        let left = max(0, Int(t.carbsG - n.carbsG))
+                        return .text("\(Int(n.carbsG))g carbs today. Target: \(Int(t.carbsG))g. \(left > 0 ? "Need \(left)g more." : "Reached!")")
+                    }
+                    return .text("\(Int(n.carbsG))g carbs today.")
                 }
                 if query.contains("fat") && !query.contains("body fat") {
-                    let left = targets.map { max(0, Int($0.fatG - n.fatG)) }
-                    return .text("\(Int(n.fatG))g fat today.\(left.map { " Target: \(Int(targets!.fatG))g. \($0 > 0 ? "Need \($0)g more." : "Reached!")" } ?? "")")
+                    if let t = targets {
+                        let left = max(0, Int(t.fatG - n.fatG))
+                        return .text("\(Int(n.fatG))g fat today. Target: \(Int(t.fatG))g. \(left > 0 ? "Need \(left)g more." : "Reached!")")
+                    }
+                    return .text("\(Int(n.fatG))g fat today.")
                 }
 
                 // Sugar / fiber query
