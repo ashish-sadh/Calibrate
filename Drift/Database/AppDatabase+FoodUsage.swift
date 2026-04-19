@@ -351,9 +351,20 @@ extension AppDatabase {
                     }
                 }
             }
-            try insertCluster(breakfast, hour: 8, minute: 0)
-            try insertCluster(dayOffset % 2 == 0 ? lunchChole : lunchDosa, hour: 12, minute: 30)
-            if dayOffset <= 3 { try insertCluster(dinner, hour: 19, minute: 30) }
+            let clusters: [[SeedItem]] = [
+                breakfast,
+                dayOffset % 2 == 0 ? lunchChole : lunchDosa,
+            ] + (dayOffset <= 3 ? [dinner] : [])
+            let hours = [8, 12, 19]
+            let minutes = [0, 30, 30]
+            for (i, cluster) in clusters.enumerated() {
+                try insertCluster(cluster, hour: hours[i], minute: minutes[i])
+                for item in cluster {
+                    try trackFoodUsage(name: item.name, foodId: nil, servings: 1,
+                                       calories: item.cal, proteinG: item.p, carbsG: item.c,
+                                       fatG: item.f, fiberG: 0, servingSizeG: item.ss)
+                }
+            }
         }
     }
 

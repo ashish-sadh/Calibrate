@@ -496,52 +496,38 @@ struct FoodTabView: View {
         .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.secondary.opacity(0.25), lineWidth: 1))
     }
 
-    private var quickAddStrips: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            if !viewModel.combos.isEmpty {
-                HStack(alignment: .center, spacing: 8) {
-                    Text("Combos").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
-                        .frame(width: 48, alignment: .leading)
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 6) {
-                            ForEach(viewModel.combos) { combo in
-                                let totalCal = combo.recipeItems?.reduce(0) { $0 + $1.calories } ?? combo.calories
-                                Button { comboToLog = combo } label: {
-                                    comboChip(name: combo.name, calories: Int(totalCal))
-                                }
-                                .buttonStyle(.plain)
-                            }
-                            Button { showingCombos = true } label: {
-                                Text("···").font(.subheadline).foregroundStyle(Theme.accent.opacity(0.6))
-                                    .frame(width: 28, height: 28)
-                            }.buttonStyle(.plain)
-                        }
+    private var suggestionStrip: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Suggestions").font(.caption2.weight(.semibold)).foregroundStyle(.tertiary)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 6) {
+                    ForEach(viewModel.combos.prefix(5)) { combo in
+                        let totalCal = combo.recipeItems?.reduce(0) { $0 + $1.calories } ?? combo.calories
+                        Button { comboToLog = combo } label: {
+                            comboChip(name: combo.name, calories: Int(totalCal))
+                        }.buttonStyle(.plain)
                     }
-                }
-            }
-            if !viewModel.recentFoods.isEmpty {
-                HStack(alignment: .center, spacing: 8) {
-                    Text("Recent").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
-                        .frame(width: 48, alignment: .leading)
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 6) {
-                            ForEach(viewModel.recentFoods.prefix(8)) { food in
-                                Button {
-                                    confirmPrefill = AIChatViewModel.ManualFoodPrefill(
-                                        name: food.name, calories: Int(food.calories),
-                                        proteinG: food.proteinG, carbsG: food.carbsG,
-                                        fatG: food.fatG, fiberG: food.fiberG)
-                                    showingConfirmLog = true
-                                } label: {
-                                    recentChip(name: food.name, calories: Int(food.calories))
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
+                    let comboNames = Set(viewModel.combos.map { $0.name.lowercased() })
+                    ForEach(viewModel.recentFoods.prefix(6).filter { !comboNames.contains($0.name.lowercased()) }) { food in
+                        Button {
+                            confirmPrefill = AIChatViewModel.ManualFoodPrefill(
+                                name: food.name, calories: Int(food.calories),
+                                proteinG: food.proteinG, carbsG: food.carbsG,
+                                fatG: food.fatG, fiberG: food.fiberG)
+                            showingConfirmLog = true
+                        } label: {
+                            recentChip(name: food.name, calories: Int(food.calories))
+                        }.buttonStyle(.plain)
                     }
+                    Button { showingCombos = true } label: {
+                        Text("···").font(.subheadline).foregroundStyle(.tertiary)
+                            .frame(width: 28, height: 28)
+                    }.buttonStyle(.plain)
                 }
+                .padding(.bottom, 2)
             }
         }
+        .padding(.top, 6)
     }
 
     private func groupedEntryBlock(_ entries: [FoodEntry]) -> some View {
@@ -621,12 +607,6 @@ struct FoodTabView: View {
             }
             .padding(.bottom, 10)
 
-            // Quick add (combos + recent) — today only, consistently styled horizontal chips
-            if viewModel.isToday && (!viewModel.combos.isEmpty || !viewModel.recentFoods.isEmpty) {
-                quickAddStrips
-                Divider().padding(.vertical, 6)
-            }
-
             if viewModel.todayEntries.isEmpty {
                 emptyDiaryView
             } else {
@@ -666,6 +646,11 @@ struct FoodTabView: View {
                         if gi < timeGroups.count - 1 { Divider() }
                     }
                 }
+            }
+
+            if viewModel.isToday && (!viewModel.combos.isEmpty || !viewModel.recentFoods.isEmpty) {
+                Divider().padding(.top, 8)
+                suggestionStrip
             }
         }
         .card()

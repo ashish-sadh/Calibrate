@@ -93,9 +93,14 @@ struct ComboLogSheet: View {
     }
 
     private var itemList: some View {
-        VStack(spacing: 1) {
-            ForEach($logItems) { $item in
-                itemRow(item: $item)
+        VStack(alignment: .leading, spacing: 0) {
+            Text("FOOD ITEMS")
+                .font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 6)
+            VStack(spacing: 1) {
+                ForEach($logItems) { $item in
+                    itemRow(item: $item)
+                }
             }
         }
         .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 12))
