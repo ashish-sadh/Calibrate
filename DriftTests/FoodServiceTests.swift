@@ -272,3 +272,120 @@ import Testing
     let food = FoodService.fetchFoodById(Int64.max)
     #expect(food == nil)
 }
+
+// MARK: - Recipe Expand-On-Log (#190)
+
+@Test @MainActor func logRecipeAggregatedByDefault() throws {
+    let db = try AppDatabase.empty()
+    let vm = FoodLogViewModel(database: db)
+    let items = [
+        QuickAddView.RecipeItem(name: "coffee", portionText: "250ml",
+                                calories: 5, proteinG: 0, carbsG: 1, fatG: 0, fiberG: 0, servingSizeG: 250),
+        QuickAddView.RecipeItem(name: "milk", portionText: "50ml",
+                                calories: 25, proteinG: 2, carbsG: 2, fatG: 1, fiberG: 0, servingSizeG: 50),
+        QuickAddView.RecipeItem(name: "protein powder", portionText: "1 scoop",
+                                calories: 120, proteinG: 24, carbsG: 3, fatG: 1, fiberG: 0, servingSizeG: 30),
+    ]
+    let ingredientsJson = (try? JSONEncoder().encode(items)).flatMap { String(data: $0, encoding: .utf8) }
+    let recipe = SavedFood(name: "coffee-group-agg", calories: 150, proteinG: 26, carbsG: 6,
+                           fatG: 2, fiberG: 0, isRecipe: true, ingredients: ingredientsJson,
+                           expandOnLog: false)
+
+    let expanded = FoodService.logRecipe(recipe, servings: 1, mealType: .breakfast, viewModel: vm)
+    #expect(expanded == false, "logRecipe should return false when expandOnLog is off")
+
+    let entries = try db.fetchFoodEntries(for: DateFormatters.todayString)
+    #expect(entries.count == 1, "Aggregated recipe should produce exactly 1 entry")
+    #expect(entries.first?.foodName == "coffee-group-agg")
+    #expect(entries.first?.calories == 150)
+}
+
+@Test @MainActor func logRecipeExpandedCreatesOneEntryPerItem() throws {
+    let db = try AppDatabase.empty()
+    let vm = FoodLogViewModel(database: db)
+    let items = [
+        QuickAddView.RecipeItem(name: "dosa", portionText: "1",
+                                calories: 180, proteinG: 4, carbsG: 33, fatG: 4, fiberG: 2, servingSizeG: 90),
+        QuickAddView.RecipeItem(name: "sambar", portionText: "1 bowl",
+                                calories: 80, proteinG: 4, carbsG: 12, fatG: 2, fiberG: 3, servingSizeG: 150),
+    ]
+    let ingredientsJson = (try? JSONEncoder().encode(items)).flatMap { String(data: $0, encoding: .utf8) }
+    let recipe = SavedFood(name: "dosa+sambar", calories: 260, proteinG: 8, carbsG: 45,
+                           fatG: 6, fiberG: 5, isRecipe: true, ingredients: ingredientsJson,
+                           expandOnLog: true)
+
+    let expanded = FoodService.logRecipe(recipe, servings: 1, mealType: .breakfast, viewModel: vm)
+    #expect(expanded == true, "logRecipe should return true when expandOnLog is on")
+
+    let entries = try db.fetchFoodEntries(for: DateFormatters.todayString)
+    #expect(entries.count == 2, "Expanded recipe should produce one entry per ingredient")
+    let names = Set(entries.map(\.foodName))
+    #expect(names == ["dosa", "sambar"])
+    // Per-item macros preserved (not summed into one row).
+    let dosa = entries.first { $0.foodName == "dosa" }
+    #expect(dosa?.calories == 180)
+    #expect(dosa?.proteinG == 4)
+    let sambar = entries.first { $0.foodName == "sambar" }
+    #expect(sambar?.calories == 80)
+}
+
+@Test @MainActor func logRecipeExpandedScalesByServings() throws {
+    let db = try AppDatabase.empty()
+    let vm = FoodLogViewModel(database: db)
+    let items = [
+        QuickAddView.RecipeItem(name: "rice", portionText: "100g",
+                                calories: 130, proteinG: 3, carbsG: 28, fatG: 0, fiberG: 0, servingSizeG: 100),
+    ]
+    let ingredientsJson = (try? JSONEncoder().encode(items)).flatMap { String(data: $0, encoding: .utf8) }
+    let recipe = SavedFood(name: "rice-bowl", calories: 130, proteinG: 3, carbsG: 28,
+                           fatG: 0, fiberG: 0, isRecipe: true, ingredients: ingredientsJson,
+                           expandOnLog: true)
+
+    _ = FoodService.logRecipe(recipe, servings: 2, mealType: .lunch, viewModel: vm)
+
+    let entries = try db.fetchFoodEntries(for: DateFormatters.todayString)
+    #expect(entries.count == 1)
+    let rice = entries.first
+    #expect(rice?.foodName == "rice")
+    #expect(rice?.calories == 260, "Servings=2 should double the logged calories")
+    #expect(rice?.servingSizeG == 200)
+}
+
+@Test @MainActor func updateRecipePersistsExpandOnLogFlag() {
+    let baseName = "test-recipe-expand-\(UUID().uuidString.prefix(8))"
+    let item = QuickAddView.RecipeItem(
+        name: "oats", portionText: "50g",
+        calories: 190, proteinG: 7, carbsG: 33, fatG: 3, fiberG: 5, servingSizeG: 50)
+    var recipe = SavedFood(name: baseName, calories: 190, proteinG: 7, carbsG: 33,
+                           fatG: 3, fiberG: 5, isRecipe: true, ingredients: nil)
+    FoodService.saveRecipe(&recipe)
+    guard let id = recipe.id else { Issue.record("saveRecipe failed"); return }
+
+    // Default (expandOnLog=false).
+    let initial = FoodService.fetchFoodById(id)
+    #expect(initial?.expandOnLog == false)
+
+    // Flip the flag.
+    FoodService.updateRecipe(id: id, name: baseName, items: [item], servings: 1, expandOnLog: true)
+    let reloaded = FoodService.fetchFoodById(id)
+    #expect(reloaded?.expandOnLog == true)
+
+    // Clean up.
+    FoodService.deleteFavorite(id: id)
+}
+
+@Test @MainActor func logRecipeExpandedFallsBackWhenItemsMissing() throws {
+    // Recipe flagged expandOnLog but with no ingredient JSON → behave aggregated.
+    let db = try AppDatabase.empty()
+    let vm = FoodLogViewModel(database: db)
+    let recipe = SavedFood(name: "orphan-recipe", calories: 500, proteinG: 20, carbsG: 40,
+                           fatG: 15, fiberG: 3, isRecipe: true, ingredients: nil,
+                           expandOnLog: true)
+
+    let expanded = FoodService.logRecipe(recipe, servings: 1, mealType: .snack, viewModel: vm)
+    #expect(expanded == false, "Should fall through to aggregated when no items are present")
+
+    let entries = try db.fetchFoodEntries(for: DateFormatters.todayString)
+    #expect(entries.count == 1)
+    #expect(entries.first?.calories == 500)
+}

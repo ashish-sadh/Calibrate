@@ -18,6 +18,10 @@ struct Food: Identifiable, Codable, Sendable {
     var sortOrder: Int = 0
     var defaultServings: Double = 1
     var novaGroup: Int?       // NOVA 1-4: processing level for plant points
+    /// When true (recipes only), logging this recipe inserts one FoodEntry
+    /// per ingredient instead of a single aggregated entry — lets users
+    /// treat a recipe as a named meal "group" (e.g. coffee + protein + creatine).
+    var expandOnLog: Bool = false
 
     enum CodingKeys: String, CodingKey {
         case id, name, category, calories, ingredients, source
@@ -25,6 +29,7 @@ struct Food: Identifiable, Codable, Sendable {
         case sortOrder = "sort_order"
         case defaultServings = "default_servings"
         case novaGroup = "nova_group"
+        case expandOnLog = "expand_on_log"
         case servingSize = "serving_size"
         case servingUnit = "serving_unit"
         case proteinG = "protein_g"
@@ -49,7 +54,8 @@ struct Food: Identifiable, Codable, Sendable {
         isRecipe: Bool = false,
         sortOrder: Int = 0,
         defaultServings: Double = 1,
-        novaGroup: Int? = nil
+        novaGroup: Int? = nil,
+        expandOnLog: Bool = false
     ) {
         self.id = id
         self.name = name
@@ -67,6 +73,7 @@ struct Food: Identifiable, Codable, Sendable {
         self.sortOrder = sortOrder
         self.defaultServings = defaultServings
         self.novaGroup = novaGroup
+        self.expandOnLog = expandOnLog
     }
 
     init(from decoder: Decoder) throws {
@@ -92,6 +99,7 @@ struct Food: Identifiable, Codable, Sendable {
         sortOrder = try c.decodeIfPresent(Int.self, forKey: .sortOrder) ?? 0
         defaultServings = try c.decodeIfPresent(Double.self, forKey: .defaultServings) ?? 1
         novaGroup = try c.decodeIfPresent(Int.self, forKey: .novaGroup)
+        expandOnLog = try c.decodeIfPresent(Bool.self, forKey: .expandOnLog) ?? false
     }
 
     /// Compact macro string like "165cal 31P 0C 4F"

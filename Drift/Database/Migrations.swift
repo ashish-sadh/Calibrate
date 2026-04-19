@@ -501,5 +501,14 @@ enum Migrations {
                 t.add(column: "is_ai_parsed", .boolean).notNull().defaults(to: false)
             }
         }
+
+        // v31: expand_on_log on food — when true for a recipe, re-logging
+        // inserts one FoodEntry per ingredient instead of one aggregated
+        // entry (lets a recipe act as a named "meal group").
+        migrator.registerMigration("v31_recipe_expand_on_log") { db in
+            try db.alter(table: "food") { t in
+                t.add(column: "expand_on_log", .boolean).notNull().defaults(to: false)
+            }
+        }
     }
 }

@@ -159,7 +159,7 @@ enum FoodService {
     /// recomputes per-serving macros from the items sum. Used by the recipe
     /// builder when editing an existing recipe (#192) — avoids the duplicate
     /// row that `saveRecipe` would otherwise create.
-    static func updateRecipe(id: Int64, name: String, items: [QuickAddView.RecipeItem], servings: Double = 1) {
+    static func updateRecipe(id: Int64, name: String, items: [QuickAddView.RecipeItem], servings: Double = 1, expandOnLog: Bool = false) {
         let safeServings = max(servings, 0.1)
         let totals = items.reduce(into: (cal: 0.0, p: 0.0, c: 0.0, f: 0.0, fb: 0.0)) { acc, item in
             acc.cal += item.calories
@@ -174,7 +174,7 @@ enum FoodService {
             try db.execute(sql: """
                 UPDATE food SET name = ?, calories = ?, protein_g = ?,
                 carbs_g = ?, fat_g = ?, fiber_g = ?, ingredients = ?,
-                is_recipe = 1 WHERE id = ?
+                is_recipe = 1, expand_on_log = ? WHERE id = ?
                 """, arguments: [
                     name,
                     totals.cal / safeServings,
@@ -183,9 +183,43 @@ enum FoodService {
                     totals.f / safeServings,
                     totals.fb / safeServings,
                     ingredientsJson,
+                    expandOnLog,
                     id
                 ])
         }
+    }
+
+    /// Log a recipe: aggregated single entry, or expanded (one entry per ingredient)
+    /// when `recipe.expandOnLog == true` and ingredient items are available.
+    /// Returns true if expanded (caller can decide feedback text).
+    @discardableResult
+    static func logRecipe(_ recipe: Food, servings: Double, mealType: MealType,
+                          loggedAt: String? = nil, viewModel: FoodLogViewModel) -> Bool {
+        if recipe.expandOnLog, let items = recipe.recipeItems, !items.isEmpty {
+            for item in items {
+                viewModel.quickAdd(
+                    name: item.name,
+                    calories: item.calories * servings,
+                    proteinG: item.proteinG * servings,
+                    carbsG: item.carbsG * servings,
+                    fatG: item.fatG * servings,
+                    fiberG: item.fiberG * servings,
+                    mealType: mealType,
+                    loggedAt: loggedAt,
+                    servingSizeG: item.servingSizeG * servings,
+                    servings: 1
+                )
+            }
+            return true
+        }
+        viewModel.quickAdd(
+            name: recipe.name, calories: recipe.calories * servings,
+            proteinG: recipe.proteinG * servings, carbsG: recipe.carbsG * servings,
+            fatG: recipe.fatG * servings, fiberG: recipe.fiberG * servings,
+            mealType: mealType, loggedAt: loggedAt,
+            servingSizeG: recipe.servingSize, servings: 1
+        )
+        return false
     }
 
     // MARK: - Search with Online Fallback

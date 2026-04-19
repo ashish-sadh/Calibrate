@@ -101,7 +101,8 @@ struct FoodSearchView: View {
                 QuickAddView(viewModel: viewModel,
                              initialItems: recipe.recipeItems ?? [],
                              initialName: recipe.name,
-                             editingRecipeID: recipe.id)
+                             editingRecipeID: recipe.id,
+                             initialExpandOnLog: recipe.expandOnLog)
             }
             .onAppear {
                 viewModel.loadSuggestions()
@@ -351,17 +352,26 @@ struct FoodSearchView: View {
                 Section("Your Recipes") {
                     ForEach(matchingRecipes) { recipe in
                         Button {
-                            viewModel.quickAdd(name: recipe.name, calories: recipe.calories,
-                                               proteinG: recipe.proteinG, carbsG: recipe.carbsG,
-                                               fatG: recipe.fatG, fiberG: recipe.fiberG,
-                                               mealType: effectiveMealType)
+                            FoodService.logRecipe(recipe, servings: 1, mealType: effectiveMealType,
+                                                  viewModel: viewModel)
                             viewModel.loadSuggestions()
                             loggedCount += 1
                         } label: {
                             HStack {
                                 Image(systemName: "bookmark.fill").font(.caption2).foregroundStyle(Theme.accent.opacity(0.7))
                                 VStack(alignment: .leading, spacing: 2) {
-                                    Text(recipe.name).font(.subheadline)
+                                    HStack(spacing: 6) {
+                                        Text(recipe.name).font(.subheadline)
+                                        // Group badge (#190): signals that logging this recipe
+                                        // will expand into N individual food entries.
+                                        if recipe.expandOnLog, let items = recipe.recipeItems, !items.isEmpty {
+                                            Text("group · \(items.count)")
+                                                .font(.caption2.weight(.semibold))
+                                                .foregroundStyle(Theme.accent)
+                                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                                .background(Theme.accent.opacity(0.15), in: Capsule())
+                                        }
+                                    }
                                     Text(recipe.macroSummary).font(.caption).foregroundStyle(.secondary)
                                 }
                                 Spacer()

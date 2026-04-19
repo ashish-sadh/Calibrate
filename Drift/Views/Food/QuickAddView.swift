@@ -10,6 +10,8 @@ struct QuickAddView: View {
     /// rather than creating a new one. Save updates the row and dismisses —
     /// no new food-log entry is written.
     var editingRecipeID: Int64? = nil
+    /// Initial expandOnLog value when editing (#190) — propagates existing state.
+    var initialExpandOnLog: Bool = false
     @Environment(\.dismiss) private var dismiss
     @State private var recipeName = ""
     @State private var items: [RecipeItem] = []
@@ -17,6 +19,7 @@ struct QuickAddView: View {
     @State private var editingIndex: Int?
     @State private var recipeLogTime = Date()
     @State private var recipeServings = "1"
+    @State private var expandOnLog = false
 
     struct RecipeItem: Identifiable, Codable, Equatable {
         var id = UUID()
@@ -127,6 +130,22 @@ struct QuickAddView: View {
                         .padding(.horizontal, 16).padding(.vertical, 10)
                         .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
 
+                        // Expand on log toggle (#190) — enabled only for multi-item recipes.
+                        // When on, re-logging this recipe inserts one FoodEntry per
+                        // ingredient instead of a single aggregated entry.
+                        if items.count > 1 {
+                            Toggle(isOn: $expandOnLog) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Log items individually").font(.subheadline)
+                                    Text("Adds each ingredient as a separate entry")
+                                        .font(.caption2).foregroundStyle(.tertiary)
+                                }
+                            }
+                            .tint(Theme.accent)
+                            .padding(.horizontal, 16).padding(.vertical, 8)
+                            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
+                        }
+
                         // Time picker
                         DatePicker("Time", selection: $recipeLogTime, displayedComponents: .hourAndMinute)
                             .font(.subheadline).foregroundStyle(.secondary)
@@ -154,6 +173,7 @@ struct QuickAddView: View {
                     items = initialItems
                     recipeName = initialName
                 }
+                expandOnLog = initialExpandOnLog
             }
             .sheet(isPresented: $showingIngredientPicker) {
                 IngredientPickerView { item in items.append(item) }
@@ -190,11 +210,12 @@ struct QuickAddView: View {
     private func saveAndLogRecipe() {
         let servings = max(Double(recipeServings) ?? 1, 0.1)
         let name = recipeName.isEmpty ? (items.count == 1 ? items[0].name : "Recipe") : recipeName
+        let effectiveExpand = items.count > 1 && expandOnLog
 
         // Edit mode (#192): update the existing recipe row in place and
         // dismiss — the user is modifying, not re-logging.
         if let editingID = editingRecipeID {
-            FoodService.updateRecipe(id: editingID, name: name, items: items, servings: servings)
+            FoodService.updateRecipe(id: editingID, name: name, items: items, servings: servings, expandOnLog: effectiveExpand)
             return
         }
 
@@ -211,15 +232,35 @@ struct QuickAddView: View {
         let perServingFb = t.fb / servings
         var fav = SavedFood(name: name, calories: perServingCal, proteinG: perServingP,
                                carbsG: perServingC, fatG: perServingF, fiberG: perServingFb,
-                               isRecipe: items.count > 1, ingredients: ingredientsJson)
+                               isRecipe: items.count > 1, ingredients: ingredientsJson,
+                               expandOnLog: effectiveExpand)
         FoodService.saveRecipe(&fav)
         let totalServing = items.reduce(0.0) { $0 + $1.servingSizeG }
         let loggedAtStr = ISO8601DateFormatter().string(from: recipeLogTime)
-        // Log with per-serving macros × servings
-        viewModel.quickAdd(name: name, calories: perServingCal, proteinG: perServingP,
-                           carbsG: perServingC, fatG: perServingF, fiberG: perServingFb,
-                           mealType: viewModel.autoMealType, loggedAt: loggedAtStr,
-                           servingSizeG: totalServing / servings, servings: servings)
+
+        // If expandOnLog: insert one entry per ingredient × servings.
+        // Otherwise: existing aggregated behavior.
+        if effectiveExpand {
+            for item in items {
+                viewModel.quickAdd(
+                    name: item.name,
+                    calories: item.calories * servings,
+                    proteinG: item.proteinG * servings,
+                    carbsG: item.carbsG * servings,
+                    fatG: item.fatG * servings,
+                    fiberG: item.fiberG * servings,
+                    mealType: viewModel.autoMealType,
+                    loggedAt: loggedAtStr,
+                    servingSizeG: item.servingSizeG * servings,
+                    servings: 1
+                )
+            }
+        } else {
+            viewModel.quickAdd(name: name, calories: perServingCal, proteinG: perServingP,
+                               carbsG: perServingC, fatG: perServingF, fiberG: perServingFb,
+                               mealType: viewModel.autoMealType, loggedAt: loggedAtStr,
+                               servingSizeG: totalServing / servings, servings: servings)
+        }
     }
 }
 
