@@ -312,6 +312,51 @@ extension AppDatabase {
         }
     }
 
+    /// Insert sample food entries across the past 5 days for testing history grouping.
+    func seedTestData() throws {
+        struct SeedItem {
+            let name: String, cal: Double, p: Double, c: Double, f: Double, ss: Double, meal: String
+        }
+        let breakfast: [SeedItem] = [
+            SeedItem(name: "Egg", cal: 72, p: 6, c: 0.5, f: 5, ss: 50, meal: "breakfast"),
+            SeedItem(name: "Milk (2%)", cal: 122, p: 8, c: 12, f: 5, ss: 244, meal: "breakfast"),
+            SeedItem(name: "Protein Powder", cal: 120, p: 25, c: 3, f: 1.5, ss: 30, meal: "breakfast"),
+        ]
+        let lunchDosa: [SeedItem] = [
+            SeedItem(name: "Dosa", cal: 168, p: 3, c: 34, f: 0.5, ss: 100, meal: "lunch"),
+            SeedItem(name: "Sambar", cal: 90, p: 5, c: 15, f: 2, ss: 200, meal: "lunch"),
+        ]
+        let lunchChole: [SeedItem] = [
+            SeedItem(name: "Chole", cal: 269, p: 14, c: 45, f: 4, ss: 200, meal: "lunch"),
+            SeedItem(name: "Rice", cal: 206, p: 4, c: 45, f: 0.4, ss: 186, meal: "lunch"),
+        ]
+        let dinner: [SeedItem] = [
+            SeedItem(name: "Dal Tadka", cal: 160, p: 10, c: 27, f: 3, ss: 200, meal: "dinner"),
+            SeedItem(name: "Roti", cal: 104, p: 3, c: 22, f: 0.3, ss: 40, meal: "dinner"),
+        ]
+        let iso = ISO8601DateFormatter()
+        let cal = Calendar.current
+        for dayOffset in 1...5 {
+            guard let date = cal.date(byAdding: .day, value: -dayOffset, to: Date()) else { continue }
+            let dateStr = DateFormatters.dateOnly.string(from: date)
+            func insertCluster(_ items: [SeedItem], hour: Int, minute: Int) throws {
+                guard let base = cal.date(bySettingHour: hour, minute: minute, second: 0, of: date) else { return }
+                for (idx, item) in items.enumerated() {
+                    let ts = iso.string(from: base.addingTimeInterval(Double(idx * 90)))
+                    try writer.write { db in
+                        var entry = FoodEntry(foodName: item.name, servingSizeG: item.ss, servings: 1,
+                                             calories: item.cal, proteinG: item.p, carbsG: item.c, fatG: item.f,
+                                             createdAt: ts, loggedAt: ts, date: dateStr, mealType: item.meal)
+                        try entry.insert(db)
+                    }
+                }
+            }
+            try insertCluster(breakfast, hour: 8, minute: 0)
+            try insertCluster(dayOffset % 2 == 0 ? lunchChole : lunchDosa, hour: 12, minute: 30)
+            if dayOffset <= 3 { try insertCluster(dinner, hour: 19, minute: 30) }
+        }
+    }
+
     /// Search saved recipes/favorites by name.
     func searchRecipes(query: String) throws -> [SavedFood] {
         try reader.read { db in
