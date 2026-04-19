@@ -354,6 +354,42 @@ final class IntentRoutingEval: XCTestCase {
         await assertRoutes("and black coffee", to: "log_food", history: history2)
     }
 
+    // MARK: - Last Tool Result Context (#184)
+
+    /// Baseline: follow-ups route correctly when the assistant turn already
+    /// carries the tool-result text (info tools → LLM presentation usually
+    /// preserves numbers). Sanity check that the pipeline hasn't regressed.
+    func testMultiTurn_lastToolContext_assistantCarriesMacros() async {
+        let riceHistory = "User: log 200g rice\nAssistant: Logged 200g rice (260 cal, 56g carbs, 5g protein, 0g fat)"
+        await assertRoutes("how many calories was that?", to: "food_info", history: riceHistory)
+
+        let chickenHistory = "User: log chicken breast\nAssistant: Logged chicken breast (165 cal, 31g protein, 0g carbs, 3.6g fat)"
+        await assertRoutes("is that enough protein?", to: "food_info", history: chickenHistory)
+
+        let paneerHistory = "User: what's in paneer\nAssistant: Paneer: 265 cal per 100g, 18g protein, 1.2g carbs, 21g fat"
+        await assertRoutes("log 100g of that", to: "log_food", history: paneerHistory)
+    }
+
+    /// The case #184 actually solves: action tools (log_food, log_weight)
+    /// return no text, so the assistant turn is empty. The builder now
+    /// prepends a synthesized `[LAST ACTION: …]` line — with that line
+    /// present, the classifier can still resolve pronouns in follow-ups.
+    func testMultiTurn_lastToolContext_actionToolsWithPrefix() async {
+        // Logged rice via action tool; assistant text is empty, LAST ACTION carries the referent.
+        let ricePrefix = "[LAST ACTION: Opened log for 200g rice]\nUser: log 200g rice\nAssistant: "
+        await assertRoutes("how many calories was that?", to: "food_info", history: ricePrefix)
+        await assertRoutes("log another serving of that", to: "log_food", history: ricePrefix)
+
+        // Started a workout; follow-up about the session.
+        let workoutPrefix = "[LAST ACTION: Started workout: push day]\nUser: start push day\nAssistant: "
+        await assertRoutes("how long was that", to: "exercise_info", history: workoutPrefix)
+
+        // Logged weight; follow-up about trend.
+        let weightPrefix = "[LAST ACTION: Opened weight entry: 74 kg]\nUser: I weigh 74 kg\nAssistant: "
+        await assertRoutes("how does that compare to last week", to: "weight_info", history: weightPrefix)
+    }
+
+
     // MARK: - Sleep (extended edge cases: slang, implicit, messy)
 
     func testSleep_extended() async {

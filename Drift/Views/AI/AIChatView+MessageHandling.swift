@@ -189,6 +189,10 @@ extension AIChatViewModel {
         // Phases set inside async handlers are captured by the next send or scene-backgrounding.
         defer { saveConversationState() }
 
+        // Advance the user-turn index so #184 freshness window (last tool
+        // summary) can distinguish "this turn" from "older turns".
+        convState.beginUserTurn()
+
         // Phase 0: Normalize input (strip filler words, voice artifacts, repeated words)
         // All subsequent phases see clean input consistently.
         let normalized = InputNormalizer.normalize(text)

@@ -79,6 +79,7 @@ enum AIToolAgent {
                     if isInfoTool(toolName) {
                         let toolResult = await ToolRegistry.shared.execute(call)
                         if case .text(let data) = toolResult, !data.isEmpty {
+                            ConversationState.shared.captureToolSummary(data)
                             onStep("Preparing answer...")
                             return await streamPresentation(
                                 query: message, toolData: data, screen: screen, history: history, onToken: onToken
@@ -111,6 +112,7 @@ enum AIToolAgent {
         // or return raw data directly (small model — LLM presentation unreliable)
         if !toolResults.isEmpty {
             let data = toolResults.map(\.text).joined(separator: "\n")
+            ConversationState.shared.captureToolSummary(data)
             if isLargeModel {
                 onStep("Preparing answer...")
                 return await streamPresentation(
@@ -395,13 +397,39 @@ enum AIToolAgent {
         let result = await ToolRegistry.shared.execute(toolCall)
         switch result {
         case .text(let text):
+            ConversationState.shared.captureToolSummary(text)
             return AgentOutput(text: text, action: nil, toolsCalled: [toolCall.tool])
         case .action(let action):
+            // Action tools produce no user-visible text — synthesize a summary
+            // so follow-ups ("what did I just log?") have context to reference.
+            ConversationState.shared.captureToolSummary(actionSummary(toolCall: toolCall, action: action))
             return AgentOutput(text: "", action: action, toolsCalled: [toolCall.tool])
         case .error(let msg):
             // User-friendly error message instead of raw error
             let friendly = "I couldn't quite do that — \(msg.lowercased()). Try rephrasing or say \"help\" to see what I can do."
             return AgentOutput(text: friendly, action: nil, toolsCalled: [toolCall.tool])
+        }
+    }
+
+    /// Human-readable one-liner for an action tool-call (log_food, start_workout,
+    /// etc.) used as the "last action" summary when no text result is available.
+    private static func actionSummary(toolCall: ToolCall, action: ToolAction) -> String {
+        let p = toolCall.params.values
+        switch toolCall.tool {
+        case "log_food":
+            let name = p["name"] ?? p["query"] ?? "food"
+            if let amount = p["amount"] { return "Opened log for \(amount) \(name)" }
+            if let servings = p["servings"] { return "Opened log for \(servings) \(name)" }
+            return "Opened log for \(name)"
+        case "log_weight":
+            if let v = p["value"] { return "Opened weight entry: \(v) \(p["unit"] ?? "kg")" }
+            return "Opened weight entry"
+        case "start_workout":
+            return "Started workout: \(p["name"] ?? "custom")"
+        case "log_activity":
+            return "Logged activity: \(p["name"] ?? "workout")"
+        default:
+            return "Executed \(toolCall.tool)"
         }
     }
 

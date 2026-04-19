@@ -22,6 +22,46 @@ final class ConversationState {
     var lastTool: String?
     var lastParams: [String: String] = [:]
 
+    // MARK: - Last Tool Result (for follow-up context, #184)
+
+    /// Raw tool-result text captured immediately after tool execution, used to
+    /// thread concrete data (macros, values) into the next turn's LLM context.
+    /// Retained for exactly one subsequent user turn — goes stale after that
+    /// so questions like "what was that?" can't reach back indefinitely.
+    var lastToolSummary: String?
+    /// The `userTurnIndex` at which `lastToolSummary` was captured. Fresh when
+    /// captured during the current turn or the immediately preceding one.
+    var lastToolSummaryTurn: Int = -1
+
+    /// Monotonic counter incremented once per user-initiated turn. Distinct
+    /// from `turnCount` (which increments on tool execution only) so the
+    /// freshness window is measured against the user's perspective.
+    var userTurnIndex: Int = 0
+
+    /// Call at the start of every user send to advance the freshness window.
+    func beginUserTurn() {
+        userTurnIndex += 1
+    }
+
+    /// Record the raw tool-result text for the next turn. Called by
+    /// AIToolAgent after every successful tool execution. Empty input is
+    /// ignored — actions that produce no text (sheet opens) pass a synthetic
+    /// summary so follow-ups still have something to reference.
+    func captureToolSummary(_ text: String) {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        lastToolSummary = String(trimmed.prefix(300))
+        lastToolSummaryTurn = userTurnIndex
+    }
+
+    /// Returns the summary only when it was captured during the current or
+    /// previous user turn — nil otherwise. Prevents stale context from
+    /// leaking into unrelated later conversations.
+    func freshToolSummary() -> String? {
+        guard let summary = lastToolSummary else { return nil }
+        return (userTurnIndex - lastToolSummaryTurn) <= 1 ? summary : nil
+    }
+
     // MARK: - Topic Tracking
 
     enum Topic: String, Codable {
@@ -114,8 +154,10 @@ final class ConversationState {
         pendingIntent = nil
         lastTool = nil
         lastParams = [:]
+        lastToolSummary = nil
+        lastToolSummaryTurn = -1
         phase = .idle
-        // Don't reset lastTopic, turnCount, or lastWriteAction — those persist across resets
+        // Don't reset lastTopic, turnCount, userTurnIndex, or lastWriteAction — those persist across resets
     }
 
     func recordToolExecution(tool: String, params: [String: String]) {
