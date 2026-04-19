@@ -18,6 +18,7 @@ struct EditFoodEntrySheet: View {
     @State private var editName: String
     @State private var editMealType: MealType
     @State private var overrideMacros = false
+    @State private var showingRecipeEditor = false
 
     init(entry: FoodEntry, viewModel: FoodLogViewModel, onCopiedToToday: @escaping (String) -> Void, onDone: @escaping () -> Void) {
         self.entry = entry
@@ -62,6 +63,13 @@ struct EditFoodEntrySheet: View {
     }
 
     private var units: [FoodUnit] { food.map { FoodUnit.smartUnits(for: $0) } ?? [] }
+
+    /// The Food record backing this entry, only when it has editable recipe items.
+    private var recipeFood: Food? {
+        let food = entry.foodId.flatMap { FoodService.fetchFoodById($0) }
+            ?? FoodService.findByName(entry.foodName)
+        return food?.recipeItems != nil ? food : nil
+    }
 
     private var multiplier: Double {
         let safeIndex = min(editUnitIndex, max(units.count - 1, 0))
@@ -276,6 +284,15 @@ struct EditFoodEntrySheet: View {
             }
         }
         .presentationDetents([.fraction(0.85), .large])
+        .sheet(isPresented: $showingRecipeEditor, onDismiss: { onDone() }) {
+            if let rf = recipeFood {
+                QuickAddView(viewModel: viewModel,
+                             initialItems: rf.recipeItems ?? [],
+                             initialName: rf.name,
+                             editingRecipeID: rf.id,
+                             initialExpandOnLog: rf.expandOnLog)
+            }
+        }
     }
 
     // MARK: - Ingredients Section
@@ -316,13 +333,31 @@ struct EditFoodEntrySheet: View {
         }
 
         if hasIngredients, let dbFood {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Ingredients").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
-                Text(dbFood.ingredientList.joined(separator: ", "))
-                    .font(.caption).foregroundStyle(.tertiary)
+            if dbFood.recipeItems != nil {
+                Button { showingRecipeEditor = true } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Ingredients").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                            Text(dbFood.ingredientList.joined(separator: ", "))
+                                .font(.caption).foregroundStyle(.tertiary)
+                                .multilineTextAlignment(.leading)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.tertiary)
+                    }
+                }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 4)
+            } else {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Ingredients").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    Text(dbFood.ingredientList.joined(separator: ", "))
+                        .font(.caption).foregroundStyle(.tertiary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 4)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 4)
         }
     }
 
