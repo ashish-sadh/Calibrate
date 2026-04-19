@@ -304,7 +304,7 @@ private struct IngredientPickerView: View {
                 // Search bar
                 HStack {
                     Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                    TextField("Search ingredient", text: $query)
+                    TextField("Search food", text: $query)
                         .textFieldStyle(.plain).autocorrectionDisabled()
                         .focused($searchFocused)
                         .onChange(of: query) { _, q in
@@ -326,16 +326,15 @@ private struct IngredientPickerView: View {
                     ingredientList
                 }
             }
-            .navigationTitle(editingItem != nil ? "Edit Ingredient" : "Add Ingredient").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle(editingItem != nil ? "Edit Food Item" : "Add Food Item").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                // When a food is picked and a valid amount is entered, "Done"
-                // behaves as "Add and dismiss" — matches user expectation (#191).
-                // Otherwise (still searching), it's a plain cancel.
                 ToolbarItem(placement: .cancellationAction) {
-                    Button(doneButtonLabel) {
-                        if canAddSelected { addSelectedIngredient() }
-                        dismiss()
-                    }
+                    Button("Cancel") { dismiss() }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Add") { addSelectedIngredient(); dismiss() }
+                        .fontWeight(.semibold)
+                        .disabled(!canAddSelected)
                 }
             }
             .sheet(isPresented: $showingManual) { manualIngredientSheet }
@@ -527,7 +526,7 @@ private struct IngredientPickerView: View {
                     addSelectedIngredient()
                     dismiss()
                 } label: {
-                    Text("Add to Recipe").font(.headline).frame(maxWidth: .infinity)
+                    Text("Add to Combo").font(.headline).frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent).tint(Theme.accent)
             }
@@ -549,9 +548,6 @@ private struct IngredientPickerView: View {
         selectedFood != nil && (Double(amount) ?? 0) > 0
     }
 
-    private var doneButtonLabel: String {
-        canAddSelected ? "Add" : "Cancel"
-    }
 
     private func addSelectedIngredient() {
         guard let food = selectedFood else { return }
