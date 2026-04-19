@@ -37,6 +37,7 @@ enum ToolAction: Sendable {
 
 extension Notification.Name {
     static let navigateToTab = Notification.Name("drift.navigateToTab")
+    static let saveConversationState = Notification.Name("drift.saveConversationState")
 }
 
 /// Parameters passed to a tool handler, extracted from LLM JSON output.

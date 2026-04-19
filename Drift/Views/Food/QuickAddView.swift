@@ -14,7 +14,7 @@ struct QuickAddView: View {
     @State private var recipeLogTime = Date()
     @State private var recipeServings = "1"
 
-    struct RecipeItem: Identifiable, Codable {
+    struct RecipeItem: Identifiable, Codable, Equatable {
         var id = UUID()
         var name: String
         var portionText: String

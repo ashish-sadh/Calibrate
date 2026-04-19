@@ -3,7 +3,7 @@ import Foundation
 /// Parses AI responses for action commands and extracts structured data.
 enum AIActionParser {
 
-    struct WorkoutExercise {
+    struct WorkoutExercise: Codable, Equatable {
         let name: String
         let sets: Int
         let reps: Int

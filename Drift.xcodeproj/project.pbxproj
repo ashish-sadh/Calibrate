@@ -12,6 +12,7 @@
 		0884D534B3ADDE47643801F8 /* WeightTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E96402659F73046846B409D5 /* WeightTabView.swift */; };
 		0BECBF8EA607FB3FE10DC3FE /* DriftWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 145534F72860C9C345156102 /* DriftWidget.swift */; };
 		0E9D1FE15EFC96D35A4D6CBC /* ConfirmationCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BFC0D10ECB1BBDADD1D1CCB /* ConfirmationCardTests.swift */; };
+		10C86149C159122F1E150EBC /* ConversationStatePersistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87905A31DE15D664CC66E343 /* ConversationStatePersistence.swift */; };
 		11AFD9A7915929FB480CFE99 /* CycleCalculationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6B6C02FCD909BDE67D229EC1 /* CycleCalculationTests.swift */; };
 		12608375BDCD57D211C64849 /* WeightLogListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E78D132A90B0FDC35353646 /* WeightLogListView.swift */; };
 		12D17153112FD530712D6FC6 /* AIContextBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB907D183F2E9999A4BC3915 /* AIContextBuilder.swift */; };
@@ -122,6 +123,7 @@
 		92F6CD33F11BF82738AAF81C /* LabReportOCRTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D1E187818C8B9D2196B4B9D /* LabReportOCRTests.swift */; };
 		93791225B1B385B9611CB503 /* DEXAService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 706EF63B663E60DF825752E3 /* DEXAService.swift */; };
 		940612EB003CCC2F1FF36DD1 /* AIEvalHarness.swift in Sources */ = {isa = PBXBuildFile; fileRef = BADD153523D188C4ED89B55D /* AIEvalHarness.swift */; };
+		94F5CD3A73D0EAA80DCEA612 /* ConversationStatePersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6C4AF4636637C2EF46CD085 /* ConversationStatePersistenceTests.swift */; };
 		96A4FE9ADE8FF47326F95FBE /* FoodServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DAC7F3DE02D237C91936A3C /* FoodServiceTests.swift */; };
 		96B6BBB4C02D93E14F28C043 /* AIChatView+Suggestions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 188A69D621CC2DF63ADFB21F /* AIChatView+Suggestions.swift */; };
 		9870D7B4B5A001CA244B3785 /* SpellCorrectService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C93A5EC7AC72AD0108FAC30 /* SpellCorrectService.swift */; };
@@ -373,6 +375,7 @@
 		7F4C6870115BE53081FA0CDE /* AISetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISetupView.swift; sourceTree = "<group>"; };
 		7F7F3BAFA978301368D148CF /* ServingInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServingInputView.swift; sourceTree = "<group>"; };
 		82577AEF6B12486590A24B47 /* BiomarkerResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiomarkerResult.swift; sourceTree = "<group>"; };
+		87905A31DE15D664CC66E343 /* ConversationStatePersistence.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationStatePersistence.swift; sourceTree = "<group>"; };
 		88A19640FB19F5628DC8B824 /* Units.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Units.swift; sourceTree = "<group>"; };
 		89FB0C77EA74796A1BF01D1F /* WeightGoal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightGoal.swift; sourceTree = "<group>"; };
 		8A5D8C6A1BAF376B6F58EAB7 /* SleepRecoveryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepRecoveryService.swift; sourceTree = "<group>"; };
@@ -450,6 +453,7 @@
 		E4B60275240AEDD1A676B282 /* ConversationState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationState.swift; sourceTree = "<group>"; };
 		E4BD88646DFE4A17724D4407 /* AddSupplementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSupplementView.swift; sourceTree = "<group>"; };
 		E6B95CCD0C984C915051F482 /* sample_lingo_export.csv */ = {isa = PBXFileReference; path = sample_lingo_export.csv; sourceTree = "<group>"; };
+		E6C4AF4636637C2EF46CD085 /* ConversationStatePersistenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationStatePersistenceTests.swift; sourceTree = "<group>"; };
 		E96402659F73046846B409D5 /* WeightTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTabView.swift; sourceTree = "<group>"; };
 		EAB2409B416C7255C377B839 /* AppDatabase+LabsAndScans.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppDatabase+LabsAndScans.swift"; sourceTree = "<group>"; };
 		EBF19C358E700091486400DD /* PromptOptimizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptOptimizer.swift; sourceTree = "<group>"; };
@@ -586,6 +590,7 @@
 				6B09F9950FCEB38280CA6636 /* AIRuleEngineCoverageTests.swift */,
 				19E7517E5B4779CBBE1C7284 /* AITests.swift */,
 				0BFC0D10ECB1BBDADD1D1CCB /* ConfirmationCardTests.swift */,
+				E6C4AF4636637C2EF46CD085 /* ConversationStatePersistenceTests.swift */,
 				6D6B07DD56345F8A5F5448BC /* CSVParserTests.swift */,
 				6B6C02FCD909BDE67D229EC1 /* CycleCalculationTests.swift */,
 				32AC5A6130E7655FFC74502F /* DatabaseEdgeCaseTests.swift */,
@@ -825,6 +830,7 @@
 				9F9F051926CE39DF3E0A47DA /* BodySpecPDFParser.swift */,
 				16A8D46F9E08C1960010A695 /* CGMImportService.swift */,
 				E4B60275240AEDD1A676B282 /* ConversationState.swift */,
+				87905A31DE15D664CC66E343 /* ConversationStatePersistence.swift */,
 				37D1FB1A43791483D88EC4BC /* CycleCalculations.swift */,
 				9B410A7B058246A1F98F46E9 /* DefaultFoods.swift */,
 				5D4BF27A41CD9659EFF50036 /* DefaultTemplates.swift */,
@@ -1130,6 +1136,7 @@
 				B8666DFAC44BA801AF626FE7 /* CSVParser.swift in Sources */,
 				9ACECC13D2365A3DF7F2C28C /* ContentView.swift in Sources */,
 				D02CC9A4CB338DCF9AF743EC /* ConversationState.swift in Sources */,
+				10C86149C159122F1E150EBC /* ConversationStatePersistence.swift in Sources */,
 				6191E6C9B6E6F21E8BE507EF /* CreateTemplateView.swift in Sources */,
 				5A5C3B121A517C9F07A31C5A /* CycleCalculations.swift in Sources */,
 				D8DCF736FEE3123E530756CA /* CycleView.swift in Sources */,
@@ -1264,6 +1271,7 @@
 				2DDEA9907FA6338488A8E1CD /* AITests.swift in Sources */,
 				8A8CF11C6A7AF26DCABECF6A /* CSVParserTests.swift in Sources */,
 				0E9D1FE15EFC96D35A4D6CBC /* ConfirmationCardTests.swift in Sources */,
+				94F5CD3A73D0EAA80DCEA612 /* ConversationStatePersistenceTests.swift in Sources */,
 				11AFD9A7915929FB480CFE99 /* CycleCalculationTests.swift in Sources */,
 				4B409391B107757F169355AE /* DatabaseEdgeCaseTests.swift in Sources */,
 				310C2BA2AF1BB8CC25FCC976 /* DriftTests.swift in Sources */,
@@ -1411,7 +1419,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = DriftWidget/DriftWidget.entitlements;
-				CURRENT_PROJECT_VERSION = 136;
+				CURRENT_PROJECT_VERSION = 138;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				INFOPLIST_FILE = DriftWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1431,7 +1439,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = DriftWidget/DriftWidget.entitlements;
-				CURRENT_PROJECT_VERSION = 136;
+				CURRENT_PROJECT_VERSION = 138;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				INFOPLIST_FILE = DriftWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1489,7 +1497,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Drift/Drift.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 136;
+				CURRENT_PROJECT_VERSION = 138;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1622,7 +1630,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Drift/Drift.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 136;
+				CURRENT_PROJECT_VERSION = 138;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",

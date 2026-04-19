@@ -198,6 +198,9 @@ extension AIChatViewModel {
         if text.count > 300 { text = String(text.prefix(300)) }
         guard !text.isEmpty, !isGenerating else { return }
         inputText = ""
+        // Snapshot conversation state on every send so mid-flow survives app kill.
+        // Phases set inside async handlers are captured by the next send or scene-backgrounding.
+        defer { saveConversationState() }
 
         // Phase 0: Normalize input (strip filler words, voice artifacts, repeated words)
         // All subsequent phases see clean input consistently.

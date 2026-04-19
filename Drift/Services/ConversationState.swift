@@ -24,7 +24,7 @@ final class ConversationState {
 
     // MARK: - Topic Tracking
 
-    enum Topic: String {
+    enum Topic: String, Codable {
         case food, weight, exercise, sleep, supplements, glucose, biomarkers, bodyComp, unknown
     }
 
@@ -122,5 +122,96 @@ final class ConversationState {
         lastTool = tool
         lastParams = params
         turnCount += 1
+    }
+
+    /// Apply a persisted snapshot to the live singleton.
+    /// pendingIntent and lastWriteAction are not persisted (transient / reference DB rows).
+    func apply(_ snapshot: PersistedConversationState) {
+        phase = snapshot.phase
+        lastTopic = snapshot.lastTopic
+        turnCount = snapshot.turnCount
+    }
+}
+
+// MARK: - Codable Phase (tagged union)
+
+extension ConversationState.Phase: Codable {
+    private enum Tag: String, Codable {
+        case idle, awaitingMealItems, awaitingExercises, planningMeals, planningWorkout
+    }
+    private enum Keys: String, CodingKey {
+        case tag, mealName, splitType, iteration, currentDay, totalDays
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: Keys.self)
+        switch try c.decode(Tag.self, forKey: .tag) {
+        case .idle:
+            self = .idle
+        case .awaitingMealItems:
+            self = .awaitingMealItems(mealName: try c.decode(String.self, forKey: .mealName))
+        case .awaitingExercises:
+            self = .awaitingExercises
+        case .planningMeals:
+            self = .planningMeals(
+                mealName: try c.decode(String.self, forKey: .mealName),
+                iteration: try c.decode(Int.self, forKey: .iteration))
+        case .planningWorkout:
+            self = .planningWorkout(
+                splitType: try c.decode(String.self, forKey: .splitType),
+                currentDay: try c.decode(Int.self, forKey: .currentDay),
+                totalDays: try c.decode(Int.self, forKey: .totalDays))
+        }
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: Keys.self)
+        switch self {
+        case .idle:
+            try c.encode(Tag.idle, forKey: .tag)
+        case .awaitingMealItems(let name):
+            try c.encode(Tag.awaitingMealItems, forKey: .tag)
+            try c.encode(name, forKey: .mealName)
+        case .awaitingExercises:
+            try c.encode(Tag.awaitingExercises, forKey: .tag)
+        case .planningMeals(let name, let iter):
+            try c.encode(Tag.planningMeals, forKey: .tag)
+            try c.encode(name, forKey: .mealName)
+            try c.encode(iter, forKey: .iteration)
+        case .planningWorkout(let split, let day, let total):
+            try c.encode(Tag.planningWorkout, forKey: .tag)
+            try c.encode(split, forKey: .splitType)
+            try c.encode(day, forKey: .currentDay)
+            try c.encode(total, forKey: .totalDays)
+        }
+    }
+
+    /// Human-readable description for the resume banner.
+    public var resumeBlurb: String {
+        switch self {
+        case .idle: return "your conversation"
+        case .awaitingMealItems(let mealName): return "logging your \(mealName)"
+        case .awaitingExercises: return "logging your workout"
+        case .planningMeals(let mealName, _): return "planning your \(mealName)"
+        case .planningWorkout: return "building your workout split"
+        }
+    }
+}
+
+// MARK: - Persisted Snapshot
+
+/// Serializable snapshot of conversation state + AIChatViewModel pending fields.
+struct PersistedConversationState: Codable, Equatable {
+    var phase: ConversationState.Phase
+    var lastTopic: ConversationState.Topic
+    var turnCount: Int
+    var pendingRecipeItems: [QuickAddView.RecipeItem]
+    var pendingRecipeName: String
+    var pendingExercises: [AIActionParser.WorkoutExercise]
+    var savedAt: Date
+
+    /// True when worth restoring (anything meaningful to pick up).
+    var isMeaningful: Bool {
+        phase != .idle || !pendingRecipeItems.isEmpty || !pendingExercises.isEmpty
     }
 }

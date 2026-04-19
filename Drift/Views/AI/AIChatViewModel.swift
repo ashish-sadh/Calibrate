@@ -30,6 +30,56 @@ final class AIChatViewModel {
 
     var isGenerating: Bool { generatingState != .idle }
 
+    /// Injectable for tests; production uses the shared singleton.
+    let persistence: ConversationStatePersistence
+
+    init(persistence: ConversationStatePersistence = .shared) {
+        self.persistence = persistence
+        restorePersistedConversation()
+        // Save on scenePhase background (posted by DriftApp) — captures phases set by
+        // async handlers that sendMessage's defer missed.
+        NotificationCenter.default.addObserver(
+            forName: .saveConversationState, object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor in self?.saveConversationState() }
+        }
+    }
+
+    /// Apply any fresh on-disk snapshot to the singleton and VM-local pending state.
+    /// If the snapshot is old but non-idle, prepend a "picking up where we left off" assistant
+    /// message so the user understands why context is pre-loaded.
+    private func restorePersistedConversation() {
+        guard let snapshot = persistence.loadIfFresh() else { return }
+        convState.apply(snapshot)
+        pendingRecipeItems = snapshot.pendingRecipeItems
+        pendingRecipeName = snapshot.pendingRecipeName
+        pendingExercises = snapshot.pendingExercises
+        if persistence.shouldShowResumeBanner(snapshot) {
+            messages.append(ChatMessage(
+                role: .assistant,
+                text: "Picking up where we left off — still want to finish \(snapshot.phase.resumeBlurb)?"))
+        }
+    }
+
+    /// Snapshot current conversation state to disk. Called from `sendMessage` and scene
+    /// backgrounding so mid-flow context survives app kill/relaunch.
+    func saveConversationState(now: Date = Date()) {
+        let snapshot = PersistedConversationState(
+            phase: convState.phase,
+            lastTopic: convState.lastTopic,
+            turnCount: convState.turnCount,
+            pendingRecipeItems: pendingRecipeItems,
+            pendingRecipeName: pendingRecipeName,
+            pendingExercises: pendingExercises,
+            savedAt: now)
+        if snapshot.isMeaningful {
+            persistence.save(snapshot)
+        } else {
+            // Nothing worth persisting — drop any stale on-disk state so a later restore is clean.
+            persistence.clear()
+        }
+    }
+
     struct ManualFoodPrefill {
         let name: String
         let calories: Int
