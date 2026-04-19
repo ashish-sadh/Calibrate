@@ -283,7 +283,17 @@ private struct IngredientPickerView: View {
                 }
             }
             .navigationTitle(editingItem != nil ? "Edit Ingredient" : "Add Ingredient").navigationBarTitleDisplayMode(.inline)
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
+            .toolbar {
+                // When a food is picked and a valid amount is entered, "Done"
+                // behaves as "Add and dismiss" — matches user expectation (#191).
+                // Otherwise (still searching), it's a plain cancel.
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(doneButtonLabel) {
+                        if canAddSelected { addSelectedIngredient() }
+                        dismiss()
+                    }
+                }
+            }
             .sheet(isPresented: $showingManual) { manualIngredientSheet }
             .onAppear {
                 recentIngredients = FoodService.fetchRecentFoods(limit: 5)
@@ -470,16 +480,7 @@ private struct IngredientPickerView: View {
 
                 // Add button
                 Button {
-                    let portionText = formatPortion(amount: amount, unitLabel: unit.label)
-                    onAdd(QuickAddView.RecipeItem(
-                        name: food.name, portionText: portionText,
-                        calories: food.calories * multiplier,
-                        proteinG: food.proteinG * multiplier,
-                        carbsG: food.carbsG * multiplier,
-                        fatG: food.fatG * multiplier,
-                        fiberG: food.fiberG * multiplier,
-                        servingSizeG: totalGrams
-                    ))
+                    addSelectedIngredient()
                     dismiss()
                 } label: {
                     Text("Add to Recipe").font(.headline).frame(maxWidth: .infinity)
@@ -498,6 +499,35 @@ private struct IngredientPickerView: View {
             return "\(Int(num)) \(unitLabel)"
         }
         return "\(amount) \(unitLabel)"
+    }
+
+    private var canAddSelected: Bool {
+        selectedFood != nil && (Double(amount) ?? 0) > 0
+    }
+
+    private var doneButtonLabel: String {
+        canAddSelected ? "Add" : "Cancel"
+    }
+
+    private func addSelectedIngredient() {
+        guard let food = selectedFood else { return }
+        let units = FoodUnit.smartUnits(for: food)
+        let safeIndex = min(selectedUnitIndex, max(units.count - 1, 0))
+        let unit = units.isEmpty ? FoodUnit(label: "g", gramsEquivalent: 1) : units[safeIndex]
+        let amountNum = Double(amount) ?? 0
+        let totalGrams = amountNum * unit.gramsEquivalent
+        let multiplier = food.servingSize > 0 ? totalGrams / food.servingSize : amountNum
+        let portionText = formatPortion(amount: amount, unitLabel: unit.label)
+        onAdd(QuickAddView.RecipeItem(
+            name: food.name,
+            portionText: portionText,
+            calories: food.calories * multiplier,
+            proteinG: food.proteinG * multiplier,
+            carbsG: food.carbsG * multiplier,
+            fatG: food.fatG * multiplier,
+            fiberG: food.fiberG * multiplier,
+            servingSizeG: totalGrams
+        ))
     }
 
     // MARK: - Manual Ingredient Sheet
