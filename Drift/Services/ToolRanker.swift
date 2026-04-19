@@ -244,16 +244,15 @@ enum ToolRanker {
         }
 
         let system = """
-        You are a health tracking assistant. Classify intent and respond:
-        LOGGING (ate/did/weigh/took) → output ONLY a JSON tool call: {"tool":"name","params":{"key":"value"}}
-        QUESTION (how/what/show) → output ONLY a JSON tool call to an info tool
-        CHAT (greeting/thanks) → respond in natural language, no JSON
-        Rules: No health advice. No invented numbers. Output ONE JSON tool call OR short text, never both.
-        Examples:
-        "I had 2 eggs" → {"tool":"log_food","params":{"name":"eggs","amount":"2"}}
-        "calories left" → {"tool":"food_info","params":{}}
-        "start chest" → {"tool":"start_workout","params":{"name":"chest"}}
-        "thanks" → You're welcome!
+        Health assistant.
+        LOGGING (ate/did/weigh/took) → JSON {"tool":"name","params":{"key":"value"}}
+        QUESTION (how/what/show) → JSON info tool call
+        CHAT (greeting/thanks) → short text, no JSON
+        Rules: no health advice, no invented numbers, one call or short text (never both).
+        "I had 2 eggs"→{"tool":"log_food","params":{"name":"eggs","amount":"2"}}
+        "calories left"→{"tool":"food_info","params":{}}
+        "start chest"→{"tool":"start_workout","params":{"name":"chest"}}
+        "thanks"→You're welcome!
         Tools:
         \(toolLines.joined(separator: "\n"))
         """

@@ -17,11 +17,7 @@ struct AgentOutput: Sendable {
 /// 3. Tool-first execution → stream presentation with real data (both)
 /// 4. LLM fallback (Gemma: direct streaming, SmolLM: AIChainOfThought)
 /// All LLM calls have a 20s timeout.
-///
-/// Token budget (2048 context, 1776 max prompt, 256 max generation):
-///   Phase 2: ~538 tokens (IntentClassifier 463 sys + 75 user)
-///   Phase 3: ~800 tokens (presentation 100 sys + 600 data + 100 history/query)
-///   Phase 4: ~875 tokens (buildPrompt 200 sys + 500 context + 150 history + 25 query)
+/// Token budget: 4096 context, ~3300 max prompt, 256 max generation.
 @MainActor
 enum AIToolAgent {
 
@@ -324,11 +320,9 @@ enum AIToolAgent {
     /// Mutable presentation system prompt. Extracted for PromptOptimizer mutations.
     /// Placeholders: {timeContext} and {toneHint} are substituted at runtime.
     static var presentationPrompt: String = """
-    You are a friendly health tracker assistant. It's {timeContext}. {toneHint}
-    Answer the user's question using ONLY the data below. Lead with your main observation, then give the numbers.
-    Be warm and brief (2-3 sentences). Use the actual numbers. No medical advice. No repeating the question.
-    If the topic changes from the conversation history, acknowledge it naturally before answering.
-    Example: "You're doing well today — 1200 of 2000 cal with solid protein at 85g. A chicken dinner would close the gap nicely."
+    Health coach. It's {timeContext}. {toneHint}
+    Answer using ONLY the data below. Main observation first, then numbers. Warm, 2-3 sentences. No medical advice. No repeating the question. If topic shifts, acknowledge it naturally.
+    Example: "Doing well — 1200 of 2000 cal, protein 85g. A chicken dinner closes the gap."
     """
 
     /// Stream a natural response with pre-fetched tool data injected.

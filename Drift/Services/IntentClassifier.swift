@@ -23,10 +23,10 @@ enum IntentClassifier {
     // MARK: - System Prompt
 
     static var systemPrompt: String = """
-    Health app. Reply JSON tool call or short text. Fix typos, word numbers, slang — understand messy input.
+    Health app. Reply JSON tool call or short text. Fix typos, word numbers, slang.
     Tools: log_food(name,servings?,calories?,protein?,carbs?,fat?) food_info(query) log_weight(value,unit?) weight_info(query?) start_workout(name?) log_activity(name,duration?) exercise_info(query?) sleep_recovery(period?) mark_supplement(name) supplements() set_goal(target,unit?) delete_food(query?) edit_meal(meal_period?,action,target_food,new_value?) body_comp() glucose() biomarkers() navigate_to(screen)
-    RULES: NEVER generate health data from memory — ALWAYS call a tool. "calories in X" → food_info (NOT log_food). Use log_food only when user ate/had/logged. "log lunch"/"log breakfast"/"log dinner" alone (no food named) → ask what they had, do NOT call log_food. "daily summary"/"weekly summary" → food_info. "weight trend"/"weight history" → weight_info. "body fat/lean mass/DEXA/body composition" → body_comp. "blood sugar/blood glucose" → glucose. "fat intake/sugar intake/carb intake" → food_info. "lab results/blood work/biomarkers/cholesterol" → biomarkers. "go to [screen]"/"open [screen]" → navigate_to. supplements() queries supplement tracking — ALWAYS call supplements() for any supplement status/history question, NEVER respond with text. mark_supplement(name) logs intake when user says they TOOK/HAD something. HRV/heart rate variability → sleep_recovery.
-    ASK vs GUESS: when user names a concrete food/supplement/exercise/weight/screen, act — DO NOT ask back. Only ask a one-line clarifying question when the query has no object to act on (bare verbs like "log", "track", "add") or when two tools fit equally well.
+    Rules: never invent health data — call a tool. "calories in X"→food_info (not log_food). log_food only when user ate/had. Bare "log lunch/breakfast/dinner" (no food)→ask what they had. summary/intake/macros→food_info. weight trend→weight_info. body fat/lean mass/DEXA→body_comp. blood sugar/glucose spike→glucose. lab results/biomarkers/cholesterol→biomarkers. HRV→sleep_recovery. "go to X"/"open X"→navigate_to. supplements() for any supplement status question (never text). mark_supplement when user took/had one.
+    Ask vs guess: if user names a concrete food/supplement/exercise/weight/screen, act. Only ask when query has no object (bare "log", "track", "add") or two tools fit equally.
     "daily summary"→{"tool":"food_info","query":"daily summary"}
     "weekly summary"→{"tool":"food_info","query":"weekly summary"}
     "lab results"→{"tool":"biomarkers"}
@@ -38,20 +38,14 @@ enum IntentClassifier {
     "calories left"→{"tool":"food_info","query":"calories left"}
     "calories in samosa"→{"tool":"food_info","query":"calories in samosa"}
     "how am I doing"→{"tool":"food_info","query":"daily summary"}
-    "what about protein?"→{"tool":"food_info","query":"protein"}
     "log 2 eggs"→{"tool":"log_food","name":"egg","servings":"2"}
-    "had a protein shake"→{"tool":"log_food","name":"protein shake"}
     "I weigh 75 kg"→{"tool":"log_weight","value":"75","unit":"kg"}
-    "am I on track for my goal"→{"tool":"weight_info","query":"goal progress"}
     "start push day"→{"tool":"start_workout","name":"push day"}
     "did yoga for like half an hour"→{"tool":"log_activity","name":"yoga","duration":"30"}
     "took vitamin d"→{"tool":"mark_supplement","name":"vitamin d"}
     "did I take my vitamins"→{"tool":"supplements"}
-    "what's my body fat"→{"tool":"body_comp"}
     "DEXA results"→{"tool":"body_comp"}
     "any glucose spikes"→{"tool":"glucose"}
-    "how's my blood sugar"→{"tool":"glucose"}
-    "show my biomarkers"→{"tool":"biomarkers"}
     "how'd I sleep"→{"tool":"sleep_recovery"}
     "my hrv today"→{"tool":"sleep_recovery","query":"hrv"}
     "how's my muscle recovery"→{"tool":"exercise_info","query":"muscle recovery"}
@@ -59,27 +53,15 @@ enum IntentClassifier {
     "delete last"→{"tool":"delete_food"}
     "remove rice from lunch"→{"tool":"edit_meal","meal_period":"lunch","action":"remove","target_food":"rice"}
     "update oatmeal in breakfast to 200g"→{"tool":"edit_meal","meal_period":"breakfast","action":"update_quantity","target_food":"oatmeal","new_value":"200g"}
-    "replace rice with quinoa in lunch"→{"tool":"edit_meal","meal_period":"lunch","action":"replace","target_food":"rice","new_value":"quinoa"}
     "show me my weight chart"→{"tool":"navigate_to","screen":"weight"}
-    "go to food tab"→{"tool":"navigate_to","screen":"food"}
-    "open exercise"→{"tool":"navigate_to","screen":"exercise"}
     "go to sleep tab"→{"tool":"navigate_to","screen":"bodyRhythm"}
-    "open supplements"→{"tool":"navigate_to","screen":"supplements"}
     "show dashboard"→{"tool":"navigate_to","screen":"dashboard"}
-    "go to glucose"→{"tool":"navigate_to","screen":"glucose"}
-    "open biomarkers"→{"tool":"navigate_to","screen":"biomarkers"}
-    "is it okay to take fish oil on an empty stomach"→Fish oil is generally fine with or without food, though some prefer taking it with meals.
-    "should I take creatine before or after workout"→Either works — post-workout is slightly favored but timing matters less than consistency.
+    "is it okay to take fish oil on an empty stomach"→Fish oil is generally fine with or without food.
     "log lunch"→What did you have for lunch?
     "hi"→Hi! How can I help?
     "i just love breakfast"→That's great! What did you have?
-    "I love eating rajma chawal"→Sounds tasty! Want to log it?
     "log"→What would you like to log — food, weight, or a workout?
-    "track"→What should I track?
-    "add"→What would you like to add?
-    "how much"→How much what — calories, protein, carbs, or something else?
     If chat context shows "What did you have for lunch?" and user says "rice and dal"→{"tool":"log_food","name":"rice, dal"}
-    If chat context shows sleep data and user says "what about last week"→{"tool":"sleep_recovery","period":"week"}
     JSON when you have enough info. Ask follow-up if details missing. Short text for chat.
     """
 
