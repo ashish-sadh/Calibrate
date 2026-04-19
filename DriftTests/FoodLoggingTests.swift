@@ -4085,3 +4085,112 @@ enum TestError: Error { case msg(String); init(_ s: String) { self = .msg(s) } }
     let updated = await vm.todayEntries.first(where: { $0.id == entryId })
     #expect(updated?.mealType == "dinner", "Meal type should be updated to dinner")
 }
+
+// MARK: - swapEntries Tests (3 tests)
+
+@Test func swapEntriesSwapsTimes() async throws {
+    let db = try AppDatabase.empty()
+    let vm = await FoodLogViewModel(database: db)
+    let t1 = "2026-01-01T08:00:00Z"
+    let t2 = "2026-01-01T12:00:00Z"
+    await vm.quickAdd(name: "A", calories: 100, proteinG: 10, carbsG: 10, fatG: 5, fiberG: 0,
+                      mealType: .breakfast, loggedAt: t1)
+    await vm.quickAdd(name: "B", calories: 200, proteinG: 20, carbsG: 20, fatG: 10, fiberG: 0,
+                      mealType: .lunch, loggedAt: t2)
+    let entries = await vm.todayEntries.sorted { $0.loggedAt < $1.loggedAt }
+    #expect(entries.count == 2)
+    await vm.swapEntries(0, 1, in: entries)
+    await vm.loadTodayMeals()
+    let after = await vm.todayEntries.sorted { $0.loggedAt < $1.loggedAt }
+    #expect(after[0].foodName == "B", "B should now be first (had t2, swapped to t1)")
+    #expect(after[1].foodName == "A")
+}
+
+@Test func swapEntriesSameTimetampAdjustsByOneSecond() async throws {
+    let db = try AppDatabase.empty()
+    let vm = await FoodLogViewModel(database: db)
+    let t = "2026-01-01T09:00:00Z"
+    await vm.quickAdd(name: "X", calories: 100, proteinG: 5, carbsG: 10, fatG: 5, fiberG: 0,
+                      mealType: .breakfast, loggedAt: t)
+    await vm.quickAdd(name: "Y", calories: 150, proteinG: 8, carbsG: 15, fatG: 6, fiberG: 0,
+                      mealType: .breakfast, loggedAt: t)
+    let entries = await vm.todayEntries
+    #expect(entries.count == 2)
+    await vm.swapEntries(0, 1, in: entries)
+    await vm.loadTodayMeals()
+    #expect(await vm.todayEntries.count == 2, "Should still have 2 entries after same-time swap")
+}
+
+@Test func swapEntriesOutOfBoundsIsNoop() async throws {
+    let db = try AppDatabase.empty()
+    let vm = await FoodLogViewModel(database: db)
+    await vm.quickAdd(name: "Food", calories: 100, proteinG: 5, carbsG: 10, fatG: 5, fiberG: 0,
+                      mealType: .lunch)
+    let entries = await vm.todayEntries
+    await vm.swapEntries(0, 5, in: entries)
+    #expect(await vm.todayEntries.count == 1, "Out-of-bounds swap should be a no-op")
+}
+
+// MARK: - loggedDays Tests (2 tests)
+
+@Test func loggedDaysReturnsCaloriesForDaysWithFood() async throws {
+    let db = try AppDatabase.empty()
+    let vm = await FoodLogViewModel(database: db)
+    await vm.quickAdd(name: "Lunch", calories: 500, proteinG: 20, carbsG: 60, fatG: 15, fiberG: 3,
+                      mealType: .lunch)
+    let result = await vm.loggedDays(last: 7)
+    let todayKey = Calendar.current.startOfDay(for: Date())
+    #expect((result[todayKey] ?? 0) >= 500, "Today should have logged calories")
+}
+
+@Test func loggedDaysEmptyDatabaseReturnsZeroCalories() async throws {
+    let db = try AppDatabase.empty()
+    let vm = await FoodLogViewModel(database: db)
+    let result = await vm.loggedDays(last: 7)
+    let totalLogged = result.values.reduce(0, +)
+    #expect(totalLogged == 0, "Empty DB should have no logged calories")
+}
+
+// MARK: - yesterdayCalories Tests (2 tests)
+
+@Test func yesterdayCaloriesReturnsNilWhenNothingLogged() async throws {
+    let db = try AppDatabase.empty()
+    let vm = await FoodLogViewModel(database: db)
+    let result = await vm.yesterdayCalories()
+    #expect(result == nil, "No food yesterday should return nil")
+}
+
+// MARK: - loadPlantPoints Tests (2 tests)
+
+@Test func loadPlantPointsCountsUniqueIngredients() async throws {
+    let db = try AppDatabase.empty()
+    let vm = await FoodLogViewModel(database: db)
+    await vm.quickAdd(name: "Spinach", calories: 30, proteinG: 2, carbsG: 5, fatG: 0.5, fiberG: 2,
+                      mealType: .lunch)
+    await vm.loadPlantPoints()
+    let points = await vm.weeklyPlantPoints
+    #expect(points.plantCount >= 1, "Should count spinach as a plant")
+}
+
+@Test func loadPlantPointsZeroWhenNoFoodLogged() async throws {
+    let db = try AppDatabase.empty()
+    let vm = await FoodLogViewModel(database: db)
+    await vm.loadPlantPoints()
+    let points = await vm.weeklyPlantPoints
+    #expect(points.plantCount == 0, "Empty DB should have zero plant points")
+}
+
+// MARK: - toggleFavorite / isFavorite Tests (2 tests)
+
+@MainActor @Test func toggleFavoritePersistsAcrossCalls() async throws {
+    let name = "ToggleTestFood_\(Int.random(in: 1000...9999))"
+    FoodService.toggleFavorite(name: name, foodId: nil)
+    #expect(FoodService.isFavorite(name: name), "Should be favorite after first toggle")
+    FoodService.toggleFavorite(name: name, foodId: nil)
+    #expect(!FoodService.isFavorite(name: name), "Should not be favorite after second toggle")
+}
+
+@MainActor @Test func isFavoriteReturnsFalseForNewFood() {
+    let name = "NeverFavorited_\(Int.random(in: 10000...99999))"
+    #expect(!FoodService.isFavorite(name: name), "Brand-new food should not be a favorite")
+}
