@@ -319,4 +319,67 @@ final class IntentClassifierGoldSetTests: XCTestCase {
         print("📊 StaticOverrides non-domain: \(caught)/\(staticCases.count)")
         XCTAssertEqual(caught, staticCases.count)
     }
+
+    // MARK: - Confidence Parsing (ask vs guess)
+
+    /// LLM-emitted confidence is parsed into ClassifiedIntent.confidence and surfaces
+    /// to AIToolAgent for observability (low confidence routes still execute but log).
+    func testParseResponse_ConfidenceFieldParsed() {
+        let cases: [(json: String, expected: String)] = [
+            (#"{"tool":"log_food","name":"rice","confidence":"high"}"#, "high"),
+            (#"{"tool":"log_food","name":"rice","confidence":"medium"}"#, "medium"),
+            (#"{"tool":"log_food","name":"rice","confidence":"low"}"#, "low"),
+        ]
+        for (json, expected) in cases {
+            guard let intent = IntentClassifier.parseResponse(json) else {
+                XCTFail("Should parse with confidence: \(json)"); continue
+            }
+            XCTAssertEqual(intent.confidence, expected,
+                "Confidence field should round-trip exactly as emitted")
+        }
+    }
+
+    /// Missing confidence field → must default to "high" so existing LLM outputs
+    /// (which don't emit the field) keep their current behavior.
+    func testParseResponse_MissingConfidenceDefaultsHigh() {
+        let json = #"{"tool":"log_food","name":"rice"}"#
+        guard let intent = IntentClassifier.parseResponse(json) else {
+            XCTFail("Should parse without confidence"); return
+        }
+        XCTAssertEqual(intent.confidence, "high",
+            "Absent confidence defaults to high — preserves pre-calibration behavior")
+    }
+
+    /// Non-string confidence (malformed LLM output) → fall back to "high".
+    func testParseResponse_MalformedConfidenceFallsBackHigh() {
+        let cases = [
+            #"{"tool":"log_food","name":"rice","confidence":42}"#,     // numeric
+            #"{"tool":"log_food","name":"rice","confidence":null}"#,   // null
+            #"{"tool":"log_food","name":"rice","confidence":[]}"#,     // array
+        ]
+        for json in cases {
+            guard let intent = IntentClassifier.parseResponse(json) else {
+                XCTFail("Should parse with bad confidence: \(json)"); continue
+            }
+            XCTAssertEqual(intent.confidence, "high",
+                "Malformed confidence should fall back to high, not crash or go empty")
+        }
+    }
+
+    /// Ambiguity branch: bare verbs with no object should produce text clarifying questions,
+    /// not tool calls. Verifies the .text mapping path the LLM can choose.
+    func testMapResponse_ClarifyTextForBareVerbs() {
+        let clarifyResponses = [
+            "What would you like to log — food, weight, or a workout?",
+            "What should I track?",
+            "What would you like to add?",
+            "How much what — calories, protein, carbs, or something else?",
+        ]
+        for text in clarifyResponses {
+            guard case .text(let out) = IntentClassifier.mapResponse(text) else {
+                XCTFail("Clarifying text should map to .text: \(text)"); continue
+            }
+            XCTAssertFalse(out.isEmpty)
+        }
+    }
 }

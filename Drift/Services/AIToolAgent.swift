@@ -70,6 +70,11 @@ enum AIToolAgent {
                 logTiming("Phase 2 (classify)", start: classifyStart)
                 switch result {
                 case .toolCall(let intent):
+                    // Low-confidence routing observability — surfaces ask-vs-guess miscalibration
+                    // without changing behavior. Text-branch handles explicit clarifying questions.
+                    if intent.confidence.lowercased() == "low" {
+                        Log.app.info("IntentClassifier: low-confidence route → \(intent.tool) for '\(message)'")
+                    }
                     // Strip parentheses from tool name (LLM quirk: "food_info()" → "food_info")
                     let toolName = intent.tool.replacingOccurrences(of: "()", with: "")
                     let rawCall = ToolCall(tool: toolName, params: ToolCallParams(values: intent.params))

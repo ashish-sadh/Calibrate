@@ -34,6 +34,7 @@
 		24CF74D9CA0E8A4555F1EC68 /* SupplementViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D783FD1AF8952C1C8CECD29 /* SupplementViewModel.swift */; };
 		24D454E75E424F7ACA736A91 /* GlucoseTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DAF3E5EFC6C85282C084A8 /* GlucoseTabView.swift */; };
 		24FB59FA8518C99125C773FC /* MealTypeDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 358B9AF32E9AE57D1A7DF354 /* MealTypeDetectionTests.swift */; };
+		261CF4F6663AA435756483F5 /* AmbiguityEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB66CE8222D505237BF36996 /* AmbiguityEval.swift */; };
 		27536FF4DD83AB95ADECF5AB /* Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDFFBCB3D524DCFEA822DB53 /* Persistence.swift */; };
 		2789843CBA7CA913FA86CCEB /* biomarkers.json in Resources */ = {isa = PBXBuildFile; fileRef = 059465804E239D09C0E9C1D4 /* biomarkers.json */; };
 		2789D96230755D58B91B3175 /* WorkoutPersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46E22593ED4EAC860EFBF887 /* WorkoutPersistenceTests.swift */; };
@@ -447,6 +448,7 @@
 		C182889F4730B18DE0244F02 /* MealLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealLog.swift; sourceTree = "<group>"; };
 		C6C5FCF45E66161B45683C82 /* LabReportOCR+Biomarkers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LabReportOCR+Biomarkers.swift"; sourceTree = "<group>"; };
 		CB475E92982AD4F8897D5D8E /* RecoveryEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryEstimator.swift; sourceTree = "<group>"; };
+		CB66CE8222D505237BF36996 /* AmbiguityEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbiguityEval.swift; sourceTree = "<group>"; };
 		D0E8B598BCB7486A2C75848E /* WeightViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightViewModel.swift; sourceTree = "<group>"; };
 		D40A67C320513F5DD21FE3EB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D4683CA86D3045B1534504B0 /* ManualFoodEntrySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualFoodEntrySheet.swift; sourceTree = "<group>"; };
@@ -922,6 +924,7 @@
 		F4B015D112A49ACBB40A883E /* DriftLLMEvalMacOS */ = {
 			isa = PBXGroup;
 			children = (
+				CB66CE8222D505237BF36996 /* AmbiguityEval.swift */,
 				3053C86565C8B26D3B16A0A2 /* AutoResearchTests.swift */,
 				2DEC3049742676C1201A6847 /* HardEvalSet.swift */,
 				A048685BCBAD258ADEEB3E22 /* IntentRoutingEval.swift */,
@@ -1342,6 +1345,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F0C8CC093DF982FE0DBD0C3E /* AIBackend.swift in Sources */,
+				261CF4F6663AA435756483F5 /* AmbiguityEval.swift in Sources */,
 				23BF8720FC949BA82AFA68B2 /* AutoResearchTests.swift in Sources */,
 				E63F9BB35572B3EF11BF9DE5 /* HardEvalSet.swift in Sources */,
 				2215DF726E90983BDFBFB842 /* InputNormalizer.swift in Sources */,
