@@ -381,6 +381,7 @@ struct ActiveWorkoutView: View {
                 } label: {
                     Image(systemName: "xmark.circle.fill").font(.subheadline).foregroundStyle(.tertiary)
                 }
+                .accessibilityLabel("Exercise options")
             }
 
             // Notes (editable - pre-filled from template)
@@ -461,7 +462,7 @@ struct ActiveWorkoutView: View {
                             if exercises[ei].sets.isEmpty { exercises.remove(at: ei) }
                         } label: {
                             Image(systemName: "xmark").font(.system(size: 10)).foregroundStyle(.quaternary)
-                        }.frame(width: 20)
+                        }.frame(width: 20).accessibilityLabel("Delete set")
                     }
                     .padding(.vertical, 2)
                     .contextMenu {

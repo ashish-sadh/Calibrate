@@ -97,6 +97,7 @@ struct GlucoseTabView: View {
                 Button { showingImport = true } label: {
                     Image(systemName: "doc.badge.plus").foregroundStyle(Theme.accent)
                 }
+                .accessibilityLabel("Import glucose data")
             }
         }
         .fileImporter(isPresented: $showingImport, allowedContentTypes: [.commaSeparatedText, .plainText]) { handleImport($0) }

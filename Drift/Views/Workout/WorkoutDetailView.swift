@@ -120,6 +120,7 @@ struct WorkoutDetailView: View {
                         } label: { Label("Delete Workout", systemImage: "trash") }
                     }
                 } label: { Image(systemName: "ellipsis.circle").foregroundStyle(Theme.accent) }
+                .accessibilityLabel("Workout options")
             }
         }
         .alert("Delete Workout?", isPresented: $showingDeleteConfirm) {

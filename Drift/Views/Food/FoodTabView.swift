@@ -714,7 +714,7 @@ struct FoodTabView: View {
                                 showingConfirmLog = true
                             } label: {
                                 Image(systemName: "plus.circle.fill").foregroundStyle(Theme.accent)
-                            }.buttonStyle(.plain)
+                            }.buttonStyle(.plain).accessibilityLabel("Log \(food.name)")
                         }
                         .contextMenu {
                             Button {
