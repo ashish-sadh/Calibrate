@@ -548,6 +548,7 @@ struct FoodTabView: View {
                 Image(systemName: "plus").font(.caption2.weight(.semibold)).foregroundStyle(Theme.accent)
             }
             .buttonStyle(.plain)
+            .accessibilityLabel("Add to \(meal.displayName)")
         }
         .padding(.vertical, 6)
     }

@@ -83,7 +83,7 @@ struct AIChatView: View {
                     } label: {
                         Image(systemName: "stop.circle.fill")
                             .font(.title2)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(Theme.surplus)
                     }
 
                     Button {
@@ -107,13 +107,13 @@ struct AIChatView: View {
                     } label: {
                         Image(systemName: "mic")
                             .font(.system(size: 18))
-                            .foregroundStyle(Color.gray.opacity(0.6))
+                            .foregroundStyle(.secondary)
                     }
                     .disabled(vm.isGenerating)
 
                     Button { vm.sendMessage() } label: {
                         Image(systemName: "arrow.up.circle.fill").font(.title2)
-                            .foregroundStyle(vm.inputText.isEmpty ? Color.gray.opacity(0.5) : Theme.accent)
+                            .foregroundStyle(vm.inputText.isEmpty ? Color.secondary.opacity(0.5) : Theme.accent)
                     }
                     .disabled(vm.inputText.isEmpty || vm.isGenerating)
                 }
