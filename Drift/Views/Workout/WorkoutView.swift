@@ -185,6 +185,7 @@ struct WorkoutView: View {
                         } label: {
                             Image(systemName: "ellipsis.circle").font(.body).foregroundStyle(Theme.accent)
                         }
+                        .accessibilityLabel("Template options")
                     }
 
                     if templates.isEmpty {

@@ -54,12 +54,14 @@ struct WeightTabView: View {
                         .font(.body.weight(.semibold))
                         .foregroundStyle(Theme.accent)
                 }
+                .accessibilityLabel("Back")
             }
             ToolbarItem(placement: .primaryAction) {
                 Button { showingAddWeight = true } label: {
                     Image(systemName: "plus.circle.fill")
                         .foregroundStyle(Theme.accent)
                 }
+                .accessibilityLabel("Add weight")
             }
         }
         .scrollContentBackground(.hidden)
@@ -225,6 +227,7 @@ struct WeightTabView: View {
                     .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 6))
                     .foregroundStyle(.secondary)
             }
+            .accessibilityLabel(viewModel.granularity == .daily ? "Granularity: Daily" : "Granularity: Weekly")
         }
     }
 

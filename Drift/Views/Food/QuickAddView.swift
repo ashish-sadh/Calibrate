@@ -312,6 +312,7 @@ private struct IngredientPickerView: View {
                         Button { query = ""; results = [] } label: {
                             Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
                         }
+                        .accessibilityLabel("Clear search")
                     }
                 }
                 .padding()

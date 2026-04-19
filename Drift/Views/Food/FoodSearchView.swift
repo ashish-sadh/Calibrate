@@ -61,6 +61,7 @@ struct FoodSearchView: View {
                         Button { query = ""; results = []; matchingRecipes = [] } label: {
                             Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
                         }
+                        .accessibilityLabel("Clear search")
                     }
                 }
                 .padding()
