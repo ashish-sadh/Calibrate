@@ -5,12 +5,13 @@ AI-first local health tracker. AI chat is the primary interface — every data e
 
 ## Numbers
 - **Version:** 0.1.0, Build 133
-- **Tests:** 1564+ (35 test files; LLM eval expanded to ~130+ cases in DriftLLMEvalMacOS)
+- **Tests:** 1677+ (38 test files; LLM eval expanded to ~160+ cases in DriftLLMEvalMacOS)
 - **AI Eval:** 400+ scenarios in eval harness + LLM eval (~130-case gold set in IntentRoutingEval)
 - **Foods:** 2,187 (Indian, Mexican, Asian, Thai, Japanese, Korean, Mediterranean, Chinese, Middle Eastern, American classics, fitness staples, coffee drinks, seeds, Indo-Chinese, sushi rolls, meal prep bowls, South Indian, Indian street food, bowls, Kerala dishes, fast food India, Indian fruits, Indian regional, Maharashtrian, Odia, Assamese, Bihari, Rajasthani, Andhra, Karnataka, Goan, Himachal Pradesh, Northeast India, Sindhi, Madhya Pradesh, Coorg, Vietnamese, Latin American, African, Italian expanded, branded protein bars/shakes, bakery, soups, seafood, Bengali fish, Indian snacks, Indian drinks, Filipino, Turkish, Ethiopian, fast food US, supplements)
 - **Exercises:** 960 (free-exercise-db)
 - **Biomarkers:** 65 across 9 categories
 - **AI Tools:** 20 registered tools
+- **TTFT Benchmark:** ChatLatencyBenchmark (10 queries × 3 runs, 1.3× regression threshold, opt-in via DRIFT_LATENCY_BENCH=1)
 - **AI Chat Features:** 25+ (see `Docs/ai-parity.md`)
 - **Confirmation Cards:** 8 types (food, weight, workout, navigation, supplement, sleep, glucose, biomarker)
 
