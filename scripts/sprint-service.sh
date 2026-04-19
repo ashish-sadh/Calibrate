@@ -365,6 +365,15 @@ cmd_session_done() {
     # Remove in-progress label from GitHub
     gh issue edit "$NUM" --remove-label in-progress 2>/dev/null || true
 
+    # Guard: permanent tasks must never be closed — auto-reopen if AI closed it
+    local IS_PERM IS_CLOSED
+    IS_PERM=$(gh issue view "$NUM" --json labels --jq '[.labels[].name] | index("permanent-task") != null' 2>/dev/null || echo "false")
+    IS_CLOSED=$(gh issue view "$NUM" --json state --jq '.state' 2>/dev/null || echo "OPEN")
+    if [ "$IS_PERM" = "true" ] && [ "$IS_CLOSED" = "CLOSED" ]; then
+        gh issue reopen "$NUM" 2>/dev/null || true
+        echo "WARNING: Permanent task #$NUM was closed — auto-reopened. Use session-done, never gh issue close." >&2
+    fi
+
     # Mark done in LOCAL state only — do NOT close the GitHub issue.
     # For permanent tasks:
     #   - Sets sprint_done=True (persists across refreshes, blocks senior re-selection this sprint)

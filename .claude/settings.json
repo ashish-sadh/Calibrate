@@ -71,6 +71,16 @@
       },
       {
         "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/guard-permanent-close.sh",
+            "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
         "if": "Bash(git commit *)",
         "hooks": [
           {
