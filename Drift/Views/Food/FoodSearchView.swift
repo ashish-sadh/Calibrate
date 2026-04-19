@@ -13,6 +13,7 @@ struct FoodSearchView: View {
     @State private var results: [Food] = []
     @State private var matchingRecipes: [SavedFood] = []
     @State private var showingManual = false
+    @State private var showingCombos = false
     @State private var logTime = Date()
     @State private var selectedMealType: MealType? = nil
     @State private var loggedCount = 0
@@ -97,6 +98,7 @@ struct FoodSearchView: View {
                 ManualFoodEntrySheet(viewModel: viewModel) { loggedCount += 1 }
             }
             .sheet(isPresented: $showingRecipeBuilder) { QuickAddView(viewModel: viewModel) }
+            .sheet(isPresented: $showingCombos) { CombosView(viewModel: viewModel) }
             .sheet(item: $comboToLog) { combo in
                 ComboLogSheet(combo: combo, viewModel: viewModel) {
                     viewModel.loadSuggestions()
@@ -155,8 +157,12 @@ struct FoodSearchView: View {
                         Label("Scan", systemImage: "barcode.viewfinder").font(.caption)
                     }.buttonStyle(.bordered).tint(Theme.accent)
 
+                    Button { showingCombos = true } label: {
+                        Label("Combos", systemImage: "fork.knife").font(.caption)
+                    }.buttonStyle(.bordered).tint(Theme.accent)
+
                     Button { showingRecipeBuilder = true } label: {
-                        Label("Recipe", systemImage: "fork.knife").font(.caption)
+                        Label("Recipe", systemImage: "list.bullet.rectangle").font(.caption)
                     }.buttonStyle(.bordered).tint(Theme.accent)
 
                     Button { showingManual = true } label: {

@@ -47,7 +47,7 @@ struct QuickAddView: View {
                 VStack(spacing: 14) {
                     // Recipe name (show after first ingredient added)
                     if !items.isEmpty {
-                        TextField("Recipe name", text: $recipeName)
+                        TextField("Combo name", text: $recipeName)
                             .font(.headline)
                             .padding(12)
                             .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 12))
@@ -55,13 +55,13 @@ struct QuickAddView: View {
 
                     // Ingredients
                     VStack(alignment: .leading, spacing: 0) {
-                        Text("INGREDIENTS").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                        Text("FOOD ITEMS").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
                             .padding(.bottom, 8)
 
                         if items.isEmpty {
                             VStack(spacing: 8) {
                                 Image(systemName: "fork.knife").font(.title2).foregroundStyle(Theme.accent.opacity(0.4))
-                                Text("Add ingredients to build your recipe")
+                                Text("Add food items to build your combo")
                                     .font(.subheadline).foregroundStyle(.tertiary)
                             }
                             .frame(maxWidth: .infinity)
@@ -85,7 +85,7 @@ struct QuickAddView: View {
                                 Button { items.remove(at: i) } label: {
                                     Image(systemName: "xmark.circle.fill").font(.caption).foregroundStyle(.tertiary)
                                 }
-                                .accessibilityLabel("Remove ingredient")
+                                .accessibilityLabel("Remove food item")
                                 .buttonStyle(.plain)
                             }
                             .padding(.vertical, 5)
@@ -97,7 +97,7 @@ struct QuickAddView: View {
                         Divider().padding(.vertical, 4)
 
                         Button { showingIngredientPicker = true } label: {
-                            Label("Add ingredient", systemImage: "plus.circle")
+                            Label("Add food item", systemImage: "plus.circle")
                                 .font(.subheadline).foregroundStyle(Theme.accent)
                         }.buttonStyle(.plain)
                     }
@@ -168,7 +168,7 @@ struct QuickAddView: View {
             }
             .scrollDismissesKeyboard(.interactively)
             .background(Theme.background)
-            .navigationTitle("Recipe").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Combo / Recipe").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
             .onAppear {
                 if items.isEmpty && !initialItems.isEmpty {
