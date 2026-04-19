@@ -219,7 +219,7 @@ struct FoodSearchView: View {
                 viewModel.logFood(food, servings: lastUsed, mealType: effectiveMealType)
                 viewModel.loadSuggestions()
                 loggedCount += 1
-                dismiss()
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
             } label: {
                 Image(systemName: "plus.circle.fill").foregroundStyle(Theme.accent)
             }.buttonStyle(.plain).padding(.leading, 6)
@@ -282,7 +282,7 @@ struct FoodSearchView: View {
                 }
                 viewModel.loadSuggestions()
                 loggedCount += 1
-                dismiss()
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
             } label: {
                 Image(systemName: "plus.circle.fill").foregroundStyle(Theme.accent)
             }.buttonStyle(.plain).padding(.leading, 6)
