@@ -29,10 +29,10 @@ struct ComboLogSheet: View {
 
     private var checkedItems: [ComboLogItem] { logItems.filter { $0.enabled } }
 
-    private var totalCal: Double { checkedItems.reduce(0) { $0 + $1.totalCal } }
-    private var totalP: Double { checkedItems.reduce(0) { $0 + $1.totalP } }
-    private var totalC: Double { checkedItems.reduce(0) { $0 + $1.totalC } }
-    private var totalF: Double { checkedItems.reduce(0) { $0 + $1.totalF } }
+    private var totalCal: Double { logItems.isEmpty ? combo.calories : checkedItems.reduce(0) { $0 + $1.totalCal } }
+    private var totalP: Double { logItems.isEmpty ? combo.proteinG : checkedItems.reduce(0) { $0 + $1.totalP } }
+    private var totalC: Double { logItems.isEmpty ? combo.carbsG : checkedItems.reduce(0) { $0 + $1.totalC } }
+    private var totalF: Double { logItems.isEmpty ? combo.fatG : checkedItems.reduce(0) { $0 + $1.totalF } }
 
     var body: some View {
         NavigationStack {
@@ -58,10 +58,11 @@ struct ComboLogSheet: View {
                     Button("Cancel") { dismiss() }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Log \(checkedItems.count)") { logSelected() }
+                    let canLog = logItems.isEmpty || !checkedItems.isEmpty
+                    Button(logItems.isEmpty ? "Log" : "Log \(checkedItems.count)") { logSelected() }
                         .fontWeight(.semibold)
-                        .foregroundStyle(checkedItems.isEmpty ? .secondary : Theme.accent)
-                        .disabled(checkedItems.isEmpty)
+                        .foregroundStyle(canLog ? Theme.accent : .secondary)
+                        .disabled(!canLog)
                 }
             }
         }
