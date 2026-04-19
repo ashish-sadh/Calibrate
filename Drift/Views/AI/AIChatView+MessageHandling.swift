@@ -39,23 +39,10 @@ extension AIChatViewModel {
     // MARK: - Conversation History
 
     func buildConversationHistory() -> String {
-        // Compact format: Q/A instead of User/Assistant (saves tokens)
-        let large = aiService.isLargeModel
-        let recentCount = large ? 6 : 4   // Gemma can handle more context
-        let charBudget = large ? 600 : 300
-        let msgLimit = large ? 250 : 150
-        let recent = messages.suffix(recentCount)
-        var lines: [String] = []
-        var charCount = 0
-        for msg in recent {
-            let prefix = msg.role == .user ? "Q" : "A"
-            let truncatedText = msg.text.prefix(msgLimit)
-            let line = "\(prefix): \(truncatedText)"
-            if charCount + line.count > charBudget { break }
-            lines.append(line)
-            charCount += line.count
-        }
-        return lines.isEmpty ? "" : lines.joined(separator: "\n")
+        // Gemma gets the full 400-token budget; SmolLM stays tighter at 150
+        // because its attention on distant tokens is less reliable.
+        let maxTokens = aiService.isLargeModel ? 400 : 150
+        return ConversationHistoryBuilder.build(messages: messages, maxTokens: maxTokens)
     }
 
     /// Detect meal context from conversation history.

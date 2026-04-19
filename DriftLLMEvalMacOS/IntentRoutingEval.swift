@@ -308,6 +308,32 @@ final class IntentRoutingEval: XCTestCase {
         await assertRoutes("what about last week", to: "sleep_recovery", history: sleepHistory)
     }
 
+    // MARK: - Multi-Turn History-Dependent Follow-ups (#198)
+
+    /// Terse follow-ups that only resolve with history. Each must route to
+    /// the tool implied by the prior assistant turn, not the literal words.
+    func testMultiTurn_historyDependentFollowUps() async {
+        // "what about yesterday?" after a daily summary → food_info
+        let summaryHistory = "User: how am I doing\nAssistant: You've eaten 1200 of 2000 calories today with 85g protein."
+        await assertRoutes("what about yesterday?", to: "food_info", history: summaryHistory)
+
+        // "how about protein then?" after calories left → food_info
+        let caloriesHistory = "User: calories left\nAssistant: You have 800 calories left today."
+        await assertRoutes("how about protein then?", to: "food_info", history: caloriesHistory)
+
+        // "last week?" after sleep query → sleep_recovery
+        let sleepHistory = "User: how'd I sleep\nAssistant: You slept 7h 20m last night."
+        await assertRoutes("last week?", to: "sleep_recovery", history: sleepHistory)
+
+        // "and legs?" after a push workout start → start_workout
+        let workoutHistory = "User: start push day\nAssistant: Starting push day — bench, overhead press, tricep dips."
+        await assertRoutes("and legs?", to: "start_workout", history: workoutHistory)
+
+        // "same for dinner" after breakfast log → log_food
+        let breakfastHistory = "User: log oatmeal for breakfast\nAssistant: Logged oatmeal for breakfast (150 cal)"
+        await assertRoutes("same for dinner", to: "log_food", history: breakfastHistory)
+    }
+
     // MARK: - Multi-Turn Food Logging Reliability (#166)
 
     /// 3-turn breakfast continuation: log oatmeal → also add banana → and black coffee.

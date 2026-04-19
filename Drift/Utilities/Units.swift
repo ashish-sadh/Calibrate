@@ -91,4 +91,16 @@ enum Preferences {
         get { UserDefaults.standard.bool(forKey: healthNudgesKey) }
         set { UserDefaults.standard.set(newValue, forKey: healthNudgesKey) }
     }
+
+    private static let conversationHistoryEnabledKey = "drift_conversation_history_enabled"
+
+    /// When enabled, the last few chat turns are threaded into LLM prompts so
+    /// follow-ups like "what about protein?" resolve in context. Default: ON.
+    static var conversationHistoryEnabled: Bool {
+        get {
+            if UserDefaults.standard.object(forKey: conversationHistoryEnabledKey) == nil { return true }
+            return UserDefaults.standard.bool(forKey: conversationHistoryEnabledKey)
+        }
+        set { UserDefaults.standard.set(newValue, forKey: conversationHistoryEnabledKey) }
+    }
 }
