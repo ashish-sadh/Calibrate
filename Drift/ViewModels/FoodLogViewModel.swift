@@ -185,6 +185,12 @@ final class FoodLogViewModel {
                                          calories: food.calories, proteinG: food.proteinG,
                                          carbsG: food.carbsG, fatG: food.fatG, fiberG: food.fiberG,
                                          servingSizeG: food.servingSize)
+            if let id = entry.id {
+                ConversationState.shared.pushRecentEntry(.init(
+                    id: id, name: food.name, mealType: mealType.rawValue,
+                    calories: Int(food.calories), loggedAt: loggedAt
+                ))
+            }
             loadTodayMeals()
         } catch {
             Log.foodLog.error("Failed to log food: \(error.localizedDescription)")
@@ -264,6 +270,13 @@ final class FoodLogViewModel {
                                              calories: calories, proteinG: proteinG,
                                              carbsG: carbsG, fatG: fatG, fiberG: fiberG,
                                              servingSizeG: servingSizeG)
+            }
+            if let id = entry.id, date == DateFormatters.todayString,
+               name != "Quick Add" && !name.isEmpty {
+                ConversationState.shared.pushRecentEntry(.init(
+                    id: id, name: name, mealType: mealType.rawValue,
+                    calories: Int(calories), loggedAt: Date()
+                ))
             }
             loadTodayMeals()
         } catch {

@@ -62,6 +62,109 @@ final class ConversationState {
         return (userTurnIndex - lastToolSummaryTurn) <= 1 ? summary : nil
     }
 
+    // MARK: - Recent Food Entries (rolling window for multi-turn refs, #227)
+
+    /// Compact reference to a recently-logged food entry. Used for multi-turn
+    /// resolution of "delete the rice I just logged", "edit the 500 cal one",
+    /// "remove the first one" — so tools operate on the exact row the user
+    /// means rather than re-searching by name (which picks wrong rows when
+    /// duplicates exist).
+    struct FoodEntryRef: Equatable, Sendable {
+        let id: Int64
+        let name: String
+        let mealType: String   // breakfast | lunch | dinner | snack
+        let calories: Int      // Per-serving calories rounded for display
+        let loggedAt: Date     // Used for TTL eviction and "Nm ago" context
+    }
+
+    /// Rolling window of today's most recent entries, newest last. Capped at
+    /// `recentEntriesCap`, stale rows beyond `recentEntriesTTL` are dropped
+    /// on every read/push. Never persisted — IDs may be invalid across app
+    /// relaunches if the user manually deletes in the UI, so the window is
+    /// rebuilt from writes during the current session only.
+    private(set) var recentEntries: [FoodEntryRef] = []
+    static let recentEntriesCap = 10
+    /// 2h TTL matches the product-review decision: "just logged" shouldn't
+    /// reach back into last night's dinner when the user opens chat in the
+    /// morning.
+    static let recentEntriesTTL: TimeInterval = 2 * 60 * 60
+
+    /// Push a newly-logged (or edited) entry onto the rolling window. Oldest
+    /// entries get evicted when the window exceeds `recentEntriesCap` (LRU).
+    /// Duplicate IDs update the existing ref in place — avoids a stale copy
+    /// lingering after an edit.
+    func pushRecentEntry(_ ref: FoodEntryRef) {
+        pruneExpiredRecentEntries()
+        recentEntries.removeAll { $0.id == ref.id }
+        recentEntries.append(ref)
+        if recentEntries.count > Self.recentEntriesCap {
+            recentEntries.removeFirst(recentEntries.count - Self.recentEntriesCap)
+        }
+    }
+
+    /// Drop a ref — called after successful delete/remove so stale IDs can't
+    /// re-resolve on a follow-up turn.
+    func dropRecentEntry(id: Int64) {
+        recentEntries.removeAll { $0.id == id }
+    }
+
+    /// Evict entries older than the TTL. Called defensively on every window
+    /// read and push.
+    func pruneExpiredRecentEntries(now: Date = Date()) {
+        let cutoff = now.addingTimeInterval(-Self.recentEntriesTTL)
+        recentEntries.removeAll { $0.loggedAt < cutoff }
+    }
+
+    /// Compact prompt-ready view of the window. Includes relative time
+    /// ("5m ago") so the LLM can tie references like "the one I just logged"
+    /// to the freshest row. Returns nil when the window is empty.
+    func recentEntriesContextBlock(now: Date = Date()) -> String? {
+        pruneExpiredRecentEntries(now: now)
+        guard !recentEntries.isEmpty else { return nil }
+        let rows = recentEntries.suffix(Self.recentEntriesCap).map { ref -> String in
+            let minsAgo = max(0, Int(now.timeIntervalSince(ref.loggedAt) / 60))
+            return "\(ref.id)|\(ref.mealType)|\(ref.name)|\(ref.calories)cal|\(minsAgo)m"
+        }
+        return "<recent_entries>\n\(rows.joined(separator: "\n"))\n</recent_entries>"
+    }
+
+    /// Resolve an ordinal phrase ("first", "last", "second to last", "2nd")
+    /// against the rolling window. Returns the matching entry or nil when
+    /// the phrase isn't a recognized ordinal or the window is empty.
+    /// Ordinal semantics: "first" = oldest in window, "last" = newest. This
+    /// matches how a user reads their own diary.
+    func resolveOrdinal(_ phrase: String, now: Date = Date()) -> FoodEntryRef? {
+        pruneExpiredRecentEntries(now: now)
+        guard !recentEntries.isEmpty else { return nil }
+        let lower = phrase.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        // "last" / "most recent" / "just logged" → newest
+        if ["last", "last one", "last entry", "most recent",
+            "just logged", "just added", "just now", "latest"].contains(lower) {
+            return recentEntries.last
+        }
+        // "second to last" / "second last" / "penultimate" → newest - 1
+        if ["second to last", "second last", "next to last",
+            "penultimate"].contains(lower) {
+            return recentEntries.count >= 2 ? recentEntries[recentEntries.count - 2] : nil
+        }
+        // "third to last" → newest - 2
+        if ["third to last", "third last"].contains(lower) {
+            return recentEntries.count >= 3 ? recentEntries[recentEntries.count - 3] : nil
+        }
+        // Numeric positions from the start: "first", "1st", "second", "2nd", etc.
+        let positionMap: [String: Int] = [
+            "first": 1, "1st": 1,
+            "second": 2, "2nd": 2,
+            "third": 3, "3rd": 3,
+            "fourth": 4, "4th": 4,
+            "fifth": 5, "5th": 5
+        ]
+        if let pos = positionMap[lower] {
+            return pos <= recentEntries.count ? recentEntries[pos - 1] : nil
+        }
+        return nil
+    }
+
     // MARK: - Topic Tracking
 
     enum Topic: String, Codable {
@@ -162,6 +265,7 @@ final class ConversationState {
         lastParams = [:]
         lastToolSummary = nil
         lastToolSummaryTurn = -1
+        recentEntries = []
         phase = .idle
         // Don't reset lastTopic, turnCount, userTurnIndex, or lastWriteAction — those persist across resets
     }

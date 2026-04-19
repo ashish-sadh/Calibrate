@@ -337,37 +337,25 @@ enum ToolRegistration {
 
         r.register(ToolSchema(
             id: "food.delete_food", name: "delete_food", service: "food",
-            description: "User wants to REMOVE or DELETE a food entry. Use when they say 'remove', 'delete', 'undo food'.",
-            parameters: [ToolParam("name", "string", "Food name to remove, or 'last' for most recent entry")],
-            handler: { params in
-                let name = params.string("name") ?? "last"
-                return .text(FoodService.deleteEntry(matching: name))
-            }
+            description: "User wants to REMOVE or DELETE a food entry. Use when they say 'remove', 'delete', 'undo food'. Prefer entry_id when a recent-entries window row matches; falls back to name/ordinal.",
+            parameters: [
+                ToolParam("entry_id", "number", "Stable id of a recently-logged entry (from <recent_entries> context)", required: false),
+                ToolParam("name", "string", "Food name to remove, 'last' for most recent, or an ordinal like 'first'/'second to last'", required: false)
+            ],
+            handler: { params in .text(DeleteFoodHandler.run(params: params)) }
         ))
 
         r.register(ToolSchema(
             id: "food.edit_meal", name: "edit_meal", service: "food",
-            description: "User wants to MODIFY a food entry inside a specific meal — e.g. 'remove rice from lunch', 'change chicken to 2 servings', 'update oatmeal to 200g', 'replace rice with quinoa in lunch'. Use when a specific meal (breakfast/lunch/dinner/snack) is referenced or when swapping/replacing one food with another.",
+            description: "User wants to MODIFY a food entry inside a specific meal — e.g. 'remove rice from lunch', 'change chicken to 2 servings', 'update oatmeal to 200g', 'replace rice with quinoa in lunch', 'edit the 500 cal one'. Accepts entry_id from <recent_entries> context for precise multi-turn references; falls back to name match.",
             parameters: [
+                ToolParam("entry_id", "number", "Stable id of a recently-logged entry (from <recent_entries> context)", required: false),
                 ToolParam("meal_period", "string", "Which meal: breakfast | lunch | dinner | snack", required: false),
                 ToolParam("action", "string", "remove | update_quantity | replace"),
-                ToolParam("target_food", "string", "Name of the food to edit"),
+                ToolParam("target_food", "string", "Name of the food to edit (or an ordinal). Optional when entry_id is given.", required: false),
                 ToolParam("new_value", "string", "For update_quantity: new quantity ('2', '1.5', '200g'). For replace: the replacement food name.", required: false)
             ],
-            handler: { params in
-                let mealPeriod = params.string("meal_period")
-                let action = params.string("action") ?? "remove"
-                guard let target = params.string("target_food"), !target.isEmpty else {
-                    return .error("Missing target_food")
-                }
-                let newValue = params.string("new_value")
-                return .text(FoodService.editMealEntry(
-                    mealPeriod: mealPeriod,
-                    targetFood: target,
-                    action: action,
-                    newValue: newValue
-                ))
-            }
+            handler: { params in .text(EditMealHandler.run(params: params)) }
         ))
 
         r.register(ToolSchema(

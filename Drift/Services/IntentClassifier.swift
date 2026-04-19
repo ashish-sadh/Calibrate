@@ -24,7 +24,8 @@ enum IntentClassifier {
 
     static var systemPrompt: String = """
     Health app. Reply JSON tool call or short text. Fix typos, word numbers, slang.
-    Tools: log_food(name,servings?,calories?,protein?,carbs?,fat?) food_info(query) log_weight(value,unit?) weight_info(query?) start_workout(name?) log_activity(name,duration?) exercise_info(query?) sleep_recovery(period?) mark_supplement(name) supplements() set_goal(target,unit?) delete_food(query?) edit_meal(meal_period?,action,target_food,new_value?) body_comp() glucose() biomarkers() navigate_to(screen)
+    Tools: log_food(name,servings?,calories?,protein?,carbs?,fat?) food_info(query) log_weight(value,unit?) weight_info(query?) start_workout(name?) log_activity(name,duration?) exercise_info(query?) sleep_recovery(period?) mark_supplement(name) supplements() set_goal(target,unit?) delete_food(entry_id?,name?) edit_meal(entry_id?,meal_period?,action,target_food?,new_value?) body_comp() glucose() biomarkers() navigate_to(screen)
+    When <recent_entries> is shown and user refers to a row (by ordinal, calories, meal, or "the one I just logged"), pass its id as entry_id. Otherwise use name/target_food.
     Rules: never invent health data — call a tool. "calories in X"→food_info (not log_food). log_food only when user ate/had. Bare "log lunch/breakfast/dinner" (no food)→ask what they had. summary/intake/macros→food_info. weight trend→weight_info. body fat/lean mass/DEXA→body_comp. blood sugar/glucose spike→glucose. lab results/biomarkers/cholesterol→biomarkers. HRV→sleep_recovery. "go to X"/"open X"→navigate_to. supplements() for any supplement status question (never text). mark_supplement when user took/had one.
     Ask vs guess: if user names a concrete food/supplement/exercise/weight/screen, act. Only ask when query has no object (bare "log", "track", "add") or two tools fit equally.
     "daily summary"→{"tool":"food_info","query":"daily summary"}
@@ -55,6 +56,9 @@ enum IntentClassifier {
     "delete eggs from breakfast"→{"tool":"edit_meal","meal_period":"breakfast","action":"remove","target_food":"eggs"}
     "update oatmeal in breakfast to 200g"→{"tool":"edit_meal","meal_period":"breakfast","action":"update_quantity","target_food":"oatmeal","new_value":"200g"}
     "swap chicken for tofu in dinner"→{"tool":"edit_meal","meal_period":"dinner","action":"replace","target_food":"chicken","new_value":"tofu"}
+    If <recent_entries> lists "42|lunch|rice|180cal|3m": "delete the rice I just logged"→{"tool":"delete_food","entry_id":"42"}
+    If <recent_entries> shows two rows and user says "delete the first one"→use the id of the earlier row.
+    If <recent_entries> has a 500cal row at id 7: "edit the 500 cal one to 2 servings"→{"tool":"edit_meal","entry_id":"7","action":"update_quantity","new_value":"2"}
     "show me my weight chart"→{"tool":"navigate_to","screen":"weight"}
     "go to sleep tab"→{"tool":"navigate_to","screen":"bodyRhythm"}
     "show dashboard"→{"tool":"navigate_to","screen":"dashboard"}
@@ -69,12 +73,52 @@ enum IntentClassifier {
 
     // MARK: - Classify
 
-    /// Build the user message with optional history context. Public for testing.
+    /// Trigger tokens that switch on recent-entries context injection. Kept
+    /// narrow to avoid leaking the window into unrelated turns where the
+    /// tokens would just waste budget.
+    nonisolated static let deleteEditTriggers: [String] = [
+        "delete", "remove", "undo", "edit", "change", "update",
+        "replace", "swap", "the one", "the first", "the second",
+        "the last", "the 500", "just logged", "just added"
+    ]
+
+    /// Build the user message with optional history context. Public for
+    /// testing — keeps the pre-#227 signature for deterministic callers.
+    /// The MainActor-aware variant below injects recent-entries context.
     nonisolated static func buildUserMessage(message: String, history: String) -> String {
-        if !history.isEmpty {
-            return "Chat:\n\(String(history.prefix(400)))\n\nUser: \(message)"
-        }
-        return message
+        composeUserMessage(message: message, history: history, recentBlock: nil)
+    }
+
+    /// MainActor variant used by the live pipeline. Prepends the recent-
+    /// entries block when the message looks like a delete/edit turn AND
+    /// the window has rows.
+    @MainActor
+    static func buildContextualUserMessage(message: String, history: String) -> String {
+        let recentBlock = needsRecentEntries(message)
+            ? ConversationState.shared.recentEntriesContextBlock()
+            : nil
+        return composeUserMessage(message: message, history: history, recentBlock: recentBlock)
+    }
+
+    /// Pure composer — deterministic, test-friendly. Order of precedence:
+    /// `<recent_entries>` → `Chat:` → `User:`. Falls back to the bare
+    /// message when neither recent-entries nor history applies, preserving
+    /// the pre-#227 prompt shape for unaffected turns.
+    nonisolated static func composeUserMessage(
+        message: String, history: String, recentBlock: String?
+    ) -> String {
+        if recentBlock == nil && history.isEmpty { return message }
+        var parts: [String] = []
+        if let recentBlock { parts.append(recentBlock) }
+        if !history.isEmpty { parts.append("Chat:\n\(String(history.prefix(400)))") }
+        parts.append("User: \(message)")
+        return parts.joined(separator: "\n\n")
+    }
+
+    /// Heuristic: does this message plausibly reference a recent entry?
+    nonisolated static func needsRecentEntries(_ message: String) -> Bool {
+        let lower = message.lowercased()
+        return deleteEditTriggers.contains(where: { lower.contains($0) })
     }
 
     /// Map raw LLM response string to a ClassifyResult. Public for testing.
@@ -91,7 +135,7 @@ enum IntentClassifier {
     /// Classify user message into intent + tool call via LLM.
     /// Returns nil only on timeout. Text responses (follow-ups, greetings) are returned as .text.
     static func classifyFull(message: String, history: String) async -> ClassifyResult? {
-        let msg = buildUserMessage(message: message, history: history)
+        let msg = buildContextualUserMessage(message: message, history: history)
         let response = await withTimeout(seconds: 10) {
             await LocalAIService.shared.respondDirect(
                 systemPrompt: systemPrompt,

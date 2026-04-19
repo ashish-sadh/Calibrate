@@ -381,6 +381,25 @@ enum FoodService {
 
     // MARK: - Delete
 
+    /// Delete by stable entry id (preferred path when the AI resolves a multi-turn
+    /// reference to a specific row via the recentEntries window). Verifies the id
+    /// belongs to today so a stale reference can't nuke an unrelated row.
+    static func deleteEntry(id: Int64) -> String? {
+        let today = DateFormatters.todayString
+        guard let mealLogs = try? AppDatabase.shared.fetchMealLogs(for: today) else { return nil }
+        for ml in mealLogs {
+            guard let mlId = ml.id,
+                  let entries = try? AppDatabase.shared.fetchFoodEntries(forMealLog: mlId) else { continue }
+            if let entry = entries.first(where: { $0.id == id }) {
+                try? AppDatabase.shared.deleteFoodEntry(id: id)
+                WidgetDataProvider.refreshWidgetData()
+                ConversationState.shared.dropRecentEntry(id: id)
+                return "Removed \(entry.foodName) (\(Int(entry.calories)) cal)."
+            }
+        }
+        return nil
+    }
+
     /// Delete the most recent food entry matching a name. Returns confirmation or error.
     static func deleteEntry(matching name: String) -> String {
         let today = DateFormatters.todayString
@@ -411,12 +430,14 @@ enum FoodService {
                 }
                 try? AppDatabase.shared.deleteFoodEntry(id: lastId)
                 WidgetDataProvider.refreshWidgetData()
+                ConversationState.shared.dropRecentEntry(id: lastId)
                 return "Removed \(last.foodName) (\(Int(last.entry.calories)) cal)."
             }
             return "Couldn't find '\(name)' in today's food log."
         }
         try? AppDatabase.shared.deleteFoodEntry(id: entryId)
         WidgetDataProvider.refreshWidgetData()
+        ConversationState.shared.dropRecentEntry(id: entryId)
         return "Removed \(found.foodName) (\(Int(found.entry.calories)) cal)."
     }
 
@@ -429,15 +450,28 @@ enum FoodService {
     ///     grams convert back to servings using the entry's servingSizeG.
     ///   - "replace" — newValue is the replacement food name; looks it up in the
     ///     local food DB, updates name + per-serving macros, keeps meal + servings.
+    ///
+    /// When `entryId` is provided AND matches a today-dated row, bypass name
+    /// search entirely — this is the multi-turn reference path (#227).
     static func editMealEntry(
         mealPeriod: String?,
         targetFood: String,
         action: String,
-        newValue: String?
+        newValue: String?,
+        entryId: Int64? = nil
     ) -> String {
         let today = DateFormatters.todayString
         guard let mealLogs = try? AppDatabase.shared.fetchMealLogs(for: today), !mealLogs.isEmpty else {
             return "No food logged today."
+        }
+
+        // Fast path: operate on a specific row resolved via recentEntries window.
+        if let id = entryId,
+           let found = findTodayEntry(id: id, in: mealLogs) {
+            return applyEditAction(
+                action: action, entry: found.entry,
+                meal: found.meal, newValue: newValue
+            )
         }
 
         // Filter by meal period when provided.
@@ -464,23 +498,49 @@ enum FoodService {
         let query = targetFood.lowercased()
         let match = candidates.last(where: { $0.entry.foodName.lowercased() == query })
             ?? candidates.last(where: { $0.entry.foodName.lowercased().contains(query) })
-        guard let found = match, let entryId = found.entry.id else {
+        guard let found = match else {
             let where_ = wantedMeal.map { " in \($0)" } ?? ""
             return "Couldn't find '\(targetFood)'\(where_)."
         }
+        return applyEditAction(action: action, entry: found.entry, meal: found.meal, newValue: newValue)
+    }
 
+    /// Locate a today-dated food entry by id across all of today's meal logs.
+    /// Returns nil when the id is stale (entry deleted, or user referenced an
+    /// entry from yesterday).
+    private static func findTodayEntry(
+        id: Int64, in mealLogs: [MealLog]
+    ) -> (entry: FoodEntry, meal: String)? {
+        for ml in mealLogs {
+            guard let mlId = ml.id,
+                  let entries = try? AppDatabase.shared.fetchFoodEntries(forMealLog: mlId) else { continue }
+            if let entry = entries.first(where: { $0.id == id }) {
+                return (entry: entry, meal: ml.mealType)
+            }
+        }
+        return nil
+    }
+
+    /// Apply a remove/update/replace action to a resolved FoodEntry. Kept
+    /// separate from lookup so both the entry-id fast path and the name-match
+    /// path can share the same write logic and response wording.
+    private static func applyEditAction(
+        action: String, entry: FoodEntry, meal: String, newValue: String?
+    ) -> String {
+        guard let entryId = entry.id else { return "Couldn't edit that entry." }
         switch action.lowercased() {
         case "remove", "delete":
             try? AppDatabase.shared.deleteFoodEntry(id: entryId)
             WidgetDataProvider.refreshWidgetData()
-            let cal = Int(found.entry.calories * found.entry.servings)
-            return "Removed \(found.entry.foodName) from \(found.meal) (\(cal) cal)."
+            ConversationState.shared.dropRecentEntry(id: entryId)
+            let cal = Int(entry.calories * entry.servings)
+            return "Removed \(entry.foodName) from \(meal) (\(cal) cal)."
 
         case "update_quantity", "update":
             guard let rawValue = newValue, !rawValue.isEmpty else {
-                return "Missing new quantity for \(found.entry.foodName)."
+                return "Missing new quantity for \(entry.foodName)."
             }
-            let newServings = parseServings(rawValue, servingSizeG: found.entry.servingSizeG)
+            let newServings = parseServings(rawValue, servingSizeG: entry.servingSizeG)
             guard let servings = newServings, servings > 0 else {
                 return "Couldn't parse '\(rawValue)' as a quantity."
             }
@@ -489,11 +549,11 @@ enum FoodService {
             let formatted = servings == Double(Int(servings))
                 ? "\(Int(servings))"
                 : String(format: "%.1f", servings)
-            return "Updated \(found.entry.foodName) to \(formatted) serving\(servings == 1 ? "" : "s") in \(found.meal)."
+            return "Updated \(entry.foodName) to \(formatted) serving\(servings == 1 ? "" : "s") in \(meal)."
 
         case "replace", "swap":
             guard let raw = newValue?.trimmingCharacters(in: .whitespaces), !raw.isEmpty else {
-                return "Missing replacement food for \(found.entry.foodName)."
+                return "Missing replacement food for \(entry.foodName)."
             }
             let candidates = searchFood(query: raw)
             guard let replacement = candidates.first else {
@@ -509,7 +569,13 @@ enum FoodService {
                 fiberG: replacement.fiberG
             )
             WidgetDataProvider.refreshWidgetData()
-            return "Replaced \(found.entry.foodName) with \(replacement.name) in \(found.meal)."
+            if let mealType = MealType(rawValue: meal) {
+                ConversationState.shared.pushRecentEntry(.init(
+                    id: entryId, name: replacement.name, mealType: mealType.rawValue,
+                    calories: Int(replacement.calories), loggedAt: Date()
+                ))
+            }
+            return "Replaced \(entry.foodName) with \(replacement.name) in \(meal)."
 
         default:
             return "Unknown edit action '\(action)'."
