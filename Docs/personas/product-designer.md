@@ -184,6 +184,13 @@
 - Design doc #65 owner feedback is the strongest product signal: multi-stage specialized prompts, not one unified classifier. The owner sees wrong data extraction even on clear input. The fix is domain-specific extraction (food prompt, exercise prompt) — not better generic classification.
 - Feature request #74 (lab reports + LLM) benefits from the same multi-stage architecture. Defer implementation until the pipeline pattern is proven on food/exercise.
 
+### What I Learned — Planning Cycle 341 (2026-04-18)
+- User filed 7 bugs the same day (186-192, 195) after dogfooding voice + chat on TestFlight. This is the highest-quality signal we get — batch-filed bugs after a single session mean the feature is being used seriously. Every recipe flow gap (#191, #192) and every food-list friction (#187 multi-select, #189 meal-name auto-detect) is a real trust erosion.
+- Mental model gap, #189: users don't think in flat food lists. They think "this is breakfast." MFP's meal-period grouping is the baseline; auto-detection from time + explicit override on the card is the chat-first version. Don't make users say "for breakfast" — infer it, let them correct.
+- #190 ("food logging group") vs existing saved-meals: the feature exists via context menu but is invisible to this user. That's a discoverability failure. Before building a second grouping feature, surface the existing one — or build the new one only if it's obviously distinct.
+- #188 South Indian cuisine is a recurring signal. Our Indian base is the target audience; any gap vs MFP is a direct competitive loss. Prioritize 20–30 specific dishes (idli varieties, dosa types, sambar, rasam, kuzhambu, thoran, aviyal, puliyogare) over breadth across other cuisines.
+- New sprint intentionally has zero "photo food" or "widgets" items — product focus is pure AI chat quality this cycle. Resist surface expansion until current chat polish (context threading, edit_meal tool, persistent state, multi-turn eval) is shipped.
+
 ## Preferences & Style
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation

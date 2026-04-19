@@ -197,6 +197,12 @@
 - **Pipeline structure principle**: For complex multi-domain classification, consider multi-stage prompts — a domain router first ("is this food/weight/exercise/sleep/supplement?"), then domain-specific extraction. Fewer tokens per prompt = higher accuracy per token for 2B models.
 - **PipelineE2EEval is the integration gate**: IntentRoutingEval tests routing in isolation; PipelineE2EEval (InputNormalizer → LLM classify → MockToolExecutor → Presentation LLM) tests the full chain. Both must be 100% before any AI merge.
 
+### What I Learned — Planning Cycle 341 (2026-04-18)
+- Four new P0 bugs landed same-session from real TestFlight use (#186 fiber-as-macro, #187 multi-select on previous foods, #191 recipe Done button, #192 recipe ingredient editing). Recipe mutation path is underspecified — every write needs an edit/delete counterpart at the same layer, not a UI-only fallback.
+- Bug #195 (coffee-with-milk zero calories) suggests the composed-food lookup path may be dropping additive calories. Candidate failure modes: (a) USDA fallback returning base "coffee" with 0 kcal, (b) "with milk" parsed as modifier but not as ingredient with macros. Audit the composed-food logic end-to-end.
+- Sprint queue jumped to ~21 items (10 carry-over + 8 new + 3 P1 bug promotions). Senior budget is 5/session so full drain is ~4 senior sessions. Keep future planning sessions honest — don't pile on if the queue isn't drained.
+- Product focus directive explicitly forbids new StaticOverrides/keyword rules — every new AI task must improve the LLM prompt, pipeline stage, or tool set. This session's 8 new tasks all comply (new tools, new card types, prompt threading, eval expansion, persistence). Reinforces the "static overrides are a symptom, not a cure" lesson from Review #42.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)

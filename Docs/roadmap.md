@@ -38,6 +38,7 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 
 ### Now
 - ~~**AI Chat reliability (P0)**~~ DONE — 6-stage pipeline shipped: input normalization, LLM intent classifier, domain extraction, Swift validation, streaming presentation. 55-query gold set at 100% baseline.
+- **AI Chat depth (P0, cycle 341 sprint)** — Pipeline threading (last 3 turns into LLM context), `edit_meal` tool for multi-item mutations via chat, session-persistent conversation state across app relaunch, time-aware suggestion pills, meal-period auto-detect in food parser, streamed stage-label indicator, nutrition-lookup structured card, 25-turn multi-turn regression suite. All tasks must preserve FoodLoggingGoldSet at 100%. No new StaticOverrides.
 
 ### Next
 - ~~**USDA API Phase 1**~~ DONE — Opt-in toggle, rate limiting, searchWithFallback, privacy notice. Behind toggle (default OFF).
@@ -92,6 +93,8 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 - ~~**DB enrichment to 1,500**~~ DONE — 1,500+ foods. Chinese, Middle Eastern, American classics, sandwiches, soups, healthy options. Manual enrichment paused — next investment should be USDA API or search quality.
 - ~~**Search quality (P1)**~~ DONE — Synonym expansion (40+ regional/colloquial terms), spell correction hardened. Prefix matching works via substring SQL (`%word%` matches "chick" → "chicken"). 3 verification tests added.
 - Ingredient persistence for recipe rebuilding
+- **South Indian cuisine expansion (P1, bug #188)** — Target 20–30 dishes: idli variants, dosa types, sambar, rasam, kuzhambu, thoran, aviyal, puliyogare, Kerala/Tamil/Andhra/Karnataka specifics. User feedback: app lags MFP here and Indian users feel it.
+- **Composed-food calorie audit (P1, bug #195)** — "Coffee with milk" returns 0 kcal. Audit composed-food lookup path (USDA fallback + "with X" modifier parsing) — calories on additives are being dropped somewhere.
 
 ### Next
 - USDA API integration for verified nutrition data
