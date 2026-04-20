@@ -91,13 +91,19 @@ enum IntentClassifier {
 
     /// MainActor variant used by the live pipeline. Prepends the recent-
     /// entries block when the message looks like a delete/edit turn AND
-    /// the window has rows.
+    /// the window has rows. Optional `literalHint` is used by the #240
+    /// auto-retry path to nudge the extractor toward a more literal read.
     @MainActor
-    static func buildContextualUserMessage(message: String, history: String) -> String {
+    static func buildContextualUserMessage(
+        message: String, history: String, literalHint: String? = nil
+    ) -> String {
         let recentBlock = needsRecentEntries(message)
             ? ConversationState.shared.recentEntriesContextBlock()
             : nil
-        return composeUserMessage(message: message, history: history, recentBlock: recentBlock)
+        return composeUserMessage(
+            message: message, history: history,
+            recentBlock: recentBlock, literalHint: literalHint
+        )
     }
 
     /// Pure composer — deterministic, test-friendly. Order of precedence:
@@ -105,12 +111,13 @@ enum IntentClassifier {
     /// message when neither recent-entries nor history applies, preserving
     /// the pre-#227 prompt shape for unaffected turns.
     nonisolated static func composeUserMessage(
-        message: String, history: String, recentBlock: String?
+        message: String, history: String, recentBlock: String?, literalHint: String? = nil
     ) -> String {
-        if recentBlock == nil && history.isEmpty { return message }
+        if recentBlock == nil && history.isEmpty && literalHint == nil { return message }
         var parts: [String] = []
         if let recentBlock { parts.append(recentBlock) }
         if !history.isEmpty { parts.append("Chat:\n\(String(history.prefix(400)))") }
+        if let literalHint { parts.append("Hint: \(literalHint)") }
         parts.append("User: \(message)")
         return parts.joined(separator: "\n\n")
     }
@@ -134,8 +141,14 @@ enum IntentClassifier {
 
     /// Classify user message into intent + tool call via LLM.
     /// Returns nil only on timeout. Text responses (follow-ups, greetings) are returned as .text.
-    static func classifyFull(message: String, history: String) async -> ClassifyResult? {
-        let msg = buildContextualUserMessage(message: message, history: history)
+    /// `literalHint` (optional) is appended to the user message and is used by
+    /// the #240 auto-retry to nudge the extractor toward a more literal read.
+    static func classifyFull(
+        message: String, history: String, literalHint: String? = nil
+    ) async -> ClassifyResult? {
+        let msg = buildContextualUserMessage(
+            message: message, history: history, literalHint: literalHint
+        )
         let response = await withTimeout(seconds: 10) {
             await LocalAIService.shared.respondDirect(
                 systemPrompt: systemPrompt,

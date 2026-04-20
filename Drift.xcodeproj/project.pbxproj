@@ -27,6 +27,7 @@
 		1843A7BA95D85443BE51CC32 /* RecentEntriesWindowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E63B0B98A699C56CBC8944B1 /* RecentEntriesWindowTests.swift */; };
 		199FAB3D1CB2427EF6A5792A /* SupplementService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D4B47196E8598EB15359D7C /* SupplementService.swift */; };
 		1A6ADB53D0145027371ACD73 /* InputNormalizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE3ADA1EC70838D9C144B5AA /* InputNormalizer.swift */; };
+		1AAF038CFCDC0C26FE29E559 /* Features.swift in Sources */ = {isa = PBXBuildFile; fileRef = C83F8A82CCD53BEF551BC4A6 /* Features.swift */; };
 		1BF24E5EFE0ECE537D36EA2E /* FloatingAIAssistant.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFF155F20FB2EF069D634C95 /* FloatingAIAssistant.swift */; };
 		1CCD2D031DB1C7F7BB7E52EF /* ToolRegistration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F42EA4B9416215EFE670984 /* ToolRegistration.swift */; };
 		1D4B4658B68B40350E20F753 /* ComposedFoodEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6EEDE4BB88D55A2579A27D /* ComposedFoodEval.swift */; };
@@ -191,6 +192,7 @@
 		BEAFE882B09BA211628205D9 /* ServingUnit.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFCD031A1C605FBFFDF1B7D0 /* ServingUnit.swift */; };
 		BED961B980821487CA56AD51 /* HealthKitService+Cycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36BB15B5D3A14E0D9940B118 /* HealthKitService+Cycle.swift */; };
 		BFA019F024F4E73B203B8975 /* BodySpecPDFParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9F051926CE39DF3E0A47DA /* BodySpecPDFParser.swift */; };
+		C1711A4AA359C352065463BF /* AIToolAgentRetryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3C39C489AD2FB465A0192A5 /* AIToolAgentRetryTests.swift */; };
 		C29B1BD9EF5C4235CA2FDBDC /* SpeechRecognitionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39F11EC4CFD7DA3C49DA882 /* SpeechRecognitionTests.swift */; };
 		C2CAF32E19EB6A66F3C6554E /* AIModelManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 377CCA5F9E895164E95EC65E /* AIModelManager.swift */; };
 		C4412538AE3E1E269685CB2A /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99C89E28D8FBE125273FB677 /* Log.swift */; };
@@ -480,6 +482,7 @@
 		B0DAF3E5EFC6C85282C084A8 /* GlucoseTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlucoseTabView.swift; sourceTree = "<group>"; };
 		B0EFA5472653570BDFE77155 /* AIChainOfThought.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChainOfThought.swift; sourceTree = "<group>"; };
 		B39F11EC4CFD7DA3C49DA882 /* SpeechRecognitionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognitionTests.swift; sourceTree = "<group>"; };
+		B3C39C489AD2FB465A0192A5 /* AIToolAgentRetryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIToolAgentRetryTests.swift; sourceTree = "<group>"; };
 		B3D6A44D7C25BC4956132FE8 /* FoodLoggingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodLoggingTests.swift; sourceTree = "<group>"; };
 		B3DFA8260F20D786980837BE /* DriftWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DriftWidget.entitlements; sourceTree = "<group>"; };
 		B42BDAF88B654D1EE5C4C403 /* latency-queries.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "latency-queries.json"; sourceTree = "<group>"; };
@@ -501,6 +504,7 @@
 		C182889F4730B18DE0244F02 /* MealLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealLog.swift; sourceTree = "<group>"; };
 		C1D0EF86656667CEF40EB779 /* MultiTurnContextEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiTurnContextEval.swift; sourceTree = "<group>"; };
 		C6C5FCF45E66161B45683C82 /* LabReportOCR+Biomarkers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LabReportOCR+Biomarkers.swift"; sourceTree = "<group>"; };
+		C83F8A82CCD53BEF551BC4A6 /* Features.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features.swift; sourceTree = "<group>"; };
 		C92BBFFC16E3948FD5DABA59 /* USDAFallbackEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = USDAFallbackEval.swift; sourceTree = "<group>"; };
 		CB475E92982AD4F8897D5D8E /* RecoveryEstimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryEstimator.swift; sourceTree = "<group>"; };
 		CB66CE8222D505237BF36996 /* AmbiguityEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbiguityEval.swift; sourceTree = "<group>"; };
@@ -675,6 +679,7 @@
 				8B0FF829D1EAEEF0257163CC /* AIResponseCleanerTests.swift */,
 				6B09F9950FCEB38280CA6636 /* AIRuleEngineCoverageTests.swift */,
 				19E7517E5B4779CBBE1C7284 /* AITests.swift */,
+				B3C39C489AD2FB465A0192A5 /* AIToolAgentRetryTests.swift */,
 				3406F79A46B85F01DC0010FB /* AIToolAgentStageTests.swift */,
 				0F40084353223A2C822198D7 /* ChatLatencyBenchmark.swift */,
 				E9FA0E48A2845CFA85AB7395 /* ChatSuggestionPillsTests.swift */,
@@ -959,6 +964,7 @@
 				706EF63B663E60DF825752E3 /* DEXAService.swift */,
 				B0653C13FD227ACE4F774C46 /* ExerciseDatabase.swift */,
 				EE0664FF9B8E28C6F853B820 /* ExerciseService.swift */,
+				C83F8A82CCD53BEF551BC4A6 /* Features.swift */,
 				CD7334F506F319A08A1EBE7E /* FoodEntryRefResolver.swift */,
 				D4B70DE6FB571839514EFB23 /* FoodService.swift */,
 				E003BCE9AE8B62B2BC163C7B /* GlucoseService.swift */,
@@ -1299,6 +1305,7 @@
 				29FCA567A01752328CAEFFED /* ExerciseDatabase.swift in Sources */,
 				6327143E6A1E3CD8CFEEB252 /* ExercisePickerView.swift in Sources */,
 				46ED8561ED2CE03CCFE4BC0F /* ExerciseService.swift in Sources */,
+				1AAF038CFCDC0C26FE29E559 /* Features.swift in Sources */,
 				1BF24E5EFE0ECE537D36EA2E /* FloatingAIAssistant.swift in Sources */,
 				DB3B28E9FBF4531A10E67AA9 /* Food.swift in Sources */,
 				E083B1E037CD15A623ABFF2D /* FoodEntry.swift in Sources */,
@@ -1414,6 +1421,7 @@
 				9C01C0F24CCB9341148D4C71 /* AIResponseCleanerTests.swift in Sources */,
 				453834783C24A47BFC2EE5E4 /* AIRuleEngineCoverageTests.swift in Sources */,
 				2DDEA9907FA6338488A8E1CD /* AITests.swift in Sources */,
+				C1711A4AA359C352065463BF /* AIToolAgentRetryTests.swift in Sources */,
 				ABD8DD6A5F55642129836B7B /* AIToolAgentStageTests.swift in Sources */,
 				8A8CF11C6A7AF26DCABECF6A /* CSVParserTests.swift in Sources */,
 				9F37F2ED3EE2286472FF19E4 /* ChatLatencyBenchmark.swift in Sources */,

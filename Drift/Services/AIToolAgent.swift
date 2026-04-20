@@ -28,6 +28,54 @@ enum AIToolAgent {
 
     private static let llmTimeout: UInt64 = 20_000_000_000 // 20 seconds in nanoseconds
 
+    // MARK: - #240 Auto-retry on empty/incomplete extraction
+
+    /// Tools that justify a second classify pass when the first returns no
+    /// tool call or missing required params. Chosen from the per-tool gold
+    /// set tail: log_food/log_weight/mark_supplement are most common; the
+    /// other two sit at ~90% and benefit most from the retry lift.
+    nonisolated static let retryTargetTools: Set<String> = [
+        "log_food", "edit_meal", "log_weight", "mark_supplement", "food_info"
+    ]
+
+    /// Literal-mode hint appended to the user message on the retry call.
+    /// Intentionally short — long nudges crowd the instruction window on Gemma.
+    nonisolated static let literalRetryHint = "Be literal. Extract whatever food, weight, or supplement the user named. If unsure which tool, pick the most specific one."
+
+    /// Decide whether to retry intent classification with a literal hint.
+    /// True when the flag is on AND the first result is nil OR a target
+    /// tool with missing required params. Pure — safe to unit-test.
+    nonisolated static func shouldRetryClassify(_ result: IntentClassifier.ClassifyResult?) -> Bool {
+        guard Features.autoRetryOnEmpty else { return false }
+        guard let result else { return true } // nil = LLM timed out or returned empty
+        switch result {
+        case .text:
+            // LLM chose to respond with plain text — don't retry, it had reason
+            return false
+        case .toolCall(let intent):
+            let tool = intent.tool.replacingOccurrences(of: "()", with: "")
+            guard retryTargetTools.contains(tool) else { return false }
+            return !hasRequiredParams(tool: tool, params: intent.params)
+        }
+    }
+
+    /// Tool-specific required-param check — mirrors the minimum the tool
+    /// needs to do its job without prompting the user.
+    nonisolated static func hasRequiredParams(tool: String, params: [String: String]) -> Bool {
+        func filled(_ key: String) -> Bool {
+            guard let v = params[key]?.trimmingCharacters(in: .whitespaces) else { return false }
+            return !v.isEmpty
+        }
+        switch tool {
+        case "log_food":        return filled("name")
+        case "edit_meal":       return filled("action")
+        case "log_weight":      return filled("value")
+        case "mark_supplement": return filled("name")
+        case "food_info":       return filled("query") || filled("name")
+        default:                return true
+        }
+    }
+
     /// Thread-safe state for the streaming token callback.
     private final class StreamState: @unchecked Sendable {
         var buffer = ""
@@ -91,9 +139,22 @@ enum AIToolAgent {
         if isLargeModel {
             onStep(stepMessage(for: message))
 
-            // Try LLM intent classifier first
+            // Try LLM intent classifier first. If the first extraction
+            // returns no tool call or incomplete params for a top-5 tool,
+            // retry ONCE with a "be literal" hint (#240).
             let classifyStart = CFAbsoluteTimeGetCurrent()
-            if let result = await IntentClassifier.classifyFull(message: normalized, history: history) {
+            let firstResult = await IntentClassifier.classifyFull(message: normalized, history: history)
+            let finalResult: IntentClassifier.ClassifyResult?
+            if shouldRetryClassify(firstResult) {
+                Log.app.info("IntentClassifier: empty/incomplete first result — retrying with literal hint (#240)")
+                let retried = await IntentClassifier.classifyFull(
+                    message: normalized, history: history, literalHint: literalRetryHint
+                )
+                finalResult = retried ?? firstResult
+            } else {
+                finalResult = firstResult
+            }
+            if let result = finalResult {
                 logTiming("Phase 2 (classify)", start: classifyStart)
                 switch result {
                 case .toolCall(let intent):
