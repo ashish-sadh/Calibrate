@@ -86,8 +86,11 @@ private func cleanupMeal(_ id: Int64?) {
         mealPeriod: "lunch", targetFood: "xyzzy_does_not_exist_9999",
         action: "remove", newValue: nil
     )
-    // Either "No food logged today." or "No lunch logged today." or "Couldn't find"
-    #expect(result.contains("No food") || result.contains("No lunch") || result.contains("Couldn't find"))
+    // Covers all "not found" paths regardless of concurrent test state:
+    // empty DB → "No food logged today."
+    // no lunch entries → "No lunch logged today." / "No entries found in lunch."
+    // lunch exists but no match → "Couldn't find 'xyzzy...' in lunch."
+    #expect(result.contains("No food") || result.contains("No lunch") || result.contains("Couldn't find") || result.contains("No entries found"))
 }
 
 @Test @MainActor func editMealUpdateMissingNewValue() {
@@ -186,5 +189,5 @@ private func seedFoodDB(name: String, calories: Double = 120, proteinG: Double =
         mealPeriod: "lunch", targetFood: "anything",
         action: "remove", newValue: nil
     )
-    #expect(result.contains("No food") || result.contains("No lunch") || result.contains("Couldn't find"))
+    #expect(result.contains("No food") || result.contains("No lunch") || result.contains("Couldn't find") || result.contains("No entries found"))
 }

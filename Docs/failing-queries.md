@@ -11,6 +11,21 @@ Real queries that don't work well. Fix systematically, then move to Fixed.
 
 ## Failing
 
+### Micronutrient Queries
+- **"how much fiber did I eat today"** — CATEGORY: micronutrient queries (fiber, sodium, sugar, vitamins). `food_info` handler exposes cal/protein/carbs/fat per entry but fiber_g is only used in the nutrition estimation flow (Gemma 4 food lookup), not stored per logged entry. Query routes to `food_info(query:"fiber today")` but the handler returns a daily macro summary that omits fiber — user gets a non-answer. Fix tier: 2 (store fiber_g on FoodEntry, surface in `food_info` daily summary). Variants: "did I get enough fiber this week", "how much sodium today", "what's my sugar intake".
+
+### Informal Corrections / Replacements
+- **"No, I had the other chicken instead"** — CATEGORY: correction-as-replacement. The word "instead" (and "no, i had") is absent from `IntentClassifier.deleteEditTriggers`, so `needsRecentEntries()` returns false and the recent-entries context block is not injected. Without that block, the LLM sees "I had the other chicken" naked, classifies it as `log_food("the other chicken")`, and creates a duplicate entry rather than replacing the prior one. Fix tier: 0 (add "instead", "no, i had", "actually i had" to `deleteEditTriggers`). Variants: "Actually I had salmon, not chicken", "Wait, it was 2 eggs not 3", "No, that was lunch not dinner".
+
+### Non-Weight Goal Setting
+- **"set my calorie goal to 2000"** — CATEGORY: macro/calorie goal setting. `set_goal` tool is weight-only (`target` = kg or lbs). The LLM calls `set_goal(target:"2000", unit:"kcal")` but the handler converts to kg and rejects because 2000 kg fails the `targetKg < 20 || targetKg > 200` guard → error message. User receives a confusing "outside valid range" error. Same failure for "set my protein goal to 150g", "set my step goal to 10000". Fix tier: 2 (extend set_goal or add calorie_goal/macro_goal tool; teach the IntentClassifier to distinguish weight vs. macro goals). Variants: "I want to eat 1800 calories a day", "set my protein target to 120g".
+
+### Historical Date Queries
+- **"how many calories did I eat last Tuesday"** — CATEGORY: specific past-date lookups. `food_info` handler only has two date windows: today ("daily summary") and this week ("weekly summary"). A query like "last Tuesday" or "two days ago" routes to `food_info(query:"last Tuesday")` but the handler has no date-parsing logic — it returns today's macros or an empty/wrong result. Fix tier: 2 (add date parsing to `food_info` handler — convert "last Tuesday", "yesterday", "two days ago" to an absolute date before querying FoodEntry records). Variants: "what did I log two days ago", "calories on Saturday", "last week Monday".
+
+### Macro Goal Progress Queries
+- **"am I hitting my protein goal"** — CATEGORY: macro goal tracking / goal-vs-actual comparison. There is no protein goal in the data model (`WeightGoal` stores only target weight). The system prompt routes protein queries to `food_info`, which shows today's protein intake, but there is no goal to compare against — so the response is just "you had X g protein" with no benchmark. User question goes half-answered. Fix tier: 3 (add macro targets to user prefs; expose them in `food_info` so it can compare intake vs. goal). Variants: "did I hit my fat goal today", "am I on track for carbs", "how far off am I from my protein target".
+
 ### Normalizer / Natural Language
 - [x] **"I had 2 to 3 bananas"** — FIXED: extractAmount now handles ranges "X to Y" by taking higher number.
 - [x] **"I ate three biryani"** — FIXED: extractAmount already handles "three"→3. Verified with eval test.
