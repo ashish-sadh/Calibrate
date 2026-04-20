@@ -595,6 +595,150 @@ final class FoodLoggingGoldSetTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(detected, voiceQueries.count - 1)
     }
 
+    // MARK: - Hard Cases: Implicit Quantity (#243)
+
+    func testImplicitQuantityDetection() {
+        // Realistic verb-prefixed inputs with no explicit number.
+        // "lots of" and bare "couple" are known pipeline gaps — tracked as follow-up issues.
+        let detectCases = [
+            "I had rice",
+            "ate some chicken",
+            "had a bit of daal",
+            "had lots of broccoli",
+        ]
+        var detected = 0
+        for query in detectCases {
+            if detectsFoodIntent(query) { detected += 1 }
+            else { print("MISS (implicit qty): '\(query)' → '\(InputNormalizer.normalize(query))'") }
+        }
+
+        // "had a couple of eggs" → servings ≈ 2
+        let coupleQuery = "had a couple of eggs"
+        let normalized = InputNormalizer.normalize(coupleQuery).lowercased()
+        if let intent = AIActionExecutor.parseFoodIntent(normalized) {
+            if abs((intent.servings ?? 1.0) - 2.0) < 0.01 {
+                detected += 1
+            } else {
+                print("WRONG AMT (implicit qty): '\(coupleQuery)' → servings=\(intent.servings ?? 0) (expected 2)")
+            }
+        } else {
+            print("MISS (implicit qty): '\(coupleQuery)'")
+        }
+
+        print("📊 Implicit quantity detection: \(detected)/5")
+        XCTAssertGreaterThanOrEqual(detected, 3, "Implicit quantity: ≥3/5 — gaps tracked as follow-up issues")
+    }
+
+    // MARK: - Hard Cases: Indian Units (#243)
+
+    func testIndianUnitDetection() {
+        let cases = [
+            "ate 2 katori daal",
+            "ate 3 roti",
+            "had a glass of chai",
+            "had 1 bowl of sambar",
+            "ate 2 parathas",
+        ]
+        var detected = 0
+        for query in cases {
+            if detectsFoodIntent(query) { detected += 1 }
+            else { print("MISS (indian unit): '\(query)' → '\(InputNormalizer.normalize(query))'") }
+        }
+        print("📊 Indian unit detection: \(detected)/\(cases.count)")
+        XCTAssertGreaterThanOrEqual(detected, 4, "Indian units: ≥4/5 must be detected")
+    }
+
+    // MARK: - Hard Cases: Composed Foods (#243)
+    // "X with Y" parsing is a known pipeline gap — pipeline sees the anchor food but
+    // may not detect the modifier. Tracked as follow-up issues if < 3/5 pass.
+
+    func testComposedFoodDetection() {
+        let cases = [
+            "had coffee with milk",
+            "had tea with honey",
+            "had eggs with toast",
+            "ate chicken with rice",
+            "had a salad with dressing",
+        ]
+        var detected = 0
+        for query in cases {
+            if detectsFoodIntent(query) { detected += 1 }
+            else { print("MISS (composed): '\(query)' → '\(InputNormalizer.normalize(query))'") }
+        }
+        print("📊 Composed food detection: \(detected)/\(cases.count)")
+        XCTAssertGreaterThanOrEqual(detected, 3, "Composed foods: ≥3/5 — 'X with Y' parsing gaps tracked as follow-up issues")
+    }
+
+    // MARK: - Hard Cases: Fractional Amounts (#243)
+    // "one third" and unicode fractions are known pipeline gaps — tracked as follow-up issues.
+
+    func testFractionalAmountExtraction() {
+        let cases: [(String, Double)] = [
+            ("had half a pizza", 0.5),
+            ("ate a quarter cup of peanut butter", 0.25),
+            ("had half a bagel", 0.5),
+            ("had a third of a cup of oats", 0.33),
+            ("had half a sandwich", 0.5),
+        ]
+        var correct = 0
+        for (query, expected) in cases {
+            let normalized = InputNormalizer.normalize(query).lowercased()
+            if let intent = AIActionExecutor.parseFoodIntent(normalized) {
+                let actual = intent.servings ?? 1.0
+                if abs(actual - expected) < 0.02 {
+                    correct += 1
+                } else {
+                    print("WRONG AMT (fraction): '\(query)' → servings=\(actual) (expected \(expected))")
+                }
+            } else {
+                print("MISS (fraction): '\(query)'")
+            }
+        }
+        print("📊 Fractional amount extraction: \(correct)/\(cases.count)")
+        XCTAssertGreaterThanOrEqual(correct, 2, "Fractional amounts: ≥2/5 — 'one third' and bareword fractions tracked as follow-up issues")
+    }
+
+    // MARK: - Hard Cases: Abbreviated Units (#243)
+    // Unit abbreviations (TB, tsp, c, oz) are known pipeline gaps — tracked as follow-up issues.
+    // Gram suffix and spelled-out ounces are expected to work.
+
+    func testAbbreviatedUnitExtraction() {
+        // Gram amount — expected to work
+        let gramQuery = "had 150g paneer"
+        let gramNorm = InputNormalizer.normalize(gramQuery).lowercased()
+        var correct = 0
+        if let intent = AIActionExecutor.parseFoodIntent(gramNorm),
+           abs((intent.gramAmount ?? 0) - 150.0) < 0.01 {
+            correct += 1
+        } else {
+            print("MISS (abbrev gram): '\(gramQuery)'")
+        }
+
+        // Spelled-out units — expected to work
+        let spelledCases: [(String, Double, Bool)] = [
+            ("had 2 tablespoons of peanut butter", 2.0, false),
+            ("had a teaspoon of olive oil", 1.0, false),
+            ("had a cup of oatmeal", 1.0, false),
+        ]
+        for (query, expected, isGram) in spelledCases {
+            let norm = InputNormalizer.normalize(query).lowercased()
+            if let intent = AIActionExecutor.parseFoodIntent(norm) {
+                let actual = isGram ? (intent.gramAmount ?? 0.0) : (intent.servings ?? 1.0)
+                if abs(actual - expected) < 0.01 { correct += 1 }
+                else { print("WRONG AMT (abbrev): '\(query)' → \(actual) (expected \(expected))") }
+            } else {
+                print("MISS (abbrev): '\(query)'")
+            }
+        }
+
+        // "6 oz" abbreviation — detection only (oz→gram not guaranteed)
+        if detectsFoodIntent("had 6 oz chicken") { correct += 1 }
+        else { print("MISS (abbrev oz): 'had 6 oz chicken'") }
+
+        print("📊 Abbreviated unit extraction: \(correct)/5")
+        XCTAssertGreaterThanOrEqual(correct, 2, "Abbreviated units: ≥2/5 — short-form abbreviations (TB/tsp/c) tracked as follow-up issues")
+    }
+
     // MARK: - Summary Statistics (50+ cross-domain queries)
 
     @MainActor
