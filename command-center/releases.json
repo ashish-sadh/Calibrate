@@ -1570,6 +1570,18 @@
     ]
   },
   {
+    "build": 150,
+    "date": "2026-04-20T02:30:00-07:00",
+    "description": "AI benchmark + test coverage — confirmation-card latency, clarify round-trip, domain-blend gold set",
+    "features": [
+      "ChatLatencyBenchmark: 2 new opt-in scenarios — confirmation-card render (gates completion_ms) and clarify round-trip (gates total of 2 LLM calls)",
+      "IntentClassifier gold set +15 domain-blend cases: cross-domain, ambiguous verbs, implicit domain, temporal ambiguity, abbreviation blends — 3 false StaticOverrides captures surfaced"
+    ],
+    "fixes": [
+      "AI failing-queries discovery: 5 new category-level gaps pinned as regression tests (food amount, category-level, implicit domain)"
+    ]
+  },
+  {
     "build": 149,
     "date": "2026-04-19T22:40:00-07:00",
     "description": "AI quality — intent confidence v2, cross-domain pronoun resolution, auto-retry extraction",

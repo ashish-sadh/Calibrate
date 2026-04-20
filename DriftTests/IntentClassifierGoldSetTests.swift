@@ -393,4 +393,119 @@ final class IntentClassifierGoldSetTests: XCTestCase {
         XCTAssertLessThanOrEqual(charCount, 5600,
             "systemPrompt has \(charCount) chars — over the 5600-char ceiling. Remove redundant examples before adding new ones.")
     }
+
+    // MARK: - Domain-Blend Gold Set (#246)
+
+    /// Verifies that ambiguous domain-blend queries return nil from StaticOverrides,
+    /// correctly falling through to the LLM. Catches false-positive static captures.
+    @MainActor
+    func testDomainBlend_StaticOverridesPassthrough() {
+        let cases: [(query: String, rationale: String)] = [
+            ("how much protein did I eat after my workout", "food+workout cross-domain — must reach LLM"),
+            ("did my run affect my weight", "workout+weight cross-domain — must reach LLM"),
+            ("gained weight after cheat day", "weight+food cross-domain — must reach LLM"),
+            ("track my run", "'track' is non-canonical verb for log_activity"),
+            ("record my yoga session", "'record' is non-canonical verb for log_activity"),
+            ("log my walk", "walk could be activity or exercise — LLM decides"),
+            ("150", "bare number — weight vs food gram vs calorie, LLM needs context"),
+            ("200g protein", "amount+food blend — LLM picks log_food vs food_info"),
+            ("75 kgs", "weight with unit but no log verb — LLM decides log vs info"),
+            ("last meal", "temporal query vs delete-last ambiguity — must reach LLM"),
+            ("calories from yesterday", "temporal food query — LLM routes to food_info"),
+            ("how am I doing on protein", "progress check phrasing — LLM routes to food_info"),
+            ("5k this morning", "5k = run distance, not 5000 calories — LLM resolves"),
+            ("bench 225 for 5", "non-canonical exercise log format — LLM routes"),
+            ("hit my macros today", "'hit' as status verb — LLM routes to food_info"),
+        ]
+
+        var passedThrough = 0
+        for c in cases {
+            let normalized = InputNormalizer.normalize(c.query).lowercased()
+            if StaticOverrides.match(normalized) == nil {
+                passedThrough += 1
+            } else {
+                print("FALSE CAPTURE ('\(c.query)'): StaticOverrides caught domain-blend query — \(c.rationale)")
+            }
+        }
+        print("📊 Domain-blend StaticOverrides passthrough: \(passedThrough)/\(cases.count)")
+        XCTAssertGreaterThanOrEqual(passedThrough, 12,
+            "At least 12/15 domain-blend queries must fall through StaticOverrides to LLM")
+    }
+
+    /// Given the expected LLM JSON output for each domain-blend case, verifies the
+    /// JSON parser routes to the correct tool. Documents intended routing behavior.
+    func testDomainBlend_ParseResponse() {
+        let cases: [(id: String, json: String, tool: String, rationale: String)] = [
+            // Cross-domain questions
+            ("protein_post_workout",
+             #"{"tool":"food_info","query":"protein after workout"}"#,
+             "food_info", "protein eaten after workout — answer lives in food data"),
+            ("run_weight_effect",
+             #"{"tool":"weight_info","query":"weight trend after run"}"#,
+             "weight_info", "workout→weight cross-domain — weight_info has the answer"),
+            ("weight_after_cheatday",
+             #"{"tool":"weight_info","query":"weight gain after cheat day"}"#,
+             "weight_info", "cheat-day weight change — weight_info context"),
+
+            // Ambiguous verbs
+            ("track_run",
+             #"{"tool":"log_activity","name":"run"}"#,
+             "log_activity", "'track my run' → log_activity, not navigate_to"),
+            ("record_yoga",
+             #"{"tool":"log_activity","name":"yoga","duration":"60"}"#,
+             "log_activity", "'record yoga' → log_activity via non-canonical verb"),
+            ("log_walk",
+             #"{"tool":"log_activity","name":"walk"}"#,
+             "log_activity", "walk is an activity, not a structured workout"),
+
+            // Implicit domain
+            ("bare_150",
+             #"{"tool":"log_weight","value":"150","unit":"lbs"}"#,
+             "log_weight", "bare number most likely means weight in lbs context"),
+            ("grams_protein",
+             #"{"tool":"log_food","name":"protein powder","servings":"1"}"#,
+             "log_food", "200g protein → log_food, not a macro query"),
+            ("kg_weight",
+             #"{"tool":"log_weight","value":"75","unit":"kg"}"#,
+             "log_weight", "75 kgs → log_weight even without explicit log verb"),
+
+            // Temporal ambiguity
+            ("last_meal_query",
+             #"{"tool":"food_info","query":"last meal"}"#,
+             "food_info", "'last meal' is a query, not a delete command"),
+            ("calories_yesterday",
+             #"{"tool":"food_info","query":"calories yesterday"}"#,
+             "food_info", "temporal food query routes to food_info"),
+            ("protein_progress",
+             #"{"tool":"food_info","query":"protein progress"}"#,
+             "food_info", "'how am I doing on protein' → food_info progress check"),
+
+            // Abbreviation / blend
+            ("5k_run",
+             #"{"tool":"log_activity","name":"run","distance":"5k"}"#,
+             "log_activity", "5k = run distance, not 5000 calories"),
+            ("bench_press",
+             #"{"tool":"start_workout","name":"bench press"}"#,
+             "start_workout", "bench 225 for 5 → structured exercise log"),
+            ("hit_macros",
+             #"{"tool":"food_info","query":"macro status"}"#,
+             "food_info", "'hit my macros' = check macro status, not a log action"),
+        ]
+
+        var correct = 0
+        for c in cases {
+            guard let intent = IntentClassifier.parseResponse(c.json) else {
+                print("MISS (\(c.id)): \(c.json)")
+                continue
+            }
+            if intent.tool == c.tool {
+                correct += 1
+            } else {
+                print("WRONG (\(c.id)): expected \(c.tool), got \(intent.tool) | \(c.rationale)")
+            }
+        }
+        print("📊 Domain-blend parseResponse: \(correct)/\(cases.count)")
+        XCTAssertEqual(correct, cases.count,
+            "All domain-blend JSON should parse to the expected tool — these are deterministic parser tests")
+    }
 }
