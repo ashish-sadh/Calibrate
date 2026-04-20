@@ -78,6 +78,21 @@ cmd_finish() {
     # Merge current branch and return to main
     CURRENT_BRANCH=$(git branch --show-current)
 
+    # Self-heal: Command Center filters reviews/execs by label=report — a missing
+    # label hides the PR from the UI. Enforce it here so a slip at `gh pr create`
+    # time can't surface as an invisible report.
+    if echo "$CURRENT_BRANCH" | grep -q "^review/cycle-\|^report/exec-\|^report/.*exec"; then
+        PR_INFO=$(gh pr view --json number,labels 2>/dev/null || echo "")
+        if [ -n "$PR_INFO" ]; then
+            PR_NUM=$(echo "$PR_INFO" | jq -r '.number // empty')
+            HAS_LABEL=$(echo "$PR_INFO" | jq -r '[.labels[].name] | index("report") != null')
+            if [ -n "$PR_NUM" ] && [ "$HAS_LABEL" = "false" ]; then
+                gh pr edit "$PR_NUM" --add-label report >/dev/null 2>&1 \
+                    && echo "Added missing 'report' label to PR #$PR_NUM"
+            fi
+        fi
+    fi
+
     gh pr merge --squash --delete-branch 2>/dev/null || true
     git checkout main && git pull
 
