@@ -1594,5 +1594,19 @@
       "Weekly summary chip no longer fuzzy-matches to a random food item",
       "Gemma 4 download hardened — retry on failure, size validation, pinned revision (#238)"
     ]
+  },
+  {
+    "build": 151,
+    "date": "2026-04-20T06:00:00-07:00",
+    "description": "Food DB +30, hard-case eval +25, multi-turn regression +15, latency bench hardening",
+    "features": [
+      "Food DB +30 — boba/bubble tea, poke bowls, açaí bowls, specialty coffee, sports nutrition (now 2,511 foods)",
+      "Latency benchmark hardening — ChatLatencyBenchmark adds confirmation-card and clarify-round-trip scenarios",
+      "Daily exec briefing workflow — 2026-04-20 report"
+    ],
+    "fixes": [
+      "FoodLoggingGoldSetTests +25 hard cases — edge units, implicit qty, composed foods",
+      "MultiTurnRegressionTests +15 — ordinal refs, mid-recipe topic switch, partial undo"
+    ]
   }
 ]
