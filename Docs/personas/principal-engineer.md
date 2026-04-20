@@ -218,6 +218,14 @@
 - Food DB growth is still zero-risk high-value work for junior sessions (#230, #231). Restaurant chains are a new axis — USDA doesn't cover Starbucks/Chipotle, and those are the meals users log most often.
 - Flake hygiene matters now that FoodLoggingGoldSetTests is a session-start gate (#235). A flaky gate becomes ignored; a stable gate becomes trusted. Audit before adding more fixtures.
 
+### What I Learned — Planning Cycle 2605 (2026-04-19)
+- Cycle 2000 sprint (trust & precision) landed cleanly: clarification dialogue #226, multi-turn entry refs #227, per-tool 50-query gold set #228, prompt compression round 2 #229. Pipeline is in its cleanest state since the state-machine refactor — per-stage reliability is now measurable at 4 levels (intent, per-tool, pipeline eval, latency benchmark).
+- New gap: DomainExtractor (Stage 3) has no isolated gold set. Every other stage does. It's the invisible middleware between routing and tool call — a 5% extraction drift shows up as "wrong quantities" to the user with no clear signal. Ticket #239 closes the gap with a 50-query eval.
+- Tool-call retry (#240) is the next reliability play. Per-tool gold sets shipped at ≥90% post-tune. The tail 10% is where retry pays off — pipeline currently gives up and falls through to slow fallback. A single variant-prompt retry should halve the failure rate.
+- False-positive clarifications are the new risk from shipping #226. Friction for no reason on the success path is worse than a silent guess. #242 consults extractor completeness before triggering clarify.
+- P0 bug #238 (Gemma 4 download failure) filed by user mid-planning — real user is hitting a first-run blocker. Senior must investigate as first task post-planning. This is why the sprint-task + P0 auto-labeling matters — no routing delay.
+- Crash hardening landed twice in 2 cycles (ForEach(indices) + force-unwraps). Pattern to watch: SwiftUI ForEach over mutable collections without stable IDs. Worth a boy-scout rule: grep for `ForEach.*indices` quarterly.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)

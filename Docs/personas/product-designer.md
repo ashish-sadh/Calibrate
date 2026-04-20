@@ -207,3 +207,11 @@
 - Prefer opinionated design over configurability — make good defaults, don't add settings
 - Prefer chat-first interactions — every feature should be reachable from conversation
 - Prefer clean, scannable dashboards over dense data displays
+
+### What I Learned — Planning Cycle 2605 (2026-04-19)
+- Clarification dialogue (#226) is live; early risk: we now intrude on the success path. If a user says "log 3 eggs" and we still show a clarify chip, the feature flipped from helpful to annoying. Calibration v2 (#242) must privilege extractor completeness over verb-shape keyword signals.
+- Combos feature shipped fast but needed four fix commits to land cleanly (autopilot seed data, label rename, migration cleanup, sheet confirm). Takeaway: when we introduce a new first-class domain object (combos ≈ saved meals v2), invest 30 minutes in naming + 30 minutes in migration before shipping. Half the fix cycle was those two decisions not being pinned upfront.
+- User-filed P0 bug #238 (Gemma 4 download failure) is a first-run experience blocker. Nothing else we ship matters if new users can't load the model. Senior must treat this as first task.
+- Bubble tea / poke / acai bowls are a visible food-DB gap vs competitors (#244). This is the "modern beverage culture" cohort we're losing silently — users who don't find their boba don't file bugs, they just stop logging.
+- Cross-domain pronoun resolution (#241) closes a natural-conversation gap: "I ate 150g chicken" → "how much protein is in that" shouldn't force the user to repeat themselves. Within-domain refs shipped last sprint; cross-domain is the next tier of "chat-first" credibility.
+- Zero user-filed feature requests this cycle (one P0 bug). Either the dogfood pace dropped or the current product is coherent enough that new asks are rare. Treat silence with caution — explicitly ask for feedback in next TestFlight notes.
