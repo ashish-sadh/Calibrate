@@ -155,6 +155,10 @@ final class FoodLogViewModel {
                 try? AppDatabase.shared.clearAutopilotSeedData()
                 UserDefaults.standard.set(true, forKey: "didClearAutopilotSeedV1")
             }
+            if !UserDefaults.standard.bool(forKey: "didClearAutoCombosV1") {
+                try? AppDatabase.shared.clearAutoDetectedCombos()
+                UserDefaults.standard.set(true, forKey: "didClearAutoCombosV1")
+            }
             try? AppDatabase.shared.detectAndSaveCombos()
             await MainActor.run { self?.combos = (try? AppDatabase.shared.fetchCombos()) ?? [] }
         }

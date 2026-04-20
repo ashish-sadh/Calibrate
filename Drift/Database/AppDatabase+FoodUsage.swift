@@ -343,6 +343,17 @@ extension AppDatabase {
         }
     }
 
+    /// Wipe all auto-detected combos (category='Combo', source='recipe').
+    /// Manually-created combos via QuickAddView have no category set — they survive.
+    func clearAutoDetectedCombos() throws {
+        try writer.write { db in
+            try db.execute(sql: """
+                DELETE FROM food
+                WHERE source = 'recipe' AND is_recipe = 1 AND LOWER(COALESCE(category,'')) = 'combo'
+                """)
+        }
+    }
+
     func seedTestData() throws {
         struct SeedItem {
             let name: String, cal: Double, p: Double, c: Double, f: Double, ss: Double, meal: String
