@@ -1,14 +1,17 @@
 import XCTest
 import Foundation
 
-/// Hard multi-turn regression suite — 20 scenarios across 5 failure categories:
+/// Hard multi-turn regression suite — 35 scenarios across 8 failure categories:
 ///   H1–H5  : Mid-log topic switch (user pivots topic mid-stream then resumes)
 ///   H6–H10 : Pronoun after gap    (reference to earlier turn after 2+ intervening turns)
 ///   H11–H14: Clarifier + continue (assistant clarifies → user answers → follow-up)
 ///   H15–H17: Cross-domain         (two different health domains in 3 turns)
 ///   H18–H20: Confirm-then-edit    (log confirmed → user corrects quantity/unit/removes)
+///   H21–H25: Ordinal entry refs   ("delete the second one", "edit the third entry")
+///   H26–H30: Topic switch mid-recipe (weight pivot mid-meal-build → resume)
+///   H31–H35: Partial undo         ("undo just the rice", "keep only the chicken")
 ///
-/// Pass threshold: ≥80% of all turns correct across all 20 scenarios.
+/// Pass threshold: ≥80% of all turns correct across all 35 scenarios.
 /// Each scenario also enforces a local floor (≥67% of its turns).
 ///
 /// Run:
@@ -47,7 +50,7 @@ final class MultiTurnRegressionTests: XCTestCase {
         var localFloor: Int { max(1, Int(ceil(Double(turns.count) * 0.67))) }
     }
 
-    // MARK: - Corpus (single source of truth for all 20 scenarios)
+    // MARK: - Corpus (single source of truth for all 35 scenarios)
 
     static let allScenarios: [Scenario] = [
         // H1–H5: Mid-log topic switch
@@ -164,6 +167,88 @@ final class MultiTurnRegressionTests: XCTestCase {
             HardTurn(query: "hmm I didn't actually eat that, delete it", expectedTool: "delete_food"),
             HardTurn(query: "log paneer tikka instead",                  expectedTool: "log_food"),
         ]),
+
+        // H21–H25: Ordinal entry refs
+        Scenario(name: "H21:log-eggs+oatmeal→delete-second", turns: [
+            HardTurn(query: "log eggs for breakfast",                    expectedTool: "log_food"),
+            HardTurn(query: "log oatmeal for breakfast too",             expectedTool: "log_food"),
+            HardTurn(query: "delete the second one",                     expectedTool: "delete_food"),
+        ]),
+        Scenario(name: "H22:log-rice+dal→change-first-to-150g", turns: [
+            HardTurn(query: "log rice",                                  expectedTool: "log_food"),
+            HardTurn(query: "log dal",                                   expectedTool: "log_food"),
+            HardTurn(query: "change the first entry to 150g",            expectedTool: "edit_meal"),
+        ]),
+        Scenario(name: "H23:log-chicken+naan→remove-item-2", turns: [
+            HardTurn(query: "log chicken tikka for dinner",              expectedTool: "log_food"),
+            HardTurn(query: "log naan for dinner",                       expectedTool: "log_food"),
+            HardTurn(query: "remove item 2",                             expectedTool: "delete_food"),
+        ]),
+        Scenario(name: "H24:log-3items→calories-last-two", turns: [
+            HardTurn(query: "log eggs",                                  expectedTool: "log_food"),
+            HardTurn(query: "log toast",                                 expectedTool: "log_food"),
+            HardTurn(query: "log coffee",                                expectedTool: "log_food"),
+            HardTurn(query: "how many calories in my last two entries?", expectedTool: "food_info"),
+        ]),
+        Scenario(name: "H25:log-3items→edit-third-to-60g", turns: [
+            HardTurn(query: "log banana",                                expectedTool: "log_food"),
+            HardTurn(query: "log yogurt",                                expectedTool: "log_food"),
+            HardTurn(query: "log granola",                               expectedTool: "log_food"),
+            HardTurn(query: "edit the third entry to 60g",               expectedTool: "edit_meal"),
+        ]),
+
+        // H26–H30: Topic switch mid-recipe
+        Scenario(name: "H26:dinner→weight-pivot→resume", turns: [
+            HardTurn(query: "log dinner — rice and dal",                 expectedTool: "log_food"),
+            HardTurn(query: "actually log my weight first, I'm 74 kg",  expectedTool: "log_weight"),
+            HardTurn(query: "ok back to dinner, add chicken too",        expectedTool: "log_food"),
+        ]),
+        Scenario(name: "H27:breakfast-build→sleep-pivot→resume", turns: [
+            HardTurn(query: "log oatmeal for breakfast",                 expectedTool: "log_food"),
+            HardTurn(query: "add banana",                                expectedTool: "log_food"),
+            HardTurn(query: "quick — how's my sleep from last night?",   expectedTool: "sleep_recovery"),
+            HardTurn(query: "ok add black coffee to that breakfast",     expectedTool: "log_food"),
+        ]),
+        Scenario(name: "H28:multi-food→supplement-check→resume", turns: [
+            HardTurn(query: "log chicken and rice for lunch",            expectedTool: "log_food"),
+            HardTurn(query: "wait, did I take my creatine today?",       expectedTool: "supplements"),
+            HardTurn(query: "ok now log the broccoli too",               expectedTool: "log_food"),
+        ]),
+        Scenario(name: "H29:breakfast→protein-check→add-more", turns: [
+            HardTurn(query: "log 2 eggs for breakfast",                  expectedTool: "log_food"),
+            HardTurn(query: "how much protein have I had today?",        expectedTool: "food_info"),
+            HardTurn(query: "add orange juice to breakfast too",         expectedTool: "log_food"),
+        ]),
+        Scenario(name: "H30:dinner→weigh-first→add-dal", turns: [
+            HardTurn(query: "log paneer and rice for dinner",            expectedTool: "log_food"),
+            HardTurn(query: "actually weigh me at 162 lbs first",       expectedTool: "log_weight"),
+            HardTurn(query: "done with weight, now add dal to dinner",   expectedTool: "log_food"),
+        ]),
+
+        // H31–H35: Partial undo
+        Scenario(name: "H31:log-rice+dal→undo-just-rice", turns: [
+            HardTurn(query: "log rice and dal for lunch",                expectedTool: "log_food"),
+            HardTurn(query: "undo just the rice",                        expectedTool: "delete_food"),
+        ]),
+        Scenario(name: "H32:log-chicken+rice+naan→keep-only-chicken", turns: [
+            HardTurn(query: "log chicken tikka, rice, and naan for dinner", expectedTool: "log_food"),
+            HardTurn(query: "actually keep only the chicken",            expectedTool: "delete_food"),
+        ]),
+        Scenario(name: "H33:log-3items→delete-except-rice", turns: [
+            HardTurn(query: "log rice, dal, and roti for dinner",        expectedTool: "log_food"),
+            HardTurn(query: "delete everything except the rice",         expectedTool: "delete_food"),
+        ]),
+        Scenario(name: "H34:log-3items→undo-last-two", turns: [
+            HardTurn(query: "log eggs",                                  expectedTool: "log_food"),
+            HardTurn(query: "log toast",                                 expectedTool: "log_food"),
+            HardTurn(query: "log coffee",                                expectedTool: "log_food"),
+            HardTurn(query: "undo my last two",                          expectedTool: "delete_food"),
+        ]),
+        Scenario(name: "H35:log-banana+shake→cancel-second", turns: [
+            HardTurn(query: "log banana",                                expectedTool: "log_food"),
+            HardTurn(query: "log protein shake",                         expectedTool: "log_food"),
+            HardTurn(query: "cancel the second log",                     expectedTool: "delete_food"),
+        ]),
     ]
 
     // MARK: - Runner
@@ -231,14 +316,29 @@ final class MultiTurnRegressionTests: XCTestCase {
     func testH18() async { await runScenario(Self.allScenarios[17]) }
     func testH19() async { await runScenario(Self.allScenarios[18]) }
     func testH20() async { await runScenario(Self.allScenarios[19]) }
+    func testH21() async { await runScenario(Self.allScenarios[20]) }
+    func testH22() async { await runScenario(Self.allScenarios[21]) }
+    func testH23() async { await runScenario(Self.allScenarios[22]) }
+    func testH24() async { await runScenario(Self.allScenarios[23]) }
+    func testH25() async { await runScenario(Self.allScenarios[24]) }
+    func testH26() async { await runScenario(Self.allScenarios[25]) }
+    func testH27() async { await runScenario(Self.allScenarios[26]) }
+    func testH28() async { await runScenario(Self.allScenarios[27]) }
+    func testH29() async { await runScenario(Self.allScenarios[28]) }
+    func testH30() async { await runScenario(Self.allScenarios[29]) }
+    func testH31() async { await runScenario(Self.allScenarios[30]) }
+    func testH32() async { await runScenario(Self.allScenarios[31]) }
+    func testH33() async { await runScenario(Self.allScenarios[32]) }
+    func testH34() async { await runScenario(Self.allScenarios[33]) }
+    func testH35() async { await runScenario(Self.allScenarios[34]) }
 
-    // MARK: - Global summary (≥80% floor across all 20 scenarios)
+    // MARK: - Global summary (≥80% floor across all 35 scenarios)
 
     func testHardSuiteBaseline() async {
         var totalCorrect = 0
         var totalTurns = 0
 
-        print("\n📊 Hard Multi-Turn Suite — 20 Scenarios:")
+        print("\n📊 Hard Multi-Turn Suite — 35 Scenarios:")
         for scenario in Self.allScenarios {
             let (c, t) = await runScenario(scenario)
             totalCorrect += c
