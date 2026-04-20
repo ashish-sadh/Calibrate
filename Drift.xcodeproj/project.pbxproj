@@ -248,6 +248,7 @@
 		FB1D2AF65F10F935076969F6 /* LocalAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5ABF9F3D40318CC0238A796 /* LocalAIService.swift */; };
 		FC725819F735636B40300619 /* NutritionOCRTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1575030FD9A7BEF5BC9E0612 /* NutritionOCRTests.swift */; };
 		FD04469D134154054159AA4C /* ToolRanker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81CB6F88CC852F18E7809C8 /* ToolRanker.swift */; };
+		FD8D0C6963EAD881D678A148 /* AIModelManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30537026EE533EE546180AB3 /* AIModelManagerTests.swift */; };
 		FE2EC2B62CB693DA85CD1544 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2565511DFA43570D0CE9EA /* DashboardView.swift */; };
 /* End PBXBuildFile section */
 
@@ -358,6 +359,7 @@
 		2D4B47196E8598EB15359D7C /* SupplementService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupplementService.swift; sourceTree = "<group>"; };
 		2DEC3049742676C1201A6847 /* HardEvalSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardEvalSet.swift; sourceTree = "<group>"; };
 		2E52DF869EA41A78F57F6CC8 /* IntentClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntentClassifier.swift; sourceTree = "<group>"; };
+		30537026EE533EE546180AB3 /* AIModelManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIModelManagerTests.swift; sourceTree = "<group>"; };
 		3053C86565C8B26D3B16A0A2 /* AutoResearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoResearchTests.swift; sourceTree = "<group>"; };
 		3120313481E2B0C45C1B573A /* top-500-foods.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "top-500-foods.txt"; sourceTree = "<group>"; };
 		3258B6E91169170587AAB02B /* GoalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalView.swift; sourceTree = "<group>"; };
@@ -663,6 +665,7 @@
 			isa = PBXGroup;
 			children = (
 				BADD153523D188C4ED89B55D /* AIEvalHarness.swift */,
+				30537026EE533EE546180AB3 /* AIModelManagerTests.swift */,
 				8B0FF829D1EAEEF0257163CC /* AIResponseCleanerTests.swift */,
 				6B09F9950FCEB38280CA6636 /* AIRuleEngineCoverageTests.swift */,
 				19E7517E5B4779CBBE1C7284 /* AITests.swift */,
@@ -1397,6 +1400,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				940612EB003CCC2F1FF36DD1 /* AIEvalHarness.swift in Sources */,
+				FD8D0C6963EAD881D678A148 /* AIModelManagerTests.swift in Sources */,
 				9C01C0F24CCB9341148D4C71 /* AIResponseCleanerTests.swift in Sources */,
 				453834783C24A47BFC2EE5E4 /* AIRuleEngineCoverageTests.swift in Sources */,
 				2DDEA9907FA6338488A8E1CD /* AITests.swift in Sources */,

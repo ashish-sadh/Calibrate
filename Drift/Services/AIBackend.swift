@@ -37,7 +37,7 @@ enum AIModelTier: Sendable {
     var downloadSizeMB: Int {
         switch self {
         case .small: 368
-        case .large: 2900
+        case .large: 2963
         }
     }
 
@@ -46,8 +46,9 @@ enum AIModelTier: Sendable {
         case .small:
             return [ModelFile(name: "smollm2-360m-instruct-q8_0.gguf", sizeMB: 368)]
         case .large:
-            return [ModelFile(name: "gemma-4-e2b-q4_k_m.gguf", sizeMB: 2900,
-                              customURL: "https://huggingface.co/unsloth/gemma-4-E2B-it-GGUF/resolve/main/gemma-4-E2B-it-Q4_K_M.gguf")]
+            // Pinned revision prevents silent file-size drift when the unsloth repo updates.
+            return [ModelFile(name: "gemma-4-e2b-q4_k_m.gguf", sizeMB: 2963,
+                              customURL: "https://huggingface.co/unsloth/gemma-4-E2B-it-GGUF/resolve/f064409f340b34190993560b2168133e5dbae558/gemma-4-E2B-it-Q4_K_M.gguf")]
         }
     }
 

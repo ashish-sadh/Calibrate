@@ -107,42 +107,118 @@ final class AIModelManager {
         Log.app.info("AI model downloaded: \(self.currentTier.displayName)")
     }
 
+    private static let maxDownloadAttempts = 3
+    private static let sizeToleranceFraction = 0.05  // allow ±5% size variance
+
     private func downloadFile(from url: URL, to destination: URL, fileSizeMB: Int, offsetMB: Int, totalMB: Int) async -> Bool {
-        do {
-            // Download with progress delegate — follows redirects automatically
-            let tracker = ProgressTracker { [weak self] fileProgress in
-                Task { @MainActor in
-                    let overall = (Double(offsetMB) + fileProgress * Double(fileSizeMB)) / Double(totalMB)
-                    self?.downloadState = .downloading(progress: min(overall, 0.99))
-                }
-            }
-            let config = URLSessionConfiguration.default
-            config.httpMaximumConnectionsPerHost = 1
-            let session = URLSession(configuration: config, delegate: tracker, delegateQueue: nil)
-            let (tempURL, _) = try await session.download(from: url)
-
-            try? FileManager.default.removeItem(at: destination)
-            try FileManager.default.moveItem(at: tempURL, to: destination)
-
-            // Verify GGUF magic bytes
-            guard Self.isValidGGUF(at: destination) else {
-                try? FileManager.default.removeItem(at: destination)
-                downloadState = .error("Downloaded file is not a valid model. Please try again.")
+        var lastError: Error?
+        for attempt in 1...Self.maxDownloadAttempts {
+            do {
+                try await performDownload(from: url, to: destination, fileSizeMB: fileSizeMB, offsetMB: offsetMB, totalMB: totalMB)
+                return true
+            } catch let error as DownloadError {
+                // Permanent errors (validation failures) — don't retry
+                downloadState = .error(error.userMessage)
+                Log.app.error("Download aborted (no retry): \(error.userMessage)")
                 return false
+            } catch {
+                lastError = error
+                let isRetryable = Self.isRetryable(error)
+                Log.app.error("Download attempt \(attempt)/\(Self.maxDownloadAttempts) failed (retryable=\(isRetryable)): \(error.localizedDescription)")
+                if !isRetryable || attempt == Self.maxDownloadAttempts { break }
+                let backoffSeconds = UInt64(pow(2.0, Double(attempt - 1)))  // 1s, 2s, 4s
+                try? await Task.sleep(nanoseconds: backoffSeconds * 1_000_000_000)
             }
-            return true
-        } catch {
-            downloadState = .error("Download failed: \(error.localizedDescription)")
-            return false
+        }
+        let message = lastError.map { Self.friendlyMessage(for: $0) } ?? "Download failed. Please try again."
+        downloadState = .error(message)
+        return false
+    }
+
+    private func performDownload(from url: URL, to destination: URL, fileSizeMB: Int, offsetMB: Int, totalMB: Int) async throws {
+        let tracker = ProgressTracker { [weak self] fileProgress in
+            Task { @MainActor in
+                let overall = (Double(offsetMB) + fileProgress * Double(fileSizeMB)) / Double(totalMB)
+                self?.downloadState = .downloading(progress: min(overall, 0.99))
+            }
+        }
+        let config = URLSessionConfiguration.default
+        config.httpMaximumConnectionsPerHost = 1
+        config.timeoutIntervalForRequest = 120  // per-packet idle timeout; large downloads can have gaps
+        config.waitsForConnectivity = true
+        let session = URLSession(configuration: config, delegate: tracker, delegateQueue: nil)
+        let (tempURL, _) = try await session.download(from: url)
+
+        // Size sanity check — reject truncated downloads before they reach the GGUF check
+        // (a truncated file starting with GGUF magic would pass validation but fail to load).
+        let attrs = try FileManager.default.attributesOfItem(atPath: tempURL.path)
+        let actualBytes = (attrs[.size] as? Int64) ?? 0
+        let expectedBytes = Int64(fileSizeMB) * 1024 * 1024
+        let tolerance = Int64(Double(expectedBytes) * Self.sizeToleranceFraction)
+        if expectedBytes > 0 && abs(actualBytes - expectedBytes) > tolerance {
+            try? FileManager.default.removeItem(at: tempURL)
+            let actualMB = Int(actualBytes / (1024 * 1024))
+            throw DownloadError.sizeMismatch(expected: fileSizeMB, actual: actualMB)
+        }
+
+        try? FileManager.default.removeItem(at: destination)
+        try FileManager.default.moveItem(at: tempURL, to: destination)
+
+        guard Self.isValidGGUF(at: destination) else {
+            try? FileManager.default.removeItem(at: destination)
+            throw DownloadError.invalidGGUF
         }
     }
 
     /// Check that a file starts with the GGUF magic bytes (0x47 0x47 0x55 0x46 = "GGUF").
-    static func isValidGGUF(at url: URL) -> Bool {
+    nonisolated static func isValidGGUF(at url: URL) -> Bool {
         guard let handle = try? FileHandle(forReadingFrom: url) else { return false }
         defer { try? handle.close() }
         guard let header = try? handle.read(upToCount: 4), header.count == 4 else { return false }
         return header == Data([0x47, 0x47, 0x55, 0x46]) // "GGUF"
+    }
+
+    enum DownloadError: Error {
+        case sizeMismatch(expected: Int, actual: Int)
+        case invalidGGUF
+
+        var userMessage: String {
+            switch self {
+            case .sizeMismatch(let expected, let actual):
+                return "Downloaded file size (\(actual) MB) does not match expected (\(expected) MB). Please try again."
+            case .invalidGGUF:
+                return "Downloaded file is not a valid model. Please try again."
+            }
+        }
+    }
+
+    nonisolated static func isRetryable(_ error: Error) -> Bool {
+        guard let urlError = error as? URLError else { return false }
+        switch urlError.code {
+        case .timedOut, .networkConnectionLost, .notConnectedToInternet,
+             .cannotConnectToHost, .dnsLookupFailed, .resourceUnavailable,
+             .internationalRoamingOff, .callIsActive, .dataNotAllowed,
+             .secureConnectionFailed:
+            return true
+        default:
+            return false
+        }
+    }
+
+    nonisolated static func friendlyMessage(for error: Error) -> String {
+        if let urlError = error as? URLError {
+            switch urlError.code {
+            case .notConnectedToInternet, .cannotConnectToHost, .dnsLookupFailed:
+                return "No internet connection. Please connect to Wi-Fi and try again."
+            case .timedOut, .networkConnectionLost:
+                return "Download timed out. Please try again on a stronger connection."
+            case .cancelled:
+                return "Download cancelled."
+            default:
+                break
+            }
+        }
+        return "Download failed: \(error.localizedDescription)"
     }
 
     // MARK: - Delete
