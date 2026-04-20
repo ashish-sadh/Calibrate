@@ -107,8 +107,7 @@ struct DashboardView: View {
 
                     // Proactive alerts — urgent, actionable
                     if !viewModel.proactiveAlerts.isEmpty {
-                        ForEach(viewModel.proactiveAlerts.indices, id: \.self) { i in
-                            let alert = viewModel.proactiveAlerts[i]
+                        ForEach(viewModel.proactiveAlerts) { alert in
                             HStack(spacing: 10) {
                                 Image(systemName: alert.icon)
                                     .font(.body)
@@ -455,8 +454,7 @@ struct DashboardView: View {
                 Text("Insights").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
                 Spacer()
             }
-            ForEach(viewModel.behaviorInsights.indices, id: \.self) { i in
-                let insight = viewModel.behaviorInsights[i]
+            ForEach(viewModel.behaviorInsights) { insight in
                 HStack(alignment: .top, spacing: 8) {
                     Image(systemName: insight.icon)
                         .font(.caption)

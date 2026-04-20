@@ -3,7 +3,8 @@ import Foundation
 /// Computes behavior-outcome correlations from existing cross-domain data.
 /// Each insight compares a behavior (workout frequency, protein intake, sleep)
 /// against an outcome (weight trend, recovery score) using simple descriptive stats.
-struct BehaviorInsight: Sendable {
+struct BehaviorInsight: Sendable, Identifiable {
+    let id = UUID()
     let icon: String
     let title: String
     let detail: String
