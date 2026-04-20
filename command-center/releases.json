@@ -1557,5 +1557,16 @@
     "fixes": [
       "Command-center: report listings now sort newest-first for both PR-matched and unmatched files"
     ]
+  },
+  {
+    "build": 148,
+    "date": "2026-04-19T15:30:00-07:00",
+    "description": "Crash fixes for Dashboard + combos migration cleanup",
+    "features": [],
+    "fixes": [
+      "P0: eliminated index-out-of-bounds crash risks in Dashboard weekly summary and yesterdayCalories",
+      "P0: replaced ForEach(indices) with element-based ForEach in DashboardView to prevent list-reorder crashes",
+      "Combos: clear autopilot-generated auto-detected combos on migration so fresh users don't inherit seed data"
+    ]
   }
 ]
