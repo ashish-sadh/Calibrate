@@ -61,12 +61,12 @@ final class SpeechRecognitionService: @unchecked Sendable {
         let status = SFSpeechRecognizer.authorizationStatus()
         switch status {
         case .authorized:
-            setupEngine(recognizer: recognizer, onTranscript: onTranscript)
+            ensureMicAndStart(recognizer: recognizer, onTranscript: onTranscript)
         case .notDetermined:
             SFSpeechRecognizer.requestAuthorization { [weak self] s in
                 DispatchQueue.main.async {
                     if s == .authorized {
-                        self?.setupEngine(recognizer: recognizer, onTranscript: onTranscript)
+                        self?.ensureMicAndStart(recognizer: recognizer, onTranscript: onTranscript)
                     } else {
                         self?.recordingState = .unavailable("Speech recognition denied.")
                     }
@@ -75,6 +75,31 @@ final class SpeechRecognitionService: @unchecked Sendable {
         case .denied, .restricted:
             recordingState = .unavailable("Enable in Settings → Privacy → Speech Recognition.")
         @unknown default: break
+        }
+    }
+
+    /// Request microphone permission on main before touching `AVAudioEngine`.
+    /// Skipping this path lets iOS surface the mic prompt as a side effect of
+    /// `AVAudioSession.setActive(true)`, which leaves the session mid-
+    /// negotiation while `installTap`/`engine.start` run — that mismatch can
+    /// throw an uncatchable `NSInternalInconsistencyException` and crash the
+    /// app on first voice tap. #272.
+    @MainActor
+    private func ensureMicAndStart(
+        recognizer: SFSpeechRecognizer,
+        onTranscript: @escaping @MainActor (String) -> Void
+    ) {
+        nonisolated(unsafe) let capturedRec = recognizer
+        AVAudioApplication.requestRecordPermission { [weak self] granted in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                guard self.recordingState == .recording else { return }
+                if granted {
+                    self.setupEngine(recognizer: capturedRec, onTranscript: onTranscript)
+                } else {
+                    self.recordingState = .unavailable("Enable microphone in Settings → Privacy → Microphone.")
+                }
+            }
         }
     }
 
