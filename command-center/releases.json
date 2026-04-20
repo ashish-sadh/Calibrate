@@ -1625,5 +1625,15 @@
       "Voice input no longer crashes on first mic permission grant — explicit AVAudioApplication.requestRecordPermission before engine start (#272)",
       "Reports workflow auto-heals missing 'report' label on cmd_finish"
     ]
+  },
+  {
+    "build": 153,
+    "date": "2026-04-20T21:40:27-07:00",
+    "description": "Exercise photo coverage 90→97% via tiered fuzzy match; TestFlight preflight hardening",
+    "features": [],
+    "fixes": [
+      "Exercise library: tiered fuzzy match raises photo coverage from 90% → 97% (#273)",
+      "TestFlight preflight hook fails closed on P0 check and tightens issue matcher"
+    ]
   }
 ]
