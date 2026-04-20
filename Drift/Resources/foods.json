@@ -41679,5 +41679,529 @@
       "soy sauce"
     ],
     "nova_group": 1
+  },
+  {
+    "name": "Classic Milk Tea Boba",
+    "category": "Beverages",
+    "serving_size": 480,
+    "serving_unit": "ml",
+    "calories": 375,
+    "protein_g": 3,
+    "carbs_g": 75,
+    "fat_g": 7,
+    "fiber_g": 0.0,
+    "ingredients": [
+      "milk",
+      "black tea",
+      "tapioca pearls",
+      "sugar"
+    ]
+  },
+  {
+    "name": "Taro Milk Tea Boba",
+    "category": "Beverages",
+    "serving_size": 480,
+    "serving_unit": "ml",
+    "calories": 400,
+    "protein_g": 4,
+    "carbs_g": 80,
+    "fat_g": 7,
+    "fiber_g": 2.0,
+    "ingredients": [
+      "taro",
+      "milk",
+      "tapioca pearls",
+      "sugar"
+    ]
+  },
+  {
+    "name": "Matcha Milk Tea Boba",
+    "category": "Beverages",
+    "serving_size": 480,
+    "serving_unit": "ml",
+    "calories": 360,
+    "protein_g": 4,
+    "carbs_g": 68,
+    "fat_g": 8,
+    "fiber_g": 1.0,
+    "ingredients": [
+      "matcha",
+      "milk",
+      "tapioca pearls",
+      "sugar"
+    ]
+  },
+  {
+    "name": "Brown Sugar Milk Tea Boba",
+    "category": "Beverages",
+    "serving_size": 480,
+    "serving_unit": "ml",
+    "calories": 420,
+    "protein_g": 3,
+    "carbs_g": 84,
+    "fat_g": 7,
+    "fiber_g": 0.0,
+    "ingredients": [
+      "brown sugar",
+      "milk",
+      "black tea",
+      "tapioca pearls"
+    ]
+  },
+  {
+    "name": "Passion Fruit Tea Boba",
+    "category": "Beverages",
+    "serving_size": 480,
+    "serving_unit": "ml",
+    "calories": 280,
+    "protein_g": 1,
+    "carbs_g": 68,
+    "fat_g": 0,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "passion fruit",
+      "green tea",
+      "tapioca pearls",
+      "sugar"
+    ]
+  },
+  {
+    "name": "Thai Milk Tea Boba",
+    "category": "Beverages",
+    "serving_size": 480,
+    "serving_unit": "ml",
+    "calories": 440,
+    "protein_g": 4,
+    "carbs_g": 83,
+    "fat_g": 10,
+    "fiber_g": 0.0,
+    "ingredients": [
+      "thai tea",
+      "condensed milk",
+      "evaporated milk",
+      "tapioca pearls"
+    ]
+  },
+  {
+    "name": "Jasmine Green Tea Boba",
+    "category": "Beverages",
+    "serving_size": 480,
+    "serving_unit": "ml",
+    "calories": 290,
+    "protein_g": 2,
+    "carbs_g": 70,
+    "fat_g": 1,
+    "fiber_g": 0.0,
+    "ingredients": [
+      "jasmine tea",
+      "tapioca pearls",
+      "sugar"
+    ]
+  },
+  {
+    "name": "Oolong Milk Tea Boba",
+    "category": "Beverages",
+    "serving_size": 480,
+    "serving_unit": "ml",
+    "calories": 350,
+    "protein_g": 3,
+    "carbs_g": 68,
+    "fat_g": 7,
+    "fiber_g": 0.0,
+    "ingredients": [
+      "oolong tea",
+      "milk",
+      "tapioca pearls",
+      "sugar"
+    ]
+  },
+  {
+    "name": "Tuna Poke Bowl",
+    "category": "Bowls",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 510,
+    "protein_g": 35,
+    "carbs_g": 65,
+    "fat_g": 12,
+    "fiber_g": 4.0,
+    "ingredients": [
+      "tuna",
+      "brown rice",
+      "edamame",
+      "cucumber",
+      "avocado",
+      "soy sauce",
+      "sesame oil"
+    ]
+  },
+  {
+    "name": "Salmon Poke Bowl",
+    "category": "Bowls",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 530,
+    "protein_g": 32,
+    "carbs_g": 63,
+    "fat_g": 16,
+    "fiber_g": 4.0,
+    "ingredients": [
+      "salmon",
+      "brown rice",
+      "edamame",
+      "avocado",
+      "cucumber",
+      "soy sauce"
+    ]
+  },
+  {
+    "name": "Spicy Tuna Poke Bowl",
+    "category": "Bowls",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 500,
+    "protein_g": 33,
+    "carbs_g": 60,
+    "fat_g": 14,
+    "fiber_g": 4.0,
+    "ingredients": [
+      "tuna",
+      "sriracha",
+      "brown rice",
+      "cucumber",
+      "edamame",
+      "avocado"
+    ]
+  },
+  {
+    "name": "Shrimp Poke Bowl",
+    "category": "Bowls",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 460,
+    "protein_g": 28,
+    "carbs_g": 62,
+    "fat_g": 10,
+    "fiber_g": 4.0,
+    "ingredients": [
+      "shrimp",
+      "brown rice",
+      "mango",
+      "cucumber",
+      "edamame",
+      "ponzu"
+    ]
+  },
+  {
+    "name": "Tofu Poke Bowl",
+    "category": "Bowls",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 20,
+    "carbs_g": 68,
+    "fat_g": 14,
+    "fiber_g": 6.0,
+    "ingredients": [
+      "tofu",
+      "brown rice",
+      "edamame",
+      "avocado",
+      "cucumber",
+      "sesame oil",
+      "soy sauce"
+    ]
+  },
+  {
+    "name": "Acai Bowl",
+    "category": "Bowls",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 450,
+    "protein_g": 8,
+    "carbs_g": 75,
+    "fat_g": 13,
+    "fiber_g": 8.0,
+    "ingredients": [
+      "acai",
+      "banana",
+      "granola",
+      "strawberries",
+      "blueberries",
+      "honey"
+    ]
+  },
+  {
+    "name": "Pitaya Bowl",
+    "category": "Bowls",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 390,
+    "protein_g": 7,
+    "carbs_g": 72,
+    "fat_g": 8,
+    "fiber_g": 6.0,
+    "ingredients": [
+      "dragon fruit",
+      "banana",
+      "coconut",
+      "granola",
+      "mango",
+      "honey"
+    ]
+  },
+  {
+    "name": "Peanut Butter Acai Bowl",
+    "category": "Bowls",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 500,
+    "protein_g": 14,
+    "carbs_g": 68,
+    "fat_g": 18,
+    "fiber_g": 8.0,
+    "ingredients": [
+      "acai",
+      "peanut butter",
+      "banana",
+      "granola",
+      "honey",
+      "chia seeds"
+    ]
+  },
+  {
+    "name": "Tropical Smoothie Bowl",
+    "category": "Bowls",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 430,
+    "protein_g": 6,
+    "carbs_g": 85,
+    "fat_g": 7,
+    "fiber_g": 6.0,
+    "ingredients": [
+      "mango",
+      "pineapple",
+      "coconut",
+      "banana",
+      "granola",
+      "kiwi"
+    ]
+  },
+  {
+    "name": "Chocolate Acai Bowl",
+    "category": "Bowls",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 10,
+    "carbs_g": 78,
+    "fat_g": 14,
+    "fiber_g": 8.0,
+    "ingredients": [
+      "acai",
+      "cacao",
+      "banana",
+      "granola",
+      "almond butter",
+      "honey"
+    ]
+  },
+  {
+    "name": "Oat Milk Latte",
+    "category": "Beverages",
+    "serving_size": 360,
+    "serving_unit": "ml",
+    "calories": 150,
+    "protein_g": 4,
+    "carbs_g": 23,
+    "fat_g": 4,
+    "fiber_g": 1.0,
+    "ingredients": [
+      "espresso",
+      "oat milk"
+    ]
+  },
+  {
+    "name": "Cold Brew Coffee",
+    "category": "Beverages",
+    "serving_size": 360,
+    "serving_unit": "ml",
+    "calories": 4,
+    "protein_g": 1,
+    "carbs_g": 0,
+    "fat_g": 0,
+    "fiber_g": 0.0,
+    "ingredients": [
+      "coffee"
+    ]
+  },
+  {
+    "name": "Nitro Cold Brew",
+    "category": "Beverages",
+    "serving_size": 360,
+    "serving_unit": "ml",
+    "calories": 12,
+    "protein_g": 1,
+    "carbs_g": 2,
+    "fat_g": 0,
+    "fiber_g": 0.0,
+    "ingredients": [
+      "coffee",
+      "nitrogen"
+    ]
+  },
+  {
+    "name": "Pumpkin Spice Latte",
+    "category": "Beverages",
+    "serving_size": 360,
+    "serving_unit": "ml",
+    "calories": 290,
+    "protein_g": 9,
+    "carbs_g": 44,
+    "fat_g": 8,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "espresso",
+      "milk",
+      "pumpkin puree",
+      "pumpkin spice",
+      "sugar",
+      "whipped cream"
+    ]
+  },
+  {
+    "name": "Iced Matcha Latte",
+    "category": "Beverages",
+    "serving_size": 360,
+    "serving_unit": "ml",
+    "calories": 181,
+    "protein_g": 4,
+    "carbs_g": 30,
+    "fat_g": 5,
+    "fiber_g": 1.0,
+    "ingredients": [
+      "matcha",
+      "oat milk",
+      "sugar"
+    ]
+  },
+  {
+    "name": "Brown Sugar Oat Milk Latte",
+    "category": "Beverages",
+    "serving_size": 360,
+    "serving_unit": "ml",
+    "calories": 197,
+    "protein_g": 4,
+    "carbs_g": 34,
+    "fat_g": 5,
+    "fiber_g": 1.0,
+    "ingredients": [
+      "espresso",
+      "oat milk",
+      "brown sugar",
+      "cinnamon"
+    ]
+  },
+  {
+    "name": "Cortado",
+    "category": "Beverages",
+    "serving_size": 120,
+    "serving_unit": "ml",
+    "calories": 63,
+    "protein_g": 3,
+    "carbs_g": 6,
+    "fat_g": 3,
+    "fiber_g": 0.0,
+    "ingredients": [
+      "espresso",
+      "milk"
+    ]
+  },
+  {
+    "name": "Kombucha",
+    "category": "Beverages",
+    "serving_size": 480,
+    "serving_unit": "ml",
+    "calories": 60,
+    "protein_g": 0,
+    "carbs_g": 14,
+    "fat_g": 0,
+    "fiber_g": 0.0,
+    "ingredients": [
+      "black tea",
+      "sugar",
+      "live cultures"
+    ]
+  },
+  {
+    "name": "Overnight Oats",
+    "category": "Breakfast",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 370,
+    "protein_g": 15,
+    "carbs_g": 55,
+    "fat_g": 9,
+    "fiber_g": 7.0,
+    "ingredients": [
+      "oats",
+      "milk",
+      "chia seeds",
+      "banana",
+      "honey",
+      "almonds"
+    ]
+  },
+  {
+    "name": "Energy Gel",
+    "category": "Sports Nutrition",
+    "serving_size": 32,
+    "serving_unit": "g",
+    "calories": 100,
+    "protein_g": 0,
+    "carbs_g": 25,
+    "fat_g": 0,
+    "fiber_g": 0.0,
+    "ingredients": [
+      "maltodextrin",
+      "fructose",
+      "sodium",
+      "caffeine"
+    ]
+  },
+  {
+    "name": "Protein Donut",
+    "category": "Sports Nutrition",
+    "serving_size": 75,
+    "serving_unit": "g",
+    "calories": 263,
+    "protein_g": 20,
+    "carbs_g": 30,
+    "fat_g": 7,
+    "fiber_g": 2.0,
+    "ingredients": [
+      "whey protein",
+      "flour",
+      "egg",
+      "coconut oil",
+      "sugar"
+    ]
+  },
+  {
+    "name": "Low-Carb Whole Wheat Wrap",
+    "category": "Grains & Cereals",
+    "serving_size": 45,
+    "serving_unit": "g",
+    "calories": 103,
+    "protein_g": 4,
+    "carbs_g": 15,
+    "fat_g": 3,
+    "fiber_g": 8.0,
+    "ingredients": [
+      "whole wheat flour",
+      "water",
+      "salt"
+    ]
   }
 ]
