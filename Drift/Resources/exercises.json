@@ -12847,7 +12847,8 @@
     "secondaryMuscles": [
       "calves",
       "hamstrings"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Front_Box_Jump/0.jpg"
   },
   {
     "name": "Jump Squat",
@@ -12862,7 +12863,8 @@
     "secondaryMuscles": [
       "calves",
       "hamstrings"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Freehand_Jump_Squat/0.jpg"
   },
   {
     "name": "Turkish Get-Up",
@@ -12878,7 +12880,8 @@
       "glutes",
       "quadriceps",
       "triceps"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Kettlebell_Turkish_Get-Up_Lunge_style/0.jpg"
   },
   {
     "name": "Battle Ropes",
@@ -12973,7 +12976,8 @@
       "quadriceps",
       "chest",
       "triceps"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bear_Crawl_Sled_Drags/0.jpg"
   },
   {
     "name": "Dumbbell Chest Fly",
@@ -13179,7 +13183,8 @@
     "secondaryMuscles": [
       "triceps",
       "shoulders"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Chest_Press/0.jpg"
   },
   {
     "name": "Machine Shoulder Press",
@@ -13192,7 +13197,8 @@
     ],
     "secondaryMuscles": [
       "triceps"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Shoulder_Press/0.jpg"
   },
   {
     "name": "Machine Leg Curl",
@@ -13205,7 +13211,8 @@
     ],
     "secondaryMuscles": [
       "calves"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Ball_Leg_Curl/0.jpg"
   },
   {
     "name": "Machine Leg Extension",
@@ -13216,7 +13223,8 @@
     "primaryMuscles": [
       "quadriceps"
     ],
-    "secondaryMuscles": []
+    "secondaryMuscles": [],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Extensions/0.jpg"
   },
   {
     "name": "Dumbbell Pullover",
@@ -13230,7 +13238,8 @@
     "secondaryMuscles": [
       "lats",
       "triceps"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bent-Arm_Dumbbell_Pullover/0.jpg"
   },
   {
     "name": "Cable Lateral Raise",
@@ -13241,7 +13250,8 @@
     "primaryMuscles": [
       "shoulders"
     ],
-    "secondaryMuscles": []
+    "secondaryMuscles": [],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Side_Lateral_Raise/0.jpg"
   },
   {
     "name": "Cable Reverse Fly",
@@ -13254,7 +13264,8 @@
     ],
     "secondaryMuscles": [
       "middle back"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Reverse_Flyes/0.jpg"
   },
   {
     "name": "Cable Curl",
@@ -13267,7 +13278,8 @@
     ],
     "secondaryMuscles": [
       "forearms"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/High_Cable_Curls/0.jpg"
   },
   {
     "name": "Dumbbell Kickback",
@@ -13278,7 +13290,8 @@
     "primaryMuscles": [
       "triceps"
     ],
-    "secondaryMuscles": []
+    "secondaryMuscles": [],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Tricep_Dumbbell_Kickback/0.jpg"
   },
   {
     "name": "Bench Press",
@@ -13292,7 +13305,8 @@
     "secondaryMuscles": [
       "triceps",
       "shoulders"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Machine_Bench_Press/0.jpg"
   },
   {
     "name": "Incline Bench Press",
@@ -13306,7 +13320,8 @@
     "secondaryMuscles": [
       "triceps",
       "shoulders"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Smith_Machine_Incline_Bench_Press/0.jpg"
   },
   {
     "name": "Decline Bench Press",
@@ -13333,7 +13348,8 @@
     "secondaryMuscles": [
       "triceps",
       "shoulders"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Arnold_Dumbbell_Press/0.jpg"
   },
   {
     "name": "Chest Press",
@@ -13347,7 +13363,8 @@
     "secondaryMuscles": [
       "triceps",
       "shoulders"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Chest_Press/0.jpg"
   },
   {
     "name": "Push-Up",
@@ -13362,7 +13379,8 @@
       "triceps",
       "shoulders"
     ],
-    "youtubeUrl": "https://www.youtube.com/results?search_query=push%20up%20form%20tutorial"
+    "youtubeUrl": "https://www.youtube.com/results?search_query=push%20up%20form%20tutorial",
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Plyo_Push-up/0.jpg"
   },
   {
     "name": "Dip",
@@ -13376,7 +13394,8 @@
     "secondaryMuscles": [
       "triceps",
       "shoulders"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Ring_Dips/0.jpg"
   },
   {
     "name": "Pec Fly Machine",
@@ -13400,7 +13419,8 @@
     ],
     "secondaryMuscles": [
       "triceps"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Shoulder_Press/0.jpg"
   },
   {
     "name": "Overhead Press",
@@ -13428,7 +13448,8 @@
     "secondaryMuscles": [
       "triceps"
     ],
-    "youtubeUrl": "https://www.youtube.com/results?search_query=arnold%20press%20form%20tutorial"
+    "youtubeUrl": "https://www.youtube.com/results?search_query=arnold%20press%20form%20tutorial",
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Kettlebell_Arnold_Press/0.jpg"
   },
   {
     "name": "Lateral Raise",
@@ -13440,7 +13461,8 @@
       "shoulders"
     ],
     "secondaryMuscles": [],
-    "youtubeUrl": "https://www.youtube.com/results?search_query=lateral%20raise%20form%20tutorial"
+    "youtubeUrl": "https://www.youtube.com/results?search_query=lateral%20raise%20form%20tutorial",
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Side_Lateral_Raise/0.jpg"
   },
   {
     "name": "Dumbbell Lateral Raise",
@@ -13451,7 +13473,8 @@
     "primaryMuscles": [
       "shoulders"
     ],
-    "secondaryMuscles": []
+    "secondaryMuscles": [],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Side_Lateral_Raise/0.jpg"
   },
   {
     "name": "Front Raise",
@@ -13462,7 +13485,8 @@
     "primaryMuscles": [
       "shoulders"
     ],
-    "secondaryMuscles": []
+    "secondaryMuscles": [],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Front_Raise_And_Pullover/0.jpg"
   },
   {
     "name": "Rear Delt Fly",
@@ -13476,7 +13500,8 @@
     "secondaryMuscles": [
       "middle back"
     ],
-    "youtubeUrl": "https://www.youtube.com/results?search_query=rear%20delt%20fly%20form%20tutorial"
+    "youtubeUrl": "https://www.youtube.com/results?search_query=rear%20delt%20fly%20form%20tutorial",
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Rear_Delt_Fly/0.jpg"
   },
   {
     "name": "Upright Row",
@@ -13490,7 +13515,8 @@
     "secondaryMuscles": [
       "traps",
       "biceps"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Upright_Row_-_With_Bands/0.jpg"
   },
   {
     "name": "Shrug",
@@ -13501,7 +13527,8 @@
     "primaryMuscles": [
       "traps"
     ],
-    "secondaryMuscles": []
+    "secondaryMuscles": [],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Clean_Shrug/0.jpg"
   },
   {
     "name": "Barbell Row",
@@ -13516,7 +13543,8 @@
       "biceps",
       "lats"
     ],
-    "youtubeUrl": "https://www.youtube.com/results?search_query=barbell%20row%20form%20tutorial"
+    "youtubeUrl": "https://www.youtube.com/results?search_query=barbell%20row%20form%20tutorial",
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Upright_Barbell_Row/0.jpg"
   },
   {
     "name": "Dumbbell Row",
@@ -13530,7 +13558,8 @@
     "secondaryMuscles": [
       "biceps",
       "lats"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/One-Arm_Dumbbell_Row/0.jpg"
   },
   {
     "name": "Cable Row",
@@ -13544,7 +13573,8 @@
     "secondaryMuscles": [
       "biceps",
       "lats"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Seated_Cable_Rows/0.jpg"
   },
   {
     "name": "Lat Pulldown",
@@ -13559,7 +13589,8 @@
       "biceps",
       "middle back"
     ],
-    "youtubeUrl": "https://www.youtube.com/results?search_query=lat%20pulldown%20form%20tutorial"
+    "youtubeUrl": "https://www.youtube.com/results?search_query=lat%20pulldown%20form%20tutorial",
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/One_Arm_Lat_Pulldown/0.jpg"
   },
   {
     "name": "Pull-Up",
@@ -13574,7 +13605,8 @@
       "biceps",
       "middle back"
     ],
-    "youtubeUrl": "https://www.youtube.com/results?search_query=pull%20up%20form%20tutorial"
+    "youtubeUrl": "https://www.youtube.com/results?search_query=pull%20up%20form%20tutorial",
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Scapular_Pull-Up/0.jpg"
   },
   {
     "name": "T-Bar Row",
@@ -13588,7 +13620,8 @@
     "secondaryMuscles": [
       "biceps",
       "lats"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_T-Bar_Row/0.jpg"
   },
   {
     "name": "Deadlift",
@@ -13604,7 +13637,8 @@
       "glutes",
       "forearms"
     ],
-    "youtubeUrl": "https://www.youtube.com/results?search_query=deadlift%20form%20tutorial"
+    "youtubeUrl": "https://www.youtube.com/results?search_query=deadlift%20form%20tutorial",
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Car_Deadlift/0.jpg"
   },
   {
     "name": "Dumbbell Deadlift",
@@ -13618,7 +13652,8 @@
     "secondaryMuscles": [
       "hamstrings",
       "glutes"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Stiff-Legged_Dumbbell_Deadlift/0.jpg"
   },
   {
     "name": "Bicep Curl",
@@ -13631,7 +13666,8 @@
     ],
     "secondaryMuscles": [
       "forearms"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Machine_Bicep_Curl/0.jpg"
   },
   {
     "name": "Dumbbell Curl",
@@ -13644,7 +13680,8 @@
     ],
     "secondaryMuscles": [
       "forearms"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Seated_Dumbbell_Curl/0.jpg"
   },
   {
     "name": "Hammer Curl",
@@ -13658,7 +13695,8 @@
     "secondaryMuscles": [
       "forearms"
     ],
-    "youtubeUrl": "https://www.youtube.com/results?search_query=hammer%20curl%20form%20tutorial"
+    "youtubeUrl": "https://www.youtube.com/results?search_query=hammer%20curl%20form%20tutorial",
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Hammer_Curls/0.jpg"
   },
   {
     "name": "EZ Bar Curl",
@@ -13671,7 +13709,8 @@
     ],
     "secondaryMuscles": [
       "forearms"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Close-Grip_EZ_Bar_Curl/0.jpg"
   },
   {
     "name": "Concentration Curl",
@@ -13682,7 +13721,8 @@
     "primaryMuscles": [
       "biceps"
     ],
-    "secondaryMuscles": []
+    "secondaryMuscles": [],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Concentration_Curls/0.jpg"
   },
   {
     "name": "Tricep Pushdown",
@@ -13726,7 +13766,8 @@
     "primaryMuscles": [
       "triceps"
     ],
-    "secondaryMuscles": []
+    "secondaryMuscles": [],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_Dumbbell_Tricep_Extension/0.jpg"
   },
   {
     "name": "Skull Crusher",
@@ -13738,7 +13779,8 @@
       "triceps"
     ],
     "secondaryMuscles": [],
-    "youtubeUrl": "https://www.youtube.com/results?search_query=skull%20crusher%20form%20tutorial"
+    "youtubeUrl": "https://www.youtube.com/results?search_query=skull%20crusher%20form%20tutorial",
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Band_Skull_Crusher/0.jpg"
   },
   {
     "name": "Tricep Dip",
@@ -13767,7 +13809,8 @@
       "glutes",
       "hamstrings",
       "calves"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Box_Squat/0.jpg"
   },
   {
     "name": "Front Squat",
@@ -13781,7 +13824,8 @@
     "secondaryMuscles": [
       "glutes"
     ],
-    "youtubeUrl": "https://www.youtube.com/results?search_query=front%20squat%20form%20tutorial"
+    "youtubeUrl": "https://www.youtube.com/results?search_query=front%20squat%20form%20tutorial",
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Front_Squat_Clean_Grip/0.jpg"
   },
   {
     "name": "Lunge",
@@ -13795,7 +13839,8 @@
     "secondaryMuscles": [
       "glutes",
       "hamstrings"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lunge_Sprint/0.jpg"
   },
   {
     "name": "Dumbbell Lunge",
@@ -13809,7 +13854,8 @@
     "secondaryMuscles": [
       "glutes",
       "hamstrings"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Lunges/0.jpg"
   },
   {
     "name": "Walking Lunge",
@@ -13823,7 +13869,8 @@
     "secondaryMuscles": [
       "glutes",
       "hamstrings"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Walking_Lunge/0.jpg"
   },
   {
     "name": "Dumbbell Romanian Deadlift",
@@ -13837,7 +13884,8 @@
     "secondaryMuscles": [
       "glutes",
       "lower back"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Romanian_Deadlift/0.jpg"
   },
   {
     "name": "Leg Extension",
@@ -13849,7 +13897,8 @@
       "quadriceps"
     ],
     "secondaryMuscles": [],
-    "youtubeUrl": "https://www.youtube.com/results?search_query=leg%20extension%20form%20tutorial"
+    "youtubeUrl": "https://www.youtube.com/results?search_query=leg%20extension%20form%20tutorial",
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Extensions/0.jpg"
   },
   {
     "name": "Leg Curl",
@@ -13863,7 +13912,8 @@
     "secondaryMuscles": [
       "calves"
     ],
-    "youtubeUrl": "https://www.youtube.com/results?search_query=leg%20curl%20form%20tutorial"
+    "youtubeUrl": "https://www.youtube.com/results?search_query=leg%20curl%20form%20tutorial",
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Ball_Leg_Curl/0.jpg"
   },
   {
     "name": "Lying Leg Curl",
@@ -13876,7 +13926,8 @@
     ],
     "secondaryMuscles": [
       "calves"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_Leg_Curls/0.jpg"
   },
   {
     "name": "Calf Raise",
@@ -13888,7 +13939,8 @@
       "calves"
     ],
     "secondaryMuscles": [],
-    "youtubeUrl": "https://www.youtube.com/results?search_query=calf%20raise%20form%20tutorial"
+    "youtubeUrl": "https://www.youtube.com/results?search_query=calf%20raise%20form%20tutorial",
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Seated_Calf_Raise/0.jpg"
   },
   {
     "name": "Standing Calf Raise",
@@ -13899,7 +13951,8 @@
     "primaryMuscles": [
       "calves"
     ],
-    "secondaryMuscles": []
+    "secondaryMuscles": [],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Standing_Calf_Raises/0.jpg"
   },
   {
     "name": "Hip Thrust",
@@ -13913,7 +13966,8 @@
     "secondaryMuscles": [
       "hamstrings"
     ],
-    "youtubeUrl": "https://www.youtube.com/results?search_query=hip%20thrust%20form%20tutorial"
+    "youtubeUrl": "https://www.youtube.com/results?search_query=hip%20thrust%20form%20tutorial",
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Hip_Thrust/0.jpg"
   },
   {
     "name": "Glute Bridge",
@@ -13926,7 +13980,8 @@
     ],
     "secondaryMuscles": [
       "hamstrings"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Glute_Bridge/0.jpg"
   },
   {
     "name": "Step Up",
@@ -13940,7 +13995,8 @@
     "secondaryMuscles": [
       "glutes",
       "hamstrings"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Step_Ups/0.jpg"
   },
   {
     "name": "Crunch",
@@ -13952,7 +14008,8 @@
       "abdominals"
     ],
     "secondaryMuscles": [],
-    "youtubeUrl": "https://www.youtube.com/results?search_query=crunch%20ab%20exercise%20form"
+    "youtubeUrl": "https://www.youtube.com/results?search_query=crunch%20ab%20exercise%20form",
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Crunches/0.jpg"
   },
   {
     "name": "Leg Raise",
@@ -13963,7 +14020,8 @@
     "primaryMuscles": [
       "abdominals"
     ],
-    "secondaryMuscles": []
+    "secondaryMuscles": [],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Rear_Leg_Raises/0.jpg"
   },
   {
     "name": "Kettlebell Swing",
@@ -13977,6 +14035,7 @@
     "secondaryMuscles": [
       "glutes",
       "shoulders"
-    ]
+    ],
+    "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/One-Arm_Kettlebell_Swings/0.jpg"
   }
 ]
