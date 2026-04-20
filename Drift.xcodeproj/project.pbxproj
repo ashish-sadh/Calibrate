@@ -245,6 +245,7 @@
 		F2DAD90846C1E28C0DBBB863 /* IntentRoutingEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = A048685BCBAD258ADEEB3E22 /* IntentRoutingEval.swift */; };
 		F3F76111AABE3827018AE984 /* AIChatView+MessageHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 483437CB4AFE28505FCFE44A /* AIChatView+MessageHandling.swift */; };
 		F48B724B0FCDD5F1CE751D00 /* ConversationHistoryBuilderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC6101DFE9E2C3B0CE1F69F4 /* ConversationHistoryBuilderTests.swift */; };
+		F4A789AE03946D731AF93122 /* DomainExtractorGoldSetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA48E87D458B74FDF0FC6C8B /* DomainExtractorGoldSetTests.swift */; };
 		F5D75205618898612BC57C04 /* RecoveryEstimatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE8784E04AE612EE26E7AFE5 /* RecoveryEstimatorTests.swift */; };
 		F6746A0A13DC1D820EE372CC /* ToolRouterEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF1A03F6A7AD74047A466B9 /* ToolRouterEval.swift */; };
 		F76EFB1E0CD3A82C570B9475 /* USDAFoodService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EEA23E4C1755C342030C667 /* USDAFoodService.swift */; };
@@ -557,6 +558,7 @@
 		F86480D874FB7BC3461695E4 /* ClarificationFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClarificationFlowTests.swift; sourceTree = "<group>"; };
 		F86B648E00469832A2C8FB56 /* NotificationServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationServiceTests.swift; sourceTree = "<group>"; };
 		FA0DCFCDAFF06DBAD3CA13DB /* WidgetDataTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDataTests.swift; sourceTree = "<group>"; };
+		FA48E87D458B74FDF0FC6C8B /* DomainExtractorGoldSetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DomainExtractorGoldSetTests.swift; sourceTree = "<group>"; };
 		FAE5B42E1108785AF7EEA041 /* PronounResolverTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PronounResolverTests.swift; sourceTree = "<group>"; };
 		FAF40DC8990B1C6D8A2C89E3 /* PerToolReliabilityEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerToolReliabilityEval.swift; sourceTree = "<group>"; };
 		FCBE3BA3D70586AC0F3ED34E /* DebugSeedData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSeedData.swift; sourceTree = "<group>"; };
@@ -788,6 +790,7 @@
 		5C5A33109C9BA8C6F1F9ED8F /* LLMEval */ = {
 			isa = PBXGroup;
 			children = (
+				FA48E87D458B74FDF0FC6C8B /* DomainExtractorGoldSetTests.swift */,
 				BA011B2F5DA344904EFAD4D3 /* LLMGemma4Eval.swift */,
 				11C8DCE5BFBE377F800CD11B /* LLMIntegrationTest.swift */,
 				6C100ED24DAB0D032BD8C5BD /* LLMQwen3Eval.swift */,
@@ -1402,6 +1405,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F4A789AE03946D731AF93122 /* DomainExtractorGoldSetTests.swift in Sources */,
 				72F5D9C470D2FE034CE2094E /* LLMGemma4Eval.swift in Sources */,
 				4619DED6D59EC5E38FD24EBB /* LLMIntegrationTest.swift in Sources */,
 				7FF64D8FECEB7302909982E6 /* LLMQwen3Eval.swift in Sources */,
