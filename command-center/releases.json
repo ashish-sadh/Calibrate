@@ -1608,5 +1608,22 @@
       "FoodLoggingGoldSetTests +25 hard cases — edge units, implicit qty, composed foods",
       "MultiTurnRegressionTests +15 — ordinal refs, mid-recipe topic switch, partial undo"
     ]
+  },
+  {
+    "build": 152,
+    "date": "2026-04-20T09:18:58-07:00",
+    "description": "Photo Log (Cal AI) full stack — BYOK cloud vision, capture + review flow, beta-gated entry",
+    "features": [
+      "Photo Log capture + review UI with beta-gated camera button in Food tab (#267)",
+      "PhotoLog AI tool registration for chat-driven photo meal logging (#268)",
+      "Photo Log BYOK Settings UI with biometric-gated key storage (#266, #263)",
+      "CloudVisionClient protocol + Anthropic implementation (#264)",
+      "PhotoLogService orchestrates preprocess + vision + cache (#265)",
+      "Suggestion-strip food taps now open adjustable-serving log sheet instead of calories-only quick-add (#270)"
+    ],
+    "fixes": [
+      "Voice input no longer crashes on first mic permission grant — explicit AVAudioApplication.requestRecordPermission before engine start (#272)",
+      "Reports workflow auto-heals missing 'report' label on cmd_finish"
+    ]
   }
 ]
