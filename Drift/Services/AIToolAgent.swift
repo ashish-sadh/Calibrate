@@ -51,7 +51,19 @@ enum AIToolAgent {
         // ── Step 0: Input normalization (instant, no LLM) ──
         // Strips filler words, voice artifacts, repeated words, collapses whitespace.
         // All subsequent phases see clean input.
-        let normalized = InputNormalizer.normalize(message)
+        var normalized = InputNormalizer.normalize(message)
+
+        // ── Step 0b: Cross-domain pronoun resolution (#241) ──
+        // Rewrite "how much protein in that" → "how much protein in <last entry>"
+        // before classification so the LLM sees a concrete subject. Food
+        // action pronouns ("log that") are still handled by the chat VM's
+        // food-scoped resolver — PronounResolver returns nil for action
+        // verbs to avoid double-binding.
+        if let freshEntry = ConversationState.shared.freshLastEntry(),
+           let rewritten = PronounResolver.resolve(message: normalized, context: freshEntry) {
+            Log.app.info("Pronoun resolved: '\(normalized)' → '\(rewritten)'")
+            normalized = rewritten
+        }
 
         // ── Phase 1: Try rules on raw input (instant, both models) ──
         // Only for high-confidence action commands (undo, delete, greetings)

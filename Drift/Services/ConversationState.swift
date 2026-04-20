@@ -100,6 +100,9 @@ final class ConversationState {
         if recentEntries.count > Self.recentEntriesCap {
             recentEntries.removeFirst(recentEntries.count - Self.recentEntriesCap)
         }
+        // Cross-domain "last thing we touched" pointer — powers pronoun
+        // resolution for queries like "how much protein in that". #241.
+        recordLastEntry(domain: .food, summary: ref.name, at: ref.loggedAt)
     }
 
     /// Drop a ref — called after successful delete/remove so stale IDs can't
@@ -173,6 +176,35 @@ final class ConversationState {
 
     var lastTopic: Topic = .unknown
     var turnCount: Int = 0
+
+    // MARK: - Cross-domain pronoun pointer (#241)
+
+    /// Last entry the user logged / edited *across any domain*. Powers
+    /// pronoun resolution on query-type intents: "how much protein in that"
+    /// after a food log, "am I under goal" after a weight log, etc.
+    /// Goes stale on the same 2h TTL as `recentEntries`.
+    struct LastEntryContext: Equatable, Sendable {
+        let domain: Topic
+        let summary: String     // "150g chicken" | "180 lbs" | "30min yoga"
+        let loggedAt: Date
+    }
+
+    private(set) var lastAnyEntry: LastEntryContext?
+
+    /// Record the most-recently-touched entry. Called from `pushRecentEntry`
+    /// for food and from non-food log paths (weight, exercise) directly.
+    func recordLastEntry(domain: Topic, summary: String, at when: Date = Date()) {
+        let trimmed = summary.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        lastAnyEntry = LastEntryContext(domain: domain, summary: trimmed, loggedAt: when)
+    }
+
+    /// Fresh-only accessor: returns `lastAnyEntry` only when within TTL.
+    func freshLastEntry(now: Date = Date()) -> LastEntryContext? {
+        guard let entry = lastAnyEntry else { return nil }
+        let cutoff = now.addingTimeInterval(-Self.recentEntriesTTL)
+        return entry.loggedAt < cutoff ? nil : entry
+    }
 
     // MARK: - Undo (last write action only)
 
@@ -269,6 +301,7 @@ final class ConversationState {
         lastToolSummary = nil
         lastToolSummaryTurn = -1
         recentEntries = []
+        lastAnyEntry = nil
         phase = .idle
         // Don't reset lastTopic, turnCount, userTurnIndex, or lastWriteAction — those persist across resets
     }

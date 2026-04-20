@@ -14,6 +14,13 @@ enum WeightServiceAPI {
         var entry = WeightEntry(date: DateFormatters.todayString, weightKg: kg, source: "manual")
         do {
             try AppDatabase.shared.saveWeightEntry(&entry)
+            // Cross-domain pronoun pointer — powers "am I under goal" after
+            // a weight log. #241.
+            let formatted = value == value.rounded() ? "\(Int(value))" : String(format: "%.1f", value)
+            ConversationState.shared.recordLastEntry(
+                domain: .weight,
+                summary: "\(formatted) \(unit.lowercased())"
+            )
             return entry
         } catch {
             return nil
