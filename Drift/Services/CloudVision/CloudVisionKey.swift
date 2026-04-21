@@ -7,11 +7,13 @@ import LocalAuthentication
 enum CloudVisionProvider: String, CaseIterable, Codable, Sendable {
     case anthropic
     case openai
+    case gemini
 
     var displayName: String {
         switch self {
         case .anthropic: return "Anthropic (Claude)"
-        case .openai: return "OpenAI (GPT-4o)"
+        case .openai:    return "OpenAI (GPT-4o)"
+        case .gemini:    return "Google (Gemini 2.5)"
         }
     }
 }

@@ -197,11 +197,14 @@ struct PhotoLogBetaSettingsView: View {
             }
             switch provider {
             case .anthropic:
-                let client = AnthropicVisionClient(apiKey: key)
-                try await client.ping()
+                try await AnthropicVisionClient(apiKey: key).ping()
                 status = .success("Connection OK.")
             case .openai:
-                status = .error("OpenAI client not implemented yet.")
+                try await OpenAIVisionClient(apiKey: key).ping()
+                status = .success("Connection OK.")
+            case .gemini:
+                try await GeminiVisionClient(apiKey: key).ping()
+                status = .success("Connection OK.")
             }
         } catch let error as CloudVisionError {
             // LocalizedError conformance gives actionable copy per case.
