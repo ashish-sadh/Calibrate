@@ -1670,5 +1670,20 @@
       "SmolLM\u2194Gemma 4 Tier 0/1 parity invariants \u2014 ensure 6GB devices hit same deterministic handlers",
       "ChatLatencyBenchmark single-item TTFT smoke runs by default, not opt-in \u2014 catches regressions in CI"
     ]
+  },
+  {
+    "build": 158,
+    "date": "2026-04-21T10:00:00-0700",
+    "description": "Photo Log multi-provider (OpenAI + Gemini); chat telemetry raw-text persistence for multi-turn analysis; intent classifier routes 'log pizza' correctly",
+    "features": [
+      "Photo Log adds OpenAI and Gemini providers alongside Anthropic \u2014 users can BYOK with preferred vendor (#298)",
+      "Photo Log surfaces real provider errors instead of generic fallback (#298)",
+      "Chat telemetry persists raw query + response text for multi-turn analysis (#297)"
+    ],
+    "fixes": [
+      "Intent classifier: 'log pizza' correctly routes to log_food, not food_info \u2014 root cause of #271",
+      "PAUSE/DRAIN enforcement hook only fires for autopilot sessions, not human takeover (#296)",
+      "Compliance now accepts 'approved' label for P0 routing and blocks senior on unwritten designs"
+    ]
   }
 ]
