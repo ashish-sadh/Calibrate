@@ -237,10 +237,9 @@ enum PhotoLogFlowService {
         }
         let client: CloudVisionClient
         switch provider {
-        case .anthropic:
-            client = AnthropicVisionClient(apiKey: key)
-        case .openai:
-            throw CloudVisionError.malformedPayload  // OpenAI not wired yet
+        case .anthropic: client = AnthropicVisionClient(apiKey: key)
+        case .openai:    client = OpenAIVisionClient(apiKey: key)
+        case .gemini:    client = GeminiVisionClient(apiKey: key)
         }
         let service = PhotoLogService(client: client)
         return try await service.analyze(image: image, prompt: PhotoLogTool.defaultPrompt)

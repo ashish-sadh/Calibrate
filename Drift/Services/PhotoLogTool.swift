@@ -95,12 +95,14 @@ enum PhotoLogTool {
             return errorOutput("Photo analysis timed out. Check your connection and try again.")
         } catch CloudVisionError.offline, PhotoLogService.Error.offline {
             return errorOutput("Couldn't reach the provider. Check your connection and try again.")
+        } catch let CloudVisionError.providerError(status, message) {
+            // Surface the real reason (credit balance, invalid key, etc.) so
+            // users know whether to add credit or re-enter the key.
+            return errorOutput("Provider rejected the request (HTTP \(status)): \(message)")
         } catch CloudVisionError.malformedPayload {
             return errorOutput("Provider returned an unreadable response. Try a clearer photo.")
         } catch PhotoLogService.Error.encodingFailed {
             return errorOutput("Couldn't prepare that image. Try a different photo.")
-        } catch OpenAINotImplemented.flag {
-            return errorOutput("OpenAI support is coming soon. Switch to Anthropic to use Photo Log today.")
         } catch CloudVisionKey.StorageError.notFound {
             return errorOutput("No key saved. Add one in Settings → Photo Log (Beta).")
         } catch {
@@ -110,10 +112,6 @@ enum PhotoLogTool {
 
     // MARK: - Default service wiring
 
-    /// Sentinel thrown when the selected provider has no client yet (OpenAI).
-    /// Using a throw keeps the `do/catch` in `run` flat.
-    private enum OpenAINotImplemented: Error { case flag }
-
     private static func buildDefaultService() async throws -> PhotoLogService {
         let provider = Preferences.photoLogProvider
         guard let key = try await CloudVisionKey.get(for: provider) else {
@@ -121,10 +119,9 @@ enum PhotoLogTool {
         }
         let client: CloudVisionClient
         switch provider {
-        case .anthropic:
-            client = AnthropicVisionClient(apiKey: key)
-        case .openai:
-            throw OpenAINotImplemented.flag
+        case .anthropic: client = AnthropicVisionClient(apiKey: key)
+        case .openai:    client = OpenAIVisionClient(apiKey: key)
+        case .gemini:    client = GeminiVisionClient(apiKey: key)
         }
         return PhotoLogService(client: client)
     }

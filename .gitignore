@@ -42,3 +42,8 @@ graphify-out/.graphify_uncached.txt
 graphify-out/.graphify_semantic_new.json
 graphify-out/.graphify_transcripts.json
 graphify-out/graph.html
+
+# Local API keys — never commit
+.drift-secrets/
+*.anthropic-key
+/tmp/drift-test-*
