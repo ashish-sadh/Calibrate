@@ -231,10 +231,13 @@ start_claude() {
     if [[ "$SESSION_TYPE" != "planning" ]]; then
     # 1. Planning due?
     if "$WORK_DIR/scripts/sprint-service.sh" planning-due 2>/dev/null; then
-        local NOW=$(date +%s)
         MODEL=$(get_model planning opus)
         SESSION_TYPE="planning"
-        echo "$NOW" > "$HOME/drift-state/last-review-time"
+        # NOTE: last-review-time is stamped by `report-service.sh finish` when a
+        # product-review branch is actually merged — NOT here. Writing it at
+        # session spawn made `cmd_review_due` believe a review was done every
+        # time a planner started, and reviews silently stopped getting written
+        # (710-cycle gap observed 2026-04-21).
         log "Sprint planning due — $MODEL"
 
         local CYCLE=$(cat "$HOME/drift-state/cycle-counter" 2>/dev/null || echo "?")
