@@ -96,6 +96,7 @@
 		51943F743F3F4638E4D7EBAA /* PhotoLogTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAC05282764E0169FEFB3D88 /* PhotoLogTool.swift */; };
 		51D36C1D00F25F64F54D70BF /* HealthKitService+Sleep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4902DF0863C6F54F0D1BC3BA /* HealthKitService+Sleep.swift */; };
 		5284981F1135EBAFC55F5BFE /* llama.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4101CD9171B652C6B8D1BB4E /* llama.xcframework */; };
+		542C08421C811567432469A4 /* FoodInfoGoalProgressTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AB4EA94D5F94E8F7F5BAF5 /* FoodInfoGoalProgressTests.swift */; };
 		5A5C3B121A517C9F07A31C5A /* CycleCalculations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37D1FB1A43791483D88EC4BC /* CycleCalculations.swift */; };
 		5A6FF40412DE467AB6BDAF6D /* CombosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD6164BEC39C20085C879296 /* CombosView.swift */; };
 		5D799CB56178B7DEF0087C56 /* NormalizerEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC5F3236EF7B5CE9409448BD /* NormalizerEval.swift */; };
@@ -554,6 +555,7 @@
 		C10970FB3ED143760EC6C8C5 /* exercises.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = exercises.json; sourceTree = "<group>"; };
 		C170D4FEDFB68CA8A61E1D03 /* ToolSchema.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolSchema.swift; sourceTree = "<group>"; };
 		C182889F4730B18DE0244F02 /* MealLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealLog.swift; sourceTree = "<group>"; };
+		C1AB4EA94D5F94E8F7F5BAF5 /* FoodInfoGoalProgressTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodInfoGoalProgressTests.swift; sourceTree = "<group>"; };
 		C1D0EF86656667CEF40EB779 /* MultiTurnContextEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiTurnContextEval.swift; sourceTree = "<group>"; };
 		C6C5FCF45E66161B45683C82 /* LabReportOCR+Biomarkers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LabReportOCR+Biomarkers.swift"; sourceTree = "<group>"; };
 		C83F8A82CCD53BEF551BC4A6 /* Features.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Features.swift; sourceTree = "<group>"; };
@@ -758,6 +760,7 @@
 				47334FA11098E0172ED4A19A /* EdgeCaseTests.swift */,
 				7858A979E074F294B4374C4F /* EditMealTests.swift */,
 				86925D3A552412270FE48794 /* EntryReferenceResolutionTests.swift */,
+				C1AB4EA94D5F94E8F7F5BAF5 /* FoodInfoGoalProgressTests.swift */,
 				01D12135182651E611071EA0 /* FoodLoggingGoldSetTests.swift */,
 				B3D6A44D7C25BC4956132FE8 /* FoodLoggingTests.swift */,
 				4EACDB02677C363A05FD0592 /* FoodLogSheetTests.swift */,
@@ -1559,6 +1562,7 @@
 				F29E79872466C7556AC9D549 /* EdgeCaseTests.swift in Sources */,
 				8251B89F118F563CB2197980 /* EditMealTests.swift in Sources */,
 				3CFAC4ABCCF2DD477733214E /* EntryReferenceResolutionTests.swift in Sources */,
+				542C08421C811567432469A4 /* FoodInfoGoalProgressTests.swift in Sources */,
 				9828F6D5E316631E7B0A8420 /* FoodLogSheetTests.swift in Sources */,
 				D45468A5C7B2A9C18304ED83 /* FoodLoggingGoldSetTests.swift in Sources */,
 				5D88D4133DC583D407E81955 /* FoodLoggingTests.swift in Sources */,

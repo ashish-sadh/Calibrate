@@ -204,12 +204,14 @@ enum ToolRegistration {
                 let goal = WeightGoal.load()
                 let targets = goal?.macroTargets(currentWeightKg: WeightTrendService.shared.latestWeightKg)
 
-                // Macro-specific focus: "how is my protein", "carbs today", "fat intake"
+                // Macro-specific focus: "how is my protein", "carbs today", "fat intake",
+                // "am I hitting my protein goal".
                 if query.contains("protein") {
                     guard n.proteinG > 0 else { return .text("No food logged yet. Log meals to track protein.") }
                     if let t = targets {
+                        var response = FoodService.macroProgressLine(
+                            label: "Protein", currentG: Int(n.proteinG), targetG: Int(t.proteinG))
                         let left = max(0, Int(t.proteinG - n.proteinG))
-                        var response = "\(Int(n.proteinG))g protein today (\(Int(t.proteinG))g target). \(left > 0 ? "Still need \(left)g." : "Target reached!")"
                         let topP = FoodService.topProteinFoods(limit: 3)
                         if left > 20 && !topP.isEmpty {
                             response += " Try: " + topP.map { "\($0.name) (\(Int($0.proteinG))P)" }.joined(separator: ", ")
@@ -220,15 +222,15 @@ enum ToolRegistration {
                 }
                 if query.contains("carb") {
                     if let t = targets {
-                        let left = max(0, Int(t.carbsG - n.carbsG))
-                        return .text("\(Int(n.carbsG))g carbs today. Target: \(Int(t.carbsG))g. \(left > 0 ? "Need \(left)g more." : "Reached!")")
+                        return .text(FoodService.macroProgressLine(
+                            label: "Carbs", currentG: Int(n.carbsG), targetG: Int(t.carbsG)))
                     }
                     return .text("\(Int(n.carbsG))g carbs today.")
                 }
                 if query.contains("fat") && !query.contains("body fat") {
                     if let t = targets {
-                        let left = max(0, Int(t.fatG - n.fatG))
-                        return .text("\(Int(n.fatG))g fat today. Target: \(Int(t.fatG))g. \(left > 0 ? "Need \(left)g more." : "Reached!")")
+                        return .text(FoodService.macroProgressLine(
+                            label: "Fat", currentG: Int(n.fatG), targetG: Int(t.fatG)))
                     }
                     return .text("\(Int(n.fatG))g fat today.")
                 }

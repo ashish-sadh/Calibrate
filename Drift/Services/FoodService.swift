@@ -328,6 +328,23 @@ enum FoodService {
         return response + "."
     }
 
+    /// Formats a macro-goal-progress line: "Protein: 87g / 120g goal — 73% (33g to go)".
+    /// Pure — no I/O. Returns percent of target (capped at 999 to avoid absurd values on bad input).
+    nonisolated static func macroProgressLine(label: String, currentG: Int, targetG: Int, unit: String = "g") -> String {
+        let c = max(0, currentG)
+        let t = max(0, targetG)
+        guard t > 0 else { return "\(label): \(c)\(unit)." }
+        let pct = min(999, Int((Double(c) / Double(t)) * 100.0))
+        let tail: String
+        if c >= t {
+            let over = c - t
+            tail = over == 0 ? "target reached!" : "\(over)\(unit) over"
+        } else {
+            tail = "\(t - c)\(unit) to go"
+        }
+        return "\(label): \(c)\(unit) / \(t)\(unit) goal — \(pct)% (\(tail))."
+    }
+
     // MARK: - Suggestions
 
     /// High-protein foods the user actually eats, that fit remaining calories.
