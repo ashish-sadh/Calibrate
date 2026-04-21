@@ -103,6 +103,24 @@ if [ "$SESSION_TYPE" = "senior" ] && [ "$DRIFT_CONTROL" = "RUN" ]; then
     exit 2
   fi
 
+  # Pending design docs unwritten: if any exist and this session produced no
+  # design-doc PR, block. Senior is the only role allowed to write design docs
+  # (per program.md step 3) — without this gate they were silently exiting
+  # while docs like #274 rotted in the pending queue.
+  PENDING_DESIGN=$("${CLAUDE_PROJECT_DIR:-.}/scripts/design-service.sh" pending 2>/dev/null | grep -E '^#[0-9]+' || echo "")
+  if [ -n "$PENDING_DESIGN" ]; then
+    # Did THIS session produce a design-doc PR? Check for one created by us in the last 4h.
+    CUTOFF=$(date -u -v-4H +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u -d '4 hours ago' +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "")
+    NEW_DESIGN_PRS=0
+    if [ -n "$CUTOFF" ]; then
+      NEW_DESIGN_PRS=$(gh pr list --label design-doc --state all --search "created:>$CUTOFF" --json number --jq 'length' 2>/dev/null || echo "0")
+    fi
+    if [ "$NEW_DESIGN_PRS" = "0" ]; then
+      echo -e "BLOCKED: Pending design doc(s) not written this session:\n${PENDING_DESIGN}\nWrite at least one (design-service.sh pending → branch → PR with --label design-doc) or add the 'blocked' label with a stated reason before stopping." >&2
+      exit 2
+    fi
+  fi
+
   # Bugs closed this session without plan-posted label — warn (not hard block)
   UNPLANNED=$(gh issue list --state closed --label bug --json number,title,labels \
     --jq '[.[] | select(.labels | map(.name) | index("plan-posted") | not)] | length' 2>/dev/null || echo "0")

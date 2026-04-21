@@ -162,10 +162,15 @@ available = [t for t in tasks
              if t.get("status") != "done" and t.get("number") != in_progress]
 
 # ── Priority 1 (all sessions): Admin-approved P0 bugs ─────────────────────────
-# Admin-approved = has sprint-task label (admin files with sprint-task; non-admin needs approval first)
+# Admin-approved = has sprint-task OR approved label. CC's Approve button stamps
+# sprint-task; admins sometimes manually stamp `approved` via GitHub UI (e.g. #282,
+# which then stayed invisible to the router). Accept either as the go-signal.
+def admin_approved(t):
+    return has(t, "sprint-task") or has(t, "approved")
+
 for t in available:
     if has(t, "needs-review"): continue
-    if has(t, "bug") and has(t, "P0") and has(t, "sprint-task"):
+    if has(t, "bug") and has(t, "P0") and admin_approved(t):
         print(f"{t['number']} {t['title']}"); sys.exit(0)
 
 # ── Senior-only section ────────────────────────────────────────────────────────
@@ -177,10 +182,10 @@ if filter_mode in ("--senior", "--any"):
         if has(t, "sprint-task") and has(t, "SENIOR"):
             print(f"{t['number']} {t['title']}"); sys.exit(0)
 
-    # Priority 3: Admin-approved P1/P2 bugs (sprint-task, no SENIOR, no needs-review)
+    # Priority 3: Admin-approved P1/P2 bugs (sprint-task or approved, no SENIOR, no needs-review)
     for t in available:
         if has(t, "needs-review"): continue
-        if has(t, "bug") and (has(t, "P1") or has(t, "P2")) and has(t, "sprint-task") and not has(t, "SENIOR"):
+        if has(t, "bug") and (has(t, "P1") or has(t, "P2")) and admin_approved(t) and not has(t, "SENIOR"):
             print(f"{t['number']} {t['title']}"); sys.exit(0)
 
     # Priority 4: Requested SENIOR permanent tasks (admin-requested this cycle, once per sprint)
@@ -207,10 +212,10 @@ if filter_mode in ("--junior", "--any"):
         if has(t, "sprint-task") and not has(t, "SENIOR") and not has(t, "bug"):
             print(f"{t['number']} {t['title']}"); sys.exit(0)
 
-    # Priority 3: Admin-approved P1/P2 bugs (sprint-task, no SENIOR, no needs-review)
+    # Priority 3: Admin-approved P1/P2 bugs (sprint-task or approved, no SENIOR, no needs-review)
     for t in available:
         if has(t, "needs-review"): continue
-        if has(t, "bug") and (has(t, "P1") or has(t, "P2")) and has(t, "sprint-task") and not has(t, "SENIOR"):
+        if has(t, "bug") and (has(t, "P1") or has(t, "P2")) and admin_approved(t) and not has(t, "SENIOR"):
             print(f"{t['number']} {t['title']}"); sys.exit(0)
 
     # Priority 4: Requested non-SENIOR permanent tasks (admin-requested this cycle)
