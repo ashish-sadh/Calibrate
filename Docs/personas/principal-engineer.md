@@ -234,6 +234,13 @@
 - Voice transcription misrecognition of health terms (metformin, creatine, whey) is a deterministic post-processing problem, not a model quality problem. Fixing at the string level (dictionary pass on final transcript) is the right layer — cheaper than trying to train or fine-tune SpeechRecognizer.
 - Queue depth: entered cycle at 16 pending tasks, closed at ~26 post-planning. The 5-senior-task budget means full drain is ~5 sessions. Honest capacity signal — don't pile on next cycle unless queue drops.
 
+### What I Learned — Planning Cycle 3985 (2026-04-21)
+- Photo Log went from single-provider (Anthropic) to three (Anthropic + OpenAI + Gemini) in #298. Each provider adds its own failure modes (auth shape, rate-limit header, transient-vs-permanent error semantics). The *next* architectural move is making the provider choice invisible: fallback chain (#300) so a user with three BYOK keys effectively never sees "AI unavailable". This is the same pattern as multi-region database reads — clients shouldn't know which replica served them.
+- Telemetry raw-text persistence (#297) landed but is still open-loop, same class of problem I flagged last cycle with #261. Ticket #301 (`/debug last-failures` chat command) closes the loop by turning the persistence layer into an on-device consumer. Lesson is restated: every new telemetry emission needs its reader on the same sprint, else it's shelfware.
+- IntentClassifier still uses one global confidence threshold. The telemetry now in place lets us measure per-domain false-clarify and false-guess rates — #302 replaces the single number with per-domain thresholds. Calibration you couldn't justify pre-telemetry is now defensible at review with evidence.
+- Hooks fix #296 (PAUSE/DRAIN enforcement only fires for autopilot sessions) shipped after a human-takeover session hit autopilot hooks. Mode-unaware behavior is a subtle bug class — grep for \`PAUSE\|DRAIN\|autopilot\` checks in hook scripts to audit other instances.
+- Queue closed this cycle at ~30 (20 in + 10 new). Not runaway growth, but the tail on SENIOR is now 8 tasks — that's 2 full senior sessions of drain before we should add more. Next planning cycle should look at queue-drain-rate before adding anything.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)
