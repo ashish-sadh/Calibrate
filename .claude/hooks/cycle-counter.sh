@@ -4,9 +4,15 @@
 
 set -e
 
-# 1. DRAIN/PAUSE — graceful stop after this commit
+SESSION_TYPE=$(cat "$HOME/drift-state/cache-session-type" 2>/dev/null || echo "junior")
+
+# 1. DRAIN/PAUSE — graceful stop after this commit. ONLY enforced on autopilot
+#    sessions. Ground truth for "is this autopilot" is DRIFT_AUTONOMOUS=1, which
+#    the watchdog exports before launching Claude. The cache-session-type file
+#    is unreliable here because each autopilot spawn overwrites it and human
+#    sessions inherit the stale "senior"/"junior" stamp.
 DRIFT_STATE=$(cat "$HOME/drift-control.txt" 2>/dev/null | tr -d '[:space:]' | tr '[:lower:]' '[:upper:]')
-if [ "$DRIFT_STATE" = "DRAIN" ] || [ "$DRIFT_STATE" = "PAUSE" ]; then
+if [ "${DRIFT_AUTONOMOUS:-}" = "1" ] && { [ "$DRIFT_STATE" = "DRAIN" ] || [ "$DRIFT_STATE" = "PAUSE" ]; }; then
   cat <<ENDJSON
 {
   "hookSpecificOutput": {
@@ -25,7 +31,6 @@ COUNT=$((COUNT + 1))
 echo "$COUNT" > "$COUNTER_FILE"
 
 # 3. Build context injection based on session role
-SESSION_TYPE=$(cat "$HOME/drift-state/cache-session-type" 2>/dev/null || echo "junior")
 CONTEXT=""
 
 # All roles: close bugs with a comment

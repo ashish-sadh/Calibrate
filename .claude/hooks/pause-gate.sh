@@ -13,6 +13,15 @@ if [[ "$COMMAND" != scripts/sprint-service.sh* && \
     exit 0
 fi
 
+# PAUSE gate only applies to autopilot sessions. The watchdog exports
+# DRIFT_AUTONOMOUS=1 before launching Claude; human-started sessions don't
+# have it. cache-session-type is not used here because it gets overwritten by
+# every autopilot spawn and stays stamped "senior"/"junior"/"planning" during
+# human takeover.
+if [ "${DRIFT_AUTONOMOUS:-}" != "1" ]; then
+    exit 0
+fi
+
 CONTROL="$(cat "$HOME/drift-control.txt" 2>/dev/null || echo RUN)"
 [ "$CONTROL" != "PAUSE" ] && exit 0
 
