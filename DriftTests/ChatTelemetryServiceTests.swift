@@ -249,6 +249,129 @@ private func drain(_ service: ChatTelemetryService) {
     #expect(stat.p50 <= stat.p95)
 }
 
+// MARK: - recentFailures (#281)
+
+/// Format a timestamp N hours before `now` in the same ISO8601 format
+/// ChatTelemetryService uses so its parser matches.
+private func isoTimestamp(hoursAgo: Double, now: Date = Date()) -> String {
+    let f = ISO8601DateFormatter()
+    f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return f.string(from: now.addingTimeInterval(-hoursAgo * 3600))
+}
+
+@Test func recentFailuresCountsFailedWithinWindow() throws {
+    Preferences.chatTelemetryEnabled = true
+    defer { Preferences.chatTelemetryEnabled = false }
+    let db = try makeTestDB()
+    let service = makeService(db: db)
+    // 2 failures on log_food in the last hour
+    for _ in 0..<2 {
+        try db.insertChatTurn(ChatTurnRow(
+            timestamp: isoTimestamp(hoursAgo: 0.5),
+            queryFingerprint: "aaaaaaaaaaaa",
+            intentLabel: "tool_call", toolCalled: "log_food",
+            outcome: "failed", latencyMs: 100, turnIndex: 0
+        ))
+    }
+    // 1 timeout on log_weight in the last hour (should count as failure)
+    try db.insertChatTurn(ChatTurnRow(
+        timestamp: isoTimestamp(hoursAgo: 0.5),
+        queryFingerprint: "bbbbbbbbbbbb",
+        intentLabel: "timeout", toolCalled: "log_weight",
+        outcome: "timeout", latencyMs: 20000, turnIndex: 0
+    ))
+    // 1 success (should NOT count)
+    try db.insertChatTurn(ChatTurnRow(
+        timestamp: isoTimestamp(hoursAgo: 0.5),
+        queryFingerprint: "cccccccccccc",
+        intentLabel: "tool_call", toolCalled: "log_food",
+        outcome: "success", latencyMs: 100, turnIndex: 0
+    ))
+    let failures = service.recentFailures(hoursBack: 24)
+    #expect(failures.count == 2)
+    #expect(failures.first?.tool == "log_food")
+    #expect(failures.first?.count == 2)
+    #expect(failures.contains(where: { $0.tool == "log_weight" && $0.count == 1 }))
+}
+
+@Test func recentFailuresExcludesRowsOlderThanWindow() throws {
+    Preferences.chatTelemetryEnabled = true
+    defer { Preferences.chatTelemetryEnabled = false }
+    let db = try makeTestDB()
+    let service = makeService(db: db)
+    // 2 recent (in window)
+    for _ in 0..<2 {
+        try db.insertChatTurn(ChatTurnRow(
+            timestamp: isoTimestamp(hoursAgo: 1),
+            queryFingerprint: "aaaaaaaaaaaa",
+            intentLabel: "tool_call", toolCalled: "log_food",
+            outcome: "failed", latencyMs: 100, turnIndex: 0
+        ))
+    }
+    // 5 old (25h ago, outside 24h window)
+    for _ in 0..<5 {
+        try db.insertChatTurn(ChatTurnRow(
+            timestamp: isoTimestamp(hoursAgo: 25),
+            queryFingerprint: "bbbbbbbbbbbb",
+            intentLabel: "tool_call", toolCalled: "log_food",
+            outcome: "failed", latencyMs: 100, turnIndex: 0
+        ))
+    }
+    let failures = service.recentFailures(hoursBack: 24)
+    #expect(failures.count == 1)
+    #expect(failures.first?.tool == "log_food")
+    #expect(failures.first?.count == 2)  // only the 2 recent ones
+}
+
+@Test func recentFailuresEmptyWhenNoFailures() throws {
+    Preferences.chatTelemetryEnabled = true
+    defer { Preferences.chatTelemetryEnabled = false }
+    let db = try makeTestDB()
+    let service = makeService(db: db)
+    try db.insertChatTurn(ChatTurnRow(
+        timestamp: isoTimestamp(hoursAgo: 1),
+        queryFingerprint: "aaaaaaaaaaaa",
+        intentLabel: "tool_call", toolCalled: "log_food",
+        outcome: "success", latencyMs: 100, turnIndex: 0
+    ))
+    #expect(service.recentFailures(hoursBack: 24).isEmpty)
+}
+
+@Test func recentFailuresEmptyWhenOptedOut() throws {
+    Preferences.chatTelemetryEnabled = false
+    let db = try makeTestDB()
+    let service = makeService(db: db)
+    // Even if rows existed in a shared DB, opt-out path returns empty table.
+    // (record() is a no-op when off, so in a fresh DB the table is empty.)
+    #expect(service.recentFailures(hoursBack: 24).isEmpty)
+}
+
+@Test func recentFailuresRespectsCustomWindow() throws {
+    Preferences.chatTelemetryEnabled = true
+    defer { Preferences.chatTelemetryEnabled = false }
+    let db = try makeTestDB()
+    let service = makeService(db: db)
+    // 1 fail at 2h ago, 1 fail at 30min ago
+    try db.insertChatTurn(ChatTurnRow(
+        timestamp: isoTimestamp(hoursAgo: 2),
+        queryFingerprint: "aaaaaaaaaaaa",
+        intentLabel: "tool_call", toolCalled: "log_food",
+        outcome: "failed", latencyMs: 100, turnIndex: 0
+    ))
+    try db.insertChatTurn(ChatTurnRow(
+        timestamp: isoTimestamp(hoursAgo: 0.5),
+        queryFingerprint: "bbbbbbbbbbbb",
+        intentLabel: "tool_call", toolCalled: "log_food",
+        outcome: "failed", latencyMs: 100, turnIndex: 0
+    ))
+    // 1h window → only the 30min-ago row counts
+    let oneHour = service.recentFailures(hoursBack: 1)
+    #expect(oneHour.first?.count == 1)
+    // 3h window → both count
+    let threeHours = service.recentFailures(hoursBack: 3)
+    #expect(threeHours.first?.count == 2)
+}
+
 // MARK: - Factory reset
 
 @Test func factoryResetClearsTelemetry() throws {

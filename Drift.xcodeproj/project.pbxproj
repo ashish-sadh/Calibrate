@@ -148,6 +148,7 @@
 		874EFD308E2D9EB4A66A47C8 /* PhotoLogService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 40C61E461D3E4A0FA092F2C3 /* PhotoLogService.swift */; };
 		87D41671B48C76809CA2ACB0 /* ConversationHistoryBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97443F553C4834DE8344C9F8 /* ConversationHistoryBuilder.swift */; };
 		88C39BC23EC131562257B528 /* BodyComposition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0F9EB82B9906D11C092B3111 /* BodyComposition.swift */; };
+		896886745EB2603EB44D2228 /* AIToolAgentTelemetryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 79933DCD44BD469E32826413 /* AIToolAgentTelemetryTests.swift */; };
 		897722DC29F4AAF58BDA1CCF /* ActiveWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 22F8386EAF9FBD18F89C8C60 /* ActiveWorkoutView.swift */; };
 		8A7201AC4ADB2A915B648FAB /* ChatTelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F8C0457514C26F34AFF908D /* ChatTelemetryService.swift */; };
 		8A8CF11C6A7AF26DCABECF6A /* CSVParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D6B07DD56345F8A5F5448BC /* CSVParserTests.swift */; };
@@ -474,6 +475,7 @@
 		7395A23088568B416917E2A6 /* DriftLLMEvalTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = DriftLLMEvalTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7858A979E074F294B4374C4F /* EditMealTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditMealTests.swift; sourceTree = "<group>"; };
 		790C2D3452366D6B473DE2B1 /* Supplement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Supplement.swift; sourceTree = "<group>"; };
+		79933DCD44BD469E32826413 /* AIToolAgentTelemetryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIToolAgentTelemetryTests.swift; sourceTree = "<group>"; };
 		7B9BADD02A9760A82C60DE4E /* SavedFood.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SavedFood.swift; sourceTree = "<group>"; };
 		7E7A1FEC035003AE448E5C65 /* PhotoLogFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLogFlowView.swift; sourceTree = "<group>"; };
 		7ED878D9FF93287B41B67503 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
@@ -740,6 +742,7 @@
 				19E7517E5B4779CBBE1C7284 /* AITests.swift */,
 				B3C39C489AD2FB465A0192A5 /* AIToolAgentRetryTests.swift */,
 				3406F79A46B85F01DC0010FB /* AIToolAgentStageTests.swift */,
+				79933DCD44BD469E32826413 /* AIToolAgentTelemetryTests.swift */,
 				0F40084353223A2C822198D7 /* ChatLatencyBenchmark.swift */,
 				E9FA0E48A2845CFA85AB7395 /* ChatSuggestionPillsTests.swift */,
 				1901726AE786A1A885C03F7E /* ChatTelemetryServiceTests.swift */,
@@ -1542,6 +1545,7 @@
 				2DDEA9907FA6338488A8E1CD /* AITests.swift in Sources */,
 				C1711A4AA359C352065463BF /* AIToolAgentRetryTests.swift in Sources */,
 				ABD8DD6A5F55642129836B7B /* AIToolAgentStageTests.swift in Sources */,
+				896886745EB2603EB44D2228 /* AIToolAgentTelemetryTests.swift in Sources */,
 				8A8CF11C6A7AF26DCABECF6A /* CSVParserTests.swift in Sources */,
 				9F37F2ED3EE2286472FF19E4 /* ChatLatencyBenchmark.swift in Sources */,
 				64BFF27391CC32B927344BA1 /* ChatSuggestionPillsTests.swift in Sources */,

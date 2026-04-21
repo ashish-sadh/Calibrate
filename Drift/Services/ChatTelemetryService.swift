@@ -181,6 +181,35 @@ extension ChatTelemetryService {
             .map { $0 }
     }
 
+    /// Failure rollup over the last `hoursBack` hours — the aggregate the
+    /// daily session summary surfaces so tool-call reliability regressions
+    /// are visible without waiting for a user bug report. #281.
+    ///
+    /// Filters to `outcome ∈ {failed, timeout}` and groups by tool. Rows with
+    /// no tool fall under `intent_label`, then `"unknown"`. Returns `[]` when
+    /// opt-in is off (table is empty) or no failures in the window.
+    func recentFailures(hoursBack: Int = 24, limit: Int = 10) -> [ToolStat] {
+        let cutoff = Date().addingTimeInterval(-Double(max(0, hoursBack) * 3600))
+        let parser = ISO8601DateFormatter()
+        parser.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let rows = fetchRecent().filter { row in
+            let isFailure = row.outcome == Outcome.failed.rawValue || row.outcome == Outcome.timeout.rawValue
+            guard isFailure else { return false }
+            guard let ts = parser.date(from: row.timestamp) else { return false }
+            return ts >= cutoff
+        }
+        var byKey: [String: Int] = [:]
+        for row in rows {
+            let key = row.toolCalled ?? row.intentLabel ?? "unknown"
+            byKey[key, default: 0] += 1
+        }
+        return byKey
+            .map { ToolStat(tool: $0.key, count: $0.value, failed: $0.value) }
+            .sorted { $0.count > $1.count }
+            .prefix(limit)
+            .map { $0 }
+    }
+
     /// Latency percentiles over the recorded sample.
     func latency() -> LatencyStat {
         let rows = fetchRecent().map(\.latencyMs).sorted()

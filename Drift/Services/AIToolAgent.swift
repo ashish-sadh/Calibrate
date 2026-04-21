@@ -12,6 +12,10 @@ struct AgentOutput: Sendable {
     /// The VM attaches these as tappable chips and sets
     /// `ConversationState.phase = .awaitingClarification(options:)`. #226.
     var clarificationOptions: [ClarificationOption]? = nil
+    /// True when the pipeline produced a non-clarifying, non-timeout failure
+    /// (tool handler returned `.error`, or the LLM fell back after empty/
+    /// low-quality/hallucinated output). Drives telemetry `.failed` outcome. #281.
+    var didFail: Bool = false
 }
 
 // MARK: - AI Tool Agent
@@ -114,7 +118,7 @@ enum AIToolAgent {
     /// Classify the pipeline outcome into a telemetry `IntentLabel`. Ordering
     /// matters: clarifications surface before tool labels because a clarifier
     /// result includes no tool in `toolsCalled`.
-    private static func telemetryIntent(for output: AgentOutput) -> ChatTelemetryService.IntentLabel? {
+    nonisolated static func telemetryIntent(for output: AgentOutput) -> ChatTelemetryService.IntentLabel? {
         if output.clarificationOptions?.isEmpty == false { return .clarification }
         let first = output.toolsCalled.first ?? ""
         switch first {
@@ -127,11 +131,15 @@ enum AIToolAgent {
     }
 
     /// Map output → telemetry outcome. `failed`/`timeout` are distinct so we
-    /// can tell "user needed clarification" from "pipeline couldn't cope."
-    private static func telemetryOutcome(for output: AgentOutput) -> ChatTelemetryService.Outcome {
+    /// can tell "user needed clarification" from "tool handler errored" from
+    /// "pipeline hit the wall." Order matters: timeout beats everything,
+    /// clarification beats didFail (a clarifying response isn't a failure),
+    /// didFail beats success. #281.
+    nonisolated static func telemetryOutcome(for output: AgentOutput) -> ChatTelemetryService.Outcome {
         let first = output.toolsCalled.first ?? ""
         if first == "timeout" { return .timeout }
         if output.clarificationOptions?.isEmpty == false { return .clarified }
+        if output.didFail { return .failed }
         return .success
     }
 
@@ -573,7 +581,7 @@ enum AIToolAgent {
         case .error(let msg):
             // User-friendly error message instead of raw error
             let friendly = "I couldn't quite do that — \(msg.lowercased()). Try rephrasing or say \"help\" to see what I can do."
-            return AgentOutput(text: friendly, action: nil, toolsCalled: [toolCall.tool])
+            return AgentOutput(text: friendly, action: nil, toolsCalled: [toolCall.tool], didFail: true)
         }
     }
 
@@ -611,10 +619,10 @@ enum AIToolAgent {
     static func handleTextResponse(_ response: String, screen: AIScreen) -> AgentOutput {
         let cleaned = AIResponseCleaner.clean(response)
         if cleaned.isEmpty || AIResponseCleaner.isLowQuality(cleaned) {
-            return AgentOutput(text: fallbackText(for: screen), action: nil, toolsCalled: [])
+            return AgentOutput(text: fallbackText(for: screen), action: nil, toolsCalled: [], didFail: true)
         }
         if AIResponseCleaner.hasHallucinatedNumbers(cleaned, context: AIContextBuilder.baseContext()) {
-            return AgentOutput(text: fallbackText(for: screen), action: nil, toolsCalled: [])
+            return AgentOutput(text: fallbackText(for: screen), action: nil, toolsCalled: [], didFail: true)
         }
         return AgentOutput(text: cleaned, action: nil, toolsCalled: [])
     }
