@@ -103,9 +103,12 @@ enum AIToolAgent {
             isLargeModel: isLargeModel, onStep: onStep, onToken: onToken
         )
         // #261 — opt-in gate is inside the service; this call is a no-op by default.
+        // When opt-in is on, `output.text` (the final user-facing response) is
+        // captured alongside the query so transcripts drive multi-turn analysis.
         let latencyMs = Int((CFAbsoluteTimeGetCurrent() - telemetryStart) * 1000)
         ChatTelemetryService.shared.record(
             query: message,
+            response: output.text,
             intent: telemetryIntent(for: output),
             tool: output.toolsCalled.first,
             outcome: telemetryOutcome(for: output),

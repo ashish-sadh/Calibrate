@@ -527,5 +527,16 @@ enum Migrations {
             }
             try db.create(index: "idx_chat_turn_timestamp", on: "chat_turn", columns: ["timestamp"])
         }
+
+        // v33: Store raw query + response text in telemetry so exports can feed
+        // multi-turn failure analysis. Nullable so pre-v33 rows (fingerprint-only)
+        // stay valid. Still on-device only; transmission only via user-initiated
+        // Export JSON.
+        migrator.registerMigration("v33_chat_telemetry_text") { db in
+            try db.alter(table: "chat_turn") { t in
+                t.add(column: "query_text", .text)
+                t.add(column: "response_text", .text)
+            }
+        }
     }
 }

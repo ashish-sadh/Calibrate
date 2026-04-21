@@ -213,6 +213,7 @@ struct SettingsView: View {
     @State private var telemetryEnabled: Bool = Preferences.chatTelemetryEnabled
     @State private var telemetryCount: Int = 0
     @State private var showingTelemetryDeleteConfirm = false
+    @State private var showingTelemetryEnableConfirm = false
     @State private var telemetryShareURL: URL?
 
     var body: some View {
@@ -396,20 +397,27 @@ struct SettingsView: View {
                             .foregroundStyle(Theme.accent).frame(width: 24)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("AI Chat Telemetry").font(.subheadline.weight(.medium))
-                            Text("Stored on your device only. Helps improve AI chat routing.")
+                            Text("Stored on this device. Nothing is transmitted until you tap Export JSON.")
                                 .font(.caption2).foregroundStyle(.tertiary)
                         }
                         Spacer()
                         Toggle("", isOn: $telemetryEnabled)
                             .labelsHidden().tint(Theme.accent)
                             .onChange(of: telemetryEnabled) { _, on in
-                                Preferences.chatTelemetryEnabled = on
-                                if !on { ChatTelemetryService.shared.deleteAll() }
-                                telemetryCount = ChatTelemetryService.shared.count()
+                                if on {
+                                    // Show the storage disclosure before flipping the pref
+                                    // so the user confirms they understand raw text is kept.
+                                    telemetryEnabled = false
+                                    showingTelemetryEnableConfirm = true
+                                } else {
+                                    Preferences.chatTelemetryEnabled = false
+                                    ChatTelemetryService.shared.deleteAll()
+                                    telemetryCount = ChatTelemetryService.shared.count()
+                                }
                             }
                     }
                     if telemetryEnabled {
-                        Text("Only a short hash of each query — never the raw text — is stored, along with the routed tool and outcome.")
+                        Text("Full query + response text is stored locally, alongside the routed tool and outcome. Use Export JSON to share a transcript with the Drift team to improve multi-turn reliability. Nothing leaves this device until you do.")
                             .font(.caption2).foregroundStyle(.tertiary)
                             .padding(.leading, 36)
 
@@ -457,6 +465,16 @@ struct SettingsView: View {
                     Button("Cancel", role: .cancel) {}
                 } message: {
                     Text("Removes all recorded chat-turn telemetry from this device. User data (weight, food, workouts) is not affected.")
+                }
+                .alert("Store chat transcripts on this device?", isPresented: $showingTelemetryEnableConfirm) {
+                    Button("Turn on") {
+                        Preferences.chatTelemetryEnabled = true
+                        telemetryEnabled = true
+                        telemetryCount = ChatTelemetryService.shared.count()
+                    }
+                    Button("Cancel", role: .cancel) {}
+                } message: {
+                    Text("When on, each chat turn's full query and assistant response will be saved on this device only. Nothing is transmitted. You can Export JSON anytime to share a transcript with the Drift team to improve multi-turn AI reliability, or Delete all to wipe it.")
                 }
 
                 // Photo Log (Beta) — BYOK cloud vision. #224 / #266.

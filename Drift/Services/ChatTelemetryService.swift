@@ -1,14 +1,17 @@
 import Foundation
 import CryptoKit
 
-/// Opt-in, on-device only AI chat telemetry. Records hashed-fingerprint turn
-/// metadata (never raw query text) so we can surface real failure patterns
-/// without breaking the privacy-first promise. #261.
+/// Opt-in, on-device only AI chat telemetry. Records turn metadata plus — when
+/// opt-in is enabled — the raw user query and assistant response text so we
+/// can audit real multi-turn failure transcripts. #261, raw-text capture v33.
 ///
 /// - Disabled by default. All public entry points return early when the
 ///   `Preferences.chatTelemetryEnabled` gate is off.
 /// - Ring buffer: caps `chat_turn` at `ringBufferLimit` rows.
-/// - Network: zero. All data lives in the local SQLite DB.
+/// - Network: zero. Raw text lives in the local SQLite DB and is only
+///   transmitted when the user taps Export JSON + shares it themselves.
+/// - Fingerprint is kept alongside raw text so aggregates that used it
+///   (dedupe-by-query) still work after the schema change.
 final class ChatTelemetryService: @unchecked Sendable {
     static let shared = ChatTelemetryService(db: AppDatabase.shared)
 
@@ -46,8 +49,13 @@ final class ChatTelemetryService: @unchecked Sendable {
 
     /// Fire-and-forget record. Returns immediately; work happens on a utility
     /// queue. No-op when the opt-in gate is off.
+    ///
+    /// `response` is the final assistant-facing text. Stored verbatim alongside
+    /// the query when opt-in is on so exported transcripts can drive multi-turn
+    /// failure analysis. Both raw strings live only in the local DB.
     func record(
         query: String,
+        response: String? = nil,
         intent: IntentLabel?,
         tool: String?,
         outcome: Outcome,
@@ -62,7 +70,9 @@ final class ChatTelemetryService: @unchecked Sendable {
             toolCalled: tool,
             outcome: outcome.rawValue,
             latencyMs: max(0, latencyMs),
-            turnIndex: max(0, turnIndex)
+            turnIndex: max(0, turnIndex),
+            queryText: query,
+            responseText: response
         )
         serialQueue.async { [db] in
             do {

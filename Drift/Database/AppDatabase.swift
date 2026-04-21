@@ -673,11 +673,12 @@ extension AppDatabase {
         try dbWriter.write { db in
             try db.execute(sql: """
                 INSERT INTO chat_turn
-                (timestamp, query_fingerprint, intent_label, tool_called, outcome, latency_ms, turn_index)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                (timestamp, query_fingerprint, intent_label, tool_called, outcome, latency_ms, turn_index, query_text, response_text)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, arguments: [
                     row.timestamp, row.queryFingerprint, row.intentLabel,
-                    row.toolCalled, row.outcome, row.latencyMs, row.turnIndex
+                    row.toolCalled, row.outcome, row.latencyMs, row.turnIndex,
+                    row.queryText, row.responseText
                 ])
         }
     }
@@ -698,7 +699,7 @@ extension AppDatabase {
     func fetchChatTurns(limit: Int = 5000) throws -> [ChatTurnRow] {
         try dbWriter.read { db in
             let rows = try Row.fetchAll(db, sql: """
-                SELECT timestamp, query_fingerprint, intent_label, tool_called, outcome, latency_ms, turn_index
+                SELECT timestamp, query_fingerprint, intent_label, tool_called, outcome, latency_ms, turn_index, query_text, response_text
                 FROM chat_turn ORDER BY id DESC LIMIT ?
                 """, arguments: [limit])
             return rows.map { r in
@@ -709,7 +710,9 @@ extension AppDatabase {
                     toolCalled: r["tool_called"] as String?,
                     outcome: r["outcome"] as String? ?? "",
                     latencyMs: Int(r["latency_ms"] as Int64? ?? 0),
-                    turnIndex: Int(r["turn_index"] as Int64? ?? 0)
+                    turnIndex: Int(r["turn_index"] as Int64? ?? 0),
+                    queryText: r["query_text"] as String?,
+                    responseText: r["response_text"] as String?
                 )
             }
         }
@@ -730,6 +733,9 @@ extension AppDatabase {
 
 /// Transport struct for chat telemetry rows. Not a GRDB `Record` — intentionally
 /// plain so tests and service code can construct rows without DB setup.
+///
+/// `queryText` and `responseText` are nullable to preserve v32 rows that
+/// pre-date raw-text capture. Written only when opt-in is on.
 struct ChatTurnRow: Equatable, Codable, Sendable {
     var timestamp: String
     var queryFingerprint: String
@@ -738,4 +744,6 @@ struct ChatTurnRow: Equatable, Codable, Sendable {
     var outcome: String
     var latencyMs: Int
     var turnIndex: Int
+    var queryText: String? = nil
+    var responseText: String? = nil
 }

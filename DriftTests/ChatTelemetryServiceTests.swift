@@ -90,6 +90,43 @@ private func drain(_ service: ChatTelemetryService) {
     #expect(rows.first?.queryFingerprint.count == ChatTelemetryService.fingerprintHexLength)
 }
 
+@Test func recordPersistsRawQueryAndResponseText() throws {
+    // v33: Raw text is captured when opt-in is on so exported transcripts can
+    // drive multi-turn failure analysis. Fingerprint is still written for
+    // back-compat aggregates.
+    Preferences.chatTelemetryEnabled = true
+    defer { Preferences.chatTelemetryEnabled = false }
+    let db = try makeTestDB()
+    let service = makeService(db: db)
+    service.record(
+        query: "log 2 eggs",
+        response: "Logged 2 eggs (140 kcal).",
+        intent: .toolCall, tool: "log_food",
+        outcome: .success, latencyMs: 120, turnIndex: 3
+    )
+    drain(service)
+    let row = try #require(service.fetchRecent().first)
+    #expect(row.queryText == "log 2 eggs")
+    #expect(row.responseText == "Logged 2 eggs (140 kcal).")
+    #expect(row.queryFingerprint.count == ChatTelemetryService.fingerprintHexLength)
+    #expect(row.turnIndex == 3)
+}
+
+@Test func recordOmitsRawTextWhenOptedOut() throws {
+    // Opt-out path stays airtight: no row written, no raw text captured.
+    Preferences.chatTelemetryEnabled = false
+    let db = try makeTestDB()
+    let service = makeService(db: db)
+    service.record(
+        query: "log 2 eggs",
+        response: "Logged 2 eggs (140 kcal).",
+        intent: .toolCall, tool: "log_food",
+        outcome: .success, latencyMs: 120, turnIndex: 0
+    )
+    Thread.sleep(forTimeInterval: 0.1)
+    #expect(service.count() == 0)
+}
+
 // MARK: - Ring buffer
 
 @Test func ringBufferEvictsOldestBeyondLimit() throws {
