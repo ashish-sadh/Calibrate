@@ -22,6 +22,30 @@ enum CloudVisionError: Error, Equatable {
     case transport(String)   // underlying URLSession error, redacted message
 }
 
+extension CloudVisionError: LocalizedError {
+    /// Human-readable descriptions surfaced when a caller falls through to
+    /// the generic `catch { error.localizedDescription }` path. Without this
+    /// conformance users see "Drift.CloudVisionError error N" (#275).
+    var errorDescription: String? {
+        switch self {
+        case .unauthorized:
+            return "API key rejected (401). Check the key in Settings → Photo Log (Beta)."
+        case .rateLimited:
+            return "Provider is throttling (429). Try again in a minute."
+        case .timeout:
+            return "Provider didn't respond in time. Check your connection and try again."
+        case .offline:
+            return "No internet. Connect and try again."
+        case .badResponse(let code):
+            return "Provider returned HTTP \(code). Try again in a moment."
+        case .malformedPayload:
+            return "Provider returned an unreadable response. Try a clearer photo."
+        case .transport(let detail):
+            return "Network error: \(detail)."
+        }
+    }
+}
+
 // MARK: - Anthropic implementation
 
 /// Claude vision implementation. Uses the Messages API with a forced

@@ -30,6 +30,25 @@ private func resetKeychain() {
     try CloudVisionKey.clear(for: .anthropic)
 }
 
+/// Regression for #275: `has()` must stay cheap/non-prompting so UI gates
+/// (`.disabled(!has(...))`) can be computed on every body re-render without
+/// stacking Face-ID / passcode popups. We can't assert the prompt
+/// suppression directly on simulator, but we can assert that hundreds of
+/// back-to-back calls stay consistent — exercising the
+/// `kSecUseAuthenticationContext(interactionNotAllowed: true)` path.
+@Test func hasIsCheapToCallRepeatedly() async throws {
+    resetKeychain()
+    try CloudVisionKey.set("sk-repeat", for: .anthropic)
+    for _ in 0..<50 {
+        #expect(CloudVisionKey.has(provider: .anthropic) == true)
+        #expect(CloudVisionKey.has(provider: .openai) == false)
+    }
+    try CloudVisionKey.clear(for: .anthropic)
+    for _ in 0..<10 {
+        #expect(CloudVisionKey.has(provider: .anthropic) == false)
+    }
+}
+
 // MARK: - Round trip
 
 @Test func setThenGetRoundTrips() async throws {

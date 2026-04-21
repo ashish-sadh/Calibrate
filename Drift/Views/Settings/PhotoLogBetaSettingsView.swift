@@ -203,12 +203,9 @@ struct PhotoLogBetaSettingsView: View {
             case .openai:
                 status = .error("OpenAI client not implemented yet.")
             }
-        } catch CloudVisionError.unauthorized {
-            status = .error("Key rejected (401). Check the key and try again.")
-        } catch CloudVisionError.rateLimited {
-            status = .error("Provider is throttling (429). Try again in a minute.")
-        } catch CloudVisionError.offline {
-            status = .error("No internet. Connect and try again.")
+        } catch let error as CloudVisionError {
+            // LocalizedError conformance gives actionable copy per case.
+            status = .error(error.errorDescription ?? "Could not reach provider.")
         } catch {
             status = .error("Could not reach provider: \(error.localizedDescription)")
         }

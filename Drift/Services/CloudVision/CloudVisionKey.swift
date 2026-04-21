@@ -93,15 +93,24 @@ enum CloudVisionKey {
         }
     }
 
-    /// Non-prompting existence check. Does not trigger biometrics, does not
-    /// read the key. Safe to use from any UI gate.
+    /// Non-prompting existence check. Attaches an `LAContext` with
+    /// `interactionNotAllowed = true` so `SecItemCopyMatching` returns
+    /// `errSecInteractionNotAllowed` (instead of prompting Face ID /
+    /// passcode) when the protected item exists. We treat that status as
+    /// "exists" so UI gates can be computed on every body re-render without
+    /// stacking passcode popups (#275).
     static func has(provider: CloudVisionProvider) -> Bool {
+        let context = LAContext()
+        context.interactionNotAllowed = true
+
         var query = baseQuery(for: provider)
         query[kSecReturnData as String] = false
         query[kSecMatchLimit as String] = kSecMatchLimitOne
-        // Do NOT set kSecUseOperationPrompt — metadata-only query.
+        query[kSecUseAuthenticationContext as String] = context
         let status = SecItemCopyMatching(query as CFDictionary, nil)
-        return status == errSecSuccess
+        // errSecSuccess: item exists and was returned without UI.
+        // errSecInteractionNotAllowed: item exists but would need UI — still "exists".
+        return status == errSecSuccess || status == errSecInteractionNotAllowed
     }
 
     /// Delete the stored key. Safe to call when no key exists.
