@@ -1635,5 +1635,15 @@
       "Exercise library: tiered fuzzy match raises photo coverage from 90% → 97% (#273)",
       "TestFlight preflight hook fails closed on P0 check and tightens issue matcher"
     ]
+  },
+  {
+    "build": 154,
+    "date": "2026-04-20T17:41:30-07:00",
+    "description": "Barcode scanner: KIND/CLIF/QUEST bars no longer default to 4ml; fixes chocolate→cola substring false-match",
+    "features": [],
+    "fixes": [
+      "Barcode scanner defaulted to 4ml for branded bars (KIND, CLIF, QUEST, LARABAR, RXBAR) when OFF product_name lacked 'bar' — now resolves to per-piece serving (#278)",
+      "Liquid unit detection no longer false-matches 'chocolate' as 'cola' substring — uses word-boundary for single-word liquids (milk, juice, cola, coffee, etc.)"
+    ]
   }
 ]

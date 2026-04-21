@@ -186,6 +186,57 @@ final class SmartUnitsGoldSetTests: XCTestCase {
         }
     }
 
+    // MARK: - Branded bars (bug #278: Kind bar scanner defaulted to 4ml)
+
+    func testKindBarBrandResolvesToPiece() {
+        // OFF returns "Dark Chocolate Nuts & Sea Salt" with brands "KIND" — the word "bar"
+        // is NOT in product_name. Must still resolve to a per-piece unit, not ml/serving.
+        let units = FoodUnit.smartUnits(for: food("Dark Chocolate Nuts & Sea Salt - KIND", size: 40))
+        XCTAssertEqual(units.first?.label, "piece",
+                       "KIND bar product without 'bar' in name should get 'piece' primary; got \(units.map(\.label))")
+        XCTAssertFalse(units.contains(where: { $0.label == "ml" }),
+                       "KIND chocolate bar must not include 'ml' unit; got \(units.map(\.label))")
+        XCTAssertFalse(units.contains(where: { $0.label == "fl oz" }),
+                       "KIND chocolate bar must not include 'fl oz' unit; got \(units.map(\.label))")
+    }
+
+    func testClifAndQuestBrandedBarsResolveToPiece() {
+        // Other branded bars where OFF omits "bar" from product_name.
+        // Flavors chosen to avoid hitting earlier fruit (banana/apple) or peanut-butter rules.
+        let brandedBars = [
+            "Chocolate Chip - CLIF",
+            "Chocolate Chip Cookie Dough - QUEST",
+            "Cashew Cookie - LARABAR",
+            "Chocolate Sea Salt - RXBAR",
+        ]
+        for name in brandedBars {
+            let unit = primaryUnit(for: name, size: 60)
+            XCTAssertEqual(unit, "piece", "'\(name)' should resolve to 'piece' primary; got '\(unit)'")
+        }
+    }
+
+    func testChocolateDoesNotTriggerLiquidUnits() {
+        // Regression: "chocolate" contains "cola" as a substring. Liquid-detection
+        // must not false-match and add ml/fl oz to solid chocolate products.
+        let chocolates = [
+            "Chocolate Almond",
+            "Dark Chocolate Chips",
+            "Hot Chocolate Mix",  // note: cocoa-based mix, still solid powder
+        ]
+        for name in chocolates {
+            let units = FoodUnit.smartUnits(for: food(name, size: 30))
+            XCTAssertFalse(units.contains(where: { $0.label == "fl oz" }),
+                           "'\(name)' must not include 'fl oz'; got \(units.map(\.label))")
+        }
+    }
+
+    func testCocaColaStillTriggersLiquidUnits() {
+        // Real cola should still be detected as liquid — "cola" as a word should match.
+        let units = FoodUnit.smartUnits(for: food("Coca Cola", size: 330))
+        XCTAssertTrue(units.contains(where: { $0.label == "ml" }),
+                      "Coca Cola should include 'ml' unit; got \(units.map(\.label))")
+    }
+
     // MARK: - Default Amount (bug #195: Coffee shows 0 cal on quick-add)
 
     func testDefaultAmountForLiquidsIsServingSize() {

@@ -252,12 +252,13 @@ struct FoodUnit: Hashable {
             units.append(FoodUnit(label: "piece", gramsEquivalent: pieceWeight))
         }
 
-        let liquidSubstrings = ["milk", "juice", "buttermilk", "coconut water",
-                                "smoothie", "broth", "soup", "shake", "lemonade",
-                                "soda", "cola", "kombucha", "water"]
+        // Compound phrases need substring; bare single words use word-boundary to avoid
+        // false matches like "choc-ola-te" hitting "cola".
+        let liquidSubstrings = ["buttermilk", "coconut water", "smoothie", "lemonade", "kombucha"]
+        let liquidWords: Set<String> = ["milk", "juice", "broth", "soup", "shake", "soda", "cola",
+                                        "water", "lassi", "tea", "chai", "latte", "coffee", "espresso"]
         let isLiquid = liquidSubstrings.contains(where: { lower.contains($0) })
-            || words.contains("lassi") || words.contains("tea") || words.contains("chai")
-            || words.contains("latte") || words.contains("coffee") || words.contains("espresso")
+            || !liquidWords.isDisjoint(with: words)
         if isLiquid {
             if !units.contains(where: { $0.label == "ml" }) {
                 units.append(FoodUnit(label: "ml", gramsEquivalent: 1))
@@ -655,6 +656,15 @@ struct FoodUnit: Hashable {
            name.contains("rxbar") || name.contains("larabar") ||
            name.contains("quest bar") || name.contains("one bar") ||
            (name.contains("bar") && name.contains("nut")) {
+            return FoodUnit(label: "piece", gramsEquivalent: ss)
+        }
+        // Branded bars where OFF product_name lacks the word "bar" (e.g. KIND "Dark Chocolate Nuts & Sea Salt").
+        // Word-boundary on brand tokens to avoid matching common words like "kind" in sentences.
+        let barBrandWords: Set<String> = ["kind", "clif", "larabar", "rxbar", "quest", "built",
+                                           "luna", "perfect", "kashi", "gomacro"]
+        let barDescriptorSubstrings = ["nut", "chocolate", "granola", "oat", "protein", "cookie", "crunch"]
+        if !barBrandWords.isDisjoint(with: words) &&
+           barDescriptorSubstrings.contains(where: { name.contains($0) }) {
             return FoodUnit(label: "piece", gramsEquivalent: ss)
         }
 
