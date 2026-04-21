@@ -40,9 +40,12 @@ struct PhotoLogCaptureView: View {
                 }
             }
             .fullScreenCover(isPresented: $showingCamera) {
+                // CameraView calls its own `dismiss()` internally to close the
+                // fullScreenCover — do NOT call `dismiss()` here, which would
+                // resolve to PhotoLogCaptureView's environment dismiss (the
+                // outer sheet) and kill the flow mid-analysis. #310.
                 CameraView { image in
                     onCaptured(image)
-                    dismiss()
                 }
             }
             .photosPicker(isPresented: $showingLibrary, selection: $selectedItem, matching: .images)
@@ -119,6 +122,12 @@ struct PhotoLogCaptureView: View {
 
     /// Load the picked PhotosPicker item as UIImage. Runs the transfer on a
     /// background task so the UI doesn't stall on large iCloud downloads.
+    ///
+    /// Do NOT call `dismiss()` after `onCaptured` — the coordinator swaps
+    /// this view out when state becomes `.analyzing`. Calling `dismiss()`
+    /// here would dismiss the outer PhotoLogFlowView sheet (wrong scope),
+    /// cancel the analysis task via `.onDisappear`, and leave the user
+    /// staring at the food tab with no indication anything happened. #310.
     private func handleLibraryPick(_ item: PhotosPickerItem) async {
         do {
             guard let data = try await item.loadTransferable(type: Data.self),
@@ -128,7 +137,6 @@ struct PhotoLogCaptureView: View {
             }
             libraryLoadError = nil
             onCaptured(image)
-            dismiss()
         } catch {
             libraryLoadError = "Couldn't load photo: \(error.localizedDescription)"
         }
