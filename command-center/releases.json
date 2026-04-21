@@ -1685,5 +1685,17 @@
       "PAUSE/DRAIN enforcement hook only fires for autopilot sessions, not human takeover (#296)",
       "Compliance now accepts 'approved' label for P0 routing and blocks senior on unwritten designs"
     ]
+  },
+  {
+    "build": 159,
+    "date": "2026-04-21T15:00:00-0700",
+    "description": "Photo Log hardening — photo library permission prompt + sheet no longer dismisses after pick; domain-aware intent clarify policy",
+    "features": [
+      "Intent classifier: domain-aware clarify policy via IntentThresholds — separate confidence thresholds per domain reduce false clarifications (#302)"
+    ],
+    "fixes": [
+      "Photo Log now requests NSPhotoLibraryUsageDescription so users can pick photos on first launch (#310)",
+      "Photo Log: picking a photo no longer dismisses the whole sheet (#310)"
+    ]
   }
 ]
