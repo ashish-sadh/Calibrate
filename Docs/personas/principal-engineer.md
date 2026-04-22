@@ -256,6 +256,12 @@
 - Telemetry-driven prompt refresh (#326) is the first data-driven prompt improvement in the history of this project. Previous prompt changes were hypothesis-driven (Review #42 example-placement insight). This cycle we have real failing queries persisted (#297). Using them to update examples is the "measure, then optimize" principle in practice.
 - Photo Log review screen complexity is approaching extraction threshold. Four feature additions in two builds (editable macros, serving units, ingredients, plant badge). If #331 (onboarding tip) adds more state to this view, extract PhotoLogReviewViewModel. Keep the threshold rule: 4+ feature-additions to one view = extraction time.
 
+### What I Learned — Planning Cycle 4521 (2026-04-22)
+- Analytical tool pattern is architecturally sound and reusable. cross_domain_insight (#317) established: (1) read 2+ domain services with date windows, (2) compute aggregate/correlation in pure Swift, (3) return structured summary. weight_trend_prediction (#334) adds linear regression over weight series — same pattern, different services. No new infrastructure needed; the tool-registration pattern in AIToolAgent handles it.
+- Macro goal targets in UserPreferences is a structural fix that unblocks 4+ failing queries at once ('am I hitting my protein goal', 'on track for carbs', 'how far from my fat target'). Prefer fixing the root-cause data model over patching individual query responses with hardcoded heuristics.
+- state.md accuracy gap is a process failure. Enforce: state.md must be updated in the same commit as any change that affects a field it tracks — build number, context window, tool count, test count. Make the update mechanical, not a separate ticket.
+- Queue now has 15 SENIOR tasks after this cycle. At 5 tasks/session = 3 senior sessions to drain SENIOR backlog. The planning-to-drain ratio is healthy if 2+ senior sessions run per day. If queue grows past 20 SENIOR, pause SENIOR task creation until drainage catches up.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)
