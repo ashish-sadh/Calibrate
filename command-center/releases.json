@@ -1723,5 +1723,19 @@
       "cross_domain_insight AI tool for correlational queries (#317) \u2014 shipped with build 160, fully exercised in this build",
       "Autopilot model default: all sessions (planning/senior/junior) now use Sonnet 4.6 \u2014 faster turnaround per sprint task vs Opus"
     ]
+  },
+  {
+    "build": 162,
+    "date": "2026-04-21T21:07:00-07:00",
+    "description": "Food DB hash-gated reseed + AI Chat Telemetry toggle recursion fix",
+    "features": [
+      "Photo Log Settings \u2192 Test Connection is now a prominent filled button with a bottom spacer so the chat orb doesn't overlap it",
+      "seedFoodsFromJSON is now hash-gated \u2014 full reseed only runs on first install or when an app update ships a new foods.json. Steady-state cold start is a ~50\u00b5s hash + COUNT(*) instead of 2,511 per-row SQL queries.",
+      "When a reseed runs, JSON is authoritative for calories + protein + carbs + fat + fiber + serving size \u2014 not just ingredients + NOVA. Fixes stale calorie values (e.g. 'Coffee with milk' showing 0 cal on older installs)."
+    ],
+    "fixes": [
+      "AI Chat Telemetry toggle: re-enabling after a disable now works. The previous `.onChange` handler recursed on state reverts, leaving the toggle permanently off after the confirmation alert. Replaced with a custom Binding that stages intent without mutating state; the alert's 'Turn on' button is the single flip point.",
+      "factoryReset now clears the food-JSON hash so the post-wipe launch correctly re-seeds the food table (the hash gate would otherwise skip seeding and leave an empty DB)."
+    ]
   }
 ]
