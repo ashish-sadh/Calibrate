@@ -37,6 +37,10 @@ struct PhotoLogBetaSettingsView: View {
                         .foregroundStyle(status.isError ? Theme.surplus : Theme.deficit)
                         .padding(.horizontal, 4)
                 }
+                // Bottom spacer so the actionSection card clears the global
+                // AI chat orb (bottom-right). Without this, Test Connection
+                // + Clear Key get obscured when scrolled to the bottom.
+                Color.clear.frame(height: 80)
             }
             .padding()
         }
@@ -206,29 +210,41 @@ struct PhotoLogBetaSettingsView: View {
     }
 
     private var actionSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
+            // Test Connection is the primary action after pasting a key —
+            // promote it to a filled button so it reads as the CTA and
+            // clears the chat-orb obscuring the bottom of the screen.
             Button {
                 Task { await runTestConnection() }
             } label: {
-                HStack {
-                    if testing { ProgressView().scaleEffect(0.8) }
+                HStack(spacing: 8) {
+                    if testing {
+                        ProgressView().scaleEffect(0.8).tint(.white)
+                    } else {
+                        Image(systemName: "bolt.horizontal.fill")
+                    }
                     Text(testing ? "Testing…" : "Test Connection")
-                        .font(.subheadline.weight(.medium))
+                        .font(.subheadline.weight(.semibold))
                     Spacer()
-                    Image(systemName: "bolt.horizontal.fill").foregroundStyle(Theme.accent)
                 }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
             }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.accent)
             .disabled(testing || !CloudVisionKey.has(provider: provider))
 
             Button(role: .destructive) {
                 clearKey()
             } label: {
                 HStack {
+                    Image(systemName: "trash")
                     Text("Clear Key").font(.subheadline.weight(.medium))
                     Spacer()
-                    Image(systemName: "trash").foregroundStyle(Theme.surplus)
                 }
             }
+            .buttonStyle(.bordered)
+            .tint(Theme.surplus)
             .disabled(!CloudVisionKey.has(provider: provider))
         }
         .card()
