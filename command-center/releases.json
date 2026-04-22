@@ -1737,5 +1737,17 @@
       "AI Chat Telemetry toggle: re-enabling after a disable now works. The previous `.onChange` handler recursed on state reverts, leaving the toggle permanently off after the confirmation alert. Replaced with a custom Binding that stages intent without mutating state; the alert's 'Turn on' button is the single flip point.",
       "factoryReset now clears the food-JSON hash so the post-wipe launch correctly re-seeds the food table (the hash gate would otherwise skip seeding and leave an empty DB)."
     ]
+  },
+  {
+    "build": 163,
+    "date": "2026-04-22T00:08:00-07:00",
+    "description": "Fix zero-cal Coffee/milk/tea + manual Refresh food database + build-bump reseed trigger",
+    "features": [
+      "Settings \u2192 Refresh food database button (above Danger Zone). Clears the stored hash and re-seeds calories + macros + ingredients from the bundled foods.json. Use if you ever see stale values after an update.",
+      "Every TestFlight update now automatically re-seeds the food DB once \u2014 the hash gate now includes CFBundleVersion alongside the JSON bytes."
+    ],
+    "fixes": [
+      "Coffee/milk/tea/other liquid-primary-unit foods no longer default to '1' (interpreted as 1ml \u2192 0.25 cal \u2192 displayed 0 cal) when logging from the Food-tab suggestion strip, recent-food tap, or re-log-from-diary. FoodLogSheet now wires FoodUnit.defaultAmount at init time so every entry point defaults to the full serving (e.g. 240ml for a cup of coffee)."
+    ]
   }
 ]
