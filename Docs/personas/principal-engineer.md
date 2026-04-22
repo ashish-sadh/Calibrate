@@ -241,6 +241,14 @@
 - Hooks fix #296 (PAUSE/DRAIN enforcement only fires for autopilot sessions) shipped after a human-takeover session hit autopilot hooks. Mode-unaware behavior is a subtle bug class — grep for \`PAUSE\|DRAIN\|autopilot\` checks in hook scripts to audit other instances.
 - Queue closed this cycle at ~30 (20 in + 10 new). Not runaway growth, but the tail on SENIOR is now 8 tasks — that's 2 full senior sessions of drain before we should add more. Next planning cycle should look at queue-drain-rate before adding anything.
 
+### What I Learned — Planning Cycle 4247 (2026-04-21)
+- Entering cycle at 29 pending / 7 SENIOR — queue neither drained nor grew materially since cycle 3985 despite #302 shipping (domain-aware clarify policy). Senior drain rate is the binding constraint, not task supply. Keep new-task volume ≤ drain rate per cycle.
+- Two *independent* clarify levers: IntentThresholds (shipped #302) handles low *confidence*; the new tie-break task (#313) handles high-confidence *confusion* between top-1 and top-2. A 'high' confidence guess on the wrong tool is a different failure class than a 'low' confidence guess on the right tool — previously conflated. Telemetry will tell us which one dominates real misroutes.
+- Per-stage failure attribution (#312) is the eval-infra move I've been circling for two cycles. Current FoodLoggingGoldSet reports aggregate pass/fail — so a regression could be in StaticOverride, Intent, Extract, Validate, Execute, or Present, and we ship the fix for the wrong stage half the time. Once attribution lands, every subsequent AI task can claim a stage-specific success metric, not just aggregate.
+- Context window progression 2048 → 4096 → 6144 (#315) follows a rule I want to make explicit: every n_ctx bump ships with its prompt audit. Without the audit, growth is absorbed by sloppy prompts instead of conversation history — the opposite of the intended win. The audit is the feature, not the bump.
+- First truly *analytical* AI tool lands this sprint: cross_domain_insight (#317). The previous 20 are transactional (log/fetch/edit). An analytical tool combines 2+ domain services read-only and returns correlation + summary. This is a new tool category, not a new tool — I expect 3-5 more analytical tools over the next few sprints (correlate glucose/food, correlate sleep/recovery, correlate supplements/biomarkers).
+- Multi-turn entry-ref is a staircase: 2-turn pronouns (shipped #227) → 3+ turn ordinal + attribute (#314) → cross-session persistence (future). Each step requires state model changes, not just prompt tweaks. The staircase matters because users don't perceive 2-turn as "working" — they perceive 2-turn as "mostly broken the same way 3-turn is broken" until the whole staircase is built.
+
 ## Preferences & Approach
 - Prefer boring, proven solutions over clever abstractions
 - Prefer fixing patterns over fixing instances (fix the stale-preference pattern, not just one ViewModel)
