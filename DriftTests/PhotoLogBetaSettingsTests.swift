@@ -10,7 +10,9 @@ import Testing
 
 private func resetPhotoLogState() {
     Preferences.photoLogEnabled = false
-    Preferences.photoLogProvider = .anthropic
+    // Clear the stored raw value entirely so the default-fallback in
+    // `Preferences.photoLogProvider.get` is what the next test observes.
+    UserDefaults.standard.removeObject(forKey: "drift_photo_log_provider")
     for provider in CloudVisionProvider.allCases {
         try? CloudVisionKey.clear(for: provider)
     }
@@ -32,17 +34,20 @@ private func resetPhotoLogState() {
     #expect(Preferences.photoLogEnabled == false)
 }
 
-@Test func photoLogProviderDefaultsToAnthropic() {
+@Test func photoLogProviderDefaultsToGemini() {
+    // Gemini has a free tier so new users can try Photo Log without billing.
     resetPhotoLogState()
-    #expect(Preferences.photoLogProvider == .anthropic)
+    #expect(Preferences.photoLogProvider == .gemini)
 }
 
-@Test func photoLogProviderRoundTripsOpenAI() {
+@Test func photoLogProviderRoundTripsAcrossProviders() {
     resetPhotoLogState()
     Preferences.photoLogProvider = .openai
     #expect(Preferences.photoLogProvider == .openai)
     Preferences.photoLogProvider = .anthropic
     #expect(Preferences.photoLogProvider == .anthropic)
+    Preferences.photoLogProvider = .gemini
+    #expect(Preferences.photoLogProvider == .gemini)
 }
 
 // MARK: - Provider switching preserves the other key

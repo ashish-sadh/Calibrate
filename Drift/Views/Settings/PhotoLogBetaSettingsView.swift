@@ -72,7 +72,7 @@ struct PhotoLogBetaSettingsView: View {
     }
 
     private var providerPicker: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("Provider").font(.subheadline.weight(.medium))
             Picker("Provider", selection: $provider) {
                 ForEach(CloudVisionProvider.allCases, id: \.self) { p in
@@ -85,7 +85,12 @@ struct PhotoLogBetaSettingsView: View {
                 refreshStoredKey()
                 status = nil
             }
-            Text("Keys for the other provider stay saved — switching back keeps you signed in.")
+            // Tier / cost line for the currently selected provider. Makes the
+            // Gemini free-tier path discoverable so new users don't assume
+            // every option costs money.
+            Text(provider.pricingLine)
+                .font(.caption).foregroundStyle(.secondary)
+            Text("Keys for the other providers stay saved — switching back keeps you signed in.")
                 .font(.caption2).foregroundStyle(.tertiary)
         }
         .card()

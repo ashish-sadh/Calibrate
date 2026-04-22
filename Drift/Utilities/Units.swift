@@ -128,10 +128,14 @@ enum Preferences {
 
     /// Currently active cloud provider for Photo Log. The key for the other
     /// provider stays in Keychain if the user switches back.
+    ///
+    /// Default is Gemini — Gemini 2.5 Flash has a free tier (500 photos/day)
+    /// so first-time users can try Photo Log without paying. Paid providers
+    /// (Anthropic, OpenAI) are opt-in via the Settings picker.
     static var photoLogProvider: CloudVisionProvider {
         get {
             let raw = UserDefaults.standard.string(forKey: photoLogProviderKey) ?? ""
-            return CloudVisionProvider(rawValue: raw) ?? .anthropic
+            return CloudVisionProvider(rawValue: raw) ?? .gemini
         }
         set { UserDefaults.standard.set(newValue.rawValue, forKey: photoLogProviderKey) }
     }

@@ -16,6 +16,22 @@ enum CloudVisionProvider: String, CaseIterable, Codable, Sendable {
         case .gemini:    return "Google (Gemini 2.5)"
         }
     }
+
+    /// One-line tier + cost summary shown next to the picker option and in
+    /// the pre-capture cost banner. Token estimates are for a 1024×1024 meal
+    /// photo (our preprocess cap). Free-tier quotas are Google AI Studio's
+    /// published limits as of 2026-04 and may change — reconfirm at
+    /// https://ai.google.dev/gemini-api/docs/rate-limits.
+    var pricingLine: String {
+        switch self {
+        case .anthropic:
+            return "~$0.008/photo · Claude Sonnet 4.6 · paid only"
+        case .openai:
+            return "~$0.0003/photo · GPT-4o-mini · paid only"
+        case .gemini:
+            return "Free (up to 500 photos/day, 10/min) · Gemini 2.5 Flash"
+        }
+    }
 }
 
 /// Secure, biometric-gated storage for BYOK cloud vision API keys. #224 / #263.

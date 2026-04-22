@@ -88,7 +88,10 @@ struct PhotoLogCaptureView: View {
         HStack(spacing: 8) {
             Image(systemName: "creditcard")
                 .font(.caption).foregroundStyle(.tertiary)
-            Text("About 2¢ per photo on \(Preferences.photoLogProvider.displayName). Billed by your provider.")
+            // Provider-aware — previously hardcoded "~2¢ per photo" which was
+            // accurate for Anthropic Sonnet but misleading for OpenAI mini
+            // (~30× cheaper) and wrong for Gemini Flash (free tier).
+            Text(Preferences.photoLogProvider.pricingLine)
                 .font(.caption2).foregroundStyle(.secondary)
             Spacer()
         }
