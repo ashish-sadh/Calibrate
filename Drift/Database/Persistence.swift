@@ -22,7 +22,12 @@ extension AppDatabase {
             let dbPool = try DatabasePool(path: databaseURL.path, configuration: makeConfiguration())
             let database = try AppDatabase(dbPool)
 
-            // Seed foods from bundled JSON on first launch
+            // Seed + refresh foods from bundled JSON on every launch. New
+            // rows get inserted; existing DB-sourced rows get calories,
+            // macros, and ingredients re-synced from the JSON (so stale
+            // values from older installs don't stick around — see
+            // "Coffee (with milk) 0 cal" complaint 2026-04-21). User-scanned
+            // foods (barcode / recipe / photo_log / custom) are never touched.
             try database.seedFoodsFromJSON()
             Log.database.info("Database ready")
 

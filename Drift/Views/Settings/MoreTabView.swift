@@ -401,20 +401,30 @@ struct SettingsView: View {
                                 .font(.caption2).foregroundStyle(.tertiary)
                         }
                         Spacer()
-                        Toggle("", isOn: $telemetryEnabled)
-                            .labelsHidden().tint(Theme.accent)
-                            .onChange(of: telemetryEnabled) { _, on in
-                                if on {
-                                    // Show the storage disclosure before flipping the pref
-                                    // so the user confirms they understand raw text is kept.
-                                    telemetryEnabled = false
+                        // Custom binding instead of .onChange — otherwise the
+                        // "revert + show confirm" pattern recursed: setting
+                        // telemetryEnabled=false fired onChange with on=false,
+                        // which then ran the off-branch (deleteAll) *and* the
+                        // alert. Tapping "Turn on" in the alert re-fired
+                        // onChange → re-reverted → re-showed alert.
+                        // Setter just stages the user's intent; actual state
+                        // flip happens from the alert's "Turn on" button.
+                        Toggle("", isOn: Binding(
+                            get: { telemetryEnabled },
+                            set: { newValue in
+                                if newValue {
+                                    // Confirm first — don't flip yet. Toggle
+                                    // bounces back to off via `get`.
                                     showingTelemetryEnableConfirm = true
                                 } else {
+                                    telemetryEnabled = false
                                     Preferences.chatTelemetryEnabled = false
                                     ChatTelemetryService.shared.deleteAll()
-                                    telemetryCount = ChatTelemetryService.shared.count()
+                                    telemetryCount = 0
                                 }
                             }
+                        ))
+                        .labelsHidden().tint(Theme.accent)
                     }
                     if telemetryEnabled {
                         Text("Full query + response text is stored locally, alongside the routed tool and outcome. Use Export JSON to share a transcript with the Drift team to improve multi-turn reliability. Nothing leaves this device until you do.")

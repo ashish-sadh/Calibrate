@@ -1,5 +1,6 @@
 import Foundation
 import GRDB
+import CryptoKit
 
 /// The main application database providing read-write access to all user data.
 struct AppDatabase: @unchecked Sendable {
@@ -56,6 +57,9 @@ extension AppDatabase {
             try db.execute(sql: "DELETE FROM food_usage")
             try? db.execute(sql: "DELETE FROM chat_turn")
         }
+        // Clear the seed hash so seedFoodsFromJSON() actually runs (hash-gated
+        // skip otherwise — would leave the food table empty after the wipe).
+        UserDefaults.standard.removeObject(forKey: Self.foodsJSONHashKey)
         // Re-seed default foods
         try seedFoodsFromJSON()
         Log.database.info("Factory reset complete - all data deleted, foods re-seeded")
@@ -466,30 +470,88 @@ extension AppDatabase {
 // MARK: - Food Database (bundled read-only)
 
 extension AppDatabase {
-    func seedFoodsFromJSON() throws {
-        try dbWriter.write { db in
-            guard let url = Bundle.main.url(forResource: "foods", withExtension: "json"),
-                  let data = try? Data(contentsOf: url),
-                  let foods = try? JSONDecoder().decode([Food].self, from: data) else {
-                return
-            }
+    /// UserDefaults key for the SHA-256 of the last-seeded `foods.json`. Used
+    /// to skip the seed loop on launches where the bundle didn't change.
+    private static let foodsJSONHashKey = "drift_foods_json_hash"
 
+    /// Seed or refresh the food DB from the bundled `foods.json`.
+    ///
+    /// Runs on every cold start but exits in O(1) when `foods.json` hasn't
+    /// changed since the last successful seed (SHA-256 compared against
+    /// `UserDefaults`). The full 2.5k-row insert/update loop only runs:
+    ///
+    /// 1. On first install (no stored hash)
+    /// 2. After an app update that ships a new `foods.json` (hash differs)
+    /// 3. After `factoryReset` clears UserDefaults
+    ///
+    /// When the loop does run, JSON is authoritative for *all* nutrition
+    /// fields, not just ingredients/NOVA. Previously calories + macros only
+    /// got set at first-install and never refreshed — users who installed
+    /// early versions kept seeing stale/wrong calories (e.g. "Coffee (with
+    /// milk)" at 0 cal) even after the JSON was corrected. Refresh is
+    /// scoped to DB-sourced rows; user-scanned foods (source='barcode',
+    /// 'recipe', 'photo_log', 'custom') are never overwritten.
+    func seedFoodsFromJSON() throws {
+        guard let url = Bundle.main.url(forResource: "foods", withExtension: "json"),
+              let data = try? Data(contentsOf: url) else {
+            return
+        }
+
+        // Hash-gate: skip the whole loop when the bundle bytes are identical
+        // to the last successful seed AND the food table is non-empty. Turns
+        // production cold start from ~2.5k SQL queries into a single
+        // ~50µs SHA-256 hash + tiny COUNT(*) when nothing changed.
+        //
+        // The `foodCount > 0` guard matters for tests (each in-memory
+        // `AppDatabase.empty()` gets a fresh food table, so without this
+        // check the UserDefaults hash set by an earlier test would make
+        // later tests skip seeding and see an empty DB).
+        let currentHash = SHA256.hash(data: data)
+            .map { String(format: "%02x", $0) }
+            .joined()
+        let lastHash = UserDefaults.standard.string(forKey: Self.foodsJSONHashKey) ?? ""
+        let foodCount = try dbWriter.read { db in
+            try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM food") ?? 0
+        }
+        if foodCount > 0 && currentHash == lastHash {
+            return
+        }
+
+        guard let foods = try? JSONDecoder().decode([Food].self, from: data) else { return }
+
+        try dbWriter.write { db in
             let existingNames = try Set(String.fetchAll(db, sql: "SELECT LOWER(name) FROM food"))
 
             for var food in foods {
                 if !existingNames.contains(food.name.lowercased()) {
                     try food.insert(db)
                 } else {
-                    // Always update ingredients + nova_group from JSON (authoritative source)
                     try db.execute(sql: """
                         UPDATE food SET
+                            calories = ?,
+                            protein_g = ?,
+                            carbs_g = ?,
+                            fat_g = ?,
+                            fiber_g = ?,
+                            serving_size = ?,
+                            serving_unit = ?,
                             ingredients = COALESCE(?, ingredients),
                             nova_group = COALESCE(?, nova_group)
                         WHERE LOWER(name) = ?
-                        """, arguments: [food.ingredients, food.novaGroup, food.name.lowercased()])
+                          AND (source IS NULL OR source = 'database')
+                        """, arguments: [
+                            food.calories, food.proteinG, food.carbsG, food.fatG, food.fiberG,
+                            food.servingSize, food.servingUnit,
+                            food.ingredients, food.novaGroup,
+                            food.name.lowercased()
+                        ])
                 }
             }
         }
+
+        // Only write the hash after a successful seed so a mid-seed crash
+        // leaves us in a state that retries on next launch.
+        UserDefaults.standard.set(currentHash, forKey: Self.foodsJSONHashKey)
     }
 
     /// Escape SQL LIKE special characters in user input.
