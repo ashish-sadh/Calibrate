@@ -714,6 +714,13 @@ enum ToolRegistration {
             }
         ))
 
+        // MARK: - Insights Tools
+
+        // Cross-domain correlation tool — answers "did I lose weight on
+        // workout days" style questions by correlating two on-device
+        // metrics over a window. Read-only. #317.
+        CrossDomainInsightTool.syncRegistration(registry: r)
+
         // MARK: - Conditional Tools
         // Photo Log is gated on the beta flag AND a stored cloud-vision key.
         // Keeping this last so the gated call is the single conditional hop.

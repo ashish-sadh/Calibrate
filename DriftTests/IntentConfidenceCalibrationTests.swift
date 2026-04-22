@@ -49,6 +49,7 @@ private func shouldClarify(_ tool: String, _ confidence: String, _ complete: Boo
         ("body_comp", .data),
         ("glucose", .data),
         ("biomarkers", .data),
+        ("cross_domain_insight", .data),
         ("navigate_to", .meta),
     ]
     for (tool, domain) in toolDomains {

@@ -397,7 +397,8 @@ enum AIToolAgent {
 
     private static let infoTools: Set<String> = [
         "food_info", "weight_info", "exercise_info", "sleep_recovery",
-        "supplements", "glucose", "biomarkers", "body_comp", "explain_calories"
+        "supplements", "glucose", "biomarkers", "body_comp", "explain_calories",
+        "cross_domain_insight"
     ]
 
     static func isInfoTool(_ name: String) -> Bool {
