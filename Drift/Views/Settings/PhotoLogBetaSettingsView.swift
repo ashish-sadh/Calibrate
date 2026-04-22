@@ -72,18 +72,35 @@ struct PhotoLogBetaSettingsView: View {
     }
 
     private var providerPicker: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
             Text("Provider").font(.subheadline.weight(.medium))
-            Picker("Provider", selection: $provider) {
+            // Menu-style picker — segmented was truncating the 3 full names
+            // (each ≥15 chars) into unreadable stubs on narrow screens. Menu
+            // shows the selection in full with a dropdown affordance.
+            Menu {
                 ForEach(CloudVisionProvider.allCases, id: \.self) { p in
-                    Text(p.displayName).tag(p)
+                    Button {
+                        provider = p
+                        Preferences.photoLogProvider = p
+                        refreshStoredKey()
+                        status = nil
+                    } label: {
+                        if p == provider {
+                            Label(p.displayName, systemImage: "checkmark")
+                        } else {
+                            Text(p.displayName)
+                        }
+                    }
                 }
-            }
-            .pickerStyle(.segmented)
-            .onChange(of: provider) { _, new in
-                Preferences.photoLogProvider = new
-                refreshStoredKey()
-                status = nil
+            } label: {
+                HStack {
+                    Text(provider.displayName).font(.subheadline.weight(.semibold))
+                    Spacer()
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 10).padding(.horizontal, 12)
+                .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
             }
             // Tier / cost line for the currently selected provider. Makes the
             // Gemini free-tier path discoverable so new users don't assume
