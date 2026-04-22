@@ -529,6 +529,23 @@ extension AppDatabase {
         guard let foods = try? JSONDecoder().decode([Food].self, from: data) else { return }
 
         try dbWriter.write { db in
+            // Delete stale photo_log rows that shadow a canonical JSON name.
+            // These are ephemeral AI scans — if the JSON ships the same food
+            // (e.g. "Coffee (with milk)"), the curated entry must win so
+            // searches return the right macros. Without this, a past bad scan
+            // with 0 cal blocks the seed UPDATE (WHERE source='database' skips
+            // it) AND blocks the INSERT (name-exists check), leaving the user
+            // permanently stuck on the 0-cal row.
+            let jsonNames = foods.map { $0.name.lowercased() }
+            if !jsonNames.isEmpty {
+                let placeholders = Array(repeating: "?", count: jsonNames.count).joined(separator: ",")
+                try db.execute(sql: """
+                    DELETE FROM food
+                    WHERE source = 'photo_log'
+                      AND LOWER(name) IN (\(placeholders))
+                    """, arguments: StatementArguments(jsonNames))
+            }
+
             let existingNames = try Set(String.fetchAll(db, sql: "SELECT LOWER(name) FROM food"))
 
             for var food in foods {

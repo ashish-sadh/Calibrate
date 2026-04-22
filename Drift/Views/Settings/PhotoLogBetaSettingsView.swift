@@ -13,6 +13,11 @@ struct PhotoLogBetaSettingsView: View {
     @State private var storedKeyMasked: String? = nil
     @State private var status: StatusMessage? = nil
     @State private var testing: Bool = false
+    /// Toggles the raw-key SecureField on top of a stored key. Hidden by
+    /// default once a key is saved — user has to tap "Replace key" to reveal
+    /// the input so we don't leave a second input sitting next to the masked
+    /// badge (past confusion: "does Drift round-robin between keys?").
+    @State private var replacingKey: Bool = false
 
     enum StatusMessage: Equatable {
         case success(String)
@@ -172,13 +177,41 @@ struct PhotoLogBetaSettingsView: View {
     private var keySection: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("API Key").font(.subheadline.weight(.medium))
-            if let masked = storedKeyMasked {
-                HStack(spacing: 8) {
-                    Image(systemName: "lock.fill").foregroundStyle(Theme.accent)
-                    Text(masked).font(.caption.monospaced())
-                    Spacer()
-                }
+            if let masked = storedKeyMasked, !replacingKey {
+                storedKeyRow(masked: masked)
+            } else {
+                keyInputRow
             }
+            Text("Stored in iOS Keychain, protected by Face ID. Never uploaded.")
+                .font(.caption2).foregroundStyle(.tertiary)
+        }
+        .card()
+    }
+
+    /// Shown once a key is saved. No second input box — the "Replace key"
+    /// button is the only way to reveal the SecureField, so the user can't
+    /// accidentally stack two keys and wonder if we're round-robining.
+    private func storedKeyRow(masked: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "lock.fill").foregroundStyle(Theme.accent)
+            Text(masked).font(.caption.monospaced())
+            Spacer()
+            Button {
+                keyInput = ""
+                replacingKey = true
+            } label: {
+                Label("Replace", systemImage: "arrow.triangle.2.circlepath")
+                    .font(.caption.weight(.medium))
+            }
+            .buttonStyle(.bordered)
+        }
+    }
+
+    /// Paste + Save controls — visible when no key exists or the user tapped
+    /// "Replace". Save clears `replacingKey` via `saveKey` so the card falls
+    /// back to the masked row.
+    private var keyInputRow: some View {
+        VStack(alignment: .leading, spacing: 8) {
             SecureField("Paste \(provider.displayName) API key", text: $keyInput)
                 .textFieldStyle(.roundedBorder)
                 .autocorrectionDisabled()
@@ -193,6 +226,16 @@ struct PhotoLogBetaSettingsView: View {
                 }
                 .buttonStyle(.bordered)
 
+                if storedKeyMasked != nil {
+                    Button {
+                        keyInput = ""
+                        replacingKey = false
+                    } label: {
+                        Text("Cancel").font(.subheadline)
+                    }
+                    .buttonStyle(.bordered)
+                }
+
                 Spacer()
 
                 Button {
@@ -203,10 +246,7 @@ struct PhotoLogBetaSettingsView: View {
                 .buttonStyle(.borderedProminent)
                 .disabled(keyInput.isEmpty)
             }
-            Text("Stored in iOS Keychain, protected by Face ID. Never uploaded.")
-                .font(.caption2).foregroundStyle(.tertiary)
         }
-        .card()
     }
 
     private var actionSection: some View {
@@ -255,6 +295,7 @@ struct PhotoLogBetaSettingsView: View {
     private func refreshStoredKey() {
         storedKeyMasked = CloudVisionKey.has(provider: provider) ? "•••• stored in Keychain" : nil
         keyInput = ""
+        replacingKey = false
     }
 
     private func saveKey() {

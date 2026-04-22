@@ -86,12 +86,24 @@ struct PhotoLogReviewView: View {
             ForEach($items) { $item in
                 PhotoLogItemRow(item: $item)
             }
+            .onDelete(perform: removeItems)
+            Button {
+                items.append(.blank())
+            } label: {
+                Label("Add item", systemImage: "plus.circle.fill")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Theme.accent)
+            }
         } header: {
             Text("Items")
         } footer: {
-            Text("Uncheck anything the model got wrong. Tap grams to adjust.")
+            Text("Edit the name, uncheck wrong items, swipe to delete, or Add item for anything the model missed. Tap grams or macros to adjust.")
                 .font(.caption2)
         }
+    }
+
+    private func removeItems(at offsets: IndexSet) {
+        items.remove(atOffsets: offsets)
     }
 
     private var mealSection: some View {
@@ -262,10 +274,12 @@ private struct PhotoLogItemRow: View {
                 .buttonStyle(.plain)
 
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text(item.name)
+                    HStack(spacing: 6) {
+                        TextField("Name", text: $item.name)
                             .font(.subheadline.weight(.semibold))
                             .foregroundStyle(Theme.textPrimary)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.words)
                         if item.confidence == .low {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .font(.caption2)

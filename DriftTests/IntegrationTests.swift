@@ -700,3 +700,74 @@ import Testing
     // Dashboard loads weight trend internally — just verify it didn't crash
     // (HealthKit part is skipped on simulator)
 }
+
+// MARK: - Photo Log Shadow Row Cleanup (cycle 4521)
+//
+// A past AI scan that returned "Coffee (with milk)" with 0 cal persisted a
+// `source=photo_log` row. On the next seed, the UPDATE skipped it (WHERE
+// source='database') and the INSERT skipped it (name already exists) — so
+// searches permanently returned the 0-cal row and every log showed 0 cal.
+// The seed now deletes photo_log rows that shadow a canonical JSON name
+// before the INSERT loop runs.
+
+@Test func seedDeletesPhotoLogRowsShadowingCanonicalNames() async throws {
+    // Clear the shared UserDefaults hash so the seed actually runs in the
+    // test — other tests in the same xctest process may have already marked
+    // the current hash as seeded against their in-memory DB, which would
+    // short-circuit this test's seed before the cleanup + reinsert could run.
+    UserDefaults.standard.removeObject(forKey: "drift_foods_json_hash")
+
+    let db = try AppDatabase.empty()
+
+    // Simulate the bad state: an AI-scanned Coffee (with milk) with 0 cal.
+    var badCoffee = Food(
+        name: "Coffee (with milk)",
+        category: "Beverages",
+        servingSize: 240,
+        servingUnit: "ml",
+        calories: 0,
+        proteinG: 0,
+        carbsG: 0,
+        fatG: 0,
+        fiberG: 0,
+        source: "photo_log"
+    )
+    _ = try db.saveScannedFood(&badCoffee)
+
+    // Seed should replace the photo_log row with the canonical JSON row.
+    try db.seedFoodsFromJSON()
+
+    let results = try db.searchFoods(query: "coffee with milk", limit: 5)
+    let coffee = results.first { $0.name.lowercased() == "coffee (with milk)" }
+    #expect(coffee != nil, "Expected canonical Coffee (with milk) in results after seed")
+    #expect(coffee?.calories ?? 0 > 0, "Seed must have replaced the 0-cal photo_log row")
+    #expect(coffee?.source == "database" || coffee?.source == nil,
+            "Winning row must be the database seed, not the stale photo_log")
+}
+
+@Test func seedPreservesUserBarcodeFoodsEvenWhenNameMatches() async throws {
+    UserDefaults.standard.removeObject(forKey: "drift_foods_json_hash")
+    let db = try AppDatabase.empty()
+
+    // Barcode scans are user-provided and shouldn't be touched by the shadow
+    // cleanup — only photo_log rows (ephemeral AI scans) are purged.
+    var userCoffee = Food(
+        name: "Coffee (with milk)",
+        category: "Beverages",
+        servingSize: 240,
+        servingUnit: "ml",
+        calories: 42,
+        proteinG: 1,
+        carbsG: 5,
+        fatG: 2,
+        fiberG: 0,
+        source: "barcode"
+    )
+    _ = try db.saveScannedFood(&userCoffee)
+
+    try db.seedFoodsFromJSON()
+
+    let all = try db.searchFoods(query: "coffee with milk", limit: 10)
+    let barcode = all.first { $0.source == "barcode" }
+    #expect(barcode != nil, "User's barcode-scanned food must survive reseed")
+}

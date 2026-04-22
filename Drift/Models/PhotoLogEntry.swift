@@ -246,6 +246,28 @@ struct PhotoLogEditableItem: Identifiable, Equatable {
     enum MacroField {
         case calories, protein, carbs, fat, fiber
     }
+
+    /// Empty item the user creates when they tap "Add item" in the review
+    /// sheet — the model missed something and they want to fill it in by
+    /// hand. Defaults to 100 g / zero macros; per-gram rates stay at zero
+    /// until a macro is typed so `rescale()` doesn't wipe the user's input
+    /// when they adjust the amount.
+    static func blank() -> PhotoLogEditableItem {
+        let seed = PhotoLogItem(
+            name: "",
+            grams: 100,
+            calories: 0,
+            proteinG: 0,
+            carbsG: 0,
+            fatG: 0,
+            fiberG: 0,
+            confidence: .medium,
+            servingUnit: "grams",
+            servingAmount: 100,
+            ingredients: nil
+        )
+        return PhotoLogEditableItem(from: seed)
+    }
 }
 
 /// UI phases of the Photo Log flow. A single `@State` holds this so the
