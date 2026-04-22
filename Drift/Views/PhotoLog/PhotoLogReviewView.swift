@@ -188,21 +188,36 @@ struct PhotoLogReviewView: View {
 
     private func logSelected() {
         for item in items where item.selected {
-            let food = Food(
-                name: item.name,
-                category: "Photo Log",
-                servingSize: max(item.grams, 1),
-                servingUnit: "g",
-                calories: item.calories,
-                proteinG: item.proteinG,
-                carbsG: item.carbsG,
-                fatG: item.fatG,
-                source: "photo_log"
-            )
-            foodLog.logFood(food, servings: 1, mealType: mealType)
+            foodLog.logFood(photoLogFood(for: item), servings: 1, mealType: mealType)
         }
         onLogged()
         dismiss()
+    }
+
+    /// Build a Food from the LLM's answer — LLM-first, no matching against
+    /// the local food DB. Curated DB rows were giving users calories for a
+    /// different portion than what the photo showed, which was confusing.
+    /// Ingredients come from the LLM too (food_log schema extension) and are
+    /// attached to the Food struct so plant-points picks them up via the
+    /// existing name-join fallback in fetchFoodItemsForPlantPoints.
+    private func photoLogFood(for item: PhotoLogEditableItem) -> Food {
+        let ingredientsJSON: String? = {
+            guard !item.ingredients.isEmpty else { return nil }
+            let data = try? JSONEncoder().encode(item.ingredients)
+            return data.flatMap { String(data: $0, encoding: .utf8) }
+        }()
+        return Food(
+            name: item.name,
+            category: "Photo Log",
+            servingSize: max(item.grams, 1),
+            servingUnit: "g",
+            calories: item.calories,
+            proteinG: item.proteinG,
+            carbsG: item.carbsG,
+            fatG: item.fatG,
+            ingredients: ingredientsJSON,
+            source: "photo_log"
+        )
     }
 
     private func confidenceBadge(for confidence: Confidence, big: Bool = false) -> some View {
