@@ -53,12 +53,26 @@ function startOAuth() {
 
 async function exchangeCode(code) {
   const resp = await fetch(`${WORKER_URL}?code=${code}`);
-  const data = await resp.json();
+  // GitHub sometimes returns HTML (reused / expired code, redirect URI
+  // mismatch) and the worker forwards it verbatim — parsing that as JSON
+  // blows up with "unexpected character at line 1 column 1". Read as
+  // text first, then try to parse, so we can surface a readable error.
+  const raw = await resp.text();
+  let data;
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    throw new Error(
+      resp.status >= 400
+        ? `Sign-in rejected by GitHub (${resp.status}). The authorization code may have already been used — go back and start sign-in again.`
+        : 'GitHub returned an unexpected response. Try signing in again from the main page.'
+    );
+  }
   if (data.access_token) {
     setToken(data.access_token);
     return data;
   }
-  throw new Error(data.error_description || 'OAuth exchange failed');
+  throw new Error(data.error_description || data.error || 'OAuth exchange failed');
 }
 
 async function getUser() {
