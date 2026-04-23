@@ -3,7 +3,8 @@
 # Commands: checkpoint <step> | remaining | validate | issue-number | reset
 #
 # Steps: admin_replied, review_merged, tasks_created, personas_updated,
-#        roadmap_updated, sprint_refreshed, feedback_drained
+#        roadmap_updated, sprint_refreshed, feedback_drained,
+#        bug_triage, design_docs_noted, feature_requests, state_assessed
 
 set -euo pipefail
 
@@ -23,13 +24,17 @@ get_issue_number() {
 step_to_line() {
     local STEP="$1"
     case "$STEP" in
-        admin_replied)    echo "Admin replies" ;;
-        review_merged)    echo "Product review" ;;
-        tasks_created)    echo "Sprint tasks" ;;
-        personas_updated) echo "Personas updated" ;;
-        roadmap_updated)  echo "Roadmap updated" ;;
-        sprint_refreshed) echo "Sprint refreshed" ;;
-        feedback_drained) echo "Feedback drained" ;;
+        admin_replied)       echo "Admin replies" ;;
+        review_merged)       echo "Product review" ;;
+        tasks_created)       echo "Sprint tasks" ;;
+        personas_updated)    echo "Personas updated" ;;
+        roadmap_updated)     echo "Roadmap updated" ;;
+        sprint_refreshed)    echo "Sprint refreshed" ;;
+        feedback_drained)    echo "Feedback drained" ;;
+        bug_triage)          echo "Bug triage" ;;
+        design_docs_noted)   echo "Design docs" ;;
+        feature_requests)    echo "Feature requests" ;;
+        state_assessed)      echo "State assessed" ;;
         *)
             echo "planning-service: unknown step '$STEP'" >&2
             return 1
@@ -111,8 +116,11 @@ cmd_validate() {
         FAILURES="${FAILURES}tasks_created: only $TASK_COUNT sprint-task issues open (need 8+)\n"
     fi
 
-    # Remaining steps — self-reported via checklist
-    for STEP in admin_replied personas_updated roadmap_updated sprint_refreshed feedback_drained; do
+    # Remaining steps — self-reported via checklist. bug_triage,
+    # design_docs_noted, feature_requests, state_assessed were previously
+    # unchecked in the validation loop; the planner could close the issue
+    # while leaving them blank. Now all nine self-reported steps block.
+    for STEP in admin_replied personas_updated roadmap_updated sprint_refreshed feedback_drained bug_triage design_docs_noted feature_requests state_assessed; do
         local LINE_PREFIX
         LINE_PREFIX=$(step_to_line "$STEP")
         if echo "$BODY" | grep -q "^\- \[ \] ${LINE_PREFIX}"; then
