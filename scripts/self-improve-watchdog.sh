@@ -654,6 +654,7 @@ while true; do
             sync_stamps_from_main
             reconcile_in_progress
             sweep_stale_in_progress_labels
+            "$WORK_DIR/scripts/heartbeat-snapshot.sh" 2>/dev/null || true
             # Check if autopilot is dead
             if ! is_claude_alive; then
                 stop_monitor

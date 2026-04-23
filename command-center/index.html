@@ -31,6 +31,7 @@
       <div class="tab" data-tab="designs" id="designs-tab" style="display:none">Designs</div>
       <div class="tab" data-tab="review" id="review-tab" style="display:none">Review</div>
       <div class="tab" data-tab="admin" id="admin-tab" style="display:none">Admin</div>
+      <div class="tab" data-tab="activity" id="activity-tab" style="display:none">Activity</div>
     </div>
 
     <div id="tab-sprint" style="display:none">
@@ -232,13 +233,30 @@
 
       </div>
     </div>
+
+    <div id="tab-activity" style="display:none">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:1100px;margin:0 auto;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px;">
+          <h2 style="margin:0;font-size:20px;">Session Activity</h2>
+          <div id="activity-meta" style="color:var(--text-muted);font-size:12px;">Loading...</div>
+        </div>
+        <p style="color:var(--text-muted);font-size:13px;margin:0 0 16px;">Tool calls per 5-minute bucket over the last 24 hours. Tall bars = active work, gaps = idle or stalled. Bar color shows the session type that did the most work in that window.</p>
+        <div id="activity-chart" style="width:100%;min-height:220px;background:var(--bg);border-radius:8px;border:1px solid var(--border);padding:16px;"></div>
+        <div style="display:flex;gap:16px;margin-top:12px;font-size:12px;color:var(--text-muted);">
+          <div><span style="display:inline-block;width:10px;height:10px;background:#58a6ff;border-radius:2px;margin-right:4px;vertical-align:middle;"></span>planning</div>
+          <div><span style="display:inline-block;width:10px;height:10px;background:#f85149;border-radius:2px;margin-right:4px;vertical-align:middle;"></span>senior</div>
+          <div><span style="display:inline-block;width:10px;height:10px;background:#3fb950;border-radius:2px;margin-right:4px;vertical-align:middle;"></span>junior</div>
+          <div><span style="display:inline-block;width:10px;height:10px;background:#6e7681;border-radius:2px;margin-right:4px;vertical-align:middle;"></span>other</div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="app.js"></script>
   <script>
     // Tabs
-    const allTabs = ['reports', 'bugs', 'feedback', 'releases', 'sprint', 'features', 'designs', 'review', 'admin'];
+    const allTabs = ['reports', 'bugs', 'feedback', 'releases', 'sprint', 'features', 'designs', 'review', 'admin', 'activity'];
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', () => {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -256,6 +274,7 @@
         if (tab.dataset.tab === 'designs') loadDesignDocs();
         if (tab.dataset.tab === 'review') loadReviewItems();
         if (tab.dataset.tab === 'admin') loadAdmin();
+        if (tab.dataset.tab === 'activity') loadActivity();
       });
     });
 
@@ -1441,8 +1460,72 @@
         document.getElementById('review-tab').style.display = '';
         document.getElementById('admin-tab').style.display = '';
         document.getElementById('designs-tab').style.display = '';
+        document.getElementById('activity-tab').style.display = '';
       }
     });
+
+    async function loadActivity() {
+      const chart = document.getElementById('activity-chart');
+      const meta = document.getElementById('activity-meta');
+      chart.innerHTML = '<div style="color:var(--text-muted);padding:20px;text-align:center;">Loading…</div>';
+      let data;
+      try {
+        // Local copy first (served from the same folder during localhost dev),
+        // then fall back to GitHub raw so it works on the deployed Pages.
+        try {
+          const resp = await fetch('heartbeat.json', { cache: 'no-store' });
+          if (!resp.ok) throw new Error();
+          data = await resp.json();
+        } catch {
+          const resp = await fetch(`https://raw.githubusercontent.com/${OWNER}/${REPO}/main/command-center/heartbeat.json`, { cache: 'no-store' });
+          data = await resp.json();
+        }
+      } catch (e) {
+        chart.innerHTML = `<div style="color:var(--red);padding:20px;text-align:center;">Couldn't load heartbeat.json: ${e.message}</div>`;
+        meta.textContent = '';
+        return;
+      }
+
+      const buckets = data.buckets || [];
+      if (buckets.length === 0) {
+        chart.innerHTML = '<div style="color:var(--text-muted);padding:20px;text-align:center;">No heartbeat activity logged yet — waiting for the next session to tick.</div>';
+        meta.textContent = `generated ${new Date(data.generated_at * 1000).toLocaleTimeString()}`;
+        return;
+      }
+
+      const maxCount = Math.max(1, ...buckets.map(b => b.count));
+      const total = buckets.reduce((s, b) => s + b.count, 0);
+      const activeBuckets = buckets.filter(b => b.count > 0).length;
+      const colorFor = t => ({ planning: '#58a6ff', senior: '#f85149', junior: '#3fb950' }[t] || '#6e7681');
+
+      const W = 1040;
+      const H = 200;
+      const barW = W / buckets.length;
+      const bars = buckets.map((b, i) => {
+        const h = Math.round((b.count / maxCount) * (H - 20));
+        const x = i * barW;
+        const y = H - h;
+        const color = b.count === 0 ? '#1c2128' : colorFor(b.type);
+        const tip = `${new Date(b.t * 1000).toLocaleTimeString()} — ${b.count} calls${b.count ? ` (${b.type})` : ''}`;
+        return `<rect x="${x.toFixed(2)}" y="${y}" width="${Math.max(barW - 1, 0.5).toFixed(2)}" height="${h}" fill="${color}"><title>${tip}</title></rect>`;
+      }).join('');
+
+      // Faint baseline
+      const baseline = `<line x1="0" y1="${H - 0.5}" x2="${W}" y2="${H - 0.5}" stroke="#30363d" stroke-width="1"/>`;
+      // Time labels at 0%, 25%, 50%, 75%, 100%
+      const labels = [0, 0.25, 0.5, 0.75, 1].map(f => {
+        const idx = Math.min(buckets.length - 1, Math.floor(f * (buckets.length - 1)));
+        const d = new Date(buckets[idx].t * 1000);
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        const x = f * W;
+        const anchor = f === 0 ? 'start' : f === 1 ? 'end' : 'middle';
+        return `<text x="${x}" y="${H + 14}" fill="#6e7681" font-size="10" text-anchor="${anchor}">${hh}:${mm}</text>`;
+      }).join('');
+
+      chart.innerHTML = `<svg viewBox="0 0 ${W} ${H + 20}" preserveAspectRatio="none" style="width:100%;height:${H + 20}px;display:block;">${bars}${baseline}${labels}</svg>`;
+      meta.textContent = `${total} tool calls · ${activeBuckets}/${buckets.length} active buckets · generated ${new Date(data.generated_at * 1000).toLocaleTimeString()}`;
+    }
   </script>
 </body>
 </html>
