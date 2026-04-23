@@ -715,6 +715,80 @@ final class IntentRoutingEval: XCTestCase {
         await assertRoutes("log the same dinner again", to: "log_food", history: longHistory)
     }
 
+    // MARK: - Cross-Domain Insight (#177)
+
+    func testCrossDomainInsight_routing() async {
+        await assertRoutes("did I lose weight on workout days", to: "cross_domain_insight")
+        await assertRoutes("glucose vs carbs last week", to: "cross_domain_insight")
+        await assertRoutes("protein on lifting days vs rest", to: "cross_domain_insight")
+        await assertRoutes("correlation between calories and weight", to: "cross_domain_insight")
+        await assertRoutes("how does my sleep affect my weight", to: "cross_domain_insight")
+        await assertRoutes("do I eat more on rest days", to: "cross_domain_insight")
+    }
+
+    // MARK: - Weight Trend Prediction (#177)
+
+    func testWeightTrendPrediction_routing() async {
+        await assertRoutes("when will I reach my goal weight", to: "weight_trend_prediction")
+        await assertRoutes("how long until I hit 75 kg", to: "weight_trend_prediction")
+        await assertRoutes("when will I reach 160 lbs", to: "weight_trend_prediction")
+        await assertRoutes("at this rate, when do I reach my target", to: "weight_trend_prediction")
+        await assertRoutes("predict when I'll hit my goal weight", to: "weight_trend_prediction")
+    }
+
+    // MARK: - Implicit Food Logging: no "log" keyword (#177 / #183)
+
+    func testFoodLogging_noLogKeyword() async {
+        await assertRoutes("had oatmeal this morning", to: "log_food")
+        await assertRoutes("ate a banana after my workout", to: "log_food")
+        await assertRoutes("wolfed down a burger for lunch", to: "log_food")
+        await assertRoutes("just finished a bowl of curd rice", to: "log_food")
+        await assertRoutes("morning snack was almonds and raisins", to: "log_food")
+        await assertRoutes("had idli sambar for breakfast", to: "log_food")
+        await assertRoutes("polished off a plate of pasta", to: "log_food")
+    }
+
+    // MARK: - Sleep deep edge cases (#177)
+
+    func testSleep_deepEdgeCases() async {
+        await assertRoutes("woke up 3 times last night", to: "sleep_recovery")
+        await assertRoutes("my sleep has been terrible this week", to: "sleep_recovery")
+        await assertRoutes("am I getting enough deep sleep", to: "sleep_recovery")
+        await assertRoutes("check my HRV trend this month", to: "sleep_recovery")
+        await assertRoutes("how long was my longest sleep streak", to: "sleep_recovery")
+    }
+
+    // MARK: - Supplement advice: must NOT call mark_supplement or supplements (#177)
+
+    func testSupplementAdvice_isNotTool() async {
+        for query in [
+            "should I take magnesium before bed",
+            "what's the best time to take creatine",
+            "how much omega 3 should I take daily"
+        ] {
+            guard let response = await classify(query) else {
+                XCTFail("No response for '\(query)'"); continue
+            }
+            let tool = extractTool(response)
+            XCTAssertNotEqual(tool, "mark_supplement",
+                "'\(query)' → mark_supplement (advice question, not intake log)",
+                file: #filePath, line: #line)
+            XCTAssertNotEqual(tool, "supplements",
+                "'\(query)' → supplements (advice question, not status check)",
+                file: #filePath, line: #line)
+        }
+    }
+
+    // MARK: - Glucose: implicit & trend queries (#177)
+
+    func testGlucose_implicitAndTrend() async {
+        await assertRoutes("was I spiking last night", to: "glucose")
+        await assertRoutes("are my blood sugar levels stable", to: "glucose")
+        await assertRoutes("check my glucose trend this week", to: "glucose")
+        await assertRoutes("how high did I spike after that meal", to: "glucose")
+        await assertRoutes("morning fasting glucose reading", to: "glucose")
+    }
+
     // MARK: - Summary
 
     func testPrintRoutingSummary() async {
