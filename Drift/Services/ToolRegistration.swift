@@ -721,6 +721,10 @@ enum ToolRegistration {
         // metrics over a window. Read-only. #317.
         CrossDomainInsightTool.syncRegistration(registry: r)
 
+        // Weight trend prediction — "when will I reach my goal weight?"
+        // OLS regression on last 30 days → projected date + R² confidence. #402.
+        WeightTrendPredictionTool.syncRegistration(registry: r)
+
         // MARK: - Conditional Tools
         // Photo Log is gated on the beta flag AND a stored cloud-vision key.
         // Keeping this last so the gated call is the single conditional hop.

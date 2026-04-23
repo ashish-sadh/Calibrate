@@ -24,7 +24,7 @@ enum IntentClassifier {
 
     static var systemPrompt: String = """
     Health app. Reply JSON tool call or short text. Fix typos, word numbers, slang.
-    Tools: log_food(name,servings?,calories?,protein?,carbs?,fat?) food_info(query) log_weight(value,unit?) weight_info(query?) start_workout(name?) log_activity(name,duration?) exercise_info(query?) sleep_recovery(period?) mark_supplement(name) supplements() set_goal(target,unit?) delete_food(entry_id?,name?) edit_meal(entry_id?,meal_period?,action,target_food?,new_value?) body_comp() glucose() biomarkers() navigate_to(screen) cross_domain_insight(metric_a,metric_b,window_days?)
+    Tools: log_food(name,servings?,calories?,protein?,carbs?,fat?) food_info(query) log_weight(value,unit?) weight_info(query?) start_workout(name?) log_activity(name,duration?) exercise_info(query?) sleep_recovery(period?) mark_supplement(name) supplements() set_goal(target,unit?) delete_food(entry_id?,name?) edit_meal(entry_id?,meal_period?,action,target_food?,new_value?) body_comp() glucose() biomarkers() navigate_to(screen) cross_domain_insight(metric_a,metric_b,window_days?) weight_trend_prediction()
     When <recent_entries> is shown and user refers to a row (by ordinal, calories, meal, or "the one I just logged"), pass its id as entry_id. Otherwise use name/target_food.
     Rules: never invent health data — call a tool. "calories in X"→food_info (not log_food). log_food when user ate/had OR said log/add/track/record with a named food. Bare "log lunch/breakfast/dinner" (no food)→ask what they had. "search/find X in my logs"→food_info, not log_food. summary/intake/macros→food_info. weight trend→weight_info. body fat/lean mass/DEXA→body_comp. blood sugar/glucose spike→glucose. lab results/biomarkers/cholesterol→biomarkers. HRV→sleep_recovery. "go to X"/"open X"→navigate_to. supplements() for any supplement status question (never text). mark_supplement when user took/had one.
     Ask vs guess: if user names a concrete food/supplement/exercise/weight/screen, act. Only ask when query has no object (bare "log", "track", "add") or two tools fit equally.
@@ -62,6 +62,9 @@ enum IntentClassifier {
     If <recent_entries> lists "42|lunch|rice|180cal|3m": "delete the rice I just logged"→{"tool":"delete_food","entry_id":"42"}
     If <recent_entries> shows two rows and user says "delete the first one"→use the id of the earlier row.
     If <recent_entries> has a 500cal row at id 7: "edit the 500 cal one to 2 servings"→{"tool":"edit_meal","entry_id":"7","action":"update_quantity","new_value":"2"}
+    "when will I reach my goal weight"→{"tool":"weight_trend_prediction"}
+    "how long until I hit 75kg"→{"tool":"weight_trend_prediction"}
+    "when will I reach 160 lbs"→{"tool":"weight_trend_prediction"}
     "did I lose weight on workout days"→{"tool":"cross_domain_insight","metric_a":"weight","metric_b":"workout_volume"}
     "glucose vs carbs last week"→{"tool":"cross_domain_insight","metric_a":"glucose_avg","metric_b":"carbs","window_days":"7"}
     "protein on lifting days vs rest"→{"tool":"cross_domain_insight","metric_a":"protein","metric_b":"workout_volume"}
