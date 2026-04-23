@@ -1789,5 +1789,19 @@
       "Admin reply on USDA API thread (#333) \u2014 Phase 2 tracked in issue #345"
     ],
     "fixes": []
+  },
+  {
+    "build": 169,
+    "date": "2026-04-23T00:00:00-07:00",
+    "description": "Sprint planning cycle 5219 \u2014 weight_trend_prediction AI tool + watchdog stability + product review #54",
+    "features": [
+      "AI chat: 'When will I reach my goal weight?' \u2014 weight_trend_prediction analytical tool using linear regression on weight log, returns projected date, weekly rate, and confidence",
+      "Product review #54 published (cycle 5243): breaking 4-review stall, analytical tools roadmap assessment",
+      "Sprint planning cycle 5219: infra improvement issues created for session stalls (#406, #407)"
+    ],
+    "fixes": [
+      "Watchdog self-heal broadened to cover TestFlight stamp + sprint-state reconciliation",
+      "Watchdog planning-due stamp decoupled from git log to prevent false triggers"
+    ]
   }
 ]
