@@ -237,12 +237,18 @@
     <div id="tab-activity" style="display:none">
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:1100px;margin:0 auto;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap;">
-          <h2 style="margin:0;font-size:20px;">Session Activity</h2>
+          <h2 style="margin:0;font-size:20px;display:flex;align-items:center;gap:8px;">Session Activity <span id="activity-pulse" style="display:none;"></span></h2>
           <div style="display:flex;align-items:center;gap:12px;">
             <div id="activity-updated" style="color:var(--text-muted);font-size:12px;"></div>
             <button onclick="loadActivity()" class="btn" style="padding:4px 10px;font-size:12px;">Refresh</button>
           </div>
         </div>
+        <style>
+          @keyframes drift-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.85); } }
+          .drift-pulse-dot { display:inline-block; width:10px; height:10px; border-radius:50%; animation: drift-pulse 1.2s ease-in-out infinite; }
+          @keyframes drift-beat { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+          .drift-beat { animation: drift-beat 0.6s ease-in-out; }
+        </style>
         <div id="activity-stats" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px;"></div>
         <div id="activity-chart" style="width:100%;background:var(--bg);border-radius:8px;border:1px solid var(--border);padding:16px 12px;"></div>
         <div style="display:flex;gap:14px;margin-top:8px;font-size:11px;color:var(--text-muted);flex-wrap:wrap;">
@@ -1468,13 +1474,25 @@
       }
     });
 
+    let _activityPrevCalls = null;
+    let _activityAutoTimer = null;
+
     async function loadActivity() {
       const chart = document.getElementById('activity-chart');
       const stats = document.getElementById('activity-stats');
       const events = document.getElementById('activity-events');
       const updated = document.getElementById('activity-updated');
-      chart.innerHTML = '<div style="color:var(--text-muted);padding:20px;text-align:center;">Loading…</div>';
-      stats.innerHTML = ''; events.innerHTML = ''; updated.textContent = '';
+      const pulse = document.getElementById('activity-pulse');
+      // Don't blank-flash on auto-refresh — only show "Loading…" on first manual open.
+      if (!stats.children.length) {
+        chart.innerHTML = '<div style="color:var(--text-muted);padding:20px;text-align:center;">Loading…</div>';
+      }
+
+      // Schedule next auto-tick only while the Activity tab is visible.
+      clearTimeout(_activityAutoTimer);
+      const activityPanel = document.getElementById('tab-activity');
+      const isVisible = activityPanel && activityPanel.style.display !== 'none';
+      if (isVisible) _activityAutoTimer = setTimeout(loadActivity, 15000);
       let data;
       try {
         // Local copy first (served from the same folder during localhost dev),
@@ -1495,7 +1513,15 @@
       const buckets = data.buckets || [];
       const evList = data.events || [];
       const now = Math.floor(Date.now() / 1000);
+      const totalCalls = buckets.reduce((s, b) => s + b.count, 0);
+      const isNew = _activityPrevCalls !== null && totalCalls > _activityPrevCalls;
+      _activityPrevCalls = totalCalls;
       updated.textContent = `updated ${new Date(data.generated_at * 1000).toLocaleTimeString()}`;
+      if (isNew) {
+        updated.classList.remove('drift-beat');
+        void updated.offsetWidth; // restart animation
+        updated.classList.add('drift-beat');
+      }
 
       const hueFor = t => ({ planning: '#58a6ff', senior: '#f85149', junior: '#3fb950' }[t] || '#6e7681');
       const eventColor = { start: '#3fb950', stall: '#f85149', crash: '#da3633', pause: '#d29922', exit: '#8b949e' };
@@ -1519,15 +1545,37 @@
         <div style="font-size:16px;font-weight:600;">${value}</div>
       </div>`;
 
+      // Last heartbeat from the bucket data — the most recent active bucket
+      // plus the session-heartbeat stamp gives us a "last tool call" age.
+      const lastActive = [...buckets].reverse().find(b => b.count > 0);
+      const lastCallTs = lastActive ? lastActive.t + data.bucket_seconds : null;
+      const lastCallAge = lastCallTs ? now - lastCallTs : null;
+      const isLive = activeNow && lastCallAge !== null && lastCallAge < 180;
+
+      const statusDot = activeNow
+        ? `<span class="drift-pulse-dot" style="background:${hueFor(lastStart.session)};"></span>`
+        : `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#6e7681;"></span>`;
       const statusValue = activeNow
-        ? `<span style="color:${hueFor(lastStart.session)};">● ${lastStart.session}${lastStart.model ? ` (${lastStart.model})` : ''}</span>`
-        : `<span style="color:var(--text-muted);">● idle</span>`;
+        ? `<span style="display:inline-flex;align-items:center;gap:6px;color:${hueFor(lastStart.session)};">${statusDot} ${lastStart.session}${lastStart.model ? ` (${lastStart.model})` : ''}</span>`
+        : `<span style="display:inline-flex;align-items:center;gap:6px;color:var(--text-muted);">${statusDot} idle</span>`;
       const sinceLabel = activeNow
         ? `running ${fmtAge(now - lastStart.t).replace(' ago', '')}`
         : lastExit ? `last ran ${fmtAge(now - lastExit.t)}` : 'no activity yet';
+      const lastCallLabel = lastCallAge === null
+        ? 'none'
+        : `${fmtAge(lastCallAge)}`;
+
+      // Header pulse matches the Status card
+      if (isLive) {
+        pulse.style.display = 'inline-block';
+        pulse.innerHTML = `<span class="drift-pulse-dot" style="background:${hueFor(lastStart.session)};vertical-align:middle;"></span>`;
+      } else {
+        pulse.style.display = 'none';
+      }
 
       stats.innerHTML = [
         statCard('Status', statusValue, activeNow ? hueFor(lastStart.session) : '#6e7681'),
+        statCard('Last tool call', lastCallLabel, isLive ? hueFor(lastStart.session) : '#6e7681'),
         statCard('Since', sinceLabel, '#8b949e'),
         statCard('Tool calls (4h)', total4h.toLocaleString(), '#3fb950'),
         statCard('Tool calls (24h)', total24.toLocaleString(), '#3fb950'),
