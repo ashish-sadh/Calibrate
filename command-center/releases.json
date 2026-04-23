@@ -1803,5 +1803,22 @@
       "Watchdog self-heal broadened to cover TestFlight stamp + sprint-state reconciliation",
       "Watchdog planning-due stamp decoupled from git log to prevent false triggers"
     ]
+  },
+  {
+    "build": 170,
+    "date": "2026-04-23T00:00:00-07:00",
+    "description": "AI chat: progressive multi-item food streaming + expanded LLM eval + sprint-service claim gate",
+    "features": [
+      "AI chat: multi-food inputs ('rice and dal') now stream each item result as it resolves instead of batching",
+      "LLM eval expanded to 175+ cases — added sleep edge cases, glucose implicit queries, supplement advice vs status, implicit food intent",
+      "Sprint-service: atomic next --claim command prevents double-claiming tasks",
+      "Command-center: ECG-style sparkline activity chart, simpler activity dashboard",
+      "Watchdog: launchd plist + install helper for supervised lifecycle, session heartbeat for reliable liveness detection",
+      "Hook: require-claim gate enforces issue claiming before code edits in senior/junior sessions"
+    ],
+    "fixes": [
+      "Command-center OAuth error now shows friendlier message when auth code is reused",
+      "Watchdog: ensure-clean-state skips live heartbeat snapshot to avoid false dirty-state"
+    ]
   }
 ]
