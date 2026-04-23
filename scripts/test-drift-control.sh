@@ -372,6 +372,28 @@ assert_exit0 "planning-due when 7h ago" sprint_service planning-due
 rm -f "$LAST_PLANNING_FILE"
 sprint_service planning-done > /dev/null
 assert_exit_nonzero "planning-due not due after planning-done" sprint_service planning-due
+
+# 3.8 next --claim is atomic: returns task AND locks it
+write_state_with_tasks "null" \
+    "$(task 700 'Atomic claim' pending sprint-task)" \
+    "$(task 701 'Second task' pending sprint-task)"
+RESULT=$(sprint_service next --junior --claim 2>/dev/null)
+assert_eq "next --claim returns first task" "700 Atomic claim" "$RESULT"
+# in_progress should be set to 700
+IN_P=$(jq -r '.in_progress' "$STATE_FILE")
+assert_eq "next --claim marks in_progress atomically" "700" "$IN_P"
+# A second --claim without done/unclaim should fail because in_progress is set.
+# (claim fails on conflict; next returns the same task but the chained claim rejects.)
+RESULT2=$(sprint_service next --junior --claim 2>/dev/null)
+IN_P2=$(jq -r '.in_progress' "$STATE_FILE")
+assert_eq "concurrent --claim doesn't overwrite in_progress" "700" "$IN_P2"
+
+# 3.9 next --claim with no task returns none and doesn't claim
+write_state_with_tasks "null"
+RESULT=$(sprint_service next --junior --claim 2>/dev/null)
+assert_eq "next --claim with empty queue prints none" "none" "$RESULT"
+IN_P=$(jq -r '.in_progress' "$STATE_FILE")
+assert_eq "next --claim with empty queue leaves in_progress null" "null" "$IN_P"
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════

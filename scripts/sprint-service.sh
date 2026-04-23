@@ -136,9 +136,22 @@ PYEOF
 }
 
 cmd_next() {
-    local FILTER="${1:---any}"
+    # Accept --claim anywhere in args so both
+    #   next --senior --claim
+    #   next --claim --senior
+    # work. Any other arg becomes the filter mode.
+    local FILTER="--any"
+    local DO_CLAIM=0
+    for arg in "$@"; do
+        if [ "$arg" = "--claim" ]; then
+            DO_CLAIM=1
+        elif [ -n "$arg" ]; then
+            FILTER="$arg"
+        fi
+    done
 
-    python3 - "$FILTER" "$STATE_FILE" <<'PYEOF'
+    local RESULT
+    RESULT=$(python3 - "$FILTER" "$STATE_FILE" <<'PYEOF'
 import json, sys
 
 filter_mode = sys.argv[1]
@@ -240,6 +253,22 @@ if filter_mode in ("--junior", "--any"):
 
 print("none")
 PYEOF
+)
+
+    # If no task or claim not requested, just print result and return.
+    echo "$RESULT"
+    if [ "$DO_CLAIM" -ne 1 ] || [ "$RESULT" = "none" ] || [ -z "$RESULT" ]; then
+        return 0
+    fi
+
+    # Extract task number from "N TITLE" and claim it. Claim output goes
+    # to stderr so the stdout contract ("N TITLE" or "none") stays intact
+    # for callers that captured `next` before this flag existed.
+    local NUM
+    NUM=$(echo "$RESULT" | awk '{print $1}')
+    if [ -n "$NUM" ]; then
+        cmd_claim "$NUM" >&2 || true
+    fi
 }
 
 cmd_claim() {
@@ -546,7 +575,7 @@ shift 2>/dev/null || true
 
 case "$CMD" in
     refresh)        cmd_refresh ;;
-    next)           cmd_next "${1:---any}" ;;
+    next)           cmd_next "$@" ;;
     claim)          cmd_claim "$1" ;;
     done)           cmd_done "$1" "${2:-}" ;;
     unclaim)        cmd_unclaim "$1" ;;
