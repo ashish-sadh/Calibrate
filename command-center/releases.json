@@ -1778,5 +1778,16 @@
     "fixes": [
       "Planning cycle 4734 sprint tasks created \u2014 6 new tasks added (Settings Feedback row, weight_trend_prediction tool, USDA key upgrade, state.md refresh, failing-queries.md refresh, PhotoLogReviewViewModel extraction)"
     ]
+  },
+  {
+    "build": 167,
+    "date": "2026-04-22T00:00:00-07:00",
+    "description": "Sprint planning cycle 4949 \u2014 product review #53 + TestFlight build",
+    "features": [
+      "Product review #53 published: fourth-consecutive zero-feature review, queue cap of 70 recommended",
+      "Sprint planning cycle 4949: 9 new tasks created (#394-#402) covering AI eval, food DB, IntentClassifier improvements",
+      "Admin reply on USDA API thread (#333) \u2014 Phase 2 tracked in issue #345"
+    ],
+    "fixes": []
   }
 ]
