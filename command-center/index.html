@@ -236,17 +236,25 @@
 
     <div id="tab-activity" style="display:none">
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;max-width:1100px;margin:0 auto;">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:12px;flex-wrap:wrap;">
           <h2 style="margin:0;font-size:20px;">Session Activity</h2>
-          <div id="activity-meta" style="color:var(--text-muted);font-size:12px;">Loading...</div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div id="activity-meta" style="color:var(--text-muted);font-size:12px;">Loading...</div>
+            <button id="activity-refresh" onclick="loadActivity()" class="btn" style="padding:4px 10px;font-size:12px;">Refresh</button>
+          </div>
         </div>
-        <p style="color:var(--text-muted);font-size:13px;margin:0 0 16px;">Tool calls per 5-minute bucket over the last 24 hours. Tall bars = active work, gaps = idle or stalled. Bar color shows the session type that did the most work in that window.</p>
-        <div id="activity-chart" style="width:100%;min-height:220px;background:var(--bg);border-radius:8px;border:1px solid var(--border);padding:16px;"></div>
-        <div style="display:flex;gap:16px;margin-top:12px;font-size:12px;color:var(--text-muted);">
+        <p style="color:var(--text-muted);font-size:13px;margin:0 0 16px;">24-hour heatmap, each row is one hour, each cell is a 5-minute bucket. Brighter cells = more tool calls. Cell hue reflects the dominant session type; corner dots mark session lifecycle events.</p>
+        <div id="activity-chart" style="width:100%;min-height:220px;background:var(--bg);border-radius:8px;border:1px solid var(--border);padding:16px;overflow:auto;"></div>
+        <div style="display:flex;gap:16px;margin-top:12px;font-size:12px;color:var(--text-muted);flex-wrap:wrap;">
           <div><span style="display:inline-block;width:10px;height:10px;background:#58a6ff;border-radius:2px;margin-right:4px;vertical-align:middle;"></span>planning</div>
           <div><span style="display:inline-block;width:10px;height:10px;background:#f85149;border-radius:2px;margin-right:4px;vertical-align:middle;"></span>senior</div>
           <div><span style="display:inline-block;width:10px;height:10px;background:#3fb950;border-radius:2px;margin-right:4px;vertical-align:middle;"></span>junior</div>
-          <div><span style="display:inline-block;width:10px;height:10px;background:#6e7681;border-radius:2px;margin-right:4px;vertical-align:middle;"></span>other</div>
+          <div><span style="display:inline-block;width:10px;height:10px;background:#1c2128;border:1px solid #30363d;border-radius:2px;margin-right:4px;vertical-align:middle;"></span>idle</div>
+          <div style="color:#3fb950;">● start</div>
+          <div style="color:#f85149;">● stall</div>
+          <div style="color:#da3633;">● crash</div>
+          <div style="color:#d29922;">● pause</div>
+          <div style="color:#8b949e;">● exit</div>
         </div>
       </div>
     </div>
@@ -1494,67 +1502,113 @@
         return;
       }
 
-      const maxCount = Math.max(1, ...buckets.map(b => b.count));
       const total = buckets.reduce((s, b) => s + b.count, 0);
       const activeBuckets = buckets.filter(b => b.count > 0).length;
-      const colorFor = t => ({ planning: '#58a6ff', senior: '#f85149', junior: '#3fb950' }[t] || '#6e7681');
 
-      const W = 1040;
-      const H = 200;
-      const t0 = buckets[0].t;
-      const tSpan = Math.max(1, buckets[buckets.length - 1].t + data.bucket_seconds - t0);
-      const xForTime = ts => ((ts - t0) / tSpan) * W;
+      // Heatmap geometry: 1 row per hour (24 rows), 12 cells per row (5-min
+      // buckets). Cells are sized generously so hover + click feel easy.
+      const CELL = 28;
+      const GAP = 2;
+      const LABEL_W = 56;
+      const COLS = Math.round(3600 / data.bucket_seconds); // normally 12
+      const INNER_W = COLS * (CELL + GAP);
+      const W = LABEL_W + INNER_W + 10;
 
-      const barW = W / buckets.length;
-      const bars = buckets.map((b, i) => {
-        const h = Math.round((b.count / maxCount) * (H - 20));
-        const x = i * barW;
-        const y = H - h;
-        const color = b.count === 0 ? '#1c2128' : colorFor(b.type);
-        const tip = `${new Date(b.t * 1000).toLocaleTimeString()} — ${b.count} calls${b.count ? ` (${b.type})` : ''}`;
-        return `<rect x="${x.toFixed(2)}" y="${y}" width="${Math.max(barW - 1, 0.5).toFixed(2)}" height="${h}" fill="${color}"><title>${tip}</title></rect>`;
-      }).join('');
+      // Index buckets by absolute hour so rows line up on clock boundaries
+      // regardless of when the window started.
+      const bucketByT = new Map(buckets.map(b => [b.t, b]));
+      const hourBuckets = new Map();
+      for (const b of buckets) {
+        const hour = Math.floor(b.t / 3600) * 3600;
+        if (!hourBuckets.has(hour)) hourBuckets.set(hour, []);
+        hourBuckets.get(hour).push(b);
+      }
+      const sortedHours = [...hourBuckets.keys()].sort((a, b) => a - b);
 
-      // Event markers — vertical line per start/stall/crash/pause/exit.
-      const eventStyle = {
-        start: { color: '#3fb950', dash: '',     marker: 'circle' },
-        stall: { color: '#f85149', dash: '4,3',  marker: 'x' },
-        crash: { color: '#da3633', dash: '2,2',  marker: 'x' },
-        pause: { color: '#d29922', dash: '3,3',  marker: 'pause' },
-        exit:  { color: '#8b949e', dash: '',     marker: 'circle' },
+      const maxCount = Math.max(1, ...buckets.map(b => b.count));
+      // Log-ish intensity so a single tool call still shows, but a busy
+      // burst doesn't make everything else look black.
+      const intensityFor = c => {
+        if (c <= 0) return 0;
+        return Math.min(1, Math.log2(c + 1) / Math.log2(maxCount + 1));
       };
-      const markers = events.map(ev => {
-        const s = eventStyle[ev.kind] || { color: '#8b949e', dash: '', marker: 'circle' };
-        const x = xForTime(ev.t);
-        if (x < 0 || x > W) return '';
-        const stamp = new Date(ev.t * 1000).toLocaleTimeString();
-        const label = ev.kind === 'start'
-          ? `start ${ev.session || ''}${ev.model ? ` (${ev.model})` : ''}`
-          : ev.kind;
-        const tip = `${stamp} — ${label}`;
-        const line = `<line x1="${x.toFixed(2)}" y1="0" x2="${x.toFixed(2)}" y2="${H}" stroke="${s.color}" stroke-width="1" stroke-dasharray="${s.dash}" opacity="0.7"><title>${tip}</title></line>`;
-        // Top-edge dot so markers are noticeable even when lines overlap the bars
-        const dot = `<circle cx="${x.toFixed(2)}" cy="4" r="3" fill="${s.color}"><title>${tip}</title></circle>`;
-        return line + dot;
-      }).join('');
+      const hueFor = t => ({ planning: '#58a6ff', senior: '#f85149', junior: '#3fb950' }[t] || '#6e7681');
+      const mix = (hex, alpha) => {
+        // Cell color = idle base + tinted overlay at `alpha`. Keeps idle
+        // cells readable as a dark grid, active cells glow in type color.
+        const n = parseInt(hex.slice(1), 16);
+        const r = (n >> 16) & 0xff, g = (n >> 8) & 0xff, b = n & 0xff;
+        const base = 28, baseAlpha = 1 - alpha;
+        const mr = Math.round(base * baseAlpha + r * alpha);
+        const mg = Math.round(base * baseAlpha + g * alpha);
+        const mb = Math.round(base * baseAlpha + b * alpha);
+        return `rgb(${mr},${mg},${mb})`;
+      };
 
-      // Faint baseline
-      const baseline = `<line x1="0" y1="${H - 0.5}" x2="${W}" y2="${H - 0.5}" stroke="#30363d" stroke-width="1"/>`;
-      // Time labels at 0%, 25%, 50%, 75%, 100%
-      const labels = [0, 0.25, 0.5, 0.75, 1].map(f => {
-        const idx = Math.min(buckets.length - 1, Math.floor(f * (buckets.length - 1)));
-        const d = new Date(buckets[idx].t * 1000);
-        const hh = String(d.getHours()).padStart(2, '0');
-        const mm = String(d.getMinutes()).padStart(2, '0');
-        const x = f * W;
-        const anchor = f === 0 ? 'start' : f === 1 ? 'end' : 'middle';
-        return `<text x="${x}" y="${H + 14}" fill="#6e7681" font-size="10" text-anchor="${anchor}">${hh}:${mm}</text>`;
-      }).join('');
+      const H = sortedHours.length * (CELL + GAP) + 30;
 
-      chart.innerHTML = `<svg viewBox="0 0 ${W} ${H + 20}" preserveAspectRatio="none" style="width:100%;height:${H + 20}px;display:block;">${bars}${markers}${baseline}${labels}</svg>`;
+      // Event index by bucket so we can corner-dot the right cell
+      const eventsByBucket = new Map();
+      for (const ev of events) {
+        const key = Math.floor(ev.t / data.bucket_seconds) * data.bucket_seconds;
+        if (!eventsByBucket.has(key)) eventsByBucket.set(key, []);
+        eventsByBucket.get(key).push(ev);
+      }
+      const eventColor = { start: '#3fb950', stall: '#f85149', crash: '#da3633', pause: '#d29922', exit: '#8b949e' };
+
+      let svg = '';
+      sortedHours.forEach((hour, rowIdx) => {
+        const y = rowIdx * (CELL + GAP) + 20;
+        const hh = String(new Date(hour * 1000).getHours()).padStart(2, '0');
+        svg += `<text x="${LABEL_W - 10}" y="${y + CELL / 2 + 4}" font-size="11" fill="#6e7681" text-anchor="end">${hh}:00</text>`;
+
+        for (let c = 0; c < COLS; c++) {
+          const bucketT = hour + c * data.bucket_seconds;
+          const b = bucketByT.get(bucketT);
+          const x = LABEL_W + c * (CELL + GAP);
+          const count = b ? b.count : 0;
+          const type = b && count > 0 ? b.type : 'idle';
+          const color = count > 0 ? mix(hueFor(type), 0.15 + 0.85 * intensityFor(count)) : '#1c2128';
+          const stroke = count > 0 ? hueFor(type) : '#30363d';
+          const strokeOp = count > 0 ? 0.4 : 0.3;
+          const stamp = new Date(bucketT * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          const tip = count > 0
+            ? `${stamp} · ${count} call${count === 1 ? '' : 's'} · ${type}`
+            : `${stamp} · idle`;
+          svg += `<rect x="${x}" y="${y}" width="${CELL}" height="${CELL}" rx="4" fill="${color}" stroke="${stroke}" stroke-opacity="${strokeOp}"><title>${tip}</title></rect>`;
+
+          // Event corner dot on bucket that contains the event
+          const evs = eventsByBucket.get(bucketT) || [];
+          if (evs.length > 0) {
+            // Pick the highest-severity event in this bucket for the dot color
+            const severity = { crash: 5, stall: 4, pause: 3, start: 2, exit: 1 };
+            evs.sort((a, b) => (severity[b.kind] || 0) - (severity[a.kind] || 0));
+            const top = evs[0];
+            const dotColor = eventColor[top.kind] || '#8b949e';
+            const evTip = evs.map(e => {
+              const ts = new Date(e.t * 1000).toLocaleTimeString();
+              return e.kind === 'start'
+                ? `${ts} start ${e.session || ''}${e.model ? ` (${e.model})` : ''}`
+                : `${ts} ${e.kind}`;
+            }).join('\n');
+            svg += `<circle cx="${x + CELL - 5}" cy="${y + 5}" r="3.5" fill="${dotColor}" stroke="#0d1117" stroke-width="1"><title>${evTip}</title></circle>`;
+          }
+        }
+      });
+
+      // Column-header minute marks (:00, :15, :30, :45)
+      for (let c = 0; c < COLS; c++) {
+        const mins = c * (data.bucket_seconds / 60);
+        if (mins % 15 === 0) {
+          const x = LABEL_W + c * (CELL + GAP) + CELL / 2;
+          svg += `<text x="${x}" y="14" font-size="10" fill="#6e7681" text-anchor="middle">:${String(mins).padStart(2, '0')}</text>`;
+        }
+      }
+
+      chart.innerHTML = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" style="display:block;">${svg}</svg>`;
       const eventCounts = events.reduce((acc, e) => { acc[e.kind] = (acc[e.kind] || 0) + 1; return acc; }, {});
       const eventSummary = Object.entries(eventCounts).map(([k, v]) => `${v} ${k}`).join(' · ');
-      meta.textContent = `${total} tool calls · ${activeBuckets}/${buckets.length} active buckets${eventSummary ? ' · ' + eventSummary : ''} · generated ${new Date(data.generated_at * 1000).toLocaleTimeString()}`;
+      meta.textContent = `${total} tool calls · ${activeBuckets}/${buckets.length} active${eventSummary ? ' · ' + eventSummary : ''} · generated ${new Date(data.generated_at * 1000).toLocaleTimeString()}`;
     }
   </script>
 </body>
