@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.drift.watchdog</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/Users/ashishsadh/workspace/Drift/scripts/self-improve-watchdog.sh</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/ashishsadh/workspace/Drift</string>
+
+    <!-- Start at login + restart on any exit. ThrottleInterval prevents
+         crash-loop hammering: minimum 30s between relaunches. -->
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+
+    <!-- Nice + process limits keep the watchdog out of the way of active
+         work. The watchdog itself is light; heavy lifting is the spawned
+         claude sessions which aren't bound by this. -->
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>Nice</key>
+    <integer>5</integer>
+
+    <!-- Logs go to the existing drift-self-improve-logs directory so they
+         sit next to watchdog.log and session logs. -->
+    <key>StandardOutPath</key>
+    <string>/Users/ashishsadh/drift-self-improve-logs/launchd-stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/ashishsadh/drift-self-improve-logs/launchd-stderr.log</string>
+
+    <!-- launchd scrubs the environment; pass the minimal vars the watchdog
+         + gh CLI + git need. HOME is required for ~/drift-state/ writes. -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/Users/ashishsadh/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>HOME</key>
+        <string>/Users/ashishsadh</string>
+    </dict>
+</dict>
+</plist>
