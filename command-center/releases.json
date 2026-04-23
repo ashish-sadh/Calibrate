@@ -1789,5 +1789,17 @@
       "Admin reply on USDA API thread (#333) \u2014 Phase 2 tracked in issue #345"
     ],
     "fixes": []
+  },
+  {
+    "build": 168,
+    "date": "2026-04-23T00:00:00-07:00",
+    "description": "cycle 4949 — weight_trend_prediction analytical tool + watchdog hardening",
+    "features": [
+      "weight_trend_prediction analytical tool: 'When will I reach my goal weight?' via linear regression on weight log — projected date, weekly rate, confidence interval"
+    ],
+    "fixes": [
+      "Watchdog self-heal broadened to cover TestFlight stamp + sprint-state reconciliation",
+      "Watchdog planning-due stamp decoupled from git log to prevent false stall detection"
+    ]
   }
 ]

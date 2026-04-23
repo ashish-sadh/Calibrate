@@ -26,7 +26,7 @@ enum IntentClassifier {
     Health app. Reply JSON tool call or short text. Fix typos, word numbers, slang.
     Tools: log_food(name,servings?,calories?,protein?,carbs?,fat?) food_info(query) log_weight(value,unit?) weight_info(query?) start_workout(name?) log_activity(name,duration?) exercise_info(query?) sleep_recovery(period?) mark_supplement(name) supplements() set_goal(target,unit?) delete_food(entry_id?,name?) edit_meal(entry_id?,meal_period?,action,target_food?,new_value?) body_comp() glucose() biomarkers() navigate_to(screen) cross_domain_insight(metric_a,metric_b,window_days?) weight_trend_prediction()
     When <recent_entries> is shown and user refers to a row (by ordinal, calories, meal, or "the one I just logged"), pass its id as entry_id. Otherwise use name/target_food.
-    Rules: never invent health data — call a tool. "calories in X"→food_info (not log_food). log_food when user ate/had OR said log/add/track/record with a named food. Bare "log lunch/breakfast/dinner" (no food)→ask what they had. "search/find X in my logs"→food_info, not log_food. summary/intake/macros→food_info. weight trend→weight_info. body fat/lean mass/DEXA→body_comp. blood sugar/glucose spike→glucose. lab results/biomarkers/cholesterol→biomarkers. HRV→sleep_recovery. "go to X"/"open X"→navigate_to. supplements() for any supplement status question (never text). mark_supplement when user took/had one.
+    Rules: never invent health data — call a tool. "calories in X"→food_info (not log_food). log_food when user ate/had OR said log/add/track/record with a named food. Bare "log lunch/breakfast/dinner" (no food)→ask what they had. "search/find X in my logs"→food_info, not log_food. summary/intake/macros/fiber/sodium/sugar→food_info. weight trend→weight_info. body fat/lean mass/DEXA→body_comp. blood sugar/glucose spike→glucose. lab results/biomarkers/cholesterol→biomarkers. HRV→sleep_recovery. "go to X"/"open X"→navigate_to. supplements() for any supplement status question (never text). mark_supplement when user took/had one. date queries (last Tuesday, two days ago, on Saturday)→food_info with date in query.
     Ask vs guess: if user names a concrete food/supplement/exercise/weight/screen, act. Only ask when query has no object (bare "log", "track", "add") or two tools fit equally.
     "daily summary"→{"tool":"food_info","query":"daily summary"}
     "weekly summary"→{"tool":"food_info","query":"weekly summary"}
@@ -38,41 +38,36 @@ enum IntentClassifier {
     "chipotle bowl 3000 cal 30p 45c 67f"→{"tool":"log_food","name":"chipotle bowl","calories":"3000","protein":"30","carbs":"45","fat":"67"}
     "calories left"→{"tool":"food_info","query":"calories left"}
     "calories in samosa"→{"tool":"food_info","query":"calories in samosa"}
-    "how am I doing"→{"tool":"food_info","query":"daily summary"}
     "log 2 eggs"→{"tool":"log_food","name":"egg","servings":"2"}
     "log pizza"→{"tool":"log_food","name":"pizza"}
-    "log a sandwich"→{"tool":"log_food","name":"sandwich"}
-    "search pizza in my logs"→{"tool":"food_info","query":"pizza"}
     "I weigh 75 kg"→{"tool":"log_weight","value":"75","unit":"kg"}
     "start push day"→{"tool":"start_workout","name":"push day"}
     "did yoga for like half an hour"→{"tool":"log_activity","name":"yoga","duration":"30"}
     "took vitamin d"→{"tool":"mark_supplement","name":"vitamin d"}
     "did I take my vitamins"→{"tool":"supplements"}
-    "DEXA results"→{"tool":"body_comp"}
-    "any glucose spikes"→{"tool":"glucose"}
-    "how'd I sleep"→{"tool":"sleep_recovery"}
-    "my hrv today"→{"tool":"sleep_recovery","query":"hrv"}
     "how's my muscle recovery"→{"tool":"exercise_info","query":"muscle recovery"}
     "set my goal to one sixty"→{"tool":"set_goal","target":"160","unit":"lbs"}
     "delete last"→{"tool":"delete_food"}
     "remove rice from lunch"→{"tool":"edit_meal","meal_period":"lunch","action":"remove","target_food":"rice"}
-    "delete eggs from breakfast"→{"tool":"edit_meal","meal_period":"breakfast","action":"remove","target_food":"eggs"}
     "update oatmeal in breakfast to 200g"→{"tool":"edit_meal","meal_period":"breakfast","action":"update_quantity","target_food":"oatmeal","new_value":"200g"}
     "swap chicken for tofu in dinner"→{"tool":"edit_meal","meal_period":"dinner","action":"replace","target_food":"chicken","new_value":"tofu"}
     If <recent_entries> lists "42|lunch|rice|180cal|3m": "delete the rice I just logged"→{"tool":"delete_food","entry_id":"42"}
-    If <recent_entries> shows two rows and user says "delete the first one"→use the id of the earlier row.
     If <recent_entries> has a 500cal row at id 7: "edit the 500 cal one to 2 servings"→{"tool":"edit_meal","entry_id":"7","action":"update_quantity","new_value":"2"}
     "when will I reach my goal weight"→{"tool":"weight_trend_prediction"}
-    "how long until I hit 75kg"→{"tool":"weight_trend_prediction"}
-    "when will I reach 160 lbs"→{"tool":"weight_trend_prediction"}
     "did I lose weight on workout days"→{"tool":"cross_domain_insight","metric_a":"weight","metric_b":"workout_volume"}
     "glucose vs carbs last week"→{"tool":"cross_domain_insight","metric_a":"glucose_avg","metric_b":"carbs","window_days":"7"}
-    "protein on lifting days vs rest"→{"tool":"cross_domain_insight","metric_a":"protein","metric_b":"workout_volume"}
-    "correlation between calories and weight"→{"tool":"cross_domain_insight","metric_a":"calories","metric_b":"weight"}
     "show me my weight chart"→{"tool":"navigate_to","screen":"weight"}
     "go to sleep tab"→{"tool":"navigate_to","screen":"bodyRhythm"}
-    "show dashboard"→{"tool":"navigate_to","screen":"dashboard"}
-    "is it okay to take fish oil on an empty stomach"→Fish oil is generally fine with or without food.
+    "how much fiber did I eat today"→{"tool":"food_info","query":"fiber today"}
+    "how much sodium today"→{"tool":"food_info","query":"sodium today"}
+    "what's my sugar intake"→{"tool":"food_info","query":"sugar today"}
+    "how many calories did I eat last Tuesday"→{"tool":"food_info","query":"calories last Tuesday"}
+    "calories on Saturday"→{"tool":"food_info","query":"calories Saturday"}
+    "am I hitting my protein goal"→{"tool":"food_info","query":"protein today"}
+    "set my calorie goal to 2000"→Calorie goals aren't tracked yet — I can set your weight goal. Try "set my goal to 70 kg".
+    "I drank 2 glasses of water"→{"tool":"log_food","name":"water","servings":"2"}
+    If <recent_entries> shows "43|lunch|chicken|320cal": "No, I had salmon instead"→{"tool":"edit_meal","entry_id":"43","action":"replace","target_food":"chicken","new_value":"salmon"}
+    If <recent_entries> shows "44|breakfast|eggs|180cal": "actually it was 2 eggs not 3"→{"tool":"edit_meal","entry_id":"44","action":"update_quantity","target_food":"eggs","new_value":"2"}
     "log lunch"→What did you have for lunch?
     "log my breakfast"→What did you have for breakfast?
     "hi"→Hi! How can I help?
@@ -90,7 +85,9 @@ enum IntentClassifier {
     nonisolated static let deleteEditTriggers: [String] = [
         "delete", "remove", "undo", "edit", "change", "update",
         "replace", "swap", "the one", "the first", "the second",
-        "the last", "the 500", "just logged", "just added"
+        "the last", "the 500", "just logged", "just added",
+        "instead", "no, i had", "actually i had", "wait, it was",
+        "actually it was", "not that", "not the"
     ]
 
     /// Build the user message with optional history context. Public for

@@ -101,6 +101,38 @@ final class IntentClassifierEval: XCTestCase {
         await runCases(cases, stage: "actions")
     }
 
+    // MARK: - Micronutrient & date queries (top telemetry failure categories — cycle 4949)
+
+    func testClassifier_micronutrientQueries() async {
+        let cases: [(String, String)] = [
+            ("how much fiber did I eat today",   "food_info"),
+            ("how much sodium today",            "food_info"),
+            ("what's my sugar intake",           "food_info"),
+            ("how much protein today",           "food_info"),
+            ("did I get enough fiber this week", "food_info"),
+        ]
+        await runCases(cases, stage: "micronutrient_queries")
+    }
+
+    func testClassifier_historicalDateQueries() async {
+        let cases: [(String, String)] = [
+            ("how many calories did I eat last Tuesday", "food_info"),
+            ("what did I log two days ago",              "food_info"),
+            ("calories on Saturday",                     "food_info"),
+            ("what did I eat last week Monday",          "food_info"),
+        ]
+        await runCases(cases, stage: "historical_date_queries")
+    }
+
+    func testClassifier_informalCorrections() async {
+        // "instead" triggers recent-entries injection; model should route to edit_meal
+        let cases: [(String, String)] = [
+            ("No, I had salmon instead of chicken", "edit_meal"),
+            ("actually it was 2 eggs not 3",        "edit_meal"),
+        ]
+        await runCases(cases, stage: "informal_corrections")
+    }
+
     // MARK: - Summary
 
     func testPrintClassifierSummary() async {
