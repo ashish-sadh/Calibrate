@@ -271,6 +271,13 @@
 - Dashboard food variety score (#389) is the first insight card measuring *breadth* of diet rather than quantity. Novel signal — complements protein/calorie tracking with a diversity dimension.
 - American fast food (#388) and Indian protein staples (#387) address the highest-frequency meal logging gaps for the target user base. Dal/paneer/egg curry users who hit "not found" every day are the first to switch to MFP.
 
+### What I Learned — Review Cycle 4975 (2026-04-22)
+- Four consecutive zero-feature reviews (#50–#53) confirms the structural diagnosis from reviews 26 and 27: when planning cycles outpace execution cycles, the product stalls. The queue cap of 70 sprint tasks (hard limit, blocks new planning) is now the enforced policy. The lever to pull is not more tickets — it's more senior sessions per watchdog day.
+- Whoop Behavior Trends continues to widen the analytical gap. Our `supplement_insight` (#369) and `food_timing_insight` (#370) are the same pattern — habit → outcome correlation — but unshipped. Every planning cycle they stay queued, Whoop cements this pattern as "theirs" in the market. These two tools must be treated as P0 for the very next senior session, no exceptions.
+- Queue at 95 is a quality signal, not a planning success. Old tasks accumulate context drift. Tasks #253–#256 from cycle 3022 are now ~2000 cycles old — the code they target has likely evolved. Hard rule: any task >500 cycles old requires re-validation before implementation. Executor must grep for referenced symbols before writing any code.
+- State.md has been stale for four consecutive reviews. This is no longer a minor doc gap — it's an active planning risk. Executor who reads build 133 and 2048-token context makes wrong decisions. Require State.md refresh as step zero of every product review, before the scorecard is written.
+- Queue cap recommendation from this review: 70 sprint tasks max. When queue exceeds 70, next planning session may NOT add new tasks until queue drops below 70. Only P0 bugs bypass this cap.
+
 ### What I Learned — Planning Cycle 4774 (2026-04-22)
 - Queue is now ~75 pending (65 before + 10 added this cycle). This exceeds the ≤6 cap set last cycle. Queue size is now the #1 product planning problem — more tasks ≠ more throughput. Senior sessions drain 5 tasks each; junior sessions drain 5. At current rate, the oldest tasks are weeks stale before they get touched. Hard cap: ≤5 new tasks per planning cycle until queue is below 40.
 - Photo Log hardening (fallback chain + eval) finally tasked. Cycle 3985 sprint items have been in the roadmap for 3 planning cycles without all corresponding tasks. When a roadmap sprint has untasked items, explicitly create those tasks — don't assume they're implicit.
