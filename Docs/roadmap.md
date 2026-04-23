@@ -102,15 +102,16 @@ What's not: Color palette feels disjointed (dark blue/purple + bright rings), no
 - ~~**Search quality (P1)**~~ DONE — Synonym expansion (40+ regional/colloquial terms), spell correction hardened. Prefix matching works via substring SQL (`%word%` matches "chick" → "chicken"). 3 verification tests added.
 - Ingredient persistence for recipe rebuilding
 - **South Indian cuisine expansion (P1, bug #188)** — Target 20–30 dishes: idli variants, dosa types, sambar, rasam, kuzhambu, thoran, aviyal, puliyogare, Kerala/Tamil/Andhra/Karnataka specifics. User feedback: app lags MFP here and Indian users feel it.
-- **Composed-food calorie audit (P1, bug #195)** — "Coffee with milk" returns 0 kcal. Audit composed-food lookup path (USDA fallback + "with X" modifier parsing) — calories on additives are being dropped somewhere.
+- ~~**Composed-food calorie audit (P1, bug #195)**~~ DONE — Zero-calorie composed-food bug fixed (build 163). "Coffee with milk" now returns correct kcal. Additive calories were being dropped in USDA fallback path.
 
 ### Next
-- USDA API integration for verified nutrition data
+- **USDA API Phase 2 (P1)** — Phase 1 (fallback-only) is live and free. Phase 2: use USDA FoodData Central as a proactive search source for common verified foods — batch import top foods or add a "verified nutrition" search tier. API is free (1000 req/hour), 400k+ entries. Closes the MFP DB gap via API, not manual curation.
 - Restaurant menu items (Chipotle bowl builder, etc.)
 - Barcode coverage expansion
+- USDA DEMO_KEY → registered API key (required before App Store launch, low urgency for TestFlight)
 
 ### Benchmark: MyFitnessPal
-- MFP has 14M+ foods (acquired Cal AI Mar 2026). We have 1,500. Close gap via USDA API, not manual entry.
+- MFP has 20M+ foods (Cal AI + Intent acquisitions, Mar 2026). We have 2,511. Close gap via USDA API Phase 2, not manual entry.
 - MFP logging is ~3 taps. Match or beat this with AI chat.
 
 ## Exercise
