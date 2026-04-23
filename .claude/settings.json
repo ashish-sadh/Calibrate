@@ -37,6 +37,10 @@
         "hooks": [{ "type": "command", "command": ".claude/hooks/pause-gate.sh", "timeout": 5 }]
       },
       {
+        "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": ".claude/hooks/sprint-cap.sh", "timeout": 10 }]
+      },
+      {
         "matcher": "*",
         "hooks": [{ "type": "command", "command": ".claude/hooks/session-heartbeat.sh", "timeout": 3 }]
       },

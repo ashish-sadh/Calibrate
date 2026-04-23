@@ -46,7 +46,12 @@ scripts/planning-service.sh remaining
 
 8. **Daily exec report (if due):** `scripts/report-service.sh daily-due || true` — if due: `scripts/report-service.sh start-exec` → write report → PR with `--label report` → merge. Then: `echo $(date +%s) > ~/drift-state/last-report-time`
 
-9. **Create 8+ sprint tasks:** `gh issue create --label sprint-task [--label SENIOR]`
+9. **Create sprint tasks (cap 100 open):** `gh issue create --label sprint-task [--label SENIOR]`
+   **Hard cap: the open sprint-task queue is capped at 100.** A PreToolUse
+   hook blocks new creates past the cap. If the queue is near the limit:
+   prune stale issues, consolidate duplicates, mark superseded ones
+   `wontfix` — don't pad the queue to hit "8+". Planning quality > task
+   count.
    Body must include: Goal, Files to modify, Approach, Tests, Acceptance criteria.
    SENIOR = AI pipeline, architecture, multi-file refactors. JUNIOR = food DB, UI, tests, simple fixes.
    Prioritize: P0 bugs → product focus → admin feedback → roadmap "Now" → parity gaps.
