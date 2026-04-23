@@ -1765,5 +1765,18 @@
       "Admin feedback on USDA API (PR #333) replied \u2014 confirmed free API, sprint task created",
       "Build bump to 165 \u2014 no code changes, planning-only build"
     ]
+  },
+  {
+    "build": 166,
+    "date": "2026-04-22T17:00:00-07:00",
+    "description": "Sprint planning cycle 4734 \u2014 product review #50 + TestFlight cadence build",
+    "features": [
+      "Product review #50 published: analytical tools category (1/5 cross_domain_insight live), USDA free API decision surfaced",
+      "Personas updated with USDA expansion priority and queue cap guidance",
+      "Competitive analysis: MFP Today tab redesign, Whoop Behavior Insights, MacroFactor Workouts Apple Health integration"
+    ],
+    "fixes": [
+      "Planning cycle 4734 sprint tasks created \u2014 6 new tasks added (Settings Feedback row, weight_trend_prediction tool, USDA key upgrade, state.md refresh, failing-queries.md refresh, PhotoLogReviewViewModel extraction)"
+    ]
   }
 ]
