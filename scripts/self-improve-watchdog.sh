@@ -154,6 +154,54 @@ stop_monitor() {
     rm -f "$MONITOR_PID_FILE"
 }
 
+# Reconcile cadence stamps against what actually shipped on main. The
+# planning/review/report gates all key off these stamps; a session that
+# merges without going through the service script leaves its stamp stale
+# and the gate fires forever. Idempotent — only bumps a stamp forward.
+sync_stamps_from_main() {
+    cd "$WORK_DIR" || return
+    local SD="$HOME/drift-state"
+
+    # Most recent review cycle merge → last-review-time
+    local review_last
+    review_last=$(git log origin/main --format='%ct' --grep='^review-cycle-' -1 2>/dev/null || echo "")
+    if [[ -n "$review_last" ]]; then
+        local review_stamp
+        review_stamp=$(cat "$SD/last-review-time" 2>/dev/null || echo "0")
+        if (( review_last > review_stamp )); then
+            echo "$review_last" > "$SD/last-review-time"
+            log "Self-heal: bumped last-review-time $review_stamp → $review_last (from merged review commit)"
+        fi
+    fi
+
+    # Most recent exec report merge → last-report-time. Matches the squash-
+    # merge subject `Daily Briefing — YYYY-MM-DD` (with optional `chore:` prefix)
+    # plus the legacy `report/exec-` merge-commit form.
+    local exec_last
+    exec_last=$(git log origin/main --format='%ct' --grep='Daily Briefing\|report/exec-' -1 2>/dev/null || echo "")
+    if [[ -n "$exec_last" ]]; then
+        local exec_stamp
+        exec_stamp=$(cat "$SD/last-report-time" 2>/dev/null || echo "0")
+        if (( exec_last > exec_stamp )); then
+            echo "$exec_last" > "$SD/last-report-time"
+            log "Self-heal: bumped last-report-time $exec_stamp → $exec_last (from merged exec commit)"
+        fi
+    fi
+
+    # Planning issue closed since we last checked → last-planning-time
+    local plan_issue
+    plan_issue=$(cat "$SD/planning-issue" 2>/dev/null || echo "")
+    if [[ -n "$plan_issue" ]]; then
+        local plan_state
+        plan_state=$(gh issue view "$plan_issue" --json state --jq '.state' 2>/dev/null || echo "")
+        if [[ "$plan_state" == "CLOSED" ]]; then
+            date +%s > "$SD/last-planning-time"
+            rm -f "$SD/planning-issue"
+            log "Self-heal: planning Issue #$plan_issue is CLOSED — stamped last-planning-time and cleared tracking file"
+        fi
+    fi
+}
+
 refresh_compliance_cache() {
     local SD="$HOME/drift-state"
     cd "$WORK_DIR"
@@ -510,6 +558,10 @@ while true; do
         RUN)
             # Ensure override is CONTINUE
             sed -i '' 's/_Override:_ STOP/_Override:_ CONTINUE/' "$WORK_DIR/program.md" 2>/dev/null || true
+            # Reconcile stamps before spawning any session — prevents the
+            # planning-due / review-due loop if a prior session merged
+            # outside report-service.sh finish.
+            sync_stamps_from_main
             # Check if autopilot is dead
             if ! is_claude_alive; then
                 stop_monitor

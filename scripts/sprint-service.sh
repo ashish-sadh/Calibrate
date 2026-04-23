@@ -13,12 +13,14 @@
 #   status                               — print sprint summary
 #   count [--p0|--senior|--junior|--sprint|--permanent] — print count
 #   planning-due                         — exit 0 if 6+ hours since last planning
+#   planning-done                        — stamp last-planning-time = now
 
 set -euo pipefail
 
 STATE_FILE="$HOME/drift-state/sprint-state.json"
 LOCK_FILE="$HOME/drift-state/sprint-state.json.lock"
 LAST_REVIEW_FILE="$HOME/drift-state/last-review-time"
+LAST_PLANNING_FILE="$HOME/drift-state/last-planning-time"
 WORK_DIR="/Users/ashishsadh/workspace/Drift"
 
 mkdir -p "$HOME/drift-state"
@@ -517,8 +519,11 @@ PYEOF
 }
 
 cmd_planning_due() {
+    # Keys off last-planning-time, not last-review-time. Each timestamp
+    # gates its own activity; coupling them means any break in one flow
+    # silently starves the other.
     local LAST
-    LAST=$(cat "$LAST_REVIEW_FILE" 2>/dev/null || echo "0")
+    LAST=$(cat "$LAST_PLANNING_FILE" 2>/dev/null || echo "0")
     local NOW
     NOW=$(date +%s)
     local HOURS_SINCE=$(( (NOW - LAST) / 3600 ))
@@ -527,6 +532,11 @@ cmd_planning_due() {
     else
         exit 1  # not due
     fi
+}
+
+cmd_planning_done() {
+    date +%s > "$LAST_PLANNING_FILE"
+    echo "Recorded planning time"
 }
 
 # ── Dispatch ──────────────────────────────────────────────────────────────────
@@ -547,9 +557,10 @@ case "$CMD" in
     status)            cmd_status ;;
     count)             cmd_count "${1:---sprint}" ;;
     planning-due)      cmd_planning_due ;;
+    planning-done)     cmd_planning_done ;;
     *)
         echo "Unknown command: $CMD" >&2
-        echo "Commands: refresh, next, claim, done, unclaim, session-done, reset-sprint-done, clear, status, count, planning-due" >&2
+        echo "Commands: refresh, next, claim, done, unclaim, session-done, reset-sprint-done, clear, status, count, planning-due, planning-done" >&2
         exit 1
         ;;
 esac

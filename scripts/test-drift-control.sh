@@ -102,6 +102,7 @@ mkdir -p "$DRIFT_STATE"
 STATE_FILE="$DRIFT_STATE/sprint-state.json"
 PLAN_ISSUE_FILE="$DRIFT_STATE/planning-issue"
 LAST_REVIEW_FILE="$DRIFT_STATE/last-review-time"
+LAST_PLANNING_FILE="$DRIFT_STATE/last-planning-time"
 FEEDBACK_LOG="$DRIFT_STATE/process-feedback.log"
 
 sprint_service() { "$SCRIPT_DIR/sprint-service.sh" "$@"; }
@@ -355,17 +356,22 @@ sprint_service session-done 30 2>/dev/null || true
 OUT=$(sprint_service next --junior)
 assert_eq "session-done prevents perm task reselection" "none" "$OUT"
 
-# 3.4 planning-due returns 0 (due) if last-review is 0
-rm -f "$LAST_REVIEW_FILE"
+# 3.4 planning-due returns 0 (due) if last-planning is absent
+rm -f "$LAST_PLANNING_FILE"
 assert_exit0 "planning-due when never run" sprint_service planning-due
 
 # 3.5 planning-due returns 1 (not due) if run recently
-echo "$(date +%s)" > "$LAST_REVIEW_FILE"
+echo "$(date +%s)" > "$LAST_PLANNING_FILE"
 assert_exit_nonzero "planning-due not due when just run" sprint_service planning-due
 
 # 3.6 planning-due returns 0 (due) if 7h ago
-echo "$(( $(date +%s) - 25200 ))" > "$LAST_REVIEW_FILE"
+echo "$(( $(date +%s) - 25200 ))" > "$LAST_PLANNING_FILE"
 assert_exit0 "planning-due when 7h ago" sprint_service planning-due
+
+# 3.7 planning-done stamps current time and clears due status
+rm -f "$LAST_PLANNING_FILE"
+sprint_service planning-done > /dev/null
+assert_exit_nonzero "planning-due not due after planning-done" sprint_service planning-due
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -698,7 +704,7 @@ OUT2=$(sprint_service next --junior)
 assert_eq "session-done on missing task doesn't corrupt state" "80 Normal" "$OUT2"
 
 # 8.8 planning-due arithmetic with very old timestamp
-echo "1000000" > "$LAST_REVIEW_FILE"  # Unix epoch 1970 — way in the past
+echo "1000000" > "$LAST_PLANNING_FILE"  # Unix epoch 1970 — way in the past
 assert_exit0 "planning-due with ancient timestamp" sprint_service planning-due
 }
 
@@ -1170,9 +1176,9 @@ RESULT=$(sprint_service next --senior)
 assert_eq "LC-10: senior has nothing left (regular sprint not for senior)" "none" "$RESULT"
 
 # ── LC-11: Planning-due boundary — exactly at 6h and 6h-1s ───────────────
-echo "$(( $(date +%s) - 21600 ))" > "$LAST_REVIEW_FILE"   # exactly 6h ago
+echo "$(( $(date +%s) - 21600 ))" > "$LAST_PLANNING_FILE"   # exactly 6h ago
 assert_exit0    "LC-11: planning-due at exactly 6h" sprint_service planning-due
-echo "$(( $(date +%s) - 21599 ))" > "$LAST_REVIEW_FILE"   # 6h minus 1s
+echo "$(( $(date +%s) - 21599 ))" > "$LAST_PLANNING_FILE"   # 6h minus 1s
 assert_exit_nonzero "LC-11: planning-not-due at 6h-1s" sprint_service planning-due
 
 # ── LC-12: Overhead issue does not block real task claims ─────────────────

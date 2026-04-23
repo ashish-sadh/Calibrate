@@ -27,7 +27,7 @@ cat <<ENDJSON
 {
   "hookSpecificOutput": {
     "hookEventName": "PostToolUse",
-    "additionalContext": "DAILY EXEC BRIEFING DUE.\n1. scripts/report-service.sh start-exec\n2. Write Docs/reports/exec-${TODAY}.md using EXEC-TEMPLATE.md\n3. git add + commit + push\n4. gh pr create --label report → gh pr merge --squash --delete-branch\n5. git checkout main && git pull\n6. echo \$(date +%s) > ~/drift-state/last-report-time"
+    "additionalContext": "DAILY EXEC BRIEFING DUE.\n1. scripts/report-service.sh start-exec\n2. Write Docs/reports/exec-${TODAY}.md using EXEC-TEMPLATE.md\n3. git add + commit + push\n4. gh pr create --label report\n5. scripts/report-service.sh finish  — do NOT call gh pr merge directly; finish handles merge + stamp atomically, and the gating timestamps depend on it."
   }
 }
 ENDJSON
