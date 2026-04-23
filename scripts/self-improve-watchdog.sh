@@ -415,6 +415,11 @@ start_claude() {
     log "Starting autopilot ($SESSION_TYPE, model=$MODEL, log: $CURRENT_LOG)"
     cd "$WORK_DIR"
 
+    # Seed the heartbeat at spawn so is_log_stale_seconds doesn't flag
+    # "stale" based on the previous session's trailing stamp before the
+    # new session has made its first tool call.
+    date +%s > "$HOME/drift-state/session-heartbeat"
+
     # Opus gets Sonnet fallback for API overload. Sonnet gets no fallback.
     local FALLBACK=""
     [[ "$MODEL" == "opus" ]] && FALLBACK="--fallback-model sonnet"
@@ -446,11 +451,29 @@ is_log_stale() {
 
 is_log_stale_seconds() {
     local threshold=$1
-    if [[ -z "$CURRENT_LOG" ]] || [[ ! -f "$CURRENT_LOG" ]]; then
-        return 1  # No log yet, not stale
-    fi
     local now
     now=$(date +%s)
+
+    # Primary signal: session-heartbeat — written by a PreToolUse hook on
+    # every tool call. More reliable than log mtime because the stream-json
+    # log buffer can go quiet for long generation bursts (writing a big
+    # file, extended thinking) even when the session is actively working.
+    local hb_file="$HOME/drift-state/session-heartbeat"
+    if [[ -f "$hb_file" ]]; then
+        local hb_ts
+        hb_ts=$(cat "$hb_file" 2>/dev/null || echo "$now")
+        local hb_age=$(( now - hb_ts ))
+        if (( hb_age <= threshold )); then
+            return 1  # heartbeat fresh — alive
+        fi
+    fi
+
+    # Fallback: log mtime. Keeps the behaviour for sessions that haven't
+    # stamped a heartbeat yet (startup, test runners that never reach the
+    # first tool call).
+    if [[ -z "$CURRENT_LOG" ]] || [[ ! -f "$CURRENT_LOG" ]]; then
+        return 1
+    fi
     local last_mod
     last_mod=$(stat -f %m "$CURRENT_LOG" 2>/dev/null || echo "$now")
     local age=$(( now - last_mod ))
