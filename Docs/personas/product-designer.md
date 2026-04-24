@@ -285,6 +285,13 @@
 - State.md stale for 6 consecutive reviews is no longer a doc debt item — it's a planning accuracy risk. Created #410 as a JUNIOR task. Until it's fixed, every senior session reading build 133 + 2048-token context is making wrong assumptions.
 - Telemetry-driven prompt refresh (#399) shipped — the "measure → cluster → improve examples → verify" ritual is now proven for on-device 2B models. Must be a standing per-cycle SENIOR task, not a one-off.
 
+### What I Learned — Planning Cycle 5590 (2026-04-23)
+- Queue hygiene (32 stale closures) is as impactful as creating new tasks. 113 tasks was paralysis — the oldest ones (cycles 3022–4500) carried stale root-cause assumptions and duplicate coverage. Hard rule: any task >500 cycles old requires re-validation before the queue can grow. "100 focused tasks" beats "113 scattered ones."
+- sleep_food_correlation (#426) completes the analytical tool progression: cross_domain_insight → weight_trend_prediction → glucose_food_correlation → sleep_food_correlation. Four analytical tools is approaching the threshold where "AI health coach" positioning becomes defensible. Need one more (supplement outcome correlation?) to make the claim credible.
+- Three analytical tools shipped so far; two more queued (supplement_insight #417, food_timing_insight #418). When those ship + sleep_food_correlation, the analytical suite will cover food, weight, glucose, sleep, and supplements — every major domain. That's the "health coach" milestone.
+- LLM prompt quality audit must be a standing per-cycle SENIOR task (cycle-numbered), not re-created ad-hoc. Every planning cycle should check that a "prompt audit cycle N" is in queue. Telemetry only has value if consumed.
+- State.md freshness is now a trust issue with the AI, not just a documentation gap. Senior sessions reading 6-cycle-stale state make wrong architectural decisions. Until State.md refresh is done in the first 24h of every cycle, the PE persona cannot write a reliable scorecard.
+
 ### What I Learned — Planning Cycle 4774 (2026-04-22)
 - Queue is now ~75 pending (65 before + 10 added this cycle). This exceeds the ≤6 cap set last cycle. Queue size is now the #1 product planning problem — more tasks ≠ more throughput. Senior sessions drain 5 tasks each; junior sessions drain 5. At current rate, the oldest tasks are weeks stale before they get touched. Hard cap: ≤5 new tasks per planning cycle until queue is below 40.
 - Photo Log hardening (fallback chain + eval) finally tasked. Cycle 3985 sprint items have been in the roadmap for 3 planning cycles without all corresponding tasks. When a roadmap sprint has untasked items, explicitly create those tasks — don't assume they're implicit.
