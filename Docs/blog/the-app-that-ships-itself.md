@@ -12,7 +12,7 @@ Over the seven days before I sat down to write this, that loop pushed **409 comm
 
 I wrote none of that code. I read some of the reviews.
 
-That's the interesting claim. Not *"I built an app."* Zero-to-one is now easy enough to stop being news. The claim is that a first-time iOS developer, working nights and weekends, can ship a production app by spending almost all of his engineering effort not on the app itself but on the **harness** — the scaffolding that directs the language models, catches their mistakes, keeps their work visible, and lets a human spend attention only on the things that genuinely need it.
+That's the interesting claim. Not *"I built an app."* Zero-to-one is now easy enough to stop being news. The claim is that a first-time iOS developer, tinkering in spare hours, can ship a production app by putting almost all of his engineering attention not on the app itself but on the **harness** — the scaffolding that directs the language models, catches their mistakes, keeps their work visible, and lets a human spend attention only on the things that genuinely need it.
 
 The harness, in my experience, is the more interesting engineering. By a wide margin.
 
