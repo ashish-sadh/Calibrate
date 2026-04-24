@@ -33,3 +33,5 @@
    Also include his generalization: **"Ralph can be done with any tool that does not cap tool calls and usage."** And the punchy claim about Ralph replacing greenfield outsourcing, with defects being identifiable and resolvable via prompt styles.
 
 6. **Add a funny line about Drift** in the opening / early part of the essay — something that lands as humor, not brag. (Context: user asked for "brief but complete intro and funny line from drift".)
+
+7. **Crisp, small, solid — no reader gets lost.** The post should be short and dense with signal, not sprawling. Every section has to earn its place. Reader should never be confused about what they're reading or why.
