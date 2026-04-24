@@ -26,7 +26,15 @@ That's the app. I hope you try it.
 
 But what I actually want to write about is how it gets built. A year ago, a first-time iOS developer could not have shipped something like this on nights and weekends — not because the idea was wrong, but because the infrastructure to *build* it didn't exist yet. The frontier models got good enough at software engineering that the interesting work moved up the stack: from writing code to designing the environment in which code gets written. The scaffolding around the agent is where the leverage lives. For an indie developer, that scaffolding is the difference between *"this works for a demo"* and *"this ships every Tuesday."*
 
-This post is about what that scaffolding looks like when one person does it, nights and weekends, for an app that ships to real users. Four patterns I had to get right. Four I got wrong first. A few higher-level lessons underneath them. And a zip file at the bottom with every script, hook, and dashboard wire, so you can build a version of this for whatever you're working on.
+---
+
+## Where this sits, in context
+
+If you've followed agentic coding at all, you've seen [**Geoffrey Huntley's Ralph loop**](https://ghuntley.com/ralph/) — a minimal `while true` around an AI coding agent that picks one task, does it, exits, starts fresh. Progress lives in files and git, not in the model's memory. Elegant. It's shipped real work overnight on meaningful budgets.
+
+**Drift Control is that instinct, grown up.** The inner loop is still there. What wraps it is the scaffolding you need once you care about running unattended for *weeks* rather than hours: a supervisor tree (launchd over the watchdog over the sessions); a domain-specific state machine (GitHub issues as the queue, labels as the hand-off protocol); enforcement hooks that refuse invalid operations; a dashboard that tells me from my phone whether the line is moving. If Ralph is the engine, Drift Control is the engine plus the dashboard, the oil light, and the seatbelt.
+
+One framing point: **this is deliberately not a general-purpose personal agent.** Narrow beats broad, for this class of system — because narrow domains come with ground truth you can reconcile against, and "do anything for me" doesn't. Drift Control has one job (ship a specific iOS app). Git, GitHub, `xcodebuild`, and TestFlight are the anchors that make every pattern below possible.
 
 ---
 
@@ -120,13 +128,52 @@ The personas, in other words, are growing with the product. They have a memory t
 
 ---
 
+## The dial I actually turn
+
+One question I get a lot: *how do you steer this thing?*
+
+The answer isn't a single lever. It's a dial with roughly six settings, from "untouched" to "take the wheel." Most days I use the light ones.
+
+| Setting | What I do | What the harness does |
+|---|---|---|
+| **0. Nothing** | Don't touch it. Close the laptop. | Reads the roadmap, runs product reviews, learns from past cycles, picks the next thing from its own backlog. Defaults are usually fine. |
+| **1. Strategic nudge** | One-line comment on a product-review PR: *"focus on food-DB coverage this week."* | Next planning session treats it as a priority signal. No rewrite of anything. |
+| **2. Design-review request** | Add a `design-doc` label to an issue. | Senior session writes a design doc on a branch, PRs it, waits for my comment. Implementation only starts after I approve. |
+| **3. Feature request** | File a GitHub issue with `feature-request` + one paragraph of intent. | Planning triages it as P0/P1 into the sprint, or labels it `deferred`. I don't pre-specify files or approach. |
+| **4. P0 bug** | Filed with a `P0` label, usually from a beta user. | Interrupts the current session at the next tick, picks it up on the senior session. The eleven-minute flow above. |
+| **5. Take the wheel** | `echo PAUSE > ~/drift-control.txt`, open Claude Code in human-shepherded mode, type. | Stops spawning sessions. Session-start hook detects human mode and suppresses auto-publish. When I'm done, `echo RUN` resumes the loop. |
+
+The counterintuitive thing is this: **the lighter the intervention, the more the personas compound.** If I'm always at setting 4 or 5, the harness doesn't learn what I actually want — it just executes. If I stay at 0 or 1, it drifts toward what the market is signaling, which is usually right but occasionally misses my taste. Setting 2 (design-review request) has become what I use most often for anything I actually care about shaping. Most of my product decisions are now made by reading a design PR and leaving two comments.
+
+The point of the harness isn't that it's autonomous. It's that it lets me be *selective about where I pay attention*.
+
+---
+
+## Higher-level lessons, pulled up from the specifics
+
+Zooming out from the week-in-the-life vignettes, three general observations became obvious once I'd been running this loop for a few months.
+
+### The agent isn't the product you own.
+
+Models change. What persists — and what you actually own — is the harness: the queue, the hooks, the reconciliation, the dashboards, the test suite, the replay tooling, the personas. If you pour all your craft into clever prompts, you've invested in something a model update will subsume. If you pour it into the harness, it compounds. The model is a swappable component; the scaffolding is the asset. Personas are part of that scaffolding — they're the longest-lived artifact in this whole system.
+
+### Agents are a distributed-systems problem, not a language-model problem.
+
+Every unglamorous distributed-systems pattern reappears, one at a time, the moment you let an LLM run unsupervised: atomicity, idempotency, liveness, supervisor trees, clock skew, partial failure, leader election, exactly-once semantics. The good news is these are well-understood and half a century old. The bad news is most people building on agents haven't touched them since their systems-design interview. When something feels hard or weird about your agent, ask the systems question first — *"is this a race?"* *"what's my fencing token?"* — before the prompt question.
+
+### The feedback loop is the architecture.
+
+The version of the harness I started with did not close its own feedback loop. When autopilot hit a systemic problem — a rate limit, a flaky test, a bad pattern the model repeated — I had to notice and fix it manually. That scales to about a weekend. The version in this repo files its own process-feedback as tickets; the planning session drains them into the next sprint; systemic issues graduate into `infra-improvement` tasks the harness then picks up and works on. The personas remember the lessons. If your harness can't feed its own failure modes back into its own queue, *you* are the feedback loop — and that's a job that doesn't fit in a day. Designing the loopback is the architecture, not a nice-to-have.
+
+---
+
 ## What the harness is, briefly
 
-I can run Drift's development loop in three modes:
+Three modes, under the hood:
 
 - **Human-shepherded.** I'm at the keyboard. Claude Code is my pair. Nothing special.
 - **Autopilot.** I type *"run autopilot"* and the loop runs in the foreground on a program file — sprint tickets → implement → test → commit. Ctrl-C to stop. No supervisor.
-- **Drift Control.** A shell script called the **watchdog** supervises the whole loop. Sessions fire one at a time on my laptop — no sandboxes, no parallel worktrees. A **planning** session every six hours refreshes the sprint. A **senior** session picks up complex work. A **junior** session clears the simpler stuff. ("Senior" and "junior" are not skill tiers; they're just a more-expensive vs. cheaper model, each with a five-task budget.) Between those, the watchdog fires special-purpose sessions — design-doc reviews, product reviews every twenty cycles, daily exec reports, TestFlight publishes every three hours. If a session dies, the watchdog restarts it. If the watchdog dies, `launchd` restarts *it*. I can be offline for days.
+- **Drift Control.** A shell script called the **watchdog** supervises the whole loop. Sessions fire one at a time on my laptop — no sandboxes, no parallel worktrees. A **planning** session every six hours refreshes the sprint. A **senior** session picks up complex work. A **junior** session clears the simpler stuff. ("Senior" and "junior" aren't skill tiers; they're just a more-expensive vs. cheaper model tier, each with a five-task budget.) Between those, the watchdog fires special-purpose sessions — design-doc reviews, product reviews every twenty cycles, daily exec reports, TestFlight publishes every three hours. If a session dies, the watchdog restarts it. If the watchdog dies, `launchd` restarts *it*. I can be offline for days.
 
 ```mermaid
 flowchart LR
@@ -140,17 +187,9 @@ flowchart LR
     W -->|heartbeat + snapshot| D[Command Center<br/>dashboard]
 ```
 
-Sprint-task coding is maybe 60% of what all this does. The other 40% is the meta-work you saw in the week-in-the-life section: draining process feedback into the harness's own backlog, triaging feature requests, replying to admin comments on PRs, writing product reviews, updating personas and roadmap, publishing exec reports. Separately the senior session owns **design docs** — it finds issues that need one, writes it on a branch, PRs it, and once approved creates the implementation sub-tasks and refreshes the sprint.
+Sprint-task coding is maybe 60% of what all this does. The other 40% is the meta-work you saw in the week-in-the-life section: draining process feedback into the harness's own backlog, triaging feature requests, replying to admin comments on PRs, writing product reviews, updating personas and roadmap, publishing exec reports. Separately, the senior session owns **design docs** — it finds issues that need one, writes it on a branch, PRs it, and once approved creates the implementation sub-tasks and refreshes the sprint.
 
-And the testing? Stratified by layer, not outsourced to a remote device farm. Roughly 1,700 unit tests hit a real SQLite database via GRDB — no mocks, because mocking a database was the fastest way I found to ship migration bugs. A simulator integration layer runs the SwiftUI flows via `xcodebuild test`. An LLM eval harness runs scripted prompts against the on-device model in a test host and scores them against expected intents and tool calls. And a separate laptop-only regression suite (~200 cases) tests the watchdog state machine itself. TestFlight is the substitute for a device farm: twenty-five users on twenty-five real phones, sending feedback that feeds right back into the loop.
-
-### Where this sits, in context
-
-If you've followed agentic coding over the last year, you've probably seen [**Geoffrey Huntley's Ralph loop**](https://ghuntley.com/ralph/) (or the [Ralph Wiggum technique](https://github.com/ghuntley/how-to-ralph-wiggum) it grew into) — a deliberately minimal `while true` around an AI coding agent that reads a spec file, picks one task, implements it, exits, and starts a fresh process on the next iteration. Each loop gets a clean context window; progress persists in files and git, not in the model's memory. It's elegant, and it's shipped real work overnight on meaningful budgets — one widely-cited example delivered a ~$50K scope for under $300 in API costs. The philosophy is simple: don't aim for perfect on the first try; let the loop refine the work.
-
-Drift Control is that instinct, grown up. The inner loop is still there — the watchdog's tick is the outer `while true`, and each session fires, does one bounded unit of work, and exits. What's around it is the scaffolding you need once you care about running unattended for *weeks* instead of hours: a supervisor tree so the loop restarts itself when something upstream dies; a domain-specific state machine (GitHub issues as the queue, labels as the hand-off protocol); enforcement hooks that refuse invalid operations; a dashboard that tells me from my phone whether the line is moving. If Ralph is the engine, Drift Control is the engine plus the dashboard, the oil light, and the seatbelt.
-
-One framing point worth flagging upfront: this is deliberately **not** a general-purpose personal agent. A "do anything for me" agent is too broad — it has no natural ground truth to reconcile against, and no domain-shaped state machine to run on. Drift Control is the opposite: a narrow harness for one job (shipping a specific iOS app), and most of what makes it tractable leans on the narrowness. Git, GitHub, `xcodebuild`, TestFlight — those are the anchors reconciliation needs. If the ambition had been "personal assistant for my whole life," none of the patterns below would be available, because the state wouldn't live anywhere I could read it. Narrow beats broad, for this class of system. At least with today's models.
+Testing? Stratified by layer, not outsourced to a device farm. Roughly 1,700 unit tests hit a real SQLite database via GRDB — no mocks, because mocking a database was the fastest way I found to ship migration bugs. A simulator layer runs the SwiftUI flows via `xcodebuild test`. An LLM eval harness runs scripted prompts against the on-device model in a test host, scored against expected intents and tool calls. And a separate laptop-only regression suite (~200 cases) tests the watchdog state machine itself. TestFlight is the device-farm substitute: twenty-five users on twenty-five real phones.
 
 ---
 
@@ -299,24 +338,6 @@ The four gaps, and the four patterns that close them:
 | Work can be invisible | Atomic claim + visible-lock gate |
 | Silence can be activity | Dedicated liveness channel |
 | Supervisors can die | Supervise your supervisor |
-
----
-
-## Higher-level lessons, pulled up from the specifics
-
-The four patterns are specific. Zooming out, three more general observations became obvious once I'd been running this loop for a few months.
-
-### The agent isn't the product you own.
-
-Models change. What persists — and what you actually own — is the harness: the queue, the hooks, the reconciliation, the dashboards, the test suite, the replay tooling, the personas. If you pour all your craft into clever prompts, you've invested in something a model update will subsume. If you pour it into the harness, it compounds. The model is a swappable component; the scaffolding is the asset. Personas are part of that scaffolding — they're the longest-lived artifact in this whole system.
-
-### Agents are a distributed-systems problem, not a language-model problem.
-
-Every unglamorous distributed-systems pattern reappears, one at a time, the moment you let an LLM run unsupervised: atomicity, idempotency, liveness, supervisor trees, clock skew, partial failure, leader election, exactly-once semantics. The good news is these are well-understood and half a century old. The bad news is most people building on agents haven't touched them since their systems-design interview. When something feels hard or weird about your agent, ask the systems question first — *"is this a race?"* *"what's my fencing token?"* — before the prompt question.
-
-### The feedback loop is the architecture.
-
-The version of the harness I started with did not close its own feedback loop. When autopilot hit a systemic problem — a rate limit, a flaky test, a bad pattern the model repeated — I had to notice and fix it manually. That scales to about a weekend. The version in this repo files its own process-feedback as tickets; the planning session drains them into the next sprint; systemic issues graduate into `infra-improvement` tasks the harness then picks up and works on. The personas remember the lessons. If your harness can't feed its own failure modes back into its own queue, *you* are the feedback loop — and that's a job that doesn't fit in a day. Designing the loopback is the architecture, not a nice-to-have.
 
 ---
 
