@@ -1827,5 +1827,21 @@
     "description": "chore: TestFlight build 171 — infrastructure heartbeat snapshots",
     "features": [],
     "fixes": []
+  },
+  {
+    "build": 172,
+    "date": "2026-04-24T09:55:00-07:00",
+    "description": "TestFlight build 172 — strawberry overcount fixed + AI chat meal log no longer drops items",
+    "features": [
+      "AI chat \"log breakfast avocado toast and coffee\" now shows both items in the diary as separate rows (previously collapsed into one aggregated entry).",
+      "Combos & Recipes list: tap a row to edit, pencil icon next to Log — edit affordance was previously only reachable by swipe-left.",
+      "Gram figures for unit pills show \"≈\" when the weight is a guess (spray, flat-constant tbsp) vs a measured value."
+    ],
+    "fixes": [
+      "Strawberry \"5 pieces = 750g = 240 cal\" overcount — was 4× over real, now gated behind real piece-size data and defaults to ~19 cal.",
+      "117 `gramsEquivalent: ss` sites in ServingUnit.swift no longer silently synthesize unit weights from food.servingSize; the piece unit is only offered when backed by a trusted source.",
+      "USDAFoodService stops discarding foodPortions from API responses — per-unit gram weights from USDA now propagate into Food so online fallback foods get correct piece/cup/tbsp.",
+      "OpenFoodFacts `piecesPerServing` now flows through to Food.pieceSizeG (was dropped at the adapter seam)."
+    ]
   }
 ]
