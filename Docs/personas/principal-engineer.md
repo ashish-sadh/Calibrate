@@ -307,3 +307,11 @@
 - Prefer tests that catch real bugs over tests that achieve coverage numbers
 - Prefer small, shippable increments over large, risky rewrites
 - When in doubt, ship — perfect is the enemy of good
+
+### What I Learned — Planning Cycle 5965 (2026-04-24)
+- The 4 remaining failing query categories all require service/data-model changes, not just prompt tweaks: (1) historical dates need Calendar arithmetic + date-range query in food_info handler; (2) macro goals need UserPrefs extension + DB migration + set_goal tool extension; (3) macro goal progress depends on #440 landing first before food_info can compare intake vs goal; (4) micronutrients need a DB migration v35 adding fiber_g/sodium_mg/sugar_g columns to FoodEntry with nil-safe reads for pre-migration rows.
+- #440 (non-weight goals) and #441 (macro goal progress) are strictly ordered — #441 reads the calorieGoal/proteinGoal columns that #440 creates. Senior sessions must implement in that order. Claim #440 first, verify migration lands cleanly, then claim #441.
+- Micronutrient migration (#442) must guard against nil reads for all FoodEntry rows logged before the migration. Pattern: `fiber_g ?? 0.0` at the aggregation layer. The DB migration should NOT backfill historical entries from the Food table — too slow, and historical data accuracy is unknowable.
+- Context-aware tie-break (#449) reads ConversationState.phase at classification time. IntentClassifier runs on the LLM inference thread; ConversationState is @MainActor. Thread safety requires reading phase as a copied value before entering LLM inference, not during. Pass it as a parameter, not a captured reference.
+- `/debug last-failures` (#447) must be gated to DEBUG builds. A PreToolUse hook on git commit should verify no /debug routes are reachable in release target. Pattern: `#if DEBUG` around the debug command handler, plus an XCTest that verifies DebugCommandService is unreachable from the release scheme.
+- Queue at 30 entering this cycle means full drain is 6 junior sessions + 2 senior sessions — the most executable queue state in recent memory. Adding 14 new tasks (439–452) brings it to 44, which is below the 70 cap. Maintain this loading level.
