@@ -18,13 +18,15 @@ Drift is an all-in-one health app built on a simple premise: your food, exercise
 
 In practice, that means three things:
 
-- **Analytics on top of Apple Health.** Behavior logging for food and exercise gets layered onto what Apple Health already tracks — one unified view, no sync drama. A small on-device LLM turns natural-language entries into structured logs. Private data stays on the device. Never touches the network.
-- **Bring-your-own-key for heavier work.** For tasks where a remote frontier model is the right tool — photo meal logging is the obvious one — you plug in your existing Anthropic, OpenAI, or Gemini key. Keys live in iOS Keychain. You pay the provider directly.
-- **No-service architecture.** No accounts, no subscriptions, no server to hold your data hostage. Drift is a client you run; the intelligence is whatever you configure it to use. Even for remote-LLM paths, only the minimum payload (the photo, not your profile) goes on the wire.
+- **Analytics on top of Apple Health.** Behavior logging for food and exercise gets layered on what Apple Health already tracks — one unified view, no sync drama. A small on-device language model turns natural-language entries like *"log breakfast: two eggs, toast, and coffee with milk"* or *"I did four sets of squats at 60kg"* into structured logs. Private data stays on the device. Never touches the network. If you wear a CGM, Drift joins its readings against your food logs to answer questions like *"does my glucose spike after rice?"* — locally, on your phone.
+- **Bring-your-own-key for heavier work.** For tasks where a remote frontier model is actually better — photo meal logging is the obvious one — you plug in your existing Anthropic, OpenAI, or Gemini API key. Keys live in iOS Keychain. Drift talks to the provider directly from your phone. You pay them directly. No proxy. No account. No subscription. Only the payload you chose to upload (the photo) goes on the wire — never your profile, your history, or your identity.
+- **No-service architecture.** No accounts, no subscriptions, no server to hold your data hostage. Drift is a client you run; the intelligence is whatever you configure it to use. The only backend is your phone.
 
 That's the app. I hope you try it.
 
-But what I actually want to write about is how it gets built.
+But what I actually want to write about is how it gets built. A year ago, a first-time iOS developer could not have shipped something like this on nights and weekends — not because the idea was wrong, but because the infrastructure to *build* it didn't exist yet. The frontier models got good enough at software engineering that the interesting work moved up the stack: from writing code to designing the environment in which code gets written. The scaffolding around the agent is where the leverage lives. For an indie developer, that scaffolding is the difference between *"this works for a demo"* and *"this ships every Tuesday."*
+
+This post is about what that scaffolding looks like when one person does it, nights and weekends, for an app that ships to real users. Four patterns I had to get right. Four I got wrong first. A few higher-level lessons underneath them. And a zip file at the bottom with every script, hook, and dashboard wire, so you can build a version of this for whatever you're working on.
 
 ---
 
