@@ -368,9 +368,10 @@ enum AIToolAgent {
 
     // MARK: - Multi-Item Food Disclosure (#178)
 
-    /// For "rice, dal" inputs: look up each item in the local DB sequentially and stream
-    /// each result via onToken as it resolves. Returns the recipe-builder action alongside
-    /// a text summary so the chat bubble persists after the sheet opens.
+    /// For "rice, dal" inputs: look up each item in the local DB in parallel and stream
+    /// each result via onToken as it resolves (first-come-first-served). Returns the
+    /// recipe-builder action alongside a text summary so the chat bubble persists after
+    /// the sheet opens. Final order matches input order for the recipe builder.
     static func executeMultiItemFoodDisclosure(
         name: String,
         mealHint: String?,
@@ -383,21 +384,29 @@ enum AIToolAgent {
             return await executeTool(ToolCall(tool: "log_food", params: ToolCallParams(values: ["name": name])))
         }
 
-        var resolvedNames: [String] = []
-        var summaryLines: [String] = []
-        for item in items {
-            if let match = AIActionExecutor.findFood(query: item, servings: nil, gramAmount: nil) {
-                let cal = Int(match.food.calories * match.servings)
-                let line = "\(match.food.name) — \(cal) cal"
-                onToken(line + "\n")
-                resolvedNames.append(match.food.name)
-                summaryLines.append(line)
-            } else {
-                onToken("\(item.capitalized) — looking up\n")
-                resolvedNames.append(item)
-                summaryLines.append(item.capitalized)
+        // Resolve all items in parallel; stream each as it completes (progressive disclosure).
+        // findFood is nonisolated sync, so tasks run off MainActor for true concurrency.
+        var resultsByIndex = [(Int, String, String)]()  // (originalIndex, resolvedName, summaryLine)
+        await withTaskGroup(of: (Int, String, String).self) { group in
+            for (index, item) in items.enumerated() {
+                group.addTask {
+                    if let match = AIActionExecutor.findFood(query: item, servings: nil, gramAmount: nil) {
+                        let cal = Int(match.food.calories * match.servings)
+                        return (index, match.food.name, "\(match.food.name) — \(cal) cal")
+                    }
+                    return (index, item, item.capitalized)
+                }
+            }
+            for await (idx, resolvedName, line) in group {
+                onToken(line + "\n")  // stream as each task finishes
+                resultsByIndex.append((idx, resolvedName, line))
             }
         }
+
+        // Sort back to input order for the recipe builder and final bubble text.
+        let sorted = resultsByIndex.sorted { $0.0 < $1.0 }
+        let resolvedNames = sorted.map { $0.1 }
+        let summaryLines = sorted.map { $0.2 }
 
         let summary = resolvedNames.joined(separator: ", ")
         ConversationState.shared.captureToolSummary("Multi-item log: \(summary)")
