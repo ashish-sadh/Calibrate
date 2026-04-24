@@ -1,20 +1,17 @@
-# LinkedIn version (~240 words)
+# LinkedIn version (~280 words)
 
-I built an iOS app called **Drift** — an all-in-one health app with analytics on top of Apple Health, behavior logging for food and exercise, a small on-device LLM for conversational logging (private data never touches the network), and bring-your-own-key support for heavier remote work: plug in your existing Anthropic / OpenAI / Gemini key, it lives in iOS Keychain, you pay the provider directly. No accounts, no subscription, no server. That's the product.
+I've never built an iOS app before. **Drift** is my first.
 
-The part I want to write about is *how* it gets built. Drift ships itself, most days. A supervised autonomous loop — think Geoffrey Huntley's [Ralph loop](https://ghuntley.com/ralph/) grown up: the inner `while true` is still there, wrapped in a supervisor tree, a domain-specific state machine (GitHub issues + labels), enforcement hooks, and a live dashboard. It plans sprints, picks tickets, writes code, runs tests, does design reviews, publishes TestFlight builds, files its own product reviews, updates its own personas and roadmap, and drains its own process-feedback into the next cycle. I watch a dashboard. I course-correct when something looks off.
+It has 25 beta users on TestFlight right now — friends, friends of friends, teammates, family. When one of them reports a bug, it usually gets diagnosed, patched, tested, and committed within ten minutes. Unless the loop is mid-market-research, in which case I might have to wait an hour. That shouldn't be possible for a first-time iOS developer on a Saturday morning. It is, because Drift isn't the only thing I built. I also built the *harness* that builds Drift.
 
-Deliberately *not* a general-purpose personal agent. What makes this tractable is that it's narrow — one app, one repo, one job (ship it) — with ground truth you can reconcile against (git, GitHub, `xcodebuild`). A "do anything" agent wouldn't have that.
+In the last seven days the harness pushed **409 commits**, shipped **9 user-visible features** (cross-domain insight tool, weight-trend prediction, photo-log overhaul with multi-provider AI, expanded eval harness to 175+ cases, …), closed **~20 bugs**, published **10 daily exec reports** as merged PRs, and wrote a full product review — studying MyFitnessPal's Winter 2026 AI release and Whoop's Behavior Trends, then *telling me* that two of our queued features had slipped behind competitive parity and needed to be re-prioritized. Its personas (Product Designer + Principal Engineer) have now been through 54 reviews — the early entries are surface-level; recent ones read like senior-engineer RFCs.
 
-Four patterns turned out to be non-negotiable, each from a specific, embarrassing failure:
+Think [Ralph loop](https://ghuntley.com/ralph/) grown up: the inner `while true` is still there, wrapped in a supervisor tree, a domain-specific state machine (GitHub issues + labels), enforcement hooks, and a live dashboard. Deliberately *not* a general-purpose personal agent — narrow beats broad.
 
-1. **Reconcile with ground truth every tick** — don't trust state a session wrote, because sessions die mid-stamp. Read from git log and GitHub instead.
-2. **Make work visible, atomically** — `next --claim` as one operation; hooks refuse to let code get written without a held claim.
-3. **Liveness needs its own signal** — tool-call heartbeats, not log-file mtime (which lies during long generations).
-4. **Every supervisor needs a supervisor** — `launchd` watches the watchdog.
+Four patterns turned out to be non-negotiable: reconcile with ground truth every tick (don't trust session memory), atomic claim (peek-without-claim is a distributed-systems bug), tool-call heartbeats (not log-file mtime), and launchd-over-the-watchdog (every supervisor needs a supervisor).
 
-The higher-level takeaway: the agent is not the product you own. The model will change; the scaffolding around it compounds. A solo dev with bash and a GitHub repo can build something correct enough to run without them.
+The higher-level takeaway: the agent is not the product you own. The scaffolding around it is.
 
-Full post + zip of every hook, script, and dashboard wire so you can replicate it: [link to blog post]
+Full post + zip of every hook, script, and dashboard wire so you can replicate it: [link]
 
 #iOSDevelopment #AgenticEngineering #SoloDev #BuildInPublic

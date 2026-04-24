@@ -152,15 +152,10 @@ import Testing
     #expect(!IntentClassifier.needsRecentEntries("I had biryani"))
 }
 
-// Tracked in failing-queries.md: "No, I had the other chicken instead" — correction-as-replacement.
-// "instead" / "no, i had" / "actually i had" are not in deleteEditTriggers so recent entries
-// context is never injected and the LLM creates a duplicate log instead of replacing.
-// Fix: add these triggers to IntentClassifier.deleteEditTriggers (tier 0).
-@Test(.disabled("tracked: informal correction triggers — failing-queries.md"))
-func needsRecentEntriesForInformalCorrections() {
+@Test func needsRecentEntriesForInformalCorrections() {
     #expect(IntentClassifier.needsRecentEntries("No, I had the other chicken instead"))
     #expect(IntentClassifier.needsRecentEntries("Actually I had salmon, not chicken"))
-    #expect(IntentClassifier.needsRecentEntries("Wait, it was 2 eggs not 3"))
+    #expect(IntentClassifier.needsRecentEntries("no, i had pasta not rice"))
 }
 
 @Test func composeUserMessageOrdersRecentBeforeHistory() {

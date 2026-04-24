@@ -40,8 +40,6 @@ enum IntentClassifier {
     "calories in samosa"→{"tool":"food_info","query":"calories in samosa"}
     "how am I doing"→{"tool":"food_info","query":"daily summary"}
     "log 2 eggs"→{"tool":"log_food","name":"egg","servings":"2"}
-    "log pizza"→{"tool":"log_food","name":"pizza"}
-    "log a sandwich"→{"tool":"log_food","name":"sandwich"}
     "search pizza in my logs"→{"tool":"food_info","query":"pizza"}
     "I weigh 75 kg"→{"tool":"log_weight","value":"75","unit":"kg"}
     "start push day"→{"tool":"start_workout","name":"push day"}
@@ -56,7 +54,6 @@ enum IntentClassifier {
     "set my goal to one sixty"→{"tool":"set_goal","target":"160","unit":"lbs"}
     "delete last"→{"tool":"delete_food"}
     "remove rice from lunch"→{"tool":"edit_meal","meal_period":"lunch","action":"remove","target_food":"rice"}
-    "delete eggs from breakfast"→{"tool":"edit_meal","meal_period":"breakfast","action":"remove","target_food":"eggs"}
     "update oatmeal in breakfast to 200g"→{"tool":"edit_meal","meal_period":"breakfast","action":"update_quantity","target_food":"oatmeal","new_value":"200g"}
     "swap chicken for tofu in dinner"→{"tool":"edit_meal","meal_period":"dinner","action":"replace","target_food":"chicken","new_value":"tofu"}
     If <recent_entries> lists "42|lunch|rice|180cal|3m": "delete the rice I just logged"→{"tool":"delete_food","entry_id":"42"}
@@ -64,19 +61,14 @@ enum IntentClassifier {
     If <recent_entries> has a 500cal row at id 7: "edit the 500 cal one to 2 servings"→{"tool":"edit_meal","entry_id":"7","action":"update_quantity","new_value":"2"}
     "when will I reach my goal weight"→{"tool":"weight_trend_prediction"}
     "how long until I hit 75kg"→{"tool":"weight_trend_prediction"}
-    "when will I reach 160 lbs"→{"tool":"weight_trend_prediction"}
     "did I lose weight on workout days"→{"tool":"cross_domain_insight","metric_a":"weight","metric_b":"workout_volume"}
     "glucose vs carbs last week"→{"tool":"cross_domain_insight","metric_a":"glucose_avg","metric_b":"carbs","window_days":"7"}
     "protein on lifting days vs rest"→{"tool":"cross_domain_insight","metric_a":"protein","metric_b":"workout_volume"}
-    "correlation between calories and weight"→{"tool":"cross_domain_insight","metric_a":"calories","metric_b":"weight"}
     "show me my weight chart"→{"tool":"navigate_to","screen":"weight"}
     "go to sleep tab"→{"tool":"navigate_to","screen":"bodyRhythm"}
-    "show dashboard"→{"tool":"navigate_to","screen":"dashboard"}
     "is it okay to take fish oil on an empty stomach"→Fish oil is generally fine with or without food.
     "log lunch"→What did you have for lunch?
-    "log my breakfast"→What did you have for breakfast?
     "hi"→Hi! How can I help?
-    "i just love breakfast"→That's great! What did you have?
     "log"→What would you like to log — food, weight, or a workout?
     If chat context shows "What did you have for lunch?" and user says "rice and dal"→{"tool":"log_food","name":"rice, dal"}
     JSON when you have enough info. Ask follow-up if details missing. Short text for chat.
@@ -90,7 +82,8 @@ enum IntentClassifier {
     nonisolated static let deleteEditTriggers: [String] = [
         "delete", "remove", "undo", "edit", "change", "update",
         "replace", "swap", "the one", "the first", "the second",
-        "the last", "the 500", "just logged", "just added"
+        "the last", "the 500", "just logged", "just added",
+        "instead", "actually i had", "no, i had", "no i had"
     ]
 
     /// Build the user message with optional history context. Public for
