@@ -34,7 +34,7 @@ Here's what Drift's autopilot did during the seven days before I wrote this post
 
 It pushed **409 commits** across the repo. I wrote zero lines of that code.
 
-It shipped **nine user-visible features**, including: a Photo Log overhaul with editable macros, per-provider model picker, and AI-returned serving hints; a `cross_domain_insight` tool that answers correlational queries like *"does my glucose spike after rice?"*; a `weight_trend_prediction` tool that projects the date you'll hit your goal weight; an expansion of the intent-routing eval harness from 120 to 175+ test cases; and a full redesign of the Command Center activity dashboard down to an ECG-style heartbeat strip.
+It shipped **nine user-visible features**, including: a Photo Log overhaul with editable macros, per-provider model picker, and AI-returned serving hints; a `cross_domain_insight` tool that answers correlational queries like *"does my glucose spike after rice?"* by joining food logs against CGM data pulled through Apple Health; a `weight_trend_prediction` tool that projects the date you'll hit your goal weight; an expansion of the intent-routing eval harness from 120 to 175+ test cases; and a full redesign of the Command Center activity dashboard down to an ECG-style heartbeat strip.
 
 It closed **thirty distinct bug issues**, most of them from real user reports. A five-bug bundle landed in a single fix commit after a friend sent me a handful of Photo Log screenshots over iMessage one evening.
 
