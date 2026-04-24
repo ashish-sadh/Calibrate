@@ -4,7 +4,7 @@
 
 ---
 
-If you've known me for a few years, you've watched me cycle through many health trackers on the App Store and explain my HRV at dinner to people who didn't ask. **Drift**, the iOS app I eventually built to replace all of that, is the natural endpoint — a personal app that a few friends ended up getting invested in too. They'd seen me geek out long enough about how sleep, heart rate, CGM glucose, and DEXA body-comp numbers correlate, and they trusted that if I was going to build a health app, I'd be obsessed enough to make it good. With language models democratizing the power of software to almost anyone, I couldn't not build it. A couple of friends adopted it as their primary tracker and each saved themselves a ~$20-a-month subscription elsewhere; since Drift runs entirely on the user's phone, my cost to keep any of it running is zero. In return, they find the subtle bugs I miss, push back on the places where the UI lacks taste, and every fix lands back as an improvement for all of us.
+If you've known me for a few years, you've watched me cycle through many health trackers on the App Store and explain my HRV at dinner to people who didn't ask. **Drift**, the iOS app I eventually built to replace all of that, is the natural endpoint — a personal app that a few friends ended up getting invested in too. They'd seen me geek out long enough about how sleep, heart rate, CGM glucose, and DEXA body-comp numbers correlate, and they trusted that if I was going to build a health app, I'd be obsessed enough to make it good. With language models democratizing the power of software to almost anyone, I couldn't not build it. A couple of friends adopted it as their primary tracker and each saved themselves a ~$20-a-month subscription elsewhere; since Drift runs entirely on the user's phone, my cost to keep any of it running is zero. In return, they find the subtle bugs I miss, push back on the places where the UI lacks taste, and every fix lands back as an improvement for all of us. It's on twenty-five phones now, all by word of mouth.
 
 This post isn't really about Drift, though — or it is, in the way a post about a restaurant is about the kitchen. What I want to write about is the *kitchen*: the autonomous development loop I wired around a pair of language models to actually ship Drift, one iOS build at a time, without me at the stove.
 
@@ -48,9 +48,13 @@ That last point matters to me more than it probably should. A lot of health apps
 
 So Drift is a **no-"server" architecture.** No accounts. No subscriptions. No server on my end at all. Drift is a client you run; the intelligence is whatever you configure it to use. The only backend is your phone.
 
-That design constraint, concretely, meant fitting a language model into a phone. iPhones have finite memory — call it 6 GB on a reasonable modern device — and squeezing iOS plus a model into that envelope takes surgery. I picked **SmolLM (360M)** and **Gemma 4 (2B)** via `llama.cpp`, compiled for CPU-only (Metal is broken on A19 Pro as of this writing), with automatic model selection based on available memory and auto-unload after sixty seconds of idle. The context window is 2048 tokens, expanded to 4096 on devices with headroom.
+That design constraint meant running a language model on the phone itself — which means the model has to be **small**. Small enough to fit, small enough to stay resident when you open the app, small enough to unload when you don't need it.
 
-A small model on a phone is not a smart model. That's the point. The smartness has to come from somewhere else — namely, the **context layer** that wraps it.
+A small model is not a smart model, but it turns out it doesn't need to be. Small models are reliably good at one thing: **tool calling.** Give them a clear toolbox, they can read the query, pick the right tool, fill in its parameters, and return a structured result. And that turns out to be the shape of almost every query a health app actually needs to answer.
+
+So I broke Drift down into roughly twenty tools. Each tool sits on top of one slice of your data — food logs, weight history, workouts, Apple Health (weight, workouts, CGM glucose), a goal-projection calculator, a cross-domain correlation query, a trend projector — and runs the analytics itself, in Swift, deterministically. The small model's job isn't to *do* the analysis; it's to read the query, pick the right tool, fill its parameters, and route the structured result back to the UI. Almost all of Drift's perceived intelligence is really the tools underneath doing the real work, with the model acting as router.
+
+The smartness, in other words, has to come from somewhere other than the model — namely, the **context layer** that wraps it.
 
 ```mermaid
 flowchart TD
@@ -64,7 +68,7 @@ flowchart TD
         T0 --> T1 --> T2 --> T3
     end
 
-    CTX --> LLM["Local LLM<br/>SmolLM 360M / Gemma 4 2B<br/>llama.cpp · CPU-only"]
+    CTX --> LLM["Local LLM<br/>(small, on-device)"]
     CTX --> TOOLS
 
     subgraph TOOLS["On-device tools"]
@@ -82,9 +86,11 @@ flowchart TD
     REM -. macros .-> CTX
 ```
 
-The context layer is where the actual engineering lives. Tier 0 handles instant, deterministic queries — the kind a regex can answer. Tier 1 normalizes the input: resolving synonyms, expanding abbreviations, picking units. Tier 2 chooses which tool to call from a registry of roughly twenty on-device tools (Food DB, AnalyticsService, Apple Health, a goal calculator, correlation tools, trend prediction). Tier 3 composes the answer and streams it back to the user. The LLM is consulted only when necessary, and never with more context than it needs. Most queries get answered by tiers 0–2 without the model seeing anything at all. By the time the model does run, the hard work — deciding what to look up, what to do with it — is already done.
+The context layer itself is four tiers deep. Tier 0 handles instant, deterministic queries — the kind a regex can answer. Tier 1 normalizes the input: resolving synonyms, expanding abbreviations, picking units. Tier 2 picks the right tool from the twenty. Tier 3 composes the answer and streams it back. The model is consulted only when necessary, and never with more context than it needs — most queries get answered by tiers 0–2 without the model seeing anything at all. By the time the model runs, the hard work of deciding *what* to look up is already done.
 
 That's why this works. A small model given the right five facts at the right moment behaves beautifully. A small model given twenty thousand tokens of noise does not, and no amount of clever prompting will save it. The scaffolding saves it.
+
+One engineering problem turned out to take more effort than the model itself: getting the tool's structured result back into the UI and surfacing it for confirmation. Saying *"log coffee with milk"* in chat has to round-trip into a confirmation card in the Food tab — right serving units pre-filled, macros editable, an *Add* button the user can tweak or accept — all from a sentence the model read and routed. That round-trip, from natural-language input → tool invocation → editable UI confirmation, is where most of the product polish went.
 
 There is one place in Drift where the cost/benefit genuinely favors a frontier model: **photo meal logging**. Point your camera at a plate, want macros and servings back — that's a task where a current on-device model cannot compete with Anthropic's, OpenAI's, or Google's vision. So Drift offers a **bring-your-own-key** path: you plug your existing Anthropic, OpenAI, or Gemini API key into Settings, it's stored in iOS Keychain, and Drift talks to the provider directly from your phone. You pay them, not me. The photo is the only thing that leaves the device — everything else stays local. If you'd rather not configure a key, photo logging is simply off, and the text and voice paths still work against the local model.
 
