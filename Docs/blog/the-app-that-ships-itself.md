@@ -4,27 +4,30 @@
 
 ---
 
+Over the seven days before I sat down to write this, a loop I built around a pair of language models pushed **409 commits** into an iOS app's repo. It closed **thirty bug issues** — most filed by real people on TestFlight — resolving the shallower ones in about eleven minutes on average. It wrote **nine product-review PRs**, studying the competition and telling me where the app was losing ground. It shipped **three TestFlight builds**.
+
 I wrote none of that code. I read some of the reviews.
 
-Back up. If you've known me for a few years, you've watched me cycle through every health tracker on the App Store and explain my HRV at dinner to people who didn't ask.
+The app is called **Drift**. It's an iOS health tracker on twenty-five phones, all by word of mouth — a handful of friends, a couple of teammates, some family. Two of them traded a $20-a-month health-app subscription for a copy of this one. The app runs entirely on their phones; nothing of theirs hits my servers, because I don't have any. My cost to keep it running is zero. In return, they find the subtle bugs I miss and push back on the places where the UI lacks taste.
 
-**Drift**, the iOS app I eventually built to replace all of that, is the natural endpoint — a personal app that a few friends ended up getting invested in too. A couple of them adopted it as their primary tracker and each saved themselves a ~$20-a-month subscription elsewhere. Since Drift runs entirely on the user's phone, my cost to keep any of it running is zero. In return, they find the subtle bugs I miss and push back on the places where the UI lacks taste.
+Two things sit side by side in this story, and it's worth naming them right now:
 
-It's on twenty-five phones now, all by word of mouth.
+- **Drift** is the iOS app. The thing users touch. It lives on my friends' phones.
+- **Drift Control** is the *autonomous development loop* that builds Drift. The supervisor script, the Claude Code sessions, the hooks, the personas, the dashboard — all the scaffolding I wired around the language models so that the paragraph above is a boring Tuesday. I touch this. Users don't.
 
-This post isn't really about Drift, though — or it is, in the way a post about a restaurant is about the kitchen. What I want to write about is the *kitchen*: the autonomous development loop I wired around a pair of language models to actually ship Drift, mostly at the table while the kitchen ran itself.
+Drift is the dish. Drift Control is the kitchen. This post is mostly about the kitchen.
 
-It isn't news at this point that a language model will write a pile of working code if you few-shot it hard enough. That part is easy. What I find interesting — and what I think actually took the engineering — is what happens when you let the process run unattended for *months*, not minutes. The inner loop at the center of Drift Control is what Geoffrey Huntley named a [Ralph loop](https://ghuntley.com/ralph/): a `while true` around an AI coding agent, one task per pass, progress persisted in git, not in the model's memory. Ralph is the engine. The question this essay is really about is what you have to build *around* the engine so the whole thing keeps running honestly without you watching.
+The inner loop of Drift Control is what Geoffrey Huntley calls a [Ralph loop](https://ghuntley.com/ralph/): a `while true` around an AI coding agent, one task per pass, progress persisted in git rather than in the model's memory. Ralph is the engine. This post is about everything you have to build *around* the engine so it keeps running honestly for weeks without you watching.
 
-What runs out first, in that unattended mode, isn't compute or context window. It's **human attention** — and the taste that attention encodes. Most of what follows is machinery for making that scarce resource go further: scaffolding that ends up carrying what you'd normally call product judgment.
+It isn't news at this point that a language model will write a pile of working code if you few-shot it hard enough. That part is easy. What I find interesting — and what I think actually took the engineering — is what happens when you let the process run unattended for *months*, not minutes. What runs out first, in that mode, isn't compute or context window. It's **human attention**, and the taste that attention encodes. Most of what follows is machinery for making that scarce resource go further — scaffolding that ends up carrying what you'd normally call product judgment.
 
-(Claude Code is the agent runtime I happen to use. You could run the same pattern around a different one — Aider, OpenCode, Cursor's agent mode — with some re-plumbing. The harness is what's load-bearing here, not the runtime.)
+(Claude Code is the agent runtime I happen to use. You could run the same pattern around Aider or OpenCode or Cursor's agent mode with some re-plumbing. The harness is what's load-bearing, not the runtime.)
 
-The harness, in my experience, is the more interesting engineering. Tinkering in spare hours, I can ship a production app to real users by putting almost all of my engineering attention not on the app itself but on the scaffolding that directs the language models, catches their mistakes, and lets a human spend attention only on the things that need it.
+The harness, in my experience, is the more interesting engineering.
 
 ---
 
-## Taste lives in the scaffolding
+## taste lives in the scaffolding
 
 **Taste lives in the scaffolding, and human attention is what it spends.**
 
@@ -34,17 +37,17 @@ Two observations became obvious after a few months of running this.
 
 The first is that **the agent is not the product you own.** Models change. What persists is the harness: the queue, the hooks, the reconciliation, the dashboards, the test suite, the personas. If you pour your craft into clever prompts, you've invested in something a model update will replace. If you pour it into the harness, it compounds. The model gets swapped out; the scaffolding is what you keep.
 
-The second is that **agents are a distributed-systems problem, not a language-model problem.** Every unglamorous distributed-systems pattern reappears the moment you let a language model run unsupervised — atomicity, idempotency, supervisor trees, and so on. The good news: these are half a century old and well understood. The bad news: most people building on agents haven't touched them since their systems-design interview. When something feels hard or weird about your agent, ask the systems question first — *"is this a race?"* — before the prompt question.
+The second is that **agents are a distributed-systems problem, not a language-model problem.** Every unglamorous distributed-systems pattern reappears the moment you let a language model run unsupervised — atomicity, idempotency, supervisor trees, and so on. These are half a century old and well understood. Most people building on agents haven't touched them since their systems-design interview. When something feels hard or weird about your agent, ask the systems question first — *"is this a race?"* — before the prompt question.
 
-One more framing point. **Offloading a task to a bigger model is lazy.** You want a smart answer, you pay for a smarter model. The harder craft is the inverse: take a model that isn't especially smart, feed it the right context at the right moment, and watch it produce work that *looks* smart because the scaffolding did the heavy lifting. That principle shows up twice in Drift — once in the app (on-device models with a four-tier context pipeline) and once in the harness (hook-enforced ground-truth reconciliation that keeps ordinary Claude Code sessions honest).
+One more framing point: **offloading a task to a bigger model is lazy.** You want a smart answer, you pay for a smarter model. The harder craft is the inverse: take a model that isn't especially smart, feed it the right context at the right moment, and watch it produce work that *looks* smart because the scaffolding did the heavy lifting. That principle shows up twice in Drift — once in the app (on-device models with a tool-calling context layer) and once in the harness (hook-enforced ground-truth reconciliation that keeps ordinary Claude Code sessions honest).
 
-A final point: this is deliberately **not a general-purpose personal agent**. A "do anything for me" agent has no ground truth to reconcile against and no domain-shaped state machine to run on. Drift Control has one job: ship a specific iOS app. Git, GitHub, `xcodebuild`, and TestFlight are the anchors that make every pattern below possible. Narrow beats broad, for this class of system. At least with today's models.
+A final framing point: this is deliberately **not a general-purpose personal agent**. A "do anything for me" agent has no ground truth to reconcile against and no domain-shaped state machine to run on. Drift Control has one job: ship a specific iOS app. Git, GitHub, `xcodebuild`, and TestFlight are the anchors that make every pattern below possible. Narrow beats broad, for this class of system. At least with today's models.
 
 ---
 
-## Drift, the app
+## drift, the app
 
-Drift is an iOS health tracker. I built it because every existing option fell short of what I wanted: an app that knew my food, my workouts, my weight, my mood, my sleep, and my glucose when I'm wearing a CGM, and that answered questions like *"when will I hit my goal weight?"* or *"does my glucose spike after rice?"* by chatting. Natural-language logging — type or speak *"log breakfast: two eggs, toast, and coffee with milk,"* have the structured record appear. And I wanted it to live on my phone, not as another subscription.
+If you've known me for a while, you've watched me cycle through every health tracker on the App Store and explain my HRV at dinner to people who didn't ask. Drift is the natural endpoint of that. I built it because every existing option fell short of what I wanted: an app that knew my food, my workouts, my weight, my mood, my sleep, and my glucose when I'm wearing a CGM, and that answered questions like *"when will I hit my goal weight?"* or *"does my glucose spike after rice?"* by chatting. Natural-language logging — type or speak *"log breakfast: two eggs, toast, and coffee with milk,"* have the structured record appear. And I wanted it to live on my phone, not as another subscription.
 
 That last point matters to me more than it probably should. A lot of health apps are becoming thin clients on top of cloud LLMs, charging monthly for what's really a few pass-through calls to a frontier-model provider. I didn't want to add one more of those to my phone, and I didn't want to build one.
 
@@ -66,15 +69,15 @@ There is one place in Drift where the tradeoff favors a frontier model: **photo 
 
 ---
 
-## The same pattern, applied to the dev loop
+## same pattern, dev loop edition
 
 The harness around Claude Code is not an elaborate multi-agent orchestration with judges and tournaments. It's ordinary language-model sessions, firing sequentially on my laptop — no sandboxes, no parallel worktrees — wrapped in enough scaffolding that ordinary sessions do real work and correct themselves before the problems reach me.
 
-The scaffolding is made of five principles, each learned the hard way.
+The scaffolding is made of five patterns, each learned the hard way.
 
 ---
 
-## Principle 1 — Ground truth over memory
+## 1 — ground truth, not memory
 
 One Saturday I noticed the watchdog had run eleven consecutive planning sessions in four hours. Zero code shipped. The sessions kept firing *because the planning-due check was reading a stamp file that each session was supposed to write when it finished — and the sessions kept partially executing and dying before the stamp got written.* The harness was asking itself *"when did I last plan?"* and the answer was, forever, *"never."*
 
@@ -93,9 +96,9 @@ It costs more in API calls. It's worth it. Git and GitHub are the durable store;
 
 ---
 
-## Principle 2 — Mechanical enforcement, not prose
+## 2 — hooks are law; prose is hints
 
-If Principle 1 is about *what* you reconcile against, Principle 2 is about *how* you enforce.
+If the first pattern is about *what* you reconcile against, the second is about *how* you enforce.
 
 The answer is: not by writing rules in a prose file the agent reads. The agent drifts from prose. Prose is a hint; the agent may or may not read it, and even if it does, "please don't do X" is one weight in a soup of many. What you want is *code that refuses to let the agent do X*. A gate that fails closed.
 
@@ -107,7 +110,7 @@ Docs are hints the agent may or may not follow; hooks are enforced. Use laws for
 
 ---
 
-## Principle 3 — Atomic claim makes work visible
+## 3 — atomic claim or nothing
 
 Early on, I watched a senior session spend twenty minutes "investigating" a task. No `in-progress` label. No claim. No visible indication anywhere that it was working on anything. Eventually it crashed, and a second session spun up and picked up the same task from scratch. Classic **peek-without-claim** — the session had read the queue, decided what to do, but hadn't yet marked the task as taken. Between those two operations, anything can happen.
 
@@ -119,7 +122,7 @@ One script call does both — returns the next task and marks it `in-progress` o
 TASK=$(scripts/sprint-service.sh next --senior --claim)
 ```
 
-The caller never sees a task that wasn't already claimed. And the `require-claim` hook from Principle 2 finishes the job: no claim held, no `Edit` or `Write` fires. Work without a claim can't happen.
+The caller never sees a task that wasn't already claimed. And the `require-claim` hook from the previous section finishes the job: no claim held, no `Edit` or `Write` fires. Work without a claim can't happen.
 
 Here's what that looks like end-to-end, on an actual bug from two days before I wrote this — issue **#220**.
 
@@ -139,7 +142,7 @@ That kind of close happens three to ten times a week on shallow bugs. The ones t
 
 ---
 
-## Principle 4 — Tool calls are the pulse
+## 4 — tool calls are the pulse
 
 Before I had a proper liveness signal, I was using log-file modification time as the check for *"is this session still alive?"*. It lied. During long generation bursts — the model thinking for ninety-plus seconds before producing any tool call — the log file didn't move. The watchdog kept concluding the session was stalled, killing it mid-thought, and wasting its work. I lost real progress that way more than once.
 
@@ -153,7 +156,7 @@ date +%s > ~/drift-state/session-heartbeat
 echo "$(date +%s) $CLAUDE_TOOL_NAME" >> ~/drift-state/session-heartbeat.log
 ```
 
-That's the entire signal. The watchdog reads that first file — not the log, not the process table — to decide whether the session is alive. Stale threshold: thirty minutes without a tool call. Tool calls are the pulse. They're also, in practice, the only meaningful indicator of activity in a language-model agent — reasoning without a tool call is invisible by design, and a session that has gone silent for thirty minutes has gotten stuck in a thinking loop rather than doing useful work.
+That's the entire signal. The watchdog reads that first file — not the log, not the process table — to decide whether the session is alive. Stale threshold: thirty minutes without a tool call. Tool calls are the pulse. They're also the only meaningful indicator of activity in a language-model agent: reasoning without a tool call is invisible by design, and a session that has gone silent for thirty minutes has gotten stuck in a thinking loop rather than doing useful work.
 
 Every ten minutes, a snapshot script bucketizes `session-heartbeat.log` into a JSON file, commits it, and pushes. The Command Center — a static HTML page on GitHub Pages — renders that JSON as an ECG strip:
 
@@ -169,15 +172,15 @@ One additional piece: **every supervisor needs a supervisor.** A session can cra
 
 ---
 
-## Principle 5 — The feedback loop is the architecture
+## 5 — the loop that fixes itself
 
-The first four principles make it possible to run the loop unattended for long stretches. This one is what makes the loop actually get *better* while it runs — and it's where the work starts to feel like it has a mind.
+The first four patterns make it possible to run the loop unattended for long stretches. This one is what makes the loop actually get *better* while it runs — and it's where the work starts to feel like it has a mind.
 
 The version of the harness I started with did not close its own feedback loop. When autopilot hit a systemic problem — a rate limit, a flaky test, a pattern the model kept repeating — I had to notice and fix it manually. That scales to roughly a weekend. Past a weekend, the harness itself needs to be learning.
 
 The version in this repo does. Every planning session, as its first step, runs `issue-service.sh drain-feedback`: it reads issues labeled `process-feedback`, and if they describe systemic problems, converts them into `infra-improvement` tasks on the harness's own backlog. The harness fixes itself over time.
 
-But the sharper expression of this principle is in the **personas**. Two of them: a Product Designer and a Principal Engineer. They started as seed files I wrote in an afternoon. They have now been through fifty-four full product reviews, and every review ends with an appended block titled *"What I Learned — Review #N."* Those blocks stack up and become the context for every subsequent cycle. The personas develop taste. They remember past mistakes. They start pushing back on me when I'm wrong.
+But the sharper expression of this pattern is in the **personas**. Two of them: a Product Designer and a Principal Engineer. They started as seed files I wrote in an afternoon. They have now been through fifty-four full product reviews, and every review ends with an appended block titled *"What I Learned — Review #N."* Those blocks stack up and become the context for every subsequent cycle. The personas develop taste. They remember past mistakes. They start pushing back on me when I'm wrong.
 
 You can watch it happen. Here's the Designer in Review #11, about two hundred cycles ago, at the level of a fresh observation:
 
@@ -205,19 +208,19 @@ There's a minor governance structure inside these reviews worth naming: **a two-
 >
 > **Agreed Direction:** *"Queue cap of 70 is re-affirmed — planning sessions creating >8 tasks when queue exceeds 70 are blocked. Senior execution drain rate is the only lever that matters for product velocity."*
 
-Neither persona has unilateral authority. Neither one is me. And the point isn't the specific debate — it's that the harness has an *opinion of its own*, developed across fifty-four reviews, that converges before asking for my time. When it does ask, it asks three sharp questions in a block called *Decisions for Human*. I read that block in bed on my phone, tap approve on one, reply *"defer"* on another. The harness picks up my replies on the next planning cycle and adjusts.
+Neither persona has unilateral authority. Neither one is me. And the point isn't the specific debate — it's that the harness has an opinion of its own, developed across fifty-four reviews, that converges before asking for my time. When it does ask, it asks three sharp questions in a block called *Decisions for Human*. I read that block in bed on my phone, tap approve on one, reply *"defer"* on another. The harness picks up my replies on the next planning cycle and adjusts.
 
-That is what I mean when I say the feedback loop is the architecture. The harness isn't just shipping features — it is *studying the market, taking a position, defending the product, and educating me about what to prioritize*.
+That is what I mean when I say the feedback loop is the architecture. The harness isn't just shipping features — it is studying the market, taking a position, defending the product, and educating me about what to prioritize.
 
 I first heard about MyFitnessPal adding GLP-1 medication tracking in a product-review PR from my own autopilot, not from the tech press. That still sits oddly with me.
 
-The direction all of this points — and the part still half-built — is a voting system with more than two voters. The personas are two. The A/B evals in the LLM harness are a small handful. The beta-user reactions on issues and exec-report PRs are a few dozen signals a week. Each of these is a vote. The next lever against the *human-attention bottleneck* is to let those votes — especially the handful of beta-user A/B signals on real features — become the real eval, so the harness can fix its own taste from users without me having to ratify every change. More on that in *What remains unresolved*.
+The direction this is all pointing — and the part still half-built — is a voting system with more than two voters. The personas are two. The LLM eval harness is a small handful of golden prompts. Beta-user reactions on issues and exec-report PRs are a few dozen signals a week, and unlike the personas those *are* independent signal. The next lever against the human-attention bottleneck is to let a handful of A/B-tested beta-user votes become the real eval, so the harness can fix its own taste from users without me having to ratify every change. More on that below.
 
 ---
 
-## A week in the life, at a glance
+## a week in the life, at a glance
 
-Every principle above is distilled from actual traces the harness left behind. The seven-day trace from the week before I wrote this, as a single picture:
+Every pattern above is distilled from actual traces the harness left behind. The seven-day trace from the week before I wrote this, as a single picture:
 
 ```
   Drift Control · last 7 days
@@ -247,14 +250,14 @@ Every principle above is distilled from actual traces the harness left behind. T
        as a compounding competitive risk vs Whoop
   Thu  five-bug bundle from photo-log screenshots (single commit)
   Sat  eleven planning sessions fire in four hours
-       (the failure that became Principle 1)
+       (the failure that became pattern #1)
 ```
 
 I did no code work that week. I read five of the exec reports, approved one design, and left two comments on the product review. The rest ran itself.
 
 ---
 
-## The dial I actually turn
+## the dial I actually turn
 
 One question I keep getting: *how do you steer this thing, exactly?*
 
@@ -266,7 +269,7 @@ The answer isn't one lever. It's a dial with roughly six settings, from *"don't 
 | **1. Strategic nudge** | One-line comment on a product-review PR: *"focus on food-DB coverage this week."* | Next planning session treats it as a priority signal. No rewrite of anything. |
 | **2. Design-review request** | Add a `design-doc` label to an issue. | Senior session writes a design doc on a branch, PRs it, waits for my comment. Implementation only starts after I approve. |
 | **3. Feature request** | File a GitHub issue with `feature-request` + one paragraph of intent. | Planning triages it into the sprint as P0/P1 or labels it `deferred`. I don't pre-specify files or approach. |
-| **4. P0 bug** | Filed with a `P0` label, usually from a beta user. | Interrupts on the next tick, picks it up on the senior session. The eleven-minute flow in Principle 3. |
+| **4. P0 bug** | Filed with a `P0` label, usually from a beta user. | Interrupts on the next tick, picks it up on the senior session. The eleven-minute flow from pattern #3. |
 | **5. Take the wheel** | `echo PAUSE > ~/drift-control.txt`, open Claude Code in human-shepherded mode, type. | Stops spawning sessions. Session-start hook detects human mode and suppresses auto-publish. `echo RUN` resumes the loop. |
 
 The counterintuitive part: the lighter the intervention, the more the personas compound. Setting 2 — design-review request — has become what I use most often for anything I care about shaping. Most of my product decisions now happen by reading a design PR and leaving two comments.
@@ -275,7 +278,7 @@ The harness isn't really about autonomy. It's about choosing where to spend atte
 
 ---
 
-## What remains unresolved
+## what remains unresolved
 
 A few pieces are open problems. I'm writing about them because the essay would be dishonest without them.
 
@@ -289,7 +292,38 @@ A few pieces are open problems. I'm writing about them because the essay would b
 
 ---
 
-## Replicate it
+## the actual hooks
+
+If you want the whole zip, see *replicate it* below. If you just want to know what these patterns look like in code, here are two of the load-bearing pieces.
+
+**The heartbeat**, wired as both `PreToolUse` and `PostToolUse`. Fires on every tool call, before and after. Three lines:
+
+```bash
+#!/usr/bin/env bash
+date +%s > ~/drift-state/session-heartbeat
+echo "$(date +%s) $CLAUDE_TOOL_NAME" >> ~/drift-state/session-heartbeat.log
+```
+
+**The claim-required gate.** `PreToolUse` on `Edit|Write`. If the session isn't holding at least one `in-progress` issue on GitHub (or isn't on a review / report / design-doc branch), the hook denies and the tool call never fires. The harness literally cannot do ghost work:
+
+```bash
+#!/usr/bin/env bash
+# require-claim.sh — blocks Edit/Write unless this session holds a claim
+BRANCH=$(git symbolic-ref --short HEAD 2>/dev/null)
+if [[ "$BRANCH" =~ ^(review/cycle-|report/exec-|design-doc/) ]]; then exit 0; fi
+COUNT=$(gh issue list --label in-progress --json number --jq 'length' 2>/dev/null || echo 0)
+if [[ "$COUNT" -lt 1 ]]; then
+  echo "BLOCKED: this session is not holding a claim on a sprint-task issue." >&2
+  exit 2
+fi
+exit 0
+```
+
+Two files. Maybe forty lines together. They do most of the load-bearing work in this essay.
+
+---
+
+## replicate it
 
 Everything is zipped at [`drift-command-center-replicate.zip`](./drift-command-center-replicate.zip) in this folder:
 
@@ -307,4 +341,9 @@ It isn't a framework. It's a kit. Cut and paste what you need, replace the Drift
 
 ---
 
-*The next bug report came from one of those same friends. Drift is on twenty-five phones. The harness built most of it while I slept. If you have a small app and a spare laptop, yours could ship the same way.*
+## ps. links
+
+- Repository: [github.com/ashish-sadh/Drift](https://github.com/ashish-sadh/Drift)
+- Ralph loop, the original: [ghuntley.com/ralph](https://ghuntley.com/ralph/) — go read this, it's where the engine comes from
+- Dashboard (currently live): the Command Center page in the repo
+- The next bug report came from one of those same friends. Drift is on twenty-five phones. The harness built most of it while I slept. If you have a small app and a spare laptop, yours could ship the same way.
