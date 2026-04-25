@@ -67,6 +67,52 @@ final class FoodLoggingGoldSetTests: XCTestCase {
         return healthTools.contains(tools.first?.name ?? "")
     }
 
+    @MainActor
+    private func detectsExerciseIntent(_ query: String) -> Bool {
+        let normalized = InputNormalizer.normalize(query).lowercased()
+        if let result = StaticOverrides.match(normalized) {
+            if case .response(let text) = result {
+                return text.contains("Log ") && (text.contains("min)") || text.contains("today?"))
+            }
+            return false
+        }
+        let tools = ToolRanker.rank(query: normalized, screen: .exercise)
+        return tools.first?.name == "start_workout" || tools.first?.name == "log_activity"
+    }
+
+    @MainActor
+    private func isStaticCommand(_ query: String) -> Bool {
+        let normalized = InputNormalizer.normalize(query).lowercased()
+        guard let result = StaticOverrides.match(normalized) else { return false }
+        switch result {
+        case .response(let text):
+            if text.contains("Log ") && text.contains("today?") { return false }
+            return true
+        case .handler: return true
+        case .uiAction(let action, _):
+            if case .navigate = action { return false }
+            return true
+        case .toolCall: return true
+        }
+    }
+
+    @MainActor
+    private func detectsNavigationIntent(_ query: String) -> Bool {
+        let normalized = InputNormalizer.normalize(query).lowercased()
+        if let result = StaticOverrides.match(normalized) {
+            if case .uiAction(let action, _) = result {
+                if case .navigate = action { return true }
+            }
+        }
+        return false
+    }
+
+    @MainActor
+    private func detectsAnyHealthIntent(_ query: String) -> Bool {
+        let screens: [AIScreen] = [.bodyRhythm, .supplements, .glucose, .biomarkers, .bodyComposition]
+        return screens.contains { detectsHealthIntent(query, screen: $0) }
+    }
+
     private func detectsFoodIntent(_ query: String) -> Bool {
         let normalized = InputNormalizer.normalize(query).lowercased()
         return AIActionExecutor.parseFoodIntent(normalized) != nil
@@ -471,6 +517,46 @@ final class FoodLoggingGoldSetTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(detected, healthQueries.count - 1)
     }
 
+    // MARK: - Exercise Intent Detection
+
+    @MainActor
+    func testExerciseIntents() {
+        let exerciseQueries = [
+            "i did yoga for 30 minutes",
+            "just did 20 min cardio",
+            "i did push ups",
+            "did running for about 45 minutes",
+            "i went for a walk",
+            "just finished chest day",
+        ]
+        var detected = 0
+        for query in exerciseQueries {
+            if detectsExerciseIntent(query) { detected += 1 }
+            else { print("MISS (exercise): '\(query)'") }
+        }
+        print("📊 Exercise intent detection: \(detected)/\(exerciseQueries.count)")
+        XCTAssertGreaterThanOrEqual(detected, exerciseQueries.count - 1)
+    }
+
+    // MARK: - Navigation Intent Detection
+
+    @MainActor
+    func testNavigationIntents() {
+        let navQueries = [
+            "show me my weight chart",
+            "go to food tab",
+            "open exercise",
+            "show me my supplements",
+        ]
+        var detected = 0
+        for query in navQueries {
+            if detectsNavigationIntent(query) { detected += 1 }
+            else { print("MISS (navigation): '\(query)'") }
+        }
+        print("📊 Navigation intent detection: \(detected)/\(navQueries.count)")
+        XCTAssertGreaterThanOrEqual(detected, navQueries.count - 1)
+    }
+
     // MARK: - Voice-Style Cross-Domain
 
     func testVoiceWeightLogging() {
@@ -578,6 +664,73 @@ final class FoodLoggingGoldSetTests: XCTestCase {
         }
         print("📊 Fractional amount extraction: \(correct)/\(cases.count)")
         XCTAssertGreaterThanOrEqual(correct, 2, "Fractional amounts: ≥2/5 — 'one third' and bareword fractions tracked as follow-up issues")
+    }
+
+    @MainActor
+    func testVoiceExerciseLogging() {
+        let voiceQueries = [
+            "umm I did yoga for like 30 minutes",
+            "so I just finished running",
+            "uh I did push ups today",
+        ]
+        var detected = 0
+        for query in voiceQueries {
+            if detectsExerciseIntent(query) { detected += 1 }
+            else { print("MISS (voice exercise): '\(query)'") }
+        }
+        print("📊 Voice exercise detection: \(detected)/\(voiceQueries.count)")
+        XCTAssertGreaterThanOrEqual(detected, voiceQueries.count - 1)
+    }
+
+    @MainActor
+    func testGoldSetSummary() {
+        enum Domain: String { case food, weight, exercise, navigation, health, none }
+
+        let allQueries: [(String, Domain)] = [
+            ("log 2 eggs", .food), ("I had chicken breast", .food),
+            ("ate a banana for breakfast", .food), ("had 200g paneer", .food),
+            ("log rice and dal", .food), ("umm I had 2 eggs and toast", .food),
+            ("I had I had some chicken", .food), ("so I ate biryani for lunch", .food),
+            ("had a couple of rotis", .food), ("ate 3 idli with chutney", .food),
+            ("had a protein shake", .food), ("eating oatmeal", .food),
+            ("I weigh 165 lbs", .weight), ("weight is 75.2 kg", .weight),
+            ("scale says 82 kg", .weight), ("weighed in at 170", .weight),
+            ("i did yoga for 30 minutes", .exercise), ("just did 20 min cardio", .exercise),
+            ("i did push ups", .exercise), ("just finished chest day", .exercise),
+            ("show me my weight chart", .navigation), ("go to food tab", .navigation),
+            ("open exercise", .navigation), ("show me my supplements", .navigation),
+            ("how'd I sleep", .health), ("took my creatine", .health),
+            ("any glucose spikes", .health), ("how's my body fat", .health),
+            ("hello", .none), ("thanks", .none),
+            ("calories in a banana", .none), ("daily summary", .none),
+        ]
+
+        var correct = 0
+        for (query, expected) in allQueries {
+            let detected: Domain
+            if detectsFoodIntent(query) {
+                detected = .food
+            } else if detectsWeightIntent(query) {
+                detected = .weight
+            } else if detectsNavigationIntent(query) {
+                detected = .navigation
+            } else if isStaticCommand(query) {
+                detected = .none
+            } else if detectsExerciseIntent(query) {
+                detected = .exercise
+            } else if detectsAnyHealthIntent(query) {
+                detected = .health
+            } else {
+                detected = .none
+            }
+
+            if detected == expected { correct += 1 }
+            else { print("WRONG: '\(query)' → \(detected.rawValue) (expected \(expected.rawValue))") }
+        }
+
+        let accuracy = Double(correct) / Double(allQueries.count) * 100
+        print("📊 GOLD SET SUMMARY (\(allQueries.count) queries): \(correct)/\(allQueries.count) (\(String(format: "%.0f", accuracy))%)")
+        XCTAssertGreaterThanOrEqual(accuracy, 75, "Overall accuracy ≥75%")
     }
 
     func testAbbreviatedUnitExtraction() {
