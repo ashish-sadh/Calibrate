@@ -1,6 +1,5 @@
 import XCTest
 @testable import DriftCore
-@testable import Drift
 
 final class ComposedFoodParserTests: XCTestCase {
 

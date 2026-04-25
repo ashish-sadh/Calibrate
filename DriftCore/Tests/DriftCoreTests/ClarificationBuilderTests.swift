@@ -1,7 +1,6 @@
 import Foundation
 @testable import DriftCore
 import Testing
-@testable import Drift
 
 /// Ask-don't-guess: deterministic ambiguity detection. #226.
 /// Covers ambiguous triggers (must produce options) AND unambiguous

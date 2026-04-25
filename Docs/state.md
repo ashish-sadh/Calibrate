@@ -4,8 +4,8 @@
 AI-first local health tracker. AI chat is the primary interface — every data entry doable through conversation. Traditional UI for visual analytics and fallback. No cloud, no accounts. Published on TestFlight as "Drift Fitness" (bundle: com.drift.health).
 
 ## Numbers
-- **Version:** 0.1.0, Build 133
-- **Tests:** 1677+ (38 test files; LLM eval expanded to ~160+ cases in DriftLLMEvalMacOS)
+- **Version:** 0.1.0, Build 174
+- **Tests:** 2061 iOS DriftTests (81 files, 27.7s) + 30 macOS DriftCoreTests (0.077s, cross-platform pure-logic suite); LLM eval ~160+ cases in DriftLLMEvalMacOS
 - **AI Eval:** 400+ scenarios in eval harness + LLM eval (~130-case gold set in IntentRoutingEval)
 - **Per-tool Reliability (Gemma 4, 50-query gold set):** log_food 10/10 (100%), edit_meal 9/10 (90%, tuned +10% from 80%), log_weight 10/10 (100%), mark_supplement 10/10 (100%), food_info 9/10 (90%) — overall 48/50 (96%)
 - **Foods:** 2,511 (Indian, Mexican, Asian, Thai, Japanese, Korean, Mediterranean, Chinese, Middle Eastern, American classics, fitness staples, coffee drinks, seeds, Indo-Chinese, sushi rolls, meal prep bowls, South Indian, Indian street food, bowls, Kerala dishes, fast food India, Indian fruits, Indian regional, Maharashtrian, Odia, Assamese, Bihari, Rajasthani, Andhra, Karnataka, Goan, Himachal Pradesh, Northeast India, Sindhi, Madhya Pradesh, Coorg, Vietnamese, Latin American, African, Italian expanded, branded protein bars/shakes, bakery, soups, seafood, Bengali fish, Indian snacks, Indian drinks, Filipino, Turkish, Ethiopian, fast food US, supplements, South Indian breakfasts, Karnataka snacks, regional protein shakes, bubble tea/boba, poke bowls, acai bowls, specialty coffee, sports nutrition)
@@ -21,6 +21,19 @@ AI-first local health tracker. AI chat is the primary interface — every data e
 - GRDB.swift for SQLite (only SPM dependency)
 - llama.cpp xcframework (rebuilt from source, Metal GPU)
 - XcodeGen for project generation
+
+## Module Layout
+
+Post-DriftCore extraction (Apr 25, 2026, build 174):
+
+- **`DriftCore/`** — Swift package, ~104 files, builds on iOS 17+ and macOS 14+. No `import UIKit/SwiftUI/HealthKit/WidgetKit/AVFoundation/Speech/Photos/AppIntents`.
+  - `Models/` (28), `Persistence/` (5), `Adapters/` (4), `Utilities/` (5)
+  - `Domain/{Food,Weight,Workout,Health}/` (27)
+  - `AI/{Parsing,Classification,Tools,Pipeline,LLM}/` (36)
+- **`Drift/`** — iOS app shell. Views, ViewModels, and iOS-bound services only: HealthKit, Widget, Notification, Speech, Photo, CloudVision, OCR.
+- **Adapter seams**: `HealthDataProvider`, `WidgetRefresher` — wired in `DriftApp.init()` via `DriftPlatform.health = HealthKitService.shared` + `DriftPlatform.widget = WidgetCenterRefresher()`.
+
+Test infrastructure: macOS-native `swift test` for pure logic (~0.1s warm), iOS simulator only for UI/HealthKit/Widget integration.
 
 ## AI System — Tiered Pipeline
 

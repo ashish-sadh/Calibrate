@@ -1,7 +1,6 @@
 import Foundation
 @testable import DriftCore
 import Testing
-@testable import Drift
 
 // CSV parser tests only - Lingo import tests are in UIFlowTests
 

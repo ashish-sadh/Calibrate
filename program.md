@@ -12,7 +12,7 @@ Follow the section that matches your prompt. The watchdog passes one of:
 
 _Directive:_ **Read `Docs/roadmap.md` to understand product direction. Be bold. The goal is visible, meaningful progress every cycle.**
 
-_Override:_ STOP
+_Override:_ CONTINUE
 
 **How enforcement works:** Hooks and the watchdog enforce what must not be skipped. This file guides decisions that require judgment. If Override says STOP, exit cleanly.
 
