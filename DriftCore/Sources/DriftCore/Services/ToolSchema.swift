@@ -146,18 +146,10 @@ public final class ToolRegistry {
         Array(tools.values)
     }
 
-    /// Tools relevant to a screen (food screen → food tools first, etc.)
+    /// Tools relevant to a screen (food screen → food tools first, etc.).
+    /// Screen→service mapping lives on `AIScreen.serviceName` — single source of truth.
     public func toolsForScreen(_ screen: String) -> [ToolSchema] {
-        let screenService: String? = switch screen {
-        case "food": "food"
-        case "weight", "goal": "weight"
-        case "exercise": "exercise"
-        case "bodyRhythm": "sleep"
-        case "supplements": "supplement"
-        case "glucose": "glucose"
-        case "biomarkers": "biomarker"
-        default: nil
-        }
+        let screenService = AIScreen(rawValue: screen)?.serviceName
         let sorted = tools.values.sorted { a, b in
             if a.service == screenService && b.service != screenService { return true }
             if a.service != screenService && b.service == screenService { return false }

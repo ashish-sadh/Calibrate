@@ -270,7 +270,6 @@
 		F9B44B0CA0EB70D90AFF6AA0 /* LlamaCppBackend.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7392F1C1953721F1AD362662 /* LlamaCppBackend.swift */; };
 		FB1D2AF65F10F935076969F6 /* LocalAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5ABF9F3D40318CC0238A796 /* LocalAIService.swift */; };
 		FC725819F735636B40300619 /* NutritionOCRTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1575030FD9A7BEF5BC9E0612 /* NutritionOCRTests.swift */; };
-		FD04469D134154054159AA4C /* ToolRanker.swift in Sources */ = {isa = PBXBuildFile; fileRef = A81CB6F88CC852F18E7809C8 /* ToolRanker.swift */; };
 		FD8D0C6963EAD881D678A148 /* AIModelManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30537026EE533EE546180AB3 /* AIModelManagerTests.swift */; };
 		FE2EC2B62CB693DA85CD1544 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD2565511DFA43570D0CE9EA /* DashboardView.swift */; };
 		FEF6119337EB90E188499D3B /* PhotoLogFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7E7A1FEC035003AE448E5C65 /* PhotoLogFlowView.swift */; };
@@ -508,7 +507,6 @@
 		A411F4544692EA6196F07C9C /* MacroRingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroRingsView.swift; sourceTree = "<group>"; };
 		A434AE755701CCB89A111516 /* PipelineE2EEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelineE2EEval.swift; sourceTree = "<group>"; };
 		A4BC95967D2043D701CA63AB /* BodyCompEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyCompEntryView.swift; sourceTree = "<group>"; };
-		A81CB6F88CC852F18E7809C8 /* ToolRanker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolRanker.swift; sourceTree = "<group>"; };
 		A835CA7572E629657044C111 /* PhotoLogServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLogServiceTests.swift; sourceTree = "<group>"; };
 		AAC05282764E0169FEFB3D88 /* PhotoLogTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLogTool.swift; sourceTree = "<group>"; };
 		AB2998A31AEC29094C6F4062 /* WorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutView.swift; sourceTree = "<group>"; };
@@ -1097,7 +1095,6 @@
 				0F915E1ECAEF188959934E07 /* StaticOverrides.swift */,
 				2D4B47196E8598EB15359D7C /* SupplementService.swift */,
 				BC5309A92CB03534993AE5E9 /* TDEEEstimator.swift */,
-				A81CB6F88CC852F18E7809C8 /* ToolRanker.swift */,
 				7F42EA4B9416215EFE670984 /* ToolRegistration.swift */,
 				C170D4FEDFB68CA8A61E1D03 /* ToolSchema.swift */,
 				1EEA23E4C1755C342030C667 /* USDAFoodService.swift */,
@@ -1494,7 +1491,6 @@
 				F1E4DA4DB8A18FEE2C6A4413 /* TDEEEstimator.swift in Sources */,
 				EE6A23C25BA80D02C16DFC47 /* TemplatePreviewSheet.swift in Sources */,
 				5F4476C2F1B7DC3E662A1DBC /* Theme.swift in Sources */,
-				FD04469D134154054159AA4C /* ToolRanker.swift in Sources */,
 				1CCD2D031DB1C7F7BB7E52EF /* ToolRegistration.swift in Sources */,
 				7430C66B3A1C306F1199C3FA /* ToolSchema.swift in Sources */,
 				07703998EC9E02AD418576E8 /* TypingDotsView.swift in Sources */,

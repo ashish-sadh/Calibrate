@@ -9,7 +9,63 @@ import XCTest
 /// Run on macOS with: `cd DriftCore && swift test`.
 final class FoodLoggingGoldSetTests: XCTestCase {
 
+    override func setUp() {
+        super.setUp()
+        MainActor.assumeIsolated {
+            registerStubToolsIfNeeded()
+        }
+    }
+
+    /// Register tool stubs so `ToolRanker` can score and rank against them.
+    /// Handlers are no-ops — these tests don't execute tools, only test ranking.
+    @MainActor
+    private func registerStubToolsIfNeeded() {
+        guard ToolRegistry.shared.allTools().isEmpty else { return }
+        let stubHandler: @MainActor (ToolCallParams) async -> ToolResult = { _ in .text("") }
+
+        let toolToService: [(String, String)] = [
+            ("log_food", "food"), ("food_info", "food"),
+            ("copy_yesterday", "food"), ("delete_food", "food"),
+            ("explain_calories", "food"),
+            ("log_weight", "weight"), ("weight_info", "weight"), ("set_goal", "weight"),
+            ("start_workout", "exercise"), ("exercise_info", "exercise"),
+            ("log_activity", "exercise"),
+            ("sleep_recovery", "sleep"),
+            ("supplements", "supplement"), ("mark_supplement", "supplement"),
+            ("add_supplement", "supplement"),
+            ("glucose", "glucose"),
+            ("biomarkers", "biomarker"),
+            ("body_comp", "body_comp"), ("log_body_comp", "body_comp"),
+        ]
+
+        for (name, service) in toolToService {
+            ToolRegistry.shared.register(ToolSchema(
+                id: "stub.\(name)",
+                name: name,
+                service: service,
+                description: "Stub \(name)",
+                parameters: [],
+                handler: stubHandler
+            ))
+        }
+    }
+
     // MARK: - Domain Detection Helpers
+
+    @MainActor
+    private func ranksLogFood(_ query: String, screen: AIScreen = .food) -> Bool {
+        let normalized = InputNormalizer.normalize(query).lowercased()
+        let tools = ToolRanker.rank(query: normalized, screen: screen)
+        return tools.first?.name == "log_food"
+    }
+
+    @MainActor
+    private func detectsHealthIntent(_ query: String, screen: AIScreen) -> Bool {
+        let normalized = InputNormalizer.normalize(query).lowercased()
+        let tools = ToolRanker.rank(query: normalized, screen: screen)
+        let healthTools: Set<String> = ["sleep_recovery", "mark_supplement", "glucose", "biomarkers", "body_comp"]
+        return healthTools.contains(tools.first?.name ?? "")
+    }
 
     private func detectsFoodIntent(_ query: String) -> Bool {
         let normalized = InputNormalizer.normalize(query).lowercased()
@@ -368,6 +424,51 @@ final class FoodLoggingGoldSetTests: XCTestCase {
         XCTAssertNotNil(result)
         XCTAssertEqual(result?.tool, "log_food")
         XCTAssertEqual(result?.params["name"], "roti")
+    }
+
+    // MARK: - Normalizer + ToolRanker Integration
+
+    @MainActor
+    func testNormalizerImprovesToolRanking() {
+        let queries = [
+            "umm I had 2 eggs",
+            "so I ate some rice",
+            "ok so log chicken breast",
+            "well I had a banana",
+            "I had I had some toast",
+        ]
+        var correct = 0
+        for query in queries {
+            if ranksLogFood(query) { correct += 1 }
+            else {
+                let normalized = InputNormalizer.normalize(query).lowercased()
+                let tools = ToolRanker.rank(query: normalized, screen: .food)
+                print("WRONG RANK (normalized): '\(query)' → '\(normalized)' → \(tools.first?.name ?? "nil")")
+            }
+        }
+        print("📊 Normalizer+ToolRanker food routing: \(correct)/\(queries.count)")
+        XCTAssertGreaterThanOrEqual(correct, queries.count - 1)
+    }
+
+    // MARK: - Health Intent Detection
+
+    @MainActor
+    func testHealthIntents() {
+        let healthQueries: [(String, AIScreen)] = [
+            ("how'd I sleep", .bodyRhythm),
+            ("sleep quality this week", .bodyRhythm),
+            ("took my creatine", .supplements),
+            ("took vitamin d", .supplements),
+            ("any glucose spikes", .glucose),
+            ("how's my body fat", .bodyComposition),
+        ]
+        var detected = 0
+        for (query, screen) in healthQueries {
+            if detectsHealthIntent(query, screen: screen) { detected += 1 }
+            else { print("MISS (health): '\(query)'") }
+        }
+        print("📊 Health intent detection: \(detected)/\(healthQueries.count)")
+        XCTAssertGreaterThanOrEqual(detected, healthQueries.count - 1)
     }
 
     // MARK: - Voice-Style Cross-Domain

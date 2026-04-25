@@ -1,17 +1,16 @@
 import Foundation
-import DriftCore
 
 // MARK: - Tool Ranker
 
 /// Lightweight keyword-based tool ranking. Scores each tool against the query,
 /// returns top N relevant tools for the LLM prompt. Keeps token budget tight.
 @MainActor
-enum ToolRanker {
+public enum ToolRanker {
 
     // MARK: - Public API
 
     /// Score and return the top N tools most relevant to the query.
-    static func rank(query: String, screen: AIScreen, topN: Int = 4) -> [ToolSchema] {
+    public static func rank(query: String, screen: AIScreen, topN: Int = 4) -> [ToolSchema] {
         let lower = query.lowercased()
         let words = Set(lower.split(separator: " ").map(String.init))
         let intent = classifyIntent(lower, words: words)
@@ -19,47 +18,16 @@ enum ToolRanker {
         var scores: [(tool: ToolSchema, score: Float)] = []
         for tool in ToolRegistry.shared.allTools() {
             guard let profile = profiles[tool.name] else { continue }
-            var score: Float = 0
-
-            // Keyword triggers
-            for (keyword, weight) in profile.triggers {
-                if keyword.contains(" ") {
-                    // Multi-word phrase: substring match
-                    if lower.contains(keyword) { score += weight }
-                } else {
-                    // Single word: exact word match
-                    if words.contains(keyword) { score += weight }
-                }
-            }
-
-            // Intent affinity
-            switch intent {
-            case .log:  score += profile.logBoost
-            case .query: score += profile.queryBoost
-            case .chat: break
-            }
-
-            // Screen affinity
-            if let screenBoost = profile.screens[screen] {
-                score += screenBoost
-            }
-
-            // Anti-keywords suppress
-            for anti in profile.antiKeywords {
-                if words.contains(anti) { score -= 1.5 }
-            }
-
+            let score = scoreProfile(profile, query: lower, words: words, intent: intent, screen: screen)
             if score > 0 { scores.append((tool, score)) }
         }
 
-        // Sort by score descending
         scores.sort { $0.score > $1.score }
         var result = scores.prefix(topN).map(\.tool)
 
         // Pad with screen defaults if too few matches
         if result.count < 2 {
-            let defaults = screenDefaults(screen)
-            for name in defaults where result.count < 2 {
+            for name in screen.defaultTools where result.count < 2 {
                 if let tool = ToolRegistry.shared.tool(named: name),
                    !result.contains(where: { $0.name == name }) {
                     result.append(tool)
@@ -72,7 +40,7 @@ enum ToolRanker {
 
     /// Tiny extraction prompt (~100 tokens). LLM just maps query → tool call JSON.
     /// No context, no history, no examples — pure normalization.
-    static func quickExtractPrompt(query: String, screen: AIScreen) -> (system: String, user: String) {
+    public static func quickExtractPrompt(query: String, screen: AIScreen) -> (system: String, user: String) {
         let tools = rank(query: query, screen: screen, topN: 3)
         let toolLines = tools.map { t in
             let params = t.parameters.map { "\($0.name):\($0.type)" }.joined(separator: ", ")
@@ -88,18 +56,9 @@ enum ToolRanker {
         return (system, query)
     }
 
-    // MARK: - Universal Query Normalizer
-
-    /// Ultra-compact normalizer prompt (~100 tokens). LLM rewrites messy natural language
-    /// into clean command form that existing Swift parsers/rules can handle.
-    /// Covers ALL domains: food, weight, exercise, supplements, sleep, etc.
-    // Normalizer removed — merged into IntentClassifier prompt (one LLM call instead of two)
-
-    // MARK: - Rule-Based Tool Picker
-
     /// Try to pick a tool purely from keyword rules. Returns a ToolCall if confident.
     /// High confidence = top tool scores well AND clear gap from #2.
-    static func tryRulePick(query: String, screen: AIScreen) -> ToolCall? {
+    public static func tryRulePick(query: String, screen: AIScreen) -> ToolCall? {
         let lower = query.lowercased()
         let words = Set(lower.split(separator: " ").map(String.init))
         let intent = classifyIntent(lower, words: words)
@@ -107,10 +66,8 @@ enum ToolRanker {
         let ranked = rank(query: lower, screen: screen, topN: 2)
         guard let top = ranked.first, let topProfile = profiles[top.name] else { return nil }
 
-        // Score top tool
         let topScore = scoreProfile(topProfile, query: lower, words: words, intent: intent, screen: screen)
 
-        // Score second tool (if any)
         var secondScore: Float = 0
         if ranked.count > 1, let secondProfile = profiles[ranked[1].name] {
             secondScore = scoreProfile(secondProfile, query: lower, words: words, intent: intent, screen: screen)
@@ -119,7 +76,6 @@ enum ToolRanker {
         // Need high confidence: score ≥ 4.0 and clear gap ≥ 2.0 from runner-up
         guard topScore >= 4.0, topScore - secondScore >= 2.0 else { return nil }
 
-        // Build params from query for the matched tool
         let params = extractParamsForTool(top, from: query)
         return ToolCall(tool: top.name, params: ToolCallParams(values: params))
     }
@@ -148,21 +104,19 @@ enum ToolRanker {
     }
 
     /// Extract minimal params from the query for a tool.
-    static func extractParamsForTool(_ tool: ToolSchema, from query: String) -> [String: String] {
+    public static func extractParamsForTool(_ tool: ToolSchema, from query: String) -> [String: String] {
         var params: [String: String] = [:]
         let lower = query.lowercased()
 
         switch tool.name {
         case "log_food":
-            // Try to extract food name + amount from the query
             if let intent = AIActionExecutor.parseFoodIntent(lower) {
                 params["name"] = intent.query
                 if let s = intent.servings { params["amount"] = "\(s)" }
             } else {
-                params["name"] = lower // pass through for tool's preHook to handle
+                params["name"] = lower
             }
         case "start_workout":
-            // Extract muscle group or template name — strip intent prefixes
             var stripped = lower
             let workoutPrefixes = ["i want to work on ", "i want to train ", "i want to do ",
                                     "i wanna do ", "i wanna train ", "work on ", "train ",
@@ -210,7 +164,6 @@ enum ToolRanker {
                 }
             }
         case "food_info":
-            // Pass macro focus if asking about specific macro, or raw query for context
             if lower.contains("protein") { params["query"] = "protein" }
             else if lower.contains("carb") { params["query"] = "carbs" }
             else if lower.contains("fat") && !lower.contains("body fat") { params["query"] = "fat" }
@@ -223,19 +176,18 @@ enum ToolRanker {
         case "exercise_info":
             params["query"] = lower
         case "sleep_recovery":
-            // Pass period context for weekly queries
             if lower.contains("week") || lower.contains("trend") || lower.contains("last") {
                 params["period"] = "week"
             }
         default:
-            break // Many tools take no params (weight_info, sleep_recovery, etc.)
+            break
         }
 
         return params
     }
 
     /// Full prompt with context for questions that need data. (~1000 tokens)
-    static func buildPrompt(
+    public static func buildPrompt(
         query: String, screen: AIScreen, context: String, history: String
     ) -> (system: String, user: String) {
         let tools = rank(query: query, screen: screen, topN: 4)
@@ -258,8 +210,7 @@ enum ToolRanker {
         \(toolLines.joined(separator: "\n"))
         """
 
-        // User message: context (truncated) + history (truncated) + query
-        let truncatedContext = AIContextBuilder.truncateToFit(context, maxTokens: 500)
+        let truncatedContext = PromptUtils.truncateToFit(context, maxTokens: 500)
         let truncatedHistory = String(history.prefix(600))
 
         var userParts: [String] = []
@@ -272,7 +223,7 @@ enum ToolRanker {
 
     // MARK: - Intent Classification
 
-    enum Intent { case log, query, chat }
+    public enum Intent { case log, query, chat }
 
     private static func classifyIntent(_ lower: String, words: Set<String>) -> Intent {
         let logVerbs: Set<String> = ["ate", "had", "log", "add", "took", "did", "went",
@@ -282,7 +233,6 @@ enum ToolRanker {
         let queryWords: Set<String> = ["how", "what", "show", "calories", "much", "many",
                                         "trend", "progress", "status", "summary", "left"]
 
-        // Check log phrases first (higher signal)
         for phrase in logPhrases {
             if lower.contains(phrase) { return .log }
         }
@@ -292,30 +242,14 @@ enum ToolRanker {
         return .chat
     }
 
-    // MARK: - Screen Defaults
-
-    private static func screenDefaults(_ screen: AIScreen) -> [String] {
-        switch screen {
-        case .food:            return ["log_food", "food_info"]
-        case .weight, .goal:   return ["weight_info", "log_weight"]
-        case .exercise:        return ["start_workout", "exercise_info"]
-        case .bodyRhythm:      return ["sleep_recovery"]
-        case .supplements:     return ["supplements", "mark_supplement"]
-        case .glucose:         return ["glucose"]
-        case .biomarkers:      return ["biomarkers"]
-        case .bodyComposition: return ["body_comp"]
-        default:               return ["food_info", "weight_info"]
-        }
-    }
-
     // MARK: - Tool Profiles
 
     private struct ToolProfile {
-        let triggers: [(String, Float)]     // keyword/phrase → weight
-        let logBoost: Float                 // bonus when intent is LOG
-        let queryBoost: Float               // bonus when intent is QUERY
-        let screens: [AIScreen: Float]      // screen → affinity bonus
-        let antiKeywords: Set<String>       // words that suppress this tool
+        let triggers: [(String, Float)]
+        let logBoost: Float
+        let queryBoost: Float
+        let screens: [AIScreen: Float]
+        let antiKeywords: Set<String>
     }
 
     // swiftlint:disable function_body_length
@@ -333,7 +267,6 @@ enum ToolRanker {
                        ("protein shake", 3.5), ("protein bar", 3),
                        ("breakfast", 1), ("lunch", 1), ("dinner", 1), ("snack", 1)],
             logBoost: 2, queryBoost: -1,
-            // Slightly higher food-screen boost than food_info so bare food names default to log
             screens: [.food: 0.6, .dashboard: 0.3],
             antiKeywords: ["sleep", "supplement", "weight", "weigh", "how", "what", "calories in", "healthy"]
         )
