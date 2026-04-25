@@ -1,22 +1,20 @@
 import Foundation
-import DriftCore
 
 /// Unified weight service — used by both UI views and AI tool calls.
 /// Wraps AppDatabase weight methods + WeightTrendCalculator.
 @MainActor
-enum WeightServiceAPI {
+public enum WeightServiceAPI {
 
     // MARK: - Log
 
     /// Log a weight entry. Returns the saved entry.
-    static func logWeight(value: Double, unit: String) -> WeightEntry? {
+    public static func logWeight(value: Double, unit: String) -> WeightEntry? {
         let kg = unit.lowercased().hasPrefix("kg") ? value : value / 2.20462
         guard kg > 10 && kg < 300 else { return nil } // Sanity check
         var entry = WeightEntry(date: DateFormatters.todayString, weightKg: kg, source: "manual")
         do {
             try AppDatabase.shared.saveWeightEntry(&entry)
-            // Cross-domain pronoun pointer — powers "am I under goal" after
-            // a weight log. #241.
+            // Cross-domain pronoun pointer — powers "am I under goal" after a weight log. #241.
             let formatted = value == value.rounded() ? "\(Int(value))" : String(format: "%.1f", value)
             ConversationState.shared.recordLastEntry(
                 domain: .weight,
@@ -30,29 +28,25 @@ enum WeightServiceAPI {
 
     // MARK: - Body Composition
 
-    /// Fetch the latest body composition entry.
-    static func latestBodyComposition() -> BodyComposition? {
+    public static func latestBodyComposition() -> BodyComposition? {
         try? AppDatabase.shared.fetchLatestBodyComposition()
     }
 
-    /// Save a body composition entry.
-    static func saveBodyComposition(_ entry: inout BodyComposition) {
+    public static func saveBodyComposition(_ entry: inout BodyComposition) {
         try? AppDatabase.shared.saveBodyComposition(&entry)
     }
 
     /// Save a weight entry directly (when caller handles unit conversion).
-    static func saveWeightEntry(_ entry: inout WeightEntry) {
+    public static func saveWeightEntry(_ entry: inout WeightEntry) {
         try? AppDatabase.shared.saveWeightEntry(&entry)
     }
 
-    /// Fetch all body composition entries.
-    static func fetchBodyComposition() -> [BodyComposition] {
+    public static func fetchBodyComposition() -> [BodyComposition] {
         (try? AppDatabase.shared.fetchBodyComposition()) ?? []
     }
 
-    // MARK: - Trend
+    // MARK: - Trend (internal — exposed via describeTrend)
 
-    /// Get current weight trend: current weight, weekly rate, direction, changes.
     static func getTrend() -> WeightTrendInfo? {
         let service = WeightTrendService.shared
         guard let trend = service.trend, !service.isStale else { return nil }
@@ -73,8 +67,7 @@ enum WeightServiceAPI {
 
     // MARK: - History
 
-    /// Get recent weight entries.
-    static func getHistory(days: Int = 30) -> [WeightEntry] {
+    public static func getHistory(days: Int = 30) -> [WeightEntry] {
         guard let entries = try? AppDatabase.shared.fetchWeightEntries() else { return [] }
         if days >= 365 { return entries }
         guard let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date()) else { return entries }
@@ -82,9 +75,8 @@ enum WeightServiceAPI {
         return entries.filter { $0.date >= cutoffStr }
     }
 
-    // MARK: - Goal
+    // MARK: - Goal (internal — only used by describeTrend / future iOS code)
 
-    /// Get goal progress: target, current, % done, projection.
     static func getGoalProgress() -> GoalProgressInfo? {
         guard let goal = WeightGoal.load(),
               let entries = try? AppDatabase.shared.fetchWeightEntries(),
@@ -101,7 +93,7 @@ enum WeightServiceAPI {
     }
 
     /// Natural language description of weight trend.
-    static func describeTrend() -> String {
+    public static func describeTrend() -> String {
         guard let trend = getTrend() else { return "No weight data yet." }
         var lines: [String] = []
         lines.append("Current: \(String(format: "%.1f", trend.currentWeight))\(trend.unit)")
@@ -119,7 +111,7 @@ enum WeightServiceAPI {
     }
 }
 
-// MARK: - Data Types
+// MARK: - Internal Data Types (only consumed within DriftCore)
 
 struct WeightTrendInfo: Sendable {
     let currentWeight: Double
