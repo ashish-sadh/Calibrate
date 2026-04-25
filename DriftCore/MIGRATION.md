@@ -2,6 +2,32 @@
 
 Goal: extract a multi-platform `DriftCore` Swift Package so the heavy regression and LLM-eval tests run on macOS without the iOS Simulator. The Drift iOS app keeps everything platform-bound (UIKit, SwiftUI, HealthKit live integration).
 
+## Status — 2026-04-25 (after Plan A iter 1 — LLM eval on macOS)
+
+**Both prizes delivered.** macOS now runs:
+
+| Suite | macOS time | iOS Simulator (prior) | Speedup |
+|---|---|---|---|
+| `cd DriftCore && swift test` (26 gold-set tests) | **0.012s** warm / 4.3s cold | ~8 min | **~700x** warm |
+| `xcodebuild test -scheme DriftLLMEvalMacOS` (57 IntentRoutingEval tests, real Gemma 4 inference) | **5m 15s** wall | ~30 min | **~6x** |
+| `xcodebuild test -scheme DriftLLMEvalMacOS -only-testing:NormalizerEval` (22 deterministic) | **6s** wall | ~5 min | **~50x** |
+
+The LLM eval on macOS uses native Apple Silicon llama.cpp from `Frameworks/llama.xcframework/macos-arm64/`. The 57-test routing eval surfaced 26 real LLM regressions, separable from infrastructure noise.
+
+### Scope completed in Plan A iter 1
+- Moved `ToolRanker` (rank, quickExtractPrompt, tryRulePick, extractParamsForTool, buildPrompt) to Core. Pure logic, only depended on already-Core types.
+- Added `PromptUtils.truncateToFit` / `estimateTokens` (Core).
+- **Dedup #1:** Screen→service mapping was duplicated 3x across `ToolRegistry.toolsForScreen`, `ToolRanker.screenDefaults`, and (in iOS) `AIChainOfThought.execute`. Consolidated onto `AIScreen.serviceName` + `AIScreen.defaultTools` extensions.
+- **Dedup #2:** Food-verb prefix stripping was duplicated between `parseFoodIntent` and `parseMultiFoodIntent` (3 identical constant lists + same strip sequence). Extracted `stripFoodLead(_:)` private helper.
+- Fixed `Frameworks/llama.xcframework/macos-arm64/llama.framework/llama` install_name (was hard-coded to `/tmp/llama-src/...`) and re-codesigned ad-hoc; iOS slice unaffected.
+- Bulk-added `import DriftCore` to 18 `DriftLLMEvalMacOS/` test files.
+
+### What's still iOS-only (and not blocking the AI iteration loop)
+- **4 gold-set tests** that need `StaticOverrides` + full `ToolRegistration`: `testExerciseIntents`, `testNavigationIntents`, `testVoiceExerciseLogging`, `testGoldSetSummary`. Worth doing only if you actually iterate on StaticOverrides/exercise routing.
+- ~25 service files (Food/Workout/Exercise/Supplement/Glucose/Biomarker/DEXA/Weight/TDEE/AIDataCache/ConversationState/AppDatabase + Database/) — moving them to Core is architectural cleanup, not a user-visible win since macOS test runs already work.
+- Real protocol shims for `HealthDataProvider` + `WidgetRefresher` only become necessary if/when the above services move (and only those services touch HealthKit/Widget directly).
+- **Dedup #3** (domain-keyword classification across `AIChainOfThought.plan` / `ToolRanker.profiles` / `StaticOverrides`) — call sites have different concerns (broad context fetch vs scored ranking vs pattern match); unifying would lose information. Skipping.
+
 ## Status — 2026-04-25 (after Plan B — gold-set on macOS)
 
 **Plan B delivered:** 24 of 26 gold-set tests now run on macOS in **0.019s** (24/26 ≈ 92%; remaining 2 need StaticOverrides + ToolRanker + ToolRegistration).
