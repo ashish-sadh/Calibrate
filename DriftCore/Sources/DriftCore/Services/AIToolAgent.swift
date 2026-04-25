@@ -4,19 +4,20 @@ import DriftCore
 // MARK: - Agent Output
 
 /// What the agent returns to AIChatView.
-struct AgentOutput: Sendable {
-    let text: String                  // User-facing message
-    let action: ToolAction?           // Optional UI action (open sheet, etc.)
-    let toolsCalled: [String]         // For debugging/logging
-    /// Present when the agent stopped on a genuinely-ambiguous input and
-    /// the user must pick one of the offered options before we proceed.
-    /// The VM attaches these as tappable chips and sets
-    /// `ConversationState.phase = .awaitingClarification(options:)`. #226.
-    var clarificationOptions: [ClarificationOption]? = nil
-    /// True when the pipeline produced a non-clarifying, non-timeout failure
-    /// (tool handler returned `.error`, or the LLM fell back after empty/
-    /// low-quality/hallucinated output). Drives telemetry `.failed` outcome. #281.
-    var didFail: Bool = false
+public struct AgentOutput: Sendable {
+    public let text: String                  // User-facing message
+    public let action: ToolAction?           // Optional UI action (open sheet, etc.)
+    public let toolsCalled: [String]         // For debugging/logging
+    public var clarificationOptions: [ClarificationOption]? = nil
+    public var didFail: Bool = false
+
+    public init(text: String, action: ToolAction?, toolsCalled: [String], clarificationOptions: [ClarificationOption]? = nil, didFail: Bool = false) {
+        self.text = text
+        self.action = action
+        self.toolsCalled = toolsCalled
+        self.clarificationOptions = clarificationOptions
+        self.didFail = didFail
+    }
 }
 
 // MARK: - AI Tool Agent
@@ -29,7 +30,7 @@ struct AgentOutput: Sendable {
 /// All LLM calls have a 20s timeout.
 /// Token budget: 4096 context, ~3300 max prompt, 256 max generation.
 @MainActor
-enum AIToolAgent {
+public enum AIToolAgent {
 
     private static let llmTimeout: UInt64 = 20_000_000_000 // 20 seconds in nanoseconds
 
@@ -90,7 +91,7 @@ enum AIToolAgent {
 
     // MARK: - Main Entry Point (Tiered)
 
-    static func run(
+    public static func run(
         message: String,
         screen: AIScreen,
         history: String,

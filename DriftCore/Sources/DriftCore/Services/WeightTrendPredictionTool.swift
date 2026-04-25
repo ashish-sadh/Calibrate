@@ -2,7 +2,7 @@ import Foundation
 import DriftCore
 
 @MainActor
-enum WeightTrendPredictionTool {
+public enum WeightTrendPredictionTool {
 
     nonisolated static let toolName = "weight_trend_prediction"
 
@@ -30,7 +30,7 @@ enum WeightTrendPredictionTool {
 
     // MARK: - Entry point
 
-    static func run() -> String {
+    public static func run() -> String {
         guard let goal = WeightGoal.load() else {
             return "Set a goal weight first — try 'set my goal to 75 kg' and I'll project when you'll get there."
         }

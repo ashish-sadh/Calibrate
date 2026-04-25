@@ -1,9 +1,8 @@
 import Foundation
-import DriftCore
 
 // MARK: - Navigation Notifications
 
-extension Notification.Name {
+public extension Notification.Name {
     static let navigateToTab = Notification.Name("drift.navigateToTab")
     static let saveConversationState = Notification.Name("drift.saveConversationState")
 }
@@ -14,7 +13,7 @@ extension Notification.Name {
 extension ToolRegistry {
     /// Execute a tool call by name. Runs pre-hook → validation → handler → post-hook.
     /// Lives in Drift (not DriftCore) because it touches `ConversationState.shared`.
-    func execute(_ call: ToolCall) async -> ToolResult {
+    public func execute(_ call: ToolCall) async -> ToolResult {
         guard let tool = self.tool(named: call.tool) else {
             return .error("Unknown tool: \(call.tool)")
         }

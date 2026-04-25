@@ -1,29 +1,19 @@
 import Foundation
-import DriftCore
-
-// MARK: - Screen Tracking
-
-/// Tracks which screen the user is currently viewing for context-aware AI responses.
-@MainActor @Observable
-final class AIScreenTracker {
-    static let shared = AIScreenTracker()
-    var currentScreen: AIScreen = .dashboard
-}
 
 // MARK: - Chain of Thought
 
 /// Multi-step reasoning: classifies queries, fetches relevant data, then calls LLM once with enriched context.
 @MainActor
-enum AIChainOfThought {
+public enum AIChainOfThought {
 
-    struct Step {
+    public struct Step {
         let label: String
         let fetch: () -> String
     }
 
     /// Determine if a query needs multi-step data fetching before answering.
     /// Returns nil for simple queries that can go straight to LLM.
-    static func plan(query: String, screen: AIScreen) -> [Step]? {
+    public static func plan(query: String, screen: AIScreen) -> [Step]? {
         let q = query.lowercased().trimmingCharacters(in: .punctuationCharacters).trimmingCharacters(in: .whitespaces)
         var steps: [Step] = []
 
@@ -211,7 +201,7 @@ enum AIChainOfThought {
     }
 
     /// Execute chain: run steps to gather data, build enriched context, call LLM with streaming.
-    static func execute(
+    public static func execute(
         query: String,
         screen: AIScreen,
         history: String,

@@ -4,9 +4,9 @@ import DriftCore
 /// Registers all service tools in the ToolRegistry.
 /// Called once at app startup.
 @MainActor
-enum ToolRegistration {
+public enum ToolRegistration {
 
-    static func registerAll() {
+    public static func registerAll() {
         let r = ToolRegistry.shared
 
         // MARK: - Food Tools (3 — consolidated from 7)
@@ -523,7 +523,7 @@ enum ToolRegistration {
                 // General workout info: suggestion + history + streak
                 var lines: [String] = [ExerciseService.suggestWorkout()]
                 // Recent workouts from HealthKit
-                if let recent = try? await HealthKitService.shared.fetchRecentWorkouts(days: 7), !recent.isEmpty {
+                if let hk = DriftPlatform.health, let recent = try? await hk.fetchRecentWorkouts(days: 7), !recent.isEmpty {
                     lines.append("Recent workouts:")
                     for w in recent.prefix(5) {
                         let dur = Int(w.duration / 60)
@@ -607,7 +607,7 @@ enum ToolRegistration {
                 // Weekly sleep trend from HealthKit
                 let period = params.string("period")?.lowercased() ?? ""
                 if period.contains("week") || period.contains("last") {
-                    if let recent = try? await HealthKitService.shared.fetchRecentSleepData(days: 7), !recent.isEmpty {
+                    if let hk = DriftPlatform.health, let recent = try? await hk.fetchRecentSleepData(days: 7), !recent.isEmpty {
                         let avgHours = recent.map(\.hours).reduce(0, +) / Double(recent.count)
                         lines.append("Last 7 days avg: \(String(format: "%.1f", avgHours))h sleep (\(recent.count) nights tracked)")
                     }
@@ -726,9 +726,8 @@ enum ToolRegistration {
         // OLS regression on last 30 days → projected date + R² confidence. #402.
         WeightTrendPredictionTool.syncRegistration(registry: r)
 
-        // MARK: - Conditional Tools
-        // Photo Log is gated on the beta flag AND a stored cloud-vision key.
-        // Keeping this last so the gated call is the single conditional hop.
-        PhotoLogTool.syncRegistration(registry: r)
+        // PhotoLog tool is registered separately by the iOS Drift app
+        // after this base registration runs (it depends on iOS-only
+        // CloudVision / Keychain).
     }
 }

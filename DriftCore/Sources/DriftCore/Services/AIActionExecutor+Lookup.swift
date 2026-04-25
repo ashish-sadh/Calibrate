@@ -1,5 +1,4 @@
 import Foundation
-import DriftCore
 
 /// iOS-only side of AIActionExecutor — DB lookup + LLM-assisted normalization.
 /// Pure parsing methods live in DriftCore (`AIActionExecutor` enum).

@@ -13,7 +13,7 @@ import DriftCore
 ///   answer with a graceful "not yet supported" line — HealthKit historical
 ///   fetches are async and out of scope for v1. #317.
 @MainActor
-enum CrossDomainInsightTool {
+public enum CrossDomainInsightTool {
 
     nonisolated static let toolName = "cross_domain_insight"
 
@@ -59,7 +59,7 @@ enum CrossDomainInsightTool {
     /// Main analyzer. Returns a formatted user-facing line. Testable by
     /// seeding the DB — the pure correlation math is exposed below for
     /// direct unit tests.
-    static func run(metricA: String, metricB: String, windowDays: Int) -> String {
+    public static func run(metricA: String, metricB: String, windowDays: Int) -> String {
         guard !metricA.isEmpty, !metricB.isEmpty else {
             return "Tell me which two metrics to compare — e.g. 'weight vs workout_volume' or 'glucose vs carbs'."
         }

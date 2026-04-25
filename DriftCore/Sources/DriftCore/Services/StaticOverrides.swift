@@ -4,7 +4,7 @@ import DriftCore
 // MARK: - Static Override Result
 
 /// Result of a static override match — tells AIChatView what to do without hitting the LLM.
-enum StaticResult: Sendable {
+public enum StaticResult: Sendable {
     case response(String)                    // Show this text directly
     case toolCall(ToolCall)                  // Execute this tool directly
     case uiAction(ToolAction, String?)       // Open a sheet/navigate + optional message
@@ -34,10 +34,10 @@ enum StaticResult: Sendable {
 ///
 /// Audit result: 0 rules removed. All rules serve a purpose distinct from LLM routing.
 @MainActor
-enum StaticOverrides {
+public enum StaticOverrides {
 
     /// Returns a static result if the query matches, nil to fall through to AIToolAgent.
-    static func match(_ query: String) -> StaticResult? {
+    public static func match(_ query: String) -> StaticResult? {
         let lower = query.lowercased()
 
         // --- Universal overrides (both models) ---
@@ -105,7 +105,7 @@ enum StaticOverrides {
                     case .foodLogged(let entryId, let name, let cal):
                         do {
                             try AppDatabase.shared.deleteFoodEntry(id: entryId)
-                            WidgetDataProvider.refreshWidgetData()
+                            DriftPlatform.widget?.refresh()
                             return "Undone: removed \(name) (\(Int(cal)) cal)."
                         } catch { return "Couldn't undo — try again." }
                     case .weightLogged(let entryId, let value):
@@ -133,7 +133,7 @@ enum StaticOverrides {
                 }
                 do {
                     try AppDatabase.shared.deleteFoodEntry(id: id)
-                    WidgetDataProvider.refreshWidgetData()
+                    DriftPlatform.widget?.refresh()
                     return "Undone: removed \(last.foodName) (\(Int(last.calories * last.servings)) cal)."
                 } catch {
                     return "Couldn't undo — try again."
@@ -172,7 +172,7 @@ enum StaticOverrides {
                     }
                     do {
                         try AppDatabase.shared.deleteFoodEntry(id: id)
-                        WidgetDataProvider.refreshWidgetData()
+                        DriftPlatform.widget?.refresh()
                         return "Deleted \(last.foodName) (\(Int(last.calories * last.servings)) cal)."
                     } catch {
                         return "Couldn't delete \(last.foodName) — try again."
@@ -192,7 +192,7 @@ enum StaticOverrides {
                        let id = match.id {
                         do {
                             try AppDatabase.shared.deleteFoodEntry(id: id)
-                            WidgetDataProvider.refreshWidgetData()
+                            DriftPlatform.widget?.refresh()
                             return "Deleted \(match.foodName) (\(Int(match.calories * match.servings)) cal)."
                         } catch {
                             return "Couldn't delete \(match.foodName) — try again."
@@ -465,7 +465,7 @@ enum StaticOverrides {
 
     /// Detect structured workout exercise patterns: "3x10", "3 sets of 10", "@135", "at 135 lbs".
     /// Used to skip activity-confirmation flow and route to proper exercise logging pipeline.
-    static func containsWorkoutSetPattern(_ text: String) -> Bool {
+    public static func containsWorkoutSetPattern(_ text: String) -> Bool {
         let lower = text.lowercased()
         return lower.range(of: #"\d+x\d+"#, options: .regularExpression) != nil               // "3x10", "4x8"
             || lower.range(of: #"\d+\s+sets?\s+(?:of\s+)?\d+"#, options: .regularExpression) != nil // "3 sets of 10"

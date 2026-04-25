@@ -1,5 +1,4 @@
 import Foundation
-import DriftCore
 
 /// iOS-side IntentClassifier methods that touch ConversationState / LocalAIService.
 /// Pure parsing + composition lives in DriftCore (`IntentClassifier` enum).
