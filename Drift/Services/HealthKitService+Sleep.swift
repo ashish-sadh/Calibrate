@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 import HealthKit
 
 // MARK: - Sleep & Recovery Data

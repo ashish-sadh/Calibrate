@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Unified exercise/workout service — used by both UI views and AI tool calls.
 /// Wraps WorkoutService + ExerciseDatabase + adds smart builder and progressive overload.

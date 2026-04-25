@@ -1,4 +1,5 @@
 import SwiftUI
+import DriftCore
 
 /// Shared goal progress card used by Dashboard and GoalView.
 /// Shows target, progress bar, remaining, start info, and edit link.

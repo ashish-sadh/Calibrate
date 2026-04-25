@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 #if DEBUG
 /// Seed data for testing the stale-startWeightKg bug on simulator.

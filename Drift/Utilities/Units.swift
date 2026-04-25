@@ -1,6 +1,7 @@
 import Foundation
+import DriftCore
 
-enum WeightUnit: String, CaseIterable, Codable, Sendable {
+public enum WeightUnit: String, CaseIterable, Codable, Sendable {
     case kg
     case lbs
 
@@ -42,7 +43,7 @@ enum WeightUnit: String, CaseIterable, Codable, Sendable {
     }
 }
 
-enum Preferences {
+public enum Preferences {
     private static let weightUnitKey = "weight_unit"
     private static let cycleFertileWindowKey = "drift_cycle_fertile_window"
 

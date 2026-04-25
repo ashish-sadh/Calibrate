@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 import llama
 
 /// llama.cpp backend using raw C API — bypasses LLM.swift wrapper which has Metal issues on device.

@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// ViewModel for AIChatView — owns all chat state, message handling, and AI pipeline interaction.
 @Observable

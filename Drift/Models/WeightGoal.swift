@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Diet style affects how macros are distributed across protein, carbs, and fat.
 enum DietPreference: String, Codable, CaseIterable, Sendable {

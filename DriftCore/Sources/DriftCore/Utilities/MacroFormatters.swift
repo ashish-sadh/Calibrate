@@ -6,10 +6,10 @@ import Foundation
 /// say 0?"). #282. We keep integers for bigger values to stay compact in the
 /// entry-row macro line, but keep one decimal for sub-10g fiber so small
 /// portions don't disappear.
-enum MacroFormatter {
+public enum MacroFormatter {
     /// Fiber grams → display string (no unit suffix). One decimal for
     /// non-integer values under 10g, whole number otherwise.
-    static func fiber(_ grams: Double) -> String {
+    public static func fiber(_ grams: Double) -> String {
         guard grams > 0 else { return "0" }
         if grams < 10 {
             let rounded = (grams * 10).rounded() / 10

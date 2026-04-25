@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Persistent multi-turn conversation state. Singleton — survives navigation.
 /// Replaces @State vars in AIChatView for multi-turn tracking.

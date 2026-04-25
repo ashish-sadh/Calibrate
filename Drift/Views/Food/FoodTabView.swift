@@ -1,4 +1,5 @@
 import SwiftUI
+import DriftCore
 import Charts
 
 struct FoodTabView: View {

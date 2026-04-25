@@ -1,11 +1,11 @@
 import Foundation
 import GRDB
 
-struct MealLog: Identifiable, Codable, Sendable {
-    var id: Int64?
-    var date: String         // "YYYY-MM-DD"
-    var mealType: String     // "breakfast" | "lunch" | "dinner" | "snack"
-    var createdAt: String
+public struct MealLog: Identifiable, Codable, Sendable {
+    public var id: Int64?
+    public var date: String         // "YYYY-MM-DD"
+    public var mealType: String     // "breakfast" | "lunch" | "dinner" | "snack"
+    public var createdAt: String
 
     enum CodingKeys: String, CodingKey {
         case id, date
@@ -13,7 +13,7 @@ struct MealLog: Identifiable, Codable, Sendable {
         case createdAt = "created_at"
     }
 
-    init(
+    public init(
         id: Int64? = nil,
         date: String,
         mealType: String,
@@ -27,24 +27,24 @@ struct MealLog: Identifiable, Codable, Sendable {
 }
 
 extension MealLog: FetchableRecord, PersistableRecord {
-    static let databaseTableName = "meal_log"
+    public static let databaseTableName = "meal_log"
 
-    mutating func didInsert(_ inserted: InsertionSuccess) {
+    public mutating func didInsert(_ inserted: InsertionSuccess) {
         id = inserted.rowID
     }
 }
 
-enum MealType: String, CaseIterable, Codable, Sendable {
+public enum MealType: String, CaseIterable, Codable, Sendable {
     case breakfast
     case lunch
     case dinner
     case snack
 
-    var displayName: String {
+    public var displayName: String {
         rawValue.capitalized
     }
 
-    var icon: String {
+    public var icon: String {
         switch self {
         case .breakfast: "sunrise"
         case .lunch: "sun.max"
@@ -57,7 +57,7 @@ enum MealType: String, CaseIterable, Codable, Sendable {
     /// If the most recent entry is within `inheritWindow` of `now` AND its meal type is
     /// breakfast/lunch/dinner, inherit it — lets a second bowl at 10am after a 7am breakfast
     /// stay `breakfast`. Otherwise fall back to hour ranges.
-    static func resolve(now: Date = Date(), recentEntries: [FoodEntry],
+    public static func resolve(now: Date = Date(), recentEntries: [FoodEntry],
                         inheritWindow: TimeInterval = 3 * 3600) -> MealType {
         let iso = DateFormatters.iso8601
         let sqlite = DateFormatters.sqliteDatetime
@@ -88,7 +88,7 @@ enum MealType: String, CaseIterable, Codable, Sendable {
     /// Detect meal type from hour alone (no recent-entry inheritance).
     /// Used by AI chat parser when user doesn't specify a meal keyword.
     /// Ranges: 5–10 breakfast, 10–15 lunch, 15–18 snack, 18–22 dinner, else snack.
-    static func fromHour(_ hour: Int = Calendar.current.component(.hour, from: Date())) -> MealType {
+    public static func fromHour(_ hour: Int = Calendar.current.component(.hour, from: Date())) -> MealType {
         switch hour {
         case 5..<10: return .breakfast
         case 10..<15: return .lunch

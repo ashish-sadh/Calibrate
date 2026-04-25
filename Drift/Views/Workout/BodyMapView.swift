@@ -1,4 +1,5 @@
 import SwiftUI
+import DriftCore
 
 /// Shows muscle groups with recovery status colors and contextual coaching.
 struct BodyMapView: View {

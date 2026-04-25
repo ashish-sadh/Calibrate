@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Unified TDEE estimation using Base + Dampened Corrections.
 ///

@@ -1,4 +1,5 @@
 import SwiftUI
+import DriftCore
 
 /// Entry view for body composition + optional weight.
 struct BodyCompEntryView: View {

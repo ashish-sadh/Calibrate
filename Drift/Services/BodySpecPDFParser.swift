@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 import PDFKit
 
 /// Parses BodySpec DEXA scan PDF reports using PDFKit text extraction.

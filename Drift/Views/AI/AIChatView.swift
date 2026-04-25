@@ -1,4 +1,5 @@
 import SwiftUI
+import DriftCore
 import PhotosUI
 
 /// Chat-style AI assistant with chain-of-thought reasoning and smart suggestion pills.

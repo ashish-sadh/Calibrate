@@ -1,8 +1,8 @@
 import Foundation
 
-enum DateFormatters {
+public enum DateFormatters {
     /// "YYYY-MM-DD" for database date columns.
-    static let dateOnly: DateFormatter = {
+    public static let dateOnly: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
         f.locale = Locale(identifier: "en_US_POSIX")
@@ -10,42 +10,42 @@ enum DateFormatters {
     }()
 
     /// ISO 8601 for timestamps.
-    nonisolated(unsafe) static let iso8601: ISO8601DateFormatter = {
+    public nonisolated(unsafe) static let iso8601: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime]
         return f
     }()
 
     /// Display format: "Mar 28"
-    static let shortDisplay: DateFormatter = {
+    public static let shortDisplay: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "MMM d"
         return f
     }()
 
     /// Display format: "Sat, Mar 28"
-    static let dayDisplay: DateFormatter = {
+    public static let dayDisplay: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "E, MMM d"
         return f
     }()
 
     /// Display format: "March 2026"
-    static let monthYear: DateFormatter = {
+    public static let monthYear: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "MMMM yyyy"
         return f
     }()
 
     /// Short time display: "8:30 AM"
-    static let shortTime: DateFormatter = {
+    public static let shortTime: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "h:mm a"
         return f
     }()
 
     /// SQLite datetime format: "YYYY-MM-DD HH:MM:SS"
-    static let sqliteDatetime: DateFormatter = {
+    public static let sqliteDatetime: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd HH:mm:ss"
         f.locale = Locale(identifier: "en_US_POSIX")
@@ -54,7 +54,7 @@ enum DateFormatters {
     }()
 
     /// Today's date as "YYYY-MM-DD".
-    static var todayString: String {
+    public static var todayString: String {
         dateOnly.string(from: Date())
     }
 }

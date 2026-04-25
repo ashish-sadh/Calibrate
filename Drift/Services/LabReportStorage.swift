@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 import CryptoKit
 
 /// Handles encrypted local storage of lab report files using CryptoKit + iOS Data Protection.

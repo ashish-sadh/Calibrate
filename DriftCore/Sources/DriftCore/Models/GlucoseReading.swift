@@ -1,12 +1,12 @@
 import Foundation
 import GRDB
 
-struct GlucoseReading: Identifiable, Codable, Sendable {
-    var id: Int64?
-    var timestamp: String     // ISO 8601 datetime
-    var glucoseMgdl: Double
-    var source: String        // "lingo_csv"
-    var importBatch: String?  // UUID grouping readings from same import
+public struct GlucoseReading: Identifiable, Codable, Sendable {
+    public var id: Int64?
+    public var timestamp: String     // ISO 8601 datetime
+    public var glucoseMgdl: Double
+    public var source: String        // "lingo_csv"
+    public var importBatch: String?  // UUID grouping readings from same import
 
     enum CodingKeys: String, CodingKey {
         case id, timestamp, source
@@ -14,7 +14,7 @@ struct GlucoseReading: Identifiable, Codable, Sendable {
         case importBatch = "import_batch"
     }
 
-    init(
+    public init(
         id: Int64? = nil,
         timestamp: String,
         glucoseMgdl: Double,
@@ -29,7 +29,7 @@ struct GlucoseReading: Identifiable, Codable, Sendable {
     }
 
     /// Glucose zone for color coding.
-    var zone: GlucoseZone {
+    public var zone: GlucoseZone {
         switch glucoseMgdl {
         case ..<70: .low
         case 70..<100: .normal
@@ -40,13 +40,13 @@ struct GlucoseReading: Identifiable, Codable, Sendable {
 }
 
 extension GlucoseReading: FetchableRecord, PersistableRecord {
-    static let databaseTableName = "glucose_reading"
+    public static let databaseTableName = "glucose_reading"
 
-    mutating func didInsert(_ inserted: InsertionSuccess) {
+    public mutating func didInsert(_ inserted: InsertionSuccess) {
         id = inserted.rowID
     }
 }
 
-enum GlucoseZone: Sendable {
+public enum GlucoseZone: Sendable {
     case low, normal, elevated, high
 }

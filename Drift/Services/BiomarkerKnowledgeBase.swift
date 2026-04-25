@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Provides access to the bundled biomarker definitions.
 enum BiomarkerKnowledgeBase {

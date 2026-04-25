@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Seeds default workout templates on first launch. Respects user edits - only seeds if no templates exist.
 enum DefaultTemplates {

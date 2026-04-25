@@ -1,4 +1,5 @@
 import SwiftUI
+import DriftCore
 
 struct FoodSearchView: View {
     @Bindable var viewModel: FoodLogViewModel

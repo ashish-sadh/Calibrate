@@ -1,4 +1,5 @@
 import SwiftUI
+import DriftCore
 
 struct MoreTabView: View {
     @Binding var selectedTab: Int

@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Builds rich, context-specific prompts for AI interactions.
 /// Each action/page gets tailored data injected into the prompt.

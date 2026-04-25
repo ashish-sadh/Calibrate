@@ -1,4 +1,5 @@
 import SwiftUI
+import DriftCore
 
 // MARK: - Message Handling (conversation history, intent parsing, send flow)
 

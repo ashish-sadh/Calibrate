@@ -1,4 +1,5 @@
 import SwiftUI
+import DriftCore
 
 /// Second step of the Photo Log flow. The cloud-vision response has been
 /// decoded into `PhotoLogEditableItem`s by the parent; this view lets the

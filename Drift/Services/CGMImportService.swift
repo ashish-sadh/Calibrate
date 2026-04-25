@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Parses Lingo CGM CSV exports and imports glucose readings.
 enum CGMImportService {

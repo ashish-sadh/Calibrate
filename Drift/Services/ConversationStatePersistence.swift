@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Reads and writes `PersistedConversationState` to the app's Documents directory.
 /// Survives app relaunch; expires after `maxAge` so stale mid-flows don't hijack the chat.

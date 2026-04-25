@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Manages AI model download, storage, and deletion.
 @MainActor

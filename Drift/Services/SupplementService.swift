@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Unified supplement service — used by both UI views and AI tool calls.
 @MainActor

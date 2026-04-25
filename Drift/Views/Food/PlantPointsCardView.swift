@@ -1,4 +1,5 @@
 import SwiftUI
+import DriftCore
 
 struct PlantPointsCardView: View {
     @Bindable var viewModel: FoodLogViewModel

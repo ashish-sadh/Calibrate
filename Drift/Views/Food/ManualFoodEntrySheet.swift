@@ -1,4 +1,5 @@
 import SwiftUI
+import DriftCore
 
 struct ManualFoodEntrySheet: View {
     @Bindable var viewModel: FoodLogViewModel

@@ -2,19 +2,19 @@ import Foundation
 import GRDB
 
 /// A single biomarker value extracted from a lab report.
-struct BiomarkerResult: Identifiable, Codable, Sendable {
-    var id: Int64?
-    var reportId: Int64            // FK to lab_report
-    var biomarkerId: String        // matches BiomarkerDefinition.id (e.g. "total_cholesterol")
-    var value: Double
-    var unit: String               // original unit from report
-    var normalizedValue: Double    // value converted to standard unit
-    var normalizedUnit: String     // standard unit (from BiomarkerDefinition)
-    var referenceLow: Double?      // lab's reference range (if provided)
-    var referenceHigh: Double?
-    var confidence: Double?        // LLM extraction confidence (0–1); nil = regex-extracted
-    var isAIParsed: Bool           // true when value was extracted by LLM (not regex)
-    var createdAt: String
+public struct BiomarkerResult: Identifiable, Codable, Sendable {
+    public var id: Int64?
+    public var reportId: Int64            // FK to lab_report
+    public var biomarkerId: String        // matches BiomarkerDefinition.id (e.g. "total_cholesterol")
+    public var value: Double
+    public var unit: String               // original unit from report
+    public var normalizedValue: Double    // value converted to standard unit
+    public var normalizedUnit: String     // standard unit (from BiomarkerDefinition)
+    public var referenceLow: Double?      // lab's reference range (if provided)
+    public var referenceHigh: Double?
+    public var confidence: Double?        // LLM extraction confidence (0–1); nil = regex-extracted
+    public var isAIParsed: Bool           // true when value was extracted by LLM (not regex)
+    public var createdAt: String
 
     enum CodingKeys: String, CodingKey {
         case id, value, unit, confidence
@@ -28,7 +28,7 @@ struct BiomarkerResult: Identifiable, Codable, Sendable {
         case createdAt = "created_at"
     }
 
-    init(
+    public init(
         id: Int64? = nil,
         reportId: Int64,
         biomarkerId: String,
@@ -58,6 +58,6 @@ struct BiomarkerResult: Identifiable, Codable, Sendable {
 }
 
 extension BiomarkerResult: FetchableRecord, PersistableRecord {
-    static let databaseTableName = "biomarker_result"
-    mutating func didInsert(_ inserted: InsertionSuccess) { id = inserted.rowID }
+    public static let databaseTableName = "biomarker_result"
+    public mutating func didInsert(_ inserted: InsertionSuccess) { id = inserted.rowID }
 }

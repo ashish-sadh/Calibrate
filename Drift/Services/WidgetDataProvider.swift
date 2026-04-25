@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 import WidgetKit
 
 /// Bridges daily nutrition data to the widget extension via App Groups UserDefaults.

@@ -1,4 +1,5 @@
 import SwiftUI
+import DriftCore
 
 struct DashboardView: View {
     @Binding var syncComplete: Bool

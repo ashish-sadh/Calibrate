@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 import GRDB
 
 // MARK: - DEXA Scan + Lab Report Operations

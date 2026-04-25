@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Computes behavior-outcome correlations from existing cross-domain data.
 /// Each insight compares a behavior (workout frequency, protein intake, sleep)

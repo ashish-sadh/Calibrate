@@ -1,13 +1,13 @@
 import Foundation
 import GRDB
 
-struct SupplementLog: Identifiable, Codable, Sendable {
-    var id: Int64?
-    var supplementId: Int64
-    var date: String         // "YYYY-MM-DD"
-    var taken: Bool
-    var takenAt: String?     // ISO 8601 datetime
-    var notes: String?
+public struct SupplementLog: Identifiable, Codable, Sendable {
+    public var id: Int64?
+    public var supplementId: Int64
+    public var date: String         // "YYYY-MM-DD"
+    public var taken: Bool
+    public var takenAt: String?     // ISO 8601 datetime
+    public var notes: String?
 
     enum CodingKeys: String, CodingKey {
         case id, date, taken, notes
@@ -15,7 +15,7 @@ struct SupplementLog: Identifiable, Codable, Sendable {
         case takenAt = "taken_at"
     }
 
-    init(
+    public init(
         id: Int64? = nil,
         supplementId: Int64,
         date: String,
@@ -33,9 +33,9 @@ struct SupplementLog: Identifiable, Codable, Sendable {
 }
 
 extension SupplementLog: FetchableRecord, PersistableRecord {
-    static let databaseTableName = "supplement_log"
+    public static let databaseTableName = "supplement_log"
 
-    mutating func didInsert(_ inserted: InsertionSuccess) {
+    public mutating func didInsert(_ inserted: InsertionSuccess) {
         id = inserted.rowID
     }
 }

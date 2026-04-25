@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 import CryptoKit
 
 /// Opt-in, on-device only AI chat telemetry. Records turn metadata plus — when

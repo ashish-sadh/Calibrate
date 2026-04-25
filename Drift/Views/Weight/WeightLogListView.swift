@@ -1,4 +1,5 @@
 import SwiftUI
+import DriftCore
 
 struct WeightLogListView: View {
     let entries: [WeightEntry]

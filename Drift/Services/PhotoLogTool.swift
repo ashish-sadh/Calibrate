@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 import UIKit
 
 /// Tool-agent adapter for the Photo Log cloud vision pipeline. Registers a

@@ -1,4 +1,5 @@
 import SwiftUI
+import DriftCore
 
 /// Lightweight "log this food with adjustable servings" sheet. Opened when
 /// the user taps a recent/favorite food in the Food tab suggestion strip,

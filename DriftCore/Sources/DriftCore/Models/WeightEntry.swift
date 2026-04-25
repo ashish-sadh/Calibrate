@@ -1,17 +1,17 @@
 import Foundation
 import GRDB
 
-struct WeightEntry: Identifiable, Codable, Sendable {
-    var id: Int64?
-    var date: String           // "YYYY-MM-DD"
-    var weightKg: Double
-    var source: String         // "manual" | "healthkit"
-    var createdAt: String
-    var syncedFromHk: Bool
-    var bodyFatPct: Double?    // 0-100, optional
-    var bmi: Double?           // e.g. 22.5, optional
-    var waterPct: Double?      // 0-100, optional
-    var hidden: Bool = false   // soft-delete: hidden entries aren't shown but block HealthKit re-sync
+public struct WeightEntry: Identifiable, Codable, Sendable {
+    public var id: Int64?
+    public var date: String           // "YYYY-MM-DD"
+    public var weightKg: Double
+    public var source: String         // "manual" | "healthkit"
+    public var createdAt: String
+    public var syncedFromHk: Bool
+    public var bodyFatPct: Double?    // 0-100, optional
+    public var bmi: Double?           // e.g. 22.5, optional
+    public var waterPct: Double?      // 0-100, optional
+    public var hidden: Bool = false   // soft-delete: hidden entries aren't shown but block HealthKit re-sync
 
     enum CodingKeys: String, CodingKey {
         case id, date, source, bmi, hidden
@@ -22,7 +22,7 @@ struct WeightEntry: Identifiable, Codable, Sendable {
         case waterPct = "water_pct"
     }
 
-    init(
+    public init(
         id: Int64? = nil,
         date: String,
         weightKg: Double,
@@ -45,16 +45,16 @@ struct WeightEntry: Identifiable, Codable, Sendable {
     }
 
     /// Weight in lbs.
-    var weightLbs: Double { weightKg * 2.20462 }
+    public var weightLbs: Double { weightKg * 2.20462 }
 
     /// Whether this entry has any body composition data.
-    var hasBodyComposition: Bool { bodyFatPct != nil || bmi != nil || waterPct != nil }
+    public var hasBodyComposition: Bool { bodyFatPct != nil || bmi != nil || waterPct != nil }
 }
 
 extension WeightEntry: FetchableRecord, PersistableRecord {
-    static let databaseTableName = "weight_entry"
+    public static let databaseTableName = "weight_entry"
 
-    mutating func didInsert(_ inserted: InsertionSuccess) {
+    public mutating func didInsert(_ inserted: InsertionSuccess) {
         id = inserted.rowID
     }
 }

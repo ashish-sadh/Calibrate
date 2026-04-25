@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Orchestrates AI inference — picks backend (MLX or llama.cpp) and model tier based on device.
 @MainActor

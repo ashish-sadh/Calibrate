@@ -1,18 +1,18 @@
 import Foundation
 import GRDB
 
-struct BodyComposition: Identifiable, Codable, Sendable {
-    var id: Int64?
-    var date: String            // "YYYY-MM-DD"
-    var bodyFatPct: Double?     // 0-100
-    var bmi: Double?            // e.g. 22.5
-    var waterPct: Double?       // 0-100
-    var muscleMassKg: Double?   // kg
-    var boneMassKg: Double?     // kg
-    var visceralFat: Double?    // rating 1-59
-    var metabolicAge: Int?      // years
-    var source: String          // "manual" | "healthkit" | "smart_scale"
-    var createdAt: String
+public struct BodyComposition: Identifiable, Codable, Sendable {
+    public var id: Int64?
+    public var date: String            // "YYYY-MM-DD"
+    public var bodyFatPct: Double?     // 0-100
+    public var bmi: Double?            // e.g. 22.5
+    public var waterPct: Double?       // 0-100
+    public var muscleMassKg: Double?   // kg
+    public var boneMassKg: Double?     // kg
+    public var visceralFat: Double?    // rating 1-59
+    public var metabolicAge: Int?      // years
+    public var source: String          // "manual" | "healthkit" | "smart_scale"
+    public var createdAt: String
 
     enum CodingKeys: String, CodingKey {
         case id, date, source, bmi
@@ -25,7 +25,7 @@ struct BodyComposition: Identifiable, Codable, Sendable {
         case createdAt = "created_at"
     }
 
-    init(
+    public init(
         id: Int64? = nil, date: String,
         bodyFatPct: Double? = nil, bmi: Double? = nil, waterPct: Double? = nil,
         muscleMassKg: Double? = nil, boneMassKg: Double? = nil,
@@ -40,13 +40,13 @@ struct BodyComposition: Identifiable, Codable, Sendable {
         self.source = source; self.createdAt = createdAt
     }
 
-    var hasData: Bool {
+    public var hasData: Bool {
         bodyFatPct != nil || bmi != nil || waterPct != nil ||
         muscleMassKg != nil || boneMassKg != nil || visceralFat != nil || metabolicAge != nil
     }
 }
 
 extension BodyComposition: FetchableRecord, PersistableRecord {
-    static let databaseTableName = "body_composition"
-    mutating func didInsert(_ inserted: InsertionSuccess) { id = inserted.rowID }
+    public static let databaseTableName = "body_composition"
+    public mutating func didInsert(_ inserted: InsertionSuccess) { id = inserted.rowID }
 }

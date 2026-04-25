@@ -1,22 +1,22 @@
 import Foundation
 import GRDB
 
-struct FoodEntry: Identifiable, Codable, Sendable {
-    var id: Int64?
-    var mealLogId: Int64      // kept for backwards compat (legacy FK to meal_log)
-    var foodId: Int64?        // nil if quick-add
-    var foodName: String
-    var servingSizeG: Double
-    var servings: Double
-    var calories: Double
-    var proteinG: Double
-    var carbsG: Double
-    var fatG: Double
-    var fiberG: Double
-    var createdAt: String
-    var loggedAt: String
-    var date: String?         // "YYYY-MM-DD" — which day this belongs to
-    var mealType: String?     // "breakfast" | "lunch" | "dinner" | "snack"
+public struct FoodEntry: Identifiable, Codable, Sendable {
+    public var id: Int64?
+    public var mealLogId: Int64      // kept for backwards compat (legacy FK to meal_log)
+    public var foodId: Int64?        // nil if quick-add
+    public var foodName: String
+    public var servingSizeG: Double
+    public var servings: Double
+    public var calories: Double
+    public var proteinG: Double
+    public var carbsG: Double
+    public var fatG: Double
+    public var fiberG: Double
+    public var createdAt: String
+    public var loggedAt: String
+    public var date: String?         // "YYYY-MM-DD" — which day this belongs to
+    public var mealType: String?     // "breakfast" | "lunch" | "dinner" | "snack"
 
     enum CodingKeys: String, CodingKey {
         case id, servings, calories, date
@@ -33,7 +33,7 @@ struct FoodEntry: Identifiable, Codable, Sendable {
         case mealType = "meal_type"
     }
 
-    init(
+    public init(
         id: Int64? = nil,
         mealLogId: Int64 = 0,
         foodId: Int64? = nil,
@@ -68,24 +68,24 @@ struct FoodEntry: Identifiable, Codable, Sendable {
     }
 
     /// Total calories for this entry (per-serving * servings).
-    var totalCalories: Double { calories * servings }
-    var totalProtein: Double { proteinG * servings }
-    var totalCarbs: Double { carbsG * servings }
-    var totalFat: Double { fatG * servings }
-    var totalFiber: Double { fiberG * servings }
+    public var totalCalories: Double { calories * servings }
+    public var totalProtein: Double { proteinG * servings }
+    public var totalCarbs: Double { carbsG * servings }
+    public var totalFat: Double { fatG * servings }
+    public var totalFiber: Double { fiberG * servings }
 }
 
 extension FoodEntry: FetchableRecord, PersistableRecord {
-    static let databaseTableName = "food_entry"
+    public static let databaseTableName = "food_entry"
 
-    mutating func didInsert(_ inserted: InsertionSuccess) {
+    public mutating func didInsert(_ inserted: InsertionSuccess) {
         id = inserted.rowID
     }
 }
 
 extension FoodEntry {
     /// Human-readable portion text: "2 eggs", "200g", etc.
-    var portionText: String {
+    public var portionText: String {
         guard servingSizeG > 0 else { return "" }
         let totalG = servingSizeG * servings
         let lower = foodName.lowercased()

@@ -1,4 +1,5 @@
 import SwiftUI
+import DriftCore
 
 /// Unified weight + body composition entry view.
 /// Used by Dashboard "Tap to update" and Weight tab "+".

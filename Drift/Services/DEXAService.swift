@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Domain service for DEXA scan operations.
 @MainActor

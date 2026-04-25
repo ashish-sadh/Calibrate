@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Centralized weight trend service. ALL callers use this instead of independently
 /// fetching weight entries and calculating trends. Applies 90-day filter and

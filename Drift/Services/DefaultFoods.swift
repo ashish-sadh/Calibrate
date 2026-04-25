@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Seeds recipe favorites on first launch. Does NOT pre-seed recents.
 enum DefaultFoods {

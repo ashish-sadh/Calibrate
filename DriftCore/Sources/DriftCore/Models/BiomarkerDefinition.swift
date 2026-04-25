@@ -1,23 +1,23 @@
 import Foundation
 
 /// Static definition of a biomarker from the knowledge base.
-struct BiomarkerDefinition: Codable, Identifiable, Sendable {
-    let id: String
-    let name: String
-    let category: String
-    let unit: String
-    let optimalLow: Double
-    let optimalHigh: Double
-    let sufficientLow: Double
-    let sufficientHigh: Double
-    let absoluteLow: Double
-    let absoluteHigh: Double
-    let description: String
-    let whyItMatters: String
-    let relationships: String
-    let howToImprove: String
-    let healthMetrics: String
-    let impactCategories: [String]
+public struct BiomarkerDefinition: Codable, Identifiable, Sendable {
+    public let id: String
+    public let name: String
+    public let category: String
+    public let unit: String
+    public let optimalLow: Double
+    public let optimalHigh: Double
+    public let sufficientLow: Double
+    public let sufficientHigh: Double
+    public let absoluteLow: Double
+    public let absoluteHigh: Double
+    public let description: String
+    public let whyItMatters: String
+    public let relationships: String
+    public let howToImprove: String
+    public let healthMetrics: String
+    public let impactCategories: [String]
 
     enum CodingKeys: String, CodingKey {
         case id, name, category, unit, description, relationships
@@ -34,7 +34,7 @@ struct BiomarkerDefinition: Codable, Identifiable, Sendable {
     }
 
     /// Determine status for a given value.
-    func status(for value: Double) -> BiomarkerStatus {
+    public func status(for value: Double) -> BiomarkerStatus {
         if value >= optimalLow && value <= optimalHigh {
             return .optimal
         } else if value >= sufficientLow && value <= sufficientHigh {
@@ -45,19 +45,19 @@ struct BiomarkerDefinition: Codable, Identifiable, Sendable {
     }
 
     /// Normalized position (0...1) of a value within the absolute range, clamped.
-    func normalizedPosition(for value: Double) -> Double {
+    public func normalizedPosition(for value: Double) -> Double {
         guard absoluteHigh > absoluteLow else { return 0.5 }
         return min(1, max(0, (value - absoluteLow) / (absoluteHigh - absoluteLow)))
     }
 }
 
 /// Status classification for a biomarker reading.
-enum BiomarkerStatus: String, Codable, Sendable, CaseIterable {
+public enum BiomarkerStatus: String, Codable, Sendable, CaseIterable {
     case optimal
     case sufficient
     case outOfRange
 
-    var label: String {
+    public var label: String {
         switch self {
         case .optimal: "Optimal"
         case .sufficient: "Sufficient"
@@ -65,7 +65,7 @@ enum BiomarkerStatus: String, Codable, Sendable, CaseIterable {
         }
     }
 
-    var iconName: String {
+    public var iconName: String {
         switch self {
         case .optimal: "checkmark.circle.fill"
         case .sufficient: "circle.fill"

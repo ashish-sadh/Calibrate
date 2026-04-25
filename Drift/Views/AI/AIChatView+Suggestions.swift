@@ -1,4 +1,5 @@
 import SwiftUI
+import DriftCore
 
 // MARK: - Smart Suggestions, Page Insight, Fallback Responses
 

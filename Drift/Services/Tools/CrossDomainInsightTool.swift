@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Cross-domain correlation tool. Answers questions that span 2+ health
 /// domains — "did I lose weight on workout days?", "glucose vs carbs?",

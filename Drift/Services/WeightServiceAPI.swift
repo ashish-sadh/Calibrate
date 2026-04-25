@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Unified weight service — used by both UI views and AI tool calls.
 /// Wraps AppDatabase weight methods + WeightTrendCalculator.

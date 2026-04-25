@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Registers all service tools in the ToolRegistry.
 /// Called once at app startup.

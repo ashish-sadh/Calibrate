@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// One offered alternative when the classifier can't tell between two
 /// reasonable intents. Carries the preview shown to the user AND the

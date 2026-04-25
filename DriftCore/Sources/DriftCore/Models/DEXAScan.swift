@@ -1,26 +1,26 @@
 import Foundation
 import GRDB
 
-struct DEXAScan: Identifiable, Codable, Sendable {
-    var id: Int64?
-    var scanDate: String
-    var location: String?
-    var totalMassKg: Double?
-    var fatMassKg: Double?
-    var leanMassKg: Double?
-    var boneMassKg: Double?
-    var bodyFatPct: Double?
-    var visceralFatKg: Double?
-    var trunkFatPct: Double?
-    var armsFatPct: Double?
-    var legsFatPct: Double?
-    var boneDensityTotal: Double?
-    var notes: String?
-    var createdAt: String
+public struct DEXAScan: Identifiable, Codable, Sendable {
+    public var id: Int64?
+    public var scanDate: String
+    public var location: String?
+    public var totalMassKg: Double?
+    public var fatMassKg: Double?
+    public var leanMassKg: Double?
+    public var boneMassKg: Double?
+    public var bodyFatPct: Double?
+    public var visceralFatKg: Double?
+    public var trunkFatPct: Double?
+    public var armsFatPct: Double?
+    public var legsFatPct: Double?
+    public var boneDensityTotal: Double?
+    public var notes: String?
+    public var createdAt: String
     // v7 fields
-    var rmrCalories: Double?
-    var vatVolumeIn3: Double?
-    var agRatio: Double?
+    public var rmrCalories: Double?
+    public var vatVolumeIn3: Double?
+    public var agRatio: Double?
 
     enum CodingKeys: String, CodingKey {
         case id, location, notes
@@ -41,7 +41,7 @@ struct DEXAScan: Identifiable, Codable, Sendable {
         case agRatio = "ag_ratio"
     }
 
-    init(
+    public init(
         id: Int64? = nil, scanDate: String, location: String? = nil,
         totalMassKg: Double? = nil, fatMassKg: Double? = nil, leanMassKg: Double? = nil,
         boneMassKg: Double? = nil, bodyFatPct: Double? = nil, visceralFatKg: Double? = nil,
@@ -58,14 +58,14 @@ struct DEXAScan: Identifiable, Codable, Sendable {
         self.rmrCalories = rmrCalories; self.vatVolumeIn3 = vatVolumeIn3; self.agRatio = agRatio
     }
 
-    var totalMassLbs: Double? { totalMassKg.map { $0 * 2.20462 } }
-    var fatMassLbs: Double? { fatMassKg.map { $0 * 2.20462 } }
-    var leanMassLbs: Double? { leanMassKg.map { $0 * 2.20462 } }
-    var visceralFatLbs: Double? { visceralFatKg.map { $0 * 2.20462 } }
-    var bmcLbs: Double? { boneMassKg.map { $0 * 2.20462 } }
+    public var totalMassLbs: Double? { totalMassKg.map { $0 * 2.20462 } }
+    public var fatMassLbs: Double? { fatMassKg.map { $0 * 2.20462 } }
+    public var leanMassLbs: Double? { leanMassKg.map { $0 * 2.20462 } }
+    public var visceralFatLbs: Double? { visceralFatKg.map { $0 * 2.20462 } }
+    public var bmcLbs: Double? { boneMassKg.map { $0 * 2.20462 } }
 }
 
 extension DEXAScan: FetchableRecord, PersistableRecord {
-    static let databaseTableName = "dexa_scan"
-    mutating func didInsert(_ inserted: InsertionSuccess) { id = inserted.rowID }
+    public static let databaseTableName = "dexa_scan"
+    public mutating func didInsert(_ inserted: InsertionSuccess) { id = inserted.rowID }
 }

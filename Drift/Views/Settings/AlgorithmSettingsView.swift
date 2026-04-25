@@ -1,4 +1,5 @@
 import SwiftUI
+import DriftCore
 
 struct AlgorithmSettingsView: View {
     @Environment(\.dismiss) private var dismiss

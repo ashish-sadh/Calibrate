@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Rule-based health insights — works without the AI model.
 /// Used as fallback when model isn't downloaded, and to enrich AI responses.

@@ -1,4 +1,5 @@
 import SwiftUI
+import DriftCore
 
 /// Floating AI assistant bubble — sits above tab bar on all screens.
 struct FloatingAIAssistant: View {

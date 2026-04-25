@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 import GRDB
 
 /// Workout data operations and Strong CSV import.

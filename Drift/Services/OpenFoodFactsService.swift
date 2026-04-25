@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Fetches nutrition data from Open Food Facts by barcode.
 /// Free, open-source, no API key needed. ~3M products.

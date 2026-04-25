@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Resolves multi-turn references to food entries — preferring a stable
 /// `entry_id` from the ConversationState recent-entries window, then

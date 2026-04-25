@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 import GRDB
 
 /// Unified food service — used by both UI views and AI tool calls.

@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 import GRDB
 
 struct RecentEntry: Identifiable, Sendable {
