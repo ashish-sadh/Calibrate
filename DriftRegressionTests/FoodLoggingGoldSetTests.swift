@@ -6,7 +6,11 @@ import XCTest
 /// 50+ queries covering: food, weight, exercise, health, navigation, voice-style, multi-turn.
 /// Measurement framework for design doc #65 — captures baseline before pipeline changes.
 ///
-/// Run: xcodebuild test -only-testing:'DriftTests/FoodLoggingGoldSetTests'
+/// Run: xcodebuild test -scheme DriftRegressionTests -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
+///
+/// This test lives in its own scheme/target so it does not run as part of the
+/// default `-scheme Drift` test pass. Sessions running fast unit tests should
+/// not pull this in by accident; it has to be invoked explicitly.
 final class FoodLoggingGoldSetTests: XCTestCase {
 
     override func setUp() {

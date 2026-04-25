@@ -24,6 +24,14 @@ schemes:
     test:
       targets:
         - DriftLLMEvalMacOS
+  DriftRegressionTests:
+    build:
+      targets:
+        Drift: all
+        DriftRegressionTests: [test]
+    test:
+      targets:
+        - DriftRegressionTests
 
 packages:
   GRDB:
@@ -104,6 +112,18 @@ targets:
     platform: iOS
     sources:
       - path: DriftTests/LLMEval
+    dependencies:
+      - target: Drift
+    settings:
+      base:
+        SWIFT_VERSION: "6.0"
+        GENERATE_INFOPLIST_FILE: YES
+
+  DriftRegressionTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - path: DriftRegressionTests
     dependencies:
       - target: Drift
     settings:
