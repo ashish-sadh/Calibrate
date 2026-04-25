@@ -1,46 +1,16 @@
 import Foundation
 import HealthKit
+import DriftCore
 
 // MARK: - Cycle Tracking
 
 extension HealthKitService {
 
-    struct CycleEntry: Sendable, Identifiable {
-        let id = UUID()
-        let date: Date
-        let flow: Int // 1=light, 2=medium, 3=heavy, 4=none/spotting ended
-
-        /// HK: 1=unspecified, 2=light, 3=medium, 4=heavy, 5=none
-        var flowDisplay: String {
-            switch flow {
-            case 1: "Unspecified"
-            case 2: "Light"
-            case 3: "Medium"
-            case 4: "Heavy"
-            case 5: "None"
-            default: "Unknown"
-            }
-        }
-    }
-
-    struct OvulationEntry: Sendable, Identifiable {
-        let id = UUID()
-        let date: Date
-        let result: Int // 1=negative, 2=LH surge (positive), 3=indeterminate, 4=estrogen surge
-
-        var isPositive: Bool { result == 2 || result == 4 }
-    }
-
-    struct BBTEntry: Sendable, Identifiable {
-        let id = UUID()
-        let date: Date
-        let temperatureCelsius: Double
-    }
-
-    struct SpottingEntry: Sendable, Identifiable {
-        let id = UUID()
-        let date: Date
-    }
+    // CycleEntry / OvulationEntry / BBTEntry / SpottingEntry value types live in DriftCore.
+    typealias CycleEntry = DriftCore.CycleEntry
+    typealias OvulationEntry = DriftCore.OvulationEntry
+    typealias BBTEntry = DriftCore.BBTEntry
+    typealias SpottingEntry = DriftCore.SpottingEntry
 
     /// Check if user has any cycle data in Apple Health (last 90 days).
     func hasCycleData() async -> Bool {

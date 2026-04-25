@@ -6,15 +6,8 @@ import HealthKit
 
 extension HealthKitService {
 
-    struct SleepDetail: Sendable {
-        let totalHours: Double
-        let remHours: Double
-        let deepHours: Double
-        let lightHours: Double
-        let awakeHours: Double
-        let bedStart: Date?
-        let bedEnd: Date?
-    }
+    // SleepDetail value type lives in DriftCore/Adapters/HealthValueTypes.swift
+    typealias SleepDetail = DriftCore.SleepDetail
 
     /// Detailed sleep breakdown for a night.
     func fetchSleepDetail(for date: Date) async throws -> SleepDetail {

@@ -55,4 +55,9 @@ public protocol HealthDataProvider: Sendable {
     @MainActor func fetchRecentSleepData(days: Int) async throws -> [SleepNight]
     @MainActor func fetchCaloriesBurned(for date: Date) async throws -> CaloriesBurned
     @MainActor func fetchSteps(for date: Date) async throws -> Double
+    @MainActor func fetchSleepHours(for date: Date) async throws -> Double
+    @MainActor func fetchSleepDetail(for date: Date) async throws -> SleepDetail
+    @MainActor func fetchHRV(for date: Date) async throws -> Double
+    @MainActor func fetchRestingHeartRate(for date: Date) async throws -> Double
+    @MainActor func fetchCycleHistory(days: Int) async throws -> [CycleEntry]
 }

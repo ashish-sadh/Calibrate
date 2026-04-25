@@ -5,40 +5,53 @@ import Foundation
 /// Recovery Score (0-100): HRV (40%) + RHR (30%) + Sleep (30%), relative to personal baselines.
 /// Sleep Score (0-100): Duration vs dynamic need (60%) + stage quality (40%).
 /// Activity Load: Light / Moderate / Heavy classification from calories + steps.
-enum RecoveryEstimator {
+public enum RecoveryEstimator {
 
     // MARK: - Data Models
 
-    struct DailyRecovery: Sendable {
-        let date: Date
-        let recoveryScore: Int          // 0-100
-        let sleepScore: Int             // 0-100
-        let activityLoad: ActivityLoad
-        let activityRaw: Double         // 0-21 internal scale
-        let activeCalories: Double
-        let steps: Double
+    public struct DailyRecovery: Sendable {
+        public let date: Date
+        public let recoveryScore: Int          // 0-100
+        public let sleepScore: Int             // 0-100
+        public let activityLoad: ActivityLoad
+        public let activityRaw: Double         // 0-21 internal scale
+        public let activeCalories: Double
+        public let steps: Double
 
-        let sleepHours: Double
-        let sleepNeeded: Double
-        let sleepDebt: Double           // exponentially-decayed, capped -3 to +3
-        let hrvMs: Double
-        let restingHR: Double
-        let respiratoryRate: Double
+        public let sleepHours: Double
+        public let sleepNeeded: Double
+        public let sleepDebt: Double           // exponentially-decayed, capped -3 to +3
+        public let hrvMs: Double
+        public let restingHR: Double
+        public let respiratoryRate: Double
 
-        let sleepDetail: HealthKitService.SleepDetail?
-        let baselines: Baselines?
+        public let sleepDetail: SleepDetail?
+        public let baselines: Baselines?
+
+        public init(date: Date, recoveryScore: Int, sleepScore: Int, activityLoad: ActivityLoad,
+                    activityRaw: Double, activeCalories: Double, steps: Double,
+                    sleepHours: Double, sleepNeeded: Double, sleepDebt: Double,
+                    hrvMs: Double, restingHR: Double, respiratoryRate: Double,
+                    sleepDetail: SleepDetail?, baselines: Baselines?) {
+            self.date = date; self.recoveryScore = recoveryScore; self.sleepScore = sleepScore
+            self.activityLoad = activityLoad; self.activityRaw = activityRaw
+            self.activeCalories = activeCalories; self.steps = steps
+            self.sleepHours = sleepHours; self.sleepNeeded = sleepNeeded; self.sleepDebt = sleepDebt
+            self.hrvMs = hrvMs; self.restingHR = restingHR; self.respiratoryRate = respiratoryRate
+            self.sleepDetail = sleepDetail; self.baselines = baselines
+        }
     }
 
-    struct Baselines: Sendable {
-        let hrvMs: Double
-        let restingHR: Double
-        let respiratoryRate: Double
-        let sleepHours: Double
-        let daysOfData: Int
-        var isEstablished: Bool { daysOfData >= 5 }
+    public struct Baselines: Sendable {
+        public let hrvMs: Double
+        public let restingHR: Double
+        public let respiratoryRate: Double
+        public let sleepHours: Double
+        public let daysOfData: Int
+        public var isEstablished: Bool { daysOfData >= 5 }
     }
 
-    enum ActivityLoad: String, Sendable {
+    public enum ActivityLoad: String, Sendable {
         case rest = "Rest"
         case light = "Light"
         case moderate = "Moderate"
@@ -48,7 +61,7 @@ enum RecoveryEstimator {
 
     // MARK: - Baselines
 
-    static func calculateBaselines(
+    public static func calculateBaselines(
         hrvHistory: [(date: Date, ms: Double)],
         rhrHistory: [(date: Date, bpm: Double)],
         respHistory: [(date: Date, rpm: Double)],
@@ -64,7 +77,7 @@ enum RecoveryEstimator {
 
     // MARK: - Recovery Score (0-100)
 
-    static func calculateRecovery(
+    public static func calculateRecovery(
         hrvMs: Double,
         restingHR: Double,
         sleepHours: Double,
@@ -99,7 +112,7 @@ enum RecoveryEstimator {
 
     // MARK: - Sleep Score (0-100)
 
-    static func calculateSleepScore(
+    public static func calculateSleepScore(
         totalHours: Double,
         remHours: Double,
         deepHours: Double,
@@ -126,7 +139,7 @@ enum RecoveryEstimator {
 
     // MARK: - Activity Load
 
-    static func calculateActivityLoad(activeCalories: Double, steps: Double) -> (load: ActivityLoad, raw: Double) {
+    public static func calculateActivityLoad(activeCalories: Double, steps: Double) -> (load: ActivityLoad, raw: Double) {
         let calStrain = min(15.0, activeCalories / 70.0)
         let stepStrain = min(6.0, steps / 2500.0)
         let raw = min(21.0, max(0, calStrain * 0.7 + stepStrain * 0.3))
@@ -146,7 +159,7 @@ enum RecoveryEstimator {
 
     /// Sleep need = 7.5h base + strain adjustment + debt adjustment.
     /// Capped at 9h — nobody realistically needs more than that.
-    static func dynamicSleepNeed(
+    public static func dynamicSleepNeed(
         previousDayLoad: Double,
         rollingDebtHours: Double
     ) -> Double {
@@ -160,7 +173,7 @@ enum RecoveryEstimator {
     /// Exponentially-decayed sleep debt over 7 days. Recent nights matter more.
     /// Capped at -3h to +3h — you can't accumulate infinite debt.
     /// Sleeping more gradually pays it off (decay factor 0.7 per day).
-    static func sleepDebt(recentSleep: [(date: Date, hours: Double)], need: Double) -> Double {
+    public static func sleepDebt(recentSleep: [(date: Date, hours: Double)], need: Double) -> Double {
         let last7 = Array(recentSleep.suffix(7))
         guard !last7.isEmpty else { return 0 }
 
@@ -184,7 +197,7 @@ enum RecoveryEstimator {
 
     // MARK: - Deviation Helpers
 
-    static func deviation(current: Double, baseline: Double, higherIsBetter: Bool) -> (arrow: String, pct: Int, favorable: Bool) {
+    public static func deviation(current: Double, baseline: Double, higherIsBetter: Bool) -> (arrow: String, pct: Int, favorable: Bool) {
         guard baseline > 0 else { return ("—", 0, true) }
         let pct = Int(((current - baseline) / baseline) * 100)
         let arrow = pct > 3 ? "↑" : pct < -3 ? "↓" : "—"
@@ -199,7 +212,7 @@ enum RecoveryEstimator {
 
     // MARK: - Insights
 
-    static func generateInsights(
+    public static func generateInsights(
         recovery: DailyRecovery,
         hrvHistory: [(date: Date, ms: Double)],
         sleepHistory: [(date: Date, hours: Double)]
