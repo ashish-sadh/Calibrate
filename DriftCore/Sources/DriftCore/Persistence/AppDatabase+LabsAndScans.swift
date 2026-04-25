@@ -3,7 +3,7 @@ import GRDB
 
 // MARK: - DEXA Scan + Lab Report Operations
 
-public extension AppDatabase {
+extension AppDatabase {
     func saveDEXAScan(_ scan: inout DEXAScan) throws {
         try writer.write { [scan] db in
             // Upsert by scan_date
@@ -33,7 +33,7 @@ public extension AppDatabase {
         }
     }
 
-    func fetchDEXAScans() throws -> [DEXAScan] {
+    public func fetchDEXAScans() throws -> [DEXAScan] {
         try reader.read { db in
             try DEXAScan.order(Column("scan_date").desc).fetchAll(db)
         }
@@ -102,7 +102,7 @@ public extension AppDatabase {
 
 
 
-public extension AppDatabase {
+extension AppDatabase {
     func saveLabReport(_ report: inout LabReport) throws {
         try writer.write { [report] db in
             var mutable = report
@@ -155,7 +155,7 @@ public extension AppDatabase {
     }
 
     /// Fetch the latest result for each biomarker across all reports.
-    func fetchLatestBiomarkerResults() throws -> [BiomarkerResult] {
+    public func fetchLatestBiomarkerResults() throws -> [BiomarkerResult] {
         try reader.read { db in
             try BiomarkerResult.fetchAll(db, sql: """
                 SELECT br.* FROM biomarker_result br

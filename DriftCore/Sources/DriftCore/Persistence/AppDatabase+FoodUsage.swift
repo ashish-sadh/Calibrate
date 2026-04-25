@@ -19,9 +19,9 @@ public struct RecentEntry: Identifiable, Sendable {
 
 // MARK: - Food Usage Tracking
 
-public extension AppDatabase {
+extension AppDatabase {
     /// Track food usage for smart search ranking + recents. Upserts with macros.
-    func trackFoodUsage(name: String, foodId: Int64?, servings: Double,
+    public func trackFoodUsage(name: String, foodId: Int64?, servings: Double,
                         calories: Double = 0, proteinG: Double = 0, carbsG: Double = 0,
                         fatG: Double = 0, fiberG: Double = 0, servingSizeG: Double = 0) throws {
         try writer.write { db in
@@ -46,7 +46,7 @@ public extension AppDatabase {
     }
 
     /// Recent foods by last-used time (DB foods only).
-    func fetchRecentFoods(limit: Int = 10) throws -> [Food] {
+    public func fetchRecentFoods(limit: Int = 10) throws -> [Food] {
         try reader.read { db in
             try Food.fetchAll(db, sql: """
                 SELECT f.* FROM food f
@@ -59,7 +59,7 @@ public extension AppDatabase {
     }
 
     /// Recent entries including recipes and manual adds — reads macros directly from food_usage.
-    func fetchRecentEntryNames(limit: Int = 10) throws -> [RecentEntry] {
+    public func fetchRecentEntryNames(limit: Int = 10) throws -> [RecentEntry] {
         try reader.read { db in
             let rows = try Row.fetchAll(db, sql: """
                 SELECT food_name, food_id, last_servings,
@@ -85,7 +85,7 @@ public extension AppDatabase {
     }
 
     /// Most-logged foods by usage count.
-    func fetchFrequentFoods(limit: Int = 10) throws -> [Food] {
+    public func fetchFrequentFoods(limit: Int = 10) throws -> [Food] {
         try reader.read { db in
             try Food.fetchAll(db, sql: """
                 SELECT f.* FROM food f
@@ -98,7 +98,7 @@ public extension AppDatabase {
     }
 
     /// Toggle favorite status for a food item.
-    func toggleFoodFavorite(name: String, foodId: Int64?) throws {
+    public func toggleFoodFavorite(name: String, foodId: Int64?) throws {
         try writer.write { db in
             let now = ISO8601DateFormatter().string(from: Date())
             // Resolve foodId if not provided — look up from food table
@@ -129,7 +129,7 @@ public extension AppDatabase {
     }
 
     /// Fetch user-favorited entry names (unified — food table has everything now).
-    func fetchFavoriteEntryNames() throws -> [RecentEntry] {
+    public func fetchFavoriteEntryNames() throws -> [RecentEntry] {
         try reader.read { db in
             let rows = try Row.fetchAll(db, sql: """
                 SELECT fu.food_name, fu.food_id, fu.last_servings,
@@ -149,7 +149,7 @@ public extension AppDatabase {
     }
 
     /// Check if a food is favorited.
-    func isFoodFavorite(name: String) throws -> Bool {
+    public func isFoodFavorite(name: String) throws -> Bool {
         try reader.read { db in
             let val = try Bool.fetchOne(db, sql: "SELECT is_favorite FROM food_usage WHERE food_name = ?", arguments: [name])
             return val ?? false
@@ -161,7 +161,7 @@ public extension AppDatabase {
     /// generic food ("Pizza") always outranks an unrelated specific item
     /// with the same term ("Pizza Logs"), even if the specific item has
     /// been logged many times (#271).
-    func searchFoodsRanked(query: String, limit: Int = 50) throws -> [Food] {
+    public func searchFoodsRanked(query: String, limit: Int = 50) throws -> [Food] {
         try reader.read { db in
             if query.isEmpty { return [] }
             let words = query.lowercased().split(separator: " ").map(String.init).filter { !$0.isEmpty }
@@ -194,7 +194,7 @@ public extension AppDatabase {
     }
 
     /// Fetch combos (recipes with isRecipe=true) ranked by pinned → use_count → last_used.
-    func fetchCombos(limit: Int = 8) throws -> [Food] {
+    public func fetchCombos(limit: Int = 8) throws -> [Food] {
         try reader.read { db in
             try Food.fetchAll(db, sql: """
                 SELECT f.* FROM food f
@@ -214,7 +214,7 @@ public extension AppDatabase {
     /// Scan food_entry history and auto-save frequently co-logged groups as combos.
     /// Groups entries logged within 25 minutes on the same date into sessions;
     /// signatures appearing on 2+ distinct dates become saved recipe combos.
-    func detectAndSaveCombos() throws {
+    public func detectAndSaveCombos() throws {
         struct EntryRow {
             let date: String; let name: String
             let calories: Double; let proteinG: Double
@@ -320,7 +320,7 @@ public extension AppDatabase {
     /// Insert sample food entries across the past 5 days for testing history grouping.
     /// One-time cleanup: removes food entries and combos inserted by autopilot seed.
     /// Safe to call repeatedly — guarded by UserDefaults flag at call site.
-    func clearAutopilotSeedData() throws {
+    public func clearAutopilotSeedData() throws {
         // Foods the user confirmed they never logged — safe to delete entirely
         let distinctlySeeded = ["Dosa", "Sambar", "Dal Tadka", "Roti"]
         // Generic foods seeded with exact calorie values — match by name + cal
@@ -350,7 +350,7 @@ public extension AppDatabase {
 
     /// Wipe all auto-detected combos (category='Combo', source='recipe').
     /// Manually-created combos via QuickAddView have no category set — they survive.
-    func clearAutoDetectedCombos() throws {
+    public func clearAutoDetectedCombos() throws {
         try writer.write { db in
             try db.execute(sql: """
                 DELETE FROM food
@@ -359,7 +359,7 @@ public extension AppDatabase {
         }
     }
 
-    func seedTestData() throws {
+    public func seedTestData() throws {
         struct SeedItem {
             let name: String, cal: Double, p: Double, c: Double, f: Double, ss: Double, meal: String
         }
@@ -415,7 +415,7 @@ public extension AppDatabase {
     }
 
     /// Search saved recipes/favorites by name.
-    func searchRecipes(query: String) throws -> [SavedFood] {
+    public func searchRecipes(query: String) throws -> [SavedFood] {
         try reader.read { db in
             if query.isEmpty {
                 return try Food.filter(Column("source") == "recipe")

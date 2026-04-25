@@ -1,9 +1,9 @@
 import Foundation
 import GRDB
 
-public extension AppDatabase {
+extension AppDatabase {
     /// The shared database for the application (production).
-    static let shared = makeShared()
+    public static let shared = makeShared()
 
     private static func makeShared() -> AppDatabase {
         do {

@@ -26,15 +26,15 @@ public struct AppDatabase: @unchecked Sendable {
 
 // MARK: - Database Access
 
-public extension AppDatabase {
+extension AppDatabase {
     /// Provides read access.
-    var reader: any DatabaseReader { dbWriter }
+    public var reader: any DatabaseReader { dbWriter }
 
     /// Provides write access.
-    var writer: any DatabaseWriter { dbWriter }
+    public var writer: any DatabaseWriter { dbWriter }
 
     /// Delete ALL data from ALL tables. Nuclear option for factory reset.
-    func factoryReset() throws {
+    public func factoryReset() throws {
         try dbWriter.write { db in
             try db.execute(sql: "DELETE FROM food_entry")
             try db.execute(sql: "DELETE FROM meal_log")
@@ -68,8 +68,8 @@ public extension AppDatabase {
 
 // MARK: - Weight Entry Operations
 
-public extension AppDatabase {
-    func saveWeightEntry(_ entry: inout WeightEntry) throws {
+extension AppDatabase {
+    public func saveWeightEntry(_ entry: inout WeightEntry) throws {
         try dbWriter.write { [entry] db in
             // Upsert: if date already exists, update the weight (with priority rules)
             if let existing = try WeightEntry.filter(Column("date") == entry.date).fetchOne(db) {
@@ -93,14 +93,14 @@ public extension AppDatabase {
         } ?? entry
     }
 
-    func deleteWeightEntry(id: Int64) throws {
+    public func deleteWeightEntry(id: Int64) throws {
         try dbWriter.write { db in
             // Soft-delete: mark hidden instead of deleting (prevents HealthKit re-sync)
             try db.execute(sql: "UPDATE weight_entry SET hidden = 1 WHERE id = ?", arguments: [id])
         }
     }
 
-    func fetchWeightEntries(from startDate: String? = nil, to endDate: String? = nil) throws -> [WeightEntry] {
+    public func fetchWeightEntries(from startDate: String? = nil, to endDate: String? = nil) throws -> [WeightEntry] {
         try dbWriter.read { db in
             var request = WeightEntry.filter(Column("hidden") == false).order(Column("date").desc)
             if let start = startDate {
@@ -122,8 +122,8 @@ public extension AppDatabase {
 
 // MARK: - Meal Log Operations
 
-public extension AppDatabase {
-    func saveMealLog(_ log: inout MealLog) throws {
+extension AppDatabase {
+    public func saveMealLog(_ log: inout MealLog) throws {
         let isNew = log.id == nil
         try dbWriter.write { [log] db in
             var mutable = log
@@ -140,7 +140,7 @@ public extension AppDatabase {
         try dbWriter.write { db in try MealLog.deleteOne(db, id: id) }
     }
 
-    func saveFoodEntry(_ entry: inout FoodEntry) throws {
+    public func saveFoodEntry(_ entry: inout FoodEntry) throws {
         // Auto-populate date/mealType from meal_log if not set (backwards compat)
         if entry.date == nil && entry.mealLogId > 0 {
             if let ml = try? dbWriter.read({ db in try MealLog.fetchOne(db, id: entry.mealLogId) }) {
@@ -160,7 +160,7 @@ public extension AppDatabase {
         }
     }
 
-    func updateFoodEntryMacros(id: Int64, calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double) throws {
+    public func updateFoodEntryMacros(id: Int64, calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double) throws {
         try dbWriter.write { db in
             try db.execute(sql: """
                 UPDATE food_entry SET calories = ?, protein_g = ?, carbs_g = ?, fat_g = ?, fiber_g = ? WHERE id = ?
@@ -168,31 +168,31 @@ public extension AppDatabase {
         }
     }
 
-    func updateFoodEntryLoggedAt(id: Int64, loggedAt: String) throws {
+    public func updateFoodEntryLoggedAt(id: Int64, loggedAt: String) throws {
         try dbWriter.write { db in
             try db.execute(sql: "UPDATE food_entry SET logged_at = ? WHERE id = ?", arguments: [loggedAt, id])
         }
     }
 
-    func updateFoodEntryMealType(id: Int64, mealType: String) throws {
+    public func updateFoodEntryMealType(id: Int64, mealType: String) throws {
         try dbWriter.write { db in
             try db.execute(sql: "UPDATE food_entry SET meal_type = ? WHERE id = ?", arguments: [mealType, id])
         }
     }
 
-    func updateFoodEntryName(id: Int64, name: String) throws {
+    public func updateFoodEntryName(id: Int64, name: String) throws {
         try dbWriter.write { db in
             try db.execute(sql: "UPDATE food_entry SET food_name = ? WHERE id = ?", arguments: [name, id])
         }
     }
 
-    func updateFoodEntryServings(id: Int64, servings: Double) throws {
+    public func updateFoodEntryServings(id: Int64, servings: Double) throws {
         try dbWriter.write { db in
             try db.execute(sql: "UPDATE food_entry SET servings = ? WHERE id = ?", arguments: [servings, id])
         }
     }
 
-    func deleteFoodEntry(id: Int64) throws {
+    public func deleteFoodEntry(id: Int64) throws {
         try dbWriter.write { db in
             // Get the meal_log_id before deleting
             let mealLogId = try Int64.fetchOne(db, sql: "SELECT meal_log_id FROM food_entry WHERE id = ?", arguments: [id])
@@ -207,7 +207,7 @@ public extension AppDatabase {
         }
     }
 
-    func fetchMealLogs(for date: String) throws -> [MealLog] {
+    public func fetchMealLogs(for date: String) throws -> [MealLog] {
         try dbWriter.read { db in
             try MealLog.filter(Column("date") == date)
                 .order(Column("id").asc)
@@ -216,7 +216,7 @@ public extension AppDatabase {
     }
 
     /// Fetch all food entries for a given date. Uses date column (v26+) with meal_log fallback.
-    func fetchFoodEntries(for date: String) throws -> [FoodEntry] {
+    public func fetchFoodEntries(for date: String) throws -> [FoodEntry] {
         try dbWriter.read { db in
             try FoodEntry.fetchAll(db, sql: """
                 SELECT fe.* FROM food_entry fe
@@ -227,7 +227,7 @@ public extension AppDatabase {
         }
     }
 
-    func fetchFoodEntries(forMealLog mealLogId: Int64) throws -> [FoodEntry] {
+    public func fetchFoodEntries(forMealLog mealLogId: Int64) throws -> [FoodEntry] {
         try dbWriter.read { db in
             try FoodEntry
                 .filter(Column("meal_log_id") == mealLogId)
@@ -236,7 +236,7 @@ public extension AppDatabase {
         }
     }
 
-    func fetchDailyNutrition(for date: String) throws -> DailyNutrition {
+    public func fetchDailyNutrition(for date: String) throws -> DailyNutrition {
         try dbWriter.read { db in
             let row = try Row.fetchOne(db, sql: """
                 SELECT
@@ -261,7 +261,7 @@ public extension AppDatabase {
     }
 
     /// Count of days with food logged in a date range.
-    func daysWithFoodLogged(from startDate: String, to endDate: String) throws -> Int {
+    public func daysWithFoodLogged(from startDate: String, to endDate: String) throws -> Int {
         try dbWriter.read { db in
             let row = try Row.fetchOne(db, sql: """
                 SELECT COUNT(DISTINCT fe.date) as days
@@ -273,7 +273,7 @@ public extension AppDatabase {
     }
 
     /// Daily calorie totals for a date range (batch query for consistency heatmap).
-    func fetchDailyCalories(from startDate: String, to endDate: String) throws -> [String: Double] {
+    public func fetchDailyCalories(from startDate: String, to endDate: String) throws -> [String: Double] {
         try dbWriter.read { db in
             let rows = try Row.fetchAll(db, sql: """
                 SELECT fe.date, SUM(fe.calories * fe.servings) as total_cal
@@ -292,7 +292,7 @@ public extension AppDatabase {
     }
 
     /// Average daily calories over a date range (for TDEE estimation).
-    func averageDailyCalories(from startDate: String, to endDate: String) throws -> Double {
+    public func averageDailyCalories(from startDate: String, to endDate: String) throws -> Double {
         try dbWriter.read { db in
             let row = try Row.fetchOne(db, sql: """
                 SELECT AVG(daily_cal) as avg_cal FROM (
@@ -309,7 +309,7 @@ public extension AppDatabase {
 
     /// Unique ingredient names for plant points. Uses ingredients JSON when available, falls back to food_name.
     /// Fetch food items with ingredients + NOVA for plant points calculation.
-    func fetchFoodItemsForPlantPoints(from startDate: String, to endDate: String) throws -> [PlantPointsFoodItem] {
+    public func fetchFoodItemsForPlantPoints(from startDate: String, to endDate: String) throws -> [PlantPointsFoodItem] {
         try dbWriter.read { db in
             let rows = try Row.fetchAll(db, sql: """
                 SELECT DISTINCT fe.food_name,
@@ -356,8 +356,8 @@ public extension AppDatabase {
 
 // MARK: - Supplement Operations
 
-public extension AppDatabase {
-    func saveSupplement(_ supplement: inout Supplement) throws {
+extension AppDatabase {
+    public func saveSupplement(_ supplement: inout Supplement) throws {
         let isNew = supplement.id == nil
         try dbWriter.write { [supplement] db in
             var mutable = supplement
@@ -377,7 +377,7 @@ public extension AppDatabase {
         }
     }
 
-    func fetchActiveSupplements() throws -> [Supplement] {
+    public func fetchActiveSupplements() throws -> [Supplement] {
         try dbWriter.read { db in
             try Supplement.filter(Column("is_active") == true)
                 .order(Column("sort_order"))
@@ -385,13 +385,13 @@ public extension AppDatabase {
         }
     }
 
-    func fetchSupplementLogs(for date: String) throws -> [SupplementLog] {
+    public func fetchSupplementLogs(for date: String) throws -> [SupplementLog] {
         try dbWriter.read { db in
             try SupplementLog.filter(Column("date") == date).fetchAll(db)
         }
     }
 
-    func fetchSupplementLogs(from startDate: String, to endDate: String) throws -> [SupplementLog] {
+    public func fetchSupplementLogs(from startDate: String, to endDate: String) throws -> [SupplementLog] {
         try dbWriter.read { db in
             try SupplementLog
                 .filter(Column("date") >= startDate)
@@ -401,7 +401,7 @@ public extension AppDatabase {
         }
     }
 
-    func toggleSupplementTaken(supplementId: Int64, date: String) throws {
+    public func toggleSupplementTaken(supplementId: Int64, date: String) throws {
         try dbWriter.write { db in
             if var existing = try SupplementLog
                 .filter(Column("supplement_id") == supplementId)
@@ -425,8 +425,8 @@ public extension AppDatabase {
 
 // MARK: - Glucose Operations
 
-public extension AppDatabase {
-    func saveGlucoseReadings(_ readings: [GlucoseReading]) throws {
+extension AppDatabase {
+    public func saveGlucoseReadings(_ readings: [GlucoseReading]) throws {
         try dbWriter.write { db in
             for var reading in readings {
                 try reading.insert(db)
@@ -434,7 +434,7 @@ public extension AppDatabase {
         }
     }
 
-    func fetchGlucoseReadings(from start: String, to end: String) throws -> [GlucoseReading] {
+    public func fetchGlucoseReadings(from start: String, to end: String) throws -> [GlucoseReading] {
         try dbWriter.read { db in
             try GlucoseReading
                 .filter(Column("timestamp") >= start)
@@ -450,8 +450,8 @@ public extension AppDatabase {
 
 // MARK: - HealthKit Sync Anchor
 
-public extension AppDatabase {
-    func saveAnchor(dataType: String, anchor: Data) throws {
+extension AppDatabase {
+    public func saveAnchor(dataType: String, anchor: Data) throws {
         try dbWriter.write { db in
             try db.execute(
                 sql: "INSERT OR REPLACE INTO hk_sync_anchor (data_type, last_anchor) VALUES (?, ?)",
@@ -460,7 +460,7 @@ public extension AppDatabase {
         }
     }
 
-    func fetchAnchor(dataType: String) throws -> Data? {
+    public func fetchAnchor(dataType: String) throws -> Data? {
         try dbWriter.read { db in
             try Data.fetchOne(db, sql: "SELECT last_anchor FROM hk_sync_anchor WHERE data_type = ?", arguments: [dataType])
         }
@@ -469,7 +469,7 @@ public extension AppDatabase {
 
 // MARK: - Food Database (bundled read-only)
 
-public extension AppDatabase {
+extension AppDatabase {
     /// UserDefaults key for the SHA-256 of the last-seeded `foods.json`. Used
     /// to skip the seed loop on launches where the bundle didn't change.
     private static let foodsJSONHashKey = "drift_foods_json_hash"
@@ -491,7 +491,7 @@ public extension AppDatabase {
     /// milk)" at 0 cal) even after the JSON was corrected. Refresh is
     /// scoped to DB-sourced rows; user-scanned foods (source='barcode',
     /// 'recipe', 'photo_log', 'custom') are never overwritten.
-    func seedFoodsFromJSON() throws {
+    public func seedFoodsFromJSON() throws {
         guard let url = Bundle.main.url(forResource: "foods", withExtension: "json"),
               let data = try? Data(contentsOf: url) else {
             return
@@ -595,7 +595,7 @@ public extension AppDatabase {
     }
 
     /// Fetch foods by category, sorted by name.
-    func fetchFoodsByCategory(_ category: String, limit: Int = 20) throws -> [Food] {
+    public func fetchFoodsByCategory(_ category: String, limit: Int = 20) throws -> [Food] {
         try dbWriter.read { db in
             try Food.filter(Column("category") == category)
                 .order(Column("name"))
@@ -604,7 +604,7 @@ public extension AppDatabase {
         }
     }
 
-    func searchFoods(query: String, limit: Int = 50) throws -> [Food] {
+    public func searchFoods(query: String, limit: Int = 50) throws -> [Food] {
         try dbWriter.read { db in
             if query.isEmpty { return [] }
             let words = query.lowercased().split(separator: " ").map(String.init).filter { !$0.isEmpty }
@@ -627,7 +627,7 @@ public extension AppDatabase {
 
     /// Save a scanned/OCR food to the food table so it appears in future searches.
     /// Skips if a food with the same name already exists.
-    func saveScannedFood(_ food: inout Food) throws {
+    public func saveScannedFood(_ food: inout Food) throws {
         food.source = food.source ?? "barcode"
         try dbWriter.write { db in
             let exists = try Food.filter(Column("name") == food.name).fetchCount(db) > 0
@@ -646,8 +646,8 @@ public extension AppDatabase {
 
 // MARK: - Favorites & Recipes
 
-public extension AppDatabase {
-    func saveFavorite(_ fav: inout SavedFood) throws {
+extension AppDatabase {
+    public func saveFavorite(_ fav: inout SavedFood) throws {
         // SavedFood is now Food — save to food table with source='recipe'
         if fav.source == nil { fav.source = "recipe" }
         try dbWriter.write { [fav] db in
@@ -660,14 +660,14 @@ public extension AppDatabase {
         } ?? fav
     }
 
-    func fetchFavorites() throws -> [SavedFood] {
+    public func fetchFavorites() throws -> [SavedFood] {
         try dbWriter.read { db in
             try Food.filter(Column("source") == "recipe")
                 .order(Column("sort_order")).fetchAll(db)
         }
     }
 
-    func deleteFavorite(id: Int64) throws {
+    public func deleteFavorite(id: Int64) throws {
         try dbWriter.write { db in
             let name = try String.fetchOne(db, sql: "SELECT name FROM food WHERE id = ?", arguments: [id])
             _ = try Food.deleteOne(db, id: id)
@@ -680,15 +680,15 @@ public extension AppDatabase {
 
 // MARK: - Barcode Cache
 
-public extension AppDatabase {
-    func cacheBarcodeProduct(_ cache: BarcodeCache) throws {
+extension AppDatabase {
+    public func cacheBarcodeProduct(_ cache: BarcodeCache) throws {
         try dbWriter.write { [cache] db in
             var mutable = cache
             try mutable.save(db)
         }
     }
 
-    func fetchCachedBarcode(_ barcode: String) throws -> BarcodeCache? {
+    public func fetchCachedBarcode(_ barcode: String) throws -> BarcodeCache? {
         try dbWriter.read { db in
             try BarcodeCache.fetchOne(db, key: barcode)
         }
@@ -706,20 +706,20 @@ public extension AppDatabase {
 
 // MARK: - Body Composition
 
-public extension AppDatabase {
-    func saveBodyComposition(_ entry: inout BodyComposition) throws {
+extension AppDatabase {
+    public func saveBodyComposition(_ entry: inout BodyComposition) throws {
         try dbWriter.write { db in
             try entry.save(db)
         }
     }
 
-    func fetchBodyComposition() throws -> [BodyComposition] {
+    public func fetchBodyComposition() throws -> [BodyComposition] {
         try dbWriter.read { db in
             try BodyComposition.order(Column("date").desc).fetchAll(db)
         }
     }
 
-    func fetchLatestBodyComposition() throws -> BodyComposition? {
+    public func fetchLatestBodyComposition() throws -> BodyComposition? {
         try dbWriter.read { db in
             try BodyComposition.order(Column("date").desc).fetchOne(db)
         }
@@ -734,11 +734,11 @@ public extension AppDatabase {
 
 // MARK: - Search Miss Tracking
 
-public extension AppDatabase {
+extension AppDatabase {
     /// Record a food search query that returned zero local results.
     /// Deduplicates by normalizing (lowercase, trimmed). Increments count on repeat.
     /// Skips short queries (<3 chars) or single punctuation that aren't real food names.
-    func trackSearchMiss(query: String) throws {
+    public func trackSearchMiss(query: String) throws {
         let normalized = query.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         guard normalized.count >= 3, normalized.first?.isLetter == true else { return }
         try dbWriter.write { db in
@@ -762,7 +762,7 @@ public extension AppDatabase {
 
 // MARK: - Chat Telemetry (opt-in, #261)
 
-public extension AppDatabase {
+extension AppDatabase {
     /// Insert one telemetry record. Caller is responsible for the opt-in gate.
     func insertChatTurn(_ row: ChatTurnRow) throws {
         try dbWriter.write { db in
