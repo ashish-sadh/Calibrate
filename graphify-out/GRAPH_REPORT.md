@@ -1,7 +1,7 @@
 # Graph Report - /Users/ashishsadh/workspace/Drift  (2026-04-25)
 
 ## Corpus Check
-- 412 files · ~1,764,132 words
+- 412 files · ~1,764,233 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -1045,11 +1045,9 @@ Nodes (0):
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `date` connect `Community 0` to `Community 1`, `Community 2`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 10`, `Community 11`, `Community 12`, `Community 13`, `Community 15`, `Community 16`, `Community 17`, `Community 18`, `Community 19`, `Community 20`, `Community 21`, `Community 24`, `Community 27`, `Community 29`?**
-  _High betweenness centrality (0.051) - this node is a cross-community bridge._
-- **Why does `CodingKeys` connect `Community 12` to `Community 5`?**
-  _High betweenness centrality (0.022) - this node is a cross-community bridge._
-- **Why does `Keys` connect `Community 19` to `Community 11`, `Community 12`, `Community 5`, `Community 15`?**
-  _High betweenness centrality (0.022) - this node is a cross-community bridge._
+  _High betweenness centrality (0.068) - this node is a cross-community bridge._
+- **Why does `data` connect `Community 10` to `Community 0`, `Community 1`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 8`, `Community 9`, `Community 11`, `Community 13`, `Community 17`, `Community 22`, `Community 23`, `Community 24`, `Community 30`?**
+  _High betweenness centrality (0.026) - this node is a cross-community bridge._
 - **Are the 353 inferred relationships involving `String` (e.g. with `.classify()` and `.extractTool()`) actually correct?**
   _`String` has 353 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 292 inferred relationships involving `date` (e.g. with `.measureTTFT()` and `.testSingleItemTTFTSmoke()`) actually correct?**
@@ -1058,3 +1056,5 @@ _Questions this graph is uniquely positioned to answer:_
   _`empty` has 240 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 124 inferred relationships involving `text` (e.g. with `exchangeCode()` and `fetch()`) actually correct?**
   _`text` has 124 INFERRED edges - model-reasoned connections that need verification._
+- **What connects `HardTurn`, `Scenario`, `Case` to the rest of the system?**
+  _504 weakly-connected nodes found - possible documentation gaps or missing edges._
