@@ -1,9 +1,8 @@
 import Foundation
-import DriftCore
 import GRDB
 
 /// All database schema migrations.
-enum Migrations {
+public enum Migrations {
     static func registerAll(_ migrator: inout DatabaseMigrator) {
         // v1: Weight tracking
         migrator.registerMigration("v1_weight") { db in

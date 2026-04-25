@@ -1,10 +1,9 @@
 import Foundation
-import DriftCore
 import GRDB
 
 // MARK: - DEXA Scan + Lab Report Operations
 
-extension AppDatabase {
+public extension AppDatabase {
     func saveDEXAScan(_ scan: inout DEXAScan) throws {
         try writer.write { [scan] db in
             // Upsert by scan_date
@@ -61,7 +60,7 @@ extension AppDatabase {
     }
 
     /// Import parsed BodySpec scans (from PDF).
-    func importBodySpecScans(_ parsedScans: [BodySpecPDFParser.ParsedScan]) throws -> Int {
+    func importBodySpecScans(_ parsedScans: [BodySpecParsedScan]) throws -> Int {
         var count = 0
         for parsed in parsedScans {
             var scan = DEXAScan(
@@ -103,7 +102,7 @@ extension AppDatabase {
 
 
 
-extension AppDatabase {
+public extension AppDatabase {
     func saveLabReport(_ report: inout LabReport) throws {
         try writer.write { [report] db in
             var mutable = report

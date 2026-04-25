@@ -1,10 +1,9 @@
 import Foundation
-import DriftCore
 import GRDB
 import CryptoKit
 
 /// The main application database providing read-write access to all user data.
-struct AppDatabase: @unchecked Sendable {
+public struct AppDatabase: @unchecked Sendable {
     private let dbWriter: any DatabaseWriter
 
     init(_ dbWriter: any DatabaseWriter) throws {
@@ -27,7 +26,7 @@ struct AppDatabase: @unchecked Sendable {
 
 // MARK: - Database Access
 
-extension AppDatabase {
+public extension AppDatabase {
     /// Provides read access.
     var reader: any DatabaseReader { dbWriter }
 
@@ -69,7 +68,7 @@ extension AppDatabase {
 
 // MARK: - Weight Entry Operations
 
-extension AppDatabase {
+public extension AppDatabase {
     func saveWeightEntry(_ entry: inout WeightEntry) throws {
         try dbWriter.write { [entry] db in
             // Upsert: if date already exists, update the weight (with priority rules)
@@ -123,7 +122,7 @@ extension AppDatabase {
 
 // MARK: - Meal Log Operations
 
-extension AppDatabase {
+public extension AppDatabase {
     func saveMealLog(_ log: inout MealLog) throws {
         let isNew = log.id == nil
         try dbWriter.write { [log] db in
@@ -310,7 +309,7 @@ extension AppDatabase {
 
     /// Unique ingredient names for plant points. Uses ingredients JSON when available, falls back to food_name.
     /// Fetch food items with ingredients + NOVA for plant points calculation.
-    func fetchFoodItemsForPlantPoints(from startDate: String, to endDate: String) throws -> [PlantPointsService.FoodItem] {
+    func fetchFoodItemsForPlantPoints(from startDate: String, to endDate: String) throws -> [PlantPointsFoodItem] {
         try dbWriter.read { db in
             let rows = try Row.fetchAll(db, sql: """
                 SELECT DISTINCT fe.food_name,
@@ -332,7 +331,7 @@ extension AppDatabase {
                           let arr = try? JSONDecoder().decode([String].self, from: data), !arr.isEmpty else { return nil }
                     return arr
                 }
-                return PlantPointsService.FoodItem(name: foodName, ingredients: ingredients, novaGroup: novaGroup)
+                return PlantPointsFoodItem(name: foodName, ingredients: ingredients, novaGroup: novaGroup)
             }
         }
     }
@@ -357,7 +356,7 @@ extension AppDatabase {
 
 // MARK: - Supplement Operations
 
-extension AppDatabase {
+public extension AppDatabase {
     func saveSupplement(_ supplement: inout Supplement) throws {
         let isNew = supplement.id == nil
         try dbWriter.write { [supplement] db in
@@ -426,7 +425,7 @@ extension AppDatabase {
 
 // MARK: - Glucose Operations
 
-extension AppDatabase {
+public extension AppDatabase {
     func saveGlucoseReadings(_ readings: [GlucoseReading]) throws {
         try dbWriter.write { db in
             for var reading in readings {
@@ -451,7 +450,7 @@ extension AppDatabase {
 
 // MARK: - HealthKit Sync Anchor
 
-extension AppDatabase {
+public extension AppDatabase {
     func saveAnchor(dataType: String, anchor: Data) throws {
         try dbWriter.write { db in
             try db.execute(
@@ -470,7 +469,7 @@ extension AppDatabase {
 
 // MARK: - Food Database (bundled read-only)
 
-extension AppDatabase {
+public extension AppDatabase {
     /// UserDefaults key for the SHA-256 of the last-seeded `foods.json`. Used
     /// to skip the seed loop on launches where the bundle didn't change.
     private static let foodsJSONHashKey = "drift_foods_json_hash"
@@ -647,7 +646,7 @@ extension AppDatabase {
 
 // MARK: - Favorites & Recipes
 
-extension AppDatabase {
+public extension AppDatabase {
     func saveFavorite(_ fav: inout SavedFood) throws {
         // SavedFood is now Food — save to food table with source='recipe'
         if fav.source == nil { fav.source = "recipe" }
@@ -681,7 +680,7 @@ extension AppDatabase {
 
 // MARK: - Barcode Cache
 
-extension AppDatabase {
+public extension AppDatabase {
     func cacheBarcodeProduct(_ cache: BarcodeCache) throws {
         try dbWriter.write { [cache] db in
             var mutable = cache
@@ -707,7 +706,7 @@ extension AppDatabase {
 
 // MARK: - Body Composition
 
-extension AppDatabase {
+public extension AppDatabase {
     func saveBodyComposition(_ entry: inout BodyComposition) throws {
         try dbWriter.write { db in
             try entry.save(db)
@@ -735,7 +734,7 @@ extension AppDatabase {
 
 // MARK: - Search Miss Tracking
 
-extension AppDatabase {
+public extension AppDatabase {
     /// Record a food search query that returned zero local results.
     /// Deduplicates by normalizing (lowercase, trimmed). Increments count on repeat.
     /// Skips short queries (<3 chars) or single punctuation that aren't real food names.
@@ -763,7 +762,7 @@ extension AppDatabase {
 
 // MARK: - Chat Telemetry (opt-in, #261)
 
-extension AppDatabase {
+public extension AppDatabase {
     /// Insert one telemetry record. Caller is responsible for the opt-in gate.
     func insertChatTurn(_ row: ChatTurnRow) throws {
         try dbWriter.write { db in
@@ -832,14 +831,26 @@ extension AppDatabase {
 ///
 /// `queryText` and `responseText` are nullable to preserve v32 rows that
 /// pre-date raw-text capture. Written only when opt-in is on.
-struct ChatTurnRow: Equatable, Codable, Sendable {
-    var timestamp: String
-    var queryFingerprint: String
-    var intentLabel: String?
-    var toolCalled: String?
-    var outcome: String
-    var latencyMs: Int
-    var turnIndex: Int
-    var queryText: String? = nil
-    var responseText: String? = nil
+public struct ChatTurnRow: Equatable, Codable, Sendable {
+    public var timestamp: String
+    public var queryFingerprint: String
+    public var intentLabel: String?
+    public var toolCalled: String?
+    public var outcome: String
+    public var latencyMs: Int
+    public var turnIndex: Int
+    public var queryText: String? = nil
+    public var responseText: String? = nil
+
+    public init(timestamp: String, queryFingerprint: String, intentLabel: String? = nil, toolCalled: String? = nil, outcome: String, latencyMs: Int, turnIndex: Int, queryText: String? = nil, responseText: String? = nil) {
+        self.timestamp = timestamp
+        self.queryFingerprint = queryFingerprint
+        self.intentLabel = intentLabel
+        self.toolCalled = toolCalled
+        self.outcome = outcome
+        self.latencyMs = latencyMs
+        self.turnIndex = turnIndex
+        self.queryText = queryText
+        self.responseText = responseText
+    }
 }

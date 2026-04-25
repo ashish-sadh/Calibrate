@@ -8,29 +8,9 @@ import PDFKit
 /// single lines with values concatenated. This parser handles that format.
 enum BodySpecPDFParser {
 
-    struct ParsedScan: Sendable {
-        let scanDate: String
-        let bodyFatPct: Double?
-        let totalMassLbs: Double?
-        let fatMassLbs: Double?
-        let leanMassLbs: Double?
-        let bmcLbs: Double?
-        let rmrCalories: Double?
-        let vatMassLbs: Double?
-        let vatVolumeIn3: Double?
-        let agRatio: Double?
-        let boneDensityTotal: Double?
-        let regions: [ParsedRegion]
-    }
-
-    struct ParsedRegion: Sendable {
-        let name: String
-        let fatPct: Double?
-        let totalMassLbs: Double?
-        let fatMassLbs: Double?
-        let leanMassLbs: Double?
-        let bmcLbs: Double?
-    }
+    /// Top-level types live in DriftCore so AppDatabase can return them.
+    typealias ParsedScan = BodySpecParsedScan
+    typealias ParsedRegion = BodySpecParsedRegion
 
     static func parse(url: URL) throws -> [ParsedScan] {
         guard url.startAccessingSecurityScopedResource() else { throw ParseError.accessDenied }

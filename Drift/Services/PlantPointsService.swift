@@ -16,12 +16,8 @@ enum PlantPointsService {
         var plantCount: Int { uniquePlants.count + uniqueHerbsSpices.count }
     }
 
-    /// Food item with NOVA processing level for accurate plant point calculation.
-    struct FoodItem {
-        let name: String
-        let ingredients: [String]?  // parsed ingredient names, nil = use name
-        let novaGroup: Int?         // 1-4, nil = treat as unprocessed
-    }
+    /// Top-level type lives in DriftCore so AppDatabase can return it.
+    typealias FoodItem = PlantPointsFoodItem
 
     /// Classify food items into plant points with NOVA-aware logic.
     /// - NOVA 1-2: count directly

@@ -1,8 +1,7 @@
 import Foundation
-import DriftCore
 import GRDB
 
-extension AppDatabase {
+public extension AppDatabase {
     /// The shared database for the application (production).
     static let shared = makeShared()
 

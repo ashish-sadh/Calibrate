@@ -1,26 +1,25 @@
 import Foundation
-import DriftCore
 import GRDB
 
-struct RecentEntry: Identifiable, Sendable {
-    let id = UUID()
-    let name: String
-    let foodId: Int64?
-    let calories: Double
-    let proteinG: Double
-    let carbsG: Double
-    let fatG: Double
-    let fiberG: Double
-    let servingSize: Double
-    let lastServings: Double
+public struct RecentEntry: Identifiable, Sendable {
+    public let id = UUID()
+    public let name: String
+    public let foodId: Int64?
+    public let calories: Double
+    public let proteinG: Double
+    public let carbsG: Double
+    public let fatG: Double
+    public let fiberG: Double
+    public let servingSize: Double
+    public let lastServings: Double
 
-    var macroSummary: String { "\(Int(calories))cal \(Int(proteinG))P \(Int(carbsG))C \(Int(fatG))F" }
-    var isDBFood: Bool { foodId != nil }
+    public var macroSummary: String { "\(Int(calories))cal \(Int(proteinG))P \(Int(carbsG))C \(Int(fatG))F" }
+    public var isDBFood: Bool { foodId != nil }
 }
 
 // MARK: - Food Usage Tracking
 
-extension AppDatabase {
+public extension AppDatabase {
     /// Track food usage for smart search ranking + recents. Upserts with macros.
     func trackFoodUsage(name: String, foodId: Int64?, servings: Double,
                         calories: Double = 0, proteinG: Double = 0, carbsG: Double = 0,
@@ -282,7 +281,7 @@ extension AppDatabase {
         for (sig, dates) in sigDates where dates.count >= 2 {
             guard let items = sigItems[sig] else { continue }
             let recipeItems = items.map { item in
-                QuickAddView.RecipeItem(
+                RecipeItem(
                     name: item.name,
                     portionText: item.ss > 0 ? "\(Int(item.ss))g" : "",
                     calories: item.cal, proteinG: item.p, carbsG: item.c,
