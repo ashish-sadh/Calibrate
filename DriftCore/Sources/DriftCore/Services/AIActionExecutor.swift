@@ -28,32 +28,58 @@ public enum AIActionExecutor {
         }
     }
 
+    // MARK: - Verb / Prefix Stripping (shared by parseFoodIntent + parseMultiFoodIntent)
+
+    /// Conversational openers that wrap a logging intent — stripped first.
+    /// "i want to log eggs" → "log eggs"
+    private static let conversationalPrefixes = [
+        "i want to ", "i'd like to ", "can you ", "could you ",
+        "can i ", "please ", "let me ", "help me "
+    ]
+
+    /// Imperative logging verbs at the start of the (possibly already-stripped) text.
+    private static let foodVerbs = [
+        "log ", "ate ", "had ", "add ", "track ", "logged ",
+        "eating ", "drank ", "drinking ", "made "
+    ]
+
+    /// First-person past/present-tense leads that don't take a verb prefix.
+    /// Checked against the ORIGINAL (pre-conversational-strip) text — "can you I had X"
+    /// is intentionally rejected (asking, not logging).
+    private static let foodNaturalPrefixes = [
+        "i just had ", "i just ate ", "i had ", "i ate ",
+        "just had ", "just ate ", "just logged ",
+        "i'm having ", "i'm eating ", "snacked on ",
+        "i drank ", "just drank ", "i made "
+    ]
+
+    /// Strip a food-logging verb or natural prefix; return the food remainder.
+    /// Returns nil if no recognized lead.
+    private static func stripFoodLead(_ text: String) -> String? {
+        let lower = text.lowercased().trimmingCharacters(in: .whitespaces)
+        var workingText = lower
+
+        for cp in conversationalPrefixes where workingText.hasPrefix(cp) {
+            workingText = String(workingText.dropFirst(cp.count)).trimmingCharacters(in: .whitespaces)
+            break
+        }
+
+        if let verb = foodVerbs.first(where: { workingText.hasPrefix($0) }) {
+            return String(workingText.dropFirst(verb.count)).trimmingCharacters(in: .whitespaces)
+        }
+
+        if let prefix = foodNaturalPrefixes.first(where: { lower.hasPrefix($0) }) {
+            return String(lower.dropFirst(prefix.count)).trimmingCharacters(in: .whitespaces)
+        }
+
+        return nil
+    }
+
     /// Try to parse a food logging intent from natural language.
     /// "log 1/3 avocado" → FoodIntent(query: "avocado", servings: 0.33)
     /// "ate 2 eggs" → FoodIntent(query: "egg", servings: 2)
     public static func parseFoodIntent(_ text: String) -> FoodIntent? {
-        let lower = text.lowercased().trimmingCharacters(in: .whitespaces)
-
-        var workingText = lower
-        let conversationalPrefixes = ["i want to ", "i'd like to ", "can you ", "could you ", "can i ", "please ", "let me ", "help me "]
-        for cp in conversationalPrefixes {
-            if workingText.hasPrefix(cp) {
-                workingText = String(workingText.dropFirst(cp.count)).trimmingCharacters(in: .whitespaces)
-                break
-            }
-        }
-
-        let verbs = ["log ", "ate ", "had ", "add ", "track ", "logged ", "eating ", "drank ", "drinking ", "made "]
-        var remainder: String
-
-        if let verb = verbs.first(where: { workingText.hasPrefix($0) }) {
-            remainder = String(workingText.dropFirst(verb.count)).trimmingCharacters(in: .whitespaces)
-        } else {
-            let naturalPrefixes = ["i just had ", "i just ate ", "i had ", "i ate ", "just had ", "just ate ", "just logged ",
-                                     "i'm having ", "i'm eating ", "snacked on ", "i drank ", "just drank ", "i made "]
-            guard let prefix = naturalPrefixes.first(where: { lower.hasPrefix($0) }) else { return nil }
-            remainder = String(lower.dropFirst(prefix.count)).trimmingCharacters(in: .whitespaces)
-        }
+        guard var remainder = stripFoodLead(text) else { return nil }
 
         if remainder.hasPrefix("my ") { remainder = String(remainder.dropFirst(3)) }
 
@@ -122,29 +148,7 @@ public enum AIActionExecutor {
 
     /// Parse multiple food items: "log chicken and rice" → [FoodIntent("chicken"), FoodIntent("rice")]
     public static func parseMultiFoodIntent(_ text: String) -> [FoodIntent]? {
-        let lower = text.lowercased().trimmingCharacters(in: .whitespaces)
-
-        var workingText = lower
-        let conversationalPrefixes = ["i want to ", "i'd like to ", "can you ", "could you ", "can i ", "please ", "let me ", "help me "]
-        for cp in conversationalPrefixes {
-            if workingText.hasPrefix(cp) {
-                workingText = String(workingText.dropFirst(cp.count)).trimmingCharacters(in: .whitespaces)
-                break
-            }
-        }
-
-        let verbs = ["log ", "ate ", "had ", "add ", "track ", "logged ", "eating ", "drank ", "drinking ", "made "]
-        let naturalPrefixes = ["i just had ", "i just ate ", "i had ", "i ate ", "just had ", "just ate ",
-                               "i'm having ", "i'm eating ", "snacked on ", "i drank ", "just drank ", "i made "]
-        var remainder: String
-
-        if let verb = verbs.first(where: { workingText.hasPrefix($0) }) {
-            remainder = String(workingText.dropFirst(verb.count)).trimmingCharacters(in: .whitespaces)
-        } else if let prefix = naturalPrefixes.first(where: { lower.hasPrefix($0) }) {
-            remainder = String(lower.dropFirst(prefix.count)).trimmingCharacters(in: .whitespaces)
-        } else {
-            return nil
-        }
+        guard var remainder = stripFoodLead(text) else { return nil }
 
         if remainder.hasPrefix("my ") { remainder = String(remainder.dropFirst(3)) }
         for suffix in [" for me", " please", " today", " for breakfast", " for lunch", " for dinner", " for snack"] {
