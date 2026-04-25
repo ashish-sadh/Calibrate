@@ -1,7 +1,6 @@
 import Foundation
 @testable import DriftCore
 import Testing
-@testable import Drift
 
 /// Auto-retry on empty/incomplete extraction (#240).
 /// Unit-level coverage for the `shouldRetryClassify` decision and the

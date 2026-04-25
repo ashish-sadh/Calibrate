@@ -1,7 +1,6 @@
 import Foundation
 @testable import DriftCore
 import Testing
-@testable import Drift
 
 /// Regression floor for #242: concrete queries that accidentally tripped the
 /// keyword-based ambiguity detector even though they carry enough structure

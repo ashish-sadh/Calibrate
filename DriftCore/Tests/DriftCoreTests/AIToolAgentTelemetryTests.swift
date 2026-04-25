@@ -1,7 +1,6 @@
 import Foundation
 @testable import DriftCore
 import Testing
-@testable import Drift
 
 /// Covers the `AgentOutput.didFail → Outcome.failed` mapping introduced in
 /// #281. These assert the pure outcome classifier and the two producers we

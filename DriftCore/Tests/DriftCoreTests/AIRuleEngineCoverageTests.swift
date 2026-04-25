@@ -1,7 +1,6 @@
 import Foundation
 @testable import DriftCore
 import Testing
-@testable import Drift
 
 // MARK: - AIRuleEngine Branch Coverage
 // Exercises non-empty-DB branches by seeding AppDatabase.shared with cleanup.

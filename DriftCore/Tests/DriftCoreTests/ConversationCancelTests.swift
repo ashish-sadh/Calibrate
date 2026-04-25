@@ -1,6 +1,5 @@
 import XCTest
 @testable import DriftCore
-@testable import Drift
 
 /// Tests for cancel / never-mind / scratch-that handling in pending conversation phases.
 /// All tests are deterministic — no LLM, no network.
