@@ -49,3 +49,13 @@ enum WidgetDataProvider {
         WidgetCenter.shared.reloadAllTimelines()
     }
 }
+
+// MARK: - DriftCore Adapter Conformance
+
+/// Thin wrapper so DriftCore services can request widget refresh through
+/// `DriftPlatform.widget?.refresh()` without knowing about WidgetKit.
+struct WidgetCenterRefresher: WidgetRefresher {
+    @MainActor func refresh() {
+        WidgetDataProvider.refreshWidgetData()
+    }
+}

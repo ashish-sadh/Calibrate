@@ -23,7 +23,7 @@ final class DashboardViewModel {
     var supplementsTotal: Int = 0
     var isHealthKitAvailable: Bool = false
     // Apple Health Workouts
-    var todayWorkouts: [HealthKitService.HealthWorkout] = []
+    var todayWorkouts: [HealthWorkout] = []
     var recentAppleWorkoutDates: [Date] = []
     // Recovery
     var recoveryScore: Int = 0

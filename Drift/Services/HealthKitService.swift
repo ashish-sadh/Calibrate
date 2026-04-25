@@ -251,21 +251,7 @@ final class HealthKitService {
         #endif
     }
 
-    // MARK: - Apple Health Workouts
-
-    struct HealthWorkout: Sendable, Identifiable {
-        let id: UUID
-        let type: String
-        let duration: TimeInterval
-        let calories: Double
-        let date: Date
-
-        var durationDisplay: String {
-            let m = Int(duration) / 60
-            let h = m / 60
-            return h > 0 ? "\(h)h \(m % 60)m" : "\(m)m"
-        }
-    }
+    // MARK: - Apple Health Workouts (HealthWorkout type lives in DriftCore/Adapters)
 
     /// Fetch today's workouts from Apple Health.
     func fetchWorkouts(for date: Date) async throws -> [HealthWorkout] {
@@ -328,12 +314,7 @@ final class HealthKitService {
         #endif
     }
 
-    // MARK: - Sleep History
-
-    struct SleepNight: Sendable {
-        let date: Date
-        let hours: Double
-    }
+    // MARK: - Sleep History (SleepNight type lives in DriftCore/Adapters)
 
     /// Fetch recent sleep data (hours per night, last N days).
     func fetchRecentSleepData(days: Int = 7) async throws -> [SleepNight] {
@@ -611,3 +592,7 @@ extension HKWorkoutActivityType {
         }
     }
 }
+
+// MARK: - DriftCore Adapter Conformance
+
+extension HealthKitService: HealthDataProvider {}

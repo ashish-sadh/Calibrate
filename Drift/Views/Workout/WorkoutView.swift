@@ -34,7 +34,7 @@ struct WorkoutView: View {
     @State private var activeCalories: Double = 0
     @State private var steps: Double = 0
     @State private var showHistory = false
-    @State private var healthWorkouts: [HealthKitService.HealthWorkout] = []
+    @State private var healthWorkouts: [HealthWorkout] = []
 
     var body: some View {
         ScrollView {

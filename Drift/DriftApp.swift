@@ -8,6 +8,13 @@ struct DriftApp: App {
     @State private var syncComplete = false
     @Environment(\.scenePhase) private var scenePhase
 
+    init() {
+        // Wire DriftCore adapter seams so cross-platform services can reach
+        // HealthKit / WidgetKit through protocols instead of direct singletons.
+        DriftPlatform.health = HealthKitService.shared
+        DriftPlatform.widget = WidgetCenterRefresher()
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView(syncComplete: $syncComplete)
