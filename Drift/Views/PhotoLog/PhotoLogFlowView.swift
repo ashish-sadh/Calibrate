@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import DriftCore
 
 /// Coordinator that owns the three phases of the Photo Log sheet: capture
 /// (pick photo), analyzing (waiting on cloud vision), and review (edit +

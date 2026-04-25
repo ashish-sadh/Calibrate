@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Serializes recent chat turns into a token-budgeted "Q: … / A: …" string
 /// that AIToolAgent injects into Stage 2 (IntentClassifier), Stage 3

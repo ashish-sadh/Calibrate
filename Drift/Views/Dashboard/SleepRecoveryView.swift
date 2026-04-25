@@ -437,7 +437,7 @@ struct SleepRecoveryView: View {
         let hrv = (try? await hk.fetchHRV(for: today)) ?? 0
         let rhr = (try? await hk.fetchRestingHeartRate(for: today)) ?? 0
         let resp = (try? await hk.fetchRespiratoryRate(for: today)) ?? 0
-        let calories = (try? await hk.fetchCaloriesBurned(for: today)) ?? (active: 0.0, basal: 0.0)
+        let calories = (try? await hk.fetchCaloriesBurned(for: today)) ?? CaloriesBurned(active: 0, basal: 0)
         let steps = (try? await hk.fetchSteps(for: today)) ?? 0
 
         // Use sleep hours from either fetchSleepDetail OR fetchSleepHours (whichever has data)

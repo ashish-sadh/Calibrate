@@ -1,5 +1,4 @@
 import Foundation
-import DriftCore
 
 /// Unified TDEE estimation using Base + Dampened Corrections.
 ///
@@ -8,43 +7,51 @@ import DriftCore
 ///   + Mifflin correction (0.4 dampening) — when age/height/sex provided
 ///   + Apple Health correction (0.5 dampening) — when resting + active available
 ///   + Weight Trend correction (0.3 dampening) — when food logging consistent
-///
-/// Result: conservative default that improves incrementally with data.
 @MainActor
-final class TDEEEstimator {
-    static let shared = TDEEEstimator()
+public final class TDEEEstimator {
+    public static let shared = TDEEEstimator()
+
+    private init() {}
 
     // MARK: - Configuration
 
-    enum Sex: String, Codable, Sendable, CaseIterable {
+    public enum Sex: String, Codable, Sendable, CaseIterable {
         case male, female
-        var label: String { rawValue.capitalized }
+        public var label: String { rawValue.capitalized }
     }
 
-    struct TDEEConfig: Codable, Sendable {
-        var activityMultiplier: Double
-        var appleHealthTrust: Double
-        var manualAdjustment: Double
+    public struct TDEEConfig: Codable, Sendable {
+        public var activityMultiplier: Double
+        public var appleHealthTrust: Double
+        public var manualAdjustment: Double
 
-        // Optional profile for Mifflin-St Jeor
-        var age: Int?
-        var heightCm: Double?
-        var sex: Sex?
+        public var age: Int?
+        public var heightCm: Double?
+        public var sex: Sex?
 
-        // Adaptive TDEE — smoothed from weight trend + food intake
-        var adaptiveTDEE: Double?
-        var adaptiveDataPoints: Int = 0
+        public var adaptiveTDEE: Double?
+        public var adaptiveDataPoints: Int = 0
 
-        static let `default` = TDEEConfig(
+        public init(activityMultiplier: Double, appleHealthTrust: Double, manualAdjustment: Double, age: Int? = nil, heightCm: Double? = nil, sex: Sex? = nil, adaptiveTDEE: Double? = nil, adaptiveDataPoints: Int = 0) {
+            self.activityMultiplier = activityMultiplier
+            self.appleHealthTrust = appleHealthTrust
+            self.manualAdjustment = manualAdjustment
+            self.age = age
+            self.heightCm = heightCm
+            self.sex = sex
+            self.adaptiveTDEE = adaptiveTDEE
+            self.adaptiveDataPoints = adaptiveDataPoints
+        }
+
+        public static let `default` = TDEEConfig(
             activityMultiplier: 29,
             appleHealthTrust: 1.0,
-            manualAdjustment: 0,
-            age: nil, heightCm: nil, sex: nil
+            manualAdjustment: 0
         )
 
-        var loggingConsistencyThreshold: Double { 0.5 }
+        public var loggingConsistencyThreshold: Double { 0.5 }
 
-        var activityLabel: String {
+        public var activityLabel: String {
             switch activityMultiplier {
             case ..<24: "Sedentary"
             case ..<27: "Lightly Active"
@@ -54,19 +61,19 @@ final class TDEEEstimator {
             }
         }
 
-        var hasMifflinProfile: Bool {
+        public var hasMifflinProfile: Bool {
             age != nil && heightCm != nil && sex != nil
         }
 
         /// Map activity slider (22-36) to Mifflin activity factor (1.2-1.9)
-        var mifflinActivityFactor: Double {
+        public var mifflinActivityFactor: Double {
             1.2 + (activityMultiplier - 22) * 0.05
         }
     }
 
     private static let configKey = "drift_tdee_config"
 
-    static func loadConfig() -> TDEEConfig {
+    public static func loadConfig() -> TDEEConfig {
         guard let data = UserDefaults.standard.data(forKey: configKey),
               let config = try? JSONDecoder().decode(TDEEConfig.self, from: data) else {
             return .default
@@ -74,7 +81,7 @@ final class TDEEEstimator {
         return config
     }
 
-    static func saveConfig(_ config: TDEEConfig) {
+    public static func saveConfig(_ config: TDEEConfig) {
         if let data = try? JSONEncoder().encode(config) {
             UserDefaults.standard.set(data, forKey: configKey)
         }
@@ -84,15 +91,24 @@ final class TDEEEstimator {
 
     // MARK: - Estimate
 
-    struct Estimate: Codable, Sendable {
-        let tdee: Double
-        let source: Source
-        let confidence: Confidence
-        let timestamp: Date
-        let activeSources: [String] // which sources contributed
-        var adaptiveTDEE: Double?   // smoothed from weight trend + food logs (nil = insufficient data)
+    public struct Estimate: Codable, Sendable {
+        public let tdee: Double
+        public let source: Source
+        public let confidence: Confidence
+        public let timestamp: Date
+        public let activeSources: [String]
+        public var adaptiveTDEE: Double?
 
-        enum Source: String, Codable, Sendable {
+        public init(tdee: Double, source: Source, confidence: Confidence, timestamp: Date, activeSources: [String], adaptiveTDEE: Double? = nil) {
+            self.tdee = tdee
+            self.source = source
+            self.confidence = confidence
+            self.timestamp = timestamp
+            self.activeSources = activeSources
+            self.adaptiveTDEE = adaptiveTDEE
+        }
+
+        public enum Source: String, Codable, Sendable {
             case appleHealth = "Apple Health"
             case weightTrend = "Weight Trend"
             case blended = "Blended"
@@ -100,11 +116,11 @@ final class TDEEEstimator {
             case bodyWeight = "Body Weight"
         }
 
-        enum Confidence: String, Codable, Sendable {
+        public enum Confidence: String, Codable, Sendable {
             case high, medium, low
         }
 
-        var explanation: String {
+        public var explanation: String {
             switch source {
             case .appleHealth:
                 return "Resting + active energy from Apple Health (7-day avg)."
@@ -121,15 +137,13 @@ final class TDEEEstimator {
     }
 
     private let cacheKey = "drift_tdee_cache"
-    private(set) var current: Estimate?
+    public private(set) var current: Estimate?
 
     // MARK: - Core Formula
 
-    /// Compute base TDEE from weight + activity slider.
     /// Anchored at 2000 kcal for 70kg, sqrt scaling for diminishing returns.
-    /// Soft-capped at 2700 kcal — without profile data (age/height/sex), we're guessing,
-    /// so stay conservative. Mifflin/Apple Health corrections can push higher when backed by data.
-    nonisolated static func computeBase(weightKg: Double?, activityMultiplier: Double) -> Double {
+    /// Soft-capped at 2700 kcal — without profile data, stay conservative.
+    public nonisolated static func computeBase(weightKg: Double?, activityMultiplier: Double) -> Double {
         guard let w = weightKg, w > 0 else { return 2000 }
         let raw = 2000 * sqrt(w / 70) * (activityMultiplier / 29)
         let softCap = 2700.0
@@ -137,14 +151,12 @@ final class TDEEEstimator {
         return softCap + (raw - softCap) * 0.3
     }
 
-    /// Compute Mifflin-St Jeor TDEE. Works with partial profile — uses population defaults for missing fields.
-    /// Returns (tdee, confidence) where confidence scales with how many fields were provided (0.0-1.0).
-    nonisolated static func computeMifflin(weightKg: Double, config: TDEEConfig) -> (tdee: Double, confidence: Double)? {
-        // Need at least ONE profile field to be useful
+    /// Compute Mifflin-St Jeor TDEE. Works with partial profile.
+    public nonisolated static func computeMifflin(weightKg: Double, config: TDEEConfig) -> (tdee: Double, confidence: Double)? {
         guard config.age != nil || config.heightCm != nil || config.sex != nil else { return nil }
 
-        let age = Double(config.age ?? 30)            // default: 30yo (fitness app user avg)
-        let height = config.heightCm ?? 170            // default: 170cm (5'7", between male/female avg)
+        let age = Double(config.age ?? 30)
+        let height = config.heightCm ?? 170
 
         let bmr: Double
         if let sex = config.sex {
@@ -153,44 +165,36 @@ final class TDEEEstimator {
             case .female: bmr = 10 * weightKg + 6.25 * height - 5 * age - 161
             }
         } else {
-            // No sex: average male and female BMR
             let maleBMR = 10 * weightKg + 6.25 * height - 5 * age + 5
             let femaleBMR = 10 * weightKg + 6.25 * height - 5 * age - 161
-            bmr = (maleBMR + femaleBMR) / 2  // splits the 166-cal difference
+            bmr = (maleBMR + femaleBMR) / 2
         }
 
-        // Confidence: how many of 3 fields are provided (each worth 0.33)
         var fieldsProvided = 0.0
         if config.age != nil { fieldsProvided += 1 }
         if config.heightCm != nil { fieldsProvided += 1 }
         if config.sex != nil { fieldsProvided += 1 }
-        let confidence = fieldsProvided / 3.0  // 0.33, 0.67, or 1.0
+        let confidence = fieldsProvided / 3.0
 
         return (bmr * config.mifflinActivityFactor, confidence)
     }
 
-    // MARK: - Refresh (async — uses Apple Health)
+    // MARK: - Refresh (async — uses Apple Health via DriftPlatform.health)
 
-    func refresh() async {
+    public func refresh() async {
         let config = Self.loadConfig()
-        let db = AppDatabase.shared
         let weightKg = WeightTrendService.shared.latestWeightKg
 
-        // Step 1: Base
         var tdee = Self.computeBase(weightKg: weightKg, activityMultiplier: config.activityMultiplier)
         var sources: [String] = weightKg != nil ? ["Weight"] : ["Default"]
         var bestSource: Estimate.Source = weightKg != nil ? .bodyWeight : .bodyWeight
 
-        // Step 2: Corrections
-
-        // Mifflin correction (dampening scales with confidence: 0.4 × confidence)
         if let w = weightKg, let (mifflin, confidence) = Self.computeMifflin(weightKg: w, config: config) {
             tdee += (mifflin - tdee) * 0.4 * confidence
             sources.append("Profile\(confidence < 1 ? " (partial)" : "")")
             bestSource = .mifflin
         }
 
-        // Apple Health correction (0.5 dampening)
         let ahTDEE = await fetchAppleHealth7DayAvg(config: config)
         if let ah = ahTDEE {
             tdee += (ah - tdee) * 0.5
@@ -198,7 +202,6 @@ final class TDEEEstimator {
             bestSource = sources.count >= 3 ? .blended : .appleHealth
         }
 
-        // Weight trend correction (0.3 dampening) + adaptive update
         let trendTDEE = fetchWeightTrendTDEE()
         let consistency = foodLoggingConsistency()
         if let trend = trendTDEE, consistency >= config.loggingConsistencyThreshold {
@@ -207,13 +210,9 @@ final class TDEEEstimator {
             bestSource = .blended
         }
 
-        // Adaptive TDEE: DISABLED — dropped calories dangerously (1960→1400).
-        // Reverted to base + Mifflin + Apple Health + Weight Trend.
-        // Future: weight-trend-only adaptive in Phase 5 (see Docs/backlog.md).
-        // Reset any stored adaptive state so it doesn't linger.
+        // Adaptive TDEE: DISABLED — caused dangerous drops.
         resetAdaptiveIfNeeded()
 
-        // Step 3: Final
         tdee = max(1200, tdee + config.manualAdjustment)
 
         let confidence: Estimate.Confidence = sources.count >= 3 ? .high : sources.count >= 2 ? .medium : .low
@@ -226,27 +225,23 @@ final class TDEEEstimator {
 
     // MARK: - Sync path (no Apple Health)
 
-    func cachedOrSync() -> Estimate {
+    public func cachedOrSync() -> Estimate {
         if let current { return current }
         if let cached = loadCache() { self.current = cached; return cached }
 
         let config = Self.loadConfig()
-        let db = AppDatabase.shared
         let weightKg = WeightTrendService.shared.latestWeightKg
 
-        // Step 1: Base
         var tdee = Self.computeBase(weightKg: weightKg, activityMultiplier: config.activityMultiplier)
         var sources: [String] = weightKg != nil ? ["Weight"] : ["Default"]
         var bestSource: Estimate.Source = .bodyWeight
 
-        // Step 2: Mifflin correction
         if let w = weightKg, let (mifflin, confidence) = Self.computeMifflin(weightKg: w, config: config) {
             tdee += (mifflin - tdee) * 0.4 * confidence
             sources.append("Profile\(confidence < 1 ? " (partial)" : "")")
             bestSource = .mifflin
         }
 
-        // Step 2b: Weight trend correction
         let trendTDEE = fetchWeightTrendTDEE()
         let consistency = foodLoggingConsistency()
         if let trend = trendTDEE, consistency >= config.loggingConsistencyThreshold {
@@ -255,9 +250,6 @@ final class TDEEEstimator {
             bestSource = .blended
         }
 
-        // Adaptive TDEE: DISABLED (see refresh() comment)
-
-        // Step 3: Final
         tdee = max(1200, tdee + config.manualAdjustment)
 
         let confidence: Estimate.Confidence = sources.count >= 2 ? .medium : .low
@@ -269,14 +261,8 @@ final class TDEEEstimator {
     // MARK: - Apple Health (smart multi-signal, 7-day average)
 
     private func fetchAppleHealth7DayAvg(config: TDEEConfig) async -> Double? {
-        #if targetEnvironment(simulator)
-        return nil
-        #else
-        let hk = HealthKitService.shared
-        guard hk.isAvailable else { return nil }
+        guard let hk = DriftPlatform.health, hk.isAvailable else { return nil }
 
-        // Step correction: 0.04 kcal/step baseline, don't scale DOWN for lighter people
-        let db = AppDatabase.shared
         let weightKg = WeightTrendService.shared.latestWeightKg ?? 70
         let kcalPerStep = 0.04 * max(1.0, weightKg / 70)
 
@@ -299,13 +285,11 @@ final class TDEEEstimator {
         guard dailyTotals.count >= 3 else { return nil }
         let avg = dailyTotals.reduce(0, +) / Double(dailyTotals.count)
         return avg * config.appleHealthTrust
-        #endif
     }
 
     // MARK: - Weight Trend + Food Logs (Adaptive TDEE)
 
     private func fetchWeightTrendTDEE() -> Double? {
-        // Use centralized trend service (90-day filter + outlier detection)
         guard let trend = WeightTrendService.shared.trend else { return nil }
         guard !WeightTrendService.shared.isStale else { return nil }
 
@@ -322,10 +306,7 @@ final class TDEEEstimator {
         return tdee > 800 ? tdee : nil
     }
 
-    // MARK: - Adaptive TDEE (DISABLED)
-
-    /// Clears any stored adaptive state from the broken v1 implementation.
-    /// Called on every refresh to ensure bad data doesn't linger.
+    /// Clears stored adaptive state from the broken v1 implementation.
     private func resetAdaptiveIfNeeded() {
         var config = Self.loadConfig()
         if config.adaptiveTDEE != nil || config.adaptiveDataPoints > 0 {
@@ -337,7 +318,7 @@ final class TDEEEstimator {
 
     // MARK: - Food Logging Consistency
 
-    func foodLoggingConsistency() -> Double {
+    public func foodLoggingConsistency() -> Double {
         let db = AppDatabase.shared
         let today = Date()
         let twoWeeksAgo = Calendar.current.date(byAdding: .day, value: -14, to: today) ?? today

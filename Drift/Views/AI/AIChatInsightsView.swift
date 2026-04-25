@@ -1,4 +1,5 @@
 import SwiftUI
+import DriftCore
 
 /// Surfaces AI chat telemetry (opt-in, local-only). Shows top tools, top
 /// failure intents, and latency percentiles so we can see real-world failure

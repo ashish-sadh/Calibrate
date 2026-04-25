@@ -1,4 +1,5 @@
 import UserNotifications
+import DriftCore
 
 /// Schedules local push notifications for health nudges (protein, supplements, workouts).
 /// All logic is on-device — no cloud, no tracking. Reuses BehaviorInsightService detection.

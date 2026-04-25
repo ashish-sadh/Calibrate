@@ -1,4 +1,5 @@
 import SwiftUI
+import DriftCore
 import UIKit
 
 /// BYOK settings for the Photo Log Beta. Controls the opt-in toggle, the

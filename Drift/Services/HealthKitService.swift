@@ -239,15 +239,15 @@ final class HealthKitService {
         }
     }
 
-    func fetchCaloriesBurned(for date: Date) async throws -> (active: Double, basal: Double) {
+    func fetchCaloriesBurned(for date: Date) async throws -> CaloriesBurned {
         #if targetEnvironment(simulator)
-        return (active: 420, basal: 1580)
+        return CaloriesBurned(active: 420, basal: 1580)
         #else
         async let active = fetchDaySum(typeIdentifier: .activeEnergyBurned, for: date)
         async let basal = fetchDaySum(typeIdentifier: .basalEnergyBurned, for: date)
-        let result = try await (active, basal)
-        Log.healthKit.debug("Calories: active=\(Int(result.0)) basal=\(Int(result.1))")
-        return result
+        let (a, b) = try await (active, basal)
+        Log.healthKit.debug("Calories: active=\(Int(a)) basal=\(Int(b))")
+        return CaloriesBurned(active: a, basal: b)
         #endif
     }
 
