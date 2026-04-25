@@ -19,7 +19,7 @@ public enum WeightTrendCalculator {
         /// Weekly rate threshold (kg/week) below which we classify as "maintaining".
         public var maintainingThresholdKgPerWeek: Double
 
-        public init(emaAlpha: Double, regressionWindowDays: Int, kcalPerKg: Double, maintainingThresholdKgPerWeek: Double) {
+        init(emaAlpha: Double, regressionWindowDays: Int, kcalPerKg: Double, maintainingThresholdKgPerWeek: Double) {
             self.emaAlpha = emaAlpha
             self.regressionWindowDays = regressionWindowDays
             self.kcalPerKg = kcalPerKg
@@ -61,7 +61,7 @@ public enum WeightTrendCalculator {
         public let weightChanges: WeightChanges
         public let config: AlgorithmConfig
 
-        public init(currentEMA: Double, previousEMA: Double, weeklyRateKg: Double, estimatedDailyDeficit: Double, trendDirection: TrendDirection, projection30Day: Double?, dataPoints: [WeightDataPoint], weightChanges: WeightChanges, config: AlgorithmConfig) {
+        init(currentEMA: Double, previousEMA: Double, weeklyRateKg: Double, estimatedDailyDeficit: Double, trendDirection: TrendDirection, projection30Day: Double?, dataPoints: [WeightDataPoint], weightChanges: WeightChanges, config: AlgorithmConfig) {
             self.currentEMA = currentEMA
             self.previousEMA = previousEMA
             self.weeklyRateKg = weeklyRateKg
@@ -80,7 +80,7 @@ public enum WeightTrendCalculator {
         public let actualWeight: Double?
         public let emaWeight: Double
 
-        public init(date: Date, dateString: String, actualWeight: Double?, emaWeight: Double) {
+        init(date: Date, dateString: String, actualWeight: Double?, emaWeight: Double) {
             self.date = date
             self.dateString = dateString
             self.actualWeight = actualWeight
@@ -95,7 +95,7 @@ public enum WeightTrendCalculator {
         public let thirtyDay: Double?
         public let ninetyDay: Double?
 
-        public init(threeDay: Double?, sevenDay: Double?, fourteenDay: Double?, thirtyDay: Double?, ninetyDay: Double?) {
+        init(threeDay: Double?, sevenDay: Double?, fourteenDay: Double?, thirtyDay: Double?, ninetyDay: Double?) {
             self.threeDay = threeDay
             self.sevenDay = sevenDay
             self.fourteenDay = fourteenDay

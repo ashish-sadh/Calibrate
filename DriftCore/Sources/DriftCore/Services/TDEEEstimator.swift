@@ -32,7 +32,7 @@ public final class TDEEEstimator {
         public var adaptiveTDEE: Double?
         public var adaptiveDataPoints: Int = 0
 
-        public init(activityMultiplier: Double, appleHealthTrust: Double, manualAdjustment: Double, age: Int? = nil, heightCm: Double? = nil, sex: Sex? = nil, adaptiveTDEE: Double? = nil, adaptiveDataPoints: Int = 0) {
+        init(activityMultiplier: Double, appleHealthTrust: Double, manualAdjustment: Double, age: Int? = nil, heightCm: Double? = nil, sex: Sex? = nil, adaptiveTDEE: Double? = nil, adaptiveDataPoints: Int = 0) {
             self.activityMultiplier = activityMultiplier
             self.appleHealthTrust = appleHealthTrust
             self.manualAdjustment = manualAdjustment
@@ -99,7 +99,7 @@ public final class TDEEEstimator {
         public let activeSources: [String]
         public var adaptiveTDEE: Double?
 
-        public init(tdee: Double, source: Source, confidence: Confidence, timestamp: Date, activeSources: [String], adaptiveTDEE: Double? = nil) {
+        init(tdee: Double, source: Source, confidence: Confidence, timestamp: Date, activeSources: [String], adaptiveTDEE: Double? = nil) {
             self.tdee = tdee
             self.source = source
             self.confidence = confidence

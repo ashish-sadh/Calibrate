@@ -215,7 +215,7 @@ public struct WeightGoal: Codable, Sendable {
         public let preference: DietPreference
         public var fatWasClamped: Bool = false
 
-        public init(proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double, calorieTarget: Double, isLosing: Bool, preference: DietPreference, fatWasClamped: Bool = false) {
+        init(proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double, calorieTarget: Double, isLosing: Bool, preference: DietPreference, fatWasClamped: Bool = false) {
             self.proteinG = proteinG
             self.carbsG = carbsG
             self.fatG = fatG

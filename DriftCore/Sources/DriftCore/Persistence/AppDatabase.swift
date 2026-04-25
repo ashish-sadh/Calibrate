@@ -842,7 +842,7 @@ public struct ChatTurnRow: Equatable, Codable, Sendable {
     public var queryText: String? = nil
     public var responseText: String? = nil
 
-    public init(timestamp: String, queryFingerprint: String, intentLabel: String? = nil, toolCalled: String? = nil, outcome: String, latencyMs: Int, turnIndex: Int, queryText: String? = nil, responseText: String? = nil) {
+    init(timestamp: String, queryFingerprint: String, intentLabel: String? = nil, toolCalled: String? = nil, outcome: String, latencyMs: Int, turnIndex: Int, queryText: String? = nil, responseText: String? = nil) {
         self.timestamp = timestamp
         self.queryFingerprint = queryFingerprint
         self.intentLabel = intentLabel
