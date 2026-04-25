@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# Silent for non-autonomous (human) sessions — these hooks are autopilot-only.
+[[ "${DRIFT_AUTONOMOUS:-0}" != "1" ]] && exit 0
 # Hook: PreToolUse on Bash|Grep
 # Lightweight P0 reminder only. Sprint service enforces all other priorities.
 # Injecting full compliance wall on every bash call trains the model to ignore it.

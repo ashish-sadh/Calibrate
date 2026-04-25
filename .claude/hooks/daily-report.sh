@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# Silent for non-autonomous (human) sessions — these hooks are autopilot-only.
+[[ "${DRIFT_AUTONOMOUS:-0}" != "1" ]] && exit 0
 # Hook: PostToolUse on Bash(git commit *)
 # Fallback daily report trigger — planning is primary, this is fallback only.
 

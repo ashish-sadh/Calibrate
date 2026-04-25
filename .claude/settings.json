@@ -7,12 +7,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/require-read-before-edit.sh",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/require-read-before-edit.sh",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": ".claude/hooks/require-claim.sh",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/require-claim.sh",
             "timeout": 5
           }
         ]
@@ -22,7 +22,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/compliance-check.sh",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/compliance-check.sh",
             "timeout": 5
           }
         ]
@@ -32,22 +32,22 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/guard-testflight.sh",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-testflight.sh",
             "timeout": 600
           }
         ]
       },
       {
         "matcher": "Bash",
-        "hooks": [{ "type": "command", "command": ".claude/hooks/pause-gate.sh", "timeout": 5 }]
+        "hooks": [{ "type": "command", "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/pause-gate.sh", "timeout": 5 }]
       },
       {
         "matcher": "Bash",
-        "hooks": [{ "type": "command", "command": ".claude/hooks/sprint-cap.sh", "timeout": 10 }]
+        "hooks": [{ "type": "command", "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/sprint-cap.sh", "timeout": 10 }]
       },
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": ".claude/hooks/session-heartbeat.sh", "timeout": 3 }]
+        "hooks": [{ "type": "command", "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/session-heartbeat.sh", "timeout": 3 }]
       },
       {
         "matcher": "Glob|Grep",
@@ -62,19 +62,19 @@
     "PostToolUse": [
       {
         "matcher": "*",
-        "hooks": [{ "type": "command", "command": ".claude/hooks/session-heartbeat.sh", "timeout": 3 }]
+        "hooks": [{ "type": "command", "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/session-heartbeat.sh", "timeout": 3 }]
       },
       {
         "matcher": "Edit|Write",
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/boy-scout.sh",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/boy-scout.sh",
             "timeout": 5
           },
           {
             "type": "command",
-            "command": ".claude/hooks/autopilot-test.sh",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/autopilot-test.sh",
             "timeout": 15
           }
         ]
@@ -85,7 +85,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/enforce-close-comment.sh",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/enforce-close-comment.sh",
             "timeout": 5
           }
         ]
@@ -96,7 +96,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/guard-permanent-close.sh",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-permanent-close.sh",
             "timeout": 10
           }
         ]
@@ -107,22 +107,22 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/cycle-counter.sh",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/cycle-counter.sh",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": ".claude/hooks/testflight-check.sh",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/testflight-check.sh",
             "timeout": 10
           },
           {
             "type": "command",
-            "command": ".claude/hooks/coverage-gate.sh",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/coverage-gate.sh",
             "timeout": 300
           },
           {
             "type": "command",
-            "command": ".claude/hooks/daily-report.sh",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/daily-report.sh",
             "timeout": 30
           }
         ]
@@ -134,7 +134,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/session-start.sh",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/session-start.sh",
             "timeout": 5
           }
         ]
@@ -145,7 +145,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/ensure-clean-state.sh",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/ensure-clean-state.sh",
             "timeout": 10
           }
         ]

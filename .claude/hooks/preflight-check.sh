@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# Silent for non-autonomous (human) sessions — these hooks are autopilot-only.
+[[ "${DRIFT_AUTONOMOUS:-0}" != "1" ]] && exit 0
 # Hook: PreToolUse on Bash
 # Runs before xcodebuild archive. Ensures the app is healthy before TestFlight.
 # Blocks the archive if any check fails.

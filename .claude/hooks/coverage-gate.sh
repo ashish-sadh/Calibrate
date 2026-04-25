@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# Silent for non-autonomous (human) sessions — these hooks are autopilot-only.
+[[ "${DRIFT_AUTONOMOUS:-0}" != "1" ]] && exit 0
 # Hook: PostToolUse on Bash(git commit *)
 # Every 5th commit: runs coverage check. If coverage dropped or is below threshold,
 # injects a strong message to prioritize writing tests that catch REAL bugs.

@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# Silent for non-autonomous (human) sessions — these hooks are autopilot-only.
+[[ "${DRIFT_AUTONOMOUS:-0}" != "1" ]] && exit 0
 # Hook: PostToolUse on Bash(git commit *)
 # Publishes TestFlight when watchdog has marked it due (every 3h).
 # Watchdog writes ~/drift-state/testflight-due in its heartbeat loop.
