@@ -1,11 +1,13 @@
 import XCTest
 @testable import DriftCore
 
-/// Isolated gold set for IntentClassifier — sprint task #161.
-/// Tests deterministic JSON parsing (parseResponse/mapResponse) and StaticOverrides routing.
-/// Fully deterministic: no LLM, no network. Runs in <5s.
+/// Routing-layer gold set: deterministic, no LLM, no network. Runs in <5s.
+/// Three layers in one file:
+///   1. JSON parsing — IntentClassifier.parseResponse / mapResponse
+///   2. Per-domain routing — AIActionExecutor + StaticOverrides + ToolRanker
+///   3. End-to-end summary — 55-query cross-domain accuracy floor (≥80%)
 ///
-/// Run: xcodebuild test -only-testing:'DriftTests/IntentClassifierGoldSetTests'
+/// Run: `cd DriftCore && swift test --filter IntentClassifierGoldSetTests`
 final class IntentClassifierGoldSetTests: XCTestCase {
 
     override func setUp() {
@@ -558,5 +560,430 @@ final class IntentClassifierGoldSetTests: XCTestCase {
         print("📊 Domain-blend parseResponse: \(correct)/\(cases.count)")
         XCTAssertEqual(correct, cases.count,
             "All domain-blend JSON should parse to the expected tool — these are deterministic parser tests")
+    }
+
+    // MARK: - Routing helpers (was FoodLoggingGoldSet)
+    //
+    // These exercise the full deterministic pipeline post-normalization:
+    // InputNormalizer → AIActionExecutor / StaticOverrides / ToolRanker.
+    // Failures here mean a routing regression; the layered parser/classifier
+    // tests above pinpoint *which* layer.
+
+    private func detectsFoodIntent(_ query: String) -> Bool {
+        let normalized = InputNormalizer.normalize(query).lowercased()
+        return AIActionExecutor.parseFoodIntent(normalized) != nil
+            || AIActionExecutor.parseMultiFoodIntent(normalized) != nil
+    }
+
+    private func detectsWeightIntent(_ query: String) -> Bool {
+        let normalized = InputNormalizer.normalize(query).lowercased()
+        return AIActionExecutor.parseWeightIntent(normalized) != nil
+    }
+
+    @MainActor
+    private func detectsExerciseIntent(_ query: String) -> Bool {
+        let normalized = InputNormalizer.normalize(query).lowercased()
+        if let result = StaticOverrides.match(normalized) {
+            if case .response(let text) = result {
+                return text.contains("Log ") && (text.contains("min)") || text.contains("today?"))
+            }
+            // Don't fall through to ToolRanker if StaticOverrides matched a non-exercise result
+            return false
+        }
+        let tools = ToolRanker.rank(query: normalized, screen: .exercise)
+        return tools.first?.name == "start_workout" || tools.first?.name == "log_activity"
+    }
+
+    @MainActor
+    private func detectsNavigationIntent(_ query: String) -> Bool {
+        let normalized = InputNormalizer.normalize(query).lowercased()
+        if let result = StaticOverrides.match(normalized) {
+            if case .uiAction(let action, _) = result {
+                if case .navigate = action { return true }
+            }
+        }
+        return false
+    }
+
+    @MainActor
+    private func detectsHealthIntent(_ query: String, screen: AIScreen) -> Bool {
+        let normalized = InputNormalizer.normalize(query).lowercased()
+        let tools = ToolRanker.rank(query: normalized, screen: screen)
+        let healthTools: Set<String> = ["sleep_recovery", "mark_supplement", "glucose", "biomarkers", "body_comp"]
+        return healthTools.contains(tools.first?.name ?? "")
+    }
+
+    @MainActor
+    private func detectsAnyHealthIntent(_ query: String) -> Bool {
+        let screens: [AIScreen] = [.bodyRhythm, .supplements, .glucose, .biomarkers, .bodyComposition]
+        return screens.contains { detectsHealthIntent(query, screen: $0) }
+    }
+
+    @MainActor
+    private func ranksLogFood(_ query: String, screen: AIScreen = .food) -> Bool {
+        let normalized = InputNormalizer.normalize(query).lowercased()
+        let tools = ToolRanker.rank(query: normalized, screen: screen)
+        return tools.first?.name == "log_food"
+    }
+
+    @MainActor
+    private func isStaticCommand(_ query: String) -> Bool {
+        let normalized = InputNormalizer.normalize(query).lowercased()
+        guard let result = StaticOverrides.match(normalized) else { return false }
+        switch result {
+        case .response(let text):
+            // Exercise activity confirmations: "Log Yoga (30 min) for today?"
+            if text.contains("Log ") && text.contains("today?") { return false }
+            return true
+        case .handler: return true
+        case .uiAction(let action, _):
+            if case .navigate = action { return false }
+            return true
+        case .toolCall: return true
+        }
+    }
+
+    // MARK: - Multi-food + Indian food + vague-quantity routing
+
+    func testMultiFoodQueries() {
+        let multiFood = [
+            ("log rice and dal", 2),
+            ("I had 2 eggs and toast", 2),
+            ("ate chicken, rice, and dal", 3),
+            ("had eggs, toast, and coffee", 3),
+            ("log paneer and roti for dinner", 2),
+        ]
+        var detected = 0
+        for (query, expectedCount) in multiFood {
+            let normalized = InputNormalizer.normalize(query).lowercased()
+            if let items = AIActionExecutor.parseMultiFoodIntent(normalized) {
+                if items.count >= expectedCount { detected += 1 }
+            } else if AIActionExecutor.parseFoodIntent(normalized) != nil {
+                detected += 1 // Single-food parse is acceptable for 2-item queries
+            }
+        }
+        XCTAssertGreaterThanOrEqual(detected, multiFood.count - 1)
+    }
+
+    func testIndianFoods() {
+        let indianQueries = [
+            "had paneer tikka masala",
+            "ate 2 idli with chutney",
+            "log 1 dosa and sambar",
+            "had a plate of biryani",
+            "ate chole bhature",
+            "log rajma chawal",
+            "had 2 parathas for breakfast",
+            "ate aloo gobi with 2 rotis",
+            "had dal makhani and naan",
+            "log a bowl of khichdi",
+        ]
+        var detected = 0
+        for query in indianQueries {
+            if detectsFoodIntent(query) { detected += 1 }
+        }
+        XCTAssertGreaterThanOrEqual(detected, Int(Double(indianQueries.count) * 0.8), "Indian foods: ≥80% detection")
+    }
+
+    func testVagueQuantities() {
+        let vagueQueries = [
+            "had some rice",
+            "ate a couple of eggs",
+            "had a lot of chicken",
+            "just had a little bit of oatmeal",
+            "ate a few rotis",
+            "had a handful of almonds",
+        ]
+        var detected = 0
+        for query in vagueQueries {
+            if detectsFoodIntent(query) { detected += 1 }
+        }
+        XCTAssertGreaterThanOrEqual(detected, vagueQueries.count - 2, "Vague quantities: at most 2 misses")
+    }
+
+    @MainActor
+    func testNormalizerImprovesToolRanking() {
+        let queries = [
+            "umm I had 2 eggs",
+            "so I ate some rice",
+            "ok so log chicken breast",
+            "well I had a banana",
+            "I had I had some toast",
+        ]
+        var correct = 0
+        for query in queries {
+            if ranksLogFood(query) { correct += 1 }
+        }
+        XCTAssertGreaterThanOrEqual(correct, queries.count - 1)
+    }
+
+    // MARK: - Routing negatives (false-positive prevention)
+
+    func testNormalizerDoesNotCreateFalsePositives() {
+        // Info/status queries should NOT become food intents after normalization
+        let shouldNotLog = [
+            "umm how many calories left",
+            "like what should I eat for dinner",
+            "uh how's my protein",
+            "so how am I doing today",
+            "well what's my weight trend",
+            "ok so start push day",
+            "umm how did I sleep",
+        ]
+        var falsePositives = 0
+        for query in shouldNotLog {
+            if detectsFoodIntent(query) { falsePositives += 1 }
+        }
+        XCTAssertLessThanOrEqual(falsePositives, 1, "Normalizer should not create false positives")
+    }
+
+    /// Regression gate: these queries must NEVER be detected as food logging intent.
+    func testNonFoodQueriesMustNotBeFood() {
+        let nonFoodQueries = [
+            // Sleep
+            "how was my sleep last night", "how'd I sleep", "show me my sleep quality",
+            // Supplements
+            "did I take my creatine today", "did I take my supplements",
+            // Exercise
+            "how much did I bench last week", "how many pushups last week", "start push day",
+            // Weight/goal
+            "what's my weight trend", "am I on track for my goal", "I weigh 165 lbs",
+            // Health
+            "how's my body fat", "show me my biomarkers",
+            // Meta
+            "daily summary", "weekly summary", "how am I doing today", "calories left",
+            // Macro / info
+            "how's my protein today", "what's my protein", "how many carbs left", "show my macros",
+            // #169 — exercise instruction must not be food
+            "how do I do a deadlift", "how to do bench press", "form tips for squats",
+            // #169 — protein/nutrition status must not log food
+            "am I on track for protein", "how many calories should I eat",
+        ]
+        var falsePositives: [String] = []
+        for query in nonFoodQueries {
+            if detectsFoodIntent(query) { falsePositives.append(query) }
+        }
+        XCTAssertTrue(falsePositives.isEmpty,
+            "These queries must NOT be food intent:\n\(falsePositives.joined(separator: "\n"))")
+    }
+
+    // MARK: - Per-domain routing
+
+    func testWeightIntents() {
+        let shouldLog: [(String, Double)] = [
+            ("I weigh 165 lbs", 165.0),
+            ("weight is 75.2 kg", 75.2),
+            ("weighed in at 170", 170.0),
+            ("scale says 82 kg", 82.0),
+            ("um my weight is like 165", 165.0),
+            ("so I weigh 72 kg", 72.0),
+        ]
+        var detected = 0
+        for (query, expectedValue) in shouldLog {
+            if let intent = AIActionExecutor.parseWeightIntent(InputNormalizer.normalize(query).lowercased()),
+               abs(intent.weightValue - expectedValue) < 0.1 {
+                detected += 1
+            }
+        }
+        XCTAssertGreaterThanOrEqual(detected, shouldLog.count - 1)
+    }
+
+    @MainActor
+    func testExerciseIntents() {
+        let exerciseQueries = [
+            "i did yoga for 30 minutes",
+            "just did 20 min cardio",
+            "i did push ups",
+            "did running for about 45 minutes",
+            "i went for a walk",
+            "just finished chest day",
+        ]
+        var detected = 0
+        for query in exerciseQueries {
+            if detectsExerciseIntent(query) { detected += 1 }
+        }
+        XCTAssertGreaterThanOrEqual(detected, exerciseQueries.count - 1)
+    }
+
+    @MainActor
+    func testNavigationIntents() {
+        let navQueries = [
+            "show me my weight chart",
+            "go to food tab",
+            "open exercise",
+            "show me my supplements",
+        ]
+        var detected = 0
+        for query in navQueries {
+            if detectsNavigationIntent(query) { detected += 1 }
+        }
+        XCTAssertGreaterThanOrEqual(detected, navQueries.count - 1)
+    }
+
+    @MainActor
+    func testHealthIntents() {
+        let healthQueries: [(String, AIScreen)] = [
+            ("how'd I sleep", .bodyRhythm),
+            ("sleep quality this week", .bodyRhythm),
+            ("took my creatine", .supplements),
+            ("took vitamin d", .supplements),
+            ("any glucose spikes", .glucose),
+            ("how's my body fat", .bodyComposition),
+        ]
+        var detected = 0
+        for (query, screen) in healthQueries {
+            if detectsHealthIntent(query, screen: screen) { detected += 1 }
+        }
+        XCTAssertGreaterThanOrEqual(detected, healthQueries.count - 1)
+    }
+
+    // MARK: - Voice-style cross-domain routing
+
+    func testVoiceWeightLogging() {
+        let voiceQueries: [(String, Double)] = [
+            ("um so my weight is like 165", 165.0),
+            ("uh I weigh 72 kg", 72.0),
+            ("so I weighed in at 170 today", 170.0),
+        ]
+        var detected = 0
+        for (query, expected) in voiceQueries {
+            if let intent = AIActionExecutor.parseWeightIntent(InputNormalizer.normalize(query).lowercased()),
+               abs(intent.weightValue - expected) < 0.1 {
+                detected += 1
+            }
+        }
+        XCTAssertGreaterThanOrEqual(detected, voiceQueries.count - 1)
+    }
+
+    @MainActor
+    func testVoiceExerciseLogging() {
+        let voiceQueries = [
+            "umm I did yoga for like 30 minutes",
+            "so I just finished running",
+            "uh I did push ups today",
+        ]
+        var detected = 0
+        for query in voiceQueries {
+            if detectsExerciseIntent(query) { detected += 1 }
+        }
+        XCTAssertGreaterThanOrEqual(detected, voiceQueries.count - 1)
+    }
+
+    // MARK: - Multi-turn routing (canned history + response parsing)
+
+    func testMultiTurnFoodFollowUp() {
+        let history = "Assistant: What did you have for lunch?"
+        let userMsg = "rice and dal"
+        let fullMsg = IntentClassifier.buildUserMessage(message: userMsg, history: history)
+        XCTAssertTrue(fullMsg.contains("What did you have for lunch"))
+        XCTAssertTrue(fullMsg.contains("rice and dal"))
+
+        let cannedResponse = #"{"tool":"log_food","name":"rice, dal"}"#
+        let result = IntentClassifier.parseResponse(cannedResponse)
+        XCTAssertEqual(result?.tool, "log_food")
+        XCTAssertEqual(result?.params["name"], "rice, dal")
+    }
+
+    func testMultiTurnQuantityFollowUp() {
+        let history = "User: I had rice\nAssistant: How much rice?"
+        let fullMsg = IntentClassifier.buildUserMessage(message: "200 grams", history: history)
+        XCTAssertTrue(fullMsg.contains("How much rice"))
+
+        let cannedResponse = #"{"tool":"log_food","name":"rice","servings":"200","unit":"g"}"#
+        let result = IntentClassifier.parseResponse(cannedResponse)
+        XCTAssertEqual(result?.tool, "log_food")
+        XCTAssertEqual(result?.params["name"], "rice")
+    }
+
+    func testMultiTurnTopicSwitch() {
+        let history = "User: log 2 eggs\nAssistant: Logged 2 eggs (140 cal)"
+        let fullMsg = IntentClassifier.buildUserMessage(message: "I weigh 165 lbs", history: history)
+        XCTAssertTrue(fullMsg.contains("165"))
+
+        let cannedResponse = #"{"tool":"log_weight","value":"165","unit":"lbs"}"#
+        let result = IntentClassifier.parseResponse(cannedResponse)
+        XCTAssertEqual(result?.tool, "log_weight")
+    }
+
+    func testMultiTurnExerciseChain() {
+        let history = "User: start push day\nAssistant: Starting Push Day workout!"
+        let fullMsg = IntentClassifier.buildUserMessage(message: "how's my bench press doing", history: history)
+        XCTAssertTrue(fullMsg.contains("push day"))
+
+        let cannedResponse = #"{"tool":"exercise_info","query":"bench press trend"}"#
+        let result = IntentClassifier.parseResponse(cannedResponse)
+        XCTAssertEqual(result?.tool, "exercise_info")
+    }
+
+    func testMultiTurnMealContinuation() {
+        let history = "User: log rice and dal for lunch\nAssistant: Logged rice and dal (450 cal)"
+        let fullMsg = IntentClassifier.buildUserMessage(message: "also add a roti", history: history)
+        XCTAssertTrue(fullMsg.contains("rice and dal"))
+        XCTAssertTrue(fullMsg.contains("also add a roti"))
+
+        let cannedResponse = #"{"tool":"log_food","name":"roti"}"#
+        let result = IntentClassifier.parseResponse(cannedResponse)
+        XCTAssertEqual(result?.tool, "log_food")
+        XCTAssertEqual(result?.params["name"], "roti")
+    }
+
+    // MARK: - End-to-end summary (55 queries across 6 domains)
+
+    @MainActor
+    func testGoldSetSummary() {
+        enum Domain: String { case food, weight, exercise, navigation, health, none }
+
+        let allQueries: [(String, Domain)] = [
+            // Food (20)
+            ("log 2 eggs", .food), ("I had chicken breast", .food), ("ate a banana for breakfast", .food),
+            ("had 200g paneer", .food), ("log rice and dal", .food), ("umm I had 2 eggs and toast", .food),
+            ("I had I had some chicken", .food), ("so I ate biryani for lunch", .food),
+            ("had a couple of rotis", .food), ("ate 3 idli with chutney", .food),
+            ("log aloo gobi", .food), ("had a protein shake", .food), ("drank a glass of milk", .food),
+            ("eating oatmeal", .food), ("just had some yogurt", .food),
+            ("log 100g chicken for dinner", .food), ("ate chole bhature", .food),
+            ("had dal makhani and naan", .food), ("log 3 scoops of protein", .food),
+            ("I made a smoothie", .food),
+            // Weight (6)
+            ("I weigh 165 lbs", .weight), ("weight is 75.2 kg", .weight), ("scale says 82 kg", .weight),
+            ("weighed in at 170", .weight), ("my weight is 160", .weight), ("log weight 80 kg", .weight),
+            // Exercise (6)
+            ("i did yoga for 30 minutes", .exercise), ("just did 20 min cardio", .exercise),
+            ("i did push ups", .exercise), ("did running for about 45 minutes", .exercise),
+            ("just finished chest day", .exercise), ("i went for a walk", .exercise),
+            // Navigation (4)
+            ("show me my weight chart", .navigation), ("go to food tab", .navigation),
+            ("open exercise", .navigation), ("show me my supplements", .navigation),
+            // Health (5)
+            ("how'd I sleep", .health), ("took my creatine", .health), ("took vitamin d", .health),
+            ("any glucose spikes", .health), ("how's my body fat", .health),
+            // None / must NOT match a logging intent (16)
+            ("how many calories left", .none), ("what should I eat", .none), ("how's my protein", .none),
+            ("daily summary", .none), ("hello", .none), ("thanks", .none),
+            ("calories in a banana", .none), ("weight trend", .none), ("suggest a workout", .none),
+            ("what should I train today", .none), ("how am I doing", .none),
+            ("set goal to 160 lbs", .none), ("help", .none), ("undo", .none),
+            ("how do I do a deadlift", .none), ("am I on track for protein", .none),
+        ]
+
+        var correct = 0
+        for (query, expected) in allQueries {
+            let detected: Domain
+            if detectsFoodIntent(query) { detected = .food }
+            else if detectsWeightIntent(query) { detected = .weight }
+            else if detectsNavigationIntent(query) { detected = .navigation }
+            else if isStaticCommand(query) { detected = .none }
+            else if detectsExerciseIntent(query) { detected = .exercise }
+            else if detectsAnyHealthIntent(query) { detected = .health }
+            else { detected = .none }
+
+            if detected == expected { correct += 1 }
+            else { print("WRONG: '\(query)' → \(detected.rawValue) (expected \(expected.rawValue))") }
+        }
+
+        let accuracy = Double(correct) / Double(allQueries.count) * 100
+        print("📊 GOLD SET: \(correct)/\(allQueries.count) (\(String(format: "%.0f", accuracy))%)")
+        XCTAssertGreaterThanOrEqual(allQueries.count, 50, "Gold set should have 50+ queries")
+        XCTAssertGreaterThanOrEqual(accuracy, 80, "Overall accuracy should be ≥80%")
     }
 }
