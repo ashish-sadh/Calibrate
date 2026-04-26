@@ -28,6 +28,41 @@ WORK_DIR="/Users/ashishsadh/workspace/Drift"
 
 mkdir -p "$HOME/drift-state"
 
+# ── gh helpers ────────────────────────────────────────────────────────────────
+#
+# Audit (2026-04-25) found cmd_claim/done/unclaim/session-done all used
+# `gh ... 2>/dev/null || true` — silent failure. Local state would mark
+# "done" while GitHub stayed open, and discipline failures were invisible.
+# Pattern: run gh, capture stderr, retry once on transient failures, log
+# loudly on hard failures. Returns 0 on success, non-zero otherwise.
+
+GH_ERR_LOG="${GH_ERR_LOG:-$HOME/drift-state/gh-errors.log}"
+
+gh_loud() {
+    # gh_loud <description> -- <gh args...>
+    local desc="$1"; shift
+    [ "$1" = "--" ] && shift
+    local err
+    if err=$(gh "$@" 2>&1 >/dev/null); then
+        return 0
+    fi
+    # Retry once on transient errors (rate limit, 5xx, network)
+    if echo "$err" | grep -qiE "rate limit|HTTP 5|timeout|temporarily unavailable|connection reset"; then
+        sleep 2
+        if err=$(gh "$@" 2>&1 >/dev/null); then
+            return 0
+        fi
+    fi
+    # Hard failure — log loudly so it doesn't go silent
+    {
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] gh_loud FAILED: $desc"
+        echo "  cmd: gh $*"
+        echo "  err: $err"
+    } >> "$GH_ERR_LOG"
+    echo "WARN: gh $desc failed — see $GH_ERR_LOG" >&2
+    return 1
+}
+
 # ── JSON helpers ──────────────────────────────────────────────────────────────
 
 read_state() {
@@ -331,7 +366,12 @@ PYEOF
     rmdir "$LOCK_DIR" 2>/dev/null || true
     trap - EXIT
 
-    gh issue edit "$NUM" --add-label in-progress 2>/dev/null || true
+    # Loud + logged on failure, but non-blocking — local state already
+    # claims #N, so the session can proceed even if the GitHub label add
+    # fails. The discrepancy will show up in gh-errors.log and the
+    # in-progress label may be missing in the UI; both are visible signals
+    # rather than silent state divergence.
+    gh_loud "add in-progress label on #$NUM" -- issue edit "$NUM" --add-label in-progress || true
 }
 
 cmd_done() {
@@ -351,9 +391,14 @@ cmd_done() {
     local COMMENT="Done.${COMMIT_REF}"
     [ -n "$NOTE" ] && COMMENT="$NOTE${COMMIT_REF}"
 
-    gh issue comment "$NUM" --body "$COMMENT" 2>/dev/null || true
-    gh issue close "$NUM" 2>/dev/null || true
-    gh issue edit "$NUM" --remove-label in-progress 2>/dev/null || true
+    # All three calls are loud (logged to gh-errors.log on failure) but
+    # non-blocking: we still update local state + increment budget so the
+    # session can progress. Failed closes leave the GitHub issue open and
+    # the WARN visible — the watchdog or human can re-close them. This
+    # preserves the budget-bookkeeping semantics test-drift-control.sh expects.
+    gh_loud "comment on #$NUM" -- issue comment "$NUM" --body "$COMMENT" || true
+    gh_loud "close #$NUM" -- issue close "$NUM" || true
+    gh_loud "remove in-progress label on #$NUM" -- issue edit "$NUM" --remove-label in-progress || true
 
     python3 - "$STATE_FILE" "$NUM" <<'PYEOF'
 import json, sys
@@ -380,7 +425,7 @@ cmd_unclaim() {
     local NUM="$1"
     if [ -z "$NUM" ]; then echo "Usage: sprint-service.sh unclaim <number>" >&2; exit 1; fi
 
-    gh issue edit "$NUM" --remove-label in-progress 2>/dev/null || true
+    gh_loud "remove in-progress label on #$NUM" -- issue edit "$NUM" --remove-label in-progress || true
 
     python3 - "$STATE_FILE" "$NUM" <<'PYEOF'
 import json, sys
@@ -402,7 +447,7 @@ cmd_session_done() {
     if [ -z "$NUM" ]; then echo "Usage: sprint-service.sh session-done <number>" >&2; exit 1; fi
 
     # Remove in-progress label from GitHub
-    gh issue edit "$NUM" --remove-label in-progress 2>/dev/null || true
+    gh_loud "remove in-progress label on #$NUM (session-done)" -- issue edit "$NUM" --remove-label in-progress || true
 
     # Mark done in LOCAL state only — do NOT close the GitHub issue.
     # For permanent tasks:
@@ -471,14 +516,14 @@ cmd_clear() {
         --jq '.[].number' 2>/dev/null || true)
 
     for N in $IN_PROGRESS_NUMS; do
-        gh issue edit "$N" --remove-label in-progress 2>/dev/null || true
+        gh_loud "clear in-progress label on #$N" -- issue edit "$N" --remove-label in-progress || true
     done
 
     # Also check state file for claimed task
     local STATE_IP
     STATE_IP=$(python3 -c "import json; d=json.load(open('$STATE_FILE')); print(d.get('in_progress') or '')" 2>/dev/null || true)
     if [ -n "$STATE_IP" ] && [ "$STATE_IP" != "None" ]; then
-        gh issue edit "$STATE_IP" --remove-label in-progress 2>/dev/null || true
+        gh_loud "clear in-progress label on #$STATE_IP (from state)" -- issue edit "$STATE_IP" --remove-label in-progress || true
     fi
 
     python3 - "$STATE_FILE" <<'PYEOF'

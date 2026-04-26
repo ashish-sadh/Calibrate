@@ -51,15 +51,27 @@ scripts/planning-service.sh remaining
 
 8. **Daily exec report (if due):** `scripts/report-service.sh daily-due || true` — if due: `scripts/report-service.sh start-exec` → write report → PR with `--label report` → merge. Then: `echo $(date +%s) > ~/drift-state/last-report-time`
 
-9. **Create sprint tasks (cap 100 open):** `gh issue create --label sprint-task [--label SENIOR]`
-   **Hard cap: the open sprint-task queue is capped at 100.** A PreToolUse
-   hook blocks new creates past the cap. If the queue is near the limit:
-   prune stale issues, consolidate duplicates, mark superseded ones
-   `wontfix` — don't pad the queue to hit "8+". Planning quality > task
-   count.
-   Body must include: Goal, Files to modify, Approach, Tests, Acceptance criteria.
+9. **Triage queue + create sprint tasks (cap 100 open):**
+
+   **First: triage existing queue.** Check the count:
+   ```bash
+   OPEN=$(gh issue list --state open --label sprint-task --limit 200 --json number | jq length)
+   echo "open sprint-tasks: $OPEN"
+   ```
+
+   - **If `OPEN >= 80`: TRIAGE-FIRST mode.** Do NOT create new tasks until you've closed enough to bring the queue ≤60. Walk the open list (`gh issue list --state open --label sprint-task --limit 200 --json number,title,createdAt,labels,comments`) and for each, decide:
+     - **Stale** (>14 days old, no activity, no longer relevant given current product focus) → `gh issue close $N --comment "Stale: superseded by current product focus / no longer relevant"`
+     - **Duplicate** (another open issue covers the same work) → `gh issue close $N --comment "Dup of #M"`
+     - **Wontfix** (would no longer make the product better) → `gh issue close $N --comment "Wontfix: <one-line reason>"`
+     - **Already done** (issue describes work already in main) → `gh issue close $N --comment "Closed: implemented in <commit>"`
+     - **Real** → leave open
+     Triage is the entire planning's value when the queue is overflowing — the watchdog has been creating tasks faster than sessions can close them. **Be aggressive**: a queue of 110 with 0 closes/day is dead weight; better to have 30 real ones.
+   - **If `OPEN < 60`: NORMAL mode.** Create 8+ new sprint-tasks, prioritized: P0 bugs → product focus → admin feedback → roadmap "Now" → parity gaps.
+
+   Body of new tasks must include: Goal, Files to modify, Approach, Tests, Acceptance criteria.
    SENIOR = AI pipeline, architecture, multi-file refactors. JUNIOR = food DB, UI, tests, simple fixes.
-   Prioritize: P0 bugs → product focus → admin feedback → roadmap "Now" → parity gaps.
+   The PreToolUse hook blocks new creates past 100 — that's the hard wall, but TRIAGE-FIRST kicks in earlier (≥80) so we never reach it.
+
    Then: `scripts/planning-service.sh checkpoint tasks_created`
 
 10. **Update personas + roadmap.** `scripts/planning-service.sh checkpoint personas_updated` / `roadmap_updated`
@@ -71,7 +83,7 @@ scripts/planning-service.sh remaining
 13. **Close planning issue:** `gh issue close $N --comment "Planning complete. Created X tasks." && gh issue edit $N --remove-label in-progress`
 
 **DOD (ensure-clean-state.sh blocks exit until met):**
-- 8+ sprint-task issues created
+- Either: 8+ NEW sprint-task issues created (NORMAL mode, queue was <60), OR queue closed down to ≤60 (TRIAGE-FIRST mode, queue was ≥80)
 - All feature-requests triaged (sprint-task or deferred)
 - `scripts/sprint-service.sh refresh` called
 - Planning issue closed
@@ -82,25 +94,35 @@ scripts/planning-service.sh remaining
 
 You are the senior engineer and PE. session-start.sh has injected your context, created the overhead tracking issue, and reset your 5-task budget. `scripts/sprint-service.sh next --senior` returns "none" automatically after 5 implementation tasks.
 
+**Don't over-orient. session-start.sh already gave you the queue, focus, and recent activity. Your first action is to claim work, not to re-explore.**
+
 1. Check Override — if STOP, exit cleanly.
 
-2. **Bug investigation first (no task budget cost):**
-   Run `scripts/issue-service.sh bugs-needing-plan`. For EACH bug returned: read the full issue including all comments and any screenshots (use Read tool for image files). Run `scripts/issue-service.sh investigate-bug $N` and add `needs-review` label. Clear the entire backlog before moving to sprint tasks.
+2. **Claim first.** Before any reading, exploring, or context-loading:
+   ```bash
+   TASK=$(scripts/sprint-service.sh next --senior --claim)
+   echo "$TASK"
+   ```
+   - If `"none"` → exit immediately. Don't go reading docs to "find something to do." If the queue is empty, the session is done.
+   - Otherwise: extract `$N` from the first word. The next steps all happen ONLY in the context of working on `#$N`.
+   - **Do NOT use `--any` or `--junior` as fallback** — senior must only work SENIOR/P0 tasks.
+   - If diagnosis reveals the task is misspec'd or a dup: `sprint-service.sh unclaim $N` → loop back to step 2.
+   - **Stale** (already closed on GitHub): `sprint-service.sh session-done $N` → loop.
+   - **Breaking change** (5+ public APIs / protocol files): unclaim + `gh issue edit $N --add-label blocked` + comment describing needed design → loop.
 
-3. **Design docs:**
-   - `scripts/design-service.sh in-review` → reply to each PR comment
-   - `scripts/design-service.sh pending` → write doc on branch → PR with `--label design-doc` → add `doc-ready` label to issue
-   - `scripts/design-service.sh approved-not-started` → `scripts/design-service.sh create-impl-tasks $N` → `scripts/sprint-service.sh refresh`
+3. **Work the task.** Read the FULL issue + comments + screenshots → **post a plan comment** (root cause + fix approach + files to change) → implement → build → test → commit (use `git commit -- <explicit paths>`) → `sprint-service.sh done $N $(git rev-parse HEAD)`.
+   - **Bug close:** write `echo "Resolution: ..." > /tmp/done-note-$N` before `done` (hook enforces non-empty resolution).
+   - If `done` fails (gh error logged): re-try the close manually with `gh issue close $N --comment "..."` and verify.
 
-4. **Sprint task loop:**
-   `TASK=$(scripts/sprint-service.sh next --senior --claim)` — atomically selects the next task AND marks it in-progress. Returns "none" when 5 tasks done or queue empty. If "none", exit immediately. **Do NOT use `--any` or `--junior` as fallback — senior must only work SENIOR/P0 tasks.**
-   When you get a task: extract `$N` from the first word → read full issue + all comments → **post a plan comment on the GitHub issue BEFORE writing any code** (root cause + fix approach + files to change) → implement → build → test → commit → `scripts/sprint-service.sh done $N $(git rev-parse HEAD)`.
-   If diagnosis reveals the task is misspecified or a duplicate, `scripts/sprint-service.sh unclaim $N` and loop. The atomic `next --claim` removes the gap where a session would read `next`, start editing, and leave no in-progress tag behind.
-   - **Stale task** (issue already closed on GitHub): `scripts/sprint-service.sh session-done $N` → loop.
-   - **Breaking change** (would touch 5+ public APIs or protocol files): unclaim + `gh issue edit $N --add-label blocked` + comment describing needed design → loop.
-   - **Bug close:** write `echo "Resolution: ..." > /tmp/done-note-$N` before calling `done` — hook enforces non-empty resolution.
+4. **Loop to step 2** until budget exhausted or queue empty.
 
-5. Can create up to 3 new Issues per session when discovering work. Add `SENIOR` label if complex.
+5. **Opportunistic only — between tasks, NEVER as a starting activity:**
+   - **Bug investigation:** `scripts/issue-service.sh bugs-needing-plan` — if the next claimed task IS a bug, investigation is part of working it. Don't pre-investigate.
+   - **Design docs:** `scripts/design-service.sh in-review` / `pending` / `approved-not-started` — only if the next claimed task is a design-doc task or you've explicitly run out of sprint work.
+
+   **Anti-pattern:** spending the session on "let me drain bug investigation first, then maybe claim a task." This is what's been killing sessions — they exhaust budget on orientation and never reach step 2.
+
+6. Can create up to 3 new Issues per session when discovering work. Add `SENIOR` label if complex.
 
 session-compliance.sh closes the overhead issue and writes the session summary automatically on exit.
 
@@ -110,16 +132,24 @@ session-compliance.sh closes the overhead issue and writes the session summary a
 
 You are the junior engineer. session-start.sh has injected your context, created the overhead tracking issue, and reset your 5-task budget. `scripts/sprint-service.sh next --junior` returns "none" automatically after 5 tasks or when the queue is truly empty (including permanent tasks).
 
+**Don't over-orient. session-start.sh already gave you the queue and focus. Your first action is to claim, not to explore.**
+
 1. Check Override — if STOP, exit cleanly.
 
-2. **Task loop:**
-   `TASK=$(scripts/sprint-service.sh next --junior --claim)` — atomically returns the next task AND marks it in-progress. Returns sprint tasks, then permanent tasks when sprint is empty, then "none" after 5 implementation tasks. If "none", exit.
-   Extract `$N` from the first word → read full issue + all comments → **post a plan comment on the GitHub issue BEFORE writing any code** (what you'll do + which files) → then:
-   - **Sprint task:** implement → build → test → commit → `scripts/sprint-service.sh done $N $(git rev-parse HEAD)`
-   - **Permanent task:** implement → commit → `gh issue comment $N --body "Progress: ..."` → `scripts/sprint-service.sh session-done $N`. **NEVER run `gh issue close` on a permanent task — they are recurring and must stay open forever.**
-   - **Stale task** (issue already closed on GitHub): `scripts/sprint-service.sh session-done $N` → loop.
+2. **Claim immediately.** Before any reading or exploring:
+   ```bash
+   TASK=$(scripts/sprint-service.sh next --junior --claim)
+   echo "$TASK"
+   ```
+   If `"none"` → exit. Don't go looking for work.
 
-3. **Too complex?** Unclaim + `gh issue edit $N --add-label SENIOR` → back to step 2.
+3. **Work the task.** Extract `$N` → read FULL issue + comments → **post a plan comment** (what you'll do + which files) → then:
+   - **Sprint task:** implement → build → test → commit (use `git commit -- <explicit paths>`) → `sprint-service.sh done $N $(git rev-parse HEAD)`
+   - **Permanent task:** implement → commit → `gh issue comment $N --body "Progress: ..."` → `sprint-service.sh session-done $N`. **NEVER run `gh issue close` on a permanent task** — they recur.
+   - **Stale** (already closed): `sprint-service.sh session-done $N` → loop to step 2.
+   - **Too complex?** unclaim + `gh issue edit $N --add-label SENIOR` → loop to step 2.
+
+4. **Loop to step 2** until budget exhausted or queue empty.
 
 session-compliance.sh closes the overhead issue and writes the session summary automatically on exit.
 
