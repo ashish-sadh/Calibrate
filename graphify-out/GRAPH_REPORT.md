@@ -1,7 +1,7 @@
 # Graph Report - /Users/ashishsadh/workspace/Drift  (2026-04-25)
 
 ## Corpus Check
-- 410 files · ~1,767,980 words
+- 410 files · ~1,767,954 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -1028,9 +1028,11 @@ Nodes (0):
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `date` connect `Community 1` to `Community 0`, `Community 2`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 9`, `Community 11`, `Community 13`, `Community 14`, `Community 16`, `Community 17`, `Community 18`, `Community 19`, `Community 21`, `Community 28`, `Community 31`?**
-  _High betweenness centrality (0.049) - this node is a cross-community bridge._
-- **Why does `data` connect `Community 13` to `Community 0`, `Community 1`, `Community 2`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 9`, `Community 10`, `Community 11`, `Community 12`, `Community 16`, `Community 18`, `Community 20`, `Community 22`, `Community 31`?**
-  _High betweenness centrality (0.027) - this node is a cross-community bridge._
+  _High betweenness centrality (0.051) - this node is a cross-community bridge._
+- **Why does `RawIngredient` connect `Community 2` to `Community 6`?**
+  _High betweenness centrality (0.024) - this node is a cross-community bridge._
+- **Why does `BarcodeLookupView` connect `Community 4` to `Community 2`, `Community 3`, `Community 30`?**
+  _High betweenness centrality (0.021) - this node is a cross-community bridge._
 - **Are the 352 inferred relationships involving `String` (e.g. with `.classify()` and `.extractTool()`) actually correct?**
   _`String` has 352 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 292 inferred relationships involving `date` (e.g. with `.measureTTFT()` and `.testSingleItemTTFTSmoke()`) actually correct?**
@@ -1039,5 +1041,3 @@ _Questions this graph is uniquely positioned to answer:_
   _`empty` has 240 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 173 inferred relationships involving `food` (e.g. with `seedFoodDB()` and `.detectAndSaveCombos()`) actually correct?**
   _`food` has 173 INFERRED edges - model-reasoned connections that need verification._
-- **What connects `HardTurn`, `Scenario`, `Case` to the rest of the system?**
-  _503 weakly-connected nodes found - possible documentation gaps or missing edges._
