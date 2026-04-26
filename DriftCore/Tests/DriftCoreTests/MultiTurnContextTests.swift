@@ -1,6 +1,5 @@
 import XCTest
 @testable import DriftCore
-@testable import Drift
 
 /// Multi-turn context hardening — sprint task #80.
 /// Tests that conversation history is correctly built, passed, and used for
