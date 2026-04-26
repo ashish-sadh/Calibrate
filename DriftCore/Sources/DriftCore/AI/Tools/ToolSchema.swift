@@ -14,7 +14,8 @@ public struct ToolParam: Sendable {
     }
 }
 
-/// Result of executing a tool.
+/// Result of executing a tool. Public because it appears as the return type
+/// of the closures passed to `ToolSchema.handler` and `ToolSchema.postHook`.
 public enum ToolResult: Sendable {
     case text(String)
     case action(ToolAction)
@@ -76,6 +77,7 @@ public enum PreHookResult: Sendable {
 }
 
 /// PostHook result — verify tool output, optionally reject with fallback.
+/// Public because it appears in `ToolSchema.postHook` closure signatures.
 public enum PostHookResult: Sendable {
     case accept(followUp: String?)
     case reject(reason: String, fallback: String)

@@ -29,7 +29,7 @@ public struct GlucoseReading: Identifiable, Codable, Sendable {
     }
 
     /// Glucose zone for color coding.
-    public var zone: GlucoseZone {
+    var zone: GlucoseZone {
         switch glucoseMgdl {
         case ..<70: .low
         case 70..<100: .normal
@@ -47,6 +47,6 @@ extension GlucoseReading: FetchableRecord, PersistableRecord {
     }
 }
 
-public enum GlucoseZone: Sendable {
+enum GlucoseZone: Sendable {
     case low, normal, elevated, high
 }

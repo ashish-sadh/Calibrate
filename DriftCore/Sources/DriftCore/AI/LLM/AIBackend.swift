@@ -3,7 +3,7 @@ import Foundation
 // MARK: - AI Backend Protocol
 
 /// Abstraction for on-device LLM inference. Supports both llama.cpp and MLX backends.
-public protocol AIBackend: AnyObject, Sendable {
+protocol AIBackend: AnyObject, Sendable {
     var isLoaded: Bool { get }
     var supportsVision: Bool { get }
 
@@ -61,6 +61,7 @@ public enum AIModelTier: Sendable {
 
 // MARK: - Backend Type
 
+/// Public because it appears as a property type on `AIModelManager.backendType`.
 public enum AIBackendType: Sendable {
     case llamaCpp
     case mlx

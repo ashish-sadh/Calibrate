@@ -1,5 +1,4 @@
 import Foundation
-import DriftCore
 
 /// Resolves multi-turn references to food entries — preferring a stable
 /// `entry_id` from the ConversationState recent-entries window, then
@@ -7,14 +6,14 @@ import DriftCore
 /// name-match in FoodService. Owns the disambiguation logic so the tool
 /// handlers stay thin (#227).
 @MainActor
-public enum FoodEntryRefResolver {
+enum FoodEntryRefResolver {
 
     /// Attempt to resolve a concrete entry id from the LLM-extracted params.
     /// Order of precedence:
     ///   1. `entry_id` numeric param, validated against today's recent window
     ///   2. ordinal phrase in `name` / `target_food` ("first", "last", etc.)
     /// Returns nil when neither applies — callers fall back to name search.
-    public static func resolveEntryId(
+    static func resolveEntryId(
         from params: ToolCallParams,
         phraseKeys: [String] = ["name", "target_food", "query"]
     ) -> Int64? {

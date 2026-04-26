@@ -18,8 +18,16 @@
 #     DriftWidget/ (if it exists), DriftIntents/ (if it exists). Tests using
 #     @testable import DriftCore reach internal members anyway, so a symbol
 #     used only in a test file is still a downgrade candidate.
-#   - We grep for the bare type name. False positives possible if the name
-#     is a common English word (e.g. "Workout"). Eyeball the report.
+#   - We grep for the bare type name. False positives common in:
+#     * Common English words (e.g. "Workout"). Eyeball the report.
+#     * Types reached only via a `public typealias` (e.g. PlantPointsFoodItem
+#       is exposed as `PlantPointsService.FoodItem`).
+#     * Types appearing only as closure parameter/return types in *other*
+#       public function signatures (e.g. `ToolResult` in
+#       `ToolSchema.handler: (ToolCallParams) -> ToolResult`). Type inference
+#       hides the name at every call site.
+#     If the compiler complains "public X uses internal Y" after a
+#     downgrade, Y is one of these — revert.
 set -uo pipefail
 # Don't `set -e`: grep returns 1 on no-match, and we have many empty-result greps.
 
