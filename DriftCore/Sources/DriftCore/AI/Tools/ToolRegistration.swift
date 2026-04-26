@@ -209,10 +209,12 @@ public enum ToolRegistration {
                 // "am I hitting my protein goal".
                 if query.contains("protein") {
                     guard n.proteinG > 0 else { return .text("No food logged yet. Log meals to track protein.") }
-                    if let t = targets {
+                    // Prefer explicit user-set proteinGoal (#441); fall back to macro-breakdown target
+                    let proteinTarget = goal?.proteinGoal ?? targets.map { $0.proteinG }
+                    if let target = proteinTarget {
                         var response = FoodService.macroProgressLine(
-                            label: "Protein", currentG: Int(n.proteinG), targetG: Int(t.proteinG))
-                        let left = max(0, Int(t.proteinG - n.proteinG))
+                            label: "Protein", currentG: Int(n.proteinG), targetG: Int(target))
+                        let left = max(0, Int(target - n.proteinG))
                         let topP = FoodService.topProteinFoods(limit: 3)
                         if left > 20 && !topP.isEmpty {
                             response += " Try: " + topP.map { "\($0.name) (\(Int($0.proteinG))P)" }.joined(separator: ", ")
@@ -220,6 +222,14 @@ public enum ToolRegistration {
                         return .text(response)
                     }
                     return .text("\(Int(n.proteinG))g protein today.")
+                }
+                if query.contains("calori") && (query.contains("goal") || query.contains("target") || query.contains("hitting") || query.contains("on track")) {
+                    // Explicit calorie goal check: "am I hitting my calorie goal?" (#441)
+                    let calTarget = goal?.calorieGoal ?? targets.map { $0.calorieTarget }
+                    if let target = calTarget {
+                        return .text(FoodService.macroProgressLine(
+                            label: "Calories", currentG: Int(n.calories), targetG: Int(target), unit: " cal"))
+                    }
                 }
                 if query.contains("carb") {
                     if let t = targets {

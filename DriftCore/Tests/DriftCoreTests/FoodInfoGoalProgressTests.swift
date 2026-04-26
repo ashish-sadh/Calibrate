@@ -60,6 +60,23 @@ final class FoodInfoGoalProgressTests: XCTestCase {
         XCTAssertEqual(line, "Calories: 1500 cal / 2000 cal goal — 75% (500 cal to go).")
     }
 
+    // MARK: - Calorie goal progress format (#441)
+
+    func testCalorieGoalProgressUnder() {
+        let line = FoodService.macroProgressLine(label: "Calories", currentG: 1400, targetG: 2000, unit: " cal")
+        XCTAssertEqual(line, "Calories: 1400 cal / 2000 cal goal — 70% (600 cal to go).")
+    }
+
+    func testCalorieGoalProgressOver() {
+        let line = FoodService.macroProgressLine(label: "Calories", currentG: 2200, targetG: 2000, unit: " cal")
+        XCTAssertEqual(line, "Calories: 2200 cal / 2000 cal goal — 110% (200 cal over).")
+    }
+
+    func testCalorieGoalProgressExact() {
+        let line = FoodService.macroProgressLine(label: "Calories", currentG: 2000, targetG: 2000, unit: " cal")
+        XCTAssertEqual(line, "Calories: 2000 cal / 2000 cal goal — 100% (target reached!).")
+    }
+
     // MARK: - WeightGoal.proteinGoal / calorieGoal (#440)
 
     func testWeightGoal_ProteinGoalRoundTrips() {
