@@ -101,7 +101,6 @@
 		9B11BE8782BE0D44DD4D4816 /* GoalSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7AB5CF548B4E61C45C1485 /* GoalSetupView.swift */; };
 		9E576FCB247BD6516612E63F /* ManualFoodEntrySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4683CA86D3045B1534504B0 /* ManualFoodEntrySheet.swift */; };
 		9F09FCD3472B6C02FEC11B48 /* llama.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4101CD9171B652C6B8D1BB4E /* llama.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		A1BCD9E578BA6D939E4F078B /* top-500-foods.txt in Resources */ = {isa = PBXBuildFile; fileRef = 3120313481E2B0C45C1B573A /* top-500-foods.txt */; };
 		A2ACB0BE8811077162EBE463 /* FoodLogViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE2809389EE890A3F01ED675 /* FoodLogViewModel.swift */; };
 		A349C57E1A1A347C924B9FA1 /* DriftWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 0F759FA8F6D800CE5BAD454A /* DriftWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A459C9B6E82F83B1CC545F63 /* IntentClassifierEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEAFAA2ECC4A71FF1264A19F /* IntentClassifierEval.swift */; };
@@ -252,7 +251,6 @@
 		2662F38D09EED0C1C9415508 /* PhotoLogCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLogCaptureView.swift; sourceTree = "<group>"; };
 		2DEC3049742676C1201A6847 /* HardEvalSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardEvalSet.swift; sourceTree = "<group>"; };
 		3053C86565C8B26D3B16A0A2 /* AutoResearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoResearchTests.swift; sourceTree = "<group>"; };
-		3120313481E2B0C45C1B573A /* top-500-foods.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "top-500-foods.txt"; sourceTree = "<group>"; };
 		3258B6E91169170587AAB02B /* GoalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalView.swift; sourceTree = "<group>"; };
 		36BB15B5D3A14E0D9940B118 /* HealthKitService+Cycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthKitService+Cycle.swift"; sourceTree = "<group>"; };
 		3F480CCAF91EFD799E6B5B8C /* DriftLLMEvalMacOS.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DriftLLMEvalMacOS.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -628,7 +626,6 @@
 				D692B540EF483EFFC8EB0569 /* latency-baseline.json */,
 				B42BDAF88B654D1EE5C4C403 /* latency-queries.json */,
 				E6B95CCD0C984C915051F482 /* sample_lingo_export.csv */,
-				3120313481E2B0C45C1B573A /* top-500-foods.txt */,
 			);
 			path = Fixtures;
 			sourceTree = "<group>";
@@ -945,7 +942,6 @@
 				70385AB62DB3A7D09C4BB002 /* latency-baseline.json in Resources */,
 				6805E46813F436A37E4F3B2E /* latency-queries.json in Resources */,
 				8CB8BF68CE3F11B2CFBDDB16 /* sample_lingo_export.csv in Resources */,
-				A1BCD9E578BA6D939E4F078B /* top-500-foods.txt in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

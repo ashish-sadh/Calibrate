@@ -32,7 +32,10 @@ let package = Package(
         .testTarget(
             name: "DriftCoreTests",
             dependencies: ["DriftCore"],
-            path: "Tests/DriftCoreTests"
+            path: "Tests/DriftCoreTests",
+            resources: [
+                .process("Fixtures"),
+            ]
         ),
     ]
 )

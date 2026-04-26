@@ -1,11 +1,14 @@
 import XCTest
 @testable import DriftCore
 
-/// Multi-turn context hardening — sprint task #80.
-/// Tests that conversation history is correctly built, passed, and used for
-/// context-dependent queries. No LLM required — tests deterministic pipeline.
+/// Deterministic multi-turn pipeline tests (no LLM): IntentClassifier message
+/// builder, response parser, ConversationState topic classifier,
+/// InputNormalizer. Validates the data layer *before* the LLM sees it.
 ///
-/// Run: xcodebuild test -only-testing:'DriftTests/MultiTurnContextTests'
+/// LLM-backed multi-turn behavior (does Gemma 4 actually use the history we
+/// build?) lives in `DriftLLMEvalMacOS/MultiTurnContextEval.swift`.
+///
+/// Run: `cd DriftCore && swift test --filter MultiTurnContextTests`
 final class MultiTurnContextTests: XCTestCase {
 
     // MARK: - IntentClassifier History Window

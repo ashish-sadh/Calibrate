@@ -1,9 +1,13 @@
 import XCTest
 @testable import DriftCore
 
-/// Intent routing eval: verifies ToolRanker correctly ranks tools for natural food phrasing.
+/// Deterministic ToolRanker routing tests (no LLM, ~30 cases, <100ms).
 /// Focus: implicit food logging (no "log" keyword) and nutrition-query negatives.
-/// All cases must pass at 100% — failures indicate a routing regression.
+/// All cases must pass at 100% — failures indicate a ToolRanker regression.
+///
+/// LLM-backed intent routing (~300 cases, 5min) lives in
+/// `DriftLLMEvalMacOS/IntentRoutingEval.swift` — that file calls real Gemma 4
+/// to validate prompt + model behavior, not the deterministic ranker.
 final class IntentRoutingEvalTests: XCTestCase {
 
     override func setUp() {
