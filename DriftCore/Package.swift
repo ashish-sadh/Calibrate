@@ -24,7 +24,10 @@ let package = Package(
                 .product(name: "GRDB", package: "GRDB.swift"),
                 "llama",
             ],
-            path: "Sources/DriftCore"
+            path: "Sources/DriftCore",
+            resources: [
+                .process("Resources"),
+            ]
         ),
         .testTarget(
             name: "DriftCoreTests",

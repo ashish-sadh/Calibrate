@@ -19,7 +19,7 @@ public enum ExerciseDatabase {
 
     public static var all: [ExerciseInfo] {
         if let cached = _exercises { return cached }
-        guard let url = Bundle.main.url(forResource: "exercises", withExtension: "json"),
+        guard let url = Bundle.module.url(forResource: "exercises", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let decoded = try? JSONDecoder().decode([ExerciseInfo].self, from: data) else {
             return []

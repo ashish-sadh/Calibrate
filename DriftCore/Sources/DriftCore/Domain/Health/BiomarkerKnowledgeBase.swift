@@ -1,12 +1,11 @@
 import Foundation
-import DriftCore
 
 /// Provides access to the bundled biomarker definitions.
 public enum BiomarkerKnowledgeBase {
 
     /// All 65 biomarker definitions, loaded from biomarkers.json.
     public static let all: [BiomarkerDefinition] = {
-        guard let url = Bundle.main.url(forResource: "biomarkers", withExtension: "json"),
+        guard let url = Bundle.module.url(forResource: "biomarkers", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let defs = try? JSONDecoder().decode([BiomarkerDefinition].self, from: data) else {
             Log.biomarkers.error("Failed to load biomarkers.json")

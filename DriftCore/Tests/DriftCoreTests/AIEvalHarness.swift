@@ -1,6 +1,5 @@
 import XCTest
 @testable import DriftCore
-@testable import Drift
 
 /// Gold-standard evaluation harness for the unified AI chat pipeline.
 /// Tests the real flow: StaticOverrides → AIActionExecutor → ToolRanker → tool execution.

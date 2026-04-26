@@ -1,5 +1,4 @@
 import Foundation
-import DriftCore
 
 /// Spell correction using food DB names + hardcoded fallback.
 /// Corrects user input before passing to LLM or food search.
@@ -8,7 +7,7 @@ public enum SpellCorrectService {
     /// Cached food names from DB for fuzzy matching
     nonisolated(unsafe) private static var foodNames: [String] = {
         // Load food names from the bundled DB at startup
-        guard let url = Bundle.main.url(forResource: "foods", withExtension: "json"),
+        guard let url = Bundle.module.url(forResource: "foods", withExtension: "json"),
               let data = try? Data(contentsOf: url),
               let foods = try? JSONDecoder().decode([[String: AnyCodable]].self, from: data) else {
             return []

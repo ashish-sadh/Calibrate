@@ -492,7 +492,7 @@ extension AppDatabase {
     /// scoped to DB-sourced rows; user-scanned foods (source='barcode',
     /// 'recipe', 'photo_log', 'custom') are never overwritten.
     public func seedFoodsFromJSON() throws {
-        guard let url = Bundle.main.url(forResource: "foods", withExtension: "json"),
+        guard let url = Bundle.module.url(forResource: "foods", withExtension: "json"),
               let data = try? Data(contentsOf: url) else {
             return
         }

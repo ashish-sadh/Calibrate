@@ -2,7 +2,12 @@ import Foundation
 @testable import DriftCore
 import Testing
 import GRDB
-@testable import Drift
+
+/// Serialized so `Preferences.chatTelemetryEnabled` (UserDefaults global) can't
+/// race across parallel test invocations — we toggle it per-test and a
+/// concurrent test could otherwise observe the wrong value mid-flight.
+@Suite(.serialized)
+struct ChatTelemetryServiceTests {
 
 /// Helpers: fresh in-memory DB per test so we don't touch shared state.
 private func makeTestDB() throws -> AppDatabase {
@@ -426,3 +431,5 @@ private func isoTimestamp(hoursAgo: Double, now: Date = Date()) -> String {
     service.deleteAll()
     #expect(service.count() == 0)
 }
+
+}  // end ChatTelemetryServiceTests
