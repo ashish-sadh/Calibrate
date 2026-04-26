@@ -91,7 +91,32 @@ The codebase is split into a multi-platform `DriftCore` Swift package + the iOS 
 
 If you touch a file that's only Swift logic (no SwiftUI / HealthKit / WidgetKit / etc), it almost certainly belongs in DriftCore — keep the iOS target lean.
 
-**New tests:** pure-logic tests live in `DriftCore/Tests/DriftCoreTests/`; reserve `DriftTests/` for tests that genuinely need `@testable import Drift` (Views, ViewModels, HealthKitService, OCR, CloudVisionKey, etc.). The `swift test` loop is ~10× faster than the iOS Simulator boot.
+## Test Tier Map — run the right test at the right time
+
+Five tiers by cost. Each test file MUST belong to exactly one tier; mixing tiers in one file is the failure mode that turned the whole suite into a liability.
+
+| Tier | Trigger | Wall time | Where it lives | What it tests |
+|---|---|---|---|---|
+| **0** | every save | <2s warm | `DriftCore/Tests/DriftCoreTests/` | pure logic — InputNormalizer, ToolRanker, parsers, formatters, services with in-memory DB |
+| **1** | every commit | ~30s | `DriftTests/` (iOS sim) | UI/ViewModel binding, HealthKit, Widget, Notification, Speech, OCR, Keychain |
+| **2** | every commit | ~30s | `DriftLLMEvalMacOS/` *(deterministic only)* | LLM-pipeline cases that don't actually call a model — IntentRouting smoke, prompt-structure asserts |
+| **3** | nightly + pre-TestFlight | ~5–10 min | `DriftLLMEvalMacOS/` *(LLM-backed)* | real Gemma 4 / Qwen3 routing, multi-turn, prompt regressions |
+| **4** | manual / weekly / opt-in | minutes–hours | gated by env var | `DRIFT_DEEP_EVAL=1`, `DRIFT_AUTORESEARCH=1`, `DRIFT_LATENCY_BENCH=1`, `DRIFT_USDA_EVAL=1` — benchmarks, optimization loops, coverage scans |
+
+**New test? Decision flow:**
+
+1. Does the test need a real LLM call? → Tier 3 (`DriftLLMEvalMacOS`, no env gate) or Tier 4 (`DriftLLMEvalMacOS`, env-gated).
+2. Does the test need iOS Simulator (UIKit, HealthKit, Widget, Speech, Photos, AppIntents, Keychain via Security/LocalAuthentication)? → Tier 1 (`DriftTests`).
+3. Otherwise → Tier 0 (`DriftCore/Tests/DriftCoreTests/`). This is the default; the burden of proof is on putting it elsewhere.
+
+**Rules:**
+
+- **One tier per file.** Don't write a test class where some methods are deterministic and others hit a real model — split them. Tier-2 cases that "might" call the LLM under env gate belong in Tier 4.
+- **Env-gated tests stay co-located with their helpers.** If `AutoResearchTests` needs `PromptOptimizer.swift`, that helper lives next to the test. Don't create a fake "lib" folder.
+- **Gold sets are Tier 0 unless they call the LLM.** A gold set that asserts `ToolRanker.rank("log eggs").first == log_food` is Tier 0. A gold set that asserts `LocalAIService.classify("log eggs") == log_food` is Tier 3.
+- **Fixtures travel with their tests.** SwiftPM test target uses `resources: [.process("Fixtures")]` + `Bundle.module`. iOS test target uses `path: DriftTests` (dir-globbed by xcodegen). If you orphan a fixture, the test will silently produce empty data — assert non-empty in setup.
+- **Don't create a new test file** if its assertions belong in an existing file. Prefer expanding `IntentClassifierGoldSetTests` over making `IntentClassifierGoldSetTests_v2`.
+- **Reserve `DriftTests/`** for tests that genuinely need `@testable import Drift` (Views, ViewModels, HealthKitService, OCR, CloudVisionKey). The `swift test` loop is ~10× faster than the iOS Simulator boot — don't put pure logic there.
 
 ## Build & Test
 
