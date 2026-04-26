@@ -41,9 +41,10 @@ enum FoodEntryRefResolver {
 }
 
 /// Thin adapter: extracts params, resolves id, routes to FoodService.
+/// Public for cross-target use in DriftCoreAI/Tools/ToolRegistration.
 @MainActor
-enum DeleteFoodHandler {
-    static func run(params: ToolCallParams) -> String {
+public enum DeleteFoodHandler {
+    public static func run(params: ToolCallParams) -> String {
         if let id = FoodEntryRefResolver.resolveEntryId(from: params),
            let msg = FoodService.deleteEntry(id: id) {
             return msg
@@ -54,9 +55,10 @@ enum DeleteFoodHandler {
 }
 
 /// Thin adapter: extracts params, resolves id, routes to FoodService.
+/// Public for cross-target use in DriftCoreAI/Tools/ToolRegistration.
 @MainActor
-enum EditMealHandler {
-    static func run(params: ToolCallParams) -> String {
+public enum EditMealHandler {
+    public static func run(params: ToolCallParams) -> String {
         let action = params.string("action") ?? "remove"
         let newValue = params.string("new_value")
         let mealPeriod = params.string("meal_period")
