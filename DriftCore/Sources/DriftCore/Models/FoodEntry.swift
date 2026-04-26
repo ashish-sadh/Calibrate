@@ -17,6 +17,8 @@ public struct FoodEntry: Identifiable, Codable, Sendable {
     public var loggedAt: String
     public var date: String?         // "YYYY-MM-DD" — which day this belongs to
     public var mealType: String?     // "breakfast" | "lunch" | "dinner" | "snack"
+    public var sodiumMg: Double?     // nullable — absent for pre-v35 entries; COALESCE to 0
+    public var sugarG: Double?       // nullable — absent for pre-v35 entries; COALESCE to 0
 
     enum CodingKeys: String, CodingKey {
         case id, servings, calories, date
@@ -31,6 +33,8 @@ public struct FoodEntry: Identifiable, Codable, Sendable {
         case createdAt = "created_at"
         case loggedAt = "logged_at"
         case mealType = "meal_type"
+        case sodiumMg = "sodium_mg"
+        case sugarG = "sugar_g"
     }
 
     public init(
@@ -48,7 +52,9 @@ public struct FoodEntry: Identifiable, Codable, Sendable {
         createdAt: String = ISO8601DateFormatter().string(from: Date()),
         loggedAt: String = ISO8601DateFormatter().string(from: Date()),
         date: String? = nil,
-        mealType: String? = nil
+        mealType: String? = nil,
+        sodiumMg: Double? = nil,
+        sugarG: Double? = nil
     ) {
         self.id = id
         self.mealLogId = mealLogId
@@ -65,6 +71,27 @@ public struct FoodEntry: Identifiable, Codable, Sendable {
         self.loggedAt = loggedAt
         self.date = date
         self.mealType = mealType
+        self.sodiumMg = sodiumMg
+        self.sugarG = sugarG
+    }
+
+    /// Convenience init that copies all macro/micronutrient fields from a Food at log-time.
+    public init(food: Food, servings: Double, date: String? = nil, mealType: String? = nil) {
+        self.init(
+            foodId: food.id,
+            foodName: food.name,
+            servingSizeG: food.servingSize,
+            servings: servings,
+            calories: food.calories,
+            proteinG: food.proteinG,
+            carbsG: food.carbsG,
+            fatG: food.fatG,
+            fiberG: food.fiberG,
+            date: date,
+            mealType: mealType,
+            sodiumMg: food.sodiumMg,
+            sugarG: food.sugarG
+        )
     }
 
     /// Total calories for this entry (per-serving * servings).
@@ -73,6 +100,8 @@ public struct FoodEntry: Identifiable, Codable, Sendable {
     public var totalCarbs: Double { carbsG * servings }
     public var totalFat: Double { fatG * servings }
     public var totalFiber: Double { fiberG * servings }
+    public var totalSodium: Double { (sodiumMg ?? 0) * servings }
+    public var totalSugar: Double { (sugarG ?? 0) * servings }
 }
 
 extension FoodEntry: FetchableRecord, PersistableRecord {

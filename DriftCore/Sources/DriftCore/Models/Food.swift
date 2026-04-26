@@ -32,6 +32,8 @@ public struct Food: Identifiable, Codable, Sendable {
     public var tbspSizeG: Double?
     public var scoopSizeG: Double?
     public var bowlSizeG: Double?
+    public var sodiumMg: Double?   // nullable — populated by v35 migration; absent = unknown
+    public var sugarG: Double?     // nullable — populated by v35 migration; absent = unknown
 
     enum CodingKeys: String, CodingKey {
         case id, name, category, calories, ingredients, source
@@ -51,6 +53,8 @@ public struct Food: Identifiable, Codable, Sendable {
         case tbspSizeG = "tbsp_size_g"
         case scoopSizeG = "scoop_size_g"
         case bowlSizeG = "bowl_size_g"
+        case sodiumMg = "sodium_mg"
+        case sugarG = "sugar_g"
     }
 
     public init(
@@ -75,7 +79,9 @@ public struct Food: Identifiable, Codable, Sendable {
         cupSizeG: Double? = nil,
         tbspSizeG: Double? = nil,
         scoopSizeG: Double? = nil,
-        bowlSizeG: Double? = nil
+        bowlSizeG: Double? = nil,
+        sodiumMg: Double? = nil,
+        sugarG: Double? = nil
     ) {
         self.id = id
         self.name = name
@@ -99,6 +105,8 @@ public struct Food: Identifiable, Codable, Sendable {
         self.tbspSizeG = tbspSizeG
         self.scoopSizeG = scoopSizeG
         self.bowlSizeG = bowlSizeG
+        self.sodiumMg = sodiumMg
+        self.sugarG = sugarG
     }
 
     public init(from decoder: Decoder) throws {
@@ -130,6 +138,8 @@ public struct Food: Identifiable, Codable, Sendable {
         tbspSizeG = try c.decodeIfPresent(Double.self, forKey: .tbspSizeG)
         scoopSizeG = try c.decodeIfPresent(Double.self, forKey: .scoopSizeG)
         bowlSizeG = try c.decodeIfPresent(Double.self, forKey: .bowlSizeG)
+        sodiumMg = try c.decodeIfPresent(Double.self, forKey: .sodiumMg)
+        sugarG = try c.decodeIfPresent(Double.self, forKey: .sugarG)
     }
 
     /// Compact macro string like "165cal 31P 0C 4F"

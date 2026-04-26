@@ -241,3 +241,63 @@ import GRDB
     #expect(result.rows[0]["B"] == "2")
     #expect(result.rows[0]["C"] == nil, "Missing column should be nil")
 }
+
+// MARK: - Micronutrient fields (#442)
+
+@Test func foodEntryMicronutrientsNilByDefault() {
+    let entry = FoodEntry(foodName: "Egg", servingSizeG: 50, calories: 70)
+    #expect(entry.sodiumMg == nil)
+    #expect(entry.sugarG == nil)
+    #expect(entry.totalSodium == 0, "totalSodium should COALESCE nil to 0")
+    #expect(entry.totalSugar == 0, "totalSugar should COALESCE nil to 0")
+}
+
+@Test func foodEntryMicronutrientsScaleWithServings() {
+    var entry = FoodEntry(foodName: "Chips", servingSizeG: 30, servings: 2, calories: 150,
+                          sodiumMg: 200, sugarG: 1)
+    #expect(entry.totalSodium == 400)
+    #expect(entry.totalSugar == 2)
+    entry.servings = 0.5
+    #expect(entry.totalSodium == 100)
+    #expect(entry.totalSugar == 0.5)
+}
+
+@Test func foodEntryConvenienceInitCopiesMicronutrients() {
+    let food = Food(name: "Banana", category: "Fruit", servingSize: 120,
+                    servingUnit: "medium", calories: 105, proteinG: 1.3,
+                    carbsG: 27, fatG: 0.4, fiberG: 3.1,
+                    sodiumMg: 1, sugarG: 14)
+    let entry = FoodEntry(food: food, servings: 1.5, mealType: "snack")
+    #expect(entry.sodiumMg == 1)
+    #expect(entry.sugarG == 14)
+    #expect(entry.totalSodium == 1.5)
+    #expect(entry.totalSugar == 21)
+    #expect(entry.mealType == "snack")
+    #expect(entry.foodName == "Banana")
+}
+
+@Test func foodEntryConvenienceInitWithNilMicronutrients() {
+    let food = Food(name: "Rice", category: "Grains", servingSize: 186,
+                    servingUnit: "cup cooked", calories: 242)
+    let entry = FoodEntry(food: food, servings: 1)
+    #expect(entry.sodiumMg == nil)
+    #expect(entry.sugarG == nil)
+    #expect(entry.totalSodium == 0)
+    #expect(entry.totalSugar == 0)
+}
+
+@Test func foodMicronutrientsNilByDefault() {
+    let food = Food(name: "Plain food", category: "Other", servingSize: 100,
+                    servingUnit: "g", calories: 100)
+    #expect(food.sodiumMg == nil)
+    #expect(food.sugarG == nil)
+}
+
+@Test func foodMicronutrientsRoundTripViaJSON() throws {
+    let food = Food(name: "Soup", category: "Soups", servingSize: 240,
+                    servingUnit: "cup", calories: 80, sodiumMg: 480, sugarG: 3)
+    let data = try JSONEncoder().encode(food)
+    let decoded = try JSONDecoder().decode(Food.self, from: data)
+    #expect(decoded.sodiumMg == 480)
+    #expect(decoded.sugarG == 3)
+}

@@ -553,5 +553,19 @@ enum Migrations {
                 t.add(column: "bowl_size_g", .double)
             }
         }
+
+        // v35: Micronutrient per-entry tracking. Nullable so historical rows stay
+        // untouched. New entries populated at log-time from the food table.
+        // Aggregation always uses COALESCE(sodium_mg, 0) / COALESCE(sugar_g, 0).
+        migrator.registerMigration("v35_micronutrients") { db in
+            try db.alter(table: "food_entry") { t in
+                t.add(column: "sodium_mg", .double)
+                t.add(column: "sugar_g", .double)
+            }
+            try db.alter(table: "food") { t in
+                t.add(column: "sodium_mg", .double)
+                t.add(column: "sugar_g", .double)
+            }
+        }
     }
 }
