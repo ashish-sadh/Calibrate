@@ -455,6 +455,10 @@ public enum AIToolAgent {
     /// Execute N cross-domain sub-queries sequentially and combine their outputs.
     /// Text outputs are joined with "\n\n". The first ToolAction found (sheet opener)
     /// is preserved in the combined result — only one sheet can open at a time.
+    ///
+    /// Temporal sub-queries ("remind me to log dinner at 7pm") are NOT routed
+    /// through `runInner` — Drift has no scheduler yet, so they substitute a
+    /// transparent skip message and continue. v2 (#797).
     static func executeMultiIntent(
         subQueries: [String],
         screen: AIScreen,
@@ -465,11 +469,18 @@ public enum AIToolAgent {
     ) async -> AgentOutput {
         var outputs: [AgentOutput] = []
         for subQuery in subQueries {
-            let output = await runInner(
-                message: subQuery, screen: screen, history: history,
-                isLargeModel: isLargeModel, onStep: onStep, onToken: onToken
-            )
-            outputs.append(output)
+            switch MultiIntentSplitter.handling(for: subQuery) {
+            case .skipTemporal(let message):
+                outputs.append(AgentOutput(
+                    text: message, action: nil, toolsCalled: [], didFail: false
+                ))
+            case .execute:
+                let output = await runInner(
+                    message: subQuery, screen: screen, history: history,
+                    isLargeModel: isLargeModel, onStep: onStep, onToken: onToken
+                )
+                outputs.append(output)
+            }
         }
         let combinedText = outputs.compactMap { $0.text.isEmpty ? nil : $0.text }
             .joined(separator: "\n\n")
