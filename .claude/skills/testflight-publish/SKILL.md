@@ -123,10 +123,17 @@ Else manually: parse last published-sha + git log since → build entry with {bu
 
 ### 10. Commit + push
 ```
-git add project.yml command-center/releases.json
+git add project.yml Drift.xcodeproj/project.pbxproj command-center/releases.json
 git commit -m "chore: TestFlight build $NEW_BUILD"
 git push
 ```
+**Important:** `project.pbxproj` MUST be in the same commit. xcodegen
+regenerates it in Step 6, and the repo's convention (CLAUDE.md: "Run
+xcodegen generate after changing project.yml or adding new files")
+requires both files version-controlled together. Omitting pbxproj
+leaves the working tree dirty after the publish and the Stop hook
+blocks the next session's exit.
+
 Note: this commit has no associated issue (so `require-qa-verdict.sh` shouldn't enforce — it only enforces on issue-referencing commits). Verify.
 
 ### 11. Exit 0
