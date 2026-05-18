@@ -155,6 +155,7 @@
 		E16388BC43C225F2C6B7368A /* AIChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA2C56E731BE5610FDC5B12 /* AIChatView.swift */; };
 		E1FE09769EF8F02ECF537EBF /* V6QuickLogRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99672FF01D5ED00EC42A120D /* V6QuickLogRow.swift */; };
 		E220B46BAB957B8242ABA44A /* IntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24EBC73AF46E92F7FF6A10FF /* IntegrationTests.swift */; };
+		E3112CD38D734531A4040541 /* FoundationModelsChatParityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8C8E55C6396731BC65D49AB /* FoundationModelsChatParityTests.swift */; };
 		E312846BA4FBD129108D7C82 /* ExerciseBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21311CD0AE82F339C988BDD2 /* ExerciseBrowserView.swift */; };
 		E3A1AAD6DC61707246AECDA8 /* BackupMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC007029A7A52990CE4FBDE /* BackupMonitorTests.swift */; };
 		E3CB0A9B3B0ECCDBD1210A36 /* WorkoutConsistencyCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20F12007183DC0602FA4B0F3 /* WorkoutConsistencyCard.swift */; };
@@ -361,6 +362,7 @@
 		C1D0EF86656667CEF40EB779 /* MultiTurnContextEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiTurnContextEval.swift; sourceTree = "<group>"; };
 		C31F86A74BCE6386018C7BCF /* V6BodyTile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = V6BodyTile.swift; sourceTree = "<group>"; };
 		C6C5FCF45E66161B45683C82 /* LabReportOCR+Biomarkers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LabReportOCR+Biomarkers.swift"; sourceTree = "<group>"; };
+		C8C8E55C6396731BC65D49AB /* FoundationModelsChatParityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelsChatParityTests.swift; sourceTree = "<group>"; };
 		C92BBFFC16E3948FD5DABA59 /* USDAFallbackEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = USDAFallbackEval.swift; sourceTree = "<group>"; };
 		CB66CE8222D505237BF36996 /* AmbiguityEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbiguityEval.swift; sourceTree = "<group>"; };
 		CCE57CE0133752BC4B5C80F3 /* CloudVisionKeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudVisionKeyTests.swift; sourceTree = "<group>"; };
@@ -807,6 +809,7 @@
 				734A43F9D7C58B37BC8B6C07 /* ChatLatencyBenchmark.swift */,
 				1D6EEDE4BB88D55A2579A27D /* ComposedFoodEval.swift */,
 				D573CD42E3A315491B5DD60D /* CompositeFoodExtractorFMEval.swift */,
+				C8C8E55C6396731BC65D49AB /* FoundationModelsChatParityTests.swift */,
 				2DEC3049742676C1201A6847 /* HardEvalSet.swift */,
 				A048685BCBAD258ADEEB3E22 /* IntentRoutingEval.swift */,
 				1BBFE4D3A672CECBACA7F08D /* MultiIntentDeterministicEval.swift */,
@@ -1157,6 +1160,7 @@
 				1D4B4658B68B40350E20F753 /* ComposedFoodEval.swift in Sources */,
 				14837F24BC4C9D932FF61765 /* CompositeFoodExtractorFMEval.swift in Sources */,
 				D8E7B7B5446C1B3CB3BBF5FC /* DomainExtractorEval.swift in Sources */,
+				E3112CD38D734531A4040541 /* FoundationModelsChatParityTests.swift in Sources */,
 				E63F9BB35572B3EF11BF9DE5 /* HardEvalSet.swift in Sources */,
 				A459C9B6E82F83B1CC545F63 /* IntentClassifierEval.swift in Sources */,
 				F2DAD90846C1E28C0DBBB863 /* IntentRoutingEval.swift in Sources */,

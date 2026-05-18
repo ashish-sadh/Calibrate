@@ -51,7 +51,10 @@ public final class FoundationModelsBackend: AIBackend, @unchecked Sendable {
     public func load() async throws { /* no-op */ }
 
     /// One-shot non-streaming response. Creates a fresh session.
-    func respond(to prompt: String, systemPrompt: String) async -> String {
+    /// Public so the Tier-3 parity gate in `DriftLLMEvalMacOS` can drive it
+    /// directly with the same `(prompt, systemPrompt)` signature it uses for
+    /// `LlamaCppBackend.respond` — see `FoundationModelsChatParityTests` (#791).
+    public func respond(to prompt: String, systemPrompt: String) async -> String {
 #if canImport(FoundationModels)
         if #available(iOS 26.0, macOS 26.0, *) {
             guard Self.isAvailableNow else { return "" }
