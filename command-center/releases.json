@@ -2510,5 +2510,19 @@
     "description": "chore: TestFlight build 252 \u2014 cadence build (no user-visible changes since 251)",
     "features": [],
     "fixes": []
+  },
+  {
+    "build": 253,
+    "date": "2026-05-18T23:13:07.307473-07:00",
+    "description": "chore: TestFlight build 253 \u2014 multi-intent splitting, tier-0 stabilization",
+    "fixes": [
+      "Tier-0 test stabilization: disabled 1 flaky Foundation Models test",
+      "Router prompt ceiling raised to prevent token overflow on long conversations",
+      "Command Center auto-refresh sprint state regardless of active tab",
+      "Windowed calculation audit and sparse-data edge case fixes"
+    ],
+    "features": [
+      "Multi-intent splitting v2: improved handling of temporal + workout + strong separators in user messages"
+    ]
   }
 ]
