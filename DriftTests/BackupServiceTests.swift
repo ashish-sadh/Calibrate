@@ -162,6 +162,21 @@ final class BackupServiceTests: XCTestCase {
 
     // MARK: - Upload monitor
 
+    func testPerformBackupClearsStaleErrorOnLocalWriteSuccess() async throws {
+        // Stale failure from a prior attempt sits in UserDefaults. The next
+        // successful local write must clear it so Settings → Backup doesn't
+        // show a red error label next to the green "uploading…" confirmation
+        // while we wait for `recordUploadSuccess` to fire from iCloud's
+        // metadata query.
+        defaultsSuite.set("previous failure", forKey: BackupService.lastBackupErrorKey)
+
+        let service = makeService()
+        _ = try await service.performBackup()
+
+        XCTAssertNil(defaultsSuite.string(forKey: BackupService.lastBackupErrorKey))
+        XCTAssertNil(service.lastBackupError)
+    }
+
     func testRecordUploadSuccessPersistsTimestampAndClearsError() {
         let service = makeService()
         defaultsSuite.set("previous failure", forKey: BackupService.lastBackupErrorKey)

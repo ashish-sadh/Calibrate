@@ -112,6 +112,11 @@ public final class BackupService: @unchecked Sendable {
 
         pruneRingBuffer(excluding: destination)
         startUploadMonitor(for: destination)
+        // Local write succeeded — the previous failure is no longer "the last
+        // attempt." Clearing here keeps Settings → Backup from showing a stale
+        // red error label next to the green "uploading…" confirmation while
+        // we wait for `recordUploadSuccess` to fire from the metadata query.
+        userDefaults.removeObject(forKey: Self.lastBackupErrorKey)
         return destination
     }
 
