@@ -209,6 +209,20 @@ struct FloatingAIAssistant: View {
         VStack(spacing: 16) {
             Spacer()
 
+            #if targetEnvironment(simulator)
+            // FoundationModels isn't shipped to the iOS Simulator, so the
+            // "is Apple Intelligence available?" check fails and the app
+            // falls back to the GGUF download path. There's no point
+            // downloading 600 MB of weights into a sim that won't keep
+            // them across resets — surface the limitation instead.
+            Image(systemName: "laptopcomputer.slash")
+                .font(.system(size: 36)).foregroundStyle(.secondary)
+            Text("AI not available in Simulator")
+                .font(.subheadline.weight(.semibold))
+            Text("Apple Intelligence and the local model don't run in the iOS Simulator. Run on a real device (iOS 18.4+) to use Drift AI, or add a cloud key under More → Bring Your Own Key.")
+                .font(.caption2).foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center).padding(.horizontal, 24)
+            #else
             if case .downloading = modelManager.downloadState {
                 ProgressView().tint(Theme.accent)
                 Text("Downloading Drift Brain...")
@@ -244,8 +258,9 @@ struct FloatingAIAssistant: View {
 
                 Button { Task { await aiService.downloadModel() } } label: {
                     Label("Download", systemImage: "sparkles").font(.subheadline)
-                }.buttonStyle(.borderedProminent).tint(Theme.accent)
+                }.buttonStyle(.borderedProminent).tint(Theme.ink)
             }
+            #endif
 
             Spacer()
 

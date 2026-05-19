@@ -52,7 +52,7 @@ struct WorkoutView: View {
                             Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.white.opacity(0.6))
                         }
                         .padding(12)
-                        .background(Theme.accent, in: RoundedRectangle(cornerRadius: 12))
+                        .background(Theme.ink, in: RoundedRectangle(cornerRadius: 12))
                     }.buttonStyle(.plain)
                 }
 
@@ -134,7 +134,7 @@ struct WorkoutView: View {
                         showingNewWorkout = true
                     } label: {
                         Label("Start Workout", systemImage: "plus.circle.fill").frame(maxWidth: .infinity)
-                    }.buttonStyle(.borderedProminent).tint(Theme.accent)
+                    }.buttonStyle(.borderedProminent).tint(Theme.ink)
 
                     Button {
                         if let smart = ExerciseService.buildSmartSession() {
@@ -144,7 +144,7 @@ struct WorkoutView: View {
                     } label: {
                         Label("Coach Me", systemImage: "brain.head.profile").frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent).tint(Theme.accent.opacity(0.7))
+                    .buttonStyle(.bordered).tint(Theme.ink)
                 }
 
                 Button { showingPastWorkout = true } label: {
@@ -247,7 +247,7 @@ struct WorkoutView: View {
                 // Browse exercises
                 Button { showingExerciseBrowser = true } label: {
                     Label("Browse Exercises", systemImage: "dumbbell").frame(maxWidth: .infinity)
-                }.buttonStyle(.bordered)
+                }.buttonStyle(.bordered).tint(Theme.ink)
 
                 // History — collapsible
                 if workouts.isEmpty && !isLoading {

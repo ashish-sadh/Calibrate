@@ -16,12 +16,6 @@ struct MoreTabView: View {
                                color: Theme.macroKcal) {
                             WorkoutView(selectedTab: $selectedTab)
                         }
-                        rowDivider
-                        navRow(icon: "camera.viewfinder", title: "Photo Log",
-                               subtitle: "Snap a meal · BYOK cloud AI",
-                               color: Theme.macroFiber) {
-                            PhotoLogBetaSettingsView()
-                        }
                     }
 
                     section("HEALTH") {
@@ -69,6 +63,12 @@ struct MoreTabView: View {
                                subtitle: "Target weight, timeline, plan",
                                color: Theme.macroFat) {
                             GoalView()
+                        }
+                        rowDivider
+                        navRow(icon: "key.fill", title: "Bring Your Own Key",
+                               subtitle: "Snap a meal · cloud AI",
+                               color: Theme.macroFiber) {
+                            PhotoLogBetaSettingsView()
                         }
                         rowDivider
                         navRow(icon: "gear", title: "Settings",
@@ -239,7 +239,7 @@ struct SettingsView: View {
                     } label: {
                         VStack(alignment: .leading, spacing: 2) {
                             HStack {
-                                Image(systemName: "arrow.triangle.2.circlepath").foregroundStyle(Theme.accent)
+                                Image(systemName: "arrow.triangle.2.circlepath").foregroundStyle(Theme.textSecondary)
                                 Text("Sync Weight")
                                 Spacer()
                             }
@@ -271,7 +271,7 @@ struct SettingsView: View {
                     }
 
                     if let status = syncStatus {
-                        Text(status).font(.caption).foregroundStyle(Theme.accent)
+                        Text(status).font(.caption).foregroundStyle(Theme.textSecondary)
                             .transition(.opacity)
                     }
                 }
@@ -283,7 +283,7 @@ struct SettingsView: View {
                 } label: {
                     HStack(spacing: 12) {
                         Image(systemName: "icloud")
-                            .foregroundStyle(Theme.accent).frame(width: 24)
+                            .foregroundStyle(Theme.textSecondary).frame(width: 24)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("iCloud Backup").font(.subheadline.weight(.medium))
                             Text("Daily snapshot of your data to iCloud Drive")
@@ -310,7 +310,7 @@ struct SettingsView: View {
                         }
                     } label: {
                         HStack {
-                            Image(systemName: "dumbbell.fill").foregroundStyle(Theme.accent)
+                            Image(systemName: "dumbbell.fill").foregroundStyle(Theme.textSecondary)
                             Text("Export Workouts (CSV)")
                             Spacer()
                         }
@@ -322,7 +322,7 @@ struct SettingsView: View {
                         }
                     } label: {
                         HStack {
-                            Image(systemName: "fork.knife").foregroundStyle(Theme.accent)
+                            Image(systemName: "fork.knife").foregroundStyle(Theme.textSecondary)
                             Text("Export Food Logs (CSV)")
                             Spacer()
                         }
@@ -334,7 +334,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 12) {
                         Image(systemName: "globe")
-                            .foregroundStyle(Theme.accent).frame(width: 24)
+                            .foregroundStyle(Theme.textSecondary).frame(width: 24)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Online Food Search").font(.subheadline.weight(.medium))
                             Text("Search USDA & Open Food Facts when local results are limited")
@@ -345,7 +345,7 @@ struct SettingsView: View {
                             get: { Preferences.onlineFoodSearchEnabled },
                             set: { Preferences.onlineFoodSearchEnabled = $0 }
                         ))
-                        .labelsHidden().tint(Theme.accent)
+                        .labelsHidden().tint(Theme.ink)
                     }
                     if Preferences.onlineFoodSearchEnabled {
                         Text("Only food search terms are sent — no personal data, no tracking.")
@@ -359,7 +359,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 12) {
                         Image(systemName: "bell.badge")
-                            .foregroundStyle(Theme.accent).frame(width: 24)
+                            .foregroundStyle(Theme.textSecondary).frame(width: 24)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Health Nudges").font(.subheadline.weight(.medium))
                             Text("Reminders for protein, supplements, and workout gaps")
@@ -373,7 +373,7 @@ struct SettingsView: View {
                                 Task { await NotificationService.refreshScheduledAlerts() }
                             }
                         ))
-                        .labelsHidden().tint(Theme.accent)
+                        .labelsHidden().tint(Theme.ink)
                     }
                 }
                 .card()
@@ -382,7 +382,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 12) {
                         Image(systemName: "fork.knife.circle")
-                            .foregroundStyle(Theme.accent).frame(width: 24)
+                            .foregroundStyle(Theme.textSecondary).frame(width: 24)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Smart Meal Reminders").font(.subheadline.weight(.medium))
                             Text("Quiet nudge ~30 min after your typical meal time, only if you haven't logged it yet")
@@ -396,7 +396,7 @@ struct SettingsView: View {
                                 Task { await NotificationService.refreshScheduledAlerts() }
                             }
                         ))
-                        .labelsHidden().tint(Theme.accent)
+                        .labelsHidden().tint(Theme.ink)
                     }
                     if Preferences.mealRemindersEnabled {
                         HStack(spacing: 12) {
@@ -414,7 +414,7 @@ struct SettingsView: View {
                                     Task { await NotificationService.refreshScheduledAlerts() }
                                 }
                             ))
-                            .labelsHidden().tint(Theme.accent)
+                            .labelsHidden().tint(Theme.ink)
                         }
                     }
                 }
@@ -424,7 +424,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 12) {
                         Image(systemName: "pill.circle")
-                            .foregroundStyle(Theme.accent).frame(width: 24)
+                            .foregroundStyle(Theme.textSecondary).frame(width: 24)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Medication Dose Reminders").font(.subheadline.weight(.medium))
                             Text("Quiet nudge ~2h after your typical dose time, only if you haven't logged it yet today")
@@ -438,7 +438,7 @@ struct SettingsView: View {
                                 Task { await NotificationService.refreshScheduledAlerts() }
                             }
                         ))
-                        .labelsHidden().tint(Theme.accent)
+                        .labelsHidden().tint(Theme.ink)
                     }
                 }
                 .card()
@@ -447,7 +447,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 12) {
                         Image(systemName: "syringe")
-                            .foregroundStyle(Theme.accent).frame(width: 24)
+                            .foregroundStyle(Theme.textSecondary).frame(width: 24)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("GLP-1 Weekly Reminders").font(.subheadline.weight(.medium))
                             Text("Weekly notification on your injection day — only fires if you haven't logged a dose in the last 7 days")
@@ -461,7 +461,7 @@ struct SettingsView: View {
                                 Task { await NotificationService.refreshScheduledAlerts() }
                             }
                         ))
-                        .labelsHidden().tint(Theme.accent)
+                        .labelsHidden().tint(Theme.ink)
                     }
                 }
                 .card()
@@ -470,7 +470,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 12) {
                         Image(systemName: "chart.bar.doc.horizontal")
-                            .foregroundStyle(Theme.accent).frame(width: 24)
+                            .foregroundStyle(Theme.textSecondary).frame(width: 24)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("AI Chat Telemetry").font(.subheadline.weight(.medium))
                             Text("Stored on this device. Nothing is transmitted until you tap Export JSON.")
@@ -500,7 +500,7 @@ struct SettingsView: View {
                                 }
                             }
                         ))
-                        .labelsHidden().tint(Theme.accent)
+                        .labelsHidden().tint(Theme.ink)
                     }
                     if telemetryEnabled {
                         Text("Full query + response text is stored locally, alongside the routed tool and outcome. Use Export JSON to share a transcript with the Drift team to improve multi-turn reliability. Nothing leaves this device until you do.")
@@ -569,7 +569,7 @@ struct SettingsView: View {
                 } label: {
                     HStack(spacing: 12) {
                         Image(systemName: "slider.horizontal.3")
-                            .foregroundStyle(Theme.accent).frame(width: 24)
+                            .foregroundStyle(Theme.textSecondary).frame(width: 24)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Algorithm").font(.subheadline.weight(.medium))
                             Text("TDEE & calorie target settings").font(.caption2).foregroundStyle(.tertiary)
@@ -594,10 +594,10 @@ struct SettingsView: View {
                             if isRefreshingFoods {
                                 ProgressView()
                                     .progressViewStyle(.circular)
-                                    .tint(Theme.accent)
+                                    .tint(Theme.textSecondary)
                                     .frame(width: 24)
                             } else {
-                                Image(systemName: "arrow.clockwise").foregroundStyle(Theme.accent)
+                                Image(systemName: "arrow.clockwise").foregroundStyle(Theme.textSecondary)
                             }
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Refresh food database").foregroundStyle(Theme.textPrimary)
@@ -653,6 +653,13 @@ struct SettingsView: View {
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Settings")
         .toolbarColorScheme(.light, for: .navigationBar)
+        // V7 light palette: button labels here inherited the system tint
+        // (coral from V6) and shipped as unreadable pink. Force the tint
+        // to ink so text reads as charcoal-on-white. Explicitly-colored
+        // sub-elements (heart icon, sync arrows, destructive Factory
+        // Reset) keep their `.foregroundStyle(...)` overrides — .tint
+        // only affects the buttons' default content color.
+        .tint(Theme.textPrimary)
     }
 
     private var refreshFoodsSubtitle: String {
@@ -670,7 +677,7 @@ struct SettingsView: View {
 
     private var refreshFoodsSubtitleColor: Color {
         if foodsRefreshError != nil { return Theme.surplus }
-        if refreshedFoodCount != nil { return Theme.accent }
+        if refreshedFoodCount != nil { return Theme.textSecondary }
         return .secondary
     }
 
