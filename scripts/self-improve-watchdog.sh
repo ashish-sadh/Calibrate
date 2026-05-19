@@ -1254,7 +1254,33 @@ while true; do
                     atomic_write "$CRASH_FILE" "$CRASHES"
                     log "Autopilot CRASHED (no result event, session age ${SESSION_AGE}s). Crash #$CRASHES. Restarting..."
                     run_compliance "crash"
-                    if [[ "$CRASHES" -ge 3 ]]; then
+
+                    # Planning-specific anti-loop: when a planning session
+                    # crashes (e.g. on Anthropic API socket drops), the
+                    # watchdog re-creates a planning tracking issue on every
+                    # respawn because last-planning-time isn't stamped until
+                    # planning completes. Result: indefinite retry burning
+                    # ~$1.50 per attempt with senior/junior queue starved.
+                    # Observed 2026-05-19 cycle 12472: 5 consecutive planning
+                    # API-error crashes before manual intervention.
+                    #
+                    # Fix: after 3 consecutive crashes specifically on
+                    # planning, stamp last-planning-time so planning-due
+                    # returns false for 24h, freeing the queue for senior /
+                    # junior work. Operator restores planning by deleting
+                    # the stamp when API stabilizes.
+                    if [[ "$SESSION_TYPE" == "planning" ]] && [[ "$CRASHES" -ge 3 ]]; then
+                        log "Planning crashed $CRASHES times consecutively. Stamping last-planning-time to defer for 24h. Clear ~/drift-state/last-planning-time to retry sooner."
+                        date +%s > "$HOME/drift-state/last-planning-time"
+                        if [[ -f "$HOME/drift-state/planning-issue" ]]; then
+                            local _STALE_PLAN=$(cat "$HOME/drift-state/planning-issue" 2>/dev/null | tr -d '[:space:]' || true)
+                            if [[ -n "$_STALE_PLAN" ]]; then
+                                gh issue close "$_STALE_PLAN" --comment "Auto-closed: $CRASHES consecutive planning crashes (likely API instability). last-planning-time stamped to defer 24h; senior/junior queue can now advance." 2>/dev/null || true
+                            fi
+                            rm -f "$HOME/drift-state/planning-issue" "$HOME/drift-state/planning-resume-count-$_STALE_PLAN"
+                        fi
+                        atomic_write "$CRASH_FILE" "0"
+                    elif [[ "$CRASHES" -ge 3 ]]; then
                         log "WARNING: $CRASHES consecutive crashes. Backing off 5 min."
                         sleep 300
                     fi
