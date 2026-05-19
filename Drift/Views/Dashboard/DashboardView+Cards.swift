@@ -160,27 +160,25 @@ extension DashboardView {
     var calorieBalanceCard: some View {
         VStack(spacing: 10) {
             if let targets = WeightGoal.load()?.macroTargets(currentWeightKg: viewModel.trendWeight) {
-                // With goal: macro rings + legend
-                HStack {
-                    Text("Nutrition")
-                        .font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
-                    Spacer()
-                    Text("Today").font(.caption).foregroundStyle(.tertiary)
-                }
-
-                // V6 hero: 3 concentric rings (kcal / protein / fiber)
-                v6RingsHero(targets: targets)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 4)
-
-                // Carbs + fat sit below the hero — the V6 reference uses
-                // a 2-up legend row for the macros that aren't on the rings.
-                // Colors come from Theme.V6 so the strip below the hero
-                // matches the Apple-Fitness palette, not the legacy macros.
-                HStack(spacing: 12) {
-                    macroLegend("Carb", value: viewModel.todayNutrition.carbsG, target: targets.carbsG, color: Theme.V6.ringCarbs, unit: "g")
-                    macroLegend("Fat", value: viewModel.todayNutrition.fatG, target: targets.fatG, color: Theme.V6.ringFat, unit: "g")
-                }
+                // V6 hero intake card — anatomy step 2 of v6-today.jsx.
+                // Overline + display title + accent-soft pct chip header,
+                // the 3 concentric kcal/protein/fiber rings + legend, then
+                // a hairline divider with a 3-col carbs / empty / fat
+                // legend strip below. See V6HeroIntakeCard for the layout.
+                V6HeroIntakeCard(
+                    payload: V6HeroIntakeCard.payload(
+                        kcalEaten: viewModel.todayNutrition.calories,
+                        kcalTarget: targets.calorieTarget,
+                        proteinEatenG: viewModel.todayNutrition.proteinG,
+                        proteinTargetG: targets.proteinG,
+                        fiberEatenG: viewModel.todayNutrition.fiberG,
+                        fiberTargetG: targets.fiberG,
+                        carbsEatenG: viewModel.todayNutrition.carbsG,
+                        carbsTargetG: targets.carbsG,
+                        fatEatenG: viewModel.todayNutrition.fatG,
+                        fatTargetG: targets.fatG
+                    )
+                )
             } else {
                 // No goal: just show eaten + macros chip row
                 HStack {
@@ -209,88 +207,12 @@ extension DashboardView {
         .card()
     }
 
-    /// V6 Apple-Fitness hero: kcal / protein / fiber concentric rings with the
-    /// "kcal eaten" V6 numeral in the center. The ring colors come from
-    /// `Theme.V6` so this stays additive to the legacy dark palette until V6
-    /// landed end-to-end. Carbs and fat live in the legend row below the hero.
-    ///
-    /// Track colors are V6 tints at 35% opacity — the raw V6 pastels are
-    /// designed for the future light theme; on the current dark
-    /// `Theme.cardBackground` they would otherwise read as a second filled
-    /// ring and bury the actual fill.
-    @ViewBuilder
-    func v6RingsHero(targets: WeightGoal.MacroTargets) -> some View {
-        let nutrition = viewModel.todayNutrition
-        let rings: [V6Ring] = [
-            V6Ring(label: "kcal", unit: "",
-                   value: nutrition.calories, target: targets.calorieTarget,
-                   color: Theme.V6.ringMove, trackColor: Theme.V6.ringMoveBg.opacity(0.35)),
-            V6Ring(label: "protein", unit: "g",
-                   value: nutrition.proteinG, target: targets.proteinG,
-                   color: Theme.V6.ringEx, trackColor: Theme.V6.ringExBg.opacity(0.35)),
-            V6Ring(label: "fiber", unit: "g",
-                   value: nutrition.fiberG, target: targets.fiberG,
-                   color: Theme.V6.ringStand, trackColor: Theme.V6.ringStandBg.opacity(0.35)),
-        ]
-        let kcal = max(0, Int(nutrition.calories.isFinite ? nutrition.calories : 0))
-        // Step font down for 4+ digit kcal so a 4500-kcal day doesn't overflow
-        // the inner-ring radius. Comma separator from Locale.current so en-IN
-        // users see "1,45,000" not "145,000".
-        let kcalFont: Font = kcal >= 10_000
-            ? .system(size: 22, weight: .bold, design: .rounded).monospacedDigit()
-            : kcal >= 1_000
-                ? .system(size: 26, weight: .bold, design: .rounded).monospacedDigit()
-                : .system(size: 30, weight: .bold, design: .rounded).monospacedDigit()
-        VStack(spacing: 10) {
-            V6Rings(
-                rings: rings,
-                size: 180,
-                stroke: 16,
-                center: AnyView(
-                    VStack(spacing: 2) {
-                        Text(kcal, format: .number)
-                            .font(kcalFont)
-                        Text("KCAL")
-                            .font(.system(size: 10, weight: .semibold))
-                            .tracking(1.5)
-                            .foregroundStyle(.secondary)
-                    }
-                )
-            )
-            V6RingLegend(rings: rings)
-        }
-    }
-
-    private func macroLegend(_ label: String, value: Double, target: Double, color: Color, unit: String) -> some View {
-        VStack(spacing: 2) {
-            Circle().fill(color).frame(width: 6, height: 6)
-            Text("\(Int(value))\(unit)")
-                .font(.caption2.weight(.bold).monospacedDigit())
-                .foregroundStyle(value >= target ? color : .primary)
-            Text(label)
-                .font(.system(size: 9, weight: .medium))
-                .foregroundStyle(.tertiary)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
     func macroChip(_ label: String, value: Double, color: Color) -> some View {
         HStack(spacing: 2) {
             RoundedRectangle(cornerRadius: 1).fill(color).frame(width: 2, height: 10)
             Text("\(Int(value))g \(label)")
                 .font(.caption2.weight(.medium).monospacedDigit())
                 .foregroundStyle(.secondary)
-        }
-        .padding(.horizontal, 6).padding(.vertical, 3)
-        .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
-    }
-
-    func macroChipWithTarget(_ label: String, value: Double, target: Double, color: Color) -> some View {
-        HStack(spacing: 2) {
-            RoundedRectangle(cornerRadius: 1).fill(color).frame(width: 2, height: 10)
-            Text("\(Int(value))/\(Int(target))g \(label)")
-                .font(.caption2.weight(.medium).monospacedDigit())
-                .foregroundStyle(value >= target ? color : .secondary)
         }
         .padding(.horizontal, 6).padding(.vertical, 3)
         .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
@@ -305,19 +227,6 @@ extension DashboardView {
         let currentKg = viewModel.trendWeight ?? goal.startWeightKg
         let losing = goal.isLosing(currentWeightKg: currentKg)
         return losing ? deficit < 0 : deficit > 0
-    }
-
-    func macroPill(_ label: String, value: Double, color: Color) -> some View {
-        VStack(spacing: 3) {
-            Text("\(Int(value))g")
-                .font(.subheadline.weight(.bold).monospacedDigit())
-            Text(label)
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-        .background(color.opacity(0.15), in: RoundedRectangle(cornerRadius: 10))
     }
 
     // MARK: - V6 Body Tile Row
