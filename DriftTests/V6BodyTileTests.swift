@@ -189,7 +189,7 @@ final class V6BodyTileTests: XCTestCase {
             label: "Weight", value: "165.4", unit: "lbs",
             delta: "+0.50 lbs/wk", deltaLabel: "this wk",
             tone: Theme.V6.ringMove,
-            onTap: {}, onAdd: {}
+            onTap: {}
         )
         let empty = V6BodyTile(
             label: "Sleep", value: "--", unit: "h",
@@ -208,25 +208,8 @@ final class V6BodyTileTests: XCTestCase {
         XCTAssertNotNil(partial)
     }
 
-    /// QA scenario: the "+" add button on Weight must fire `onAdd` only and
-    /// must NOT also bubble to `onTap`. We can't synthesize a SwiftUI tap here,
-    /// but we can verify that the two closures are stored independently — the
-    /// outer Button and inner Button are siblings in a ZStack, not nested.
-    func testWeightTileOnAddAndOnTapAreSeparateClosures() {
-        var tapCount = 0
-        var addCount = 0
-        let tile = V6BodyTile(
-            label: "Weight", value: "165.4", unit: "lbs",
-            delta: "+0.50 lbs/wk", deltaLabel: "this wk",
-            tone: Theme.V6.ringMove,
-            onTap: { tapCount += 1 },
-            onAdd: { addCount += 1 }
-        )
-        XCTAssertNotNil(tile)
-        // We can't synthesize a SwiftUI tap from XCTest here, but pinning the
-        // construction-time wiring (the closures don't share storage) catches
-        // the "I refactored to a single closure that does both" regression.
-        XCTAssertEqual(tapCount, 0)
-        XCTAssertEqual(addCount, 0)
-    }
+    // 2026-05-19: dropped `testWeightTileOnAddAndOnTapAreSeparateClosures`.
+    // The "+" overlay on the Weight tile (and its `onAdd` callback) was
+    // removed in the V6 polish pass — the whole tile now routes to the
+    // Weight tab via `onTap`, so there is no second closure to pin.
 }

@@ -28,7 +28,7 @@ struct AIChatInsightsView: View {
         }
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("AI Chat Insights")
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbarColorScheme(.light, for: .navigationBar)
         .onAppear(perform: reload)
     }
 

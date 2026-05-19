@@ -42,7 +42,6 @@ struct PhotoLogReviewView: View {
             }
             .onAppear(perform: resolveDefaultMealType)
         }
-        .preferredColorScheme(.dark)
     }
 
     // MARK: - Populated content
@@ -371,7 +370,7 @@ private struct PhotoLogItemRow: View {
             }
             .padding(.vertical, 8)
             .padding(.horizontal, 12)
-            .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 10))
+            .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 10))
 
             ForEach(searchResults, id: \.name) { food in
                 Button {
@@ -392,7 +391,7 @@ private struct PhotoLogItemRow: View {
                     }
                     .padding(.vertical, 6)
                     .padding(.horizontal, 12)
-                    .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 8))
+                    .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 8))
                 }
                 .buttonStyle(.plain)
             }
@@ -497,7 +496,7 @@ private struct PhotoLogItemRow: View {
             .frame(width: 56)
             .padding(.vertical, 6)
             .padding(.horizontal, 8)
-            .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
+            .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 8))
             .onChange(of: amountText) { _, newValue in
                 // Allow trailing "." so the user can type "1.5" without the
                 // field nuking partial input. Only commit when parseable.
@@ -530,7 +529,7 @@ private struct PhotoLogItemRow: View {
             .padding(.vertical, 6)
             .padding(.horizontal, 8)
             .foregroundStyle(.secondary)
-            .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 8))
+            .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 8))
         }
     }
 
@@ -562,7 +561,7 @@ private struct PhotoLogItemRow: View {
                 .foregroundStyle(Theme.textPrimary)
                 .padding(.vertical, 4)
                 .padding(.horizontal, 2)
-                .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 6))
+                .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 6))
         }
     }
 

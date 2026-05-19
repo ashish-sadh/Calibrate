@@ -29,7 +29,7 @@ struct LabReportDetailView: View {
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Lab Report")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbarColorScheme(.light, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .destructiveAction) {
                 Button(role: .destructive) { showingDeleteAlert = true } label: {

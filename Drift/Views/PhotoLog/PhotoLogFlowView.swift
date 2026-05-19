@@ -65,7 +65,6 @@ struct PhotoLogFlowView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
     }
 
     // MARK: - Review (unwrapped with binding)
@@ -115,7 +114,6 @@ struct PhotoLogFlowView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
     }
 
     private func errorView(message: String) -> some View {
@@ -146,7 +144,6 @@ struct PhotoLogFlowView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
     }
 
     // MARK: - Flow

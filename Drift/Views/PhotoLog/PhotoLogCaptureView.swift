@@ -57,8 +57,7 @@ struct PhotoLogCaptureView: View {
                             }
                         }
                 }
-                .preferredColorScheme(.dark)
-            }
+                    }
             .onChange(of: showingSettings) { _, isShowing in
                 if !isShowing {
                     let hasProvider = CloudVisionProvider.allCases.contains { CloudVisionKey.has(provider: $0) }
@@ -80,7 +79,6 @@ struct PhotoLogCaptureView: View {
                 Task { await handleLibraryPick(item) }
             }
         }
-        .preferredColorScheme(.dark)
     }
 
     // MARK: - Sections
@@ -92,37 +90,42 @@ struct PhotoLogCaptureView: View {
                 .foregroundStyle(Theme.accent)
             Text("Snap a meal to log it")
                 .font(.headline)
+                .foregroundStyle(Theme.textPrimary)
             Text("Photo Log uses cloud AI to identify what's on your plate.")
-                .font(.caption).foregroundStyle(.secondary)
+                .font(.caption).foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center)
         }
         .padding(.top, 8)
     }
 
     private var privacyBanner: some View {
+        // 2026-05-19: was Color.white.opacity(0.04) (invisible on the new
+        // light bg, leaving the privacy disclosure as an empty-looking
+        // strip). Theme.pillBackground gives the soft-gray surface that
+        // matches the rest of V6.
         Label {
             Text("This single photo is sent to \(Preferences.photoLogProvider.displayName). Your key, your data — Drift never sees either.")
-                .font(.caption2).foregroundStyle(.secondary)
+                .font(.caption2).foregroundStyle(Theme.textSecondary)
         } icon: {
             Image(systemName: "cloud").foregroundStyle(Theme.accent)
         }
         .padding(10)
-        .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
+        .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 10))
     }
 
     private var costBanner: some View {
         HStack(spacing: 8) {
             Image(systemName: "creditcard")
-                .font(.caption).foregroundStyle(.tertiary)
+                .font(.caption).foregroundStyle(Theme.textTertiary)
             // Provider-aware — previously hardcoded "~2¢ per photo" which was
             // accurate for Anthropic Sonnet but misleading for OpenAI mini
             // (~30× cheaper) and wrong for Gemini Flash (free tier).
             Text(Preferences.photoLogProvider.pricingLine)
-                .font(.caption2).foregroundStyle(.secondary)
+                .font(.caption2).foregroundStyle(Theme.textSecondary)
             Spacer()
         }
         .padding(10)
-        .background(Color.white.opacity(0.03), in: RoundedRectangle(cornerRadius: 10))
+        .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 10))
     }
 
     private var byokTipBanner: some View {

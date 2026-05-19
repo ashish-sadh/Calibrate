@@ -256,8 +256,7 @@ extension DashboardView {
                 delta: weightPayload.delta,
                 deltaLabel: weightPayload.deltaLabel,
                 tone: Theme.V6.ringMove,
-                onTap: { selectedTab = 1 },
-                onAdd: { showingWeightEntry = true }
+                onTap: { selectedTab = 1 }
             )
             V6BodyTile(
                 label: sleepPayload.label,

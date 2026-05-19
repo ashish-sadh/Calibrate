@@ -16,6 +16,11 @@ struct GoalSetupView: View {
     @State private var customProtein: String = ""
     @State private var customCarbs: String = ""
     @State private var customFat: String = ""
+    /// 2026-05-19: Save used to silently no-op when the user had no weight
+    /// data AND was creating a goal (not editing one). Now flips this alert
+    /// so the failure mode is visible — the user is told exactly which
+    /// prerequisite is missing and where to fix it.
+    @State private var showNoWeightAlert: Bool = false
 
     /// True when the user typed a calorie target below the 1200 safety floor.
     /// Empty = "auto", which is fine. Non-empty < 1200 disables Save.
@@ -263,7 +268,11 @@ struct GoalSetupView: View {
                         guard let target = Double(targetWeight) else { return }
                         let targetKg = unit.convertToKg(target)
                         guard let currentKg = getCurrentWeight() ?? existingGoal?.startWeightKg else {
-                            // No weight data at all — need at least one weight entry
+                            // No weight data and no existing goal to inherit
+                            // a start weight from. Surface to the user via
+                            // alert rather than silent return — see
+                            // showNoWeightAlert docstring.
+                            showNoWeightAlert = true
                             return
                         }
 
@@ -295,6 +304,11 @@ struct GoalSetupView: View {
                     if let c = g.carbsTargetG { customCarbs = "\(Int(c))" }
                     if let f = g.fatTargetG { customFat = "\(Int(f))" }
                 }
+            }
+            .alert("Log your current weight first", isPresented: $showNoWeightAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Drift needs at least one weight entry to project your timeline. Tap the Weight tab, log today's reading, then come back here to set your goal.")
             }
         }
     }

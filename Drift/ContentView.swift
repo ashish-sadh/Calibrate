@@ -39,7 +39,10 @@ struct ContentView: View {
         UINavigationBar.appearance().compactAppearance = navAppearance
     }
 
-    @AppStorage("drift_ai_enabled") private var aiEnabled = false
+    // 2026-05-19: default flipped from false → true (V6 + FoundationModels
+    // migration). AI is always available with Apple FM — no download or
+    // toggle gate. Mirrors the same flag flip in DashboardView.swift.
+    @AppStorage("drift_ai_enabled") private var aiEnabled = true
 
     var body: some View {
         ZStack {

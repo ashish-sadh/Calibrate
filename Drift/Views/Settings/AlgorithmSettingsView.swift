@@ -92,7 +92,7 @@ struct AlgorithmSettingsView: View {
         }
         .navigationTitle("Algorithm")
         .navigationBarBackButtonHidden(true)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbarColorScheme(.light, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button { dismiss() } label: {

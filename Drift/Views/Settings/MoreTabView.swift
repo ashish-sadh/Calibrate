@@ -172,7 +172,7 @@ struct MoreTabView: View {
             .scrollContentBackground(.hidden)
             .background(Theme.background.ignoresSafeArea())
             .navigationTitle("More")
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarColorScheme(.light, for: .navigationBar)
             .task { hasCycleData = await HealthKitService.shared.hasCycleData() }
         }
         .id(navId)
@@ -697,7 +697,7 @@ struct SettingsView: View {
         .scrollContentBackground(.hidden)
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Settings")
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbarColorScheme(.light, for: .navigationBar)
     }
 
     private var refreshFoodsSubtitle: String {

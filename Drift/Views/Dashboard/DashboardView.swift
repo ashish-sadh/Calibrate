@@ -6,9 +6,14 @@ struct DashboardView: View {
     @Binding var selectedTab: Int
     @State var viewModel = DashboardViewModel()
     @State var showDeficitExplainer = false
-    @AppStorage("drift_ai_enabled") private var aiEnabled = false
+    // 2026-05-19: default was `false` when AI lived behind the dashboard
+    // beta toggle (now removed) and a model-download flow. With Apple
+    // Foundation Models as the default backend, AI is system-managed and
+    // always available — flipped to `true` so the Ask AI surfaces show up
+    // for everyone by default. Users who explicitly disabled it in Settings
+    // (Preferences.aiEnabled) still see their choice respected via UserDefaults.
+    @AppStorage("drift_ai_enabled") private var aiEnabled = true
     @AppStorage("workout_consistency_dismissed_until") private var workoutConsistencyDismissedUntil: Double = 0
-    @State var showingWeightEntry = false
     @State var showingSleepRecovery = false
     @State private var staleBackupDays: Int?
     @State private var showingBackupSettings = false
@@ -150,16 +155,21 @@ struct DashboardView: View {
                     // points into logging.
                     V6QuickLogRow(selectedTab: $selectedTab, aiEnabled: $aiEnabled)
 
-                    // V6 meals timeline — fixed 4-slot Breakfast/Lunch/Dinner
-                    // /Snacks per v6-today.jsx anatomy step 4. Replaces the
-                    // legacy "No food logged today" muted state that used to
-                    // live inside calorieBalanceCard. Tap routes to the Food
-                    // tab where edit-meal / add-meal flows are owned today.
-                    sectionHeader("Today's meals")
-                    V6MealTimeline(
-                        slots: V6MealTimeline.payloads(from: viewModel.todayFoodEntries)
-                    ) { _ in
-                        selectedTab = 2
+                    // V6 meals timeline — only renders meals that have been
+                    // logged today. Originally rendered a fixed 4-slot
+                    // Breakfast/Lunch/Dinner/Snacks list with "Log" buttons
+                    // on the empty rows (#bug-feedback: "section looks
+                    // rendered empty, no need to show 4 Log buttons that all
+                    // route to Food tab anyway"). The Quick Log row above
+                    // (Snap/Voice/Search/Recent) already serves "log a new
+                    // meal", so the empty placeholders were redundant.
+                    let loggedSlots = V6MealTimeline.payloads(from: viewModel.todayFoodEntries)
+                        .filter(\.isLogged)
+                    if !loggedSlots.isEmpty {
+                        sectionHeader("Today's meals")
+                        V6MealTimeline(slots: loggedSlots) { _ in
+                            selectedTab = 2
+                        }
                     }
 
                     // ── Body ──
@@ -250,7 +260,8 @@ struct DashboardView: View {
             }
             .scrollContentBackground(.hidden)
             .background(Theme.background.ignoresSafeArea())
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            // 2026-05-19: was .dark when the app was dark-themed. Now light.
+            .toolbarColorScheme(.light, for: .navigationBar)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .principal) {
@@ -260,29 +271,19 @@ struct DashboardView: View {
                             .foregroundStyle(Theme.accent)
                         Text("Drift")
                             .font(.headline.weight(.bold))
+                            // 2026-05-19: was inheriting the system nav title
+                            // color which still resolved to white from a dark-
+                            // era UINavigationBarAppearance somewhere. Pin
+                            // explicitly so the wordmark stays legible on the
+                            // paper-white nav bar.
+                            .foregroundStyle(Theme.textPrimary)
                     }
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    if DeviceCapability.canRunAI {
-                        Button { aiEnabled.toggle() } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "sparkles").font(.system(size: 10))
-                                Text("beta").font(.system(size: 8, weight: .semibold))
-                                RoundedRectangle(cornerRadius: 7)
-                                    .fill(aiEnabled ? Theme.accent : Theme.textTertiary)
-                                    .frame(width: 28, height: 16)
-                                    .overlay(alignment: aiEnabled ? .trailing : .leading) {
-                                        Circle().fill(Theme.textPrimary).frame(width: 12, height: 12)
-                                            .padding(.horizontal, 2)
-                                    }
-                                    .animation(.easeInOut(duration: 0.15), value: aiEnabled)
-                            }
-                            .foregroundStyle(aiEnabled ? Theme.accent : .secondary)
-                        }
-                        .accessibilityLabel("AI beta, \(aiEnabled ? "on" : "off")")
-                        .accessibilityHint("Double tap to toggle")
-                    }
-                }
+                // 2026-05-19: removed the "beta" AI toggle. Apple Foundation
+                // Models is now the default backend (commit 3d1d91ba) — AI is
+                // always available, no opt-in/download needed. The toggle
+                // was a relic of the local-model era when users had to
+                // explicitly enable the feature + download weights.
             }
             .onAppear {
                 AIScreenTracker.shared.currentScreen = .dashboard
@@ -305,28 +306,10 @@ struct DashboardView: View {
             .onChange(of: syncComplete) { _, done in
                 if done { Task { await viewModel.loadToday() } }
             }
-            .sheet(isPresented: $showingWeightEntry, onDismiss: {
-                Task { await viewModel.loadToday() }
-            }) {
-                let latestComp = WeightServiceAPI.latestBodyComposition()
-                WeightEntryView(
-                    unit: Preferences.weightUnit,
-                    lastBodyFat: latestComp?.bodyFatPct,
-                    lastBMI: latestComp?.bmi,
-                    lastWater: latestComp?.waterPct,
-                    onSave: { value, date in
-                        let kg = Preferences.weightUnit == .kg ? value : value / 2.20462
-                        let dateStr = DateFormatters.dateOnly.string(from: date)
-                        var entry = WeightEntry(date: dateStr, weightKg: kg, source: "manual")
-                        WeightServiceAPI.saveWeightEntry(&entry)
-                        WeightTrendService.shared.refresh()
-                    },
-                    onSaveBodyComp: { comp in
-                        var c = comp
-                        WeightServiceAPI.saveBodyComposition(&c)
-                    }
-                )
-            }
+            // 2026-05-19: dropped the inline weight-entry sheet — the V6
+            // Body tile's "+" overlay (the only thing that opened it) was
+            // removed in the same migration. The Weight tab is the
+            // canonical entry point, and the tile's onTap routes there.
             .sheet(isPresented: $showingBackupSettings) {
                 NavigationStack { BackupSettingsView() }
             }

@@ -40,7 +40,7 @@ struct LabReportUploadView: View {
             .background(Theme.background.ignoresSafeArea())
             .navigationTitle("Upload Lab Report")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarColorScheme(.light, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") { dismiss() }

@@ -31,7 +31,7 @@ struct BackupSettingsView: View {
         .scrollContentBackground(.hidden)
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Backup")
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbarColorScheme(.light, for: .navigationBar)
         .onAppear { refreshState() }
         .sheet(isPresented: $showingRestorePicker) {
             NavigationStack {

@@ -96,7 +96,7 @@ struct FoodTabView: View {
             .background(Theme.background.ignoresSafeArea())
             .navigationTitle("Food")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarColorScheme(.light, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     HStack(spacing: 16) {

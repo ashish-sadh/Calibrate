@@ -33,8 +33,14 @@ public enum Preferences {
 
     private static let aiEnabledKey = "drift_ai_enabled"
 
+    // 2026-05-19: default flipped false → true (Apple FoundationModels
+    // migration). When AI lived behind a local-model download flow, opt-in
+    // made sense — it was the user agreeing to download ~1GB of weights.
+    // With Apple FM the model is system-managed, on-device, and always
+    // available; there is nothing to opt into. Mirrors the @AppStorage
+    // flip in ContentView.swift + DashboardView.swift.
     public static var aiEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: aiEnabledKey) }
+        get { (UserDefaults.standard.object(forKey: aiEnabledKey) as? Bool) ?? true }
         set { UserDefaults.standard.set(newValue, forKey: aiEnabledKey) }
     }
 

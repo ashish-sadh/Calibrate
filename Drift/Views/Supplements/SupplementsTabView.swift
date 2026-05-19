@@ -142,7 +142,7 @@ struct SupplementsTabView: View {
             .background(Theme.background.ignoresSafeArea())
             .navigationTitle("Supplements")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbarColorScheme(.dark, for: .navigationBar)
+            .toolbarColorScheme(.light, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button { showingAdd = true } label: {

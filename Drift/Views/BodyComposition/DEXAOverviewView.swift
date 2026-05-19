@@ -74,7 +74,7 @@ struct DEXAOverviewView: View {
         .scrollContentBackground(.hidden)
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Body Composition")
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbarColorScheme(.light, for: .navigationBar)
         .fileImporter(isPresented: $showingImportPDF, allowedContentTypes: [.pdf]) { handlePDFImport($0) }
         .sheet(isPresented: $showingManualEntry) {
             DEXAEntryView { loadScans() }

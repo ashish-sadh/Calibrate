@@ -55,7 +55,7 @@ struct WeightTabView: View {
         }
         .navigationTitle("Weight")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbarColorScheme(.light, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button { selectedTab = 0 } label: {

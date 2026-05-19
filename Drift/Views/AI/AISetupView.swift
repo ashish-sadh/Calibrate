@@ -40,13 +40,22 @@ struct AIView: View {
         }
     }
 
-    /// True when at least one backend is ready to serve a chat turn. Lets us
-    /// short-circuit into the chat even when the local model is missing but
-    /// the user has the cloud BYOK path configured. The chooser shows up
-    /// only when BOTH paths are unavailable.
+    /// True when at least one backend is ready to serve a chat turn — skips
+    /// the chooser / download / loading UI entirely.
+    ///
+    /// 2026-05-19: Apple FoundationModels is now the default backend on
+    /// supported hardware. FM is system-managed (no weights to download, no
+    /// per-call cost, ships with the OS), so when it's the preferred backend
+    /// we go straight into the chat. The old chooser/download flow only
+    /// applied to the local llama.cpp era — we keep its branches for users
+    /// who explicitly switched to llama.cpp via the in-chat backend toggle.
+    /// Remote BYOK still requires a stored key.
     private var shouldShowChat: Bool {
-        AIBackendCoordinator.hasRemoteKey
-            && Preferences.preferredAIBackend == .remote
+        switch Preferences.preferredAIBackend {
+        case .foundationModels: return true
+        case .remote: return AIBackendCoordinator.hasRemoteKey
+        case .llamaCpp, .mlx: return false
+        }
     }
 
     // MARK: - Downloading

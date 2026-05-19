@@ -37,7 +37,7 @@ struct BiomarkerDetailView: View {
         .background(statusGradientBackground)
         .navigationTitle("Biomarker Details")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarColorScheme(.dark, for: .navigationBar)
+        .toolbarColorScheme(.light, for: .navigationBar)
         .onAppear { loadResults() }
     }
 

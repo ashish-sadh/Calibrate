@@ -86,10 +86,16 @@ enum Theme {
     /// Secondary text — for captions, metadata.
     static let textSecondary = Color(hex: "5C5D69")
     /// Tertiary text — placeholders, disabled, axis labels.
-    /// Bumped 2026-05-19 from #B6B7BC (too faint on white in TestFlight 255
-    /// screenshots — "Started: 117.5 lbs", "Based on last 21 days", "Today"
-    /// labels were nearly invisible) to #6F7079.
-    static let textTertiary = Color(hex: "6F7079")
+    /// Bumped 2026-05-19 in two passes:
+    ///   1) #B6B7BC → #6F7079 (TestFlight 255 visibility pass).
+    ///   2) #6F7079 → #595A63 (user feedback: weight-chart x-axis labels
+    ///      "Apr May May May" and body-comp stat blocks "-- kg/wk", "Log
+    ///      a few more days", "3d 7d 14d 30d 90d" still read as washed-out
+    ///      placeholders rather than legible secondary info).
+    /// Cool near-black target: oklch(0.36) approx — still differentiates
+    /// from textSecondary but no longer falls below the AA contrast floor
+    /// for small text on the paper-white background.
+    static let textTertiary = Color(hex: "595A63")
     /// Quaternary — for truly disabled / placeholder states only.
     static let textQuaternary = Color(hex: "A6A7AD")
 

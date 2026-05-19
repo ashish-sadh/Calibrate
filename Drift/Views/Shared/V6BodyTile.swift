@@ -9,11 +9,10 @@ import DriftCore
 /// conversion, "--" fallbacks) happens at the call site so tests can lock the
 /// formatter independently of the rendering layer.
 ///
-/// The optional `onAdd` "+" button is for the Weight tile only — Sleep and
-/// Readiness don't have a one-tap log path. Tapping the "+" must NEVER bubble
-/// up to `onTap` (the body recompute handler that opens the detail view), so
-/// the button calls `onAdd` with a `simultaneousGesture`-free `Button` placed
-/// outside the tap surface and the outer Button explicitly avoids covering it.
+/// 2026-05-19: dropped the legacy `onAdd` "+" overlay (was Weight-only) per
+/// user feedback — the whole tile already routes to the Weight tab where
+/// the inline + log button lives, so the corner overlay was duplicate noise
+/// AND a hard-to-discover hit target (22×22 inside a 14pt-padded card).
 struct V6BodyTile: View {
     let label: String
     let value: String
@@ -22,93 +21,65 @@ struct V6BodyTile: View {
     let deltaLabel: String
     let tone: Color
     let onTap: () -> Void
-    var onAdd: (() -> Void)? = nil
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            Button(action: onTap) {
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(tone)
-                            .frame(width: 7, height: 7)
-                        Text(label.uppercased())
-                            .font(.system(size: 11, weight: .bold))
-                            .tracking(0.4)
-                            .foregroundStyle(Theme.textSecondary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.85)
-                        Spacer(minLength: 0)
-                        // Reserve space for the "+" button so its hit-target
-                        // doesn't visually clip the label even though it lives
-                        // in the outer ZStack overlay. `.allowsHitTesting(false)`
-                        // so a stray tap on the placeholder routes to the outer
-                        // tile, not into a no-op transparent area.
-                        if onAdd != nil {
-                            Color.clear
-                                .frame(width: 22, height: 22)
-                                .allowsHitTesting(false)
-                        }
-                    }
-                    HStack(alignment: .firstTextBaseline, spacing: 3) {
-                        Text(value)
-                            .font(.system(size: 22, weight: .bold, design: .rounded).monospacedDigit())
-                            .foregroundStyle(Theme.textPrimary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.6)
-                        if !unit.isEmpty {
-                            Text(unit)
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundStyle(Theme.textTertiary)
-                        }
-                    }
-                    // Always render an HStack with one or two text runs so
-                    // mixed populated/empty tiles in the same row keep equal
-                    // intrinsic heights. Populated → "delta deltaLabel";
-                    // empty → just deltaLabel in the tertiary color.
-                    HStack(spacing: 4) {
-                        if let delta {
-                            Text(delta)
-                                .font(.system(size: 11, weight: .medium).monospacedDigit())
-                                .foregroundStyle(Theme.textSecondary)
-                        }
-                        Text(deltaLabel)
-                            .font(.system(size: 11))
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(tone)
+                        .frame(width: 7, height: 7)
+                    Text(label.uppercased())
+                        .font(.system(size: 11, weight: .bold))
+                        .tracking(0.4)
+                        .foregroundStyle(Theme.textSecondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                    Spacer(minLength: 0)
+                }
+                HStack(alignment: .firstTextBaseline, spacing: 3) {
+                    Text(value)
+                        .font(.system(size: 22, weight: .bold, design: .rounded).monospacedDigit())
+                        .foregroundStyle(Theme.textPrimary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                    if !unit.isEmpty {
+                        Text(unit)
+                            .font(.system(size: 11, weight: .semibold))
                             .foregroundStyle(Theme.textTertiary)
                     }
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
                 }
-                .padding(.horizontal, 14)
-                .padding(.top, 12)
-                .padding(.bottom, 12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .strokeBorder(Theme.separator, lineWidth: 0.5)
-                )
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(accessibilityLabel)
-            .accessibilityHint("Open \(label.lowercased()) details")
-
-            if let onAdd {
-                Button(action: onAdd) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(Theme.background)
-                        .frame(width: 22, height: 22)
-                        .background(Theme.textPrimary, in: Circle())
-                        .contentShape(Circle())
+                // Always render an HStack with one or two text runs so mixed
+                // populated/empty tiles in the same row keep equal intrinsic
+                // heights. Populated → "delta deltaLabel"; empty → just
+                // deltaLabel in the tertiary color.
+                HStack(spacing: 4) {
+                    if let delta {
+                        Text(delta)
+                            .font(.system(size: 11, weight: .medium).monospacedDigit())
+                            .foregroundStyle(Theme.textSecondary)
+                    }
+                    Text(deltaLabel)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.textTertiary)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Log \(label.lowercased())")
-                .padding(.top, 10)
-                .padding(.trailing, 10)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
             }
+            .padding(.horizontal, 14)
+            .padding(.top, 12)
+            .padding(.bottom, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .strokeBorder(Theme.separator, lineWidth: 0.5)
+            )
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel(accessibilityLabel)
+        .accessibilityHint("Open \(label.lowercased()) details")
         .dynamicTypeSize(...DynamicTypeSize.accessibility2)
     }
 
@@ -233,7 +204,7 @@ extension V6BodyTile {
             label: "Weight", value: "165.4", unit: "lbs",
             delta: "+0.30 lbs/wk", deltaLabel: "this wk",
             tone: Theme.V6.ringMove,
-            onTap: {}, onAdd: {}
+            onTap: {}
         )
         V6BodyTile(
             label: "Sleep", value: "7.5", unit: "h",
@@ -259,7 +230,7 @@ extension V6BodyTile {
             label: "Weight", value: "--", unit: "lbs",
             delta: nil, deltaLabel: "no data",
             tone: Theme.V6.ringMove,
-            onTap: {}, onAdd: {}
+            onTap: {}
         )
         V6BodyTile(
             label: "Sleep", value: "--", unit: "h",

@@ -140,9 +140,10 @@ struct FloatingAIAssistant: View {
 
     private var expandedChat: some View {
         VStack(spacing: 0) {
-            // Handle bar
+            // Handle bar — neutral gray pill on the light surface (was
+            // Color.white.opacity(0.2) from the dark era).
             RoundedRectangle(cornerRadius: 2.5)
-                .fill(Color.white.opacity(0.2))
+                .fill(Theme.separator)
                 .frame(width: 36, height: 5)
                 .padding(.top, 8)
 
@@ -150,10 +151,12 @@ struct FloatingAIAssistant: View {
             HStack {
                 HStack(spacing: 6) {
                     Image(systemName: "sparkles").foregroundStyle(Theme.accent)
-                    Text("Drift AI").font(.subheadline.weight(.semibold))
-                    Text("Beta").font(.system(size: 9)).foregroundStyle(.tertiary)
-                        .padding(.horizontal, 5).padding(.vertical, 2)
-                        .background(Color.white.opacity(0.08), in: Capsule())
+                    Text("Drift AI")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.textPrimary)
+                    // 2026-05-19: removed "Beta" pill — Apple Foundation
+                    // Models is now the default backend, no opt-in or
+                    // download. AI is shipped as a first-class feature.
                 }
                 Spacer()
                 Button { withAnimation { isExpanded = false } } label: {
@@ -165,23 +168,36 @@ struct FloatingAIAssistant: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
 
-            Divider().overlay(Color.white.opacity(0.06))
+            Divider().overlay(Theme.separator)
 
-            // Chat content
-            if !modelManager.isModelDownloaded {
-                downloadPrompt
-            } else {
+            // Chat content. Foundation Models is system-managed (no weights
+            // to download), so when it's the preferred backend we go
+            // straight into the chat — the downloadPrompt branch only
+            // applies to the legacy llama.cpp path that still requires a
+            // local weights file on disk. Mirrors the same short-circuit
+            // in AISetupView.shouldShowChat.
+            if Preferences.preferredAIBackend == .foundationModels || modelManager.isModelDownloaded {
                 AIChatView()
                     .task { await AIDataCache.shared.refreshIfNeeded() }
+            } else {
+                downloadPrompt
             }
         }
         .frame(height: UIScreen.main.bounds.height * 0.55)
+        // 2026-05-19: was Color(white: 0.1) (near-black) — the V6 light
+        // migration missed this file, so the expanded chat appeared dark on
+        // an otherwise paper-white app. Flipped to the card surface so the
+        // chat panel reads as an elevated sheet on the dashboard.
         .background(
             RoundedRectangle(cornerRadius: 24)
-                .fill(Color(white: 0.1))
-                .shadow(color: .black.opacity(0.5), radius: 30, y: -5)
+                .fill(Theme.cardBackground)
+                .shadow(color: .black.opacity(0.15), radius: 30, y: -5)
         )
         .clipShape(RoundedRectangle(cornerRadius: 24))
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .strokeBorder(Theme.separator, lineWidth: 0.5)
+        )
     }
 
     // MARK: - Download Prompt
