@@ -87774,5 +87774,395 @@
       "oil (for frying)"
     ],
     "nova_group": 4
+  },
+  {
+    "name": "Hawawshi (Egyptian Stuffed Bread)",
+    "category": "Egyptian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 22,
+    "carbs_g": 45,
+    "fat_g": 22,
+    "fiber_g": 3.0,
+    "ingredients": [
+      "pita bread",
+      "minced beef",
+      "onion",
+      "tomato",
+      "parsley",
+      "spices"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Mahshi (Egyptian Stuffed Vegetables)",
+    "category": "Egyptian",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 8,
+    "carbs_g": 52,
+    "fat_g": 9,
+    "fiber_g": 5.0,
+    "ingredients": [
+      "rice",
+      "tomato",
+      "zucchini",
+      "bell pepper",
+      "herbs",
+      "olive oil"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Ta'ameya (Egyptian Fava Falafel)",
+    "category": "Egyptian",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 290,
+    "protein_g": 12,
+    "carbs_g": 30,
+    "fat_g": 14,
+    "fiber_g": 7.0,
+    "ingredients": [
+      "fava beans",
+      "parsley",
+      "cilantro",
+      "garlic",
+      "onion",
+      "oil (for frying)"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Mahalabia (Egyptian Milk Pudding)",
+    "category": "Egyptian",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 5,
+    "carbs_g": 28,
+    "fat_g": 5,
+    "fiber_g": 0.5,
+    "ingredients": [
+      "milk",
+      "sugar",
+      "cornstarch",
+      "rose water",
+      "pistachio"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Chicken Paprikash (Paprikás Csirke)",
+    "category": "Hungarian",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 32,
+    "carbs_g": 18,
+    "fat_g": 28,
+    "fiber_g": 2.0,
+    "ingredients": [
+      "chicken",
+      "paprika",
+      "onion",
+      "sour cream",
+      "butter",
+      "flour"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Pörkölt (Hungarian Stew)",
+    "category": "Hungarian",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 420,
+    "protein_g": 28,
+    "carbs_g": 10,
+    "fat_g": 28,
+    "fiber_g": 2.0,
+    "ingredients": [
+      "beef",
+      "onion",
+      "paprika",
+      "tomato",
+      "bell pepper",
+      "lard"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Dobos Torte (Hungarian Caramel Cake)",
+    "category": "Hungarian",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 410,
+    "protein_g": 5,
+    "carbs_g": 50,
+    "fat_g": 22,
+    "fiber_g": 1.0,
+    "ingredients": [
+      "flour",
+      "egg",
+      "sugar",
+      "butter",
+      "chocolate",
+      "caramel"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Töltött Paprika (Hungarian Stuffed Peppers)",
+    "category": "Hungarian",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 360,
+    "protein_g": 18,
+    "carbs_g": 30,
+    "fat_g": 18,
+    "fiber_g": 4.0,
+    "ingredients": [
+      "bell pepper",
+      "minced pork/beef",
+      "rice",
+      "tomato sauce",
+      "onion",
+      "paprika"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Francesinha (Portuguese Sandwich)",
+    "category": "Portuguese",
+    "serving_size": 400,
+    "serving_unit": "g",
+    "calories": 920,
+    "protein_g": 45,
+    "carbs_g": 55,
+    "fat_g": 58,
+    "fiber_g": 3.0,
+    "ingredients": [
+      "bread",
+      "ham",
+      "sausage",
+      "steak",
+      "cheese",
+      "tomato-beer sauce"
+    ],
+    "nova_group": 4
+  },
+  {
+    "name": "Caldeirada (Portuguese Fish Stew)",
+    "category": "Portuguese",
+    "serving_size": 350,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 28,
+    "carbs_g": 22,
+    "fat_g": 12,
+    "fiber_g": 4.0,
+    "ingredients": [
+      "mixed fish",
+      "potato",
+      "onion",
+      "tomato",
+      "bell pepper",
+      "olive oil",
+      "white wine"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Frango Piri-Piri (Portuguese Spicy Chicken)",
+    "category": "Portuguese",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 420,
+    "protein_g": 38,
+    "carbs_g": 4,
+    "fat_g": 28,
+    "fiber_g": 1.0,
+    "ingredients": [
+      "chicken",
+      "piri-piri chili",
+      "garlic",
+      "lemon",
+      "olive oil",
+      "paprika"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Polvo à Lagareiro (Portuguese Octopus)",
+    "category": "Portuguese",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 340,
+    "protein_g": 30,
+    "carbs_g": 22,
+    "fat_g": 16,
+    "fiber_g": 3.0,
+    "ingredients": [
+      "octopus",
+      "potato",
+      "garlic",
+      "olive oil",
+      "parsley"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Sill (Swedish Pickled Herring)",
+    "category": "Scandinavian",
+    "serving_size": 80,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 12,
+    "carbs_g": 8,
+    "fat_g": 11,
+    "fiber_g": 0.0,
+    "ingredients": [
+      "herring",
+      "vinegar",
+      "sugar",
+      "onion",
+      "spices"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Knäckebröd (Swedish Crispbread)",
+    "category": "Scandinavian",
+    "serving_size": 30,
+    "serving_unit": "g",
+    "calories": 110,
+    "protein_g": 3,
+    "carbs_g": 22,
+    "fat_g": 1,
+    "fiber_g": 4.0,
+    "ingredients": [
+      "rye flour",
+      "water",
+      "salt",
+      "yeast"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Lutefisk (Norwegian Lye-Cured Fish)",
+    "category": "Scandinavian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 200,
+    "protein_g": 28,
+    "carbs_g": 0,
+    "fat_g": 10,
+    "fiber_g": 0.0,
+    "ingredients": [
+      "cod",
+      "lye",
+      "butter",
+      "salt"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Janssons Frestelse (Swedish Potato Casserole)",
+    "category": "Scandinavian",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 360,
+    "protein_g": 10,
+    "carbs_g": 32,
+    "fat_g": 22,
+    "fiber_g": 3.0,
+    "ingredients": [
+      "potato",
+      "onion",
+      "anchovy/sprat",
+      "cream",
+      "butter",
+      "breadcrumbs"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Beef Stroganoff (Russian)",
+    "category": "Russian",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 32,
+    "carbs_g": 12,
+    "fat_g": 32,
+    "fiber_g": 1.5,
+    "ingredients": [
+      "beef",
+      "mushroom",
+      "onion",
+      "sour cream",
+      "butter",
+      "mustard"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Pirozhki (Russian Baked Buns)",
+    "category": "Russian",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 290,
+    "protein_g": 10,
+    "carbs_g": 38,
+    "fat_g": 11,
+    "fiber_g": 2.0,
+    "ingredients": [
+      "flour",
+      "yeast",
+      "egg",
+      "beef/cabbage/potato filling",
+      "butter"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Syrniki (Russian Cottage Cheese Pancakes)",
+    "category": "Russian",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 320,
+    "protein_g": 18,
+    "carbs_g": 30,
+    "fat_g": 14,
+    "fiber_g": 1.0,
+    "ingredients": [
+      "tvorog (cottage cheese)",
+      "egg",
+      "flour",
+      "sugar",
+      "butter"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Kasha (Russian Buckwheat Porridge)",
+    "category": "Russian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 220,
+    "protein_g": 8,
+    "carbs_g": 42,
+    "fat_g": 4,
+    "fiber_g": 6.0,
+    "ingredients": [
+      "buckwheat",
+      "water/milk",
+      "butter",
+      "salt"
+    ],
+    "nova_group": 1
   }
 ]
