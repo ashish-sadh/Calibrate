@@ -2524,5 +2524,23 @@
     "features": [
       "Multi-intent splitting v2: improved handling of temporal + workout + strong separators in user messages"
     ]
+  },
+  {
+    "build": 256,
+    "date": "2026-05-19T09:10:31-07:00",
+    "description": "V7 visual refresh \u2014 3-tab IA + black floating FAB + palette retirement (phases 1, 4, 3-partial)",
+    "features": [
+      "3-tab IA: Today / Body / More (collapsed from five tabs \u2014 Food + Exercise moved off primary IA)",
+      "Black floating + FAB to the right of the tab pill, opens the Log-a-Meal sheet",
+      "More tab regrouped into ACTIVITY / HEALTH / APP sections; Photo Log renamed Bring Your Own Key and moved under APP",
+      "FoundationModels Simulator skip \u2014 no more 600MB Drift Brain download attempts on the iOS Simulator"
+    ],
+    "fixes": [
+      "Weight chart EMA trace + dots are visible again (were rendering .white on white from the dark-mode migration)",
+      "Weight chart x-axis no longer renders 'May May May' on single-day ranges (added day to format)",
+      "WeightInsightsView 3d/7d/14d/30d/90d chip row labels + placeholders bumped to readable contrast",
+      "WorkoutView red CTAs (Start Workout / Coach Me / Browse Exercises / in-progress banner) flipped to V7 ink black",
+      "SettingsView 22 pink-by-accident button labels + icons flipped to neutral (toggles back to ink)"
+    ]
   }
 ]
