@@ -1,6 +1,6 @@
 ---
 name: design-doc
-description: Sub-skill invoked by /senior when claimed task is design-doc-labeled. State machine: pending → write doc; in-review → respond to comments (lightweight or delegated to /autofix-pr for substantive); ready-to-close → verify all impl tasks closed + close parent. Never claims independently; always called from /senior.
+description: "Sub-skill invoked by /senior when claimed task is design-doc-labeled. State machine — pending → write doc; in-review → respond to comments (lightweight or delegated to /autofix-pr for substantive); ready-to-close → verify all impl tasks closed + close parent. Never claims independently; always called from /senior."
 ---
 
 <role>
