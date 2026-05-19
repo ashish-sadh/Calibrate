@@ -111,5 +111,5 @@ public enum BackupOnboardingDecision {
 
 #Preview {
     BackupOnboardingSheet()
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(.light)
 }

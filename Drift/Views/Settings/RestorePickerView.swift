@@ -159,5 +159,5 @@ struct RestorePickerView: View {
     NavigationStack {
         RestorePickerView()
     }
-    .preferredColorScheme(.dark)
+    .preferredColorScheme(.light)
 }

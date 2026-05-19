@@ -10,14 +10,19 @@ struct ContentView: View {
         self._syncComplete = syncComplete
         self.launchStage = launchStage
 
+        // V6 tab bar: clean, no "active red pill" effect. Selected = dark
+        // ink text + accent icon (so the active tab reads as the icon
+        // signal, not a saturated color block). Inactive = mid-gray.
+        // Background flips to surface (white) instead of page bg so the
+        // tab bar lifts off the soft-gray page.
         let tabAppearance = UITabBarAppearance()
         tabAppearance.configureWithOpaqueBackground()
-        tabAppearance.backgroundColor = UIColor(Theme.background)
-        tabAppearance.stackedLayoutAppearance.normal.iconColor = .secondaryLabel
-        tabAppearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.secondaryLabel]
+        tabAppearance.backgroundColor = UIColor(Theme.cardBackground)  // white, not page-gray
+        tabAppearance.stackedLayoutAppearance.normal.iconColor = UIColor(Theme.textTertiary)
+        tabAppearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor(Theme.textTertiary)]
         let accentColor = UIColor(Theme.accent)
         tabAppearance.stackedLayoutAppearance.selected.iconColor = accentColor
-        tabAppearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: accentColor]
+        tabAppearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: UIColor(Theme.textPrimary)]
         UITabBar.appearance().standardAppearance = tabAppearance
         UITabBar.appearance().scrollEdgeAppearance = tabAppearance
 
