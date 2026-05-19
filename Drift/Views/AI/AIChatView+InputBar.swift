@@ -135,7 +135,7 @@ extension AIChatView {
         let canSend = !vm.inputText.isEmpty || vm.pendingPhotoData != nil
         Button { vm.sendMessage() } label: {
             Image(systemName: "arrow.up.circle.fill").font(.title2)
-                .foregroundStyle(canSend ? Theme.accent : Color.secondary.opacity(0.5))
+                .foregroundStyle(canSend ? Theme.ink : Color.secondary.opacity(0.5))
         }
         .accessibilityLabel("Send message")
         .accessibilityIdentifier("ai-chat-send")

@@ -58,7 +58,7 @@ struct GoalView: View {
                             .font(.subheadline.weight(.medium))
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered).tint(Theme.accent)
+                    .buttonStyle(.bordered).tint(Theme.ink)
                     macroTargetsCard(goal)
                     paceCard(goal)
                     deficitCard(goal)
@@ -82,7 +82,7 @@ struct GoalView: View {
                         Label("Set Weight Goal", systemImage: "target")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent).tint(Theme.accent)
+                    .buttonStyle(.borderedProminent).tint(Theme.ink)
                 }
             }
             .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)

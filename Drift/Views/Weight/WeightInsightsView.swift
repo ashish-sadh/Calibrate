@@ -448,8 +448,8 @@ struct WeightInsightsView: View {
     private func changeChip(_ period: String, value: Double?) -> some View {
         VStack(spacing: 3) {
             Text(period)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Theme.textSecondary)
             if let value {
                 let d = unit.convert(fromKg: value)
                 HStack(spacing: 1) {
@@ -461,8 +461,8 @@ struct WeightInsightsView: View {
                 .foregroundStyle(changeColor(value))
             } else {
                 Text("--")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.textSecondary)
             }
         }
         .frame(maxWidth: .infinity)

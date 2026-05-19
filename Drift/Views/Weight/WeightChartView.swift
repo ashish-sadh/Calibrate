@@ -111,14 +111,17 @@ struct WeightChartView: View {
                         }
                 }
 
-                // Single clean line — EMA trend with dots at each point
+                // Single clean line — EMA trend with dots at each point.
+                // V7 light migration: was .white.opacity which rendered
+                // invisible on the white card. Coral line + dots match
+                // the reference design and read on paper-white.
                 ForEach(displayPoints.indices, id: \.self) { i in
                     LineMark(x: .value("", displayPoints[i].date), y: .value("", displayPoints[i].ema))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(Theme.accent)
                         .lineStyle(StrokeStyle(lineWidth: 2))
                         .interpolationMethod(.catmullRom)
                     PointMark(x: .value("", displayPoints[i].date), y: .value("", displayPoints[i].ema))
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(Theme.accent)
                         .symbolSize(granularity == .weekly ? 30 : 16)
                 }
 
@@ -145,13 +148,18 @@ struct WeightChartView: View {
             .chartYScale(domain: .automatic(includesZero: false))
             .chartXScale(domain: (rangeStart ?? displayPoints.first?.date ?? Date())...Date())
             .chartXAxis {
+                // V7: include day so a single-day range doesn't render
+                // "May May May" — when displayPoints all sit in one
+                // month the formatter would otherwise emit identical
+                // labels across desiredCount=4 ticks.
                 AxisMarks(values: .automatic(desiredCount: 4)) {
-                    AxisValueLabel(format: .dateTime.month(.abbreviated)).foregroundStyle(.tertiary)
+                    AxisValueLabel(format: .dateTime.month(.abbreviated).day())
+                        .foregroundStyle(Theme.textSecondary)
                 }
             }
             .chartYAxis {
                 AxisMarks(position: .trailing) {
-                    AxisValueLabel().foregroundStyle(.tertiary)
+                    AxisValueLabel().foregroundStyle(Theme.textSecondary)
                 }
                 if showCaloriesOverlay, let bars = scaledCalorieBars() {
                     AxisMarks(position: .leading, values: leadingAxisTicks(bars: bars)) { value in
