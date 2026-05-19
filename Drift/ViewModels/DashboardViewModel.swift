@@ -8,6 +8,7 @@ final class DashboardViewModel {
     private let database: AppDatabase
 
     var todayNutrition: DailyNutrition = .zero
+    var todayFoodEntries: [FoodEntry] = []
     var caloriesBurned: Double = 0
     var activeCalories: Double = 0
     var basalCalories: Double = 0
@@ -69,6 +70,16 @@ final class DashboardViewModel {
             todayNutrition = try database.fetchDailyNutrition(for: today)
         } catch {
             Log.app.error("Failed to load nutrition: \(error.localizedDescription)")
+        }
+
+        // Today's food entries — fuels V6 meals timeline on the Dashboard.
+        // Same fetch FoodLogViewModel uses; one extra read per loadToday is
+        // well inside the 3-min refresh budget.
+        do {
+            todayFoodEntries = try database.fetchFoodEntries(for: today)
+        } catch {
+            Log.app.error("Failed to load food entries: \(error.localizedDescription)")
+            todayFoodEntries = []
         }
 
         // Load supplements

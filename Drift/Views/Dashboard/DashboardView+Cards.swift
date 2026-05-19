@@ -159,65 +159,50 @@ extension DashboardView {
 
     var calorieBalanceCard: some View {
         VStack(spacing: 10) {
-            if hasLoggedFood {
-                if let targets = WeightGoal.load()?.macroTargets(currentWeightKg: viewModel.trendWeight) {
-                    // With goal: macro rings + legend
-                    HStack {
-                        Text("Nutrition")
-                            .font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
-                        Spacer()
-                        Text("Today").font(.caption).foregroundStyle(.tertiary)
-                    }
+            if let targets = WeightGoal.load()?.macroTargets(currentWeightKg: viewModel.trendWeight) {
+                // With goal: macro rings + legend
+                HStack {
+                    Text("Nutrition")
+                        .font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                    Spacer()
+                    Text("Today").font(.caption).foregroundStyle(.tertiary)
+                }
 
-                    // V6 hero: 3 concentric rings (kcal / protein / fiber)
-                    v6RingsHero(targets: targets)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 4)
+                // V6 hero: 3 concentric rings (kcal / protein / fiber)
+                v6RingsHero(targets: targets)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 4)
 
-                    // Carbs + fat sit below the hero — the V6 reference uses
-                    // a 2-up legend row for the macros that aren't on the rings.
-                    // Colors come from Theme.V6 so the strip below the hero
-                    // matches the Apple-Fitness palette, not the legacy macros.
-                    HStack(spacing: 12) {
-                        macroLegend("Carb", value: viewModel.todayNutrition.carbsG, target: targets.carbsG, color: Theme.V6.ringCarbs, unit: "g")
-                        macroLegend("Fat", value: viewModel.todayNutrition.fatG, target: targets.fatG, color: Theme.V6.ringFat, unit: "g")
-                    }
-                } else {
-                    // No goal: just show eaten + macros
-                    HStack {
-                        Text("Nutrition")
-                            .font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
-                        Spacer()
-                        Text("Today").font(.caption).foregroundStyle(.tertiary)
-                    }
-
-                    HStack(alignment: .firstTextBaseline, spacing: 3) {
-                        Text("\(Int(viewModel.todayNutrition.calories))")
-                            .font(.title3.weight(.bold).monospacedDigit())
-                            .foregroundStyle(Theme.calorieBlue)
-                        Text("kcal eaten").font(.caption).foregroundStyle(.secondary)
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                    HStack(spacing: 6) {
-                        macroChip("P", value: viewModel.todayNutrition.proteinG, color: Theme.proteinRed)
-                        macroChip("C", value: viewModel.todayNutrition.carbsG, color: Theme.carbsGreen)
-                        macroChip("F", value: viewModel.todayNutrition.fatG, color: Theme.fatYellow)
-                        macroChip("Fiber", value: viewModel.todayNutrition.fiberG, color: Theme.fiberBrown)
-                    }
+                // Carbs + fat sit below the hero — the V6 reference uses
+                // a 2-up legend row for the macros that aren't on the rings.
+                // Colors come from Theme.V6 so the strip below the hero
+                // matches the Apple-Fitness palette, not the legacy macros.
+                HStack(spacing: 12) {
+                    macroLegend("Carb", value: viewModel.todayNutrition.carbsG, target: targets.carbsG, color: Theme.V6.ringCarbs, unit: "g")
+                    macroLegend("Fat", value: viewModel.todayNutrition.fatG, target: targets.fatG, color: Theme.V6.ringFat, unit: "g")
                 }
             } else {
-                // Muted state: no food logged
-                HStack(spacing: 10) {
-                    Image(systemName: "fork.knife")
-                        .foregroundStyle(.tertiary)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("No food logged today")
-                            .font(.subheadline).foregroundStyle(.tertiary)
-                        Text("Log meals to see nutrition and macros")
-                            .font(.caption2).foregroundStyle(.quaternary)
-                    }
+                // No goal: just show eaten + macros chip row
+                HStack {
+                    Text("Nutrition")
+                        .font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
                     Spacer()
+                    Text("Today").font(.caption).foregroundStyle(.tertiary)
+                }
+
+                HStack(alignment: .firstTextBaseline, spacing: 3) {
+                    Text("\(Int(viewModel.todayNutrition.calories))")
+                        .font(.title3.weight(.bold).monospacedDigit())
+                        .foregroundStyle(Theme.calorieBlue)
+                    Text("kcal eaten").font(.caption).foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                HStack(spacing: 6) {
+                    macroChip("P", value: viewModel.todayNutrition.proteinG, color: Theme.proteinRed)
+                    macroChip("C", value: viewModel.todayNutrition.carbsG, color: Theme.carbsGreen)
+                    macroChip("F", value: viewModel.todayNutrition.fatG, color: Theme.fatYellow)
+                    macroChip("Fiber", value: viewModel.todayNutrition.fiberG, color: Theme.fiberBrown)
                 }
             }
         }

@@ -150,6 +150,18 @@ struct DashboardView: View {
                     // points into logging.
                     V6QuickLogRow(selectedTab: $selectedTab, aiEnabled: $aiEnabled)
 
+                    // V6 meals timeline — fixed 4-slot Breakfast/Lunch/Dinner
+                    // /Snacks per v6-today.jsx anatomy step 4. Replaces the
+                    // legacy "No food logged today" muted state that used to
+                    // live inside calorieBalanceCard. Tap routes to the Food
+                    // tab where edit-meal / add-meal flows are owned today.
+                    sectionHeader("Today's meals")
+                    V6MealTimeline(
+                        slots: V6MealTimeline.payloads(from: viewModel.todayFoodEntries)
+                    ) { _ in
+                        selectedTab = 2
+                    }
+
                     // ── Body ──
                     sectionHeader("Body")
 
