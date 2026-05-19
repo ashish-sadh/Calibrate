@@ -174,32 +174,33 @@ struct DashboardView: View {
                     // Sleep / Readiness route into SleepRecoveryView.
                     v6BodyTileRow
 
-                    // Proactive alerts — urgent, actionable
-                    if !viewModel.proactiveAlerts.isEmpty {
-                        ForEach(viewModel.proactiveAlerts) { alert in
-                            HStack(spacing: 10) {
-                                Image(systemName: alert.icon)
-                                    .font(.body)
-                                    .foregroundStyle(Theme.fatYellow)
-                                    .frame(width: 32, height: 32)
-                                    .background(Theme.fatYellow.opacity(0.12), in: RoundedRectangle(cornerRadius: 8))
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(alert.title).font(.caption.weight(.semibold))
-                                    Text(alert.detail).font(.caption2).foregroundStyle(.secondary)
-                                }
-                                Spacer()
-                                if let key = alert.dismissKey {
-                                    Button {
-                                        withAnimation { viewModel.dismissProactiveAlert(key: key) }
-                                    } label: {
-                                        Image(systemName: "xmark")
-                                            .font(.caption2)
-                                            .foregroundStyle(.tertiary)
+                    // V6 coaching nudge — anatomy step 6 of `v6-today.jsx`.
+                    // Replaces the legacy multi-card ForEach over
+                    // `viewModel.proactiveAlerts`: only the topmost-priority
+                    // alert renders, as a single friendly card with display-
+                    // weight title, body line, and an "Ask AI" pill gated on
+                    // the dashboard AI-beta toggle. Existing 24h dismissal
+                    // (Preferences.alertDismissedUntil via
+                    // dismissProactiveAlert) is preserved by routing the "×"
+                    // through the same viewmodel call.
+                    if let nudge = V6CoachingNudge.payload(
+                        from: viewModel.proactiveAlerts,
+                        aiEnabled: aiEnabled
+                    ) {
+                        V6CoachingNudge(
+                            payload: nudge,
+                            onAskAI: {
+                                NotificationCenter.default.post(
+                                    name: .expandAIAssistant, object: nil)
+                            },
+                            onDismiss: nudge.dismissKey.map { key in
+                                {
+                                    withAnimation {
+                                        viewModel.dismissProactiveAlert(key: key)
                                     }
-                                    .accessibilityLabel("Dismiss alert")
                                 }
-                            }.card()
-                        }
+                            }
+                        )
                     }
 
                     // Goal progress → Goal page
