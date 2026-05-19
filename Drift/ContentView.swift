@@ -50,23 +50,28 @@ struct ContentView: View {
                 DashboardView(syncComplete: $syncComplete, selectedTab: $selectedTab)
                     .tabItem { Label("Drift", systemImage: "chart.line.uptrend.xyaxis") }
                     .tag(0)
+                    .accessibilityIdentifier("tab-drift")
 
                 WeightTabView(syncComplete: $syncComplete, selectedTab: $selectedTab)
                     .tabItem { Label("Weight", systemImage: "scalemass") }
                     .tag(1)
+                    .accessibilityIdentifier("tab-weight")
 
                 FoodTabView(selectedTab: $selectedTab)
                     .tabItem { Label("Food", systemImage: "fork.knife") }
                     .tag(2)
+                    .accessibilityIdentifier("tab-food")
 
                 WorkoutView(selectedTab: $selectedTab)
                     .wrapInNav()
                     .tabItem { Label("Exercise", systemImage: "dumbbell.fill") }
                     .tag(3)
+                    .accessibilityIdentifier("tab-exercise")
 
                 MoreTabView(selectedTab: $selectedTab)
                     .tabItem { Label("More", systemImage: "ellipsis") }
                     .tag(4)
+                    .accessibilityIdentifier("tab-more")
             }
             .tint(Theme.accent)
             .background(Theme.background.ignoresSafeArea())

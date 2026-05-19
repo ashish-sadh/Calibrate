@@ -37,6 +37,7 @@ struct GoalSetupView: View {
                         TextField("0.0", text: $targetWeight)
                             .keyboardType(.decimalPad)
                             .font(.title2.monospacedDigit())
+                            .accessibilityIdentifier("goal-setup-target-weight")
                         Picker("", selection: $unit) {
                             Text("kg").tag(WeightUnit.kg)
                             Text("lbs").tag(WeightUnit.lbs)
@@ -262,7 +263,10 @@ struct GoalSetupView: View {
             .navigationTitle("Set Goal")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                        .accessibilityIdentifier("goal-setup-cancel")
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         guard let target = Double(targetWeight) else { return }
@@ -291,6 +295,7 @@ struct GoalSetupView: View {
                         onSave(goal)
                         dismiss()
                     }
+                    .accessibilityIdentifier("goal-setup-save")
                     .disabled(Double(targetWeight) == nil || calorieBelowFloor)
                 }
             }

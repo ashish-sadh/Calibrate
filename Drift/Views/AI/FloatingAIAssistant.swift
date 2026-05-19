@@ -134,6 +134,8 @@ struct FloatingAIAssistant: View {
             }
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier("ai-floating-bubble")
+        .accessibilityLabel("Open Drift AI chat")
     }
 
     // MARK: - Expanded Chat
@@ -164,6 +166,7 @@ struct FloatingAIAssistant: View {
                         .font(.title3).foregroundStyle(.secondary)
                 }
                 .accessibilityLabel("Dismiss")
+                .accessibilityIdentifier("ai-chat-close")
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)

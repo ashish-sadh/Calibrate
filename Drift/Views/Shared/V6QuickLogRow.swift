@@ -45,6 +45,7 @@ struct V6QuickLogRow: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(chip.accessibilityLabel)
                 .accessibilityHint(chip.accessibilityHint)
+                .accessibilityIdentifier("quick-log-\(chip.rawValue)")
             }
         }
         .dynamicTypeSize(...DynamicTypeSize.accessibility2)

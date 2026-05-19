@@ -80,6 +80,7 @@ struct V6BodyTile: View {
         .buttonStyle(.plain)
         .accessibilityLabel(accessibilityLabel)
         .accessibilityHint("Open \(label.lowercased()) details")
+        .accessibilityIdentifier("body-tile-\(label.lowercased())")
         .dynamicTypeSize(...DynamicTypeSize.accessibility2)
     }
 

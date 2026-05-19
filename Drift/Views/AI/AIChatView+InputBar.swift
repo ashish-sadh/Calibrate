@@ -45,6 +45,7 @@ extension AIChatView {
                     .textFieldStyle(.plain).font(.subheadline)
                     .lineLimit(1...(vm.speechService.isRecording ? 6 : 3)).focused($inputFocused)
                     .onSubmit { vm.sendMessage() }
+                    .accessibilityIdentifier("ai-chat-input")
             }
             .animation(.easeInOut(duration: 0.2), value: vm.pendingPhotoData != nil)
 
@@ -55,9 +56,12 @@ extension AIChatView {
             }
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
+        // 2026-05-19: was Color.white.opacity(0.05) (invisible on the new
+        // light card bg) — flipped to Theme.pillBackground so the input
+        // field actually reads as a tappable rounded surface.
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.05))
+                .fill(Theme.pillBackground)
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
                         .stroke(vm.speechService.isRecording ? Color.red.opacity(0.6) : Color.clear, lineWidth: 1.5)
@@ -134,6 +138,7 @@ extension AIChatView {
                 .foregroundStyle(canSend ? Theme.accent : Color.secondary.opacity(0.5))
         }
         .accessibilityLabel("Send message")
+        .accessibilityIdentifier("ai-chat-send")
         .disabled(!canSend || vm.isGenerating)
     }
 }
