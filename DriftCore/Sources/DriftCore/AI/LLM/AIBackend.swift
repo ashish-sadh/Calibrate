@@ -85,15 +85,24 @@ public enum DeviceCapability {
     }
 
     /// Detect the best model tier + backend for this device.
+    ///
+    /// **2026-05-19 LLM-swap migration:** Drift now defaults to Apple
+    /// Foundation Models (iOS 26+, Apple-Intelligence-eligible hardware).
+    /// FoundationModelsBackend.isLoaded gates availability at runtime —
+    /// if a device can't run FM, the chat layer routes around it the
+    /// same way it routes around an undownloaded local model.
+    ///
+    /// Tier is still returned (.small / .large) for legacy callers that
+    /// switch on it, but the backend is always .foundationModels going
+    /// forward. The .llamaCpp case in `AIBackendType` is kept for
+    /// transitional UI references; never returned by detectTier.
     public static func detectTier() -> (tier: AIModelTier, backend: AIBackendType) {
-        // physicalMemory reports total RAM but iOS reserves 1-2GB
-        // iPhone 16 Pro (8GB) reports ~7.2-7.8, iPhone 15 (6GB) reports ~5.2-5.8
         if ramGB >= 6.5 {
-            return (.large, .llamaCpp)  // Gemma 4 (2.9GB) — 8GB devices (Pro models)
+            return (.large, .foundationModels)  // Apple FM on 8GB+ devices
         } else if ramGB >= 5.0 {
-            return (.small, .llamaCpp)  // SmolLM2 (368MB) — 6GB devices
+            return (.small, .foundationModels)
         } else {
-            return (.small, .llamaCpp)  // SmolLM2 — older devices
+            return (.small, .foundationModels)
         }
     }
 

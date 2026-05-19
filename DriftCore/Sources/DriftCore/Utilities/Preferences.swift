@@ -232,14 +232,17 @@ public enum Preferences {
 
     private static let preferredAIBackendKey = "drift_preferred_ai_backend"
 
-    /// User-selected AI backend for chat. Default: `.llamaCpp` (privacy-first).
-    /// Persisted across launches; flipped by the in-chat cpu/cloud toggle when
-    /// both local and remote backends are available. Mid-thread changes don't
-    /// reset history — `LocalAIService` swaps the underlying backend in place.
+    /// User-selected AI backend for chat. Default: `.foundationModels`
+    /// (Apple FM — on-device, system-managed weights, zero per-call cost).
+    /// 2026-05-19 migration: was .llamaCpp; now defaults to FoundationModels
+    /// on Apple-Intelligence-eligible hardware. Persisted across launches;
+    /// flipped by the in-chat cpu/cloud toggle when remote is also available.
+    /// Mid-thread changes don't reset history — `LocalAIService` swaps the
+    /// underlying backend in place.
     public static var preferredAIBackend: AIBackendType {
         get {
             let raw = UserDefaults.standard.string(forKey: preferredAIBackendKey) ?? ""
-            return AIBackendType(rawValue: raw) ?? .llamaCpp
+            return AIBackendType(rawValue: raw) ?? .foundationModels
         }
         set { UserDefaults.standard.set(newValue.rawValue, forKey: preferredAIBackendKey) }
     }
