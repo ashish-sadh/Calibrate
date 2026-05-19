@@ -49,14 +49,14 @@ struct BackupSettingsView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 12) {
                 Image(systemName: "icloud")
-                    .foregroundStyle(Theme.accent).frame(width: 24)
+                    .foregroundStyle(Theme.textSecondary).frame(width: 24)
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Automatic Backups (iCloud)").font(.subheadline.weight(.medium))
                     Text("Daily snapshot of your Drift data to iCloud Drive")
                         .font(.caption2).foregroundStyle(.tertiary)
                 }
                 Spacer()
-                Toggle("", isOn: $backupEnabled).labelsHidden().tint(Theme.accent)
+                Toggle("", isOn: $backupEnabled).labelsHidden().tint(Theme.ink)
             }
 
             if let date = lastSuccessfulDate {
@@ -83,9 +83,9 @@ struct BackupSettingsView: View {
             } label: {
                 HStack(spacing: 12) {
                     if isBackingUp {
-                        ProgressView().tint(Theme.accent).frame(width: 24)
+                        ProgressView().tint(Theme.ink).frame(width: 24)
                     } else {
-                        Image(systemName: "arrow.up.to.line").foregroundStyle(Theme.accent).frame(width: 24)
+                        Image(systemName: "arrow.up.to.line").foregroundStyle(Theme.textSecondary).frame(width: 24)
                     }
                     Text("Back Up Now").foregroundStyle(Theme.textPrimary)
                     Spacer()
@@ -97,7 +97,7 @@ struct BackupSettingsView: View {
             .accessibilityHint(isBackingUp ? "Backup in progress" : "Backs up Drift to iCloud immediately")
 
             if let status = transientStatus {
-                Text(status).font(.caption).foregroundStyle(Theme.accent)
+                Text(status).font(.caption).foregroundStyle(Theme.deficit)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
@@ -107,7 +107,7 @@ struct BackupSettingsView: View {
                 showingRestorePicker = true
             } label: {
                 HStack(spacing: 12) {
-                    Image(systemName: "arrow.down.to.line").foregroundStyle(Theme.accent).frame(width: 24)
+                    Image(systemName: "arrow.down.to.line").foregroundStyle(Theme.textSecondary).frame(width: 24)
                     Text("Restore from Backup…").foregroundStyle(Theme.textPrimary)
                     Spacer()
                     Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
@@ -138,11 +138,11 @@ struct BackupSettingsView: View {
             .padding(.top, 6)
         } label: {
             HStack(spacing: 12) {
-                Image(systemName: "questionmark.circle").foregroundStyle(Theme.accent).frame(width: 24)
+                Image(systemName: "questionmark.circle").foregroundStyle(Theme.textSecondary).frame(width: 24)
                 Text("What's in my backup?").font(.subheadline.weight(.medium))
             }
         }
-        .tint(Theme.accent)
+        .tint(Theme.textPrimary)
         .card()
     }
 
