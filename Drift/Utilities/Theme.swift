@@ -41,6 +41,17 @@ enum Theme {
     /// Secondary accent — orange (the fat ring color), used sparingly.
     static let accentSecondary = Color(hex: "FF8F2C")
 
+    // MARK: - Ink (V7 black primary CTA / FAB / active-tab)
+    //
+    // The V7 design moves the primary action color from coral-on-white to
+    // black-on-white. Coral still owns "move ring + brand moments" (weight
+    // chart line, kcal ring, log-on-empty links), but the FAB, active tab
+    // pill, primary buttons ("Suggest a snack", "Open camera", filter
+    // pills selected state) all use ink. Net effect: only color in the app
+    // chrome maps to either brand (coral) or goal direction (green/red).
+    static let ink = Color(hex: "0A0A0A")
+    static let inkSoft = Color(hex: "1F1F23")
+
     // MARK: - Semantic Colors (goal-aware)
 
     /// Aligned with goal direction (weight loss → green, gain → green if goal=gain).
@@ -53,19 +64,37 @@ enum Theme {
     static let warn = Color(hex: "FF9500")
     static let warnSoft = Color(hex: "FFEFD9")
 
-    // MARK: - Macro Colors (Apple Fitness ring palette)
+    // MARK: - Macro Colors
+    //
+    // V7 (May 2026) introduced semantic names — `macroKcal/Protein/Fiber/
+    // Carbs/Fat`. The legacy tokens below it (`calorieBlue`, `proteinRed`,
+    // `carbsGreen`, `fatYellow`, `fiberBrown`) are misnamed leftovers from
+    // an earlier palette. New code should use the `macro*` names; the
+    // legacy names are kept as aliases so existing callsites still resolve
+    // without a sweeping rename.
 
+    /// Kcal / energy ring → coral.
+    static let macroKcal = Color(hex: "FF375F")
+    /// Protein ring → green (matches V7 ring palette).
+    static let macroProtein = Color(hex: "30C760")
+    /// Fiber ring → sky blue. The legacy `fiberBrown` was a muted brown
+    /// that didn't match the V7 design's bright-blue fiber dot.
+    static let macroFiber = Color(hex: "5BAEEC")
+    /// Carbs → amber.
+    static let macroCarbs = Color(hex: "F0AD2F")
+    /// Fat → orange.
+    static let macroFat = Color(hex: "FF8F2C")
+
+    // Legacy aliases — kept to avoid a sweeping callsite rename. Prefer
+    // `macroKcal`, `macroProtein`, etc. in new code.
     /// Calorie / energy → red (the "move" ring).
-    static let calorieBlue = Color(hex: "FF375F")  // V6 uses red for move/kcal
-    /// Protein → muted Fitness green. v7 uses oklch(0.78 0.20 145) which
-    /// renders as a much-too-neon #7BE619 in sRGB on white. Tightened to a
-    /// darker, less-saturated shade so the protein bar / dot reads as
-    /// "green" without screaming.
+    static let calorieBlue = macroKcal
+    /// Protein.
     static let proteinRed = Color(hex: "30A845")
     /// Carbs → amber.
-    static let carbsGreen = Color(hex: "F0AD2F")
+    static let carbsGreen = macroCarbs
     /// Fat → orange.
-    static let fatYellow = Color(hex: "FF8F2C")
+    static let fatYellow = macroFat
     /// Fiber → muted brown (kept from prior palette).
     static let fiberBrown = Color(hex: "A16207")
 

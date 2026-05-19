@@ -5,165 +5,92 @@ struct MoreTabView: View {
     @Binding var selectedTab: Int
     @State private var navId = UUID()
     @State private var hasCycleData = false
-    @State private var showingAIRemoveConfirm = false
-    @State private var showingAIRemoved = false
 
     var body: some View {
         NavigationStack {
             ScrollView {
-                VStack(spacing: 14) {
-                    // Report a Bug — prominent at top
-                    Link(destination: URL(string: "https://ashish-sadh.github.io/Drift/")!) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "ant.fill")
-                                .foregroundStyle(.red)
-                                .frame(width: 24)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Report a Bug")
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(.primary)
-                                Text("Found something wrong? Let us know")
-                                    .font(.caption2)
-                                    .foregroundStyle(.tertiary)
-                            }
-                            Spacer()
-                            Image(systemName: "arrow.up.right")
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
-                                .accessibilityHidden(true)
+                VStack(spacing: 24) {
+                    section("ACTIVITY") {
+                        navRow(icon: "dumbbell.fill", title: "Exercise",
+                               subtitle: "Strength, cardio, mobility",
+                               color: Theme.macroKcal) {
+                            WorkoutView(selectedTab: $selectedTab)
                         }
-                        .padding(.vertical, 10)
-                    }
-                    .card()
-
-                    // Goal
-                    VStack(spacing: 0) {
-                        navRow(icon: "target", title: "Weight Goal", subtitle: "Target weight, timeline, deficit plan", color: Theme.deficit) {
-                            GoalView()
+                        rowDivider
+                        navRow(icon: "camera.viewfinder", title: "Photo Log",
+                               subtitle: "Snap a meal · BYOK cloud AI",
+                               color: Theme.macroFiber) {
+                            PhotoLogBetaSettingsView()
                         }
                     }
-                    .card()
 
-                    // Health & Data
-                    VStack(spacing: 0) {
-                        navRow(icon: "waveform.path", title: "Body Rhythm", subtitle: "Sleep, vitals, and recovery", color: Theme.rhythmTeal) {
+                    section("HEALTH") {
+                        navRow(icon: "waveform.path", title: "Body Rhythm",
+                               subtitle: "Sleep, vitals, recovery",
+                               color: Theme.rhythmTeal) {
                             SleepRecoveryView()
                         }
                         if hasCycleData {
-                            Divider().overlay(Theme.separator)
-                            navRow(icon: "circle.circle", title: "Cycle", subtitle: "Period tracking from Apple Health", color: Theme.cyclePink) {
+                            rowDivider
+                            navRow(icon: "circle.circle", title: "Cycle",
+                                   subtitle: "From Apple Health",
+                                   color: Theme.cyclePink) {
                                 CycleView()
                             }
                         }
-                        Divider().overlay(Theme.separator)
-                        navRow(icon: "pill.fill", title: "Supplements", subtitle: "Daily checklist, consistency", color: Theme.supplementMint) {
+                        rowDivider
+                        navRow(icon: "pill.fill", title: "Supplements",
+                               subtitle: "Daily checklist",
+                               color: Theme.macroProtein) {
                             SupplementsTabView()
                         }
-                        Divider().overlay(Theme.separator)
-                        navRow(icon: "figure.stand", title: "Body Composition", subtitle: "DEXA scan data", color: Theme.accent) {
+                        rowDivider
+                        navRow(icon: "figure.stand", title: "Body Composition",
+                               subtitle: "DEXA scan data",
+                               color: Theme.macroKcal) {
                             DEXAOverviewView()
                         }
-                        Divider().overlay(Theme.separator)
-                        navRow(icon: "waveform.path.ecg", title: "Glucose", subtitle: "CGM glucose tracking", color: Theme.calorieBlue) {
+                        rowDivider
+                        navRow(icon: "waveform.path.ecg", title: "Glucose",
+                               subtitle: "CGM tracking",
+                               color: Theme.macroFiber) {
                             GlucoseTabView()
                         }
-                        Divider().overlay(Theme.separator)
-                        navRow(icon: "cross.case.fill", title: "Biomarkers", subtitle: "Blood test results & trends", color: Theme.heartRed) {
+                        rowDivider
+                        navRow(icon: "cross.case.fill", title: "Biomarkers",
+                               subtitle: "Blood test results & trends",
+                               color: Theme.macroCarbs) {
                             BiomarkersTabView()
                         }
-                        Divider().overlay(Theme.separator)
-                        navRow(icon: "camera.viewfinder", title: "Photo Log", subtitle: "Snap a meal, get calories · BYOK cloud AI", color: Theme.accent) {
-                            PhotoLogBetaSettingsView()
+                    }
+
+                    section("APP") {
+                        navRow(icon: "target", title: "Weight Goal",
+                               subtitle: "Target weight, timeline, plan",
+                               color: Theme.macroFat) {
+                            GoalView()
                         }
-                        Divider().overlay(Theme.separator)
-                        navRow(icon: "gear", title: "Settings", subtitle: "Units, Health access, export", color: .secondary) {
+                        rowDivider
+                        navRow(icon: "gear", title: "Settings",
+                               subtitle: "Units · sync · export",
+                               color: Theme.textTertiary) {
                             SettingsView()
                         }
                     }
-                    .card()
 
-                    // AI
-                    VStack(spacing: 0) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "sparkles")
-                                .foregroundStyle(Theme.accent).frame(width: 24)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("AI Assistant").font(.subheadline.weight(.medium))
-                                Text("On-device AI · Beta").font(.caption2).foregroundStyle(.tertiary)
-                            }
-                            Spacer()
-                            Toggle("", isOn: Binding(
-                                get: { Preferences.aiEnabled },
-                                set: { Preferences.aiEnabled = $0 }
-                            ))
-                            .labelsHidden().tint(Theme.accent)
-                        }
-                        .padding(.vertical, 10)
-
-                        if AIModelManager.shared.isModelDownloaded || showingAIRemoved {
-                            Divider().overlay(Theme.separator)
-                            if showingAIRemoved {
-                                HStack(spacing: 8) {
-                                    Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.deficit)
-                                    Text("AI data removed").font(.subheadline).foregroundStyle(.secondary)
-                                }
-                                .padding(.vertical, 10)
-                                .transition(.opacity)
-                            } else {
-                                Button(role: .destructive) {
-                                    showingAIRemoveConfirm = true
-                                } label: {
-                                    HStack(spacing: 12) {
-                                        Image(systemName: "trash").foregroundStyle(Theme.surplus).frame(width: 24)
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text("Remove AI Data").font(.subheadline.weight(.medium)).foregroundStyle(Theme.surplus)
-                                            Text("Free ~\(AIModelManager.shared.modelSizeOnDiskMB) MB")
-                                                .font(.caption2).foregroundStyle(.tertiary)
-                                        }
-                                        Spacer()
-                                    }
-                                    .padding(.vertical, 10)
-                                }.buttonStyle(.plain)
-                                .alert("Remove AI Data?", isPresented: $showingAIRemoveConfirm) {
-                                    Button("Remove", role: .destructive) {
-                                        LocalAIService.shared.deleteModel()
-                                        Preferences.aiEnabled = false
-                                        withAnimation { showingAIRemoved = true }
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                                            withAnimation { showingAIRemoved = false }
-                                        }
-                                    }
-                                    Button("Cancel", role: .cancel) {}
-                                } message: {
-                                    Text("This will delete the AI model (~\(AIModelManager.shared.modelSizeOnDiskMB) MB) from your device.")
-                                }
-                            }
-                        }
-                    }
-                    .card()
-
-                    // Privacy
                     VStack(spacing: 6) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "lock.shield.fill")
-                                .foregroundStyle(Theme.deficit)
-                                .font(.caption)
-                            Text("Your data stays on your device")
-                                .font(.caption.weight(.medium))
+                        Link(destination: URL(string: "https://ashish-sadh.github.io/Drift/")!) {
+                            Text("Report a bug")
+                                .font(.caption2)
+                                .foregroundStyle(Theme.textTertiary)
+                                .underline()
                         }
-                        Text("Drift stores all data locally on your iPhone and Apple Health. No accounts, no cloud, no tracking. Barcode lookups send only the barcode number. Online food search (opt-in) sends food search terms to USDA and Open Food Facts — no personal data.")
+                        Text("Drift · v\(versionString) · \(yearString)")
                             .font(.caption2)
-                            .foregroundStyle(.tertiary)
-                            .multilineTextAlignment(.center)
+                            .foregroundStyle(Theme.textTertiary)
                     }
                     .frame(maxWidth: .infinity)
-                    .card()
-
-                    // Version
-                    Text("Drift v\(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"))")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
-                        .padding(.top, 4)
+                    .padding(.top, 12)
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 8)
@@ -177,38 +104,66 @@ struct MoreTabView: View {
         }
         .id(navId)
         .onChange(of: selectedTab) { oldTab, newTab in
-            // When leaving More tab, reset navigation so it shows root when coming back
             if oldTab == 4 && newTab != 4 { navId = UUID() }
         }
+    }
+
+    @ViewBuilder
+    private func section<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Theme.textSecondary)
+                .tracking(0.8)
+                .padding(.leading, 4)
+            VStack(spacing: 0) { content() }
+                .card()
+        }
+    }
+
+    private var rowDivider: some View {
+        Divider().overlay(Theme.separator).padding(.leading, 50)
     }
 
     private func navRow<Dest: View>(icon: String, title: String, subtitle: String, color: Color, @ViewBuilder destination: () -> Dest) -> some View {
         NavigationLink {
             destination()
         } label: {
-            HStack(spacing: 12) {
-                Image(systemName: icon)
-                    .font(.subheadline)
-                    .foregroundStyle(color)
-                    .frame(width: 24)
+            HStack(spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(color.opacity(0.15))
+                        .frame(width: 36, height: 36)
+                    Image(systemName: icon)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(color)
+                }
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.primary)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.textPrimary)
                     Text(subtitle)
                         .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Theme.textSecondary)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Theme.textTertiary)
                     .accessibilityHidden(true)
             }
             .contentShape(Rectangle())
             .padding(.vertical, 10)
         }
         .buttonStyle(.plain)
+    }
+
+    private var versionString: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "0.1.0"
+    }
+
+    private var yearString: String {
+        String(Calendar.current.component(.year, from: Date()))
     }
 }
 
