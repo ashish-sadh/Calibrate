@@ -344,6 +344,33 @@ if filter_mode in ("--senior", "--any"):
 # ── Junior-only section ────────────────────────────────────────────────────────
 if filter_mode in ("--junior", "--any"):
 
+    # Priority 1.9 (#790): Stale junior sprint-tasks. Tasks queued long ago
+    # that no junior session has claimed get bumped ahead of fresher work
+    # so multi-week-old cuisine/food-DB tasks don't keep losing the lottery
+    # to whatever planning just filed.
+    #
+    # Age proxy: issue NUMBER. sprint-state.json doesn't store createdAt
+    # currently; lower numbers are older. The router considers a task
+    # "stale" when its number is ≥STALE_DELTA below the max current task
+    # number — i.e., it's been queued behind a sliding window of newer
+    # tasks. STALE_DELTA=80 picks up tasks roughly ≥5 days old at the
+    # current planning cadence (8-12 new tasks/cycle, ~2 cycles/day).
+    nums = [t.get("number", 0) for t in available if isinstance(t.get("number"), int)]
+    _max_num = max(nums) if nums else 0
+    STALE_DELTA = 80
+    stale_juniors = [
+        t for t in available
+        if has(t, "sprint-task") and not has(t, "SENIOR") and not has(t, "bug")
+        and not has(t, "needs-review")
+        and isinstance(t.get("number"), int)
+        and t["number"] < (_max_num - STALE_DELTA)
+    ]
+    if stale_juniors:
+        # Oldest (lowest number) first within the stale bucket.
+        stale_juniors.sort(key=lambda t: t["number"])
+        t = stale_juniors[0]
+        print(f"{t['number']} {t['title']}"); sys.exit(0)
+
     # Priority 2: Regular sprint tasks (sprint-task, no SENIOR, not a bug)
     for t in available:
         if has(t, "needs-review"): continue
