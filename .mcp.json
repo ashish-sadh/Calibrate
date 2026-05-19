@@ -1,0 +1,22 @@
+{
+  "mcpServers": {
+    "drift": {
+      "command": "/opt/homebrew/bin/python3.11",
+      "args": [
+        "-m",
+        "drift_mcp.server"
+      ],
+      "env": {
+        "PYTHONPATH": "/Users/ashishsadh/workspace/Drift/drift-mcp",
+        "DRIFT_REPO": "/Users/ashishsadh/workspace/Drift"
+      }
+    },
+    "mobile": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@mobilenext/mobile-mcp@latest"
+      ]
+    }
+  }
+}
