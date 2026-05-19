@@ -35,7 +35,11 @@ struct DriftApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView(syncComplete: $syncComplete, launchStage: launchStage)
-                .preferredColorScheme(.dark)
+                // V6 migration 2026-05-19: force light mode app-wide per V6
+                // spec ("Light-only, Apple Fitness DNA"). Theme.swift was
+                // rewritten in the same commit; this is the trigger so iOS
+                // doesn't request light/dark per system setting.
+                .preferredColorScheme(.light)
                 .onChange(of: scenePhase) { _, newPhase in
                     // Broadcast to any listening AIChatViewModel so it can snapshot state.
                     // Listener-based so the singleton doesn't need a VM reference.
