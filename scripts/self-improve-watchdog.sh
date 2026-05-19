@@ -929,7 +929,21 @@ start_claude() {
         PROMPT_ARG="$SESSION_PROMPT"
     fi
 
-    DRIFT_AUTONOMOUS=1 DRIFT_USE_SKILLS="$USE_SKILLS" DRIFT_SESSION_TYPE="$SESSION_TYPE" claude -p "$PROMPT_ARG" \
+    # DRIFT_STUCK_DETECTOR_ENFORCE: read from file flag (lets us toggle
+    # without restarting watchdog/launchd). When 1, stuck-detector.sh kills
+    # sessions that go ≥30 calls without diff growth, ≥20 calls without
+    # plan/progress comment update, or ≥5 reads of the same file.
+    local STUCK_ENFORCE=""
+    if [[ -f "$HOME/drift-state/stuck-detector-enforce.flag" ]]; then
+        STUCK_ENFORCE=$(cat "$HOME/drift-state/stuck-detector-enforce.flag" 2>/dev/null | tr -d '[:space:]')
+    fi
+    STUCK_ENFORCE="${STUCK_ENFORCE:-0}"
+
+    DRIFT_AUTONOMOUS=1 \
+    DRIFT_USE_SKILLS="$USE_SKILLS" \
+    DRIFT_SESSION_TYPE="$SESSION_TYPE" \
+    DRIFT_STUCK_DETECTOR_ENFORCE="$STUCK_ENFORCE" \
+    claude -p "$PROMPT_ARG" \
         $MCP_CONFIG_ARG \
         --dangerously-skip-permissions \
         --model "$MODEL" \
@@ -1182,6 +1196,28 @@ while true; do
             exit 0
             ;;
         RUN)
+            # stuck-detector handoff: the PostToolUse hook writes a kill
+            # marker when it detects no diff growth + no plan-comment update
+            # within thresholds. The watchdog actually kills (the hook can't
+            # kill its own session because it's a child of it).
+            STUCK_KILL_FILE="$HOME/drift-state/stuck-session-kill"
+            if [[ -f "$STUCK_KILL_FILE" ]]; then
+                STUCK_REASON=$(jq -r '.reason // "unknown"' "$STUCK_KILL_FILE" 2>/dev/null || echo "unknown")
+                STUCK_SID=$(jq -r '.session_id // ""' "$STUCK_KILL_FILE" 2>/dev/null || echo "")
+                if is_claude_alive; then
+                    log "Stuck-detector fired ($STUCK_REASON, session=$STUCK_SID). Killing autopilot."
+                    # Mark the in-progress issue as abandoned before killing
+                    if [[ -f "$HOME/drift-state/in-progress-issue" ]]; then
+                        IN_PROGRESS=$(cat "$HOME/drift-state/in-progress-issue" 2>/dev/null)
+                        if [[ -n "$IN_PROGRESS" ]]; then
+                            "$WORK_DIR/scripts/sprint-service.sh" abandon "$IN_PROGRESS" --reason "stuck_detector: $STUCK_REASON" 2>/dev/null || true
+                        fi
+                    fi
+                    kill_claude
+                fi
+                rm -f "$STUCK_KILL_FILE"
+            fi
+
             # Reconcile state before touching anything else — catches stamps
             # that a prior session left stale, GitHub-closed tasks still
             # locking our in_progress slot, and orphan in-progress labels.
