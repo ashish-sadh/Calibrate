@@ -109,7 +109,7 @@ enum QuickLogChip: String, CaseIterable, Identifiable {
     StatefulPreview()
         .padding()
         .background(Theme.background)
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(.light)
 }
 
 private struct StatefulPreview: View {

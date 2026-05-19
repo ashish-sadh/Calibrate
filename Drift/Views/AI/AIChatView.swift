@@ -60,7 +60,7 @@ struct AIChatView: View {
                 undoChip
             }
 
-            Divider().overlay(Color.white.opacity(0.06))
+            Divider().overlay(Theme.separator)
 
             inputBar
         }
@@ -123,8 +123,10 @@ struct AIChatView: View {
                     } label: {
                         Text(suggestion)
                             .font(.caption)
+                            .foregroundColor(Theme.textPrimary)
                             .padding(.horizontal, 12).padding(.vertical, 6)
-                            .background(Color.white.opacity(0.08), in: Capsule())
+                            .background(Theme.pillBackground, in: Capsule())
+                            .overlay(Capsule().strokeBorder(Theme.separator, lineWidth: 0.5))
                     }.buttonStyle(.plain)
                 }
             }

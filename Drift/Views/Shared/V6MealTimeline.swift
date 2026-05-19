@@ -267,13 +267,13 @@ extension V6MealTimeline {
     return V6MealTimeline(slots: slots) { _ in }
         .padding()
         .background(Theme.background)
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(.light)
 }
 
 #Preview("V6MealTimeline all empty") {
     V6MealTimeline(slots: V6MealTimeline.payloads(from: [])) { _ in }
         .padding()
         .background(Theme.background)
-        .preferredColorScheme(.dark)
+        .preferredColorScheme(.light)
 }
 #endif

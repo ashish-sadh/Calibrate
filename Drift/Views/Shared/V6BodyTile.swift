@@ -250,7 +250,7 @@ extension V6BodyTile {
     }
     .padding()
     .background(Theme.background)
-    .preferredColorScheme(.dark)
+    .preferredColorScheme(.light)
 }
 
 #Preview("V6BodyTile empty states") {
@@ -276,6 +276,6 @@ extension V6BodyTile {
     }
     .padding()
     .background(Theme.background)
-    .preferredColorScheme(.dark)
+    .preferredColorScheme(.light)
 }
 #endif

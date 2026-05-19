@@ -154,7 +154,7 @@ extension V6CoachingNudge {
     )
     .padding()
     .background(Theme.background)
-    .preferredColorScheme(.dark)
+    .preferredColorScheme(.light)
 }
 
 #Preview("V6CoachingNudge AI off") {
@@ -171,6 +171,6 @@ extension V6CoachingNudge {
     )
     .padding()
     .background(Theme.background)
-    .preferredColorScheme(.dark)
+    .preferredColorScheme(.light)
 }
 #endif

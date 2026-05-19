@@ -173,6 +173,6 @@ struct V6LegendItem: View {
     }
     .padding()
     .background(Theme.background)
-    .preferredColorScheme(.dark)
+    .preferredColorScheme(.light)
 }
 #endif

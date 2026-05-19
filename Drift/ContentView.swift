@@ -24,8 +24,11 @@ struct ContentView: View {
         let navAppearance = UINavigationBarAppearance()
         navAppearance.configureWithOpaqueBackground()
         navAppearance.backgroundColor = UIColor(Theme.background)
-        navAppearance.titleTextAttributes = [.foregroundColor: UIColor.white]
-        navAppearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+        // V6 light-mode migration 2026-05-19: titles use Theme.textPrimary
+        // (near-black on paper-white). Was UIColor.white from the dark era,
+        // which left nav titles invisible after the theme flip.
+        navAppearance.titleTextAttributes = [.foregroundColor: UIColor(Theme.textPrimary)]
+        navAppearance.largeTitleTextAttributes = [.foregroundColor: UIColor(Theme.textPrimary)]
         UINavigationBar.appearance().standardAppearance = navAppearance
         UINavigationBar.appearance().scrollEdgeAppearance = navAppearance
         UINavigationBar.appearance().compactAppearance = navAppearance

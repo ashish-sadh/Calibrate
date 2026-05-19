@@ -78,10 +78,13 @@ enum Theme {
     static let textPrimary = Color(hex: "1A1B22")
     /// Secondary text — for captions, metadata.
     static let textSecondary = Color(hex: "5C5D69")
-    /// Tertiary text — placeholders, disabled.
-    static let textTertiary = Color(hex: "898A93")
-    /// Quaternary — faint hints. Rarely needed.
-    static let textQuaternary = Color(hex: "B6B7BC")
+    /// Tertiary text — placeholders, disabled, axis labels.
+    /// Bumped 2026-05-19 from #B6B7BC (too faint on white in TestFlight 255
+    /// screenshots — "Started: 117.5 lbs", "Based on last 21 days", "Today"
+    /// labels were nearly invisible) to #6F7079.
+    static let textTertiary = Color(hex: "6F7079")
+    /// Quaternary — for truly disabled / placeholder states only.
+    static let textQuaternary = Color(hex: "A6A7AD")
 
     // MARK: - Typography
 
