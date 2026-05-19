@@ -3,18 +3,38 @@
 ## Vision
 
 Two equally important pillars:
-1. **AI chat that handles 90% of interactions** — type what you did, AI does the rest
-2. **Beautiful, fast, opinionated health tracking UI** — charts, diary, insights that are world-class
+1. **AI chat that handles 90% of interactions** — type what you did, AI does the rest. Apple Foundation Models is now the on-device intelligence layer powering chat + structured extraction (food parsing, label OCR, workout transcripts, lab reports).
+2. **Beautiful, fast, opinionated health tracking UI** — charts, diary, insights that are world-class. V7 (light theme, 3-tab IA, black floating FAB, donut hero, palette retired pink-as-default) is the active design direction.
 
 Neither is secondary. Every improvement should advance one or both pillars.
 
-Privacy-first: everything on-device, no cloud, no accounts. This is non-negotiable.
+Privacy-first: everything on-device, no cloud, no accounts. This is non-negotiable. BYOK cloud chat is opt-in and clearly indicated.
 
-## Current Phase: Polish & Depth (Phase 3c)
+## Current Phase: V7 refresh + AI depth (May 2026 — V7 reset)
 
-What's working: core tracking across all domains, AI chat foundation, 35 tools (12 analytical engines), dual-model pipeline + cloud BYOK, **Apple Foundation Models extraction live behind feature flag** (CompositeFood, WorkoutEntry, NutritionLabel OCR, LabReport hybrid — #744/#745/#748/#749), **`.foundationModels` chat backend wired** (Task 1 PR A, `4f0f1d4f`), **V6 visual evolution Elements 1-3 shipped** (#782 — Apple-Fitness rings hero, quick-log chip row, Body tile row), ~2553 tests (1253 iOS + 1300 DriftCore, macOS 8s warm), 5,420 foods (curated, ceiling locked at 6,000), state machine, structured chat cards (8 types), photo-attached meal logging, cross-session context, recent foods quick-log, **GLP-1 medication data model + log_medication AI tool** (#751/#752), proactive coach triad live, Settings → Feedback + 7-day dashboard activation banner (#759), iCloud backup full surface + first-launch enable nudge (#677/#678/#679/`8421ee10`), **TestFlight pipeline restored — 6 builds shipped 244-250 + build 251 archive in flight 2026-05-16**.
+**Sprint queue reset on 2026-05-19.** All open `sprint-task` issues filed prior to that date were closed as part of the V7 visual refresh; planning starts fresh after this commit. Product focus tenets updated — see Issue #111 — to add tenet #0 (Apple Foundation Models is the on-device intelligence layer; AI chat depth is the next focus) and revise tenet #10 (V6 → V7 visual direction).
 
-What's not: #708 backup E2E dogfood still open after 4 cycles (filed #789 to build `human-action.md` register + migrate #708 with named owner + 48h deadline), Settings → Feedback null traffic 4 days post-banner-ship (pending friend-tester DM), V6 Element 4+ paused pending tester feedback on 1-3 (#792 audit), cuisine 4 cycles flat at 5,420 (junior routing bug suspected — #790 diagnostic), `.foundationModels` chat backend pending Tier-3 parity eval gate (#797), planning crash (#407 → #619, still deferred).
+**Shipped 2026-05-19 (builds 256+, V7 phases 1/3-partial/4):**
+- Theme palette tokens — `Theme.ink` (#0A0A0A) added as the V7 primary CTA color, semantic macro tokens (`macroKcal/Protein/Fiber/Carbs/Fat`), legacy names kept as aliases.
+- More tab regrouped into ACTIVITY / HEALTH / APP sections per V7 reference. Photo Log renamed "Bring Your Own Key" and moved under APP. AI Assistant toggle removed (FoundationModels is always-on, no longer requires a download gate).
+- 3-tab IA collapse — V6 five tabs (Drift / Weight / Food / Exercise / More) → V7 three (Today / Body / More). Food + Exercise removed from primary tabs; Food lives behind the FAB, Exercise lives under More → Activity. Custom floating white pill tab bar + black "+" FAB (56pt circle, ink fill) to the right.
+- Weight chart visibility fix — EMA line + points flipped from `.white.opacity(0.7)` (invisible on white card) to `Theme.accent` (coral on paper-white per reference). X-axis format includes day so a single-day data range doesn't render "May May May".
+- WeightInsightsView chip-row contrast — 3d/7d/14d/30d/90d labels + "--" placeholders flipped from `.tertiary` to `Theme.textSecondary` with semibold weight.
+- WorkoutView red-button retirement — Start Workout / Coach Me / Browse Exercises / in-progress banner flipped from `Theme.accent` to `Theme.ink`.
+- FloatingAIAssistant Simulator skip — `#if targetEnvironment(simulator)` short-circuit shows "AI not available in Simulator" instead of downloading 600 MB of weights that the Sim resets anyway.
+- SettingsView pink retirement — 22 `Theme.accent` sub-row icons flipped to `Theme.textSecondary`, toggles re-tinted to `Theme.ink`. Root `.tint(Theme.textPrimary)` so button labels read charcoal instead of inheriting system coral.
+
+**Queued V7 work** (will be filed as sprint-tasks by the next planning cycle):
+- **Phase 2 — Today donut redesign.** 3 concentric rings (kcal coral / protein green / fiber blue) with center kcal number, macro grid beneath (kcal/protein/fiber + carbs/fat), Log section with 4 method cards (Snap/Voice/Search/Recent), vertical meal timeline with dot rail, body summary cards (WEIGHT/SLEEP/READINESS), coach nudge card with sun icon.
+- **Phase 3 proper — Body screen unification.** Replaces WeightTabView. Merges weight chart + Rhythm (sleep ring + HR/RESP/READINESS) + Glucose chart + Composition row (Body Fat / Lean Mass / Fat Mass) + Biomarkers into one scrolling Body screen.
+- **Phase 5 — Sheet redesigns.** Drift Coach sheet (replaces FloatingAIAssistant, with visible model selector for Apple FM / local / BYOK cloud), redesigned Log-a-Meal sheet (4-mode segmented Recent/Search/Voice/Snap), Exercise History sheet with filter pills, Weight Goal clean redesign.
+- **Pink retirement remainder.** ~270 `Theme.accent` sites left across dashboard cards, food list, supplements, biomarkers, glucose. Cleaned as each view is rewritten.
+- **AI chat depth** (per tenet #0). Multi-turn reliability eval gate, FM-driven extraction surfaces beyond chat (free-text food parsing, exercise transcript, lab report hybrid), per-screen nav-bar chat icon, Drift Coach prompt-suggestions surfaced contextually.
+
+What's *not* working (V7 reset closed the prior open-issue list; this is the new short backlog):
+- Today + Body screens still on V6 internals — V7 IA shell wraps them but the inner views haven't been redesigned yet. Pixel mismatch with the reference mocks until Phase 2/3 land.
+- Drift Coach is still the V6 floating bubble until Phase 5.
+- AI access on Simulator is correctly blocked, but the BYOK cloud-key path doesn't yet surface from the chat sheet (user has to find it under More → Bring Your Own Key).
 
 ---
 
