@@ -13,9 +13,13 @@ enum Theme {
 
     // MARK: - Surface Colors (paper white, layered)
 
-    /// Page / scroll bg — soft paper white. sRGB approx of oklch(0.985 0.002 250).
-    static let background = Color(hex: "FAFAFB")
-    /// Grouped scroll bg / inset region.
+    /// Page / scroll bg — soft gray. White cards float on this layer (v7 spec).
+    /// Was #FAFAFB (paper white) initially; v7 uses oklch(0.94 0.003 250) so
+    /// that #ffffff cards have visual lift via simple contrast rather than
+    /// relying on shadows alone.
+    static let background = Color(hex: "EFEFF1")
+    /// Grouped scroll bg / inset region — slightly lighter than page bg
+    /// so nested sections still differentiate.
     static let backgroundGrouped = Color(hex: "F5F5F7")
     /// Card surface — pure white for the most-elevated content.
     static let cardBackground = Color.white
@@ -53,8 +57,11 @@ enum Theme {
 
     /// Calorie / energy → red (the "move" ring).
     static let calorieBlue = Color(hex: "FF375F")  // V6 uses red for move/kcal
-    /// Protein → Fitness green (the "exercise" ring).
-    static let proteinRed = Color(hex: "7BE619")
+    /// Protein → muted Fitness green. v7 uses oklch(0.78 0.20 145) which
+    /// renders as a much-too-neon #7BE619 in sRGB on white. Tightened to a
+    /// darker, less-saturated shade so the protein bar / dot reads as
+    /// "green" without screaming.
+    static let proteinRed = Color(hex: "30A845")
     /// Carbs → amber.
     static let carbsGreen = Color(hex: "F0AD2F")
     /// Fat → orange.

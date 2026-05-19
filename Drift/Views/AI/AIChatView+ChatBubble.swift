@@ -10,6 +10,18 @@ import DriftCore
 
 extension AIChatView {
 
+    /// Shape for chat-message bubble background + overlay border. Asymmetric
+    /// corners give iMessage-style "tail" toward the speaker: user bubbles
+    /// have a clipped bottom-right corner, assistant bubbles clip bottom-left.
+    fileprivate func bubbleShape(for role: AIChatViewModel.ChatMessage.Role) -> UnevenRoundedRectangle {
+        UnevenRoundedRectangle(
+            topLeadingRadius: 16,
+            bottomLeadingRadius: role == .user ? 16 : 4,
+            bottomTrailingRadius: role == .user ? 4 : 16,
+            topTrailingRadius: 16
+        )
+    }
+
     // MARK: Thinking Indicator
 
     var thinkingIndicator: some View {
@@ -118,26 +130,21 @@ extension AIChatView {
                         }
                     }
                         .font(.subheadline)
-                        .foregroundStyle(msg.role == .user ? .white : Theme.textPrimary)
+                        // User bubble: solid accent (Fitness coral) + white
+                        // ink for contrast. Assistant bubble: white card +
+                        // ink-primary text. Previously user-bubble was
+                        // accent.opacity(0.25) with white text — barely
+                        // visible on the resulting pink wash.
+                        .foregroundStyle(msg.role == .user ? Color.white : Theme.textPrimary)
                         .padding(.horizontal, 14).padding(.vertical, 10)
                         .background(
                             msg.role == .user
-                                ? AnyShapeStyle(Theme.accent.opacity(0.25))
+                                ? AnyShapeStyle(Theme.accent)
                                 : AnyShapeStyle(Theme.cardBackground),
-                            in: UnevenRoundedRectangle(
-                                topLeadingRadius: 16,
-                                bottomLeadingRadius: msg.role == .user ? 16 : 4,
-                                bottomTrailingRadius: msg.role == .user ? 4 : 16,
-                                topTrailingRadius: 16
-                            )
+                            in: bubbleShape(for: msg.role)
                         )
                         .overlay(
-                            UnevenRoundedRectangle(
-                                topLeadingRadius: 16,
-                                bottomLeadingRadius: msg.role == .user ? 16 : 4,
-                                bottomTrailingRadius: msg.role == .user ? 4 : 16,
-                                topTrailingRadius: 16
-                            )
+                            bubbleShape(for: msg.role)
                             .strokeBorder(
                                 msg.role == .user
                                     ? Theme.accent.opacity(0.15)
