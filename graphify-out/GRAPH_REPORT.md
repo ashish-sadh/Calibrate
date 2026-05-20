@@ -1,7 +1,7 @@
 # Graph Report - /Users/ashishsadh/workspace/Drift  (2026-05-19)
 
 ## Corpus Check
-- 579 files · ~2,242,816 words
+- 579 files · ~2,242,844 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -1210,11 +1210,11 @@ Nodes (1): Convert USDA all-caps descriptions to readable Title Case names.     
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `date` connect `Community 2` to `Community 0`, `Community 1`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 10`, `Community 11`, `Community 12`, `Community 13`, `Community 14`, `Community 17`, `Community 20`, `Community 21`, `Community 22`, `Community 27`, `Community 28`, `Community 29`, `Community 34`, `Community 37`, `Community 40`, `Community 41`, `Community 44`?**
-  _High betweenness centrality (0.056) - this node is a cross-community bridge._
+  _High betweenness centrality (0.089) - this node is a cross-community bridge._
 - **Why does `data` connect `Community 8` to `Community 0`, `Community 1`, `Community 2`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 10`, `Community 12`, `Community 17`, `Community 20`, `Community 21`, `Community 25`, `Community 26`?**
-  _High betweenness centrality (0.031) - this node is a cross-community bridge._
-- **Why does `date` connect `Community 2` to `Community 0`, `Community 1`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 12`, `Community 13`, `Community 17`, `Community 20`, `Community 22`, `Community 27`?**
   _High betweenness centrality (0.025) - this node is a cross-community bridge._
+- **Why does `date` connect `Community 2` to `Community 0`, `Community 1`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 12`, `Community 13`, `Community 17`, `Community 20`, `Community 22`, `Community 27`?**
+  _High betweenness centrality (0.024) - this node is a cross-community bridge._
 - **Are the 453 inferred relationships involving `String` (e.g. with `.classify()` and `.extractTool()`) actually correct?**
   _`String` has 453 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 439 inferred relationships involving `date` (e.g. with `.measureTTFT()` and `.testSingleItemTTFTSmoke()`) actually correct?**
