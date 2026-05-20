@@ -193,6 +193,43 @@ final class BackupServiceTests: XCTestCase {
         XCTAssertNil(service.lastBackupError)
     }
 
+    func testRecordUploadFailureMapsQuotaErrorAndSurfacesViaAccessor() {
+        // iCloud rejected the upload mid-flight (quota full). Prior to this
+        // path being wired, the local write succeeded so `lastBackupError`
+        // stayed nil — user thought backup was uploading when it never would.
+        let service = makeService()
+        let quotaError = NSError(
+            domain: NSCocoaErrorDomain,
+            code: NSFileWriteOutOfSpaceError,
+            userInfo: nil
+        )
+
+        service.recordUploadFailure(quotaError)
+
+        XCTAssertEqual(service.lastBackupError, "quotaExceeded")
+    }
+
+    func testRecordUploadFailureMapsArbitraryErrorWithDescription() {
+        let service = makeService()
+        let networkError = NSError(
+            domain: NSURLErrorDomain,
+            code: -1009, // offline
+            userInfo: [NSLocalizedDescriptionKey: "The Internet connection appears to be offline."]
+        )
+
+        service.recordUploadFailure(networkError)
+
+        let surfaced = service.lastBackupError ?? ""
+        XCTAssertTrue(
+            surfaced.contains("upload failed"),
+            "Expected surfaced error to mention 'upload failed', got: \(surfaced)"
+        )
+        XCTAssertTrue(
+            surfaced.contains("offline"),
+            "Expected surfaced error to include localizedDescription, got: \(surfaced)"
+        )
+    }
+
     // MARK: - Helpers
 
     private func makeService(

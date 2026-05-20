@@ -256,9 +256,14 @@ public final class BackupService: @unchecked Sendable {
         for i in 0..<query.resultCount {
             guard let item = query.result(at: i) as? NSMetadataItem else { continue }
             let isUploaded = (item.value(forAttribute: NSMetadataUbiquitousItemIsUploadedKey) as? Bool) ?? false
-            let uploadError = item.value(forAttribute: NSMetadataUbiquitousItemUploadingErrorKey)
+            let uploadError = item.value(forAttribute: NSMetadataUbiquitousItemUploadingErrorKey) as? NSError
             if isUploaded && uploadError == nil {
                 recordUploadSuccess(date: now())
+                stopMonitor(for: monitoredURL)
+                return
+            }
+            if let uploadError {
+                recordUploadFailure(uploadError)
                 stopMonitor(for: monitoredURL)
                 return
             }
@@ -271,6 +276,19 @@ public final class BackupService: @unchecked Sendable {
     func recordUploadSuccess(date: Date) {
         userDefaults.set(date, forKey: Self.lastSuccessfulBackupDateKey)
         userDefaults.removeObject(forKey: Self.lastBackupErrorKey)
+    }
+
+    /// Persist an upload failure surfaced via `NSMetadataUbiquitousItemUploadingErrorKey`
+    /// so Settings → Backup can show it. Maps `NSFileWriteOutOfSpaceError` to
+    /// `.quotaExceeded` to match the local-write path.
+    func recordUploadFailure(_ error: NSError) {
+        let mapped: BackupError
+        if error.domain == NSCocoaErrorDomain && error.code == NSFileWriteOutOfSpaceError {
+            mapped = .quotaExceeded
+        } else {
+            mapped = .invalidFormat("upload failed: \(error.localizedDescription)")
+        }
+        userDefaults.set(String(describing: mapped), forKey: Self.lastBackupErrorKey)
     }
 
     private func stopMonitor(for url: URL) {
