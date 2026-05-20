@@ -50,7 +50,7 @@ struct BackupOnboardingSheet: View {
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(Theme.accent, in: RoundedRectangle(cornerRadius: 12))
+                        .background(Theme.ink, in: RoundedRectangle(cornerRadius: 12))
                         .foregroundStyle(.white)
                 }
                 .buttonStyle(.plain)
@@ -80,7 +80,7 @@ struct BackupOnboardingSheet: View {
     private func row(icon: String, text: String) -> some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
-                .foregroundStyle(Theme.accent)
+                .foregroundStyle(Theme.textSecondary)
                 .frame(width: 22, alignment: .center)
                 .padding(.top, 2)
             Text(text)
