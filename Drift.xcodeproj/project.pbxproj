@@ -130,6 +130,7 @@
 		BED961B980821487CA56AD51 /* HealthKitService+Cycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36BB15B5D3A14E0D9940B118 /* HealthKitService+Cycle.swift */; };
 		BF258BC94D0A0F1BBD657AD2 /* V6BodyTile.swift in Sources */ = {isa = PBXBuildFile; fileRef = C31F86A74BCE6386018C7BCF /* V6BodyTile.swift */; };
 		BFA019F024F4E73B203B8975 /* BodySpecPDFParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F9F051926CE39DF3E0A47DA /* BodySpecPDFParser.swift */; };
+		C039044B1E2BAEF8D16D6202 /* FoundationModelsExerciseTranscriptEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 371F20936CDC979979B7686D /* FoundationModelsExerciseTranscriptEval.swift */; };
 		C071908C17208D54A2738C23 /* BackupSettingsViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFB14EB9D844878B58DA9643 /* BackupSettingsViewTests.swift */; };
 		C29B1BD9EF5C4235CA2FDBDC /* SpeechRecognitionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B39F11EC4CFD7DA3C49DA882 /* SpeechRecognitionTests.swift */; };
 		C7666848928C7210A8CE6BD6 /* PromptOptimizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = EBF19C358E700091486400DD /* PromptOptimizer.swift */; };
@@ -283,6 +284,7 @@
 		3258B6E91169170587AAB02B /* GoalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalView.swift; sourceTree = "<group>"; };
 		35655D26FCDB45A9D01AD273 /* V6Rings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = V6Rings.swift; sourceTree = "<group>"; };
 		36BB15B5D3A14E0D9940B118 /* HealthKitService+Cycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthKitService+Cycle.swift"; sourceTree = "<group>"; };
+		371F20936CDC979979B7686D /* FoundationModelsExerciseTranscriptEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelsExerciseTranscriptEval.swift; sourceTree = "<group>"; };
 		3C81D24E67187CB4B4034B33 /* V6HeroIntakeCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = V6HeroIntakeCard.swift; sourceTree = "<group>"; };
 		3CAFF7147516FE2E4E416B06 /* V6RingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = V6RingsTests.swift; sourceTree = "<group>"; };
 		3F480CCAF91EFD799E6B5B8C /* DriftLLMEvalMacOS.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DriftLLMEvalMacOS.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -831,6 +833,7 @@
 				1D6EEDE4BB88D55A2579A27D /* ComposedFoodEval.swift */,
 				D573CD42E3A315491B5DD60D /* CompositeFoodExtractorFMEval.swift */,
 				C8C8E55C6396731BC65D49AB /* FoundationModelsChatParityTests.swift */,
+				371F20936CDC979979B7686D /* FoundationModelsExerciseTranscriptEval.swift */,
 				2DEC3049742676C1201A6847 /* HardEvalSet.swift */,
 				A048685BCBAD258ADEEB3E22 /* IntentRoutingEval.swift */,
 				1BBFE4D3A672CECBACA7F08D /* MultiIntentDeterministicEval.swift */,
@@ -1189,6 +1192,7 @@
 				14837F24BC4C9D932FF61765 /* CompositeFoodExtractorFMEval.swift in Sources */,
 				D8E7B7B5446C1B3CB3BBF5FC /* DomainExtractorEval.swift in Sources */,
 				E3112CD38D734531A4040541 /* FoundationModelsChatParityTests.swift in Sources */,
+				C039044B1E2BAEF8D16D6202 /* FoundationModelsExerciseTranscriptEval.swift in Sources */,
 				E63F9BB35572B3EF11BF9DE5 /* HardEvalSet.swift in Sources */,
 				A459C9B6E82F83B1CC545F63 /* IntentClassifierEval.swift in Sources */,
 				F2DAD90846C1E28C0DBBB863 /* IntentRoutingEval.swift in Sources */,

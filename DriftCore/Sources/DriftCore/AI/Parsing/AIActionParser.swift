@@ -104,41 +104,35 @@ public enum AIActionParser {
     }
 
     /// FM-first variant: when `Preferences.fmWorkoutExtractEnabled` and the
-    /// platform supports FoundationModels (iOS 26+), each comma-split segment
-    /// goes through `WorkoutEntryExtractor`; on any failure the segment falls
-    /// back to the regex path. Returns the same `WorkoutExercise` shape so
-    /// existing callers don't need to know which path ran.
+    /// platform supports FoundationModels (iOS 26+), the entire transcript
+    /// goes through `FoundationModelsExerciseExtractor` in ONE call so that
+    /// novel separators ("then", "followed by", multi-line) work without
+    /// comma-splitting. On any failure (unavailable / empty / bounded / session
+    /// error / flag-off) the whole input falls back to the comma-split regex
+    /// path. Returns the same `WorkoutExercise` shape so existing callers
+    /// don't need to know which path ran.
     public static func parseWorkoutExercisesAsync(_ input: String) async -> [WorkoutExercise] {
         guard Preferences.fmWorkoutExtractEnabled else { return parseWorkoutExercises(input) }
-        var results: [WorkoutExercise] = []
-        for part in input.split(separator: ",") {
-            let trimmed = part.trimmingCharacters(in: .whitespaces)
-            guard !trimmed.isEmpty else { continue }
-            if let fm = await fmExtractOrNil(trimmed) {
-                results.append(fm)
-            } else if let regex = Self.parseSingleExerciseRegex(trimmed[...]) {
-                results.append(regex)
-            }
+        do {
+            let entries = try await FoundationModelsExerciseExtractor.extract(text: input)
+            let mapped = entries.compactMap(fmExerciseToWorkout)
+            return mapped.isEmpty ? parseWorkoutExercises(input) : mapped
+        } catch {
+            return parseWorkoutExercises(input)
         }
-        return results
     }
 
-    /// Map a single `FMWorkoutEntry` (strength-shaped) to the existing
+    /// Map one `FMExerciseEntry` to the existing strength-shaped
     /// `WorkoutExercise`; returns nil for non-strength categories so the
-    /// caller doesn't synthesize empty sets/reps for cardio.
-    private static func fmExtractOrNil(_ text: String) async -> WorkoutExercise? {
-        do {
-            let entry = try await WorkoutEntryExtractor.extract(text: text)
-            guard entry.category == .strength else { return nil }
-            return WorkoutExercise(
-                name: entry.exerciseName,
-                sets: entry.sets ?? 3,
-                reps: entry.reps ?? 10,
-                weight: entry.weight
-            )
-        } catch {
-            return nil
-        }
+    /// caller doesn't synthesize empty sets/reps for cardio/mobility/sports.
+    private static func fmExerciseToWorkout(_ entry: FMExerciseEntry) -> WorkoutExercise? {
+        guard entry.category == .strength else { return nil }
+        return WorkoutExercise(
+            name: entry.exerciseName,
+            sets: entry.sets ?? 3,
+            reps: entry.reps ?? 10,
+            weight: entry.weight
+        )
     }
 
     /// Synchronous regex parser for one segment — shared between the sync and
