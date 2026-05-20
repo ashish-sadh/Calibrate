@@ -2542,5 +2542,12 @@
       "WorkoutView red CTAs (Start Workout / Coach Me / Browse Exercises / in-progress banner) flipped to V7 ink black",
       "SettingsView 22 pink-by-accident button labels + icons flipped to neutral (toggles back to ink)"
     ]
+  },
+  {
+    "build": 259,
+    "date": "2026-05-19T21:20:46.031443-07:00",
+    "description": "chore: TestFlight build 259",
+    "fixes": [],
+    "features": []
   }
 ]
