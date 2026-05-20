@@ -88164,5 +88164,399 @@
       "salt"
     ],
     "nova_group": 1
+  },
+  {
+    "name": "Tingmo (Tibetan Steamed Bun)",
+    "category": "Tibetan",
+    "serving_size": 80,
+    "serving_unit": "g",
+    "calories": 200,
+    "protein_g": 6,
+    "carbs_g": 40,
+    "fat_g": 1,
+    "fiber_g": 1.0,
+    "ingredients": [
+      "wheat flour",
+      "yeast",
+      "water",
+      "salt"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Shabaley (Tibetan Meat Bread)",
+    "category": "Tibetan",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 340,
+    "protein_g": 14,
+    "carbs_g": 32,
+    "fat_g": 18,
+    "fiber_g": 2.0,
+    "ingredients": [
+      "flour",
+      "ground beef",
+      "onion",
+      "ginger",
+      "spices",
+      "oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Laping (Tibetan Cold Mung Bean Noodles)",
+    "category": "Tibetan",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 180,
+    "protein_g": 4,
+    "carbs_g": 30,
+    "fat_g": 4,
+    "fiber_g": 2.0,
+    "ingredients": [
+      "mung bean starch",
+      "water",
+      "chili oil",
+      "vinegar",
+      "soy sauce"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Khapse (Tibetan Fried Biscuit)",
+    "category": "Tibetan",
+    "serving_size": 50,
+    "serving_unit": "g",
+    "calories": 230,
+    "protein_g": 4,
+    "carbs_g": 28,
+    "fat_g": 11,
+    "fiber_g": 1.0,
+    "ingredients": [
+      "flour",
+      "sugar",
+      "butter",
+      "egg",
+      "oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Varenyky (Ukrainian Dumplings)",
+    "category": "Ukrainian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 380,
+    "protein_g": 12,
+    "carbs_g": 56,
+    "fat_g": 12,
+    "fiber_g": 3.0,
+    "ingredients": [
+      "flour",
+      "egg",
+      "potato",
+      "cheese",
+      "onion",
+      "butter"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Holubtsi (Ukrainian Cabbage Rolls)",
+    "category": "Ukrainian",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 310,
+    "protein_g": 14,
+    "carbs_g": 35,
+    "fat_g": 13,
+    "fiber_g": 5.0,
+    "ingredients": [
+      "cabbage",
+      "rice",
+      "ground pork",
+      "onion",
+      "tomato sauce",
+      "carrot"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Deruny (Ukrainian Potato Pancakes)",
+    "category": "Ukrainian",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 290,
+    "protein_g": 6,
+    "carbs_g": 32,
+    "fat_g": 16,
+    "fiber_g": 3.0,
+    "ingredients": [
+      "potato",
+      "egg",
+      "flour",
+      "onion",
+      "oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Chicken Kyiv",
+    "category": "Ukrainian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 520,
+    "protein_g": 38,
+    "carbs_g": 22,
+    "fat_g": 30,
+    "fiber_g": 1.0,
+    "ingredients": [
+      "chicken breast",
+      "butter",
+      "garlic",
+      "parsley",
+      "breadcrumbs",
+      "egg"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Aji de Gallina (Peruvian Chicken Stew)",
+    "category": "Peruvian",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 28,
+    "carbs_g": 48,
+    "fat_g": 20,
+    "fiber_g": 3.0,
+    "ingredients": [
+      "chicken",
+      "aji amarillo",
+      "bread",
+      "walnuts",
+      "milk",
+      "parmesan",
+      "rice"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Causa Limeña (Peruvian Layered Potato)",
+    "category": "Peruvian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 12,
+    "carbs_g": 38,
+    "fat_g": 9,
+    "fiber_g": 3.0,
+    "ingredients": [
+      "yellow potato",
+      "lime",
+      "aji amarillo",
+      "tuna",
+      "avocado",
+      "mayonnaise"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Papa a la Huancaina (Peruvian Potato in Cheese Sauce)",
+    "category": "Peruvian",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 340,
+    "protein_g": 10,
+    "carbs_g": 30,
+    "fat_g": 20,
+    "fiber_g": 3.0,
+    "ingredients": [
+      "potato",
+      "queso fresco",
+      "aji amarillo",
+      "milk",
+      "crackers",
+      "lettuce"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Pollo a la Brasa (Peruvian Rotisserie Chicken)",
+    "category": "Peruvian",
+    "serving_size": 250,
+    "serving_unit": "g",
+    "calories": 520,
+    "protein_g": 42,
+    "carbs_g": 12,
+    "fat_g": 32,
+    "fiber_g": 1.0,
+    "ingredients": [
+      "chicken",
+      "salt",
+      "garlic",
+      "paprika",
+      "soy sauce",
+      "cumin"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Tagine (Moroccan Stew)",
+    "category": "Moroccan",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 450,
+    "protein_g": 28,
+    "carbs_g": 30,
+    "fat_g": 22,
+    "fiber_g": 6.0,
+    "ingredients": [
+      "lamb or chicken",
+      "onion",
+      "preserved lemon",
+      "olives",
+      "ras el hanout",
+      "vegetables"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Mechoui (Moroccan Roasted Lamb)",
+    "category": "Moroccan",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 36,
+    "carbs_g": 2,
+    "fat_g": 36,
+    "fiber_g": 0.0,
+    "ingredients": [
+      "lamb shoulder",
+      "cumin",
+      "salt",
+      "butter",
+      "garlic"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Briouat (Moroccan Stuffed Pastry)",
+    "category": "Moroccan",
+    "serving_size": 60,
+    "serving_unit": "g",
+    "calories": 200,
+    "protein_g": 8,
+    "carbs_g": 18,
+    "fat_g": 11,
+    "fiber_g": 1.0,
+    "ingredients": [
+      "warqa pastry",
+      "ground beef",
+      "onion",
+      "spices",
+      "oil"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Tangia (Moroccan Slow-Cooked Beef)",
+    "category": "Moroccan",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 520,
+    "protein_g": 38,
+    "carbs_g": 8,
+    "fat_g": 38,
+    "fiber_g": 2.0,
+    "ingredients": [
+      "beef",
+      "preserved lemon",
+      "garlic",
+      "cumin",
+      "saffron",
+      "smen butter"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Bhuna Khichuri (Bangladeshi Spiced Rice and Lentils)",
+    "category": "Bangladeshi",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 18,
+    "carbs_g": 70,
+    "fat_g": 14,
+    "fiber_g": 6.0,
+    "ingredients": [
+      "rice",
+      "moong dal",
+      "onion",
+      "ghee",
+      "ginger",
+      "cumin",
+      "bay leaf"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Bhorta (Bangladeshi Mashed Vegetable Side)",
+    "category": "Bangladeshi",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 120,
+    "protein_g": 4,
+    "carbs_g": 16,
+    "fat_g": 5,
+    "fiber_g": 3.0,
+    "ingredients": [
+      "eggplant or potato",
+      "mustard oil",
+      "chili",
+      "onion",
+      "garlic",
+      "salt"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Doi Bhaat (Bangladeshi Yogurt Rice)",
+    "category": "Bangladeshi",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 270,
+    "protein_g": 8,
+    "carbs_g": 50,
+    "fat_g": 4,
+    "fiber_g": 1.0,
+    "ingredients": [
+      "cooked rice",
+      "plain yogurt",
+      "salt",
+      "green chili"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Beef Tehari (Bangladeshi Beef Pulao)",
+    "category": "Bangladeshi",
+    "serving_size": 300,
+    "serving_unit": "g",
+    "calories": 620,
+    "protein_g": 28,
+    "carbs_g": 70,
+    "fat_g": 26,
+    "fiber_g": 3.0,
+    "ingredients": [
+      "basmati rice",
+      "beef",
+      "onion",
+      "ghee",
+      "ginger",
+      "garlic",
+      "spices"
+    ],
+    "nova_group": 3
   }
 ]
