@@ -8,10 +8,15 @@ import Observation
 final class WeightViewModel {
     private let database: AppDatabase
 
-    var entries: [WeightEntry] = []          // filtered by time range (for chart + log)
+    var entries: [WeightEntry] = []          // filtered by time range (for log + calorie overlay)
     var allEntries: [WeightEntry] = []       // ALL entries (for insights)
-    var trend: WeightTrendCalculator.WeightTrend?        // from filtered entries (chart)
-    var fullTrend: WeightTrendCalculator.WeightTrend?    // from ALL entries (insights)
+    /// Single source of truth for the weight trend (EMA + slope + deltas).
+    /// Used by both the chart (scoped via `rangeStart` on the chart side)
+    /// and `WeightInsightsView`. Was previously paired with a windowed
+    /// `trend` used by the chart only — that reseeded the EMA at the
+    /// leftmost visible entry's raw weight and produced a chart trajectory
+    /// that contradicted the insight cards (see fix in WeightTabView).
+    var fullTrend: WeightTrendCalculator.WeightTrend?
     var selectedTimeRange: TimeRange = .threeMonths
     var granularity: Granularity = .daily
     var weightUnit: WeightUnit = Preferences.weightUnit
@@ -111,7 +116,9 @@ final class WeightViewModel {
             let allInput = allEntries.map { (date: $0.date, weightKg: $0.weightKg) }
             fullTrend = WeightTrendCalculator.calculateTrend(entries: allInput)
 
-            // Filter for chart time range (in memory, not a second DB call)
+            // Filter `entries` for the calorie overlay and the log list
+            // below the chart. The chart itself reads `fullTrend.dataPoints`
+            // and scopes visually via `rangeStart`.
             if let days = selectedTimeRange.days,
                let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date()) {
                 let cutoffStr = DateFormatters.dateOnly.string(from: cutoff)
@@ -119,8 +126,6 @@ final class WeightViewModel {
             } else {
                 entries = allEntries
             }
-            let input = entries.map { (date: $0.date, weightKg: $0.weightKg) }
-            trend = WeightTrendCalculator.calculateTrend(entries: input)
 
             goal = WeightGoal.load()
             loadCalorieOverlay()

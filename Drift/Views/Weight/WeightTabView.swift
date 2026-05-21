@@ -22,9 +22,25 @@ struct WeightTabView: View {
                     VStack(spacing: 14) {
                         timeRangeBar
 
-                        // Chart — hero element
+                        // Chart — hero element. Was passing the windowed
+                        // `viewModel.trend` (only entries inside the
+                        // selected time range), which made the chart's
+                        // EMA reseed from scratch at the leftmost
+                        // entry's raw weight. Real bug from the field:
+                        // a user whose long-term trajectory is a steady
+                        // loss saw the chart trend UP because the
+                        // windowed EMA reset at a low value on the left
+                        // and accumulated upward, while the cards
+                        // (`fullTrend`-backed) correctly showed losing
+                        // — producing the "Difference +1.5 lbs but Est.
+                        // Deficit -357 kcal/day" contradiction in the
+                        // same view. Chart now uses the same fullTrend
+                        // as the insights cards; `rangeStart` scopes
+                        // the visible X-axis, and `displayPoints` is
+                        // filtered to match so avg / diff / labels
+                        // reflect the visible window.
                         WeightChartView(
-                            trend: viewModel.trend,
+                            trend: viewModel.fullTrend,
                             unit: viewModel.weightUnit,
                             granularity: viewModel.granularity,
                             rawEntries: viewModel.entries,

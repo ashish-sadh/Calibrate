@@ -1231,3 +1231,56 @@ private func dateStr(_ d: Date) -> String {
     let trend = WeightTrendCalculator.calculateTrend(entries: entries)
     #expect(trend != nil, "Degenerate widen-window slice must not crash.")
 }
+
+// MARK: - History-preserving EMA (chart fix regression)
+
+@Test func calculateTrend_emaReflectsFullHistory_notJustVisibleWindow() async throws {
+    // Regression for the field-reported chart bug 2026-05-21:
+    //   - User screenshot showed the 1M chart line trending UP (~+1.5 lbs)
+    //     while the deltas (3d/7d/14d/30d/90d) all showed losses.
+    //   - Root cause was WeightTabView passing a *windowed* trend to the
+    //     chart, which reseeded the EMA at the leftmost windowed entry's
+    //     raw weight instead of carrying forward the EMA from earlier
+    //     entries. The chart and the insight cards then disagreed.
+    //   - The fix in WeightTabView/WeightChartView swaps the chart over to
+    //     the same `fullTrend` the insight cards use and scopes the
+    //     display window in the view.
+    //
+    // This test pins the property the fix depends on: an EMA computed on
+    // the full series produces values at recent dates that match a
+    // monotonically-decreasing actual-weight trajectory — they do *not*
+    // anchor to the leftmost windowed value. If anyone reintroduces
+    // a "recompute trend on the visible window" path, this test will
+    // fail because the EMA at -30d will jump to the raw weight at -30d
+    // instead of carrying the earlier-history smoothing.
+    let entries = recentDailyEntries(count: 90) { i in
+        // Linear loss from 120 kg → 111 kg over 90 days (-0.1 kg/day).
+        120.0 - 0.1 * Double(i)
+    }
+    let full = WeightTrendCalculator.calculateTrend(entries: entries)!
+
+    // EMA must be monotonically decreasing once it catches up (after the
+    // half-life). Pick a mid-series and end-series sample; mid > end.
+    let midIdx = full.dataPoints.count / 2
+    let midEMA = full.dataPoints[midIdx].emaWeight
+    let endEMA = full.dataPoints.last!.emaWeight
+    #expect(midEMA > endEMA, "Full-history EMA must reflect the loss trajectory")
+
+    // Re-run the calculator on a 30-day slice of the same data — this is
+    // what the old buggy chart code path did. The slice's first EMA value
+    // will equal its first raw weight (no history to seed from), which is
+    // much lower than the corresponding full-history EMA at the same date.
+    let sliceStartIdx = max(0, entries.count - 30)
+    let slice = Array(entries[sliceStartIdx...])
+    let windowed = WeightTrendCalculator.calculateTrend(entries: slice)!
+    let windowedFirstEMA = windowed.dataPoints.first!.emaWeight
+    let fullEMAAtSameDate = full.dataPoints[sliceStartIdx].emaWeight
+    // The windowed seed is the raw weight at that date (no smoothing); the
+    // full EMA at the same date carries earlier-history weight. For a
+    // losing trajectory, the full EMA is *higher* than the raw weight.
+    #expect(
+        fullEMAAtSameDate > windowedFirstEMA + 0.5,
+        "Full-history EMA at day -30 should be meaningfully above the windowed EMA's seed"
+    )
+}
+

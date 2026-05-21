@@ -43,8 +43,19 @@ import GRDB
 }
 
 @Test func weightRapidLoss() async throws {
-    let entries: [(String, Double)] = (0..<14).map {
-        (String(format: "2026-03-%02d", $0 + 1), 80.0 - Double($0) * 0.5) // 0.5 kg/day = extreme
+    // Dates relative to today — `WeightTrendCalculator.weeklyRateForWindow`
+    // filters by `Date()` minus windowDays, so hardcoded historical dates
+    // fall outside the regression window once the calendar moves past them
+    // and the calculator returns `hasInsufficientData = true` instead of a
+    // real slope. (Was hardcoded to 2026-03-XX; failed silently for months
+    // because the test asserted on data the calculator had already dropped.)
+    let today = Date()
+    // 15 entries spanning 14 days (-14..0). `hasSufficientData` requires
+    // span >= 14 days; the previous 14-entries -13..0 span was 13 days
+    // (off by one) and tripped the insufficient-data guard.
+    let entries: [(String, Double)] = (0..<15).map { day in
+        let date = Calendar.current.date(byAdding: .day, value: -14 + day, to: today)!
+        return (DateFormatters.dateOnly.string(from: date), 80.0 - Double(day) * 0.5) // 0.5 kg/day = extreme
     }
     let t = WeightTrendCalculator.calculateTrend(entries: entries)!
     #expect(t.trendDirection == .losing)
@@ -52,8 +63,10 @@ import GRDB
 }
 
 @Test func weightGradualGain() async throws {
-    let entries: [(String, Double)] = (0..<21).map {
-        (String(format: "2026-03-%02d", $0 + 1), 55.0 + Double($0) * 0.03) // slow lean bulk
+    let today = Date()
+    let entries: [(String, Double)] = (0..<21).map { day in
+        let date = Calendar.current.date(byAdding: .day, value: -20 + day, to: today)!
+        return (DateFormatters.dateOnly.string(from: date), 55.0 + Double(day) * 0.03) // slow lean bulk
     }
     let t = WeightTrendCalculator.calculateTrend(entries: entries)!
     #expect(t.trendDirection == .gaining || t.trendDirection == .maintaining) // very slow gain might be maintaining

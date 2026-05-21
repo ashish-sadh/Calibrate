@@ -1046,12 +1046,20 @@ import Testing
 }
 
 @Test @MainActor func aiToolAgentExecuteToolWithUnknownTool() async throws {
+    // Unknown-tool case was deliberately changed in AIToolAgent.executeTool
+    // (see comment block before the `if msg.lowercased().hasPrefix("unknown
+    // tool")` branch): instead of surfacing an internal-plumbing error, the
+    // agent now replies conversationally with `toolsCalled = []` and
+    // `didFail = false`. This is the user-facing behavior when the LLM
+    // hallucinates a tool name like "chat" / "respond" — the chat should
+    // stay friendly, not flag the turn as failed.
     ToolRegistration.registerAll()
     let call = ToolCall(tool: "nonexistent_tool_xyz", params: ToolCallParams(values: [:]))
     let output = await AIToolAgent.executeTool(call)
-    // Unknown tool should produce a friendly error message
-    #expect(output.toolsCalled == ["nonexistent_tool_xyz"])
-    #expect(output.text.contains("couldn't") || output.text.contains("help") || !output.text.isEmpty)
+    #expect(output.toolsCalled.isEmpty, "Unknown tool should not be reported as called")
+    #expect(output.didFail == false, "Unknown tool falls through as conversational, not a failure")
+    #expect(!output.text.isEmpty, "Should produce a friendly conversational reply")
+    #expect(output.action == nil, "No action emitted for an unknown tool")
 }
 
 @Test @MainActor func aiToolAgentExecuteToolWithFoodInfo() async throws {

@@ -15,8 +15,19 @@ struct WeightChartView: View {
 
     private var displayPoints: [(date: Date, actual: Double?, ema: Double)] {
         guard let trend else { return [] }
-        if granularity == .weekly { return weeklyAggregated(trend.dataPoints) }
-        return trend.dataPoints.map {
+        // Filter the *full-history* trend's dataPoints to the visible
+        // window. The EMA values stay the ones the calculator produced
+        // across all history — preserves the smoothed story that the
+        // insights cards reference — but the chart only renders the
+        // entries inside the selected range, so the date labels, average
+        // and difference numbers track what the user is actually looking
+        // at instead of summarising 2 years of history.
+        let scopedPoints: [WeightTrendCalculator.WeightDataPoint] = {
+            guard let start = rangeStart else { return trend.dataPoints }
+            return trend.dataPoints.filter { $0.date >= start }
+        }()
+        if granularity == .weekly { return weeklyAggregated(scopedPoints) }
+        return scopedPoints.map {
             ($0.date, $0.actualWeight.map { unit.convert(fromKg: $0) }, unit.convert(fromKg: $0.emaWeight))
         }
     }

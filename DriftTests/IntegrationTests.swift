@@ -428,7 +428,7 @@ import Testing
     }
 
     #expect(await vm.allEntries.count == 7)
-    #expect(await vm.trend != nil, "Should have calculated trend")
+    #expect(await vm.fullTrend != nil, "Should have calculated trend")
 }
 
 @Test func weightTimeRangeFiltering() async throws {
@@ -693,7 +693,7 @@ import Testing
     }
 
     #expect(await weightVM.allEntries.count == 5)
-    #expect(await weightVM.trend != nil, "Weight VM should have trend")
+    #expect(await weightVM.fullTrend != nil, "Weight VM should have trend")
 
     // Dashboard loads weight from same DB
     let dashVM = await DashboardViewModel(database: db)

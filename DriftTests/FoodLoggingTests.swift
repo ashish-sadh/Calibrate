@@ -2617,19 +2617,40 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
 // MARK: - Weight Trend Fallback Tests
 
 @Test func weightTrendFallbackUsesTwoMostRecent() async throws {
-    // With < 3 points in regression window, should use 2 most recent (not oldest-to-newest)
+    // Dates relative to today so the regression window always covers them.
+    // (Was hardcoded 2026-01-01/03-28/03-30 which all fell outside the
+    // window once the calendar moved past them — calculator returned
+    // `hasInsufficientData = true` and zeroed the rate.)
+    //
+    // What this test still pins: a recent losing trajectory yields a
+    // negative-and-moderate weekly rate. After the 2026-05 stability pass
+    // `hasSufficientData` requires ≥4 points spanning ≥14 days for the
+    // calculator to publish any rate at all — so the input now spaces
+    // 4 points across 14 days with a clear losing trend.
+    let today = Date()
+    func d(_ daysAgo: Int) -> String {
+        DateFormatters.dateOnly.string(
+            from: Calendar.current.date(byAdding: .day, value: -daysAgo, to: today)!
+        )
+    }
     let entries: [(date: String, weightKg: Double)] = [
-        ("2026-01-01", 80.0),  // old entry, far away
-        ("2026-03-28", 75.0),  // recent
-        ("2026-03-30", 74.5),  // most recent
+        (d(14), 75.0),
+        (d(10), 74.7),
+        (d(5), 74.6),
+        (d(0), 74.5),
     ]
     let trend = WeightTrendCalculator.calculateTrend(
         entries: entries,
-        config: .init(emaHalfLifeDays: 14, regressionWindowDays: 3, widenSlopeThresholdKgPerWeek: 0.227, widenWindowDays: 42, kcalPerKg: 6000, maintainingThresholdKgPerWeek: 0.05)
+        config: .init(
+            emaHalfLifeDays: 14,
+            regressionWindowDays: 21,
+            widenSlopeThresholdKgPerWeek: 0.227,
+            widenWindowDays: 42,
+            kcalPerKg: 6000,
+            maintainingThresholdKgPerWeek: 0.05
+        )
     )
     #expect(trend != nil)
-    // With 3-day window, only last 2 entries are in window → fallback path
-    // Rate should be based on 74.5 vs 75.0 over 2 days, NOT 74.5 vs 80.0 over 89 days
     if let rate = trend?.weeklyRateKg {
         #expect(rate < 0, "Should show losing trend")
         #expect(abs(rate) < 5, "Rate should be moderate, not extreme: \(rate)")
