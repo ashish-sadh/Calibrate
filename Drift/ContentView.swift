@@ -102,6 +102,20 @@ struct ContentView: View {
     /// touching the pill bar at the bottom. Page-indicator dots are
     /// hidden because the custom `PillTabBar` is the canonical selector.
     private var tabContent: some View {
+        // Default `TabView` keeps every page alive across selection
+        // (no view rebuild on switch like the original `switch` had
+        // — that was the original UX complaint in #5). The PillTabBar
+        // at the bottom drives `selectedTab`; we hide the system tab
+        // bar so only the pill is visible.
+        //
+        // Earlier (commit c975c24f) this used `.tabViewStyle(.page(...))`
+        // for swipe-between-tabs. That triggered an
+        // NSInternalInconsistencyException when Food (which has its
+        // own NavigationStack) became a tab — the page-style pager's
+        // own nav-bar context fought with FoodTabView's
+        // NavigationStack on tab-swap, raising "client attempt to
+        // nest wrapped navigation controllers." Dropping `.page`
+        // keeps all tabs alive without the nav-bar nesting conflict.
         TabView(selection: $selectedTab) {
             DashboardView(syncComplete: $syncComplete, selectedTab: selectedTabBindingLegacy)
                 .tag(PrimaryTab.today)
@@ -116,7 +130,7 @@ struct ContentView: View {
                 .tag(PrimaryTab.more)
                 .accessibilityIdentifier("tab-more-content")
         }
-        .tabViewStyle(.page(indexDisplayMode: .never))
+        .toolbar(.hidden, for: .tabBar)
         // V7 polish: floating PillTabBar + FAB sit in the bottom 78pt of
         // the screen but don't contribute to the safe area (they live
         // in an overlay ZStack). Without this inset, ScrollViews inside

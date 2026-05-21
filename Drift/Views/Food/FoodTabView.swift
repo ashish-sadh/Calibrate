@@ -97,15 +97,35 @@ struct FoodTabView: View {
             .navigationTitle("Food")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.light, for: .navigationBar)
-            // V7 polish: dropped the duplicate "+" toolbar items
-            // (74712a69) and the briefly-added ChatIconButton
-            // (b8975f8a). The bottom-right floating chat control in
-            // ContentView is the single AI access point now. The
-            // `.toolbar { }` modifier itself is removed too — an
-            // empty toolbar with the tab's NavigationStack nested
-            // inside the page-style TabView triggered the
-            // NSInternalInconsistencyException about "client attempt
-            // to nest wrapped navigation controllers" on tab swipe.
+            // V7 polish: only a Snap shortcut lives in the top-right
+            // — chat lives in the bottom-right floating button now.
+            // Tapping camera posts `.openPhotoLog`, which ContentView
+            // handles via the same fullScreenCover the Dashboard Snap
+            // chip uses. Note: this is a *content-level* HStack
+            // overlay rather than a `.toolbar { }` ToolbarItem — the
+            // empty / re-populated toolbar declaration crashed with
+            // "client attempt to nest wrapped navigation controllers"
+            // on tab-swipe (see commit edfdc898).
+            .safeAreaInset(edge: .top, spacing: 0) {
+                HStack {
+                    Spacer()
+                    Button {
+                        NotificationCenter.default.post(name: .openPhotoLog, object: nil)
+                    } label: {
+                        Image(systemName: "camera.viewfinder")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(Theme.ink)
+                            .frame(width: 44, height: 44)
+                            .background(Theme.cardBackground, in: Circle())
+                            .overlay(Circle().strokeBorder(Theme.separator, lineWidth: 0.5))
+                            .shadow(color: Color.black.opacity(0.08), radius: 14, x: 0, y: 4)
+                    }
+                    .accessibilityLabel("Snap a meal")
+                    .accessibilityIdentifier("food-snap-shortcut")
+                    .padding(.trailing, 16)
+                }
+                .padding(.bottom, 8)
+            }
             .fullScreenCover(isPresented: $showingScanner) { BarcodeLookupView(viewModel: viewModel) }
             .sheet(isPresented: $showingPhotoLog) {
                 PhotoLogFlowView(foodLog: viewModel)
@@ -639,7 +659,17 @@ struct FoodTabView: View {
                 emptyDiaryView
             } else {
                 // Small add food — only when entries exist
-                Button { showingSearch = true } label: {
+                Button {
+                    // V7: route to Log-a-Meal sheet (4-mode) instead of
+                    // jumping straight to Search. User asked for all
+                    // four entry points (Recent / Search / Voice / Snap)
+                    // behind the "+ Add food" affordance.
+                    NotificationCenter.default.post(
+                        name: .openLogMeal,
+                        object: nil,
+                        userInfo: ["mode": LogMealMode.recent.rawValue]
+                    )
+                } label: {
                     HStack {
                         Image(systemName: "plus.circle").font(.subheadline).foregroundStyle(Theme.accent)
                         Text("Add food").font(.subheadline).foregroundStyle(.secondary)
@@ -867,7 +897,17 @@ struct FoodTabView: View {
                 .multilineTextAlignment(.center)
             Spacer().frame(height: 16)
             HStack(spacing: 10) {
-                Button { showingSearch = true } label: {
+                Button {
+                    // Same V7 reroute as the inline "+ Add food" higher
+                    // up in the diary — empty-state "Add food" button
+                    // opens the 4-mode Log-a-Meal sheet, not the
+                    // single-purpose FoodSearchView.
+                    NotificationCenter.default.post(
+                        name: .openLogMeal,
+                        object: nil,
+                        userInfo: ["mode": LogMealMode.recent.rawValue]
+                    )
+                } label: {
                     Label("Add food", systemImage: "plus")
                         .font(.caption.weight(.semibold))
                         .padding(.horizontal, 14).padding(.vertical, 7)
