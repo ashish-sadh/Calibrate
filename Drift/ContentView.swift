@@ -2,20 +2,16 @@ import SwiftUI
 import DriftCore
 
 /// V7 IA — three primary tabs (Today / Body / More) + a black floating "+"
-/// FAB to the right of the tab pill that opens the Log-a-Meal sheet.
-///
-/// Old V6 layout had five tabs (Drift / Weight / Food / Exercise / More)
-/// and a coral floating AI bubble overlay. Food + Exercise are no longer
-/// destinations — Food is reachable only via the FAB (where logging
-/// belongs), Exercise lives under More → Activity → Exercise. The AI
-/// floating bubble is kept temporarily; Phase 5 replaces it with a
-/// Drift Coach sheet and a per-screen nav-bar chat icon.
+/// FAB to the right of the tab pill that opens the Log-a-Meal sheet, plus a
+/// chat-icon button to the left of the pill that opens the Drift Coach
+/// sheet (V7 Phase 5 replacement for the V6 floating AI bubble).
 struct ContentView: View {
     @Binding var syncComplete: Bool
     var launchStage: LaunchStage
 
     @State private var selectedTab: PrimaryTab = .today
     @State private var showingLogMeal = false
+    @State private var showingDriftCoach = false
 
     init(syncComplete: Binding<Bool>, launchStage: LaunchStage = .starting) {
         self._syncComplete = syncComplete
@@ -36,8 +32,6 @@ struct ContentView: View {
         UINavigationBar.appearance().compactAppearance = navAppearance
     }
 
-    @AppStorage("drift_ai_enabled") private var aiEnabled = true
-
     var body: some View {
         ZStack {
             ZStack(alignment: .bottom) {
@@ -47,15 +41,11 @@ struct ContentView: View {
                 tabBarOverlay
             }
             .background(Theme.background.ignoresSafeArea())
-            .overlay {
-                if aiEnabled {
-                    // V6 floating bubble — Phase 5 replaces with a sheet
-                    // triggered from a nav-bar chat icon per the V7 design.
-                    FloatingAIAssistant(currentTab: selectedTab.legacyIndex)
-                }
-            }
             .sheet(isPresented: $showingLogMeal) {
                 LogMealSheet()
+            }
+            .sheet(isPresented: $showingDriftCoach) {
+                DriftCoachSheet()
             }
             .onReceive(NotificationCenter.default.publisher(for: .navigateToTab)) { notification in
                 if let tab = notification.userInfo?["tab"] as? Int,
@@ -90,6 +80,7 @@ struct ContentView: View {
 
     private var tabBarOverlay: some View {
         HStack(spacing: 12) {
+            ChatIconButton(isPresented: $showingDriftCoach)
             PillTabBar(selected: $selectedTab)
             FAB { showingLogMeal = true }
         }
