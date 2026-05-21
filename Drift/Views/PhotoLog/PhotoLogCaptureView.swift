@@ -84,10 +84,14 @@ struct PhotoLogCaptureView: View {
     // MARK: - Sections
 
     private var header: some View {
+        // V7 polish (mobile review): coral camera icon retired —
+        // user said the page had "too many colors and doesn't look
+        // clean." Switched to a neutral outline glyph matching the
+        // dashed-border camera card from the V7 reference mocks 16.
         VStack(spacing: 6) {
-            Image(systemName: "camera.metering.matrix")
-                .font(.system(size: 44))
-                .foregroundStyle(Theme.accent)
+            Image(systemName: "camera")
+                .font(.system(size: 44, weight: .light))
+                .foregroundStyle(Theme.textSecondary)
             Text("Snap a meal to log it")
                 .font(.headline)
                 .foregroundStyle(Theme.textPrimary)
@@ -99,15 +103,14 @@ struct PhotoLogCaptureView: View {
     }
 
     private var privacyBanner: some View {
-        // 2026-05-19: was Color.white.opacity(0.04) (invisible on the new
-        // light bg, leaving the privacy disclosure as an empty-looking
-        // strip). Theme.pillBackground gives the soft-gray surface that
-        // matches the rest of V6.
+        // V7 polish: dropped the coral cloud icon — single grey glyph
+        // matches the rest of the privacy/info chrome in V7 and stops
+        // competing with brand colour.
         Label {
             Text("This single photo is sent to \(Preferences.photoLogProvider.displayName). Your key, your data — Drift never sees either.")
                 .font(.caption2).foregroundStyle(Theme.textSecondary)
         } icon: {
-            Image(systemName: "cloud").foregroundStyle(Theme.accent)
+            Image(systemName: "cloud").foregroundStyle(Theme.textTertiary)
         }
         .padding(10)
         .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 10))
@@ -133,7 +136,7 @@ struct PhotoLogCaptureView: View {
             HStack(alignment: .top, spacing: 8) {
                 Image(systemName: "key.fill")
                     .font(.caption)
-                    .foregroundStyle(Theme.accent)
+                    .foregroundStyle(Theme.textSecondary)
                 Text("Drift supports BYOK — bring your own OpenAI, Gemini, or Anthropic API key for AI food photo scanning. Tap ⚙️ to add a key.")
                     .font(.caption2)
                     .foregroundStyle(.secondary)
@@ -160,18 +163,21 @@ struct PhotoLogCaptureView: View {
                     showingSettings = true
                 }
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(Theme.accent)
+                .foregroundStyle(Theme.ink)
             }
         }
         .padding(10)
-        .background(Theme.accent.opacity(0.06), in: RoundedRectangle(cornerRadius: 10))
-        .overlay(
-            RoundedRectangle(cornerRadius: 10)
-                .strokeBorder(Theme.accent.opacity(0.25), lineWidth: 0.5)
-        )
+        .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 10))
     }
 
     private var captureButtons: some View {
+        // V7 polish: Take Photo flipped from coral.borderedProminent →
+        // ink.borderedProminent (V7 primary-CTA convention, matches
+        // the FAB-era black filled buttons elsewhere in the app).
+        // Choose from Library is the secondary path — `.tint(.secondary)`
+        // gives a charcoal label instead of the default system blue
+        // that was making this screen look like it had three different
+        // primary colors (coral + blue + gray).
         VStack(spacing: 10) {
             Button {
                 requestCameraAccess()
@@ -180,7 +186,7 @@ struct PhotoLogCaptureView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(Theme.accent)
+            .tint(Theme.ink)
             .disabled(!UIImagePickerController.isSourceTypeAvailable(.camera))
             .alert("Camera access needed", isPresented: $showingCameraDeniedAlert) {
                 Button("Open Settings") {
@@ -200,6 +206,7 @@ struct PhotoLogCaptureView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
+            .tint(Theme.textPrimary)
         }
     }
 
