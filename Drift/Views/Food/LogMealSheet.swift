@@ -12,17 +12,17 @@ import DriftCore
 ///
 /// Replaces the V6/early-V7 stub that just wrapped `FoodTabView` in a
 /// NavigationStack with a Done button.
-/// V7 mobile fix: dropped `.snap`. Snap was reachable two ways —
-/// the Dashboard quick-log chip (which already posts `.openPhotoLog`
-/// directly, bypassing this sheet) AND a Snap segment inside this
-/// sheet that triggered a re-route to PhotoLogFlowView. The two
-/// paths showed users two visually-different "Snap" screens
-/// (V7-styled empty state + V6-styled PhotoLog onboarding) and felt
-/// like a bug. Now there's one canonical Snap experience: tap a
-/// Snap entry point → PhotoLogFlowView. This sheet handles the
-/// non-camera modes only.
+/// V7: 4 modes (Recent / Search / Voice / Snap). The Snap segment
+/// auto-presents PhotoLogFlowView the moment it's selected and bounces
+/// back to Recent on dismiss so the user isn't stranded on an empty
+/// Snap segment. Single PhotoLog implementation, four entry points:
+///   1. FAB → LogMealSheet → Snap segment (via this enum case)
+///   2. Dashboard quick-log "Snap" chip → posts `.openLogMeal(mode: .snap)`
+///   3. Food-tab top-right camera shortcut → posts `.openPhotoLog`
+///      (skips the sheet step for the "I know I want camera" shortcut)
+///   4. Drift Coach "snap a meal" voice/text command (TODO)
 public enum LogMealMode: String, CaseIterable, Identifiable, Sendable {
-    case recent, search, voice
+    case recent, search, voice, snap
     public var id: String { rawValue }
 
     var label: String {
@@ -30,6 +30,7 @@ public enum LogMealMode: String, CaseIterable, Identifiable, Sendable {
         case .recent: "Recent"
         case .search: "Search"
         case .voice: "Voice"
+        case .snap: "Snap"
         }
     }
 
@@ -38,6 +39,7 @@ public enum LogMealMode: String, CaseIterable, Identifiable, Sendable {
         case .recent: "clock"
         case .search: "magnifyingglass"
         case .voice: "mic"
+        case .snap: "camera"
         }
     }
 }
@@ -48,6 +50,7 @@ struct LogMealSheet: View {
     @State private var mode: LogMealMode
     @State private var foodLogVM = FoodLogViewModel()
     @State private var recentFoods: [Food] = []
+    @State private var showingPhotoLog = false
 
     init(initialMode: LogMealMode = .recent) {
         _mode = State(initialValue: initialMode)
@@ -94,7 +97,27 @@ struct LogMealSheet: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .fullScreenCover(isPresented: $showingPhotoLog) {
+                PhotoLogFlowView(foodLog: foodLogVM)
+            }
             .task { recentFoods = FoodService.fetchRecentFoods(limit: 30) }
+            // V7: Snap-segment auto-triggers PhotoLog so the user
+            // doesn't see two screens in sequence ("Snap your plate"
+            // empty state, then the real PhotoLog). Bounces back to
+            // Recent on dismiss so the user isn't stranded if they
+            // cancel out of PhotoLog — the previous "stuck on Snap
+            // segment" bug from commit 774c9bfc.
+            .onAppear {
+                if mode == .snap { showingPhotoLog = true }
+            }
+            .onChange(of: mode) { _, new in
+                if new == .snap { showingPhotoLog = true }
+            }
+            .onChange(of: showingPhotoLog) { _, isShowing in
+                if !isShowing && mode == .snap {
+                    mode = .recent
+                }
+            }
         }
     }
 
@@ -122,6 +145,14 @@ struct LogMealSheet: View {
         case .recent: recentContent
         case .search: searchContent
         case .voice: VoiceLogSheet()
+        case .snap:
+            // Brief placeholder while PhotoLogFlowView covers — the
+            // .onAppear / .onChange handlers above flip showingPhotoLog
+            // to true on this segment. If the cover happens to be
+            // dismissing or hasn't shown yet, this passive card avoids
+            // a black gap. Bounces back to Recent on PhotoLog dismiss.
+            ProgressView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 
