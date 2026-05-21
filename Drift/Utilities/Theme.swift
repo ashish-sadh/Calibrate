@@ -227,9 +227,13 @@ extension Color {
 // MARK: - V6 shadows (glass depth)
 
 extension View {
-    /// V6 soft shadow + hairline. Default for cards.
+    /// V6 soft shadow + hairline. Default for cards. V7 polish bumped
+    /// the radius 2→6 and the y-offset 1→2 because the card border was
+    /// being dropped at the same time (`CardStyle`) — the lift needed
+    /// to come from somewhere or cards would visually collapse into
+    /// the page background.
     func shadowSoft() -> some View {
-        self.shadow(color: Color.black.opacity(0.04), radius: 2, x: 0, y: 1)
+        self.shadow(color: Color.black.opacity(0.05), radius: 6, x: 0, y: 2)
     }
     /// V6 pop shadow. Sheets / popovers.
     func shadowPop() -> some View {
@@ -246,13 +250,15 @@ extension View {
 
 struct CardStyle: ViewModifier {
     func body(content: Content) -> some View {
+        // V7 polish: dropped the 0.5pt `.strokeBorder(Theme.separator)`
+        // overlay that made cards look like cut-out tiles on top of the
+        // page background. The soft shadow + Theme.cardBackground (pure
+        // white) vs Theme.background (#EFEFF1) contrast already do all
+        // the lifting work — the border was redundant and broke flow
+        // between adjacent cards on the Today / Body screens.
         content
             .padding(Theme.cardPadding)
-            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.cardCornerRadius))
-            .overlay(
-                RoundedRectangle(cornerRadius: Theme.cardCornerRadius)
-                    .strokeBorder(Theme.separator, lineWidth: 0.5)
-            )
+            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.cardCornerRadius, style: .continuous))
             .shadowSoft()
     }
 }
@@ -260,5 +266,20 @@ struct CardStyle: ViewModifier {
 extension View {
     func card() -> some View {
         modifier(CardStyle())
+    }
+}
+
+// MARK: - Section heading
+
+/// V7 polish: shared small-caps + tracking + secondary-gray heading
+/// modifier so the section labels match across the Today, Body, and
+/// More tabs. MoreTabView used to inline this style; pulled here so
+/// other roots can opt in via `Text("ACTIVITY").sectionHeading()`.
+extension Text {
+    func sectionHeading() -> some View {
+        self
+            .font(.caption2.weight(.semibold))
+            .foregroundStyle(Theme.textSecondary)
+            .tracking(0.8)
     }
 }

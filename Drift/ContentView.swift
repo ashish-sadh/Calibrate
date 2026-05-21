@@ -94,6 +94,16 @@ struct ContentView: View {
                 .accessibilityIdentifier("tab-more-content")
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
+        // V7 polish: floating PillTabBar + FAB sit in the bottom 78pt of
+        // the screen but don't contribute to the safe area (they live
+        // in an overlay ZStack). Without this inset, ScrollViews inside
+        // the tab destinations let their last row slide *under* the
+        // tab bar — the V7 mobile review surfaced this as "content
+        // gets cut off at the bottom" and contributed to the
+        // "UI not flowing" complaint.
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            Color.clear.frame(height: 78)
+        }
     }
 
     private var tabBarOverlay: some View {
