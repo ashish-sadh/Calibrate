@@ -12,8 +12,17 @@ import DriftCore
 ///
 /// Replaces the V6/early-V7 stub that just wrapped `FoodTabView` in a
 /// NavigationStack with a Done button.
+/// V7 mobile fix: dropped `.snap`. Snap was reachable two ways —
+/// the Dashboard quick-log chip (which already posts `.openPhotoLog`
+/// directly, bypassing this sheet) AND a Snap segment inside this
+/// sheet that triggered a re-route to PhotoLogFlowView. The two
+/// paths showed users two visually-different "Snap" screens
+/// (V7-styled empty state + V6-styled PhotoLog onboarding) and felt
+/// like a bug. Now there's one canonical Snap experience: tap a
+/// Snap entry point → PhotoLogFlowView. This sheet handles the
+/// non-camera modes only.
 public enum LogMealMode: String, CaseIterable, Identifiable, Sendable {
-    case recent, search, voice, snap
+    case recent, search, voice
     public var id: String { rawValue }
 
     var label: String {
@@ -21,7 +30,6 @@ public enum LogMealMode: String, CaseIterable, Identifiable, Sendable {
         case .recent: "Recent"
         case .search: "Search"
         case .voice: "Voice"
-        case .snap: "Snap"
         }
     }
 
@@ -30,7 +38,6 @@ public enum LogMealMode: String, CaseIterable, Identifiable, Sendable {
         case .recent: "clock"
         case .search: "magnifyingglass"
         case .voice: "mic"
-        case .snap: "camera"
         }
     }
 }
@@ -40,7 +47,6 @@ struct LogMealSheet: View {
 
     @State private var mode: LogMealMode
     @State private var foodLogVM = FoodLogViewModel()
-    @State private var showingPhotoLog = false
     @State private var recentFoods: [Food] = []
 
     init(initialMode: LogMealMode = .recent) {
@@ -88,20 +94,7 @@ struct LogMealSheet: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-            .fullScreenCover(isPresented: $showingPhotoLog) {
-                PhotoLogFlowView(foodLog: foodLogVM)
-            }
             .task { recentFoods = FoodService.fetchRecentFoods(limit: 30) }
-            // V7 polish: Snap is a verb, not a screen. When the user
-            // arrives at Snap mode (either via initialMode or by tapping
-            // the segment), present the camera-driven PhotoLog flow
-            // directly instead of an intermediate empty state.
-            .onAppear {
-                if mode == .snap { showingPhotoLog = true }
-            }
-            .onChange(of: mode) { _, new in
-                if new == .snap { showingPhotoLog = true }
-            }
         }
     }
 
@@ -129,7 +122,6 @@ struct LogMealSheet: View {
         case .recent: recentContent
         case .search: searchContent
         case .voice: VoiceLogSheet()
-        case .snap: snapContent
         }
     }
 
@@ -238,43 +230,6 @@ struct LogMealSheet: View {
 
     private var searchContent: some View {
         FoodSearchView(viewModel: foodLogVM)
-    }
-
-    // MARK: - Snap
-
-    private var snapContent: some View {
-        VStack(spacing: 24) {
-            Spacer()
-            VStack(spacing: 16) {
-                Image(systemName: "camera")
-                    .font(.system(size: 44, weight: .light))
-                    .foregroundStyle(Theme.textSecondary)
-                Text("Snap your plate")
-                    .font(.headline.weight(.semibold))
-                Text("AI will detect each item and suggest portions. Confirm before logging.")
-                    .font(.caption)
-                    .foregroundStyle(Theme.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 32)
-                Button {
-                    showingPhotoLog = true
-                } label: {
-                    Label("Open camera", systemImage: "camera.fill")
-                        .frame(maxWidth: 240)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.ink)
-                .accessibilityIdentifier("log-meal-snap-open-camera")
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 40)
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .strokeBorder(Theme.separator, style: StrokeStyle(lineWidth: 1, dash: [6, 4]))
-            )
-            .padding(.horizontal, 16)
-            Spacer()
-        }
     }
 
     // MARK: - Empty state

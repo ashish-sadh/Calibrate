@@ -363,115 +363,30 @@ struct SettingsView: View {
                 }
                 .card()
 
-                // Health Nudges
-                VStack(alignment: .leading, spacing: 8) {
+                // V7 Settings restructure: the 4 notification reminders
+                // (Health Nudges, Smart Meal, Medication, GLP-1) moved
+                // into a dedicated `NotificationsSettingsView` sub-page
+                // and shown here as a single navigation row, matching
+                // iOS Settings → Notifications convention. Cuts the
+                // top-level Settings list from ~13 cards to ~7.
+                NavigationLink {
+                    NotificationsSettingsView()
+                } label: {
                     HStack(spacing: 12) {
                         Image(systemName: "bell.badge")
                             .foregroundStyle(Theme.textSecondary).frame(width: 24)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Health Nudges").font(.subheadline.weight(.medium))
-                            Text("Reminders for protein, supplements, and workout gaps")
+                            Text("Notifications").font(.subheadline.weight(.medium))
+                            Text("Health nudges, meal reminders, medication, GLP-1")
                                 .font(.caption2).foregroundStyle(.tertiary)
                         }
                         Spacer()
-                        Toggle("", isOn: Binding(
-                            get: { Preferences.healthNudgesEnabled },
-                            set: {
-                                Preferences.healthNudgesEnabled = $0
-                                Task { await NotificationService.refreshScheduledAlerts() }
-                            }
-                        ))
-                        .labelsHidden().tint(Theme.ink)
+                        Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                            .accessibilityHidden(true)
                     }
+                    .padding(.vertical, 10)
                 }
-                .card()
-
-                // Smart Meal Reminders — #385 / #690
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "fork.knife.circle")
-                            .foregroundStyle(Theme.textSecondary).frame(width: 24)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Smart Meal Reminders").font(.subheadline.weight(.medium))
-                            Text("Quiet nudge ~30 min after your typical meal time, only if you haven't logged it yet")
-                                .font(.caption2).foregroundStyle(.tertiary)
-                        }
-                        Spacer()
-                        Toggle("", isOn: Binding(
-                            get: { Preferences.mealRemindersEnabled },
-                            set: {
-                                Preferences.mealRemindersEnabled = $0
-                                Task { await NotificationService.refreshScheduledAlerts() }
-                            }
-                        ))
-                        .labelsHidden().tint(Theme.ink)
-                    }
-                    if Preferences.mealRemindersEnabled {
-                        HStack(spacing: 12) {
-                            Spacer().frame(width: 24)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Use my eating patterns").font(.caption.weight(.medium))
-                                Text("Learn from the last 30 days. Needs 10+ entries per meal — falls back to defaults below threshold.")
-                                    .font(.caption2).foregroundStyle(.tertiary)
-                            }
-                            Spacer()
-                            Toggle("", isOn: Binding(
-                                get: { Preferences.useEatingPatternsForReminders },
-                                set: {
-                                    Preferences.useEatingPatternsForReminders = $0
-                                    Task { await NotificationService.refreshScheduledAlerts() }
-                                }
-                            ))
-                            .labelsHidden().tint(Theme.ink)
-                        }
-                    }
-                }
-                .card()
-
-                // Medication Dose Reminders — #592
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "pill.circle")
-                            .foregroundStyle(Theme.textSecondary).frame(width: 24)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Medication Dose Reminders").font(.subheadline.weight(.medium))
-                            Text("Quiet nudge ~2h after your typical dose time, only if you haven't logged it yet today")
-                                .font(.caption2).foregroundStyle(.tertiary)
-                        }
-                        Spacer()
-                        Toggle("", isOn: Binding(
-                            get: { Preferences.medicationRemindersEnabled },
-                            set: {
-                                Preferences.medicationRemindersEnabled = $0
-                                Task { await NotificationService.refreshScheduledAlerts() }
-                            }
-                        ))
-                        .labelsHidden().tint(Theme.ink)
-                    }
-                }
-                .card()
-
-                // GLP-1 Weekly Reminders — #620
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 12) {
-                        Image(systemName: "syringe")
-                            .foregroundStyle(Theme.textSecondary).frame(width: 24)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("GLP-1 Weekly Reminders").font(.subheadline.weight(.medium))
-                            Text("Weekly notification on your injection day — only fires if you haven't logged a dose in the last 7 days")
-                                .font(.caption2).foregroundStyle(.tertiary)
-                        }
-                        Spacer()
-                        Toggle("", isOn: Binding(
-                            get: { Preferences.glp1RemindersEnabled },
-                            set: {
-                                Preferences.glp1RemindersEnabled = $0
-                                Task { await NotificationService.refreshScheduledAlerts() }
-                            }
-                        ))
-                        .labelsHidden().tint(Theme.ink)
-                    }
-                }
+                .buttonStyle(.plain)
                 .card()
 
                 // AI Chat Telemetry (opt-in, local only) — #261
@@ -830,3 +745,128 @@ struct SettingsView: View {
 }
 
 // ShareSheet is defined in WorkoutView.swift — reused here for file export
+
+// MARK: - Notifications Settings sub-page
+//
+// V7 Settings restructure: four notification toggles (Health Nudges,
+// Smart Meal Reminders, Medication Dose, GLP-1 Weekly) extracted
+// from the top-level SettingsView into a dedicated sub-page. Each
+// toggle still writes Preferences and refreshes
+// NotificationService — no behavior change, just IA cleanup.
+
+struct NotificationsSettingsView: View {
+    @State private var mealRemindersOn = Preferences.mealRemindersEnabled
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 14) {
+                toggleCard(
+                    icon: "bell.badge",
+                    title: "Health Nudges",
+                    subtitle: "Reminders for protein, supplements, and workout gaps",
+                    isOn: Binding(
+                        get: { Preferences.healthNudgesEnabled },
+                        set: {
+                            Preferences.healthNudgesEnabled = $0
+                            Task { await NotificationService.refreshScheduledAlerts() }
+                        }
+                    )
+                )
+
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack(spacing: 12) {
+                        Image(systemName: "fork.knife.circle")
+                            .foregroundStyle(Theme.textSecondary).frame(width: 24)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Smart Meal Reminders").font(.subheadline.weight(.medium))
+                            Text("Quiet nudge ~30 min after your typical meal time, only if you haven't logged it yet")
+                                .font(.caption2).foregroundStyle(.tertiary)
+                        }
+                        Spacer()
+                        Toggle("", isOn: Binding(
+                            get: { Preferences.mealRemindersEnabled },
+                            set: { newValue in
+                                Preferences.mealRemindersEnabled = newValue
+                                mealRemindersOn = newValue
+                                Task { await NotificationService.refreshScheduledAlerts() }
+                            }
+                        ))
+                        .labelsHidden().tint(Theme.ink)
+                    }
+                    if mealRemindersOn {
+                        HStack(spacing: 12) {
+                            Spacer().frame(width: 24)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Use my eating patterns").font(.caption.weight(.medium))
+                                Text("Learn from the last 30 days. Needs 10+ entries per meal — falls back to defaults below threshold.")
+                                    .font(.caption2).foregroundStyle(.tertiary)
+                            }
+                            Spacer()
+                            Toggle("", isOn: Binding(
+                                get: { Preferences.useEatingPatternsForReminders },
+                                set: {
+                                    Preferences.useEatingPatternsForReminders = $0
+                                    Task { await NotificationService.refreshScheduledAlerts() }
+                                }
+                            ))
+                            .labelsHidden().tint(Theme.ink)
+                        }
+                    }
+                }
+                .card()
+
+                toggleCard(
+                    icon: "pill.circle",
+                    title: "Medication Dose Reminders",
+                    subtitle: "Quiet nudge ~2h after your typical dose time, only if you haven't logged it yet today",
+                    isOn: Binding(
+                        get: { Preferences.medicationRemindersEnabled },
+                        set: {
+                            Preferences.medicationRemindersEnabled = $0
+                            Task { await NotificationService.refreshScheduledAlerts() }
+                        }
+                    )
+                )
+
+                toggleCard(
+                    icon: "syringe",
+                    title: "GLP-1 Weekly Reminders",
+                    subtitle: "Weekly notification on your injection day — only fires if you haven't logged a dose in the last 7 days",
+                    isOn: Binding(
+                        get: { Preferences.glp1RemindersEnabled },
+                        set: {
+                            Preferences.glp1RemindersEnabled = $0
+                            Task { await NotificationService.refreshScheduledAlerts() }
+                        }
+                    )
+                )
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+            .padding(.bottom, 24)
+        }
+        .scrollContentBackground(.hidden)
+        .background(Theme.background.ignoresSafeArea())
+        .navigationTitle("Notifications")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarColorScheme(.light, for: .navigationBar)
+    }
+
+    @ViewBuilder
+    private func toggleCard(icon: String, title: String, subtitle: String, isOn: Binding<Bool>) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 12) {
+                Image(systemName: icon)
+                    .foregroundStyle(Theme.textSecondary).frame(width: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title).font(.subheadline.weight(.medium))
+                    Text(subtitle).font(.caption2).foregroundStyle(.tertiary)
+                }
+                Spacer()
+                Toggle("", isOn: isOn)
+                    .labelsHidden().tint(Theme.ink)
+            }
+        }
+        .card()
+    }
+}

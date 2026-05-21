@@ -63,12 +63,15 @@ struct V6QuickLogRow: View {
             return
         }
 
+        // .snap is handled above via the early-return; the LogMealMode
+        // enum no longer carries a .snap case (V7: Snap is always
+        // direct → PhotoLog, never a sheet segment).
         let mode: LogMealMode
         switch chip {
         case .voice: mode = .voice
         case .search: mode = .search
         case .recent: mode = .recent
-        case .snap: mode = .snap  // unreachable — handled above
+        case .snap: return  // unreachable — handled above
         }
         NotificationCenter.default.post(
             name: .openLogMeal,
