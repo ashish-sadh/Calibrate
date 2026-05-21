@@ -70,8 +70,25 @@ struct WeightChartView: View {
                 }
 
                 if let f = displayPoints.first?.date, let l = displayPoints.last?.date {
-                    Text("\(DateFormatters.shortDisplay.string(from: f)) – \(DateFormatters.shortDisplay.string(from: l))")
-                        .font(.caption2).foregroundStyle(.tertiary)
+                    HStack(alignment: .firstTextBaseline, spacing: 12) {
+                        Text("\(DateFormatters.shortDisplay.string(from: f)) – \(DateFormatters.shortDisplay.string(from: l))")
+                            .font(.caption2).foregroundStyle(.tertiary)
+                        Spacer()
+                        // Dual-line legend (#field-2026-05-21). Without this
+                        // the coral / grey lines look like a styling glitch.
+                        // Coral = the actual logged weights, grey-dashed =
+                        // EMA smoothing. Tap any coral dot to read the
+                        // exact value.
+                        HStack(spacing: 4) {
+                            Circle().fill(Theme.accent).frame(width: 6, height: 6)
+                            Text("Actual").font(.caption2).foregroundStyle(.secondary)
+                        }
+                        HStack(spacing: 4) {
+                            Rectangle().fill(Theme.textTertiary.opacity(0.7))
+                                .frame(width: 10, height: 1.5)
+                            Text("Trend").font(.caption2).foregroundStyle(.secondary)
+                        }
+                    }
                 }
 
                 // Toggle is ON but no bars rendered = no calorie data in
@@ -110,30 +127,60 @@ struct WeightChartView: View {
                     }
                 }
 
-                // Current value reference line (accent, horizontal)
-                if let currentWeight = displayPoints.last?.ema {
-                    RuleMark(y: .value("", currentWeight))
+                // Current value reference line (accent, horizontal) —
+                // anchored to the latest *actual* weight so the user's
+                // most recent weigh-in is the line you see, not the
+                // smoothed trend value (which can sit several pounds
+                // away after a sharp move).
+                if let currentActual = displayPoints.last(where: { $0.actual != nil })?.actual {
+                    RuleMark(y: .value("", currentActual))
                         .foregroundStyle(Theme.accent.opacity(0.4))
                         .lineStyle(StrokeStyle(lineWidth: 1.5))
                         .annotation(position: .trailing, spacing: 4) {
-                            Text(String(format: "%.1f", currentWeight))
+                            Text(String(format: "%.1f", currentActual))
                                 .font(.caption.weight(.bold).monospacedDigit())
                                 .foregroundStyle(Theme.accent)
                         }
                 }
 
-                // Single clean line — EMA trend with dots at each point.
-                // V7 light migration: was .white.opacity which rendered
-                // invisible on the white card. Coral line + dots match
-                // the reference design and read on paper-white.
+                // V7 mobile fix (2026-05-21 field report): user said "I
+                // definitely gained, something is wrong" — chart line
+                // (smoothed EMA) looked flat while the cards reported
+                // a clear deficit. They were both reading the same DB
+                // but plotting different signals. Now we draw BOTH
+                // lines: actual weights in coral, EMA in grey. The
+                // coral line is what drives the Difference number,
+                // the rule line, and the tap callout, so the user can
+                // verify their raw data with their eyes instead of
+                // having to interpret a smoothing curve.
                 ForEach(displayPoints.indices, id: \.self) { i in
-                    LineMark(x: .value("", displayPoints[i].date), y: .value("", displayPoints[i].ema))
+                    LineMark(
+                        x: .value("", displayPoints[i].date),
+                        y: .value("Trend", displayPoints[i].ema),
+                        series: .value("Series", "Trend")
+                    )
+                    .foregroundStyle(Theme.textTertiary.opacity(0.7))
+                    .lineStyle(StrokeStyle(lineWidth: 1.25, dash: [4, 3]))
+                    .interpolationMethod(.catmullRom)
+                }
+
+                ForEach(displayPoints.indices, id: \.self) { i in
+                    if let actual = displayPoints[i].actual {
+                        LineMark(
+                            x: .value("", displayPoints[i].date),
+                            y: .value("Actual", actual),
+                            series: .value("Series", "Actual")
+                        )
                         .foregroundStyle(Theme.accent)
                         .lineStyle(StrokeStyle(lineWidth: 2))
                         .interpolationMethod(.catmullRom)
-                    PointMark(x: .value("", displayPoints[i].date), y: .value("", displayPoints[i].ema))
+                        PointMark(
+                            x: .value("", displayPoints[i].date),
+                            y: .value("Actual", actual)
+                        )
                         .foregroundStyle(Theme.accent)
                         .symbolSize(granularity == .weekly ? 30 : 16)
+                    }
                 }
 
                 // Selected point callout
@@ -211,7 +258,13 @@ struct WeightChartView: View {
                                        let nearest = displayPoints.min(by: {
                                            abs($0.date.timeIntervalSince(date)) < abs($1.date.timeIntervalSince(date))
                                        }) {
-                                        selectedPoint = (nearest.date, nearest.ema)
+                                        // Tap-to-read picks the actual
+                                        // weight when present (matches
+                                        // the coral line + Difference);
+                                        // falls through to EMA for
+                                        // synthesized / EMA-only points
+                                        // so the callout is never blank.
+                                        selectedPoint = (nearest.date, nearest.actual ?? nearest.ema)
                                     }
                                 }
                                 .onEnded { _ in selectedPoint = nil }
@@ -239,6 +292,16 @@ struct WeightChartView: View {
     }
 
     private var totalDifference: Double? {
+        // Uses actual-weight endpoints so the Difference matches what
+        // the coral line shows (and what the 30d/90d delta chips
+        // reference). Falls back to EMA endpoints only when no actual
+        // entries are present in the visible window — keeps the legacy
+        // behavior for the synthesized-point edge case rather than
+        // returning nil.
+        let actuals = displayPoints.compactMap(\.actual)
+        if let f = actuals.first, let l = actuals.last {
+            return l - f
+        }
         guard let f = displayPoints.first?.ema, let l = displayPoints.last?.ema else { return nil }
         return l - f
     }

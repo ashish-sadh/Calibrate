@@ -106,14 +106,41 @@ struct PhotoLogCaptureView: View {
         // V7 polish: dropped the coral cloud icon — single grey glyph
         // matches the rest of the privacy/info chrome in V7 and stops
         // competing with brand colour.
-        Label {
-            Text("This single photo is sent to \(Preferences.photoLogProvider.displayName). Your key, your data — Drift never sees either.")
-                .font(.caption2).foregroundStyle(Theme.textSecondary)
-        } icon: {
-            Image(systemName: "cloud").foregroundStyle(Theme.textTertiary)
+        //
+        // Mobile review fix: the copy mentions "Your key, your data" but
+        // when the user *doesn't* have a key the banner gave no path to
+        // get one — they had to know to look under Settings → Photo Log
+        // (Beta). Making the whole banner a button to BYOK settings when
+        // no key is configured. When a key is present the banner stays
+        // non-tappable (no useful destination).
+        let hasKey = CloudVisionProvider.allCases.contains { CloudVisionKey.has(provider: $0) }
+        return Button {
+            if !hasKey { showingSettings = true }
+        } label: {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Image(systemName: "cloud").foregroundStyle(Theme.textTertiary)
+                if hasKey {
+                    Text("This single photo is sent to \(Preferences.photoLogProvider.displayName). Your key, your data — Drift never sees either.")
+                        .font(.caption2).foregroundStyle(Theme.textSecondary)
+                        .multilineTextAlignment(.leading)
+                } else {
+                    (Text("Photo Log uses your own AI key (\(Preferences.photoLogProvider.displayName), OpenAI, or Anthropic). ")
+                        .foregroundStyle(Theme.textSecondary)
+                     + Text("Tap to set one up →")
+                        .foregroundStyle(Theme.accent)
+                        .fontWeight(.semibold))
+                        .font(.caption2)
+                        .multilineTextAlignment(.leading)
+                }
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(10)
+            .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 10))
         }
-        .padding(10)
-        .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 10))
+        .buttonStyle(.plain)
+        .disabled(hasKey)
+        .accessibilityIdentifier("photo-log-privacy-banner")
     }
 
     private var costBanner: some View {

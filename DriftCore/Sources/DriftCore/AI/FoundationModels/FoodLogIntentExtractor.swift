@@ -182,6 +182,16 @@ public enum FoodLogIntentExtractor {
         - "log workout", "exercise", "weight", "sleep", "summary", "supplement" → foodName=""
         - "what did I eat yesterday" → foodName=""
 
+        Conversational / greeting / off-topic messages — also return EMPTY foodName.
+        Real bug from the field 2026-05-21: speech transcribed "hello how are you
+        doing" and the extractor hallucinated egg + banana. If the message contains
+        no explicit food item or quantity, foodName must be the empty string.
+        Examples that must return foodName="":
+        - "hello", "hi", "hey there", "good morning", "good evening"
+        - "how are you", "how are you doing", "what's up"
+        - "what can you do", "help", "test", "testing"
+        - Any greeting, question, or smalltalk without a named food
+
         Food name rules:
         - Use singular canonical form: "egg" not "eggs", "banana" not "bananas".
         - Preserve the user's specific dish name verbatim (e.g. "chicken biryani" stays one phrase, not split into chicken + biryani).
@@ -200,7 +210,7 @@ public enum FoodLogIntentExtractor {
 @available(macOS 26, iOS 26, *)
 @Generable
 struct FMFoodLogIntentSchema: Sendable {
-    @Guide(description: "Primary food name in singular canonical form (e.g. 'egg', 'banana', 'chicken biryani'). EMPTY STRING when the message is not a food log (weight chart, workout, summary, etc.).")
+    @Guide(description: "Primary food name in singular canonical form (e.g. 'egg', 'banana', 'chicken biryani'). EMPTY STRING when the message is not a food log — covers BOTH data requests (weight chart, workout, summary, etc.) AND conversational input (greetings like 'hello' or 'how are you doing', help requests, smalltalk). Do not invent a food when the user did not name one.")
     let foodName: String
     @Guide(description: "Numeric quantity. Use 1 when the user didn't specify. Range 0.01-100.")
     let quantity: Double

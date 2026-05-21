@@ -167,6 +167,18 @@ import Testing
     #expect(p.contains("weight chart") || p.contains("workout"))
 }
 
+@Test func foodIntentPromptCoversGreetings() {
+    // Real field bug 2026-05-21: speech said "Hello how are you doing" and
+    // the extractor returned egg + banana. Pin the greeting examples in the
+    // prompt so subsequent edits can't silently drop them and reintroduce
+    // the hallucination. Doesn't simulate the FM (Tier 3 territory) — just
+    // pins the prompt content the FM sees.
+    let p = FoodLogIntentExtractor.buildPrompt(for: "any").lowercased()
+    #expect(p.contains("hello"))
+    #expect(p.contains("how are you"))
+    #expect(p.contains("greeting") || p.contains("smalltalk") || p.contains("conversational"))
+}
+
 @Test func foodIntentPromptIncludesInputText() {
     let unique = "MARKER_\(UUID().uuidString.prefix(8))"
     let p = FoodLogIntentExtractor.buildPrompt(for: unique)
