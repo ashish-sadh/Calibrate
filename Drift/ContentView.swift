@@ -60,19 +60,27 @@ struct ContentView: View {
         .animation(.easeOut(duration: 0.25), value: syncComplete)
     }
 
-    @ViewBuilder
+    /// Tab content. Was a ViewBuilder `switch` over `selectedTab`, but that
+    /// causes SwiftUI to fully tear down and rebuild the destination view
+    /// on every tab change — jarring transition, lost scroll position,
+    /// re-fired `.task` blocks. Native `TabView` with `.page` style keeps
+    /// all three pages alive, animates the swap with the system's built-in
+    /// cross-fade, and allows a horizontal swipe between tabs without
+    /// touching the pill bar at the bottom. Page-indicator dots are
+    /// hidden because the custom `PillTabBar` is the canonical selector.
     private var tabContent: some View {
-        switch selectedTab {
-        case .today:
+        TabView(selection: $selectedTab) {
             DashboardView(syncComplete: $syncComplete, selectedTab: selectedTabBindingLegacy)
+                .tag(PrimaryTab.today)
                 .accessibilityIdentifier("tab-today-content")
-        case .body:
             WeightTabView(syncComplete: $syncComplete, selectedTab: selectedTabBindingLegacy)
+                .tag(PrimaryTab.body)
                 .accessibilityIdentifier("tab-body-content")
-        case .more:
             MoreTabView(selectedTab: selectedTabBindingLegacy)
+                .tag(PrimaryTab.more)
                 .accessibilityIdentifier("tab-more-content")
         }
+        .tabViewStyle(.page(indexDisplayMode: .never))
     }
 
     private var tabBarOverlay: some View {
