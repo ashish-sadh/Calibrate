@@ -67,6 +67,16 @@ struct DriftApp: App {
                         // `iCloudAvailable` is the single signal we need from BackupService here:
                         // - true → there's a usable iCloud Drive container to back up to or restore from
                         // - false → iCloud Drive is off / user signed out; skip both sheets silently
+                        //
+                        // Probe on a background thread first (per Apple's
+                        // docs — main-thread calls to
+                        // `forUbiquityContainerIdentifier:` early in
+                        // launch return nil while the iCloud daemon is
+                        // still initializing). Without this, devices
+                        // with iCloud Drive ON were getting the
+                        // misfiring "iCloud Drive is off" alert (#7 in
+                        // the 2026-05-20 UI review).
+                        await BackupService.shared.probeContainerURL()
                         let iCloudAvailable = (try? BackupService.shared.containerURL()) != nil
                         if iCloudAvailable, let dbEmpty = try? AppDatabase.shared.isEmpty(), dbEmpty {
                             let available = BackupService.shared.availableBackups()

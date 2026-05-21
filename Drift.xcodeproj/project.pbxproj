@@ -106,6 +106,7 @@
 		8D8FB3814300848676740EC6 /* AddSupplementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4BD88646DFE4A17724D4407 /* AddSupplementView.swift */; };
 		8E747171A19B2FB4FB6B5C0B /* MultiStageEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1C54188E36BDCD10D5F753A /* MultiStageEval.swift */; };
 		92F6CD33F11BF82738AAF81C /* LabReportOCRTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D1E187818C8B9D2196B4B9D /* LabReportOCRTests.swift */; };
+		93BB4F4C9A49061E5433BDB0 /* BackupServiceProbeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F73428EA4B69D7713A6140D4 /* BackupServiceProbeTests.swift */; };
 		94F5CD3A73D0EAA80DCEA612 /* ConversationStatePersistenceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6C4AF4636637C2EF46CD085 /* ConversationStatePersistenceTests.swift */; };
 		96A4FE9ADE8FF47326F95FBE /* FoodServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DAC7F3DE02D237C91936A3C /* FoodServiceTests.swift */; };
 		96B6BBB4C02D93E14F28C043 /* AIChatView+Suggestions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 188A69D621CC2DF63ADFB21F /* AIChatView+Suggestions.swift */; };
@@ -416,6 +417,7 @@
 		F2B8EAC57A3A10193855A81F /* GoalView+Profile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "GoalView+Profile.swift"; sourceTree = "<group>"; };
 		F30EC2EF2E12E44F63B37582 /* EditFoodEntrySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditFoodEntrySheet.swift; sourceTree = "<group>"; };
 		F57B8BA8C0B119CF10614F14 /* HealthKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitService.swift; sourceTree = "<group>"; };
+		F73428EA4B69D7713A6140D4 /* BackupServiceProbeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupServiceProbeTests.swift; sourceTree = "<group>"; };
 		F78E3B6C1497F6A200DF8095 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		F7D747073BCD9310AB76B496 /* LabReportUploadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabReportUploadView.swift; sourceTree = "<group>"; };
 		F82FD7245B0E99CA6CB7090F /* BackupSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupSchedulerTests.swift; sourceTree = "<group>"; };
@@ -541,6 +543,7 @@
 				19E7517E5B4779CBBE1C7284 /* AITests.swift */,
 				BBC007029A7A52990CE4FBDE /* BackupMonitorTests.swift */,
 				F82FD7245B0E99CA6CB7090F /* BackupSchedulerTests.swift */,
+				F73428EA4B69D7713A6140D4 /* BackupServiceProbeTests.swift */,
 				7AE6A77FE92E8A4DDC4AFDC3 /* BackupServiceTests.swift */,
 				AFB14EB9D844878B58DA9643 /* BackupSettingsViewTests.swift */,
 				E9FA0E48A2845CFA85AB7395 /* ChatSuggestionPillsTests.swift */,
@@ -1149,6 +1152,7 @@
 				2DDEA9907FA6338488A8E1CD /* AITests.swift in Sources */,
 				E3A1AAD6DC61707246AECDA8 /* BackupMonitorTests.swift in Sources */,
 				133EE1957A7EEB3394C0A926 /* BackupSchedulerTests.swift in Sources */,
+				93BB4F4C9A49061E5433BDB0 /* BackupServiceProbeTests.swift in Sources */,
 				51CBDEF0E20717FDB4B0460B /* BackupServiceTests.swift in Sources */,
 				C071908C17208D54A2738C23 /* BackupSettingsViewTests.swift in Sources */,
 				64BFF27391CC32B927344BA1 /* ChatSuggestionPillsTests.swift in Sources */,

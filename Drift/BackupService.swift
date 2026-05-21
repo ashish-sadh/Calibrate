@@ -37,6 +37,15 @@ public final class BackupService: @unchecked Sendable {
     private var activeQueries: [URL: NSMetadataQuery] = [:]
     private var queryObservers: [URL: NSObjectProtocol] = [:]
 
+    /// Cached URL of the ubiquity container. Populated by `probeContainerURL()`
+    /// (intended to run early, on a background thread) and consumed by the
+    /// synchronous `containerURL()` getter that the rest of the app uses.
+    /// nil means either iCloud Drive is off, the user is signed out, or the
+    /// initial probe hasn't completed yet.
+    private let probeLock = NSLock()
+    private var cachedContainerURL: URL?
+    private var probeAttempted = false
+
     public convenience init() {
         self.init(
             containerURLProvider: {
@@ -69,13 +78,74 @@ public final class BackupService: @unchecked Sendable {
 
     // MARK: - Public API
 
+    /// Probe the ubiquity container on a background thread and cache the
+    /// result. Apple's docs are explicit: `forUbiquityContainerIdentifier:`
+    /// should be called on a background thread, because the first call
+    /// can block while the iCloud daemon initializes the container. When
+    /// called on the main thread early in app launch (which we used to
+    /// do from DriftApp.swift), the daemon often hasn't responded yet and
+    /// the call returns nil — making the app think iCloud Drive is off
+    /// when it's actually on. This led to a misfiring "iCloud Drive is
+    /// off" alert on users whose drive was clearly enabled (#7 in the
+    /// 2026-05-20 UI review).
+    ///
+    /// Call once from `DriftApp.task` early in launch (before the first
+    /// `containerURL()` consumer). Idempotent — second call is a no-op.
+    public func probeContainerURL() async {
+        // Swift 6: NSLock isn't callable from async contexts, so the
+        // critical sections are wrapped in sync helpers below. Lock is
+        // never held across an `await`.
+        guard !probeWasAttempted() else { return }
+
+        // Run the underlying FileManager call on a detached background
+        // task so the main thread isn't blocked. Apple's docs are
+        // explicit about this — the first call to
+        // forUbiquityContainerIdentifier blocks until the iCloud daemon
+        // confirms container availability, and on the main thread that
+        // means it returns nil before the daemon has responded.
+        let provider = containerURLProvider
+        let url = await Task.detached(priority: .userInitiated) {
+            provider()
+        }.value
+
+        recordProbeResult(url)
+    }
+
     /// Root of the iCloud Drive ubiquity container, or throw `.iCloudUnavailable`
     /// when the user has iCloud Drive disabled or is signed out.
+    /// Returns the cached probe result when available; falls back to a
+    /// fresh sync lookup otherwise (which can race against the daemon).
     public func containerURL() throws -> URL {
-        guard let url = containerURLProvider() else {
-            throw BackupError.iCloudUnavailable
+        if let cached = cachedURL() { return cached }
+
+        // No cached URL — either the probe ran and got nil (iCloud truly
+        // off) or it hasn't run yet (cold call). Fall back to a sync
+        // attempt: if iCloud is up by now, this catches it; otherwise
+        // we throw the same error as before.
+        if let url = containerURLProvider() {
+            recordProbeResult(url)
+            return url
         }
-        return url
+
+        throw BackupError.iCloudUnavailable
+    }
+
+    // MARK: - Probe state helpers (sync — safe to call from async)
+
+    private func cachedURL() -> URL? {
+        probeLock.lock(); defer { probeLock.unlock() }
+        return cachedContainerURL
+    }
+
+    private func probeWasAttempted() -> Bool {
+        probeLock.lock(); defer { probeLock.unlock() }
+        return probeAttempted
+    }
+
+    private func recordProbeResult(_ url: URL?) {
+        probeLock.lock(); defer { probeLock.unlock() }
+        cachedContainerURL = url
+        probeAttempted = true
     }
 
     /// Build a `.driftbackup`, move it into the iCloud container, prune the
