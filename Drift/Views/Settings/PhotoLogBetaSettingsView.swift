@@ -115,7 +115,7 @@ struct PhotoLogBetaSettingsView: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 10).padding(.horizontal, 12)
-                .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+                .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 10))
             }
             // Tier / cost line for the currently selected provider. Makes the
             // Gemini free-tier path discoverable so new users don't assume
@@ -167,7 +167,7 @@ struct PhotoLogBetaSettingsView: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 10).padding(.horizontal, 12)
-                .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+                .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 10))
             }
             Text("Paid-tier models (Claude Opus, GPT-4o, Gemini 2.5 Pro) require billing on the provider. Test Connection below surfaces the provider's actual error — quota exhaustion, key scope, or model-not-available — verbatim.")
                 .font(.caption2).foregroundStyle(.tertiary)

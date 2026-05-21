@@ -76,7 +76,7 @@ struct BiomarkerDetailView: View {
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 6))
-                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.white.opacity(0.1), lineWidth: 1))
+                        .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.separator, lineWidth: 1))
                         .foregroundStyle(.secondary)
                 }
             }
@@ -184,7 +184,9 @@ struct BiomarkerDetailView: View {
                         x: .value("Date", data[i].date),
                         y: .value("Value", data[i].value)
                     )
-                    .foregroundStyle(.white.opacity(0.8))
+                    // V7 light fix: was `.white.opacity(0.8)` —
+                    // invisible on white card background.
+                    .foregroundStyle(Theme.accent)
                     .lineStyle(StrokeStyle(lineWidth: 2))
 
                     PointMark(
@@ -290,7 +292,7 @@ struct BiomarkerDetailView: View {
                 .padding(.vertical, 8)
 
                 if result.id != results.first?.id {
-                    Divider().overlay(Color.white.opacity(0.05))
+                    Divider().overlay(Theme.separator)
                 }
             }
         }
@@ -400,7 +402,7 @@ struct BiomarkerDetailView: View {
                     .padding(.bottom, 8)
             }
 
-            Divider().overlay(Color.white.opacity(0.05))
+            Divider().overlay(Theme.separator)
         }
     }
 

@@ -65,7 +65,7 @@ struct LabReportDetailView: View {
                 Spacer()
             }
 
-            Divider().overlay(Color.white.opacity(0.05))
+            Divider().overlay(Theme.separator)
 
             HStack {
                 Label("\(report.markerCount) biomarkers scanned", systemImage: "chart.bar.fill")
@@ -163,7 +163,7 @@ struct LabReportDetailView: View {
                         .buttonStyle(.plain)
 
                         if result.biomarkerId != group.items.last?.0.biomarkerId {
-                            Divider().overlay(Color.white.opacity(0.05))
+                            Divider().overlay(Theme.separator)
                         }
                     }
                 }

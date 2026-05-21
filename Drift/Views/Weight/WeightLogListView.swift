@@ -56,7 +56,7 @@ struct WeightLogListView: View {
                             entryRow(entry: entry, index: index, allEntries: entries)
 
                             if index < group.entries.count - 1 {
-                                Divider().overlay(Color.white.opacity(0.05))
+                                Divider().overlay(Theme.separator)
                             }
                         }
                     }

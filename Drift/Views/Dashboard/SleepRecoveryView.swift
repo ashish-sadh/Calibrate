@@ -100,13 +100,13 @@ struct SleepRecoveryView: View {
                      higherIsBetter: true, icon: "waveform.path", color: Theme.deficit,
                      history: hrvHistory.map { ($0.date, $0.ms) }, id: "hrv")
 
-            Divider().overlay(Color.white.opacity(0.05))
+            Divider().overlay(Theme.separator)
 
             vitalRow("Resting HR", value: r.restingHR, unit: "bpm", baseline: r.baselines?.restingHR,
                      higherIsBetter: false, icon: "heart.fill", color: Theme.heartRed,
                      history: rhrHistory.map { ($0.date, $0.bpm) }, id: "rhr")
 
-            Divider().overlay(Color.white.opacity(0.05))
+            Divider().overlay(Theme.separator)
 
             vitalRow("Respiratory", value: r.respiratoryRate, unit: "rpm", baseline: r.baselines?.respiratoryRate,
                      higherIsBetter: false, icon: "lungs.fill", color: Theme.calorieBlue,

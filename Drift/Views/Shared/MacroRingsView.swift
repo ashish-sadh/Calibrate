@@ -118,8 +118,16 @@ struct MacroRingsView: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
-        .shadow(radius: 4)
+        // V7 light fix: was `.ultraThinMaterial` which renders as a
+        // dark blob over saturated chart colors on light theme (see
+        // WeightChartView annotation fix). Solid surface + hairline +
+        // soft shadow is the V7 chrome pattern.
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Theme.separator, lineWidth: 0.5)
+        )
+        .shadow(color: Color.black.opacity(0.12), radius: 6, x: 0, y: 2)
         .fixedSize(horizontal: true, vertical: false)
         .onTapGesture {
             withAnimation(.easeOut(duration: 0.15)) { showTooltip = false }

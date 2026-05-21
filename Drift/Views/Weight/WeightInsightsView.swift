@@ -190,7 +190,11 @@ struct WeightInsightsView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 14))
+                    // V7 light fix: was `Color.white.opacity(0.05)`
+                    // which is effectively invisible on the white
+                    // card. Theme.pillBackground gives the soft-grey
+                    // inset that matches the rest of the V7 surfaces.
+                    .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 14))
                 }
                 .buttonStyle(.plain)
             } else {
@@ -305,13 +309,18 @@ struct WeightInsightsView: View {
                                         .foregroundStyle(Theme.accent)
                                 }
                         }
+                        // V7 light fix: body-composition chart used
+                        // `.white.opacity` for its line + points —
+                        // invisible on the white card background. Same
+                        // bug class as the main weight chart fix in
+                        // commit 805a7dd4. Flipped to Theme.accent.
                         ForEach(parsed.indices, id: \.self) { i in
                             LineMark(x: .value("Date", parsed[i].date), y: .value(title, parsed[i].value))
-                                .foregroundStyle(.white.opacity(0.7))
+                                .foregroundStyle(Theme.accent)
                                 .lineStyle(StrokeStyle(lineWidth: 2))
                                 .interpolationMethod(.catmullRom)
                             PointMark(x: .value("Date", parsed[i].date), y: .value(title, parsed[i].value))
-                                .foregroundStyle(.white.opacity(0.8))
+                                .foregroundStyle(Theme.accent)
                                 .symbolSize(20)
                         }
                     }

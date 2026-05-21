@@ -130,7 +130,11 @@ struct WeightTabView: View {
                         .foregroundStyle(.white)
                 }
                 .padding(.horizontal, 28).padding(.vertical, 16)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                // V7 milestone-celebration card: was `.ultraThinMaterial`
+                // (renders dark on light theme over the chart) — solid
+                // ink + white text matches the V7 primary-CTA convention
+                // and keeps the celebratory shadow pop intact.
+                .background(Theme.ink, in: RoundedRectangle(cornerRadius: 16))
                 .shadow(color: Theme.accent.opacity(0.3), radius: 20)
                 .scaleEffect(showMilestone ? 1.0 : 0.8)
                 .opacity(showMilestone ? 1.0 : 0)

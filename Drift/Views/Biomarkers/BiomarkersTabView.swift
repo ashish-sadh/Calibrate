@@ -176,7 +176,7 @@ struct BiomarkersTabView: View {
                 .buttonStyle(.plain)
 
                 if report.id != reports.last?.id {
-                    Divider().overlay(Color.white.opacity(0.05))
+                    Divider().overlay(Theme.separator)
                 }
             }
         }
@@ -280,7 +280,7 @@ struct BiomarkersTabView: View {
                         .buttonStyle(.plain)
 
                         if result.biomarkerId != group.items.last?.0.biomarkerId {
-                            Divider().overlay(Color.white.opacity(0.05))
+                            Divider().overlay(Theme.separator)
                         }
                     }
                 }

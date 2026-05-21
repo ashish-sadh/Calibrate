@@ -24,7 +24,7 @@ extension AIChatView {
                     .foregroundStyle(.secondary)
             }
 
-            Divider().overlay(Color.white.opacity(0.06))
+            Divider().overlay(Theme.separator)
 
             ForEach(card.items) { item in
                 HStack {

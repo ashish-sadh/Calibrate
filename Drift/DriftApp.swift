@@ -110,6 +110,18 @@ struct DriftApp: App {
                         // DebugSeedData.seedWeightGoalBug()    // reproduces "gain 14.1 kg" bug
                         // DebugSeedData.seedNormalGoal()        // normal losing goal (correct)
                         // DebugSeedData.seedGainingGoal()       // gaining goal scenario
+
+                        // V7 rich-seed: once per simulator install, populate
+                        // 60 days of weight + 14 days of food so the Today
+                        // dashboard renders with real numbers (rings + meal
+                        // timeline + body tile trend) instead of "no data".
+                        // Gated by a UserDefaults flag so it doesn't re-seed
+                        // on every launch. Bump the flag suffix to force
+                        // a re-seed.
+                        if !UserDefaults.standard.bool(forKey: "drift_debug_seeded_v1") {
+                            DebugSeedData.seedRichTestData()
+                            UserDefaults.standard.set(true, forKey: "drift_debug_seeded_v1")
+                        }
                         #endif
                         // Stage transitions ALWAYS fire (even on simulator where the
                         // HealthKit calls are #if'd out) so the splash shows the same

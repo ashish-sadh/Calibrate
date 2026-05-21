@@ -163,13 +163,13 @@ struct DEXAOverviewView: View {
 
             VStack(spacing: 0) {
                 regionRow("Arms", region: arms)
-                Divider().overlay(Color.white.opacity(0.05))
+                Divider().overlay(Theme.separator)
                 regionRow("Trunk", region: trunk)
-                Divider().overlay(Color.white.opacity(0.05))
+                Divider().overlay(Theme.separator)
                 regionRow("Legs", region: legs)
-                Divider().overlay(Color.white.opacity(0.05))
+                Divider().overlay(Theme.separator)
                 regionRow("Android", region: android)
-                Divider().overlay(Color.white.opacity(0.05))
+                Divider().overlay(Theme.separator)
                 regionRow("Gynoid", region: gynoid)
             }
             .card()
@@ -219,13 +219,13 @@ struct DEXAOverviewView: View {
 
                     VStack(spacing: 0) {
                         balanceHeader
-                        Divider().overlay(Color.white.opacity(0.05))
+                        Divider().overlay(Theme.separator)
                         balanceRow("R Arm", region: rArm)
-                        Divider().overlay(Color.white.opacity(0.05))
+                        Divider().overlay(Theme.separator)
                         balanceRow("L Arm", region: lArm)
-                        Divider().overlay(Color.white.opacity(0.05))
+                        Divider().overlay(Theme.separator)
                         balanceRow("R Leg", region: rLeg)
-                        Divider().overlay(Color.white.opacity(0.05))
+                        Divider().overlay(Theme.separator)
                         balanceRow("L Leg", region: lLeg)
                     }
                     .card()
@@ -386,7 +386,7 @@ struct DEXAOverviewView: View {
                     .padding(.vertical, 4)
 
                     if scan.id != scans.last?.id {
-                        Divider().overlay(Color.white.opacity(0.05))
+                        Divider().overlay(Theme.separator)
                     }
                 }
             }

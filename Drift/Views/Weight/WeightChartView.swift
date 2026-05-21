@@ -139,9 +139,23 @@ struct WeightChartView: View {
                                     .font(.caption.weight(.bold).monospacedDigit())
                                     .foregroundStyle(.primary)
                             }
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 6))
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            // V7 mobile fix: `.ultraThinMaterial`
+                            // rendered as a near-opaque dark blob over
+                            // the coral chart line on the light theme
+                            // (the material's adaptive blur picked up
+                            // the saturated coral and went dark
+                            // instead of frosted). Solid cardBackground
+                            // + a hairline border reads cleanly on top
+                            // of the line and matches the rest of the
+                            // V7 chrome.
+                            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .strokeBorder(Theme.separator, lineWidth: 0.5)
+                            )
+                            .shadow(color: Color.black.opacity(0.10), radius: 4, x: 0, y: 2)
                         }
                 }
             }

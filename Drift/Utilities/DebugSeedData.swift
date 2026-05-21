@@ -126,5 +126,67 @@ enum DebugSeedData {
         WeightTrendService.shared.refresh()
         Log.app.info("🧪 DEBUG: Seeded gaining goal — 9 entries (58→61), target=70")
     }
+
+    /// V7 sim test seed: rich enough to populate the Today dashboard
+    /// (weight trend tile, calorie ring, meal timeline), the Body tab
+    /// (chart + chip row + 28d window), and the Food tab (recent foods
+    /// + multi-day diary). One-shot — gated by a UserDefaults flag in
+    /// the caller so it doesn't re-seed on every launch.
+    @MainActor
+    static func seedRichTestData() {
+        // Reuse the clean losing-goal weight history (60 days, 105→100).
+        seedNormalGoal()
+
+        // Layer in 14 days of food entries — mix of meals/snacks so the
+        // ring + macro grid + meal timeline render with real numbers.
+        let vm = FoodLogViewModel()
+        let cal = Calendar.current
+        let today = Date()
+        struct Sample {
+            let name: String
+            let kcal: Double
+            let p: Double
+            let c: Double
+            let f: Double
+            let fb: Double
+            let meal: MealType
+        }
+        let samples: [Sample] = [
+            .init(name: "Oatmeal w/ berries", kcal: 320, p: 12, c: 55, f: 6, fb: 8, meal: .breakfast),
+            .init(name: "Avocado toast", kcal: 280, p: 8, c: 30, f: 14, fb: 6, meal: .breakfast),
+            .init(name: "Greek yogurt + honey", kcal: 220, p: 20, c: 28, f: 4, fb: 0, meal: .breakfast),
+            .init(name: "Grilled chicken salad", kcal: 420, p: 38, c: 25, f: 18, fb: 7, meal: .lunch),
+            .init(name: "Dal + rice", kcal: 520, p: 18, c: 80, f: 12, fb: 10, meal: .lunch),
+            .init(name: "Paneer wrap", kcal: 480, p: 24, c: 45, f: 22, fb: 5, meal: .lunch),
+            .init(name: "Salmon + veggies", kcal: 540, p: 42, c: 20, f: 28, fb: 8, meal: .dinner),
+            .init(name: "Chicken biryani", kcal: 680, p: 32, c: 78, f: 22, fb: 4, meal: .dinner),
+            .init(name: "Sabzi + roti", kcal: 460, p: 14, c: 60, f: 16, fb: 9, meal: .dinner),
+            .init(name: "Apple", kcal: 95, p: 0.5, c: 25, f: 0.3, fb: 4, meal: .snack),
+            .init(name: "Almonds (30g)", kcal: 175, p: 6, c: 6, f: 15, fb: 3, meal: .snack),
+            .init(name: "Protein shake", kcal: 150, p: 25, c: 8, f: 2, fb: 1, meal: .snack),
+        ]
+
+        for daysAgo in 0..<14 {
+            guard let date = cal.date(byAdding: .day, value: -daysAgo, to: today) else { continue }
+            let dateStr = DateFormatters.dateOnly.string(from: date)
+            // 3-4 meals per day, deterministic per day so the test
+            // surface is reproducible (no random scatter from launch to
+            // launch).
+            let mealsByDay: [MealType] = [.breakfast, .lunch, .dinner] +
+                (daysAgo.isMultiple(of: 2) ? [.snack] : [])
+            for meal in mealsByDay {
+                let candidates = samples.filter { $0.meal == meal }
+                let s = candidates[(daysAgo + meal.hashValue) % candidates.count]
+                vm.quickAdd(
+                    name: s.name,
+                    calories: s.kcal, proteinG: s.p, carbsG: s.c, fatG: s.f, fiberG: s.fb,
+                    mealType: meal,
+                    servingSizeG: 0, servings: 1,
+                    date: dateStr
+                )
+            }
+        }
+        Log.app.info("🧪 DEBUG: Seeded 14 days of food entries (~45 meals)")
+    }
 }
 #endif

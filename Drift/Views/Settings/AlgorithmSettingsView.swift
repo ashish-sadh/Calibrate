@@ -61,10 +61,10 @@ struct AlgorithmSettingsView: View {
                 VStack(spacing: 0) {
                     accordionRow(id: "activity", icon: "figure.run", label: "Activity Level",
                                  value: tdeeConfig.activityLabel) { activityContent }
-                    Divider().overlay(Color.white.opacity(0.05))
+                    Divider().overlay(Theme.separator)
                     accordionRow(id: "profile", icon: "person.crop.circle", label: "Profile",
                                  value: profileSummary) { profileContent }
-                    Divider().overlay(Color.white.opacity(0.05))
+                    Divider().overlay(Theme.separator)
                     accordionRow(id: "finetune", icon: "slider.horizontal.3", label: "Fine-tune",
                                  value: tdeeConfig.manualAdjustment == 0 ? "0" : "\(tdeeConfig.manualAdjustment > 0 ? "+" : "")\(Int(tdeeConfig.manualAdjustment))") { finetuneContent }
                 }
@@ -367,7 +367,7 @@ struct AlgorithmSettingsView: View {
                         }
                     }
 
-                    Divider().overlay(Color.white.opacity(0.05))
+                    Divider().overlay(Theme.separator)
 
                     // Presets
                     VStack(alignment: .leading, spacing: 6) {
@@ -383,7 +383,7 @@ struct AlgorithmSettingsView: View {
                         }
                     }
 
-                    Divider().overlay(Color.white.opacity(0.05))
+                    Divider().overlay(Theme.separator)
 
                     // How it works
                     VStack(alignment: .leading, spacing: 6) {

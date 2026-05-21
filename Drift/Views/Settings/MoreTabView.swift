@@ -25,6 +25,18 @@ struct MoreTabView: View {
                     }
 
                     section("HEALTH") {
+                        // V7 polish: even though "Body" is a top-level
+                        // tab that already opens WeightTabView, users
+                        // looking for "Weight" specifically in More
+                        // weren't finding it. Adding a discoverable
+                        // nav row here — same destination, second
+                        // entry point.
+                        navRow(icon: "scalemass", title: "Weight",
+                               subtitle: "Trend, goal, body composition",
+                               color: Theme.accent) {
+                            WeightTabView(syncComplete: .constant(true), selectedTab: $selectedTab)
+                        }
+                        rowDivider
                         navRow(icon: "waveform.path", title: "Body Rhythm",
                                subtitle: "Sleep, vitals, recovery",
                                color: Theme.rhythmTeal) {

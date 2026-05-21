@@ -114,7 +114,7 @@ struct SupplementsTabView: View {
                             }
 
                             if index < viewModel.supplements.count - 1 {
-                                Divider().overlay(Color.white.opacity(0.05))
+                                Divider().overlay(Theme.separator)
                             }
                         }
                     }
