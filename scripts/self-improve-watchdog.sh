@@ -1269,7 +1269,20 @@ while true; do
                     # returns false for 24h, freeing the queue for senior /
                     # junior work. Operator restores planning by deleting
                     # the stamp when API stabilizes.
-                    if [[ "$SESSION_TYPE" == "planning" ]] && [[ "$CRASHES" -ge 3 ]]; then
+                    # SESSION_TYPE is `local` inside start_claude (line 690+)
+                    # and doesn't propagate to this main-loop scope. The
+                    # canonical record lives in cache-session-type, which
+                    # start_claude atomically stamps at line 860 before
+                    # every session boots. Reading it here keeps the
+                    # planning anti-loop check working without `set -u`
+                    # killing the watchdog on an unbound `$SESSION_TYPE`.
+                    # Observed 2026-05-20 against #831: senior session
+                    # ran a real diff, watchdog crashed in this branch on
+                    # the unbound var, restarted, looked like senior was
+                    # crash-looping when really the supervisor was.
+                    local LAST_SESSION_TYPE
+                    LAST_SESSION_TYPE=$(cat "$HOME/drift-state/cache-session-type" 2>/dev/null || echo "")
+                    if [[ "$LAST_SESSION_TYPE" == "planning" ]] && [[ "$CRASHES" -ge 3 ]]; then
                         log "Planning crashed $CRASHES times consecutively. Stamping last-planning-time to defer for 24h. Clear ~/drift-state/last-planning-time to retry sooner."
                         date +%s > "$HOME/drift-state/last-planning-time"
                         if [[ -f "$HOME/drift-state/planning-issue" ]]; then
