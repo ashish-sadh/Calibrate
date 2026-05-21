@@ -6,6 +6,7 @@ struct FoodTabView: View {
     @Binding var selectedTab: Int
     @State private var viewModel = FoodLogViewModel()
     @State private var showingSearch = false
+    @State private var showingDriftCoach = false
     @State private var showingRecipeBuilder = false
     @State private var showingScanner = false
     @State private var loggedDays: [Date: Double] = [:]
@@ -100,13 +101,19 @@ struct FoodTabView: View {
             // V7 polish: previous V6 toolbar had a coral "+" (open
             // FoodSearchView) and an optional camera icon (open
             // PhotoLog). Both are reachable now via the bottom-right
-            // black FAB → LogMealSheet (Search/Snap modes). The
-            // duplicate trailing controls on the Food tab read as
-            // "two add buttons that do almost the same thing" and were
-            // flagged on mobile review. Removing here so the FAB is
-            // the single, canonical add path. Inline "+ Add food"
-            // affordances inside the meal diary still work.
-            .toolbar { }
+            // black FAB → LogMealSheet (Search/Snap modes), and the
+            // duplicate trailing controls read as "two add buttons
+            // that do almost the same thing." Replaced with the
+            // standard ChatIconButton so the trailing nav-bar slot is
+            // consistent with Today / Body / More.
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    ChatIconButton(isPresented: $showingDriftCoach)
+                }
+            }
+            .sheet(isPresented: $showingDriftCoach) {
+                DriftCoachSheet()
+            }
             .fullScreenCover(isPresented: $showingScanner) { BarcodeLookupView(viewModel: viewModel) }
             .sheet(isPresented: $showingPhotoLog) {
                 PhotoLogFlowView(foodLog: viewModel)
