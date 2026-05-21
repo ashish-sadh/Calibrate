@@ -86,6 +86,9 @@ struct ContentView: View {
             DashboardView(syncComplete: $syncComplete, selectedTab: selectedTabBindingLegacy)
                 .tag(PrimaryTab.today)
                 .accessibilityIdentifier("tab-today-content")
+            FoodTabView(selectedTab: selectedTabBindingLegacy)
+                .tag(PrimaryTab.food)
+                .accessibilityIdentifier("tab-food-content")
             WeightTabView(syncComplete: $syncComplete, selectedTab: selectedTabBindingLegacy)
                 .tag(PrimaryTab.body)
                 .accessibilityIdentifier("tab-body-content")
@@ -145,12 +148,13 @@ struct ContentView: View {
 // MARK: - Primary tabs
 
 enum PrimaryTab: Int, CaseIterable, Identifiable {
-    case today = 0, body = 1, more = 2
+    case today = 0, food = 1, body = 2, more = 3
     var id: Int { rawValue }
 
     var label: String {
         switch self {
         case .today: "Today"
+        case .food: "Food"
         case .body: "Body"
         case .more: "More"
         }
@@ -158,6 +162,7 @@ enum PrimaryTab: Int, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .today: "target"
+        case .food: "fork.knife"
         case .body: "figure"
         case .more: "line.3.horizontal"
         }
@@ -165,28 +170,33 @@ enum PrimaryTab: Int, CaseIterable, Identifiable {
     var accessibilityIdentifier: String {
         switch self {
         case .today: "tab-today"
+        case .food: "tab-food"
         case .body: "tab-body"
         case .more: "tab-more"
         }
     }
 
     /// Map V7 tab → legacy 5-tab index used by inner-view bindings.
-    /// Today=0 (was Drift=0), Body=1 (was Weight=1), More=2 (was More=4).
+    /// Today=0 (was Drift=0), Food=2 (was Food=2), Body=1 (was Weight=1),
+    /// More=4 (was More=4). Food was briefly dropped in the 3-tab
+    /// collapse (c0e4f674) and re-added 2026-05-20 after the food
+    /// diary felt "almost gone" — user wanted it as a visible tab.
     var legacyIndex: Int {
         switch self {
         case .today: 0
+        case .food: 2
         case .body: 1
         case .more: 4
         }
     }
 
-    /// Inverse of `legacyIndex`. Returns nil for legacy values that don't
-    /// map (2 = Food, 3 = Exercise — Food now opens via FAB, Exercise lives
-    /// under More).
+    /// Inverse of `legacyIndex`. Returns nil for legacy 3 (Exercise),
+    /// which lives under More → Activity in V7.
     init?(legacyIndex: Int) {
         switch legacyIndex {
         case 0: self = .today
         case 1: self = .body
+        case 2: self = .food
         case 4: self = .more
         default: return nil
         }
