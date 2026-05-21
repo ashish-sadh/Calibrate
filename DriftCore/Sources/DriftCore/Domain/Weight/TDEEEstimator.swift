@@ -98,14 +98,21 @@ public final class TDEEEstimator {
         public let timestamp: Date
         public let activeSources: [String]
         public var adaptiveTDEE: Double?
+        /// Two-track display (V7 #3). `tdee` above is the *settled* number:
+        /// median of qualified-log days over 28d, anchored against weight
+        /// trend. `recentTDEE` is the 7-day average without the qualified-
+        /// day filter — useful for users who want the moving signal but
+        /// don't want it to be the headline. nil when not enough data.
+        public var recentTDEE: Double?
 
-        init(tdee: Double, source: Source, confidence: Confidence, timestamp: Date, activeSources: [String], adaptiveTDEE: Double? = nil) {
+        init(tdee: Double, source: Source, confidence: Confidence, timestamp: Date, activeSources: [String], adaptiveTDEE: Double? = nil, recentTDEE: Double? = nil) {
             self.tdee = tdee
             self.source = source
             self.confidence = confidence
             self.timestamp = timestamp
             self.activeSources = activeSources
             self.adaptiveTDEE = adaptiveTDEE
+            self.recentTDEE = recentTDEE
         }
 
         public enum Source: String, Codable, Sendable {
@@ -216,11 +223,13 @@ public final class TDEEEstimator {
         tdee = max(1200, tdee + config.manualAdjustment)
 
         let confidence: Estimate.Confidence = sources.count >= 3 ? .high : sources.count >= 2 ? .medium : .low
+        let recent = fetchRecentTDEE()
         let estimate = Estimate(tdee: tdee, source: bestSource, confidence: confidence,
-                                timestamp: Date(), activeSources: sources, adaptiveTDEE: nil)
+                                timestamp: Date(), activeSources: sources, adaptiveTDEE: nil,
+                                recentTDEE: recent)
         current = estimate
         cache(estimate)
-        Log.app.info("TDEE: \(Int(tdee)) kcal (\(sources.joined(separator: "+")))")
+        Log.app.info("TDEE: \(Int(tdee)) kcal (\(sources.joined(separator: "+"))) recent: \(recent.map { String(Int($0)) } ?? "—")")
     }
 
     // MARK: - Sync path (no Apple Health)
@@ -254,7 +263,8 @@ public final class TDEEEstimator {
 
         let confidence: Estimate.Confidence = sources.count >= 2 ? .medium : .low
         let est = Estimate(tdee: tdee, source: bestSource, confidence: confidence,
-                           timestamp: Date(), activeSources: sources, adaptiveTDEE: nil)
+                           timestamp: Date(), activeSources: sources, adaptiveTDEE: nil,
+                           recentTDEE: fetchRecentTDEE())
         current = est; return est
     }
 
@@ -295,15 +305,52 @@ public final class TDEEEstimator {
 
         let deficit = trend.estimatedDailyDeficit
         let today = Date()
-        let twoWeeksAgo = Calendar.current.date(byAdding: .day, value: -14, to: today) ?? today
-
-        guard let avgIntake = try? AppDatabase.shared.averageDailyCalories(
-            from: DateFormatters.dateOnly.string(from: twoWeeksAgo),
+        // V7 #3: widened from 14d mean to 28d median over qualified-log
+        // days. Partial-log days (e.g. only logged a tea) were dragging
+        // the mean toward zero and producing big swings in TDEE for
+        // users who skip occasionally. The qualified filter keeps the
+        // estimate honest without penalizing missed logs.
+        let fourWeeksAgo = Calendar.current.date(byAdding: .day, value: -28, to: today) ?? today
+        guard let totals = try? AppDatabase.shared.fetchQualifiedDailyCalories(
+            from: DateFormatters.dateOnly.string(from: fourWeeksAgo),
             to: DateFormatters.dateOnly.string(from: today)),
-              avgIntake > 500 else { return nil }
+              totals.count >= 5,
+              let intake = Self.median(totals),
+              intake > 500
+        else { return nil }
 
-        let tdee = avgIntake - deficit
+        let tdee = intake - deficit
         return tdee > 800 ? tdee : nil
+    }
+
+    /// 7-day average daily kcal *without* the qualified-day filter.
+    /// Exposed as `Estimate.recentTDEE` so UI surfaces that want the
+    /// moving signal can show "Recent: X" alongside the settled
+    /// headline. Returns nil when there's no logged intake or no
+    /// weight-trend deficit to anchor against.
+    private func fetchRecentTDEE() -> Double? {
+        guard let trend = WeightTrendService.shared.trend else { return nil }
+        let today = Date()
+        let oneWeekAgo = Calendar.current.date(byAdding: .day, value: -7, to: today) ?? today
+        guard let intake = try? AppDatabase.shared.averageDailyCalories(
+            from: DateFormatters.dateOnly.string(from: oneWeekAgo),
+            to: DateFormatters.dateOnly.string(from: today)),
+              intake > 500 else { return nil }
+        let tdee = intake - trend.estimatedDailyDeficit
+        return tdee > 800 ? tdee : nil
+    }
+
+    /// Median of a non-empty `[Double]`. Returns nil for empty input.
+    /// Used to aggregate qualified-log daily kcals into a single
+    /// settled-intake estimate that's resistant to outlier days.
+    nonisolated static func median(_ values: [Double]) -> Double? {
+        guard !values.isEmpty else { return nil }
+        let sorted = values.sorted()
+        let n = sorted.count
+        if n.isMultiple(of: 2) {
+            return (sorted[n / 2 - 1] + sorted[n / 2]) / 2
+        }
+        return sorted[n / 2]
     }
 
     /// Clears stored adaptive state from the broken v1 implementation.

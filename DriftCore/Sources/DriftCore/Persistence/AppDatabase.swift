@@ -335,6 +335,36 @@ extension AppDatabase {
         }
     }
 
+    /// Daily kcal totals for days that count as "complete" logging, used by
+    /// TDEE estimation. A day qualifies when its total kcal is at least
+    /// `minKcal` AND it has at least `minMeals` distinct meal_type rows
+    /// (so a single-tea or single-snack day doesn't drag the estimate
+    /// toward zero). Returns the per-day totals in arbitrary order —
+    /// caller is responsible for aggregation (median, etc.).
+    ///
+    /// Replaces the recency-biased `averageDailyCalories` flow for TDEE,
+    /// where partial-log days were pulling the moving average down and
+    /// causing the swings users on TestFlight reported (#3 in the V7
+    /// UI review).
+    public func fetchQualifiedDailyCalories(
+        from startDate: String,
+        to endDate: String,
+        minMeals: Int = 3,
+        minKcal: Double = 800
+    ) throws -> [Double] {
+        try dbWriter.read { db in
+            let rows = try Row.fetchAll(db, sql: """
+                SELECT SUM(fe.calories * fe.servings) AS daily_cal,
+                       COUNT(DISTINCT fe.meal_type) AS meal_count
+                FROM food_entry fe
+                WHERE fe.date BETWEEN ? AND ?
+                GROUP BY fe.date
+                HAVING daily_cal >= ? AND meal_count >= ?
+                """, arguments: [startDate, endDate, minKcal, minMeals])
+            return rows.compactMap { row in row["daily_cal"] as Double? }
+        }
+    }
+
     /// Average daily calories over a date range (for TDEE estimation).
     public func averageDailyCalories(from startDate: String, to endDate: String) throws -> Double {
         try dbWriter.read { db in
