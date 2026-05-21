@@ -192,6 +192,14 @@ struct SettingsView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
+                // V7 Settings cleanup pass: explicit section headers
+                // throughout. The previous flat list of cards made it
+                // hard to see "which group is this in." Headers use
+                // the shared `Text.sectionHeading()` (small-caps +
+                // tracking + secondary) so the rhythm matches the
+                // More tab and (eventually) the rest of the app.
+                Text("UNITS").sectionHeading().frame(maxWidth: .infinity, alignment: .leading)
+
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Body Weight Unit")
                         .font(.subheadline.weight(.semibold))
@@ -206,6 +214,9 @@ struct SettingsView: View {
                         .font(.caption2).foregroundStyle(.tertiary)
                 }
                 .card()
+
+                Text("HEALTH SOURCES").sectionHeading().frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 8)
 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Apple Health")
@@ -306,6 +317,9 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
                 .card()
 
+                Text("DATA").sectionHeading().frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 8)
+
                 // Export
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Export Data")
@@ -338,6 +352,9 @@ struct SettingsView: View {
                 }
                 .card()
 
+                Text("PRIVACY").sectionHeading().frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 8)
+
                 // Online Food Search
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 12) {
@@ -362,6 +379,9 @@ struct SettingsView: View {
                     }
                 }
                 .card()
+
+                Text("NOTIFICATIONS").sectionHeading().frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 8)
 
                 // V7 Settings restructure: the 4 notification reminders
                 // (Health Nudges, Smart Meal, Medication, GLP-1) moved
@@ -388,6 +408,9 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.plain)
                 .card()
+
+                Text("ADVANCED").sectionHeading().frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 8)
 
                 // AI Chat Telemetry (opt-in, local only) — #261
                 VStack(alignment: .leading, spacing: 8) {
