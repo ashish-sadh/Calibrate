@@ -5,6 +5,7 @@ struct MoreTabView: View {
     @Binding var selectedTab: Int
     @State private var navId = UUID()
     @State private var hasCycleData = false
+    @State private var showingDriftCoach = false
 
     var body: some View {
         NavigationStack {
@@ -100,6 +101,14 @@ struct MoreTabView: View {
             .background(Theme.background.ignoresSafeArea())
             .navigationTitle("More")
             .toolbarColorScheme(.light, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    ChatIconButton(isPresented: $showingDriftCoach)
+                }
+            }
+            .sheet(isPresented: $showingDriftCoach) {
+                DriftCoachSheet()
+            }
             .task { hasCycleData = await HealthKitService.shared.hasCycleData() }
         }
         .id(navId)

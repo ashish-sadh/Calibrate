@@ -2,16 +2,16 @@ import SwiftUI
 import DriftCore
 
 /// V7 IA — three primary tabs (Today / Body / More) + a black floating "+"
-/// FAB to the right of the tab pill that opens the Log-a-Meal sheet, plus a
-/// chat-icon button to the left of the pill that opens the Drift Coach
-/// sheet (V7 Phase 5 replacement for the V6 floating AI bubble).
+/// FAB to the right of the tab pill that opens the Log-a-Meal sheet. The
+/// Drift Coach sheet (V7 Phase 5 replacement for the V6 floating AI bubble)
+/// is reached via a chat-icon button in the trailing nav-bar of each tab
+/// root — kept out of the floating overlay so the FAB has visual room.
 struct ContentView: View {
     @Binding var syncComplete: Bool
     var launchStage: LaunchStage
 
     @State private var selectedTab: PrimaryTab = .today
     @State private var showingLogMeal = false
-    @State private var showingDriftCoach = false
 
     init(syncComplete: Binding<Bool>, launchStage: LaunchStage = .starting) {
         self._syncComplete = syncComplete
@@ -43,9 +43,6 @@ struct ContentView: View {
             .background(Theme.background.ignoresSafeArea())
             .sheet(isPresented: $showingLogMeal) {
                 LogMealSheet()
-            }
-            .sheet(isPresented: $showingDriftCoach) {
-                DriftCoachSheet()
             }
             .onReceive(NotificationCenter.default.publisher(for: .navigateToTab)) { notification in
                 if let tab = notification.userInfo?["tab"] as? Int,
@@ -80,7 +77,6 @@ struct ContentView: View {
 
     private var tabBarOverlay: some View {
         HStack(spacing: 12) {
-            ChatIconButton(isPresented: $showingDriftCoach)
             PillTabBar(selected: $selectedTab)
             FAB { showingLogMeal = true }
         }

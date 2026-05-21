@@ -46,7 +46,7 @@ struct DriftCoachSheet: View {
 
             Picker("Model", selection: $backend) {
                 Text("Apple Foundation Models").tag(AIBackendType.foundationModels)
-                Text("Local Gemma").tag(AIBackendType.llamaCpp)
+                Text("Drift Brain").tag(AIBackendType.llamaCpp)
                 Text("Bring Your Own Key").tag(AIBackendType.remote)
             }
             .pickerStyle(.segmented)
@@ -71,7 +71,7 @@ struct DriftCoachSheet: View {
         case .foundationModels:
             return "On-device · Apple Intelligence. Nothing leaves your phone."
         case .llamaCpp, .mlx:
-            return "On-device · Local Gemma. Nothing leaves your phone."
+            return "On-device · Drift Brain. Nothing leaves your phone."
         case .remote:
             return "Cloud · uses your BYOK key. Messages leave your device."
         }

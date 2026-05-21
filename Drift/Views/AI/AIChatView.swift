@@ -41,7 +41,13 @@ struct AIChatView: View {
                 }
             }
 
-            if case .loading = vm.aiService.state {
+            // Apple Foundation Models is system-managed and ready
+            // synchronously — there's no model file to load, no
+            // download to wait for. Suppress the "Preparing AI
+            // assistant..." spinner for that backend; it stays valid
+            // for Drift Brain (GGUF) and BYOK cloud (handshake).
+            if case .loading = vm.aiService.state,
+               vm.activeBackend != .foundationModels {
                 HStack(spacing: 6) {
                     ProgressView().scaleEffect(0.6)
                     Text("Preparing AI assistant...")

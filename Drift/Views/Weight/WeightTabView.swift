@@ -11,6 +11,7 @@ struct WeightTabView: View {
     @State private var showLog = false
     @State private var showMilestone = false
     @State private var editingEntry: WeightEntry?
+    @State private var showingDriftCoach = false
     @AppStorage("drift_dismissed_outlier") private var dismissedOutlierDate = ""
 
     var body: some View {
@@ -65,6 +66,9 @@ struct WeightTabView: View {
                 }
                 .accessibilityLabel("Back")
             }
+            ToolbarItem(placement: .topBarTrailing) {
+                ChatIconButton(isPresented: $showingDriftCoach)
+            }
             ToolbarItem(placement: .primaryAction) {
                 Button { showingAddWeight = true } label: {
                     Image(systemName: "plus.circle.fill")
@@ -72,6 +76,9 @@ struct WeightTabView: View {
                 }
                 .accessibilityLabel("Add weight")
             }
+        }
+        .sheet(isPresented: $showingDriftCoach) {
+            DriftCoachSheet()
         }
         .scrollContentBackground(.hidden)
         .background(Theme.background.ignoresSafeArea())
