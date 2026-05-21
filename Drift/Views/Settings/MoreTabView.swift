@@ -12,6 +12,20 @@ struct MoreTabView: View {
             ScrollView {
                 VStack(spacing: 24) {
                     section("ACTIVITY") {
+                        // V7 mobile pass: when the Food tab was dropped from
+                        // primary IA (3-tab collapse in commit c0e4f674),
+                        // the food diary became unreachable except through
+                        // the FAB → Log-a-Meal sheet, which is a logging
+                        // entry not a diary entry. User: "where is food
+                        // diary? I feel it's almost gone now." Restoring
+                        // it here as a top-level More row keeps the
+                        // diary discoverable without re-adding a tab.
+                        navRow(icon: "fork.knife", title: "Food Diary",
+                               subtitle: "Today's meals, recent, search, copy",
+                               color: Theme.macroProtein) {
+                            FoodTabView(selectedTab: $selectedTab)
+                        }
+                        rowDivider
                         navRow(icon: "dumbbell.fill", title: "Exercise",
                                subtitle: "Strength, cardio, mobility",
                                color: Theme.macroKcal) {
