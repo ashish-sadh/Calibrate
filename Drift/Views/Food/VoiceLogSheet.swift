@@ -12,9 +12,11 @@ import DriftCore
 ///      Live partial transcripts feed `transcript`.
 ///   2. User taps Stop → service emits the final transcript via the
 ///      `onDone` callback. Phase flips to `.parsing`.
-///   3. Parse via `FoodLogIntentExtractor.extract(text:)` (Apple
-///      FoundationModels, iOS 26+). For older OSes we fall back to a
-///      simple single-item entry where `foodName = transcript`.
+///   3. Parse via `FoundationModelsFoodExtractor.extract(text:)` (Apple
+///      FoundationModels facade, iOS 26+). The facade short-circuits to
+///      `.unavailable` when `Preferences.fmFoodIntentExtractEnabled` is OFF
+///      or on iOS<26; in either case we fall back to a simple single-item
+///      entry where `foodName = transcript`.
 ///   4. Phase flips to `.confirming` with a list of parsed items.
 ///   5. User taps "Log all" → resolve each item against the local food
 ///      DB (`FoodService.searchFood`) and call `FoodLogViewModel.quickAdd`
@@ -342,15 +344,21 @@ final class VoiceLogViewModel {
         }
         phase = .parsing
 
-        // Apple Foundation Models extractor only available on iOS 26+.
-        // Older OS users get a fallback that treats the whole transcript
-        // as one ad-hoc food entry — they can edit before logging.
+        // Route through the FoundationModelsFoodExtractor facade — gated
+        // by `Preferences.fmFoodIntentExtractEnabled` AND iOS 26+. The
+        // facade throws `.unavailable` when the kill-switch is OFF or the
+        // host is iOS<26 / macOS<26, in which case we fall back to a
+        // single-item ad-hoc entry the user can edit before logging.
+        // Other FM errors (.notFoodLog, .bounded, .sessionFailed) surface
+        // to the user via the error phase so they can retry or edit.
         if #available(macOS 26, iOS 26, *) {
             do {
-                let intent = try await FoodLogIntentExtractor.extract(text: text)
+                let intent = try await FoundationModelsFoodExtractor.extract(text: text)
                 parsedItems = mapToParsedItems(intent: intent)
                 phase = .confirming
                 return
+            } catch FMFoodLogIntentExtractorError.unavailable {
+                // Fall through to the ad-hoc single-item entry below.
             } catch let err as FMFoodLogIntentExtractorError {
                 phase = .error("Parser said: \(err)")
                 return
