@@ -48,6 +48,13 @@ CRASH_FILE="$HOME/drift-state/consecutive-crashes"
 # where 5 long-stable runs that each happened to crash at the end get
 # escalated as if it were a broken config.
 STABLE_RUN_THRESHOLD=300
+# External-kill grace window. If `is_claude_alive` flips false but the
+# session-heartbeat / log mtime is fresh within this many seconds, the
+# death was almost certainly an external kill (launchctl kickstart, OOM
+# killer, manual `kill`) rather than a real session crash. The watchdog
+# logs it as such and does NOT increment the consecutive-crashes
+# counter. Tunable per-host: LIVENESS_FRESH_SECONDS=N watchdog
+LIVENESS_FRESH_SECONDS=${LIVENESS_FRESH_SECONDS:-60}
 MONITOR_PID=""
 
 PROMPT="run autopilot"
@@ -970,6 +977,32 @@ is_claude_alive() {
     [[ -n "$CLAUDE_PID" ]] && kill -0 "$CLAUDE_PID" 2>/dev/null
 }
 
+# Did the session emit a heartbeat or log line within the last `threshold`
+# seconds? Used by the crash-handler to distinguish "killed externally"
+# (PID gone but log was fresh moments before death) from "real crash"
+# (PID gone, log stale, no recent progress).
+log_or_heartbeat_fresh() {
+    local threshold=$1
+    local now
+    now=$(date +%s)
+    local hb_file="$HOME/drift-state/session-heartbeat"
+    if [[ -f "$hb_file" ]]; then
+        local hb_ts
+        hb_ts=$(cat "$hb_file" 2>/dev/null || echo 0)
+        if (( (now - hb_ts) <= threshold )); then
+            return 0
+        fi
+    fi
+    if [[ -n "$CURRENT_LOG" ]] && [[ -f "$CURRENT_LOG" ]]; then
+        local log_mtime
+        log_mtime=$(stat -f %m "$CURRENT_LOG" 2>/dev/null || echo 0)
+        if (( (now - log_mtime) <= threshold )); then
+            return 0
+        fi
+    fi
+    return 1
+}
+
 is_log_stale() {
     is_log_stale_seconds "$STALE_THRESHOLD"
 }
@@ -1238,6 +1271,20 @@ while true; do
                     log "Autopilot completed normally. Restarting..."
                     atomic_write "$CRASH_FILE" "0"
                     run_compliance "normal"
+                elif log_or_heartbeat_fresh "$LIVENESS_FRESH_SECONDS"; then
+                    # PID gone but heartbeat / log mtime was fresh within
+                    # LIVENESS_FRESH_SECONDS — this is almost certainly an
+                    # external kill (launchctl kickstart, OOM killer, manual
+                    # `kill`, watchdog self-restart cascading SIGKILL to
+                    # children) rather than a session crash. Without this
+                    # branch the supervisor counts every restart-induced
+                    # death as a session crash, polluting the consecutive-
+                    # crashes counter and posting bogus "Resumable: crashed
+                    # session" comments to the open issue. Observed
+                    # 2026-05-20 against #831 after launchctl kickstart -k.
+                    log "Autopilot PID gone but heartbeat/log fresh within ${LIVENESS_FRESH_SECONDS}s — treating as external kill, not a session crash. Crash count NOT incremented."
+                    atomic_write "$CRASH_FILE" "0"
+                    run_compliance "external_kill"
                 else
                     # Stable-run reset: if the session was alive for at least
                     # STABLE_RUN_THRESHOLD seconds, this crash is most likely
