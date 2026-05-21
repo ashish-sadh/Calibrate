@@ -18,7 +18,6 @@ struct DashboardView: View {
     @State private var staleBackupDays: Int?
     @State private var showingBackupSettings = false
     @State private var showFeedbackPrompt = false
-    @State private var showingDriftCoach = false
     @Environment(\.scenePhase) private var scenePhase
 
     private var isWorkoutConsistencyDismissed: Bool {
@@ -285,12 +284,9 @@ struct DashboardView: View {
                 // always available, no opt-in/download needed. The toggle
                 // was a relic of the local-model era when users had to
                 // explicitly enable the feature + download weights.
-                ToolbarItem(placement: .topBarTrailing) {
-                    ChatIconButton(isPresented: $showingDriftCoach)
-                }
-            }
-            .sheet(isPresented: $showingDriftCoach) {
-                DriftCoachSheet()
+                // 2026-05-20: dropped the trailing ChatIconButton too — the
+                // bottom-right floating chat control in ContentView is now
+                // the single AI access point.
             }
             .onAppear {
                 AIScreenTracker.shared.currentScreen = .dashboard

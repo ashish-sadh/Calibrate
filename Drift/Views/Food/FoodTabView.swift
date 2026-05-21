@@ -6,7 +6,6 @@ struct FoodTabView: View {
     @Binding var selectedTab: Int
     @State private var viewModel = FoodLogViewModel()
     @State private var showingSearch = false
-    @State private var showingDriftCoach = false
     @State private var showingRecipeBuilder = false
     @State private var showingScanner = false
     @State private var loggedDays: [Date: Double] = [:]
@@ -98,22 +97,15 @@ struct FoodTabView: View {
             .navigationTitle("Food")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.light, for: .navigationBar)
-            // V7 polish: previous V6 toolbar had a coral "+" (open
-            // FoodSearchView) and an optional camera icon (open
-            // PhotoLog). Both are reachable now via the bottom-right
-            // black FAB → LogMealSheet (Search/Snap modes), and the
-            // duplicate trailing controls read as "two add buttons
-            // that do almost the same thing." Replaced with the
-            // standard ChatIconButton so the trailing nav-bar slot is
-            // consistent with Today / Body / More.
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    ChatIconButton(isPresented: $showingDriftCoach)
-                }
-            }
-            .sheet(isPresented: $showingDriftCoach) {
-                DriftCoachSheet()
-            }
+            // V7 polish: dropped the duplicate "+" toolbar items
+            // (74712a69) and the briefly-added ChatIconButton
+            // (b8975f8a). The bottom-right floating chat control in
+            // ContentView is the single AI access point now. The
+            // `.toolbar { }` modifier itself is removed too — an
+            // empty toolbar with the tab's NavigationStack nested
+            // inside the page-style TabView triggered the
+            // NSInternalInconsistencyException about "client attempt
+            // to nest wrapped navigation controllers" on tab swipe.
             .fullScreenCover(isPresented: $showingScanner) { BarcodeLookupView(viewModel: viewModel) }
             .sheet(isPresented: $showingPhotoLog) {
                 PhotoLogFlowView(foodLog: viewModel)

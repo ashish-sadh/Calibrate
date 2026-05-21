@@ -723,6 +723,19 @@ public enum AIToolAgent {
             ConversationState.shared.captureToolSummary(actionSummary(toolCall: toolCall, action: action))
             return AgentOutput(text: "", action: action, toolsCalled: [toolCall.tool])
         case .error(let msg):
+            // Unknown-tool case is special: the classifier picked a
+            // tool name the registry doesn't have (e.g. "chat",
+            // "respond" — the LLM hallucinating an unlisted tool for
+            // free-form / conversational input like "Hi" / "How are
+            // you doing"). Surfacing "I couldn't quite do that —
+            // unknown tool: chat" reads as an internal-plumbing error
+            // and is confusing for end users; reply conversationally
+            // instead. didFail stays false so the chat input bar
+            // doesn't flag this as a failed turn.
+            if msg.lowercased().hasPrefix("unknown tool") {
+                let fallback = "I'm here. Ask me about your food, weight, sleep, or workouts, or say \"log [item]\" to track something."
+                return AgentOutput(text: fallback, action: nil, toolsCalled: [], didFail: false)
+            }
             // User-friendly error message instead of raw error
             let friendly = "I couldn't quite do that — \(msg.lowercased()). Try rephrasing or say \"help\" to see what I can do."
             return AgentOutput(text: friendly, action: nil, toolsCalled: [toolCall.tool], didFail: true)

@@ -1,11 +1,15 @@
 import SwiftUI
 import DriftCore
 
-/// V7 IA — three primary tabs (Today / Body / More) + a black floating "+"
-/// FAB to the right of the tab pill that opens the Log-a-Meal sheet. The
-/// Drift Coach sheet (V7 Phase 5 replacement for the V6 floating AI bubble)
-/// is reached via a chat-icon button in the trailing nav-bar of each tab
-/// root — kept out of the floating overlay so the FAB has visual room.
+/// V7 IA — four primary tabs (Today / Food / Body / More) + a floating
+/// chat button to the right of the tab pill that opens Drift Coach.
+/// The Log-a-Meal sheet is still reachable via Dashboard chips
+/// (Snap/Voice/Search/Recent) and per-meal "+" rows inside the Food
+/// tab — the global "+" FAB was removed once Food became a top-level
+/// destination, since the dedicated tab provides better-than-FAB
+/// access to logging. The per-screen nav-bar chat icons were removed
+/// in the same pass; AI is now a single floating control instead of
+/// being duplicated on every tab.
 struct ContentView: View {
     @Binding var syncComplete: Bool
     var launchStage: LaunchStage
@@ -13,13 +17,16 @@ struct ContentView: View {
     @State private var selectedTab: PrimaryTab = .today
     @State private var showingLogMeal = false
     /// Mode the next LogMealSheet presentation should open at. Set by
-    /// the Dashboard quick-log chips via `.openLogMeal` notification;
-    /// FAB-tap path leaves this nil and defaults to `.recent`.
+    /// the Dashboard quick-log chips via `.openLogMeal` notification.
     @State private var pendingLogMealMode: LogMealMode = .recent
     /// V7 polish: Snap chip routes directly here instead of through
     /// the Log-a-Meal sheet — user expected camera-first.
     @State private var showingPhotoLog = false
     @State private var photoLogVM = FoodLogViewModel()
+    /// Drift Coach is now the floating bottom-right control (replaces
+    /// the V6 coral bubble *and* the V7 black FAB). Sheet state moved
+    /// here from per-tab @State so the chat persists across tab swipes.
+    @State private var showingDriftCoach = false
 
     init(syncComplete: Binding<Bool>, launchStage: LaunchStage = .starting) {
         self._syncComplete = syncComplete
@@ -73,6 +80,9 @@ struct ContentView: View {
             .fullScreenCover(isPresented: $showingPhotoLog) {
                 PhotoLogFlowView(foodLog: photoLogVM)
             }
+            .sheet(isPresented: $showingDriftCoach) {
+                DriftCoachSheet()
+            }
 
             if !syncComplete {
                 LaunchSplashView(stage: launchStage)
@@ -122,10 +132,7 @@ struct ContentView: View {
     private var tabBarOverlay: some View {
         HStack(spacing: 12) {
             PillTabBar(selected: $selectedTab)
-            FAB {
-                pendingLogMealMode = .recent
-                showingLogMeal = true
-            }
+            ChatIconButton(isPresented: $showingDriftCoach)
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 6)
@@ -243,24 +250,6 @@ private struct PillTabBar: View {
         .background(Theme.cardBackground, in: Capsule())
         .overlay(Capsule().strokeBorder(Theme.separator, lineWidth: 0.5))
         .shadow(color: Color.black.opacity(0.08), radius: 14, x: 0, y: 4)
-    }
-}
-
-// MARK: - Floating + button
-
-private struct FAB: View {
-    let action: () -> Void
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: "plus")
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 56, height: 56)
-                .background(Theme.ink, in: Circle())
-                .shadow(color: Color.black.opacity(0.20), radius: 14, x: 0, y: 6)
-        }
-        .accessibilityIdentifier("fab-log-meal")
-        .accessibilityLabel("Log a meal")
     }
 }
 

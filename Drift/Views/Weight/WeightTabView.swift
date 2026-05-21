@@ -11,7 +11,6 @@ struct WeightTabView: View {
     @State private var showLog = false
     @State private var showMilestone = false
     @State private var editingEntry: WeightEntry?
-    @State private var showingDriftCoach = false
     @AppStorage("drift_dismissed_outlier") private var dismissedOutlierDate = ""
 
     var body: some View {
@@ -66,9 +65,6 @@ struct WeightTabView: View {
                 }
                 .accessibilityLabel("Back")
             }
-            // V7: chat icon previously here, moved into timeRangeBar
-            // because the inline nav bar on this screen renders
-            // transparent — toolbar items were placed but never drawn.
             ToolbarItem(placement: .primaryAction) {
                 Button { showingAddWeight = true } label: {
                     Image(systemName: "plus.circle.fill")
@@ -76,9 +72,6 @@ struct WeightTabView: View {
                 }
                 .accessibilityLabel("Add weight")
             }
-        }
-        .sheet(isPresented: $showingDriftCoach) {
-            DriftCoachSheet()
         }
         .scrollContentBackground(.hidden)
         .background(Theme.background.ignoresSafeArea())
@@ -258,25 +251,10 @@ struct WeightTabView: View {
                 }
                 .accessibilityLabel(viewModel.showCaloriesOverlay ? "Hide calorie overlay" : "Show calorie overlay")
 
-                // V7 mobile pass: the chat icon I had on `.toolbar` was
-                // invisible here because WeightTabView's nav bar
-                // renders transparent (no title, no background fill).
-                // Putting it in the timeRangeBar row alongside the
-                // D/W + flame controls is the visible-on-mobile path.
-                // Matches the same chat-icon affordance the Today tab
-                // already shows in its nav bar.
-                Button {
-                    showingDriftCoach = true
-                } label: {
-                    Image(systemName: "bubble.left.and.text.bubble.right")
-                        .font(.caption.weight(.bold))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 6))
-                        .foregroundStyle(Theme.ink)
-                }
-                .accessibilityLabel("Open Drift Coach")
-                .accessibilityIdentifier("nav-chat-icon-weight")
+                // V7 polish: per-screen chat icon dropped in favor of
+                // the single bottom-right ChatIconButton in
+                // ContentView. The brief stint of an inline chat
+                // button here (commit fd45503c) is gone.
             }
         }
     }
