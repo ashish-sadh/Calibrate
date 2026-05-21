@@ -136,6 +136,38 @@ public final class LlamaCppBackend: AIBackend, @unchecked Sendable {
         return s
     }
 
+    // MARK: - Crash-safety: serialize unload vs. in-flight inference
+    //
+    // Real-device crash 2026-05-20 (image #42):
+    // `Task 181: EXC_BAD_ACCESS at llama_decode`. Trace was:
+    //   1. _respondStreaming captured `self.context` to a local `let`.
+    //   2. LocalAIService's idle-unload Timer fired (60s no activity).
+    //   3. `unload()` ran `llama_free(self.context)` and set
+    //      `self.context = nil`.
+    //   4. The first `let context` from step 1 was now a dangling
+    //      pointer; `llama_decode(context, …)` segfaulted.
+    //
+    // Mitigation: a sync-only `inferenceInFlight` flag guarded by
+    // `inferenceLock`. Inference sets it true on entry, false on
+    // exit. `unload()` checks the flag — if true, the unload is
+    // skipped and the next idle-timer firing will retry. This
+    // prevents the free-during-decode race without holding the lock
+    // across an `await` (Swift 6 strict concurrency forbids that).
+    private let inferenceLock = NSLock()
+    private var inferenceInFlight = false
+
+    private func beginInference() -> Bool {
+        inferenceLock.lock(); defer { inferenceLock.unlock() }
+        if inferenceInFlight { return false }
+        inferenceInFlight = true
+        return true
+    }
+
+    private func endInference() {
+        inferenceLock.lock(); defer { inferenceLock.unlock() }
+        inferenceInFlight = false
+    }
+
     // MARK: - Inference (AIBackend protocol)
 
     /// Protocol conformance: greedy (temp=0) — deterministic, ideal for intent classification.
@@ -163,6 +195,13 @@ public final class LlamaCppBackend: AIBackend, @unchecked Sendable {
     // MARK: - Core Inference
 
     private func _respondStreaming(to prompt: String, systemPrompt: String, temperature: Float, onToken: @escaping @Sendable (String) -> Void) async -> String {
+        // Refuse to enter if another inference is currently running OR
+        // if `unload()` is holding the lock. Either way returning ""
+        // gives the chat layer the same shape as a normal empty
+        // response; better than crashing.
+        guard beginInference() else { return "" }
+        defer { endInference() }
+
         guard let model, let context else { return "" }
 
         // Build prompt using model-appropriate chat template
@@ -270,6 +309,19 @@ public final class LlamaCppBackend: AIBackend, @unchecked Sendable {
     // MARK: - Cleanup
 
     public func unload() {
+        // Crash-safety (image #42 incident): never free `context` or
+        // `model` while an inference is in flight — the running call
+        // has captured raw pointers and will segfault if we yank them
+        // out from under it. Skip; LocalAIService's idle-unload Timer
+        // re-fires periodically, so the next quiet window will catch
+        // this.
+        inferenceLock.lock()
+        let busy = inferenceInFlight
+        inferenceLock.unlock()
+        if busy {
+            Log.app.info("AI: unload deferred — inference in flight")
+            return
+        }
         if let context { llama_free(context) }
         if let model { llama_model_free(model) }
         context = nil

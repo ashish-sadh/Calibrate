@@ -412,9 +412,16 @@ struct WeightInsightsView: View {
 
             // Value
             HStack(alignment: .firstTextBaseline, spacing: 3) {
+                // V7 mobile fix: a Text value of "—" / "--" (no-data
+                // placeholder) coming through `color: .secondary` was
+                // rendering as ghost-grey on white card. Detect the
+                // placeholder and bump to Theme.textSecondary semibold
+                // so "no data yet" is *readable* instead of looking
+                // like a broken render.
+                let isPlaceholder = value == "—" || value == "--"
                 Text(value)
                     .font(.title2.weight(.bold).monospacedDigit())
-                    .foregroundStyle(color)
+                    .foregroundStyle(isPlaceholder ? Theme.textSecondary : color)
                 if !valueUnit.isEmpty {
                     Text(valueUnit)
                         .font(.caption.weight(.medium))
@@ -422,11 +429,13 @@ struct WeightInsightsView: View {
                 }
             }
 
-            // Nudge
+            // Nudge — was Theme.textTertiary (too faint to read). The
+            // whole point of a nudge is "do this to get useful data" —
+            // it has to be legible.
             if let nudge {
                 Text(nudge)
-                    .font(.caption2)
-                    .foregroundStyle(Theme.textTertiary)
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(Theme.textSecondary)
             }
         }
         .frame(maxWidth: .infinity)

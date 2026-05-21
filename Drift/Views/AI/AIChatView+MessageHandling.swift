@@ -218,6 +218,27 @@ extension AIChatViewModel {
         if text.count > 300 { text = String(text.prefix(300)) }
         guard !text.isEmpty || pendingPhotoData != nil, !isGenerating else { return }
         inputText = ""
+
+        // Simulator + Apple FM fast-fail. FoundationModels isn't shipped
+        // to the iOS Simulator, so `SystemLanguageModel.availability`
+        // returns `.unavailable`. The chat pipeline calls FM's
+        // `respondStreaming` which returns "" immediately — but several
+        // tool-resolution paths still proceed and have been observed
+        // hanging the chat UI for 25+ seconds on the "Checking your
+        // data..." indicator. Cut the loss: when the user is on Sim and
+        // their active backend is FM (i.e. the migration from
+        // .llamaCpp in DriftApp.task put them here), surface a clear
+        // not-available message instead of letting the pipeline drag.
+        #if targetEnvironment(simulator)
+        if activeBackend == .foundationModels {
+            messages.append(ChatMessage(role: .user, text: text))
+            messages.append(ChatMessage(
+                role: .assistant,
+                text: "Apple Foundation Models isn't available in the iOS Simulator — try this on a real device (iOS 26+ with Apple Intelligence enabled), or switch to Bring Your Own Key in the model picker above."
+            ))
+            return
+        }
+        #endif
         // Snapshot conversation state on every send so mid-flow survives app kill.
         // Phases set inside async handlers are captured by the next send or scene-backgrounding.
         defer { saveConversationState() }
