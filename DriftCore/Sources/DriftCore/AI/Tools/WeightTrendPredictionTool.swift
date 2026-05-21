@@ -100,7 +100,10 @@ public enum WeightTrendPredictionTool {
         guard entries.count >= 2 else { return nil }
         let fmt = DateFormatters.dateOnly
         let sorted = entries.sorted { $0.date < $1.date }
-        guard let firstDate = fmt.date(from: sorted.first!.date) else { return nil }
+        // Crash-audit: guard count≥2 above guarantees sorted is non-empty,
+        // but optional-binding is more robust to future refactor.
+        guard let firstEntryDate = sorted.first?.date,
+              let firstDate = fmt.date(from: firstEntryDate) else { return nil }
 
         let pairs: [(x: Double, y: Double)] = sorted.compactMap { e in
             guard let d = fmt.date(from: e.date) else { return nil }

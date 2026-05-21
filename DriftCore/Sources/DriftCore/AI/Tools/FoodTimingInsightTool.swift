@@ -77,10 +77,15 @@ public enum FoodTimingInsightTool {
         let lateCount = lateNightDays.count
         let latePct = total > 0 ? Int(Double(lateCount) / Double(total) * 100) : 0
 
+        // Crash-audit (2026-05-20): dict bangs on `mealHours[key]!`
+        // were guaranteed safe at init time (the dict is seeded with
+        // these 4 keys on line 59) but fragile — if a refactor swaps
+        // the init shape, the bangs would crash on the first user
+        // who triggers this tool. Nil-coalesce is the same cost.
         return MealTimingStats(
-            avgBreakfastHour: avg(mealHours["breakfast"]!),
-            avgLunchHour: avg(mealHours["lunch"]!),
-            avgDinnerHour: avg(mealHours["dinner"]!),
+            avgBreakfastHour: avg(mealHours["breakfast"] ?? []),
+            avgLunchHour: avg(mealHours["lunch"] ?? []),
+            avgDinnerHour: avg(mealHours["dinner"] ?? []),
             lateNightDays: lateCount,
             totalLoggedDays: total,
             lateNightPct: latePct,

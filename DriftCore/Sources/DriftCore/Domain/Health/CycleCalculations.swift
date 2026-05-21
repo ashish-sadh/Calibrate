@@ -46,7 +46,13 @@ public enum CycleCalculations {
             if let last = currentDays.last {
                 let gap = Calendar.current.dateComponents([.day], from: last.date, to: entry.date).day ?? 0
                 if gap > 3 {
-                    periods.append(CyclePeriod(startDate: currentDays.first!.date, days: currentDays))
+                    // Crash-audit: `currentDays.first!.date` was safe
+                    // because the `if let last` branch only fires when
+                    // currentDays is non-empty. Optional-binding the
+                    // first day is more robust to future refactor.
+                    if let firstDay = currentDays.first {
+                        periods.append(CyclePeriod(startDate: firstDay.date, days: currentDays))
+                    }
                     currentDays = [entry]
                 } else {
                     currentDays.append(entry)
@@ -55,8 +61,8 @@ public enum CycleCalculations {
                 currentDays = [entry]
             }
         }
-        if !currentDays.isEmpty {
-            periods.append(CyclePeriod(startDate: currentDays.first!.date, days: currentDays))
+        if let firstDay = currentDays.first {
+            periods.append(CyclePeriod(startDate: firstDay.date, days: currentDays))
         }
         return periods
     }

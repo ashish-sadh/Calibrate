@@ -198,10 +198,11 @@ struct PhotoLogEditableItem: Identifiable, Equatable {
         carbsPerGram    = carb / g
         fatPerGram      = f / g
         fiberPerGram    = fb / g
+        // Crash-audit: was `aiUnit.fixedGramsPerUnit != nil` + `!`
+        // unwrap. The cleaner double-bind avoids the bang.
         if let aiUnit = PhotoLogServingUnit.parse(aiItem.servingUnit),
-           aiUnit.fixedGramsPerUnit != nil {
+           let gpu = aiUnit.fixedGramsPerUnit {
             servingUnit = aiUnit
-            let gpu = aiUnit.fixedGramsPerUnit!
             servingAmount = gpu > 0 ? g / gpu : 1
         } else {
             servingUnit = .grams

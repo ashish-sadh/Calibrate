@@ -51,7 +51,11 @@ public final class WeightTrendService {
         }
 
         let sixtyDaysAgo = cal.date(byAdding: .day, value: -60, to: now) ?? now
-        if let mostRecentDate = DateFormatters.dateOnly.date(from: entries.first!.date) {
+        // Crash-audit: `.first!` was guarded by `!entries.isEmpty`
+        // earlier in this method, so safe today. Optional-binding is
+        // the same cost and survives a refactor that moves the guard.
+        if let firstEntry = entries.first,
+           let mostRecentDate = DateFormatters.dateOnly.date(from: firstEntry.date) {
             isStale = mostRecentDate < sixtyDaysAgo
         } else {
             isStale = true

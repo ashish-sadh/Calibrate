@@ -340,8 +340,8 @@ public enum AIActionExecutor {
                 if leadingWords.count > 3 && leadingWords[2].lowercased() == "of" { foodStart = 3 }
                 let food = leadingWords[foodStart...].joined(separator: " ").trimmingCharacters(in: .whitespaces)
                 if !food.isEmpty {
-                    if convertedGrams != nil {
-                        return (nil, food, normalizeToGrams(num, unit: unit, foodHint: food) ?? convertedGrams!)
+                    if let cg = convertedGrams {
+                        return (nil, food, normalizeToGrams(num, unit: unit, foodHint: food) ?? cg)
                     } else if unit == "piece" || unit == "pieces",
                               let pieceGrams = normalizeToGrams(num, unit: "piece", foodHint: food) {
                         return (nil, food, pieceGrams)

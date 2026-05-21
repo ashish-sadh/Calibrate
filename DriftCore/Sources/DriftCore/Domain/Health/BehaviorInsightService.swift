@@ -313,11 +313,16 @@ public enum BehaviorInsightService {
             let startStr = DateFormatters.dateOnly.string(from: week.weekStart)
             let endStr = DateFormatters.dateOnly.string(from: weekEnd)
 
-            // Get weight change this week
+            // Get weight change this week. Crash-audit: was using
+            // `.last!`/`.first!` after a count-≥-2 guard — safe today
+            // but bangs are the wrong shape when the guard is read-
+            // ahead context for the unwrap. Use the cleaner
+            // optional-binding form.
             guard let weightEntries = try? db.fetchWeightEntries(from: startStr, to: endStr),
-                  weightEntries.count >= 2 else { continue }
-            let firstW = weightEntries.last!.weightKg  // entries are DESC sorted
-            let lastW = weightEntries.first!.weightKg
+                  weightEntries.count >= 2,
+                  let firstW = weightEntries.last?.weightKg,
+                  let lastW = weightEntries.first?.weightKg
+            else { continue }
             let change = lastW - firstW  // negative = lost weight
 
             if week.count >= 3 {
