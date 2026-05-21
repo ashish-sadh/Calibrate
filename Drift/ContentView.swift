@@ -27,6 +27,9 @@ struct ContentView: View {
     /// the V6 coral bubble *and* the V7 black FAB). Sheet state moved
     /// here from per-tab @State so the chat persists across tab swipes.
     @State private var showingDriftCoach = false
+    /// Optional text routed into Drift Coach when "Edit in chat" is
+    /// tapped on the VoiceLogSheet confirmation card.
+    @State private var driftCoachPrefill: String = ""
 
     init(syncComplete: Binding<Bool>, launchStage: LaunchStage = .starting) {
         self._syncComplete = syncComplete
@@ -81,7 +84,15 @@ struct ContentView: View {
                 PhotoLogFlowView(foodLog: photoLogVM)
             }
             .sheet(isPresented: $showingDriftCoach) {
-                DriftCoachSheet()
+                DriftCoachSheet(prefill: driftCoachPrefill)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .openDriftCoach)) { notification in
+                if let prefill = notification.userInfo?["prefill"] as? String {
+                    driftCoachPrefill = prefill
+                } else {
+                    driftCoachPrefill = ""
+                }
+                showingDriftCoach = true
             }
 
             if !syncComplete {

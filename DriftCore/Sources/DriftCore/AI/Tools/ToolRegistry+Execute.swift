@@ -27,6 +27,13 @@ public extension Notification.Name {
     /// listens, sets its `pendingLogMealMode` state, and flips the sheet
     /// presentation. `userInfo["mode"]` is a `LogMealMode` rawValue string.
     static let openLogMeal = Notification.Name("drift.openLogMeal")
+
+    /// V7: posted by VoiceLogSheet's "Edit in chat" button to hand off
+    /// a transcript into the Drift Coach chat input. ContentView listens
+    /// and presents `DriftCoachSheet(prefill: userInfo["prefill"])`.
+    /// Replaces the V6 `.expandAIAssistant` notification, which had no
+    /// listener after the FloatingAIAssistant overlay was retired.
+    static let openDriftCoach = Notification.Name("drift.openDriftCoach")
 }
 
 // MARK: - Tool Registry Execution (iOS-side)

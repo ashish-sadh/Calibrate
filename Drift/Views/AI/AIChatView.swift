@@ -11,12 +11,20 @@ struct AIChatView: View {
     @FocusState var inputFocused: Bool
     @State var photoPickerItem: PhotosPickerItem? = nil
 
-    var body: some View {
-        VStack(spacing: 0) {
-            if vm.canToggleBackend {
-                backendSelectorHeader
-            }
+    /// Optional pre-filled input — used by VoiceLogSheet's "Edit in chat"
+    /// hand-off so the user can refine a transcript before sending.
+    let prefill: String
 
+    init(prefill: String = "") {
+        self.prefill = prefill
+    }
+
+    var body: some View {
+        // V7: DriftCoachSheet owns the visible backend picker now, so
+        // AIChatView no longer renders an inline `backendSelectorHeader`
+        // (the old "Local Brain | Cloud AI" tiles). Removed to avoid two
+        // stacked pickers.
+        VStack(spacing: 0) {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(spacing: 10) {
@@ -107,6 +115,10 @@ struct AIChatView: View {
             vm.aiService.cancelUnload()
             if vm.messages.isEmpty {
                 vm.messages.append(AIChatViewModel.ChatMessage(role: .assistant, text: vm.pageInsight))
+            }
+            if !prefill.isEmpty && vm.inputText.isEmpty {
+                vm.inputText = prefill
+                inputFocused = true
             }
             if !vm.aiService.isModelLoaded && vm.aiService.state == .ready {
                 vm.aiService.loadModel()

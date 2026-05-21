@@ -176,7 +176,16 @@ enum DebugSeedData {
                 (daysAgo.isMultiple(of: 2) ? [.snack] : [])
             for meal in mealsByDay {
                 let candidates = samples.filter { $0.meal == meal }
-                let s = candidates[(daysAgo + meal.hashValue) % candidates.count]
+                guard !candidates.isEmpty else { continue }
+                // Was `(daysAgo + meal.hashValue) % candidates.count` —
+                // Swift's `%` keeps the sign of the dividend, so on any
+                // launch where `meal.hashValue` resolved negative the
+                // index went negative and crashed (Index out of range,
+                // killing the iOS test runner on every fresh sim boot).
+                // A plain `daysAgo % count` is positive and still cycles
+                // the variants across days.
+                let idx = daysAgo % candidates.count
+                let s = candidates[idx]
                 vm.quickAdd(
                     name: s.name,
                     calories: s.kcal, proteinG: s.p, carbsG: s.c, fatG: s.f, fiberG: s.fb,

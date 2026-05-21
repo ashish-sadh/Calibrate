@@ -55,14 +55,13 @@ struct VoiceLogSheet: View {
             Spacer()
 
             ZStack {
+                // V7 mobile fix: the pulsing scale animation was
+                // distracting. User: "the red circle on mic is
+                // constantly moving — keep it static." Static disc,
+                // no animation.
                 Circle()
                     .fill(Theme.accent.opacity(0.18))
                     .frame(width: 140, height: 140)
-                    .scaleEffect(viewModel.pulse ? 1.05 : 1.0)
-                    .animation(
-                        .easeInOut(duration: 0.9).repeatForever(autoreverses: true),
-                        value: viewModel.pulse
-                    )
                 Image(systemName: "mic.fill")
                     .font(.system(size: 44, weight: .semibold))
                     .foregroundStyle(Theme.accent)
@@ -192,8 +191,17 @@ struct VoiceLogSheet: View {
                 .accessibilityIdentifier("voice-log-confirm")
 
                 Button {
+                    // V7 mobile fix: "Edit in chat" wasn't working
+                    // because nothing listened for the V6
+                    // `.expandAIAssistant` notification anymore (the
+                    // FloatingAIAssistant overlay was removed when
+                    // DriftCoachSheet took its place). Now posts the
+                    // dedicated `.openDriftCoach` notification with a
+                    // `prefill` userInfo — ContentView listens and
+                    // presents DriftCoachSheet(prefill:) with the
+                    // transcript routed into AIChatView's input bar.
                     NotificationCenter.default.post(
-                        name: .expandAIAssistant,
+                        name: .openDriftCoach,
                         object: nil,
                         userInfo: ["prefill": viewModel.transcript]
                     )
@@ -203,7 +211,7 @@ struct VoiceLogSheet: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
-                .tint(Theme.textSecondary)
+                .tint(Theme.textPrimary)
             }
             .padding(16)
         }
@@ -296,7 +304,6 @@ final class VoiceLogViewModel {
     var phase: Phase = .listening
     var transcript: String = ""
     var parsedItems: [ParsedItem] = []
-    var pulse: Bool = false
 
     private let speech = SpeechRecognitionService.shared
     private let foodLogVM = FoodLogViewModel()
@@ -305,7 +312,6 @@ final class VoiceLogViewModel {
         transcript = ""
         parsedItems = []
         phase = .listening
-        pulse = true
         speech.startRecording(
             onTranscript: { [weak self] partial in
                 self?.transcript = partial
@@ -327,7 +333,6 @@ final class VoiceLogViewModel {
         // recognition task without invoking `onDone`. Safer than leaving
         // a half-open mic if the sheet is dismissed mid-recording.
         speech.forceStop()
-        pulse = false
     }
 
     private func parse(_ text: String) async {
@@ -381,8 +386,20 @@ final class VoiceLogViewModel {
     }
 
     private func resolveItem(name: String, quantity: Double, mealType: MealType) -> ParsedItem {
+        // V7 mobile fix (#bad-food-matches): user reported
+        // "egg" → "Fish, Whitefish, Eggs (Alaska Native)". The food
+        // DB has lots of comma-laden USDA Legacy entries that match
+        // simple queries before the clean single-word entries.
+        // Re-rank: fewer commas first, then shorter names. So "Egg"
+        // beats "Fish, Whitefish, Eggs (Alaska Native)" every time.
         let candidates = FoodService.searchFood(query: name)
-        if let match = candidates.first {
+        let ranked = candidates.sorted { a, b in
+            let aCommas = a.name.filter { $0 == "," }.count
+            let bCommas = b.name.filter { $0 == "," }.count
+            if aCommas != bCommas { return aCommas < bCommas }
+            return a.name.count < b.name.count
+        }
+        if let match = ranked.first {
             return ParsedItem(
                 displayName: match.name,
                 detail: "\(formatQty(quantity)) serving\(quantity == 1 ? "" : "s")",
