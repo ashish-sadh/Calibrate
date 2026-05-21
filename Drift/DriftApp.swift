@@ -59,6 +59,19 @@ struct DriftApp: App {
                 .task {
                     if !hasRequestedHealthKit {
                         hasRequestedHealthKit = true
+                        // V7 mobile pass: drop "Drift Brain" from the
+                        // Drift Coach picker and migrate any user whose
+                        // persisted preference is still `.llamaCpp`
+                        // (from a TestFlight build before Apple FM was
+                        // the default). Apple Foundation Models is the
+                        // headline option now; the GGUF backend is no
+                        // longer user-selectable. The .llamaCpp enum
+                        // case is retained for backward compat.
+                        if Preferences.preferredAIBackend == .llamaCpp {
+                            Preferences.preferredAIBackend = .foundationModels
+                            Log.app.info("Migrated preferredAIBackend: .llamaCpp → .foundationModels (V7 picker simplification)")
+                            await AIBackendCoordinator.applyPreferredBackend()
+                        }
                         // First-launch restore: if this device's DB is fresh
                         // AND a backup is sitting in the user's iCloud Drive
                         // container, offer to restore before any other launch

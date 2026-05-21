@@ -44,9 +44,19 @@ struct DriftCoachSheet: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Theme.textSecondary)
 
+            // V7 mobile pass: "we don't need Drift Brain if there's
+            // Apple Foundation Models" — the picker is the user's
+            // entire mental model for which AI is talking to them, and
+            // dropping the GGUF option simplifies that to "system
+            // intelligence vs. your own cloud key." The .llamaCpp case
+            // still exists in `AIBackendType` for any old user prefs
+            // that resolved to it before Apple FM became the default;
+            // a launch-time migration in DriftApp.task flips those to
+            // .foundationModels. Removing the picker entry means new
+            // users never *select* Drift Brain, and existing ones get
+            // moved off it automatically.
             Picker("Model", selection: $backend) {
                 Text("Apple Foundation Models").tag(AIBackendType.foundationModels)
-                Text("Drift Brain").tag(AIBackendType.llamaCpp)
                 Text("Bring Your Own Key").tag(AIBackendType.remote)
             }
             .pickerStyle(.segmented)
@@ -71,7 +81,11 @@ struct DriftCoachSheet: View {
         case .foundationModels:
             return "On-device · Apple Intelligence. Nothing leaves your phone."
         case .llamaCpp, .mlx:
-            return "On-device · Drift Brain. Nothing leaves your phone."
+            // V7: legacy backend retained in the enum so old prefs
+            // resolve, but no longer surfaced in the picker. If a user
+            // somehow lands here pre-migration, show the same on-device
+            // privacy line so the privacy story doesn't break.
+            return "On-device · legacy local model (migrating to Apple Foundation Models on next launch)."
         case .remote:
             return "Cloud · uses your BYOK key. Messages leave your device."
         }

@@ -387,20 +387,25 @@ struct WeightInsightsView: View {
         tooltip: String,
         nudge: String? = nil
     ) -> some View {
-        VStack(spacing: 4) {
-            // Label + direction arrow
+        VStack(spacing: 6) {
+            // V7 mobile pass: without the card hairlines around each
+            // metric cell, the previous lowercase/medium label was
+            // visually mushy on the Body screen — the four cells in
+            // the 2x2 grid blurred into each other. Bumping the label
+            // to the shared small-caps tracked style (matches the
+            // section headings in MoreTabView) so each cell anchors
+            // visually on its own without needing a border.
             HStack(spacing: 4) {
                 if let labelIcon {
                     Image(systemName: labelIcon)
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .font(.caption2)
+                        .foregroundStyle(Theme.textSecondary)
                 }
-                Text(label)
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
+                Text(label.uppercased())
+                    .sectionHeading()
                 if let direction {
                     Image(systemName: direction)
-                        .font(.caption.weight(.bold))
+                        .font(.caption2.weight(.bold))
                         .foregroundStyle(directionColor ?? color)
                 }
             }
@@ -408,26 +413,26 @@ struct WeightInsightsView: View {
             // Value
             HStack(alignment: .firstTextBaseline, spacing: 3) {
                 Text(value)
-                    .font(.title3.weight(.bold).monospacedDigit())
+                    .font(.title2.weight(.bold).monospacedDigit())
                     .foregroundStyle(color)
                 if !valueUnit.isEmpty {
                     Text(valueUnit)
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Theme.textSecondary)
                 }
             }
 
             // Nudge
             if let nudge {
                 Text(nudge)
-                    .font(.system(size: 10))
-                    .foregroundStyle(.tertiary)
+                    .font(.caption2)
+                    .foregroundStyle(Theme.textTertiary)
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .padding(.horizontal, 6)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
+        .padding(.vertical, 14)
+        .padding(.horizontal, 8)
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 
     // MARK: - Weight Changes Row

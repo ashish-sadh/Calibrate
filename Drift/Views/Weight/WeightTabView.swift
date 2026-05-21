@@ -66,9 +66,9 @@ struct WeightTabView: View {
                 }
                 .accessibilityLabel("Back")
             }
-            ToolbarItem(placement: .topBarTrailing) {
-                ChatIconButton(isPresented: $showingDriftCoach)
-            }
+            // V7: chat icon previously here, moved into timeRangeBar
+            // because the inline nav bar on this screen renders
+            // transparent — toolbar items were placed but never drawn.
             ToolbarItem(placement: .primaryAction) {
                 Button { showingAddWeight = true } label: {
                     Image(systemName: "plus.circle.fill")
@@ -257,6 +257,26 @@ struct WeightTabView: View {
                         .foregroundStyle(viewModel.showCaloriesOverlay ? Theme.accent : .secondary)
                 }
                 .accessibilityLabel(viewModel.showCaloriesOverlay ? "Hide calorie overlay" : "Show calorie overlay")
+
+                // V7 mobile pass: the chat icon I had on `.toolbar` was
+                // invisible here because WeightTabView's nav bar
+                // renders transparent (no title, no background fill).
+                // Putting it in the timeRangeBar row alongside the
+                // D/W + flame controls is the visible-on-mobile path.
+                // Matches the same chat-icon affordance the Today tab
+                // already shows in its nav bar.
+                Button {
+                    showingDriftCoach = true
+                } label: {
+                    Image(systemName: "bubble.left.and.text.bubble.right")
+                        .font(.caption.weight(.bold))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 6))
+                        .foregroundStyle(Theme.ink)
+                }
+                .accessibilityLabel("Open Drift Coach")
+                .accessibilityIdentifier("nav-chat-icon-weight")
             }
         }
     }
