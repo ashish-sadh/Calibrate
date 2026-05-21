@@ -171,6 +171,15 @@ struct VoiceLogSheet: View {
                 Button {
                     Task {
                         await viewModel.logAll()
+                        // V7 polish: same as Recent/Done paths in
+                        // LogMealSheet — after a successful voice
+                        // log, route to the Food Diary so the user
+                        // sees what they just added.
+                        NotificationCenter.default.post(
+                            name: .navigateToTab,
+                            object: nil,
+                            userInfo: ["tab": 2]
+                        )
                         dismiss()
                     }
                 } label: {

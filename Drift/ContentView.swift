@@ -16,6 +16,10 @@ struct ContentView: View {
     /// the Dashboard quick-log chips via `.openLogMeal` notification;
     /// FAB-tap path leaves this nil and defaults to `.recent`.
     @State private var pendingLogMealMode: LogMealMode = .recent
+    /// V7 polish: Snap chip routes directly here instead of through
+    /// the Log-a-Meal sheet — user expected camera-first.
+    @State private var showingPhotoLog = false
+    @State private var photoLogVM = FoodLogViewModel()
 
     init(syncComplete: Binding<Bool>, launchStage: LaunchStage = .starting) {
         self._syncComplete = syncComplete
@@ -62,6 +66,12 @@ struct ContentView: View {
                     pendingLogMealMode = .recent
                 }
                 showingLogMeal = true
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .openPhotoLog)) { _ in
+                showingPhotoLog = true
+            }
+            .fullScreenCover(isPresented: $showingPhotoLog) {
+                PhotoLogFlowView(foodLog: photoLogVM)
             }
 
             if !syncComplete {

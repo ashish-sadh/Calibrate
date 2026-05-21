@@ -97,24 +97,16 @@ struct FoodTabView: View {
             .navigationTitle("Food")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.light, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .primaryAction) {
-                    HStack(spacing: 16) {
-                        if photoLogAvailable {
-                            Button { showingPhotoLog = true } label: {
-                                Image(systemName: "camera.metering.matrix")
-                                    .font(.body.weight(.semibold))
-                                    .foregroundStyle(Theme.accent)
-                            }
-                            .accessibilityLabel("Photo log meal")
-                        }
-                        Button { showingSearch = true } label: {
-                            Image(systemName: "plus").font(.body.weight(.semibold)).foregroundStyle(Theme.accent)
-                        }
-                        .accessibilityLabel("Add food")
-                    }
-                }
-            }
+            // V7 polish: previous V6 toolbar had a coral "+" (open
+            // FoodSearchView) and an optional camera icon (open
+            // PhotoLog). Both are reachable now via the bottom-right
+            // black FAB → LogMealSheet (Search/Snap modes). The
+            // duplicate trailing controls on the Food tab read as
+            // "two add buttons that do almost the same thing" and were
+            // flagged on mobile review. Removing here so the FAB is
+            // the single, canonical add path. Inline "+ Add food"
+            // affordances inside the meal diary still work.
+            .toolbar { }
             .fullScreenCover(isPresented: $showingScanner) { BarcodeLookupView(viewModel: viewModel) }
             .sheet(isPresented: $showingPhotoLog) {
                 PhotoLogFlowView(foodLog: viewModel)

@@ -52,18 +52,23 @@ struct V6QuickLogRow: View {
     }
 
     private func fire(_ chip: QuickLogChip) {
-        // V7: all four chips open the unified Log-a-Meal sheet at the
-        // matching mode. The legacy `selectedTab = 2` (jump to Food tab)
-        // is a no-op in V7's 3-tab IA — the Food tab doesn't exist
-        // anymore. Posting `.openLogMeal` lets ContentView present
-        // LogMealSheet at the right mode without each tab root knowing
-        // about the sheet binding.
+        // V7: Recent/Search/Voice open the unified Log-a-Meal sheet at
+        // the matching mode. Snap is special-cased — user feedback on
+        // mobile: "I was expecting it will just plug in and open
+        // previous photolog screen we had." Camera-first verb, no
+        // intermediate empty state. Routes directly to PhotoLogFlowView
+        // via `.openPhotoLog`, bypassing the segmented sheet.
+        if chip == .snap {
+            NotificationCenter.default.post(name: .openPhotoLog, object: nil)
+            return
+        }
+
         let mode: LogMealMode
         switch chip {
-        case .snap: mode = .snap
         case .voice: mode = .voice
         case .search: mode = .search
         case .recent: mode = .recent
+        case .snap: mode = .snap  // unreachable — handled above
         }
         NotificationCenter.default.post(
             name: .openLogMeal,

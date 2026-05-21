@@ -69,8 +69,22 @@ struct LogMealSheet: View {
             .background(Theme.background.ignoresSafeArea())
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                        .foregroundStyle(Theme.textPrimary)
+                    Button("Done") {
+                        // V7 polish: user asked that finishing a log
+                        // session (Done after Search/Voice/Recent
+                        // adds) routes them to the Food Diary so they
+                        // see what they just added in context.
+                        // Posting `.navigateToTab` with the legacy
+                        // food index = 2 — ContentView's binding shim
+                        // maps that to `PrimaryTab.food`.
+                        NotificationCenter.default.post(
+                            name: .navigateToTab,
+                            object: nil,
+                            userInfo: ["tab": 2]
+                        )
+                        dismiss()
+                    }
+                    .foregroundStyle(Theme.textPrimary)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
@@ -78,6 +92,16 @@ struct LogMealSheet: View {
                 PhotoLogFlowView(foodLog: foodLogVM)
             }
             .task { recentFoods = FoodService.fetchRecentFoods(limit: 30) }
+            // V7 polish: Snap is a verb, not a screen. When the user
+            // arrives at Snap mode (either via initialMode or by tapping
+            // the segment), present the camera-driven PhotoLog flow
+            // directly instead of an intermediate empty state.
+            .onAppear {
+                if mode == .snap { showingPhotoLog = true }
+            }
+            .onChange(of: mode) { _, new in
+                if new == .snap { showingPhotoLog = true }
+            }
         }
     }
 
@@ -177,6 +201,14 @@ struct LogMealSheet: View {
             mealType: defaultMealType(),
             servingSizeG: food.servingSize,
             servings: 1
+        )
+        // After a Recent-tap log, route to the Food Diary so the user
+        // sees the entry land in today's timeline. Same intent as the
+        // Done-button navigate above.
+        NotificationCenter.default.post(
+            name: .navigateToTab,
+            object: nil,
+            userInfo: ["tab": 2]
         )
         dismiss()
     }
