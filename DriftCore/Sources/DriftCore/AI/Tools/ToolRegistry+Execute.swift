@@ -16,7 +16,17 @@ public extension Notification.Name {
     /// Posted by the V6 Dashboard quick-log row's "Voice" chip after enabling
     /// AI. FloatingAIAssistant listens and auto-expands so the user sees the
     /// chat + mic button on the first tap instead of a stranded corner bubble.
+    /// V7: FloatingAIAssistant is gone (replaced by DriftCoachSheet) — the
+    /// Voice chip now posts `.openLogMeal(mode: .voice)` instead and the
+    /// notification below is retained for backwards-compat in case a
+    /// straggler call site still posts it.
     static let expandAIAssistant = Notification.Name("drift.expandAIAssistant")
+
+    /// V7: posted by the Dashboard quick-log chips (Snap/Voice/Search/Recent)
+    /// to open the unified Log-a-Meal sheet at a specific mode. ContentView
+    /// listens, sets its `pendingLogMealMode` state, and flips the sheet
+    /// presentation. `userInfo["mode"]` is a `LogMealMode` rawValue string.
+    static let openLogMeal = Notification.Name("drift.openLogMeal")
 }
 
 // MARK: - Tool Registry Execution (iOS-side)

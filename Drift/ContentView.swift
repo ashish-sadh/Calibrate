@@ -12,6 +12,10 @@ struct ContentView: View {
 
     @State private var selectedTab: PrimaryTab = .today
     @State private var showingLogMeal = false
+    /// Mode the next LogMealSheet presentation should open at. Set by
+    /// the Dashboard quick-log chips via `.openLogMeal` notification;
+    /// FAB-tap path leaves this nil and defaults to `.recent`.
+    @State private var pendingLogMealMode: LogMealMode = .recent
 
     init(syncComplete: Binding<Bool>, launchStage: LaunchStage = .starting) {
         self._syncComplete = syncComplete
@@ -42,13 +46,22 @@ struct ContentView: View {
             }
             .background(Theme.background.ignoresSafeArea())
             .sheet(isPresented: $showingLogMeal) {
-                LogMealSheet()
+                LogMealSheet(initialMode: pendingLogMealMode)
             }
             .onReceive(NotificationCenter.default.publisher(for: .navigateToTab)) { notification in
                 if let tab = notification.userInfo?["tab"] as? Int,
                    let mapped = PrimaryTab(legacyIndex: tab) {
                     withAnimation { selectedTab = mapped }
                 }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .openLogMeal)) { notification in
+                if let rawMode = notification.userInfo?["mode"] as? String,
+                   let mode = LogMealMode(rawValue: rawMode) {
+                    pendingLogMealMode = mode
+                } else {
+                    pendingLogMealMode = .recent
+                }
+                showingLogMeal = true
             }
 
             if !syncComplete {
@@ -86,7 +99,10 @@ struct ContentView: View {
     private var tabBarOverlay: some View {
         HStack(spacing: 12) {
             PillTabBar(selected: $selectedTab)
-            FAB { showingLogMeal = true }
+            FAB {
+                pendingLogMealMode = .recent
+                showingLogMeal = true
+            }
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 6)
@@ -215,28 +231,6 @@ private struct FAB: View {
         }
         .accessibilityIdentifier("fab-log-meal")
         .accessibilityLabel("Log a meal")
-    }
-}
-
-// MARK: - Log a Meal sheet
-//
-// V7 places meal logging behind the floating "+" FAB. Phase 5 redesigns
-// this sheet as a 4-mode segmented picker (Recent / Search / Voice / Snap)
-// matching reference mocks 16-19. For Phase 4 we wrap the existing
-// FoodTabView so the FAB has a working destination — the visual refresh
-// of the picker itself lands in the next commit.
-
-private struct LogMealSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    var body: some View {
-        NavigationStack {
-            FoodTabView(selectedTab: .constant(0))
-                .toolbar {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        Button("Done") { dismiss() }
-                    }
-                }
-        }
     }
 }
 

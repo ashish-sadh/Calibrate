@@ -52,19 +52,24 @@ struct V6QuickLogRow: View {
     }
 
     private func fire(_ chip: QuickLogChip) {
+        // V7: all four chips open the unified Log-a-Meal sheet at the
+        // matching mode. The legacy `selectedTab = 2` (jump to Food tab)
+        // is a no-op in V7's 3-tab IA — the Food tab doesn't exist
+        // anymore. Posting `.openLogMeal` lets ContentView present
+        // LogMealSheet at the right mode without each tab root knowing
+        // about the sheet binding.
+        let mode: LogMealMode
         switch chip {
-        case .snap:
-            selectedTab = 2
-            NotificationCenter.default.post(name: .openPhotoLog, object: nil)
-        case .voice:
-            aiEnabled = true
-            NotificationCenter.default.post(name: .expandAIAssistant, object: nil)
-        case .search:
-            selectedTab = 2
-            NotificationCenter.default.post(name: .openFoodSearch, object: nil)
-        case .recent:
-            selectedTab = 2
+        case .snap: mode = .snap
+        case .voice: mode = .voice
+        case .search: mode = .search
+        case .recent: mode = .recent
         }
+        NotificationCenter.default.post(
+            name: .openLogMeal,
+            object: nil,
+            userInfo: ["mode": mode.rawValue]
+        )
     }
 }
 
