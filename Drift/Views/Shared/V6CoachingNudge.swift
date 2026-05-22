@@ -17,8 +17,8 @@ import DriftCore
 /// the icon should be, whether AI is enabled) flows in via a pre-formatted
 /// `V6CoachingNudgePayload`. The pure `payload(from:aiEnabled:)` factory is
 /// `static` so tier-1 tests can pin the priority + icon-mapping rules without
-/// instantiating the SwiftUI view, matching the discipline of `V6BodyTile` and
-/// `V6MealTimeline`.
+/// instantiating the SwiftUI view, matching the same factory-then-render
+/// discipline as `V6HeroIntakeCard`.
 struct V6CoachingNudge: View {
     let payload: V6CoachingNudgePayload
     let onAskAI: () -> Void

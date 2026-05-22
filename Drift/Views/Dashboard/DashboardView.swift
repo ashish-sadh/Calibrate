@@ -24,6 +24,19 @@ struct DashboardView: View {
         Date().timeIntervalSince1970 < workoutConsistencyDismissedUntil
     }
 
+    /// User's intended weight direction, derived from the stored WeightGoal +
+    /// current weight. Powers the goal-aware color flip on the WEIGHT card
+    /// in BodySummaryCardsRow. `.none` when no goal exists.
+    var goalDirection: GoalDirection {
+        guard let goal = WeightGoal.load() else { return .none }
+        let currentKg = viewModel.latestWeight ?? viewModel.trendWeight ?? goal.startWeightKg
+        let deltaToTarget = currentKg - goal.targetWeightKg
+        if abs(deltaToTarget) < 0.1 {
+            return .maintain
+        }
+        return goal.isLosing(currentWeightKg: currentKg) ? .lose : .gain
+    }
+
     /// Recomputes the 7-day Feedback banner visibility from Preferences. Called
     /// on appear, on scene → active (day-boundary crossings during foreground),
     /// and from the 180s `.task` poll (auto-dismiss after day 14 without
@@ -149,40 +162,30 @@ struct DashboardView: View {
                     Button { selectedTab = 2 } label: { calorieBalanceCard }.buttonStyle(.plain)
 
                     // V6 quick-log row — Snap · Voice · Search · Recent.
-                    // Per v6-today.jsx anatomy, this sits between the hero and
-                    // the Body section; always visible regardless of whether
-                    // food was logged so first-time users have 4 clear entry
-                    // points into logging.
+                    // Always visible regardless of whether food was logged so
+                    // first-time users have 4 clear entry points into logging.
                     V6QuickLogRow(selectedTab: $selectedTab, aiEnabled: $aiEnabled)
 
-                    // V6 meals timeline — only renders meals that have been
-                    // logged today. Originally rendered a fixed 4-slot
-                    // Breakfast/Lunch/Dinner/Snacks list with "Log" buttons
-                    // on the empty rows (#bug-feedback: "section looks
-                    // rendered empty, no need to show 4 Log buttons that all
-                    // route to Food tab anyway"). The Quick Log row above
-                    // (Snap/Voice/Search/Recent) already serves "log a new
-                    // meal", so the empty placeholders were redundant.
-                    let loggedSlots = V6MealTimeline.payloads(from: viewModel.todayFoodEntries)
-                        .filter(\.isLogged)
-                    if !loggedSlots.isEmpty {
-                        sectionHeader("Today's meals")
-                        V6MealTimeline(slots: loggedSlots) { _ in
-                            selectedTab = 2
-                        }
-                    }
+                    // V7 Phase 2 (#821) — vertical meal timeline. Replaces
+                    // the V6 4-slot Breakfast/Lunch/Dinner/Snacks list with a
+                    // single dot-rail of every FoodEntry logged today. Empty
+                    // state nudges the user to the Snap card above.
+                    MealTimelineSection(entries: viewModel.todayFoodEntries)
 
-                    // ── Body ──
-                    sectionHeader("Body")
-
-                    // V6 Body tile row — Weight + Sleep + Readiness. Per
-                    // v6-today.jsx anatomy step 5, three small tiles replace
-                    // the legacy full-width Weight+Trend card so the user
-                    // sees current weight, last-night sleep, and recovery at
-                    // a glance. Detail entry points are unchanged: Weight tap
-                    // opens the entry sheet (with "+" inline log button),
-                    // Sleep / Readiness route into SleepRecoveryView.
-                    v6BodyTileRow
+                    // V7 Phase 2 (#821) — body summary 3-card row. WEIGHT /
+                    // SLEEP / READINESS. Tap any card to jump to the Body
+                    // tab. Goal-aware coloring on WEIGHT only.
+                    BodySummaryCardsRow(
+                        payloads: BodySummaryCardsRow.payloads(
+                            weightKg: viewModel.latestWeight ?? viewModel.trendWeight,
+                            weeklyRateKg: viewModel.weeklyRate,
+                            sleepHours: viewModel.sleepHours,
+                            recoveryScore: viewModel.recoveryScore,
+                            hrvMs: viewModel.hrvMs,
+                            goalDirection: goalDirection
+                        ),
+                        onTapBody: { selectedTab = 1 }
+                    )
 
                     // V6 coaching nudge — anatomy step 6 of `v6-today.jsx`.
                     // Replaces the legacy multi-card ForEach over

@@ -13,7 +13,7 @@ import SwiftUI
 ///
 /// Owns nothing visual that isn't in the V6 spec — the surrounding card chrome
 /// (`.card()`), tap target, and section header are the caller's responsibility,
-/// same convention as `V6Rings` / `V6BodyTile` / `V6QuickLogRow`.
+/// same convention as `V6Rings` / `V6QuickLogRow`.
 struct V6HeroIntakeCard: View {
     let payload: V6HeroIntakeCardPayload
 
@@ -96,7 +96,7 @@ struct V6HeroIntakeCard: View {
 /// Pure value type — all formatting and color decisions baked in once by
 /// `V6HeroIntakeCard.payload(...)` so the view is dumb and tier-1-testable
 /// without standing up a SwiftUI host. Same factory-then-render discipline
-/// as `V6BodyTilePayload` / `V6MealSlotPayload` / `V6CoachingNudgePayload`.
+/// as `V6CoachingNudgePayload`.
 struct V6HeroIntakeCardPayload: Equatable {
     let titleText: String
     let pctOfGoal: Int
@@ -127,7 +127,7 @@ extension V6HeroIntakeCard {
     ///
     /// Raw doubles (not domain types) so the test can pin formatter behavior
     /// without standing up a `WeightGoal.MacroTargets` / `DailyNutrition`
-    /// fixture. Same shape as `V6BodyTile.weightPayload(weightKg:weeklyRateKg:)`.
+    /// fixture.
     ///
     /// NaN / infinite / negative inputs are clamped to 0 — matches V6Rings'
     /// finite-only policy so a corrupt nutrition row can't paint a phantom
