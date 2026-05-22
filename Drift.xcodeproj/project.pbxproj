@@ -34,6 +34,7 @@
 		25F0B0777381EAD673CCAF41 /* AIChatView+InputBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0E11C51B4521808471EB7C7C /* AIChatView+InputBar.swift */; };
 		261CF4F6663AA435756483F5 /* AmbiguityEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB66CE8222D505237BF36996 /* AmbiguityEval.swift */; };
 		2CCF5E1D415E462AE9997DD4 /* DashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0C555B3F9005A7C75FAAD51 /* DashboardViewModel.swift */; };
+		2CEFAD1A539839CD3A1D4D39 /* FoundationModelsFoodExtractorIndianEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD0CE09FD6BD4F070AF9B084 /* FoundationModelsFoodExtractorIndianEval.swift */; };
 		2CF22C2420F9E22D2F989C70 /* NotificationServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F86B648E00469832A2C8FB56 /* NotificationServiceTests.swift */; };
 		2DBEBC3C1C0A2223F64A721A /* LogMealSheetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC00E0CF9EA4AC9ADEF6D8F0 /* LogMealSheetTests.swift */; };
 		2DDEA9907FA6338488A8E1CD /* AITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19E7517E5B4779CBBE1C7284 /* AITests.swift */; };
@@ -432,6 +433,7 @@
 		FBD371873F1D148C190AA7DB /* PhotoLogToolTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLogToolTests.swift; sourceTree = "<group>"; };
 		FC00E0CF9EA4AC9ADEF6D8F0 /* LogMealSheetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogMealSheetTests.swift; sourceTree = "<group>"; };
 		FCBE3BA3D70586AC0F3ED34E /* DebugSeedData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugSeedData.swift; sourceTree = "<group>"; };
+		FD0CE09FD6BD4F070AF9B084 /* FoundationModelsFoodExtractorIndianEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelsFoodExtractorIndianEval.swift; sourceTree = "<group>"; };
 		FF0DB0809C7110E3644208F2 /* Drift.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Drift.entitlements; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -849,6 +851,7 @@
 				D573CD42E3A315491B5DD60D /* CompositeFoodExtractorFMEval.swift */,
 				C8C8E55C6396731BC65D49AB /* FoundationModelsChatParityTests.swift */,
 				371F20936CDC979979B7686D /* FoundationModelsExerciseTranscriptEval.swift */,
+				FD0CE09FD6BD4F070AF9B084 /* FoundationModelsFoodExtractorIndianEval.swift */,
 				2DEC3049742676C1201A6847 /* HardEvalSet.swift */,
 				A048685BCBAD258ADEEB3E22 /* IntentRoutingEval.swift */,
 				1BBFE4D3A672CECBACA7F08D /* MultiIntentDeterministicEval.swift */,
@@ -1213,6 +1216,7 @@
 				D8E7B7B5446C1B3CB3BBF5FC /* DomainExtractorEval.swift in Sources */,
 				E3112CD38D734531A4040541 /* FoundationModelsChatParityTests.swift in Sources */,
 				C039044B1E2BAEF8D16D6202 /* FoundationModelsExerciseTranscriptEval.swift in Sources */,
+				2CEFAD1A539839CD3A1D4D39 /* FoundationModelsFoodExtractorIndianEval.swift in Sources */,
 				E63F9BB35572B3EF11BF9DE5 /* HardEvalSet.swift in Sources */,
 				A459C9B6E82F83B1CC545F63 /* IntentClassifierEval.swift in Sources */,
 				F2DAD90846C1E28C0DBBB863 /* IntentRoutingEval.swift in Sources */,
@@ -1383,7 +1387,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Drift/Drift.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 268;
+				CURRENT_PROJECT_VERSION = 269;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1516,7 +1520,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Drift/Drift.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 268;
+				CURRENT_PROJECT_VERSION = 269;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
