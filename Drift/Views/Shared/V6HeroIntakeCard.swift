@@ -13,7 +13,7 @@ import SwiftUI
 ///
 /// Owns nothing visual that isn't in the V6 spec — the surrounding card chrome
 /// (`.card()`), tap target, and section header are the caller's responsibility,
-/// same convention as `V6Rings` / `V6QuickLogRow`.
+/// same convention as `V6Rings` / `LogMethodCardsRow`.
 struct V6HeroIntakeCard: View {
     let payload: V6HeroIntakeCardPayload
 

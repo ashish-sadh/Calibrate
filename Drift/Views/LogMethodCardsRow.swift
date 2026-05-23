@@ -1,17 +1,22 @@
 import SwiftUI
 import DriftCore
 
-/// V6 Dashboard quick-log strip — 4 chip buttons that sit under the rings hero.
-/// Maps 1:1 to `V6QuickIcon` + the chip grid in
-/// `Docs/design-references/v6-2026-05-14/v6/v6-today.jsx` (anatomy step 3).
+/// V7 Phase 2 Dashboard log-methods row — 4 cards that sit between the
+/// donut hero (`V6HeroIntakeCard`) and the meal timeline. Replaces the
+/// V6 quick-log chip strip. Surfaces 4 entry points so first-time users
+/// always have a clear path into logging:
 ///
-/// Each chip is a stable, identifiable surface (`kind` is the identity, not a
-/// per-init `UUID()` — same identity discipline the V6Rings ForEach uses).
-/// Tap handlers fan out via `NotificationCenter` so the Food tab / AI overlay
-/// can react without Dashboard owning those sheet bindings. The Voice chip
-/// uses an explicit `aiEnabled = true` (never `.toggle()`) so a double-tap
-/// can't surprise-disable AI.
-struct V6QuickLogRow: View {
+///   - **Snap** → routes to PhotoLog (camera-first verb, bypasses the
+///     segmented sheet so users go straight to capture).
+///   - **Voice** → opens `LogMealSheet` at the Voice segment.
+///   - **Search** → opens `LogMealSheet` at the Search segment.
+///   - **Recent** → opens `LogMealSheet` at the Recent segment.
+///
+/// Each card is a stable, identifiable surface (`kind` is the identity,
+/// not a per-init `UUID()` — same identity discipline `V6Rings` uses).
+/// Tap handlers fan out via `NotificationCenter` so the Food tab / AI
+/// overlay react without Dashboard owning those sheet bindings.
+struct LogMethodCardsRow: View {
     @Binding var selectedTab: Int
     @Binding var aiEnabled: Bool
 
@@ -20,14 +25,14 @@ struct V6QuickLogRow: View {
             columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4),
             spacing: 8
         ) {
-            ForEach(QuickLogChip.allCases) { chip in
-                Button { fire(chip) } label: {
+            ForEach(LogMethodCard.allCases) { card in
+                Button { fire(card) } label: {
                     VStack(spacing: 6) {
-                        Image(systemName: chip.icon)
+                        Image(systemName: card.icon)
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(Theme.textPrimary)
                             .frame(height: 22)
-                        Text(chip.label)
+                        Text(card.label)
                             .font(.system(size: 11.5, weight: .semibold))
                             .foregroundStyle(Theme.textPrimary)
                             .lineLimit(1)
@@ -43,31 +48,27 @@ struct V6QuickLogRow: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(chip.accessibilityLabel)
-                .accessibilityHint(chip.accessibilityHint)
-                .accessibilityIdentifier("quick-log-\(chip.rawValue)")
+                .accessibilityLabel(card.accessibilityLabel)
+                .accessibilityHint(card.accessibilityHint)
+                .accessibilityIdentifier("log-method-\(card.rawValue)")
             }
         }
         .dynamicTypeSize(...DynamicTypeSize.accessibility2)
     }
 
-    private func fire(_ chip: QuickLogChip) {
-        // V7: Recent/Search/Voice open the unified Log-a-Meal sheet at
-        // the matching mode. Snap is special-cased — user feedback on
-        // mobile: "I was expecting it will just plug in and open
-        // previous photolog screen we had." Camera-first verb, no
-        // intermediate empty state. Routes directly to PhotoLogFlowView
-        // via `.openPhotoLog`, bypassing the segmented sheet.
-        if chip == .snap {
+    private func fire(_ card: LogMethodCard) {
+        // Snap is special-cased — user feedback on mobile: "I was
+        // expecting it will just plug in and open previous photolog
+        // screen we had." Camera-first verb, no intermediate empty
+        // state. Routes directly to PhotoLogFlowView via `.openPhotoLog`,
+        // bypassing the segmented sheet.
+        if card == .snap {
             NotificationCenter.default.post(name: .openPhotoLog, object: nil)
             return
         }
 
-        // .snap is handled above via the early-return; the LogMealMode
-        // enum no longer carries a .snap case (V7: Snap is always
-        // direct → PhotoLog, never a sheet segment).
         let mode: LogMealMode
-        switch chip {
+        switch card {
         case .voice: mode = .voice
         case .search: mode = .search
         case .recent: mode = .recent
@@ -81,10 +82,11 @@ struct V6QuickLogRow: View {
     }
 }
 
-/// One quick-log chip. `id` is `rawValue` so SwiftUI keeps stable identity
-/// across Dashboard body recomputes — same discipline as `V6Ring.id`. Adding
-/// or reordering cases is a deliberate UI change, not a hidden identity churn.
-enum QuickLogChip: String, CaseIterable, Identifiable {
+/// One log-method card. `id` is `rawValue` so SwiftUI keeps stable
+/// identity across Dashboard body recomputes — same discipline as
+/// `V6Ring.id`. Adding or reordering cases is a deliberate UI change,
+/// not a hidden identity churn.
+enum LogMethodCard: String, CaseIterable, Identifiable {
     case snap, voice, search, recent
     var id: String { rawValue }
 
@@ -119,7 +121,7 @@ enum QuickLogChip: String, CaseIterable, Identifiable {
 }
 
 #if DEBUG
-#Preview("V6QuickLogRow") {
+#Preview("LogMethodCardsRow") {
     StatefulPreview()
         .padding()
         .background(Theme.background)
@@ -130,7 +132,7 @@ private struct StatefulPreview: View {
     @State private var tab = 0
     @State private var ai = false
     var body: some View {
-        V6QuickLogRow(selectedTab: $tab, aiEnabled: $ai)
+        LogMethodCardsRow(selectedTab: $tab, aiEnabled: $ai)
     }
 }
 #endif

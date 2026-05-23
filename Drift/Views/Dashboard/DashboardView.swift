@@ -161,10 +161,10 @@ struct DashboardView: View {
                     // Nutrition hero (macro rings) → Food tab
                     Button { selectedTab = 2 } label: { calorieBalanceCard }.buttonStyle(.plain)
 
-                    // V6 quick-log row — Snap · Voice · Search · Recent.
+                    // V7 Phase 2 log-methods row — Snap · Voice · Search · Recent.
                     // Always visible regardless of whether food was logged so
                     // first-time users have 4 clear entry points into logging.
-                    V6QuickLogRow(selectedTab: $selectedTab, aiEnabled: $aiEnabled)
+                    LogMethodCardsRow(selectedTab: $selectedTab, aiEnabled: $aiEnabled)
 
                     // V7 Phase 2 (#821) — vertical meal timeline. Replaces
                     // the V6 4-slot Breakfast/Lunch/Dinner/Snacks list with a
