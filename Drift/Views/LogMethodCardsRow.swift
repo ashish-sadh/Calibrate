@@ -2,7 +2,7 @@ import SwiftUI
 import DriftCore
 
 /// V7 Phase 2 Dashboard log-methods row — 4 cards that sit between the
-/// donut hero (`V6HeroIntakeCard`) and the meal timeline. Replaces the
+/// donut hero (`TodayDonutView`) and the meal timeline. Replaces the
 /// V6 quick-log chip strip. Surfaces 4 entry points so first-time users
 /// always have a clear path into logging:
 ///

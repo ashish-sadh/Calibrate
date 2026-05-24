@@ -2,18 +2,20 @@ import XCTest
 import SwiftUI
 @testable import Drift
 
-/// Tier-1 tests for `V6HeroIntakeCard` — the V6 Today-tab hero card chrome
-/// (anatomy step 2 of `v6-today.jsx`). Pins the payload factory contract:
-/// title string, pct-of-goal Int, ring array order, color tokens, and
-/// NaN/inf/negative defensive handling. The SwiftUI view tree is dumb (just
-/// renders payload fields), so the formatter is where bugs hide.
+/// Tier-1 tests for `TodayDonutView` — the V7 Today-tab donut hero card
+/// (anatomy step 2 of `v6-today.jsx`, adapted with goal-aware kcal-ring
+/// color flip). Pins the payload factory contract: title string,
+/// pct-of-goal Int, ring array order, color tokens, goal-aware kcal-ring
+/// color flip, and NaN/inf/negative defensive handling. The SwiftUI view
+/// tree is dumb (just renders payload fields), so the formatter is where
+/// bugs hide.
 @MainActor
-final class V6HeroIntakeCardTests: XCTestCase {
+final class TodayDonutViewTests: XCTestCase {
 
     // MARK: - Title text
 
     func testTitleSaysKcalLeftWhenUnderTarget() {
-        let p = V6HeroIntakeCard.payload(
+        let p = TodayDonutView.payload(
             kcalEaten: 1450, kcalTarget: 2000,
             proteinEatenG: 0, proteinTargetG: 0,
             fiberEatenG: 0, fiberTargetG: 0,
@@ -25,7 +27,7 @@ final class V6HeroIntakeCardTests: XCTestCase {
     }
 
     func testTitleSaysOnTargetWhenExactlyAtTarget() {
-        let p = V6HeroIntakeCard.payload(
+        let p = TodayDonutView.payload(
             kcalEaten: 2000, kcalTarget: 2000,
             proteinEatenG: 0, proteinTargetG: 0,
             fiberEatenG: 0, fiberTargetG: 0,
@@ -36,7 +38,7 @@ final class V6HeroIntakeCardTests: XCTestCase {
     }
 
     func testTitleSaysOnTargetWhenOverTarget() {
-        let p = V6HeroIntakeCard.payload(
+        let p = TodayDonutView.payload(
             kcalEaten: 2400, kcalTarget: 2000,
             proteinEatenG: 0, proteinTargetG: 0,
             fiberEatenG: 0, fiberTargetG: 0,
@@ -48,7 +50,7 @@ final class V6HeroIntakeCardTests: XCTestCase {
 
     func testTitleRoundsRemainingToInteger() {
         // 1234.6 remaining → 1235 kcal left (rounded, not truncated).
-        let p = V6HeroIntakeCard.payload(
+        let p = TodayDonutView.payload(
             kcalEaten: 765.4, kcalTarget: 2000,
             proteinEatenG: 0, proteinTargetG: 0,
             fiberEatenG: 0, fiberTargetG: 0,
@@ -63,7 +65,7 @@ final class V6HeroIntakeCardTests: XCTestCase {
 
     func testPctOfGoalRoundsHalfUp() {
         // 1500/2000 = 75% — no rounding ambiguity.
-        let p = V6HeroIntakeCard.payload(
+        let p = TodayDonutView.payload(
             kcalEaten: 1500, kcalTarget: 2000,
             proteinEatenG: 0, proteinTargetG: 0,
             fiberEatenG: 0, fiberTargetG: 0,
@@ -76,7 +78,7 @@ final class V6HeroIntakeCardTests: XCTestCase {
     func testPctOfGoalAllowsOvershootOver100() {
         // 2400/2000 = 120%. V6 design intentionally shows the overshoot
         // number so the user sees how far past goal they went.
-        let p = V6HeroIntakeCard.payload(
+        let p = TodayDonutView.payload(
             kcalEaten: 2400, kcalTarget: 2000,
             proteinEatenG: 0, proteinTargetG: 0,
             fiberEatenG: 0, fiberTargetG: 0,
@@ -88,7 +90,7 @@ final class V6HeroIntakeCardTests: XCTestCase {
 
     func testPctOfGoalReturnsZeroWhenTargetIsZero() {
         // Defensive: a 0-target macro shouldn't divide-by-zero or NaN-paint.
-        let p = V6HeroIntakeCard.payload(
+        let p = TodayDonutView.payload(
             kcalEaten: 1450, kcalTarget: 0,
             proteinEatenG: 0, proteinTargetG: 0,
             fiberEatenG: 0, fiberTargetG: 0,
@@ -101,7 +103,7 @@ final class V6HeroIntakeCardTests: XCTestCase {
     // MARK: - NaN / inf / negative guards
 
     func testNanEatenFallsBackToZeroAndTreatsAsUnderTarget() {
-        let p = V6HeroIntakeCard.payload(
+        let p = TodayDonutView.payload(
             kcalEaten: .nan, kcalTarget: 2000,
             proteinEatenG: .nan, proteinTargetG: 150,
             fiberEatenG: .nan, fiberTargetG: 30,
@@ -116,7 +118,7 @@ final class V6HeroIntakeCardTests: XCTestCase {
     }
 
     func testInfiniteEatenFallsBackToZero() {
-        let p = V6HeroIntakeCard.payload(
+        let p = TodayDonutView.payload(
             kcalEaten: .infinity, kcalTarget: 2000,
             proteinEatenG: 0, proteinTargetG: 0,
             fiberEatenG: 0, fiberTargetG: 0,
@@ -130,7 +132,7 @@ final class V6HeroIntakeCardTests: XCTestCase {
     func testNegativeEatenClampedToZero() {
         // A corrupt nutrition row with a negative gram count shouldn't paint
         // a phantom arc backwards.
-        let p = V6HeroIntakeCard.payload(
+        let p = TodayDonutView.payload(
             kcalEaten: -500, kcalTarget: 2000,
             proteinEatenG: -10, proteinTargetG: 150,
             fiberEatenG: 0, fiberTargetG: 30,
@@ -146,7 +148,7 @@ final class V6HeroIntakeCardTests: XCTestCase {
     // MARK: - Ring array shape
 
     func testRingsArrayPreservesKcalProteinFiberOrder() {
-        let p = V6HeroIntakeCard.payload(
+        let p = TodayDonutView.payload(
             kcalEaten: 1450, kcalTarget: 2000,
             proteinEatenG: 95, proteinTargetG: 150,
             fiberEatenG: 18, fiberTargetG: 30,
@@ -167,7 +169,7 @@ final class V6HeroIntakeCardTests: XCTestCase {
     // MARK: - Carb + fat legend tokens
 
     func testCarbsLegendUsesV6CarbsColor() {
-        let p = V6HeroIntakeCard.payload(
+        let p = TodayDonutView.payload(
             kcalEaten: 0, kcalTarget: 0,
             proteinEatenG: 0, proteinTargetG: 0,
             fiberEatenG: 0, fiberTargetG: 0,
@@ -182,7 +184,7 @@ final class V6HeroIntakeCardTests: XCTestCase {
     }
 
     func testFatLegendUsesV6FatColor() {
-        let p = V6HeroIntakeCard.payload(
+        let p = TodayDonutView.payload(
             kcalEaten: 0, kcalTarget: 0,
             proteinEatenG: 0, proteinTargetG: 0,
             fiberEatenG: 0, fiberTargetG: 0,
@@ -201,7 +203,7 @@ final class V6HeroIntakeCardTests: XCTestCase {
     func testKcalCenterValueTruncatesToInteger() {
         // 1450.7 → 1450 (Int truncation, not rounding — center label sees
         // raw count, the rings see the precise double).
-        let p = V6HeroIntakeCard.payload(
+        let p = TodayDonutView.payload(
             kcalEaten: 1450.7, kcalTarget: 2000,
             proteinEatenG: 0, proteinTargetG: 0,
             fiberEatenG: 0, fiberTargetG: 0,
@@ -212,17 +214,17 @@ final class V6HeroIntakeCardTests: XCTestCase {
     }
 
     func testKcalCenterFontStepsDownFor4DigitDays() {
-        let small = V6HeroIntakeCard.payload(
+        let small = TodayDonutView.payload(
             kcalEaten: 850, kcalTarget: 2000,
             proteinEatenG: 0, proteinTargetG: 0, fiberEatenG: 0, fiberTargetG: 0,
             carbsEatenG: 0, carbsTargetG: 0, fatEatenG: 0, fatTargetG: 0
         )
-        let big = V6HeroIntakeCard.payload(
+        let big = TodayDonutView.payload(
             kcalEaten: 4500, kcalTarget: 2000,
             proteinEatenG: 0, proteinTargetG: 0, fiberEatenG: 0, fiberTargetG: 0,
             carbsEatenG: 0, carbsTargetG: 0, fatEatenG: 0, fatTargetG: 0
         )
-        let huge = V6HeroIntakeCard.payload(
+        let huge = TodayDonutView.payload(
             kcalEaten: 12_000, kcalTarget: 2000,
             proteinEatenG: 0, proteinTargetG: 0, fiberEatenG: 0, fiberTargetG: 0,
             carbsEatenG: 0, carbsTargetG: 0, fatEatenG: 0, fatTargetG: 0
@@ -230,5 +232,83 @@ final class V6HeroIntakeCardTests: XCTestCase {
         XCTAssertEqual(small.kcalCenterFontSize, 30, "<1000 kcal should use 30pt")
         XCTAssertEqual(big.kcalCenterFontSize, 26, "1000-9999 kcal should use 26pt")
         XCTAssertEqual(huge.kcalCenterFontSize, 22, "10000+ kcal should use 22pt")
+    }
+
+    // MARK: - Goal-aware kcal-ring color flip (V7 delta)
+
+    func testKcalRingColorFlipsToSurplusWhenOverTargetAndLosingWeight() {
+        // Losing-weight user who blew past target → kcal ring should flip
+        // from coral (Theme.V6.ringMove) to red (Theme.surplus), per the
+        // goal-aware-color tenet (red = against goal).
+        let p = TodayDonutView.payload(
+            kcalEaten: 2400, kcalTarget: 2000,
+            proteinEatenG: 0, proteinTargetG: 0,
+            fiberEatenG: 0, fiberTargetG: 0,
+            carbsEatenG: 0, carbsTargetG: 0,
+            fatEatenG: 0, fatTargetG: 0,
+            isLosingWeight: true
+        )
+        XCTAssertEqual(p.rings[0].label, "kcal")
+        XCTAssertEqual(p.rings[0].color, Theme.surplus,
+                       "Losing-weight + kcal over target should paint kcal ring Theme.surplus")
+    }
+
+    func testKcalRingColorFlipsExactlyAtTargetForLosingWeight() {
+        // At-target counts as over-target for the flip (kEaten >= kTarget).
+        let p = TodayDonutView.payload(
+            kcalEaten: 2000, kcalTarget: 2000,
+            proteinEatenG: 0, proteinTargetG: 0,
+            fiberEatenG: 0, fiberTargetG: 0,
+            carbsEatenG: 0, carbsTargetG: 0,
+            fatEatenG: 0, fatTargetG: 0,
+            isLosingWeight: true
+        )
+        XCTAssertEqual(p.rings[0].color, Theme.surplus,
+                       "Losing-weight + kcal exactly at target should also flip to surplus")
+    }
+
+    func testKcalRingStaysCoralWhenOverTargetButNotLosing() {
+        // Non-losing user (maintain or gain): kcal ring stays coral even
+        // when over target — coral is goal-neutral. Only losing-weight
+        // users see the red surplus flip.
+        let p = TodayDonutView.payload(
+            kcalEaten: 2400, kcalTarget: 2000,
+            proteinEatenG: 0, proteinTargetG: 0,
+            fiberEatenG: 0, fiberTargetG: 0,
+            carbsEatenG: 0, carbsTargetG: 0,
+            fatEatenG: 0, fatTargetG: 0,
+            isLosingWeight: false
+        )
+        XCTAssertEqual(p.rings[0].color, Theme.V6.ringMove,
+                       "Non-losing user over target should keep coral ring")
+    }
+
+    func testKcalRingStaysCoralWhenUnderTargetEvenForLosingWeight() {
+        // Under target is goal-aligned for a losing user — keep coral.
+        let p = TodayDonutView.payload(
+            kcalEaten: 1500, kcalTarget: 2000,
+            proteinEatenG: 0, proteinTargetG: 0,
+            fiberEatenG: 0, fiberTargetG: 0,
+            carbsEatenG: 0, carbsTargetG: 0,
+            fatEatenG: 0, fatTargetG: 0,
+            isLosingWeight: true
+        )
+        XCTAssertEqual(p.rings[0].color, Theme.V6.ringMove,
+                       "Under target should stay coral regardless of goal direction")
+    }
+
+    func testKcalRingStaysCoralWhenTargetIsZeroEvenForLosingWeight() {
+        // Defensive: target=0 should not trip the flip (kEaten >= 0 is
+        // always true and would falsely flag everyone as over-target).
+        let p = TodayDonutView.payload(
+            kcalEaten: 1500, kcalTarget: 0,
+            proteinEatenG: 0, proteinTargetG: 0,
+            fiberEatenG: 0, fiberTargetG: 0,
+            carbsEatenG: 0, carbsTargetG: 0,
+            fatEatenG: 0, fatTargetG: 0,
+            isLosingWeight: true
+        )
+        XCTAssertEqual(p.rings[0].color, Theme.V6.ringMove,
+                       "Zero kcal target should not falsely flip the flag")
     }
 }

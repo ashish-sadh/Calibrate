@@ -160,13 +160,14 @@ extension DashboardView {
     var calorieBalanceCard: some View {
         VStack(spacing: 10) {
             if let targets = WeightGoal.load()?.macroTargets(currentWeightKg: viewModel.trendWeight) {
-                // V6 hero intake card — anatomy step 2 of v6-today.jsx.
-                // Overline + display title + accent-soft pct chip header,
-                // the 3 concentric kcal/protein/fiber rings + legend, then
-                // a hairline divider with a 3-col carbs / empty / fat
-                // legend strip below. See V6HeroIntakeCard for the layout.
-                V6HeroIntakeCard(
-                    payload: V6HeroIntakeCard.payload(
+                // V7 Today donut hero — anatomy step 2 of v6-today.jsx,
+                // adapted with goal-aware kcal-ring color flip. Overline +
+                // display title + accent-soft pct chip header, 3 concentric
+                // kcal/protein/fiber rings + legend, hairline divider, then
+                // a 3-col carbs / empty / fat legend strip. See
+                // TodayDonutView for the layout.
+                TodayDonutView(
+                    payload: TodayDonutView.payload(
                         kcalEaten: viewModel.todayNutrition.calories,
                         kcalTarget: targets.calorieTarget,
                         proteinEatenG: viewModel.todayNutrition.proteinG,
@@ -176,7 +177,8 @@ extension DashboardView {
                         carbsEatenG: viewModel.todayNutrition.carbsG,
                         carbsTargetG: targets.carbsG,
                         fatEatenG: viewModel.todayNutrition.fatG,
-                        fatTargetG: targets.fatG
+                        fatTargetG: targets.fatG,
+                        isLosingWeight: targets.isLosing
                     )
                 )
             } else {

@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// V6 Today-tab hero intake card — anatomy step 2 of
-/// `Docs/design-references/v6-2026-05-14/v6/v6-today.jsx`.
+/// V7 Today-tab donut hero — anatomy step 2 of
+/// `Docs/design-references/v6-2026-05-14/v6/v6-today.jsx`, adapted for V7.
 ///
 /// Layout (top → bottom, matching the JSX):
 ///   • Header: "TODAY'S INTAKE" overline + display title ("X kcal left" /
@@ -11,11 +11,16 @@ import SwiftUI
 ///     (col 3), each rendered with `V6LegendItem` so the typography matches
 ///     the ring legend above pixel-for-pixel.
 ///
+/// Goal-aware color (V7 delta): when the user is in a losing-weight goal AND
+/// kcal eaten meets-or-exceeds target, the kcal ring flips from
+/// `Theme.V6.ringMove` (coral) to `Theme.surplus` (red) — the goal-aware-color
+/// tenet ("red = against goal"). Non-losing users keep coral.
+///
 /// Owns nothing visual that isn't in the V6 spec — the surrounding card chrome
 /// (`.card()`), tap target, and section header are the caller's responsibility,
 /// same convention as `V6Rings` / `LogMethodCardsRow`.
-struct V6HeroIntakeCard: View {
-    let payload: V6HeroIntakeCardPayload
+struct TodayDonutView: View {
+    let payload: TodayDonutPayload
 
     var body: some View {
         VStack(spacing: 0) {
@@ -94,10 +99,10 @@ struct V6HeroIntakeCard: View {
 }
 
 /// Pure value type — all formatting and color decisions baked in once by
-/// `V6HeroIntakeCard.payload(...)` so the view is dumb and tier-1-testable
+/// `TodayDonutView.payload(...)` so the view is dumb and tier-1-testable
 /// without standing up a SwiftUI host. Same factory-then-render discipline
 /// as `V6CoachingNudgePayload`.
-struct V6HeroIntakeCardPayload: Equatable {
+struct TodayDonutPayload: Equatable {
     let titleText: String
     let pctOfGoal: Int
     let rings: [V6Ring]
@@ -111,7 +116,7 @@ struct V6HeroIntakeCardPayload: Equatable {
     /// collapse 22pt / 26pt / 30pt to the same string under introspection.
     let kcalCenterFontSize: CGFloat
 
-    static func == (lhs: V6HeroIntakeCardPayload, rhs: V6HeroIntakeCardPayload) -> Bool {
+    static func == (lhs: TodayDonutPayload, rhs: TodayDonutPayload) -> Bool {
         lhs.titleText == rhs.titleText
             && lhs.pctOfGoal == rhs.pctOfGoal
             && lhs.kcalCenterValue == rhs.kcalCenterValue
@@ -122,12 +127,17 @@ struct V6HeroIntakeCardPayload: Equatable {
     }
 }
 
-extension V6HeroIntakeCard {
+extension TodayDonutView {
     /// Builds the hero payload from raw eaten/target macro values.
     ///
     /// Raw doubles (not domain types) so the test can pin formatter behavior
     /// without standing up a `WeightGoal.MacroTargets` / `DailyNutrition`
     /// fixture.
+    ///
+    /// `isLosingWeight` drives the goal-aware kcal-ring color flip: when true
+    /// AND kEaten meets-or-exceeds target, the kcal ring renders in
+    /// `Theme.surplus` (red = against goal) instead of `Theme.V6.ringMove`
+    /// (coral). Non-losing users always see coral.
     ///
     /// NaN / infinite / negative inputs are clamped to 0 — matches V6Rings'
     /// finite-only policy so a corrupt nutrition row can't paint a phantom
@@ -142,8 +152,9 @@ extension V6HeroIntakeCard {
         carbsEatenG: Double,
         carbsTargetG: Double,
         fatEatenG: Double,
-        fatTargetG: Double
-    ) -> V6HeroIntakeCardPayload {
+        fatTargetG: Double,
+        isLosingWeight: Bool = false
+    ) -> TodayDonutPayload {
         let kEaten = sanitize(kcalEaten)
         let kTarget = sanitize(kcalTarget)
         let pEaten = sanitize(proteinEatenG)
@@ -167,11 +178,16 @@ extension V6HeroIntakeCard {
             ? Int((kEaten / kTarget * 100).rounded())
             : 0
 
+        // Goal-aware kcal ring color: flip to surplus (red = against goal)
+        // when a losing-weight user has met-or-exceeded their kcal target.
+        let overTargetForLoser = isLosingWeight && kTarget > 0 && kEaten >= kTarget
+        let kcalRingColor: Color = overTargetForLoser ? Theme.surplus : Theme.V6.ringMove
+
         let rings: [V6Ring] = [
             V6Ring(
                 label: "kcal", unit: "",
                 value: kEaten, target: kTarget,
-                color: Theme.V6.ringMove,
+                color: kcalRingColor,
                 trackColor: Theme.V6.ringMoveBg.opacity(0.35)
             ),
             V6Ring(
@@ -214,7 +230,7 @@ extension V6HeroIntakeCard {
             kcalCenterFontSize = 30
         }
 
-        return V6HeroIntakeCardPayload(
+        return TodayDonutPayload(
             titleText: titleText,
             pctOfGoal: pctOfGoal,
             rings: rings,
@@ -231,14 +247,15 @@ extension V6HeroIntakeCard {
 }
 
 #if DEBUG
-#Preview("V6HeroIntakeCard — under target") {
-    V6HeroIntakeCard(
-        payload: V6HeroIntakeCard.payload(
+#Preview("TodayDonutView — under target") {
+    TodayDonutView(
+        payload: TodayDonutView.payload(
             kcalEaten: 1450, kcalTarget: 2000,
             proteinEatenG: 95, proteinTargetG: 150,
             fiberEatenG: 18, fiberTargetG: 30,
             carbsEatenG: 142, carbsTargetG: 220,
-            fatEatenG: 48, fatTargetG: 70
+            fatEatenG: 48, fatTargetG: 70,
+            isLosingWeight: true
         )
     )
     .padding()
@@ -247,14 +264,15 @@ extension V6HeroIntakeCard {
     .background(Theme.background)
 }
 
-#Preview("V6HeroIntakeCard — over target (overshoot)") {
-    V6HeroIntakeCard(
-        payload: V6HeroIntakeCard.payload(
+#Preview("TodayDonutView — over target (losing-weight, flips to surplus)") {
+    TodayDonutView(
+        payload: TodayDonutView.payload(
             kcalEaten: 2400, kcalTarget: 2000,
             proteinEatenG: 165, proteinTargetG: 150,
             fiberEatenG: 32, fiberTargetG: 30,
             carbsEatenG: 250, carbsTargetG: 220,
-            fatEatenG: 78, fatTargetG: 70
+            fatEatenG: 78, fatTargetG: 70,
+            isLosingWeight: true
         )
     )
     .padding()
