@@ -36,7 +36,7 @@ cmd_pending() {
     # identical to "needs doc written" without scanning git refs.
     local RAW
     RAW=$(gh issue list --state open --label design-doc --json number,title,labels \
-        --jq '[.[] | select(.labels | map(.name) | index("doc-ready") | not)] | .[] | "\(.number)|\(.title)"' \
+        --jq '[.[] | select(.labels | map(.name) | index("doc-ready") | not) | select(.labels | map(.name) | index("blocked") | not)] | .[] | "\(.number)|\(.title)"' \
         2>/dev/null || true)
     if [ -z "$RAW" ]; then
         echo "none"
