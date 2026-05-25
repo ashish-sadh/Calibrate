@@ -25,15 +25,30 @@ struct MealTimelineSection: View {
             if rows.isEmpty {
                 emptyState
             } else {
+                // 2026-05-24 density pass — user feedback: "too spaced
+                // out on Today." Was: one RoundedRectangle card *per*
+                // row + a decorative timeline gutter (14px-wide rail
+                // with dots and connectors), ~70px per row. Now: a
+                // single bounded card containing all rows, with a
+                // hairline divider between them — ~36px per row,
+                // roughly half the footprint at 7 entries. The gutter
+                // was visual noise that didn't earn its space; tap
+                // target stays the row body.
                 VStack(spacing: 0) {
                     ForEach(Array(rows.enumerated()), id: \.element.id) { idx, row in
-                        timelineRow(
-                            row: row,
-                            isFirst: idx == 0,
-                            isLast: idx == rows.count - 1
-                        )
+                        compactRow(row: row)
+                        if idx < rows.count - 1 {
+                            Divider()
+                                .overlay(Theme.separator.opacity(0.6))
+                                .padding(.leading, 14)
+                        }
                     }
                 }
+                .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .strokeBorder(Theme.separator, lineWidth: 0.5)
+                )
             }
         }
         .dynamicTypeSize(...DynamicTypeSize.accessibility2)
@@ -74,96 +89,61 @@ struct MealTimelineSection: View {
     }
 
     @ViewBuilder
-    private func timelineRow(row: MealTimelineRow, isFirst: Bool, isLast: Bool) -> some View {
+    private func compactRow(row: MealTimelineRow) -> some View {
         let isExpanded = expandedRowID == row.id
-        HStack(alignment: .top, spacing: 12) {
-            timelineGutter(isFirst: isFirst, isLast: isLast)
-            Button {
-                withAnimation(.easeInOut(duration: 0.18)) {
-                    expandedRowID = isExpanded ? nil : row.id
+        Button {
+            withAnimation(.easeInOut(duration: 0.18)) {
+                expandedRowID = isExpanded ? nil : row.id
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text(row.timeText)
+                        .font(.system(size: 11.5, weight: .semibold).monospacedDigit())
+                        .foregroundStyle(Theme.textTertiary)
+                        .frame(minWidth: 56, alignment: .leading)
+                    Text(row.foodName)
+                        .font(.system(size: 14.5, weight: .semibold))
+                        .foregroundStyle(Theme.textPrimary)
+                        .lineLimit(isExpanded ? 2 : 1)
+                        .truncationMode(.tail)
+                    Spacer(minLength: 4)
+                    Text("\(row.kcal)")
+                        .font(.system(size: 14.5, weight: .semibold, design: .rounded).monospacedDigit())
+                        .foregroundStyle(Theme.textPrimary)
+                    Text("kcal")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.textTertiary)
                 }
-            } label: {
-                rowBody(row: row, isExpanded: isExpanded)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel(row.accessibilityLabel)
-            .accessibilityHint(isExpanded ? "Hide details" : "Show details")
-            .accessibilityIdentifier("meal-timeline-row-\(row.id)")
-        }
-        .padding(.vertical, 4)
-    }
 
-    @ViewBuilder
-    private func timelineGutter(isFirst: Bool, isLast: Bool) -> some View {
-        ZStack(alignment: .top) {
-            VStack(spacing: 0) {
-                Rectangle()
-                    .fill(isFirst ? Color.clear : Theme.separator)
-                    .frame(width: 1, height: 18)
-                Rectangle()
-                    .fill(isLast ? Color.clear : Theme.separator)
-                    .frame(width: 1, height: 50)
-            }
-            Circle()
-                .fill(Theme.textPrimary)
-                .frame(width: 12, height: 12)
-                .overlay(
-                    Circle()
-                        .fill(Theme.background)
-                        .frame(width: 4, height: 4)
-                )
-                .padding(.top, 14)
-        }
-        .frame(width: 14)
-    }
-
-    @ViewBuilder
-    private func rowBody(row: MealTimelineRow, isExpanded: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(row.timeText)
-                    .font(.system(size: 11.5, weight: .semibold).monospacedDigit())
-                    .foregroundStyle(Theme.textTertiary)
-                    .frame(minWidth: 56, alignment: .leading)
-                Text(row.foodName)
-                    .font(.system(size: 14.5, weight: .semibold))
-                    .foregroundStyle(Theme.textPrimary)
-                    .lineLimit(isExpanded ? 2 : 1)
-                    .truncationMode(.tail)
-                Spacer(minLength: 4)
-                Text("\(row.kcal)")
-                    .font(.system(size: 14.5, weight: .semibold, design: .rounded).monospacedDigit())
-                    .foregroundStyle(Theme.textPrimary)
-                Text("kcal")
-                    .font(.system(size: 11))
-                    .foregroundStyle(Theme.textTertiary)
-            }
-
-            if isExpanded {
-                HStack(spacing: 6) {
-                    if !row.portionText.isEmpty {
-                        chip(row.portionText, color: Theme.textSecondary)
+                if isExpanded {
+                    HStack(spacing: 6) {
+                        if !row.portionText.isEmpty {
+                            chip(row.portionText, color: Theme.textSecondary)
+                        }
+                        macroChip("P", grams: row.proteinG, color: Theme.proteinRed)
+                        macroChip("C", grams: row.carbsG, color: Theme.macroCarbs)
+                        macroChip("F", grams: row.fatG, color: Theme.macroFat)
+                        if row.fiberG > 0.5 {
+                            macroChip("Fiber", grams: row.fiberG, color: Theme.macroFiber)
+                        }
+                        Spacer(minLength: 0)
                     }
-                    macroChip("P", grams: row.proteinG, color: Theme.proteinRed)
-                    macroChip("C", grams: row.carbsG, color: Theme.macroCarbs)
-                    macroChip("F", grams: row.fatG, color: Theme.macroFat)
-                    if row.fiberG > 0.5 {
-                        macroChip("Fiber", grams: row.fiberG, color: Theme.macroFiber)
-                    }
-                    Spacer(minLength: 0)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
-                .transition(.opacity.combined(with: .move(edge: .top)))
             }
+            // Density pass: was .padding(.horizontal 14, .vertical 12)
+            // — dropped to (14, 8) which is the comfortable lower bound
+            // for tap-target while halving the per-row footprint.
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(Theme.separator, lineWidth: 0.5)
-        )
-        .contentShape(Rectangle())
+        .buttonStyle(.plain)
+        .accessibilityLabel(row.accessibilityLabel)
+        .accessibilityHint(isExpanded ? "Hide details" : "Show details")
+        .accessibilityIdentifier("meal-timeline-row-\(row.id)")
     }
 
     private func chip(_ text: String, color: Color) -> some View {
