@@ -25,8 +25,11 @@ enum Theme {
     static let cardBackground = Color.white
     /// Sub-card surface — inset within a card.
     static let cardBackgroundElevated = Color(hex: "F5F5F7")
-    /// Pill / chip background.
-    static let pillBackground = Color(hex: "EFEFF1")
+    /// Pill / chip background. 2026-05-24: was `#EFEFF1` — identical
+    /// to `Theme.background`, so every pill/chip + the chat input
+    /// disappeared into the page. Bumped to `#E2E2E7` (Apple system
+    /// gray 5 light) so pills have a visible-but-quiet inset.
+    static let pillBackground = Color(hex: "E2E2E7")
     /// Hairline / divider color.
     static let separator = Color(hex: "E5E5E8")
     /// Faint hairline for sub-dividers.

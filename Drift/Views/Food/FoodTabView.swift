@@ -411,7 +411,7 @@ struct FoodTabView: View {
                         }
                         .padding(.vertical, 6).padding(.horizontal, 12)
                         .frame(maxWidth: .infinity)
-                        .background(Theme.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+                        .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 10))
                     }
                     .buttonStyle(.plain)
                 }
@@ -541,18 +541,21 @@ struct FoodTabView: View {
         return groups
     }
 
-    // Combo chip: accent-tinted with fork icon — opens confirm/edit sheet
+    // Combo chip — opens confirm/edit sheet. Pink-fatigue pass: was
+    // coral-tinted across all three text layers + background. Now uses
+    // pillBackground (gray) with text-primary so they read as quiet
+    // suggestions instead of competing CTAs.
     private func comboChip(name: String, calories: Int) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             HStack(spacing: 3) {
                 Image(systemName: "fork.knife").font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(Theme.accent)
-                Text(name).font(.caption.weight(.semibold)).lineLimit(1).foregroundStyle(Theme.accent)
+                    .foregroundStyle(Theme.textSecondary)
+                Text(name).font(.caption.weight(.semibold)).lineLimit(1).foregroundStyle(Theme.textPrimary)
             }
-            Text("\(calories) cal").font(.system(size: 10)).foregroundStyle(Theme.accent.opacity(0.6))
+            Text("\(calories) cal").font(.system(size: 10)).foregroundStyle(Theme.textTertiary)
         }
         .padding(.horizontal, 9).padding(.vertical, 5)
-        .background(Theme.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: 8))
+        .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 8))
     }
 
     // Recent chip: ghost outline — opens quick-add confirm sheet
@@ -689,7 +692,14 @@ struct FoodTabView: View {
                     )
                 } label: {
                     HStack {
-                        Image(systemName: "plus.circle").font(.subheadline).foregroundStyle(Theme.accent)
+                        // 2026-05-24 pink-fatigue pass — the icon was
+                        // coral and pulled the eye too hard on a row
+                        // that's used dozens of times per day. The
+                        // primary CTAs in V7 are intended to be muted
+                        // ink; coral is reserved for branded moments
+                        // (FAB / chat bubble) and explicit
+                        // confirmations (Save/Done).
+                        Image(systemName: "plus.circle").font(.subheadline).foregroundStyle(Theme.textPrimary)
                         Text("Add food").font(.subheadline).foregroundStyle(.secondary)
                         Spacer()
                     }
@@ -749,7 +759,9 @@ struct FoodTabView: View {
             return earliest == latest ? fmt.string(from: earliest) : "\(fmt.string(from: earliest))–\(fmt.string(from: latest))"
         }()
         return HStack(spacing: 6) {
-            Image(systemName: meal.icon).font(.caption2).foregroundStyle(Theme.accent)
+            // Pink-fatigue pass — meal icons were coral on every meal
+            // header (×3-5 per day). Muted to textSecondary.
+            Image(systemName: meal.icon).font(.caption2).foregroundStyle(Theme.textSecondary)
             Text(meal.displayName).font(.caption.weight(.semibold))
             if let timeRange {
                 Text("· \(timeRange)").font(.caption2).foregroundStyle(.tertiary)
@@ -760,7 +772,7 @@ struct FoodTabView: View {
                 searchMealType = meal
                 showingSearch = true
             } label: {
-                Image(systemName: "plus").font(.caption2.weight(.semibold)).foregroundStyle(Theme.accent)
+                Image(systemName: "plus").font(.caption2.weight(.semibold)).foregroundStyle(Theme.textSecondary)
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Add to \(meal.displayName)")
@@ -782,9 +794,12 @@ struct FoodTabView: View {
         let mealType = MealType(rawValue: entry.mealType ?? "")
 
         return HStack(alignment: .center, spacing: 8) {
-            // Calorie proportion bar
+            // Calorie proportion bar — pink-fatigue: was coral with a
+            // 0.3-1.0 opacity ramp which made every entry shout. Muted
+            // to textTertiary with a tighter ramp so the bar still
+            // communicates the proportion without dominating the row.
             RoundedRectangle(cornerRadius: 1)
-                .fill(Theme.accent.opacity(0.3 + fraction * 0.7))
+                .fill(Theme.textTertiary.opacity(0.25 + fraction * 0.5))
                 .frame(width: 3, height: 28)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -793,7 +808,7 @@ struct FoodTabView: View {
                     if showMealBadge, let mealType {
                         Image(systemName: mealType.icon)
                             .font(.caption2)
-                            .foregroundStyle(Theme.accent.opacity(0.7))
+                            .foregroundStyle(Theme.textTertiary)
                             .accessibilityLabel(mealType.displayName)
                     }
                 }
@@ -929,8 +944,8 @@ struct FoodTabView: View {
                     Label("Add food", systemImage: "plus")
                         .font(.caption.weight(.semibold))
                         .padding(.horizontal, 14).padding(.vertical, 7)
-                        .background(Theme.accent.opacity(0.1), in: Capsule())
-                        .foregroundStyle(Theme.accent)
+                        .background(Theme.pillBackground, in: Capsule())
+                        .foregroundStyle(Theme.textPrimary)
                 }
                 .buttonStyle(.plain)
                 if let cal = viewModel.yesterdayCalories(), cal > 0 {
@@ -1015,7 +1030,12 @@ struct FoodTabView: View {
             LazyVGrid(columns: columns, spacing: 3) {
                 ForEach(sorted, id: \.key) { date, cal in
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(cal > 0 ? Theme.accent.opacity(min(1, cal / 2000)) : Theme.cardBackgroundElevated)
+                        // Pink-fatigue pass — was 0.0-1.0 opacity ramp;
+                        // capped to 0.65 so a day at 2000 cal reads as
+                        // a confident-but-muted coral instead of full-
+                        // saturation shouting. Empty cells remain
+                        // cardBackgroundElevated (visible-but-quiet).
+                        .fill(cal > 0 ? Theme.accent.opacity(min(0.65, cal / 2000 * 0.65)) : Theme.cardBackgroundElevated)
                         .frame(height: 14)
                         .overlay {
                             if Calendar.current.isDateInToday(date) {
