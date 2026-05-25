@@ -351,13 +351,21 @@ public struct FoodUnit: Hashable {
         return units.map { reconcile($0, with: food) }
     }
 
+    /// Labels that are bulk/volume measures, not per-piece — `pieceSizeG`
+    /// must NEVER override these. Anything outside this set that primaryUnit
+    /// emits is a countable food unit (meatball, egg, slice, naan, idli,
+    /// vada, etc.) and benefits from the `pieceSizeG` override.
+    private static let bulkAndVolumeLabels: Set<String> = [
+        "g", "ml", "kg", "lb", "oz", "fl oz", "l",
+        "cup", "tbsp", "tsp", "scoop", "bowl",
+        "spray", "serving"
+    ]
+
     private static func reconcile(_ unit: FoodUnit, with food: Food) -> FoodUnit {
         func overridden(_ value: Double) -> FoodUnit {
             FoodUnit(label: unit.label, gramsEquivalent: value, isEstimate: false)
         }
         switch unit.label {
-        case "piece":
-            if let v = food.pieceSizeG, v > 0 { return overridden(v) }
         case "cup":
             if let v = food.cupSizeG, v > 0 { return overridden(v) }
         case "tbsp":
@@ -366,7 +374,21 @@ public struct FoodUnit: Hashable {
             if let v = food.scoopSizeG, v > 0 { return overridden(v) }
         case "bowl":
             if let v = food.bowlSizeG, v > 0 { return overridden(v) }
-        default: break
+        default:
+            // 2026-05-24 field bug: TJ Chicken Meatballs entry had
+            // servingSize=85g (the full serving = 5 meatballs) and
+            // primaryUnit() returned FoodUnit("meatball", gramsEquivalent: 85).
+            // Reconcile then only handled "piece" / "cup" / "tbsp" / "scoop"
+            // / "bowl", so the per-meatball calorie display was 5× too high
+            // (149 cal/meatball instead of ~30). Any per-piece label that
+            // primaryUnit() emits — "meatball", "egg", "slice", and every
+            // ad-hoc per-piece label downstream — now defers to pieceSizeG
+            // when populated. pieceSizeG is set by OpenFoodFacts barcode
+            // scans (FoodService.swift:240) and by manual per-food entries.
+            if !bulkAndVolumeLabels.contains(unit.label.lowercased()),
+               let v = food.pieceSizeG, v > 0 {
+                return overridden(v)
+            }
         }
         return unit
     }
@@ -1376,5 +1398,55 @@ public struct FoodUnit: Hashable {
 
     private static func cupGrams(for name: String) -> Double {
         cupGramsIfKnown(for: name) ?? 240
+    }
+}
+
+// MARK: - Suspicious-per-piece tripwire (2026-05-24 field bug prevention)
+
+/// Static sanity check the entry sheet uses to warn the user when a
+/// per-piece unit's gramsEquivalent looks much larger than typical for
+/// that food family. Catches the case where a multi-piece serving size
+/// (e.g. "5 pieces (85g)") was stored as `servingSize = 85g` without
+/// `pieceSizeG` — `primaryUnit()` then emits `meatball@85g` and the
+/// per-meatball calorie count is ~5× too high. The fix lands the data
+/// going forward; this tripwire makes the legacy-bad data visible at
+/// log time so the user can correct it instead of silently overlogging.
+public enum SuspiciousPieceCheck {
+    /// Typical per-piece gram ranges for common small-piece foods. Drawn
+    /// from USDA Branded + OpenFoodFacts averages; intentionally wide so
+    /// boundary cases (a slightly larger meatball, a heavier idli) don't
+    /// trip the warning. The warning only fires at >2× the upper bound,
+    /// which is where the "1 piece = full serving" mis-mapping lives.
+    static let typicalGramsPerPiece: [String: ClosedRange<Double>] = [
+        "meatball": 12...28,
+        "idli": 20...45,
+        "vada": 40...85,
+        "momo": 18...45,
+        "samosa": 35...80,
+        "pakora": 12...35,
+        "egg": 40...75,
+        "gulab jamun": 18...35,
+        "ladoo": 18...40,
+        "laddoo": 18...40,
+        "laddu": 18...40,
+        "rasgulla": 25...60,
+        "rasmalai": 35...70,
+        "barfi": 18...40,
+        "burfi": 18...40,
+        "jalebi": 18...40,
+        "peda": 15...30,
+    ]
+
+    /// If `label` is a known small-piece food and `gramsEquivalent` is
+    /// substantially above the typical range, returns the typical range
+    /// so the UI can surface a "this looks like a multi-piece serving"
+    /// hint. Returns nil when the label is unknown or the grams look
+    /// normal — no false positives.
+    public static func suspicious(label: String, gramsEquivalent: Double) -> ClosedRange<Double>? {
+        guard let range = typicalGramsPerPiece[label.lowercased()] else { return nil }
+        // 2× the upper bound is the threshold — catches the 5× field bug
+        // (typ 17g → got 85g) without flagging a slightly-larger-than-
+        // average legitimate entry.
+        return gramsEquivalent > range.upperBound * 2 ? range : nil
     }
 }

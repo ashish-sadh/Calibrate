@@ -64,6 +64,12 @@ struct FoodLogSheet: View {
                                      selectedUnitIndex: $selectedUnitIndex,
                                      units: units,
                                      servingSize: food.servingSize)
+                    if let typical = SuspiciousPieceCheck.suspicious(
+                        label: unit.label,
+                        gramsEquivalent: unit.gramsEquivalent
+                    ) {
+                        suspiciousPieceBanner(typical: typical)
+                    }
                     totalsCard
                     timeAndMealPicker
                 }
@@ -91,6 +97,35 @@ struct FoodLogSheet: View {
         .presentationBackground(Theme.background)
         .presentationCornerRadius(20)
         .preferredColorScheme(.dark)
+    }
+
+    // MARK: - Multi-piece sanity banner
+    //
+    // 2026-05-24 field report: TJ Chicken Meatballs entry had servingSize
+    // = 85g (the per-serving figure for ~5 meatballs) stored as 1-meatball
+    // = 85g — so the per-piece calorie display ran 5× too high and silently
+    // overlogged. The data fix (FoodUnit reconcile + pieceSizeG) covers
+    // new scans, but legacy rows still surface the wrong number. This
+    // banner makes the bad row visible at log time so the user can edit
+    // the food entry instead of silently overlogging.
+    private func suspiciousPieceBanner(typical: ClosedRange<Double>) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.caption)
+                .foregroundStyle(Theme.surplus)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("This looks like a multi-piece serving")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.textPrimary)
+                Text("1 \(unit.label) is showing as \(Int(unit.gramsEquivalent))g, but a typical \(unit.label) is ~\(Int(typical.lowerBound))–\(Int(typical.upperBound))g. Edit the food entry to fix the per-piece weight.")
+                    .font(.caption2)
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(10)
+        .background(Theme.surplus.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+        .accessibilityIdentifier("food-log-multipiece-warning")
     }
 
     // MARK: - Sections

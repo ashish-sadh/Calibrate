@@ -271,4 +271,118 @@ final class SmartUnitsGoldSetTests: XCTestCase {
             XCTAssertEqual(got, "1", "'\(name)' default should be '1', got '\(got)'")
         }
     }
+
+    // MARK: - pieceSizeG override propagates to per-piece labels
+    //
+    // 2026-05-24 field bug: TJ Chicken Meatballs in the user's DB had
+    // `servingSize = 85` (full serving = ~5 meatballs) and primaryUnit()
+    // returned FoodUnit("meatball", gramsEquivalent: 85). Reconcile only
+    // handled "piece"/"cup"/"tbsp"/"scoop"/"bowl", so per-meatball
+    // calories displayed at 5× the real value. These tests pin the
+    // resolved per-piece grams for every per-piece label primaryUnit
+    // emits — failing here = the bug is back.
+
+    private func resolvedPrimaryGrams(name: String,
+                                      servingSize: Double,
+                                      pieceSizeG: Double?) -> Double {
+        let f = Food(name: name, category: "Test",
+                     servingSize: servingSize, servingUnit: "g",
+                     calories: 100, pieceSizeG: pieceSizeG)
+        return FoodUnit.smartUnits(for: f).first?.gramsEquivalent ?? 0
+    }
+
+    func testMeatballPieceSizeGOverridesServingSize() {
+        // Reproduces the field bug. servingSize = 85g (5 meatballs at 17g),
+        // pieceSizeG = 17 (set by OpenFoodFacts "5 pieces (85g)" parsing).
+        let g = resolvedPrimaryGrams(name: "Trader Joe's Chicken Meatballs",
+                                     servingSize: 85, pieceSizeG: 17)
+        XCTAssertEqual(g, 17, "1 meatball must resolve to pieceSizeG, not servingSize")
+    }
+
+    func testMeatballWithoutPieceSizeGFallsBackToServingSize() {
+        // Legacy entries (no piecesPerServing parsed) keep the existing
+        // behavior so this fix doesn't silently alter old food rows.
+        let g = resolvedPrimaryGrams(name: "Plain Meatball",
+                                     servingSize: 85, pieceSizeG: nil)
+        XCTAssertEqual(g, 85, "Without pieceSizeG, primary unit grams = servingSize")
+    }
+
+    func testEggPieceSizeGOverridesServingSize() {
+        let g = resolvedPrimaryGrams(name: "Boiled Egg",
+                                     servingSize: 100, pieceSizeG: 50)
+        XCTAssertEqual(g, 50, "1 egg must resolve to pieceSizeG when set")
+    }
+
+    func testIdliPieceSizeGOverridesServingSize() {
+        // Indian-food bar: idli typical 30g/piece, serving often 4× (120g).
+        let g = resolvedPrimaryGrams(name: "Idli", servingSize: 120, pieceSizeG: 30)
+        XCTAssertEqual(g, 30, "1 idli must resolve to pieceSizeG when set")
+    }
+
+    func testSamosaPieceSizeGOverridesServingSize() {
+        let g = resolvedPrimaryGrams(name: "Samosa", servingSize: 150, pieceSizeG: 50)
+        XCTAssertEqual(g, 50, "1 samosa must resolve to pieceSizeG when set")
+    }
+
+    func testGramLabelNeverOverriddenByPieceSizeG() {
+        // pieceSizeG must NEVER influence the "g" unit's gramsEquivalent
+        // (always 1) — that would invert the entire macro math.
+        let f = Food(name: "Olive Oil", category: "Test",
+                     servingSize: 14, servingUnit: "g",
+                     calories: 120, pieceSizeG: 14)
+        let units = FoodUnit.smartUnits(for: f)
+        let gramsUnit = units.first(where: { $0.label == "g" })
+        XCTAssertEqual(gramsUnit?.gramsEquivalent, 1,
+                       "'g' unit must always have gramsEquivalent=1 regardless of pieceSizeG")
+    }
+
+    func testCupLabelNeverOverriddenByPieceSizeG() {
+        // Cup-foods have their own cupSizeG override; pieceSizeG must not
+        // bleed in.
+        let f = Food(name: "Cooked Rice", category: "Test",
+                     servingSize: 158, servingUnit: "g",
+                     calories: 200, pieceSizeG: 10) // nonsense piece for rice
+        let units = FoodUnit.smartUnits(for: f)
+        let cupUnit = units.first(where: { $0.label == "cup" })
+        XCTAssertNotEqual(cupUnit?.gramsEquivalent, 10,
+                          "'cup' unit must not adopt pieceSizeG")
+    }
+}
+
+// MARK: - SuspiciousPieceCheck (anomaly tripwire)
+
+final class SuspiciousPieceCheckTests: XCTestCase {
+
+    // Reproduces the 2026-05-24 field bug — TJ Chicken Meatballs at 85g/piece.
+    func testMeatballWayHigh_triggers() {
+        let range = SuspiciousPieceCheck.suspicious(label: "meatball", gramsEquivalent: 85)
+        XCTAssertNotNil(range, "85g/meatball must trip — typical is 12-28g")
+    }
+
+    // A slightly larger-than-average meatball must NOT trip (false-positive guard).
+    func testMeatballAtBoundary_doesNotTrigger() {
+        let range = SuspiciousPieceCheck.suspicious(label: "meatball", gramsEquivalent: 30)
+        XCTAssertNil(range, "30g/meatball is plausible — no warning")
+    }
+
+    // Foods outside the lookup must never trip — no false positives for
+    // unknown labels (would scare users for nothing).
+    func testUnknownLabel_neverTriggers() {
+        let range = SuspiciousPieceCheck.suspicious(label: "stuffed-paratha-roll", gramsEquivalent: 500)
+        XCTAssertNil(range, "Unknown labels must not surface a warning")
+    }
+
+    func testIdliFullServingMisMapping_triggers() {
+        // Common DB pattern: 4 idlis per serving, ss=120g, but pieceSizeG missing →
+        // ServingUnit returns "idli @ 120g" which is 4× too high.
+        let range = SuspiciousPieceCheck.suspicious(label: "idli", gramsEquivalent: 120)
+        XCTAssertNotNil(range, "120g/idli must trip — typical is 20-45g")
+    }
+
+    // Case-insensitive lookup — primaryUnit lowercases labels but ServingInputView
+    // displays whatever the unit struct holds, so the check must tolerate either.
+    func testLabelLookupIsCaseInsensitive() {
+        let range = SuspiciousPieceCheck.suspicious(label: "MEATBALL", gramsEquivalent: 85)
+        XCTAssertNotNil(range, "Lookup must be case-insensitive")
+    }
 }
