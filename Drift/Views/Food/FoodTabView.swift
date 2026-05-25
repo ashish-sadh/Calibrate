@@ -688,7 +688,13 @@ struct FoodTabView: View {
                     NotificationCenter.default.post(
                         name: .openLogMeal,
                         object: nil,
-                        userInfo: ["mode": LogMealMode.recent.rawValue]
+                        // 2026-05-24 field bug: both "+ Add food" buttons
+                    // (diary header and empty-state) explicitly opened
+                    // the sheet in Recent mode even after the default
+                    // was flipped. User pointed out it still defaulted
+                    // to Recent — these explicit overrides were the
+                    // reason.
+                    userInfo: ["mode": LogMealMode.search.rawValue]
                     )
                 } label: {
                     HStack {
@@ -938,7 +944,13 @@ struct FoodTabView: View {
                     NotificationCenter.default.post(
                         name: .openLogMeal,
                         object: nil,
-                        userInfo: ["mode": LogMealMode.recent.rawValue]
+                        // 2026-05-24 field bug: both "+ Add food" buttons
+                    // (diary header and empty-state) explicitly opened
+                    // the sheet in Recent mode even after the default
+                    // was flipped. User pointed out it still defaulted
+                    // to Recent — these explicit overrides were the
+                    // reason.
+                    userInfo: ["mode": LogMealMode.search.rawValue]
                     )
                 } label: {
                     Label("Add food", systemImage: "plus")
