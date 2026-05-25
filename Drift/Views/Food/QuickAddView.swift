@@ -333,7 +333,10 @@ private struct IngredientPickerView: View {
                     }
                 }
                 .padding()
-                .background(.ultraThinMaterial)
+                .background(Theme.cardBackground)
+                .overlay(alignment: .bottom) {
+                    Rectangle().fill(Theme.separator).frame(height: 0.5)
+                }
 
                 if let food = selectedFood {
                     servingPicker(food)
@@ -411,7 +414,7 @@ private struct IngredientPickerView: View {
                                 Text("All")
                                     .font(.caption.weight(selectedCategory == nil ? .semibold : .medium))
                                     .padding(.horizontal, 12).padding(.vertical, 6)
-                                    .background(selectedCategory == nil ? Theme.accent.opacity(0.25) : Theme.cardBackgroundElevated, in: Capsule())
+                                    .background(selectedCategory == nil ? Theme.ink : Theme.cardBackgroundElevated, in: Capsule())
                                     .foregroundStyle(selectedCategory == nil ? .white : .secondary)
                             }.buttonStyle(.plain)
 
@@ -423,7 +426,7 @@ private struct IngredientPickerView: View {
                                     Text(cat == "Grains & Cereals" ? "Grains" : cat)
                                         .font(.caption.weight(selectedCategory == cat ? .semibold : .medium))
                                         .padding(.horizontal, 12).padding(.vertical, 6)
-                                        .background(selectedCategory == cat ? Theme.accent.opacity(0.25) : Theme.cardBackgroundElevated, in: Capsule())
+                                        .background(selectedCategory == cat ? Theme.ink : Theme.cardBackgroundElevated, in: Capsule())
                                         .foregroundStyle(selectedCategory == cat ? .white : .secondary)
                                 }
                                 .buttonStyle(.plain)
@@ -605,7 +608,7 @@ private struct IngredientPickerView: View {
                                     Text(u)
                                         .font(.caption.weight(manualServingUnit == u ? .semibold : .medium))
                                         .padding(.horizontal, 10).padding(.vertical, 5)
-                                        .background(manualServingUnit == u ? Theme.accent.opacity(0.25) : Theme.cardBackgroundElevated, in: Capsule())
+                                        .background(manualServingUnit == u ? Theme.ink : Theme.cardBackgroundElevated, in: Capsule())
                                         .foregroundStyle(manualServingUnit == u ? .white : .secondary)
                                 }.buttonStyle(.plain)
                             }

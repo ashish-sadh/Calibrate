@@ -160,9 +160,11 @@ struct CycleView: View {
                             .offset(x: width * startFrac)
                     }
 
-                    // Current position
+                    // Current position — was Color.white, invisible on
+                    // V7 light cycle phase bar. Theme.ink with a soft
+                    // shadow reads as a confident position marker.
                     Circle()
-                        .fill(Color.white)
+                        .fill(Theme.ink)
                         .frame(width: 12, height: 12)
                         .shadow(color: .black.opacity(0.3), radius: 2)
                         .offset(x: width * progress - 6)
@@ -259,7 +261,10 @@ struct CycleView: View {
             .chartYAxis {
                 AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { _ in
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                        .foregroundStyle(Color.white.opacity(0.08))
+                        // V7 light theme — white.opacity(0.08) was
+                        // effectively invisible. Theme.separator gives
+                        // a hairline that reads on light cards.
+                        .foregroundStyle(Theme.separator)
                     AxisValueLabel()
                         .foregroundStyle(.secondary)
                 }
@@ -317,7 +322,7 @@ struct CycleView: View {
 
             Chart {
                 RuleMark(y: .value("Typical", 28))
-                    .foregroundStyle(Color.white.opacity(0.2))
+                    .foregroundStyle(Theme.textTertiary.opacity(0.5))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
                     .annotation(position: .trailing, alignment: .leading) {
                         Text("28")

@@ -193,12 +193,15 @@ struct BiomarkerDetailView: View {
                         x: .value("Date", data[i].date),
                         y: .value("Value", data[i].value)
                     )
-                    .foregroundStyle(.white)
+                    // V7 light theme — was .white, invisible on the
+                    // light-card chart background. Theme.accent matches
+                    // the dual-line pattern used by the weight chart.
+                    .foregroundStyle(Theme.accent)
                     .symbolSize(40)
                     .annotation(position: .top, spacing: 4) {
                         Text(formatValue(data[i].value))
                             .font(.caption2.weight(.bold).monospacedDigit())
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Theme.textPrimary)
                     }
                 }
             }

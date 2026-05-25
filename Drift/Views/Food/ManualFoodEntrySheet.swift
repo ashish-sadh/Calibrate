@@ -97,7 +97,7 @@ struct ManualFoodEntrySheet: View {
                                         Text(u)
                                             .font(.caption.weight(servingUnit == u ? .semibold : .medium))
                                             .padding(.horizontal, 12).padding(.vertical, 6)
-                                            .background(servingUnit == u ? Theme.accent.opacity(0.25) : Theme.cardBackgroundElevated, in: Capsule())
+                                            .background(servingUnit == u ? Theme.ink : Theme.cardBackgroundElevated, in: Capsule())
                                             .foregroundStyle(servingUnit == u ? .white : .secondary)
                                     }.buttonStyle(.plain)
                                 }

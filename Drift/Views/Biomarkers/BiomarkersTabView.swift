@@ -219,7 +219,7 @@ struct BiomarkersTabView: View {
                 .font(.caption2.weight(.medium))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 5)
-                .background(selected ? Theme.accent.opacity(0.3) : Theme.cardBackground, in: RoundedRectangle(cornerRadius: 6))
+                .background(selected ? Theme.ink : Theme.cardBackground, in: RoundedRectangle(cornerRadius: 6))
                 .foregroundStyle(selected ? .white : .secondary)
         }
     }

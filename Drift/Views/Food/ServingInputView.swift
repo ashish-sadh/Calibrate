@@ -52,7 +52,7 @@ struct ServingInputView: View {
                                 .padding(.vertical, 7)
                                 .background(
                                     i == selectedUnitIndex
-                                        ? Theme.accent.opacity(0.25)
+                                        ? Theme.ink
                                         : Theme.cardBackgroundElevated,
                                     in: Capsule()
                                 )

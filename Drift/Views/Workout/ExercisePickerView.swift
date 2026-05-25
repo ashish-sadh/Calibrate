@@ -59,7 +59,12 @@ struct ExercisePickerView: View {
                     if !query.isEmpty {
                         Button { query = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
                     }
-                }.padding().background(.ultraThinMaterial)
+                }
+                .padding()
+                .background(Theme.cardBackground)
+                .overlay(alignment: .bottom) {
+                    Rectangle().fill(Theme.separator).frame(height: 0.5)
+                }
 
                 // Body part filter chips
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -212,7 +217,7 @@ struct ExercisePickerView: View {
         Button(action: action) {
             Text(label).font(.caption.weight(.medium))
                 .padding(.horizontal, 10).padding(.vertical, 5)
-                .background(selected ? Theme.accent.opacity(0.3) : Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 6))
+                .background(selected ? Theme.ink : Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 6))
                 .foregroundStyle(selected ? .white : .secondary)
         }
     }

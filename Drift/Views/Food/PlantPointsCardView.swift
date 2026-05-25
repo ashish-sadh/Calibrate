@@ -46,7 +46,7 @@ struct PlantPointsCardView: View {
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 4)
                                 .background(
-                                    plantPeriod == period ? Theme.plantGreen.opacity(0.3) : Color.clear,
+                                    plantPeriod == period ? Theme.ink : Color.clear,
                                     in: Capsule()
                                 )
                         }

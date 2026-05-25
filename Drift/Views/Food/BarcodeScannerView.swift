@@ -136,7 +136,13 @@ struct BarcodeLookupView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
+        // 2026-05-24 field bug: barcode result screen rendered as
+        // white-on-white because this used to force .dark while the V7
+        // Theme tokens (cardBackground = #FFFFFF, background = #EFEFF1)
+        // are light. Letting the scheme follow the parent (V7 light)
+        // restores text contrast on the result + edit views. The actual
+        // camera scan UI underneath stays black because the camera
+        // preview layer covers the chrome.
     }
 
     // MARK: - Not Found → Photo option
@@ -473,7 +479,13 @@ struct NutritionPhotoCaptureView: View {
                 }
             }
         }
-        .preferredColorScheme(.dark)
+        // 2026-05-24 field bug: barcode result screen rendered as
+        // white-on-white because this used to force .dark while the V7
+        // Theme tokens (cardBackground = #FFFFFF, background = #EFEFF1)
+        // are light. Letting the scheme follow the parent (V7 light)
+        // restores text contrast on the result + edit views. The actual
+        // camera scan UI underneath stays black because the camera
+        // preview layer covers the chrome.
     }
 }
 

@@ -68,7 +68,12 @@ struct ExerciseBrowserView: View {
                 HStack {
                     Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                     TextField("Search exercises", text: $query).textFieldStyle(.plain).autocorrectionDisabled()
-                }.padding().background(.ultraThinMaterial)
+                }
+                .padding()
+                .background(Theme.cardBackground)
+                .overlay(alignment: .bottom) {
+                    Rectangle().fill(Theme.separator).frame(height: 0.5)
+                }
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
@@ -130,7 +135,7 @@ struct ExerciseBrowserView: View {
         Button(action: action) {
             Text(label).font(.caption.weight(.medium))
                 .padding(.horizontal, 10).padding(.vertical, 5)
-                .background(selected ? Theme.accent.opacity(0.3) : Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 6))
+                .background(selected ? Theme.ink : Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 6))
                 .foregroundStyle(selected ? .white : .secondary)
         }
     }

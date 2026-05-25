@@ -110,7 +110,7 @@ struct WeightTabView: View {
                 }
             )
         }
-        .sheet(isPresented: $showingAddBodyComp) {
+        .sheet(isPresented: $showingAddBodyComp, onDismiss: { viewModel.loadEntries() }) {
             let latestComp = WeightServiceAPI.latestBodyComposition()
             WeightEntryView(
                 unit: viewModel.weightUnit,
@@ -233,7 +233,10 @@ struct WeightTabView: View {
                             .font(.caption.weight(.medium))
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
-                            .background(viewModel.selectedTimeRange == range ? Theme.accent.opacity(0.3) : Color.clear, in: RoundedRectangle(cornerRadius: 6))
+                            // V7 chip: selected = solid ink + white text
+                            // (high contrast). Was .accent.opacity(0.3) with
+                            // .white text — pale coral with white = washed out.
+                            .background(viewModel.selectedTimeRange == range ? Theme.ink : Color.clear, in: RoundedRectangle(cornerRadius: 6))
                             .foregroundStyle(viewModel.selectedTimeRange == range ? .white : .secondary)
                     }
                 }

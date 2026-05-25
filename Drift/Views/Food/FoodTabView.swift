@@ -126,10 +126,18 @@ struct FoodTabView: View {
                 }
                 .padding(.bottom, 8)
             }
-            .fullScreenCover(isPresented: $showingScanner) { BarcodeLookupView(viewModel: viewModel) }
-            .sheet(isPresented: $showingPhotoLog) {
+            // 2026-05-24 field bug: "Add Food on diary adds the food but
+            // the page doesn't refresh — doesn't look like anything is
+            // added." Every sheet/cover that can write to the food DB
+            // now has an `onDismiss: reload()` so the parent diary list
+            // picks up the new row. The pattern is mechanical — every
+            // .sheet/.fullScreenCover that mutates state must reload
+            // its parent.
+            .fullScreenCover(isPresented: $showingScanner, onDismiss: { reload() }) {
+                BarcodeLookupView(viewModel: viewModel)
+            }
+            .sheet(isPresented: $showingPhotoLog, onDismiss: { reload() }) {
                 PhotoLogFlowView(foodLog: viewModel)
-                    .onDisappear { reload() }
             }
             .sheet(item: $suggestionFoodToLog) { food in
                 FoodLogSheet(food: food, foodLog: viewModel) {
@@ -150,9 +158,15 @@ struct FoodTabView: View {
                 }
             }
             .animation(.easeInOut(duration: 0.3), value: copiedToTodayName)
-            .sheet(isPresented: $showingSearch) { FoodSearchView(viewModel: viewModel, initialMealType: searchMealType) }
-            .sheet(isPresented: $showingRecipeBuilder) { QuickAddView(viewModel: viewModel) }
-            .sheet(isPresented: $showingCombos) { CombosView(viewModel: viewModel) }
+            .sheet(isPresented: $showingSearch, onDismiss: { reload() }) {
+                FoodSearchView(viewModel: viewModel, initialMealType: searchMealType)
+            }
+            .sheet(isPresented: $showingRecipeBuilder, onDismiss: { reload() }) {
+                QuickAddView(viewModel: viewModel)
+            }
+            .sheet(isPresented: $showingCombos, onDismiss: { reload() }) {
+                CombosView(viewModel: viewModel)
+            }
             .sheet(item: $comboToLog) { combo in
                 ComboLogSheet(combo: combo, viewModel: viewModel) {
                     copiedToTodayName = combo.name
@@ -343,7 +357,10 @@ struct FoodTabView: View {
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 6)
-                            .background(isSelected ? Theme.accent.opacity(0.3) : Color.clear, in: RoundedRectangle(cornerRadius: 10))
+                            // V7 chip — selected day uses solid ink so
+                            // white text is legible. Pale accent (30%)
+                            // + white text rendered as washed-out smear.
+                            .background(isSelected ? Theme.ink : Color.clear, in: RoundedRectangle(cornerRadius: 10))
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("\(dayFormatter.string(from: day)) \(cal.component(.day, from: day))\(isToday ? ", today" : "")\(hasFood ? ", food logged" : "")\(isSelected ? ", selected" : "")")
@@ -624,9 +641,10 @@ struct FoodTabView: View {
                         } label: {
                             Text(FoodSortMode.meal.label)
                                 .font(.caption2.weight(.medium))
+                                // V7 chip — solid ink when selected, white text reads.
                                 .foregroundStyle(mealGrouped ? .white : .secondary)
                                 .padding(.horizontal, 6).padding(.vertical, 3)
-                                .background(mealGrouped ? Theme.accent.opacity(0.4) : Color.clear, in: Capsule())
+                                .background(mealGrouped ? Theme.ink : Color.clear, in: Capsule())
                         }
                         .buttonStyle(.plain)
 
@@ -640,7 +658,7 @@ struct FoodTabView: View {
                                         .font(.caption2.weight(.medium))
                                         .foregroundStyle(foodSortMode == mode ? .white : .secondary)
                                         .padding(.horizontal, 6).padding(.vertical, 3)
-                                        .background(foodSortMode == mode ? Theme.accent.opacity(0.4) : Color.clear, in: Capsule())
+                                        .background(foodSortMode == mode ? Theme.ink : Color.clear, in: Capsule())
                                 }
                                 .buttonStyle(.plain)
                             }

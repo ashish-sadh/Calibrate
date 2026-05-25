@@ -69,7 +69,13 @@ struct FoodSearchView: View {
                     }
                 }
                 .padding()
-                .background(.ultraThinMaterial)
+                // V7 light theme — .ultraThinMaterial rendered as a
+                // washed-out blur on the light surface. Solid card +
+                // hairline divider matches the rest of V7 chrome.
+                .background(Theme.cardBackground)
+                .overlay(alignment: .bottom) {
+                    Rectangle().fill(Theme.separator).frame(height: 0.5)
+                }
 
                 if query.isEmpty {
                     suggestionsView
@@ -99,17 +105,21 @@ struct FoodSearchView: View {
             .sheet(isPresented: $showingManual) {
                 ManualFoodEntrySheet(viewModel: viewModel) { loggedCount += 1 }
             }
-            .sheet(isPresented: $showingRecipeBuilder) { QuickAddView(viewModel: viewModel) }
-            .sheet(isPresented: $showingCombos) { CombosView(viewModel: viewModel) }
+            .sheet(isPresented: $showingRecipeBuilder, onDismiss: { viewModel.loadSuggestions() }) {
+                QuickAddView(viewModel: viewModel)
+            }
+            .sheet(isPresented: $showingCombos, onDismiss: { viewModel.loadSuggestions() }) {
+                CombosView(viewModel: viewModel)
+            }
             .sheet(item: $comboToLog) { combo in
                 ComboLogSheet(combo: combo, viewModel: viewModel) {
                     viewModel.loadSuggestions()
                     dismiss()
                 }
             }
-            .fullScreenCover(isPresented: $showingScanner) { BarcodeLookupView(viewModel: viewModel) }
-            .onChange(of: showingRecipeBuilder) { _, showing in if !showing { viewModel.loadSuggestions() } }
-            .onChange(of: showingScanner) { _, showing in if !showing { viewModel.loadSuggestions() } }
+            .fullScreenCover(isPresented: $showingScanner, onDismiss: { viewModel.loadSuggestions() }) {
+                BarcodeLookupView(viewModel: viewModel)
+            }
             .sheet(item: $editingRecipe) { recipe in
                 EditRecipeSheet(recipe: recipe) { viewModel.loadSuggestions(); refreshSearch() }
             }

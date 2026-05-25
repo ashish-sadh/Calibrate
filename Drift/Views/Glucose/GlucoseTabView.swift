@@ -56,7 +56,7 @@ struct GlucoseTabView: View {
                                 .font(.caption.weight(.medium))
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
-                                .background(selectedRange == range ? Theme.calorieBlue.opacity(0.3) : Color.clear, in: RoundedRectangle(cornerRadius: 6))
+                                .background(selectedRange == range ? Theme.ink : Color.clear, in: RoundedRectangle(cornerRadius: 6))
                                 .foregroundStyle(selectedRange == range ? .white : .secondary)
                         }
                     }

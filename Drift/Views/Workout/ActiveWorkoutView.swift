@@ -513,7 +513,11 @@ struct ActiveWorkoutView: View {
             .overlay {
                 Text(formatRestTime(restSeconds))
                     .font(.subheadline.weight(.bold).monospacedDigit())
-                    .foregroundStyle(.white)
+                    // Was .white — invisible over the light-grey unfilled
+                    // half of the progress bar (Theme.cardBackgroundElevated)
+                    // until rest had >50% elapsed. Theme.textPrimary reads
+                    // on both the unfilled and filled (calorieBlue) halves.
+                    .foregroundStyle(Theme.textPrimary)
             }
         }
         .padding(.vertical, 4)

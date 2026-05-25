@@ -128,7 +128,7 @@ struct EditFoodEntrySheet: View {
                                 }
                                 .foregroundStyle(editMealType == meal ? .white : .secondary)
                                 .padding(.horizontal, 10).padding(.vertical, 6)
-                                .background(editMealType == meal ? Theme.accent.opacity(0.7) : Theme.cardBackgroundElevated,
+                                .background(editMealType == meal ? Theme.ink : Theme.cardBackgroundElevated,
                                             in: Capsule())
                             }
                             .buttonStyle(.plain)
