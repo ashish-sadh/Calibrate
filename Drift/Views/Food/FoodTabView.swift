@@ -23,7 +23,10 @@ struct FoodTabView: View {
     @State private var searchMealType: MealType? = nil
     @State private var showingCombos = false
     @State private var comboToLog: Food? = nil
-    @State private var showingPhotoLog = false
+    // showingPhotoLog removed 2026-05-24 — ContentView owns the
+    // PhotoLog fullScreenCover (single source). Two listeners +
+    // two sheets raced on the first tap from Dashboard, swallowing
+    // the present and recovering on the second.
     @State private var suggestionFoodToLog: Food? = nil
     @AppStorage("foodDiaryMealGrouped") private var mealGrouped = true
     @State private var collapsedSections: Set<MealType> = []
@@ -136,9 +139,6 @@ struct FoodTabView: View {
             .fullScreenCover(isPresented: $showingScanner, onDismiss: { reload() }) {
                 BarcodeLookupView(viewModel: viewModel)
             }
-            .sheet(isPresented: $showingPhotoLog, onDismiss: { reload() }) {
-                PhotoLogFlowView(foodLog: viewModel)
-            }
             .sheet(item: $suggestionFoodToLog) { food in
                 FoodLogSheet(food: food, foodLog: viewModel) {
                     copiedToTodayName = food.name
@@ -239,12 +239,13 @@ struct FoodTabView: View {
                 let totalCal = viewModel.todayEntries.reduce(0) { $0 + $1.totalCalories }
                 Text("Copy \(viewModel.todayEntries.count) items (\(Int(totalCal)) cal) to today?")
             }
-            .onAppear { AIScreenTracker.shared.currentScreen = .food; weekOffset = 0; reload() }
-            .onReceive(NotificationCenter.default.publisher(for: .openPhotoLog)) { _ in
-                // V6 Dashboard Snap chip. PhotoLogFlowView shows its own opt-in
-                // onboarding when CloudVisionKey isn't configured, so no gate
-                // here. Sheet binding is idempotent — rapid double-tap is safe.
-                showingPhotoLog = true
+            .onAppear { AIScreenTracker.shared.currentScreen = .food; reload() }
+            // `.openPhotoLog` is owned by ContentView's listener +
+            // fullScreenCover — see ContentView.swift:80. Reloads on
+            // dismiss come through `.foodEntryAdded` instead so this
+            // surface still picks up new entries after Photo Log.
+            .onReceive(NotificationCenter.default.publisher(for: .foodEntryAdded)) { _ in
+                reload()
             }
             .onReceive(NotificationCenter.default.publisher(for: .openFoodSearch)) { _ in
                 // V6 Dashboard Search chip.
@@ -268,17 +269,23 @@ struct FoodTabView: View {
 
     // MARK: - Date Navigator
 
-    @State private var weekOffset: Int = 0
-
     private var dateNav: some View {
         let cal = Calendar.current
         let today = cal.startOfDay(for: Date())
         let selected = cal.startOfDay(for: viewModel.selectedDate)
 
-        // Fixed week based on weekOffset from current week's Monday
-        let currentWeekStart = cal.dateInterval(of: .weekOfYear, for: today)?.start ?? today
-        let weekStart = cal.date(byAdding: .weekOfYear, value: weekOffset, to: currentWeekStart) ?? currentWeekStart
-        let days: [Date] = (0..<7).compactMap { cal.date(byAdding: .day, value: $0, to: weekStart) }
+        // 2026-05-24 field bug: "should make dates on food diary
+        // scrollable." Was a fixed 7-day row with chevron arrows that
+        // shifted by week. Now a horizontal scroll across the last
+        // 30 days + 7 days into the future, anchored to the selected
+        // day via ScrollViewReader. weekOffset state retired — the
+        // ScrollView owns the position; the DatePicker callback
+        // pushes the picked date and `.onChange` re-anchors.
+        let scrollBackDays = 30
+        let scrollForwardDays = 7
+        let days: [Date] = (-scrollBackDays...scrollForwardDays).compactMap {
+            cal.date(byAdding: .day, value: $0, to: today)
+        }
         let dayFormatter: DateFormatter = {
             let f = DateFormatter(); f.dateFormat = "EEE"; return f
         }()
@@ -299,9 +306,6 @@ struct FoodTabView: View {
                         set: { date in
                             viewModel.goToDate(date)
                             loggedDays = viewModel.loggedDays(last: 30)
-                            // Update weekOffset to show the week containing the picked date
-                            let pickedWeek = cal.dateInterval(of: .weekOfYear, for: date)?.start ?? date
-                            weekOffset = cal.dateComponents([.weekOfYear], from: currentWeekStart, to: pickedWeek).weekOfYear ?? 0
                         }
                     ), displayedComponents: .date)
                     .datePickerStyle(.graphical)
@@ -310,7 +314,7 @@ struct FoodTabView: View {
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) { Button("Done") { showingDatePicker = false } }
                         ToolbarItem(placement: .confirmationAction) {
-                            Button("Today") { viewModel.goToDate(Date()); loggedDays = viewModel.loggedDays(last: 30); weekOffset = 0; showingDatePicker = false }
+                            Button("Today") { viewModel.goToDate(Date()); loggedDays = viewModel.loggedDays(last: 30); showingDatePicker = false }
                                 .foregroundStyle(Theme.accent)
                         }
                     }
@@ -318,65 +322,52 @@ struct FoodTabView: View {
                 .presentationDetents([.medium])
             }
 
-            // Scrollable day strip — fixed week, swipe to change weeks
+            // Horizontal scrollable day strip — 37 days visible at any
+            // time (last 30 + next 7), auto-scrolls to the selected day
+            // on appear. Chevron arrows retired in favor of swipe.
             ScrollViewReader { proxy in
-                HStack(spacing: 4) {
-                    // Previous week arrow
-                    Button {
-                        weekOffset -= 1
-                        if let first = days.first { viewModel.goToDate(cal.date(byAdding: .day, value: -7, to: first) ?? first) }
-                        loggedDays = viewModel.loggedDays(last: 30)
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.caption2.weight(.bold)).foregroundStyle(.tertiary)
-                            .frame(width: 24, height: 44)
-                    }
-                    .accessibilityLabel("Previous week")
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 4) {
+                        ForEach(days, id: \.self) { day in
+                            let isSelected = cal.isDate(day, inSameDayAs: selected)
+                            let isToday = cal.isDate(day, inSameDayAs: today)
+                            let dayStart = cal.startOfDay(for: day)
+                            let hasFood = (loggedDays[dayStart] ?? 0) > 0
 
-                    // Day pills — fixed positions, only highlight moves
-                    ForEach(days, id: \.self) { day in
-                        let isSelected = cal.isDate(day, inSameDayAs: selected)
-                        let isToday = cal.isDate(day, inSameDayAs: today)
-                        let dayStart = cal.startOfDay(for: day)
-                        let hasFood = (loggedDays[dayStart] ?? 0) > 0
-
-                        Button {
-                            viewModel.goToDate(day)
-                            loggedDays = viewModel.loggedDays(last: 30)
-                        } label: {
-                            VStack(spacing: 2) {
-                                Text(dayFormatter.string(from: day))
-                                    .font(.caption2)
-                                    .foregroundStyle(isSelected ? .white : .secondary)
-                                Text("\(cal.component(.day, from: day))")
-                                    .font(.callout.weight(isSelected ? .bold : .regular).monospacedDigit())
-                                    .foregroundStyle(isSelected ? .white : .primary)
-                                Circle()
-                                    .fill(isToday ? Theme.accent : hasFood ? .secondary.opacity(0.5) : Color.clear)
-                                    .frame(width: isSelected ? 6 : 4, height: isSelected ? 6 : 4)
+                            Button {
+                                viewModel.goToDate(day)
+                                loggedDays = viewModel.loggedDays(last: 30)
+                                withAnimation { proxy.scrollTo(day, anchor: .center) }
+                            } label: {
+                                VStack(spacing: 2) {
+                                    Text(dayFormatter.string(from: day))
+                                        .font(.caption2)
+                                        .foregroundStyle(isSelected ? .white : .secondary)
+                                    Text("\(cal.component(.day, from: day))")
+                                        .font(.callout.weight(isSelected ? .bold : .regular).monospacedDigit())
+                                        .foregroundStyle(isSelected ? .white : .primary)
+                                    Circle()
+                                        .fill(isToday ? Theme.accent : hasFood ? .secondary.opacity(0.5) : Color.clear)
+                                        .frame(width: isSelected ? 6 : 4, height: isSelected ? 6 : 4)
+                                }
+                                .frame(width: 44)
+                                .padding(.vertical, 6)
+                                .background(isSelected ? Theme.ink : Color.clear, in: RoundedRectangle(cornerRadius: 10))
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 6)
-                            // V7 chip — selected day uses solid ink so
-                            // white text is legible. Pale accent (30%)
-                            // + white text rendered as washed-out smear.
-                            .background(isSelected ? Theme.ink : Color.clear, in: RoundedRectangle(cornerRadius: 10))
+                            .buttonStyle(.plain)
+                            .id(day)
+                            .accessibilityLabel("\(dayFormatter.string(from: day)) \(cal.component(.day, from: day))\(isToday ? ", today" : "")\(hasFood ? ", food logged" : "")\(isSelected ? ", selected" : "")")
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel("\(dayFormatter.string(from: day)) \(cal.component(.day, from: day))\(isToday ? ", today" : "")\(hasFood ? ", food logged" : "")\(isSelected ? ", selected" : "")")
                     }
-
-                    // Next week arrow
-                    Button {
-                        weekOffset += 1
-                        if let last = days.last { viewModel.goToDate(cal.date(byAdding: .day, value: 1, to: last) ?? last) }
-                        loggedDays = viewModel.loggedDays(last: 30)
-                    } label: {
-                        Image(systemName: "chevron.right")
-                            .font(.caption2.weight(.bold)).foregroundStyle(.tertiary)
-                            .frame(width: 24, height: 44)
+                    .padding(.horizontal, 8)
+                }
+                .onAppear {
+                    DispatchQueue.main.async {
+                        proxy.scrollTo(selected, anchor: .center)
                     }
-                    .accessibilityLabel("Next week")
+                }
+                .onChange(of: viewModel.selectedDate) { _, new in
+                    withAnimation { proxy.scrollTo(cal.startOfDay(for: new), anchor: .center) }
                 }
             }
 
@@ -384,7 +375,6 @@ struct FoodTabView: View {
             if !viewModel.isToday {
                 Button {
                     viewModel.goToDate(Date())
-                    weekOffset = 0
                     loggedDays = viewModel.loggedDays(last: 30)
                 } label: {
                     HStack(spacing: 6) {

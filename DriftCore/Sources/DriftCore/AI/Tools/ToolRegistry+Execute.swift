@@ -34,6 +34,16 @@ public extension Notification.Name {
     /// Replaces the V6 `.expandAIAssistant` notification, which had no
     /// listener after the FloatingAIAssistant overlay was retired.
     static let openDriftCoach = Notification.Name("drift.openDriftCoach")
+
+    /// 2026-05-24: broadcast by ContentView when the Photo Log
+    /// fullScreenCover dismisses (and could be used by any other
+    /// global write site). FoodTabView listens and reloads its
+    /// diary so a Snap-from-dashboard lands in the diary without
+    /// the user having to swipe-refresh. Centralising the cover at
+    /// ContentView fixed a double-presentation race where the
+    /// first Snap tap from Dashboard silently swallowed the
+    /// present and only the second tap opened it.
+    static let foodEntryAdded = Notification.Name("drift.foodEntryAdded")
 }
 
 // MARK: - Tool Registry Execution (iOS-side)

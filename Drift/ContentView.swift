@@ -80,7 +80,14 @@ struct ContentView: View {
             .onReceive(NotificationCenter.default.publisher(for: .openPhotoLog)) { _ in
                 showingPhotoLog = true
             }
-            .fullScreenCover(isPresented: $showingPhotoLog) {
+            .fullScreenCover(isPresented: $showingPhotoLog, onDismiss: {
+                // Single owner of the Photo Log fullScreenCover. Used
+                // to be presented from FoodTabView *too* — two sheets
+                // raced on the first Snap tap and the cover got
+                // swallowed. Dismissal broadcasts so other tabs
+                // (Food diary) refresh.
+                NotificationCenter.default.post(name: .foodEntryAdded, object: nil)
+            }) {
                 PhotoLogFlowView(foodLog: photoLogVM)
             }
             .sheet(isPresented: $showingDriftCoach) {
