@@ -52,7 +52,11 @@ struct LogMealSheet: View {
     @State private var recentFoods: [Food] = []
     @State private var showingPhotoLog = false
 
-    init(initialMode: LogMealMode = .recent) {
+    // Default mode changed 2026-05-24 — user feedback: "make Search
+    // default not Recent". Most "Add Food" taps come from intent to
+    // log something specific (typed query); Recent is for repeat
+    // loggers and still one tap away in the segmented picker.
+    init(initialMode: LogMealMode = .search) {
         _mode = State(initialValue: initialMode)
     }
 

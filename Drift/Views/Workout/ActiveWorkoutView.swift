@@ -1,6 +1,7 @@
 import SwiftUI
 import DriftCore
 import AudioToolbox
+import UserNotifications
 
 // MARK: - Active Workout (with live timer, rest timer, prefilled weights)
 
@@ -323,11 +324,14 @@ struct ActiveWorkoutView: View {
                             restTimer?.invalidate()
                             startRestTimerTick()
                         } else {
-                            // Rest finished while in background
+                            // Rest finished while in background —
+                            // background notification already fired the
+                            // alert + sound; no extra vibration here or
+                            // the user gets buzzed twice.
                             restSeconds = 0
                             restTimer?.invalidate()
                             restTimerActive = false
-                            AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
+                            cancelRestEndNotification()
                         }
                     }
                 }
@@ -575,6 +579,15 @@ struct ActiveWorkoutView: View {
         restTimerActive = true
         restTimer?.invalidate()
         startRestTimerTick()
+        // Field bug 2026-05-24 (saketh): "the timer in the exercise part
+        // of Drift doesn't go off unless I'm sitting on the page."
+        // `Timer.scheduledTimer` runs on the main RunLoop which iOS
+        // suspends in background — the haptic at line ~595 never
+        // fires when the user puts the phone down between sets.
+        // Schedule a local notification with the same delay so iOS
+        // fires it regardless of app state. The in-app display timer
+        // stays as-is for foreground UX.
+        scheduleRestEndNotification(after: duration)
     }
 
     private func startRestTimerTick() {
@@ -590,12 +603,67 @@ struct ActiveWorkoutView: View {
                     restTimerActive = false
                     restEndTime = nil
                     AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
+                    // Foreground completion — clear the backup
+                    // notification so it doesn't fire a moment later.
+                    cancelRestEndNotification()
                 }
             }
         }
     }
 
-    private func stopTimers() { workoutTimer?.invalidate(); restTimer?.invalidate() }
+    private func stopTimers() {
+        workoutTimer?.invalidate()
+        restTimer?.invalidate()
+        cancelRestEndNotification()
+    }
+
+    // MARK: - Rest-end notification (background fallback)
+
+    /// Identifier used so we can replace / cancel the pending request
+    /// without touching any other Drift notification.
+    private static let restEndNotificationID = "drift.workout.rest.end"
+
+    /// Schedules a local notification that fires after `seconds`. iOS
+    /// delivers it whether or not the app is foregrounded — fixes the
+    /// "timer doesn't go off when phone is down" report.
+    private func scheduleRestEndNotification(after seconds: Int) {
+        guard seconds > 0 else { return }
+        let center = UNUserNotificationCenter.current()
+        // Always remove any prior pending request before scheduling a
+        // new one — the user may have started a new set before the
+        // previous rest completed.
+        center.removePendingNotificationRequests(withIdentifiers: [Self.restEndNotificationID])
+
+        let content = UNMutableNotificationContent()
+        content.title = "Rest finished"
+        content.body = "Time to start your next set."
+        content.sound = .default
+        content.interruptionLevel = .timeSensitive
+
+        let trigger = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(seconds), repeats: false)
+        let request = UNNotificationRequest(identifier: Self.restEndNotificationID, content: content, trigger: trigger)
+
+        // Request auth lazily — first set finishes ⇒ user sees prompt.
+        // If they decline, scheduling no-ops; the in-app timer still
+        // works when they're on the page.
+        center.getNotificationSettings { settings in
+            switch settings.authorizationStatus {
+            case .notDetermined:
+                center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
+                    if granted { center.add(request, withCompletionHandler: nil) }
+                }
+            case .authorized, .provisional, .ephemeral:
+                center.add(request, withCompletionHandler: nil)
+            case .denied: break
+            @unknown default: break
+            }
+        }
+    }
+
+    private func cancelRestEndNotification() {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: [Self.restEndNotificationID])
+    }
 
     // MARK: - Session Persistence
 

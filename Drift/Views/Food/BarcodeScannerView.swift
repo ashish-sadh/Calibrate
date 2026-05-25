@@ -446,6 +446,12 @@ struct NutritionPhotoCaptureView: View {
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent).tint(Theme.accent)
+                    // 2026-05-24 first-launch crash fix: PhotoLogCaptureView
+                    // disables Take Photo when the camera isn't available
+                    // (Simulator, hardware missing, perms denied). This sheet
+                    // did not, so first-launch from the top-right Snap
+                    // crashed the UIImagePickerController init.
+                    .disabled(!UIImagePickerController.isSourceTypeAvailable(.camera))
 
                     Button {
                         showingLibrary = true
@@ -499,7 +505,11 @@ struct CameraView: UIViewControllerRepresentable {
 
     func makeUIViewController(context: Context) -> UIImagePickerController {
         let picker = UIImagePickerController()
-        picker.sourceType = .camera
+        // Defensive: if the caller forgot to gate the button on
+        // isSourceTypeAvailable(.camera), assigning .camera would crash.
+        // Falls back to photo library — caller's onCapture still fires
+        // with a chosen image.
+        picker.sourceType = UIImagePickerController.isSourceTypeAvailable(.camera) ? .camera : .photoLibrary
         picker.delegate = context.coordinator
         return picker
     }

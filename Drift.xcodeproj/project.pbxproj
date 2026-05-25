@@ -181,6 +181,7 @@
 		EDBADA2C372F712D791B9CB3 /* LabReportDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9317E4AADEC72D6DC385E722 /* LabReportDetailView.swift */; };
 		EE5FAB515DD08A8837C600BB /* BackupMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FA6ED1844CBEB6F82E743EA /* BackupMonitor.swift */; };
 		EE6A23C25BA80D02C16DFC47 /* TemplatePreviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF5558013233863F54F6915F /* TemplatePreviewSheet.swift */; };
+		EEE26E6D41C297483BFE6D69 /* HardcodedWhiteTextTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D35C88323E5910DAB5D5641F /* HardcodedWhiteTextTests.swift */; };
 		F29E79872466C7556AC9D549 /* EdgeCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47334FA11098E0172ED4A19A /* EdgeCaseTests.swift */; };
 		F2DAD90846C1E28C0DBBB863 /* IntentRoutingEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = A048685BCBAD258ADEEB3E22 /* IntentRoutingEval.swift */; };
 		F382B53D48F74D309E9C295A /* MultiIntentDeterministicEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BBFE4D3A672CECBACA7F08D /* MultiIntentDeterministicEval.swift */; };
@@ -389,6 +390,7 @@
 		CBA094F99189B3E26DB18B04 /* TodayDonutViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayDonutViewTests.swift; sourceTree = "<group>"; };
 		CCE57CE0133752BC4B5C80F3 /* CloudVisionKeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudVisionKeyTests.swift; sourceTree = "<group>"; };
 		D0E8B598BCB7486A2C75848E /* WeightViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightViewModel.swift; sourceTree = "<group>"; };
+		D35C88323E5910DAB5D5641F /* HardcodedWhiteTextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardcodedWhiteTextTests.swift; sourceTree = "<group>"; };
 		D40A67C320513F5DD21FE3EB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		D4683CA86D3045B1534504B0 /* ManualFoodEntrySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualFoodEntrySheet.swift; sourceTree = "<group>"; };
 		D5286E0309471AF898D70E3C /* BodyMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyMapView.swift; sourceTree = "<group>"; };
@@ -571,6 +573,7 @@
 				B3D6A44D7C25BC4956132FE8 /* FoodLoggingTests.swift */,
 				4EACDB02677C363A05FD0592 /* FoodLogSheetTests.swift */,
 				5DAC7F3DE02D237C91936A3C /* FoodServiceTests.swift */,
+				D35C88323E5910DAB5D5641F /* HardcodedWhiteTextTests.swift */,
 				24EBC73AF46E92F7FF6A10FF /* IntegrationTests.swift */,
 				5D1E187818C8B9D2196B4B9D /* LabReportOCRTests.swift */,
 				FC00E0CF9EA4AC9ADEF6D8F0 /* LogMealSheetTests.swift */,
@@ -1183,6 +1186,7 @@
 				9828F6D5E316631E7B0A8420 /* FoodLogSheetTests.swift in Sources */,
 				5D88D4133DC583D407E81955 /* FoodLoggingTests.swift in Sources */,
 				96A4FE9ADE8FF47326F95FBE /* FoodServiceTests.swift in Sources */,
+				EEE26E6D41C297483BFE6D69 /* HardcodedWhiteTextTests.swift in Sources */,
 				E220B46BAB957B8242ABA44A /* IntegrationTests.swift in Sources */,
 				92F6CD33F11BF82738AAF81C /* LabReportOCRTests.swift in Sources */,
 				2DBEBC3C1C0A2223F64A721A /* LogMealSheetTests.swift in Sources */,

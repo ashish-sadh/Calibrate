@@ -305,6 +305,13 @@ struct WorkoutView: View {
         .scrollContentBackground(.hidden).background(Theme.background.ignoresSafeArea())
         .navigationTitle("Exercise").navigationBarTitleDisplayMode(.inline)
         .toolbarColorScheme(.light, for: .navigationBar)
+        // 2026-05-24 field bug: Exercise tab showed TWO back chevrons —
+        // the system-supplied back button (because MoreTabView pushes
+        // WorkoutView via NavigationLink) *and* the custom coral
+        // chevron below that routes to Today (tab 0). Hide the system
+        // one so the explicit "back to Today" jump is the only path
+        // and the chrome looks intentional.
+        .navigationBarBackButtonHidden(true)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button { selectedTab = 0 } label: {
