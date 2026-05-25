@@ -75,6 +75,18 @@ If abandonment count is ≥3 → exit without working (issue should be labeled `
 - Label includes `design-impl-{N}` → normal implementation. After commit, call `design_check_complete(design_n=N)` and close the parent design issue if this was the last impl task.
 - Else → normal implementation (continue with step 7).
 
+### 6.5. Read parent epic context (if any)
+
+Drift's harness phase 2a (2026-05-25, see `Docs/refactor/harness-phase-2-workflows.md`) introduced spec-driven epics: an open issue with the `epic` label owns the arc-level goal + a `<subtasks>` list of regular sprint-tasks. The senior keeps claiming sprint-tasks one at a time, but before planning the work, reads the parent epic's `<goal>` so local decisions are grounded in the arc.
+
+```bash
+EPIC_OUT=$(scripts/sprint-service.sh epic <N>)
+```
+
+If `EPIC_OUT` starts with `epic_number=`, parse the three lines and add the `epic_goal` to your working context. If it prints `none`, this task isn't part of any open epic — proceed normally.
+
+This step is cheap (one live `gh` lookup, ~1s) and skipping it doesn't break anything — the epic body is supplementary context, not a hard contract. It's most valuable when the queue head is mid-arc: the senior reads the arc goal instead of just the one-sentence task title.
+
 ### 7. Post the Plan comment (within 5 min of claim)
 ```xml
 <plan>

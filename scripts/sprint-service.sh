@@ -848,6 +848,60 @@ print(f"State refreshed: {age}s ago")
 PYEOF
 }
 
+# ── Epic awareness (phase 2a, 2026-05-25) ─────────────────────────────────────
+#
+# Spec-driven workflow primitive: an open issue with the `epic` label has a
+# body containing `<epic id="..." status="..."><goal>...</goal><subtasks>...
+# <task issue="N" .../></subtasks>...</epic>` plus per-task status entries.
+# Sub-tasks remain regular sprint-tasks; the epic is *context*, not claimable.
+#
+# `epic <subtask-issue-N>` prints the parent epic's number, status, and goal
+# when N appears in any open epic's <subtasks>. Senior reads it after claim so
+# the arc goal is in working context (see Docs/refactor/harness-phase-2-workflows.md).
+#
+# Live `gh` lookup — no state-file schema change in v1. Future v2: hoist into
+# `cmd_refresh` so `sprint-state.json` carries an `epics` block.
+cmd_epic() {
+    local SUBTASK="${1:-}"
+    if [ -z "$SUBTASK" ]; then
+        echo "usage: sprint-service.sh epic <subtask-issue-number>" >&2
+        return 1
+    fi
+    # Bodies routinely contain triple-quotes / XML / newlines that break
+    # heredoc interpolation. Pass via env var (gh JSON is one line per
+    # issue, but the body is multi-line within the JSON string).
+    local OPEN_EPICS_FILE
+    OPEN_EPICS_FILE=$(mktemp)
+    gh issue list --state open --label epic --json number,title,body --limit 50 \
+        > "$OPEN_EPICS_FILE" 2>/dev/null || echo "[]" > "$OPEN_EPICS_FILE"
+    EPIC_FILE="$OPEN_EPICS_FILE" python3 - "$SUBTASK" <<'PYEOF'
+import json, os, re, sys
+subtask = sys.argv[1].lstrip("#")
+with open(os.environ["EPIC_FILE"]) as f:
+    epics = json.load(f)
+match = None
+for ep in epics:
+    body = ep.get("body", "") or ""
+    # <task issue="NNN" ...> — number may be quoted or bare, with or without `#`.
+    for m in re.finditer(r'<task\s+[^>]*issue=["\']?#?(\d+)', body):
+        if m.group(1) == subtask:
+            match = ep
+            break
+    if match: break
+if not match:
+    print("none")
+    sys.exit(0)
+goal = ""
+gm = re.search(r"<goal>(.*?)</goal>", match["body"], re.DOTALL)
+if gm:
+    goal = re.sub(r"\s+", " ", gm.group(1)).strip()
+print(f"epic_number={match['number']}")
+print(f"epic_title={match['title']}")
+print(f"epic_goal={goal}")
+PYEOF
+    rm -f "$OPEN_EPICS_FILE"
+}
+
 cmd_count() {
     local FILTER="${1:---sprint}"
     if [ ! -f "$STATE_FILE" ]; then echo "0"; return; fi
@@ -972,12 +1026,13 @@ case "$CMD" in
     clear)             cmd_clear ;;
     status)            cmd_status ;;
     count)             cmd_count "${1:---sprint}" ;;
+    epic)              cmd_epic "${1:-}" ;;
     planning-due)      cmd_planning_due ;;
     planning-done)     cmd_planning_done ;;
     planning-context)  cmd_planning_context ;;
     *)
         echo "Unknown command: $CMD" >&2
-        echo "Commands: refresh, next, claim, done, unclaim, session-done, reset-sprint-done, clear, status, count, planning-due, planning-done, planning-context" >&2
+        echo "Commands: refresh, next, claim, done, unclaim, session-done, reset-sprint-done, clear, status, count, epic, planning-due, planning-done, planning-context" >&2
         exit 1
         ;;
 esac
