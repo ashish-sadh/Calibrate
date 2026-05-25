@@ -155,6 +155,25 @@ issues_comment(issue=<N>, body="<verifier_verdict>...</verifier_verdict>")
 - Hook `require-plan-comment.sh` checks the `<plan>` block exists.
 - Commit message: `feat(#N): ...` / `fix(#N): ...` / `chore(#N): ...` / `docs(#N): ...` / `refactor(#N): ...`
 
+### 14.5. Visual evaluation (phase 2c, 2026-05-25)
+
+If the commit touched any file under `Drift/Views/**/*.swift` AND a parent epic exists for this task (step 6.5), invoke the `/ui-evaluator` skill:
+
+```bash
+git diff HEAD~1 --name-only | grep -q '^Drift/Views/' && \
+    [ -n "$EPIC_NUMBER" ] && \
+    DRIFT_COMMIT_SHA=$(git rev-parse HEAD) \
+    DRIFT_EPIC_ISSUE=$EPIC_NUMBER \
+    invoke /ui-evaluator
+```
+
+The skill reads `<visual_criteria>` from the parent epic body, captures simulator screenshots, and posts a `<visual_verdict>` comment on the epic. On REJECT it files a refinement sub-task under the epic — the next senior cycle picks it up. **Do NOT revert your commit on REJECT** — forward-fix is the policy (see `Docs/refactor/harness-phase-2-workflows.md`).
+
+Skip the invocation when:
+- The commit touches no `Drift/Views/` files (no UI surface changed).
+- No parent epic exists (this task isn't part of an arc with visual criteria).
+- The epic's body has no `<visual_criteria>` block — `/ui-evaluator` exits `N/A` cleanly; no need to invoke.
+
 ### 15. Mark done
 ```
 sprint_done(issue=<N>, resolution="<one-sentence resolution>") via drift-mcp

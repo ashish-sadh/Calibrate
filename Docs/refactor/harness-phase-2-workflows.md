@@ -88,13 +88,13 @@ This is the highest-value addition because it converts the user's manual screens
 
 ## Implementation phases (in order)
 
-| Phase | Scope | LOC | Why first |
+| Phase | Scope | LOC | Status |
 |---|---|---|---|
-| 2a | **Epic label + senior reads epic body** | ~80 LOC in sprint-service.sh + ~30 LOC in senior SKILL.md | Smallest scope, biggest "stop re-discovering context" payoff. Convert this week's bug sweep into an epic to validate. |
-| 2b | **Blocker-elevator in `sprint_claim`** | ~50 LOC in sprint-service.sh + 1 hook | Stops the kind of 15-sessions-for-1-commit stall observed 2026-05-21. |
-| 2c | **`/ui-evaluator` skill + `<visual_criteria>` schema** | ~150 LOC new skill + ~50 LOC mobile-mcp wiring + 1 cron hook | Highest impact, most work. The screenshot-driven user QA loop becomes automated. |
+| 2a | **Epic label + senior reads epic body** | ~80 LOC in sprint-service.sh + ~30 LOC in senior SKILL.md | ✅ Shipped 2026-05-25 (`9de5dee8`). First epic = #849. |
+| 2b | **`unblocks-gate` priority band in router** | ~25 LOC in sprint-service.sh + 3 tier-0 tests | ✅ Shipped 2026-05-25 (this commit). `unblocks-gate` label + Priority 0 band above P0 bugs. |
+| 2c | **`/ui-evaluator` skill + `<visual_criteria>` schema** | New `.claude/skills/ui-evaluator/SKILL.md` (~180 LOC) + senior SKILL.md step 14.5 | ✅ Skeleton shipped 2026-05-25 (this commit). First exercise = epic #849 once it adds a `<visual_criteria>` block. |
 
-Phase 2a ships in this session (see "Step 1 implementation" below). 2b is a 2-hour follow-up. 2c is a 1-day follow-up.
+All three phases land in two commits. Validation: smoke-tested 2a (`epic 839` → #849); 2b passes 226 sprint-service tier-0 tests (3 new); 2c's first real run will be against the existing epic #849 after a Drift/Views commit.
 
 ## Step 1 implementation (this session)
 

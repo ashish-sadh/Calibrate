@@ -265,12 +265,28 @@ available = [t for t in tasks
              and t.get("number") != in_progress
              and not has(t, "needs-human")]
 
-# ── Priority 1 (all sessions): Admin-approved P0 bugs ─────────────────────────
-# Admin-approved = has sprint-task OR approved label. CC's Approve button stamps
-# sprint-task; admins sometimes manually stamp `approved` via GitHub UI (e.g. #282,
-# which then stayed invisible to the router). Accept either as the go-signal.
+# ── Priority 0 (all sessions, phase 2b 2026-05-25): unblocks-gate ─────────────
+# An issue labeled `unblocks-gate` means "something is broken on main that
+# blocks every other commit at the pre-commit hook" — failing tier-0 tests,
+# a broken CI gate, an undeclared symbol after a sed sweep, etc. Without
+# this band, the queue head kept being claimed even though every senior
+# commit got hook-blocked, producing the 15-sessions-1-commit stall on
+# 2026-05-21. `unblocks-gate` issues jump above P0 bugs because they hold
+# the whole queue hostage; once the gate clears, normal priority bands
+# resume. Combine with `sprint-task` so the issue is still claimable.
+# Excludes `needs-review` (un-claimable by definition).
 def admin_approved(t):
+    # Admin-approved = has sprint-task OR approved label. CC's Approve button stamps
+    # sprint-task; admins sometimes manually stamp `approved` via GitHub UI (e.g. #282,
+    # which then stayed invisible to the router). Accept either as the go-signal.
     return has(t, "sprint-task") or has(t, "approved")
+
+for t in available:
+    if has(t, "needs-review"): continue
+    if has(t, "unblocks-gate") and admin_approved(t):
+        print(f"{t['number']} {t['title']}"); sys.exit(0)
+
+# ── Priority 1 (all sessions): Admin-approved P0 bugs ─────────────────────────
 
 for t in available:
     if has(t, "needs-review"): continue

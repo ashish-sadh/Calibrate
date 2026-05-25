@@ -220,7 +220,29 @@ run_priority() {
 echo ""
 echo "══ Priority Ordering ═══════════════════════════════════════════════════"
 
-# 2.1 Admin-approved P0 bug (has sprint-task) beats everything
+# 2.0 unblocks-gate beats everything else (phase 2b 2026-05-25)
+# Even a P0 bug is held back when the gate is broken — the broken gate
+# blocks every other senior commit at the pre-commit hook.
+write_state_with_tasks "null" \
+    "$(task 10 'Sprint task' pending sprint-task)" \
+    "$(task 15 'Broken test gate' pending unblocks-gate sprint-task)" \
+    "$(task 20 'P0 Bug admin' pending bug P0 sprint-task)"
+OUT=$(sprint_service next --junior)
+assert_eq "unblocks-gate beats P0 bug for junior" "15 Broken test gate" "$OUT"
+OUT=$(sprint_service next --senior)
+assert_eq "unblocks-gate beats P0 bug for senior" "15 Broken test gate" "$OUT"
+
+# 2.0b unblocks-gate without admin approval (no sprint-task) is NOT served
+# Same gate as P0 bugs: needs an explicit approval to enter the queue,
+# else any random label could nuke the priority order.
+write_state_with_tasks "null" \
+    "$(task 10 'Sprint task' pending sprint-task)" \
+    "$(task 15 'Broken gate unapproved' pending unblocks-gate)" \
+    "$(task 20 'P0 Bug admin' pending bug P0 sprint-task)"
+OUT=$(sprint_service next --senior)
+assert_eq "unblocks-gate without sprint-task not served (falls to P0)" "20 P0 Bug admin" "$OUT"
+
+# 2.1 Admin-approved P0 bug (has sprint-task) beats everything below the gate
 write_state_with_tasks "null" \
     "$(task 10 'Sprint task' pending sprint-task)" \
     "$(task 20 'P0 Bug admin' pending bug P0 sprint-task)" \
