@@ -29,6 +29,15 @@ set -e
 # Silent for non-autonomous (human) sessions
 [ "${DRIFT_AUTONOMOUS:-0}" != "1" ] && exit 0
 
+# Phase 3c 2026-05-26: planning sessions are research-heavy by design.
+# The new slim planning skill (15→8 steps) intentionally does many Reads
+# (Explore sub-agent + manual code-research) + optional WebSearch BEFORE
+# any local diff. The 30-calls-no-diff-growth threshold misfires against
+# this shape — observed 2026-05-26 09:18: planning killed at 32 tool
+# calls during legitimate research. Watchdog's 1h-no-heartbeat kill +
+# planning's own context-budget self-check still cover genuine stuck.
+[ "${DRIFT_SESSION_TYPE:-}" = "planning" ] && exit 0
+
 INPUT=$(cat 2>/dev/null || echo '{}')
 SESSION_ID=$(echo "$INPUT" | jq -r '.session_id // ""')
 TOOL_NAME=$(echo "$INPUT" | jq -r '.tool_name // ""')
