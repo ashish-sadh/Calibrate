@@ -858,8 +858,19 @@ start_claude() {
     else
         MODEL=$(get_model junior sonnet)
         SESSION_TYPE="junior"
-        SESSION_PROMPT="execute junior tasks"
-        log "No P0/SENIOR work — junior ($MODEL)"
+        # Phase 3b 2026-05-26: when routine-fix is the work-of-record, log
+        # it so the watchdog history shows "routine drumbeat" vs "no work."
+        # The session prompt stays generic — junior's SKILL step 4.5 spots
+        # the routine-fix label on claim and synthesizes the Done-When.
+        local ROUTINE_COUNT
+        ROUTINE_COUNT=$("$WORK_DIR/scripts/sprint-service.sh" count --routine-fix 2>/dev/null || echo 0)
+        if [[ "$ROUTINE_COUNT" -gt 0 ]]; then
+            SESSION_PROMPT="execute routine-fix worker tasks"
+            log "Routine-fix queue: $ROUTINE_COUNT — junior ($MODEL)"
+        else
+            SESSION_PROMPT="execute junior tasks"
+            log "No P0/SENIOR work — junior ($MODEL)"
+        fi
     fi
     fi  # end if not resuming planning
 

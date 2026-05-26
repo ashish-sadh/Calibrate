@@ -54,6 +54,28 @@ If absent, abandon. If permanent-task, use `<progress_when>` and call `sprint_se
 
 Junior does NOT claim permanent-tasks unless they're explicitly junior-labeled (#52 UI Polish, #51 Bug Hunting, #50 Test Coverage, #49 Food DB). If the claimed permanent isn't one of those, abandon with reason "junior-claimed senior-permanent."
 
+### 4.5. Routine-fix synthesized Done-When (phase 3b, 2026-05-26)
+
+If the claimed task carries the `routine-fix` label AND `issues_read_done_when` returned `NO_DONE_WHEN_BLOCK`, do NOT abandon. Instead synthesize a default contract and proceed:
+
+```xml
+<done_when threshold="weight_sum>=5 AND no_criterion_at_zero">
+  <criterion id="1" weight="3" verify="cd DriftCore && swift test && pkill -9 -f xcodebuild 2>/dev/null; sleep 2; xcodebuild test -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro' 2>&amp;1 | grep '✘' | wc -l">
+    Tier-0 (DriftCore swift test) AND tier-1 (iOS xcodebuild test) pass after diff. iOS verify expects output: 0.
+  </criterion>
+  <criterion id="2" weight="2" verify="">
+    The file or symbol named in the bug body is touched by the diff.
+  </criterion>
+  <criterion id="3" weight="1" verify="git diff HEAD~1 --stat | tail -1 | awk '{print $4 + $6}'">
+    Diff is ≤100 lines (insertions + deletions).
+  </criterion>
+</done_when>
+```
+
+Post this synthesized block as the FIRST comment on the issue (before the Plan), with a header line `<!-- synthesized by junior routine-fix mode per Docs/refactor/harness-phase-3-planning-slim.md -->`. The hook `require-done-when.sh` then sees the block on the issue and lets the rest of the flow proceed normally.
+
+If the routine-fix label is present BUT a `<done_when>` block already exists (admin or planning wrote one explicitly), use the explicit one and skip the synthesis.
+
 ### 5. Check task scope
 Glance at the Done-When criteria + linked files. If the task LOOKS like it'll touch >3 files OR diff >100 lines, abandon immediately with reason "scope-too-large-for-junior; planning should split or re-label as SENIOR."
 

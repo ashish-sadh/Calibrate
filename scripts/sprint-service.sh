@@ -205,6 +205,83 @@ PYEOF
     # Update P0 cache for compliance hook
     gh issue list --state open --label P0 --json number,title \
         --jq '.[] | "#\(.number) \(.title)"' > "$HOME/drift-state/cache-p0-bugs" 2>/dev/null || true
+
+    # Phase 3d 2026-05-26: auto-promote orphan bugs to routine-fix. Any bug
+    # older than 24h that isn't already routine-fix-labeled AND isn't a
+    # sub-task of any open epic gets the routine-fix label so the always-on
+    # junior worker picks it up. Self-feeds the queue under strict-one-epic
+    # mode where planning no longer files standalone bug sprint-tasks.
+    auto_promote_orphan_bugs || true
+}
+
+auto_promote_orphan_bugs() {
+    local OPEN_BUGS_FILE OPEN_EPICS_FILE
+    OPEN_BUGS_FILE=$(mktemp)
+    OPEN_EPICS_FILE=$(mktemp)
+    # Bugs that aren't already routine-fix-labeled.
+    gh issue list --state open --label bug --json number,createdAt,labels --limit 100 \
+        > "$OPEN_BUGS_FILE" 2>/dev/null || echo "[]" > "$OPEN_BUGS_FILE"
+    # Open epics' bodies — to extract <task issue="N" .../> references.
+    gh issue list --state open --label epic --json number,body --limit 50 \
+        > "$OPEN_EPICS_FILE" 2>/dev/null || echo "[]" > "$OPEN_EPICS_FILE"
+
+    local TO_PROMOTE
+    TO_PROMOTE=$(BUGS_FILE="$OPEN_BUGS_FILE" EPICS_FILE="$OPEN_EPICS_FILE" python3 <<'PYEOF'
+import json, os, re
+from datetime import datetime, timezone
+with open(os.environ["BUGS_FILE"]) as f:
+    bugs = json.load(f)
+with open(os.environ["EPICS_FILE"]) as f:
+    epics = json.load(f)
+
+# All subtask issue numbers referenced by any open epic's body.
+# Regex deliberately uses double-quoted string + chr(39) literal for the
+# single-quote alternative — Python raw single-quoted strings can't end
+# in `\'` cleanly, and the embedded `\'` form caused bash heredoc
+# parsing to bleed (the heredoc DOES treat single quotes opaquely, but
+# our outer $() context's lexer was choking on something subtle).
+SQ = chr(39)
+TASK_RE = re.compile(r'<task\s+[^>]*issue=[' + SQ + r'"]?#?(\d+)')
+
+epic_subtasks = set()
+for ep in epics:
+    body = ep.get("body", "") or ""
+    for m in TASK_RE.finditer(body):
+        epic_subtasks.add(int(m.group(1)))
+
+now = datetime.now(timezone.utc)
+to_promote = []
+for bug in bugs:
+    n = bug.get("number")
+    if not n: continue
+    labels = [l["name"] for l in bug.get("labels", [])]
+    if "routine-fix" in labels: continue
+    if n in epic_subtasks: continue
+    created = bug.get("createdAt")
+    if not created: continue
+    try:
+        dt = datetime.fromisoformat(created.replace("Z", "+00:00"))
+    except Exception:
+        continue
+    age_hours = (now - dt).total_seconds() / 3600
+    if age_hours >= 24:
+        to_promote.append(n)
+print(",".join(str(n) for n in to_promote))
+PYEOF
+)
+    rm -f "$OPEN_BUGS_FILE" "$OPEN_EPICS_FILE"
+
+    if [ -z "$TO_PROMOTE" ]; then return 0; fi
+    IFS=',' read -ra BUG_NUMS <<< "$TO_PROMOTE"
+    local COUNT=0
+    for N in "${BUG_NUMS[@]}"; do
+        if gh issue edit "$N" --add-label routine-fix > /dev/null 2>&1; then
+            COUNT=$((COUNT + 1))
+        fi
+    done
+    if [ "$COUNT" -gt 0 ]; then
+        echo "Sprint service: auto-promoted $COUNT orphan bug(s) to routine-fix"
+    fi
 }
 
 cmd_next() {
@@ -980,6 +1057,18 @@ try:
             return ("bug" in lbls and ("P1" in lbls or "P2" in lbls)
                     and "sprint-task" not in lbls and "needs-review" not in lbls)
         print(len([t for t in av if needs_investigation(t)]))
+    elif filt == "--routine-fix":
+        # Phase 3b 2026-05-26: admin-approved routine-fix issues drained by
+        # the always-on junior worker. Mirrors the cmd_next gate exactly so
+        # `count --routine-fix > 0` predicts the next junior claim under
+        # strict-one-epic mode.
+        def is_routine_fix(t):
+            lbls = t.get("labels", [])
+            return ("routine-fix" in lbls
+                    and ("sprint-task" in lbls or "approved" in lbls)
+                    and "SENIOR" not in lbls
+                    and "needs-review" not in lbls)
+        print(len([t for t in av if is_routine_fix(t)]))
     else:                      print(len(av))
 except Exception: print(0)
 PYEOF
