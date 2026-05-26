@@ -360,6 +360,19 @@ if filter_mode in ("--senior", "--any"):
 # ── Junior-only section ────────────────────────────────────────────────────────
 if filter_mode in ("--junior", "--any"):
 
+    # Priority 1.7 (phase 3a 2026-05-26): routine-fix. Always-on background
+    # worker for low-risk bugs that aren't attached to the active epic.
+    # Sits above the stale-bump and regular sprint-task bands because the
+    # routine-fix worker is the *primary* junior loop under strict-one-epic
+    # mode — planning no longer files standalone junior sprint-tasks, so
+    # the regular Priority 2 band is empty by design.
+    # admin_approved() still required so a random `routine-fix` label
+    # without sprint-task can't enter the queue.
+    for t in available:
+        if has(t, "needs-review"): continue
+        if has(t, "routine-fix") and admin_approved(t) and not has(t, "SENIOR"):
+            print(f"{t['number']} {t['title']}"); sys.exit(0)
+
     # Priority 1.9 (#790): Stale junior sprint-tasks. Tasks queued long ago
     # that no junior session has claimed get bumped ahead of fresher work
     # so multi-week-old cuisine/food-DB tasks don't keep losing the lottery
@@ -914,6 +927,29 @@ if gm:
 print(f"epic_number={match['number']}")
 print(f"epic_title={match['title']}")
 print(f"epic_goal={goal}")
+
+# Phase 3a body truncation (2026-05-26): epic bodies accumulate <shipped>
+# commits + sub-task notes across the lifetime of the arc, easily blowing
+# past 200 lines. Senior session pays the cost on every claim. Cap the
+# emitted body at 200 lines; the goal + subtasks + visual_criteria
+# (which appear early in the body) survive every truncation by
+# convention. Older progress notes stay on the issue but don't enter
+# the senior's working context.
+body = match.get("body", "") or ""
+lines = body.split("\n")
+BODY_LINE_CAP = 200
+if len(lines) > BODY_LINE_CAP:
+    truncated_body = "\n".join(lines[:BODY_LINE_CAP])
+    truncated_body += f"\n\n[truncated — body has {len(lines)} lines total; see `gh issue view {match['number']}` for full history]"
+    print("epic_body_truncated=true")
+else:
+    truncated_body = body
+    print("epic_body_truncated=false")
+# Emit body last with a delimiter so callers can grep for the markers
+# above and capture the rest as the body.
+print("---epic_body_start---")
+print(truncated_body)
+print("---epic_body_end---")
 PYEOF
     rm -f "$OPEN_EPICS_FILE"
 }

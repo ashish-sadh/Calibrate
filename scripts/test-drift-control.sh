@@ -242,6 +242,35 @@ write_state_with_tasks "null" \
 OUT=$(sprint_service next --senior)
 assert_eq "unblocks-gate without sprint-task not served (falls to P0)" "20 P0 Bug admin" "$OUT"
 
+# 2.0c routine-fix (phase 3a 2026-05-26): always-on junior worker band.
+# Sits above regular junior sprint-tasks because under strict-one-epic
+# planning no longer files standalone junior sprint-tasks — the routine
+# worker is the primary junior loop.
+write_state_with_tasks "null" \
+    "$(task 10 'Regular junior sprint' pending sprint-task)" \
+    "$(task 17 'Orphan bug auto-routed' pending bug routine-fix sprint-task)" \
+    "$(task 30 'Permanent' permanent permanent-task)"
+OUT=$(sprint_service next --junior)
+assert_eq "routine-fix beats regular junior sprint" "17 Orphan bug auto-routed" "$OUT"
+
+# 2.0d routine-fix without sprint-task NOT served (same admin_approved gate).
+write_state_with_tasks "null" \
+    "$(task 10 'Regular junior sprint' pending sprint-task)" \
+    "$(task 17 'Routine-fix unapproved' pending bug routine-fix)"
+OUT=$(sprint_service next --junior)
+assert_eq "routine-fix without sprint-task falls back to regular sprint" "10 Regular junior sprint" "$OUT"
+
+# 2.0e routine-fix doesn't override SENIOR sprint-tasks (those drain the
+# active epic; routine-fix is the parallel background queue).
+write_state_with_tasks "null" \
+    "$(task 10 'Regular junior sprint' pending sprint-task)" \
+    "$(task 17 'Routine-fix' pending bug routine-fix sprint-task)" \
+    "$(task 25 'SENIOR sprint' pending sprint-task SENIOR)"
+OUT=$(sprint_service next --senior)
+assert_eq "SENIOR sprint still beats routine-fix for senior" "25 SENIOR sprint" "$OUT"
+OUT=$(sprint_service next --junior)
+assert_eq "junior gets routine-fix (SENIOR doesn't appear in junior queue)" "17 Routine-fix" "$OUT"
+
 # 2.1 Admin-approved P0 bug (has sprint-task) beats everything below the gate
 write_state_with_tasks "null" \
     "$(task 10 'Sprint task' pending sprint-task)" \
