@@ -94,6 +94,31 @@ get_model() {
     echo "$DEFAULT"
 }
 
+# Phase 3c 2026-05-26: helper for staleness-driven session bands. Returns 0
+# (true) when STAMP_FILE is missing or its mtime is older than $AGE_SECONDS.
+# Used by the watchdog decision tree to fire /knowledge-curate when 7d
+# stale or /admin-replies when 24h stale, instead of bundling those in the
+# heavy /planning session.
+_is_stale() {
+    local STAMP_FILE="$1"
+    local AGE_SECONDS="$2"
+    if [[ ! -f "$STAMP_FILE" ]]; then return 0; fi
+    local LAST_MTIME NOW AGE
+    LAST_MTIME=$(stat -f %m "$STAMP_FILE" 2>/dev/null || stat -c %Y "$STAMP_FILE" 2>/dev/null || echo 0)
+    NOW=$(date +%s)
+    AGE=$(( NOW - LAST_MTIME ))
+    [[ "$AGE" -ge "$AGE_SECONDS" ]]
+}
+
+# Phase 3c 2026-05-26: count open epic issues for the stuck-epic cap.
+# Under strict-one-epic, planning should not fire while a prior epic is
+# still open. The cap (2 cycles stuck) is enforced at the planning-due
+# branch — see the planning-due check below. Returns the count via stdout
+# so the caller can decide.
+_count_open_epics() {
+    gh issue list --state open --label epic --json number --jq length 2>/dev/null || echo 0
+}
+
 read_control() {
     if [[ -f "$CONTROL_FILE" ]]; then
         tr -d '[:space:]' < "$CONTROL_FILE" | tr '[:lower:]' '[:upper:]'
@@ -786,8 +811,36 @@ start_claude() {
     fi
 
     if [[ "$SESSION_TYPE" != "planning" ]] && [[ "$SESSION_TYPE" != "testflight" ]]; then
-    # 1. Planning due?
+
+    # Phase 3c 2026-05-26: stuck-epic 2-cycle cap. Under strict-one-epic
+    # mode, planning should not fire while a prior epic is still open. The
+    # cap is 2 planning-due cycles: cycle 1 + 2 bump a counter and skip
+    # planning; cycle 3 fires planning anyway (override mode) so a
+    # tarpit'd epic can't deadlock the queue forever.
+    local SHOULD_FIRE_PLANNING=0
     if "$WORK_DIR/scripts/sprint-service.sh" planning-due 2>/dev/null; then
+        local OPEN_EPICS STUCK_CYCLES
+        OPEN_EPICS=$(_count_open_epics)
+        STUCK_CYCLES=$(cat "$HOME/drift-state/stuck-epic-cycles" 2>/dev/null || echo 0)
+        if [[ "$OPEN_EPICS" -eq 0 ]] || [[ "$STUCK_CYCLES" -ge 2 ]]; then
+            SHOULD_FIRE_PLANNING=1
+            rm -f "$HOME/drift-state/stuck-epic-cycles"
+            if [[ "$STUCK_CYCLES" -ge 2 ]]; then
+                # Fire planning in override mode — the prior epic stayed
+                # open across 2 cycles; planning must split / wontfix /
+                # mark needs-human.
+                touch "$HOME/drift-state/planning-override-stuck-epic"
+                log "Planning due AND stuck-epic cap reached (cycles=$STUCK_CYCLES, open epics=$OPEN_EPICS) — firing planning in override mode"
+            fi
+        else
+            STUCK_CYCLES=$((STUCK_CYCLES + 1))
+            echo "$STUCK_CYCLES" > "$HOME/drift-state/stuck-epic-cycles"
+            log "Planning due but $OPEN_EPICS open epic(s); stuck-cycles=$STUCK_CYCLES (<2 cap) — skipping planning, falling through"
+        fi
+    fi
+
+    # 1. Planning due (and stuck-epic cap allows firing)?
+    if [[ "$SHOULD_FIRE_PLANNING" -eq 1 ]]; then
         MODEL=$(get_model planning opus)
         SESSION_TYPE="planning"
         # NOTE: last-review-time is stamped by `report-service.sh finish` when a
@@ -795,7 +848,7 @@ start_claude() {
         # session spawn made `cmd_review_due` believe a review was done every
         # time a planner started, and reviews silently stopped getting written
         # (710-cycle gap observed 2026-04-21).
-        log "Sprint planning due — $MODEL"
+        log "Sprint planning firing — $MODEL"
 
         local CYCLE=$(cat "$HOME/drift-state/commit-counter" 2>/dev/null || echo "?")
         rm -f "$HOME/drift-state/planning-issue"
@@ -844,6 +897,29 @@ start_claude() {
             MODEL=$(get_model junior sonnet)
             SESSION_PROMPT="execute junior tasks"
         fi
+
+    # 1.5/1.6. Staleness-driven ceremony skills (phase 3c 2026-05-26).
+    # Replaces the in-line admin-replies + knowledge-curate that used to
+    # run inside /planning step 3 + step 8. Stamp files
+    # `~/drift-state/last-{knowledge-curate,admin-replies}-at` track last
+    # successful run. Each band fires AT MOST ONCE per stamp interval so
+    # they can't push epic/senior work down indefinitely.
+    elif _is_stale "$HOME/drift-state/last-knowledge-curate-at" 604800; then
+        # 7d (604800s) cadence — sediments persona files + roadmap +
+        # decisions.md prunes. Headless invocation of the existing skill.
+        MODEL=$(get_model junior sonnet)
+        SESSION_TYPE="knowledge-curate"
+        SESSION_PROMPT="/knowledge-curate"
+        log "Knowledge-curate stale (≥7d) — junior ($MODEL)"
+
+    elif _is_stale "$HOME/drift-state/last-admin-replies-at" 86400; then
+        # 24h (86400s) cadence — replies to admin comments on report
+        # PRs. Was bundled into /planning step 3; now its own skill so
+        # planning can stay focused on the next epic.
+        MODEL=$(get_model junior sonnet)
+        SESSION_TYPE="admin-replies"
+        SESSION_PROMPT="/admin-replies"
+        log "Admin-replies stale (≥24h) — junior ($MODEL)"
 
     # 2. P0s, SENIOR tasks, or unhandled P1/P2 bugs? → senior session
     elif [[ "$("$WORK_DIR/scripts/sprint-service.sh" count --p0 2>/dev/null || echo 0)" -gt 0 ]] || \
