@@ -806,13 +806,26 @@ start_claude() {
         TF_AGE=$(( $(date +%s) - TF_LAST ))
         # 10800s = 3h cadence (TestFlight publish-window minimum)
         if [[ "$TF_AGE" -ge 10800 ]] && "$WORK_DIR/scripts/is-clean-state.sh" > /dev/null 2>&1; then
-            MODEL="haiku"
-            SESSION_TYPE="testflight"
-            SESSION_PROMPT="/testflight-publish"
-            log "TestFlight slot — ${TF_AGE}s since last + state clean — spawning /testflight-publish (haiku)"
-            # Write the auth flag the guard-testflight.sh hook expects.
-            mkdir -p "$HOME/drift-state"
-            touch "$HOME/drift-state/testflight-publish-authorized"
+            # Phase 3e 2026-05-26: archive-failed cooldown gate. The skill self-
+            # checks but haiku is inconsistent — observed 2026-05-26 21:50 a TF
+            # session bypass its own cooldown self-check and proceed to archive
+            # (which fails again). Gate at the watchdog layer too so we don't
+            # spawn 5+ TF sessions/hour while cooldown is active.
+            local _TF_FAIL_AT _TF_COOLDOWN_AGE
+            _TF_FAIL_AT=$(cat "$HOME/drift-state/testflight-archive-failed" 2>/dev/null || echo "0")
+            _TF_COOLDOWN_AGE=$(( $(date +%s) - _TF_FAIL_AT ))
+            if [[ "$_TF_FAIL_AT" -gt 0 ]] && [[ "$_TF_COOLDOWN_AGE" -lt 86400 ]]; then
+                local _remaining=$(( 86400 - _TF_COOLDOWN_AGE ))
+                log "TestFlight skipped — archive-failed cooldown active (${_remaining}s remaining, expires $(date -r $(( _TF_FAIL_AT + 86400 ))))"
+            else
+                MODEL="haiku"
+                SESSION_TYPE="testflight"
+                SESSION_PROMPT="/testflight-publish"
+                log "TestFlight slot — ${TF_AGE}s since last + state clean — spawning /testflight-publish (haiku)"
+                # Write the auth flag the guard-testflight.sh hook expects.
+                mkdir -p "$HOME/drift-state"
+                touch "$HOME/drift-state/testflight-publish-authorized"
+            fi
         fi
     fi
 
