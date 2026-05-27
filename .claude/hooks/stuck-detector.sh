@@ -123,7 +123,15 @@ if [ "$MAX_READ_COUNT" -ge 5 ]; then
     STUCK_REASON="repeated_file_read: $REPEATED_FILE read ${MAX_READ_COUNT} times"
 fi
 
-if [ "$SINCE_PLAN" -ge 20 ] && [ -n "$IN_PROGRESS" ]; then
+# Phase 3e 2026-05-27: bumped threshold 20 → 50. Observed 2026-05-27 11:08:
+# senior on #848 (V7 design-doc) was killed at tool-call 21 *while it was
+# queueing the plan-comment TaskCreate*. Design-doc work is research-heavy
+# (read tenets/signs/roadmap/TEMPLATE/skill → write Plan comment → write doc),
+# so 20-30 tool calls of reading before the first comment is normal. The
+# zero_diff_growth (30) + repeated_file_read (5) checks above still catch
+# *real* stuck (loops, infinite reads); this threshold only fires when a
+# session is making tool calls but producing no visible artifact at all.
+if [ "$SINCE_PLAN" -ge 50 ] && [ -n "$IN_PROGRESS" ]; then
     STUCK_REASON="no_comment_update: ${SINCE_PLAN} tool calls without comment on #$IN_PROGRESS"
 fi
 
