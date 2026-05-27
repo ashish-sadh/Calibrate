@@ -168,7 +168,12 @@ Apply verdict literally. If REVISE: rewrite the epic body once, then file. If DR
 #### 8b. File the epic + its sub-task issues
 
 ```bash
-gh issue create --title "[EPIC] <short title>" --label "epic,sprint-task" --body "<full epic body>"
+gh issue create --title "[EPIC] <short title>" --label "epic" --body "<full epic body>"
+# NOTE: Do NOT add `sprint-task` to the epic. Epics are tracked via the `epic`
+# label only; the queue's claimable units are the sub-tasks (which planning
+# files separately with `sprint-task,SENIOR|JUNIOR`). Observed 2026-05-27: when
+# the epic itself carried `sprint-task`, senior sessions claimed the epic and
+# left its sub-tasks orphaned for 9h with no commits.
 # For each sub-task in <subtasks> with issue="":
 gh issue create --title "<sub-task title>" --label "sprint-task,SENIOR|JUNIOR" \
     --body "Part of #<epic-number>. <body with own <done_when>>"
