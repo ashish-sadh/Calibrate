@@ -1028,10 +1028,12 @@ start_claude() {
     local MCP_CONFIG_ARG=""
     if [[ "$USE_SKILLS" == "1" ]]; then
         case "$SESSION_TYPE" in
-            planning)   PROMPT_ARG="/planning" ;;
-            senior)     PROMPT_ARG="/senior" ;;
-            junior)     PROMPT_ARG="/junior" ;;
-            testflight) PROMPT_ARG="/testflight-publish" ;;
+            planning)        PROMPT_ARG="/planning" ;;
+            senior)          PROMPT_ARG="/senior" ;;
+            junior)          PROMPT_ARG="/junior" ;;
+            testflight)      PROMPT_ARG="/testflight-publish" ;;
+            admin-replies)   PROMPT_ARG="/admin-replies" ;;
+            knowledge-curate) PROMPT_ARG="/knowledge-curate" ;;
             *)
                 log "DRIFT_USE_SKILLS=1 but unknown SESSION_TYPE=$SESSION_TYPE — falling back to legacy prompt"
                 PROMPT_ARG="$SESSION_PROMPT"
