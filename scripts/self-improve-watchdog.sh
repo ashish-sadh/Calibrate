@@ -771,6 +771,12 @@ start_claude() {
                     MODEL=$(get_model planning opus)
                     SESSION_TYPE="planning"
                     SESSION_PROMPT="run sprint planning — close Issue #$EXISTING_PLAN when done. RESUME CHECK first: run \`scripts/planning-service.sh remaining\` and skip already-completed steps."
+                    # Resume path: stamp in-progress-issue so stuck-detector
+                    # + is-clean-state see the active claim. Same as the
+                    # fresh-create branch below; this fixes the case where a
+                    # planning session is resumed after watchdog restart and
+                    # ran observability-blind for the entire resume window.
+                    echo "$EXISTING_PLAN" > "$HOME/drift-state/in-progress-issue"
                     log "Resuming interrupted planning (Issue #$EXISTING_PLAN, attempt $RESUME_COUNT/10) — $MODEL"
                 fi
             fi
