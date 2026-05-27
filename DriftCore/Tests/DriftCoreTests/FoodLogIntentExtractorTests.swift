@@ -58,7 +58,16 @@ import Testing
     #expect(FoodLogIntentBounds.violation(in: i) == nil)
 }
 
-// MARK: - Feature flag default (serialized — both tests touch one UserDefaults key)
+// MARK: - Feature flag default (serialized — ALL tests touching the shared
+// UserDefaults key `drift_fm_food_intent_extract` live in this one suite)
+//
+// Swift Testing's `.serialized` trait only serializes within ONE suite — two
+// separate top-level @Suite(.serialized) structs run in parallel with each
+// other. The FoundationModelsFoodExtractor facade reads the same key (via
+// Preferences.fmFoodIntentExtractEnabled), so its flag tests must live HERE,
+// not in a sibling suite, or the `defer { remove key }` of one race against
+// the `Preferences = false` of the other and `asyncParseFood_flagOffMatchesSync_allGoldRows`
+// flakes when run after FoundationModelsFoodExtractor tests.
 
 @Suite(.serialized) struct FoodIntentFlagBehavior {
     private let key = "drift_fm_food_intent_extract"
@@ -107,6 +116,54 @@ import Testing
             let syncResult = AIActionExecutor.parseFoodIntent(row.input)
             #expect(equalIntents(asyncResult, syncResult),
                     "Flag-off divergence on '\(row.input)' — async=\(intentString(asyncResult)), sync=\(intentString(syncResult))")
+        }
+    }
+
+    // MARK: - FoundationModelsFoodExtractor facade kill-switch
+    //
+    // These previously lived in a separate `@Suite(.serialized) struct
+    // FoundationModelsFoodExtractorFlagBehavior` in
+    // FoundationModelsFoodExtractorTests.swift. Same UserDefaults key, same
+    // Preferences accessor, but a sibling suite — which Swift Testing runs in
+    // parallel with this one. Hoisted here so all writers of the key serialize
+    // against each other. See Docs/decisions.md "userdefaults-leakage-cross-suite".
+
+    @Test func fmFacade_flagOffThrowsUnavailableOnCandidates() async {
+        defer { UserDefaults.standard.removeObject(forKey: key) }
+        Preferences.fmFoodIntentExtractEnabled = false
+
+        await #expect(throws: FMFoodLogIntentExtractorError.self) {
+            _ = try await FoundationModelsFoodExtractor.extractCandidates(text: "ate 2 eggs")
+        }
+
+        do {
+            _ = try await FoundationModelsFoodExtractor.extractCandidates(text: "ate 2 eggs")
+            Issue.record("Expected .unavailable when flag is off")
+        } catch FMFoodLogIntentExtractorError.unavailable {
+            // Expected — flag-off must short-circuit BEFORE touching the
+            // FoundationModels session so iOS<26 hosts never see the
+            // @available error.
+        } catch {
+            Issue.record("Expected .unavailable, got \(error)")
+        }
+    }
+
+    @Test func fmFacade_flagOffThrowsUnavailableOnExtract() async {
+        // The mealType-preserving `extract(text:)` overload — used by
+        // VoiceLogSheet so meal hints ("for breakfast") aren't lost when
+        // routing through the facade — shares the same kill-switch. Without
+        // this test, a future refactor could regress only one of the two
+        // surfaces and the iOS<26 fallback would break silently.
+        defer { UserDefaults.standard.removeObject(forKey: key) }
+        Preferences.fmFoodIntentExtractEnabled = false
+
+        do {
+            _ = try await FoundationModelsFoodExtractor.extract(text: "ate 2 eggs for breakfast")
+            Issue.record("Expected .unavailable when flag is off")
+        } catch FMFoodLogIntentExtractorError.unavailable {
+            // Expected.
+        } catch {
+            Issue.record("Expected .unavailable, got \(error)")
         }
     }
 }

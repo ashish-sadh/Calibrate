@@ -330,17 +330,19 @@ if filter_mode in ("--senior", "--junior"):
     if state.get("session_tasks", 0) >= _BUDGET:
         print("none"); sys.exit(0)
 
-# Skip done, currently claimed, and needs-human (auto-applied after 3
-# abandons per the rewrite plan — issues with this label have proven
-# un-actionable by autopilot and need human triage before re-entering
-# the queue. Without this filter, the router serves them on every spawn
-# and they accumulate dozens of abandon comments (#801 reached 55).
-# Reuses the existing has() helper defined above; labels are bare strings
-# in sprint-state.json, not {name: ...} dicts.)
+# Skip done, currently claimed, needs-human, AND blocked (auto-applied
+# after 3 abandons or manual designer/engineer veto — both labels signal
+# "queue should not serve this; humans own it". Without this filter, the
+# router serves them on every spawn and they accumulate dozens of abandon
+# comments (#801 reached 55, #848 reached 4 abandonments in 2 days because
+# `blocked` was missing here — mirrors design-service.sh:39 jq pattern
+# `labels | index("blocked") | not`. Reuses the has() helper; labels are
+# bare strings in sprint-state.json, not {name: ...} dicts.)
 available = [t for t in tasks
              if t.get("status") != "done"
              and t.get("number") != in_progress
-             and not has(t, "needs-human")]
+             and not has(t, "needs-human")
+             and not has(t, "blocked")]
 
 # ── Priority 0 (all sessions, phase 2b 2026-05-25): unblocks-gate ─────────────
 # An issue labeled `unblocks-gate` means "something is broken on main that

@@ -7,50 +7,10 @@ import Testing
 // real-FM golden coverage lives in
 // DriftLLMEvalMacOS/FoundationModelsFoodExtractorIndianEval.swift (Tier-3).
 
-// MARK: - Flag-off fallback (kill-switch guarantee)
-
-@Suite(.serialized) struct FoundationModelsFoodExtractorFlagBehavior {
-    private let key = "drift_fm_food_intent_extract"
-
-    @Test func flagOffThrowsUnavailableOnCandidates() async {
-        defer { UserDefaults.standard.removeObject(forKey: key) }
-        Preferences.fmFoodIntentExtractEnabled = false
-
-        await #expect(throws: FMFoodLogIntentExtractorError.self) {
-            _ = try await FoundationModelsFoodExtractor.extractCandidates(text: "ate 2 eggs")
-        }
-
-        do {
-            _ = try await FoundationModelsFoodExtractor.extractCandidates(text: "ate 2 eggs")
-            Issue.record("Expected .unavailable when flag is off")
-        } catch FMFoodLogIntentExtractorError.unavailable {
-            // Expected — flag-off must short-circuit BEFORE touching the
-            // FoundationModels session so iOS<26 hosts never see the
-            // @available error.
-        } catch {
-            Issue.record("Expected .unavailable, got \(error)")
-        }
-    }
-
-    @Test func flagOffThrowsUnavailableOnExtract() async {
-        // The mealType-preserving `extract(text:)` overload — used by
-        // VoiceLogSheet so meal hints ("for breakfast") aren't lost when
-        // routing through the facade — shares the same kill-switch. Without
-        // this test, a future refactor could regress only one of the two
-        // surfaces and the iOS<26 fallback would break silently.
-        defer { UserDefaults.standard.removeObject(forKey: key) }
-        Preferences.fmFoodIntentExtractEnabled = false
-
-        do {
-            _ = try await FoundationModelsFoodExtractor.extract(text: "ate 2 eggs for breakfast")
-            Issue.record("Expected .unavailable when flag is off")
-        } catch FMFoodLogIntentExtractorError.unavailable {
-            // Expected.
-        } catch {
-            Issue.record("Expected .unavailable, got \(error)")
-        }
-    }
-}
+// Flag-off kill-switch tests live in FoodLogIntentExtractorTests.swift's
+// FoodIntentFlagBehavior suite — same UserDefaults key, must serialize against
+// each other. Splitting them across two sibling @Suite(.serialized) structs
+// flaked because Swift Testing parallelizes ACROSS suites.
 
 // MARK: - Prompt anchoring (delegates through; pins that the facade does not
 // silently strip the safety guards the underlying extractor depends on)
