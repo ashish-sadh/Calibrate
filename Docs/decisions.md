@@ -30,6 +30,16 @@ Append-only record of non-obvious decisions: architecture changes, harness rules
 
 ---
 
+## 2026-05-27
+
+### userdefaults-leakage-cross-suite — Swift Testing `.serialized` is intra-suite only; co-locate writers of one key
+Two separate `@Suite(.serialized) struct` blocks (`FoodIntentFlagBehavior` in `FoodLogIntentExtractorTests.swift` + `FoundationModelsFoodExtractorFlagBehavior` in `FoundationModelsFoodExtractorTests.swift`) both mutated `UserDefaults.standard["drift_fm_food_intent_extract"]` via `defer { removeObject }` + `Preferences.fmFoodIntentExtractEnabled = false`. Swift Testing's `.serialized` trait serializes child tests *within* one suite — sibling suites still run in parallel, so the `defer` in suite A raced the `= false` in suite B and `asyncParseFood_flagOffMatchesSync_allGoldRows` flaked depending on suite ordering. This bricked `state_is_clean` for #848 across 4 abandonments in 2 days. Standing rule: tests that read or write a shared global (UserDefaults key, env var, static var) MUST live in one suite. Don't add a second `@Suite(.serialized)` that touches the same key — hoist or co-locate. Fixed by moving the two FM facade flag tests into `FoodIntentFlagBehavior`. See #852 + epic #856.
+
+### queue-router-blocked-filter — every queue router must filter `blocked` AND `needs-human` from `available`
+`scripts/sprint-service.sh` `cmd_next` filtered `needs-human` but not `blocked`, so #848 — manually blocked by a designer reweight comment — kept being served to the senior, who abandoned it 4 times in 2 days before the `needs-human` auto-label finally took effect at abandonment_count=3. `scripts/design-service.sh:39` had the correct pattern (`select(.labels | map(.name) | index("blocked") | not)`); cmd_next did not. Standing rule: every queue router that surfaces work to autopilot MUST drop both labels at the `available` filter. A blocked-label issue is a designer/engineer veto — autopilot serving it is wasted cycles + amplified abandonment counts. The class-of-bug audit (#854) is filed JUNIOR to check all sibling routers. Fixed by mirroring design-service.sh's filter pattern. See #853 + epic #856.
+
+---
+
 ## 2026-05-18
 
 ### review-cadence-wall-clock-replaces-cycle-count — anchor the gate to real time, not autopilot velocity
