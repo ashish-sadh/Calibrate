@@ -177,15 +177,22 @@ gh issue create --title "<sub-task title>" --label "sprint-task,SENIOR|JUNIOR" \
 
 Sub-task `<done_when>` blocks remain mandatory (senior reads them per `require-done-when.sh`). The epic's own `<done_when>` is the *meta* check — when all sub-task verdicts are PASS, the epic is done.
 
-### 9. Refresh sprint-service cache + exit
+### 9. Refresh + close tracking issue + exit
 
-```
+Refresh the sprint cache (auto-promotes orphan bugs to `routine-fix` per phase 3d):
+
+```bash
 scripts/sprint-service.sh refresh
 ```
 
-`cmd_refresh` auto-promotes orphan bugs to `routine-fix` (phase 3d) — bugs filed since the previous planning that aren't sub-tasks of any open epic get the label so the always-on junior worker picks them up.
+**Close the planning tracking issue.** The watchdog spawned you against a tracking issue (`~/drift-state/planning-issue` or the `PLAN_ISSUE` env var). After the epic is filed and the refresh ran, close that tracking issue — otherwise the watchdog interprets "still open" as "planning didn't finish" and resumes you up to 10 times, then auto-closes after burning the resume budget. Observed live 2026-05-26: 9 of 10 resumes were spent in this loop *after* epic #856 was successfully filed.
 
-Exit cleanly. Stop hook validates: an epic-labeled issue exists, prior epics are closed OR the new epic has an `<override>` block, sprint-state is refreshed.
+```bash
+PLAN_ISSUE=$(cat ~/drift-state/planning-issue 2>/dev/null)
+[ -n "$PLAN_ISSUE" ] && gh issue close "$PLAN_ISSUE" --comment "Planning complete. Filed epic #<new-epic-number>. Sprint cache refreshed."
+```
+
+Exit cleanly. Stop hook validates: epic-labeled issue exists, prior epics closed OR new epic has `<override>`, sprint cache refreshed, planning tracking issue closed.
 
 </steps>
 
