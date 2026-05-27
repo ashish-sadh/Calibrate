@@ -887,6 +887,12 @@ start_claude() {
         if [[ -n "$PLAN_ISSUE" ]]; then
             log "Created planning tracking Issue #$PLAN_ISSUE"
             echo "$PLAN_ISSUE" > "$HOME/drift-state/planning-issue"
+            # Phase 3c follow-up 2026-05-26: also stamp in-progress-issue so
+            # stuck-detector + is-clean-state + drift-mcp state.* all see the
+            # tracked issue. Without this, planning's no-comment-update guard
+            # silently no-ops (observed live: planning ran 85+ min with 0
+            # comments and the SINCE_PLAN counter never fired).
+            echo "$PLAN_ISSUE" > "$HOME/drift-state/in-progress-issue"
             SESSION_PROMPT="run sprint planning — close Issue #$PLAN_ISSUE when done"
         else
             log "ERROR: Planning tracking-issue create failed after 3 attempts. Aborting planning spawn — will retry next watchdog cycle."

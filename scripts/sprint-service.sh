@@ -594,6 +594,14 @@ PYEOF
     # rather than silent state divergence.
     gh_loud "add in-progress label on #$NUM" -- issue edit "$NUM" --add-label in-progress || true
 
+    # Stamp the in-progress-issue file so dependents that need just the
+    # claimed issue number can read it (stuck-detector's no-comment-update
+    # gate, is-clean-state's "is there an active claim?" check, drift-mcp's
+    # state.state_in_progress_issue). File was READ in 5 places and WRITTEN
+    # in NONE — observed live 2026-05-26 10:43 when stuck-detector's
+    # SINCE_PLAN counter silently didn't gate on planning #850.
+    echo "$NUM" > "$HOME/drift-state/in-progress-issue"
+
     # Resumable warning — surfaces when claiming an issue with `resumable`
     # label set by the watchdog after a prior session crashed mid-work.
     # Without this, sessions ran bare `gh issue view N` (no comments) and
@@ -797,7 +805,20 @@ PYEOF
     # GitHub; nudge hook will re-detect it on first check).
     rm -f "$HOME/drift-state/plan-posted/${NUM}" 2>/dev/null
 
+    # Clear the in-progress-issue stamp (paired with cmd_claim's write).
+    _clear_in_progress_issue_if_matches "$NUM"
+
     echo "Closed #$NUM"
+}
+
+# Helper used by done/unclaim/session-done so an unrelated session's
+# stamp doesn't get wiped when this one finishes.
+_clear_in_progress_issue_if_matches() {
+    local NUM="$1"
+    local F="$HOME/drift-state/in-progress-issue"
+    if [ -f "$F" ] && [ "$(cat "$F" 2>/dev/null)" = "$NUM" ]; then
+        rm -f "$F"
+    fi
 }
 
 cmd_unclaim() {
@@ -820,6 +841,7 @@ try:
 except Exception: pass
 PYEOF
 
+    _clear_in_progress_issue_if_matches "$NUM"
     echo "Unclaimed #$NUM"
 }
 
@@ -856,6 +878,7 @@ try:
 except Exception: pass
 PYEOF
 
+    _clear_in_progress_issue_if_matches "$NUM"
     echo "Session-done #$NUM (not closed on GitHub)"
 }
 
@@ -922,8 +945,9 @@ try:
 except Exception: pass
 PYEOF
 
-    # Clear in-progress cache
+    # Clear in-progress cache + stamp file
     > "$HOME/drift-state/cache-in-progress" 2>/dev/null || true
+    rm -f "$HOME/drift-state/in-progress-issue"
     echo "Sprint service: cleared all in-progress"
 }
 
