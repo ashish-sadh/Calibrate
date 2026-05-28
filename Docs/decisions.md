@@ -30,6 +30,14 @@ Append-only record of non-obvious decisions: architecture changes, harness rules
 
 ---
 
+## 2026-05-28
+
+### fm-chat-parity-gate-dormant — the chat backend cutover gate was never enforced (epic #860)
+Planning cycle 15764 scoped epic #860 around a live risk: FM is the **default** chat backend (`Preferences.swift:251`; `AIBackend.swift:99-106` detectTier always returns `.foundationModels`) but it was made default without its parity cutover gate ever passing. `testFoundationModelsChat_parityCutoverGate` (≥95%/≥98% vs the Gemma baseline, `FoundationModelsChatParityTests.swift:263`) is skipped unless `DRIFT_FM_PARITY_GATE_STRICT=1`, which preflight never sets (`preflight-check.sh:86`) — so only a 40% catastrophic floor guards every autonomous 3-hourly TestFlight, and multi-turn coverage is 2 two-turn cases. This is the **same env-gated-cutover pattern as the FM composite-food extractor (#771)**, now applied to the most important FM surface (chat = showstopper, tenet #1). Two design calls were baked into the subtasks after the planning debate's moderator (participants failed — see below) flagged them: (1) backend is a *single global default*, not per-route, so an FM-below-bar outcome can only be fix-forward or a **global** revert to llama.cpp — "revert one route" is incoherent; (2) the parity test *skips* when FM is unavailable on the host, so on an autonomous no-human pipeline the gate must **hard-fail loudly**, never green-skip (a skipping gate lies). Chosen over deferred alternatives: V7 Body screen (blocked on needs-human #848), pink-retirement long tail (fragmented, partly #833), exercise visuals (off-focus).
+
+### planning-debate-participants-empty — debate-moderator participant subagents returned no output
+During #860's pre-file debate, both `principal-engineer` and `product-designer` participant subagents returned empty output across 4 spawn attempts (the parent Explore agent also socket-errored twice before succeeding on the 3rd try). The debate-moderator still produced a useful *orchestrator-level* REVISE synthesis, which was applied; the load-bearing claim (global vs per-route backend) was re-verified directly against `AIBackend.swift:99-106` rather than trusted blind. Flagging because a recurring participant-empty failure would silently degrade every planning/senior debate to single-perspective — if it recurs, investigate the Agent spawn path, don't just retry.
+
 ## 2026-05-27
 
 ### userdefaults-leakage-cross-suite — Swift Testing `.serialized` is intra-suite only; co-locate writers of one key
