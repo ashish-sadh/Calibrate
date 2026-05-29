@@ -25,18 +25,11 @@ struct MoreTabView: View {
                     }
 
                     section("HEALTH") {
-                        // V7 polish: even though "Body" is a top-level
-                        // tab that already opens WeightTabView, users
-                        // looking for "Weight" specifically in More
-                        // weren't finding it. Adding a discoverable
-                        // nav row here — same destination, second
-                        // entry point.
-                        navRow(icon: "scalemass", title: "Weight",
-                               subtitle: "Trend, goal, body composition",
-                               color: Theme.accent) {
-                            WeightTabView(syncComplete: .constant(true), selectedTab: $selectedTab)
-                        }
-                        rowDivider
+                        // Weight lives on the Body tab (the canonical screen); the
+                        // detailed weight view in More is "Weight Goal" below.
+                        // (A duplicate full-Weight row here pushed WeightTabView —
+                        // a NavigationStack-owning tab view — into More's stack,
+                        // nesting stacks → two back arrows + divergent chrome.)
                         navRow(icon: "waveform.path", title: "Body Rhythm",
                                subtitle: "Sleep, vitals, recovery",
                                color: Theme.rhythmTeal) {
