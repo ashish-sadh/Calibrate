@@ -43,10 +43,13 @@ final class FoundationModelsChatParityTests: XCTestCase {
         let isCritical: Bool
     }
 
-    /// 25-row curated set. Smaller than the full IntentRouting eval because
+    /// 41-row curated set. Smaller than the full IntentRouting eval because
     /// each row runs TWO backends — we'd otherwise double the ~12-min eval
     /// budget. Coverage spans the categories most likely to diverge between
     /// a 2B llama.cpp model and Apple's much-larger Foundation Model.
+    /// Multi-turn depth (12 non-empty-history cases) and Indian-first routing
+    /// are deliberately over-weighted: epic #860 (FM chat reliability gate)
+    /// found those are where FM ↔ Gemma attention diverges most.
     private static let goldSet: [Case] = [
         // --- Critical: food logging (explicit + implicit + Indian) ---
         .init(query: "log 2 eggs", expectedTool: "log_food", history: "", isCritical: true),
@@ -88,6 +91,69 @@ final class FoundationModelsChatParityTests: XCTestCase {
         .init(query: "what's my weight trend", expectedTool: "weight_info", history: "", isCritical: false),
         // --- Navigation ---
         .init(query: "go to food tab", expectedTool: "navigate_to", history: "", isCritical: false),
+
+        // === Expanded multi-turn (epic #860) — 3+ turn chains, topic-switch,
+        //     correction-after-N-turns, entry-reference resolution. This is the
+        //     coverage gap the arc exists to close (only 2 two-turn cases before). ===
+        // 3+ turn food chain — continuation after two prior log turns.
+        .init(query: "and a banana",
+              expectedTool: "log_food",
+              history: "User: log 2 eggs\nAssistant: Logged 2 eggs (148 cal)\nUser: also some toast\nAssistant: Added 1 slice toast (75 cal)",
+              isCritical: true),
+        // 3+ turn Indian food chain — mixed-language continuation.
+        .init(query: "and some curd on the side",
+              expectedTool: "log_food",
+              history: "User: had idli for breakfast\nAssistant: Logged 3 idli (158 cal)\nUser: with sambar\nAssistant: Added sambar (120 cal)",
+              isCritical: true),
+        // Topic-switch mid-conversation: food → weight.
+        .init(query: "I weigh 74 kg today",
+              expectedTool: "log_weight",
+              history: "User: log dal and rice\nAssistant: Logged dal and rice (320 cal)\nUser: thanks",
+              isCritical: true),
+        // Topic-switch mid-conversation: food → sleep info (non-food domain).
+        .init(query: "how was my sleep last night",
+              expectedTool: "sleep_recovery",
+              history: "User: had paneer tikka for dinner\nAssistant: Logged paneer tikka (290 cal)",
+              isCritical: false),
+        // Correction-after-N-turns: revise a logged food quantity (re-extract → log_food).
+        .init(query: "actually make it 3 rotis",
+              expectedTool: "log_food",
+              history: "User: log 2 rotis\nAssistant: Logged 2 rotis (140 cal)\nUser: hmm",
+              isCritical: true),
+        // Correction-after-N-turns: revise a logged weight value (re-extract → log_weight).
+        .init(query: "no wait it's 74.5",
+              expectedTool: "log_weight",
+              history: "User: I weigh 75 kg\nAssistant: Logged 75 kg\nUser: that's not right",
+              isCritical: true),
+        // Entry-reference resolution: "that" = the just-logged entry → delete.
+        .init(query: "remove that",
+              expectedTool: "delete_food",
+              history: "User: log a samosa\nAssistant: Logged 1 samosa (260 cal)",
+              isCritical: true),
+        // Entry-reference resolution: "that" = the just-logged entry → info.
+        .init(query: "how many calories was that",
+              expectedTool: "food_info",
+              history: "User: I had a masala dosa\nAssistant: Logged 1 masala dosa (168 cal)",
+              isCritical: false),
+        // Assistant-prompt → answer: bare food answer routes to log_food in context.
+        .init(query: "chicken curry and 2 rotis",
+              expectedTool: "log_food",
+              history: "Assistant: What did you have for dinner?",
+              isCritical: true),
+        // Topic-switch: workout context → post-workout food log.
+        .init(query: "had a protein shake after",
+              expectedTool: "log_food",
+              history: "User: start push day\nAssistant: Started push day workout\nUser: done with my sets",
+              isCritical: true),
+
+        // === Indian-first single-turn routing (tenet #4) — dishes/terms a 2B
+        //     Gemma and a much-larger FM are most likely to route differently. ===
+        .init(query: "had idli for breakfast", expectedTool: "log_food", history: "", isCritical: true),
+        .init(query: "ate masala dosa", expectedTool: "log_food", history: "", isCritical: true),
+        .init(query: "had paneer tikka and naan", expectedTool: "log_food", history: "", isCritical: true),
+        .init(query: "drank a bowl of sambar", expectedTool: "log_food", history: "", isCritical: true),
+        .init(query: "had rasam with rice", expectedTool: "log_food", history: "", isCritical: true),
+        .init(query: "ate poha this morning", expectedTool: "log_food", history: "", isCritical: true),
     ]
 
     // MARK: - Backends (loaded once per class)
@@ -291,6 +357,6 @@ final class FoundationModelsChatParityTests: XCTestCase {
         // wouldn't exercise multi-turn routing where FM ↔ llama gaps are
         // most likely (different attention behaviors on short follow-ups).
         let withHistory = Self.goldSet.filter { !$0.history.isEmpty }
-        XCTAssertGreaterThanOrEqual(withHistory.count, 2, "Need ≥2 multi-turn cases with non-empty history")
+        XCTAssertGreaterThanOrEqual(withHistory.count, 10, "Need ≥10 multi-turn cases with non-empty history (epic #860: multi-turn is where FM ↔ Gemma diverge most)")
     }
 }
