@@ -2644,8 +2644,6 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
         config: .init(
             emaHalfLifeDays: 14,
             regressionWindowDays: 21,
-            widenSlopeThresholdKgPerWeek: 0.227,
-            widenWindowDays: 42,
             kcalPerKg: 6000,
             maintainingThresholdKgPerWeek: 0.05
         )

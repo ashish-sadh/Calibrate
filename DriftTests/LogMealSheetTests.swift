@@ -48,8 +48,47 @@ final class VoiceLogViewModelTests: XCTestCase {
         XCTAssertTrue(vm.parsedItems.isEmpty)
     }
 
-    // Note: full start/stop/parse cycle requires SFSpeechRecognizer +
-    // permission grant + (for FM extractor) iOS 26 with Apple
-    // Intelligence enabled. Those are device-only; the VM smoke test
-    // above is the most we can assert in the iOS test target.
+    func testStartInTextModeEntersTypingPhaseWithoutSpeech() async {
+        // #869 — typed free-text ("Describe your meal") entry must NOT start
+        // the speech stack (no second AVAudioSession owner); it lands the
+        // user on the typing screen instead of .listening.
+        let vm = VoiceLogViewModel()
+        await vm.start(mode: .text)
+        XCTAssertEqual(vm.phase, .typing)
+        XCTAssertTrue(vm.transcript.isEmpty)
+        XCTAssertTrue(vm.parsedItems.isEmpty)
+    }
+
+    func testSubmitTypedRoutesIntoTheMultiItemConfirmationCard() async {
+        // #869 — typed text funnels through the SAME parse → confirmation
+        // card the voice path uses. Force the FM kill-switch OFF so parse
+        // takes the deterministic fallback (FM multi-item accuracy is
+        // Tier-3, owned by #870); the assertion here is the WIRING: typed
+        // input reaches .confirming with a confirmable row, NOT a dropped
+        // single-row numeric form.
+        let saved = Preferences.fmFoodIntentExtractEnabled
+        Preferences.fmFoodIntentExtractEnabled = false
+        defer { Preferences.fmFoodIntentExtractEnabled = saved }
+
+        let vm = VoiceLogViewModel()
+        await vm.start(mode: .text)
+        await vm.submitTyped("dal, rice and two rotis")
+
+        XCTAssertEqual(vm.phase, .confirming)
+        XCTAssertGreaterThanOrEqual(vm.parsedItems.count, 1)
+        XCTAssertEqual(vm.transcript, "dal, rice and two rotis")
+    }
+
+    func testSubmitTypedIgnoresBlankInput() async {
+        // Guard: an all-whitespace draft must not advance past typing.
+        let vm = VoiceLogViewModel()
+        await vm.start(mode: .text)
+        await vm.submitTyped("   ")
+        XCTAssertEqual(vm.phase, .typing)
+        XCTAssertTrue(vm.parsedItems.isEmpty)
+    }
+
+    // Note: the live speech start/stop cycle still requires SFSpeechRecognizer
+    // + mic permission, and FM multi-item extraction requires iOS 26 with
+    // Apple Intelligence — both device-only and covered by Tier-3 eval (#870).
 }

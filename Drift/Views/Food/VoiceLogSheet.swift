@@ -1,6 +1,18 @@
 import SwiftUI
 import DriftCore
 
+/// How a `VoiceLogSheet` collects the meal description before it funnels
+/// through the shared parse → multi-item confirmation-card pipeline.
+/// `.voice` (default) starts `SpeechRecognitionService`; `.text` shows the
+/// "Describe your meal" typed-text field and never touches the mic (no
+/// second `AVAudioSession` owner). Both modes converge on the SAME
+/// `parse(_:)` → `confirmView`, so a multi-item utterance becomes multiple
+/// confirmable rows either way.
+enum VoiceEntryMode {
+    case voice
+    case text
+}
+
 /// V7 Phase 5 — standalone voice-first meal logger. Used by both the
 /// dashboard quick-log "Voice" chip and the Voice mode inside the
 /// unified Log-a-Meal sheet. Replaces the V6 "Voice opens full chat
@@ -30,10 +42,22 @@ import DriftCore
 struct VoiceLogSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = VoiceLogViewModel()
+    /// Buffer for the `.text` entry mode's "Describe your meal" field. Kept
+    /// as view state so a parse error → "Try again" returns the user to the
+    /// typing screen with their text intact.
+    @State private var draft = ""
+
+    let entryMode: VoiceEntryMode
+
+    init(entryMode: VoiceEntryMode = .voice) {
+        self.entryMode = entryMode
+    }
 
     var body: some View {
         VStack(spacing: 0) {
             switch viewModel.phase {
+            case .typing:
+                typingView
             case .listening:
                 listeningView
             case .parsing:
@@ -46,8 +70,72 @@ struct VoiceLogSheet: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.background.ignoresSafeArea())
-        .task { await viewModel.start() }
+        .task { await viewModel.start(mode: entryMode) }
         .onDisappear { viewModel.cancel() }
+    }
+
+    // MARK: - Typing (Describe your meal)
+
+    private var typingView: some View {
+        VStack(spacing: 24) {
+            Spacer()
+
+            VStack(spacing: 12) {
+                ZStack {
+                    Circle()
+                        .fill(Theme.ink.opacity(0.12))
+                        .frame(width: 96, height: 96)
+                    Image(systemName: "keyboard")
+                        .font(.system(size: 36, weight: .semibold))
+                        .foregroundStyle(Theme.ink)
+                }
+                .accessibilityIdentifier("describe-meal-icon")
+
+                Text("Describe your meal")
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(Theme.textPrimary)
+
+                Text("Type what you ate — e.g. \u{201C}dal, rice and two rotis.\u{201D} I'll break it into items you can confirm.")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 32)
+            }
+
+            TextField("dal, rice and two rotis", text: $draft, axis: .vertical)
+                .font(.body)
+                .foregroundStyle(Theme.textPrimary)
+                .lineLimit(1...4)
+                .padding(14)
+                .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .strokeBorder(Theme.separator, lineWidth: 0.5)
+                )
+                .padding(.horizontal, 24)
+                .accessibilityIdentifier("describe-meal-field")
+
+            Spacer()
+
+            HStack(spacing: 12) {
+                Button("Cancel") { dismiss() }
+                    .buttonStyle(.bordered)
+                    .tint(Theme.textPrimary)
+
+                Button {
+                    Task { await viewModel.submitTyped(draft) }
+                } label: {
+                    Label("Continue", systemImage: "arrow.forward.circle.fill")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.ink)
+                .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .accessibilityIdentifier("describe-meal-submit")
+            }
+            .padding(.horizontal, 24)
+            .padding(.bottom, 24)
+        }
     }
 
     // MARK: - Listening
@@ -134,7 +222,7 @@ struct VoiceLogSheet: View {
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    Text("I heard:")
+                    Text(entryMode == .text ? "You typed:" : "I heard:")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Theme.textSecondary)
                         .tracking(0.8)
@@ -266,7 +354,7 @@ struct VoiceLogSheet: View {
                 Button("Cancel") { dismiss() }
                     .buttonStyle(.bordered)
                 Button {
-                    Task { await viewModel.start() }
+                    Task { await viewModel.start(mode: entryMode) }
                 } label: {
                     Label("Try again", systemImage: "arrow.clockwise")
                 }
@@ -283,6 +371,7 @@ struct VoiceLogSheet: View {
 @Observable
 final class VoiceLogViewModel {
     enum Phase: Equatable {
+        case typing
         case listening
         case parsing
         case confirming
@@ -310,9 +399,17 @@ final class VoiceLogViewModel {
     private let speech = SpeechRecognitionService.shared
     private let foodLogVM = FoodLogViewModel()
 
-    func start() async {
+    func start(mode: VoiceEntryMode = .voice) async {
         transcript = ""
         parsedItems = []
+        // Typed free-text entry skips the speech stack entirely — it never
+        // starts SpeechRecognitionService (no second AVAudioSession owner)
+        // and lands the user on the typing screen. The typed text is then
+        // funneled through the SAME parse → confirmation-card path as voice.
+        guard mode == .voice else {
+            phase = .typing
+            return
+        }
         phase = .listening
         speech.startRecording(
             onTranscript: { [weak self] partial in
@@ -322,6 +419,17 @@ final class VoiceLogViewModel {
                 Task { await self?.parse(final) }
             }
         )
+    }
+
+    /// Typed-text counterpart to the speech `onDone` callback: routes the
+    /// "Describe your meal" field through the identical `parse(_:)` pipeline,
+    /// so a multi-item utterance ("dal, rice and two rotis") yields the same
+    /// multi-row confirmation card the voice path produces.
+    func submitTyped(_ text: String) async {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        transcript = trimmed
+        await parse(trimmed)
     }
 
     func stopAndParse() {

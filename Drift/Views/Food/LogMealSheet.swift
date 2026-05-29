@@ -7,12 +7,12 @@ import DriftCore
 ///
 /// Layout:
 ///   - "Log a meal" title + subtitle
-///   - 4-mode segmented picker (Recent / Search / Voice / Snap)
+///   - 5-mode segmented picker (Recent / Search / Voice / Text / Snap)
 ///   - Mode-specific sub-view below
 ///
 /// Replaces the V6/early-V7 stub that just wrapped `FoodTabView` in a
 /// NavigationStack with a Done button.
-/// V7: 4 modes (Recent / Search / Voice / Snap). The Snap segment
+/// V7: 5 modes (Recent / Search / Voice / Text / Snap). The Snap segment
 /// auto-presents PhotoLogFlowView the moment it's selected and bounces
 /// back to Recent on dismiss so the user isn't stranded on an empty
 /// Snap segment. Single PhotoLog implementation, four entry points:
@@ -22,7 +22,7 @@ import DriftCore
 ///      (skips the sheet step for the "I know I want camera" shortcut)
 ///   4. Drift Coach "snap a meal" voice/text command (TODO)
 public enum LogMealMode: String, CaseIterable, Identifiable, Sendable {
-    case recent, search, voice, snap
+    case recent, search, voice, describe, snap
     public var id: String { rawValue }
 
     var label: String {
@@ -30,6 +30,7 @@ public enum LogMealMode: String, CaseIterable, Identifiable, Sendable {
         case .recent: "Recent"
         case .search: "Search"
         case .voice: "Voice"
+        case .describe: "Text"
         case .snap: "Snap"
         }
     }
@@ -39,6 +40,7 @@ public enum LogMealMode: String, CaseIterable, Identifiable, Sendable {
         case .recent: "clock"
         case .search: "magnifyingglass"
         case .voice: "mic"
+        case .describe: "keyboard"
         case .snap: "camera"
         }
     }
@@ -149,6 +151,7 @@ struct LogMealSheet: View {
         case .recent: recentContent
         case .search: searchContent
         case .voice: VoiceLogSheet()
+        case .describe: VoiceLogSheet(entryMode: .text)
         case .snap:
             // Brief placeholder while PhotoLogFlowView covers — the
             // .onAppear / .onChange handlers above flip showingPhotoLog
