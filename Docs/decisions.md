@@ -30,6 +30,11 @@ Append-only record of non-obvious decisions: architecture changes, harness rules
 
 ---
 
+## 2026-05-29
+
+### fm-multiturn-fix-is-structural-not-bounded — there is no FM-side multi-turn lever to tune (#862 → follow-up #864)
+#862 was scoped to "fix the tractable multi-turn parity breaks **in `FoundationModelsBackend.swift`**." Verified at current file:line that that lever **does not exist as a bounded edit**, so the fix is structural — documented here as #862's chartered finding rather than ground open-endedly. (1) `FoundationModelsBackend.respond(to prompt: String, systemPrompt: String)` (`FoundationModelsBackend.swift:57`) takes a **single flat pre-folded string** and spins a fresh stateless session (`makeSession:137`) with **zero** history logic. (2) Multi-turn history is folded **upstream** and shared **byte-identically** with the Gemma baseline — the parity harness folds via `userMessage(query:history:)` (`FoundationModelsChatParityTests.swift:158-160`) and feeds the same string to both `classifyLlama` (`:162`) and `classifyFM` (`:168`); production folds identically in `IntentRoutingEval`/`IntentClassifier`. So any FM↔Gemma divergence is the model's internal handling of the *same* input — nothing FM-specific to tune in-file. (3) The only FM-native multi-turn lever is seeding a session with a native `Transcript` instead of flat text, which requires changing the flat-string `AIBackend.respond` contract (`AIBackend.swift:14`) + ~25 call sites = cross-cutting redesign, explicitly out of #862's "bounded, one senior session" scope. Filed as **#864**, gated on #863's go/no-go (only do it if #863 picks fix-forward; obsolete if #863 reverts the global default to llama.cpp). **This conclusion is input-independent** — it's a property of the architecture, not of which cases fail — so it stands without #861's per-case failure list. **Still open:** #861 (the measured FM-vs-Gemma parity *number*) has not run (OPEN, 0 comments); #863's go/no-go needs both that number and this tractability finding. No source change; Tier-0 untouched.
+
 ## 2026-05-28
 
 ### fm-chat-parity-gate-dormant — the chat backend cutover gate was never enforced (epic #860)
