@@ -51,22 +51,29 @@ If `count: 0`, exit 0 quietly.
 ### 4. Check archive-failed cooldown
 If `~/drift-state/testflight-archive-failed` exists AND its mtime is within last 24h, exit 0 (cooldown active).
 
-### 5. Bump CURRENT_PROJECT_VERSION
-```
-sed -i.bak -E 's/CURRENT_PROJECT_VERSION: ([0-9]+)/CURRENT_PROJECT_VERSION: \1+1/' project.yml
-# Or read+edit+write via Python if sed is fragile
-```
-Actually the safer path:
+### 5. Bump CURRENT_PROJECT_VERSION (ALL targets, in lockstep)
+`project.yml` has TWO `CURRENT_PROJECT_VERSION` lines — the `Drift` app
+target AND the `DriftWidget` extension. App Store Connect requires an
+embedded extension's build number to MATCH the containing app's. Bump BOTH
+to the same value or the upload warns (observed 2026-05-29: `count=1` left
+DriftWidget stranded at 267 while the app climbed to 278; every publish
+logged a "widget bundle version mismatch" warning AND the commit message
+derived the wrong build number from the stale widget line).
 ```
 python3 -c "
-import re, sys, pathlib
+import re, pathlib
 p = pathlib.Path('project.yml')
 text = p.read_text()
-new = re.sub(r'CURRENT_PROJECT_VERSION:\s*(\d+)', lambda m: f'CURRENT_PROJECT_VERSION: {int(m.group(1))+1}', text, count=1)
+nums = [int(n) for n in re.findall(r'CURRENT_PROJECT_VERSION:\s*(\d+)', text)]
+target = max(nums) + 1  # bump from the highest existing so no target regresses
+new = re.sub(r'CURRENT_PROJECT_VERSION:\s*\d+', f'CURRENT_PROJECT_VERSION: {target}', text)
 p.write_text(new)
-print('bumped to', re.search(r'CURRENT_PROJECT_VERSION:\s*(\d+)', new).group(1))
+print('bumped ALL targets to', target)
 "
 ```
+Use the printed `target` value for the commit message ("chore: TestFlight
+build <target>") — do NOT re-grep project.yml for it (all lines are now
+equal, but reading the printed value is the source of truth).
 
 ### 6. Regenerate Xcode project
 ```
