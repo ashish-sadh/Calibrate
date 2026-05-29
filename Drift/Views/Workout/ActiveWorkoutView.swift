@@ -334,6 +334,14 @@ struct ActiveWorkoutView: View {
                             cancelRestEndNotification()
                         }
                     }
+                } else if newPhase == .background && !workoutEnded && !exercises.isEmpty {
+                    // Persist immediately on background so a mid-workout app
+                    // termination is recoverable — restoreSession() restores
+                    // startTime and the overall timer continues from real
+                    // elapsed instead of restarting at 0. (Was only persisted
+                    // every 30s / on the in-app Minimize button, so a quick
+                    // minimize-then-kill lost the start time.)
+                    persistSession()
                 }
             }
         }
