@@ -102,9 +102,7 @@ private func recentDailyEntries(
     // Half-life of 1 day at Δt=1 day → alpha = 1 - 0.5^1 = 0.5.
     // Two consecutive daily entries 80, 70 → 0.5*70 + 0.5*80 = 75.
     let config = WeightTrendCalculator.AlgorithmConfig(
-        emaHalfLifeDays: 1.0, regressionWindowDays: 21,
-        widenSlopeThresholdKgPerWeek: 0.227, widenWindowDays: 42,
-        kcalPerKg: 6000, maintainingThresholdKgPerWeek: 0.05
+        emaHalfLifeDays: 1.0, regressionWindowDays: 21,        kcalPerKg: 6000, maintainingThresholdKgPerWeek: 0.05
     )
     let t = WeightTrendCalculator.calculateTrend(entries: [
         (date: "2026-03-01", weightKg: 80.0), (date: "2026-03-02", weightKg: 70.0)
@@ -116,9 +114,7 @@ private func recentDailyEntries(
     // Half-life of 100 days at Δt=1 day → alpha ≈ 0.0069. Two consecutive
     // daily entries 80, 70 → ≈ 80 * 0.993 + 70 * 0.0069 ≈ 79.93 (barely moves).
     let config = WeightTrendCalculator.AlgorithmConfig(
-        emaHalfLifeDays: 100.0, regressionWindowDays: 21,
-        widenSlopeThresholdKgPerWeek: 0.227, widenWindowDays: 42,
-        kcalPerKg: 6000, maintainingThresholdKgPerWeek: 0.05
+        emaHalfLifeDays: 100.0, regressionWindowDays: 21,        kcalPerKg: 6000, maintainingThresholdKgPerWeek: 0.05
     )
     let t = WeightTrendCalculator.calculateTrend(entries: [
         (date: "2026-03-01", weightKg: 80.0), (date: "2026-03-02", weightKg: 70.0)
@@ -360,7 +356,7 @@ func deficitRespondsToConfig() async throws {
 
 @Test func configDefaults() async throws {
     let c = WeightTrendCalculator.AlgorithmConfig.default
-    #expect(c.emaAlpha == 0.1 && c.regressionWindowDays == 21 && c.kcalPerKg == 6000)
+    #expect(c.emaAlpha == 0.1 && c.regressionWindowDays == 21 && c.kcalPerKg == 7700)
 }
 
 @Test func configSaveLoad() async throws {
@@ -372,7 +368,16 @@ func deficitRespondsToConfig() async throws {
 }
 
 @Test func configPresetOrdering() async throws {
-    #expect(WeightTrendCalculator.AlgorithmConfig.conservative.kcalPerKg < WeightTrendCalculator.AlgorithmConfig.responsive.kcalPerKg)
+    // All presets share the standard energy density (7700 kcal/kg). They differ
+    // in responsiveness: responsive has the shortest EMA half-life + rate window,
+    // conservative the longest.
+    let responsive = WeightTrendCalculator.AlgorithmConfig.responsive
+    let def = WeightTrendCalculator.AlgorithmConfig.default
+    let conservative = WeightTrendCalculator.AlgorithmConfig.conservative
+    #expect(responsive.emaHalfLifeDays < def.emaHalfLifeDays)
+    #expect(def.emaHalfLifeDays < conservative.emaHalfLifeDays)
+    #expect(responsive.regressionWindowDays < conservative.regressionWindowDays)
+    #expect(conservative.kcalPerKg == 7700 && responsive.kcalPerKg == 7700)
 }
 
 // MARK: - Regime-Change Gap Detection (4 tests)
@@ -383,34 +388,6 @@ private func daysAgo(_ n: Int) -> Date {
 }
 private func dateStr(_ d: Date) -> String {
     let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.locale = Locale(identifier: "en_US_POSIX"); return f.string(from: d)
-}
-
-@Test func largestGapBetweenConsecutiveBasicCases() {
-    let mkPt = { (d: Date) in WeightTrendCalculator.WeightDataPoint(date: d, dateString: "", actualWeight: 70, emaWeight: 70) }
-    // Empty / single → 0
-    #expect(WeightTrendCalculator.largestGapBetweenConsecutive([]) == 0)
-    #expect(WeightTrendCalculator.largestGapBetweenConsecutive([mkPt(Date())]) == 0)
-    // Consecutive daily → 1
-    let daily = (0..<3).map { mkPt(daysAgo(2 - $0)) }
-    #expect(WeightTrendCalculator.largestGapBetweenConsecutive(daily) == 1)
-    // Mixed gaps: 2d, 17d, 2d → largest = 17
-    let mixed = [mkPt(daysAgo(21)), mkPt(daysAgo(19)), mkPt(daysAgo(2)), mkPt(daysAgo(0))]
-    #expect(WeightTrendCalculator.largestGapBetweenConsecutive(mixed) == 17)
-}
-
-@Test func pointsAfterLastGapReturnsPostGapSegment() {
-    let mkPt = { (d: Date) in WeightTrendCalculator.WeightDataPoint(date: d, dateString: "", actualWeight: 70, emaWeight: 70) }
-    // No gap → all returned
-    let noop = (0..<5).map { mkPt(daysAgo(4 - $0)) }
-    #expect(WeightTrendCalculator.pointsAfterLastGap(noop, gapThresholdDays: 14).count == 5)
-    // Gap of 20d at position 2: points at [40, 38, 18, 17, 16] → last gap is 20d between idx 1 and 2 → returns 3 points
-    let withGap = [mkPt(daysAgo(40)), mkPt(daysAgo(38)), mkPt(daysAgo(18)), mkPt(daysAgo(17)), mkPt(daysAgo(16))]
-    let after = WeightTrendCalculator.pointsAfterLastGap(withGap, gapThresholdDays: 14)
-    #expect(after.count == 3)
-    // Two gaps: 20d then 18d — last gap wins, returns only post-second-gap points
-    let twoGaps = [mkPt(daysAgo(60)), mkPt(daysAgo(40)), mkPt(daysAgo(18)), mkPt(daysAgo(17)), mkPt(daysAgo(16))]
-    let afterTwo = WeightTrendCalculator.pointsAfterLastGap(twoGaps, gapThresholdDays: 14)
-    #expect(afterTwo.count == 3)
 }
 
 @Test func gapInWidenedWindowClipsToPostGap() {
@@ -626,8 +603,8 @@ private func dateStr(_ d: Date) -> String {
     if svc.trend == nil {
         #expect(svc.projectedWeightKg == nil, "projectedWeightKg requires non-nil trend")
     } else if !svc.isStale, let trend = svc.trend {
-        let expected = trend.currentEMA + (trend.weeklyRateKg * 4.3)
-        #expect(svc.projectedWeightKg == expected, "projectedWeightKg should be EMA + rate * 4.3 weeks")
+        #expect(svc.projectedWeightKg == trend.projection30Day,
+                "projectedWeightKg must come from the single-source calculator projection")
     }
 }
 
@@ -681,9 +658,8 @@ private func dateStr(_ d: Date) -> String {
     let svc = WeightTrendService.shared
     svc.refresh()
     guard !svc.isStale, let trend = svc.trend else { return }
-    let expected = trend.currentEMA + (trend.weeklyRateKg * 4.3)
-    #expect(svc.projectedWeightKg != nil)
-    #expect(abs(svc.projectedWeightKg! - expected) < 0.0001)
+    // Service projection must be exactly the calculator's single-source value.
+    #expect(svc.projectedWeightKg == trend.projection30Day)
 }
 
 @Test @MainActor func weightTrendServiceTrendForRangeWithCustomConfig() async throws {
@@ -702,7 +678,7 @@ private func dateStr(_ d: Date) -> String {
     #expect(conservative != nil, "Conservative trend should not be nil with seeded data")
     #expect(responsive != nil, "Responsive trend should not be nil with seeded data")
     if let c = conservative {
-        #expect(c.config.kcalPerKg == 5500)
+        #expect(c.config.kcalPerKg == 7700)
     }
     if let r = responsive {
         #expect(r.config.kcalPerKg == 7700)
@@ -785,9 +761,7 @@ private func dateStr(_ d: Date) -> String {
 @Test func trendDirectionMaintainingHighThreshold() {
     // With a high threshold, a small loss should classify as maintaining
     let config = WeightTrendCalculator.AlgorithmConfig(
-        emaHalfLifeDays: 14, regressionWindowDays: 21,
-        widenSlopeThresholdKgPerWeek: 0.227, widenWindowDays: 42,
-        kcalPerKg: 6000, maintainingThresholdKgPerWeek: 0.5
+        emaHalfLifeDays: 14, regressionWindowDays: 21,        kcalPerKg: 6000, maintainingThresholdKgPerWeek: 0.5
     )
     let entries = recentDailyEntries(count: 21) { 70.0 - Double($0) * 0.01 }
     let t = WeightTrendCalculator.calculateTrend(entries: entries, config: config)!
@@ -1020,27 +994,25 @@ private func dateStr(_ d: Date) -> String {
     #expect(trend.trendDirection == .losing)
 }
 
-/// True maintenance after a long loss SHOULD allow widen path. Sign-flip
-/// guard only fires when |primary| ≥ maintainingThreshold (0.05 kg/wk),
-/// so a primary that's near zero (oscillating noise, not a consistent
-/// drift) doesn't suppress widening.
-@Test func regimeChange_recentMaintenance_afterLongLoss_doesNotFlipToGain() async throws {
+/// After losing for 3 weeks then being FLAT for 3 weeks, the trend must read
+/// MAINTAINING — not a phantom continued loss reached out of the stale pre-window
+/// data. Showing the old loss would be exactly the #842 "stale-data dominance"
+/// failure: recent reality (flat) is what the user is living, and the rate window
+/// only sees it. (The old "widen back into the prior loss" behavior is gone.)
+@Test func regimeChange_recentMaintenance_afterLongLoss_showsMaintaining() async throws {
     let entries = recentDailyEntries(count: 42) { i in
         if i < 21 {
             return 60.0 - (3.0 * Double(i) / 20.0)        // lose 60→57
         } else {
-            // Recent 21 days: oscillate ±0.05 kg around 57 — net-flat noise.
-            // Even-i entries are 56.95, odd-i are 57.05; mean stays at 57.
+            // Recent 21 days: oscillate ±0.05 kg around 57 — net-flat.
             return 57.0 + (i % 2 == 0 ? -0.05 : 0.05)
         }
     }
     let trend = WeightTrendCalculator.calculateTrend(entries: entries)!
-    // Primary slope ≈ 0 (< maintainingThreshold) → guard does not fire →
-    // widened slope (still negative from the prior loss) is used. The user
-    // hasn't established a new direction; the long-term trend is the right
-    // signal until they do.
-    #expect(trend.weeklyRateKg < 0,
-            "Near-zero primary should let widen path show prior trend, not flip to gain. Got \(trend.weeklyRateKg)")
+    let threshold = WeightTrendCalculator.AlgorithmConfig.default.maintainingThresholdKgPerWeek
+    #expect(abs(trend.weeklyRateKg) < threshold,
+            "3 weeks flat ⇒ maintaining; stale prior loss must not dominate. Got \(trend.weeklyRateKg) kg/wk")
+    #expect(trend.trendDirection == .maintaining)
 }
 
 // MARK: - Median-based two-window endpoints — fix for "near-flat trajectory reports -0.71 lbs/wk"
@@ -1158,61 +1130,7 @@ private func dateStr(_ d: Date) -> String {
             "Real consistent gain → non-zero rate.")
 }
 
-// MARK: - hasSufficientData crash hunt (cycle 10950)
-// These cover the now-safe paths after removing force-unwraps on
-// `points.first!.date` / `.last!.date`. The original code was guarded by
-// count>=4, but the unwraps were compiler-unverifiable; the new code uses
-// `guard let` so an empty/short array can never reach `daysBetween`.
-
-@Test func hasSufficientData_empty_returnsFalse() {
-    #expect(WeightTrendCalculator.hasSufficientData([]) == false)
-}
-
-@Test func hasSufficientData_belowCountFloor_returnsFalse() {
-    let today = Date()
-    let points: [WeightTrendCalculator.WeightDataPoint] = (0..<3).map { i in
-        WeightTrendCalculator.WeightDataPoint(
-            date: Calendar.current.date(byAdding: .day, value: -i, to: today)!,
-            dateString: "",
-            actualWeight: 70.0,
-            emaWeight: 70.0
-        )
-    }
-    #expect(WeightTrendCalculator.hasSufficientData(points) == false,
-            "3 points (below the count>=4 floor) must return false without crashing.")
-}
-
-@Test func hasSufficientData_fourPointsSpanningLessThanTwoWeeks_returnsFalse() {
-    let today = Date()
-    let points: [WeightTrendCalculator.WeightDataPoint] = (0..<4).map { i in
-        WeightTrendCalculator.WeightDataPoint(
-            date: Calendar.current.date(byAdding: .day, value: -i, to: today)!,
-            dateString: "",
-            actualWeight: 70.0,
-            emaWeight: 70.0
-        )
-    }
-    // 4 points across 3 days fail the span>=14 check.
-    #expect(WeightTrendCalculator.hasSufficientData(points) == false)
-}
-
-@Test func hasSufficientData_fourPointsSpanningTwoWeeks_returnsTrue() {
-    // Points are emitted oldest→newest (the order calculateTrend produces);
-    // hasSufficientData reads points.first/.last and expects ascending dates.
-    let today = Date()
-    let offsets = [14, 9, 5, 0]
-    let points: [WeightTrendCalculator.WeightDataPoint] = offsets.map { offset in
-        WeightTrendCalculator.WeightDataPoint(
-            date: Calendar.current.date(byAdding: .day, value: -offset, to: today)!,
-            dateString: "",
-            actualWeight: 70.0,
-            emaWeight: 70.0
-        )
-    }
-    #expect(WeightTrendCalculator.hasSufficientData(points) == true)
-}
-
-@Test func calculateTrend_widenWindowFallback_emptyPostGap_doesNotCrash() async throws {
+@Test func calculateTrend_degenerateOldPlusRecent_doesNotCrash() async throws {
     // Stresses the line 292 fix: the primary regression returns near-zero
     // slope (forcing widen), and the largest gap pushes pointsAfterLastGap to
     // a degenerate (count<2) array. Without the fix, `usablePoints.first!` /

@@ -1,102 +1,115 @@
 import Foundation
 
 /// Pure-logic weight trend calculator. No side effects, highly testable.
+///
+/// Algorithm (the "heal", 2026-05-29): **smooth first, differentiate second.**
+/// 1. Trend weight = time-weighted EMA of weigh-ins (water/glycogen noise absorbed).
+/// 2. Weekly rate = slope of that EMA over a trailing window — stable AND
+///    correctly signed, because the noise is already gone before we differentiate.
+/// 3. Surplus/deficit = rate × energy-density (7700 kcal/kg), clamped to a
+///    physiologically sane band so sparse/noisy data can never imply a 4000-kcal
+///    swing.
+///
+/// This replaced a six-layer heuristic stack (two-window median endpoints on RAW
+/// weights → adaptive window-widening → regime-gap clipping → sign-flip guards)
+/// that let a single recent water-weight dip flip the sign — the root cause of
+/// "shows a deficit while the user is gaining".
 public enum WeightTrendCalculator {
 
     // MARK: - Configuration
 
-    /// Tunable algorithm parameters. Adjust these to calibrate deficit estimates.
+    /// Tunable algorithm parameters. Deliberately small — smoothing happens once,
+    /// up front, so the old noise-fighting knobs (widen thresholds, regime gaps)
+    /// are gone.
     public struct AlgorithmConfig: Codable, Sendable {
-        /// Time-weighted EMA half-life in days. After this many days, an
-        /// entry's contribution decays by 50%. Time-weighted (not entry-
-        /// indexed) so cadence-independent — daily and weekly weighers
-        /// with identical real trajectories see the same Trend Weight.
+        /// Time-weighted EMA half-life in days. After this many days an entry's
+        /// contribution decays by 50%. Time-weighted (not entry-indexed) so a
+        /// daily and a weekly weigher with the same real trajectory get the same
+        /// Trend Weight.
         public var emaHalfLifeDays: Double
 
-        /// Default window for slope calculation (two-window endpoint method
-        /// when entries-per-half allows; OLS fallback otherwise).
+        /// Trailing window (days) over which the weekly rate is measured as the
+        /// slope of the EMA trend.
         public var regressionWindowDays: Int
 
-        /// When |slope| on the default window is below this threshold,
-        /// re-run on a wider window to surface low-rate trends that get
-        /// drowned in daily noise. Threshold in kg/week.
-        public var widenSlopeThresholdKgPerWeek: Double
-
-        /// Wider window used when widening triggers. ~2× default by design
-        /// (halves slope SE).
-        public var widenWindowDays: Int
-
-        /// Largest gap (days) between consecutive entries within the widened
-        /// window that triggers clipping to post-gap data only. Prevents
-        /// pre-regime data from blending into the slope after a logging pause.
-        public var regimeChangeGapThresholdDays: Int
-
-        /// Energy density of body weight change in kcal per kg.
+        /// Energy density of body-weight change, kcal per kg. Standard physiology
+        /// value (≈3500 kcal/lb; adipose ≈ 0.87 × 9000). A fixed constant is fine:
+        /// the adaptive expenditure loop absorbs per-individual body-composition
+        /// error week over week.
         public var kcalPerKg: Double
 
-        /// Weekly rate threshold (kg/week) below which we classify as "maintaining".
+        /// Weekly rate (kg/wk) below which the trend is classified "maintaining".
         public var maintainingThresholdKgPerWeek: Double
 
-        // Legacy field retained for Codable compatibility with persisted user
-        // configs. Not consumed by the calculator anymore — replaced by
-        // emaHalfLifeDays. Will be removed once all stored configs migrate.
+        /// Legacy field retained for Codable compatibility + the AlgorithmSettings
+        /// preview slider. Not consumed by the calculator (the EMA uses
+        /// `emaHalfLifeDays`, a time-weighted parameterization).
         public var emaAlpha: Double
 
         init(
             emaHalfLifeDays: Double,
             regressionWindowDays: Int,
-            widenSlopeThresholdKgPerWeek: Double,
-            widenWindowDays: Int,
             kcalPerKg: Double,
             maintainingThresholdKgPerWeek: Double,
-            regimeChangeGapThresholdDays: Int = 14,
             emaAlpha: Double = 0.1
         ) {
             self.emaHalfLifeDays = emaHalfLifeDays
             self.regressionWindowDays = regressionWindowDays
-            self.widenSlopeThresholdKgPerWeek = widenSlopeThresholdKgPerWeek
-            self.widenWindowDays = widenWindowDays
             self.kcalPerKg = kcalPerKg
             self.maintainingThresholdKgPerWeek = maintainingThresholdKgPerWeek
-            self.regimeChangeGapThresholdDays = regimeChangeGapThresholdDays
             self.emaAlpha = emaAlpha
         }
 
         public static let `default` = AlgorithmConfig(
             emaHalfLifeDays: 14,
             regressionWindowDays: 21,
-            // Tightened 0.227 → 0.10 (2026-05-06): the prior 0.5 lbs/wk
-            // threshold meant any sub-half-pound-per-week slope triggered
-            // widening to 42 days, which routinely pulled in pre-regime-change
-            // data and flipped the sign on users mid-direction-change. A real
-            // user gaining at +0.18 kg/wk got reported as a -0.55 lbs/wk loser
-            // because the 42-day widen reached into a prior losing phase.
-            // 0.10 kg/wk (~0.22 lbs/wk) still filters genuine near-zero noise
-            // but lets a real, consistent small slope survive without widening.
-            widenSlopeThresholdKgPerWeek: 0.10,
-            widenWindowDays: 42,
-            kcalPerKg: 6000,
+            kcalPerKg: 7700,
             maintainingThresholdKgPerWeek: 0.05
         )
 
         public static let conservative = AlgorithmConfig(
             emaHalfLifeDays: 21,
-            regressionWindowDays: 21,
-            widenSlopeThresholdKgPerWeek: 0.10,
-            widenWindowDays: 42,
-            kcalPerKg: 5500,
+            regressionWindowDays: 28,
+            kcalPerKg: 7700,
             maintainingThresholdKgPerWeek: 0.05
         )
 
         public static let responsive = AlgorithmConfig(
             emaHalfLifeDays: 7,
             regressionWindowDays: 14,
-            widenSlopeThresholdKgPerWeek: 0.227,
-            widenWindowDays: 28,
             kcalPerKg: 7700,
             maintainingThresholdKgPerWeek: 0.05
         )
     }
+
+    /// Hard clamp on the trend weekly rate (kg/wk). ±1.5 kg/wk (~3.3 lb/wk) is an
+    /// extreme, rarely-sustained real-world rate; beyond it the input is noise or
+    /// a sparse-data artefact. Clamping keeps the implied daily energy balance
+    /// sane (≤ ~1650 kcal) — no 4000-kcal surplus from one bad weigh-in.
+    public static let maxAbsWeeklyRateKg: Double = 1.5
+
+    /// Largest lookback (days) the rate will reach to find enough signal for a
+    /// sparse logger. Past this, older weigh-ins are stale and must not anchor the
+    /// slope (issue #842, "stale-data dominance").
+    static let maxRateLookbackDays = 45
+
+    /// Minimum span (days) of weigh-ins required before publishing a rate. Below
+    /// this the regression is more noise than trend. Span-based (not count-based)
+    /// so a fortnightly logger qualifies as soon as two weigh-ins are ≥14d apart
+    /// (issue #842, "sparse-logger lag").
+    static let minRateSpanDays = 14
+
+    /// A gap strictly greater than this (days) between consecutive weigh-ins
+    /// restarts the EMA from the fresh reading — the prior trend is stale and
+    /// must not bleed across the pause. 14 keeps fortnightly weighers smoothing
+    /// (their 14-day cadence is not > 14) while resetting genuine absences.
+    static let emaResetGapDays = 14
+
+    /// Half-life (days) of the LIGHT smoothing applied before the rate's OLS
+    /// slope. Short enough (~5d) to follow a genuine direction change within days
+    /// rather than the display EMA's ~2-week lag, long enough to damp daily
+    /// water/glycogen jitter so the reported surplus/deficit stops bouncing.
+    static let rateSmoothingHalfLifeDays: Double = 5
 
     // MARK: - Public Types
 
@@ -110,13 +123,12 @@ public enum WeightTrendCalculator {
         public let dataPoints: [WeightDataPoint]
         public let weightChanges: WeightChanges
         public let config: AlgorithmConfig
-        /// Actual window (days) used to compute weeklyRateKg — may differ from
-        /// config.regressionWindowDays when widening or gap-clipping applies.
+        /// Actual window (days) used to compute weeklyRateKg — may exceed
+        /// config.regressionWindowDays when the sparse-logger lookback widens it.
         public let rateWindowDays: Int
-        /// True when there aren't enough weigh-ins for a trustworthy rate.
-        /// In that case `weeklyRateKg` and `estimatedDailyDeficit` are 0 as
-        /// safe placeholders; the UI must render "—" instead of the value.
-        /// Threshold: see `hasSufficientData` (≥ 4 points spanning ≥ 14 days).
+        /// True when there aren't enough weigh-ins for a trustworthy rate. In that
+        /// case `weeklyRateKg`/`estimatedDailyDeficit` are 0; the UI must render
+        /// "—" / a "calibrating" state instead of the value.
         public let hasInsufficientData: Bool
 
         init(currentEMA: Double, previousEMA: Double, weeklyRateKg: Double, estimatedDailyDeficit: Double, trendDirection: TrendDirection, projection30Day: Double?, dataPoints: [WeightDataPoint], weightChanges: WeightChanges, config: AlgorithmConfig, rateWindowDays: Int, hasInsufficientData: Bool = false) {
@@ -198,58 +210,52 @@ public enum WeightTrendCalculator {
 
         let sorted = entries
             .compactMap { entry -> (date: Date, dateString: String, weight: Double)? in
-                guard let date = formatter.date(from: entry.date) else { return nil }
+                guard let date = formatter.date(from: entry.date), entry.weightKg > 0 else { return nil }
                 return (date, entry.date, entry.weightKg)
             }
             .sorted { $0.date < $1.date }
 
         guard !sorted.isEmpty else { return nil }
 
-        // Outlier removal: gap-aware threshold (allows more deviation after long gaps)
+        // Outlier removal: gap-aware threshold (allows more deviation after long gaps).
         let weights = sorted.map(\.weight)
-        let median = weights.sorted()[weights.count / 2]
+        let med = weights.sorted()[weights.count / 2]
         let filtered = sorted.filter { entry in
-            let deviation = abs(entry.weight - median) / median
+            let deviation = abs(entry.weight - med) / med
             let gapDays = sorted.compactMap { other -> Int? in
                 guard other.date != entry.date else { return nil }
                 return abs(Calendar.current.dateComponents([.day], from: entry.date, to: other.date).day ?? 0)
             }.min() ?? 0
-            let gapAllowance = (Double(gapDays) / 7.0) * (1.5 / median)
+            let gapAllowance = (Double(gapDays) / 7.0) * (1.5 / med)
             let threshold = min(0.15 + gapAllowance, 0.50)
             return deviation <= threshold
         }
         guard !filtered.isEmpty else { return nil }
 
-        // Time-weighted EMA: decay factor depends on elapsed days between
-        // entries, not on entry count. A weekly weigher and a daily weigher
-        // with the same actual trajectory now produce the same EMA — half-
-        // life is a property of time, not log frequency. (Was: entry-indexed
-        // alpha, which made weekly weighers' Trend Weight lag ~25% behind
-        // reality due to seed weight retention.)
+        // Time-weighted EMA: decay depends on elapsed days between entries, not on
+        // entry count — a weekly and a daily weigher with the same trajectory get
+        // the same Trend Weight.
         var dataPoints: [WeightDataPoint] = []
         var ema = filtered[0].weight
         var prevDate = filtered[0].date
-        dataPoints.append(WeightDataPoint(
-            date: filtered[0].date,
-            dateString: filtered[0].dateString,
-            actualWeight: filtered[0].weight,
-            emaWeight: ema
-        ))
+        dataPoints.append(WeightDataPoint(date: filtered[0].date, dateString: filtered[0].dateString, actualWeight: filtered[0].weight, emaWeight: ema))
         for entry in filtered.dropFirst() {
-            let deltaDays = max(
-                1.0,
-                Double(Calendar.current.dateComponents([.day], from: prevDate, to: entry.date).day ?? 1)
-            )
-            // alpha = 1 - (1/2)^(Δt / halfLife). At Δt = halfLife, alpha = 0.5,
-            // meaning the new entry contributes 50% and the prior EMA 50%.
-            let alpha = 1.0 - pow(0.5, deltaDays / config.emaHalfLifeDays)
-            ema = alpha * entry.weight + (1 - alpha) * ema
-            dataPoints.append(WeightDataPoint(
-                date: entry.date,
-                dateString: entry.dateString,
-                actualWeight: entry.weight,
-                emaWeight: ema
-            ))
+            let deltaDays = max(1.0, Double(Calendar.current.dateComponents([.day], from: prevDate, to: entry.date).day ?? 1))
+            if deltaDays > Double(Self.emaResetGapDays) {
+                // Long gap → the prior trend is stale. Restart smoothing from the
+                // fresh weigh-in instead of letting a pre-gap weight bleed forward
+                // (standard practice: a post-absence reading is a fresh, low-
+                // confidence start). Without this, a drop-then-pause-then-flat
+                // pattern reads as an ongoing loss — issue #842 "stale-data
+                // dominance" and the deficit-while-flat case.
+                ema = entry.weight
+            } else {
+                // alpha = 1 - (1/2)^(Δt / halfLife): at Δt = halfLife the new entry
+                // contributes 50% and the prior EMA 50%.
+                let alpha = 1.0 - pow(0.5, deltaDays / config.emaHalfLifeDays)
+                ema = alpha * entry.weight + (1 - alpha) * ema
+            }
+            dataPoints.append(WeightDataPoint(date: entry.date, dateString: entry.dateString, actualWeight: entry.weight, emaWeight: ema))
             prevDate = entry.date
         }
 
@@ -257,82 +263,11 @@ public enum WeightTrendCalculator {
         let currentEMA = lastPoint.emaWeight
         let previousEMA = dataPoints.count >= 2 ? dataPoints[dataPoints.count - 2].emaWeight : currentEMA
 
-        // Slope: median-based two-window endpoint method on raw weights.
-        // (median + actual time centers — see slopeViaTwoWindowEndpoints).
-        // Median is robust to single-day water-weight outliers; actual time
-        // centers reflect real elapsed time, not nominal window arithmetic.
-        // EMA-based regression considered for dense loggers but rejected:
-        // re-introduces the lag-on-regime-change bug that drove the original
-        // move away from EMA. Median two-window already produces smooth,
-        // responsive output without that tradeoff. Adaptive widen still
-        // applies for sub-threshold slopes.
-        let primary = weeklyRateForWindow(
-            dataPoints: dataPoints, windowDays: config.regressionWindowDays
-        )
-        let weeklyRateKg: Double
-        let rateWindowDays: Int
-        // `widenedRate` and `hasInsufficientData` decided inside the branches
-        // below; default to "we have a rate" and let the insufficient-data
-        // path flip it. The flag drives the UI's "—" rendering — without it,
-        // the 0.0 sentinel would render as "0.00 lbs/wk" which is no better
-        // than the previous "+4.41 lbs/wk extrapolated from 2 points" bug.
-        var hasInsufficientData = false
-        if let primary, abs(primary) >= config.widenSlopeThresholdKgPerWeek {
-            weeklyRateKg = primary
-            rateWindowDays = config.regressionWindowDays
-        } else {
-            let hasEnoughHistory = dataPoints.first.map { daysBetween($0.date, Date()) >= config.widenWindowDays } ?? false
-            if hasEnoughHistory,
-               let widenStart = Calendar.current.date(byAdding: .day, value: -config.widenWindowDays, to: Date()) {
-                let widenedPoints = dataPoints.filter { $0.date >= widenStart }
-                let usablePoints = largestGapBetweenConsecutive(widenedPoints) > config.regimeChangeGapThresholdDays
-                    ? pointsAfterLastGap(widenedPoints, gapThresholdDays: config.regimeChangeGapThresholdDays)
-                    : widenedPoints
-                let usableSpan: Int = {
-                    guard let first = usablePoints.first, let last = usablePoints.last,
-                          usablePoints.count >= 2 else { return 0 }
-                    return daysBetween(first.date, last.date)
-                }()
-                if let widened = weeklyRateForWindow(dataPoints: usablePoints, windowDays: config.widenWindowDays) {
-                    // Regime-change guard (no-gap variant): if the widened
-                    // slope flips sign relative to a meaningful primary, trust
-                    // the primary. The widen path is for noise reduction at
-                    // near-zero slopes — not for overruling a real recent
-                    // direction change. Without this, a user who switched
-                    // from losing to gaining (or vice versa) and logs
-                    // continuously (no gap to trigger pointsAfterLastGap)
-                    // gets the wrong sign on weekly rate and deficit. The
-                    // gap-based regime detection above only handles the
-                    // discontinuous case.
-                    let primaryIsMeaningful = abs(primary ?? 0) >= config.maintainingThresholdKgPerWeek
-                    let signsDiffer = primary.map { ($0 > 0) != (widened > 0) } ?? false
-                    if primaryIsMeaningful, signsDiffer, let p = primary {
-                        weeklyRateKg = p
-                        rateWindowDays = config.regressionWindowDays
-                    } else {
-                        weeklyRateKg = widened
-                        rateWindowDays = max(usableSpan, config.regressionWindowDays)
-                    }
-                } else if let p = primary {
-                    weeklyRateKg = p
-                    rateWindowDays = config.regressionWindowDays
-                } else {
-                    // Neither window produced a rate → insufficient data.
-                    weeklyRateKg = 0
-                    rateWindowDays = config.regressionWindowDays
-                    hasInsufficientData = true
-                }
-            } else if let p = primary {
-                weeklyRateKg = p
-                rateWindowDays = config.regressionWindowDays
-            } else {
-                // Primary returned nil and not enough history to widen.
-                weeklyRateKg = 0
-                rateWindowDays = config.regressionWindowDays
-                hasInsufficientData = true
-            }
-        }
-
+        // ── Weekly rate = OLS slope over the trailing window (the heal) ──
+        let rate = weeklyRateForWindow(points: dataPoints, windowDays: config.regressionWindowDays)
+        let hasInsufficientData = (rate == nil)
+        let weeklyRateKg = clampRate(rate?.kgPerWeek ?? 0)
+        let rateWindowDays = rate?.windowDays ?? config.regressionWindowDays
         let estimatedDailyDeficit = weeklyRateKg * config.kcalPerKg / 7
 
         let trendDirection: TrendDirection
@@ -344,12 +279,10 @@ public enum WeightTrendCalculator {
             trendDirection = .maintaining
         }
 
-        // Project from the latest ACTUAL weight, not from the (possibly lagging)
-        // EMA. Using the EMA as the base of projection compounds the lag —
-        // user sees a "projected weight" that's anchored to a stale value.
-        let latestActualWeight = dataPoints.last?.actualWeight ?? currentEMA
-        let projection30Day: Double? = dataPoints.count >= 3
-            ? latestActualWeight + (weeklyRateKg / 7 * 30)
+        // Project from the smooth trend, not the noisy latest scale reading, and
+        // never from a placeholder rate.
+        let projection30Day: Double? = (!hasInsufficientData && dataPoints.count >= 2)
+            ? currentEMA + (weeklyRateKg / 7 * 30)
             : nil
 
         return WeightTrend(
@@ -358,15 +291,137 @@ public enum WeightTrendCalculator {
             weeklyRateKg: weeklyRateKg,
             estimatedDailyDeficit: estimatedDailyDeficit,
             trendDirection: trendDirection,
-            // Don't project from a placeholder rate — would mislead the
-            // "Projected weight in 30 days" tile the same way the surplus
-            // tile was misleading. Hide projection when insufficient.
-            projection30Day: hasInsufficientData ? nil : projection30Day,
+            projection30Day: projection30Day,
             dataPoints: dataPoints,
             weightChanges: calculateWeightChanges(dataPoints: dataPoints),
             config: config,
             rateWindowDays: rateWindowDays,
             hasInsufficientData: hasInsufficientData
+        )
+    }
+
+    // MARK: - Rate (slope of the smooth trend)
+
+    /// Clamp a weekly rate (kg/wk) to the physiologically sane band.
+    static func clampRate(_ kgPerWeek: Double) -> Double {
+        min(maxAbsWeeklyRateKg, max(-maxAbsWeeklyRateKg, kgPerWeek))
+    }
+
+    /// Weekly rate (kg/wk) = OLS slope of a LIGHTLY smoothed series over the
+    /// trailing window, plus the span used (for the UI's "based on last N days"
+    /// label).
+    ///
+    /// Why a *light* (short half-life) smooth and then OLS — the stability vs
+    /// responsiveness balance:
+    ///  - Raw actual weights → the slope jitters day-to-day from ±1–2 kg water
+    ///    noise (≈±275 kcal), which is the "surplus/deficit changes constantly"
+    ///    complaint.
+    ///  - The heavy display EMA (14-day) → its slope lags a genuine direction
+    ///    change by ~2 weeks (it's still "catching down" from the prior regime),
+    ///    reporting the OLD, now-wrong direction.
+    ///  - A SHORT EMA (~`rateSmoothingHalfLifeDays`) kills the daily jitter
+    ///    (≈±80 kcal) yet lags only a few days, so a real reversal still shows
+    ///    through. OLS over that smoothed series is the stable-but-responsive
+    ///    middle ground — one method, no fragile EMA-vs-actual mode switching.
+    ///
+    /// Extends the lookback up to `maxRateLookbackDays` for sparse loggers so a
+    /// weekly/fortnightly weigher still gets a rate — but never past it, so stale
+    /// weigh-ins can't anchor the slope (#842).
+    static func weeklyRateForWindow(points: [WeightDataPoint], windowDays: Int) -> (kgPerWeek: Double, windowDays: Int)? {
+        func windowed(_ days: Int) -> [WeightDataPoint] {
+            guard let start = Calendar.current.date(byAdding: .day, value: -days, to: Date()) else { return [] }
+            return points.filter { $0.date >= start }
+        }
+        var pts = windowed(windowDays)
+        var used = windowDays
+        if !isSufficient(pts) {
+            pts = windowed(maxRateLookbackDays)
+            used = maxRateLookbackDays
+        }
+        guard isSufficient(pts), let first = pts.first, let last = pts.last else { return nil }
+
+        // Light re-smoothing for the slope: a short, time-weighted EMA over the
+        // window's actual weights, then OLS on the smoothed series.
+        var smoothed: [(date: Date, weight: Double)] = []
+        var s = pts[0].actualWeight ?? pts[0].emaWeight
+        var prev = pts[0].date
+        smoothed.append((pts[0].date, s))
+        for p in pts.dropFirst() {
+            let y = p.actualWeight ?? p.emaWeight
+            let deltaDays = max(1.0, Double(daysBetween(prev, p.date)))
+            let alpha = 1.0 - pow(0.5, deltaDays / rateSmoothingHalfLifeDays)
+            s = alpha * y + (1 - alpha) * s
+            smoothed.append((p.date, s))
+            prev = p.date
+        }
+        let slopePerDay = slopeOfSeries(smoothed)
+        let span = max(1, daysBetween(first.date, last.date))
+        return (slopePerDay * 7, min(used, span))
+    }
+
+    /// Span-based sufficiency: ≥2 points spanning ≥ `minRateSpanDays`.
+    static func isSufficient(_ points: [WeightDataPoint]) -> Bool {
+        guard points.count >= 2, let f = points.first, let l = points.last else { return false }
+        return daysBetween(f.date, l.date) >= minRateSpanDays
+    }
+
+    // MARK: - Linear Regression
+
+    /// OLS slope (per day) over (date, weight) pairs.
+    static func slopeOfSeries(_ samples: [(date: Date, weight: Double)]) -> Double {
+        guard samples.count >= 2 else { return 0 }
+        let referenceDate = samples[0].date
+        let n = Double(samples.count)
+        var sumX: Double = 0, sumY: Double = 0, sumXY: Double = 0, sumX2: Double = 0
+        for s in samples {
+            let x = Double(Calendar.current.dateComponents([.day], from: referenceDate, to: s.date).day ?? 0)
+            let y = s.weight
+            sumX += x; sumY += y; sumXY += x * y; sumX2 += x * x
+        }
+        let denominator = n * sumX2 - sumX * sumX
+        guard denominator != 0 else { return 0 }
+        return (n * sumXY - sumX * sumY) / denominator
+    }
+
+    /// Slope (kg/day) of the EMA-smoothed series. This IS the production rate
+    /// source now (× 7 = kg/wk). Public for the algorithm-preview tool + tests.
+    public static func linearRegressionSlope(points: [WeightDataPoint]) -> Double {
+        slopeOfSeries(points.map { (date: $0.date, weight: $0.emaWeight) })
+    }
+
+    /// Median of a numeric array. For even-count, mean of the two middle elements.
+    static func median(of values: [Double]) -> Double {
+        let sorted = values.sorted()
+        let n = sorted.count
+        if n % 2 == 1 { return sorted[n / 2] }
+        return (sorted[n / 2 - 1] + sorted[n / 2]) / 2.0
+    }
+
+    /// Whole-day count between two dates (positive when `b` is after `a`).
+    static func daysBetween(_ a: Date, _ b: Date) -> Int {
+        Calendar.current.dateComponents([.day], from: a, to: b).day ?? 0
+    }
+
+    // MARK: - Weight Changes
+
+    public static func calculateWeightChanges(dataPoints: [WeightDataPoint]) -> WeightChanges {
+        guard let latest = dataPoints.last, let latestActual = latest.actualWeight else {
+            return WeightChanges(threeDay: nil, sevenDay: nil, fourteenDay: nil, thirtyDay: nil, ninetyDay: nil)
+        }
+
+        func changeOverDays(_ days: Int) -> Double? {
+            guard let target = Calendar.current.date(byAdding: .day, value: -days, to: latest.date) else { return nil }
+            let closest = dataPoints.min { abs($0.date.timeIntervalSince(target)) < abs($1.date.timeIntervalSince(target)) }
+            guard let closest, closest.date != latest.date, let closestActual = closest.actualWeight else { return nil }
+            let daysDiff = abs(Calendar.current.dateComponents([.day], from: closest.date, to: target).day ?? 0)
+            guard daysDiff <= 3 else { return nil }
+            return latestActual - closestActual
+        }
+
+        return WeightChanges(
+            threeDay: changeOverDays(3), sevenDay: changeOverDays(7),
+            fourteenDay: changeOverDays(14), thirtyDay: changeOverDays(30),
+            ninetyDay: changeOverDays(90)
         )
     }
 
@@ -386,205 +441,5 @@ public enum WeightTrendCalculator {
         if let data = try? JSONEncoder().encode(config) {
             UserDefaults.standard.set(data, forKey: configKey)
         }
-    }
-
-    // MARK: - Linear Regression
-
-    /// OLS slope (kg/day) over (date, weight) pairs. Shared by the EMA-based
-    /// and actual-weight-based regression entry points.
-    private static func slopeOfSeries(_ samples: [(date: Date, weight: Double)]) -> Double {
-        guard samples.count >= 2 else { return 0 }
-
-        let referenceDate = samples[0].date
-        let n = Double(samples.count)
-
-        var sumX: Double = 0, sumY: Double = 0, sumXY: Double = 0, sumX2: Double = 0
-        for s in samples {
-            let x = Double(Calendar.current.dateComponents([.day], from: referenceDate, to: s.date).day ?? 0)
-            let y = s.weight
-            sumX += x; sumY += y; sumXY += x * y; sumX2 += x * x
-        }
-
-        let denominator = n * sumX2 - sumX * sumX
-        guard denominator != 0 else { return 0 }
-        return (n * sumXY - sumX * sumY) / denominator
-    }
-
-    /// Slope (kg/day) of the EMA-smoothed series. Public for tests and
-    /// algorithm-preview tools, but **not** used to compute weeklyRate /
-    /// surplus / projection — see linearRegressionSlopeOnActualWeight.
-    /// EMA-based regression lags on regime changes by half-life; the
-    /// production path uses two-window-on-raw-weights to stay responsive.
-    public static func linearRegressionSlope(points: [WeightDataPoint]) -> Double {
-        slopeOfSeries(points.map { (date: $0.date, weight: $0.emaWeight) })
-    }
-
-    /// Slope (kg/day) of the raw actual-weight series. Filters out points
-    /// without an actualWeight (synthesized/missing-data points). This is
-    /// the slope that drives weeklyRate, daily deficit, and projection —
-    /// regressing on raw weights avoids the EMA-lag inversion that
-    /// happens when a user's weight regime recently changed direction.
-    public static func linearRegressionSlopeOnActualWeight(points: [WeightDataPoint]) -> Double {
-        let samples: [(date: Date, weight: Double)] = points.compactMap {
-            guard let w = $0.actualWeight else { return nil }
-            return (date: $0.date, weight: w)
-        }
-        return slopeOfSeries(samples)
-    }
-
-    /// Two-window endpoint slope: median of first 7-day window vs median of
-    /// last 7-day window, scaled by the actual time delta between window
-    /// centers. Two robustness fixes vs. the original mean-based version:
-    /// 1. **Median, not mean** — daily weight is noisy (water/glycogen swings
-    ///    of ±1.5 lb common). With 7 samples per window, one outlier shifts
-    ///    the mean by 0.21 lb but leaves the median unchanged. A single
-    ///    after-salty-meal weighing was producing -0.71 lbs/wk reports on
-    ///    near-flat trajectories before this change.
-    /// 2. **Actual time-weighted centers** — the original assumed window
-    ///    centers were exactly `(windowDays - 7)/7` weeks apart. If the
-    ///    first window has 3 entries clustered at one end and the last has
-    ///    7 evenly spread, real centers can be ~17 days apart, not 14.
-    /// Returns nil if either endpoint window has fewer than 2 entries —
-    /// caller should fall back to OLS.
-    ///
-    /// Returns slope in **kg/week** (not kg/day, unlike slopeOfSeries).
-    static func slopeViaTwoWindowEndpoints(
-        points: [WeightDataPoint],
-        windowDays: Int
-    ) -> Double? {
-        guard let last = points.last else { return nil }
-        let endpointSpan = 7
-        guard let firstWindowEnd = Calendar.current.date(byAdding: .day, value: -(windowDays - endpointSpan), to: last.date),
-              let lastWindowStart = Calendar.current.date(byAdding: .day, value: -endpointSpan, to: last.date) else {
-            return nil
-        }
-        let firstWindow = points.filter { $0.date <= firstWindowEnd }
-        let lastWindow = points.filter { $0.date >= lastWindowStart }
-        guard firstWindow.count >= 2, lastWindow.count >= 2 else { return nil }
-
-        let firstWeights = firstWindow.compactMap { $0.actualWeight }
-        let lastWeights = lastWindow.compactMap { $0.actualWeight }
-        guard firstWeights.count >= 2, lastWeights.count >= 2 else { return nil }
-
-        // Median: robust to single-day water-weight outliers.
-        let firstMedian = median(of: firstWeights)
-        let lastMedian = median(of: lastWeights)
-
-        // Actual time centers (mean of timestamps inside each window).
-        let firstCenter = meanDate(of: firstWindow)
-        let lastCenter = meanDate(of: lastWindow)
-        let weeksBetween = lastCenter.timeIntervalSince(firstCenter) / (7 * 86400)
-        guard weeksBetween > 0 else { return nil }
-        return (lastMedian - firstMedian) / weeksBetween
-    }
-
-    /// Median of a numeric array. For even-count, returns mean of the two
-    /// middle elements. Caller guarantees non-empty.
-    static func median(of values: [Double]) -> Double {
-        let sorted = values.sorted()
-        let n = sorted.count
-        if n % 2 == 1 { return sorted[n / 2] }
-        return (sorted[n / 2 - 1] + sorted[n / 2]) / 2.0
-    }
-
-    /// Mean of timestamps in a points array. Caller guarantees non-empty.
-    static func meanDate(of points: [WeightDataPoint]) -> Date {
-        let avg = points.map { $0.date.timeIntervalSinceReferenceDate }
-            .reduce(0, +) / Double(points.count)
-        return Date(timeIntervalSinceReferenceDate: avg)
-    }
-
-    /// Whole-day count between two dates (positive when `b` is after `a`).
-    /// Wraps Calendar.current to avoid the verbose dateComponents call site.
-    static func daysBetween(_ a: Date, _ b: Date) -> Int {
-        Calendar.current.dateComponents([.day], from: a, to: b).day ?? 0
-    }
-
-    /// Largest gap in days between any two consecutive entries in `points`.
-    /// Returns 0 for fewer than 2 points.
-    static func largestGapBetweenConsecutive(_ points: [WeightDataPoint]) -> Int {
-        guard points.count >= 2 else { return 0 }
-        return zip(points, points.dropFirst())
-            .map { daysBetween($0.date, $1.date) }
-            .max() ?? 0
-    }
-
-    /// Returns all entries that follow the last gap exceeding `gapThresholdDays`.
-    /// If no such gap exists, returns `points` unchanged.
-    static func pointsAfterLastGap(_ points: [WeightDataPoint], gapThresholdDays: Int) -> [WeightDataPoint] {
-        guard points.count >= 2 else { return points }
-        for i in stride(from: points.count - 2, through: 0, by: -1) {
-            if daysBetween(points[i].date, points[i + 1].date) > gapThresholdDays {
-                return Array(points[(i + 1)...])
-            }
-        }
-        return points
-    }
-
-    /// Compute weekly rate (kg/wk) for a given window of `dataPoints` ending
-    /// at the latest entry. Tries two-window endpoint method first
-    /// (robust to noise + regime-change-correct), falls back to plain OLS
-    /// on raw weights when too few entries per endpoint, falls back to a
-    /// Returns nil when the data is too sparse for a trustworthy weekly rate.
-    /// Two failure modes the previous implementation produced — both observed
-    /// on real device, 2026-05-14, with 2 weigh-ins close together:
-    ///   1. A multi-day delta extrapolated to a weekly rate (e.g. 1.3 lbs
-    ///      gained over 5 days → "+4.41 lbs/wk").
-    ///   2. The UI labelling that result "based on last 21 days" because
-    ///      `rateWindowDays` was returned from the config, not from the
-    ///      actual span of points used.
-    /// Rule now: a weekly rate is published only when the regression has
-    /// real signal — at least 4 points spanning at least 14 days. Anything
-    /// shorter is noise dressed up as a trend.
-    static func weeklyRateForWindow(
-        dataPoints: [WeightDataPoint],
-        windowDays: Int
-    ) -> Double? {
-        guard let windowStart = Calendar.current.date(byAdding: .day, value: -windowDays, to: Date()) else { return nil }
-        let windowed = dataPoints.filter { $0.date >= windowStart }
-
-        // Minimum-data gate. Insufficient → nil → UI shows "—".
-        guard hasSufficientData(windowed) else { return nil }
-
-        if let twoWindow = slopeViaTwoWindowEndpoints(points: windowed, windowDays: windowDays) {
-            return twoWindow
-        }
-        return linearRegressionSlopeOnActualWeight(points: windowed) * 7
-    }
-
-    /// Minimum-data threshold for publishing a weekly rate. Tuned for the
-    /// noise floor of casual daily weigh-ins (~0.5–1 kg natural fluctuation
-    /// day to day from water + glycogen). Below this, any regression slope
-    /// is more noise than signal.
-    static func hasSufficientData(_ points: [WeightDataPoint]) -> Bool {
-        guard points.count >= 4,
-              let first = points.first,
-              let last = points.last else { return false }
-        let span = daysBetween(first.date, last.date)
-        return span >= 14
-    }
-
-    // MARK: - Weight Changes
-
-    public static func calculateWeightChanges(dataPoints: [WeightDataPoint]) -> WeightChanges {
-        guard let latest = dataPoints.last, let latestActual = latest.actualWeight else {
-            return WeightChanges(threeDay: nil, sevenDay: nil, fourteenDay: nil, thirtyDay: nil, ninetyDay: nil)
-        }
-
-        func changeOverDays(_ days: Int) -> Double? {
-            guard let target = Calendar.current.date(byAdding: .day, value: -days, to: latest.date) else { return nil }
-            let closest = dataPoints.min { abs($0.date.timeIntervalSince(target)) < abs($1.date.timeIntervalSince(target)) }
-            guard let closest, closest.date != latest.date,
-                  let closestActual = closest.actualWeight else { return nil }
-            let daysDiff = abs(Calendar.current.dateComponents([.day], from: closest.date, to: target).day ?? 0)
-            guard daysDiff <= 3 else { return nil }
-            return latestActual - closestActual
-        }
-
-        return WeightChanges(
-            threeDay: changeOverDays(3), sevenDay: changeOverDays(7),
-            fourteenDay: changeOverDays(14), thirtyDay: changeOverDays(30),
-            ninetyDay: changeOverDays(90)
-        )
     }
 }

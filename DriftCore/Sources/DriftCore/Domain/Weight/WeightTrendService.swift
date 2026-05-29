@@ -27,8 +27,9 @@ public final class WeightTrendService {
     public var dailyDeficit: Double? { isStale ? nil : trend?.estimatedDailyDeficit }
     public var weightChanges: WeightTrendCalculator.WeightChanges? { isStale ? nil : trend?.weightChanges }
     public var projectedWeightKg: Double? {
-        guard !isStale, let trend else { return nil }
-        return trend.currentEMA + (trend.weeklyRateKg * 4.3) // ~30 days
+        guard !isStale else { return nil }
+        // Single source: the calculator's 30-day projection (nil when calibrating).
+        return trend?.projection30Day
     }
     public var trendDirection: WeightTrendCalculator.TrendDirection? { isStale ? nil : trend?.trendDirection }
 
