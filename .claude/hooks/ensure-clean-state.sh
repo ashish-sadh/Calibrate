@@ -7,8 +7,16 @@ set -e
 
 cd "${CLAUDE_PROJECT_DIR:-.}"
 
-# Skip dirty state check if autopilot is running (it owns the working directory)
-if pgrep -f 'claude.*-p.*(execute|run.*autopilot|sprint)' > /dev/null 2>&1; then
+# Skip the dirty-state check for an INTERACTIVE session (takeover / dev work)
+# when autopilot is the active worker — it owns the working tree, and its OWN
+# sessions still pass this gate (commit-or-abandon discipline). Match the current
+# `claude -p /<skill>` invocation format (the old `(execute|run.*autopilot|sprint)`
+# pattern stopped matching, so this gate wrongly blocked interactive takeover
+# sessions whenever a senior/junior/planning session had files mid-edit). Only
+# skip when NOT autonomous — autopilot's own sessions (DRIFT_AUTONOMOUS=1) must
+# still be held to the clean-state gate below.
+if [ "${DRIFT_AUTONOMOUS:-0}" != "1" ] && \
+   pgrep -f 'claude .*-p .*/(senior|junior|planning|design-doc|testflight|admin-replies|knowledge-curate|ui-evaluator|ui-review)' > /dev/null 2>&1; then
   exit 0
 fi
 
