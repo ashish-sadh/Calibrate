@@ -64,6 +64,17 @@ CURRENT_LOG=""
 
 mkdir -p "$LOG_DIR"
 
+log() {
+    local msg="[$(date '+%Y-%m-%d %H:%M:%S')] $1"
+    # Direct writes — no `tee` pipeline (SIGPIPE vector: launchd stdout
+    # rotation could close tee's reader → SIGPIPE → watchdog death).
+    # Defined HERE, ahead of the caffeinate sleep-guard below: a forward
+    # reference made bash invoke the macOS /usr/bin/log binary instead
+    # ("Unknown subcommand" → exit 64 → launchd crash loop). 2026-05-29 fix.
+    echo "$msg" >> "$WATCHDOG_LOG"
+    echo "$msg"
+}
+
 # Keep the machine awake for the watchdog's entire lifetime. Observed
 # 2026-05-29: macOS Maintenance/Idle Sleep (pmset `sleep 1`) suspended the
 # host mid-session, which (a) dropped the TCP stream to the Anthropic API —
@@ -86,17 +97,6 @@ fi
 # the active senior session — that's the "sessions dying every 2 min"
 # pattern observed 2026-04-28 (5 watchdog respawns / hour).
 trap '' PIPE
-
-log() {
-    local msg="[$(date '+%Y-%m-%d %H:%M:%S')] $1"
-    # Direct writes — no `tee` pipeline. Was: `echo "$msg" | tee -a "$LOG"`.
-    # The pipeline was the SIGPIPE vector: launchd captures stdout into a
-    # rotated file, and an unfortunate combination of buffering + rotation
-    # would close tee's stdout reader, propagate SIGPIPE up to the script,
-    # and kill the watchdog mid-cycle.
-    echo "$msg" >> "$WATCHDOG_LOG"
-    echo "$msg"
-}
 
 get_model() {
     local SESSION_TYPE="$1"
