@@ -64,29 +64,12 @@ targets:
         com.apple.developer.kernel.increased-memory-limit: true
         com.apple.security.application-groups:
           - group.com.drift.health
-        # iCloud Drive container entitlements are commented out because the
-        # App ID com.drift.health doesn't have iCloud capability enabled in
-        # the Apple Developer portal yet, and the container itself doesn't
-        # exist. Adding these keys to the entitlements without portal-side
-        # provisioning makes `xcodebuild archive` fail with: "Provisioning
-        # profile … doesn't include the iCloud capability".
-        #
-        # To unblock:
-        #   1. Xcode → Drift target → Signing & Capabilities → + Capability
-        #      → iCloud → check "iCloud Documents" → + container →
-        #      create `iCloud.com.drift.health`.
-        #   2. Re-add the three keys below.
-        #   3. xcodegen generate && archive.
-        #
-        # Until then, BackupSettingsView's `containerURL()` returns nil and
-        # the user sees "iCloud Drive is off" — known limitation.
-        #
-        # com.apple.developer.icloud-container-identifiers:
-        #   - iCloud.com.drift.health
-        # com.apple.developer.icloud-services:
-        #   - CloudDocuments
-        # com.apple.developer.ubiquity-container-identifiers:
-        #   - iCloud.com.drift.health
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.com.drift.health
+        com.apple.developer.icloud-services:
+          - CloudDocuments
+        com.apple.developer.ubiquity-container-identifiers:
+          - iCloud.com.drift.health
 
   DriftWidget:
     type: app-extension
