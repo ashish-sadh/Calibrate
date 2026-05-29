@@ -64,6 +64,21 @@ CURRENT_LOG=""
 
 mkdir -p "$LOG_DIR"
 
+# Keep the machine awake for the watchdog's entire lifetime. Observed
+# 2026-05-29: macOS Maintenance/Idle Sleep (pmset `sleep 1`) suspended the
+# host mid-session, which (a) dropped the TCP stream to the Anthropic API —
+# senior session 50032 died with "socket connection was closed unexpectedly"
+# at the exact second of `Entering Sleep` — and (b) froze the watchdog's
+# own 30s loop for 16-31 min at a stretch, blinding stall/crash detection.
+# `caffeinate -is` blocks BOTH idle AND system sleep (plain `-i` does NOT
+# block Maintenance Sleep); `-w $$` ties the assertion to this watchdog's
+# PID so it releases automatically on exit — no leaked assertion, no manual
+# cleanup. Re-armed on every watchdog start, so launchd respawns stay awake.
+if command -v caffeinate >/dev/null 2>&1; then
+    caffeinate -is -w "$$" >/dev/null 2>&1 &
+    log "Sleep guard: caffeinate -is bound to watchdog PID $$ (blocks idle + system sleep)."
+fi
+
 # Ignore SIGPIPE — observed root cause of recurring watchdog deaths. Without
 # this, any pipeline that loses its reader (file rotation, launchd stdout
 # buffer issue, etc.) propagates SIGPIPE to the watchdog shell and bash exits
