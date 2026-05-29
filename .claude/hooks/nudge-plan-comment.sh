@@ -62,8 +62,8 @@ if [ -f "$CACHE_FILE" ]; then exit 0; fi
 # Check the issue once per call when not cached. Look for BOTH the new XML
 # contract (<plan>) and the legacy markdown headings.
 COMMENTS=$(gh issue view "$NUM" --json comments --jq '.comments[].body' 2>/dev/null || echo "")
-HAS_XML_PLAN=$(echo "$COMMENTS" | grep -c '<plan>' || echo "0")
-HAS_MD_PLAN=$(echo "$COMMENTS" | grep -ciE '^[[:space:]]*(plan|approach|investigation|progress|resolution)[[:space:]]*[:-]' || echo "0")
+HAS_XML_PLAN=$(echo "$COMMENTS" | grep -c '<plan>' || true); HAS_XML_PLAN=${HAS_XML_PLAN:-0}
+HAS_MD_PLAN=$(echo "$COMMENTS" | grep -ciE '^[[:space:]]*(plan|approach|investigation|progress|resolution)[[:space:]]*[:-]' || true); HAS_MD_PLAN=${HAS_MD_PLAN:-0}
 HAS_PLAN=$(( HAS_XML_PLAN + HAS_MD_PLAN ))
 if [ "$HAS_PLAN" -gt 0 ]; then
     touch "$CACHE_FILE"
