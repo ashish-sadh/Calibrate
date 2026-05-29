@@ -70,8 +70,18 @@ fi
 CURRENT=$(cat "$STATE_FILE")
 TOTAL=$(echo "$CURRENT" | jq '.tool_calls_total + 1')
 
-# Measure current diff size (lines)
+# Measure current diff size (lines).
+# Phase 3e 2026-05-29: include UNTRACKED files. `git diff --numstat` only
+# reports tracked-file changes — a session that writes brand-new files (a
+# new DriftCore engine + its Tier-0 test, a new View, a new design doc)
+# shows ZERO diff growth and gets killed at 30 tool calls despite heavy
+# real progress. Observed 2026-05-29: 23 zero_diff_growth kills/24h, almost
+# all sessions mid-creation of new files. One killed senior diagnosed it
+# itself: "git diff doesn't show untracked files, so it sees zero growth."
+# Count untracked line totals too so new-file work registers as progress.
 DIFF_SIZE=$(git diff --numstat 2>/dev/null | awk '{sum += $1 + $2} END {print sum+0}')
+UNTRACKED_LINES=$(git ls-files --others --exclude-standard -z 2>/dev/null | xargs -0 cat 2>/dev/null | wc -l | awk '{print $1+0}')
+DIFF_SIZE=$((DIFF_SIZE + UNTRACKED_LINES))
 LAST_DIFF=$(echo "$CURRENT" | jq '.last_diff_size // 0')
 
 DIFF_GROWTH=$((DIFF_SIZE - LAST_DIFF))
