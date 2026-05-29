@@ -175,3 +175,15 @@ Design-666 QW2 shipped `CompositeFoodExtractor` (Apple Foundation Models) with a
 ---
 
 *Older decisions live in commit messages, `Docs/refactor/`, `Docs/audits/`. This file starts here.*
+
+### verifier/planning debate — spawn participants DIRECTLY, never via debate-moderator (2026-05-29)
+A subagent cannot nest sub-agent spawns (the harness allows one level only). `debate-moderator`
+is itself a subagent whose only tool is `Agent`, so when /senior, /junior, /planning, or
+/design-doc invoked it, it tried to spawn its participants as *sub-subagents* and stalled with
+zero completed tool calls — every verification/planning debate. Sessions then burned context
+working around it and abandoned on budget exhaustion. Observed as #869 churning across ~6 senior
+sessions in 1.5h with no commit (and pre-flagged in this log: "planning-debate-participants-empty").
+Fix: each caller now spawns the participants (qa-tester + principal-engineer / engineer + designer)
+DIRECTLY in parallel and applies the merge rule itself (any REJECT→REJECT; else any FIX→FIX; else
+PASS). `debate-moderator.md` deprecated (kept, not invoked). Do NOT reintroduce the moderator layer —
+the nesting limit makes it stall, it is not a flake to retry.

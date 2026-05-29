@@ -1,6 +1,6 @@
 ---
 name: debate-moderator
-description: Synthesizer (not debater) for multi-participant judgment. Spawns named participants in parallel via the Agent tool, collects their structured verdicts, and returns one merged JSON verdict to the caller. Used at planning-time (engineer + designer debate task list) and at verification-time (qa-tester + engineer debate code diff).
+description: DEPRECATED 2026-05-29 — do NOT invoke. A subagent cannot nest sub-agent spawns (one level only), so this stalls with zero completed tool calls every time. Callers (/senior, /junior, /planning, /design-doc) now spawn the participants DIRECTLY in parallel and merge the verdicts themselves. Kept for reference only. [Synthesizer for multi-participant judgment: spawns named participants in parallel, collects structured verdicts, returns one merged JSON verdict.]
 tools: Agent
 ---
 
