@@ -111,6 +111,26 @@ public enum WeightTrendCalculator {
     /// water/glycogen jitter so the reported surplus/deficit stops bouncing.
     static let rateSmoothingHalfLifeDays: Double = 5
 
+    /// |t| (slope ÷ its standard error) the trailing trend must clear before we
+    /// report a *direction* at all. Below it the weight is statistically flat —
+    /// the slope's sign is set by which noisy endpoints the window caught, not by
+    /// real signal — so we report "maintaining" / zero energy balance instead.
+    ///
+    /// Field bug (2026-05-29): a user oscillating ±3 lb around a flat ~118 mean
+    /// saw "Est. Deficit −248 kcal/day" on the 1M view and "Est. Surplus +185" on
+    /// the 3M view — same DB, opposite signs — because each window fit a confident
+    /// slope to noise (R² ≈ 0.00–0.08). Calibration: genuine cuts/bulks clear
+    /// |t| ≈ 2.3–12; flat-noisy maintainers sit at 0.2–1.5. 2.0 ≈ the 95%
+    /// two-sided level across the 4–40 weigh-ins a window holds — it sits in the
+    /// gap between a real (if short or spiky) trend and pure noise, and biases
+    /// toward honesty ("we can't call it") when the data won't support a verdict.
+    static let significanceTThreshold: Double = 2.0
+
+    /// Minimum raw weigh-ins in the window before significance can even be
+    /// assessed. With ≤3 points the OLS fits (near-)perfectly by construction, so
+    /// the t-test is meaningless; treat as not-significant → maintaining.
+    static let minPointsForSignificance = 4
+
     // MARK: - Public Types
 
     public struct WeightTrend: Sendable {
@@ -264,9 +284,19 @@ public enum WeightTrendCalculator {
         let previousEMA = dataPoints.count >= 2 ? dataPoints[dataPoints.count - 2].emaWeight : currentEMA
 
         // ── Weekly rate = OLS slope over the trailing window (the heal) ──
+        // Gated on statistical significance: a slope that doesn't clear the noise
+        // (|t| < significanceTThreshold) is reported as flat (rate 0 → maintaining),
+        // never as a confident surplus/deficit whose SIGN is decided by which
+        // noisy endpoints the window happened to catch. Without this gate a
+        // weight oscillating ±3 lb around a flat mean reads "Est. Deficit" on a
+        // short window and "Est. Surplus" on a long one (field bug 2026-05-29).
         let rate = weeklyRateForWindow(points: dataPoints, windowDays: config.regressionWindowDays)
         let hasInsufficientData = (rate == nil)
-        let weeklyRateKg = clampRate(rate?.kgPerWeek ?? 0)
+        let significantRate = (rate?.significant == true) ? clampRate(rate?.kgPerWeek ?? 0) : 0
+        // Below the maintaining band ⇒ report exactly flat (rate 0): a sub-threshold
+        // slope — even a chance-significant one on pure noise — is "holding steady",
+        // and a non-zero deficit beside a "maintaining" label only confuses.
+        let weeklyRateKg = abs(significantRate) < config.maintainingThresholdKgPerWeek ? 0 : significantRate
         let rateWindowDays = rate?.windowDays ?? config.regressionWindowDays
         let estimatedDailyDeficit = weeklyRateKg * config.kcalPerKg / 7
 
@@ -327,7 +357,7 @@ public enum WeightTrendCalculator {
     /// Extends the lookback up to `maxRateLookbackDays` for sparse loggers so a
     /// weekly/fortnightly weigher still gets a rate — but never past it, so stale
     /// weigh-ins can't anchor the slope (#842).
-    static func weeklyRateForWindow(points: [WeightDataPoint], windowDays: Int) -> (kgPerWeek: Double, windowDays: Int)? {
+    static func weeklyRateForWindow(points: [WeightDataPoint], windowDays: Int) -> (kgPerWeek: Double, windowDays: Int, significant: Bool)? {
         func windowed(_ days: Int) -> [WeightDataPoint] {
             guard let start = Calendar.current.date(byAdding: .day, value: -days, to: Date()) else { return [] }
             return points.filter { $0.date >= start }
@@ -356,7 +386,58 @@ public enum WeightTrendCalculator {
         }
         let slopePerDay = slopeOfSeries(smoothed)
         let span = max(1, daysBetween(first.date, last.date))
-        return (slopePerDay * 7, min(used, span))
+        // Significance is judged on the RAW weigh-ins of the SAME window the
+        // magnitude uses (NOT the smoothed series, NOT a wider window):
+        //  • raw, because the 5d pre-smooth's autocorrelation inflates the fit and
+        //    waves flat water-noise through as a false "trend" (|t| 3–11 on data
+        //    that is genuinely flat).
+        //  • same window, because magnitude and direction must agree in sign — a
+        //    *wider* significance window let a 45d up-trend gate a 21d down-slice's
+        //    magnitude and report "Est. Deficit −242" for a flat-to-up user (the
+        //    field bug), and it also blinded the rate to recent regime changes the
+        //    responsive window is meant to catch. Judging both on `pts` means a
+        //    flat/oscillating window reads maintaining while a clear recent trend
+        //    (loss or gain) still registers.
+        let significant = isTrendSignificant(pts)
+        return (slopePerDay * 7, min(used, span), significant)
+    }
+
+    /// Is the trailing trend statistically distinguishable from flat? Runs OLS on
+    /// the raw weigh-ins and tests the slope's t-statistic,
+    /// `|t| = sqrt(R²·(n-2)/(1-R²))`, against `significanceTThreshold`. False ⇒
+    /// the weight is just oscillating and the slope's sign is noise; the caller
+    /// reports maintaining instead of a fabricated surplus/deficit.
+    static func isTrendSignificant(_ points: [WeightDataPoint]) -> Bool {
+        let samples = points.map { (date: $0.date, weight: $0.actualWeight ?? $0.emaWeight) }
+        guard samples.count >= minPointsForSignificance else { return false }
+        let r2 = rSquared(samples)
+        guard r2 < 1 else { return true }      // exact fit on ≥4 points ⇒ real line
+        let n = Double(samples.count)
+        let t = (r2 * (n - 2) / (1 - r2)).squareRoot()
+        return t >= significanceTThreshold
+    }
+
+    /// Coefficient of determination (R²) of a least-squares line through
+    /// (day-offset, weight) samples. 0 = the line explains nothing (flat noise),
+    /// 1 = perfect fit. Clamped to [0, 1].
+    static func rSquared(_ samples: [(date: Date, weight: Double)]) -> Double {
+        guard samples.count >= 2 else { return 0 }
+        let ref = samples[0].date
+        let xs = samples.map { Double(Calendar.current.dateComponents([.day], from: ref, to: $0.date).day ?? 0) }
+        let ys = samples.map(\.weight)
+        let n = Double(samples.count)
+        let sumX = xs.reduce(0, +), sumY = ys.reduce(0, +)
+        let sumXY = zip(xs, ys).reduce(0) { $0 + $1.0 * $1.1 }
+        let sumX2 = xs.reduce(0) { $0 + $1 * $1 }
+        let denom = n * sumX2 - sumX * sumX
+        guard denom != 0 else { return 0 }
+        let slope = (n * sumXY - sumX * sumY) / denom
+        let intercept = (sumY - slope * sumX) / n
+        let meanY = sumY / n
+        let ssTot = ys.reduce(0) { $0 + ($1 - meanY) * ($1 - meanY) }
+        let ssRes = zip(xs, ys).reduce(0) { $0 + pow($1.1 - (slope * $1.0 + intercept), 2) }
+        guard ssTot > 0 else { return 0 }
+        return min(1, max(0, 1 - ssRes / ssTot))
     }
 
     /// Span-based sufficiency: ≥2 points spanning ≥ `minRateSpanDays`.

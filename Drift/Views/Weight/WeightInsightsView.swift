@@ -55,6 +55,19 @@ struct WeightInsightsView: View {
                         tooltip: "Need at least 4 weigh-ins across 2 weeks to estimate a weekly rate.",
                         nudge: "Log a few more days"
                     )
+                } else if trend.trendDirection == .maintaining {
+                    // Statistically flat: the trend isn't distinguishable from
+                    // noise, so we DON'T print a precise "+0.00" that implies a
+                    // measured rate — we say "holding steady".
+                    metricCell(
+                        id: "weekly",
+                        label: "Weekly",
+                        value: "≈0.0",
+                        valueUnit: "\(unit.displayName)/wk",
+                        color: Theme.textSecondary,
+                        tooltip: "Your weight is holding steady over the past \(trend.rateWindowDays) days — the day-to-day ups and downs are mostly water, not a real trend.",
+                        nudge: "Holding steady"
+                    )
                 } else {
                     let rate = trend.weeklyRateKg
                     metricCell(
@@ -81,6 +94,21 @@ struct WeightInsightsView: View {
                         color: .secondary,
                         tooltip: "Need at least 4 weigh-ins across 2 weeks to estimate your daily energy balance.",
                         nudge: "Log a few more days"
+                    )
+                } else if trend.trendDirection == .maintaining {
+                    // Weight is statistically flat — reporting a confident
+                    // "Est. Deficit −248" or "Est. Surplus +185" here (the sign
+                    // of which flips with the chart range on noisy data) is the
+                    // exact field bug. Say "holding steady" instead of inventing
+                    // an energy balance the data can't support.
+                    metricCell(
+                        id: "deficit",
+                        label: "Est. Balance",
+                        value: "≈0",
+                        valueUnit: "kcal/day",
+                        color: Theme.textSecondary,
+                        tooltip: "Your weight is holding steady over the past \(trend.rateWindowDays) days — there's no clear surplus or deficit. Keep logging; a real trend will surface once it rises above day-to-day water noise.",
+                        nudge: "Holding steady"
                     )
                 } else {
                     let deficit = trend.estimatedDailyDeficit
@@ -140,7 +168,7 @@ struct WeightInsightsView: View {
                 Spacer()
             }
             .padding(.horizontal, 8).padding(.vertical, 6)
-            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
+            .hairlineCard(cornerRadius: 10)
 
             // Compact weight-change chips
             weightChangesRow
@@ -254,7 +282,7 @@ struct WeightInsightsView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
+        .hairlineCard(cornerRadius: 14)
     }
 
     private func bodyCompChartSheet(title: String, entries: [(date: String, value: Double)]) -> some View {
@@ -450,7 +478,7 @@ struct WeightInsightsView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
         .padding(.horizontal, 8)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .hairlineCard(cornerRadius: 14)
     }
 
     // MARK: - Weight Changes Row
@@ -465,7 +493,7 @@ struct WeightInsightsView: View {
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 8)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
+        .hairlineCard(cornerRadius: 14)
     }
 
     private func changeChip(_ period: String, value: Double?) -> some View {
@@ -489,5 +517,22 @@ struct WeightInsightsView: View {
             }
         }
         .frame(maxWidth: .infinity)
+    }
+}
+
+private extension View {
+    /// White card surface + V7 hairline. The Body screen's stat tiles use a
+    /// raw background (not `.card()`, so no shadow lift) — on the #EFEFF1 page
+    /// a borderless white tile is near-invisible (the "poor render" the metric
+    /// cells showed). The hairline gives each tile a defined edge so the 2×2
+    /// grid reads as distinct cards, matching the bordered weight section we
+    /// agreed on. Re-adds (scoped to this screen) the stroke V7's global
+    /// `CardStyle` dropped.
+    func hairlineCard(cornerRadius: CGFloat) -> some View {
+        background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(Theme.separator, lineWidth: 1)
+            )
     }
 }
