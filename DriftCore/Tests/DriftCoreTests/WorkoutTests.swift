@@ -1427,3 +1427,89 @@ import GRDB
     let elapsed = Int(Date().timeIntervalSince(startTime))
     #expect(elapsed >= 0 && elapsed <= 1, "Should be ~0 at start, got \(elapsed)")
 }
+
+// MARK: - buildVoiceLogSets (voice/text-logged exercises → set rows, #868)
+
+@Test func buildVoiceLogSets_multiExercise_strengthAndDuration() {
+    // "bench 3x10 @135, then 5k run 28 min" → 3 bench set-rows + 1 run duration-row.
+    let exercises = [
+        WorkoutService.VoiceLoggedExercise(name: "bench press", isDuration: false, sets: 3, reps: 10, weightLbs: 135),
+        WorkoutService.VoiceLoggedExercise(name: "running", isDuration: true, durationMinutes: 28),
+    ]
+    let rows = WorkoutService.buildVoiceLogSets(workoutId: 42, exercises: exercises)
+    #expect(rows.count == 4)
+
+    let bench = rows.filter { $0.exerciseName == "bench press" }
+    #expect(bench.count == 3)
+    #expect(bench.allSatisfy { $0.workoutId == 42 })
+    #expect(bench.allSatisfy { $0.weightLbs == 135 })
+    #expect(bench.allSatisfy { $0.reps == 10 })
+    #expect(bench.allSatisfy { $0.exerciseOrder == 0 })
+    #expect(bench.allSatisfy { $0.durationSec == nil })
+    #expect(Set(bench.map(\.setOrder)) == Set([1, 2, 3]))
+
+    let run = rows.filter { $0.exerciseName == "running" }
+    #expect(run.count == 1)
+    #expect(run[0].durationSec == 28 * 60)
+    #expect(run[0].reps == nil)
+    #expect(run[0].weightLbs == nil)
+    #expect(run[0].exerciseOrder == 1)
+    #expect(run[0].setOrder == 1)
+}
+
+@Test func buildVoiceLogSets_missingSetsDefaultsToOneRow() {
+    let exercises = [WorkoutService.VoiceLoggedExercise(name: "pull-ups", isDuration: false, sets: nil, reps: 8)]
+    let rows = WorkoutService.buildVoiceLogSets(workoutId: 1, exercises: exercises)
+    #expect(rows.count == 1)
+    #expect(rows[0].setOrder == 1)
+    #expect(rows[0].reps == 8)
+    #expect(rows[0].weightLbs == nil)  // bodyweight → no weight
+}
+
+@Test func buildVoiceLogSets_zeroOrNilWeightBecomesNil() {
+    let exercises = [
+        WorkoutService.VoiceLoggedExercise(name: "push-ups", isDuration: false, sets: 2, reps: 20, weightLbs: 0),
+        WorkoutService.VoiceLoggedExercise(name: "air squats", isDuration: false, sets: 1, reps: 15, weightLbs: nil),
+    ]
+    let rows = WorkoutService.buildVoiceLogSets(workoutId: 1, exercises: exercises)
+    #expect(rows.count == 3)
+    #expect(rows.allSatisfy { $0.weightLbs == nil })
+}
+
+@Test func buildVoiceLogSets_blankNameSkippedButPreservesOriginalOrder() {
+    let exercises = [
+        WorkoutService.VoiceLoggedExercise(name: "  ", isDuration: false, sets: 3, reps: 10),
+        WorkoutService.VoiceLoggedExercise(name: "deadlift", isDuration: false, sets: 1, reps: 5, weightLbs: 225),
+    ]
+    let rows = WorkoutService.buildVoiceLogSets(workoutId: 1, exercises: exercises)
+    #expect(rows.count == 1)
+    #expect(rows[0].exerciseName == "deadlift")
+    // exerciseOrder reflects the ORIGINAL spoken index (1), not the compacted position.
+    #expect(rows[0].exerciseOrder == 1)
+}
+
+@Test func buildVoiceLogSets_durationWithoutMinutesHasNilDuration() {
+    let exercises = [WorkoutService.VoiceLoggedExercise(name: "yoga", isDuration: true, durationMinutes: nil)]
+    let rows = WorkoutService.buildVoiceLogSets(workoutId: 1, exercises: exercises)
+    #expect(rows.count == 1)
+    #expect(rows[0].durationSec == nil)
+    #expect(rows[0].setOrder == 1)
+}
+
+@Test func buildVoiceLogSets_trimsExerciseName() {
+    let exercises = [WorkoutService.VoiceLoggedExercise(name: "  overhead press  ", isDuration: false, sets: 1, reps: 5)]
+    let rows = WorkoutService.buildVoiceLogSets(workoutId: 1, exercises: exercises)
+    #expect(rows[0].exerciseName == "overhead press")
+}
+
+@Test func buildVoiceLogSets_emptyInputProducesNoRows() {
+    #expect(WorkoutService.buildVoiceLogSets(workoutId: 1, exercises: []).isEmpty)
+}
+
+@Test func saveVoiceLoggedWorkout_allBlankNamesReturnsNilWithoutSaving() throws {
+    // Guard path: returns before touching the DB (no read-back race), so this is
+    // a safe Tier-0 assertion under parallel test execution.
+    let saved = try WorkoutService.saveVoiceLoggedWorkout(
+        name: "Empty", exercises: [WorkoutService.VoiceLoggedExercise(name: "   ", isDuration: false)])
+    #expect(saved == nil)
+}

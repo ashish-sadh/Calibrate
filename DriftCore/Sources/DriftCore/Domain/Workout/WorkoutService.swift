@@ -47,6 +47,84 @@ public enum WorkoutService {
         }
     }
 
+    // MARK: - Voice/text-logged workout → set rows (#868)
+
+    /// One exercise as confirmed in `ExerciseVoiceLogSheet` (after any user
+    /// edits), ready to be expanded into `WorkoutSet` rows. Mirrors the numeric
+    /// shape of `FMExerciseEntry` but carries the post-edit values from the
+    /// confirmation card. `isDuration` is true for cardio/mobility/sports.
+    public struct VoiceLoggedExercise: Sendable, Equatable {
+        public let name: String
+        public let isDuration: Bool
+        public let sets: Int?
+        public let reps: Int?
+        public let weightLbs: Double?
+        public let durationMinutes: Int?
+
+        public init(name: String, isDuration: Bool, sets: Int? = nil, reps: Int? = nil,
+                    weightLbs: Double? = nil, durationMinutes: Int? = nil) {
+            self.name = name
+            self.isDuration = isDuration
+            self.sets = sets
+            self.reps = reps
+            self.weightLbs = weightLbs
+            self.durationMinutes = durationMinutes
+        }
+    }
+
+    /// Expand confirmed voice/text-logged exercises into `WorkoutSet` rows for a
+    /// saved workout. Strength entries produce one row per set (defaulting to a
+    /// single set when count is missing) carrying reps + weight; duration entries
+    /// produce one row carrying `durationSec` (minutes × 60). Pure — no DB access
+    /// — so the `ExerciseVoiceLogSheet` save mapping is Tier-0 testable.
+    /// `exerciseOrder` preserves the order the user spoke/typed; entries with a
+    /// blank name are skipped (but their original index is still consumed, so the
+    /// surviving rows keep the spoken order).
+    public static func buildVoiceLogSets(workoutId: Int64, exercises: [VoiceLoggedExercise]) -> [WorkoutSet] {
+        var rows: [WorkoutSet] = []
+        for (index, ex) in exercises.enumerated() {
+            let name = ex.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty else { continue }
+            if ex.isDuration {
+                let mins = ex.durationMinutes ?? 0
+                let secs: Int? = mins > 0 ? mins * 60 : nil
+                rows.append(WorkoutSet(workoutId: workoutId, exerciseName: name, setOrder: 1,
+                                       weightLbs: nil, reps: nil, isWarmup: false,
+                                       durationSec: secs, exerciseOrder: index))
+            } else {
+                let count = max(1, ex.sets ?? 1)
+                let weight = (ex.weightLbs ?? 0) > 0 ? ex.weightLbs : nil
+                for setOrder in 1...count {
+                    rows.append(WorkoutSet(workoutId: workoutId, exerciseName: name, setOrder: setOrder,
+                                           weightLbs: weight, reps: ex.reps, isWarmup: false,
+                                           durationSec: nil, exerciseOrder: index))
+                }
+            }
+        }
+        return rows
+    }
+
+    /// Persist a voice/text-logged workout: create the `Workout` row, expand the
+    /// confirmed exercises into set rows via `buildVoiceLogSets`, and save them.
+    /// Returns the saved workout (id assigned), or nil when no exercise carries a
+    /// non-blank name (nothing to log). Mirrors the create-workout-then-save-sets
+    /// pattern `importStrongCSV` uses. `date` defaults to now.
+    @discardableResult
+    public static func saveVoiceLoggedWorkout(name: String, date: Date = Date(),
+                                              exercises: [VoiceLoggedExercise]) throws -> Workout? {
+        let hasLoggable = exercises.contains { !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        guard hasLoggable else { return nil }
+
+        var workout = Workout(name: name,
+                              date: DateFormatters.dateOnly.string(from: date),
+                              durationSeconds: nil, notes: nil,
+                              createdAt: ISO8601DateFormatter().string(from: date))
+        try saveWorkout(&workout)
+        guard let wid = workout.id else { return workout }
+        try saveSets(buildVoiceLogSets(workoutId: wid, exercises: exercises))
+        return workout
+    }
+
     public static func fetchWorkouts(limit: Int = 100) throws -> [Workout] {
         try db.reader.read { dbConn in
             try Workout.order(Column("date").desc).limit(limit).fetchAll(dbConn)

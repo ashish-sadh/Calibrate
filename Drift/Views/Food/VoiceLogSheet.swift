@@ -144,19 +144,11 @@ struct VoiceLogSheet: View {
         VStack(spacing: 24) {
             Spacer()
 
-            ZStack {
-                // V7 mobile fix: the pulsing scale animation was
-                // distracting. User: "the red circle on mic is
-                // constantly moving — keep it static." Static disc,
-                // no animation.
-                Circle()
-                    .fill(Theme.accent.opacity(0.18))
-                    .frame(width: 140, height: 140)
-                Image(systemName: "mic.fill")
-                    .font(.system(size: 44, weight: .semibold))
-                    .foregroundStyle(Theme.accent)
-            }
-            .accessibilityIdentifier("voice-log-mic")
+            // Shared mic-disc component (see VoiceMicButton). Food keeps the
+            // Theme.accent tint at the default 140/44 size — pixel-identical to
+            // the inline disc this replaced, so no food-path visual change.
+            VoiceMicButton(tint: Theme.accent)
+                .accessibilityIdentifier("voice-log-mic")
 
             Text("Listening…")
                 .font(.headline.weight(.semibold))

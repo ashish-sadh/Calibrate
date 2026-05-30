@@ -13,6 +13,7 @@ struct WorkoutView: View {
     @State private var templates: [WorkoutTemplate] = []
     @State private var showingNewWorkout = false
     @State private var showingPastWorkout = false
+    @State private var showingVoiceLog = false
     @State private var showingImport = false
     @State private var showingCreateTemplate = false
     @State private var showingExerciseBrowser = false
@@ -146,6 +147,32 @@ struct WorkoutView: View {
                     }
                     .buttonStyle(.bordered).tint(Theme.ink)
                 }
+
+                // Conversational entry — voice/text exercise logging (epic #867,
+                // Workout-tab parity with food's VoiceLogSheet). Embeds the shared
+                // VoiceMicButton (V7 ink tint, no pink) so the mic affordance reads
+                // identically to the food path.
+                Button { showingVoiceLog = true } label: {
+                    HStack(spacing: 12) {
+                        VoiceMicButton(tint: Theme.ink, diameter: 40, iconSize: 18)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Log by Voice or Text")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Theme.textPrimary)
+                            Text("Say or type your sets — \u{201C}3×10 bench at 135\u{201D}")
+                                .font(.caption2)
+                                .foregroundStyle(Theme.textSecondary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right")
+                            .font(.caption2).foregroundStyle(.tertiary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .card()
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Log workout by voice or text")
+                .accessibilityIdentifier("workout-voice-entry")
 
                 Button { showingPastWorkout = true } label: {
                     Label("Log Past Workout", systemImage: "clock.arrow.circlepath")
@@ -330,6 +357,14 @@ struct WorkoutView: View {
         }
         .sheet(isPresented: $showingPastWorkout) {
             ActiveWorkoutView(pastDate: Date().addingTimeInterval(-86400)) { loadData() }
+        }
+        .sheet(isPresented: $showingVoiceLog) {
+            // Voice/text exercise logging — reload history and reveal it so the
+            // user sees the workout they just logged.
+            ExerciseVoiceLogSheet {
+                loadData()
+                showHistory = true
+            }
         }
         .sheet(isPresented: $showingCreateTemplate) {
             CreateTemplateView { loadData() }
