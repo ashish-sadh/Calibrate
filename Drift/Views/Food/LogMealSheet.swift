@@ -267,7 +267,9 @@ struct LogMealSheet: View {
     // MARK: - Search
 
     private var searchContent: some View {
-        FoodSearchView(viewModel: foodLogVM)
+        // embedded: this sheet already provides the NavigationStack + Done; let
+        // FoodSearchView drop its own so there's only one "Done".
+        FoodSearchView(viewModel: foodLogVM, embedded: true)
     }
 
     // MARK: - Empty state

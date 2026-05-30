@@ -6,6 +6,10 @@ struct FoodSearchView: View {
     var initialQuery: String = ""
     var initialServings: Double? = nil
     var initialMealType: MealType? = nil
+    /// When embedded in a host sheet that already supplies nav chrome
+    /// (LogMealSheet's NavigationStack + Done), drop our own NavigationStack +
+    /// toolbar so the user doesn't see two "Done" buttons (field bug 2026-05-29).
+    var embedded: Bool = false
     @Environment(\.dismiss) private var dismiss
     @State private var selectedFood: Food?
     @State private var amount = "1"
@@ -34,8 +38,24 @@ struct FoodSearchView: View {
     private var logMealType: MealType { selectedMealType ?? effectiveMealType }
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
+        if embedded {
+            searchContent
+        } else {
+            NavigationStack {
+                searchContent
+                    .navigationTitle(loggedCount > 0 ? "Add Food (\(loggedCount) logged)" : "Add Food")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button(loggedCount > 0 ? "Done" : "Cancel") { dismiss() }
+                        }
+                    }
+            }
+        }
+    }
+
+    private var searchContent: some View {
+        VStack(spacing: 0) {
                 // Search bar
                 HStack {
                     Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
@@ -90,13 +110,6 @@ struct FoodSearchView: View {
                     }
                 } else {
                     searchResultsList
-                }
-            }
-            .navigationTitle(loggedCount > 0 ? "Add Food (\(loggedCount) logged)" : "Add Food")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button(loggedCount > 0 ? "Done" : "Cancel") { dismiss() }
                 }
             }
             .sheet(item: $selectedFood) { food in
@@ -156,7 +169,6 @@ struct FoodSearchView: View {
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { searchFocused = true }
             }
-        }
     }
 
     // MARK: - Suggestions (empty search)

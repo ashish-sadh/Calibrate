@@ -184,6 +184,7 @@ final class FoodLogViewModel {
     func copyGroupToToday(_ entries: [FoodEntry]) {
         entries.forEach { copyEntryToToday($0) }
         loadTodayMeals()
+        NotificationCenter.default.post(name: .foodEntryAdded, object: nil)
     }
 
     func logFood(_ food: Food, servings: Double, mealType: MealType, loggedAt: Date = Date()) {
@@ -229,6 +230,7 @@ final class FoodLogViewModel {
                 ))
             }
             loadTodayMeals()
+            NotificationCenter.default.post(name: .foodEntryAdded, object: nil)
         } catch {
             Log.foodLog.error("Failed to log food: \(error.localizedDescription)")
         }
@@ -344,6 +346,11 @@ final class FoodLogViewModel {
                 ))
             }
             loadTodayMeals()
+            // Tell the Food-diary surface (which lives on its OWN viewModel
+            // instance and only reloads on this notification) that an entry
+            // landed — otherwise logging from the FAB's LogMealSheet writes to
+            // the DB but the diary behind it never refreshes (field bug).
+            NotificationCenter.default.post(name: .foodEntryAdded, object: nil)
         } catch {
             Log.foodLog.error("Failed to quick add: \(error.localizedDescription)")
         }
