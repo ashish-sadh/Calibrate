@@ -11,25 +11,68 @@ struct WeightChartView: View {
     var dailyCaloriesByDate: [String: Double] = [:]
     var showCaloriesOverlay: Bool = false
 
-    @State private var selectedPoint: (date: Date, value: Double)? = nil
+    /// X-value the user is touching, via `.chartXSelection` — coexists with the
+    /// scroll gesture (the old DragGesture overlay would have eaten the scroll).
+    @State private var selectedDate: Date?
 
+    @State private var scrollX = Date()
+
+    /// ALL trend points (full history) — the chart PLOTS these so you can scroll
+    /// through your whole timeline. `rangeStart` no longer filters the data; it
+    /// sets the initial visible WINDOW via `.chartXVisibleDomain`. The EMA values
+    /// are the ones the calculator produced across all history.
     private var displayPoints: [(date: Date, actual: Double?, ema: Double)] {
         guard let trend else { return [] }
-        // Filter the *full-history* trend's dataPoints to the visible
-        // window. The EMA values stay the ones the calculator produced
-        // across all history — preserves the smoothed story that the
-        // insights cards reference — but the chart only renders the
-        // entries inside the selected range, so the date labels, average
-        // and difference numbers track what the user is actually looking
-        // at instead of summarising 2 years of history.
-        let scopedPoints: [WeightTrendCalculator.WeightDataPoint] = {
-            guard let start = rangeStart else { return trend.dataPoints }
-            return trend.dataPoints.filter { $0.date >= start }
-        }()
-        if granularity == .weekly { return weeklyAggregated(scopedPoints) }
-        return scopedPoints.map {
+        if granularity == .weekly { return weeklyAggregated(trend.dataPoints) }
+        return trend.dataPoints.map {
             ($0.date, $0.actualWeight.map { unit.convert(fromKg: $0) }, unit.convert(fromKg: $0.emaWeight))
         }
+    }
+
+    /// The selected-range slice — drives the Average / Difference / date-range
+    /// HEADER so those numbers track the window you start on (not 2 years).
+    private var rangePoints: [(date: Date, actual: Double?, ema: Double)] {
+        guard let start = rangeStart else { return displayPoints }
+        return displayPoints.filter { $0.date >= start }
+    }
+
+    // MARK: - Scroll window (range button = zoom; pan through history)
+
+    private var lastChartDate: Date { displayPoints.last?.date ?? Date() }
+    private var firstChartDate: Date { displayPoints.first?.date ?? lastChartDate.addingTimeInterval(-86_400) }
+
+    /// Width of the visible window in seconds = the selected range (All = full span).
+    private var visibleSeconds: TimeInterval {
+        let total = max(86_400, lastChartDate.timeIntervalSince(firstChartDate))
+        guard let start = rangeStart else { return total }
+        return min(total, max(7 * 86_400, lastChartDate.timeIntervalSince(start)))
+    }
+
+    /// Y-range of just the points in the current visible window, padded — so a
+    /// scrolled-to month fills the chart instead of looking flat against the
+    /// full-history range.
+    private var visibleYDomain: ClosedRange<Double> {
+        let hi = scrollX.addingTimeInterval(visibleSeconds)
+        let windowYs = displayPoints.filter { $0.date >= scrollX && $0.date <= hi }
+            .flatMap { [$0.ema] + ($0.actual.map { [$0] } ?? []) }
+        let pool = windowYs.count >= 2 ? windowYs
+            : displayPoints.flatMap { [$0.ema] + ($0.actual.map { [$0] } ?? []) }
+        guard let lo = pool.min(), let hiY = pool.max(), hiY > lo else { return 0...1 }
+        let pad = max(0.5, (hiY - lo) * 0.12)
+        return (lo - pad)...(hiY + pad)
+    }
+
+    private func anchorScrollToLatest() {
+        scrollX = lastChartDate.addingTimeInterval(-visibleSeconds)
+    }
+
+    /// The data point nearest the user's `.chartXSelection` touch (nil = none).
+    private var selectedChartPoint: (date: Date, value: Double)? {
+        guard let d = selectedDate,
+              let nearest = displayPoints.min(by: {
+                  abs($0.date.timeIntervalSince(d)) < abs($1.date.timeIntervalSince(d))
+              }) else { return nil }
+        return (nearest.date, nearest.actual ?? nearest.ema)
     }
 
     private func weeklyAggregated(_ points: [WeightTrendCalculator.WeightDataPoint]) -> [(date: Date, actual: Double?, ema: Double)] {
@@ -69,7 +112,7 @@ struct WeightChartView: View {
                     }
                 }
 
-                if let f = displayPoints.first?.date, let l = displayPoints.last?.date {
+                if let f = rangePoints.first?.date, let l = rangePoints.last?.date {
                     HStack(alignment: .firstTextBaseline, spacing: 12) {
                         Text("\(DateFormatters.shortDisplay.string(from: f)) – \(DateFormatters.shortDisplay.string(from: l))")
                             .font(.caption2).foregroundStyle(.tertiary)
@@ -192,7 +235,7 @@ struct WeightChartView: View {
                 }
 
                 // Selected point callout
-                if let sel = selectedPoint {
+                if let sel = selectedChartPoint {
                     PointMark(x: .value("", sel.date), y: .value("", sel.value))
                         .foregroundStyle(Theme.accent)
                         .symbolSize(80)
@@ -225,8 +268,14 @@ struct WeightChartView: View {
                         }
                 }
             }
-            .chartYScale(domain: .automatic(includesZero: false))
-            .chartXScale(domain: (rangeStart ?? displayPoints.first?.date ?? Date())...Date())
+            .chartYScale(domain: visibleYDomain)
+            .chartXScale(domain: firstChartDate...lastChartDate)
+            .chartScrollableAxes(.horizontal)
+            .chartXVisibleDomain(length: visibleSeconds)
+            .chartScrollPosition(x: $scrollX)
+            .onAppear { anchorScrollToLatest() }
+            .onChange(of: rangeStart) { _, _ in anchorScrollToLatest() }
+            .onChange(of: granularity) { _, _ in anchorScrollToLatest() }
             .chartXAxis {
                 // V7: include day so a single-day range doesn't render
                 // "May May May" — when displayPoints all sit in one
@@ -251,34 +300,10 @@ struct WeightChartView: View {
                     }
                 }
             }
-            .chartOverlay { proxy in
-                GeometryReader { geo in
-                    Rectangle().fill(.clear).contentShape(Rectangle())
-                        .gesture(
-                            DragGesture(minimumDistance: 0)
-                                .onChanged { value in
-                                    let origin = geo[proxy.plotAreaFrame].origin
-                                    let location = CGPoint(
-                                        x: value.location.x - origin.x,
-                                        y: value.location.y - origin.y
-                                    )
-                                    if let date: Date = proxy.value(atX: location.x, as: Date.self),
-                                       let nearest = displayPoints.min(by: {
-                                           abs($0.date.timeIntervalSince(date)) < abs($1.date.timeIntervalSince(date))
-                                       }) {
-                                        // Tap-to-read picks the actual
-                                        // weight when present (matches
-                                        // the coral line + Difference);
-                                        // falls through to EMA for
-                                        // synthesized / EMA-only points
-                                        // so the callout is never blank.
-                                        selectedPoint = (nearest.date, nearest.actual ?? nearest.ema)
-                                    }
-                                }
-                                .onEnded { _ in selectedPoint = nil }
-                        )
-                }
-            }
+            // Tap / long-press to read a value — `.chartXSelection` instead of a
+            // DragGesture overlay so it coexists with the horizontal scroll
+            // gesture (the old minimumDistance-0 drag would have eaten the scroll).
+            .chartXSelection(value: $selectedDate)
         }
         .card()
         .accessibilityElement(children: .combine)
@@ -307,10 +332,10 @@ struct WeightChartView: View {
         // line's net movement over the window is the honest change (and matches
         // the trend-based delta chips). Falls back to actuals only when the window
         // somehow has no EMA (synthesized-point edge case).
-        if let f = displayPoints.first?.ema, let l = displayPoints.last?.ema {
+        if let f = rangePoints.first?.ema, let l = rangePoints.last?.ema {
             return l - f
         }
-        let actuals = displayPoints.compactMap(\.actual)
+        let actuals = rangePoints.compactMap(\.actual)
         guard let f = actuals.first, let l = actuals.last else { return nil }
         return l - f
     }
