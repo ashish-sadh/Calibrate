@@ -484,39 +484,79 @@ struct WeightInsightsView: View {
     // MARK: - Weight Changes Row
 
     private var weightChangesRow: some View {
-        HStack(spacing: 0) {
-            changeChip("3d", value: trend.weightChanges.threeDay)
-            changeChip("7d", value: trend.weightChanges.sevenDay)
-            changeChip("14d", value: trend.weightChanges.fourteenDay)
-            changeChip("30d", value: trend.weightChanges.thirtyDay)
-            changeChip("90d", value: trend.weightChanges.ninetyDay)
+        VStack(spacing: 2) {
+            changeRow("3-day", days: 3, value: trend.weightChanges.threeDay)
+            changeRow("7-day", days: 7, value: trend.weightChanges.sevenDay)
+            changeRow("14-day", days: 14, value: trend.weightChanges.fourteenDay)
+            changeRow("30-day", days: 30, value: trend.weightChanges.thirtyDay)
+            changeRow("90-day", days: 90, value: trend.weightChanges.ninetyDay)
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 8)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
         .hairlineCard(cornerRadius: 14)
     }
 
-    private func changeChip(_ period: String, value: Double?) -> some View {
-        VStack(spacing: 3) {
+    /// One trend-change row: period · sparkline of the trend over that window ·
+    /// signed value · Increase/Decrease. Goal-aware colour (green = toward goal).
+    private func changeRow(_ period: String, days: Int, value: Double?) -> some View {
+        let color = value.map { changeColor($0) } ?? Color.secondary
+        return HStack(spacing: 12) {
             Text(period)
-                .font(.caption2.weight(.semibold))
+                .font(.caption.weight(.medium))
                 .foregroundStyle(Theme.textSecondary)
+                .frame(width: 46, alignment: .leading)
+            changeSparkline(days: days, color: color)
+            Spacer(minLength: 6)
             if let value {
-                let d = unit.convert(fromKg: value)
-                HStack(spacing: 1) {
-                    Image(systemName: directionIcon(value))
-                        .font(.caption2.weight(.bold))
-                    Text(String(format: "%+.1f", d))
-                        .font(.caption.weight(.semibold).monospacedDigit())
+                Text(String(format: "%+.1f %@", unit.convert(fromKg: value), unit.displayName))
+                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(color)
+                HStack(spacing: 3) {
+                    Image(systemName: directionIcon(value)).font(.caption2.weight(.bold))
+                    Text(directionWord(value)).font(.caption)
                 }
-                .foregroundStyle(changeColor(value))
+                .foregroundStyle(color)
+                .frame(width: 80, alignment: .leading)
             } else {
-                Text("--")
-                    .font(.caption.weight(.semibold))
+                Text("—")
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(height: 30)
+    }
+
+    private func directionWord(_ value: Double) -> String {
+        value < -0.01 ? "Decrease" : value > 0.01 ? "Increase" : "Steady"
+    }
+
+    /// Tiny trend (EMA) sparkline over the trailing `days` window.
+    @ViewBuilder
+    private func changeSparkline(days: Int, color: Color) -> some View {
+        let pts = emaWindow(days: days)
+        if pts.count >= 2 {
+            Chart {
+                ForEach(pts.indices, id: \.self) { i in
+                    LineMark(x: .value("i", i), y: .value("w", pts[i]))
+                        .foregroundStyle(color.opacity(0.85))
+                        .interpolationMethod(.catmullRom)
+                }
+            }
+            .chartXAxis(.hidden)
+            .chartYAxis(.hidden)
+            .chartYScale(domain: .automatic(includesZero: false))
+            .frame(width: 58, height: 22)
+        } else {
+            Color.clear.frame(width: 58, height: 22)
+        }
+    }
+
+    /// Trend (EMA) weights over the trailing `days` window, in display units.
+    private func emaWindow(days: Int) -> [Double] {
+        guard let last = trend.dataPoints.last,
+              let start = Calendar.current.date(byAdding: .day, value: -days, to: last.date) else { return [] }
+        return trend.dataPoints.filter { $0.date >= start }.map { unit.convert(fromKg: $0.emaWeight) }
     }
 }
 

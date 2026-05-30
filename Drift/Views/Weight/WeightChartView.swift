@@ -134,8 +134,8 @@ struct WeightChartView: View {
                 // away after a sharp move).
                 if let currentActual = displayPoints.last(where: { $0.actual != nil })?.actual {
                     RuleMark(y: .value("", currentActual))
-                        .foregroundStyle(Theme.accent.opacity(0.4))
-                        .lineStyle(StrokeStyle(lineWidth: 1.5))
+                        .foregroundStyle(Theme.textTertiary.opacity(0.22))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 4]))
                         .annotation(position: .trailing, spacing: 4) {
                             Text(String(format: "%.1f", currentActual))
                                 .font(.caption.weight(.bold).monospacedDigit())
@@ -153,34 +153,53 @@ struct WeightChartView: View {
                 // the rule line, and the tap callout, so the user can
                 // verify their raw data with their eyes instead of
                 // having to interpret a smoothing curve.
+                // Scale weight (raw) FIRST so it sits UNDER the trend — quiet
+                // grey texture, no dots, the honest day-to-day wave.
+                ForEach(displayPoints.indices, id: \.self) { i in
+                    if let actual = displayPoints[i].actual {
+                        LineMark(
+                            x: .value("", displayPoints[i].date),
+                            y: .value("Actual", actual),
+                            series: .value("Series", "Scale")
+                        )
+                        .foregroundStyle(Theme.textTertiary.opacity(0.5))
+                        .lineStyle(StrokeStyle(lineWidth: 1.5, lineJoin: .round))
+                        .interpolationMethod(.catmullRom)
+                    }
+                }
+
+                // Trend (EMA) is the HERO — solid ink, the smoothed signal the
+                // cards report, with a dot at each weigh-in. Recolored off coral
+                // (which read as an "alarm") to ink so the only colour on the
+                // chart is the goal-direction signals + the single coral "current"
+                // dot. Ink is V7's structural colour, so it belongs here.
                 ForEach(displayPoints.indices, id: \.self) { i in
                     LineMark(
                         x: .value("", displayPoints[i].date),
                         y: .value("Trend", displayPoints[i].ema),
                         series: .value("Series", "Trend")
                     )
-                    .foregroundStyle(Theme.textTertiary.opacity(0.7))
-                    .lineStyle(StrokeStyle(lineWidth: 1.25, dash: [4, 3]))
+                    .foregroundStyle(Theme.ink)
+                    .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
                     .interpolationMethod(.catmullRom)
                 }
-
                 ForEach(displayPoints.indices, id: \.self) { i in
-                    if let actual = displayPoints[i].actual {
-                        LineMark(
-                            x: .value("", displayPoints[i].date),
-                            y: .value("Actual", actual),
-                            series: .value("Series", "Actual")
-                        )
-                        .foregroundStyle(Theme.accent)
-                        .lineStyle(StrokeStyle(lineWidth: 2))
-                        .interpolationMethod(.catmullRom)
+                    if displayPoints[i].actual != nil {
                         PointMark(
                             x: .value("", displayPoints[i].date),
-                            y: .value("Actual", actual)
+                            y: .value("Trend", displayPoints[i].ema)
                         )
-                        .foregroundStyle(Theme.accent)
-                        .symbolSize(granularity == .weekly ? 30 : 16)
+                        .foregroundStyle(Theme.ink)
+                        .symbolSize(granularity == .weekly ? 22 : 12)
                     }
+                }
+
+                // Single coral "you are here" dot on the most recent weigh-in —
+                // the one brand accent on an otherwise neutral chart.
+                if let last = displayPoints.last(where: { $0.actual != nil }) {
+                    PointMark(x: .value("", last.date), y: .value("Trend", last.ema))
+                        .foregroundStyle(Theme.accent)
+                        .symbolSize(70)
                 }
 
                 // Selected point callout

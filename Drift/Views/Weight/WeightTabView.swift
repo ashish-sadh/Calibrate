@@ -48,7 +48,21 @@ struct WeightTabView: View {
                             dailyCaloriesByDate: viewModel.dailyCaloriesByDate,
                             showCaloriesOverlay: viewModel.showCaloriesOverlay
                         )
-                        .frame(height: 260)
+                        .frame(height: 320)
+
+                        // Scale vs Trend legend — names the two chart lines
+                        // (quiet grey scale wave vs the ink trend line).
+                        HStack(spacing: 18) {
+                            HStack(spacing: 5) {
+                                Capsule().fill(Theme.textTertiary.opacity(0.5)).frame(width: 16, height: 2)
+                                Text("Scale").font(.caption2.weight(.medium)).foregroundStyle(Theme.textSecondary)
+                            }
+                            HStack(spacing: 5) {
+                                Capsule().fill(Theme.ink).frame(width: 16, height: 3)
+                                Text("Trend").font(.caption2.weight(.medium)).foregroundStyle(Theme.textSecondary)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
 
                         // Big change banner
                         bigChangeBanner
