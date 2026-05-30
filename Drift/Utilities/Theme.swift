@@ -55,6 +55,12 @@ enum Theme {
     static let ink = Color(hex: "0A0A0A")
     static let inkSoft = Color(hex: "1F1F23")
 
+    /// Weight-chart trend line — a calm indigo. Deliberately NOT ink (the
+    /// black line read "too dark" in the field), NOT coral (reserved for
+    /// brand/CTA) and NOT green/red (reserved for goal direction). A neutral
+    /// data-viz hue, taking the cue from reference weight-trend apps.
+    static let chartTrend = Color(hex: "5856D6")
+
     // MARK: - Semantic Colors (goal-aware)
 
     /// Aligned with goal direction (weight loss → green, gain → green if goal=gain).

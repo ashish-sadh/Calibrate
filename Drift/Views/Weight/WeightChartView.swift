@@ -74,20 +74,9 @@ struct WeightChartView: View {
                         Text("\(DateFormatters.shortDisplay.string(from: f)) – \(DateFormatters.shortDisplay.string(from: l))")
                             .font(.caption2).foregroundStyle(.tertiary)
                         Spacer()
-                        // Dual-line legend (#field-2026-05-21). Without this
-                        // the coral / grey lines look like a styling glitch.
-                        // Coral = the actual logged weights, grey-dashed =
-                        // EMA smoothing. Tap any coral dot to read the
-                        // exact value.
-                        HStack(spacing: 4) {
-                            Circle().fill(Theme.accent).frame(width: 6, height: 6)
-                            Text("Actual").font(.caption2).foregroundStyle(.secondary)
-                        }
-                        HStack(spacing: 4) {
-                            Rectangle().fill(Theme.textTertiary.opacity(0.7))
-                                .frame(width: 10, height: 1.5)
-                            Text("Trend").font(.caption2).foregroundStyle(.secondary)
-                        }
+                        // Legend lives once, below the chart (Scale / Trend) —
+                        // the old header legend here duplicated it and had stale
+                        // colours after the trend went indigo.
                     }
                 }
 
@@ -179,7 +168,7 @@ struct WeightChartView: View {
                         y: .value("Trend", displayPoints[i].ema),
                         series: .value("Series", "Trend")
                     )
-                    .foregroundStyle(Theme.ink)
+                    .foregroundStyle(Theme.chartTrend)
                     .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
                     .interpolationMethod(.catmullRom)
                 }
@@ -189,7 +178,7 @@ struct WeightChartView: View {
                             x: .value("", displayPoints[i].date),
                             y: .value("Trend", displayPoints[i].ema)
                         )
-                        .foregroundStyle(Theme.ink)
+                        .foregroundStyle(Theme.chartTrend)
                         .symbolSize(granularity == .weekly ? 22 : 12)
                     }
                 }

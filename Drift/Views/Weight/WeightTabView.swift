@@ -58,7 +58,7 @@ struct WeightTabView: View {
                                 Text("Scale").font(.caption2.weight(.medium)).foregroundStyle(Theme.textSecondary)
                             }
                             HStack(spacing: 5) {
-                                Capsule().fill(Theme.ink).frame(width: 16, height: 3)
+                                Capsule().fill(Theme.chartTrend).frame(width: 16, height: 3)
                                 Text("Trend").font(.caption2.weight(.medium)).foregroundStyle(Theme.textSecondary)
                             }
                         }
