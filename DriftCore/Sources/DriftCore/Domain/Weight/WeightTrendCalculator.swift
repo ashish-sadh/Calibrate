@@ -485,18 +485,26 @@ public enum WeightTrendCalculator {
 
     // MARK: - Weight Changes
 
+    /// Change over each horizon measured on the smoothed TREND (EMA), not raw
+    /// scale weight. A raw "today vs N-days-ago" delta compares two single noisy
+    /// readings — a 120.5 high today vs a 115.2 dip 30 days ago reads "+5.3" of
+    /// mostly water — which contradicts the "Holding steady" trend verdict shown
+    /// on the same screen. The EMA delta is the honest movement of the trend line
+    /// (and matches the chart's trend-based Difference). The raw ups/downs are
+    /// still visible as the actual line on the chart.
     public static func calculateWeightChanges(dataPoints: [WeightDataPoint]) -> WeightChanges {
-        guard let latest = dataPoints.last, let latestActual = latest.actualWeight else {
+        guard let latest = dataPoints.last else {
             return WeightChanges(threeDay: nil, sevenDay: nil, fourteenDay: nil, thirtyDay: nil, ninetyDay: nil)
         }
+        let latestTrend = latest.emaWeight
 
         func changeOverDays(_ days: Int) -> Double? {
             guard let target = Calendar.current.date(byAdding: .day, value: -days, to: latest.date) else { return nil }
             let closest = dataPoints.min { abs($0.date.timeIntervalSince(target)) < abs($1.date.timeIntervalSince(target)) }
-            guard let closest, closest.date != latest.date, let closestActual = closest.actualWeight else { return nil }
+            guard let closest, closest.date != latest.date else { return nil }
             let daysDiff = abs(Calendar.current.dateComponents([.day], from: closest.date, to: target).day ?? 0)
             guard daysDiff <= 3 else { return nil }
-            return latestActual - closestActual
+            return latestTrend - closest.emaWeight
         }
 
         return WeightChanges(

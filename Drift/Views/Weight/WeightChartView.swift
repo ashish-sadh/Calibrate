@@ -292,17 +292,18 @@ struct WeightChartView: View {
     }
 
     private var totalDifference: Double? {
-        // Uses actual-weight endpoints so the Difference matches what
-        // the coral line shows (and what the 30d/90d delta chips
-        // reference). Falls back to EMA endpoints only when no actual
-        // entries are present in the visible window — keeps the legacy
-        // behavior for the synthesized-point edge case rather than
-        // returning nil.
-        let actuals = displayPoints.compactMap(\.actual)
-        if let f = actuals.first, let l = actuals.last {
+        // Trend (EMA) endpoints, NOT raw actuals. A raw first-vs-last comparison
+        // is a low-day-vs-high-day artifact — a 115.2 dip on the left vs a 120.5
+        // peak on the right reads "+5.3" of mostly water, contradicting the
+        // smoothed "Holding steady" verdict on the same screen. The dashed trend
+        // line's net movement over the window is the honest change (and matches
+        // the trend-based delta chips). Falls back to actuals only when the window
+        // somehow has no EMA (synthesized-point edge case).
+        if let f = displayPoints.first?.ema, let l = displayPoints.last?.ema {
             return l - f
         }
-        guard let f = displayPoints.first?.ema, let l = displayPoints.last?.ema else { return nil }
+        let actuals = displayPoints.compactMap(\.actual)
+        guard let f = actuals.first, let l = actuals.last else { return nil }
         return l - f
     }
 

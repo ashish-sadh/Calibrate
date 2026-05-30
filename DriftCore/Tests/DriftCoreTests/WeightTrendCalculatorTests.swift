@@ -178,7 +178,7 @@ private func recentDailyEntries(
     #expect(t.weeklyRateKg == 0)
 }
 
-// MARK: - Weight Changes (actual scale weight) (12 tests)
+// MARK: - Weight Changes (smoothed trend / EMA delta) (12 tests)
 
 func makeEntries(days: Int, startKg: Double, ratePerDay: Double) -> [(date: String, weightKg: Double)] {
     let today = Date()
@@ -228,7 +228,11 @@ func makeEntries(days: Int, startKg: Double, ratePerDay: Double) -> [(date: Stri
     #expect(t.weightChanges.ninetyDay == nil)
 }
 
-@Test func changes3dayMagnitude() async throws {
+@Test func changes3dayTrendIsSmoothed() async throws {
+    // Trend (EMA) based: a raw -2.0 kg drop over 3 days shows up SMALLER on the
+    // trend chip than the raw scale move — the EMA deliberately lags single
+    // readings so one high/low day can't inflate the chip (that's the point of
+    // trend-based deltas). Sign is preserved; magnitude is damped.
     let today = Date()
     let cal = Calendar.current
     let t = WeightTrendCalculator.calculateTrend(entries: [
@@ -236,7 +240,8 @@ func makeEntries(days: Int, startKg: Double, ratePerDay: Double) -> [(date: Stri
         (DateFormatters.dateOnly.string(from: today), 68.0),
     ])!
     if let v = t.weightChanges.threeDay {
-        #expect(abs(v - (-2.0)) < 0.1, "3-day should be -2.0, got \(v)")
+        #expect(v < 0, "3-day trend should be negative on a drop: \(v)")
+        #expect(v > -2.0, "Trend chip damps the raw -2.0 drop (EMA lag): \(v)")
     }
 }
 
