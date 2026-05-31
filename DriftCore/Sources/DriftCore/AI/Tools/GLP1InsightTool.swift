@@ -100,7 +100,8 @@ public enum GLP1InsightTool {
     /// Count consecutive calendar weeks (Mon–Sun) ending before `now` that have ≥1 dose.
     /// The current (incomplete) week is skipped — it can't break the streak.
     nonisolated public static func weeklyStreak(dates: [Date], now: Date = Date()) -> Int {
-        let cal = Calendar.current
+        var cal = Calendar.current
+        cal.firstWeekday = 2  // Monday — locale-independent week boundaries (matches test mondayOfWeek; avoids US Sunday-locale drift)
         var weekStart = cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) ?? now
         var streak = 0
         var isCurrentWeek = true
@@ -124,7 +125,8 @@ public enum GLP1InsightTool {
 
     /// Count completed calendar weeks in the last 30 days with no dose logged.
     nonisolated public static func missedWeeksInLast30Days(dates: [Date], now: Date = Date()) -> Int {
-        let cal = Calendar.current
+        var cal = Calendar.current
+        cal.firstWeekday = 2  // Monday — locale-independent week boundaries (matches test mondayOfWeek; avoids US Sunday-locale drift)
         var weekStart = cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) ?? now
         var missed = 0
         for _ in 0..<4 {
