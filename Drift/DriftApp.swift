@@ -59,18 +59,25 @@ struct DriftApp: App {
                 .task {
                     if !hasRequestedHealthKit {
                         hasRequestedHealthKit = true
-                        // V7 mobile pass: drop "Drift Brain" from the
-                        // Drift Coach picker and migrate any user whose
-                        // persisted preference is still `.llamaCpp`
-                        // (from a TestFlight build before Apple FM was
-                        // the default). Apple Foundation Models is the
-                        // headline option now; the GGUF backend is no
-                        // longer user-selectable. The .llamaCpp enum
-                        // case is retained for backward compat.
-                        if Preferences.preferredAIBackend == .llamaCpp {
-                            Preferences.preferredAIBackend = .foundationModels
-                            Log.app.info("Migrated preferredAIBackend: .llamaCpp → .foundationModels (V7 picker simplification)")
-                            await AIBackendCoordinator.applyPreferredBackend()
+                        // #872 FM NO-GO migration. The 2026-05-19 cutover made
+                        // Apple Foundation Models the global default and silently
+                        // force-migrated existing `.llamaCpp` users onto it. FM
+                        // later measured below the parity bar on the showstopper
+                        // chat surface (80.5% vs the 92.7% Gemma baseline), so the
+                        // NO-GO reverts the default to on-device Gemma/llama.cpp.
+                        // Move existing users off the reverted FM default exactly
+                        // once: reset any persisted `.foundationModels` preference
+                        // so they land on the AIChooser "download on-device AI"
+                        // CTA rather than a dead chat or a silently sub-bar
+                        // backend. FM stays user-selectable from that chooser;
+                        // re-promotion to default is gated on #874.
+                        if !Preferences.didRunFMNoGoMigration {
+                            Preferences.didRunFMNoGoMigration = true
+                            if Preferences.preferredAIBackend == .foundationModels {
+                                Preferences.preferredAIBackend = .llamaCpp
+                                Log.app.info("FM NO-GO migration (#872): reset preferredAIBackend .foundationModels → .llamaCpp; user lands on the on-device download chooser")
+                                await AIBackendCoordinator.applyPreferredBackend()
+                            }
                         }
                         // First-launch restore: if this device's DB is fresh
                         // AND a backup is sitting in the user's iCloud Drive

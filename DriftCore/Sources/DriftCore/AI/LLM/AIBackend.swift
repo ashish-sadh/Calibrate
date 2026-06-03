@@ -86,23 +86,22 @@ public enum DeviceCapability {
 
     /// Detect the best model tier + backend for this device.
     ///
-    /// **2026-05-19 LLM-swap migration:** Drift now defaults to Apple
-    /// Foundation Models (iOS 26+, Apple-Intelligence-eligible hardware).
-    /// FoundationModelsBackend.isLoaded gates availability at runtime —
-    /// if a device can't run FM, the chat layer routes around it the
-    /// same way it routes around an undownloaded local model.
+    /// Defaults to the on-device llama.cpp/Gemma baseline — the proven chat
+    /// backend. #872 NO-GO reverted the default off Apple Foundation Models,
+    /// which measured sub-bar (80.5% vs the 92.7% Gemma baseline) on the
+    /// parity gate; FM stays a selectable backend that must re-earn the
+    /// cutover gate before it can become the default again.
     ///
-    /// Tier is still returned (.small / .large) for legacy callers that
-    /// switch on it, but the backend is always .foundationModels going
-    /// forward. The .llamaCpp case in `AIBackendType` is kept for
-    /// transitional UI references; never returned by detectTier.
+    /// 8GB+ devices get Gemma 4 (.large, best tool calling); 6GB devices get
+    /// SmolLM2 (.small). FoundationModelsBackend.isLoaded still gates FM at
+    /// runtime when a user opts into it.
     public static func detectTier() -> (tier: AIModelTier, backend: AIBackendType) {
         if ramGB >= 6.5 {
-            return (.large, .foundationModels)  // Apple FM on 8GB+ devices
+            return (.large, .llamaCpp)  // Gemma 4 on 8GB+ devices — best tool calling
         } else if ramGB >= 5.0 {
-            return (.small, .foundationModels)
+            return (.small, .llamaCpp)  // SmolLM2 on 6GB devices
         } else {
-            return (.small, .foundationModels)
+            return (.small, .llamaCpp)
         }
     }
 

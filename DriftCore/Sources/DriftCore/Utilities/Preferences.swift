@@ -238,19 +238,37 @@ public enum Preferences {
 
     private static let preferredAIBackendKey = "drift_preferred_ai_backend"
 
-    /// User-selected AI backend for chat. Default: `.foundationModels`
-    /// (Apple FM — on-device, system-managed weights, zero per-call cost).
-    /// 2026-05-19 migration: was .llamaCpp; now defaults to FoundationModels
-    /// on Apple-Intelligence-eligible hardware. Persisted across launches;
-    /// flipped by the in-chat cpu/cloud toggle when remote is also available.
-    /// Mid-thread changes don't reset history — `LocalAIService` swaps the
-    /// underlying backend in place.
+    /// User-selected AI backend for chat. Default: `.llamaCpp` (on-device
+    /// Gemma 4 / SmolLM2 — the proven baseline). #872 NO-GO reverted the
+    /// default off Apple Foundation Models, which measured below the parity
+    /// bar; `.foundationModels` stays a selectable backend that must re-earn
+    /// the cutover gate before it can become the default again. Persisted
+    /// across launches; flipped by the in-chat cpu/cloud toggle when remote
+    /// is also available. Mid-thread changes don't reset history —
+    /// `LocalAIService` swaps the underlying backend in place.
     public static var preferredAIBackend: AIBackendType {
         get {
             let raw = UserDefaults.standard.string(forKey: preferredAIBackendKey) ?? ""
-            return AIBackendType(rawValue: raw) ?? .foundationModels
+            return AIBackendType(rawValue: raw) ?? .llamaCpp
         }
         set { UserDefaults.standard.set(newValue.rawValue, forKey: preferredAIBackendKey) }
+    }
+
+    // MARK: - FM NO-GO one-time migration (#872)
+
+    private static let didRunFMNoGoMigrationKey = "drift_did_run_fm_nogo_migration"
+
+    /// One-shot marker for the #872 FM NO-GO migration, run from the DriftApp
+    /// launch task. The 2026-05-19 cutover silently force-migrated existing
+    /// `.llamaCpp` users onto Apple Foundation Models as the global default;
+    /// the NO-GO reverts that default to the on-device Gemma/llama.cpp baseline
+    /// (FM measured below the parity bar on the chat surface). On the first
+    /// launch carrying the revert we reset any persisted `.foundationModels`
+    /// preference so the user lands on the on-device download chooser instead
+    /// of a dead / silently sub-bar FM chat. Runs once; default false.
+    public static var didRunFMNoGoMigration: Bool {
+        get { UserDefaults.standard.bool(forKey: didRunFMNoGoMigrationKey) }
+        set { UserDefaults.standard.set(newValue, forKey: didRunFMNoGoMigrationKey) }
     }
 
     // MARK: - USDA API Key

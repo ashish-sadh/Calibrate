@@ -60,6 +60,7 @@ Stage 5: LLM fallback with context (~10-20s)                  → conversation
 - **Spell correction** — SpellCorrectService + synonym expansion in food search chain
 
 ### Backend
+- **Default chat backend: on-device llama.cpp/Gemma.** Apple Foundation Models is a user-selectable opt-in, NOT the default. The 2026-05-19 FM cutover was reverted by the #872 NO-GO (FM measured 80.5% overall / 75.0% critical vs the 92.7% Gemma baseline on the chat parity gate); existing FM-default users get a one-time on-device setup download on the build carrying the revert, and FM must re-clear the ≥95%/≥98% parity cutover gate before it can be re-promoted to default (#874).
 - Raw llama.cpp C API, Metal GPU (all layers offloaded, ~3GB VRAM)
 - Auto-detect: RAM >= 6.5GB → Gemma 4, >= 5.0GB → SmolLM
 - Auto-unload after 60s idle

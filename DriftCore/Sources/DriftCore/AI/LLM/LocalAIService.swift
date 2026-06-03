@@ -26,10 +26,10 @@ public final class LocalAIService {
     /// Tag what kind of backend is currently installed. The chat layer reads
     /// this to (a) pick the right system prompt via
     /// `IntentClassifier.activeSystemPrompt(backend:)` and (b) decide whether
-    /// to display the cpu/cloud toggle. Defaults to `.foundationModels`
-    /// (2026-05-19 LLM-swap migration) — callers should also gate on
-    /// `state == .ready`.
-    public private(set) var activeBackendType: AIBackendType = .foundationModels
+    /// to display the cpu/cloud toggle. Defaults to `.llamaCpp` (the proven
+    /// on-device baseline; #872 NO-GO reverted the default off Foundation
+    /// Models) — callers should also gate on `state == .ready`.
+    public private(set) var activeBackendType: AIBackendType = .llamaCpp
 
     /// True when the active backend can fit the intelligencePrompt's richer
     /// extras. Local: only Gemma 4 / large tier. Remote: always (cloud LLMs
