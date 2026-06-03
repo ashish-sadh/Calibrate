@@ -15,11 +15,13 @@ import Foundation
 ///      value is the printed report and the "loud on drop" check, not the
 ///      pass/fail bar.
 ///
-///   2. `parityCutoverGate` — env-gated by `DRIFT_FM_PARITY_GATE_STRICT=1`.
-///      Enforces the ≥95% overall / ≥98% critical parity required before
-///      flipping the chat backend default to `.foundationModels`. Mirrors
-///      the design-666 / #771 extractor gate. Stays skipped in day-to-day
-///      CI / preflight so the cutover decision is explicit.
+///   2. `parityCutoverGate` — always MEASURES + emits the parity number (like
+///      the regression floor); BLOCKS on the ≥95% overall / ≥98% critical bar
+///      ONLY while Foundation Models is the active default backend. Per the
+///      #872 NO-GO the default is the on-device llama.cpp/Gemma baseline, so
+///      the gate measures every run but auto-passes — never a silent green-skip
+///      into dormancy — and re-arms automatically the moment FM is re-promoted
+///      to default (#874). The 95/98 thresholds stay the bar FM must re-clear.
 ///
 ///   3. `goldSetSanity` — non-LLM hygiene check on the gold-set shape itself.
 ///      Always runs; without it a typo could silently drop a critical case.
@@ -321,21 +323,36 @@ final class FoundationModelsChatParityTests: XCTestCase {
             "Llama baseline accuracy dropped below 80% — baseline regression, not a parity issue.\(report.description)")
     }
 
-    /// Cutover gate: enforces the ≥95% overall / ≥98% critical parity
-    /// thresholds required before flipping the chat backend default to
-    /// `.foundationModels`. Env-gated by `DRIFT_FM_PARITY_GATE_STRICT=1`
-    /// so day-to-day CI stays green while the FM gap closes; flip the env
-    /// var when measuring cutover readiness.
+    /// Cutover gate: the ≥95% overall / ≥98% critical parity bar FM must clear
+    /// to be (re-)promoted to the default chat backend. Per the #872 NO-GO this
+    /// gate MEASURES + emits the parity number on EVERY run (like the regression
+    /// floor above — never a silent green-skip), but only BLOCKS while Foundation
+    /// Models is the active default. On the reverted llama.cpp/Gemma default it
+    /// measures + auto-passes; it re-arms the moment detectTier()/preferredAIBackend
+    /// put FM back as the default (#874). The 95/98 thresholds are unchanged.
     func testFoundationModelsChat_parityCutoverGate() async throws {
         try skipUnlessBothAvailable()
-        guard ProcessInfo.processInfo.environment["DRIFT_FM_PARITY_GATE_STRICT"] == "1" else {
-            throw XCTSkip("Set DRIFT_FM_PARITY_GATE_STRICT=1 to enforce the FM chat-backend cutover gate")
-        }
+
+        // MEASURE + emit on every run — the parity number is always visible in
+        // CI output, exactly like the regression floor. #872 NO-GO: no silent
+        // green-skip into dormancy, only the BLOCK below is conditional.
         let report = await runGoldSet()
         print(report.description)
 
+        // BLOCK only while FM is the active default. detectTier() is the
+        // device-level default; preferredAIBackend is the user override —
+        // either making FM active re-arms the ≥95/≥98 bar.
+        let deviceDefault = DeviceCapability.detectTier().backend
+        let userDefault = Preferences.preferredAIBackend
+        guard deviceDefault == .foundationModels || userDefault == .foundationModels else {
+            print("ℹ️ [#872 NO-GO] Foundation Models is not the active default backend "
+                + "(detectTier → \(deviceDefault), preferredAIBackend → \(userDefault)); "
+                + "parity measured above, cutover block dormant. Re-arms when FM is re-promoted (#874).")
+            return
+        }
+
         XCTAssertGreaterThanOrEqual(report.parityRate, 0.95,
-            "FM chat backend below 95% parity vs llama.cpp baseline — cannot flip default to .foundationModels.\(report.description)")
+            "FM chat backend below 95% parity vs llama.cpp baseline — cannot keep .foundationModels as the default.\(report.description)")
         XCTAssertGreaterThanOrEqual(report.criticalParityRate, 0.98,
             "FM chat backend below 98% parity on critical cases (food log, weight log, multi-turn). These are the highest-stakes routes — failing them is a regression we cannot ship.\(report.description)")
     }

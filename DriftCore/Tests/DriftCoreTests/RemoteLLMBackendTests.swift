@@ -288,10 +288,10 @@ struct RemoteLLMBackendTests {
         let original = Preferences.preferredAIBackend
         defer { Preferences.preferredAIBackend = original }
 
-        // Default branch: no stored value → foundationModels
-        // (2026-05-19 LLM-swap migration: was .llamaCpp)
+        // Default branch: no stored value → llamaCpp (the proven on-device
+        // baseline). #872 NO-GO reverted the default off Foundation Models.
         UserDefaults.standard.removeObject(forKey: "drift_preferred_ai_backend")
-        #expect(Preferences.preferredAIBackend == .foundationModels)
+        #expect(Preferences.preferredAIBackend == .llamaCpp)
 
         // Round-trip
         Preferences.preferredAIBackend = .remote
