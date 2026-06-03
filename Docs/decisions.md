@@ -30,6 +30,18 @@ Append-only record of non-obvious decisions: architecture changes, harness rules
 
 ---
 
+## 2026-06-03
+
+### fm-chat-no-go-revert-to-llamacpp — showstopper measured sub-bar; revert the global chat default (epic #860, enacted by P0 #872)
+**Decision: NO-GO on Foundation Models as the global chat default — revert to llama.cpp/Gemma.** #861 measured FM chat parity at **80.5% overall (33/41) / 75.0% critical (18/24)** vs the llama.cpp/Gemma baseline **92.7%**; the cutover bar is ≥95%/≥98%, and FM was made the default (`AIBackend.swift:99-106` detectTier; `Preferences.swift:251`) **without ever clearing it**. #862 established the multi-turn gap is **structural** — no bounded FM-side fix; the only lever is the ~25-call-site native-`Transcript` redesign (#864). Per the operational rule *"run eval before AND after every AI change — if accuracy drops, revert, no exceptions"* + tenet #1 (chat = showstopper), the call is to **restore the documented pre-2026-05-19 default (llama.cpp/Gemma)** — not fix-forward, not escalate. Reverting is the *status quo ante*, not a new product bet (principal-engineer + product-designer debate 2026-06-03 both returned KEEP-REVERT, decisively). FM stays a user-selectable opt-in; **re-promotion to default is gated needs-human on #874**, only after FM clears the parity gate (e.g. via #864).
+
+Three findings the enactment (#872, now P0) MUST honor — verified at file:line in the 2026-06-03 debate; without them the revert silently doesn't revert:
+1. **`DriftApp.swift:70-73` runs a launch-time force-migration that re-flips any `.llamaCpp` preference back to `.foundationModels` on every launch.** Flipping `detectTier` + the `Preferences` fallback alone reverts only fresh installs; existing users get silently re-pinned to FM. This file is load-bearing and was absent from #872's original scope — the likely reason the revert never "stuck" across 3+ attempts.
+2. **Existing FM-default users need a migration prompt on the next build** (land on the chooser / "download on-device AI for better Coach quality" — never a dead chat). First-run download UX already exists (`AIChooserView`/`AISetupView`/`AIModelManager`: size, Wi-Fi guidance, progress, retry, not-enough-space), so no new download surface is needed — only the migration path + a release note (engine-shipped ≠ user-shipped, tenet #11).
+3. **Keep the parity gate always-MEASURING; only the *blocking* threshold goes conditional** on FM being the active default. "A skipping gate lies" — a gate that auto-passes once reverted must still emit the parity number every run (like the existing regression floor at `FoundationModelsChatParityTests.swift:313`), or it decays back into the dormant state being fixed here.
+
+**Done when:** `detectTier()` returns `.llamaCpp`, `Preferences.preferredAIBackend` defaults to `.llamaCpp`, the `DriftApp.swift:70-73` force-migration is removed/inverted, existing-FM users get a migration prompt, the parity floor is green on HEAD, and a release note ships in the same build. **Tradeoff accepted:** llama.cpp/Gemma needs a ~2.9GB on-device download FM avoided — acceptable because it is the prior default, fully on-device (privacy tenet), and a one-time bounded cost vs an unbounded multi-turn-quality regression on the showstopper. **Why it thrashed (3+ sessions):** the revert was a single 28-file task, never P0, and built on a *false* "gate already enforced" premise (the gate was never actually wired into preflight — `DRIFT_FM_PARITY_GATE_STRICT` is unset). Now consolidated to one honest P0 task (#872); #863 closed as a duplicate.
+
 ## 2026-05-29
 
 ### Knowledge curation pass 2026-05-29
