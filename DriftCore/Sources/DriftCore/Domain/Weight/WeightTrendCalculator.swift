@@ -473,6 +473,11 @@ public enum WeightTrendCalculator {
     /// Median of a numeric array. For even-count, mean of the two middle elements.
     static func median(of values: [Double]) -> Double {
         let sorted = values.sorted()
+        // Crash-audit (cycle 13107): empty input → n = 0 → the even-count branch
+        // evaluates `sorted[n/2 - 1]` = `sorted[-1]`, an out-of-bounds trap. No
+        // production path passes empty today (the only callers are tests), but the
+        // guard makes the helper total so a future caller can't reintroduce the trap.
+        guard !sorted.isEmpty else { return 0 }
         let n = sorted.count
         if n % 2 == 1 { return sorted[n / 2] }
         return (sorted[n / 2 - 1] + sorted[n / 2]) / 2.0

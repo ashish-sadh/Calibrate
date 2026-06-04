@@ -42,6 +42,8 @@ public final class LlamaCppBackend: AIBackend, @unchecked Sendable {
     private func _load() throws {
         guard model == nil else { return }
 
+        // Crash-audit (cycle 13107): `cString(using: .utf8)!` is nil-safe — UTF-8 encodes
+        // every Swift String, so the unwrap cannot fail for any real on-disk model path.
         let cPath = modelPath.path.cString(using: .utf8)!
 
         // GPU acceleration: xcframework built from source with Xcode 17 Metal SDK
@@ -125,6 +127,9 @@ public final class LlamaCppBackend: AIBackend, @unchecked Sendable {
     /// temperature=0 → greedy (deterministic) — use for intent classification.
     /// temperature>0 → stochastic (top-p) — use for presentation / conversational responses.
     private func makeSampler(temperature: Float) -> UnsafeMutablePointer<llama_sampler> {
+        // Crash-audit (cycle 13107): `llama_sampler_chain_init(...)!` returns nil only on
+        // unrecoverable C-level allocation failure; the non-optional return type is a deliberate
+        // contract — a backend with a loaded model can always init a sampler chain.
         let s = llama_sampler_chain_init(llama_sampler_chain_default_params())!
         if temperature <= 0 {
             llama_sampler_chain_add(s, llama_sampler_init_greedy())

@@ -1077,6 +1077,11 @@ private func dateStr(_ d: Date) -> String {
     #expect(WeightTrendCalculator.median(of: [1.0, 2.0, 3.0, 100.0]) == 2.5)
 }
 
+/// Crash-audit (cycle 13107): empty input must not trap (`sorted[-1]`); returns 0.
+@Test func median_emptyInput_returnsZeroWithoutTrapping() {
+    #expect(WeightTrendCalculator.median(of: []) == 0)
+}
+
 // MARK: - Insufficient-data guards
 //
 // Bug observed 2026-05-14: 2 weight entries spanning ~5 days produced
