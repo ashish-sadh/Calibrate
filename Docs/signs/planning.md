@@ -31,7 +31,10 @@ When adding a sign: state the rule, then a one-line `Why:` (the incident that mo
   Why: queue inflation pattern; senior drain rate is the only forward signal.
 
 - **An override "split" that spawns a parallel arc but leaves the stuck epic OPEN re-fires the override forever.** Resolve the stuck epic to a single landable task (P0 if it gates the showstopper) + an escalation ladder; don't split-and-leave-open. When an epic is stuck, verify task bodies against real file:line before acting — they may claim work landed ("gate enforced") that never committed.
-  Why: #860 was "split" 2026-05-31 (spawned #875) but left open, so the watchdog re-fired override 2026-06-03 with the same epic stuck — the real blocker was an unprioritized 28-file revert (#872) built on a false "gate enforced" premise, not arc scoping.
+  Why: #860 was "split" 2026-05-31 (spawned #875) but left open, so the watchdog re-fired override 2026-06-03 with the same epic stuck — the real blocker was an unprioritized 28-file revert (#872) built on a false "gate enforced" premise, not arc scoping. (Resolved 2026-06-04: #872 had in fact landed+PASSed 4h after the 06-03 comment claimed it hadn't — verify-at-file:line caught it, so #860 was CLOSED, not split a 4th time.)
+
+- **A multi-minute real-model eval wired as a per-TASK commit gate causes a headless death-loop in Mode 3** — sessions `external_kill` mid-eval before they can commit, re-orphaning identical files at zero net commits. Fix is a planning rescope (don't leave it `needs-human`): split the deterministic quality/grounding PREDICATE (Tier-0, commit-gated, runs on canned output) from the live-model RATE measurement (Tier-4 env-gated / preflight, OFF the commit path); the eval gold-set FILE still ships in the same PR so tenet #13 holds.
+  Why: #877 (BriefNarrator) burned 8+ headless sessions 2026-06-03→04 re-running a 12-min Gemma grounding eval that its Done-When demanded in-PR, never committing the finished 4-file deliverable; rescoped 2026-06-04 (predicate→Tier-0 in #877, live RUN→#885).
 
 ## Recently pruned (last curation cycle)
 
