@@ -135,6 +135,7 @@
 		B2654B50471C75496A1AA0D7 /* NutritionLabelOCR.swift in Sources */ = {isa = PBXBuildFile; fileRef = 418816F51F38F19F65BC3D77 /* NutritionLabelOCR.swift */; };
 		B8CAE0734166CD113EE590E8 /* WidgetDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0DCFCDAFF06DBAD3CA13DB /* WidgetDataTests.swift */; };
 		B9A962AD8F60D070E5BBA14D /* ChatIconButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE223F71A43F6E379F03A9BE /* ChatIconButton.swift */; };
+		BA41210E32239BAF3BF858C6 /* BriefNarratorGroundingEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6704FE27DCC9BC704CB4C0 /* BriefNarratorGroundingEval.swift */; };
 		BA70FAADF8E436B8FD334D6C /* ComboLogSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4909BB9427381E10328CBA9 /* ComboLogSheet.swift */; };
 		BDB8B16F12AE4FD0A5EC4FAD /* AIChatView+ChatBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = E527B4A5282EC0F633A47162 /* AIChatView+ChatBubble.swift */; };
 		BED961B980821487CA56AD51 /* HealthKitService+Cycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 36BB15B5D3A14E0D9940B118 /* HealthKitService+Cycle.swift */; };
@@ -386,6 +387,7 @@
 		B4909BB9427381E10328CBA9 /* ComboLogSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComboLogSheet.swift; sourceTree = "<group>"; };
 		B58C97F6B46397BDA539E78C /* SupplementsTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupplementsTabView.swift; sourceTree = "<group>"; };
 		B637DFADAD7FF587E499B6A7 /* MealLogUnificationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealLogUnificationTests.swift; sourceTree = "<group>"; };
+		BB6704FE27DCC9BC704CB4C0 /* BriefNarratorGroundingEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BriefNarratorGroundingEval.swift; sourceTree = "<group>"; };
 		BBC007029A7A52990CE4FBDE /* BackupMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupMonitorTests.swift; sourceTree = "<group>"; };
 		C004CB5B32E81B2A39730FE7 /* WorkoutDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutDetailView.swift; sourceTree = "<group>"; };
 		C1D0EF86656667CEF40EB779 /* MultiTurnContextEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiTurnContextEval.swift; sourceTree = "<group>"; };
@@ -861,6 +863,7 @@
 			children = (
 				CB66CE8222D505237BF36996 /* AmbiguityEval.swift */,
 				3053C86565C8B26D3B16A0A2 /* AutoResearchTests.swift */,
+				BB6704FE27DCC9BC704CB4C0 /* BriefNarratorGroundingEval.swift */,
 				734A43F9D7C58B37BC8B6C07 /* ChatLatencyBenchmark.swift */,
 				1D6EEDE4BB88D55A2579A27D /* ComposedFoodEval.swift */,
 				D573CD42E3A315491B5DD60D /* CompositeFoodExtractorFMEval.swift */,
@@ -1230,6 +1233,7 @@
 			files = (
 				261CF4F6663AA435756483F5 /* AmbiguityEval.swift in Sources */,
 				23BF8720FC949BA82AFA68B2 /* AutoResearchTests.swift in Sources */,
+				BA41210E32239BAF3BF858C6 /* BriefNarratorGroundingEval.swift in Sources */,
 				69761B4EBFEFDC857FE06E89 /* ChatLatencyBenchmark.swift in Sources */,
 				1D4B4658B68B40350E20F753 /* ComposedFoodEval.swift in Sources */,
 				14837F24BC4C9D932FF61765 /* CompositeFoodExtractorFMEval.swift in Sources */,
