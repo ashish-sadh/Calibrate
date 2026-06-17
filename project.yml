@@ -22,6 +22,21 @@ schemes:
     test:
       targets:
         - DriftLLMEvalMacOS
+      # Tier-4 env-gated evals (BriefNarratorGroundingEval #885, USDAFallbackEval, ChatLatencyBenchmark)
+      # read these via ProcessInfo. On Xcode 13+ a shell env var on `xcodebuild test` does NOT reach
+      # the macOS test host, so the gate is wired through a build-setting reference: it expands to ""
+      # (→ XCTSkip, the CI default) unless the run explicitly passes e.g. `DRIFT_DEEP_EVAL=1` as a
+      # build setting on the xcodebuild command line. Keeps the long evals off CI / the commit path.
+      environmentVariables:
+        - variable: DRIFT_DEEP_EVAL
+          value: $(DRIFT_DEEP_EVAL)
+          isEnabled: true
+        - variable: DRIFT_USDA_EVAL
+          value: $(DRIFT_USDA_EVAL)
+          isEnabled: true
+        - variable: DRIFT_LATENCY_BENCH
+          value: $(DRIFT_LATENCY_BENCH)
+          isEnabled: true
 packages:
   GRDB:
     url: https://github.com/groue/GRDB.swift.git
