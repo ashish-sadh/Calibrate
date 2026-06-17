@@ -30,6 +30,11 @@ Append-only record of non-obvious decisions: architecture changes, harness rules
 
 ---
 
+## 2026-06-17
+
+### briefnarrator-grounded-rate — live grounding eval clears the bar, green-lights the Today's Brief surface (#885 → #879)
+**BriefNarrator live grounded rate = 7/7 (100%) over the `BriefNarratorGroundingEval` gold set, vs the named `groundingThreshold = 0.75` (`DriftLLMEvalMacOS/BriefNarratorGroundingEval.swift`).** Measured on real Gemma 4 (E2B Q4, llama.cpp/Metal, M5 Max) via `xcodebuild test -scheme DriftLLMEvalMacOS ... DRIFT_DEEP_EVAL=1` after the env-gate wiring fix (commit f81c1b60). Every narrated item across all 7 Indian-first cases introduced only numbers present in its supplied `BriefInput` signals — no over-claim / 2-point-extrapolation (#801) leakage. This is the safety property the whole arc depends on: **rate ≥ 0.75 ⇒ #879 (integration capstone) is green-lit** to wire the brief onto the user-facing Today screen. The complementary Tier-0 `isGrounded` predicate (commit 15ea3527) still guards the commit path on canned output; this measures live model behavior off the headless-kill path (the split that broke the prior eval-as-commit-gate death-loop). Note for #879: grounding guards number *introduction* in digit form, not factual semantics — do not treat it as a full truth gate.
+
 ## 2026-06-03
 
 ### fm-chat-no-go-revert-to-llamacpp — showstopper measured sub-bar; revert the global chat default (epic #860, enacted by P0 #872)
