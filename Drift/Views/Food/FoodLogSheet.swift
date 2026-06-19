@@ -96,7 +96,6 @@ struct FoodLogSheet: View {
         .presentationDetents([.fraction(0.65), .large])
         .presentationBackground(Theme.background)
         .presentationCornerRadius(20)
-        .preferredColorScheme(.dark)
     }
 
     // MARK: - Multi-piece sanity banner
