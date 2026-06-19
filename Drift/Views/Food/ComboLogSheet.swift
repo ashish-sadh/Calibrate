@@ -145,38 +145,9 @@ struct ComboLogSheet: View {
 
             Spacer()
 
-            // Serving stepper
-            HStack(spacing: 0) {
-                Button {
-                    if item.wrappedValue.servings > 0.5 {
-                        item.servings.wrappedValue = max(0.5, (item.wrappedValue.servings * 10 - 5).rounded() / 10)
-                    }
-                } label: {
-                    Image(systemName: "minus").font(.caption2.weight(.bold))
-                        .frame(width: 28, height: 28)
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .disabled(!item.wrappedValue.enabled)
-
-                Text(item.wrappedValue.servings.truncatingRemainder(dividingBy: 1) == 0 ?
-                     "\(Int(item.wrappedValue.servings))x" :
-                     String(format: "%.1fx", item.wrappedValue.servings))
-                    .font(.caption.weight(.medium))
-                    .frame(width: 32, alignment: .center)
-                    .foregroundStyle(item.wrappedValue.enabled ? .primary : .secondary)
-
-                Button {
-                    item.servings.wrappedValue = (item.wrappedValue.servings * 10 + 5).rounded() / 10
-                } label: {
-                    Image(systemName: "plus").font(.caption2.weight(.bold))
-                        .frame(width: 28, height: 28)
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .disabled(!item.wrappedValue.enabled)
-            }
-            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 8))
+            // Editable serving multiplier: type an exact value or step up/down.
+            ServingMultiplierStepper(servings: item.servings,
+                                     enabled: item.wrappedValue.enabled)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
