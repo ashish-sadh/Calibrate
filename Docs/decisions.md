@@ -251,3 +251,25 @@ Fix: each caller now spawns the participants (qa-tester + principal-engineer / e
 DIRECTLY in parallel and applies the merge rule itself (any REJECT→REJECT; else any FIX→FIX; else
 PASS). `debate-moderator.md` deprecated (kept, not invoked). Do NOT reintroduce the moderator layer —
 the nesting limit makes it stall, it is not a flake to retry.
+
+### #875 Today's Brief deferred post-launch; epic #887 = Drift Coach launch hardening (2026-06-19)
+Planning override cycle 19118. Stuck epic #875 (proactive "Today's Brief") was NOT stuck on arc
+scoping — verify-at-file:line showed 4 of 6 subtasks genuinely DONE on main (#876 service, #877
+narrator @ commit `15ea3527`, #878 card, #885 grounding eval @ `decisions.md` 100% rate); the epic
+body just carried stale `status="open"` text for already-closed #877/#885. The real reason it never
+drained: the **product pivoted to Nebius cloud** (#872 FM-revert) + **launch hardening T-1 day "NO
+new features,"** which orphaned the remaining surface work (#879 integration, #880 notification).
+Decision: **defer #879/#880 post-launch, close the epic.** Decisive engineering fact (PE-confirmed):
+`BriefNarrator.narrate` → `LocalAIService.respondDirect` (BriefNarrator.swift:185) runs on **Nebius**
+on the launch build, NOT the Gemma 4 its 100% grounded rate was measured on — wiring it now ships
+*unmeasured-on-Nebius* health-number narration (the #801 over-claim bug class). Engine stays on main
+unwired (acceptable only because surface tasks are tracked). RESUME: re-run the grounding eval against
+Nebius (Qwen3-235B) before any wiring. New epic **#887** hardens Drift Coach for launch — 7 subtasks
+(#888-894), grounded in an Explore + PE/PD debate. Two debate catches worth remembering: (1) the
+"lingering spinner" is NOT missing error/retry (that exists + is tested, `handleRemoteBackendError`/
+`retryTurn`) — the real bug is **no `timeoutInterval` in RemoteLLMBackend.swift** (rides URLSession's
+60s default); (2) chat color debt lives in `AIChatView+Cards.swift` (raw `.green/.red/.orange` on
+confirm/insight cards), not just the one `Color.red` in AIChatView.swift. Queue-staleness note for
+next cycle: several pre-pivot V7 tasks remain (#833/#835/#847 visual refresh, #829 build-261 notes) —
+candidates for prune/re-triage if still unclaimed; closed #834 (FM-backend multi-turn, superseded by
+#892).
