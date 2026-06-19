@@ -18,7 +18,7 @@ struct ChatIconButton: View {
                 .frame(width: 44, height: 44)
                 .background(Theme.cardBackground, in: Circle())
                 .overlay(Circle().strokeBorder(Theme.separator, lineWidth: 0.5))
-                .shadow(color: Color.black.opacity(0.08), radius: 14, x: 0, y: 4)
+                .shadowSoft()   // same refined shadow as the pill bar — was a heavy r14/0.08 blob
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)

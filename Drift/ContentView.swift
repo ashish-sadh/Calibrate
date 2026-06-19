@@ -299,7 +299,7 @@ private struct PillTabBar: View {
         .padding(.horizontal, 6)
         .background(Theme.cardBackground, in: Capsule())
         .overlay(Capsule().strokeBorder(Theme.separator, lineWidth: 0.5))
-        .shadow(color: Color.black.opacity(0.08), radius: 14, x: 0, y: 4)
+        .shadowSoft()   // refined layered shadow — matches cards; the old r14/0.08 read as a heavy blob next to the chat button's
         // Scoped to the bar only — slides the highlight + cross-fades label color
         // snappily WITHOUT animating the TabView's page content.
         .animation(.snappy(duration: 0.22, extraBounce: 0.05), value: selected)
