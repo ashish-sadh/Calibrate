@@ -78,6 +78,29 @@ final class AIChatViewModel {
         if !voiceOutputEnabled { voiceService.stop() }
     }
 
+    /// Immersive talk-mode master switch (the top speaker button). When ON, the
+    /// coach shows the full-screen tap-to-talk circle and runs the hands-free
+    /// loop; it's a superset of voice-output, so enabling it implies spoken
+    /// replies. Persisted so it survives sheet dismiss/re-present. #coach-talk-mode
+    var talkModeEnabled: Bool = Preferences.coachTalkModeEnabled
+
+    /// Flip immersive talk-mode. Turning ON also enables voice replies; turning
+    /// OFF silences speech and stops any active recording so the mic doesn't keep
+    /// listening behind the text UI.
+    func toggleTalkMode() {
+        talkModeEnabled.toggle()
+        Preferences.coachTalkModeEnabled = talkModeEnabled
+        if talkModeEnabled {
+            if !voiceOutputEnabled {
+                voiceOutputEnabled = true
+                Preferences.coachVoiceEnabled = true
+            }
+        } else {
+            voiceService.stop()
+            speechService.forceStop()
+        }
+    }
+
     /// Speak a finalized assistant reply aloud when voice mode is on. No-op
     /// otherwise. Called from the message-completion seam.
     func speakReply(_ text: String) {

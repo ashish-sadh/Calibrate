@@ -122,6 +122,7 @@
 		9ACECC13D2365A3DF7F2C28C /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F78E3B6C1497F6A200DF8095 /* ContentView.swift */; };
 		9B11BE8782BE0D44DD4D4816 /* GoalSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7AB5CF548B4E61C45C1485 /* GoalSetupView.swift */; };
 		9E576FCB247BD6516612E63F /* ManualFoodEntrySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4683CA86D3045B1534504B0 /* ManualFoodEntrySheet.swift */; };
+		9EA6ACD1BB8579E641944A41 /* ImmersiveVoiceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 351EB505D48F8340399F5757 /* ImmersiveVoiceView.swift */; };
 		9F09FCD3472B6C02FEC11B48 /* llama.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4101CD9171B652C6B8D1BB4E /* llama.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		A2ACB0BE8811077162EBE463 /* FoodLogViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE2809389EE890A3F01ED675 /* FoodLogViewModel.swift */; };
 		A30F63FA377687747C8CFC2F /* RestorePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64A47C3CBB0D20D0B0F2DCE9 /* RestorePickerView.swift */; };
@@ -297,6 +298,7 @@
 		2F32E972AD5CBC2D866F199B /* VoiceMicButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceMicButton.swift; sourceTree = "<group>"; };
 		3053C86565C8B26D3B16A0A2 /* AutoResearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoResearchTests.swift; sourceTree = "<group>"; };
 		3258B6E91169170587AAB02B /* GoalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalView.swift; sourceTree = "<group>"; };
+		351EB505D48F8340399F5757 /* ImmersiveVoiceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImmersiveVoiceView.swift; sourceTree = "<group>"; };
 		35655D26FCDB45A9D01AD273 /* V6Rings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = V6Rings.swift; sourceTree = "<group>"; };
 		36BB15B5D3A14E0D9940B118 /* HealthKitService+Cycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthKitService+Cycle.swift"; sourceTree = "<group>"; };
 		371F20936CDC979979B7686D /* FoundationModelsExerciseTranscriptEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelsExerciseTranscriptEval.swift; sourceTree = "<group>"; };
@@ -719,6 +721,7 @@
 				A9DA1F02B1BF76DA862072A6 /* AIChooserView.swift */,
 				7F4C6870115BE53081FA0CDE /* AISetupView.swift */,
 				9ADFC025483E1D1D5A39857E /* ClarificationCard.swift */,
+				351EB505D48F8340399F5757 /* ImmersiveVoiceView.swift */,
 				A4C5119D7D0835BA845A8AAF /* ListeningCircle.swift */,
 				E2771DB577C8DC7CD66E79ED /* TypingDotsView.swift */,
 			);
@@ -1137,6 +1140,7 @@
 				BED961B980821487CA56AD51 /* HealthKitService+Cycle.swift in Sources */,
 				51D36C1D00F25F64F54D70BF /* HealthKitService+Sleep.swift in Sources */,
 				DFCF8C1D8A9F7A20072F37C0 /* HealthKitService.swift in Sources */,
+				9EA6ACD1BB8579E641944A41 /* ImmersiveVoiceView.swift in Sources */,
 				EDBADA2C372F712D791B9CB3 /* LabReportDetailView.swift in Sources */,
 				364C90C5B4A795381274F748 /* LabReportOCR+Biomarkers.swift in Sources */,
 				E0F86EB4273E7AC079F525CE /* LabReportOCR.swift in Sources */,

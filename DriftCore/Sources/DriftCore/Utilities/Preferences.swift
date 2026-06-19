@@ -164,6 +164,18 @@ public enum Preferences {
         set { UserDefaults.standard.set(newValue, forKey: coachVoiceKey) }
     }
 
+    private static let coachTalkModeKey = "drift_coach_talk_mode_enabled"
+
+    /// Immersive voice talk-mode: when ON, Drift Coach drops the chat log + input
+    /// bar for a full-screen "tap to talk" circle and runs a hands-free loop
+    /// (listen → answer aloud → keep listening). A superset of `coachVoiceEnabled`
+    /// (turning it on implies voice replies). Toggled by the speaker button at the
+    /// top of the coach. Default OFF. #coach-talk-mode.
+    public static var coachTalkModeEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: coachTalkModeKey) }
+        set { UserDefaults.standard.set(newValue, forKey: coachTalkModeKey) }
+    }
+
     private static let mealRemindersKey = "drift_meal_reminders"
 
     /// Smart meal reminders: contextual "Time to log breakfast" notifications

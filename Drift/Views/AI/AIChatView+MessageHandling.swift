@@ -211,6 +211,39 @@ extension AIChatViewModel {
         return text
     }
 
+    // MARK: - Voice turn (hands-free)
+
+    /// Entry point for a finalized voice utterance (the talk-mode loop + the mic
+    /// button). If a meal proposal is on screen, a spoken "yes"/"no" resolves it
+    /// hands-free (the voice half of dual confirm); anything else is a normal
+    /// turn. Keeps the post-fix + voice-flag bookkeeping in one place so the View
+    /// just hands over raw transcript. #coach-talk-mode
+    func submitVoiceTurn(_ raw: String) {
+        let text = VoiceTranscriptionPostFixer.fix(raw)
+        if let turnId = pendingProposalTurnId,
+           let card = messages.first(where: { $0.id == turnId })?.proposedMealCard {
+            switch AffirmationParser.verdict(text) {
+            case .yes:
+                confirmProposedMeal(card, messageId: turnId)
+                speakVoiceTurn(reply: "Logged it.", action: nil)
+                return
+            case .no:
+                if let idx = messages.firstIndex(where: { $0.id == turnId }) {
+                    messages[idx].proposedMealCard = nil
+                    messages[idx].text = "Okay, skipped that."
+                }
+                clearPendingProposal()
+                speakVoiceTurn(reply: "Okay, I won't log that.", action: nil)
+                return
+            case .unclear:
+                break   // not a yes/no — treat as a fresh turn
+            }
+        }
+        inputText = text
+        lastTurnWasVoice = true
+        sendMessage()
+    }
+
     // MARK: - Send Message
 
     func sendMessage() {

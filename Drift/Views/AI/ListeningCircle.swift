@@ -9,6 +9,9 @@ struct ListeningCircle: View {
 
     let state: CircleState
     let onTap: () -> Void
+    /// Diameter of the circle. Default suits the empty-state hero; the immersive
+    /// talk-mode passes a larger value.
+    var size: CGFloat = 150
 
     @State private var pulse = false
 
@@ -48,14 +51,14 @@ struct ListeningCircle: View {
                 ZStack {
                     Circle()
                         .fill(tint.opacity(0.12))
-                        .frame(width: 150, height: 150)
+                        .frame(width: size, height: size)
                         .overlay(Circle().stroke(tint.opacity(0.5), lineWidth: 2))
                         .scaleEffect(animating && pulse ? 1.08 : 1.0)
                     if state == .processing {
-                        ProgressView().scaleEffect(1.4).tint(tint)
+                        ProgressView().scaleEffect(1.4 * (size / 150)).tint(tint)
                     } else {
                         Image(systemName: glyph)
-                            .font(.system(size: 44, weight: .medium))
+                            .font(.system(size: 44 * (size / 150), weight: .medium))
                             .foregroundStyle(tint)
                     }
                 }

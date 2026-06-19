@@ -31,6 +31,7 @@ final class HardcodedWhiteTextTests: XCTestCase {
         ("AIChatView+ChatBubble.swift", ".background(Theme.accent"),
         ("AIChatView+Cards.swift", ".background(Capsule().fill(Theme.calorieBlue))"),
         ("CombosView.swift", ".background(Theme.accent, in: Capsule())"),
+        ("ImmersiveVoiceView.swift", ".background(Capsule().fill(Theme.accent))"),
         ("BiomarkersTabView.swift", ".background(Theme.accent, in: RoundedRectangle"),
         ("LabReportUploadView.swift", ".background(Theme.accent, in: RoundedRectangle"),
         ("BackupOnboardingSheet.swift", ".background(Theme.ink, in: RoundedRectangle"),

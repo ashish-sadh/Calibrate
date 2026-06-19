@@ -24,7 +24,18 @@ struct AIChatView: View {
         // AIChatView no longer renders an inline `backendSelectorHeader`
         // (the old "Local Brain | Cloud AI" tiles). Removed to avoid two
         // stacked pickers.
-        VStack(spacing: 0) {
+        Group {
+            if vm.talkModeEnabled {
+                ImmersiveVoiceView(
+                    state: circleState,
+                    caption: immersiveCaption,
+                    proposal: immersiveProposal,
+                    onCircleTap: startOrStopVoice,
+                    onConfirm: confirmFromImmersive,
+                    onCancel: cancelFromImmersive,
+                    onExit: { vm.toggleTalkMode() })
+            } else {
+            VStack(spacing: 0) {
             if isEmptyState {
                 // Voice-first hero: a big tap-to-talk circle. The user can also
                 // type or attach an image via the input bar below.
@@ -92,6 +103,8 @@ struct AIChatView: View {
             Divider().overlay(Theme.separator)
 
             inputBar
+            }
+            }
         }
         .sheet(isPresented: $vm.showingFoodSearch, onDismiss: { vm.mealLogRevision += 1 }) {
             // FoodSearchView owns its own NavigationStack + toolbar Done — no
@@ -153,6 +166,73 @@ struct AIChatView: View {
             vm.voiceService.stop()
         }
         .onChange(of: vm.rearmMicTick) { _, _ in rearmMic() }
+        .onChange(of: vm.talkModeEnabled) { _, on in handleTalkModeChange(on) }
+        .toolbar {
+            ToolbarItem(placement: .topBarLeading) { talkModeToggleButton }
+        }
+    }
+
+    // MARK: - Immersive talk-mode
+
+    /// The top speaker button — master switch into/out of full-screen talk-mode.
+    var talkModeToggleButton: some View {
+        Button { vm.toggleTalkMode() } label: {
+            Image(systemName: vm.talkModeEnabled ? "speaker.wave.2.fill" : "speaker.slash")
+                .foregroundStyle(vm.talkModeEnabled ? Theme.accent : Theme.textSecondary)
+        }
+        .accessibilityLabel(vm.talkModeEnabled ? "Talk mode on" : "Talk mode off")
+        .accessibilityIdentifier("coach-talk-toggle")
+    }
+
+    /// Live caption under the immersive circle: your words while listening, the
+    /// coach's last reply while it speaks / awaits a confirm, blank otherwise
+    /// (the circle's own caption covers idle/thinking).
+    var immersiveCaption: String {
+        if vm.speechService.isRecording { return vm.speechService.transcript }
+        if vm.isGenerating { return "" }
+        if vm.voiceService.isSpeaking || vm.pendingProposalTurnId != nil {
+            return vm.messages.last(where: { $0.role == .assistant })?.text ?? ""
+        }
+        return ""
+    }
+
+    /// The pending meal proposal, surfaced as the immersive Confirm/Cancel card.
+    var immersiveProposal: AIChatViewModel.ProposedMealCardData? {
+        guard let id = vm.pendingProposalTurnId else { return nil }
+        return vm.messages.first(where: { $0.id == id })?.proposedMealCard
+    }
+
+    /// Tap-Confirm (the tap half of dual confirm) — commit the proposed meal,
+    /// then speak + keep listening.
+    func confirmFromImmersive() {
+        guard let id = vm.pendingProposalTurnId,
+              let card = vm.messages.first(where: { $0.id == id })?.proposedMealCard else { return }
+        vm.confirmProposedMeal(card, messageId: id)
+        vm.speakVoiceTurn(reply: "Logged it.", action: nil)
+    }
+
+    /// Tap-Cancel — skip the proposed meal, then speak + keep listening.
+    func cancelFromImmersive() {
+        guard let id = vm.pendingProposalTurnId else { return }
+        if let idx = vm.messages.firstIndex(where: { $0.id == id }) {
+            vm.messages[idx].proposedMealCard = nil
+            vm.messages[idx].text = "Okay, skipped that."
+        }
+        vm.clearPendingProposal()
+        vm.speakVoiceTurn(reply: "Okay, cancelled.", action: nil)
+    }
+
+    /// Entering talk-mode starts listening right away (hands-free); leaving it
+    /// halts the mic + any speech so nothing keeps running behind the text UI.
+    func handleTalkModeChange(_ on: Bool) {
+        if on {
+            if !vm.isGenerating, !vm.voiceService.isSpeaking, !vm.speechService.isRecording {
+                beginListening()
+            }
+        } else {
+            vm.speechService.forceStop()
+            vm.voiceService.stop()
+        }
     }
 
     // MARK: - Listening-circle hero (voice-first empty state)
@@ -196,11 +276,7 @@ struct AIChatView: View {
         vm.voiceService.stop()
         vm.speechService.toggleRecording(
             onTranscript: { self.vm.inputText = $0 },
-            onDone: {
-                self.vm.inputText = VoiceTranscriptionPostFixer.fix($0)
-                self.vm.lastTurnWasVoice = true
-                self.vm.sendMessage()
-            }
+            onDone: { self.vm.submitVoiceTurn($0) }
         )
     }
 
