@@ -156,6 +156,7 @@
 		D2E596AFDCE5C6C9C49B5410 /* USDAFallbackEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = C92BBFFC16E3948FD5DABA59 /* USDAFallbackEval.swift */; };
 		D3A7ACF42E8B98CCF0BBFBE9 /* FoodDatabase.db in Resources */ = {isa = PBXBuildFile; fileRef = 0F17D1E36C8FFDB99E74C9A4 /* FoodDatabase.db */; };
 		D460DC58016E359FB62DFCC3 /* TodayDonutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF4E87433C72DCD46B0D423D /* TodayDonutView.swift */; };
+		D676610D58E5F117B1698F2A /* ListeningCircle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4C5119D7D0835BA845A8AAF /* ListeningCircle.swift */; };
 		D681045AF7657C38E75D4D86 /* FoodSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A6CAF4720F61DC0C9BD2E7 /* FoodSearchView.swift */; };
 		D745EB74546A99C36FE2895D /* ClarificationCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9ADFC025483E1D1D5A39857E /* ClarificationCard.swift */; };
 		D81FBCA09BF00517DBEF07AA /* VoiceLogSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375826994E169F864E5A69C1 /* VoiceLogSheet.swift */; };
@@ -369,6 +370,7 @@
 		A411F4544692EA6196F07C9C /* MacroRingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroRingsView.swift; sourceTree = "<group>"; };
 		A434AE755701CCB89A111516 /* PipelineE2EEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelineE2EEval.swift; sourceTree = "<group>"; };
 		A4BC95967D2043D701CA63AB /* BodyCompEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyCompEntryView.swift; sourceTree = "<group>"; };
+		A4C5119D7D0835BA845A8AAF /* ListeningCircle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningCircle.swift; sourceTree = "<group>"; };
 		A835CA7572E629657044C111 /* PhotoLogServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLogServiceTests.swift; sourceTree = "<group>"; };
 		A9693A1E065B9E2D3DA846EF /* CoachingBriefCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachingBriefCard.swift; sourceTree = "<group>"; };
 		A9DA1F02B1BF76DA862072A6 /* AIChooserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChooserView.swift; sourceTree = "<group>"; };
@@ -717,6 +719,7 @@
 				A9DA1F02B1BF76DA862072A6 /* AIChooserView.swift */,
 				7F4C6870115BE53081FA0CDE /* AISetupView.swift */,
 				9ADFC025483E1D1D5A39857E /* ClarificationCard.swift */,
+				A4C5119D7D0835BA845A8AAF /* ListeningCircle.swift */,
 				E2771DB577C8DC7CD66E79ED /* TypingDotsView.swift */,
 			);
 			path = AI;
@@ -1138,6 +1141,7 @@
 				364C90C5B4A795381274F748 /* LabReportOCR+Biomarkers.swift in Sources */,
 				E0F86EB4273E7AC079F525CE /* LabReportOCR.swift in Sources */,
 				CF5BB4A5266F949DA9DEE006 /* LabReportUploadView.swift in Sources */,
+				D676610D58E5F117B1698F2A /* ListeningCircle.swift in Sources */,
 				86CDB53C69F53085CA2E0555 /* LogMealSheet.swift in Sources */,
 				906FAE3EA52F19F188BB4CC1 /* LogMethodCardsRow.swift in Sources */,
 				7AD6304B58DBD8DA0BE88BC3 /* MacroRingsView.swift in Sources */,

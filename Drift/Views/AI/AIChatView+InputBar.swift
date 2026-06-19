@@ -94,26 +94,24 @@ extension AIChatView {
 
     @ViewBuilder
     private var idleControls: some View {
-        // Camera — only when the cloud coach is active (Drift Coach on Nebius
-        // supports vision; the on-device backend has no vision capability).
-        if vm.activeBackend == .remote {
-            PhotosPicker(selection: $photoPickerItem, matching: .images) {
-                Image(systemName: vm.pendingPhotoData != nil ? "camera.fill" : "camera")
-                    .font(.system(size: 18))
-                    .foregroundStyle(vm.pendingPhotoData != nil ? Theme.accent : .secondary)
-            }
-            .disabled(vm.isGenerating)
-            .onChange(of: photoPickerItem) { _, newItem in
-                guard let newItem else { return }
-                Task {
-                    if let data = try? await newItem.loadTransferable(type: Data.self) {
-                        vm.pendingPhotoData = data
-                    }
-                    photoPickerItem = nil
-                }
-            }
-            .accessibilityLabel("Attach photo")
+        // Image — always available. Image turns route to the vision model
+        // (Qwen2.5-VL); an explicit cloud touch-point when sent.
+        PhotosPicker(selection: $photoPickerItem, matching: .images) {
+            Image(systemName: vm.pendingPhotoData != nil ? "camera.fill" : "camera")
+                .font(.system(size: 18))
+                .foregroundStyle(vm.pendingPhotoData != nil ? Theme.accent : .secondary)
         }
+        .disabled(vm.isGenerating)
+        .onChange(of: photoPickerItem) { _, newItem in
+            guard let newItem else { return }
+            Task {
+                if let data = try? await newItem.loadTransferable(type: Data.self) {
+                    vm.pendingPhotoData = data
+                }
+                photoPickerItem = nil
+            }
+        }
+        .accessibilityLabel("Attach photo")
 
         // Voice replies toggle — the coach speaks its answers aloud when on,
         // pairing with the mic for a full talk-to-it experience. While speaking,
@@ -134,16 +132,7 @@ extension AIChatView {
             : (vm.voiceOutputEnabled ? "Voice replies on" : "Voice replies off"))
 
         Button {
-            vm.voiceService.stop()  // silence any in-flight reply before listening
-            vm.speechService.toggleRecording(
-                onTranscript: { text in
-                    self.vm.inputText = text
-                },
-                onDone: { finalText in
-                    self.vm.inputText = VoiceTranscriptionPostFixer.fix(finalText)
-                    self.vm.sendMessage()
-                }
-            )
+            startOrStopVoice()   // shared with the hero listening circle
         } label: {
             Image(systemName: "mic")
                 .font(.system(size: 18))

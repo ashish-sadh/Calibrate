@@ -25,26 +25,41 @@ struct AIChatView: View {
         // (the old "Local Brain | Cloud AI" tiles). Removed to avoid two
         // stacked pickers.
         VStack(spacing: 0) {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    LazyVStack(spacing: 10) {
-                        ForEach(vm.messages) { msg in
-                            messageBubble(msg).id(msg.id)
+            if isEmptyState {
+                // Voice-first hero: a big tap-to-talk circle. The user can also
+                // type or attach an image via the input bar below.
+                Spacer(minLength: 0)
+                ListeningCircle(state: circleState, onTap: startOrStopVoice)
+                if !vm.pageInsight.isEmpty {
+                    Text(vm.pageInsight)
+                        .font(.footnote)
+                        .foregroundStyle(Theme.textSecondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 36).padding(.top, 10)
+                }
+                Spacer(minLength: 0)
+            } else {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(spacing: 10) {
+                            ForEach(vm.messages) { msg in
+                                messageBubble(msg).id(msg.id)
+                            }
+                            if vm.isGenerating {
+                                thinkingIndicator
+                            }
                         }
-                        if vm.isGenerating {
-                            thinkingIndicator
+                        .padding(.top, 6)
+                    }
+                    .onChange(of: vm.messages.count) { _, _ in
+                        if let last = vm.messages.last {
+                            withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
                         }
                     }
-                    .padding(.top, 6)
-                }
-                .onChange(of: vm.messages.count) { _, _ in
-                    if let last = vm.messages.last {
-                        withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
-                    }
-                }
-                .onChange(of: vm.messages.last?.text) { _, _ in
-                    if vm.streamingMessageId != nil, let last = vm.messages.last {
-                        proxy.scrollTo(last.id, anchor: .bottom)
+                    .onChange(of: vm.messages.last?.text) { _, _ in
+                        if vm.streamingMessageId != nil, let last = vm.messages.last {
+                            proxy.scrollTo(last.id, anchor: .bottom)
+                        }
                     }
                 }
             }
@@ -127,6 +142,43 @@ struct AIChatView: View {
         .onDisappear {
             vm.aiService.scheduleUnload(delay: 60)
         }
+    }
+
+    // MARK: - Listening-circle hero (voice-first empty state)
+
+    /// Empty state = no real conversation yet (just the seeded greeting). The
+    /// greeting is appended as a message in onAppear, so `messages.isEmpty` is
+    /// never true after first render — match the greeting-only case explicitly.
+    var isEmptyState: Bool {
+        if vm.messages.isEmpty { return true }
+        return vm.messages.count == 1
+            && vm.messages[0].role == .assistant
+            && vm.messages[0].text == vm.pageInsight
+    }
+
+    /// Drive the hero circle's animation/caption from the live voice + generation
+    /// state. Precedence: speaking > processing > listening > idle.
+    var circleState: ListeningCircle.CircleState {
+        if case .unavailable = vm.speechService.recordingState { return .unavailable }
+        if vm.voiceService.isSpeaking { return .speaking }
+        if vm.isGenerating { return .processing }
+        if vm.speechService.isRecording { return .listening }
+        return .idle
+    }
+
+    /// One voice flow shared by the hero circle and the small mic button — start
+    /// recording (auto-sends on silence/stop), or stop speaking if the coach is
+    /// mid-reply. Prevents duplicated callback logic / double-sends.
+    func startOrStopVoice() {
+        if vm.voiceService.isSpeaking { vm.voiceService.stop(); return }
+        vm.voiceService.stop()
+        vm.speechService.toggleRecording(
+            onTranscript: { self.vm.inputText = $0 },
+            onDone: {
+                self.vm.inputText = VoiceTranscriptionPostFixer.fix($0)
+                self.vm.sendMessage()
+            }
+        )
     }
 
     // MARK: - Suggestions Row
