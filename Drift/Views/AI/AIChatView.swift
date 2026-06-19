@@ -286,7 +286,10 @@ struct AIChatView: View {
         vm.voiceService.stop()
         vm.speechService.toggleRecording(
             onTranscript: { self.vm.inputText = $0 },
-            onDone: { self.vm.submitVoiceTurn($0) }
+            onDone: { self.vm.submitVoiceTurn($0) },
+            // Hands-free: submit ~1.8s after you stop talking — no tap needed.
+            // Makes the coach feel like a conversation, not a walkie-talkie. #flowy-voice
+            endpointSilence: 1.8
         )
     }
 

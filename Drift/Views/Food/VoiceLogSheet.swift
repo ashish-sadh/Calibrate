@@ -281,7 +281,9 @@ final class VoiceLogViewModel {
             },
             onDone: { [weak self] final in
                 Task { await self?.parse(final) }
-            }
+            },
+            // Auto-submit ~1.8s after the user stops describing — no Stop tap. #flowy-voice
+            endpointSilence: 1.8
         )
     }
 

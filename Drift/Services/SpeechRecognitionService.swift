@@ -28,7 +28,12 @@ final class SpeechRecognitionService: @unchecked Sendable {
 
     private var committedText = ""  // Locked-in text from completed segments
     private static let maxChars = 500
+    /// Default end-of-speech pause before auto-submit. Long for the typed/edit
+    /// paths (the user may pause mid-thought). The hands-free coach passes a
+    /// short value (~1.8s) so it submits when you stop talking — no tap. #flowy-voice
     private static let silenceTimeout: TimeInterval = 30.0
+    /// Active end-of-speech pause for THIS recording (set per startRecording).
+    private var endpointSilence: TimeInterval = silenceTimeout
 
     private init() {}
 
@@ -38,22 +43,25 @@ final class SpeechRecognitionService: @unchecked Sendable {
     @MainActor
     func toggleRecording(
         onTranscript: @escaping @MainActor (String) -> Void,
-        onDone: @escaping @MainActor (String) -> Void
+        onDone: @escaping @MainActor (String) -> Void,
+        endpointSilence: TimeInterval = silenceTimeout
     ) {
         if isRecording { gracefulStop() }
-        else { startRecording(onTranscript: onTranscript, onDone: onDone) }
+        else { startRecording(onTranscript: onTranscript, onDone: onDone, endpointSilence: endpointSilence) }
     }
 
     @MainActor
     func startRecording(
         onTranscript: @escaping @MainActor (String) -> Void,
-        onDone: @escaping @MainActor (String) -> Void
+        onDone: @escaping @MainActor (String) -> Void,
+        endpointSilence: TimeInterval = silenceTimeout
     ) {
         guard let recognizer = speechRecognizer, recognizer.isAvailable else {
             recordingState = .unavailable("Speech recognition not available")
             return
         }
         onDoneCallback = onDone
+        self.endpointSilence = endpointSilence
         committedText = ""
         recordingState = .recording
         transcript = ""
@@ -238,7 +246,7 @@ final class SpeechRecognitionService: @unchecked Sendable {
                         self?.autoSend(text: captured)
                     }
                     self.silenceTimer = timer
-                    DispatchQueue.main.asyncAfter(deadline: .now() + Self.silenceTimeout, execute: timer)
+                    DispatchQueue.main.asyncAfter(deadline: .now() + self.endpointSilence, execute: timer)
 
                     // Auto-stop at 500 chars
                     if full.count > Self.maxChars {
