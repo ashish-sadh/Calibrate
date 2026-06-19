@@ -531,4 +531,26 @@ struct RemoteLLMBackendTests {
         let out = await backend.respond(to: "hi", systemPrompt: "sys")
         #expect(out == "Protein is low.")
     }
+
+    @Test func nebiusImageTurnUsesVisionModel() async {
+        let box = RequestBox()
+        let backend = RemoteLLMBackend(
+            provider: .nebius, modelID: "Qwen/Qwen3-235B-A22B-Instruct-2507",
+            apiKey: "k", session: CapturingSession(box: box))
+        _ = await backend.respondStreamingWithPhoto(
+            to: "what is this", imageData: Data([0xFF, 0xD8, 0xFF]),
+            systemPrompt: "sys", visionModelID: "Qwen/Qwen2.5-VL-72B-Instruct", onToken: { _ in })
+        let body = try! JSONSerialization.jsonObject(with: box.request!.httpBody!) as! [String: Any]
+        #expect(body["model"] as? String == "Qwen/Qwen2.5-VL-72B-Instruct")
+    }
+
+    @Test func nebiusTextTurnUsesBaseModel() async {
+        let box = RequestBox()
+        let backend = RemoteLLMBackend(
+            provider: .nebius, modelID: "Qwen/Qwen3-235B-A22B-Instruct-2507",
+            apiKey: "k", session: CapturingSession(box: box))
+        _ = await backend.respond(to: "hi", systemPrompt: "sys")
+        let body = try! JSONSerialization.jsonObject(with: box.request!.httpBody!) as! [String: Any]
+        #expect(body["model"] as? String == "Qwen/Qwen3-235B-A22B-Instruct-2507")
+    }
 }

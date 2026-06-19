@@ -2,12 +2,12 @@ import SwiftUI
 import DriftCore
 import UIKit
 
-/// BYOK settings for the Photo Log Beta. Controls the opt-in toggle, the
-/// provider choice, the API-key entry + Keychain handoff, and the [Test
-/// Connection] ping. First cloud feature — privacy copy is load-bearing.
+/// BYOK settings for Photo Log. Controls the provider choice, the API-key
+/// entry + Keychain handoff, and the [Test Connection] ping. Photo Log is on
+/// whenever a key is saved for the selected provider — there's no separate
+/// enable toggle. First cloud feature — privacy copy is load-bearing.
 /// #224 / #266.
-struct PhotoLogBetaSettingsView: View {
-    @State private var enabled: Bool = Preferences.photoLogEnabled
+struct PhotoLogSettingsView: View {
     @State private var provider: CloudVisionProvider = Preferences.photoLogProvider
     @State private var model: String = Preferences.photoLogModel(for: Preferences.photoLogProvider)
     @State private var keyInput: String = ""
@@ -32,7 +32,6 @@ struct PhotoLogBetaSettingsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
                 privacyBanner
-                enabledToggle
                 providerPicker
                 modelPicker
                 keySection
@@ -50,7 +49,7 @@ struct PhotoLogBetaSettingsView: View {
             }
             .padding()
         }
-        .navigationTitle("Photo Log (Beta)")
+        .navigationTitle("Photo Log")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear(perform: refreshStoredKey)
     }
@@ -59,26 +58,11 @@ struct PhotoLogBetaSettingsView: View {
 
     private var privacyBanner: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Label("Beta — sends photos to cloud AI", systemImage: "cloud")
+            Label("Sends photos to cloud AI", systemImage: "cloud")
                 .font(.subheadline.weight(.semibold))
-            Text("Turning on Photo Log sends your meal photos to the provider you choose (Anthropic or OpenAI). Everything else in Drift stays on your device. You pay for your own API key — Drift never sees your photos or key.")
+            Text("Photo Log sends your meal photos to the provider you choose (Anthropic or OpenAI). It turns on once you save an API key below. Everything else in Drift stays on your device. You pay for your own API key — Drift never sees your photos or key.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-        }
-        .card()
-    }
-
-    private var enabledToggle: some View {
-        Toggle(isOn: $enabled) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Enable Photo Log").font(.subheadline.weight(.medium))
-                Text("Adds a camera button in chat and food log.")
-                    .font(.caption2).foregroundStyle(.tertiary)
-            }
-        }
-        .onChange(of: enabled) { _, on in
-            Preferences.photoLogEnabled = on
-            status = .success(on ? "Photo Log enabled." : "Photo Log disabled.")
         }
         .card()
     }

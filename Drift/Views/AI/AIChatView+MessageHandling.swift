@@ -1235,7 +1235,7 @@ extension AIChatViewModel {
             if let jpeg = imageData {
                 response = await aiService.respondDirectWithPhoto(
                     systemPrompt: systemPrompt, message: message,
-                    imageData: jpeg, onToken: onToken
+                    imageData: jpeg, visionModelID: AppConfig.coachVisionModelID, onToken: onToken
                 )
             } else {
                 response = await aiService.respondStreamingDirect(

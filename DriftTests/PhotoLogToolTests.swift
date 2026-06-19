@@ -27,7 +27,6 @@ private struct OnlineReachability: ReachabilityChecking {
 
 @MainActor
 private func resetState() {
-    Preferences.photoLogEnabled = false
     Preferences.photoLogProvider = .anthropic
     for provider in CloudVisionProvider.allCases {
         try? CloudVisionKey.clear(for: provider)
@@ -48,20 +47,8 @@ private func makeImage() -> UIImage {
 
 // MARK: - Conditional registration
 
-@Test @MainActor func photoLogToolNotRegisteredWhenFeatureDisabled() throws {
-    resetState()
-    try CloudVisionKey.set("fake-key", for: .anthropic)
-
-    #expect(PhotoLogTool.isAvailable == false)
-    PhotoLogTool.syncRegistration()
-    #expect(ToolRegistry.shared.tool(named: PhotoLogTool.toolName) == nil)
-
-    try CloudVisionKey.clear(for: .anthropic)
-}
-
 @Test @MainActor func photoLogToolNotRegisteredWhenNoKey() {
     resetState()
-    Preferences.photoLogEnabled = true
 
     #expect(PhotoLogTool.isAvailable == false)
     PhotoLogTool.syncRegistration()
@@ -70,9 +57,8 @@ private func makeImage() -> UIImage {
     resetState()
 }
 
-@Test @MainActor func photoLogToolRegisteredWhenEnabledAndKeyPresent() throws {
+@Test @MainActor func photoLogToolRegisteredWhenKeyPresent() throws {
     resetState()
-    Preferences.photoLogEnabled = true
     try CloudVisionKey.set("fake-key", for: .anthropic)
 
     #expect(PhotoLogTool.isAvailable == true)
@@ -82,14 +68,14 @@ private func makeImage() -> UIImage {
     resetState()
 }
 
-@Test @MainActor func syncRegistrationRemovesToolWhenFeatureFlipsOff() throws {
+@Test @MainActor func syncRegistrationRemovesToolWhenKeyCleared() throws {
     resetState()
-    Preferences.photoLogEnabled = true
     try CloudVisionKey.set("fake-key", for: .anthropic)
     PhotoLogTool.syncRegistration()
     #expect(ToolRegistry.shared.tool(named: PhotoLogTool.toolName) != nil)
 
-    Preferences.photoLogEnabled = false
+    try CloudVisionKey.clear(for: .anthropic)
+    CloudVisionKey.dropCache()
     PhotoLogTool.syncRegistration()
     #expect(ToolRegistry.shared.tool(named: PhotoLogTool.toolName) == nil)
 
@@ -98,7 +84,6 @@ private func makeImage() -> UIImage {
 
 @Test @MainActor func registerAllIncludesPhotoLogWhenAvailable() throws {
     resetState()
-    Preferences.photoLogEnabled = true
     try CloudVisionKey.set("fake-key", for: .anthropic)
 
     ToolRegistration.registerAll()
@@ -122,7 +107,6 @@ private func makeImage() -> UIImage {
 
 @Test @MainActor func runReturnsSummaryFromInjectedService() async throws {
     resetState()
-    Preferences.photoLogEnabled = true
     try CloudVisionKey.set("fake-key", for: .anthropic)
 
     let client = FakeVisionClientForTool(response: .stub)
@@ -145,7 +129,6 @@ private func makeImage() -> UIImage {
 
 @Test @MainActor func runMapsUnauthorizedToFriendlyText() async throws {
     resetState()
-    Preferences.photoLogEnabled = true
     try CloudVisionKey.set("fake-key", for: .anthropic)
 
     let client = FakeVisionClientForTool(error: .unauthorized)
@@ -158,7 +141,6 @@ private func makeImage() -> UIImage {
 
 @Test @MainActor func runMapsRateLimitedToFriendlyText() async throws {
     resetState()
-    Preferences.photoLogEnabled = true
     try CloudVisionKey.set("fake-key", for: .anthropic)
 
     let client = FakeVisionClientForTool(error: .rateLimited)

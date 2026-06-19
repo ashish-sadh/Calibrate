@@ -34,7 +34,7 @@ extension CloudVisionError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .unauthorized:
-            return "API key rejected (401). Check the key in Settings → Photo Log (Beta)."
+            return "API key rejected (401). Check the key in Settings → Photo Log."
         case .rateLimited:
             return "Provider is throttling (429). Try again in a minute."
         case .timeout:

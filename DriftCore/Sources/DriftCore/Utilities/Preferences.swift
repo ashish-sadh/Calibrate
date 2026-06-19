@@ -304,16 +304,6 @@ public enum Preferences {
         UserDefaults.standard.set(until, forKey: "drift_alert_dismissed_\(key)")
     }
 
-    // MARK: - Photo Log Beta opt-in
-
-    private static let photoLogEnabledKey = "drift_photo_log_enabled"
-
-    /// Photo Log Beta opt-in. When OFF (default), camera entry points are hidden.
-    public static var photoLogEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: photoLogEnabledKey) }
-        set { UserDefaults.standard.set(newValue, forKey: photoLogEnabledKey) }
-    }
-
     // MARK: - Weight Chart calorie overlay
 
     private static let weightChartCaloriesKey = "drift_weight_chart_calories"

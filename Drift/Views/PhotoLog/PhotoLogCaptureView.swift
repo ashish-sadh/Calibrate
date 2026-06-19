@@ -50,7 +50,7 @@ struct PhotoLogCaptureView: View {
             }
             .sheet(isPresented: $showingSettings) {
                 NavigationStack {
-                    PhotoLogBetaSettingsView()
+                    PhotoLogSettingsView()
                         .toolbar {
                             ToolbarItem(placement: .cancellationAction) {
                                 Button("Done") { showingSettings = false }
@@ -109,8 +109,8 @@ struct PhotoLogCaptureView: View {
         //
         // Mobile review fix: the copy mentions "Your key, your data" but
         // when the user *doesn't* have a key the banner gave no path to
-        // get one — they had to know to look under Settings → Photo Log
-        // (Beta). Making the whole banner a button to BYOK settings when
+        // get one — they had to know to look under Settings → Photo Log.
+        // Making the whole banner a button to BYOK settings when
         // no key is configured. When a key is present the banner stays
         // non-tappable (no useful destination).
         let hasKey = CloudVisionProvider.allCases.contains { CloudVisionKey.has(provider: $0) }

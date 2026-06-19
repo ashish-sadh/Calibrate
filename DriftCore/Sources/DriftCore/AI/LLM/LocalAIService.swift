@@ -216,12 +216,13 @@ public final class LocalAIService {
         systemPrompt: String,
         message: String,
         imageData: Data,
+        visionModelID: String? = nil,
         onToken: @escaping @Sendable (String) -> Void
     ) async -> String {
         guard let remote = backend as? RemoteLLMBackend else { return "" }
         return await remote.respondStreamingWithPhoto(
             to: message, imageData: imageData,
-            systemPrompt: systemPrompt, onToken: onToken
+            systemPrompt: systemPrompt, visionModelID: visionModelID, onToken: onToken
         )
     }
 

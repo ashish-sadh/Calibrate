@@ -24,7 +24,6 @@ public enum BackupKeys {
         "drift_chat_telemetry_enabled",                 // Preferences.chatTelemetryEnabled (Bool)
         "drift_use_remote_model_on_wifi",               // Preferences.useRemoteModelOnWiFi (Bool)
         "drift_preferred_ai_backend",                   // Preferences.preferredAIBackend (String enum raw)
-        "drift_photo_log_enabled",                      // Preferences.photoLogEnabled (Bool)
 
         // Reminders / nudges
         "drift_health_nudges",                          // Preferences.healthNudgesEnabled (Bool)

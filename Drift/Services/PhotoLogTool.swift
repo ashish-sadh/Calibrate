@@ -17,12 +17,12 @@ enum PhotoLogTool {
     nonisolated static let toolName = "photo_log"
     nonisolated static let defaultPrompt = "Identify each food item in this meal photo. Return grams, calories, and macros per item."
 
-    /// True when the user has flipped on the beta toggle AND stored an API
-    /// key for the currently-selected provider. `CloudVisionKey.has` is a
-    /// metadata-only Keychain query — no biometrics prompt.
+    /// True when the user has stored an API key for the currently-selected
+    /// provider — saving a key is what turns Photo Log on (there's no separate
+    /// enable toggle). `CloudVisionKey.has` is a metadata-only Keychain query —
+    /// no biometrics prompt.
     static var isAvailable: Bool {
-        Preferences.photoLogEnabled
-            && CloudVisionKey.has(provider: Preferences.photoLogProvider)
+        CloudVisionKey.has(provider: Preferences.photoLogProvider)
     }
 
     /// Conditionally add the tool schema to `ToolRegistry`. Called from
@@ -72,7 +72,7 @@ enum PhotoLogTool {
     ) async -> AgentOutput {
         guard isAvailable else {
             return AgentOutput(
-                text: "Photo Log is off. Turn it on in Settings → Photo Log (Beta).",
+                text: "Photo Log is off. Add an API key in Settings → Photo Log.",
                 action: nil,
                 toolsCalled: [toolName]
             )
@@ -97,7 +97,7 @@ enum PhotoLogTool {
                 toolsCalled: [toolName]
             )
         } catch CloudVisionError.unauthorized {
-            return errorOutput("Your API key was rejected. Re-add it in Settings → Photo Log (Beta).")
+            return errorOutput("Your API key was rejected. Re-add it in Settings → Photo Log.")
         } catch CloudVisionError.rateLimited {
             return errorOutput("Provider is throttling. Try again in a minute.")
         } catch CloudVisionError.timeout {
@@ -113,7 +113,7 @@ enum PhotoLogTool {
         } catch PhotoLogService.Error.encodingFailed {
             return errorOutput("Couldn't prepare that image. Try a different photo.")
         } catch CloudVisionKey.StorageError.notFound {
-            return errorOutput("No key saved. Add one in Settings → Photo Log (Beta).")
+            return errorOutput("No key saved. Add one in Settings → Photo Log.")
         } catch {
             return errorOutput("Photo analysis failed. Try again in a moment.")
         }

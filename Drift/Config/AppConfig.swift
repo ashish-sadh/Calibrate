@@ -27,6 +27,10 @@ enum AppConfig {
     /// never finish a short spoken reply).
     static let coachModelID = "Qwen/Qwen3-235B-A22B-Instruct-2507"
 
+    /// Vision model for image turns — the text coach model can't see images
+    /// (400s). Verified to accept image_url on Nebius. #coach-agent-loop
+    static let coachVisionModelID = "Qwen/Qwen2.5-VL-72B-Instruct"
+
     /// The Nebius provider the coach installs. Base URL is encoded in
     /// `RemoteLLMBackend.Provider.nebius`.
     static let coachProvider = "nebius"

@@ -3,14 +3,14 @@ import Foundation
 import Testing
 @testable import Drift
 
-/// Preferences + Keychain interaction tests for the Photo Log Beta BYOK
-/// flow. View-layer behavior is covered manually in the simulator; here we
-/// lock in the persistence contract: toggle + provider survive relaunch,
-/// switching providers preserves the other provider's key, clearing keys
-/// is idempotent. #224 / #266.
+/// Preferences + Keychain interaction tests for the Photo Log BYOK flow.
+/// View-layer behavior is covered manually in the simulator; here we lock in
+/// the persistence contract: provider survives relaunch, switching providers
+/// preserves the other provider's key, clearing keys is idempotent. Photo Log
+/// turns on whenever a key is saved — there's no separate enable flag.
+/// #224 / #266.
 
 private func resetPhotoLogState() {
-    Preferences.photoLogEnabled = false
     // Clear the stored raw value entirely so the default-fallback in
     // `Preferences.photoLogProvider.get` is what the next test observes.
     UserDefaults.standard.removeObject(forKey: "drift_photo_log_provider")
@@ -21,19 +21,6 @@ private func resetPhotoLogState() {
 }
 
 // MARK: - Preferences persistence
-
-@Test func photoLogEnabledDefaultsFalse() {
-    resetPhotoLogState()
-    #expect(Preferences.photoLogEnabled == false)
-}
-
-@Test func photoLogEnabledPersistsAcrossReads() {
-    resetPhotoLogState()
-    Preferences.photoLogEnabled = true
-    #expect(Preferences.photoLogEnabled == true)
-    Preferences.photoLogEnabled = false
-    #expect(Preferences.photoLogEnabled == false)
-}
 
 @Test func photoLogProviderDefaultsToGemini() {
     // Gemini has a free tier so new users can try Photo Log without billing.

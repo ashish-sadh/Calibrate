@@ -31,10 +31,10 @@ struct FoodTabView: View {
     @AppStorage("foodDiaryMealGrouped") private var mealGrouped = true
     @State private var collapsedSections: Set<MealType> = []
 
-    /// Beta-gated: Photo Log entry point only appears when the user has
-    /// opted in AND stored a cloud-vision key for the selected provider.
+    /// Photo Log entry point only appears once the user has stored a
+    /// cloud-vision key for the selected provider (saving a key is the opt-in).
     private var photoLogAvailable: Bool {
-        Preferences.photoLogEnabled && CloudVisionKey.has(provider: Preferences.photoLogProvider)
+        CloudVisionKey.has(provider: Preferences.photoLogProvider)
     }
 
     enum FoodSortMode: String, CaseIterable {

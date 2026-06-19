@@ -79,7 +79,7 @@ struct MoreTabView: View {
                         navRow(icon: "key.fill", title: "Bring Your Own Key",
                                subtitle: "Snap a meal · cloud AI",
                                color: Theme.macroFiber) {
-                            PhotoLogBetaSettingsView()
+                            PhotoLogSettingsView()
                         }
                         rowDivider
                         navRow(icon: "gear", title: "Settings",

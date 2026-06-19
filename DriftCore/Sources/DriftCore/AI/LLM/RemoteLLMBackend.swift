@@ -154,9 +154,10 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
         to prompt: String,
         imageData: Data,
         systemPrompt: String,
+        visionModelID: String? = nil,
         onToken: @escaping @Sendable (String) -> Void
     ) async -> String {
-        await respondStreamingCore(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, onToken: onToken)
+        await respondStreamingCore(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, visionModelID: visionModelID, onToken: onToken)
     }
 
     private func respondStreamingCore(
@@ -164,6 +165,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
         imageData: Data?,
         systemPrompt: String,
         toolsJSON: String? = nil,
+        visionModelID: String? = nil,
         onToken: @escaping @Sendable (String) -> Void
     ) async -> String {
         errorBox.value = nil
@@ -172,7 +174,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
             return ""
         }
         do {
-            let request = try buildRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: key, toolsJSON: toolsJSON)
+            let request = try buildRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: key, toolsJSON: toolsJSON, visionModelID: visionModelID)
             let (data, response) = try await session.data(for: request)
             if let http = response as? HTTPURLResponse, http.statusCode != 200 {
                 errorBox.value = categorize(status: http.statusCode)
@@ -199,13 +201,16 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
 
     // MARK: - Request Building
 
-    private func buildRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, toolsJSON: String? = nil) throws -> URLRequest {
+    private func buildRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, toolsJSON: String? = nil, visionModelID: String? = nil) throws -> URLRequest {
         switch provider {
         case .anthropic:
             return try buildAnthropicRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey)
         case .openai, .nebius:
             guard let baseURL = provider.openAICompatibleBaseURL else { throw BackendError.invalidURL }
-            return try buildOpenAICompatibleRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey, baseURL: baseURL, toolsJSON: toolsJSON)
+            // Image turns need a vision model — the text coach model (Qwen3) 400s
+            // on images. Swap to visionModelID only when an image is attached.
+            let model = (imageData != nil) ? (visionModelID ?? modelID) : modelID
+            return try buildOpenAICompatibleRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey, baseURL: baseURL, model: model, toolsJSON: toolsJSON)
         case .gemini:
             return try buildGeminiRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey)
         }
@@ -245,7 +250,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
     /// Build an OpenAI-compatible `/chat/completions` request. Shared by `.openai`
     /// (api.openai.com) and `.nebius` (api.studio.nebius.ai) — identical request
     /// body + SSE shape, only the base URL differs.
-    private func buildOpenAICompatibleRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, baseURL: String, toolsJSON: String? = nil) throws -> URLRequest {
+    private func buildOpenAICompatibleRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, baseURL: String, model: String, toolsJSON: String? = nil) throws -> URLRequest {
         guard let url = URL(string: "\(baseURL)/chat/completions") else {
             throw BackendError.invalidURL
         }
@@ -266,7 +271,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
         }
 
         var body: [String: Any] = [
-            "model": modelID,
+            "model": model,
             "max_tokens": 512,
             "stream": true,
             "messages": [

@@ -184,7 +184,7 @@ struct PhotoLogFlowView: View {
     nonisolated static func friendlyMessage(for error: Error) -> String {
         switch error {
         case CloudVisionError.unauthorized:
-            return "Your API key was rejected. Re-add it in Settings → Photo Log (Beta)."
+            return "Your API key was rejected. Re-add it in Settings → Photo Log."
         case CloudVisionError.rateLimited:
             return "Provider is throttling. Try again in a minute."
         case CloudVisionError.timeout:
@@ -196,7 +196,7 @@ struct PhotoLogFlowView: View {
         case PhotoLogService.Error.encodingFailed:
             return "Couldn't prepare that image. Try a different photo."
         case CloudVisionKey.StorageError.notFound:
-            return "No key saved. Add one in Settings → Photo Log (Beta)."
+            return "No key saved. Add one in Settings → Photo Log."
         default:
             return "Photo analysis failed. Try again in a moment."
         }
