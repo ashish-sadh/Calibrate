@@ -139,6 +139,16 @@ struct AIChatView: View {
                                  prefill: vm.pendingManualFoodEntry,
                                  onLogged: { vm.showingManualFoodEntry = false })
         }
+        .sheet(isPresented: $vm.showingMealReview, onDismiss: { vm.pendingMealReviewItems = [] }) {
+            // "Log my usual lunch" → the editable Snap review sheet, pre-filled.
+            MealReviewSheet(
+                items: vm.pendingMealReviewItems,
+                foodLog: FoodLogViewModel(),
+                onLogged: {
+                    vm.showingMealReview = false
+                    vm.mealLogRevision += 1
+                })
+        }
         .onAppear {
             vm.aiService.cancelUnload()
             if vm.messages.isEmpty {

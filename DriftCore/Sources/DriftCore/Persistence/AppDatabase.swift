@@ -253,6 +253,31 @@ extension AppDatabase {
         }
     }
 
+    /// The most recent logged meal of `mealType` within the last `withinDays`,
+    /// returned as its individual food entries — powers "log my usual lunch".
+    /// Finds the latest date that has entries for the slot, then returns every
+    /// entry from that meal on that date. Empty when there's no recent history.
+    /// #usual-meal
+    public func fetchMostRecentMeal(forType mealType: String,
+                                    withinDays: Int = 30,
+                                    now: Date = Date()) -> [FoodEntry] {
+        var cal = Calendar(identifier: .gregorian)
+        cal.timeZone = .current
+        let start = cal.date(byAdding: .day, value: -max(withinDays, 0), to: now) ?? now
+        let startStr = DateFormatters.dateOnly.string(from: start)
+        return (try? dbWriter.read { db in
+            try FoodEntry.fetchAll(db, sql: """
+                SELECT fe.* FROM food_entry fe
+                WHERE fe.meal_type = ? AND fe.date IS NOT NULL AND fe.date >= ?
+                  AND fe.date = (
+                    SELECT MAX(fe2.date) FROM food_entry fe2
+                    WHERE fe2.meal_type = ? AND fe2.date IS NOT NULL AND fe2.date >= ?
+                  )
+                ORDER BY fe.logged_at ASC
+                """, arguments: [mealType, startStr, mealType, startStr])
+        }) ?? []
+    }
+
     public func fetchFoodEntries(forMealLog mealLogId: Int64) throws -> [FoodEntry] {
         try dbWriter.read { db in
             try FoodEntry

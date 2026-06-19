@@ -32,6 +32,10 @@ final class AIChatViewModel {
     var showingBarcodeScanner = false
     var showingManualFoodEntry = false
     var pendingManualFoodEntry: ManualFoodPrefill? = nil
+    /// "Log my usual lunch" → the editable review sheet (Snap's surface), seeded
+    /// with the recalled meal. #usual-meal
+    var showingMealReview = false
+    var pendingMealReviewItems: [PhotoLogItem] = []
 
     var isGenerating: Bool { generatingState != .idle }
     /// Bumped when a food logging sheet dismisses so suggestion pills re-evaluate.

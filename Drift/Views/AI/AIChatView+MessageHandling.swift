@@ -321,6 +321,9 @@ extension AIChatViewModel {
         // Phase 6: Planning triggers (split builder, meal planning)
         if handleWorkoutSplitTrigger(lower) { return }
         if handleMealPlanningTrigger(lower) { return }
+        // Phase 6b: "log my usual lunch" — recall + narrate + open editable sheet.
+        // Runs before food parsing so "usual lunch" isn't treated as a food name.
+        if handleUsualMeal(lower) { return }
         // Phase 7: Food & activity intent parsing
         if handleFoodIntentParsing(lower, originalText: normalized) { return }
         // Phase 8: AI pipeline fallback
@@ -328,6 +331,53 @@ extension AIChatViewModel {
     }
 
     // MARK: - Phase Handlers
+
+    /// Phase 6b: "log my usual lunch" — recall the user's most-recent meal of that
+    /// slot, narrate it, and open the editable review sheet pre-filled (Snap's
+    /// surface). The sheet's Log/Cancel is the confirm; in talk-mode the coach
+    /// speaks the narration and keeps listening while the sheet opens. #usual-meal
+    private func handleUsualMeal(_ lower: String) -> Bool {
+        guard let mealType = UsualMealRecognizer.match(lower) else { return false }
+        let slot = mealType.displayName.lowercased()
+        let entries = AppDatabase.shared.fetchMostRecentMeal(forType: mealType.rawValue)
+
+        guard !entries.isEmpty else {
+            narrate("I don't have a usual \(slot) on record yet — tell me what you had and I'll log it.")
+            return true
+        }
+
+        // Reproduce the consumed portions: FoodEntry stores per-serving macros +
+        // a separate servings multiplier, so scale by servings. #usual-meal
+        pendingMealReviewItems = entries.map { e in
+            PhotoLogItem(
+                name: e.foodName,
+                grams: e.servingSizeG * e.servings,
+                calories: e.calories * e.servings,
+                proteinG: e.proteinG * e.servings,
+                carbsG: e.carbsG * e.servings,
+                fatG: e.fatG * e.servings,
+                fiberG: e.fiberG * e.servings,
+                confidence: .medium)
+        }
+        let names = entries.prefix(3).map(\.foodName).joined(separator: ", ")
+        let extra = entries.count > 3 ? " and more" : ""
+        let totalCal = Int(entries.reduce(0) { $0 + $1.calories * $1.servings })
+        narrate("Your usual \(slot): \(names)\(extra) — about \(totalCal) cal. Review and log below.")
+        showingMealReview = true
+        return true
+    }
+
+    /// Append an assistant line and speak it (voice turn → speak + keep listening;
+    /// typed → speak if voice output is on).
+    private func narrate(_ text: String) {
+        messages.append(ChatMessage(role: .assistant, text: text))
+        if lastTurnWasVoice {
+            lastTurnWasVoice = false
+            speakVoiceTurn(reply: text, action: nil)
+        } else {
+            speakReply(text)
+        }
+    }
 
     /// Phase 1: Dispatch static override results (greetings, thanks, help, emoji, rule engine).
     private func dispatchStaticOverride(_ lower: String) -> Bool {
