@@ -50,11 +50,11 @@ struct WeightTabView: View {
                         )
                         .frame(height: 320)
 
-                        // Scale vs Trend legend — names the two chart lines
-                        // (quiet grey scale wave vs the ink trend line).
+                        // Scale vs Trend legend — names the two chart marks
+                        // (quiet grey scale dots vs the ink trend line).
                         HStack(spacing: 18) {
                             HStack(spacing: 5) {
-                                Capsule().fill(Theme.textTertiary.opacity(0.5)).frame(width: 16, height: 2)
+                                Circle().fill(Theme.textTertiary.opacity(0.5)).frame(width: 6, height: 6)
                                 Text("Scale").font(.caption2.weight(.medium)).foregroundStyle(Theme.textSecondary)
                             }
                             HStack(spacing: 5) {

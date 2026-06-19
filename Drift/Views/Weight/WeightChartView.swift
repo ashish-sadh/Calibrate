@@ -185,18 +185,20 @@ struct WeightChartView: View {
                 // the rule line, and the tap callout, so the user can
                 // verify their raw data with their eyes instead of
                 // having to interpret a smoothing curve.
-                // Scale weight (raw) FIRST so it sits UNDER the trend — quiet
-                // grey texture, no dots, the honest day-to-day wave.
+                // Raw weigh-ins as faint dots sitting ON the actual value — the
+                // honest day-to-day spread around the trend. Replaces the old
+                // connected grey line, whose catmullRom interpolation overshot
+                // each spike into loopy artifacts and made the chart look noisy.
+                // A scatter reads cleaner and is the truthful representation of
+                // discrete weigh-ins.
                 ForEach(displayPoints.indices, id: \.self) { i in
                     if let actual = displayPoints[i].actual {
-                        LineMark(
+                        PointMark(
                             x: .value("", displayPoints[i].date),
-                            y: .value("Actual", actual),
-                            series: .value("Series", "Scale")
+                            y: .value("Scale", actual)
                         )
-                        .foregroundStyle(Theme.textTertiary.opacity(0.5))
-                        .lineStyle(StrokeStyle(lineWidth: 1.5, lineJoin: .round))
-                        .interpolationMethod(.catmullRom)
+                        .foregroundStyle(Theme.textTertiary.opacity(0.4))
+                        .symbolSize(granularity == .weekly ? 26 : 14)
                     }
                 }
 
@@ -215,21 +217,27 @@ struct WeightChartView: View {
                     .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
                     .interpolationMethod(.catmullRom)
                 }
-                ForEach(displayPoints.indices, id: \.self) { i in
-                    if displayPoints[i].actual != nil {
-                        PointMark(
-                            x: .value("", displayPoints[i].date),
-                            y: .value("Trend", displayPoints[i].ema)
-                        )
-                        .foregroundStyle(Theme.chartTrend)
-                        .symbolSize(granularity == .weekly ? 22 : 12)
+                // For the coarse weekly view, mark each aggregated point on the
+                // trend line so the sparse series reads as discrete weeks.
+                if granularity == .weekly {
+                    ForEach(displayPoints.indices, id: \.self) { i in
+                        if displayPoints[i].actual != nil {
+                            PointMark(
+                                x: .value("", displayPoints[i].date),
+                                y: .value("Trend", displayPoints[i].ema)
+                            )
+                            .foregroundStyle(Theme.chartTrend)
+                            .symbolSize(22)
+                        }
                     }
                 }
 
-                // Single coral "you are here" dot on the most recent weigh-in —
-                // the one brand accent on an otherwise neutral chart.
-                if let last = displayPoints.last(where: { $0.actual != nil }) {
-                    PointMark(x: .value("", last.date), y: .value("Trend", last.ema))
+                // Single coral "you are here" dot on the most recent weigh-in,
+                // placed on the ACTUAL value (sitting on the dashed current-weight
+                // rule), not the smoothed trend — the one brand accent on an
+                // otherwise neutral chart.
+                if let last = displayPoints.last(where: { $0.actual != nil }), let actual = last.actual {
+                    PointMark(x: .value("", last.date), y: .value("Scale", actual))
                         .foregroundStyle(Theme.accent)
                         .symbolSize(70)
                 }
