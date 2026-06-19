@@ -366,6 +366,7 @@ extension AIChatViewModel {
     private func handleFoodIntentParsing(_ lower: String, originalText: String) -> Bool {
         if handleMealLogging(lower) { return true }
         let resolved = resolvePronouns(lower)
+        if handleCalorieWithoutFood(resolved) { return true }
         if handleMultiFoodIntent(resolved) { return true }
         if handleComposedFoodIntent(resolved) { return true }
         if handleSingleFoodIntent(resolved) { return true }
@@ -378,6 +379,25 @@ extension AIChatViewModel {
     }
 
     // MARK: - Intent Handlers
+
+    /// "add 20 more calories" / "log 200 calories" with NO food named — ask a
+    /// follow-up instead of food-searching "more calories" (the user's report).
+    /// Anchored to end-of-string so "add 20 calories of chicken" still parses
+    /// normally (a food IS named). #coach-clarify
+    private func handleCalorieWithoutFood(_ resolved: String) -> Bool {
+        let pattern = #"^(?:add|log|put|track)\s+(?:(\d+)\s+)?(?:more\s+|extra\s+|additional\s+|some\s+)*(?:cal|calorie|calories|kcal)s?\s*$"#
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
+              let match = regex.firstMatch(in: resolved, range: NSRange(resolved.startIndex..., in: resolved))
+        else { return false }
+        var amount = ""
+        if let r = Range(match.range(at: 1), in: resolved) { amount = String(resolved[r]) }
+        let prompt = amount.isEmpty
+            ? "Sure — what food, and how many calories?"
+            : "\(amount) calories of what? Tell me the food and I'll add it."
+        messages.append(ChatMessage(role: .assistant, text: prompt))
+        convState.lastTopic = .food
+        return true
+    }
 
     private func handleConfirmation(_ lower: String) -> Bool {
         guard lower == "yes" || lower == "yeah" || lower == "yep" || lower == "confirm" || lower == "sure" else { return false }

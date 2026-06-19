@@ -63,6 +63,28 @@ public enum AIActionExecutor {
         return nil
     }
 
+    /// True when a parsed "food name" actually names no food — only quantities,
+    /// units, calorie words, or modifiers ("more calories", "200 cal", "some
+    /// more"). Lets the coach ask "N calories of what?" instead of food-searching
+    /// a non-food. Requires EVERY word to be vacuous, so "extra cheesy pizza" and
+    /// "2 eggs" still parse as real foods.
+    public static func isFoodNameVacuous(_ food: String) -> Bool {
+        let vacuous: Set<String> = [
+            "more", "extra", "additional", "another", "some", "a", "an", "the", "of",
+            "bit", "little", "few", "just", "only", "and",
+            "calorie", "calories", "cal", "cals", "kcal", "kcals",
+            "gram", "grams", "g", "kg", "ml", "oz", "ounce", "ounces",
+            "serving", "servings", "portion", "portions", "piece", "pieces",
+            "slice", "slices", "scoop", "scoops",
+        ]
+        let words = food.lowercased()
+            .split { !$0.isLetter && !$0.isNumber }
+            .map(String.init)
+            .filter { !$0.isEmpty }
+        guard !words.isEmpty else { return true }
+        return words.allSatisfy { vacuous.contains($0) || Double($0) != nil }
+    }
+
     /// Try to parse a food logging intent from natural language.
     /// "log 1/3 avocado" → FoodIntent(query: "avocado", servings: 0.33)
     /// "ate 2 eggs" → FoodIntent(query: "egg", servings: 2)
@@ -91,6 +113,9 @@ public enum AIActionExecutor {
 
         let (amount, food, grams) = extractAmount(from: remainder)
         guard !food.isEmpty else { return nil }
+        // "add 20 more calories" / "add 200 calories" name no food — bail so the
+        // caller asks a follow-up instead of food-searching "more calories".
+        guard !isFoodNameVacuous(food) else { return nil }
 
         let nonFoodWords: Set<String> = [
             "exercise", "workout", "a workout", "weight", "sleep", "supplement",
@@ -179,7 +204,7 @@ public enum AIActionExecutor {
 
         let intents = parts.compactMap { part -> FoodIntent? in
             let (amount, food, grams) = extractAmount(from: part)
-            guard !food.isEmpty else { return nil }
+            guard !food.isEmpty, !isFoodNameVacuous(food) else { return nil }
             return FoodIntent(query: food, servings: amount, gramAmount: grams)
         }
         return intents.count > 1 ? intents : nil
