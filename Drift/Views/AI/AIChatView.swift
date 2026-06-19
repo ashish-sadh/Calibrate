@@ -171,6 +171,11 @@ struct AIChatView: View {
     /// mid-reply. Prevents duplicated callback logic / double-sends.
     func startOrStopVoice() {
         if vm.voiceService.isSpeaking { vm.voiceService.stop(); return }
+        // Talking to the coach implies it talks back — turn on Apple TTS
+        // (CoachVoiceService) for this session when starting a voice turn.
+        if !vm.speechService.isRecording && !vm.voiceOutputEnabled {
+            vm.toggleVoiceOutput()
+        }
         vm.voiceService.stop()
         vm.speechService.toggleRecording(
             onTranscript: { self.vm.inputText = $0 },
