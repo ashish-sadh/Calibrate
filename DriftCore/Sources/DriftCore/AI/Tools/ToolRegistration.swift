@@ -890,6 +890,12 @@ public enum ToolRegistration {
         // metrics over a window. Read-only. #317.
         CrossDomainInsightTool.syncRegistration(registry: r)
 
+        // Web tools — DuckDuckGo search (no API key) + URL fetch. The coach's
+        // reach beyond on-device data; only fire when the model picks them, and
+        // they are an explicit cloud touch-point. #coach-agent-loop.
+        WebSearchTool.syncRegistration(registry: r)
+        FetchURLTool.syncRegistration(registry: r)
+
         // Cross-domain pattern detector — proactively scans every metric
         // pair and surfaces the 1-3 strongest signals. Different from
         // cross_domain_insight: open-ended discovery vs. specific question. #739.
