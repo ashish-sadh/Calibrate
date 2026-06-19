@@ -67,7 +67,7 @@ struct ContentView: View {
             .onReceive(NotificationCenter.default.publisher(for: .navigateToTab)) { notification in
                 if let tab = notification.userInfo?["tab"] as? Int,
                    let mapped = PrimaryTab(legacyIndex: tab) {
-                    withAnimation { selectedTab = mapped }
+                    selectedTab = mapped   // instant switch; the pill highlight animates itself
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .openLogMeal)) { notification in
@@ -257,12 +257,22 @@ enum PrimaryTab: Int, CaseIterable, Identifiable {
 
 private struct PillTabBar: View {
     @Binding var selected: PrimaryTab
+    /// Drives the sliding selection highlight. matchedGeometry moves the capsule
+    /// to the tapped tab; only THIS (cheap) animates — the heavy tab content
+    /// switches instantly (no cross-dissolve), which is what makes it feel fast.
+    @Namespace private var ns
 
     var body: some View {
         HStack(spacing: 4) {
             ForEach(PrimaryTab.allCases) { tab in
+                let isSelected = selected == tab
                 Button {
-                    withAnimation(.easeInOut(duration: 0.15)) { selected = tab }
+                    guard selected != tab else { return }
+                    Haptics.tabSelect()
+                    // Instant content switch (NOT wrapped in withAnimation — that
+                    // forced a laggy cross-fade of the full tab pages). The pill
+                    // highlight slides via the scoped .animation below.
+                    selected = tab
                 } label: {
                     VStack(spacing: 2) {
                         Image(systemName: tab.icon)
@@ -270,9 +280,16 @@ private struct PillTabBar: View {
                         Text(tab.label)
                             .font(.system(size: 10, weight: .semibold))
                     }
-                    .foregroundStyle(selected == tab ? Theme.ink : Theme.textTertiary)
+                    .foregroundStyle(isSelected ? Theme.ink : Theme.textTertiary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 10)
+                    .background {
+                        if isSelected {
+                            Capsule()
+                                .fill(Theme.ink.opacity(0.10))
+                                .matchedGeometryEffect(id: "tab-highlight", in: ns)
+                        }
+                    }
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -283,6 +300,18 @@ private struct PillTabBar: View {
         .background(Theme.cardBackground, in: Capsule())
         .overlay(Capsule().strokeBorder(Theme.separator, lineWidth: 0.5))
         .shadow(color: Color.black.opacity(0.08), radius: 14, x: 0, y: 4)
+        // Scoped to the bar only — slides the highlight + cross-fades label color
+        // snappily WITHOUT animating the TabView's page content.
+        .animation(.snappy(duration: 0.22, extraBounce: 0.05), value: selected)
+    }
+}
+
+/// Light haptic for tab/nav taps — the tactile half of "premium feel".
+enum Haptics {
+    @MainActor private static let selection = UISelectionFeedbackGenerator()
+    @MainActor static func tabSelect() {
+        selection.selectionChanged()
+        selection.prepare()   // keep it warm for the next tap (lower latency)
     }
 }
 
