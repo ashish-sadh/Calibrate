@@ -312,7 +312,7 @@ public enum AIToolAgent {
                                 name: name, mealHint: call.params.values["meal"], onToken: onToken
                             )
                         }
-                        return await executeTool(call)
+                        return await executeToolChain(initial: call, message: message, history: history)
                     }
                 case .text(let response):
                     // LLM chose to respond with text (follow-up question, greeting, etc.)
@@ -740,6 +740,82 @@ public enum AIToolAgent {
             let friendly = "I couldn't quite do that — \(msg.lowercased()). Try rephrasing or say \"help\" to see what I can do."
             return AgentOutput(text: friendly, action: nil, toolsCalled: [toolCall.tool], didFail: true)
         }
+    }
+
+    // MARK: - Multi-step Tool Loop (#coach-agent-loop)
+
+    /// Tools whose text output is meant to be reasoned over (fed back to the
+    /// model), not shown to the user directly — the ONLY tools that trigger the
+    /// loop. Everything else stays single-hop. Adopted from swift-claude-code's
+    /// tight agent loop, but capped low for mobile latency (not 30).
+    static let chainableTools: Set<String> = ["web_search", "fetch_url"]
+
+    /// Classify seam, injectable for tests.
+    typealias ClassifyFn = @MainActor (_ message: String, _ history: String) async -> IntentClassifier.ClassifyResult?
+
+    /// Bounded multi-step tool loop. For a NON-chainable tool this is identical
+    /// to `executeTool` (returns at the first hop — zero behavior change). For a
+    /// chainable tool (web_search / fetch_url) it feeds the result back to the
+    /// model and lets it pick the next action — e.g. "search the web, then log
+    /// what you found" — capped at `maxHops`. Errors feed back as observations
+    /// so the loop can recover, not hard-fail.
+    static func executeToolChain(
+        initial: ToolCall,
+        message: String,
+        history: String,
+        maxHops: Int = 5,
+        chainable: Set<String> = chainableTools,
+        classify: ClassifyFn = { m, h in await IntentClassifier.classifyFull(message: m, history: h) }
+    ) async -> AgentOutput {
+        // Non-chainable tools: exactly the single-hop path. No regression.
+        guard chainable.contains(initial.tool) else { return await executeTool(initial) }
+
+        var current = initial
+        var calledTools: [String] = []
+        var lastText = ""
+
+        for hop in 0..<maxHops {
+            let result = await ToolRegistry.shared.execute(current)
+            calledTools.append(current.tool)
+            switch result {
+            case .action(let action):
+                ConversationState.shared.captureToolSummary(actionSummary(toolCall: current, action: action))
+                return AgentOutput(text: "", action: action, toolsCalled: calledTools)
+            case .text(let text):
+                ConversationState.shared.captureToolSummary(text)
+                lastText = text
+            case .error(let msg):
+                lastText = "(\(current.tool) couldn't complete: \(msg))"   // observation; keep going
+            }
+
+            if hop == maxHops - 1 { break }
+
+            // Feed the tool result back; ask the model for the next step.
+            let observation = "\(message)\n\n[Result from \(current.tool): \(String(lastText.prefix(2000)))]"
+            guard let next = await classify(observation, history) else {
+                return AgentOutput(text: lastText, action: nil, toolsCalled: calledTools)
+            }
+            switch next {
+            case .text(let final):
+                return AgentOutput(text: final.isEmpty ? lastText : final, action: nil, toolsCalled: calledTools)
+            case .toolCall(let intent):
+                let nextTool = intent.tool.replacingOccurrences(of: "()", with: "")
+                let nextCall = ToolCall(tool: nextTool, params: ToolCallParams(values: intent.params))
+                if chainable.contains(nextTool) {
+                    current = nextCall   // keep looping over chainable tools
+                } else {
+                    // Terminal tool (e.g. log the searched food) — run once and finish.
+                    let out = await executeTool(nextCall)
+                    return AgentOutput(
+                        text: out.text.isEmpty ? lastText : out.text,
+                        action: out.action,
+                        toolsCalled: calledTools + out.toolsCalled,
+                        didFail: out.didFail
+                    )
+                }
+            }
+        }
+        return AgentOutput(text: lastText, action: nil, toolsCalled: calledTools)
     }
 
     /// Human-readable one-liner for an action tool-call (log_food, start_workout,

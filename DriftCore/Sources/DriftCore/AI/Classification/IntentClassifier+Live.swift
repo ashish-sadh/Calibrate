@@ -38,10 +38,18 @@ extension IntentClassifier {
         let prompt = backend == .remote
             ? activeSystemPrompt(backend: .remote)
             : activeSystemPrompt(isLargeModel: isLarge)
+        // Native function-calling for the remote coach: ship the tool schemas so
+        // Nebius/Qwen3 returns structured tool_calls (the SSE parser normalizes
+        // them to Drift's {"tool":...} shape, so mapResponse is unchanged). Added
+        // ADDITIVELY — the prose tool list stays for now as a fallback; it is
+        // stripped only once the Tier-3 routing eval confirms no regression.
+        // Local backends stay prose-routed (toolsJSON nil). #coach-agent-loop.
+        let toolsJSON = backend == .remote ? ToolRegistry.shared.toolsJSONString() : nil
         let response = await withTimeout(seconds: 10) {
             await LocalAIService.shared.respondDirect(
                 systemPrompt: prompt,
-                message: msg
+                message: msg,
+                toolsJSON: toolsJSON
             )
         }
         return mapResponse(response)
