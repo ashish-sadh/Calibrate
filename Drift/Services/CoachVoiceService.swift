@@ -30,6 +30,16 @@ final class CoachVoiceService: NSObject, @unchecked Sendable {
     /// tell it's been superseded and bail instead of talking over a new turn.
     @MainActor private var playToken = 0
 
+    /// Identity of the utterance currently being spoken on-device. The
+    /// synthesizer's didFinish/didCancel callbacks are async (they hop to the
+    /// main actor), so a preempting `speak()` can run BEFORE the old utterance's
+    /// didCancel lands — without this guard, that stale callback would null out
+    /// the NEW utterance's `onFinish`, stalling the talk-mode mic re-arm. We only
+    /// honor a callback whose utterance is still the active one. Stored as an
+    /// `ObjectIdentifier` (Sendable) so the nonisolated delegate can pass it
+    /// across the actor hop without a data race. #coach-talk-mode
+    @MainActor private var currentUtteranceID: ObjectIdentifier?
+
     private override init() {
         super.init()
         synthesizer.delegate = self
@@ -75,6 +85,7 @@ final class CoachVoiceService: NSObject, @unchecked Sendable {
         utterance.voice = Self.preferredVoice
         utterance.prefersAssistiveTechnologySettings = false
 
+        currentUtteranceID = ObjectIdentifier(utterance)
         isSpeaking = true
         synthesizer.speak(utterance)
     }
@@ -166,6 +177,7 @@ final class CoachVoiceService: NSObject, @unchecked Sendable {
     @MainActor
     func stop() {
         playToken &+= 1
+        currentUtteranceID = nil   // ignore the didCancel this stopSpeaking will fire
         onFinish = nil
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
         audioPlayer?.stop(); audioPlayer = nil
@@ -199,7 +211,12 @@ final class CoachVoiceService: NSObject, @unchecked Sendable {
 
 extension CoachVoiceService: AVSpeechSynthesizerDelegate {
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        let finishedID = ObjectIdentifier(utterance)
         Task { @MainActor in
+            // Ignore a finish from an utterance that's already been superseded by
+            // a newer speak() — the newer one owns the current onFinish.
+            guard self.currentUtteranceID == finishedID else { return }
+            self.currentUtteranceID = nil
             self.isSpeaking = false
             let cb = self.onFinish; self.onFinish = nil
             cb?()
@@ -207,7 +224,13 @@ extension CoachVoiceService: AVSpeechSynthesizerDelegate {
     }
 
     func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+        let cancelledID = ObjectIdentifier(utterance)
         Task { @MainActor in
+            // Only act on a cancel of the CURRENT utterance. A preempting speak()
+            // sets a new currentUtteranceID before this lands, so a stale didCancel
+            // must NOT clear the new turn's onFinish (that stalled the mic loop).
+            guard self.currentUtteranceID == cancelledID else { return }
+            self.currentUtteranceID = nil
             self.isSpeaking = false
             self.onFinish = nil
         }

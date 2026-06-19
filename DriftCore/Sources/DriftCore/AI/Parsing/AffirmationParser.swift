@@ -38,16 +38,20 @@ public enum AffirmationParser {
         let s = normalize(raw)
         guard !s.isEmpty else { return .unclear }
 
-        // Phrase matches first — most specific.
+        // Phrase matches first — most specific, and allowed at any length.
         if noPhrases.contains(where: { s.contains($0) }) { return .no }
         if yesPhrases.contains(where: { s.contains($0) }) { return .yes }
 
-        // Whole-word token matches.
-        let tokens = Set(s.split(separator: " ").map(String.init))
-        let hitNo = !tokens.isDisjoint(with: noWords)
-        let hitYes = !tokens.isDisjoint(with: yesWords)
-        if hitNo { return .no }      // negative bias on ambiguity
-        if hitYes { return .yes }
+        // A bare confirmation is TERSE ("yes", "no", "yeah"). A longer sentence
+        // that merely contains "no"/"yes" ("no, I had chicken instead", "yes but
+        // make it two servings") is a correction or a new request — defer it to
+        // .unclear so the caller routes it as a fresh turn instead of cancelling.
+        let tokens = s.split(separator: " ").map(String.init)
+        guard tokens.count <= 4 else { return .unclear }
+
+        let set = Set(tokens)
+        if !set.isDisjoint(with: noWords) { return .no }   // negative bias on ambiguity
+        if !set.isDisjoint(with: yesWords) { return .yes }
         return .unclear
     }
 

@@ -1359,16 +1359,31 @@ extension AIChatViewModel {
         guard let idx = messages.firstIndex(where: { $0.id == responseId }) else { return }
 
         if let card = parseProposedMealCard(from: response) {
-            messages[idx].text = ""
+            // Give the card a spoken-friendly summary instead of blank text: in
+            // talk-mode the coach SPEAKS this ("Add chicken, rice — ~520 cal.
+            // Log it?") and it shows as the immersive caption. Without it the
+            // coach proposed silently. #coach-talk-mode
+            messages[idx].text = Self.proposalSummary(card)
             messages[idx].proposedMealCard = card
             messages[idx].remoteProvider = aiService.remoteProviderName
             pendingProposalTurnId = responseId
         } else if response.isEmpty {
             messages.remove(at: idx)
+            pendingProposalTurnId = nil   // followup produced nothing — drop stale proposal
         } else {
             messages[idx].text = response
             messages[idx].remoteProvider = aiService.remoteProviderName
+            pendingProposalTurnId = nil   // a plain-text reply supersedes any pending proposal
         }
+    }
+
+    /// A short, spoken-friendly restatement of a proposed meal for the assistant
+    /// bubble + the talk-mode caption/TTS.
+    static func proposalSummary(_ card: ProposedMealCardData) -> String {
+        let names = card.items.prefix(3).map(\.name).joined(separator: ", ")
+        let extra = card.items.count > 3 ? " and more" : ""
+        let total = card.items.reduce(0) { $0 + $1.calories }
+        return "Add \(names)\(extra) — about \(total) calories. Log it?"
     }
 
     /// Clear the active proposal card and undo token list.
@@ -1380,6 +1395,10 @@ extension AIChatViewModel {
     /// Confirm all items in a proposed meal card: insert each as a FoodEntry
     /// directly, open a 10s undo window, then dismiss the card in place.
     func confirmProposedMeal(_ card: ProposedMealCardData, messageId: UUID) {
+        // Only the ACTIVE proposal is confirmable. Guards against tapping an old
+        // proposal card still visible in the scroll-back (or a double-tap after a
+        // voice "yes" already logged it) — both would otherwise double-write.
+        guard messageId == pendingProposalTurnId else { return }
         let mealType = MealType.fromHour()
         let today = DateFormatters.todayString
         var loggedIds: [Int64] = []

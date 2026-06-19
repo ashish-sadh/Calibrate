@@ -31,3 +31,13 @@ import Testing
     // a yes word + a no word → safety-biased to no.
     #expect(AffirmationParser.verdict("yes no") == .no)
 }
+
+@Test func longCorrectiveSentenceIsUnclearNotCancel() {
+    // A correction that happens to start with "no" must NOT read as a bare
+    // cancel — it should route to a fresh turn. #coach-talk-mode
+    #expect(AffirmationParser.verdict("no, I had chicken instead") == .unclear)
+    #expect(AffirmationParser.verdict("yes but make it two servings of rice") == .unclear)
+    // Terse confirmations still resolve.
+    #expect(AffirmationParser.verdict("yeah do it") == .yes)
+    #expect(AffirmationParser.verdict("no") == .no)
+}
