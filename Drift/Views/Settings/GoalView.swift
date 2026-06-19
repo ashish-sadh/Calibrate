@@ -13,6 +13,7 @@ struct GoalView: View {
     @State var profileExpanded = false
     @State var showSaved = false
     @State var heightInFeet = false
+    @State var weightUnit: WeightUnit = Preferences.weightUnit
     @State var weightText = ""
     @FocusState var weightFocused: Bool
 

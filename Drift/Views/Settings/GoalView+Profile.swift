@@ -139,23 +139,40 @@ extension GoalView {
     }
 
     private var weightInput: some View {
-        HStack {
-            Text("Weight").font(.subheadline).foregroundStyle(.secondary)
-            Spacer()
-            let unit = Preferences.weightUnit
-            TextField("Not set", text: $weightText)
-                .keyboardType(.decimalPad)
-                .multilineTextAlignment(.trailing)
-                .frame(width: 70)
-                .focused($weightFocused)
-                .onChange(of: weightFocused) { _, focused in
-                    if !focused, let val = Double(weightText) {
-                        let kg = unit.convertToKg(val)
-                        currentWeightKg = kg
-                        saveWeight(kg: kg)
+        VStack(spacing: 6) {
+            HStack {
+                Text("Weight").font(.subheadline).foregroundStyle(.secondary)
+                Spacer()
+                Picker("", selection: $weightUnit) {
+                    Text("kg").tag(WeightUnit.kg)
+                    Text("lbs").tag(WeightUnit.lbs)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 110)
+                .onChange(of: weightUnit) { _, newUnit in
+                    Preferences.weightUnit = newUnit
+                    // Re-render the displayed value in the new unit.
+                    if let kg = currentWeightKg {
+                        weightText = String(format: "%.1f", newUnit.convert(fromKg: kg))
                     }
                 }
-            Text(unit.displayName).font(.caption).foregroundStyle(.tertiary)
+            }
+            HStack {
+                Spacer()
+                TextField("Not set", text: $weightText)
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 70)
+                    .focused($weightFocused)
+                    .onChange(of: weightFocused) { _, focused in
+                        if !focused, let val = Double(weightText) {
+                            let kg = weightUnit.convertToKg(val)
+                            currentWeightKg = kg
+                            saveWeight(kg: kg)
+                        }
+                    }
+                Text(weightUnit.displayName).font(.caption).foregroundStyle(.tertiary)
+            }
         }
     }
 
