@@ -59,3 +59,6 @@ __pycache__/
 *.pyc
 .pytest_cache/
 
+
+# Local scheduler lock (transient — re-created per wakeup)
+.claude/scheduled_tasks.lock
