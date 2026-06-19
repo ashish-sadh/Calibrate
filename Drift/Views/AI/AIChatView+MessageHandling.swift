@@ -303,6 +303,24 @@ extension AIChatViewModel {
 
         let lower = normalized.lowercased()
 
+        // Log EVERY resolved turn (voice + typed, deterministic + LLM) to the
+        // opt-in on-device telemetry — not just LLM turns. Deterministic fast-paths
+        // (food logging, picks, confirms) used to bypass the only record() site
+        // (AIToolAgent.run), so voice commands never appeared. `resolved(...)` runs
+        // the handler and, if it handled the turn, records it; the LLM path (Phase
+        // 8) still records itself in AIToolAgent.run, so each turn logs once.
+        // No-op unless the user enabled chat telemetry. #telemetry-all-turns
+        func resolved(_ tool: String, _ handled: Bool) -> Bool {
+            if handled {
+                ChatTelemetryService.shared.record(
+                    query: normalized,
+                    response: messages.last(where: { $0.role == .assistant })?.text,
+                    intent: .ruleMatch, tool: tool, outcome: .success,
+                    latencyMs: 0, turnIndex: convState.turnCount)
+            }
+            return handled
+        }
+
         // Phase 0.5: MID-FLOW guard. When a multi-turn phase is pending (meal/
         // workout planning, ask-don't-guess clarification, awaiting items), the
         // reply must resolve against THAT phase BEFORE static overrides — else a
@@ -312,33 +330,33 @@ extension AIChatViewModel {
         // handlers guard their own phase + return false (exiting to .idle) on a
         // genuine topic switch, so normal dispatch still runs below. #multi-turn-fix
         if convState.phase != .idle {
-            if handleClarificationResponse(lower) { return }
-            if handleMultiTurnState(lower, originalText: normalized) { return }
+            if resolved("clarification", handleClarificationResponse(lower)) { return }
+            if resolved("multi_turn", handleMultiTurnState(lower, originalText: normalized)) { return }
         }
 
         // Phase 1: Static overrides (greetings, help, rule engine)
-        if dispatchStaticOverride(lower) { return }
+        if resolved("static_override", dispatchStaticOverride(lower)) { return }
         // Phase 2: Workout quick-start ("done", "start", "ready")
-        if handleWorkoutQuickStart(lower) { return }
+        if resolved("workout_quickstart", handleWorkoutQuickStart(lower)) { return }
         // Phase 3: Confirmation ("yes" after weight/activity prompt)
-        if handleConfirmation(lower) { return }
+        if resolved("confirmation", handleConfirmation(lower)) { return }
         // Phase 4: View-state handlers (delete, smart workout, template)
-        if handleDeleteFood(lower) { return }
-        if handleSmartWorkout(lower) { return }
-        if handleTemplateStart(lower) { return }
+        if resolved("delete_food", handleDeleteFood(lower)) { return }
+        if resolved("smart_workout", handleSmartWorkout(lower)) { return }
+        if resolved("template_start", handleTemplateStart(lower)) { return }
         // Phase 4b: Ask-don't-guess clarification resolution (#226) —
         // runs before multi-turn so "1"/"first" can't be mis-parsed.
-        if handleClarificationResponse(lower) { return }
+        if resolved("clarification", handleClarificationResponse(lower)) { return }
         // Phase 5: Multi-turn conversation state
-        if handleMultiTurnState(lower, originalText: normalized) { return }
+        if resolved("multi_turn", handleMultiTurnState(lower, originalText: normalized)) { return }
         // Phase 6: Planning triggers (split builder, meal planning)
-        if handleWorkoutSplitTrigger(lower) { return }
-        if handleMealPlanningTrigger(lower) { return }
+        if resolved("workout_split", handleWorkoutSplitTrigger(lower)) { return }
+        if resolved("meal_planning", handleMealPlanningTrigger(lower)) { return }
         // Phase 6b: "log my usual lunch" — recall + narrate + open editable sheet.
         // Runs before food parsing so "usual lunch" isn't treated as a food name.
-        if handleUsualMeal(lower) { return }
+        if resolved("usual_meal", handleUsualMeal(lower)) { return }
         // Phase 7: Food & activity intent parsing
-        if handleFoodIntentParsing(lower, originalText: normalized) { return }
+        if resolved("food_intent", handleFoodIntentParsing(lower, originalText: normalized)) { return }
         // Phase 8: AI pipeline fallback
         handleAIPipeline(normalized)
     }
