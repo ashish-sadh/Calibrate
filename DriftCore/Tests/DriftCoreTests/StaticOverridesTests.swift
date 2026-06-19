@@ -298,6 +298,24 @@ final class StaticOverridesTests: XCTestCase {
         }
     }
 
+    func testEmojiOnly_bareDigitsDoNotMatch() {
+        // Regression: Unicode marks ASCII digits as emoji (keycap bases), so
+        // "1"/"2"/"3" wrongly hit the emoji-only override → "What can I help you
+        // with?", swallowing meal-planning + clarification number picks. #multi-turn-fix
+        for digit in ["1", "2", "3", "10"] {
+            let result = StaticOverrides.match(digit)
+            if case .response(let text) = result, text == "What can I help you with?" {
+                XCTFail("bare '\(digit)' must NOT match the emoji-only override (it's a pick, not an emoji)")
+            }
+        }
+        // True emoji-only still matches.
+        if case .response(let text) = StaticOverrides.match("👍"), text == "What can I help you with?" {
+            // expected
+        } else {
+            XCTFail("'👍' should still hit the emoji-only override")
+        }
+    }
+
     // MARK: - nil fall-through
 
     func testNilFallthrough_randomQuery() {

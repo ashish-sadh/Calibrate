@@ -62,8 +62,13 @@ public enum StaticOverrides {
 
         // --- Universal overrides (both models) ---
 
-        // Emoji-only
-        if lower.unicodeScalars.allSatisfy({ $0.properties.isEmoji || $0.properties.isEmojiPresentation || $0 == " " })
+        // Emoji-only. NOTE: Unicode marks ASCII digits 0-9 (and #, *) as
+        // `isEmoji` (they're keycap-emoji bases like 1️⃣), so a bare "1"/"2"/"3"
+        // would wrongly match here and return "What can I help you with?",
+        // swallowing meal-planning + clarification number-picks. Require NO
+        // alphanumerics so only true emoji/symbols match. #multi-turn-fix
+        if lower.rangeOfCharacter(from: .alphanumerics) == nil
+            && lower.unicodeScalars.allSatisfy({ $0.properties.isEmoji || $0.properties.isEmojiPresentation || $0 == " " })
             && !lower.isEmpty && lower.count <= 4 {
             return .response("What can I help you with?")
         }

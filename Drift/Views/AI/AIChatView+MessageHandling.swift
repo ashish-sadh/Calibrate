@@ -303,6 +303,19 @@ extension AIChatViewModel {
 
         let lower = normalized.lowercased()
 
+        // Phase 0.5: MID-FLOW guard. When a multi-turn phase is pending (meal/
+        // workout planning, ask-don't-guess clarification, awaiting items), the
+        // reply must resolve against THAT phase BEFORE static overrides — else a
+        // bare "1"/"2"/"ok"/"done" pick is swallowed by an override (e.g. the
+        // emoji-only rule, or the thanks set) and the conversation breaks (user
+        // picks "1" to log a meal → gets "What can I help you with?"). Both
+        // handlers guard their own phase + return false (exiting to .idle) on a
+        // genuine topic switch, so normal dispatch still runs below. #multi-turn-fix
+        if convState.phase != .idle {
+            if handleClarificationResponse(lower) { return }
+            if handleMultiTurnState(lower, originalText: normalized) { return }
+        }
+
         // Phase 1: Static overrides (greetings, help, rule engine)
         if dispatchStaticOverride(lower) { return }
         // Phase 2: Workout quick-start ("done", "start", "ready")
