@@ -158,7 +158,7 @@ enum Theme {
 
     // MARK: - Card
 
-    static let cardCornerRadius: CGFloat = 16
+    static let cardCornerRadius: CGFloat = 18   // #premium-polish: softer corners read more refined/flowy (was 16)
     static let cardPadding: CGFloat = 16
 
     // MARK: - Shadows (V6 glass depth)
@@ -242,7 +242,14 @@ extension View {
     /// to come from somewhere or cards would visually collapse into
     /// the page background.
     func shadowSoft() -> some View {
-        self.shadow(color: Color.black.opacity(0.05), radius: 6, x: 0, y: 2)
+        // Premium depth = a LAYERED shadow (Apple Fitness/Health signature): a
+        // soft diffused ambient for the gentle "float", plus a tight contact
+        // shadow that grounds the card. Both low-opacity so it reads refined,
+        // not heavy. Replaces the single flat r6 shadow that made cards look
+        // stuck-on. #premium-polish
+        self
+            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+            .shadow(color: Color.black.opacity(0.04), radius: 1.5, x: 0, y: 1)
     }
     /// V6 pop shadow. Sheets / popovers.
     func shadowPop() -> some View {
