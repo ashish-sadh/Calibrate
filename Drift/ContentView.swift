@@ -15,10 +15,12 @@ struct ContentView: View {
     var launchStage: LaunchStage
 
     @State private var selectedTab: PrimaryTab = .today
-    @State private var showingLogMeal = false
-    /// Mode the next LogMealSheet presentation should open at. Set by
-    /// the Dashboard quick-log chips via `.openLogMeal` notification.
-    @State private var pendingLogMealMode: LogMealMode = .recent
+    /// Drives the LogMealSheet presentation *and* its initial segment.
+    /// Using `.sheet(item:)` (not a separate `isPresented` + mode pair)
+    /// so the sheet always opens on the requested segment — the
+    /// two-@State version raced and opened on `.recent` regardless of
+    /// the `.openLogMeal` mode. Set by the Dashboard quick-log chips.
+    @State private var pendingLogMealMode: LogMealMode?
     /// V7 polish: Snap chip routes directly here instead of through
     /// the Log-a-Meal sheet — user expected camera-first.
     @State private var showingPhotoLog = false
@@ -59,8 +61,8 @@ struct ContentView: View {
                 tabBarOverlay
             }
             .background(Theme.background.ignoresSafeArea())
-            .sheet(isPresented: $showingLogMeal) {
-                LogMealSheet(initialMode: pendingLogMealMode)
+            .sheet(item: $pendingLogMealMode) { mode in
+                LogMealSheet(initialMode: mode)
             }
             .onReceive(NotificationCenter.default.publisher(for: .navigateToTab)) { notification in
                 if let tab = notification.userInfo?["tab"] as? Int,
@@ -75,7 +77,6 @@ struct ContentView: View {
                 } else {
                     pendingLogMealMode = .recent
                 }
-                showingLogMeal = true
             }
             .onReceive(NotificationCenter.default.publisher(for: .openPhotoLog)) { _ in
                 showingPhotoLog = true
