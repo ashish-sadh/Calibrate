@@ -123,12 +123,21 @@ echo "$UPDATED" > "$STATE_FILE"
 # Threshold checks
 STUCK_REASON=""
 
-if [ "$SINCE_DIFF" -ge 30 ]; then
+# 2026-06-19: bumped 30 → 80. The 30-call threshold false-killed deep SENIOR/
+# JUNIOR bug-fix sessions (P0 #889 died 4×, ~30-40 min each) that legitimately
+# read/grep/reproduce extensively BEFORE writing the first diff — same shape
+# planning was exempted for (line 39), but senior/junior weren't. Untracked
+# files already count as growth (line 82-84); 80 still catches a true loop (80
+# calls with ZERO bytes written) while letting real investigation finish. The
+# watchdog's 1h-no-heartbeat kill is the hard backstop.
+if [ "$SINCE_DIFF" -ge 80 ]; then
     STUCK_REASON="zero_diff_growth: ${SINCE_DIFF} tool calls without diff growth"
 fi
 
 MAX_READ_COUNT=$(echo "$FILE_COUNTS" | jq '[.[]] | max // 0')
-if [ "$MAX_READ_COUNT" -ge 5 ]; then
+# 2026-06-19: bumped 5 → 12 — debugging a bug legitimately re-reads the same
+# file several times (read → edit → re-read to verify → re-read after a test).
+if [ "$MAX_READ_COUNT" -ge 12 ]; then
     REPEATED_FILE=$(echo "$FILE_COUNTS" | jq -r 'to_entries | max_by(.value).key')
     STUCK_REASON="repeated_file_read: $REPEATED_FILE read ${MAX_READ_COUNT} times"
 fi
