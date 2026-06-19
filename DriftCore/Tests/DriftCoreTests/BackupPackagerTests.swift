@@ -4,6 +4,15 @@ import ZIPFoundation
 import CryptoKit
 @testable import DriftCore
 
+/// Thread-safe sink for the @Sendable progress callback (so the test can
+/// capture phases without a data-race warning).
+private final class PhaseCollector: @unchecked Sendable {
+    private let lock = NSLock()
+    private var store: [BackupPhase] = []
+    func append(_ p: BackupPhase) { lock.lock(); store.append(p); lock.unlock() }
+    var phases: [BackupPhase] { lock.lock(); defer { lock.unlock() }; return store }
+}
+
 final class BackupPackagerTests: XCTestCase {
     private var workDir: URL!
 
@@ -162,6 +171,51 @@ final class BackupPackagerTests: XCTestCase {
         UserDefaults().removePersistentDomain(forName: suite)
     }
 
+    /// The progress callback fires the packaging phases in order — proves the
+    /// granular status the UI shows ("Copying… → Saving… → Compressing X") is
+    /// driven by real packaging steps, not a fake timer. #backup-progress
+    func testPackageEmitsProgressPhasesInOrder() throws {
+        let dbURL = workDir.appendingPathComponent("prog.sqlite")
+        let dbQueue = try DatabaseQueue(path: dbURL.path)
+        try dbQueue.write { db in
+            try db.execute(sql: "CREATE TABLE t (id INTEGER PRIMARY KEY, v TEXT)")
+            try db.execute(sql: "INSERT INTO t(v) VALUES('x')")
+        }
+        let suite = "BackupProgressTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defaults.set(true, forKey: "drift_health_nudges")
+        defer { UserDefaults().removePersistentDomain(forName: suite) }
+
+        let collector = PhaseCollector()
+        _ = try BackupPackager().package(
+            dbWriter: dbQueue,
+            userDefaults: defaults,
+            appMetadata: .init(appBuild: "1", appVersion: "1.0", schemaVersion: 1),
+            destination: workDir.appendingPathComponent("prog.driftbackup"),
+            progress: { collector.append($0) }
+        )
+
+        let phases = collector.phases
+        XCTAssertEqual(phases.count, 3)
+        XCTAssertEqual(phases.first, .snapshotting)
+        XCTAssertEqual(phases.dropFirst().first, .savingSettings)
+        if case .compressing(let bytes) = phases.last {
+            XCTAssertGreaterThan(bytes, 0)
+        } else {
+            XCTFail("expected compressing phase last, got \(String(describing: phases.last))")
+        }
+    }
+
+    func testBackupPhaseMessages() {
+        XCTAssertEqual(BackupPhase.snapshotting.message, "Copying your data…")
+        XCTAssertEqual(BackupPhase.savingSettings.message, "Saving your settings…")
+        XCTAssertEqual(BackupPhase.movingToCloud.message, "Moving to iCloud…")
+        XCTAssertEqual(BackupPhase.uploading.message, "Uploading to iCloud…")
+        let compressing = BackupPhase.compressing(bytes: 3_500_000).message
+        XCTAssertTrue(compressing.hasPrefix("Compressing backup ("))
+        XCTAssertTrue(compressing.contains("MB"))
+    }
+
     /// Regression for #700 / #701 — allowlist must contain only real keys
     /// that the JSON pipeline can serialize (primitive / `[String]` / `Data`
     /// via `dataB64Prefix`). If you add a key, also add a writer in
@@ -176,7 +230,10 @@ final class BackupPackagerTests: XCTestCase {
             "drift_chat_telemetry_enabled",
             "drift_use_remote_model_on_wifi",
             "drift_preferred_ai_backend",
-            "drift_photo_log_enabled",
+            // NOTE: `drift_photo_log_enabled` is intentionally absent — it is not
+            // a real production key (no reader/writer; Photo Log enablement is
+            // derived from a Keychain key, which is never backed up). Per the
+            // #700 "real keys only" rule it must stay out of the allowlist.
             "drift_health_nudges",
             "drift_meal_reminders",
             "drift_medication_reminders",

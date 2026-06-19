@@ -33,16 +33,19 @@ public struct BackupPackager {
         appMetadata: AppMetadata,
         timestamp: Date = Date(),
         destination: URL,
-        scratchDir: URL? = nil
+        scratchDir: URL? = nil,
+        progress: BackupProgressHandler? = nil
     ) throws -> BackupManifest {
         let workDir = scratchDir ?? FileManager.default.temporaryDirectory
             .appendingPathComponent("drift-backup-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: workDir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: workDir) }
 
+        progress?(.snapshotting)
         let dbSnapshotURL = workDir.appendingPathComponent(BackupKeys.databaseFileName)
         try snapshotDatabase(dbWriter: dbWriter, to: dbSnapshotURL)
 
+        progress?(.savingSettings)
         let prefsURL = workDir.appendingPathComponent(BackupKeys.preferencesFileName)
         try writePreferences(userDefaults: userDefaults, to: prefsURL)
 
@@ -62,6 +65,7 @@ public struct BackupPackager {
         let manifestURL = workDir.appendingPathComponent(BackupKeys.manifestFileName)
         try BackupManifest.encoder().encode(manifest).write(to: manifestURL)
 
+        progress?(.compressing(bytes: dbEntry.sizeBytes + prefsEntry.sizeBytes))
         try writeZip(
             entries: [manifestURL, dbSnapshotURL, prefsURL],
             to: destination

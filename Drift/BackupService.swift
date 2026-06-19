@@ -154,7 +154,7 @@ public final class BackupService: @unchecked Sendable {
     /// destination URL after the file is on disk; upload confirmation is
     /// async and side-effects UserDefaults later.
     @discardableResult
-    public func performBackup() async throws -> URL {
+    public func performBackup(progress: BackupProgressHandler? = nil) async throws -> URL {
         let timestamp = now()
         let backupsDir = try backupsDirectory()
         let filename = BackupPackager.filename(for: timestamp)
@@ -168,8 +168,10 @@ public final class BackupService: @unchecked Sendable {
                 userDefaults: userDefaults,
                 appMetadata: appMetadata(),
                 timestamp: timestamp,
-                destination: tempURL
+                destination: tempURL,
+                progress: progress
             )
+            progress?(.movingToCloud)
             try moveOrMapQuota(from: tempURL, to: destination)
         } catch let err as BackupError {
             recordError(err)
@@ -182,6 +184,7 @@ public final class BackupService: @unchecked Sendable {
 
         pruneRingBuffer(excluding: destination)
         startUploadMonitor(for: destination)
+        progress?(.uploading)
         // Local write succeeded — the previous failure is no longer "the last
         // attempt." Clearing here keeps Settings → Backup from showing a stale
         // red error label next to the green "uploading…" confirmation while
@@ -346,6 +349,7 @@ public final class BackupService: @unchecked Sendable {
     func recordUploadSuccess(date: Date) {
         userDefaults.set(date, forKey: Self.lastSuccessfulBackupDateKey)
         userDefaults.removeObject(forKey: Self.lastBackupErrorKey)
+        NotificationCenter.default.post(name: .driftBackupUploadStateChanged, object: nil)
     }
 
     /// Persist an upload failure surfaced via `NSMetadataUbiquitousItemUploadingErrorKey`
@@ -359,6 +363,7 @@ public final class BackupService: @unchecked Sendable {
             mapped = .invalidFormat("upload failed: \(error.localizedDescription)")
         }
         userDefaults.set(String(describing: mapped), forKey: Self.lastBackupErrorKey)
+        NotificationCenter.default.post(name: .driftBackupUploadStateChanged, object: nil)
     }
 
     private func stopMonitor(for url: URL) {

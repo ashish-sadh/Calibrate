@@ -1,5 +1,13 @@
 import SwiftUI
 import DriftCore
+import Combine
+
+/// Live backup status for the Settings screen. MainActor-isolated (hence
+/// implicitly Sendable) so the off-main progress callback from `performBackup`
+/// can capture it and update it via `Task { @MainActor in }`. #backup-progress
+@MainActor @Observable final class BackupProgressModel {
+    var message: String?
+}
 
 /// Settings → Data → Backup screen (Section E of `561-icloud-backup.md`).
 /// Toggle + Back Up Now + Restore picker + "What's in my backup?" disclosure.
@@ -10,7 +18,10 @@ struct BackupSettingsView: View {
     @State private var lastSuccessfulDate: Date?
     @State private var showingRestorePicker = false
     @State private var showingICloudUnavailable = false
-    @State private var transientStatus: String?
+    /// Live phase text ("Compressing 3.2 MB…", "Uploading to iCloud…",
+    /// "Backed up ✓"). Reference type so the @Sendable progress callback can
+    /// update it from a background thread (via the main actor).
+    @State private var progress = BackupProgressModel()
 
     private let service: BackupService
 
@@ -33,6 +44,24 @@ struct BackupSettingsView: View {
         .navigationTitle("Backup")
         .toolbarColorScheme(.light, for: .navigationBar)
         .onAppear { refreshState() }
+        .onReceive(NotificationCenter.default.publisher(for: .driftBackupUploadStateChanged)) { _ in
+            // Upload confirmed (or failed) by the iCloud metadata query — update
+            // live instead of waiting for the next onAppear. This is the answer
+            // to "is it actually working?": the line flips to "Backed up ✓".
+            refreshState()
+            if let err = service.lastBackupError {
+                progress.message = nil
+                lastBackupError = err
+            } else if service.lastSuccessfulBackupDate != nil {
+                progress.message = "Backed up ✓"
+                let model = progress
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(4))
+                    if model.message == "Backed up ✓" { model.message = nil }
+                }
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: progress.message)
         .sheet(isPresented: $showingRestorePicker) {
             NavigationStack {
                 RestorePickerView(service: service)
@@ -96,9 +125,15 @@ struct BackupSettingsView: View {
             .disabled(isBackingUp || !backupEnabled)
             .accessibilityHint(isBackingUp ? "Backup in progress" : "Backs up Drift to iCloud immediately")
 
-            if let status = transientStatus {
-                Text(status).font(.caption).foregroundStyle(Theme.deficit)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+            if let status = progress.message {
+                HStack(spacing: 6) {
+                    if isBackingUp { ProgressView().scaleEffect(0.7) }
+                    Text(status)
+                        .font(.caption)
+                        .foregroundStyle(status.hasSuffix("✓") ? Theme.deficit : Theme.textSecondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .transition(.opacity)
             }
 
             Divider().overlay(Theme.separator)
@@ -154,17 +189,26 @@ struct BackupSettingsView: View {
     private func runBackup() async {
         guard !isBackingUp else { return }
         isBackingUp = true
-        transientStatus = nil
+        progress.message = nil
+        lastBackupError = nil
+        // Capture the reference (Sendable, MainActor-isolated) so the off-main
+        // packaging callback can post phase updates back to the UI.
+        let model = progress
         defer {
             isBackingUp = false
             refreshState()
         }
         do {
-            _ = try await service.performBackup()
-            transientStatus = "Backed up — uploading to iCloud…"
+            _ = try await service.performBackup(progress: { phase in
+                Task { @MainActor in model.message = phase.message }
+            })
+            // performBackup already emitted .uploading; that line stays until the
+            // metadata query confirms the upload (onReceive flips it to ✓).
         } catch BackupError.iCloudUnavailable {
+            progress.message = nil
             showingICloudUnavailable = true
         } catch {
+            progress.message = nil
             lastBackupError = String(describing: error)
         }
     }
