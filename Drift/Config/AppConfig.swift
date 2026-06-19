@@ -62,4 +62,35 @@ enum AppConfig {
 
     /// True when the embedded key decrypts — the cloud coach is selectable.
     static var coachCloudConfigured: Bool { !coachAPIKey.isEmpty }
+
+    // MARK: - ElevenLabs cloud TTS (studio coach voice)
+
+    /// ElevenLabs voice ID for the coach. "Rachel" — calm, warm, reliable.
+    /// Swap for any voice ID from the ElevenLabs library.
+    static let coachVoiceID = "21m00Tcm4TlvDq8ikWAM"
+
+    /// ElevenLabs model. `eleven_turbo_v2_5` — low latency (~300ms) with quality
+    /// close to multilingual_v2; right balance for a real-time spoken coach.
+    static let elevenLabsModelID = "eleven_turbo_v2_5"
+
+    /// AES-GCM(combined) of the ElevenLabs API key, base64 — sealed with the
+    /// SAME `unlockKey` derivation as the Nebius key. Only ciphertext ships.
+    /// Same caveat as `coachKeyCiphertextB64`: obfuscation, not security; the
+    /// key is on a spending cap and should be rotated after the hackathon.
+    private static let elevenLabsKeyCiphertextB64 =
+        "mJ/nOI/v3fCnaQBZ/n+vrbZRMYhLBI3qW/wQNCpZoIRTiQz/rEKeKgxIrqtQDvr+x56B8Im6z3IA1Zb61BS2QbT+byi+mrHAgb9Cq0mAfQ=="
+
+    /// Decrypt the ElevenLabs key. Returns "" when absent/garbled — the coach
+    /// then falls back to the on-device voice.
+    static var elevenLabsAPIKey: String {
+        guard !elevenLabsKeyCiphertextB64.isEmpty,
+              let data = Data(base64Encoded: elevenLabsKeyCiphertextB64),
+              let box = try? AES.GCM.SealedBox(combined: data),
+              let plain = try? AES.GCM.open(box, using: unlockKey),
+              let key = String(data: plain, encoding: .utf8) else { return "" }
+        return key
+    }
+
+    /// True when the ElevenLabs key decrypts — studio voice is available.
+    static var elevenLabsConfigured: Bool { !elevenLabsAPIKey.isEmpty }
 }

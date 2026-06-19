@@ -24,6 +24,12 @@ final class CoachVoiceService: NSObject, @unchecked Sendable {
     private let synthesizer = AVSpeechSynthesizer()
     private var onFinish: (@MainActor () -> Void)?
 
+    /// Plays ElevenLabs MP3 audio (the cloud path). Held so `stop()` can halt it.
+    @MainActor private var audioPlayer: AVAudioPlayer?
+    /// Bumped on every `speak`/`stop` so a late-returning cloud synthesis can
+    /// tell it's been superseded and bail instead of talking over a new turn.
+    @MainActor private var playToken = 0
+
     private override init() {
         super.init()
         synthesizer.delegate = self
@@ -38,9 +44,26 @@ final class CoachVoiceService: NSObject, @unchecked Sendable {
         let spoken = Self.plainSpeech(text)
         guard !spoken.isEmpty else { onFinish?(); return }
 
+        // Supersede anything in flight (synth + cloud playback + pending fetch).
+        playToken &+= 1
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
+        audioPlayer?.stop(); audioPlayer = nil
         self.onFinish = onFinish
+        isSpeaking = true
 
+        // Studio voice when an ElevenLabs key is provisioned; otherwise the best
+        // on-device voice. The cloud path silently falls back on any failure.
+        if AppConfig.elevenLabsConfigured {
+            speakCloud(spoken, token: playToken)
+        } else {
+            speakOnDevice(spoken)
+        }
+    }
+
+    /// On-device TTS via `AVSpeechSynthesizer` using the best installed voice.
+    /// The free/private/instant path and the cloud path's fallback.
+    @MainActor
+    private func speakOnDevice(_ spoken: String) {
         // Spoken-audio playback; duck (not interrupt) any other audio.
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
@@ -54,6 +77,51 @@ final class CoachVoiceService: NSObject, @unchecked Sendable {
 
         isSpeaking = true
         synthesizer.speak(utterance)
+    }
+
+    /// Studio TTS via ElevenLabs: fetch MP3 off-main, then play. On ANY failure
+    /// (network, key, decode) fall back to the on-device voice so the coach never
+    /// goes silent. `token` guards against a stale result arriving after `stop()`
+    /// or a newer turn.
+    @MainActor
+    private func speakCloud(_ spoken: String, token: Int) {
+        Task { [weak self] in
+            guard let self else { return }
+            do {
+                let data = try await ElevenLabsTTSClient.synthesize(
+                    text: spoken,
+                    voiceID: AppConfig.coachVoiceID,
+                    modelID: AppConfig.elevenLabsModelID,
+                    apiKey: AppConfig.elevenLabsAPIKey)
+                await MainActor.run { self.playCloudAudio(data, spoken: spoken, token: token) }
+            } catch {
+                Log.app.info("Coach voice: ElevenLabs failed (\(error)) — falling back on-device")
+                await MainActor.run {
+                    guard token == self.playToken else { return }
+                    self.speakOnDevice(spoken)
+                }
+            }
+        }
+    }
+
+    /// Play fetched MP3 bytes. If decoding fails, fall back on-device. Ignores a
+    /// result the user already superseded.
+    @MainActor
+    private func playCloudAudio(_ data: Data, spoken: String, token: Int) {
+        guard token == playToken else { return }
+        let session = AVAudioSession.sharedInstance()
+        try? session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
+        try? session.setActive(true)
+        do {
+            let player = try AVAudioPlayer(data: data)
+            player.delegate = self
+            audioPlayer = player
+            isSpeaking = true
+            player.play()
+        } catch {
+            Log.app.info("Coach voice: ElevenLabs MP3 decode failed — falling back on-device")
+            speakOnDevice(spoken)
+        }
     }
 
     /// The best-sounding installed English voice, chosen once. Apple's
@@ -94,10 +162,13 @@ final class CoachVoiceService: NSObject, @unchecked Sendable {
     }()
 
     /// Stop speaking immediately (user tapped stop, or started recording).
+    /// Bumps the play token so any in-flight cloud synthesis is discarded.
     @MainActor
     func stop() {
+        playToken &+= 1
         onFinish = nil
         if synthesizer.isSpeaking { synthesizer.stopSpeaking(at: .immediate) }
+        audioPlayer?.stop(); audioPlayer = nil
         isSpeaking = false
     }
 
@@ -139,6 +210,28 @@ extension CoachVoiceService: AVSpeechSynthesizerDelegate {
         Task { @MainActor in
             self.isSpeaking = false
             self.onFinish = nil
+        }
+    }
+}
+
+// MARK: - AVAudioPlayerDelegate (ElevenLabs cloud path)
+
+extension CoachVoiceService: AVAudioPlayerDelegate {
+    func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+        Task { @MainActor in
+            self.audioPlayer = nil
+            self.isSpeaking = false
+            let cb = self.onFinish; self.onFinish = nil
+            cb?()
+        }
+    }
+
+    func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
+        Task { @MainActor in
+            self.audioPlayer = nil
+            self.isSpeaking = false
+            let cb = self.onFinish; self.onFinish = nil
+            cb?()
         }
     }
 }
