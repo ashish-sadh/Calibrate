@@ -38,7 +38,7 @@ public enum RemoteBackendError: Error, Sendable, Equatable {
     /// status etc.) go to logs, not the chat bubble.
     public var userFacingMessage: String {
         switch self {
-        case .auth: return "Your API key was rejected. Re-add it in Settings → Photo Log."
+        case .auth: return "Drift Coach's cloud brain couldn't authenticate. Switch to on-device, or try again later."
         case .rateLimited: return "Provider is throttling. Wait a minute and tap retry."
         case .quotaExceeded: return "Provider rejected the request — credit balance may be low."
         case .transient: return "Couldn't reach the provider. Tap retry, or switch to on-device."

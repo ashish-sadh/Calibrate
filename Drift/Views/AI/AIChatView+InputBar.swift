@@ -94,7 +94,8 @@ extension AIChatView {
 
     @ViewBuilder
     private var idleControls: some View {
-        // Camera — only when remote backend is active (local has no vision)
+        // Camera — only when the cloud coach is active (Drift Coach on Nebius
+        // supports vision; the on-device backend has no vision capability).
         if vm.activeBackend == .remote {
             PhotosPicker(selection: $photoPickerItem, matching: .images) {
                 Image(systemName: vm.pendingPhotoData != nil ? "camera.fill" : "camera")

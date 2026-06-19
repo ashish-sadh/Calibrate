@@ -6,7 +6,8 @@ import DriftCore
 /// visible backend picker — two options now per mobile review:
 ///   - **Local** (on-device — Apple FM if available, falls back to
 ///     legacy GGUF for old prefs)
-///   - **Cloud (BYOK)** — user's own provider key
+///   - **Cloud** — Drift Coach on a Nebius team key (NOT user BYOK; the
+///     chat BYOK path was archived — see Drift/Archive/)
 /// — bound to `Preferences.preferredAIBackend`, then embeds the existing
 /// `AIChatView` underneath. The inline backend-tiles header inside
 /// AIChatView was removed in the same pass to avoid two stacked pickers.
@@ -23,10 +24,11 @@ struct DriftCoachSheet: View {
     }
 
     /// Initialized from the persisted preference. The simplified picker
-    /// shows `.foundationModels` as "Local" and `.remote` as "Cloud
-    /// (BYOK)". `.llamaCpp` is the legacy on-device backend kept for
-    /// backwards-compat and migrated to `.foundationModels` on launch
-    /// (see DriftApp.task); not user-selectable here.
+    /// shows `.foundationModels` as "Local" and `.remote` as "Cloud"
+    /// (Drift Coach on a Nebius team key — not user BYOK). `.llamaCpp` is
+    /// the legacy on-device backend kept for backwards-compat and migrated
+    /// to `.foundationModels` on launch (see DriftApp.task); not
+    /// user-selectable here.
     @State private var backend: AIBackendType = Preferences.preferredAIBackend
 
     var body: some View {
@@ -55,12 +57,12 @@ struct DriftCoachSheet: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(Theme.textSecondary)
 
-            // V7 mobile pass: collapsed the picker to "Local" + "Cloud
-            // (BYOK)" per user feedback "Local and cloud (BYOK) was
-            // enough of a switch." `.foundationModels` is the local
-            // implementation (Apple Intelligence on iOS 26+ devices);
-            // legacy `.llamaCpp` is migrated to `.foundationModels` on
-            // launch and never surfaced here.
+            // V7 mobile pass: collapsed the picker to "Local" + "Cloud"
+            // per user feedback "Local and cloud was enough of a switch."
+            // `.foundationModels` is the local implementation (Apple
+            // Intelligence on iOS 26+ devices); `.remote` is Drift Coach's
+            // cloud brain (Nebius team key). Legacy `.llamaCpp` is migrated
+            // to `.foundationModels` on launch and never surfaced here.
             Picker("Model", selection: $backend) {
                 Text("Local").tag(AIBackendType.foundationModels)
                 Text("Cloud").tag(AIBackendType.remote)
