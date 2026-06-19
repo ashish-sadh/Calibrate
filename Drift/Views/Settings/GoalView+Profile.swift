@@ -149,10 +149,16 @@ extension GoalView {
                 }
                 .pickerStyle(.segmented)
                 .frame(width: 110)
-                .onChange(of: weightUnit) { _, newUnit in
+                .onChange(of: weightUnit) { oldUnit, newUnit in
                     Preferences.weightUnit = newUnit
-                    // Re-render the displayed value in the new unit.
-                    if let kg = currentWeightKg {
+                    // Reconvert whatever is currently shown — using the text field as
+                    // source of truth so it works mid-edit (currentWeightKg only
+                    // updates on focus loss).
+                    if let shown = Double(weightText) {
+                        let kg = oldUnit.convertToKg(shown)
+                        currentWeightKg = kg
+                        weightText = String(format: "%.1f", newUnit.convert(fromKg: kg))
+                    } else if let kg = currentWeightKg {
                         weightText = String(format: "%.1f", newUnit.convert(fromKg: kg))
                     }
                 }
