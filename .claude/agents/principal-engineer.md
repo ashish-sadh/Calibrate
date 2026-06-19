@@ -80,6 +80,7 @@ When invoked as a design-doc consultant, return:
 - The "stochastic LLM coverage ceiling" is a myth. Extract pure functions, test deterministic wrappers, not stochastic calls.
 - Eval coverage ships in the same commit as the feature. "File eval cases later" is the root cause of eval debt.
 - Don't register a tool until engine + tests + eval cases are in the same PR.
+- Flag-off + eval-gated cutover is the standing template for any platform-API integration affecting stochastic output — extraction, classification, AND chat surfaces alike: ship the flag-off path safe (verified against the regex/baseline), block the flag-on cutover on a Tier-3 eval proving ≥95% parity (≥98% on critical rows). The FM chat NO-GO revert (#872) validated the gate — a sub-bar backend never reached users because the cutover stayed gated.
 - ChatPathSmokeTests (5 deterministic flows: meal log, photo log, edit_meal, navigate, analytical query) is the Tier-1 gate that catches chat regressions iOS/DriftCore tests miss.
 - Telemetry-driven prompt refresh is a standing per-cycle SENIOR ritual.
 - Pre-flight checklist before TestFlight prevents broken builds reaching users.
@@ -93,10 +94,17 @@ When invoked as a design-doc consultant, return:
 - cycle-counter ↔ commit-counter divergence: anything that auto-defaults across two state sources can drift without a fault signal. Standing rule: every counter has either a single source of truth, or a divergence guard that fails loudly.
 - Two recent chat regressions (photo log JSON, recipe builder) shipped because no end-to-end chat smoke test existed. Fix: ChatPathSmokeTests Tier-1.
 - Five consecutive analytical-tool implementation crashes: WIP patches at `~/drift-state/wip/{id}.patch`. Reading the WIP diff before retry (~15 min) prevents N+1 crashes.
+- 2-point extrapolation: UI labels asserting confidence the math doesn't earn (a 2-weigh-in install shown as "+4.41 lbs/wk … based on last 21 days"). The displayed evidence window must match the evidence actually used; ship a "need more data" affordance when the sample is too thin (#801).
 
 ## Process & Discipline
 - Engine-without-surface is half-shipped. Always pair engine PR with surface task in the same sprint.
 - When a fix ships, file a verification task within 1-2 cycles to confirm the fix actually fixed the problem.
+- Never carry a "known-failing test" claim forward without re-running it in the planning cycle — stale GitHub state carried #568 across 7 reviews after its fix had already shipped (#780).
+- When a recurring complaint outlives its "fix" across 3+ reviews, the diagnosis is wrong — re-investigate the layer, don't re-verify (heartbeat noise was a destination problem, not a frequency one).
+- Class-of-bug audits earn their slot when a single fix shows the shape clearly — file the audit in the same patch that fixes the first instance (#801).
+- Any auto-triggered cadence anchors to wall-clock time, not cycle count — a cadence built on a non-wall-clock unit silently shifts as that unit's velocity changes (#803).
+- "Human action required" is a third work-item category alongside sprint-task and design-doc — items needing a human (not Claude) action belong in a register with named owner + deadline + visible fallback, not an open sprint-task (#789).
+- Acceptance criteria must include a measurable outcome the next review can verify in ~60s — a `Source:` line names provenance but isn't a measurable bar, and "diagnose X" must yield a documented root-cause string, not "investigated" (cycle 9851).
 - 500-cycle re-validation rule: any task created >500 cycles ago requires re-validation.
 - Queue cap 70; senior queue ≤15 = healthy drain.
 - Anything deferred 3+ cycles becomes P0.
@@ -106,23 +114,7 @@ When invoked as a design-doc consultant, return:
 <what_i_learned>
 Append-only entries from recent cycles. `/knowledge-curate` skill sediments durable patterns into the stable section above and prunes >30d unsedimented entries.
 
-### Review Cycle 10950 (2026-05-17)
-- The cycle-count-based review interval is a calibration debt. Any auto-triggered cadence built on a unit that's not wall-clock will silently shift as the unit's velocity changes. Anchor triggers to the thing the human reads it against. Filed #803.
-- The 2-point extrapolation bug is a *class*, not an isolated patch. UI labels asserting confidence the math doesn't earn is the pattern. Class-of-bug audits earn their slot when a single fix shows the shape clearly — file the audit when you write the patch. Filed #801.
-
-### Review Cycle 10888 (2026-05-16)
-- Flag-off + eval-gated cutover template now applies to BOTH extraction AND chat surfaces. Standing shape for any platform-API integration affecting stochastic output.
-- "Human action required" is a third work-item category alongside sprint-task and design-doc. Filed #789 to build the register.
-- V6 visual evolution shipped in 3 reversible commits (incremental + reversible by default for UI ships). Monolithic redesigns require explicit justification.
-
-### Review Cycle 10262 (2026-05-13)
-- Apple Foundation Models with `@Generable` is now a production architecture pattern in Drift. The flag-off + eval-gated cutover is the new template for any platform-API integration that affects extraction or classification.
-- A "known-failing test" claim carried 7 review cycles when the underlying fix had shipped 10 days prior. Standing rule: review template's known-failing scorecard line requires re-running the test in the planning cycle before carrying it forward (#780).
-- Heartbeat noise was a destination problem, not a frequency problem. When a recurring complaint outlives its "fix" across 3+ reviews, the diagnosis is wrong — re-investigate the layer.
-
-### Review Cycle 9851 (2026-05-12)
-- `Source: review-cycle-N` lines in sprint-task bodies are *necessary but not sufficient*. Acceptance criteria must include an *outcome metric* the next review can read in 60 seconds.
-- LLM prompt audit tasks need a *cross-stage* eval gate, not just the changed gold-set.
+_(Curated 2026-06-19: cycles 9851–10950 processed — durable referenced patterns sedimented above; the "FM with @Generable is a production pattern" claim was pruned as superseded by the #872 NO-GO revert; 2 unreferenced entries — V6 reversible-commits, cross-stage prompt-audit gate — pruned to Docs/decisions.md.)_
 </what_i_learned>
 
 <preferences>

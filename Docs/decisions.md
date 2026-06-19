@@ -30,6 +30,34 @@ Append-only record of non-obvious decisions: architecture changes, harness rules
 
 ---
 
+## 2026-06-19
+
+### Knowledge curation pass 2026-06-19
+
+Weekly `/knowledge-curate` ran (21d since the 2026-05-29 stamp). First pass with *eligible* entries — the 2026-05-12…05-17 persona cohorts crossed the 30d sediment threshold. Key method note: the **planning/senior signs files are the "referenced by a rule" oracle.** A persona learning that `/planning` promoted to a sign counts as referenced — this caught principal-engineer's "outcome metric" entry, which a keyword grep missed because the sign phrases it as "measurable acceptance" / "documented root-cause string" (planning.md / cycle 9851). Without the signs cross-check it would have been wrongly pruned.
+
+**Sedimented into stable:**
+- principal-engineer.md: 8 durable claims — flag-off+eval-gated cutover template *(Testing & Quality)*; wall-clock-not-cycle-count cadence (#803), human-action third work-item category (#789), known-failing-test re-verify-each-planning (#780), recurring-complaint-across-3+-reviews→re-diagnose-the-layer, class-of-bug-audit-filed-with-the-patch (#801), measurable-acceptance-criteria (cycle 9851) *(Process & Discipline)*; 2-point-extrapolation bug class (#801) *(What Broke & Why)*.
+- product-designer.md: 3 — survives-one-cycle→sprint-task (cycle 9851), tenets-WITH-rules-are-infrastructure (cycle 10888), zero-feature-build auto-flags-at-next-planning (cycle 10950). All *Process & Discipline*, each backed by an existing planning sign.
+- qa-tester.md: 0 new — the cycle-9792 rubber-stamp rule was already sedimented into `<context_rules>` + senior.md signs last cycle; the entry held no new *code* failure-mode for `<drift_failure_modes>`.
+- signs (skill bodies): 0 — all three signs files are ~32d old (created 2026-05-18 … last appended 2026-06-04). Sediment needs a >90d-old incident AND a 90d violation-free track record; none qualify yet (earliest crossing ~2026-08-16, as the 2026-05-29 pass projected).
+
+**Pruned (recoverable for 1 cycle):**
+- principal-engineer.md: "V6 visual evolution shipped in 3 reversible commits (incremental + reversible by default for UI ships). Monolithic redesigns require explicit justification." — unreferenced (no sign, no decision in 34d). The designer's mirror copy was pruned for the same reason, so the incremental-UI-default principle is recoverable **only** from this log.
+- principal-engineer.md: "LLM prompt audit tasks need a *cross-stage* eval gate, not just the changed gold-set." — unreferenced; nothing picked it up in 38d.
+- principal-engineer.md (superseded, not unreferenced): "Apple Foundation Models with `@Generable` is now a production architecture pattern in Drift." — contradicted by the #872 NO-GO revert (2026-06-03). Only its durable half (the flag-off+eval-gate cutover template) sedimented.
+- product-designer.md (superseded): "Apple Foundation Models is the right platform bet to lean into." — same #872 revert.
+- product-designer.md: "V6 in 3 reversible elements is materially better than the cycle-869 monolithic theme overhaul. Multi-commit incremental UI is the default; monolithic redesigns require justification." — unreferenced mirror of the pruned principal-engineer note.
+- product-designer.md (restatements already verbatim in stable, pruned without separate recovery): the Feedback-null-traffic-#789 tracking note + the "in violation of my own learning, ZERO friend-tester DM" self-critique (both restate the passive-lever-pairing rule at stable line 47); the "TestFlight reach is measurable (#770)" + "passive lever is half a lever" entries (already in the stable Users & Feedback block).
+- qa-tester.md: "7 traced-correctly verdicts cite real tests but line numbers drift 1–58 lines …" (an observation, not an actionable rule) + "Hook recommendation deferred: extract test names from verdict body and grep test files for them at commit time." (a deferred proposal — confirmed **no such hook was ever built**, so it was a dead TODO, not a live pattern).
+
+Total agent-file line counts after curation:
+- principal-engineer: 127 / 300 cap
+- product-designer: 118 / 300 cap
+- qa-tester: 91 / 250 cap
+
+**Next eligibility:** all 9851–10950 persona cohorts are now processed; fresh `/planning` appends will age into the 30d window over the coming weeks. Signs first cross the 90d sediment threshold ~2026-08-16.
+
 ## 2026-06-17
 
 ### briefnarrator-grounded-rate — live grounding eval clears the bar, green-lights the Today's Brief surface (#885 → #879)

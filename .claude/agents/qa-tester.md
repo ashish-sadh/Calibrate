@@ -87,8 +87,5 @@ Mine these when verifying a diff — these are the recurring shapes that have br
 <learnings>
 Maintained by `/knowledge-curate` (weekly). Append a new dated entry only when a pattern is *new* and *non-obvious*. Durable entries sediment into `<drift_failure_modes>` above; >30d unsedimented entries are pruned. Stay ≤200 lines for the whole file.
 
-### Cycle 9792 (2026-05-11) — verdict-effectiveness audit (#722)
-- Rubber-stamp rate 12.5% (1/8 audited). The one rubber-stamp cited 5 nonexistent test names — looked like copy-paste from a different tool's verdict or LLM hallucination. **Rule reinforced: cite real file:line, not template names. Audit at next 10 verdicts.**
-- 7 traced-correctly verdicts cite real tests but line numbers drift 1–58 lines. The verdicts remain useful (named function/test exists) but a future audit can't grep by line.
-- Hook recommendation deferred: extract test names from verdict body and grep test files for them at commit time. False-positive rate is low.
+_(Curated 2026-06-19: the cycle-9792 verdict-effectiveness audit was processed — its rubber-stamp rule ("cite real file:line, not hallucinated test names") was already sedimented into `<context_rules>` above and `Docs/signs/senior.md`; the line-drift observation and the never-built verdict-name-grep hook proposal were pruned to Docs/decisions.md.)_
 </learnings>

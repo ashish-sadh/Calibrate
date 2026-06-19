@@ -95,26 +95,16 @@ When invoked as a design-doc UX consultant, return:
 - One large P0 = full sprint. Honest sizing prevents P1/P2 slip.
 - Refresh sprint as soon as the last P0/P1 ships.
 - If the same gap appears in 3 consecutive reviews, it becomes a P0.
+- A review recommendation that survives one cycle without action becomes a sprint-task, not a re-recommendation — the first rung below the 3-review→P0 rule (cycle 9851).
+- Tenets without rules are aspirations; tenets WITH rules are infrastructure — promote a tenet to an operational rule (auto-P0 trigger, gate) when it matters. The failed-archive-24h→auto-P0 rule collapsed recovery from 17 builds to 1 day (cycle 10888).
+- A TestFlight build with no user-visible features auto-flags at next planning; two zero-feature ships in a row is cadence theater that undermines "TestFlight reach is part of the product" (cycle 10950).
 - Same-sprint response to user-filed bug batches; same-sprint response to competitive market signals.
 </drift_specific_knowledge>
 
 <what_i_learned>
-### Review Cycle 10950 (2026-05-17)
-- "Build 251 was process-only" is an acceptable line item *once*. Two zero-feature ships in a row would be cadence theater. Add to rule: a TestFlight build with no user-visible features in the description should auto-flag at next planning cycle.
-- Three reviews in a row pointing at Feedback null traffic. #789 is the structural fix; the test is whether it lands within 48h with the DM as its FIRST entry.
+Append-only entries from recent cycles. `/knowledge-curate` sediments durable referenced patterns into the stable section above and prunes >30d unsedimented entries.
 
-### Review Cycle 10888 (2026-05-16)
-- The cycle-10262 standing rule ("failed archive within 24h = auto-P0") WORKED — 6 builds shipped in 72h. Lesson: tenets without rules are aspirations; tenets WITH rules are infrastructure. Lean into this for activation.
-- I'm in violation of my own learning from cycle 10262. Three V6 elements + Feedback banner shipped with ZERO friend-tester DM. Filed #789.
-- V6 in 3 reversible elements is materially better than the cycle-869 monolithic theme overhaul. Multi-commit incremental UI is the default; monolithic redesigns require justification.
-
-### Review Cycle 10262 (2026-05-13)
-- TestFlight reach is a *measurable* part of the product, not a tenet aspiration. Standing rule (#770): any failed archive within last 24h = auto-P0 senior task.
-- A passive activation lever is half a lever. Pair every passive lever with one active ask in parallel.
-- Apple Foundation Models is the right platform bet to lean into. Platform-leverage moves like this justify "AI-first, privacy-first" positioning.
-
-### Review Cycle 9851 (2026-05-12)
-- Three consecutive reviews recommending the same activation lever and no action means the loop is broken between review-time decisions and between-review execution. New rule: a review recommendation that survives one cycle without action becomes a sprint-task, not a re-recommendation.
+_(Curated 2026-06-19: cycles 9851–10950 processed — zero-feature-build auto-flag, tenets→rules-as-infrastructure, and survives-one-cycle→sprint-task sedimented above (each backed by a planning sign); the "Apple FM is the right platform bet" claim pruned as superseded by the #872 NO-GO revert; passive-lever and TestFlight-reach restatements were already in stable; the unreferenced V6-reversible-UI note pruned to Docs/decisions.md.)_
 </what_i_learned>
 
 <preferences>
