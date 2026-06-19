@@ -27,6 +27,11 @@ struct ExerciseVoiceLogSheet: View {
     /// Buffer for the typed-entry field. Kept as view state so a parse error →
     /// "Try again" returns the user to the input screen with their text intact.
     @State private var draft = ""
+    /// Row whose name the user is resolving via the library picker. Identifiable
+    /// wrapper so `.sheet(item:)` carries the target row id.
+    @State private var resolveTarget: ResolveTarget?
+
+    private struct ResolveTarget: Identifiable { let id: UUID }
 
     /// Called after a successful save so the Workout tab can reload its history.
     let onSaved: () -> Void
@@ -53,6 +58,11 @@ struct ExerciseVoiceLogSheet: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.background.ignoresSafeArea())
         .onDisappear { viewModel.cancel() }
+        .sheet(item: $resolveTarget) { target in
+            ExercisePickerView { name in
+                viewModel.resolve(id: target.id, name: name)
+            }
+        }
     }
 
     // MARK: - Input (mic + typed text, both present)
@@ -196,29 +206,29 @@ struct ExerciseVoiceLogSheet: View {
                 Button("Cancel") { dismiss() }
                     .foregroundStyle(Theme.textSecondary)
                 Spacer()
+                Text("Your session")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.textPrimary)
+                Spacer()
+                // Balance the leading Cancel so the title stays centered.
+                Button("Cancel") {}.opacity(0).disabled(true)
             }
             .padding(.horizontal, 16)
             .padding(.top, 12)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
-                    Text("I heard:")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Theme.textSecondary)
-                        .tracking(0.8)
-                        .padding(.horizontal, 16)
+                    if let msg = viewModel.transientMessage {
+                        Label(msg, systemImage: "exclamationmark.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(Theme.fatYellow)
+                            .padding(.horizontal, 16)
+                    }
 
-                    Text("\u{201C}\(viewModel.transcript)\u{201D}")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.textPrimary)
-                        .padding(.horizontal, 16)
-
-                    Text("Exercises to log")
-                        .font(.caption.weight(.semibold))
+                    Text("Last heard: \u{201C}\(viewModel.transcript)\u{201D}")
+                        .font(.caption)
                         .foregroundStyle(Theme.textSecondary)
-                        .tracking(0.8)
                         .padding(.horizontal, 16)
-                        .padding(.top, 6)
 
                     VStack(spacing: 10) {
                         ForEach($viewModel.exercises) { $exercise in
@@ -226,6 +236,26 @@ struct ExerciseVoiceLogSheet: View {
                         }
                     }
                     .padding(.horizontal, 16)
+
+                    // Keep the mic one tap away so logging set-by-set across a
+                    // workout never means reopening the sheet.
+                    Button {
+                        viewModel.addMore()
+                    } label: {
+                        Label("Add another exercise", systemImage: "mic.fill")
+                            .font(.subheadline.weight(.medium))
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14)
+                                    .strokeBorder(Theme.separator, lineWidth: 0.5)
+                            )
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Theme.textPrimary)
+                    .padding(.horizontal, 16)
+                    .accessibilityIdentifier("exercise-voice-add-more")
                 }
                 .padding(.top, 8)
             }
@@ -251,7 +281,9 @@ struct ExerciseVoiceLogSheet: View {
     /// duration shows minutes. Neutral colors only — strength data is not
     /// goal-aligned/against, so no green/red treatment.
     private func editableRow(_ exercise: Binding<ExerciseVoiceLogViewModel.ExerciseDraft>) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        let draft = exercise.wrappedValue
+        let isNew = viewModel.recentlyAddedIDs.contains(draft.id)
+        return VStack(alignment: .leading, spacing: 10) {
             HStack {
                 TextField("Exercise", text: exercise.name)
                     .font(.subheadline.weight(.semibold))
@@ -259,7 +291,7 @@ struct ExerciseVoiceLogSheet: View {
                     .accessibilityIdentifier("exercise-row-name")
                 Spacer()
                 Button {
-                    viewModel.remove(id: exercise.wrappedValue.id)
+                    viewModel.remove(id: draft.id)
                 } label: {
                     Image(systemName: "xmark.circle.fill")
                         .font(.body)
@@ -269,7 +301,21 @@ struct ExerciseVoiceLogSheet: View {
                 .accessibilityLabel("Remove exercise")
             }
 
-            if exercise.wrappedValue.isDuration {
+            // Unmatched names didn't resolve to the library — let the user pick
+            // the real exercise instead of logging a garbled/guessed name.
+            if !draft.matched && !draft.isDuration {
+                Button {
+                    resolveTarget = ResolveTarget(id: draft.id)
+                } label: {
+                    Label("Not in library — tap to pick", systemImage: "magnifyingglass")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Theme.fatYellow)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("exercise-row-resolve")
+            }
+
+            if draft.isDuration {
                 HStack(spacing: 10) {
                     numberField("Min", text: exercise.durationMinutes)
                     Spacer()
@@ -289,8 +335,9 @@ struct ExerciseVoiceLogSheet: View {
         .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
         .overlay(
             RoundedRectangle(cornerRadius: 14)
-                .strokeBorder(Theme.separator, lineWidth: 0.5)
+                .strokeBorder(isNew ? Theme.ink : Theme.separator, lineWidth: isNew ? 1.5 : 0.5)
         )
+        .animation(.easeOut(duration: 0.25), value: isNew)
     }
 
     private func numberField(_ label: String, text: Binding<String>) -> some View {
@@ -363,6 +410,10 @@ final class ExerciseVoiceLogViewModel {
         let id = UUID()
         var name: String
         var isDuration: Bool
+        /// True when `name` resolved to a catalog entry (or is a duration entry
+        /// where the strength catalog doesn't apply). False = spoken name didn't
+        /// match the library, so the UI prompts the user to confirm/fix it.
+        var matched: Bool
         var sets: String
         var reps: String
         var weight: String
@@ -371,7 +422,15 @@ final class ExerciseVoiceLogViewModel {
 
     var phase: Phase = .input
     var transcript: String = ""
+    /// The running session — utterances APPEND here so a user can log set by set
+    /// across the workout, then commit the whole list with one Approve.
     var exercises: [ExerciseDraft] = []
+    /// IDs added by the most recent utterance, highlighted briefly so the user
+    /// sees exactly what their last words contributed.
+    var recentlyAddedIDs: Set<UUID> = []
+    /// Inline, non-fatal notice (e.g. a follow-up utterance that didn't parse)
+    /// shown above the session list without wiping what's already there.
+    var transientMessage: String?
 
     private let speech = SpeechRecognitionService.shared
 
@@ -416,20 +475,37 @@ final class ExerciseVoiceLogViewModel {
         speech.forceStop()
     }
 
-    /// Reset to the input screen (used by error "Try again").
+    /// Continue an existing session: re-open the mic to add more exercises
+    /// without discarding what's already been logged.
+    func addMore() {
+        startListening()
+    }
+
+    /// Reset to the input screen (used by error "Try again"). Clears the session.
     func reset() {
         transcript = ""
         exercises = []
+        recentlyAddedIDs = []
+        transientMessage = nil
         phase = .input
     }
 
     func remove(id: UUID) {
         exercises.removeAll { $0.id == id }
+        recentlyAddedIDs.remove(id)
+    }
+
+    /// Replace a row's name with a user-picked catalog entry (resolves an
+    /// unmatched row from the library picker).
+    func resolve(id: UUID, name: String) {
+        guard let idx = exercises.firstIndex(where: { $0.id == id }) else { return }
+        exercises[idx].name = name
+        exercises[idx].matched = true
     }
 
     private func parse(_ text: String) async {
         guard !text.isEmpty else {
-            phase = .error("Didn't catch that. Try again — make sure microphone permission is granted.")
+            failParse("Didn't catch that. Make sure microphone permission is granted.")
             return
         }
         phase = .parsing
@@ -441,29 +517,69 @@ final class ExerciseVoiceLogViewModel {
         if #available(macOS 26, iOS 26, *) {
             do {
                 let entries = try await FoundationModelsExerciseExtractor.extract(text: text)
-                exercises = entries.map { mapToDraft($0) }
-                phase = .confirming
+                appendDrafts(entries.map { mapToDraft($0) })
                 return
             } catch FMExerciseExtractorError.unavailable {
                 // Fall through to the ad-hoc single-entry below.
             } catch FMExerciseExtractorError.empty {
-                phase = .error("That didn't sound like a workout. Try \u{201C}3×10 bench at 135\u{201D}.")
+                failParse("That didn't sound like a workout. Try \u{201C}3×10 bench at 135\u{201D}.")
                 return
             } catch {
                 // .bounded / .sessionFailed — keep the user's text as one entry.
             }
         }
-        exercises = [fallbackDraft(text)]
+        appendDrafts([fallbackDraft(text)])
+    }
+
+    /// Append newly-parsed rows to the running session and highlight them. An
+    /// empty parse mid-session surfaces a transient notice rather than wiping
+    /// the list; on a first (empty) session it routes to the full error screen.
+    private func appendDrafts(_ drafts: [ExerciseDraft]) {
+        guard !drafts.isEmpty else {
+            failParse("Couldn't find an exercise in that — try again.")
+            return
+        }
+        exercises.append(contentsOf: drafts)
+        let ids = Set(drafts.map(\.id))
+        recentlyAddedIDs = ids
+        transientMessage = nil
         phase = .confirming
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(2.5))
+            recentlyAddedIDs.subtract(ids)
+        }
+    }
+
+    /// A failed parse keeps an in-progress session intact (inline notice) and
+    /// only falls back to the full error screen when nothing has been logged yet.
+    private func failParse(_ message: String) {
+        if exercises.isEmpty {
+            phase = .error(message)
+        } else {
+            transientMessage = message
+            phase = .confirming
+        }
     }
 
     @available(macOS 26, iOS 26, *)
     private func mapToDraft(_ entry: FMExerciseEntry) -> ExerciseDraft {
         // strength → sets/reps/weight; cardio/mobility/sports → duration.
         let isDuration = entry.category != .strength
+        // Ground strength names against the catalog. Cardio/mobility/sports are
+        // not well covered by the strength-oriented library, so they pass as-is.
+        var name = entry.exerciseName
+        var matched = true
+        if !isDuration {
+            if let hit = ExerciseDatabase.match(name: entry.exerciseName) {
+                name = hit.name
+            } else {
+                matched = false
+            }
+        }
         return ExerciseDraft(
-            name: entry.exerciseName,
+            name: name,
             isDuration: isDuration,
+            matched: matched,
             sets: entry.sets.map(String.init) ?? "",
             reps: entry.reps.map(String.init) ?? "",
             weight: entry.weight.map(formatWeight) ?? "",
@@ -472,7 +588,11 @@ final class ExerciseVoiceLogViewModel {
     }
 
     private func fallbackDraft(_ text: String) -> ExerciseDraft {
-        ExerciseDraft(name: text, isDuration: false, sets: "", reps: "", weight: "", durationMinutes: "")
+        // Raw-text fallback: try to ground it; if it doesn't match, flag for the
+        // user to resolve via the library picker.
+        let hit = ExerciseDatabase.match(name: text)
+        return ExerciseDraft(name: hit?.name ?? text, isDuration: false,
+                             matched: hit != nil, sets: "", reps: "", weight: "", durationMinutes: "")
     }
 
     private func formatWeight(_ w: Double) -> String {

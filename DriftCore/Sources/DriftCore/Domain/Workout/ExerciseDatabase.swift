@@ -68,6 +68,54 @@ public enum ExerciseDatabase {
         }
     }
 
+    /// Resolve a spoken/parsed exercise name to a canonical library entry.
+    ///
+    /// Unlike `search`, this matches on the *name only* (not muscle / equipment /
+    /// bodyPart) and demands **full coverage** — every meaningful word the user
+    /// said must appear in the candidate name. This is the grounding gate for
+    /// voice logging: a confident utterance ("squats", "incline bench") maps to a
+    /// real catalog entry, while a garbled or novel one ("chest ups") returns nil
+    /// so the caller can flag it for the user instead of silently inventing an
+    /// exercise. Plurals/short suffixes are handled by prefix matching
+    /// (squat/squats, curl/curls, push/push-ups). Among fully-covering names the
+    /// most specific (fewest extra words) wins.
+    public static func match(name raw: String) -> ExerciseInfo? {
+        let q = raw.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        guard q.count >= 2 else { return nil }
+        let source = allWithCustom
+
+        if let exact = source.first(where: { $0.name.lowercased() == q }) { return exact }
+
+        let stop: Set<String> = ["the", "a", "and", "with", "of", "for", "to", "on", "my", "in"]
+        func tokenize(_ s: String) -> [String] {
+            s.lowercased()
+                .split { !$0.isLetter }
+                .map(String.init)
+                .filter { $0.count >= 2 && !stop.contains($0) }
+        }
+        func tokensMatch(_ a: String, _ b: String) -> Bool {
+            if a == b { return true }
+            return min(a.count, b.count) >= 4 && (a.hasPrefix(b) || b.hasPrefix(a))
+        }
+
+        let qTokens = tokenize(q)
+        guard !qTokens.isEmpty else { return nil }
+
+        var best: ExerciseInfo?
+        var bestPrecision = 0.0
+        for ex in source {
+            let nTokens = tokenize(ex.name)
+            guard !nTokens.isEmpty else { continue }
+            // Every spoken token must be covered by the candidate name.
+            let covered = qTokens.allSatisfy { qt in nTokens.contains { tokensMatch(qt, $0) } }
+            guard covered else { continue }
+            // Prefer the most specific full-covering name (fewest extra words).
+            let precision = Double(qTokens.count) / Double(nTokens.count)
+            if precision > bestPrecision { bestPrecision = precision; best = ex }
+        }
+        return best
+    }
+
     // MARK: - Custom Exercises (persisted in UserDefaults)
 
     private static let customKey = "drift_custom_exercises"

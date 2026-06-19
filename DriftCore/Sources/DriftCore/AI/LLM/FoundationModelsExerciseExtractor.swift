@@ -155,6 +155,8 @@ public enum FoundationModelsExerciseExtractor {
         """
         Parse the user's free-text workout transcript into a structured list of exercise entries. The user may describe one or many exercises in a single message; produce one entry per distinct exercise.
 
+        CRITICAL — do not hallucinate: Extract ONLY exercises the user explicitly named in the text. Never invent, infer, or pad the list with exercises that were not literally stated. Most messages name just one or two exercises. If the user names exactly one exercise, return exactly one entry. A short utterance like "two chest ups" is ONE exercise (with sets/reps), not several — do not add unrelated movements like squats or bench press.
+
         Strength shorthand patterns:
         - "3x10" = 3 sets of 10 reps
         - "3 sets of 10" = 3 sets of 10 reps
@@ -206,7 +208,7 @@ public enum FoundationModelsExerciseExtractor {
 @available(macOS 26, iOS 26, *)
 @Generable
 struct FMExerciseTranscriptSchema: Sendable {
-    @Guide(description: "Each distinct exercise mentioned in the transcript, in the order the user said. Empty array when the message is not a workout (data request, weight log, food log, etc.).")
+    @Guide(description: "Each distinct exercise EXPLICITLY mentioned in the transcript, in the order the user said. Never invent or infer exercises the user did not literally name — a one-exercise utterance must yield exactly one entry. Empty array when the message is not a workout (data request, weight log, food log, etc.).")
     let entries: [FMExerciseSchema]
 
     @Generable
