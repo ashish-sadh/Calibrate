@@ -131,6 +131,15 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
         await respondStreaming(to: prompt, systemPrompt: systemPrompt, onToken: { _ in })
     }
 
+    /// Native function-calling variant: ships `toolsJSON` (a JSON-array string of
+    /// OpenAI tool schemas) in the request so the model returns structured
+    /// tool_calls, which the SSE parser normalizes to Drift's `{"tool":...}`
+    /// shape. Only the OpenAI-compatible providers (.openai/.nebius) act on it;
+    /// others ignore it (still prose-routed). #coach-agent-loop.
+    public func respond(to prompt: String, systemPrompt: String, toolsJSON: String) async -> String {
+        await respondStreamingCore(prompt: prompt, imageData: nil, systemPrompt: systemPrompt, toolsJSON: toolsJSON, onToken: { _ in })
+    }
+
     public func respondStreaming(
         to prompt: String,
         systemPrompt: String,
@@ -154,6 +163,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
         prompt: String,
         imageData: Data?,
         systemPrompt: String,
+        toolsJSON: String? = nil,
         onToken: @escaping @Sendable (String) -> Void
     ) async -> String {
         errorBox.value = nil
@@ -162,7 +172,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
             return ""
         }
         do {
-            let request = try buildRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: key)
+            let request = try buildRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: key, toolsJSON: toolsJSON)
             let (data, response) = try await session.data(for: request)
             if let http = response as? HTTPURLResponse, http.statusCode != 200 {
                 errorBox.value = categorize(status: http.statusCode)
@@ -189,13 +199,13 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
 
     // MARK: - Request Building
 
-    private func buildRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String) throws -> URLRequest {
+    private func buildRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, toolsJSON: String? = nil) throws -> URLRequest {
         switch provider {
         case .anthropic:
             return try buildAnthropicRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey)
         case .openai, .nebius:
             guard let baseURL = provider.openAICompatibleBaseURL else { throw BackendError.invalidURL }
-            return try buildOpenAICompatibleRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey, baseURL: baseURL)
+            return try buildOpenAICompatibleRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey, baseURL: baseURL, toolsJSON: toolsJSON)
         case .gemini:
             return try buildGeminiRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey)
         }
@@ -235,7 +245,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
     /// Build an OpenAI-compatible `/chat/completions` request. Shared by `.openai`
     /// (api.openai.com) and `.nebius` (api.studio.nebius.ai) — identical request
     /// body + SSE shape, only the base URL differs.
-    private func buildOpenAICompatibleRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, baseURL: String) throws -> URLRequest {
+    private func buildOpenAICompatibleRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, baseURL: String, toolsJSON: String? = nil) throws -> URLRequest {
         guard let url = URL(string: "\(baseURL)/chat/completions") else {
             throw BackendError.invalidURL
         }
@@ -255,7 +265,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
             userContent = prompt
         }
 
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "model": modelID,
             "max_tokens": 512,
             "stream": true,
@@ -264,6 +274,15 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
                 ["role": "user", "content": userContent]
             ]
         ]
+        // Native function-calling: splice the tools schema array (passed as a
+        // Sendable JSON string) so the model returns structured tool_calls.
+        if let toolsJSON,
+           let data = toolsJSON.data(using: .utf8),
+           let toolsArray = try? JSONSerialization.jsonObject(with: data) as? [Any],
+           !toolsArray.isEmpty {
+            body["tools"] = toolsArray
+            body["tool_choice"] = "auto"
+        }
         req.httpBody = try JSONSerialization.data(withJSONObject: body)
         return req
     }

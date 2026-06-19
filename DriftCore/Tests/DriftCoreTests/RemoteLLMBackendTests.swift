@@ -490,6 +490,29 @@ struct RemoteLLMBackendTests {
         #expect(box.request?.value(forHTTPHeaderField: "Authorization") == "Bearer team-key")
     }
 
+    @Test func nebiusRequestIncludesToolsWhenProvided() async {
+        let box = RequestBox()
+        let backend = RemoteLLMBackend(provider: .nebius, modelID: "m", apiKey: "k", session: CapturingSession(box: box))
+        let toolsJSON = #"[{"type":"function","function":{"name":"log_food","description":"d","parameters":{"type":"object","properties":{},"required":[]}}}]"#
+        _ = await backend.respond(to: "hi", systemPrompt: "sys", toolsJSON: toolsJSON)
+        let body = decodeBody(box.request)
+        #expect(body?["tool_choice"] as? String == "auto")
+        #expect((body?["tools"] as? [Any])?.count == 1)
+    }
+
+    @Test func nebiusRequestOmitsToolsWhenAbsent() async {
+        let box = RequestBox()
+        let backend = RemoteLLMBackend(provider: .nebius, modelID: "m", apiKey: "k", session: CapturingSession(box: box))
+        _ = await backend.respond(to: "hi", systemPrompt: "sys")
+        let body = decodeBody(box.request)
+        #expect(body?["tools"] == nil)
+    }
+
+    private func decodeBody(_ request: URLRequest?) -> [String: Any]? {
+        guard let data = request?.httpBody else { return nil }
+        return try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+    }
+
     @Test func nebiusParsesOpenAICompatibleTextStream() async {
         // Nebius streams the standard OpenAI chat-completions SSE shape, so the
         // OpenAI parser handles it — content tokens concatenate into the reply.

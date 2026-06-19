@@ -160,6 +160,57 @@ public final class ToolRegistry {
         return sorted
     }
 
+    /// OpenAI-compatible function-calling schema for the registered tools — the
+    /// single source of truth for what the model sees, generated from the
+    /// `ToolSchema` structs (so the prompt no longer hand-lists tools, which
+    /// silently drifts out of sync). Drops straight into a chat-completions
+    /// request `tools` field; Nebius/Qwen3 returns structured `tool_calls` the
+    /// SSE parsers already decode. Pattern adopted from swift-claude-code, where
+    /// `ToolDefinition.inputSchema` is the contract, not the prompt.
+    public func toolsJSONSchema(forScreen screen: String? = nil) -> [[String: Any]] {
+        let toolList = screen.map { toolsForScreen($0) } ?? allTools().sorted { $0.name < $1.name }
+        return toolList.map { t in
+            var properties: [String: Any] = [:]
+            var required: [String] = []
+            for p in t.parameters {
+                properties[p.name] = ["type": Self.jsonType(p.type), "description": p.description]
+                if p.required { required.append(p.name) }
+            }
+            return [
+                "type": "function",
+                "function": [
+                    "name": t.name,
+                    "description": t.description,
+                    "parameters": [
+                        "type": "object",
+                        "properties": properties,
+                        "required": required,
+                    ] as [String: Any],
+                ] as [String: Any],
+            ]
+        }
+    }
+
+    /// The tools schema serialized to a JSON-array string — Sendable, so it can
+    /// be threaded through the async backend transport without `[String: Any]`
+    /// crossing actor/Sendable boundaries. nil when there are no tools.
+    public func toolsJSONString(forScreen screen: String? = nil) -> String? {
+        let schema = toolsJSONSchema(forScreen: screen)
+        guard !schema.isEmpty,
+              let data = try? JSONSerialization.data(withJSONObject: schema),
+              let str = String(data: data, encoding: .utf8) else { return nil }
+        return str
+    }
+
+    /// Map a `ToolParam.type` ("string"/"number"/"boolean") to its JSON-schema type.
+    private static func jsonType(_ t: String) -> String {
+        switch t {
+        case "number": return "number"
+        case "boolean": return "boolean"
+        default: return "string"
+        }
+    }
+
     /// Compact schema string for the LLM prompt.
     public func schemaPrompt(forScreen screen: String? = nil, isLargeModel: Bool = false) -> String {
         let toolList: [ToolSchema]
