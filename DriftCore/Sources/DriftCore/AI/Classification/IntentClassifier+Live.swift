@@ -30,9 +30,16 @@ extension IntentClassifier {
     static func classifyFull(
         message: String, history: String, literalHint: String? = nil
     ) async -> ClassifyResult? {
-        let msg = buildContextualUserMessage(
+        var msg = buildContextualUserMessage(
             message: message, history: history, literalHint: literalHint
         )
+        // Cross-session memory: recall durable user facts/goals and inject them;
+        // extract + persist any new ones the message states (fire-and-forget).
+        // On-device (LocalCoachMemory) — cheap, private, no network. #coach-agent-loop
+        if let memoryContext = await coachMemoryContext(for: message) {
+            msg = memoryContext + "\n\n" + msg
+        }
+        rememberDurableFacts(from: message)
         let backend = await LocalAIService.shared.activeBackendType
         let isLarge = await LocalAIService.shared.isLargeModel
         let prompt = backend == .remote
@@ -53,6 +60,22 @@ extension IntentClassifier {
             )
         }
         return mapResponse(response)
+    }
+
+    /// Recall durable facts relevant to this message, formatted for the prompt.
+    private static func coachMemoryContext(for message: String) async -> String? {
+        let hits = await CoachMemoryStore.shared.recall(query: message, limit: 3)
+        guard !hits.isEmpty else { return nil }
+        let lines = hits.map { "- \($0.text)" }.joined(separator: "\n")
+        return "What you remember about the user:\n\(lines)"
+    }
+
+    /// Extract goals/preferences the message states and persist them off the
+    /// turn's critical path (fire-and-forget).
+    private static func rememberDurableFacts(from message: String) {
+        let items = CoachMemoryExtractor.extract(from: message)
+        guard !items.isEmpty else { return }
+        Task { for item in items { await CoachMemoryStore.shared.remember(item) } }
     }
 
     /// Legacy: returns nil for text responses (backward compat)
