@@ -48,8 +48,9 @@ Each entry tagged with its maintenance status. **Auto-maintained** = a script or
 | `Docs/decisions.md` | **Append-only — sessions add** | Non-obvious decisions: arch changes, harness rules from incidents, design tenets from real failures. Planning step 6 reviews + appends. Read last ~10 entries before making related judgment calls. |
 | `Docs/architecture.md` | Reference (slow-moving) | AI-first dual-model architecture. Update only when architecture changes. |
 | `Docs/failing-queries.md` | Manual — appended by sessions | Real AI-chat queries that don't work, fixed systematically. |
-| `Docs/testing.md` | Reference | How to run tests, eval harness. |
-| `Docs/develop.md` | Reference | Dev setup, architecture, adding features. |
+| `Docs/development-sop.md` | Reference (canonical) | **The dev SOP** — module layout (DriftCore vs iOS), build, test tier map, AI eval, DriftChatSim, feature checklist. Human-facing mirror of this file's workflow rules. |
+| `Docs/testing.md` | Reference (pointer) | Test-authoring patterns + simulator utilities; defers the workflow to `development-sop.md`. |
+| `Docs/develop.md` | Reference (pointer) | Prereqs, USDA key, dependencies; defers the workflow to `development-sop.md`. |
 | `Docs/principles/` | Reference | Code quality cards (Clean Code, Design Patterns, DDD, SwiftUI). |
 | `Docs/refactor/` | Manual — durable refactor plans | Multi-day refactor proposals committed for later pickup. |
 | `Docs/audits/` | Manual — point-in-time audits | Historical audit snapshots. |

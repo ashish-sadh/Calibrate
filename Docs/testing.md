@@ -1,136 +1,54 @@
 # Testing Guide
 
-## Running Tests
+> **How testing works — the 5-tier map, which command to run for what, AI eval,
+> coverage, and the `DriftChatSim` chat simulator — lives in
+> [`Docs/development-sop.md`](development-sop.md) §3–§5.** This file keeps only
+> the test-authoring patterns and simulator utilities.
 
-**CRITICAL: Never run multiple `xcodebuild test` in parallel.** They fight for the simulator and deadlock. Always kill stale processes before starting a new test run.
+## Ground rules (recap)
+- **Never run two `xcodebuild test` in parallel** — they deadlock on the
+  simulator. `pkill -9 -f xcodebuild; sleep 2` first.
+- **One tier per file** (Tier 0 pure-logic vs Tier 3 LLM-backed never mix).
+- DriftCore pure logic → `cd DriftCore && swift test` (~2s warm). iOS UI/HealthKit
+  → the `Drift` scheme on a simulator. Real-model eval → `DriftLLMEvalMacOS` on
+  macOS (the old iOS `DriftLLMEvalTests` target was removed — it skipped silently).
 
-**Why simulator?** Test target is `bundle.unit-test` for iOS. Tests use `@testable import Drift` which targets iOS. Can't run without simulator.
-
-**LLM eval tests** (LLMToolCallingEval, LLMGemma4Eval, LLMQwen3Eval, LLMIntegrationTest, MultiTurnEvalTests) check for model files at `/tmp/*.gguf` or `~/drift-state/models/` and **skip gracefully** if not found. They do NOT download models. These are opt-in — run separately when model is pre-staged.
-
-**Expected timing:** ~2-3 min for all 729+ tests (simulator already booted). If it takes longer, you probably have stale xcodebuild processes — kill them.
-
-```bash
-cd /Users/ashishsadh/workspace/Drift
-
-# ALWAYS kill stale processes first
-pkill -9 -f xcodebuild 2>/dev/null; sleep 2
-
-# All tests (729+)
-xcodebuild test -project Drift.xcodeproj -scheme Drift \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
-
-# Quick pass/fail check
-xcodebuild test ... 2>&1 | grep "✘"  # empty = all pass
-
-# AI eval harness only (212+ test methods)
-xcodebuild test -project Drift.xcodeproj -scheme Drift \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-  --filter AIEvalHarness
-
-# LLM tool-calling eval (needs model on simulator — 100 queries)
-xcodebuild test -project Drift.xcodeproj -scheme Drift \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-  -only-testing:'DriftLLMEvalTests/LLMToolCallingEval'
-
-# Multi-turn regression suite (5 scenarios × 5 turns, needs Gemma 4 in ~/drift-state/models/)
-pkill -9 -f xcodebuild 2>/dev/null; sleep 2
-xcodebuild test -project Drift.xcodeproj -scheme Drift \
-  -destination 'platform=iOS Simulator,name=iPhone 17 Pro' \
-  -only-testing:'DriftLLMEvalTests/MultiTurnEvalTests' 2>&1 | grep -E "📊|❌|✔"
-
-# Specific test class (DriftCore tests run via swift test)
-cd DriftCore && swift test --filter WorkoutTests
-```
-
-## Test Files (19 files, 729+ tests, 248 methods)
-
-| File | Tests | Covers |
-|------|-------|--------|
-| `FoodLoggingTests.swift` | 180+ | Food search, logging, recipes, macros, TDEE |
-| `AIEvalHarness.swift` | 212+ methods | Food/weight/workout intent, routing, response quality, tools, JSON parsing |
-| `LLMToolCallingEval.swift` | 100 queries | Real model inference: food logging, questions, weight, exercise, sleep, no-tool |
-| `LLMGemma4Eval.swift` | — | Gemma 4 comparison eval |
-| `MultiTurnEvalTests.swift` | 5 scenarios × 5 turns | Multi-turn conversation chain routing |
-| `WorkoutTests.swift` | 68+ | Workouts, CSV import, recovery, templates |
-| `WorkoutPersistenceTests.swift` | 40+ | Session save/load, exercise persistence |
-| `UIFlowTests.swift` | 49 | DB CRUD: weight, food, supplements, DEXA, glucose |
-| `WeightTrendCalculatorTests.swift` | 40 | EMA, regression, deficit, projection |
-| `AITests.swift` | 30+ | Action parsing, context builders, intent detection |
-| `RobustnessTests.swift` | 30+ | Stress tests, concurrent access |
-| `EdgeCaseTests.swift` | 26 | Large datasets, special chars, zero values |
-| `DatabaseEdgeCaseTests.swift` | 20+ | Schema edge cases, cascade deletes |
-| `LabReportOCRTests.swift` | 48 | Quest + LabCorp PDF extraction |
-| `CycleCalculationTests.swift` | 16 | Cycle phase, ovulation, fertile window |
-| `NutritionOCRTests.swift` | 15 | OCR parsing: calories, macros, serving size |
-| `CSVParserTests.swift` | 4 | CSV parsing basics |
-
-## AI Eval Harness
-
-The eval harness (`DriftTests/AIEvalHarness.swift`) is the gold-standard test suite for AI quality. Run it after every AI change.
-
-### Current Coverage (212+ test methods)
-- Food logging precision: 23 positive cases, 12 false positive checks
-- Indian food logging: 12 cases
-- Food phrasing variety: 12 cases, beverages: 9, snacks: 9
-- Amount parsing: 9 cases + 7 edge cases + 3 fractions + 5 exact amounts + mid-string numbers
-- Weight logging: 6 positive, 4 false positive, 5 unit detection, 3+4 edge cases
-- Workout routing: 7 queries, 4 false positive checks
-- Workout parsing: CREATE + START with various formats
-- Chain-of-thought routing: 25 queries across all domains
-- Calorie estimation: 7 routing + 4 false positive checks
-- Nutrition lookup: 8 query formats
-- Cross-screen routing: 6 cases
-- Keyword false positive prevention: 5 broad-term cases
-- Response cleaner: markdown, preambles, ChatML, Gemma artifacts, quality gate, hallucination detection
-- Tool call JSON parsing: valid, malformed, edge cases
-- Spell correction: Levenshtein, known corrections, food word detection
-- Service tests: FoodService, WeightServiceAPI, ExerciseService, SleepRecovery
-- Body composition: entry, HealthKit sync, charts
-- Rule engine: 19 exact-match patterns
-- Domain routing: 9 domains verified
-- Token budget: truncation + all contexts under budget
-
-### Dual-Model Eval
-- **AIEvalHarness (212+ methods):** Runs without model — tests parsing, routing, tools, quality gates
-- **LLMToolCallingEval (100 queries):** Loads actual model, sends prompts with tool schemas, checks JSON output
-  - Categories: food logging (20), food questions (15), weight (15), exercise (23), sleep (10), no-tool (11), ambiguous (5)
-  - Gemma 4 baseline: food 90%, questions 70%, exercise 50%, weight 80%
-
-### Target: 300+ test methods
-Priority areas: cross-domain queries, screen-bias regression tests, multi-turn scenarios, separate SmolLM vs Gemma 4 metrics.
-
-## Test Patterns
+## Test patterns
 
 ```swift
-// Database test (empty in-memory DB)
+// Tier 0 — DB test (isolated in-memory DB)
 @Test func myTest() async throws {
     let db = try AppDatabase.empty()
-    // ... test with db
+    // ... exercise db, assert
 }
 
-// Pure logic test
-@Test func calculationTest() async throws {
-    let result = MyService.calculate(input: 42)
-    #expect(result == expected)
+// Tier 0 — pure logic
+@Test func calculationTest() {
+    #expect(MyService.calculate(input: 42) == expected)
 }
 
-// AI eval pattern (precision measurement)
+// Tier 0 — precision/eval pattern (gold set, no LLM)
 func testFoodIntents() {
-    let cases = ["log 2 eggs", "ate chicken", ...]
-    var detected = 0
-    for query in cases {
-        if parseFoodIntent(query) != nil { detected += 1 }
-    }
-    let precision = Double(detected) / Double(cases.count)
-    XCTAssertGreaterThanOrEqual(precision, 0.85)
+    let cases = ["log 2 eggs", "ate chicken", /* ... */]
+    let detected = cases.filter { parseFoodIntent($0) != nil }.count
+    XCTAssertGreaterThanOrEqual(Double(detected) / Double(cases.count), 0.85)
 }
 ```
 
-## Simulator Testing
+Fixtures travel with their test target (`resources: [.process("Fixtures")]` +
+`Bundle.module` for SwiftPM; dir-globbed for `DriftTests`). Assert non-empty in
+setup so an orphaned fixture fails loudly instead of silently testing nothing.
+
+## Reproducing chat/AI bugs
+
+Use `DriftChatSim` to drive the real pipeline over a seeded DB and see per-turn
+routing — far faster than rebuilding the app. See SOP §5 and
+`DriftCore/Sources/DriftChatSim/README.md`.
+
+## Simulator utilities
 
 ```bash
-# Install on simulator
+# Install + launch the built app on the simulator
 APP=$(find ~/Library/Developer/Xcode/DerivedData/Drift-*/Build/Products/Debug-iphonesimulator/Drift.app -maxdepth 0 | head -1)
 xcrun simctl install "iPhone 17 Pro" "$APP"
 xcrun simctl launch "iPhone 17 Pro" com.drift.health
