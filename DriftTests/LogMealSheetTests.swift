@@ -45,7 +45,7 @@ final class VoiceLogViewModelTests: XCTestCase {
         let vm = VoiceLogViewModel()
         XCTAssertEqual(vm.phase, .listening)
         XCTAssertTrue(vm.transcript.isEmpty)
-        XCTAssertTrue(vm.parsedItems.isEmpty)
+        XCTAssertTrue(vm.reviewItems.isEmpty)
     }
 
     func testStartInTextModeEntersTypingPhaseWithoutSpeech() async {
@@ -56,7 +56,7 @@ final class VoiceLogViewModelTests: XCTestCase {
         await vm.start(mode: .text)
         XCTAssertEqual(vm.phase, .typing)
         XCTAssertTrue(vm.transcript.isEmpty)
-        XCTAssertTrue(vm.parsedItems.isEmpty)
+        XCTAssertTrue(vm.reviewItems.isEmpty)
     }
 
     func testSubmitTypedRoutesIntoTheMultiItemConfirmationCard() async {
@@ -66,16 +66,21 @@ final class VoiceLogViewModelTests: XCTestCase {
         // Tier-3, owned by #870); the assertion here is the WIRING: typed
         // input reaches .confirming with a confirmable row, NOT a dropped
         // single-row numeric form.
-        let saved = Preferences.fmFoodIntentExtractEnabled
+        let savedFM = Preferences.fmFoodIntentExtractEnabled
+        let savedCloud = Preferences.coachCloudFoodParseEnabled
         Preferences.fmFoodIntentExtractEnabled = false
-        defer { Preferences.fmFoodIntentExtractEnabled = saved }
+        Preferences.coachCloudFoodParseEnabled = false   // offline: no Nebius call in tests
+        defer {
+            Preferences.fmFoodIntentExtractEnabled = savedFM
+            Preferences.coachCloudFoodParseEnabled = savedCloud
+        }
 
         let vm = VoiceLogViewModel()
         await vm.start(mode: .text)
         await vm.submitTyped("dal, rice and two rotis")
 
         XCTAssertEqual(vm.phase, .confirming)
-        XCTAssertGreaterThanOrEqual(vm.parsedItems.count, 1)
+        XCTAssertGreaterThanOrEqual(vm.reviewItems.count, 1)
         XCTAssertEqual(vm.transcript, "dal, rice and two rotis")
     }
 
@@ -85,7 +90,7 @@ final class VoiceLogViewModelTests: XCTestCase {
         await vm.start(mode: .text)
         await vm.submitTyped("   ")
         XCTAssertEqual(vm.phase, .typing)
-        XCTAssertTrue(vm.parsedItems.isEmpty)
+        XCTAssertTrue(vm.reviewItems.isEmpty)
     }
 
     // Note: the live speech start/stop cycle still requires SFSpeechRecognizer

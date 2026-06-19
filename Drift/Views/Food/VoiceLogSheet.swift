@@ -63,7 +63,16 @@ struct VoiceLogSheet: View {
             case .parsing:
                 parsingView
             case .confirming:
-                confirmView
+                // Reuse Snap's editable review sheet: tweak amounts/macros, drop
+                // items, then log. #food-logging-reuse
+                MealReviewSheet(
+                    items: viewModel.reviewItems,
+                    foodLog: viewModel.foodLog,
+                    onLogged: {
+                        NotificationCenter.default.post(
+                            name: .navigateToTab, object: nil, userInfo: ["tab": 2])
+                        dismiss()
+                    })
             case .error(let message):
                 errorView(message: message)
             }
@@ -200,132 +209,6 @@ struct VoiceLogSheet: View {
         }
     }
 
-    // MARK: - Confirm
-
-    private var confirmView: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Button("Cancel") { dismiss() }
-                    .foregroundStyle(Theme.textSecondary)
-                Spacer()
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 12)
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 14) {
-                    Text(entryMode == .text ? "You typed:" : "I heard:")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Theme.textSecondary)
-                        .tracking(0.8)
-                        .padding(.horizontal, 16)
-
-                    Text("\"\(viewModel.transcript)\"")
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.textPrimary)
-                        .padding(.horizontal, 16)
-
-                    Text("Items to log")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(Theme.textSecondary)
-                        .tracking(0.8)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 6)
-
-                    VStack(spacing: 0) {
-                        ForEach(viewModel.parsedItems) { item in
-                            confirmRow(item)
-                            if item.id != viewModel.parsedItems.last?.id {
-                                Divider().overlay(Theme.separator)
-                                    .padding(.leading, 16)
-                            }
-                        }
-                    }
-                    .background(Theme.cardBackground)
-                    .clipShape(RoundedRectangle(cornerRadius: 14))
-                    .padding(.horizontal, 16)
-                }
-                .padding(.top, 8)
-            }
-
-            VStack(spacing: 10) {
-                Button {
-                    Task {
-                        await viewModel.logAll()
-                        // V7 polish: same as Recent/Done paths in
-                        // LogMealSheet — after a successful voice
-                        // log, route to the Food Diary so the user
-                        // sees what they just added.
-                        NotificationCenter.default.post(
-                            name: .navigateToTab,
-                            object: nil,
-                            userInfo: ["tab": 2]
-                        )
-                        dismiss()
-                    }
-                } label: {
-                    Label("Log \(viewModel.parsedItems.count) item\(viewModel.parsedItems.count == 1 ? "" : "s")",
-                          systemImage: "checkmark.circle.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.ink)
-                .accessibilityIdentifier("voice-log-confirm")
-
-                Button {
-                    // V7 mobile fix: "Edit in chat" wasn't working
-                    // because nothing listened for the V6
-                    // `.expandAIAssistant` notification anymore (the
-                    // FloatingAIAssistant overlay was removed when
-                    // DriftCoachSheet took its place). Now posts the
-                    // dedicated `.openDriftCoach` notification with a
-                    // `prefill` userInfo — ContentView listens and
-                    // presents DriftCoachSheet(prefill:) with the
-                    // transcript routed into AIChatView's input bar.
-                    NotificationCenter.default.post(
-                        name: .openDriftCoach,
-                        object: nil,
-                        userInfo: ["prefill": viewModel.transcript]
-                    )
-                    dismiss()
-                } label: {
-                    Text("Edit in chat")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.bordered)
-                .tint(Theme.textPrimary)
-            }
-            .padding(16)
-        }
-    }
-
-    private func confirmRow(_ item: VoiceLogViewModel.ParsedItem) -> some View {
-        HStack(alignment: .firstTextBaseline) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(item.displayName)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.textPrimary)
-                if let detail = item.detail {
-                    Text(detail)
-                        .font(.caption2)
-                        .foregroundStyle(Theme.textSecondary)
-                }
-            }
-            Spacer()
-            if let kcal = item.calories {
-                Text("\(Int(kcal)) kcal")
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(Theme.textSecondary)
-            } else {
-                Text("est.")
-                    .font(.caption2)
-                    .foregroundStyle(Theme.textTertiary)
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-    }
-
     // MARK: - Error
 
     private func errorView(message: String) -> some View {
@@ -370,34 +253,23 @@ final class VoiceLogViewModel {
         case error(String)
     }
 
-    struct ParsedItem: Identifiable, Equatable {
-        let id = UUID()
-        let displayName: String
-        let detail: String?
-        let calories: Double?
-        let proteinG: Double
-        let carbsG: Double
-        let fatG: Double
-        let fiberG: Double
-        let mealType: MealType
-        let servingSizeG: Double
-        let servings: Double
-    }
-
     var phase: Phase = .listening
     var transcript: String = ""
-    var parsedItems: [ParsedItem] = []
+    /// Parsed food items shown in the editable review sheet (Snap's surface).
+    var reviewItems: [PhotoLogItem] = []
 
     private let speech = SpeechRecognitionService.shared
-    private let foodLogVM = FoodLogViewModel()
+    /// Shared with `MealReviewSheet` so its logged entries + meal-type
+    /// resolution run through one view model.
+    let foodLog = FoodLogViewModel()
 
     func start(mode: VoiceEntryMode = .voice) async {
         transcript = ""
-        parsedItems = []
         // Typed free-text entry skips the speech stack entirely — it never
         // starts SpeechRecognitionService (no second AVAudioSession owner)
         // and lands the user on the typing screen. The typed text is then
         // funneled through the SAME parse → confirmation-card path as voice.
+        reviewItems = []
         guard mode == .voice else {
             phase = .typing
             return
@@ -444,124 +316,66 @@ final class VoiceLogViewModel {
         }
         phase = .parsing
 
-        // Route through the FoundationModelsFoodExtractor facade — gated
-        // by `Preferences.fmFoodIntentExtractEnabled` AND iOS 26+. The
-        // facade throws `.unavailable` when the kill-switch is OFF or the
-        // host is iOS<26 / macOS<26, in which case we fall back to a
-        // single-item ad-hoc entry the user can edit before logging.
-        // Other FM errors (.notFoodLog, .bounded, .sessionFailed) surface
-        // to the user via the error phase so they can retry or edit.
+        // 1. Drift Coach cloud model (same model as chat) — best macros, handles
+        //    Indian portions + multi-item utterances. Returns nil when no key /
+        //    unreachable / nothing parsed.
+        if let resp = await MealTextLogger.parse(text), !resp.items.isEmpty {
+            reviewItems = resp.items
+            phase = .confirming
+            return
+        }
+
+        // 2. On-device FoundationModels extractor (iOS 26+, gated). Resolve each
+        //    parsed item against the local food DB for macros.
         if #available(macOS 26, iOS 26, *) {
-            do {
-                let intent = try await FoundationModelsFoodExtractor.extract(text: text)
-                parsedItems = mapToParsedItems(intent: intent)
+            if let intent = try? await FoundationModelsFoodExtractor.extract(text: text) {
+                reviewItems = mapToPhotoLogItems(intent: intent)
                 phase = .confirming
-                return
-            } catch FMFoodLogIntentExtractorError.unavailable {
-                // Fall through to the ad-hoc single-item entry below.
-            } catch let err as FMFoodLogIntentExtractorError {
-                phase = .error("Parser said: \(err)")
-                return
-            } catch {
-                phase = .error(String(describing: error))
                 return
             }
         }
-        parsedItems = [
-            ParsedItem(
-                displayName: text,
-                detail: "1 serving",
-                calories: nil,
-                proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0,
-                mealType: defaultMealType(),
-                servingSizeG: 0,
-                servings: 1
-            )
-        ]
+
+        // 3. Ad-hoc single item — name only, zero macros. The review sheet lets
+        //    the user fill in the details before logging.
+        reviewItems = [PhotoLogItem(name: text, grams: 0, calories: 0,
+                                    proteinG: 0, carbsG: 0, fatG: 0,
+                                    confidence: .low)]
         phase = .confirming
     }
 
     @available(macOS 26, iOS 26, *)
-    private func mapToParsedItems(intent: FMFoodLogIntent) -> [ParsedItem] {
-        var items: [ParsedItem] = []
-        let meal = (intent.mealType.flatMap { MealType(rawValue: $0.rawValue) }) ?? defaultMealType()
-
-        items.append(resolveItem(name: intent.foodName, quantity: intent.quantity, mealType: meal))
+    private func mapToPhotoLogItems(intent: FMFoodLogIntent) -> [PhotoLogItem] {
+        var items = [resolvePhotoItem(name: intent.foodName, quantity: intent.quantity)]
         for sub in intent.additionalItems {
-            items.append(resolveItem(name: sub.foodName, quantity: sub.quantity, mealType: meal))
+            items.append(resolvePhotoItem(name: sub.foodName, quantity: sub.quantity))
         }
         return items
     }
 
-    private func resolveItem(name: String, quantity: Double, mealType: MealType) -> ParsedItem {
-        // V7 mobile fix (#bad-food-matches): user reported
-        // "egg" → "Fish, Whitefish, Eggs (Alaska Native)". The food
-        // DB has lots of comma-laden USDA Legacy entries that match
-        // simple queries before the clean single-word entries.
-        // Re-rank: fewer commas first, then shorter names. So "Egg"
-        // beats "Fish, Whitefish, Eggs (Alaska Native)" every time.
-        let candidates = FoodService.searchFood(query: name)
-        let ranked = candidates.sorted { a, b in
+    /// Resolve a parsed name+quantity against the local food DB into a
+    /// `PhotoLogItem` (macros scaled by quantity). Falls back to a name-only
+    /// item the user can edit. Re-ranks DB hits so "egg" beats comma-laden USDA
+    /// Legacy rows (#bad-food-matches).
+    private func resolvePhotoItem(name: String, quantity: Double) -> PhotoLogItem {
+        let ranked = FoodService.searchFood(query: name).sorted { a, b in
             let aCommas = a.name.filter { $0 == "," }.count
             let bCommas = b.name.filter { $0 == "," }.count
             if aCommas != bCommas { return aCommas < bCommas }
             return a.name.count < b.name.count
         }
-        if let match = ranked.first {
-            return ParsedItem(
-                displayName: match.name,
-                detail: "\(formatQty(quantity)) serving\(quantity == 1 ? "" : "s")",
-                calories: match.calories * quantity,
-                proteinG: match.proteinG * quantity,
-                carbsG: match.carbsG * quantity,
-                fatG: match.fatG * quantity,
-                fiberG: match.fiberG * quantity,
-                mealType: mealType,
-                servingSizeG: match.servingSize * quantity,
-                servings: quantity
-            )
+        if let m = ranked.first {
+            return PhotoLogItem(
+                name: m.name,
+                grams: m.servingSize * quantity,
+                calories: m.calories * quantity,
+                proteinG: m.proteinG * quantity,
+                carbsG: m.carbsG * quantity,
+                fatG: m.fatG * quantity,
+                fiberG: m.fiberG * quantity,
+                confidence: .medium)
         }
-        return ParsedItem(
-            displayName: name,
-            detail: "\(formatQty(quantity)) serving\(quantity == 1 ? "" : "s") · est.",
-            calories: nil,
-            proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0,
-            mealType: mealType,
-            servingSizeG: 0,
-            servings: quantity
-        )
-    }
-
-    private func formatQty(_ q: Double) -> String {
-        q.truncatingRemainder(dividingBy: 1) == 0
-            ? String(Int(q))
-            : String(format: "%.1f", q)
-    }
-
-    private func defaultMealType() -> MealType {
-        let hour = Calendar.current.component(.hour, from: Date())
-        switch hour {
-        case 4..<11: return .breakfast
-        case 11..<16: return .lunch
-        case 16..<22: return .dinner
-        default: return .snack
-        }
-    }
-
-    func logAll() async {
-        for item in parsedItems {
-            foodLogVM.quickAdd(
-                name: item.displayName,
-                calories: item.calories ?? 0,
-                proteinG: item.proteinG,
-                carbsG: item.carbsG,
-                fatG: item.fatG,
-                fiberG: item.fiberG,
-                mealType: item.mealType,
-                servingSizeG: item.servingSizeG,
-                servings: 1
-            )
-        }
+        return PhotoLogItem(name: name, grams: 0, calories: 0,
+                            proteinG: 0, carbsG: 0, fatG: 0, confidence: .low)
     }
 }
 

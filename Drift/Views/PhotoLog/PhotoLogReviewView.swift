@@ -331,7 +331,12 @@ private struct PhotoLogItemRow: View {
                 plantBadge
             }
 
-            correctionRow
+            // AI "fix this item" needs the original photo. Hidden when there's
+            // no photo (text/voice/usual-meal reuse) — direct field edits above
+            // still work. #food-logging-reuse
+            if aiCorrector != nil {
+                correctionRow
+            }
             } // end else
         }
         .opacity(item.selected ? 1.0 : 0.45)

@@ -176,6 +176,17 @@ public enum Preferences {
         set { UserDefaults.standard.set(newValue, forKey: coachTalkModeKey) }
     }
 
+    private static let coachCloudFoodParseKey = "drift_coach_cloud_food_parse_enabled"
+
+    /// Whether text/voice food logging parses descriptions with the Drift Coach
+    /// cloud model (Nebius). Default ON when a key is provisioned. Off → falls
+    /// back to the on-device extractor / ad-hoc entry (also lets unit tests force
+    /// the offline path). #food-logging-reuse
+    public static var coachCloudFoodParseEnabled: Bool {
+        get { UserDefaults.standard.object(forKey: coachCloudFoodParseKey) as? Bool ?? true }
+        set { UserDefaults.standard.set(newValue, forKey: coachCloudFoodParseKey) }
+    }
+
     private static let mealRemindersKey = "drift_meal_reminders"
 
     /// Smart meal reminders: contextual "Time to log breakfast" notifications
