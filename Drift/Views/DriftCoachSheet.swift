@@ -30,11 +30,8 @@ struct DriftCoachSheet: View {
                     }
                 }
                 .task {
-                    // Coach just works on the cloud brain; installCoachBackend()
-                    // no-ops and leaves the on-device backend in place when no
-                    // key is provisioned (silent fallback). Replaces the removed
-                    // Local/Cloud picker.
-                    AIBackendCoordinator.installCoachBackend()
+                    // Backend install moved to AIChatView.onAppear (synchronous, so
+                    // the first turn can't race it). Here we just warm the data cache.
                     await AIDataCache.shared.refreshIfNeeded()
                 }
         }

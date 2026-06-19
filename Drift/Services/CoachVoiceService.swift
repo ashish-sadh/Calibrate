@@ -1,5 +1,6 @@
 import Foundation
 import AVFoundation
+import DriftCore
 
 /// On-device text-to-speech for Drift Coach's voice talk-mode (#coach-rework).
 ///
@@ -47,12 +48,50 @@ final class CoachVoiceService: NSObject, @unchecked Sendable {
 
         let utterance = AVSpeechUtterance(string: spoken)
         utterance.rate = AVSpeechUtteranceDefaultSpeechRate
-        utterance.voice = AVSpeechSynthesisVoice(language: "en-US")
+        utterance.pitchMultiplier = 1.0
+        utterance.voice = Self.preferredVoice
         utterance.prefersAssistiveTechnologySettings = false
 
         isSpeaking = true
         synthesizer.speak(utterance)
     }
+
+    /// The best-sounding installed English voice, chosen once. Apple's
+    /// `AVSpeechSynthesisVoice(language:)` returns the *compact* (robotic) voice;
+    /// the neural **premium** and **enhanced** voices sound dramatically more
+    /// human but must be downloaded by the user (Settings → Accessibility →
+    /// Spoken Content → Voices → English → tap a voice to download). We pick the
+    /// highest-quality standard voice available, preferring en-US, and avoid the
+    /// novelty voices (Zarvox, Bells, …). Falls back to the compact default when
+    /// nothing better is installed. #coach-voice
+    static let preferredVoice: AVSpeechSynthesisVoice? = {
+        let fallback = AVSpeechSynthesisVoice(language: "en-US")
+        let english = AVSpeechSynthesisVoice.speechVoices().filter { $0.language.hasPrefix("en") }
+        guard !english.isEmpty else { return fallback }
+
+        func score(_ v: AVSpeechSynthesisVoice) -> Int {
+            var s = 0
+            switch v.quality {
+            case .premium:    s += 100
+            case .enhanced:   s += 50
+            case .default:    s += 0
+            @unknown default: s += 0
+            }
+            // Novelty voices (com.apple.speech.synthesis.voice.*) read badly —
+            // hard-deprioritize so we never pick "Zarvox" over compact Samantha.
+            if v.identifier.contains(".speech.synthesis.voice.") { s -= 200 }
+            // Siri / neural voices sound the most natural when present.
+            if v.identifier.lowercased().contains("siri") { s += 40 }
+            // Prefer US English, then other major English locales.
+            if v.language == "en-US" { s += 10 }
+            else if ["en-GB", "en-AU", "en-IN", "en-IE"].contains(v.language) { s += 5 }
+            return s
+        }
+
+        let best = english.max { score($0) < score($1) }
+        if let best { Log.app.info("Coach voice: \(best.name) (\(best.language), quality \(best.quality.rawValue))") }
+        return best ?? fallback
+    }()
 
     /// Stop speaking immediately (user tapped stop, or started recording).
     @MainActor

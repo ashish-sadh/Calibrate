@@ -282,6 +282,21 @@ public enum Preferences {
         set { UserDefaults.standard.set(newValue, forKey: didRunFMNoGoMigrationKey) }
     }
 
+    // MARK: - Coach cloud-first one-time default (#coach-speed)
+
+    private static let didDefaultCoachToCloudKey = "drift_did_default_coach_to_cloud"
+
+    /// One-shot marker: on the first launch carrying a provisioned Nebius team
+    /// key, the chat backend default flips from on-device `.llamaCpp` to the
+    /// `.remote` cloud brain — even if a local model was previously downloaded.
+    /// The on-device path is the *fallback*, not the default (it's slow on A19
+    /// Pro where Metal degrades to CPU). One-time so a later explicit on-device
+    /// pick is never clobbered. Default false.
+    public static var didDefaultCoachToCloud: Bool {
+        get { UserDefaults.standard.bool(forKey: didDefaultCoachToCloudKey) }
+        set { UserDefaults.standard.set(newValue, forKey: didDefaultCoachToCloudKey) }
+    }
+
     // MARK: - USDA API Key
 
     private static let usdaApiKeyKey = "drift_usda_api_key"

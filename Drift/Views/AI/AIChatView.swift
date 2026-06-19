@@ -135,7 +135,16 @@ struct AIChatView: View {
                 vm.inputText = prefill
                 inputFocused = true
             }
-            if !vm.aiService.isModelLoaded && vm.aiService.state == .ready {
+            // Cloud-first coach. Install the Nebius brain SYNCHRONOUSLY here so the
+            // very first turn routes remote — the old async `.task` install raced the
+            // user's first message and the turn fell through to on-device Gemma. And
+            // when the cloud coach is configured, do NOT warm the local model: loading
+            // ~2.9GB of Gemma is pure waste on the cloud path and slow on A19 Pro
+            // (Metal falls back to CPU). Only warm on-device when there's no cloud
+            // brain to serve the turn. #coach-speed
+            if AIBackendCoordinator.hasCoachCloud {
+                AIBackendCoordinator.installCoachBackend()
+            } else if !vm.aiService.isModelLoaded && vm.aiService.state == .ready {
                 vm.aiService.loadModel()
             }
         }

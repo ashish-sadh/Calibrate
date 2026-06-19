@@ -79,17 +79,20 @@ struct DriftApp: App {
                                 await AIBackendCoordinator.applyPreferredBackend()
                             }
                         }
-                        // Drift Coach defaults to its cloud brain (Nebius team key) when one
-                        // is provisioned AND the user is still on the bare on-device default
-                        // with no local model downloaded — so the coach works out of the box,
-                        // no download or key setup. Users who downloaded a local model or
-                        // picked Apple Intelligence keep their choice.
-                        if AppConfig.coachCloudConfigured,
-                           Preferences.preferredAIBackend == .llamaCpp,
-                           !AIModelManager.shared.isModelDownloaded {
-                            Preferences.preferredAIBackend = .remote
-                            AIBackendCoordinator.installCoachBackend()
-                            Log.app.info("Drift Coach: defaulted to cloud (Nebius team key)")
+                        // Drift Coach is cloud-first. On the first launch carrying a
+                        // provisioned Nebius team key, default the chat backend to the
+                        // cloud brain — even if a local model was previously downloaded
+                        // (on-device is the fallback, not the default; it's slow on A19
+                        // Pro where Metal degrades to CPU). One-time, so a user who later
+                        // explicitly picks on-device keeps that choice. Users already on
+                        // Apple Intelligence are untouched (only `.llamaCpp` flips).
+                        if AppConfig.coachCloudConfigured, !Preferences.didDefaultCoachToCloud {
+                            Preferences.didDefaultCoachToCloud = true
+                            if Preferences.preferredAIBackend == .llamaCpp {
+                                Preferences.preferredAIBackend = .remote
+                                AIBackendCoordinator.installCoachBackend()
+                                Log.app.info("Drift Coach: defaulted chat backend to cloud (Nebius team key)")
+                            }
                         }
                         // First-launch restore: if this device's DB is fresh
                         // AND a backup is sitting in the user's iCloud Drive
