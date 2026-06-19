@@ -320,6 +320,21 @@ public final class LocalAIService {
         state = modelManager.isModelDownloaded ? .ready : .notSetUp
     }
 
+    /// Install a local llama.cpp backend from an EXPLICIT gguf path, bypassing
+    /// `AIModelManager`'s app-sandbox download dir. Loads synchronously and
+    /// blocks until ready — intended for headless tools (LLM eval harness,
+    /// chat simulator, CLI tests) that already have a model on disk at a known
+    /// path. The shipped app uses `loadModel()` (sandbox dir + async load); this
+    /// is the injection seam those tools lack. Throws if the model fails to load.
+    public func useLocalBackend(modelPath: URL) throws {
+        backend?.unload()
+        let llama = LlamaCppBackend(modelPath: modelPath)
+        try llama.loadSync()
+        backend = llama
+        activeBackendType = .llamaCpp
+        state = .ready
+    }
+
     // MARK: - Foundation Models Backend (Apple Intelligence on-device)
 
     /// Install the Apple Foundation Models backend. Caller must verify

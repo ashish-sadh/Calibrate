@@ -9,6 +9,7 @@ let package = Package(
     ],
     products: [
         .library(name: "DriftCore", targets: ["DriftCore"]),
+        .executable(name: "DriftChatSim", targets: ["DriftChatSim"]),
     ],
     dependencies: [
         .package(url: "https://github.com/groue/GRDB.swift.git", from: "7.0.0"),
@@ -30,6 +31,11 @@ let package = Package(
             resources: [
                 .process("Resources"),
             ]
+        ),
+        .executableTarget(
+            name: "DriftChatSim",
+            dependencies: ["DriftCore"],
+            path: "Sources/DriftChatSim"
         ),
         .testTarget(
             name: "DriftCoreTests",
