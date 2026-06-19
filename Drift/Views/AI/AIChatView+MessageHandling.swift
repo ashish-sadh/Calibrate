@@ -1538,8 +1538,9 @@ extension AIChatViewModel {
                     messages[idx].clarificationOptions = output.clarificationOptions
                     messages[idx].remoteProvider = aiService.remoteProviderName
                     attachToolCards(to: &messages[idx], toolsCalled: output.toolsCalled)
-                    // Voice talk-mode: speak the finalized reply aloud (no-op when off).
-                    speakReply(output.text)
+                    // Voice talk-mode: typed turns speak here; voice turns defer to
+                    // speakVoiceTurn below (one utterance: reply + action ack + re-arm).
+                    if !lastTurnWasVoice { speakReply(output.text) }
                 }
             }
             // Ask-don't-guess: enter the waiting phase so the next turn is
@@ -1594,6 +1595,13 @@ extension AIChatViewModel {
                         name: name, calories: calories, proteinG: proteinG, carbsG: carbsG, fatG: fatG)
                     showingManualFoodEntry = true
                 }
+            }
+
+            // Voice turn: speak the reply (+ any action ack) as ONE utterance,
+            // then re-arm the mic for hands-free continuation. #coach-keep-listening
+            if lastTurnWasVoice {
+                lastTurnWasVoice = false
+                speakVoiceTurn(reply: output.text, action: output.action)
             }
 
             // Q7: Remote backend error — fallback or surface to user. #519.

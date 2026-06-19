@@ -85,6 +85,39 @@ final class AIChatViewModel {
         voiceService.speak(text)
     }
 
+    /// True for one turn when the message came from the mic — drives the
+    /// speak-the-action + keep-listening loop. Reset once the turn is handled.
+    var lastTurnWasVoice = false
+
+    /// Bumped to ask the View to re-open the mic after the coach finishes
+    /// speaking (hands-free continuation). The View owns the audio engine; the
+    /// VM only signals — keeps the audio handoff (TTS → record) on one side.
+    var rearmMicTick = 0
+
+    /// Short spoken acknowledgement when an action opens mid-voice-turn, so the
+    /// coach says what it's doing instead of a silent sheet. #coach-keep-listening
+    func actionAckPhrase(for action: ToolAction) -> String {
+        switch action {
+        case .openFoodSearch, .openManualFoodEntry, .openRecipeBuilder:
+            return "Opening add item — keep talking."
+        case .openWorkout:        return "Starting your workout."
+        case .openWeightEntry:    return "Opening weight entry."
+        case .openBarcodeScanner: return "Opening the scanner."
+        case .navigate:           return ""
+        }
+    }
+
+    /// Speak a VOICE turn's reply (+ any action ack) as ONE utterance, then signal
+    /// the View to re-arm the mic so the user keeps talking hands-free. No-op when
+    /// voice output is off (the user muted) — they can re-tap to continue.
+    func speakVoiceTurn(reply: String, action: ToolAction?) {
+        guard voiceOutputEnabled else { return }
+        let ack = action.map { actionAckPhrase(for: $0) } ?? ""
+        let utterance = [reply, ack].filter { !$0.isEmpty }.joined(separator: " ")
+        guard !utterance.isEmpty else { rearmMicTick += 1; return }
+        voiceService.speak(utterance) { [weak self] in self?.rearmMicTick += 1 }
+    }
+
     /// Injectable for tests; production uses the shared singleton.
     let persistence: ConversationStatePersistence
 

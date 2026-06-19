@@ -141,7 +141,9 @@ struct AIChatView: View {
         }
         .onDisappear {
             vm.aiService.scheduleUnload(delay: 60)
+            vm.voiceService.stop()
         }
+        .onChange(of: vm.rearmMicTick) { _, _ in rearmMic() }
     }
 
     // MARK: - Listening-circle hero (voice-first empty state)
@@ -176,14 +178,29 @@ struct AIChatView: View {
         if !vm.speechService.isRecording && !vm.voiceOutputEnabled {
             vm.toggleVoiceOutput()
         }
+        beginListening()
+    }
+
+    /// Start (or toggle-stop) voice capture. onDone auto-sends and flags the turn
+    /// as voice so the coach speaks its reply and re-arms the mic afterward.
+    func beginListening() {
         vm.voiceService.stop()
         vm.speechService.toggleRecording(
             onTranscript: { self.vm.inputText = $0 },
             onDone: {
                 self.vm.inputText = VoiceTranscriptionPostFixer.fix($0)
+                self.vm.lastTurnWasVoice = true
                 self.vm.sendMessage()
             }
         )
+    }
+
+    /// Re-open the mic after the coach finishes speaking (the hands-free loop).
+    /// Guarded so it never opens on top of an in-flight turn or active speech.
+    func rearmMic() {
+        guard vm.voiceOutputEnabled, !vm.isGenerating,
+              !vm.speechService.isRecording, !vm.voiceService.isSpeaking else { return }
+        beginListening()
     }
 
     // MARK: - Suggestions Row
