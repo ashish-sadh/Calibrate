@@ -138,8 +138,7 @@ public final class LocalAIService {
             do {
                 try llama.loadSync()
                 await MainActor.run {
-                    self.backend = llama
-                    Task { await self.healthCheck() }
+                    self.adoptLoadedLocalBackend(llama)
                 }
             } catch {
                 await MainActor.run {
@@ -148,6 +147,21 @@ public final class LocalAIService {
                 }
             }
         }
+    }
+
+    /// Adopt a local model that just finished loading on the detached task — but
+    /// ONLY if the local path is still active and nothing claimed the backend slot
+    /// while we were loading. If the user flipped to Nebius cloud (or Foundation
+    /// Models) mid-load, adopting this llama would clobber the live cloud backend
+    /// and pin ~2.9GB of Gemma in memory on a path that never runs it. Unload and
+    /// discard instead — the cloud path stays cloud. #889
+    func adoptLoadedLocalBackend(_ loaded: AIBackend) {
+        guard activeBackendType == .llamaCpp, backend == nil else {
+            loaded.unload()
+            return
+        }
+        backend = loaded
+        Task { await healthCheck() }
     }
 
     /// Send a trivial prompt to verify the model actually works before declaring ready.

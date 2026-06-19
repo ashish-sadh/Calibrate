@@ -181,6 +181,7 @@
 		E16388BC43C225F2C6B7368A /* AIChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FA2C56E731BE5610FDC5B12 /* AIChatView.swift */; };
 		E179EE03D1DABC1B5FBBFFB3 /* CoachingBriefCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF4B2F66E0DB512E078D472 /* CoachingBriefCardTests.swift */; };
 		E220B46BAB957B8242ABA44A /* IntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24EBC73AF46E92F7FF6A10FF /* IntegrationTests.swift */; };
+		E24CF2FFAD8ED6CA89CDD5F4 /* AIBackendCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D3E8C8C02CFBE15B569BB71 /* AIBackendCoordinatorTests.swift */; };
 		E3112CD38D734531A4040541 /* FoundationModelsChatParityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C8C8E55C6396731BC65D49AB /* FoundationModelsChatParityTests.swift */; };
 		E312846BA4FBD129108D7C82 /* ExerciseBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21311CD0AE82F339C988BDD2 /* ExerciseBrowserView.swift */; };
 		E3A1AAD6DC61707246AECDA8 /* BackupMonitorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC007029A7A52990CE4FBDE /* BackupMonitorTests.swift */; };
@@ -326,6 +327,7 @@
 		4902DF0863C6F54F0D1BC3BA /* HealthKitService+Sleep.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthKitService+Sleep.swift"; sourceTree = "<group>"; };
 		4C993D1A0F278A3A9A4E02F2 /* ServingMultiplierStepper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServingMultiplierStepper.swift; sourceTree = "<group>"; };
 		4CC80EEA446BCC82FAE612AB /* AIChatView+BackendSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AIChatView+BackendSelector.swift"; sourceTree = "<group>"; };
+		4D3E8C8C02CFBE15B569BB71 /* AIBackendCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIBackendCoordinatorTests.swift; sourceTree = "<group>"; };
 		4EACDB02677C363A05FD0592 /* FoodLogSheetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodLogSheetTests.swift; sourceTree = "<group>"; };
 		54876336F0C254359603DBC4 /* LogMethodCardsRowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogMethodCardsRowTests.swift; sourceTree = "<group>"; };
 		552F5AE6789DA294DDB91E8B /* Drift.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Drift.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -580,6 +582,7 @@
 		230C4300561292D969C89B4E /* DriftTests */ = {
 			isa = PBXGroup;
 			children = (
+				4D3E8C8C02CFBE15B569BB71 /* AIBackendCoordinatorTests.swift */,
 				19E7517E5B4779CBBE1C7284 /* AITests.swift */,
 				BBC007029A7A52990CE4FBDE /* BackupMonitorTests.swift */,
 				F82FD7245B0E99CA6CB7090F /* BackupSchedulerTests.swift */,
@@ -1223,6 +1226,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E24CF2FFAD8ED6CA89CDD5F4 /* AIBackendCoordinatorTests.swift in Sources */,
 				2DDEA9907FA6338488A8E1CD /* AITests.swift in Sources */,
 				E3A1AAD6DC61707246AECDA8 /* BackupMonitorTests.swift in Sources */,
 				133EE1957A7EEB3394C0A926 /* BackupSchedulerTests.swift in Sources */,
