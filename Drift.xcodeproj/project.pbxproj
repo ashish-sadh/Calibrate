@@ -99,7 +99,6 @@
 		7A1465FD81F0693EB2B9F112 /* llama.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4101CD9171B652C6B8D1BB4E /* llama.xcframework */; };
 		7AD6304B58DBD8DA0BE88BC3 /* MacroRingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A411F4544692EA6196F07C9C /* MacroRingsView.swift */; };
 		7DF0B917D6C991089AC975A5 /* llama.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4101CD9171B652C6B8D1BB4E /* llama.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		817E6CC0A3B59ED133B6086F /* nebius.key.example in Resources */ = {isa = PBXBuildFile; fileRef = A69F4EEBD9945922A452FA8E /* nebius.key.example */; };
 		8224D8220B6D9328EDDDB648 /* DEXAOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5893DE4C163CA3CF50E74C1A /* DEXAOverviewView.swift */; };
 		8271D577C63294790DF81CC4 /* BodySummaryCardsRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8F6A3D68A0950A9BAC2E2F3 /* BodySummaryCardsRow.swift */; };
 		86211210D2E5528F57C90AEF /* WorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB2998A31AEC29094C6F4062 /* WorkoutView.swift */; };
@@ -154,7 +153,6 @@
 		CFCC147069ADCB2E367DA3D4 /* MealLogUnificationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B637DFADAD7FF587E499B6A7 /* MealLogUnificationTests.swift */; };
 		D1D942D61F82FB570F804517 /* CloudVisionClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57BE014AD72F4F5691483658 /* CloudVisionClientTests.swift */; };
 		D1F92D043D241D539585C068 /* ServingInputView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F7F3BAFA978301368D148CF /* ServingInputView.swift */; };
-		D242E5777F7B922F8CA3E7E8 /* nebius.key in Resources */ = {isa = PBXBuildFile; fileRef = 14DCC3CDC027D29F5BD87F6B /* nebius.key */; };
 		D2E596AFDCE5C6C9C49B5410 /* USDAFallbackEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = C92BBFFC16E3948FD5DABA59 /* USDAFallbackEval.swift */; };
 		D3A7ACF42E8B98CCF0BBFBE9 /* FoodDatabase.db in Resources */ = {isa = PBXBuildFile; fileRef = 0F17D1E36C8FFDB99E74C9A4 /* FoodDatabase.db */; };
 		D460DC58016E359FB62DFCC3 /* TodayDonutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF4E87433C72DCD46B0D423D /* TodayDonutView.swift */; };
@@ -274,7 +272,6 @@
 		143FEB1AD55D91893E9FF314 /* DashboardViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewTests.swift; sourceTree = "<group>"; };
 		145534F72860C9C345156102 /* DriftWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriftWidget.swift; sourceTree = "<group>"; };
 		14B31FF0A1CB79C0732FB849 /* PhotoLogEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLogEntry.swift; sourceTree = "<group>"; };
-		14DCC3CDC027D29F5BD87F6B /* nebius.key */ = {isa = PBXFileReference; path = nebius.key; sourceTree = "<group>"; };
 		155E590DFD0A95014B993B9D /* BiomarkerDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiomarkerDetailView.swift; sourceTree = "<group>"; };
 		1575030FD9A7BEF5BC9E0612 /* NutritionOCRTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NutritionOCRTests.swift; sourceTree = "<group>"; };
 		163C4017D9AEE2E0927DC907 /* CycleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleView.swift; sourceTree = "<group>"; };
@@ -372,7 +369,6 @@
 		A411F4544692EA6196F07C9C /* MacroRingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroRingsView.swift; sourceTree = "<group>"; };
 		A434AE755701CCB89A111516 /* PipelineE2EEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelineE2EEval.swift; sourceTree = "<group>"; };
 		A4BC95967D2043D701CA63AB /* BodyCompEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyCompEntryView.swift; sourceTree = "<group>"; };
-		A69F4EEBD9945922A452FA8E /* nebius.key.example */ = {isa = PBXFileReference; path = nebius.key.example; sourceTree = "<group>"; };
 		A835CA7572E629657044C111 /* PhotoLogServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLogServiceTests.swift; sourceTree = "<group>"; };
 		A9693A1E065B9E2D3DA846EF /* CoachingBriefCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachingBriefCard.swift; sourceTree = "<group>"; };
 		A9DA1F02B1BF76DA862072A6 /* AIChooserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChooserView.swift; sourceTree = "<group>"; };
@@ -779,8 +775,6 @@
 				08E33CA6BE80D735A37ED745 /* Assets.xcassets */,
 				0F17D1E36C8FFDB99E74C9A4 /* FoodDatabase.db */,
 				58B1281AF3BA620161F30716 /* foods.db */,
-				14DCC3CDC027D29F5BD87F6B /* nebius.key */,
-				A69F4EEBD9945922A452FA8E /* nebius.key.example */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -1067,8 +1061,6 @@
 				AA43792497E2FC36FF55F58C /* Assets.xcassets in Resources */,
 				D3A7ACF42E8B98CCF0BBFBE9 /* FoodDatabase.db in Resources */,
 				3D01268D3E9F35381A819628 /* foods.db in Resources */,
-				D242E5777F7B922F8CA3E7E8 /* nebius.key in Resources */,
-				817E6CC0A3B59ED133B6086F /* nebius.key.example in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,15 +1,24 @@
 import Foundation
+import CryptoKit
 
 /// Build-time configuration for Drift Coach's cloud brain.
 ///
 /// Drift Coach runs on Nebius AI Studio (OpenAI-compatible) using a single
-/// **team key**, not user BYOK (#coach-rework). The key is loaded from a
-/// git-ignored bundled resource (`Drift/Resources/nebius.key`) so it ships in
-/// the app for the hackathon demo but never enters version control. When the
-/// key is absent the coach degrades gracefully to the on-device backend.
+/// **team key**, not user BYOK. The key is NOT shipped in plaintext: only an
+/// AES-GCM ciphertext is embedded below, and the unlock key is reconstructed at
+/// runtime from scattered constants — so a `strings`/bundle dump won't surface
+/// the key.
 ///
-/// Production path (post-hackathon): replace this with a central server that
-/// holds the key + HydraDB session context, so no key ships in the client.
+/// ⚠️ This is **obfuscation, not security.** A secret that the app can decrypt
+/// at runtime can always be recovered from a running app (memory dump, hooking
+/// the decrypt). It defeats casual scraping only. It is paired with a hard
+/// spending cap on the Nebius key so an extracted key is low-stakes; rotate the
+/// key after the hackathon. The real fix (a serverless proxy holding the key) is
+/// the post-hackathon path.
+///
+/// To rotate / re-key: AES-GCM-seal the new key with the SAME derivation as
+/// `unlockKey` below (a one-off `swift` script using CryptoKit), base64 the
+/// `sealedBox.combined`, and replace `coachKeyCiphertextB64`.
 enum AppConfig {
 
     /// Nebius model powering the coach. Qwen3-235B-Instruct — fast (~1s),
@@ -22,15 +31,31 @@ enum AppConfig {
     /// `RemoteLLMBackend.Provider.nebius`.
     static let coachProvider = "nebius"
 
-    /// Team Nebius API key, loaded from the git-ignored `nebius.key` resource.
-    /// Empty when not provisioned — `coachCloudConfigured` is the gate callers
-    /// check before offering the cloud coach.
-    static var coachAPIKey: String {
-        guard let url = Bundle.main.url(forResource: "nebius", withExtension: "key"),
-              let raw = try? String(contentsOf: url, encoding: .utf8) else { return "" }
-        return raw.trimmingCharacters(in: .whitespacesAndNewlines)
+    /// AES-GCM(combined: nonce‖ciphertext‖tag) of the team Nebius key, base64.
+    /// Only the ciphertext ships; see `unlockKey` for how it's opened.
+    private static let coachKeyCiphertextB64 =
+        "Upzhzx7t932rG7agnXFDR3kkp1Hs6eClltEzIVlzNYuLmT0eVhucr/DQexhoDApXL+qzL0v0AejHZmNbC74du7LF0EbIryvAqQtpAS4ZSbsYvrZiK5Up6lfYGCyz3WTEcXnoF39SuJ8PQ3zBn+MIBDR+Qzka1FKxQj5pqNW2kkyYDo7o1fLW15vQqai0C7yoHWTKD+NyzfbIu1w9f6k/5ZRhPPj6TTDdc1ldQhIfYUKNPv7rPw4D2kiFLdFk2rPdjndUamAbkf2vl/mfmdaoN9+rFyP3LJ9488Yeg2ds+1dUOnUdPKj8JXEKk1IzrBSt1f2jM2veaKuQ9LqSrvci9q7LZZuGExA="
+
+    /// Reconstruct the AES-256 unlock key — derived (SHA-256) from scattered
+    /// pieces, never stored as a literal. MUST match the offline seal script.
+    private static var unlockKey: SymmetricKey {
+        let parts = ["dr1ft", "c0ach", "n3b", "com.drift.health"]
+        let material = parts.joined(separator: "\u{00B7}")
+        return SymmetricKey(data: SHA256.hash(data: Data(material.utf8)))
     }
 
-    /// True when a team key is bundled — the cloud coach is selectable.
+    /// Decrypt the team Nebius key from the embedded ciphertext. Returns "" if
+    /// the ciphertext is absent/garbled — `coachCloudConfigured` then reads
+    /// false and the coach degrades to on-device.
+    static var coachAPIKey: String {
+        guard !coachKeyCiphertextB64.isEmpty,
+              let data = Data(base64Encoded: coachKeyCiphertextB64),
+              let box = try? AES.GCM.SealedBox(combined: data),
+              let plain = try? AES.GCM.open(box, using: unlockKey),
+              let key = String(data: plain, encoding: .utf8) else { return "" }
+        return key
+    }
+
+    /// True when the embedded key decrypts — the cloud coach is selectable.
     static var coachCloudConfigured: Bool { !coachAPIKey.isEmpty }
 }

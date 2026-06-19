@@ -56,8 +56,6 @@ targets:
           - "Archive"
     resources:
       - path: Drift/Resources
-        excludes:
-          - "nebius.key.example"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.drift.health
