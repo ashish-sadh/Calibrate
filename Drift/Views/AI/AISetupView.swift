@@ -52,7 +52,7 @@ struct AIView: View {
     private var shouldShowChat: Bool {
         switch Preferences.preferredAIBackend {
         case .foundationModels: return true
-        case .remote: return AIBackendCoordinator.hasRemoteKey
+        case .remote: return AIBackendCoordinator.hasCoachCloud
         case .llamaCpp, .mlx: return false
         }
     }

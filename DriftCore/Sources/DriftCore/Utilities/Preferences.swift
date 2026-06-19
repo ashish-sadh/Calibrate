@@ -153,6 +153,17 @@ public enum Preferences {
 
     // MARK: - Smart Meal Reminders
 
+    private static let coachVoiceKey = "drift_coach_voice_enabled"
+
+    /// Drift Coach voice talk-mode: when ON, the coach speaks its replies aloud
+    /// (on-device TTS via `CoachVoiceService`) so the user can talk to it and
+    /// hear it back while cards render on screen. Default OFF — opt-in via the
+    /// speaker toggle in the chat input bar. #coach-rework.
+    public static var coachVoiceEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: coachVoiceKey) }
+        set { UserDefaults.standard.set(newValue, forKey: coachVoiceKey) }
+    }
+
     private static let mealRemindersKey = "drift_meal_reminders"
 
     /// Smart meal reminders: contextual "Time to log breakfast" notifications

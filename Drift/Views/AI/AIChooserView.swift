@@ -7,7 +7,6 @@ import DriftCore
 /// for "no marketing-speak. Treat users like adults." #515.
 struct AIChooserView: View {
     @State private var aiService = LocalAIService.shared
-    @State private var showPhotoLogSettings = false
 
     var body: some View {
         ScrollView {
@@ -23,9 +22,6 @@ struct AIChooserView: View {
         }
         .navigationTitle("Set up Drift AI")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showPhotoLogSettings) {
-            NavigationStack { PhotoLogBetaSettingsView() }
-        }
     }
 
     // MARK: - Sections
@@ -55,23 +51,23 @@ struct AIChooserView: View {
 
     private var cloudCard: some View {
         Button {
+            // Drift Coach cloud — Nebius team key from AppConfig, no user setup.
+            // Selecting it installs the backend immediately; LocalAIService.state
+            // flips to .ready, which advances the setup flow into the chat.
             Preferences.preferredAIBackend = .remote
-            // Photo Log opt-in is a precondition — its settings sheet handles
-            // the toggle, provider pick, and Keychain handoff in one screen.
-            Preferences.photoLogEnabled = true
-            showPhotoLogSettings = true
+            AIBackendCoordinator.installCoachBackend()
         } label: {
             chooserCard(
                 icon: "cloud.fill",
                 tint: Theme.accent,
-                title: "Cloud AI (BYOK)",
-                tagline: "Smartest, fastest. ~2¢ per message. Your messages leave your device.",
+                title: "Drift Coach (cloud)",
+                tagline: "Smartest, fastest. Messages leave your device when on.",
                 bullets: [
                     ("bolt.fill", "Top-tier reasoning + photo understanding"),
-                    ("dollarsign.circle", "You pay your own provider — Drift never sees your messages"),
+                    ("sparkles", "Powered by the cloud — no key or setup needed"),
                     ("network", "Needs a working internet connection")
                 ],
-                ctaLabel: "Set up cloud key"
+                ctaLabel: "Use Drift Coach"
             )
         }
         .buttonStyle(.plain)
@@ -108,7 +104,7 @@ struct AIChooserView: View {
                 Text("Your data stays yours")
                     .font(.caption.weight(.medium))
             }
-            Text("Drift never collects messages, photos, or telemetry. Cloud AI sends only the message you typed to the provider you chose. On-device AI sends nothing anywhere.")
+            Text("Drift never collects messages, photos, or telemetry. Drift Coach (cloud) sends only your message to the model. On-device AI sends nothing anywhere.")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
                 .multilineTextAlignment(.center)

@@ -1518,6 +1518,8 @@ extension AIChatViewModel {
                     messages[idx].clarificationOptions = output.clarificationOptions
                     messages[idx].remoteProvider = aiService.remoteProviderName
                     attachToolCards(to: &messages[idx], toolsCalled: output.toolsCalled)
+                    // Voice talk-mode: speak the finalized reply aloud (no-op when off).
+                    speakReply(output.text)
                 }
             }
             // Ask-don't-guess: enter the waiting phase so the next turn is

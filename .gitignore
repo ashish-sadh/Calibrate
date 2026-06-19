@@ -58,3 +58,7 @@ command-center/heartbeat.json
 __pycache__/
 *.pyc
 .pytest_cache/
+
+# Drift Coach team API key (hackathon) — baked into the app bundle as a resource
+# but NEVER committed. Drop the Nebius team key into Drift/Resources/nebius.key.
+Drift/Resources/nebius.key

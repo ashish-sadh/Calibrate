@@ -66,6 +66,21 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
         case anthropic
         case openai
         case gemini
+        /// Nebius AI Studio — OpenAI-compatible inference for open-weight models
+        /// (Qwen, Llama, DeepSeek, …). Used by Drift Coach with a team key from
+        /// `AppConfig`, NOT user BYOK. Reuses the OpenAI request shape + SSE
+        /// parser against the Nebius base URL.
+        case nebius
+
+        /// OpenAI-compatible chat-completions base URL for this provider, or nil
+        /// for providers with a bespoke API (Anthropic/Gemini build their own URL).
+        var openAICompatibleBaseURL: String? {
+            switch self {
+            case .openai: return "https://api.openai.com/v1"
+            case .nebius: return "https://api.studio.nebius.ai/v1"
+            case .anthropic, .gemini: return nil
+            }
+        }
     }
 
     enum BackendError: Error {
@@ -176,9 +191,13 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
 
     private func buildRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String) throws -> URLRequest {
         switch provider {
-        case .anthropic: return try buildAnthropicRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey)
-        case .openai:    return try buildOpenAIRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey)
-        case .gemini:    return try buildGeminiRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey)
+        case .anthropic:
+            return try buildAnthropicRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey)
+        case .openai, .nebius:
+            guard let baseURL = provider.openAICompatibleBaseURL else { throw BackendError.invalidURL }
+            return try buildOpenAICompatibleRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey, baseURL: baseURL)
+        case .gemini:
+            return try buildGeminiRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey)
         }
     }
 
@@ -213,8 +232,11 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
         return req
     }
 
-    private func buildOpenAIRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String) throws -> URLRequest {
-        guard let url = URL(string: "https://api.openai.com/v1/chat/completions") else {
+    /// Build an OpenAI-compatible `/chat/completions` request. Shared by `.openai`
+    /// (api.openai.com) and `.nebius` (api.studio.nebius.ai) — identical request
+    /// body + SSE shape, only the base URL differs.
+    private func buildOpenAICompatibleRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, baseURL: String) throws -> URLRequest {
+        guard let url = URL(string: "\(baseURL)/chat/completions") else {
             throw BackendError.invalidURL
         }
         var req = URLRequest(url: url)
@@ -273,9 +295,9 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
 
     private func parseResponse(data: Data, onToken: @escaping @Sendable (String) -> Void) -> String {
         switch provider {
-        case .anthropic: return AnthropicSSEParser.parse(data: data, onToken: onToken)
-        case .openai:    return OpenAISSEParser.parse(data: data, onToken: onToken)
-        case .gemini:    return GeminiSSEParser.parse(data: data, onToken: onToken)
+        case .anthropic:       return AnthropicSSEParser.parse(data: data, onToken: onToken)
+        case .openai, .nebius: return OpenAISSEParser.parse(data: data, onToken: onToken)
+        case .gemini:          return GeminiSSEParser.parse(data: data, onToken: onToken)
         }
     }
 }

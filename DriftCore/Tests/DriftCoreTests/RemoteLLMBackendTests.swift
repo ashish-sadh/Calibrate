@@ -302,13 +302,14 @@ struct RemoteLLMBackendTests {
 
     // MARK: - Provider Coverage
 
-    @Test func providerHasAllThreeCases() {
+    @Test func providerHasAllFourCases() {
         // Catches accidental enum trims that would silently break a provider.
         let all = RemoteLLMBackend.Provider.allCases
         #expect(all.contains(.anthropic))
         #expect(all.contains(.openai))
         #expect(all.contains(.gemini))
-        #expect(all.count == 3)
+        #expect(all.contains(.nebius))
+        #expect(all.count == 4)
     }
 
     @Test func geminiRequestUsesQueryStringAuth() async throws {
@@ -466,5 +467,45 @@ struct RemoteLLMBackendTests {
         )
         _ = await backend.respond(to: "hi", systemPrompt: "sys")
         #expect(backend.lastError == nil)
+    }
+
+    // MARK: - Nebius (Drift Coach cloud, OpenAI-compatible)
+
+    @Test func nebiusProviderExposesStudioBaseURL() {
+        #expect(RemoteLLMBackend.Provider.allCases.contains(.nebius))
+        #expect(RemoteLLMBackend.Provider.nebius.openAICompatibleBaseURL == "https://api.studio.nebius.ai/v1")
+        // Anthropic/Gemini have bespoke APIs — no OpenAI-compatible base URL.
+        #expect(RemoteLLMBackend.Provider.anthropic.openAICompatibleBaseURL == nil)
+        #expect(RemoteLLMBackend.Provider.gemini.openAICompatibleBaseURL == nil)
+    }
+
+    @Test func nebiusHitsStudioChatCompletionsEndpointWithBearer() async {
+        let box = RequestBox()
+        let backend = RemoteLLMBackend(
+            provider: .nebius, modelID: "Qwen/Qwen3-235B-A22B-Instruct-2507",
+            apiKey: "team-key", session: CapturingSession(box: box)
+        )
+        _ = await backend.respond(to: "hi", systemPrompt: "sys")
+        #expect(box.request?.url?.absoluteString == "https://api.studio.nebius.ai/v1/chat/completions")
+        #expect(box.request?.value(forHTTPHeaderField: "Authorization") == "Bearer team-key")
+    }
+
+    @Test func nebiusParsesOpenAICompatibleTextStream() async {
+        // Nebius streams the standard OpenAI chat-completions SSE shape, so the
+        // OpenAI parser handles it — content tokens concatenate into the reply.
+        let sse = Data("""
+        data: {"choices":[{"delta":{"content":"Protein "}}]}
+
+        data: {"choices":[{"delta":{"content":"is low."}}]}
+
+        data: [DONE]
+
+        """.utf8)
+        let backend = RemoteLLMBackend(
+            provider: .nebius, modelID: "m", apiKey: "k",
+            session: MockHTTPSession(responseData: sse)
+        )
+        let out = await backend.respond(to: "hi", systemPrompt: "sys")
+        #expect(out == "Protein is low.")
     }
 }

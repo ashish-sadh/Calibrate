@@ -22,6 +22,9 @@ final class AIChatViewModel {
     var workoutTemplate: WorkoutTemplate? = nil
     var convState = ConversationState.shared
     var speechService = SpeechRecognitionService.shared
+    /// On-device TTS for voice talk-mode. When `voiceOutputEnabled`, the coach
+    /// speaks each reply aloud after it finalizes. #coach-rework.
+    var voiceService = CoachVoiceService.shared
     var pendingExercises: [AIActionParser.WorkoutExercise] = []
     var showingRecipeBuilder = false
     var pendingRecipeItems: [QuickAddView.RecipeItem] = []
@@ -61,6 +64,25 @@ final class AIChatViewModel {
         activeBackend = next
         Preferences.preferredAIBackend = next
         Task { await AIBackendCoordinator.applyPreferredBackend() }
+    }
+
+    /// Whether the coach speaks replies aloud. Stored (not computed) so
+    /// @Observable re-renders the input-bar toggle; mirrored to Preferences.
+    var voiceOutputEnabled: Bool = Preferences.coachVoiceEnabled
+
+    /// Flip voice talk-mode. Persists the preference; silences any in-flight
+    /// speech when turning off.
+    func toggleVoiceOutput() {
+        voiceOutputEnabled.toggle()
+        Preferences.coachVoiceEnabled = voiceOutputEnabled
+        if !voiceOutputEnabled { voiceService.stop() }
+    }
+
+    /// Speak a finalized assistant reply aloud when voice mode is on. No-op
+    /// otherwise. Called from the message-completion seam.
+    func speakReply(_ text: String) {
+        guard voiceOutputEnabled else { return }
+        voiceService.speak(text)
     }
 
     /// Injectable for tests; production uses the shared singleton.

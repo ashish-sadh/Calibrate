@@ -114,7 +114,26 @@ extension AIChatView {
             .accessibilityLabel("Attach photo")
         }
 
+        // Voice replies toggle — the coach speaks its answers aloud when on,
+        // pairing with the mic for a full talk-to-it experience. While speaking,
+        // becomes a stop button.
         Button {
+            if vm.voiceService.isSpeaking {
+                vm.voiceService.stop()
+            } else {
+                vm.toggleVoiceOutput()
+            }
+        } label: {
+            Image(systemName: vm.voiceService.isSpeaking ? "stop.circle.fill"
+                    : (vm.voiceOutputEnabled ? "speaker.wave.2.fill" : "speaker.slash"))
+                .font(.system(size: 18))
+                .foregroundStyle(vm.voiceService.isSpeaking || vm.voiceOutputEnabled ? Theme.accent : .secondary)
+        }
+        .accessibilityLabel(vm.voiceService.isSpeaking ? "Stop speaking"
+            : (vm.voiceOutputEnabled ? "Voice replies on" : "Voice replies off"))
+
+        Button {
+            vm.voiceService.stop()  // silence any in-flight reply before listening
             vm.speechService.toggleRecording(
                 onTranscript: { text in
                     self.vm.inputText = text

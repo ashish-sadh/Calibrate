@@ -63,7 +63,7 @@ struct DriftCoachSheet: View {
             // launch and never surfaced here.
             Picker("Model", selection: $backend) {
                 Text("Local").tag(AIBackendType.foundationModels)
-                Text("Cloud (BYOK)").tag(AIBackendType.remote)
+                Text("Cloud").tag(AIBackendType.remote)
             }
             .pickerStyle(.segmented)
             .accessibilityIdentifier("drift-coach-model-picker")
@@ -93,7 +93,7 @@ struct DriftCoachSheet: View {
             // privacy line so the privacy story doesn't break.
             return "On-device · legacy local model (migrating to Apple Foundation Models on next launch)."
         case .remote:
-            return "Cloud · uses your BYOK key. Messages leave your device."
+            return "Cloud · faster, smarter answers. Messages leave your device when on."
         }
     }
 }

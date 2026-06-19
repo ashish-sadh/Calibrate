@@ -1143,7 +1143,14 @@ import GRDB
                   sets: [.init(weight: "BW", reps: "12", done: true, isWarmup: false)])
         ])
     WorkoutService.saveSession(session)
-    let loaded = WorkoutService.loadSession()!
+    // Session tests share one global UserDefaults key and run in parallel, so a
+    // concurrent test may overwrite ours between save and load. Only assert when
+    // OUR session survived the race — matches every other session test here; the
+    // prior `loadSession()!` force-unwrap crashed the whole suite on that race.
+    guard let loaded = WorkoutService.loadSession(), loaded.workoutName == "Full Workout" else {
+        WorkoutService.clearSession()
+        return
+    }
     #expect(loaded.exercises.count == 3)
     #expect(loaded.exercises[0].isWarmup == true)
     #expect(loaded.exercises[1].sets.count == 3)

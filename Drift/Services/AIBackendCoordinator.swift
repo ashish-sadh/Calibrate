@@ -11,10 +11,12 @@ import DriftCore
 @MainActor
 enum AIBackendCoordinator {
 
-    /// Whether a remote BYOK key is configured for the current photo-log
-    /// provider. Metadata-only Keychain query — no biometric prompt.
-    static var hasRemoteKey: Bool {
-        CloudVisionKey.has(provider: Preferences.photoLogProvider)
+    /// Whether the Drift Coach cloud brain (Nebius, team key from `AppConfig`)
+    /// is provisioned. The chat/coach path no longer uses a user-entered BYOK
+    /// key — that path is archived (see `Drift/Archive/`). Photo Log keeps its
+    /// own Keychain BYOK, untouched.
+    static var hasCoachCloud: Bool {
+        AppConfig.coachCloudConfigured
     }
 
     /// Whether the local Drift brain has been downloaded.
@@ -35,26 +37,14 @@ enum AIBackendCoordinator {
     /// only renders when this is true. With only one backend the toggle
     /// would be a no-op and just clutter the input bar.
     static var bothBackendsAvailable: Bool {
-        hasRemoteKey && hasLocalBrain
+        hasCoachCloud && hasLocalBrain
     }
 
     /// At least one backend can serve a chat turn. Drives the empty-state
     /// chooser CTA — when this is false, the chat shows the side-by-side
     /// "Cloud AI vs On-device" cards instead of the input bar.
     static var anyBackendAvailable: Bool {
-        hasRemoteKey || hasLocalBrain
-    }
-
-    /// Translate the photo-log `CloudVisionProvider` to the chat-side
-    /// `RemoteLLMBackend.Provider`. The two enums share rawValues so the
-    /// mapping is direct, but going through this helper keeps the iOS
-    /// app's Keychain enum decoupled from DriftCore's HTTP provider type.
-    static func remoteProvider(for cloud: CloudVisionProvider) -> RemoteLLMBackend.Provider {
-        switch cloud {
-        case .anthropic: return .anthropic
-        case .openai:    return .openai
-        case .gemini:    return .gemini
-        }
+        hasCoachCloud || hasLocalBrain
     }
 
     /// Apply the user's preferred backend to `LocalAIService`. Returns true
@@ -66,7 +56,7 @@ enum AIBackendCoordinator {
     static func applyPreferredBackend() async -> Bool {
         switch Preferences.preferredAIBackend {
         case .remote:
-            return await installRemoteBackend()
+            return installCoachBackend()
         case .llamaCpp, .mlx:
             return installLocalBackend()
         case .foundationModels:
@@ -74,27 +64,23 @@ enum AIBackendCoordinator {
         }
     }
 
-    /// Install the remote BYOK backend using the photo-log provider+model.
-    /// Reuses the same Keychain entry the user already configured for Photo
-    /// Log — no separate setup step. Returns false when no key is stored
-    /// (user hit the toggle without setting up a provider first).
+    /// Install the Drift Coach cloud backend — Nebius (OpenAI-compatible) with
+    /// the team key from `AppConfig`. NOT user BYOK: no Keychain, no biometric
+    /// prompt, no per-user key entry. Returns false when no team key is
+    /// provisioned, so the caller falls back to on-device.
+    ///
+    /// (The old BYOK chat path — `installRemoteBackend` reading the Photo Log
+    /// Keychain entry — is archived in `Drift/Archive/`, preserved but excluded
+    /// from the build. Photo Log itself still uses BYOK via its own path.)
     @discardableResult
-    static func installRemoteBackend() async -> Bool {
-        guard hasRemoteKey else { return false }
-        let cloud = Preferences.photoLogProvider
-        do {
-            guard let key = try await CloudVisionKey.get(for: cloud) else { return false }
-            let model = Preferences.photoLogModel(for: cloud)
-            LocalAIService.shared.useRemoteBackend(
-                provider: remoteProvider(for: cloud),
-                modelID: model,
-                apiKey: key
-            )
-            return true
-        } catch {
-            Log.app.error("AIBackendCoordinator: failed to load key for \(cloud.rawValue): \(error)")
-            return false
-        }
+    static func installCoachBackend() -> Bool {
+        guard hasCoachCloud else { return false }
+        LocalAIService.shared.useRemoteBackend(
+            provider: .nebius,
+            modelID: AppConfig.coachModelID,
+            apiKey: AppConfig.coachAPIKey
+        )
+        return true
     }
 
     /// Install the local backend: clears any in-place remote, then triggers

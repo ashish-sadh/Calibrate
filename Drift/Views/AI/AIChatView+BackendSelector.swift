@@ -20,7 +20,7 @@ extension AIChatView {
                     action: { vm.toggleBackend(to: .llamaCpp) }
                 )
                 backendCard(
-                    title: "Cloud AI",
+                    title: "Drift Coach",
                     icon: "cloud.fill",
                     subtitle: cloudAISubtitle,
                     selected: vm.activeBackend == .remote,
@@ -30,7 +30,7 @@ extension AIChatView {
             .padding(.horizontal, 12)
 
             Text(vm.activeBackend == .remote
-                ? "Cloud AI \u{00B7} routed through your own \(Preferences.photoLogProvider.rawValue.capitalized) key. Drift never sees your data."
+                ? "Drift Coach \u{00B7} cloud-powered for faster, smarter answers. Messages leave your device when this is on."
                 : "On-device \u{00B7} runs entirely on your phone. Free, private, no internet needed.")
                 .font(.system(size: 10))
                 .foregroundStyle(.secondary)
@@ -89,8 +89,6 @@ extension AIChatView {
     }
 
     private var cloudAISubtitle: String {
-        AIBackendCoordinator.hasRemoteKey
-            ? "\(Preferences.photoLogProvider.rawValue.capitalized) \u{00B7} BYOK"
-            : "Setup needed"
+        AIBackendCoordinator.hasCoachCloud ? "Cloud \u{00B7} fast" : "Unavailable"
     }
 }

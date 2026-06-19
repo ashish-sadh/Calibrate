@@ -50,8 +50,14 @@ targets:
     platform: iOS
     sources:
       - path: Drift
+        # Archived/dead code preserved for reference but NOT compiled
+        # (e.g. legacy chat BYOK path superseded by the Nebius team-key coach).
+        excludes:
+          - "Archive"
     resources:
       - path: Drift/Resources
+        excludes:
+          - "nebius.key.example"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.drift.health
