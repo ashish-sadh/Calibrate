@@ -49,6 +49,7 @@ enum ChatSim {
         var clarification: [String]? = nil
         var action: String? = nil
         var response = ""
+        var toolData: String? = nil   // the real data the presentation LLM was handed
         var didFail = false
         var phaseAfter = ""
         var dbBefore = DBSnapshot.capture()
@@ -115,6 +116,11 @@ enum ChatSim {
             trace.response = "[no backend installed: this turn would go to the LLM agent]"
         }
 
+        // The agent captures the exact data it handed the presentation LLM via
+        // captureToolSummary — surface it so we can see model-input vs model-output
+        // (e.g. data says "protein 41g" but the model answered "85g" → the model
+        // ignored the data / echoed its few-shot example).
+        trace.toolData = ConversationState.shared.lastToolSummary
         trace.dbAfter = DBSnapshot.capture()
         trace.phaseAfter = describePhase(ConversationState.shared.phase)
         trace.latencyMs = Int((CFAbsoluteTimeGetCurrent() - t0) * 1000)

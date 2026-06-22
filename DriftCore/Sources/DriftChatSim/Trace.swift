@@ -25,6 +25,9 @@ enum TracePrinter {
         out += diff("fat_g", t.dbBefore.fat, t.dbAfter.fat)
         out += diffInt("food(today)", t.dbBefore.foodEntries, t.dbAfter.foodEntries)
         out += diffInt("weight_rows", t.dbBefore.weightEntries, t.dbAfter.weightEntries)
+        if let d = t.toolData, !d.isEmpty {
+            out += row("tool_data→LLM", "\"\(d.replacingOccurrences(of: "\n", with: " ⏎ "))\"")
+        }
         out += row("response", "\"\(t.response)\"")
         out += row("did_fail", t.didFail ? "TRUE ⚠️" : "false")
         out += row("phase_after", t.phaseAfter)
@@ -45,6 +48,7 @@ enum TracePrinter {
             "clarification": t.clarification ?? [],
             "action": t.action ?? "",
             "response": t.response,
+            "tool_data": t.toolData ?? "",
             "did_fail": t.didFail,
             "phase_after": t.phaseAfter,
             "latency_ms": t.latencyMs,
