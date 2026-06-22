@@ -164,13 +164,12 @@ public enum ToolRanker {
                 }
             }
         case "food_info":
-            if lower.contains("protein") { params["query"] = "protein" }
-            else if lower.contains("carb") { params["query"] = "carbs" }
-            else if lower.contains("fat") && !lower.contains("body fat") { params["query"] = "fat" }
-            else if lower.contains("yesterday") { params["query"] = "yesterday" }
-            else if lower.contains("week") { params["query"] = "weekly" }
-            else if lower.contains("suggest") || lower.contains("what should") || lower.contains("what to eat") { params["query"] = "suggest" }
-            else { params["query"] = lower }
+            // Pass the FULL query — food_info's handler classifies it (lookup vs
+            // macro-intake vs suggest vs period summary) using the complete text.
+            // Collapsing to a bare macro word ("protein") destroyed the distinction
+            // between "what's my protein today" (intake) and "protein in chicken"
+            // (lookup) — both became "protein" and resolved to the same branch. #macro-intake
+            params["query"] = lower
         case "weight_info":
             params["query"] = lower
         case "exercise_info":

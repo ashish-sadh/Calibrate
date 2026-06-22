@@ -118,6 +118,35 @@ public enum ToolRegistration {
             handler: { params in
                 let query = (params.string("query") ?? "").lowercased()
 
+                // Classify intent up front so it gates BOTH the food-lookup branch and
+                // the macro-intake branches below. A macro-INTAKE question ("what's my
+                // protein today", "carbs today", bare "protein") asks about the user's
+                // logged totals; a food LOOKUP ("protein in chicken") or a SUGGESTION
+                // ("suggest a high protein dinner") must NOT resolve to the user's totals.
+                // Without this, "protein in chicken" fuzzy-matched to a macro total and
+                // "suggest high protein" returned "Protein: 41g". #macro-intake
+                let macroWords = ["protein", "carbs", "carb", "fat", "fiber", "fibre",
+                                  "calories", "calorie", "cals", "macros"]
+                let trimmedQuery = query.trimmingCharacters(in: .whitespaces)
+                let isLookupPhrase = query.contains(" in ") || query.contains(" for ")
+                let isSuggestPhrase = query.contains("suggest") || query.contains("what should") ||
+                    query.contains("what to eat") || query.contains("recommend") || query.contains("recipe")
+                // Personal/diary signals — the user asking about THEIR macros. Includes
+                // goal/target/progress words because the cloud model rewrites "what's my
+                // protein today" → "protein goal" (it reads "my … today" as a goal check),
+                // and the macro-intake branch answers exactly that ("Protein: 41g / 128g
+                // goal — 32% to go"). Without "goal"/"target" here, "protein goal" fuzzy-
+                // matched a food ("Soy Protein Isolate", "…Pferde - Goal"). #macro-intake
+                let hasPersonalSignal = ["my ", "today", "have i", "i've", "i ate", "eaten",
+                                         "so far", "yesterday", "this week", "intake",
+                                         "tracked", "logged", " left", " remaining",
+                                         "goal", "target", "progress", "limit", "hitting",
+                                         "on track", "how much", "how many", "how am i"]
+                    .contains { query.contains($0) }
+                let isMacroIntake = !isLookupPhrase && !isSuggestPhrase &&
+                    (macroWords.contains(trimmedQuery) ||
+                     (macroWords.contains { query.contains($0) } && hasPersonalSignal))
+
                 // Nutrition lookup for specific food: "calories in banana", "estimate calories for samosa"
                 if !query.isEmpty {
                     // Strip common prefixes to extract just the food name
@@ -153,7 +182,7 @@ public enum ToolRegistration {
                         foodName == "weekly" || foodName == "this week" ||
                         foodName == "daily"
 
-                    if !isDiaryQuery && !isSummaryQuery {
+                    if !isDiaryQuery && !isSummaryQuery && !isMacroIntake {
                         if !foodName.isEmpty, let result = FoodService.getNutrition(name: foodName) {
                             AIDataCache.shared.lastFoodLookupFood = result.food
                             return .text("\(result.perServing) Say 'log \(result.food.name.lowercased())' to add it.")
@@ -180,8 +209,10 @@ public enum ToolRegistration {
                 let targets = goal?.macroTargets(currentWeightKg: WeightTrendService.shared.latestWeightKg)
 
                 // Macro-specific focus: "how is my protein", "carbs today", "fat intake",
-                // "am I hitting my protein goal".
-                if query.contains("protein") {
+                // "am I hitting my protein goal". Gated on isMacroIntake so a suggestion
+                // ("suggest a high protein dinner") or an unresolved lookup ("protein in X")
+                // falls through to the suggest/summary branches instead of reporting totals.
+                if isMacroIntake && query.contains("protein") {
                     guard n.proteinG > 0 else { return .text("No food logged yet. Log meals to track protein.") }
                     // Prefer explicit user-set proteinGoal (#441); fall back to macro-breakdown target
                     let proteinTarget = goal?.proteinGoal ?? targets.map { $0.proteinG }
@@ -209,14 +240,14 @@ public enum ToolRegistration {
                 if query.contains("calori") && (query.contains("left") || query.contains("remain")) {
                     return .text(FoodService.getCaloriesLeft())
                 }
-                if query.contains("carb") {
+                if isMacroIntake && query.contains("carb") {
                     if let t = targets {
                         return .text(FoodService.macroProgressLine(
                             label: "Carbs", currentG: Int(n.carbsG), targetG: Int(t.carbsG)))
                     }
                     return .text("\(Int(n.carbsG))g carbs today.")
                 }
-                if query.contains("fat") && !query.contains("body fat") {
+                if isMacroIntake && query.contains("fat") && !query.contains("body fat") {
                     if let t = targets {
                         return .text(FoodService.macroProgressLine(
                             label: "Fat", currentG: Int(n.fatG), targetG: Int(t.fatG)))
@@ -225,7 +256,7 @@ public enum ToolRegistration {
                 }
 
                 // Sugar / fiber query
-                if query.contains("sugar") || query.contains("fiber") {
+                if isMacroIntake && (query.contains("sugar") || query.contains("fiber")) {
                     let macro = query.contains("sugar") ? "carbs" : "fiber"
                     let value = query.contains("sugar") ? n.carbsG : n.fiberG
                     var response = "\(Int(value))g \(macro) today."

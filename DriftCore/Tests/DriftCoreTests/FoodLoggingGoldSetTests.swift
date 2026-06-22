@@ -578,4 +578,65 @@ final class FoodLoggingGoldSetTests: XCTestCase {
         print(stageReport)
         GoldSetStageAttribution.persist(stageReport)
     }
+
+    // MARK: - food_info: macro-intake vs food-lookup routing (#macro-intake)
+
+    /// A food-DB lookup result always ends with the "Say 'log X' to add it." CTA
+    /// and shows "(per Ng): …". A macro-INTAKE answer never does — it reports the
+    /// user's totals ("Protein: 41g …") or "No food logged yet.". Asserting on
+    /// shape (not exact numbers) keeps these robust to whatever the shared DB holds.
+    private func isFoodLookup(_ text: String) -> Bool {
+        text.contains("Say 'log") || text.contains("(per ")
+    }
+
+    @MainActor
+    private func foodInfoText(_ query: String) async -> String {
+        let call = ToolCall(tool: "food_info", params: ToolCallParams(values: ["query": query.lowercased()]))
+        if case .text(let t) = await ToolRegistry.shared.execute(call) { return t }
+        return ""
+    }
+
+    /// Regression: "what's my protein today" used to fuzzy-match the word "protein"
+    /// to a food ("Soy Protein Isolate") and "carbs today" to a low-carb beer,
+    /// because food_info treated the macro word as a food name. These must report
+    /// the user's intake, never a food lookup.
+    @MainActor
+    func testFoodInfo_macroIntakeQueries_areNotFoodLookups() async {
+        let intakeQueries = [
+            "whats my protein today", "how much protein have i eaten",
+            "carbs today", "how many carbs have i had",
+            "how much fat have i eaten today", "my calories today",
+        ]
+        for q in intakeQueries {
+            let text = await foodInfoText(q)
+            XCTAssertFalse(isFoodLookup(text),
+                "Macro-intake '\(q)' must report the user's totals, not a food lookup. Got: \(text)")
+            XCTAssertFalse(text.isEmpty, "Macro-intake '\(q)' returned nothing")
+        }
+    }
+
+    /// The fix must NOT swallow genuine food lookups — "protein in chicken breast"
+    /// asks about a food's nutrition (it has a " in <food>" link), not the user's
+    /// intake. These must still resolve to a food lookup.
+    @MainActor
+    func testFoodInfo_foodLookups_stayLookups() async {
+        for q in ["calories in banana", "how much protein in chicken breast", "macros for paneer"] {
+            let text = await foodInfoText(q)
+            XCTAssertTrue(isFoodLookup(text),
+                "Food lookup '\(q)' must resolve to a food, not the user's totals. Got: \(text)")
+        }
+    }
+
+    /// ToolRanker must pass food_info the FULL query — collapsing to a bare macro
+    /// word ("protein") destroyed the intake-vs-lookup distinction downstream.
+    @MainActor
+    func testExtractParams_foodInfo_passesFullQuery() {
+        let schema = ToolRegistry.shared.allTools().first { $0.name == "food_info" }
+        guard let schema else { return XCTFail("food_info not registered") }
+        for q in ["whats my protein today", "how much protein in chicken breast", "carbs today"] {
+            let params = ToolRanker.extractParamsForTool(schema, from: q)
+            XCTAssertEqual(params["query"], q.lowercased(),
+                "food_info should receive the full query '\(q)', got '\(params["query"] ?? "nil")'")
+        }
+    }
 }

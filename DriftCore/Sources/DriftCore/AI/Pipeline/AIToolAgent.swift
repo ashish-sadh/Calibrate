@@ -631,8 +631,7 @@ public enum AIToolAgent {
     /// Placeholders: {timeContext} and {toneHint} are substituted at runtime.
     static var presentationPrompt: String = """
     Health coach. It's {timeContext}. {toneHint}
-    Answer using ONLY the data below. Main observation first, then numbers. Warm, 2-3 sentences. No medical advice. No repeating the question. If topic shifts, acknowledge it naturally.
-    Example: "Doing well — 1200 of 2000 cal, protein 85g. A chicken dinner closes the gap."
+    Rewrite the Data below as a warm, natural reply. Copy every number EXACTLY from Data — never invent, round, or add a number that isn't in Data, and never output a placeholder word like EATEN or TARGET. Lead with a one-line observation, then state the real figures from Data. 2-3 sentences. No medical advice. Don't repeat the question. If the topic shifts, acknowledge it naturally.
     """
 
     /// Stream a natural response with pre-fetched tool data injected.
