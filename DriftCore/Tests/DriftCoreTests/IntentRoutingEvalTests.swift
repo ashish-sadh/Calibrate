@@ -82,6 +82,31 @@ final class IntentRoutingEvalTests: XCTestCase {
         }
     }
 
+    // MARK: - Cardio activity routing (P0 #896)
+
+    /// run/jog/cycle/swim phrasings must route to `log_activity`, not `log_food`.
+    /// Regression: "log a 30 minute run" used to open a food search because the
+    /// `log_activity` triggers only had inflected forms ("running"/"cycling") and
+    /// lost to `log_food`'s "log" trigger. Cases run on `.food` (the hardest screen
+    /// for log_activity), so passing here means it wins on every screen.
+    @MainActor
+    func testCardioActivityRouting() {
+        let cases: [(String, String)] = [
+            ("log a 30 minute run",          "log_activity"),
+            ("went for a 5k run",            "log_activity"),
+            ("i ran for 20 minutes",         "log_activity"),
+            ("did a 30 min cycle",           "log_activity"),
+            ("log a 20 minute jog",          "log_activity"),
+            ("went jogging this morning",    "log_activity"),
+            ("did a 1 mile swim",            "log_activity"),
+            ("log 45 minutes of cycling",    "log_activity"),
+            // Regression: real food logs must stay food.
+            ("log 2 rotis",                  "log_food"),
+            ("2 eggs and toast",             "log_food"),
+        ]
+        runPositiveCases(cases)
+    }
+
     // MARK: - Helper
 
     @MainActor

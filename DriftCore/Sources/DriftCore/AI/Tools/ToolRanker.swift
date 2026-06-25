@@ -267,7 +267,11 @@ public enum ToolRanker {
                        ("breakfast", 1), ("lunch", 1), ("dinner", 1), ("snack", 1)],
             logBoost: 2, queryBoost: -1,
             screens: [.food: 0.6, .dashboard: 0.3],
-            antiKeywords: ["sleep", "supplement", "weight", "weigh", "how", "what", "calories in", "healthy"]
+            antiKeywords: ["sleep", "supplement", "weight", "weigh", "how", "what", "calories in", "healthy",
+                           // Cardio verbs are activities, never food — stops "log a 30 minute run"
+                           // from being parsed as a food search even on the .food screen (#896).
+                           "run", "ran", "jog", "jogging", "jogged", "running",
+                           "cycle", "cycled", "cycling", "swim", "swam", "swimming"]
         )
 
         p["food_info"] = ToolProfile(
@@ -379,8 +383,12 @@ public enum ToolRanker {
         p["log_activity"] = ToolProfile(
             triggers: [("yoga", 2.5), ("running", 2.5), ("swimming", 2.5), ("walked", 2.5),
                        ("cardio", 2), ("pilates", 2.5), ("cycling", 2.5), ("hiking", 2.5),
+                       // Bare/inflected cardio verbs — "log a 30 minute run" was missing
+                       // these, so log_food's "log" trigger won and opened a food search (#896).
+                       ("run", 2.5), ("ran", 2.5), ("jog", 2.5), ("jogging", 2.5), ("jogged", 2.5),
+                       ("cycle", 2.5), ("cycled", 2.5), ("swim", 2.5), ("swam", 2.5),
                        ("i did", 3), ("just finished", 3), ("went running", 3.5),
-                       ("just did", 3), ("minutes", 1)],
+                       ("just did", 3), ("minutes", 1), ("minute", 1)],
             logBoost: 2, queryBoost: -1,
             screens: [.exercise: 0.3],
             antiKeywords: ["start", "begin", "suggest", "what"]
