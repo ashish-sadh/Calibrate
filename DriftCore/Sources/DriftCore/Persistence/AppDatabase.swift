@@ -520,6 +520,31 @@ extension AppDatabase {
             }
         }
     }
+
+    /// Idempotently set a supplement's taken state for a date. Unlike
+    /// `toggleSupplementTaken` (the UI tap, which flips), this is safe to call
+    /// repeatedly: the AI affirmation "I took my vitamin D" said twice keeps it
+    /// taken, never flips it back off with a false "Marked … as taken" reply.
+    public func setSupplementTaken(supplementId: Int64, date: String, taken: Bool) throws {
+        try dbWriter.write { db in
+            if var existing = try SupplementLog
+                .filter(Column("supplement_id") == supplementId)
+                .filter(Column("date") == date)
+                .fetchOne(db) {
+                existing.taken = taken
+                existing.takenAt = taken ? ISO8601DateFormatter().string(from: Date()) : nil
+                try existing.update(db)
+            } else {
+                var log = SupplementLog(
+                    supplementId: supplementId,
+                    date: date,
+                    taken: taken,
+                    takenAt: taken ? ISO8601DateFormatter().string(from: Date()) : nil
+                )
+                try log.insert(db)
+            }
+        }
+    }
 }
 
 // MARK: - Medication Profile + Log (design-574)

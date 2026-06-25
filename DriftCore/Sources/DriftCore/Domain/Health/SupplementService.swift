@@ -20,19 +20,56 @@ public enum SupplementService {
         return "Supplements: \(taken)/\(total) taken. Still need: \(untaken.joined(separator: ", "))."
     }
 
-    /// Mark a supplement as taken by name.
+    /// Mark a supplement (or supplements) as taken from a natural-language phrase.
+    /// Robust to full sentences and filler: "I took my vitamin D and omega 3 this
+    /// morning" marks BOTH. The agent often passes the whole utterance as `name`,
+    /// so we extract the supplement names here rather than trusting upstream parsing.
     public static func markTaken(name: String) -> String {
         let today = DateFormatters.todayString
-        guard let supplements = try? AppDatabase.shared.fetchActiveSupplements() else {
+        guard let supplements = try? AppDatabase.shared.fetchActiveSupplements(),
+              !supplements.isEmpty else {
             return "No supplements found."
         }
-        let lower = name.lowercased()
-        guard let match = supplements.first(where: { $0.name.lowercased().contains(lower) }),
-              let id = match.id else {
+        let matched = matchingSupplements(query: name, among: supplements)
+        var marked: [String] = []
+        for supp in matched {
+            guard let id = supp.id else { continue }
+            // Idempotent set (not toggle): re-affirming "I took my vitamin D"
+            // must keep it taken, never flip it back off.
+            try? AppDatabase.shared.setSupplementTaken(supplementId: id, date: today, taken: true)
+            marked.append(supp.name)
+        }
+        guard !marked.isEmpty else {
             return "Couldn't find a supplement matching '\(name)'."
         }
-        try? AppDatabase.shared.toggleSupplementTaken(supplementId: id, date: today)
-        return "Marked \(match.name) as taken."
+        let summary = marked.count == 1
+            ? marked[0]
+            : marked.dropLast().joined(separator: ", ") + " and " + marked.last!
+        return "Marked \(summary) as taken."
+    }
+
+    /// Every active supplement named anywhere in `query`. Handles full sentences
+    /// ("I took my vitamin D and omega 3 this morning"), filler, multiple
+    /// supplements in one phrase, short partial queries ("d3" → "Vitamin D3"), and
+    /// punctuation/case differences ("Omega-3" == "omega 3").
+    static func matchingSupplements(query: String, among supplements: [Supplement]) -> [Supplement] {
+        let q = normalizedForMatch(query)
+        guard !q.isEmpty else { return [] }
+        let paddedQuery = " \(q) "
+        return supplements.filter { supp in
+            let n = normalizedForMatch(supp.name)
+            guard n.count >= 2 else { return false }
+            // Name appears as a whole word/phrase in the utterance, OR a short
+            // clean query is a substring of the name ("vitamin d" → "Vitamin D3").
+            return paddedQuery.contains(" \(n) ") || (q.count >= 3 && n.contains(q))
+        }
+    }
+
+    /// Lowercase, map every non-alphanumeric character to a space, collapse runs
+    /// of whitespace — so "Omega-3" and "omega 3" normalize identically.
+    private static func normalizedForMatch(_ s: String) -> String {
+        let spaced = s.lowercased().map { ($0.isLetter || $0.isNumber) ? $0 : " " }
+        return String(spaced).split(separator: " ").joined(separator: " ")
     }
 
     /// Delete a supplement by ID.
