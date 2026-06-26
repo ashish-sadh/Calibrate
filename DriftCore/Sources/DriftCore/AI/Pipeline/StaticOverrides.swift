@@ -320,6 +320,17 @@ public enum StaticOverrides {
             }
         }
 
+        // Interrogative guard (#902): a *question* about the user's data
+        // ("did I move enough today?", "have I exercised this week?", "is my
+        // body fat 15?", "did I eat 500 calories?") must never fall into a
+        // write/log override below and get logged as an entry literally named
+        // the question. Questions route to AIToolAgent, which answers with the
+        // activity/food/weight summary tools (the agent already handles "how
+        // active was I today?" correctly). Placed AFTER the question-*answering*
+        // overrides (help, navigation, exercise progress/instructions) so those
+        // still fire, and BEFORE every write override.
+        if Self.isInterrogative(lower) { return nil }
+
         // Body comp entry
         let bfPattern = #"(?:body fat|bf|body fat %|bodyfat)\s*(?:is\s+)?(\d+\.?\d*)"#
         if let bfRegex = try? NSRegularExpression(pattern: bfPattern),
@@ -594,6 +605,31 @@ public enum StaticOverrides {
             || lower.range(of: #"\d+\s+sets?\s+(?:of\s+)?\d+"#, options: .regularExpression) != nil // "3 sets of 10"
             || lower.range(of: #"@\d+"#, options: .regularExpression) != nil                   // "@135"
             || lower.range(of: #"\bat\s+\d+\s*(?:lbs?|kg|pounds?)\b"#, options: .regularExpression) != nil // "at 135 lbs"
+    }
+
+    /// True when the query is a *question* about the user's data ("did I move
+    /// enough today?", "have I exercised this week?", "am I drinking enough
+    /// water?", "how much did I eat?") rather than a log command. Used by
+    /// `match` to guard the write/log overrides so a question is never logged
+    /// as an activity/food/weight entry named the question. (#902)
+    ///
+    /// Keyed on an interrogative auxiliary + first-person subject (or a data
+    /// "how much/many" stem) so legit bare-verb logs like "did yoga" or
+    /// "i did cardio" still reach their override. Deliberately narrower than
+    /// IntentContextResolver.isQuestionCue (which fires on any "?") — here a
+    /// false positive would silently drop a real log command.
+    static func isInterrogative(_ query: String) -> Bool {
+        let q = query.lowercased().trimmingCharacters(in: .whitespaces)
+        let auxSubject = [
+            "did i ", "do i ", "have i ", "had i ", "has my ", "am i ", "was i ",
+            "is my ", "are my ",
+        ]
+        if auxSubject.contains(where: { q.hasPrefix($0) }) { return true }
+        let dataHow = [
+            "how much ", "how many ", "how active ", "how often ", "how long ", "how am i ",
+        ]
+        if dataHow.contains(where: { q.hasPrefix($0) }) { return true }
+        return false
     }
 
     /// Convert word numbers to digits: "one sixty" → "160", "seventy five" → "75"

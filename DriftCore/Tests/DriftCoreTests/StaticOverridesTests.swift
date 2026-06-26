@@ -329,4 +329,52 @@ final class StaticOverridesTests: XCTestCase {
         // Structured workout logging should fall through to LLM pipeline
         XCTAssertNil(result, "Structured workout log should fall through to LLM")
     }
+
+    // MARK: - Interrogative guard (#902)
+
+    /// Criterion 1: activity *questions* must NOT be logged as an activity
+    /// named the question. "did I move/walk enough today?" → fall through to
+    /// the agent (activity summary), NOT "Log I Move Enough Today?..." prompt.
+    func testInterrogative_didIMoveEnough_doesNotLogActivity() {
+        XCTAssertNil(StaticOverrides.match("did I move enough today?"),
+                     "'did I move enough today?' is a question — must fall through to the agent, not log an activity")
+    }
+
+    func testInterrogative_didIWalkEnough_doesNotLogActivity() {
+        XCTAssertNil(StaticOverrides.match("did I walk enough today?"),
+                     "'did I walk enough today?' is a question — must fall through to the agent, not log an activity")
+    }
+
+    /// Criterion 2: interrogatives never trigger a log override (food/weight/activity).
+    /// The last two would previously have matched quick-add-calories and
+    /// body-comp respectively and silently written an entry.
+    func testInterrogative_classNeverTriggersLogOverride() {
+        let questions = [
+            "did I move enough today?",
+            "have I exercised enough this week?",
+            "how much did I eat today?",
+            "am I drinking enough water?",
+            "did I eat 500 calories today?",   // would have matched quick-add cal
+            "is my body fat 15?",              // would have matched body-comp
+        ]
+        for q in questions {
+            XCTAssertNil(StaticOverrides.match(q),
+                         "Interrogative '\(q)' must not trigger a static log/write override")
+        }
+    }
+
+    /// Criterion 3: real log commands are unaffected (the guard is precise).
+    /// "did yoga" is a bare-verb log, not a question, so it still produces the
+    /// activity-confirmation prompt; "i walked 8000 steps"/"log a walk" still
+    /// defer to the agent's log_activity (nil from StaticOverrides) — unchanged.
+    func testInterrogative_realLogsNotBlocked() {
+        guard case .response(let text)? = StaticOverrides.match("did yoga") else {
+            XCTFail("'did yoga' is a log command — should still produce an activity confirmation"); return
+        }
+        XCTAssertTrue(text.lowercased().contains("yoga"), "Confirmation should name the activity")
+        XCTAssertNil(StaticOverrides.match("i walked 8000 steps"),
+                     "'i walked 8000 steps' defers to the agent (unchanged)")
+        XCTAssertNil(StaticOverrides.match("log a walk"),
+                     "'log a walk' defers to the agent (unchanged)")
+    }
 }
