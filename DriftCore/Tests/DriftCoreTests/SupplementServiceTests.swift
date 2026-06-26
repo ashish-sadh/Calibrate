@@ -115,3 +115,63 @@ import Testing
     let probeLog = logs.first { $0.supplementId == probeId }
     #expect(probeLog?.taken == true)  // still taken after two affirmations — not toggled off
 }
+
+// MARK: - Auto-add recognized supplements not yet in the stack (#904)
+// A fresh user (empty stack) or a user naming a real supplement they haven't added
+// must NOT dead-end with "No supplements found." — the supplement is recognized,
+// auto-added to the stack, and marked taken. Distinctive catalog names no other test
+// touches keep these parallel-safe on the shared in-memory DB; assertions are
+// presence-based (never global count deltas — the #906 flaky lesson).
+
+@Test @MainActor func markTakenAutoAddsRecognizedSupplementNotInStack() {
+    let result = SupplementService.markTaken(name: "I took my ashwagandha this morning")
+    #expect(!result.contains("Couldn't find"))
+    #expect(!result.contains("No supplements found"))
+    #expect(result.contains("Ashwagandha"), "Recognized supplement should be confirmed by name")
+
+    // End state: it's in the stack AND marked taken today.
+    let supps = (try? AppDatabase.shared.fetchActiveSupplements()) ?? []
+    let ashwa = supps.first { $0.name.lowercased() == "ashwagandha" }
+    #expect(ashwa != nil, "Recognized supplement should be auto-added to the stack")
+    let logs = (try? AppDatabase.shared.fetchSupplementLogs(for: DateFormatters.todayString)) ?? []
+    #expect(logs.contains { $0.supplementId == ashwa?.id && $0.taken },
+            "Auto-added supplement should be marked taken")
+}
+
+@Test @MainActor func markTakenRecognizesMultipleNotInStackFromSentence() {
+    let result = SupplementService.markTaken(name: "I had my triphala and shilajit today")
+    #expect(!result.contains("Couldn't find"))
+    #expect(!result.contains("No supplements found"))
+    #expect(result.contains("Triphala"))
+    #expect(result.contains("Shilajit"))
+    let supps = (try? AppDatabase.shared.fetchActiveSupplements()) ?? []
+    #expect(supps.contains { $0.name == "Triphala" })
+    #expect(supps.contains { $0.name == "Shilajit" })
+}
+
+// MARK: - KnownSupplements recognizer (#904) — pure, no DB
+
+@Test func knownSupplementsRecognizesCommonGlobalNames() {
+    #expect(KnownSupplements.recognize(in: "I took my vitamin D this morning") == ["Vitamin D"])
+    #expect(Set(KnownSupplements.recognize(in: "had my omega 3 and creatine")) == ["Omega 3", "Creatine"])
+    #expect(KnownSupplements.recognize(in: "took my b12") == ["Vitamin B12"])
+    #expect(KnownSupplements.recognize(in: "I had whey after the gym") == ["Whey Protein"])
+}
+
+@Test func knownSupplementsRecognizesIndianNames() {
+    // Indian-first is the bar — common Indian supplements must be recognized.
+    #expect(KnownSupplements.recognize(in: "I took ashwagandha") == ["Ashwagandha"])
+    #expect(KnownSupplements.recognize(in: "had some giloy and tulsi") == ["Giloy", "Tulsi"])
+    #expect(KnownSupplements.recognize(in: "took my shilajit") == ["Shilajit"])
+}
+
+@Test func knownSupplementsRejectsNonSupplementPhrases() {
+    #expect(KnownSupplements.recognize(in: "I walked the dog this morning").isEmpty)
+    #expect(KnownSupplements.recognize(in: "I had a paneer roll for lunch").isEmpty)
+    #expect(KnownSupplements.recognize(in: "").isEmpty)
+}
+
+@Test func knownSupplementsDedupesAliasesOfSameSupplement() {
+    // "vitamin d" and "d3" are two aliases of one canonical → reported once.
+    #expect(KnownSupplements.recognize(in: "I took vitamin d and d3") == ["Vitamin D"])
+}

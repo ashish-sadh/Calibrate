@@ -24,12 +24,13 @@ public enum SupplementService {
     /// Robust to full sentences and filler: "I took my vitamin D and omega 3 this
     /// morning" marks BOTH. The agent often passes the whole utterance as `name`,
     /// so we extract the supplement names here rather than trusting upstream parsing.
+    ///
+    /// If nothing in the stack matches — including a fresh user with an EMPTY stack —
+    /// we recognize common supplement names (KnownSupplements) and auto-add + mark
+    /// them, rather than dead-ending with "No supplements found." (#904)
     public static func markTaken(name: String) -> String {
         let today = DateFormatters.todayString
-        guard let supplements = try? AppDatabase.shared.fetchActiveSupplements(),
-              !supplements.isEmpty else {
-            return "No supplements found."
-        }
+        let supplements = (try? AppDatabase.shared.fetchActiveSupplements()) ?? []
         let matched = matchingSupplements(query: name, among: supplements)
         var marked: [String] = []
         for supp in matched {
@@ -39,13 +40,56 @@ public enum SupplementService {
             try? AppDatabase.shared.setSupplementTaken(supplementId: id, date: today, taken: true)
             marked.append(supp.name)
         }
-        guard !marked.isEmpty else {
-            return "Couldn't find a supplement matching '\(name)'."
+        if !marked.isEmpty {
+            return "Marked \(joined(marked)) as taken."
         }
-        let summary = marked.count == 1
-            ? marked[0]
-            : marked.dropLast().joined(separator: ", ") + " and " + marked.last!
-        return "Marked \(summary) as taken."
+
+        // Nothing in the existing stack matched — the stack is empty (a fresh user)
+        // or the user named a real supplement they haven't added yet. Recognize
+        // common names, auto-add, and mark taken so we never dead-end someone
+        // naming a real supplement (#904).
+        let (added, alreadyHad) = addAndMarkRecognized(in: name, existing: supplements, date: today)
+        if !added.isEmpty {
+            return "Added \(joined(added)) to your stack and marked \(added.count == 1 ? "it" : "them") taken."
+        }
+        if !alreadyHad.isEmpty {
+            return "Marked \(joined(alreadyHad)) as taken."
+        }
+        return supplements.isEmpty
+            ? "No supplements found. Try 'add <name>' to start your stack."
+            : "Couldn't find a supplement matching '\(name)'."
+    }
+
+    /// Recognize common supplement names in `phrase`; add any not already in the
+    /// stack and mark every recognized one taken for `date`. Returns the canonical
+    /// names newly `added` vs those `alreadyHad` (an alias gap the stack matcher
+    /// missed) so the caller can phrase an honest confirmation. (#904)
+    private static func addAndMarkRecognized(
+        in phrase: String, existing: [Supplement], date: String
+    ) -> (added: [String], alreadyHad: [String]) {
+        var added: [String] = []
+        var alreadyHad: [String] = []
+        for canonical in KnownSupplements.recognize(in: phrase) {
+            if let inStack = existing.first(where: { $0.name.lowercased() == canonical.lowercased() }) {
+                guard let id = inStack.id else { continue }
+                try? AppDatabase.shared.setSupplementTaken(supplementId: id, date: date, taken: true)
+                alreadyHad.append(inStack.name)
+            } else {
+                var supp = Supplement(name: canonical, isActive: true,
+                                      sortOrder: existing.count + added.count, dailyDoses: 1)
+                try? AppDatabase.shared.saveSupplement(&supp)
+                guard let id = supp.id else { continue }
+                try? AppDatabase.shared.setSupplementTaken(supplementId: id, date: date, taken: true)
+                added.append(canonical)
+            }
+        }
+        return (added, alreadyHad)
+    }
+
+    /// "a", "a and b", "a, b and c" — natural-language list join.
+    private static func joined(_ names: [String]) -> String {
+        guard names.count > 1 else { return names.first ?? "" }
+        return names.dropLast().joined(separator: ", ") + " and " + names.last!
     }
 
     /// Every active supplement named anywhere in `query`. Handles full sentences

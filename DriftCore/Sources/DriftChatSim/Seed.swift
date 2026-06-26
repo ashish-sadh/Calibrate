@@ -46,6 +46,14 @@ enum Seed {
                      cal: 205, p: 4, c: 45, f: 0, fiber: 1, servings: 1, at: "13:02:00")
         try seedMeal(db, date: today, meal: "dinner", name: "Paneer Butter Masala",
                      cal: 350, p: 14, c: 12, f: 28, fiber: 2, servings: 1, at: "20:00:00")
+
+        // 5. A small Indian-first supplement stack so the mark_supplement path is
+        //    exercisable e2e ("I took my vitamin D" hits a real stack entry). The
+        //    empty-stack auto-add path is covered separately by Tier-0 tests. (#904)
+        for (i, name) in ["Vitamin D", "Omega 3", "Creatine", "Ashwagandha"].enumerated() {
+            var supp = Supplement(name: name, isActive: true, sortOrder: i, dailyDoses: 1)
+            try db.saveSupplement(&supp)
+        }
     }
 
     private static func seedMeal(
