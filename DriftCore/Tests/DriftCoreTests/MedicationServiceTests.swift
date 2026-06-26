@@ -32,11 +32,18 @@ import Testing
 }
 
 @Test @MainActor func medicationServiceMultipleLogsAccumulate() {
-    let countBefore = MedicationService.todayMedications().count
-    _ = MedicationService.logMedication(name: "DrugA_\(UUID().uuidString.prefix(4))", doseMg: nil, doseUnit: nil)
-    _ = MedicationService.logMedication(name: "DrugB_\(UUID().uuidString.prefix(4))", doseMg: nil, doseUnit: nil)
-    let countAfter = MedicationService.todayMedications().count
-    #expect(countAfter == countBefore + 2)
+    // todayMedications() returns ALL of today's meds (global, unfiltered) and
+    // Swift Testing runs Tier-0 in parallel — a concurrent med-logging test
+    // inserting between the two snapshots makes a `+2` GLOBAL count-delta flake.
+    // Assert both uniquely-named meds we logged are present instead (#906),
+    // matching the DB-content-agnostic pattern in todayMedicationsReturnsLogged.
+    let nameA = "DrugA_\(UUID().uuidString.prefix(8))"
+    let nameB = "DrugB_\(UUID().uuidString.prefix(8))"
+    _ = MedicationService.logMedication(name: nameA, doseMg: nil, doseUnit: nil)
+    _ = MedicationService.logMedication(name: nameB, doseMg: nil, doseUnit: nil)
+    let today = MedicationService.todayMedications()
+    #expect(today.contains(where: { $0.name == nameA.capitalized }))
+    #expect(today.contains(where: { $0.name == nameB.capitalized }))
 }
 
 @Test @MainActor func medicationServiceLogCapitalizesName() {
