@@ -273,3 +273,24 @@ confirm/insight cards), not just the one `Color.red` in AIChatView.swift. Queue-
 next cycle: several pre-pivot V7 tasks remain (#833/#835/#847 visual refresh, #829 build-261 notes) —
 candidates for prune/re-triage if still unclaimed; closed #834 (FM-backend multi-turn, superseded by
 #892).
+
+### Knowledge curation pass 2026-06-26
+
+Ran 7 days after the prior full curation (2026-06-19, which drained cycles 9851–10950). No-op for
+content — nothing crossed a threshold:
+
+**Sedimented into stable:**
+- principal-engineer.md: 0 entries — `<what_i_learned>` holds only the 2026-06-19 curation note; no new dated `### Review Cycle` entries appended since (file untouched since Jun 19, `/planning` step 13 added nothing).
+- product-designer.md: 0 entries — same; `<what_i_learned>` is just the 2026-06-19 note.
+- qa-tester.md: 0 entries — `<learnings>` is just the 2026-06-19 note.
+- signs (skill bodies): 0 entries — every dated sign references an incident <90d old (planning.md: cycles 9851–10950 / 2026-05-31→06-04; senior.md cycle 9792). The cycle-8000-era READ-before-EDIT sign is older but is a live harness-enforced guard still producing violations, so it fails the "no violation in the period" half of the sediment test and stays. junior.md signs are timeless role-boundary rules with no dateable incident.
+
+**Pruned (recoverable for 1 cycle):**
+- None — no sign is ≥180d old (signs files date to 2026-05-18 / 06-04, all post-2025-12-28), and no agent-file learning entry was pending.
+
+(debate-moderator.md is a deprecated stub with no learnings/knowledge block — nothing to curate.)
+
+Total agent-file line counts after curation (all unchanged, well under cap):
+- principal-engineer: 127 / 300 cap
+- product-designer: 118 / 300 cap
+- qa-tester: 91 / 250 cap
