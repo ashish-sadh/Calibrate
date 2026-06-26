@@ -120,6 +120,14 @@ public enum ExerciseDatabase {
 
     private static let customKey = "drift_custom_exercises"
 
+    /// Serializes the custom-exercise read-modify-write below. `addCustomExercise`
+    /// reads the current list, appends, then writes it back — a non-atomic sequence.
+    /// Production has several call sites (manual add, workout save, default
+    /// templates) and Swift Testing runs tests in parallel, so without this lock
+    /// concurrent callers interleave their read→write and silently lose updates
+    /// (the cause of the flaky `searchFindsCustomExercises`). #905.
+    private static let customLock = NSLock()
+
     static var customExercises: [ExerciseInfo] {
         guard let data = UserDefaults.standard.data(forKey: customKey),
               let decoded = try? JSONDecoder().decode([ExerciseInfo].self, from: data) else { return [] }
@@ -127,6 +135,8 @@ public enum ExerciseDatabase {
     }
 
     public static func addCustomExercise(name: String, bodyPart: String) {
+        customLock.lock()
+        defer { customLock.unlock() }
         var customs = customExercises
         guard !customs.contains(where: { $0.name.lowercased() == name.lowercased() }) else { return }
         customs.append(ExerciseInfo(name: name, bodyPart: bodyPart, primaryMuscles: [bodyPart.lowercased()],

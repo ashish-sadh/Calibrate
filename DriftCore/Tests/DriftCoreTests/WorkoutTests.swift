@@ -1000,13 +1000,32 @@ import GRDB
     WorkoutService.clearSession()
 }
 
-// MARK: - Exercise Search Fix Tests (3 tests)
+// MARK: - Exercise Search Fix Tests (4 tests)
 
 @Test func searchFindsCustomExercises() async throws {
     let uniqueName = "ZZZ Test Custom Ex \(Int.random(in: 10000...99999))"
     ExerciseDatabase.addCustomExercise(name: uniqueName, bodyPart: "Chest")
     let results = ExerciseDatabase.search(query: uniqueName)
     #expect(!results.isEmpty, "Custom exercise should be findable in search")
+}
+
+/// #905 regression: `addCustomExercise` does a read-modify-write on a shared
+/// UserDefaults key. Swift Testing runs tests in parallel and there are several
+/// concurrent callers (this suite, `searchFindsCustomExercises`, workout save,
+/// default templates), so without serialization the interleaved read→write loses
+/// updates — the root cause of the flaky `searchFindsCustomExercises`. Fire many
+/// adds concurrently with unique names and assert EVERY one survives (this fails
+/// reliably if the lock in `ExerciseDatabase.addCustomExercise` is removed).
+@Test func concurrentAddCustomExerciseNoLostUpdates() async {
+    let names = (0..<40).map { "ZZZ Concurrent Ex \($0)-\(Int.random(in: 100000...999999))" }
+    await withTaskGroup(of: Void.self) { group in
+        for name in names {
+            group.addTask { ExerciseDatabase.addCustomExercise(name: name, bodyPart: "Chest") }
+        }
+    }
+    let stored = Set(ExerciseDatabase.customExercises.map { $0.name })
+    let missing = names.filter { !stored.contains($0) }
+    #expect(missing.isEmpty, "Lost \(missing.count)/40 concurrent custom-exercise adds: \(Array(missing.prefix(3)))")
 }
 
 @Test func searchMultiWordExercise() async throws {

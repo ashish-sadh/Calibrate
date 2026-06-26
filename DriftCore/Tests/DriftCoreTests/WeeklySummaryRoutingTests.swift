@@ -8,8 +8,22 @@ import Testing
 /// lookup branch treated the query as a food name and hit the online
 /// USDA/OpenFoodFacts fallback. Fix added a summary-query guard.
 
+/// Drives `food_info` through the real `ToolRegistry` for routing-regression
+/// coverage. Two guarantees keep this deterministic in parallel Tier-0 (#905):
+///   • Online food search is disabled, so no case can reach the USDA/OpenFoodFacts
+///     network fallback (the #249 path) — Tier-0 stays offline regardless of which
+///     local foods happen to be seeded in the shared DB.
+///   • Tools are registered before dispatch, so `execute` never sees an
+///     unregistered `food_info` (which would return an empty `.error`).
+/// The assertions below are intentionally DB-content-agnostic — they check which
+/// routing *branch* fires, not any logged data — so the shared on-disk DB's state
+/// cannot flip a verdict. That branch-not-data isolation is what matters here.
 @MainActor
 private func runFoodInfo(_ query: String) async -> String {
+    let savedOnline = Preferences.onlineFoodSearchEnabled
+    Preferences.onlineFoodSearchEnabled = false
+    defer { Preferences.onlineFoodSearchEnabled = savedOnline }
+
     if ToolRegistry.shared.allTools().isEmpty {
         ToolRegistration.registerAll()
     }
