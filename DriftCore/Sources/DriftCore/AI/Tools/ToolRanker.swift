@@ -178,6 +178,25 @@ public enum ToolRanker {
             if lower.contains("week") || lower.contains("trend") || lower.contains("last") {
                 params["period"] = "week"
             }
+        case "log_water":
+            // Parse "<amount><unit>" — "500ml", "1 liter", "2 glasses". Longer
+            // spellings first so "glasses"/"liter" win over "glass"/bare "l".
+            // Conversion to ml happens downstream via HydrationService.parseMl.
+            let waterPattern = #"(\d+\.?\d*)\s*(ml|milliliters?|millilitres?|liters?|litres?|oz|cups?|glasses|glass|bottles?|l)\b"#
+            if let regex = try? NSRegularExpression(pattern: waterPattern),
+               let match = regex.firstMatch(in: lower, range: NSRange(lower.startIndex..., in: lower)),
+               let numRange = Range(match.range(at: 1), in: lower),
+               let unitRange = Range(match.range(at: 2), in: lower) {
+                params["amount"] = String(lower[numRange])
+                params["unit"] = String(lower[unitRange])
+            } else {
+                // "a glass of water" / "a bottle of water" → one container.
+                for container in ["glass", "cup", "bottle"] where lower.contains(container) {
+                    params["amount"] = "1"
+                    params["unit"] = container
+                    break
+                }
+            }
         default:
             break
         }
@@ -317,6 +336,23 @@ public enum ToolRanker {
             logBoost: 0, queryBoost: 1.5,
             screens: [.food: 0.3],
             antiKeywords: ["log", "ate", "had"]
+        )
+
+        // --- Hydration ---
+
+        // log_water previously had NO profile, so rank() skipped it entirely
+        // (`guard let profile = profiles[tool.name] else { continue }`) and English
+        // water phrasings ("log 500ml water") lost to log_food's "log" trigger —
+        // opening a food search for "water" and dropping the volume (#901, same
+        // class as #896). Hinglish keys on the multi-word "paani piya" (drank
+        // water), NOT bare "paani", so "paani puri" (an Indian food) is untouched.
+        // "coconut" anti keeps "coconut water" (caloric) on log_food.
+        p["log_water"] = ToolProfile(
+            triggers: [("water", 3.5), ("glass of water", 2), ("glasses of water", 2),
+                       ("paani piya", 4), ("paani pi", 2.5), ("paani pee", 2.5)],
+            logBoost: 2, queryBoost: -1,
+            screens: [:],
+            antiKeywords: ["coconut"]
         )
 
         // --- Weight ---
