@@ -42,6 +42,9 @@ When adding a sign: state the rule, then a one-line `Why:` (the incident that mo
 - **The watchdog's "stuck>2cycles" keys off the epic ISSUE's own `updatedAt`, which never moves when SUBTASKS close — so a healthily-draining finite epic trips override as a false positive.** In override, verify the drain rate (subtasks closed since epic-open) before acting; if >0 and the showstopper gate is met, the correct resolution is close-the-met-gate-epic + refile survivors as a fresh finite epic (resets the clock honestly), NOT wontfix/needs-human.
   Why: #900 (cycle 20049) tripped override one day after creation despite 2 P0 showstoppers + 3 other coach fixes landing; resolved by closing it (gate #896+#897 met+verified) and refiling the 6 polish survivors as #909.
 
+- **A false-positive override on a finite epic whose GATE IS UNMET resolves by keeping the epic OPEN and bumping its `updatedAt` (edit body/comment) — NOT by close-and-refile.** Closing an undelivered-gate epic just to dodge the watchdog is dishonest; re-anchor escalation to a COUNTABLE predicate (≥3 abandon/WIP comments on the gate subtasks, `gh issue view <n> --json comments`), never an un-countable "N senior cycles."
+  Why: #909 (cycle 20462, 2026-06-27) re-fired override ~28h after creation — #901 had drained but the premium-feel gate #890/#891 sat UNCLAIMED with ZERO senior attempts (queue latency, not a blocker); the #900 close-and-refile move would have closed an epic whose stated gate wasn't delivered. Distinct from the gate-MET case (the #900 sign above) where close-and-refile IS the honest reset.
+
 ## Recently pruned (last curation cycle)
 
 None yet — first cycle. `/knowledge-curate` will populate.
