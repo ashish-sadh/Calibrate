@@ -55,7 +55,7 @@ final class MedicationLoggingGoldSetTests: XCTestCase {
             else { print("MISS (oral med): '\(query)' → \(tools.first?.name ?? "nil")") }
         }
         print("📊 Oral medication routing: \(correct)/\(cases.count)")
-        XCTAssertGreaterThanOrEqual(correct, cases.count - 1, "At most 1 oral medication routing miss")
+        XCTAssertEqual(correct, cases.count, "All oral medication phrasings must route to log_medication")
     }
 
     // MARK: - JSON parameter parsing
@@ -125,6 +125,15 @@ final class MedicationLoggingGoldSetTests: XCTestCase {
             XCTAssertNotEqual(tools.first?.name, "log_medication",
                 "Supplement query '\(query)' must not route to log_medication")
         }
+    }
+
+    /// Bare "meds" with no drug name is ambiguous and must stay mark_supplement —
+    /// only "meds" + a recognized drug name escalates to log_medication. Guards the
+    /// ("meds", 3.5) trigger from over-firing on drug-name-less phrasings. #193
+    @MainActor func testBareMedsWithoutDrugNameStaysSupplement() {
+        let tools = ToolRanker.rank(query: "took my meds", screen: .food)
+        XCTAssertNotEqual(tools.first?.name, "log_medication",
+            "Bare 'took my meds' (no drug name) must not route to log_medication")
     }
 
     // MARK: - IntentThresholds: medication proceeds at any confidence with complete params

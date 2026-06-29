@@ -475,6 +475,11 @@ public enum ToolRanker {
                        ("took metformin", 4.5), ("took insulin", 4), ("injected", 3),
                        ("semaglutide", 4), ("ozempic", 4), ("wegovy", 4), ("glp-1", 3.5),
                        ("glp1", 3.5), ("mounjaro", 4), ("tirzepatide", 4), ("metformin", 3.5),
+                       // colloquial "meds" → prescription medication (supplements are called
+                       // "supplement"/"vitamin"/brand names, never "meds"). Combines with a med
+                       // name to win when filler splits the "took my <med>" phrase, e.g.
+                       // "took my morning meds metformin" → 9.0 vs mark_supplement 7.0. #193
+                       ("meds", 3.5),
                        // "took my <med>" phrases — outscores mark_supplement "took my" trigger
                        ("took my ozempic", 6.5), ("took my glp", 6.5), ("took my semaglutide", 6.5),
                        ("took my metformin", 6.5), ("took my mounjaro", 6.5), ("took my insulin", 6.5),
