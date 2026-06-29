@@ -33,6 +33,19 @@ struct MockHTTPSessionError: HTTPDataSession, Sendable {
     }
 }
 
+/// Simulates a hung provider connection that, for test purposes, never returns
+/// (1h sleep ≫ the whole Tier-0 suite runtime). So the ONLY way the backend's
+/// `respond` can complete is its app-level timeout race firing — making the
+/// resulting `.transient` error a deterministic proof, with no wall-clock
+/// dependency that could flake under the parallel suite's executor pressure. #890
+struct HangingSession: HTTPDataSession, Sendable {
+    func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        try await Task.sleep(nanoseconds: 3_600_000_000_000)
+        let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
+        return (Data(), response)
+    }
+}
+
 // MARK: - Canned SSE Fixtures
 
 private enum SSEFixture {
@@ -552,5 +565,46 @@ struct RemoteLLMBackendTests {
         _ = await backend.respond(to: "hi", systemPrompt: "sys")
         let body = try! JSONSerialization.jsonObject(with: box.request!.httpBody!) as! [String: Any]
         #expect(body["model"] as? String == "Qwen/Qwen3-235B-A22B-Instruct-2507")
+    }
+
+    // MARK: - In-Flight Timeout (#890)
+
+    /// A hung Nebius turn must surface a bounded, fallbackable error instead of
+    /// blocking on the stalled connection. `HangingSession` never returns, so the
+    /// ONLY way `respond` completes is the app-level timeout race firing — had it
+    /// not, this call would block for an hour and hang the suite. We assert the
+    /// ERROR, not a wall-clock bound: Swift Testing runs the whole Tier-0 suite in
+    /// parallel and CPU-bound siblings can starve this task's continuation for tens
+    /// of seconds, so an `elapsed < Ns` assertion is flaky (observed 44s under
+    /// load). The `.transient` error is the deterministic, time-independent proof
+    /// the stall was cut short.
+    @Test func hungTurnSurfacesBoundedTimeoutErrorNotIndefiniteWait() async {
+        let backend = RemoteLLMBackend(
+            provider: .nebius, modelID: "m", apiKey: "k",
+            session: HangingSession(), requestTimeout: 0.1
+        )
+        let result = await backend.respond(to: "hi", systemPrompt: "sys")
+
+        #expect(result.isEmpty, "a hung turn returns empty, not a partial/blocking result")
+        // A never-returning session can only yield this error via the timeout race;
+        // had the timeout failed, the call would block on the stall (success → nil).
+        // `.transient` is fallbackable, so the chat layer retries / switches to
+        // on-device rather than leaving a dead spinner.
+        #expect(backend.lastError == .transient(0))
+        #expect(backend.lastError?.isFallbackable == true)
+    }
+
+    /// The bounded timeout is also stamped on the outgoing request, so the real
+    /// URLSession transport path is capped too (defense-in-depth alongside the
+    /// app-level race). #890 criterion 1.
+    @Test func builtRequestCarriesBoundedTimeout() async throws {
+        let box = RequestBox()
+        let backend = RemoteLLMBackend(
+            provider: .nebius, modelID: "m", apiKey: "k",
+            session: CapturingSession(box: box), requestTimeout: 42
+        )
+        _ = await backend.respond(to: "hi", systemPrompt: "sys")
+        let req = try #require(box.request)
+        #expect(req.timeoutInterval == 42)
     }
 }

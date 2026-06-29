@@ -94,6 +94,13 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
     private let apiKey: String?
     let session: any HTTPDataSession
 
+    /// Wall-clock cap on a single in-flight turn. The chat spinner can never
+    /// outlast this — a stalled provider surfaces a fallbackable error instead
+    /// of an indefinite wait. Enforced two ways: as the `URLRequest` transport
+    /// timeout AND as an app-level race in `dataWithTimeout` (so it fires even
+    /// for an injected mock session that bypasses URLSession's own timeout). #890
+    let requestTimeout: TimeInterval
+
     /// Last error from a call, in the categorized form. Reset on each call.
     /// Surfaced via `lastErrorBox` actor so callers can read it after the
     /// non-throwing protocol method returns. nil = success.
@@ -114,12 +121,14 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
         provider: Provider,
         modelID: String,
         apiKey: String?,
-        session: any HTTPDataSession = URLSession.shared
+        session: any HTTPDataSession = URLSession.shared,
+        requestTimeout: TimeInterval = 60
     ) {
         self.provider = provider
         self.modelID = modelID
         self.apiKey = apiKey
         self.session = session
+        self.requestTimeout = requestTimeout
     }
 
     // MARK: - AIBackend
@@ -174,8 +183,9 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
             return ""
         }
         do {
-            let request = try buildRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: key, toolsJSON: toolsJSON, visionModelID: visionModelID)
-            let (data, response) = try await session.data(for: request)
+            var request = try buildRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: key, toolsJSON: toolsJSON, visionModelID: visionModelID)
+            request.timeoutInterval = requestTimeout
+            let (data, response) = try await dataWithTimeout(for: request)
             if let http = response as? HTTPURLResponse, http.statusCode != 200 {
                 errorBox.value = categorize(status: http.statusCode)
                 Log.app.error("RemoteLLMBackend: HTTP \(http.statusCode) (\(self.provider.rawValue))")
@@ -186,6 +196,30 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
             errorBox.value = .transient(0)
             Log.app.error("RemoteLLMBackend: \(error)")
             return ""
+        }
+    }
+
+    /// Error thrown when the in-flight provider call exceeds `requestTimeout`.
+    /// Flows through `respondStreamingCore`'s catch → `.transient(0)`, so the
+    /// chat layer treats a hang exactly like any other transient network fault
+    /// (fallbackable — retry or switch to on-device). #890
+    private struct RemoteTimeoutError: Error {}
+
+    /// Races the provider call against `requestTimeout`. Whichever finishes
+    /// first wins; the loser is cancelled. Enforcing the deadline HERE — not
+    /// only via `URLRequest.timeoutInterval` — guarantees a bounded wait even
+    /// when a custom/mock `HTTPDataSession` is injected (URLSession's own
+    /// timeout never runs in that path). The in-flight chat spinner can never
+    /// hang indefinitely. #890
+    private func dataWithTimeout(for request: URLRequest) async throws -> (Data, URLResponse) {
+        try await withThrowingTaskGroup(of: (Data, URLResponse).self) { group in
+            group.addTask { try await self.session.data(for: request) }
+            group.addTask {
+                try await Task.sleep(nanoseconds: UInt64(self.requestTimeout * 1_000_000_000))
+                throw RemoteTimeoutError()
+            }
+            defer { group.cancelAll() }
+            return try await group.next()!
         }
     }
 
