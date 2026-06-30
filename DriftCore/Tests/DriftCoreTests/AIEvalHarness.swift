@@ -1707,8 +1707,9 @@ final class AIEvalHarness: XCTestCase {
 
     @MainActor
     func testWeightGoalCurrentBased() {
+        // currentGoalStartDate() keeps weeksRemaining > 0, rot-proof (see #916)
         let goal = WeightGoal(targetWeightKg: 90, monthsToAchieve: 6,
-                              startDate: "2026-04-01", startWeightKg: 75.9)
+                              startDate: currentGoalStartDate(), startWeightKg: 75.9)
 
         // Direction always from current weight
         XCTAssertTrue(goal.isLosing(currentWeightKg: 102), "102 > 90 → losing")

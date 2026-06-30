@@ -200,7 +200,7 @@ import GRDB
 }
 
 @Test func weightGoalRequiredRate() async throws {
-    let goal = WeightGoal(targetWeightKg: 65, monthsToAchieve: 6, startDate: "2026-01-01", startWeightKg: 75)
+    let goal = WeightGoal(targetWeightKg: 65, monthsToAchieve: 6, startDate: currentGoalStartDate(), startWeightKg: 75)
     // 10kg in 6 months = ~26 weeks = ~0.385 kg/week
     let rate = goal.requiredWeeklyRate(currentWeightKg: 75)
     #expect(rate < 0, "Should be negative for weight loss")
@@ -208,7 +208,7 @@ import GRDB
 }
 
 @Test func weightGoalOnTrackStatus() async throws {
-    let goal = WeightGoal(targetWeightKg: 65, monthsToAchieve: 6, startDate: "2026-01-01", startWeightKg: 75)
+    let goal = WeightGoal(targetWeightKg: 65, monthsToAchieve: 6, startDate: currentGoalStartDate(), startWeightKg: 75)
     let requiredRate = goal.requiredWeeklyRate(currentWeightKg: 75)
 
     let ahead = goal.isOnTrack(actualWeeklyRateKg: requiredRate * 1.5, currentWeightKg: 75)
@@ -227,7 +227,7 @@ import GRDB
 
 @Test func weightGoalWrongDirectionGaining() async throws {
     // Goal: gain 2.2 kg (56 - 53.8)
-    let goal = WeightGoal(targetWeightKg: 56, monthsToAchieve: 3, startDate: "2026-04-01", startWeightKg: 53.8)
+    let goal = WeightGoal(targetWeightKg: 56, monthsToAchieve: 3, startDate: currentGoalStartDate(), startWeightKg: 53.8)
     #expect(goal.requiredWeeklyRate(currentWeightKg: 53.8) > 0, "Gaining goal should have positive rate")
 
     // Actually losing weight = wrong direction
@@ -270,8 +270,8 @@ import GRDB
 }
 
 @Test func staleStartWeight_deficitIsNegative() async throws {
-    // Use a future start date so weeksRemaining > 0
-    let goal = WeightGoal(targetWeightKg: 90, monthsToAchieve: 6, startDate: "2026-04-01", startWeightKg: 75.9)
+    // currentGoalStartDate() keeps weeksRemaining > 0, rot-proof (see #916)
+    let goal = WeightGoal(targetWeightKg: 90, monthsToAchieve: 6, startDate: currentGoalStartDate(), startWeightKg: 75.9)
 
     // Deficit must be negative (calorie deficit for weight loss)
     let deficit = goal.requiredDailyDeficit(currentWeightKg: 101.8)
@@ -294,7 +294,7 @@ import GRDB
 
 @Test func normalGoal_allCalculationsConsistent() async throws {
     // Normal scenario: start=105, target=90, current=100 (lost 5 of 15 kg)
-    let goal = WeightGoal(targetWeightKg: 90, monthsToAchieve: 6, startDate: "2026-01-01", startWeightKg: 105)
+    let goal = WeightGoal(targetWeightKg: 90, monthsToAchieve: 6, startDate: currentGoalStartDate(), startWeightKg: 105)
 
     #expect(goal.isLosing(currentWeightKg: 100) == true)
     #expect(abs(goal.remainingKg(currentWeightKg: 100) - (-10)) < 0.01, "10 kg to lose")
@@ -312,7 +312,7 @@ import GRDB
 
 @Test func gainingGoal_directionCorrect() async throws {
     // User wants to GAIN: current=60, target=75
-    let goal = WeightGoal(targetWeightKg: 75, monthsToAchieve: 6, startDate: "2026-01-01", startWeightKg: 55)
+    let goal = WeightGoal(targetWeightKg: 75, monthsToAchieve: 6, startDate: currentGoalStartDate(), startWeightKg: 55)
 
     #expect(goal.isLosing(currentWeightKg: 60) == false, "60 < 75 = gaining")
     #expect(goal.remainingKg(currentWeightKg: 60) > 0, "Need to GAIN (positive remaining)")
@@ -322,7 +322,7 @@ import GRDB
 @Test func requiredRate_adaptsOverTime() async throws {
     // 12 kg to lose in 6 months = 2 kg/month
     // After 3 months with only 3 kg lost: 9 kg in 3 months = 3 kg/month (faster!)
-    let goal = WeightGoal(targetWeightKg: 90, monthsToAchieve: 6, startDate: "2026-01-01", startWeightKg: 102)
+    let goal = WeightGoal(targetWeightKg: 90, monthsToAchieve: 6, startDate: currentGoalStartDate(), startWeightKg: 102)
 
     let earlyRate = goal.requiredWeeklyRate(currentWeightKg: 102) // full distance, full time
     let lateRate = goal.requiredWeeklyRate(currentWeightKg: 99)   // less distance, less time

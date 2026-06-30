@@ -415,18 +415,18 @@ import GRDB
 }
 
 @Test func goalOnTrackExact() async throws {
-    let g = WeightGoal(targetWeightKg: 50, monthsToAchieve: 6, startDate: "2026-01-01", startWeightKg: 60)
+    let g = WeightGoal(targetWeightKg: 50, monthsToAchieve: 6, startDate: currentGoalStartDate(), startWeightKg: 60)
     let rate = g.requiredWeeklyRate(currentWeightKg: 60)
     #expect(g.isOnTrack(actualWeeklyRateKg: rate, currentWeightKg: 60) == .onTrack)
 }
 
 @Test func goalBehind() async throws {
-    let g = WeightGoal(targetWeightKg: 50, monthsToAchieve: 6, startDate: "2026-01-01", startWeightKg: 60)
+    let g = WeightGoal(targetWeightKg: 50, monthsToAchieve: 6, startDate: currentGoalStartDate(), startWeightKg: 60)
     #expect(g.isOnTrack(actualWeeklyRateKg: 0, currentWeightKg: 60) == .behind)
 }
 
 @Test func goalAhead() async throws {
-    let g = WeightGoal(targetWeightKg: 50, monthsToAchieve: 6, startDate: "2026-01-01", startWeightKg: 60)
+    let g = WeightGoal(targetWeightKg: 50, monthsToAchieve: 6, startDate: currentGoalStartDate(), startWeightKg: 60)
     let rate = g.requiredWeeklyRate(currentWeightKg: 60)
     #expect(g.isOnTrack(actualWeeklyRateKg: rate * 2, currentWeightKg: 60) == .ahead)
 }
