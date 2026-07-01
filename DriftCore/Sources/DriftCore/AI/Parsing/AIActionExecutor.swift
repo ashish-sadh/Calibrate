@@ -390,30 +390,47 @@ public enum AIActionExecutor {
             }
         }
 
+        // Word fractions, optionally followed by an "of a"/"of an" connector
+        // before the unit/food: "a quarter cup of almonds", "a third of a cup
+        // of oats", "two thirds of a cup of rice", "a quarter of an apple".
         let twoWordAmounts: [(String, String, Double)] = [
-            ("a", "quarter", 0.25), ("a", "half", 0.5),
-            ("one", "quarter", 0.25), ("one", "half", 0.5),
+            ("a", "quarter", 0.25), ("a", "half", 0.5), ("a", "third", 1.0 / 3),
+            ("one", "quarter", 0.25), ("one", "half", 0.5), ("one", "third", 1.0 / 3),
+            ("two", "thirds", 2.0 / 3), ("three", "quarters", 0.75), ("three", "fourths", 0.75),
             ("half", "a", 0.5),
         ]
         if leadingWords.count >= 4 {
             for (w1, w2, amt) in twoWordAmounts {
-                if leadingWords[0].lowercased() == w1 && leadingWords[1].lowercased() == w2 {
-                    let unit = leadingWords[2].lowercased()
-                    let convertedGrams = normalizeToGrams(amt, unit: unit)
-                    let isCountUnit = countUnitsLeading.contains(unit)
-                    if convertedGrams != nil || isCountUnit {
-                        var foodStart = 3
-                        if leadingWords.count > 4 && leadingWords[3].lowercased() == "of" { foodStart = 4 }
-                        let food = leadingWords[foodStart...].joined(separator: " ").trimmingCharacters(in: .whitespaces)
-                        if !food.isEmpty {
-                            if convertedGrams != nil {
-                                return (nil, food, normalizeToGrams(amt, unit: unit, foodHint: food) ?? convertedGrams!)
-                            } else {
-                                return (amt, food, nil)
-                            }
-                        }
-                    }
+                guard leadingWords[0].lowercased() == w1, leadingWords[1].lowercased() == w2 else { continue }
+                // Skip an optional "of"/"of a"/"of an" connector between the
+                // fraction and the unit ("a third OF A cup of oats").
+                var idx = 2
+                if idx < leadingWords.count, leadingWords[idx].lowercased() == "of" {
+                    idx += 1
+                    if idx < leadingWords.count, ["a", "an"].contains(leadingWords[idx].lowercased()) { idx += 1 }
                 }
+                guard idx < leadingWords.count else { continue }
+                let unit = leadingWords[idx].lowercased()
+                let convertedGrams = normalizeToGrams(amt, unit: unit)
+                guard convertedGrams != nil || countUnitsLeading.contains(unit) else {
+                    // No unit after the connector — bare "fraction of a <food>":
+                    // "a quarter of an apple" → 0.25 servings of apple.
+                    let food = leadingWords[idx...].joined(separator: " ").trimmingCharacters(in: .whitespaces)
+                    if !food.isEmpty { return (amt, food, nil) }
+                    continue
+                }
+                var foodStart = idx + 1
+                if leadingWords.count > foodStart, leadingWords[foodStart].lowercased() == "of" { foodStart += 1 }
+                let food = leadingWords[foodStart...].joined(separator: " ").trimmingCharacters(in: .whitespaces)
+                guard !food.isEmpty else { continue }
+                if let convertedGrams {
+                    // Volume/weight unit → grams: density when the food is known,
+                    // else a flat per-unit constant (consistent with the rest of
+                    // extractAmount — see test_extract_halfATbsp).
+                    return (nil, food, normalizeToGrams(amt, unit: unit, foodHint: food) ?? convertedGrams)
+                }
+                // Count unit ("a quarter serving oatmeal") → fractional servings.
+                return (amt, food, nil)
             }
         }
 

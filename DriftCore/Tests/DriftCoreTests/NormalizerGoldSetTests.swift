@@ -261,13 +261,17 @@ final class NormalizerGoldSetTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(detected, 3, "Composed foods: ≥3/5 — 'X with Y' parsing gaps tracked as follow-up issues")
     }
 
-    /// Fractional amounts — "one third" and unicode fractions are known gaps (#243).
+    /// Bare word-fractions with NO measurement unit → fractional servings
+    /// ("half a pizza", "a third of a sandwich", "two thirds of a wrap"). A volume
+    /// fraction of a food ("a quarter cup of peanut butter") routes to grams
+    /// instead — that path lives in testFractionFromInfix. (Unicode fractions like
+    /// "½" remain a known gap, #243.)
     func testFractionalAmountExtraction() {
         let cases: [(String, Double)] = [
             ("had half a pizza", 0.5),
-            ("ate a quarter cup of peanut butter", 0.25),
-            ("had half a bagel", 0.5),
-            ("had a third of a cup of oats", 0.33),
+            ("ate a quarter of a bagel", 0.25),
+            ("had a third of a sandwich", 1.0 / 3),
+            ("had two thirds of a wrap", 2.0 / 3),
             ("had half a sandwich", 0.5),
         ]
         var correct = 0
@@ -281,7 +285,39 @@ final class NormalizerGoldSetTests: XCTestCase {
                 print("MISS (fraction): '\(query)'")
             }
         }
-        XCTAssertGreaterThanOrEqual(correct, 2, "Fractional amounts: ≥2/5 — 'one third' and bareword fractions tracked as follow-up issues")
+        XCTAssertEqual(correct, cases.count, "All bare word-fractions parse to servings (half/quarter/third/two thirds)")
+    }
+
+    /// Word fractions with the "of a" infix, density-aware (#53/#243). A volume
+    /// fraction of a *known* food converts to grams via density; an *unknown* food
+    /// uses a flat per-unit constant (like the rest of extractAmount); a bare
+    /// "fraction of a <food>" with no unit becomes a fractional serving. Before
+    /// this, "third"/"two thirds" and the "of a" infix produced a polluted food
+    /// name + servings=1.0.
+    func testFractionFromInfix() {
+        // "a third of a cup of oats" — oats = 80 g/cup → ~26.7 g, clean name.
+        let oats = AIActionExecutor.parseFoodIntent(InputNormalizer.normalize("had a third of a cup of oats").lowercased())
+        XCTAssertEqual(oats?.query, "oat")  // singularized
+        XCTAssertNil(oats?.servings, "oats has a density → grams, not servings")
+        XCTAssertEqual(oats?.gramAmount ?? 0, (1.0 / 3) * 80, accuracy: 1.0)
+
+        // "two thirds of a cup of rice" — rice = 185 g/cup → ~123 g.
+        let rice = AIActionExecutor.parseFoodIntent(InputNormalizer.normalize("had two thirds of a cup of rice").lowercased())
+        XCTAssertEqual(rice?.query, "rice")
+        XCTAssertEqual(rice?.gramAmount ?? 0, (2.0 / 3) * 185, accuracy: 1.0)
+
+        // "a quarter cup of peanut butter" — no density → flat cup constant
+        // (0.25 × 240 = 60 g), clean multi-word food name (not "third of a cup…").
+        let pb = AIActionExecutor.parseFoodIntent(InputNormalizer.normalize("ate a quarter cup of peanut butter").lowercased())
+        XCTAssertEqual(pb?.query, "peanut butter")
+        XCTAssertNil(pb?.servings)
+        XCTAssertEqual(pb?.gramAmount ?? 0, 60, accuracy: 1.0)
+
+        // "a quarter of an apple" — no unit → 0.25 servings of apple.
+        let apple = AIActionExecutor.parseFoodIntent(InputNormalizer.normalize("had a quarter of an apple").lowercased())
+        XCTAssertEqual(apple?.query, "apple")
+        XCTAssertNil(apple?.gramAmount)
+        XCTAssertEqual(apple?.servings ?? 0, 0.25, accuracy: 0.01)
     }
 
     /// Abbreviated units — TB/tsp/c/oz are known gaps (#243).
