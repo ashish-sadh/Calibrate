@@ -2,10 +2,39 @@
 
 from __future__ import annotations
 
+import json
 import os
 from pathlib import Path
 
 from drift_mcp.runner import run_script
+
+
+def _shape_clean_result(result: dict) -> dict:
+    """Shape a run_script() result of is-clean-state.sh --report into the tool payload.
+
+    The gate script always emits JSON with a populated `dirty_reasons` on a
+    nonzero exit. But if it was killed before it could emit (external timeout,
+    crash) stdout is empty/unparseable — in that case synthesize a reason so
+    callers never see a reasonless clean:false (issue #907).
+    """
+    stdout = result.get("stdout", "") or ""
+    try:
+        data = json.loads(stdout) if stdout.strip() else {}
+    except json.JSONDecodeError:
+        data = {}
+    clean = result.get("ok", False)
+    dirty_reasons = data.get("dirty_reasons", []) or []
+    if not clean and not dirty_reasons:
+        exit_code = result.get("exit", "?")
+        detail = (result.get("stderr", "") or "").strip() or stdout.strip() or "no report emitted"
+        dirty_reasons = [f"is-clean-state.sh exited {exit_code} without a report: {detail[:200]}"]
+    return {
+        "ok": True,
+        "clean": clean,  # exit 0 = clean
+        "dirty_reasons": dirty_reasons,
+        "checks": data.get("checks", {}),
+        "stdout_raw": stdout,
+    }
 
 
 def _control_file() -> Path:
@@ -26,20 +55,8 @@ def register(mcp) -> None:
         only fire on stable state.
         """
         result = run_script("scripts/is-clean-state.sh", ["--report"])
-        # Convention: stdout is JSON when --report flag is passed
-        import json as _json
-
-        try:
-            data = _json.loads(result["stdout"]) if result["stdout"].strip() else {}
-        except _json.JSONDecodeError:
-            data = {}
-        return {
-            "ok": True,
-            "clean": result["ok"],  # exit 0 = clean
-            "dirty_reasons": data.get("dirty_reasons", []),
-            "checks": data.get("checks", {}),
-            "stdout_raw": result["stdout"],
-        }
+        # Convention: stdout is JSON when --report flag is passed.
+        return _shape_clean_result(result)
 
     @mcp.tool()
     def state_control_signal() -> dict:
