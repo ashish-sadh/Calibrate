@@ -294,3 +294,24 @@ Total agent-file line counts after curation (all unchanged, well under cap):
 - principal-engineer: 127 / 300 cap
 - product-designer: 118 / 300 cap
 - qa-tester: 91 / 250 cap
+
+### Knowledge curation pass 2026-07-03
+
+Ran 7 days after the 2026-06-26 pass (itself a no-op). Same result — nothing crossed a threshold. The
+last content-bearing curation remains 2026-06-19 (which drained cycles 9851–10950).
+
+**Sedimented into stable:**
+- principal-engineer.md: 0 entries — `<what_i_learned>` still holds only the 2026-06-19 curation note; `/planning` step 13 appended no new dated `### Review Cycle` entries since.
+- product-designer.md: 0 entries — same; `<what_i_learned>` is just the 2026-06-19 note.
+- qa-tester.md: 0 entries — `<learnings>` is just the 2026-06-19 note.
+- signs (skill bodies): 0 entries — every sign is <90d or an undatable-foundational contract rule. planning.md gained two override signs since 06-26 (stuck-epic override is count+counter-driven, cycle 20840 / 2026-06-30; false-positive-override on a gate-unmet epic, cycle 20462 / 2026-06-27) — both <90d, don't qualify. senior.md's cycle-8000-era READ-before-EDIT sign remains a live harness-enforced guard, so it fails the "no violation in the period" half of the sediment test and stays. junior.md signs remain timeless role-boundary rules with no dateable incident.
+
+**Pruned (recoverable for 1 cycle):**
+- None — no sign is ≥180d old (earliest signs date to 2026-05-18), and no agent-file learning entry was pending.
+
+(debate-moderator.md remains a deprecated stub with no learnings/knowledge block — nothing to curate.)
+
+Total agent-file line counts after curation (all unchanged, well under cap):
+- principal-engineer: 127 / 300 cap
+- product-designer: 118 / 300 cap
+- qa-tester: 91 / 250 cap
