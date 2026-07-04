@@ -1227,9 +1227,11 @@ Nodes (1): Convert USDA all-caps descriptions to readable Title Case names.     
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `date` connect `Community 0` to `Community 1`, `Community 2`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 12`, `Community 14`, `Community 15`, `Community 21`, `Community 22`, `Community 23`, `Community 28`, `Community 29`, `Community 34`, `Community 40`, `Community 46`?**
-  _High betweenness centrality (0.096) - this node is a cross-community bridge._
-- **Why does `date` connect `Community 0` to `Community 2`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 9`, `Community 11`, `Community 12`, `Community 13`, `Community 15`, `Community 21`, `Community 23`, `Community 28`, `Community 29`?**
-  _High betweenness centrality (0.023) - this node is a cross-community bridge._
+  _High betweenness centrality (0.062) - this node is a cross-community bridge._
+- **Why does `data` connect `Community 10` to `Community 0`, `Community 1`, `Community 2`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 11`, `Community 12`, `Community 14`, `Community 16`, `Community 18`, `Community 21`, `Community 26`, `Community 29`, `Community 30`, `Community 38`?**
+  _High betweenness centrality (0.024) - this node is a cross-community bridge._
+- **Why does `empty` connect `Community 2` to `Community 0`, `Community 1`, `Community 34`, `Community 7`, `Community 11`, `Community 12`, `Community 29`, `Community 30`?**
+  _High betweenness centrality (0.019) - this node is a cross-community bridge._
 - **Are the 486 inferred relationships involving `String` (e.g. with `.classify()` and `.extractTool()`) actually correct?**
   _`String` has 486 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 455 inferred relationships involving `date` (e.g. with `.measureTTFT()` and `.testSingleItemTTFTSmoke()`) actually correct?**
@@ -1238,5 +1240,3 @@ _Questions this graph is uniquely positioned to answer:_
   _`date` has 303 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 266 inferred relationships involving `empty` (e.g. with `barcodeCacheSaveAndRetrieve()` and `barcodeCacheReturnsNilOnMiss()`) actually correct?**
   _`empty` has 266 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 236 inferred relationships involving `Int` (e.g. with `.testHardSuiteBaseline()` and `.runAndReport()`) actually correct?**
-  _`Int` has 236 INFERRED edges - model-reasoned connections that need verification._
