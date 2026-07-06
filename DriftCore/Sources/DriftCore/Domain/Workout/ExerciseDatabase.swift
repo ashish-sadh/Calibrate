@@ -14,6 +14,10 @@ public enum ExerciseDatabase {
         public var imageUrl: String? = nil
         public var youtubeUrl: String? = nil
         public var instructions: [String]? = nil
+        /// Per-exercise time-vs-reps tracking. Absent in `exercises.json`
+        /// (decodes to nil → treated as reps by `trackingType(for:)`); set
+        /// explicitly on custom exercises so agility drills / holds carry it.
+        public var trackingType: TrackingType? = nil
     }
 
     nonisolated(unsafe) private static var _exercises: [ExerciseInfo]?
@@ -140,7 +144,8 @@ public enum ExerciseDatabase {
         var customs = customExercises
         guard !customs.contains(where: { $0.name.lowercased() == name.lowercased() }) else { return }
         customs.append(ExerciseInfo(name: name, bodyPart: bodyPart, primaryMuscles: [bodyPart.lowercased()],
-                                    secondaryMuscles: [], equipment: "other", category: "strength", level: "intermediate"))
+                                    secondaryMuscles: [], equipment: "other", category: "strength", level: "intermediate",
+                                    trackingType: classifyTrackingType(name)))
         if let data = try? JSONEncoder().encode(customs) {
             UserDefaults.standard.set(data, forKey: customKey)
         }
@@ -177,5 +182,44 @@ public enum ExerciseDatabase {
         if e.contains("bicep") || e.contains("curl") || e.contains("tricep") || e.contains("hammer") || e.contains("extension") { return "Arms" }
         if e.contains("crunch") || e.contains("plank") || e.contains("ab") || e.contains("leg raise") || e.contains("core") { return "Core" }
         return "Other"
+    }
+
+    // MARK: - Tracking Type (time-based vs reps-based)
+
+    /// Exercises Drift explicitly tracks by *time*, declared per-exercise rather
+    /// than guessed. Agility/footwork drills where a rep count is meaningless —
+    /// you log how long you moved. Lowercased for exact-name matching. Planks,
+    /// holds, and carries are covered by `timeBasedFamilies` below, not here.
+    static let timeBasedExerciseNames: Set<String> = [
+        "ladder drill", "ladder drills", "agility ladder", "agility drill",
+        "speed ladder", "footwork drill",
+    ]
+
+    /// Family roots for names Drift doesn't declare explicitly (imported or
+    /// catalog variants): holds, planks, carries, hangs. Substring match is a
+    /// *fallback default* here — the per-exercise `trackingType` attribute and
+    /// `timeBasedExerciseNames` take precedence. Kept verbatim from the prior
+    /// `WorkoutSet.isDurationExercise` keywords so no existing exercise regresses.
+    static let timeBasedFamilies: [String] = [
+        "plank", "hold", "hang", "wall sit", "l-sit", "dead hang",
+        "farmer", "carry", "walk", "battle rope", "rope climb",
+        "sled", "prowler", "isometric",
+    ]
+
+    /// The tracking type for an exercise name, resolved data-first: an explicit
+    /// per-exercise `trackingType` on the catalog entry wins; otherwise classify
+    /// by declared time-based names then family roots (fallback), else reps.
+    public static func trackingType(for name: String) -> TrackingType {
+        if let declared = info(for: name)?.trackingType { return declared }
+        return classifyTrackingType(name)
+    }
+
+    /// Pure name-based classification (no catalog lookup) — used when *creating*
+    /// a custom exercise so its stored `trackingType` reflects the declared data.
+    static func classifyTrackingType(_ name: String) -> TrackingType {
+        let n = name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+        if timeBasedExerciseNames.contains(n) { return .time }
+        if timeBasedFamilies.contains(where: { n.contains($0) }) { return .time }
+        return .reps
     }
 }

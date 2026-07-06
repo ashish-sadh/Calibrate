@@ -377,4 +377,17 @@ final class StaticOverridesTests: XCTestCase {
         XCTAssertNil(StaticOverrides.match("log a walk"),
                      "'log a walk' defers to the agent (unchanged)")
     }
+
+    /// #925 Done-When (3): a ladder-drill utterance with a minutes value records
+    /// a *duration* activity, not reps. The deterministic "did …" phrasing goes
+    /// through StaticOverrides (this test); the "log …" phrasing defers to the
+    /// agent's log_activity, verified by ToolRanker routing in WorkoutTests. The
+    /// confirmation must name the drill and carry the 3-minute duration.
+    func testActivityLog_ladderDrillForMinutes_capturesDuration() {
+        guard case .response(let text)? = StaticOverrides.match("did a ladder drill for 3 minutes") else {
+            XCTFail("'did a ladder drill for 3 minutes' should produce a duration activity confirmation"); return
+        }
+        XCTAssertTrue(text.lowercased().contains("ladder drill"), "Confirmation should name the drill: \(text)")
+        XCTAssertTrue(text.contains("3 min"), "Confirmation should carry the 3-minute duration, not reps: \(text)")
+    }
 }

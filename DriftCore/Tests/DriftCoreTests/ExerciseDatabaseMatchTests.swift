@@ -52,3 +52,43 @@ import Testing
     // user can confirm, rather than silently dropping "heavy".
     #expect(ExerciseDatabase.match(name: "heavy super bench thing") == nil)
 }
+
+// MARK: - trackingType (#925 — per-exercise time-vs-reps classification)
+
+@Test func trackingType_declaredDrillsAreTimeBased() {
+    // Agility drills are declared time-based as data (an explicit name set), not
+    // matched by a fuzzy substring — the fix the issue asked for.
+    #expect(ExerciseDatabase.trackingType(for: "Ladder Drill") == .time)
+    #expect(ExerciseDatabase.trackingType(for: "Agility Ladder") == .time)
+    #expect(ExerciseDatabase.classifyTrackingType("Speed Ladder") == .time)
+}
+
+@Test func trackingType_holdFamiliesStayTimeBased() {
+    // Family roots kept verbatim from the prior keyword list → no duration
+    // exercise regresses to reps.
+    for name in ["Plank", "Side Plank", "Wall Sit", "Dead Hang", "Farmer's Walk"] {
+        #expect(ExerciseDatabase.trackingType(for: name) == .time, "\(name) should be time-based")
+    }
+}
+
+@Test func trackingType_commonLiftsAreReps() {
+    for name in ["Bench Press", "Back Squat", "Deadlift", "Bicep Curl", "Overhead Press"] {
+        #expect(ExerciseDatabase.trackingType(for: name) == .reps, "\(name) should be reps-based")
+    }
+}
+
+@Test func exerciseInfo_carriesExplicitTrackingType() {
+    // The exercise model distinguishes tracking type as a per-exercise enum.
+    let timed = ExerciseDatabase.ExerciseInfo(
+        name: "x", bodyPart: "Core", primaryMuscles: [], secondaryMuscles: [],
+        equipment: "other", category: "strength", level: "intermediate", trackingType: .time)
+    #expect(timed.trackingType == .time)
+}
+
+@Test func exerciseInfo_catalogDecodesWithNilTrackingType() {
+    // Back-compat: exercises.json has no trackingType field, so the optional
+    // decodes to nil (treated as reps by the resolver) rather than throwing.
+    let all = ExerciseDatabase.all
+    #expect(!all.isEmpty)  // fixture loaded (else the assertion below is vacuous)
+    #expect(all.allSatisfy { $0.trackingType == nil })
+}

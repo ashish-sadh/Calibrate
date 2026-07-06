@@ -1539,3 +1539,58 @@ import GRDB
         name: "Empty", exercises: [WorkoutService.VoiceLoggedExercise(name: "   ", isDuration: false)])
     #expect(saved == nil)
 }
+
+// MARK: - #925 Ladder Drill / time-based tracking (data-driven, not name-guess)
+
+@Test func trackingType_ladderDrillResolvesTimeBased() {
+    // Done-When (1)+(4a): "Ladder Drill" is time-based via declared per-exercise
+    // data, and the manual-builder branch (`isDurationExercise`) agrees.
+    #expect(ExerciseDatabase.trackingType(for: "Ladder Drill") == .time)
+    #expect(ExerciseDatabase.trackingType(for: "ladder drill") == .time)   // case-insensitive
+    #expect(WorkoutSet.isDurationExercise("Ladder Drill"))
+}
+
+@Test func ladderDrill_buildsDurationCarryingLog_notReps() {
+    // Done-When (2)+(4b): a minutes-bearing Ladder Drill log captures duration in
+    // SECONDS (180 for 3 min) with no reps — the same VoiceLoggedExercise the
+    // Coach/voice path confirms. `isDuration` is driven by the data-driven type,
+    // so nothing hard-codes the exercise name here.
+    let isDuration = ExerciseDatabase.trackingType(for: "Ladder Drill") == .time
+    let entry = WorkoutService.VoiceLoggedExercise(
+        name: "Ladder Drill", isDuration: isDuration, durationMinutes: 3)
+    let rows = WorkoutService.buildVoiceLogSets(workoutId: 7, exercises: [entry])
+    #expect(rows.count == 1)
+    #expect(rows[0].durationSec == 180)
+    #expect(rows[0].reps == nil)
+    #expect(rows[0].weightLbs == nil)
+}
+
+@Test func durationSet_rendersAsMinutesSeconds() {
+    // Done-When (2): the set summary shows a time (e.g. "3:00"), not "× N reps".
+    let set = WorkoutSet(workoutId: 1, exerciseName: "Ladder Drill", setOrder: 1, durationSec: 180)
+    #expect(set.display == "3:00")
+}
+
+@Test func strengthExercises_stayRepsBased_noRegression() {
+    // Done-When (5): every default-template lift still tracks reps, not duration.
+    let lifts = ["Dumbbell Bench Press", "Deadlift", "Bicep Curl", "Leg Press",
+                 "Lat Pulldown", "Incline Chest Press", "Bulgarian Split Squats",
+                 "Shoulder Press", "Crunch Machine"]
+    for lift in lifts {
+        #expect(ExerciseDatabase.trackingType(for: lift) == .reps, "\(lift) should be reps-based")
+        #expect(!WorkoutSet.isDurationExercise(lift), "\(lift) should not be duration")
+    }
+}
+
+@Test @MainActor func ladderDrill_coachUtteranceRoutesToActivity_notFood() {
+    // Done-When (3): "log a ladder drill for 3 minutes" ranks activity logging
+    // above food search (the #896 "log X → log_food" trap), so the Coach records
+    // a duration activity instead of opening a food search.
+    // ToolRanker scores over ToolRegistry.shared, which starts empty — register
+    // tools first so the test is self-contained (else it only passes when another
+    // suite's init() has populated the shared registry). Matches GLP1InsightToolTests.
+    ToolRegistration.registerAll()
+    let names = ToolRanker.rank(query: "log a ladder drill for 3 minutes", screen: .dashboard).map(\.name)
+    #expect(names.first == "log_activity")
+    #expect(names.first != "log_food")
+}

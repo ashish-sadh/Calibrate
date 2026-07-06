@@ -423,6 +423,9 @@ public enum ToolRanker {
                        // these, so log_food's "log" trigger won and opened a food search (#896).
                        ("run", 2.5), ("ran", 2.5), ("jog", 2.5), ("jogging", 2.5), ("jogged", 2.5),
                        ("cycle", 2.5), ("cycled", 2.5), ("swim", 2.5), ("swam", 2.5),
+                       // Agility/footwork drills logged for time — "log a ladder drill
+                       // for 3 minutes" otherwise lost to log_food's "log" trigger (#925).
+                       ("ladder drill", 3.5), ("drill", 2.5), ("agility", 2),
                        ("i did", 3), ("just finished", 3), ("went running", 3.5),
                        ("just did", 3), ("minutes", 1), ("minute", 1)],
             logBoost: 2, queryBoost: -1,

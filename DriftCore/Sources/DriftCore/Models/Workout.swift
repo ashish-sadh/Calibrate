@@ -1,6 +1,18 @@
 import Foundation
 import GRDB
 
+// MARK: - TrackingType
+
+/// How an exercise's sets are measured. Reps-based exercises log weight × reps
+/// (bench, squat); time-based exercises log a duration (planks, carries, agility
+/// drills like "Ladder Drill") where a rep count is meaningless. Declared
+/// per-exercise on the catalog via `ExerciseDatabase.trackingType(for:)` rather
+/// than guessed from the raw name.
+public enum TrackingType: String, Codable, Sendable {
+    case reps
+    case time
+}
+
 // MARK: - Exercise
 
 public struct Exercise: Identifiable, Codable, Sendable, FetchableRecord, PersistableRecord {
@@ -111,13 +123,12 @@ public struct WorkoutSet: Identifiable, Codable, Sendable, FetchableRecord, Pers
         return w * (36.0 / (37.0 - Double(r)))
     }
 
-    /// Whether this exercise type uses duration instead of reps.
+    /// Whether this exercise is tracked by duration instead of reps. Delegates
+    /// to the per-exercise tracking type declared on the exercise catalog
+    /// (`ExerciseDatabase.trackingType`) so the decision is data-driven, not a
+    /// substring guess. Kept as a convenience for the reps-vs-timer UI branches.
     public static func isDurationExercise(_ name: String) -> Bool {
-        let lower = name.lowercased()
-        let keywords = ["plank", "hold", "hang", "wall sit", "l-sit", "dead hang",
-                        "farmer", "carry", "walk", "battle rope", "rope climb",
-                        "sled", "prowler", "isometric"]
-        return keywords.contains(where: { lower.contains($0) })
+        ExerciseDatabase.trackingType(for: name) == .time
     }
 }
 
