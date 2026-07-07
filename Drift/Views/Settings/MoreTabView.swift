@@ -188,6 +188,10 @@ struct SettingsView: View {
     @State private var foodsRefreshError: String? = nil
     @State private var refreshedFoodCount: Int? = nil
     @State private var syncStatus: String?
+    // Apple Health nutrition write-back (#934)
+    @State private var healthNutritionWrite: Bool = Preferences.healthNutritionWriteEnabled
+    @State private var showingPastSyncOptions = false
+    @State private var pastSyncRunning = false
     @State private var telemetryEnabled: Bool = Preferences.chatTelemetryEnabled
     @State private var telemetryCount: Int = 0
     @State private var showingTelemetryDeleteConfirm = false
@@ -294,12 +298,89 @@ struct SettingsView: View {
                         }
                     }
 
+                    Divider().overlay(Theme.separatorFaint)
+
+                    // Nutrition write-back (#934): dietary calories (NOT
+                    // active energy) + protein/carbs/fat/fiber, written
+                    // per-entry as meals are logged. Off by default; the
+                    // writer auto-disables it if another app is detected
+                    // writing nutrition (no double counting).
+                    VStack(alignment: .leading, spacing: 2) {
+                        Toggle(isOn: Binding(
+                            get: { healthNutritionWrite },
+                            set: { newValue in
+                                if newValue {
+                                    Task {
+                                        switch await HealthNutritionSyncService.shared.requestEnable() {
+                                        case .enabled:
+                                            healthNutritionWrite = true
+                                            syncStatus = "Nutrition will be written to Apple Health as you log"
+                                        case .foreignDetected(let apps):
+                                            healthNutritionWrite = false
+                                            syncStatus = "\(apps.joined(separator: ", ")) already writes nutrition to Health — left off to avoid double counting"
+                                        case .authDenied:
+                                            healthNutritionWrite = false
+                                            syncStatus = "Health write access denied — allow Drift in Settings → Health → Data Access"
+                                        case .unavailable:
+                                            healthNutritionWrite = false
+                                            syncStatus = "Apple Health isn't available on this device"
+                                        }
+                                        clearStatus()
+                                    }
+                                } else {
+                                    healthNutritionWrite = false
+                                    Preferences.healthNutritionWriteEnabled = false
+                                }
+                            }
+                        )) {
+                            HStack {
+                                Image(systemName: "fork.knife.circle.fill").foregroundStyle(Theme.heartRed)
+                                Text("Write Nutrition to Health")
+                            }
+                        }
+                        Text("Calories eaten, protein, carbs, fat, fiber — written as you log")
+                            .font(.caption2).foregroundStyle(.tertiary)
+                        if let reason = Preferences.healthNutritionAutoDisableReason, !healthNutritionWrite {
+                            Text(reason).font(.caption2).foregroundStyle(Theme.warn)
+                        }
+                    }
+
+                    if healthNutritionWrite {
+                        Button {
+                            showingPastSyncOptions = true
+                        } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                HStack {
+                                    Image(systemName: "clock.arrow.circlepath").foregroundStyle(Theme.textSecondary)
+                                    Text(pastSyncRunning ? "Syncing past data…" : "Sync Past Data…")
+                                    Spacer()
+                                    if pastSyncRunning { ProgressView().scaleEffect(0.7) }
+                                }
+                                Text("Write your logged history to Health — re-running never duplicates")
+                                    .font(.caption2).foregroundStyle(.tertiary)
+                            }
+                        }
+                        .disabled(pastSyncRunning)
+                        .confirmationDialog("Sync past nutrition to Apple Health", isPresented: $showingPastSyncOptions, titleVisibility: .visible) {
+                            Button("Last 30 days") { runPastSync(days: 30) }
+                            Button("Last 90 days") { runPastSync(days: 90) }
+                            Button("All history") { runPastSync(days: nil) }
+                            Button("Cancel", role: .cancel) {}
+                        } message: {
+                            Text("Days another app already wrote nutrition for are skipped to avoid double counting.")
+                        }
+                    }
+
                     if let status = syncStatus {
                         Text(status).font(.caption).foregroundStyle(Theme.textSecondary)
                             .transition(.opacity)
                     }
                 }
                 .card()
+                .onReceive(NotificationCenter.default.publisher(for: .healthNutritionAutoDisabled)) { _ in
+                    healthNutritionWrite = false
+                    syncStatus = Preferences.healthNutritionAutoDisableReason
+                }
 
                 // iCloud Backup
                 NavigationLink {
@@ -668,6 +749,22 @@ struct SettingsView: View {
     private func clearStatus() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
             withAnimation { syncStatus = nil }
+        }
+    }
+
+    /// Apple Health past-sync (#934). Idempotent — sync identifiers make
+    /// re-runs replace rather than duplicate; foreign-app days are skipped.
+    private func runPastSync(days: Int?) {
+        pastSyncRunning = true
+        Task {
+            let summary = await HealthNutritionSyncService.shared.syncPast(days: days)
+            pastSyncRunning = false
+            var status = "Wrote \(summary.entriesWritten) entries to Health"
+            if summary.daysSkipped > 0 {
+                status += " — \(summary.daysSkipped) day(s) skipped (\(summary.foreignApps.joined(separator: ", ")) data present)"
+            }
+            syncStatus = status
+            clearStatus()
         }
     }
 

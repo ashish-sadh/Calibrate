@@ -16,6 +16,7 @@ public enum BackupKeys {
         // Units / display
         "weight_unit",                                  // Preferences.weightUnit (String enum raw)
         "drift_cycle_fertile_window",                   // Preferences.cycleFertileWindow (Bool)
+        "drift_health_nutrition_write",                 // Preferences.healthNutritionWriteEnabled (Bool)
 
         // AI / chat
         "drift_ai_enabled",                             // Preferences.aiEnabled (Bool)

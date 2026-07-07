@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0140FC396CF2123BE0FB938A /* HealthNutritionSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3865EC2CDA17D1B5F9862F1 /* HealthNutritionSyncService.swift */; };
 		045B162C8175451BD63FF9C6 /* ClarificationCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D2E86F78FA3B9DFA023EF4B /* ClarificationCardTests.swift */; };
 		0760C0D96F7A70F0A9D3019F /* DashboardViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 143FEB1AD55D91893E9FF314 /* DashboardViewTests.swift */; };
 		07703998EC9E02AD418576E8 /* TypingDotsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E2771DB577C8DC7CD66E79ED /* TypingDotsView.swift */; };
@@ -411,6 +412,7 @@
 		BBC007029A7A52990CE4FBDE /* BackupMonitorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupMonitorTests.swift; sourceTree = "<group>"; };
 		C004CB5B32E81B2A39730FE7 /* WorkoutDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutDetailView.swift; sourceTree = "<group>"; };
 		C1D0EF86656667CEF40EB779 /* MultiTurnContextEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiTurnContextEval.swift; sourceTree = "<group>"; };
+		C3865EC2CDA17D1B5F9862F1 /* HealthNutritionSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthNutritionSyncService.swift; sourceTree = "<group>"; };
 		C6C5FCF45E66161B45683C82 /* LabReportOCR+Biomarkers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LabReportOCR+Biomarkers.swift"; sourceTree = "<group>"; };
 		C8C8E55C6396731BC65D49AB /* FoundationModelsChatParityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelsChatParityTests.swift; sourceTree = "<group>"; };
 		C92BBFFC16E3948FD5DABA59 /* USDAFallbackEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = USDAFallbackEval.swift; sourceTree = "<group>"; };
@@ -857,6 +859,7 @@
 				F57B8BA8C0B119CF10614F14 /* HealthKitService.swift */,
 				36BB15B5D3A14E0D9940B118 /* HealthKitService+Cycle.swift */,
 				4902DF0863C6F54F0D1BC3BA /* HealthKitService+Sleep.swift */,
+				C3865EC2CDA17D1B5F9862F1 /* HealthNutritionSyncService.swift */,
 				E342C8090873CF9612C8A63E /* LabReportOCR.swift */,
 				C6C5FCF45E66161B45683C82 /* LabReportOCR+Biomarkers.swift */,
 				04037279FDE1F5FFE95EC83D /* MealTextLogger.swift */,
@@ -1158,6 +1161,7 @@
 				BED961B980821487CA56AD51 /* HealthKitService+Cycle.swift in Sources */,
 				51D36C1D00F25F64F54D70BF /* HealthKitService+Sleep.swift in Sources */,
 				DFCF8C1D8A9F7A20072F37C0 /* HealthKitService.swift in Sources */,
+				0140FC396CF2123BE0FB938A /* HealthNutritionSyncService.swift in Sources */,
 				9EA6ACD1BB8579E641944A41 /* ImmersiveVoiceView.swift in Sources */,
 				EDBADA2C372F712D791B9CB3 /* LabReportDetailView.swift in Sources */,
 				364C90C5B4A795381274F748 /* LabReportOCR+Biomarkers.swift in Sources */,

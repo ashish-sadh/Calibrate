@@ -16,6 +16,7 @@ struct DriftApp: App {
         // HealthKit / WidgetKit through protocols instead of direct singletons.
         DriftPlatform.health = HealthKitService.shared
         DriftPlatform.widget = WidgetCenterRefresher()
+        DriftPlatform.nutritionWriter = HealthNutritionSyncService.shared
         // Stamp the install date once so the 7-day Feedback activation banner
         // has a stable anchor (#759). Idempotent — only writes when unset.
         Preferences.seedInstallDateIfNeeded()

@@ -184,6 +184,24 @@ extension AppDatabase {
                 try FoodEntry.order(Column("id").desc).fetchOne(db)
             } ?? entry
         }
+        notifyNutritionWriterSaved(entry)
+    }
+
+    /// Fire-and-forget Apple Health nutrition write-back (#934). These DB
+    /// funnels are the single choke point every entry mutation flows through
+    /// (chat tools, sheets, edit paths alike) — save/update notify with the
+    /// fresh row, delete notifies with the id. The writer
+    /// (`DriftPlatform.nutritionWriter`, iOS-only) owns the user-toggle
+    /// gating, foreign-source checks, and HealthKit I/O; nil (macOS, tests)
+    /// makes this a no-op. Never blocks or fails the DB call.
+    private func notifyNutritionWriterSaved(_ entry: FoodEntry) {
+        guard entry.id != nil else { return }
+        Task { @MainActor in DriftPlatform.nutritionWriter?.entrySaved(entry) }
+    }
+
+    private func notifyNutritionWriterUpdated(id: Int64) {
+        guard let entry = try? dbWriter.read({ db in try FoodEntry.fetchOne(db, id: id) }) else { return }
+        notifyNutritionWriterSaved(entry)
     }
 
     public func updateFoodEntryMacros(id: Int64, calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double) throws {
@@ -192,12 +210,14 @@ extension AppDatabase {
                 UPDATE food_entry SET calories = ?, protein_g = ?, carbs_g = ?, fat_g = ?, fiber_g = ? WHERE id = ?
                 """, arguments: [calories, proteinG, carbsG, fatG, fiberG, id])
         }
+        notifyNutritionWriterUpdated(id: id)
     }
 
     public func updateFoodEntryLoggedAt(id: Int64, loggedAt: String) throws {
         try dbWriter.write { db in
             try db.execute(sql: "UPDATE food_entry SET logged_at = ? WHERE id = ?", arguments: [loggedAt, id])
         }
+        notifyNutritionWriterUpdated(id: id)
     }
 
     public func updateFoodEntryMealType(id: Int64, mealType: String) throws {
@@ -216,6 +236,7 @@ extension AppDatabase {
         try dbWriter.write { db in
             try db.execute(sql: "UPDATE food_entry SET servings = ? WHERE id = ?", arguments: [servings, id])
         }
+        notifyNutritionWriterUpdated(id: id)
     }
 
     public func deleteFoodEntry(id: Int64) throws {
@@ -230,6 +251,18 @@ extension AppDatabase {
                     try db.execute(sql: "DELETE FROM meal_log WHERE id = ?", arguments: [mlId])
                 }
             }
+        }
+        Task { @MainActor in DriftPlatform.nutritionWriter?.entryDeleted(id: id) }
+    }
+
+    /// All food entries on or after `fromDate` ("YYYY-MM-DD"); nil = entire
+    /// history. Drives the Apple Health past-sync (#934).
+    public func fetchFoodEntries(fromDate: String?) throws -> [FoodEntry] {
+        try dbWriter.read { db in
+            if let fromDate {
+                return try FoodEntry.filter(Column("date") >= fromDate).order(Column("date").asc).fetchAll(db)
+            }
+            return try FoodEntry.order(Column("date").asc).fetchAll(db)
         }
     }
 

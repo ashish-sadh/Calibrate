@@ -342,6 +342,31 @@ public enum Preferences {
         UserDefaults.standard.set(until, forKey: "drift_alert_dismissed_\(key)")
     }
 
+    // MARK: - Apple Health nutrition write-back (#934)
+
+    private static let healthNutritionWriteKey = "drift_health_nutrition_write"
+    private static let healthNutritionAutoDisableKey = "drift_health_nutrition_auto_disable_reason"
+
+    /// Write logged nutrition (dietary calories + protein/carbs/fat/fiber) to
+    /// Apple Health as entries are saved. OFF by default — the user opts in
+    /// from Settings; the writer also auto-disables this (recording a reason)
+    /// when another app is detected writing nutrition, to avoid double counts.
+    public static var healthNutritionWriteEnabled: Bool {
+        get { UserDefaults.standard.bool(forKey: healthNutritionWriteKey) }
+        set {
+            UserDefaults.standard.set(newValue, forKey: healthNutritionWriteKey)
+            if newValue { healthNutritionAutoDisableReason = nil }
+        }
+    }
+
+    /// Why the writer auto-disabled the toggle (e.g. "MyApp is already
+    /// writing nutrition to Health") — surfaced in Settings. nil when the
+    /// toggle hasn't been auto-disabled.
+    public static var healthNutritionAutoDisableReason: String? {
+        get { UserDefaults.standard.string(forKey: healthNutritionAutoDisableKey) }
+        set { UserDefaults.standard.set(newValue, forKey: healthNutritionAutoDisableKey) }
+    }
+
     // MARK: - Install Date + Feedback Prompt (#759)
 
     private static let installDateKey = "drift_install_date"

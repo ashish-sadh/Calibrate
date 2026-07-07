@@ -8,4 +8,6 @@ import Foundation
 public enum DriftPlatform {
     public static var health: HealthDataProvider?
     public static var widget: WidgetRefresher?
+    /// Apple Health nutrition write-back (#934). nil on macOS/tests = no-op.
+    public static var nutritionWriter: HealthNutritionWriter?
 }

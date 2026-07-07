@@ -224,6 +224,7 @@ final class BackupPackagerTests: XCTestCase {
         let expected: Set<String> = [
             "weight_unit",
             "drift_cycle_fertile_window",
+            "drift_health_nutrition_write",
             "drift_ai_enabled",
             "drift_conversation_history_enabled",
             "drift_chat_telemetry_enabled",

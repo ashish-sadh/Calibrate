@@ -482,26 +482,8 @@ final class HealthKitService {
         return result.reversed()
     }
 
-    func writeNutrition(calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double, date: Date) async throws {
-        #if targetEnvironment(simulator)
-        return // No write access on simulator
-        #else
-        guard isAvailable else { return }
-        var samples: [HKQuantitySample] = []
-        func addSample(_ id: HKQuantityTypeIdentifier, value: Double, unit: HKUnit) {
-            guard value > 0, let type = HKQuantityType.quantityType(forIdentifier: id) else { return }
-            samples.append(HKQuantitySample(type: type, quantity: HKQuantity(unit: unit, doubleValue: value), start: date, end: date))
-        }
-        addSample(.dietaryEnergyConsumed, value: calories, unit: .kilocalorie())
-        addSample(.dietaryProtein, value: proteinG, unit: .gram())
-        addSample(.dietaryCarbohydrates, value: carbsG, unit: .gram())
-        addSample(.dietaryFatTotal, value: fatG, unit: .gram())
-        addSample(.dietaryFiber, value: fiberG, unit: .gram())
-        guard !samples.isEmpty else { return }
-        try await healthStore.save(samples)
-        Log.healthKit.info("Wrote nutrition: \(Int(calories))cal \(Int(proteinG))P \(Int(carbsG))C \(Int(fatG))F")
-    #endif
-    }
+    // Nutrition write-back lives in HealthNutritionSyncService (#934) — the
+    // old writeNutrition here was dead code with no callers and no share auth.
 
     private func fetchDaySum(typeIdentifier: HKQuantityTypeIdentifier, for date: Date, unit: HKUnit = .kilocalorie()) async throws -> Double {
         guard isAvailable, let quantityType = HKQuantityType.quantityType(forIdentifier: typeIdentifier) else { return 0 }
