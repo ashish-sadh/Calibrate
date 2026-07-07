@@ -269,7 +269,8 @@ public enum IntentClassifier {
         let trimmed = response.trimmingCharacters(in: .whitespacesAndNewlines)
 
         guard let jsonStart = trimmed.firstIndex(of: "{"),
-              let jsonEnd = trimmed.lastIndex(of: "}") else {
+              let jsonEnd = trimmed.lastIndex(of: "}"),
+              jsonStart <= jsonEnd else {
             return nil
         }
 

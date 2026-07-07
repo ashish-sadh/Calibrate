@@ -178,7 +178,8 @@ public enum AIActionParser {
 
     private static func stripJSON(from text: String) -> String {
         guard let start = text.firstIndex(of: "{"),
-              let end = text.lastIndex(of: "}") else { return text }
+              let end = text.lastIndex(of: "}"),
+              start <= end else { return text }
         var clean = text
         clean.removeSubrange(start...end)
         return clean.trimmingCharacters(in: .whitespacesAndNewlines)

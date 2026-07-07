@@ -78,9 +78,10 @@ public enum ToolRegistration {
                    let regex = try? NSRegularExpression(pattern: nameGramPattern, options: .caseInsensitive),
                    let match = regex.firstMatch(in: name, range: NSRange(name.startIndex..., in: name)),
                    let numRange = Range(match.range(at: 1), in: name),
+                   let matchRange = Range(match.range, in: name),
                    let grams = Double(String(name[numRange])) {
                     gramAmount = grams
-                    name = String(name[..<name.index(name.startIndex, offsetBy: match.range.location)]).trimmingCharacters(in: .whitespaces)
+                    name = String(name[..<matchRange.lowerBound]).trimmingCharacters(in: .whitespaces)
                 }
 
                 // --- Route 2: Multi-item → recipe builder (AI names, no DB substitution) ---
@@ -693,9 +694,10 @@ public enum ToolRegistration {
                 if duration == nil,
                    let regex = try? NSRegularExpression(pattern: durPattern),
                    let match = regex.firstMatch(in: name, range: NSRange(name.startIndex..., in: name)),
-                   let numRange = Range(match.range(at: 1), in: name) {
+                   let numRange = Range(match.range(at: 1), in: name),
+                   let matchRange = Range(match.range, in: name) {
                     duration = Double(String(name[numRange]))
-                    name = String(name[name.index(name.startIndex, offsetBy: match.range.length)...]).trimmingCharacters(in: .whitespaces)
+                    name = String(name[matchRange.upperBound...]).trimmingCharacters(in: .whitespaces)
                 }
 
                 // Also: "yoga for 30 min" → "yoga", 30
@@ -703,9 +705,10 @@ public enum ToolRegistration {
                 if duration == nil,
                    let regex = try? NSRegularExpression(pattern: trailingDurPattern),
                    let match = regex.firstMatch(in: name, range: NSRange(name.startIndex..., in: name)),
-                   let numRange = Range(match.range(at: 1), in: name) {
+                   let numRange = Range(match.range(at: 1), in: name),
+                   let matchRange = Range(match.range, in: name) {
                     duration = Double(String(name[numRange]))
-                    name = String(name[..<name.index(name.startIndex, offsetBy: match.range.location)]).trimmingCharacters(in: .whitespaces)
+                    name = String(name[..<matchRange.lowerBound]).trimmingCharacters(in: .whitespaces)
                 }
 
                 // Validate duration range

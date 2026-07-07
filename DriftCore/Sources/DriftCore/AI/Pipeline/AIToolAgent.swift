@@ -299,13 +299,7 @@ public enum AIToolAgent {
                     if isInfoTool(toolName) {
                         // Stage label 1: show query-specific lookup label before tool execute
                         onStep(toolLookupMessage(for: call, query: message))
-                        let stageStart = CFAbsoluteTimeGetCurrent()
                         let toolResult = await ToolRegistry.shared.execute(call)
-                        // Guarantee ≥300ms on the lookup stage so users can read it
-                        let elapsed = CFAbsoluteTimeGetCurrent() - stageStart
-                        if elapsed < 0.3 {
-                            try? await Task.sleep(nanoseconds: UInt64((0.3 - elapsed) * 1_000_000_000))
-                        }
                         if case .text(let data) = toolResult, !data.isEmpty {
                             ConversationState.shared.captureToolSummary(data)
                             // Stage label 2: data ready, starting presentation

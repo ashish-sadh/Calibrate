@@ -74,6 +74,12 @@ final class CoachVoiceService: NSObject, @unchecked Sendable {
     /// The free/private/instant path and the cloud path's fallback.
     @MainActor
     private func speakOnDevice(_ spoken: String) {
+        // Stop any live speech recognition tap before reconfiguring the shared
+        // AVAudioSession — reconfiguring underneath a running AVAudioEngine raises
+        // an uncatchable CoreAudio NSInternalInconsistencyException. (#957)
+        if SpeechRecognitionService.shared.isRecording {
+            SpeechRecognitionService.shared.gracefulStop()
+        }
         // Spoken-audio playback; duck (not interrupt) any other audio.
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
@@ -120,6 +126,9 @@ final class CoachVoiceService: NSObject, @unchecked Sendable {
     @MainActor
     private func playCloudAudio(_ data: Data, spoken: String, token: Int) {
         guard token == playToken else { return }
+        if SpeechRecognitionService.shared.isRecording {
+            SpeechRecognitionService.shared.gracefulStop()
+        }
         let session = AVAudioSession.sharedInstance()
         try? session.setCategory(.playback, mode: .spokenAudio, options: [.duckOthers])
         try? session.setActive(true)

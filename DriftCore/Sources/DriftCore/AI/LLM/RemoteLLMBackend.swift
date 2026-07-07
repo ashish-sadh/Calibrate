@@ -185,6 +185,16 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
         do {
             var request = try buildRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: key, toolsJSON: toolsJSON, visionModelID: visionModelID)
             request.timeoutInterval = requestTimeout
+
+            // True token streaming via URLSession.bytes — tokens reach the UI as
+            // generated instead of waiting for the full response. Only on the
+            // text path; vision requests keep the buffered path since the image
+            // body is already assembled. Test mocks (non-URLSession) also fall
+            // back to buffered. (#944)
+            if imageData == nil, let urlSession = session as? URLSession {
+                return await streamWithBytes(urlSession: urlSession, request: request, onToken: onToken)
+            }
+
             let (data, response) = try await dataWithTimeout(for: request)
             if let http = response as? HTTPURLResponse, http.statusCode != 200 {
                 errorBox.value = categorize(status: http.statusCode)
@@ -199,11 +209,55 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
         }
     }
 
+    /// Streams the SSE response line-by-line via URLSession.bytes so onToken
+    /// fires as each token arrives rather than after the entire generation.
+    private func streamWithBytes(
+        urlSession: URLSession,
+        request: URLRequest,
+        onToken: @escaping @Sendable (String) -> Void
+    ) async -> String {
+        do {
+            return try await withThrowingTaskGroup(of: String.self) { group in
+                group.addTask { [provider] in
+                    let (asyncBytes, response) = try await urlSession.bytes(for: request)
+                    if let http = response as? HTTPURLResponse, http.statusCode != 200 {
+                        throw RemoteStatusError(status: http.statusCode)
+                    }
+                    switch provider {
+                    case .openai, .nebius:
+                        return try await OpenAISSEParser.parseStream(asyncBytes, onToken: onToken)
+                    case .anthropic:
+                        return try await AnthropicSSEParser.parseStream(asyncBytes, onToken: onToken)
+                    case .gemini:
+                        return try await GeminiSSEParser.parseStream(asyncBytes, onToken: onToken)
+                    }
+                }
+                group.addTask {
+                    try await Task.sleep(nanoseconds: UInt64(self.requestTimeout * 1_000_000_000))
+                    throw RemoteTimeoutError()
+                }
+                defer { group.cancelAll() }
+                return try await group.next()!
+            }
+        } catch let e as RemoteStatusError {
+            errorBox.value = categorize(status: e.status)
+            Log.app.error("RemoteLLMBackend: HTTP \(e.status) streaming (\(self.provider.rawValue))")
+        } catch {
+            errorBox.value = .transient(0)
+            Log.app.error("RemoteLLMBackend: \(error) streaming (\(self.provider.rawValue))")
+        }
+        return ""
+    }
+
     /// Error thrown when the in-flight provider call exceeds `requestTimeout`.
     /// Flows through `respondStreamingCore`'s catch → `.transient(0)`, so the
     /// chat layer treats a hang exactly like any other transient network fault
     /// (fallbackable — retry or switch to on-device). #890
     private struct RemoteTimeoutError: Error {}
+
+    /// Carries an HTTP status code out of `streamWithBytes` so the caller can
+    /// categorize it the same way the buffered path does.
+    private struct RemoteStatusError: Error { let status: Int }
 
     /// Races the provider call against `requestTimeout`. Whichever finishes
     /// first wins; the loser is cancelled. Enforcing the deadline HERE — not
@@ -472,6 +526,41 @@ enum AnthropicSSEParser {
             .map { $0.value.textBuffer }
             .joined()
     }
+
+    static func parseStream(_ bytes: URLSession.AsyncBytes, onToken: @escaping @Sendable (String) -> Void) async throws -> String {
+        var blocks: [Int: Block] = [:]
+        for try await line in bytes.lines {
+            guard line.hasPrefix("data: ") else { continue }
+            let jsonStr = line.dropFirst(6).trimmingCharacters(in: .whitespaces)
+            guard jsonStr != "[DONE]",
+                  let jData = jsonStr.data(using: .utf8),
+                  let event = try? JSONSerialization.jsonObject(with: jData) as? [String: Any] else { continue }
+            switch event["type"] as? String ?? "" {
+            case "content_block_start":
+                let index = event["index"] as? Int ?? 0
+                if let cb = event["content_block"] as? [String: Any] {
+                    var block = Block()
+                    block.type = cb["type"] as? String ?? ""
+                    block.toolName = cb["name"] as? String ?? ""
+                    blocks[index] = block
+                }
+            case "content_block_delta":
+                let index = event["index"] as? Int ?? 0
+                guard let delta = event["delta"] as? [String: Any] else { continue }
+                let dType = delta["type"] as? String ?? ""
+                if dType == "text_delta", let text = delta["text"] as? String {
+                    onToken(text); blocks[index, default: Block()].textBuffer += text
+                } else if dType == "input_json_delta", let partial = delta["partial_json"] as? String {
+                    blocks[index, default: Block()].toolInputBuffer += partial
+                }
+            default: break
+            }
+        }
+        if let toolEntry = blocks.filter({ $0.value.type == "tool_use" }).min(by: { $0.key < $1.key }) {
+            return SSE.formatToolCall(name: toolEntry.value.toolName, arguments: toolEntry.value.toolInputBuffer)
+        }
+        return blocks.sorted(by: { $0.key < $1.key }).filter { $0.value.type == "text" }.map { $0.value.textBuffer }.joined()
+    }
 }
 
 // MARK: - OpenAI SSE Parser
@@ -523,6 +612,39 @@ enum OpenAISSEParser {
         }
         return text
     }
+
+    static func parseStream(_ bytes: URLSession.AsyncBytes, onToken: @escaping @Sendable (String) -> Void) async throws -> String {
+        var text = ""
+        var tools: [Int: ToolBuf] = [:]
+        for try await line in bytes.lines {
+            guard line.hasPrefix("data: ") else { continue }
+            let jsonStr = line.dropFirst(6).trimmingCharacters(in: .whitespaces)
+            guard jsonStr != "[DONE]",
+                  let jData = jsonStr.data(using: .utf8),
+                  let event = try? JSONSerialization.jsonObject(with: jData) as? [String: Any],
+                  let choices = event["choices"] as? [[String: Any]],
+                  let first = choices.first,
+                  let delta = first["delta"] as? [String: Any] else { continue }
+            if let content = delta["content"] as? String, !content.isEmpty {
+                onToken(content); text += content
+            }
+            if let toolCalls = delta["tool_calls"] as? [[String: Any]] {
+                for call in toolCalls {
+                    let idx = call["index"] as? Int ?? 0
+                    var buf = tools[idx] ?? ToolBuf()
+                    if let fn = call["function"] as? [String: Any] {
+                        if let name = fn["name"] as? String, !name.isEmpty { buf.name = name }
+                        if let args = fn["arguments"] as? String { buf.arguments += args }
+                    }
+                    tools[idx] = buf
+                }
+            }
+        }
+        if let firstTool = tools.min(by: { $0.key < $1.key })?.value, !firstTool.name.isEmpty {
+            return SSE.formatToolCall(name: firstTool.name, arguments: firstTool.arguments)
+        }
+        return text
+    }
 }
 
 // MARK: - Gemini SSE Parser
@@ -562,6 +684,32 @@ enum GeminiSSEParser {
         if !toolName.isEmpty {
             return SSE.formatToolCall(name: toolName, arguments: toolArgs)
         }
+        return text
+    }
+
+    static func parseStream(_ bytes: URLSession.AsyncBytes, onToken: @escaping @Sendable (String) -> Void) async throws -> String {
+        var text = ""
+        var toolName = ""
+        var toolArgs: [String: Any] = [:]
+        for try await line in bytes.lines {
+            guard line.hasPrefix("data: ") else { continue }
+            let jsonStr = line.dropFirst(6).trimmingCharacters(in: .whitespaces)
+            guard jsonStr != "[DONE]",
+                  let jData = jsonStr.data(using: .utf8),
+                  let event = try? JSONSerialization.jsonObject(with: jData) as? [String: Any],
+                  let candidates = event["candidates"] as? [[String: Any]],
+                  let first = candidates.first,
+                  let content = first["content"] as? [String: Any],
+                  let parts = content["parts"] as? [[String: Any]] else { continue }
+            for part in parts {
+                if let t = part["text"] as? String, !t.isEmpty { onToken(t); text += t }
+                if let fn = part["functionCall"] as? [String: Any] {
+                    if let n = fn["name"] as? String, !n.isEmpty { toolName = n }
+                    if let args = fn["args"] as? [String: Any] { for (k, v) in args { toolArgs[k] = v } }
+                }
+            }
+        }
+        if !toolName.isEmpty { return SSE.formatToolCall(name: toolName, arguments: toolArgs) }
         return text
     }
 }

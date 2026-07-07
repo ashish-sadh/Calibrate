@@ -238,7 +238,8 @@ public final class ToolRegistry {
 /// Expected format: {"tool":"name","params":{"key":"value"}}
 public func parseToolCallJSON(_ text: String) -> ToolCall? {
     guard let start = text.firstIndex(of: "{"),
-          let end = text.lastIndex(of: "}") else { return nil }
+          let end = text.lastIndex(of: "}"),
+          start <= end else { return nil }
     let jsonStr = String(text[start...end])
     guard let data = jsonStr.data(using: .utf8),
           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
