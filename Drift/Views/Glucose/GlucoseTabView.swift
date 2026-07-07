@@ -225,8 +225,8 @@ struct GlucoseTabView: View {
 
     private var chartYRange: ClosedRange<Double> {
         let vals = parsedReadings.map(\.value)
-        let lo = max(50, (vals.min() ?? 60) - 10)
-        let hi = min(250, (vals.max() ?? 180) + 10)
+        let lo = max(40, (vals.min() ?? 60) - 10)
+        let hi = max(lo + 1, (vals.max() ?? 180) + 10)
         return lo...hi
     }
 

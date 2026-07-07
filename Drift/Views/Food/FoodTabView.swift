@@ -583,7 +583,7 @@ struct FoodTabView: View {
 
     private var suggestionStrip: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Suggestions").font(.caption2.weight(.semibold)).foregroundStyle(.tertiary)
+            Text("Suggestions").font(.caption2.weight(.semibold)).foregroundStyle(Theme.textSecondary)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
                     ForEach(viewModel.combos.prefix(5)) { combo in
@@ -782,10 +782,10 @@ struct FoodTabView: View {
             Image(systemName: meal.icon).font(.caption2).foregroundStyle(Theme.textSecondary)
             Text(meal.displayName).font(.caption.weight(.semibold))
             if let timeRange {
-                Text("· \(timeRange)").font(.caption2).foregroundStyle(.tertiary)
+                Text("· \(timeRange)").font(.caption2).foregroundStyle(Theme.textTertiary)
             }
             Spacer()
-            Text("\(Int(totalCal)) cal").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+            Text("\(Int(totalCal)) cal").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textSecondary)
             Button {
                 searchMealType = meal
                 showingSearch = true
@@ -833,7 +833,7 @@ struct FoodTabView: View {
                 HStack(spacing: 4) {
                     if let time = entryTimeString(entry) {
                         HStack(spacing: 3) {
-                            Text(time).foregroundStyle(.quaternary)
+                            Text(time).foregroundStyle(Theme.textTertiary)
                             if isCopiedEntry(entry) {
                                 Image(systemName: "doc.on.doc")
                                     .font(.system(size: 10))
@@ -841,19 +841,19 @@ struct FoodTabView: View {
                             }
                         }
                         .font(.caption2)
-                        Text("\u{00B7}").font(.caption2).foregroundStyle(.quaternary)
+                        Text("\u{00B7}").font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
                     if !entry.portionText.isEmpty {
-                        Text(entry.portionText).font(.caption2).foregroundStyle(.tertiary)
-                        Text("\u{00B7}").font(.caption2).foregroundStyle(.quaternary)
+                        Text(entry.portionText).font(.caption2).foregroundStyle(Theme.textTertiary)
+                        Text("\u{00B7}").font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
                     Text("\(Int(entry.totalProtein))P \(Int(entry.totalCarbs))C \(Int(entry.totalFat))F \(MacroFormatter.fiber(entry.totalFiber))Fb")
-                        .font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                        .font(.caption2.monospacedDigit()).foregroundStyle(Theme.textSecondary)
                 }
             }
             Spacer()
             Text("\(Int(entry.totalCalories))").font(.subheadline.weight(.medium).monospacedDigit())
-            Text("cal").font(.caption2).foregroundStyle(.tertiary)
+            Text("cal").font(.caption2).foregroundStyle(Theme.textTertiary)
             if let id = entry.id {
                 Button {
                     viewModel.deleteEntry(id: id)
@@ -1042,12 +1042,12 @@ struct FoodTabView: View {
 
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Logging Consistency").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                Text("Logging Consistency").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textPrimary)
                 Spacer()
                 if streak > 1 {
                     Text("\(streak) day streak").font(.caption.weight(.bold).monospacedDigit()).foregroundStyle(Theme.accent)
                 }
-                Text("\(daysLogged)/30 days").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
+                Text("\(daysLogged)/30 days").font(.caption.monospacedDigit()).foregroundStyle(Theme.textSecondary)
             }
 
             let columns = Array(repeating: GridItem(.flexible(), spacing: 3), count: 10)

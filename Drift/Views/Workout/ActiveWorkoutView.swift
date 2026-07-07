@@ -94,16 +94,21 @@ struct ActiveWorkoutView: View {
                         }.buttonStyle(.bordered).tint(Theme.accent).padding(.horizontal, 12)
                     }
 
-                    // Warmup exercises
-                    let warmupIndices = exercises.indices.filter { exercises[$0].isWarmupExercise }
-                    let workingIndices = exercises.indices.filter { !exercises[$0].isWarmupExercise }
+                    // Warmup exercises — iterate by stable UUID so a removal during
+                    // animation can't produce a stale integer index (build-146 crash class).
+                    let warmup = exercises.filter { $0.isWarmupExercise }
+                    let working = exercises.filter { !$0.isWarmupExercise }
 
-                    if !warmupIndices.isEmpty {
+                    if !warmup.isEmpty {
                         Text("WARMUP").font(.caption2.weight(.bold)).foregroundStyle(Theme.fatYellow)
                             .padding(.horizontal, 16)
-                        ForEach(warmupIndices, id: \.self) { ei in exerciseSection(ei) }
+                        ForEach(warmup) { ex in
+                            if let ei = exercises.firstIndex(where: { $0.id == ex.id }) {
+                                exerciseSection(ei)
+                            }
+                        }
 
-                        if !workingIndices.isEmpty {
+                        if !working.isEmpty {
                             Divider().padding(.horizontal, 16).padding(.vertical, 4)
                             Text("WORKING SETS").font(.caption2.weight(.bold)).foregroundStyle(Theme.calorieBlue)
                                 .padding(.horizontal, 16)
@@ -111,7 +116,11 @@ struct ActiveWorkoutView: View {
                     }
 
                     // Working exercises
-                    ForEach(workingIndices, id: \.self) { ei in exerciseSection(ei) }
+                    ForEach(working) { ex in
+                        if let ei = exercises.firstIndex(where: { $0.id == ex.id }) {
+                            exerciseSection(ei)
+                        }
+                    }
 
                     // Add exercise
                     Button { showingExercisePicker = true } label: {
