@@ -7,22 +7,13 @@ struct ExerciseThumbnail: View {
     let info: ExerciseDatabase.ExerciseInfo?
     let size: CGFloat
 
+    // #929: the remote imageUrl AsyncImage is gone — it fetched from the
+    // network at render time (privacy + scroll jank) for a low-value photo.
+    // Rows show the body-part glyph; the detail view owns the anatomy card.
     var body: some View {
-        Group {
-            if let urlStr = info?.imageUrl, let url = URL(string: urlStr) {
-                AsyncImage(url: url) { phase in
-                    if let image = phase.image {
-                        image.resizable().aspectRatio(contentMode: .fill)
-                    } else {
-                        fallback
-                    }
-                }
-            } else {
-                fallback
-            }
-        }
-        .frame(width: size, height: size)
-        .clipShape(RoundedRectangle(cornerRadius: size * 0.18))
+        fallback
+            .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: size * 0.18))
     }
 
     private var fallback: some View {
@@ -199,17 +190,13 @@ struct ExerciseDetailView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
-                // Hero image
-                if let info, let urlStr = info.imageUrl, let url = URL(string: urlStr) {
-                    AsyncImage(url: url) { phase in
-                        if let image = phase.image {
-                            image.resizable().aspectRatio(contentMode: .fill)
-                        } else {
-                            Color.clear
-                        }
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 200, maxHeight: 200)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                // Hero: anatomical muscle diagram (#929) — replaces the old
+                // remote imageUrl AsyncImage (render-time network fetch).
+                if let info, !info.primaryMuscles.isEmpty || !info.secondaryMuscles.isEmpty {
+                    MuscleHighlightCard(
+                        primaryMuscles: info.primaryMuscles,
+                        secondaryMuscles: info.secondaryMuscles
+                    )
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
@@ -258,12 +245,6 @@ struct ExerciseDetailView: View {
                             }
                         }
 
-                        if !info.primaryMuscles.isEmpty || !info.secondaryMuscles.isEmpty {
-                            MuscleHighlightCard(
-                                primaryMuscles: info.primaryMuscles,
-                                secondaryMuscles: info.secondaryMuscles
-                            )
-                        }
                     }
 
                     if let pr {
