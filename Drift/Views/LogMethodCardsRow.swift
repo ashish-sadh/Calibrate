@@ -69,7 +69,7 @@ struct LogMethodCardsRow: View {
 
         let mode: LogMealMode
         switch card {
-        case .voice: mode = .voice
+        case .describe: mode = .describe
         case .search: mode = .search
         case .recent: mode = .recent
         case .snap: return  // unreachable — handled above
@@ -87,13 +87,13 @@ struct LogMethodCardsRow: View {
 /// `V6Ring.id`. Adding or reordering cases is a deliberate UI change,
 /// not a hidden identity churn.
 enum LogMethodCard: String, CaseIterable, Identifiable {
-    case snap, voice, search, recent
+    case snap, describe, search, recent
     var id: String { rawValue }
 
     var label: String {
         switch self {
         case .snap: "Snap"
-        case .voice: "Voice"
+        case .describe: "Describe"
         case .search: "Search"
         case .recent: "Recent"
         }
@@ -102,7 +102,7 @@ enum LogMethodCard: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .snap: "camera"
-        case .voice: "mic"
+        case .describe: "text.bubble"
         case .search: "magnifyingglass"
         case .recent: "clock"
         }
@@ -113,7 +113,7 @@ enum LogMethodCard: String, CaseIterable, Identifiable {
     var accessibilityHint: String {
         switch self {
         case .snap: "Open camera to identify a meal"
-        case .voice: "Start AI chat for voice or text input"
+        case .describe: "Type or speak your meal"
         case .search: "Search foods to log"
         case .recent: "Jump to recent foods on the Food tab"
         }

@@ -22,15 +22,14 @@ import DriftCore
 ///      (skips the sheet step for the "I know I want camera" shortcut)
 ///   4. Drift Coach "snap a meal" voice/text command (TODO)
 public enum LogMealMode: String, CaseIterable, Identifiable, Sendable {
-    case recent, search, voice, describe, snap
+    case recent, search, describe, snap
     public var id: String { rawValue }
 
     var label: String {
         switch self {
         case .recent: "Recent"
         case .search: "Search"
-        case .voice: "Voice"
-        case .describe: "Text"
+        case .describe: "Describe"
         case .snap: "Snap"
         }
     }
@@ -39,8 +38,7 @@ public enum LogMealMode: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .recent: "clock"
         case .search: "magnifyingglass"
-        case .voice: "mic"
-        case .describe: "keyboard"
+        case .describe: "text.bubble"
         case .snap: "camera"
         }
     }
@@ -150,8 +148,8 @@ struct LogMealSheet: View {
         switch mode {
         case .recent: recentContent
         case .search: searchContent
-        case .voice: VoiceLogSheet()
-        case .describe: VoiceLogSheet(entryMode: .text)
+        // #935: one Describe method — type or speak into the same input.
+        case .describe: VoiceLogSheet()
         case .snap:
             // Brief placeholder while PhotoLogFlowView covers — the
             // .onAppear / .onChange handlers above flip showingPhotoLog

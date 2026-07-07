@@ -6,12 +6,12 @@ import DriftCore
 /// log-methods row that replaces V6QuickLogRow. Locks the live
 /// `fire(_:)` routing so a future rename can't silently break the
 /// Dashboard ↔ LogMealSheet handshake:
-///   - exactly 4 cards (Snap / Voice / Search / Recent)
+///   - exactly 4 cards (Snap / Describe / Search / Recent) — #935 merged Voice+Text
 ///   - stable enum-based identity (no UUID churn — same bug class as V6Ring)
 ///   - notification contract strings stay pinned (`drift.openPhotoLog`,
 ///     `drift.openLogMeal`)
 ///   - Snap → `.openPhotoLog` (camera-first verb, bypasses the segmented sheet)
-///   - Voice / Search / Recent → `.openLogMeal` with `userInfo["mode"]`
+///   - Describe / Search / Recent → `.openLogMeal` with `userInfo["mode"]`
 ///     matching `LogMealMode.rawValue`
 ///   - inverse guard: non-snap cards must NOT post `.openPhotoLog`
 @MainActor
@@ -19,7 +19,7 @@ final class LogMethodCardsRowTests: XCTestCase {
 
     func testCardCountIsFour() {
         XCTAssertEqual(LogMethodCard.allCases.count, 4)
-        XCTAssertEqual(LogMethodCard.allCases, [.snap, .voice, .search, .recent])
+        XCTAssertEqual(LogMethodCard.allCases, [.snap, .describe, .search, .recent])
     }
 
     /// Regression guard: V6Ring shipped with `UUID()` for `id`, which churned
@@ -66,11 +66,11 @@ final class LogMethodCardsRowTests: XCTestCase {
         wait(for: [exp], timeout: 0.5)
     }
 
-    func testVoiceCardPostsOpenLogMealWithVoiceMode() {
+    func testDescribeCardPostsOpenLogMealWithDescribeMode() {
         let exp = expectation(forNotification: .openLogMeal, object: nil) { note in
-            (note.userInfo?["mode"] as? String) == LogMealMode.voice.rawValue
+            (note.userInfo?["mode"] as? String) == LogMealMode.describe.rawValue
         }
-        invoke(.voice)
+        invoke(.describe)
         wait(for: [exp], timeout: 0.5)
     }
 
@@ -90,7 +90,7 @@ final class LogMethodCardsRowTests: XCTestCase {
         wait(for: [exp], timeout: 0.5)
     }
 
-    /// Inverse guard — only Snap may post `.openPhotoLog`. Voice/Search/Recent
+    /// Inverse guard — only Snap may post `.openPhotoLog`. Describe/Search/Recent
     /// going through the segmented sheet is the whole point of the V7 routing.
     func testNonSnapCardsDoNotPostOpenPhotoLog() {
         var photoFired = false
@@ -99,7 +99,7 @@ final class LogMethodCardsRowTests: XCTestCase {
         }
         defer { NotificationCenter.default.removeObserver(token) }
 
-        invoke(.voice)
+        invoke(.describe)
         invoke(.search)
         invoke(.recent)
         XCTAssertFalse(photoFired, "Only Snap may post .openPhotoLog")
@@ -120,7 +120,7 @@ final class LogMethodCardsRowTests: XCTestCase {
         }
         let mode: LogMealMode
         switch card {
-        case .voice: mode = .voice
+        case .describe: mode = .describe
         case .search: mode = .search
         case .recent: mode = .recent
         case .snap: return

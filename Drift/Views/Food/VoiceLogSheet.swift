@@ -1,29 +1,15 @@
 import SwiftUI
 import DriftCore
 
-/// How a `VoiceLogSheet` collects the meal description before it funnels
-/// through the shared parse → multi-item confirmation-card pipeline.
-/// `.voice` (default) starts `SpeechRecognitionService`; `.text` shows the
-/// "Describe your meal" typed-text field and never touches the mic (no
-/// second `AVAudioSession` owner). Both modes converge on the SAME
-/// `parse(_:)` → `confirmView`, so a multi-item utterance becomes multiple
-/// confirmable rows either way.
-enum VoiceEntryMode {
-    case voice
-    case text
-}
-
-/// V7 Phase 5 — standalone voice-first meal logger. Used by both the
-/// dashboard quick-log "Voice" chip and the Voice mode inside the
-/// unified Log-a-Meal sheet. Replaces the V6 "Voice opens full chat
-/// with mic active" flow that users described as too heavy for the
-/// 90% case of "log two eggs."
+/// V7 Phase 5 — the "Describe" meal logger (#935 merged the old separate
+/// Voice and Text methods): ONE input you can type into or dictate into via
+/// the inline mic; both fill the same draft, then Continue parses it.
 ///
 /// Pipeline:
-///   1. `onAppear` → `SpeechRecognitionService.shared.startListening(...)`.
-///      Live partial transcripts feed `transcript`.
-///   2. User taps Stop → service emits the final transcript via the
-///      `onDone` callback. Phase flips to `.parsing`.
+///   1. Opens on the typed field. Tapping the mic starts
+///      `SpeechRecognitionService` and live partials feed `transcript`;
+///      the final transcript fills the SAME draft for review.
+///   2. Continue routes the draft through `parse(_:)`. Phase → `.parsing`.
 ///   3. Parse via `FoundationModelsFoodExtractor.extract(text:)` (Apple
 ///      FoundationModels facade, iOS 26+). The facade short-circuits to
 ///      `.unavailable` when `Preferences.fmFoodIntentExtractEnabled` is OFF
@@ -42,16 +28,10 @@ enum VoiceEntryMode {
 struct VoiceLogSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = VoiceLogViewModel()
-    /// Buffer for the `.text` entry mode's "Describe your meal" field. Kept
-    /// as view state so a parse error → "Try again" returns the user to the
-    /// typing screen with their text intact.
+    /// Buffer for the "Describe your meal" field. Kept as view state so a
+    /// parse error → "Try again" returns the user here with text intact;
+    /// dictation fills the same buffer (#935: type or speak, one input).
     @State private var draft = ""
-
-    let entryMode: VoiceEntryMode
-
-    init(entryMode: VoiceEntryMode = .voice) {
-        self.entryMode = entryMode
-    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -79,7 +59,11 @@ struct VoiceLogSheet: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.background.ignoresSafeArea())
-        .task { await viewModel.start(mode: entryMode) }
+        .task { viewModel.start() }
+        .onChange(of: viewModel.dictatedDraft) { _, dictated in
+            // Dictation fills the SAME draft the keyboard edits (#935).
+            if !dictated.isEmpty { draft = dictated }
+        }
         .onDisappear { viewModel.cancel() }
     }
 
@@ -104,25 +88,42 @@ struct VoiceLogSheet: View {
                     .font(.headline.weight(.semibold))
                     .foregroundStyle(Theme.textPrimary)
 
-                Text("Type what you ate — e.g. \u{201C}dal, rice and two rotis.\u{201D} I'll break it into items you can confirm.")
+                Text("Type or speak what you ate — e.g. \u{201C}dal, rice and two rotis.\u{201D} I'll break it into items you can confirm.")
                     .font(.subheadline)
                     .foregroundStyle(Theme.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
             }
 
-            TextField("dal, rice and two rotis", text: $draft, axis: .vertical)
-                .font(.body)
-                .foregroundStyle(Theme.textPrimary)
-                .lineLimit(1...4)
-                .padding(14)
-                .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .strokeBorder(Theme.separator, lineWidth: 0.5)
-                )
-                .padding(.horizontal, 24)
-                .accessibilityIdentifier("describe-meal-field")
+            // One input, two ways in (#935): type, or tap the mic to dictate
+            // into the same field.
+            HStack(spacing: 10) {
+                TextField("dal, rice and two rotis", text: $draft, axis: .vertical)
+                    .font(.body)
+                    .foregroundStyle(Theme.textPrimary)
+                    .lineLimit(1...4)
+                    .accessibilityIdentifier("describe-meal-field")
+                Button {
+                    viewModel.beginListening()
+                } label: {
+                    Image(systemName: "mic.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(Theme.accent)
+                        .frame(width: 36, height: 36)
+                        .background(Theme.accent.opacity(0.12), in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Dictate your meal")
+                .accessibilityIdentifier("describe-meal-mic")
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(
+                RoundedRectangle(cornerRadius: 14)
+                    .strokeBorder(Theme.separator, lineWidth: 0.5)
+            )
+            .padding(.horizontal, 24)
 
             Spacer()
         }
@@ -189,9 +190,9 @@ struct VoiceLogSheet: View {
                     .tint(Theme.textPrimary)
 
                 Button {
-                    viewModel.stopAndParse()
+                    viewModel.stopListening()
                 } label: {
-                    Label("Stop", systemImage: "stop.fill")
+                    Label("Use It", systemImage: "checkmark")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -237,7 +238,7 @@ struct VoiceLogSheet: View {
                 Button("Cancel") { dismiss() }
                     .buttonStyle(.bordered)
                 Button {
-                    Task { await viewModel.start(mode: entryMode) }
+                    viewModel.start()  // back to the Describe field, draft intact
                 } label: {
                     Label("Try again", systemImage: "arrow.clockwise")
                 }
@@ -271,26 +272,32 @@ final class VoiceLogViewModel {
     /// resolution run through one view model.
     let foodLog = FoodLogViewModel()
 
-    func start(mode: VoiceEntryMode = .voice) async {
+    /// Dictated text handed back to the view's draft field — dictation and
+    /// typing share ONE input (#935); the user reviews/edits, then Continues.
+    var dictatedDraft = ""
+
+    /// #935: one Describe screen. Starts on the typed field; the inline mic
+    /// starts dictation into the same draft.
+    func start() {
         transcript = ""
-        // Typed free-text entry skips the speech stack entirely — it never
-        // starts SpeechRecognitionService (no second AVAudioSession owner)
-        // and lands the user on the typing screen. The typed text is then
-        // funneled through the SAME parse → confirmation-card path as voice.
         reviewItems = []
-        guard mode == .voice else {
-            phase = .typing
-            return
-        }
+        phase = .typing
+    }
+
+    func beginListening() {
+        transcript = ""
         phase = .listening
         speech.startRecording(
             onTranscript: { [weak self] partial in
                 self?.transcript = partial
             },
             onDone: { [weak self] final in
-                Task { await self?.parse(final) }
+                // Fill the shared draft and return to the field — the user
+                // confirms with Continue (same as typing). #935
+                self?.dictatedDraft = final
+                self?.phase = .typing
             },
-            // Auto-submit ~1.8s after the user stops describing — no Stop tap. #flowy-voice
+            // Hand back ~1.8s after the user stops describing — no tap needed. #flowy-voice
             endpointSilence: 1.8
         )
     }
@@ -306,9 +313,9 @@ final class VoiceLogViewModel {
         await parse(trimmed)
     }
 
-    func stopAndParse() {
+    func stopListening() {
         // `gracefulStop` flushes any final partial transcription before
-        // firing the `onDone` callback, which then drives `parse(_:)`.
+        // firing the `onDone` callback, which fills the shared draft (#935).
         speech.gracefulStop()
     }
 

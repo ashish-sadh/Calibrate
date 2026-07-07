@@ -41,19 +41,21 @@ final class LogMealSheetTests: XCTestCase {
 @MainActor
 final class VoiceLogViewModelTests: XCTestCase {
 
-    func testInitialPhaseIsListening() {
+    func testInitialPhaseIsTyping() {
+        // #935: the merged Describe screen opens on the typed field; the
+        // mic is opt-in (beginListening) — never auto-starts the speech stack.
         let vm = VoiceLogViewModel()
-        XCTAssertEqual(vm.phase, .listening)
+        vm.start()
+        XCTAssertEqual(vm.phase, .typing)
         XCTAssertTrue(vm.transcript.isEmpty)
         XCTAssertTrue(vm.reviewItems.isEmpty)
     }
 
-    func testStartInTextModeEntersTypingPhaseWithoutSpeech() async {
-        // #869 — typed free-text ("Describe your meal") entry must NOT start
-        // the speech stack (no second AVAudioSession owner); it lands the
-        // user on the typing screen instead of .listening.
+    func testStartEntersTypingPhaseWithoutSpeech() async {
+        // #869/#935 — starting the Describe screen must NOT start the speech
+        // stack (no second AVAudioSession owner); the mic is a button.
         let vm = VoiceLogViewModel()
-        await vm.start(mode: .text)
+        vm.start()
         XCTAssertEqual(vm.phase, .typing)
         XCTAssertTrue(vm.transcript.isEmpty)
         XCTAssertTrue(vm.reviewItems.isEmpty)
@@ -76,7 +78,7 @@ final class VoiceLogViewModelTests: XCTestCase {
         }
 
         let vm = VoiceLogViewModel()
-        await vm.start(mode: .text)
+        vm.start()
         await vm.submitTyped("dal, rice and two rotis")
 
         XCTAssertEqual(vm.phase, .confirming)
@@ -87,7 +89,7 @@ final class VoiceLogViewModelTests: XCTestCase {
     func testSubmitTypedIgnoresBlankInput() async {
         // Guard: an all-whitespace draft must not advance past typing.
         let vm = VoiceLogViewModel()
-        await vm.start(mode: .text)
+        vm.start()
         await vm.submitTyped("   ")
         XCTAssertEqual(vm.phase, .typing)
         XCTAssertTrue(vm.reviewItems.isEmpty)
@@ -96,4 +98,15 @@ final class VoiceLogViewModelTests: XCTestCase {
     // Note: the live speech start/stop cycle still requires SFSpeechRecognizer
     // + mic permission, and FM multi-item extraction requires iOS 26 with
     // Apple Intelligence — both device-only and covered by Tier-3 eval (#870).
+}
+
+// MARK: - #935: Voice + Text merged into one Describe method
+
+extension LogMealSheetTests {
+    func testFourSegmentsAndNoVoiceMode() {
+        XCTAssertEqual(LogMealMode.allCases.count, 4, "Recent · Search · Describe · Snap")
+        XCTAssertEqual(LogMealMode.allCases, [.recent, .search, .describe, .snap])
+        XCTAssertNil(LogMealMode(rawValue: "voice"), "the separate Voice segment is gone")
+        XCTAssertEqual(LogMealMode.describe.label, "Describe")
+    }
 }
