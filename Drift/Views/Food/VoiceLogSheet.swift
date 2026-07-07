@@ -58,7 +58,11 @@ struct VoiceLogSheet: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(Theme.background.ignoresSafeArea())
+        // .container only — keyboard inset must still propagate so the
+        // safeAreaInset(edge: .bottom) Continue row rides above the keyboard.
+        // ignoresSafeArea() without args expands to .all which absorbs the
+        // keyboard bottom inset and defeats the fix from #933. (#966)
+        .background(Theme.background.ignoresSafeArea(.container))
         .task { viewModel.start() }
         .onChange(of: viewModel.dictatedDraft) { _, dictated in
             // Dictation fills the SAME draft the keyboard edits (#935).

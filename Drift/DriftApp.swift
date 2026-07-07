@@ -20,6 +20,10 @@ struct DriftApp: App {
         // Stamp the install date once so the 7-day Feedback activation banner
         // has a stable anchor (#759). Idempotent — only writes when unset.
         Preferences.seedInstallDateIfNeeded()
+        // One-time reset: pre-#937 bug persisted coachVoiceEnabled=true on
+        // every talk-mode toggle. Clear poisoned value so voice is off by
+        // default for all existing users. (#968)
+        Preferences.migrateCoachVoiceIfNeeded()
         // Idempotent (#941): upgrades template custom exercises registered by
         // older builds with their muscle slugs + pose assets.
         DefaultTemplates.registerCustomExercises()

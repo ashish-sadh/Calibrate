@@ -272,7 +272,17 @@ struct ActiveWorkoutView: View {
                         .font(.subheadline).foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
 
-                    ShareLink(item: completionShareText) {
+                    Button {
+                        // ShareLink(item:) snapshots the @State at render time (#967) —
+                        // UIActivityViewController reads the text at tap time so it's
+                        // always populated (mirrors WorkoutDetailView's ShareSheet pattern).
+                        let vc = UIActivityViewController(
+                            activityItems: [completionShareText], applicationActivities: nil)
+                        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+                           let root = scene.windows.first?.rootViewController {
+                            root.present(vc, animated: true)
+                        }
+                    } label: {
                         Label("Share", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)

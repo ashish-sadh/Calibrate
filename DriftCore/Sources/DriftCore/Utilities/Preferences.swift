@@ -154,6 +154,7 @@ public enum Preferences {
     // MARK: - Smart Meal Reminders
 
     private static let coachVoiceKey = "drift_coach_voice_enabled"
+    private static let coachVoiceV2MigratedKey = "drift_coach_voice_v2_migrated"
 
     /// Drift Coach voice talk-mode: when ON, the coach speaks its replies aloud
     /// (on-device TTS via `CoachVoiceService`) so the user can talk to it and
@@ -162,6 +163,17 @@ public enum Preferences {
     public static var coachVoiceEnabled: Bool {
         get { UserDefaults.standard.bool(forKey: coachVoiceKey) }
         set { UserDefaults.standard.set(newValue, forKey: coachVoiceKey) }
+    }
+
+    /// One-time migration: the pre-#937 bug in toggleTalkMode persistently wrote
+    /// coachVoiceEnabled=true even when voice was meant to be off. The #937 fix
+    /// was forward-only (stopped new force-enables) but didn't clear the poisoned
+    /// value. Call this once at launch to reset any affected device to the correct
+    /// default-off state. (#968)
+    public static func migrateCoachVoiceIfNeeded() {
+        guard !UserDefaults.standard.bool(forKey: coachVoiceV2MigratedKey) else { return }
+        UserDefaults.standard.set(false, forKey: coachVoiceKey)
+        UserDefaults.standard.set(true, forKey: coachVoiceV2MigratedKey)
     }
 
     private static let coachTalkModeKey = "drift_coach_talk_mode_enabled"
