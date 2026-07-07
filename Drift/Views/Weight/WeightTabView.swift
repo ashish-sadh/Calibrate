@@ -246,11 +246,15 @@ struct WeightTabView: View {
 
             HStack(spacing: 6) {
                 Menu {
-                    Button { viewModel.granularity = .daily } label: {
-                        Label("Daily", systemImage: viewModel.granularity == .daily ? "checkmark" : "")
-                    }
-                    Button { viewModel.granularity = .weekly } label: {
-                        Label("Weekly", systemImage: viewModel.granularity == .weekly ? "checkmark" : "")
+                    // #940: a Picker renders native checkmark menu rows — the
+                    // old Label(_, systemImage: "") with an EMPTY symbol name
+                    // is malformed and drew an oversized, clipped menu.
+                    Picker("Granularity", selection: Binding(
+                        get: { viewModel.granularity },
+                        set: { viewModel.granularity = $0 }
+                    )) {
+                        Text("Daily").tag(WeightViewModel.Granularity.daily)
+                        Text("Weekly").tag(WeightViewModel.Granularity.weekly)
                     }
                 } label: {
                     Text(viewModel.granularity == .daily ? "D" : "W")
