@@ -64,7 +64,7 @@ extension AIChatView {
                 .fill(Theme.pillBackground)
                 .overlay(
                     RoundedRectangle(cornerRadius: 20)
-                        .stroke(vm.speechService.isRecording ? Color.red.opacity(0.6) : Color.clear, lineWidth: 1.5)
+                        .stroke(vm.speechService.isRecording ? Theme.accent.opacity(0.6) : Color.clear, lineWidth: 1.5)
                 )
         )
         .animation(.easeInOut(duration: 0.3), value: vm.speechService.isRecording)

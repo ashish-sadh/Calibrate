@@ -338,7 +338,7 @@ struct AIChatView: View {
                 }
                 .foregroundStyle(.white)
                 .padding(.horizontal, 16).padding(.vertical, 8)
-                .background(Capsule().fill(Color.red.opacity(0.75)))
+                .background(Capsule().fill(Theme.surplus.opacity(0.75)))
             }
             .buttonStyle(.plain)
             Spacer()

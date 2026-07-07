@@ -270,7 +270,7 @@ extension AIChatView {
             }
             Spacer()
             Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(.green).font(.title3)
+                .foregroundStyle(Theme.deficit).font(.title3)
         }
         .padding(10)
         .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
@@ -304,7 +304,7 @@ extension AIChatView {
                 Spacer()
                 if card.confirmed {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green).font(.title3)
+                        .foregroundStyle(Theme.deficit).font(.title3)
                 } else {
                     Image(systemName: "questionmark.circle")
                         .foregroundStyle(Theme.accentSecondary.opacity(0.5)).font(.title3)
@@ -395,7 +395,7 @@ extension AIChatView {
             } else {
                 HStack(spacing: 4) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.caption).foregroundStyle(.green)
+                        .font(.caption).foregroundStyle(Theme.deficit)
                     Text("All done for today")
                         .font(.caption2).foregroundStyle(.secondary)
                 }
@@ -425,7 +425,7 @@ extension AIChatView {
             }
             Spacer()
             Image(systemName: "checkmark.circle.fill")
-                .foregroundStyle(.green).font(.title3)
+                .foregroundStyle(Theme.deficit).font(.title3)
         }
         .padding(10)
         .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
@@ -524,7 +524,7 @@ extension AIChatView {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: "drop.fill")
-                    .font(.caption).foregroundStyle(.orange)
+                    .font(.caption).foregroundStyle(Theme.warn)
                 Text("Glucose")
                     .font(.caption.weight(.semibold))
                 Spacer()
@@ -536,7 +536,7 @@ extension AIChatView {
                 VStack(spacing: 2) {
                     Text("\(card.avgMgdl)")
                         .font(.subheadline.weight(.bold).monospacedDigit())
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(Theme.warn)
                     Text("avg mg/dL").font(.system(size: 9)).foregroundStyle(.tertiary)
                 }
                 .frame(maxWidth: .infinity)
@@ -570,7 +570,7 @@ extension AIChatView {
         .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
         .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(Color.orange.opacity(0.2), lineWidth: 0.5)
+                .strokeBorder(Theme.warn.opacity(0.2), lineWidth: 0.5)
         )
     }
 
@@ -592,7 +592,7 @@ extension AIChatView {
             if card.outOfRange.isEmpty {
                 HStack(spacing: 4) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.caption).foregroundStyle(.green)
+                        .font(.caption).foregroundStyle(Theme.deficit)
                     Text("All markers in optimal range")
                         .font(.caption2).foregroundStyle(.secondary)
                 }

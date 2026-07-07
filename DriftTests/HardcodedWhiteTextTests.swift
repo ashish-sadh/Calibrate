@@ -27,7 +27,9 @@ final class HardcodedWhiteTextTests: XCTestCase {
     private static let allowlist: [(file: String, snippet: String)] = [
         // Coral / red CTAs
         ("FoodTabView.swift", ".background(Theme.deficit.opacity(0.9), in: Capsule())"),
-        ("AIChatView.swift", ".background(Capsule().fill(Color.red.opacity(0.75)))"),
+        // Undo chip: white on Theme.surplus (solid red) — same contrast pairing
+        // as the pre-#893 Color.red it replaced.
+        ("AIChatView.swift", ".background(Capsule().fill(Theme.surplus.opacity(0.75)))"),
         ("AIChatView+ChatBubble.swift", ".background(Theme.accent"),
         ("AIChatView+Cards.swift", ".background(Capsule().fill(Theme.calorieBlue))"),
         ("CombosView.swift", ".background(Theme.accent, in: Capsule())"),
