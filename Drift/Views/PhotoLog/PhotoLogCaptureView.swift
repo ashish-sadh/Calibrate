@@ -242,8 +242,10 @@ struct PhotoLogCaptureView: View {
         case .authorized:
             showingCamera = true
         case .notDetermined:
-            AVCaptureDevice.requestAccess(for: .video) { granted in
-                DispatchQueue.main.async {
+            // #943 audit: @Sendable — TCC calls back off-main; an
+            // inferred-@MainActor literal asserts at closure entry.
+            AVCaptureDevice.requestAccess(for: .video) { @Sendable granted in
+                Task { @MainActor in
                     if granted { showingCamera = true }
                     else { showingCameraDeniedAlert = true }
                 }

@@ -654,10 +654,12 @@ struct ActiveWorkoutView: View {
         // Request auth lazily — first set finishes ⇒ user sees prompt.
         // If they decline, scheduling no-ops; the in-app timer still
         // works when they're on the page.
-        center.getNotificationSettings { settings in
+        // #943 audit: explicit @Sendable — these callbacks arrive on
+        // background queues; an inferred-@MainActor literal asserts at entry.
+        center.getNotificationSettings { @Sendable settings in
             switch settings.authorizationStatus {
             case .notDetermined:
-                center.requestAuthorization(options: [.alert, .sound]) { granted, _ in
+                center.requestAuthorization(options: [.alert, .sound]) { @Sendable granted, _ in
                     if granted { center.add(request, withCompletionHandler: nil) }
                 }
             case .authorized, .provisional, .ephemeral:

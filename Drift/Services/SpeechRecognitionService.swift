@@ -71,12 +71,21 @@ final class SpeechRecognitionService: @unchecked Sendable {
         case .authorized:
             ensureMicAndStart(recognizer: recognizer, onTranscript: onTranscript)
         case .notDetermined:
-            SFSpeechRecognizer.requestAuthorization { [weak self] s in
-                DispatchQueue.main.async {
+            // #943: this closure MUST be @Sendable. Without it the literal
+            // inherits @MainActor from startRecording and the compiler emits
+            // an isolation assert at closure ENTRY — TCC delivers the result
+            // on its own queue → dispatch_assert_queue_fail → crash on every
+            // user's FIRST voice tap (two TestFlight crash reports). The old
+            // DispatchQueue.main.async inside the body never ran; the assert
+            // fired first.
+            nonisolated(unsafe) let capturedRec = recognizer
+            SFSpeechRecognizer.requestAuthorization { @Sendable [weak self] s in
+                Task { @MainActor in
+                    guard let self else { return }
                     if s == .authorized {
-                        self?.ensureMicAndStart(recognizer: recognizer, onTranscript: onTranscript)
+                        self.ensureMicAndStart(recognizer: capturedRec, onTranscript: onTranscript)
                     } else {
-                        self?.recordingState = .unavailable("Speech recognition denied.")
+                        self.recordingState = .unavailable("Speech recognition denied.")
                     }
                 }
             }
@@ -98,8 +107,11 @@ final class SpeechRecognitionService: @unchecked Sendable {
         onTranscript: @escaping @MainActor (String) -> Void
     ) {
         nonisolated(unsafe) let capturedRec = recognizer
-        AVAudioApplication.requestRecordPermission { [weak self] granted in
-            DispatchQueue.main.async {
+        // #943: same class as the speech-auth crash — explicit @Sendable so
+        // no @MainActor isolation assert is emitted at closure entry on
+        // TCC's callback queue; hop explicitly instead.
+        AVAudioApplication.requestRecordPermission { @Sendable [weak self] granted in
+            Task { @MainActor in
                 guard let self else { return }
                 guard self.recordingState == .recording else { return }
                 if granted {

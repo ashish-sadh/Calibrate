@@ -23,8 +23,10 @@ struct BarcodeScannerView: UIViewControllerRepresentable {
             case .authorized:
                 setupCamera()
             case .notDetermined:
-                AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
-                    DispatchQueue.main.async { if granted { self?.setupCamera() } }
+                // #943 audit: @Sendable — TCC calls back off-main; an
+                // inferred-@MainActor literal asserts at closure entry.
+                AVCaptureDevice.requestAccess(for: .video) { @Sendable [weak self] granted in
+                    Task { @MainActor in if granted { self?.setupCamera() } }
                 }
             case .denied, .restricted:
                 break
