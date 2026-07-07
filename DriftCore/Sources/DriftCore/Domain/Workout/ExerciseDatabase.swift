@@ -138,14 +138,48 @@ public enum ExerciseDatabase {
         return decoded
     }
 
-    public static func addCustomExercise(name: String, bodyPart: String) {
+    /// Register a custom exercise. `primaryMuscles` should be real catalog
+    /// muscle slugs (they drive the anatomy diagram); `imageUrl` may point
+    /// into free-exercise-db so the bundled pose crossfade resolves (#929).
+    /// Both optional — plain user-created exercises pass just name+bodyPart.
+    public static func addCustomExercise(name: String, bodyPart: String,
+                                         primaryMuscles: [String]? = nil,
+                                         imageUrl: String? = nil) {
         customLock.lock()
         defer { customLock.unlock() }
         var customs = customExercises
-        guard !customs.contains(where: { $0.name.lowercased() == name.lowercased() }) else { return }
-        customs.append(ExerciseInfo(name: name, bodyPart: bodyPart, primaryMuscles: [bodyPart.lowercased()],
-                                    secondaryMuscles: [], equipment: "other", category: "strength", level: "intermediate",
-                                    trackingType: classifyTrackingType(name)))
+        if let idx = customs.firstIndex(where: { $0.name.lowercased() == name.lowercased() }) {
+            // Upgrade-in-place: installs that registered this exercise before
+            // the richer registry existed (#941) have it stored without
+            // imageUrl/muscles — fill the missing visual fields, never
+            // overwrite ones already set (user edits win).
+            var existing = customs[idx]
+            var changed = false
+            if existing.imageUrl == nil, let imageUrl {
+                existing.imageUrl = imageUrl
+                changed = true
+            }
+            if let primaryMuscles,
+               existing.primaryMuscles == [existing.bodyPart.lowercased()] {
+                existing = ExerciseInfo(name: existing.name, bodyPart: existing.bodyPart,
+                                        primaryMuscles: primaryMuscles,
+                                        secondaryMuscles: existing.secondaryMuscles,
+                                        equipment: existing.equipment, category: existing.category,
+                                        level: existing.level, imageUrl: existing.imageUrl,
+                                        youtubeUrl: existing.youtubeUrl,
+                                        instructions: existing.instructions,
+                                        trackingType: existing.trackingType)
+                changed = true
+            }
+            guard changed else { return }
+            customs[idx] = existing
+        } else {
+            customs.append(ExerciseInfo(name: name, bodyPart: bodyPart,
+                                        primaryMuscles: primaryMuscles ?? [bodyPart.lowercased()],
+                                        secondaryMuscles: [], equipment: "other", category: "strength", level: "intermediate",
+                                        imageUrl: imageUrl,
+                                        trackingType: classifyTrackingType(name)))
+        }
         if let data = try? JSONEncoder().encode(customs) {
             UserDefaults.standard.set(data, forKey: customKey)
         }

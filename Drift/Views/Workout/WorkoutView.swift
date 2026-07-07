@@ -195,12 +195,14 @@ struct WorkoutView: View {
                                 Label("Import from Strong / Hevy", systemImage: "square.and.arrow.down")
                             }
                             Button {
-                                let added = DefaultTemplates.loadCurated()
-                                importResult = "Added \(added) Drift Curated templates"
-                                showingImportAlert = true
-                                loadData()
+                                loadPackage(DefaultTemplates.loadCurated, name: "Drift Package I")
                             } label: {
-                                Label("Load Drift Curated", systemImage: "star")
+                                Label("Load Drift Package I", systemImage: "star")
+                            }
+                            Button {
+                                loadPackage(DefaultTemplates.loadPackageII, name: "Drift Package II")
+                            } label: {
+                                Label("Load Drift Package II", systemImage: "star.fill")
                             }
                             if !templates.isEmpty {
                                 Divider()
@@ -217,22 +219,7 @@ struct WorkoutView: View {
                     }
 
                     if templates.isEmpty {
-                        VStack(spacing: 12) {
-                            Text("No templates yet").font(.caption).foregroundStyle(.tertiary)
-                            HStack(spacing: 12) {
-                                Button { showingImport = true } label: {
-                                    Label("Import", systemImage: "square.and.arrow.down").font(.caption)
-                                }.buttonStyle(.bordered)
-                                Button {
-                                    let added = DefaultTemplates.loadCurated()
-                                    importResult = "Added \(added) Drift Curated templates"
-                                    showingImportAlert = true
-                                    loadData()
-                                } label: {
-                                    Label("Drift Curated", systemImage: "star").font(.caption)
-                                }.buttonStyle(.bordered).tint(Theme.accent)
-                            }
-                        }
+                        emptyTemplatesActions
                     } else {
                         ScrollView {
                             VStack(spacing: 0) {
@@ -605,6 +592,32 @@ struct WorkoutView: View {
             showingImportAlert = true
         }
     }
+    /// Empty-state actions — extracted (#941): three buttons inline pushed the
+    /// enclosing ViewBuilder past the type-checker's budget.
+    private var emptyTemplatesActions: some View {
+        VStack(spacing: 12) {
+            Text("No templates yet").font(.caption).foregroundStyle(.tertiary)
+            HStack(spacing: 12) {
+                Button { showingImport = true } label: {
+                    Label("Import", systemImage: "square.and.arrow.down").font(.caption)
+                }.buttonStyle(.bordered)
+                Button { loadPackage(DefaultTemplates.loadCurated, name: "Drift Package I") } label: {
+                    Label("Package I", systemImage: "star").font(.caption)
+                }.buttonStyle(.bordered).tint(Theme.accent)
+                Button { loadPackage(DefaultTemplates.loadPackageII, name: "Drift Package II") } label: {
+                    Label("Package II", systemImage: "star.fill").font(.caption)
+                }.buttonStyle(.bordered).tint(Theme.accent)
+            }
+        }
+    }
+
+    private func loadPackage(_ loader: () -> Int, name: String) {
+        let added = loader()
+        importResult = "Added \(added) \(name) templates"
+        showingImportAlert = true
+        loadData()
+    }
+
     private func loadData() {
         isLoading = true
         // Load independently so one failure doesn't block the others

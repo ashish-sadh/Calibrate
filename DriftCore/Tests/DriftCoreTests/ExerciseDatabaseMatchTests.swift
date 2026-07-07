@@ -129,3 +129,72 @@ import Testing
     }
     #expect(mapped.count >= 900, "pose mapping collapsed: \(mapped.count)/\(ExerciseDatabase.all.count)")
 }
+
+// MARK: - Template packages (#940): every exercise resolves with visuals
+
+@Test func customExerciseTableUsesValidMuscleSlugsAndAssets() {
+    let validSlugs: Set<String> = ["abdominals", "abductors", "adductors", "biceps", "calves",
+                                   "chest", "forearms", "glutes", "hamstrings", "lats",
+                                   "lower back", "middle back", "neck", "quadriceps",
+                                   "shoulders", "traps", "triceps"]
+    for c in DefaultTemplates.customExercises {
+        for m in c.muscles ?? [] {
+            #expect(validSlugs.contains(m), "\(c.name): '\(m)' is not a catalog muscle slug — the diagram can't highlight it")
+        }
+        if let dir = c.fedDir {
+            let url = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/\(dir)/0.jpg"
+            #expect(ExercisePoses.assetBaseName(fromImageUrl: url) == dir,
+                    "\(c.name): fedDir '\(dir)' does not round-trip through the pose mapper")
+        }
+    }
+}
+
+@Test func packageIITemplatesDecodeAndResolve() throws {
+    let templates = DefaultTemplates.packageII
+    #expect(templates.count == 6)
+    let customNames = Set(DefaultTemplates.customExercises.map { $0.name.lowercased() })
+    let catalogNames = Set(ExerciseDatabase.all.map { $0.name.lowercased() })
+    for t in templates {
+        let exercises = try JSONDecoder().decode(
+            [WorkoutTemplate.TemplateExercise].self, from: Data(t.exercisesJson.utf8))
+        #expect(!exercises.isEmpty, "\(t.name) has no exercises")
+        for ex in exercises {
+            let n = ex.name.lowercased()
+            #expect(customNames.contains(n) || catalogNames.contains(n),
+                    "\(t.name): '\(ex.name)' resolves to neither catalog nor custom registry — no diagram/pose")
+        }
+    }
+}
+
+@Test func packageITemplateExercisesAllResolve() throws {
+    let customNames = Set(DefaultTemplates.customExercises.map { $0.name.lowercased() })
+    let catalogNames = Set(ExerciseDatabase.all.map { $0.name.lowercased() })
+    for t in DefaultTemplates.packageI {
+        let exercises = try JSONDecoder().decode(
+            [WorkoutTemplate.TemplateExercise].self, from: Data(t.exercisesJson.utf8))
+        for ex in exercises {
+            let n = ex.name.lowercased()
+            #expect(customNames.contains(n) || catalogNames.contains(n),
+                    "\(t.name): '\(ex.name)' resolves to neither catalog nor custom registry")
+        }
+    }
+}
+
+@Test @MainActor func addCustomExerciseUpgradesLegacyEntriesInPlace() {
+    let name = "Test Upgrade Exercise \(UUID().uuidString.prefix(6))"
+    // No remove API — snapshot/restore the persisted blob around the test.
+    let key = "drift_custom_exercises"
+    let snapshot = UserDefaults.standard.data(forKey: key)
+    defer { UserDefaults.standard.set(snapshot, forKey: key) }
+    // Legacy registration: no muscles, no imageUrl (pre-#941 builds).
+    ExerciseDatabase.addCustomExercise(name: name, bodyPart: "Legs")
+    // Re-registration with the richer fields must fill them in place —
+    // existing installs never re-tap the load button.
+    ExerciseDatabase.addCustomExercise(
+        name: name, bodyPart: "Legs",
+        primaryMuscles: ["quadriceps"],
+        imageUrl: "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Goblet_Squat/0.jpg")
+    let info = ExerciseDatabase.allWithCustom.first { $0.name == name }
+    #expect(info?.primaryMuscles == ["quadriceps"])
+    #expect(ExercisePoses.assetBaseName(fromImageUrl: info?.imageUrl) == "Goblet_Squat")
+}

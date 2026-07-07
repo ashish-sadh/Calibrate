@@ -20,6 +20,9 @@ struct DriftApp: App {
         // Stamp the install date once so the 7-day Feedback activation banner
         // has a stable anchor (#759). Idempotent — only writes when unset.
         Preferences.seedInstallDateIfNeeded()
+        // Idempotent (#941): upgrades template custom exercises registered by
+        // older builds with their muscle slugs + pose assets.
+        DefaultTemplates.registerCustomExercises()
         // Register all AI tools in ToolRegistry. Was previously called from
         // LocalAIService.init(); moved out during DriftCore migration
         // (96e3173) and the caller wiring was lost — every tool call has

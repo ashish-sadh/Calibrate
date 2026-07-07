@@ -1,7 +1,17 @@
 import Foundation
-import DriftCore
 
-/// Seeds default workout templates on first launch. Respects user edits - only seeds if no templates exist.
+/// Seeds default workout templates on demand. Respects user edits — only adds
+/// templates/exercises that don't already exist by name.
+///
+/// Two packages (#940):
+///  - **Drift Package I** — the original curated programs 1–4.
+///  - **Drift Package II** — the Srijith training program (total-body free
+///    weights / dumbbells / circuits / strength + pull & push days).
+/// Every custom exercise registered here carries real catalog muscle slugs
+/// (drives the anatomy diagram) and, where a genuine free-exercise-db analog
+/// exists, an imageUrl so the bundled pose crossfade resolves (#929). A nil
+/// fedDir means the movement has no honest photo analog — the muscle diagram
+/// is the fallback, never a wrong demo.
 public enum DefaultTemplates {
     private static let seededKey = "drift_default_templates_v3"
 
@@ -12,135 +22,193 @@ public enum DefaultTemplates {
         UserDefaults.standard.set(true, forKey: seededKey)
     }
 
-    /// Load Drift Curated templates on demand. Skips any that already exist by name.
+    /// Load Drift Package I templates on demand. Skips any that already exist by name.
     @discardableResult
     public static func loadCurated() -> Int {
+        let added = load(templates: packageI)
+        Log.app.info("Loaded \(added) Drift Package I templates")
+        return added
+    }
+
+    /// Load Drift Package II templates (Srijith program) on demand.
+    @discardableResult
+    public static func loadPackageII() -> Int {
+        let added = load(templates: packageII)
+        Log.app.info("Loaded \(added) Drift Package II templates")
+        return added
+    }
+
+    private static func load(templates: [WorkoutTemplate]) -> Int {
         let existing = Set((try? WorkoutService.fetchTemplates())?.map(\.name) ?? [])
         var added = 0
-
-        for template in allTemplates {
+        for template in templates {
             guard !existing.contains(template.name) else { continue }
             var t = template
             try? WorkoutService.saveTemplate(&t)
             added += 1
         }
-
-        // Add custom exercises needed by curated templates
-        let dbNames = Set(ExerciseDatabase.all.map { $0.name.lowercased() })
-        for (name, bodyPart) in customExercises {
-            if !dbNames.contains(name.lowercased()) {
-                ExerciseDatabase.addCustomExercise(name: name, bodyPart: bodyPart)
-            }
-        }
-
-        Log.app.info("Loaded \(added) Drift Curated templates (skipped \(allTemplates.count - added) existing)")
+        registerCustomExercises()
         return added
     }
 
-    /// All custom exercises needed across all programs
-    private static let customExercises: [(String, String)] = [
-        // Warmup
-        ("Banded Shoulder Rotations", "Shoulders"),
-        ("Banded Pull Aparts (Palms Up)", "Shoulders"),
-        ("Banded Pull Aparts (Palms Down)", "Shoulders"),
-        ("Shoulder Depressions", "Shoulders"),
-        ("Rope Pulling Machine", "Full Body"),
-        ("Ladder Drill", "Full Body"),
-        ("90/90 Hip Stretch + Extensions", "Legs"),
-        ("90/90 Switches", "Legs"),
-        ("Banded Lateral Walks", "Legs"),
+    // MARK: - Custom exercise registry
+
+    struct CustomExercise {
+        let name: String
+        let bodyPart: String
+        /// Real catalog muscle slugs — the anatomy diagram highlights these.
+        var muscles: [String]? = nil
+        /// free-exercise-db directory for the bundled pose crossfade; nil =
+        /// no honest photo analog, diagram-only.
+        var fedDir: String? = nil
+    }
+
+    /// Idempotent — safe to call at every launch: fills missing visual
+    /// fields (muscles/poses) on customs registered by older builds (#941).
+    public static func registerCustomExercises() {
+        let dbNames = Set(ExerciseDatabase.all.map { $0.name.lowercased() })
+        for c in customExercises where !dbNames.contains(c.name.lowercased()) {
+            ExerciseDatabase.addCustomExercise(
+                name: c.name, bodyPart: c.bodyPart,
+                primaryMuscles: c.muscles,
+                imageUrl: c.fedDir.map {
+                    "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/\($0)/0.jpg"
+                })
+        }
+    }
+
+    /// All custom exercises needed across both packages.
+    static let customExercises: [CustomExercise] = [
+        // Warmup / mobility
+        .init(name: "Banded Shoulder Rotations", bodyPart: "Shoulders", muscles: ["shoulders"]),
+        .init(name: "Banded Pull Aparts (Palms Up)", bodyPart: "Shoulders", muscles: ["shoulders", "middle back"]),
+        .init(name: "Banded Pull Aparts (Palms Down)", bodyPart: "Shoulders", muscles: ["shoulders", "middle back"]),
+        .init(name: "Shoulder Depressions", bodyPart: "Shoulders", muscles: ["traps"]),
+        .init(name: "Rope Pulling Machine", bodyPart: "Full Body", muscles: ["lats", "biceps"]),
+        .init(name: "Ladder Drill", bodyPart: "Full Body", muscles: ["quadriceps", "calves"]),
+        .init(name: "90/90 Hip Stretch + Extensions", bodyPart: "Legs", muscles: ["glutes"]),
+        .init(name: "90/90 Switches", bodyPart: "Legs", muscles: ["glutes"]),
+        .init(name: "Banded Lateral Walks", bodyPart: "Legs", muscles: ["glutes"]),
+        .init(name: "Down Dog to Plank", bodyPart: "Core", muscles: ["abdominals", "shoulders"]),
+        .init(name: "World's Greatest Stretch", bodyPart: "Full Body", muscles: ["hamstrings", "glutes"]),
         // Chest
-        ("Incline Chest Press", "Chest"),
-        ("Standing Cable Chest Flies (High to Low)", "Chest"),
-        ("Assisted Dips", "Chest"),
+        .init(name: "Incline Chest Press", bodyPart: "Chest", muscles: ["chest", "triceps"], fedDir: "Machine_Bench_Press"),
+        .init(name: "Standing Cable Chest Flies (High to Low)", bodyPart: "Chest", muscles: ["chest"], fedDir: "Cable_Crossover"),
+        .init(name: "Assisted Dips", bodyPart: "Chest", muscles: ["chest", "triceps"], fedDir: "Dips_-_Chest_Version"),
+        .init(name: "Banded Pushups", bodyPart: "Chest", muscles: ["chest", "triceps"], fedDir: "Pushups"),
+        .init(name: "Box Pushups", bodyPart: "Chest", muscles: ["chest", "triceps"], fedDir: "Pushups"),
+        .init(name: "Tall Side Pushups", bodyPart: "Chest", muscles: ["chest", "triceps"], fedDir: "Pushups"),
+        .init(name: "Floor Dumbbell Press", bodyPart: "Chest", muscles: ["chest", "triceps"], fedDir: "Floor_Press"),
+        .init(name: "Seated Cable Chest Fly", bodyPart: "Chest", muscles: ["chest"], fedDir: "Flat_Bench_Cable_Flyes"),
         // Core
-        ("Crunch Machine", "Core"),
-        ("Yoga Ball Pike", "Core"),
-        ("Woodchopper", "Core"),
-        ("Paloff Press", "Core"),
-        ("Copenhagen Planks", "Core"),
-        ("Side Planks", "Core"),
-        ("Dragon Flags", "Core"),
+        .init(name: "Crunch Machine", bodyPart: "Core", muscles: ["abdominals"], fedDir: "Ab_Crunch_Machine"),
+        .init(name: "Yoga Ball Pike", bodyPart: "Core", muscles: ["abdominals"]),
+        .init(name: "Woodchopper", bodyPart: "Core", muscles: ["abdominals"]),
+        .init(name: "Paloff Press", bodyPart: "Core", muscles: ["abdominals"]),
+        .init(name: "Copenhagen Planks", bodyPart: "Core", muscles: ["abdominals", "adductors"]),
+        .init(name: "Side Planks", bodyPart: "Core", muscles: ["abdominals"]),
+        .init(name: "Dragon Flags", bodyPart: "Core", muscles: ["abdominals"]),
+        .init(name: "Plank Shoulder Taps", bodyPart: "Core", muscles: ["abdominals", "shoulders"], fedDir: "Plank"),
+        .init(name: "Plank Reaches", bodyPart: "Core", muscles: ["abdominals", "shoulders"], fedDir: "Plank"),
+        .init(name: "Plank Knee Slider", bodyPart: "Core", muscles: ["abdominals"], fedDir: "Plank"),
+        .init(name: "Hollow Hold", bodyPart: "Core", muscles: ["abdominals"]),
+        .init(name: "Alternating V-Ups", bodyPart: "Core", muscles: ["abdominals"]),
+        .init(name: "Leg Lowers", bodyPart: "Core", muscles: ["abdominals"], fedDir: "Flat_Bench_Lying_Leg_Raise"),
+        .init(name: "Lying Single Leg Raise", bodyPart: "Core", muscles: ["abdominals"], fedDir: "Flat_Bench_Lying_Leg_Raise"),
+        .init(name: "Sit-Ups", bodyPart: "Core", muscles: ["abdominals"], fedDir: "Sit-Up"),
         // Back
-        ("High Rows", "Back"),
-        ("TRX Rows", "Back"),
-        ("Assisted Pull-Ups", "Back"),
-        ("Seated Supinating Rows", "Back"),
-        ("Chest Supported Row", "Back"),
+        .init(name: "High Rows", bodyPart: "Back", muscles: ["middle back", "lats"], fedDir: "Seated_Cable_Rows"),
+        .init(name: "TRX Rows", bodyPart: "Back", muscles: ["middle back", "biceps"]),
+        .init(name: "Assisted Pull-Ups", bodyPart: "Back", muscles: ["lats", "biceps"], fedDir: "Pullups"),
+        .init(name: "Wide Pull-Ups", bodyPart: "Back", muscles: ["lats", "biceps"], fedDir: "Pullups"),
+        .init(name: "Seated Supinating Rows", bodyPart: "Back", muscles: ["middle back", "biceps"], fedDir: "Seated_Cable_Rows"),
+        .init(name: "Chest Supported Row", bodyPart: "Back", muscles: ["middle back"], fedDir: "Seated_Cable_Rows"),
+        .init(name: "Iso-Lateral Front Pulldown", bodyPart: "Back", muscles: ["lats", "biceps"], fedDir: "Wide-Grip_Lat_Pulldown"),
+        .init(name: "Wide Cable Pulldown", bodyPart: "Back", muscles: ["lats"], fedDir: "Wide-Grip_Lat_Pulldown"),
+        .init(name: "Close-Grip Pulldown", bodyPart: "Back", muscles: ["lats", "biceps"], fedDir: "Close-Grip_Front_Lat_Pulldown"),
+        .init(name: "Bar Hang", bodyPart: "Back", muscles: ["forearms", "lats"]),
+        .init(name: "Cable Rear Delt Fly", bodyPart: "Shoulders", muscles: ["shoulders", "middle back"], fedDir: "Seated_Bent-Over_Rear_Delt_Raise"),
         // Arms
-        ("Wrist Extension", "Arms"),
-        ("Wrist Flexion", "Arms"),
-        ("Barbell Wrist Rolls", "Arms"),
-        ("Plate Pinches", "Arms"),
-        ("Crossbody Hammer Curls", "Arms"),
-        ("Overhead Tricep Extensions", "Arms"),
-        ("Cable Tricep Extensions", "Arms"),
-        ("Reverse Curls", "Arms"),
+        .init(name: "Wrist Extension", bodyPart: "Arms", muscles: ["forearms"]),
+        .init(name: "Wrist Flexion", bodyPart: "Arms", muscles: ["forearms"]),
+        .init(name: "Barbell Wrist Rolls", bodyPart: "Arms", muscles: ["forearms"]),
+        .init(name: "Plate Pinches", bodyPart: "Arms", muscles: ["forearms"]),
+        .init(name: "Crossbody Hammer Curls", bodyPart: "Arms", muscles: ["biceps", "forearms"], fedDir: "Cross_Body_Hammer_Curl"),
+        .init(name: "Overhead Tricep Extensions", bodyPart: "Arms", muscles: ["triceps"], fedDir: "Standing_Dumbbell_Triceps_Extension"),
+        .init(name: "Cable Tricep Extensions", bodyPart: "Arms", muscles: ["triceps"], fedDir: "Triceps_Pushdown"),
+        .init(name: "Cable Tricep Pushdown", bodyPart: "Arms", muscles: ["triceps"], fedDir: "Triceps_Pushdown"),
+        .init(name: "Reverse Curls", bodyPart: "Arms", muscles: ["biceps", "forearms"]),
+        .init(name: "Seated Incline Bicep Curl", bodyPart: "Arms", muscles: ["biceps"], fedDir: "Incline_Dumbbell_Curl"),
         // Legs
-        ("Bulgarian Split Squats", "Legs"),
-        ("Heavy Suitcase Carries", "Full Body"),
-        ("Hip Abduction Machine", "Legs"),
-        ("Hip Adduction Machine", "Legs"),
-        ("Seated Hamstring Curl", "Legs"),
-        ("Single Leg Deadlift", "Legs"),
-        ("Cossack Squats", "Legs"),
+        .init(name: "Bulgarian Split Squats", bodyPart: "Legs", muscles: ["quadriceps", "glutes"], fedDir: "One_Leg_Barbell_Squat"),
+        .init(name: "Box Bulgarian Split Squat", bodyPart: "Legs", muscles: ["quadriceps", "glutes"], fedDir: "One_Leg_Barbell_Squat"),
+        .init(name: "Heavy Suitcase Carries", bodyPart: "Full Body", muscles: ["forearms", "traps"], fedDir: "Farmers_Walk"),
+        .init(name: "Hip Abduction Machine", bodyPart: "Legs", muscles: ["abductors"], fedDir: "Thigh_Abductor"),
+        .init(name: "Hip Adduction Machine", bodyPart: "Legs", muscles: ["adductors"], fedDir: "Thigh_Adductor"),
+        .init(name: "Seated Hamstring Curl", bodyPart: "Legs", muscles: ["hamstrings"], fedDir: "Seated_Leg_Curl"),
+        .init(name: "Single Leg Deadlift", bodyPart: "Legs", muscles: ["hamstrings", "glutes"], fedDir: "Kettlebell_One-Legged_Deadlift"),
+        .init(name: "Single-Leg RDL", bodyPart: "Legs", muscles: ["hamstrings", "glutes"], fedDir: "Kettlebell_One-Legged_Deadlift"),
+        .init(name: "Cossack Squats", bodyPart: "Legs", muscles: ["quadriceps", "adductors"]),
+        .init(name: "Single Leg Hip Thrust", bodyPart: "Legs", muscles: ["glutes", "hamstrings"], fedDir: "Barbell_Hip_Thrust"),
+        .init(name: "Walking Lunges", bodyPart: "Legs", muscles: ["quadriceps", "glutes"], fedDir: "Bodyweight_Walking_Lunge"),
+        .init(name: "Heels Elevated Squat Hold", bodyPart: "Legs", muscles: ["quadriceps"], fedDir: "Goblet_Squat"),
+        .init(name: "Single Leg Calf Raise", bodyPart: "Legs", muscles: ["calves"], fedDir: "Calf_Raise_On_A_Dumbbell"),
         // Shoulders
-        ("Cable Lateral Raise", "Shoulders"),
-        ("Arnold Press", "Shoulders"),
-        ("Front Raise", "Shoulders"),
-        ("Shrug", "Shoulders"),
-        // Common aliases for better search
-        ("Goblet Squat", "Legs"),
-        ("Sumo Squat", "Legs"),
-        ("Step-Ups", "Legs"),
-        ("Glute Bridge", "Legs"),
-        ("Wall Sit", "Legs"),
-        ("Skull Crushers", "Arms"),
-        ("Rope Pushdown", "Arms"),
-        ("Cable Fly", "Chest"),
-        ("Plank", "Core"),
-        ("Dead Bug", "Core"),
-        ("Pull-Up", "Back"),
-        ("Burpee", "Full Body"),
+        .init(name: "Cable Lateral Raise", bodyPart: "Shoulders", muscles: ["shoulders"], fedDir: "Side_Lateral_Raise"),
+        .init(name: "Arnold Press", bodyPart: "Shoulders", muscles: ["shoulders", "triceps"], fedDir: "Arnold_Dumbbell_Press"),
+        .init(name: "Front Raise", bodyPart: "Shoulders", muscles: ["shoulders"], fedDir: "Front_Dumbbell_Raise"),
+        .init(name: "Shrug", bodyPart: "Shoulders", muscles: ["traps"], fedDir: "Barbell_Shrug"),
+        .init(name: "Incline Y Raise", bodyPart: "Shoulders", muscles: ["shoulders", "middle back"]),
+        .init(name: "Around the World", bodyPart: "Shoulders", muscles: ["shoulders", "chest"]),
+        .init(name: "Kneeling Landmine Press", bodyPart: "Shoulders", muscles: ["shoulders", "triceps"], fedDir: "Landmine_Linear_Jammer"),
+        // Common aliases for better search — now with poses (#929)
+        .init(name: "Goblet Squat", bodyPart: "Legs", muscles: ["quadriceps", "glutes"], fedDir: "Goblet_Squat"),
+        .init(name: "Sumo Squat", bodyPart: "Legs", muscles: ["quadriceps", "adductors"], fedDir: "Plie_Dumbbell_Squat"),
+        .init(name: "Step-Ups", bodyPart: "Legs", muscles: ["quadriceps", "glutes"], fedDir: "Barbell_Step_Ups"),
+        .init(name: "Glute Bridge", bodyPart: "Legs", muscles: ["glutes"], fedDir: "Butt_Lift_Bridge"),
+        .init(name: "Wall Sit", bodyPart: "Legs", muscles: ["quadriceps"]),
+        .init(name: "Skull Crushers", bodyPart: "Arms", muscles: ["triceps"], fedDir: "Lying_Triceps_Press"),
+        .init(name: "Rope Pushdown", bodyPart: "Arms", muscles: ["triceps"], fedDir: "Triceps_Pushdown_-_Rope_Attachment"),
+        .init(name: "Cable Fly", bodyPart: "Chest", muscles: ["chest"], fedDir: "Cable_Crossover"),
+        .init(name: "Plank", bodyPart: "Core", muscles: ["abdominals"], fedDir: "Plank"),
+        .init(name: "Dead Bug", bodyPart: "Core", muscles: ["abdominals"], fedDir: "Dead_Bug"),
+        .init(name: "Pull-Up", bodyPart: "Back", muscles: ["lats", "biceps"], fedDir: "Pullups"),
+        .init(name: "Burpee", bodyPart: "Full Body", muscles: ["chest", "quadriceps"]),
         // Full Body
-        ("Ab Wheel Rollout", "Core"),
-        ("Battle Ropes", "Full Body"),
-        ("Box Jump", "Legs"),
-        ("Mountain Climber", "Core"),
-        ("Machine Chest Press", "Chest"),
-        ("Machine Shoulder Press", "Shoulders"),
-        ("Seated Cable Row", "Back"),
-        ("Spider Curl", "Arms"),
-        ("Cable Tricep Kickback", "Arms"),
+        .init(name: "Ab Wheel Rollout", bodyPart: "Core", muscles: ["abdominals"], fedDir: "Ab_Roller"),
+        .init(name: "Battle Ropes", bodyPart: "Full Body", muscles: ["shoulders", "forearms"]),
+        .init(name: "Box Jump", bodyPart: "Legs", muscles: ["quadriceps", "glutes"], fedDir: "Box_Jump_Multiple_Response"),
+        .init(name: "Mountain Climber", bodyPart: "Core", muscles: ["abdominals", "quadriceps"], fedDir: "Mountain_Climbers"),
+        .init(name: "Machine Chest Press", bodyPart: "Chest", muscles: ["chest", "triceps"], fedDir: "Machine_Bench_Press"),
+        .init(name: "Machine Shoulder Press", bodyPart: "Shoulders", muscles: ["shoulders"], fedDir: "Machine_Shoulder_Military_Press"),
+        .init(name: "Seated Cable Row", bodyPart: "Back", muscles: ["middle back", "biceps"], fedDir: "Seated_Cable_Rows"),
+        .init(name: "Spider Curl", bodyPart: "Arms", muscles: ["biceps"], fedDir: "Spider_Curl"),
+        .init(name: "Cable Tricep Kickback", bodyPart: "Arms", muscles: ["triceps"], fedDir: "Tricep_Dumbbell_Kickback"),
+        .init(name: "Ball Slams", bodyPart: "Full Body", muscles: ["abdominals", "shoulders"], fedDir: "Overhead_Slam"),
+        .init(name: "Sled Push", bodyPart: "Full Body", muscles: ["quadriceps", "glutes"], fedDir: "Sled_Push"),
+        .init(name: "Air Bike", bodyPart: "Full Body", muscles: ["quadriceps"], fedDir: "Air_Bike"),
         // Common names used in templates (exist in DB under longer names)
-        ("Deadlift", "Legs"),
-        ("Dips", "Chest"),
-        ("Push-Ups", "Chest"),
-        ("Lat Pulldown", "Back"),
-        ("Shoulder Press", "Shoulders"),
-        ("Lateral Raise", "Shoulders"),
-        ("Bicep Curl", "Arms"),
-        ("Tricep Extension", "Arms"),
-        ("Cable Tricep Extensions", "Arms"),
-        ("Overhead Tricep Extensions", "Arms"),
-        ("Reverse Curls", "Arms"),
-        ("Upright Row", "Shoulders"),
-        ("Bent-Over Row", "Back"),
-        ("Dumbbell Row", "Back"),
-        ("Leg Raise", "Core"),
-        ("Back Extension", "Back"),
-        ("Calf Raises", "Legs"),
-        ("Cossack Squats", "Legs"),
-        ("Seated Hamstring Curl", "Legs"),
-        ("Heavy Suitcase Carries", "Full Body"),
+        .init(name: "Deadlift", bodyPart: "Legs", muscles: ["lower back", "glutes", "hamstrings"], fedDir: "Barbell_Deadlift"),
+        .init(name: "Dips", bodyPart: "Chest", muscles: ["chest", "triceps"], fedDir: "Dips_-_Chest_Version"),
+        .init(name: "Push-Ups", bodyPart: "Chest", muscles: ["chest", "triceps"], fedDir: "Pushups"),
+        .init(name: "Lat Pulldown", bodyPart: "Back", muscles: ["lats", "biceps"], fedDir: "Wide-Grip_Lat_Pulldown"),
+        .init(name: "Shoulder Press", bodyPart: "Shoulders", muscles: ["shoulders", "triceps"], fedDir: "Dumbbell_Shoulder_Press"),
+        .init(name: "Lateral Raise", bodyPart: "Shoulders", muscles: ["shoulders"], fedDir: "Side_Lateral_Raise"),
+        .init(name: "Bicep Curl", bodyPart: "Arms", muscles: ["biceps"], fedDir: "Dumbbell_Bicep_Curl"),
+        .init(name: "Tricep Extension", bodyPart: "Arms", muscles: ["triceps"], fedDir: "Triceps_Pushdown"),
+        .init(name: "Upright Row", bodyPart: "Shoulders", muscles: ["shoulders", "traps"], fedDir: "Upright_Barbell_Row"),
+        .init(name: "Bent-Over Row", bodyPart: "Back", muscles: ["middle back", "lats"], fedDir: "Bent_Over_Barbell_Row"),
+        .init(name: "Dumbbell Row", bodyPart: "Back", muscles: ["middle back", "lats"], fedDir: "One-Arm_Dumbbell_Row"),
+        .init(name: "Leg Raise", bodyPart: "Core", muscles: ["abdominals"], fedDir: "Flat_Bench_Lying_Leg_Raise"),
+        .init(name: "Back Extension", bodyPart: "Back", muscles: ["lower back", "glutes"], fedDir: "Hyperextensions_Back_Extensions"),
+        .init(name: "Calf Raises", bodyPart: "Legs", muscles: ["calves"], fedDir: "Standing_Calf_Raises"),
         // Additional common exercises
-        ("Chest Press Machine", "Chest"),
-        ("Pec Deck", "Chest"),
-        ("Preacher Curl Machine", "Arms"),
-        ("EZ Bar Curl", "Arms"),
-        ("Rope Pushdown", "Arms"),
-        ("Turkish Get-Up", "Full Body"),
-        ("Chin-Up", "Back"),
+        .init(name: "Chest Press Machine", bodyPart: "Chest", muscles: ["chest", "triceps"], fedDir: "Machine_Bench_Press"),
+        .init(name: "Pec Deck", bodyPart: "Chest", muscles: ["chest"], fedDir: "Butterfly"),
+        .init(name: "Preacher Curl Machine", bodyPart: "Arms", muscles: ["biceps"], fedDir: "Machine_Preacher_Curls"),
+        .init(name: "EZ Bar Curl", bodyPart: "Arms", muscles: ["biceps"], fedDir: "EZ-Bar_Curl"),
+        .init(name: "Turkish Get-Up", bodyPart: "Full Body", muscles: ["shoulders", "abdominals"], fedDir: "Kettlebell_Turkish_Get-Up_Squat_style"),
+        .init(name: "Chin-Up", bodyPart: "Back", muscles: ["lats", "biceps"], fedDir: "Chin-Up"),
     ]
 
     // MARK: - Helper
@@ -156,10 +224,91 @@ public enum DefaultTemplates {
         .init(name: name, sets: sets, restSeconds: rest, notes: notes)
     }
 
-    // MARK: - All Templates
+    // MARK: - Package I (original curated programs)
 
-    private static var allTemplates: [WorkoutTemplate] {
+    static var packageI: [WorkoutTemplate] {
         program4 + program3 + program2 + program1
+    }
+
+    // MARK: - Package II (Srijith program, imported 2026-07-07)
+
+    static var packageII: [WorkoutTemplate] {
+        [
+            WorkoutTemplate(name: "Total Body Free Weights", exercisesJson: json([
+                w("Down Dog to Plank", sets: 1, notes: "10 reps"),
+                w("World's Greatest Stretch", sets: 1, notes: "10 per side"),
+                e("Plank Shoulder Taps", rest: 60, notes: "20 taps, engage core"),
+                e("Single Leg Hip Thrust", rest: 75, notes: "10-12 per side, hips level, use glute"),
+                e("Front Squat", sets: 4, rest: 105, notes: "10-12 reps, sit to box, band optional"),
+                e("Kneeling Landmine Press", sets: 4, rest: 105, notes: "6-8 per side, kneeling"),
+                e("Iso-Lateral Front Pulldown", sets: 4, rest: 90, notes: "8-10 reps, plate loaded"),
+                e("Seated Incline Bicep Curl", rest: 75, notes: "13-15 reps, 60° bench"),
+                e("Seated Calf Raise", rest: 60, notes: "12 reps — optional"),
+                e("Sled Push", sets: 1, rest: 60, notes: "4 pushes or 1 mile air bike — optional cardio"),
+            ]), createdAt: now, isFavorite: true),
+
+            WorkoutTemplate(name: "Total Body Dumbbells", exercisesJson: json([
+                w("World's Greatest Stretch", sets: 1, notes: "hold 45-60 secs"),
+                w("Dead Bug", sets: 3, notes: "12-20 reps, with band and stick"),
+                w("Side Planks", notes: "20-25 secs"),
+                e("Banded Pushups", sets: 4, rest: 90, notes: "5-8 reps, at barbell rack"),
+                e("Bar Hang", sets: 4, rest: 60, notes: "10 secs, hold core tight"),
+                e("Box Bulgarian Split Squat", rest: 90, notes: "6-10 per side, control with standing leg"),
+                e("Romanian Deadlift", sets: 4, rest: 105, notes: "8 reps — lat engagement, hips back"),
+                e("Close-Grip Pulldown", sets: 4, rest: 90, notes: "8 reps, or seated plate row"),
+                e("Incline Y Raise", rest: 75, notes: "8-12 reps, 30° bench, 2-5 lbs"),
+                e("Skull Crushers", rest: 45, notes: "12-15 reps — optional"),
+                e("Wall Sit", sets: 1, rest: 60, notes: "35-45 secs"),
+            ]), createdAt: now, isFavorite: true),
+
+            WorkoutTemplate(name: "Dumbbell Circuits", exercisesJson: json([
+                e("Walking Lunges", sets: 4, rest: 45, notes: "Circuit 1 — 12 alternating"),
+                e("Plank Reaches", sets: 4, rest: 45, notes: "Circuit 1 — 20-30 reaches"),
+                e("Dumbbell Row", rest: 45, notes: "Circuit 1 — 10 per side, floor, lats"),
+                e("Floor Dumbbell Press", sets: 4, rest: 45, notes: "Circuit 2 — 10-12 reps"),
+                e("Sit-Ups", sets: 4, rest: 45, notes: "Circuit 2 — 8-10, feet under dumbbells"),
+                e("Lying Single Leg Raise", rest: 45, notes: "Circuit 2 — 12-15 per side"),
+                e("Wall Sit", sets: 4, rest: 45, notes: "Circuit 3 — 20 secs"),
+                e("Around the World", sets: 4, rest: 45, notes: "Circuit 3 — 10 reps, light dumbbells"),
+                e("Bicep Curl", sets: 4, rest: 45, notes: "Circuit 3 — 8-10 reps"),
+            ]), createdAt: now),
+
+            WorkoutTemplate(name: "Total Body Strength", exercisesJson: json([
+                w("90/90 Switches", sets: 1, notes: "ankle rocks + 90/90 hips, 10 each"),
+                w("World's Greatest Stretch", sets: 1, notes: "stretch chest, hamstring, glute, hip flexor"),
+                e("Single-Leg RDL", rest: 75, notes: "6-8 per side, cross arms, back flat"),
+                e("Tall Side Pushups", rest: 60, notes: "12-15 reps — hips forward, glutes squeezed"),
+                e("Ball Slams", rest: 60, notes: "20-25 slams, 10-12 lbs"),
+                e("Walking Lunges", rest: 75, notes: "20 reps, chest upright, HR 140-160"),
+                e("Wide Cable Pulldown", rest: 75, notes: "12-15 reps"),
+                e("Plank Knee Slider", rest: 60, notes: "10-15 reps"),
+                e("Cable Tricep Pushdown", rest: 60, notes: "12-15 reps"),
+                e("Wall Sit", sets: 2, rest: 60, notes: "15-30 secs"),
+                e("Seated Hamstring Curl", rest: 60, notes: "12-15 reps, or lying leg curl"),
+            ]), createdAt: now),
+
+            WorkoutTemplate(name: "Pull Day", exercisesJson: json([
+                w("World's Greatest Stretch", sets: 1, notes: "10 per side"),
+                w("Down Dog to Plank", sets: 1, notes: "doorway chest stretch 30 secs per side"),
+                e("Assisted Pull-Ups", rest: 90, notes: "12-15 reps, or wide pulldown"),
+                e("Seated Hamstring Curl", rest: 45, notes: "10-12 reps, or lying leg curl"),
+                e("Seated Cable Row", rest: 45, notes: "10-12 reps"),
+                e("Cable Rear Delt Fly", rest: 30, notes: "12-20 reps, light — superset with calf raises"),
+                e("Single Leg Calf Raise", rest: 30, notes: "10-15 per side, on the floor"),
+                e("Air Bike", sets: 1, rest: 60, notes: "0.5 mile under 3.5 min, no rest; optional 1 mile finish"),
+            ]), createdAt: now),
+
+            WorkoutTemplate(name: "Push Day", exercisesJson: json([
+                w("World's Greatest Stretch", sets: 1, notes: "10 per side"),
+                w("Goblet Squat", sets: 1, rest: 20, notes: "10 bodyweight squats + hamstring stretch"),
+                e("Goblet Squat", rest: 30, notes: "12-15 reps, sit to box — superset with pushups"),
+                e("Box Pushups", rest: 30, notes: "10-15 reps"),
+                e("Step-Ups", rest: 30, notes: "12-15 per leg"),
+                e("Dead Bug", rest: 30, notes: "10-20 leg extensions, with yoga ball, legs only"),
+                e("Seated Cable Chest Fly", sets: 2, rest: 45, notes: "20-25 reps, light"),
+                e("Cable Tricep Pushdown", sets: 2, rest: 45, notes: "12-25 reps"),
+            ]), createdAt: now),
+        ]
     }
 
     // MARK: - Program 4 (Current - Start 3/12/26)
