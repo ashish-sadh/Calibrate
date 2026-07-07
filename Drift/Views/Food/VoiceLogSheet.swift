@@ -32,6 +32,7 @@ struct VoiceLogSheet: View {
     /// parse error → "Try again" returns the user here with text intact;
     /// dictation fills the same buffer (#935: type or speak, one input).
     @State private var draft = ""
+    @FocusState private var fieldFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -58,10 +59,20 @@ struct VoiceLogSheet: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        // .container only — keyboard inset must still propagate so the
-        // safeAreaInset(edge: .bottom) Continue row rides above the keyboard.
-        // ignoresSafeArea() without args expands to .all which absorbs the
-        // keyboard bottom inset and defeats the fix from #933. (#966)
+        // #966: the Cancel/Continue bar rides above the keyboard as a bottom
+        // safe-area inset on THIS full-height container, which owns the
+        // keyboard avoidance directly — insetting the inner typingView left it
+        // short. Only the typing phase shows it; other phases carry their own
+        // in-flow action rows.
+        .safeAreaInset(edge: .bottom) {
+            // In-flow bar only when the keyboard is DOWN. While typing, the
+            // keyboard accessory toolbar carries Cancel/Continue (#966), so
+            // hiding this avoids a duplicate row stacked at the same spot.
+            if case .typing = viewModel.phase, !fieldFocused { typingBottomBar }
+        }
+        // .container only — the keyboard inset must still propagate so the
+        // inset row rides above the keyboard. ignoresSafeArea() = .all would
+        // absorb the keyboard bottom inset and defeat it. (#933/#966)
         .background(Theme.background.ignoresSafeArea(.container))
         .task { viewModel.start() }
         .onChange(of: viewModel.dictatedDraft) { _, dictated in
@@ -69,6 +80,28 @@ struct VoiceLogSheet: View {
             if !dictated.isEmpty { draft = dictated }
         }
         .onDisappear { viewModel.cancel() }
+        // #966: the bottom safeAreaInset can't clear the keyboard's QuickType
+        // suggestion bar in this sheet (SwiftUI's keyboard safe area undershoots
+        // by ~its height, leaving Continue occluded). Mirror the actions into the
+        // keyboard input accessory — UIKit pins this directly above the keyboard,
+        // guaranteed — so the submit button is always reachable while typing.
+        // The in-flow bottom bar still shows when the keyboard is down.
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                if case .typing = viewModel.phase {
+                    Button("Cancel") { dismiss() }
+                    Spacer()
+                    Button {
+                        Task { await viewModel.submitTyped(draft) }
+                    } label: {
+                        Label("Continue", systemImage: "arrow.forward.circle.fill")
+                            .fontWeight(.semibold)
+                    }
+                    .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    .accessibilityIdentifier("describe-meal-submit-kbd")
+                }
+            }
+        }
     }
 
     // MARK: - Typing (Describe your meal)
@@ -107,6 +140,7 @@ struct VoiceLogSheet: View {
                     .foregroundStyle(Theme.textPrimary)
                     .lineLimit(1...4)
                     .accessibilityIdentifier("describe-meal-field")
+                    .focused($fieldFocused)
                 Button {
                     viewModel.beginListening()
                 } label: {
@@ -131,33 +165,33 @@ struct VoiceLogSheet: View {
 
             Spacer()
         }
-        // Keyboard-safe (#933): the Cancel/Continue row was bottom-anchored in
-        // the VStack with fixed padding, so focusing the field slid the
-        // keyboard OVER it — you could type a meal but not reach the submit
-        // button. As a bottom safe-area inset the row rides ABOVE the
-        // keyboard (the keyboard extends the bottom safe area), and the
-        // Spacer()s absorb the compression.
-        .safeAreaInset(edge: .bottom) {
-            HStack(spacing: 12) {
-                Button("Cancel") { dismiss() }
-                    .buttonStyle(.bordered)
-                    .tint(Theme.textPrimary)
+    }
 
-                Button {
-                    Task { await viewModel.submitTyped(draft) }
-                } label: {
-                    Label("Continue", systemImage: "arrow.forward.circle.fill")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.ink)
-                .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                .accessibilityIdentifier("describe-meal-submit")
+    // Cancel/Continue row for the typing phase. #966: this is applied as a
+    // bottom safe-area inset on the OUTER body container (not on typingView),
+    // so the FULL-HEIGHT, keyboard-aware view owns the inset and the row
+    // reliably rides ABOVE the keyboard. Insetting the inner typingView left
+    // it ~26pt short — still under the keyboard's QuickType suggestion bar.
+    @ViewBuilder private var typingBottomBar: some View {
+        HStack(spacing: 12) {
+            Button("Cancel") { dismiss() }
+                .buttonStyle(.bordered)
+                .tint(Theme.textPrimary)
+
+            Button {
+                Task { await viewModel.submitTyped(draft) }
+            } label: {
+                Label("Continue", systemImage: "arrow.forward.circle.fill")
+                    .frame(maxWidth: .infinity)
             }
-            .padding(.horizontal, 24)
-            .padding(.vertical, 12)
-            .background(Theme.background)
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.ink)
+            .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            .accessibilityIdentifier("describe-meal-submit")
         }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 12)
+        .background(Theme.background)
     }
 
     // MARK: - Listening

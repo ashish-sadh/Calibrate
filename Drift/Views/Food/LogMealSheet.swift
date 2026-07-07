@@ -79,7 +79,13 @@ struct LogMealSheet: View {
                 modeContent
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            .background(Theme.background.ignoresSafeArea())
+            // #966: .container only. Plain ignoresSafeArea() = .all absorbs the
+            // KEYBOARD bottom inset here at the parent, so the Describe screen's
+            // safeAreaInset Continue row could never rise above the keyboard no
+            // matter what the child did. Scoping to .container keeps the
+            // background under the status bar / home indicator while letting the
+            // keyboard inset propagate to the child.
+            .background(Theme.background.ignoresSafeArea(.container))
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") {
