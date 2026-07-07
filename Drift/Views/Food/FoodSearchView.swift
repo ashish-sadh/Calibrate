@@ -6,6 +6,11 @@ struct FoodSearchView: View {
     var initialQuery: String = ""
     var initialServings: Double? = nil
     var initialMealType: MealType? = nil
+    /// Exact food name the caller already resolved (Coach preview card) — the
+    /// sheet pre-selects this row instead of its own top search hit, so the
+    /// preview and the confirm sheet can't disagree (#930: "Egg" card opened
+    /// a sheet pre-selected to "Egg Curry").
+    var initialSelection: String? = nil
     /// When embedded in a host sheet that already supplies nav chrome
     /// (LogMealSheet's NavigationStack + Done), drop our own NavigationStack +
     /// toolbar so the user doesn't see two "Done" buttons (field bug 2026-05-29).
@@ -149,8 +154,12 @@ struct FoodSearchView: View {
                 if !initialQuery.isEmpty {
                     query = initialQuery
                     results = FoodService.searchFood(query: initialQuery)
-                    // Auto-select best match and pre-fill servings
-                    if let bestMatch = results.first {
+                    // Auto-select the caller's already-resolved food when given
+                    // (single source of truth, #930); else the top search hit.
+                    let resolved = initialSelection.flatMap { sel in
+                        results.first(where: { $0.name == sel })
+                    }
+                    if let bestMatch = resolved ?? results.first {
                         if let servings = initialServings {
                             // Pre-fill with specified servings
                             let units = FoodUnit.smartUnits(for: bestMatch)

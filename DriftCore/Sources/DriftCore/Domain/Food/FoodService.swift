@@ -33,14 +33,7 @@ public enum FoodService {
         case 15..<18: boostKeywords = ["protein", "shake", "bar", "almonds", "fruit", "snack"]
         default: boostKeywords = ["chicken", "fish", "paneer", "rice", "pasta", "vegetables", "curry"]
         }
-
-        results.sort { a, b in
-            let aBoost = boostKeywords.contains(where: { a.name.lowercased().contains($0) })
-            let bBoost = boostKeywords.contains(where: { b.name.lowercased().contains($0) })
-            if aBoost && !bBoost { return true }
-            if !aBoost && bBoost { return false }
-            return false // preserve existing order
-        }
+        results = rerankPreservingMatchQuality(results, query: corrected, boostKeywords: boostKeywords)
 
         // Track queries that return no local results — used for food DB prioritization
         if results.isEmpty {
@@ -48,6 +41,36 @@ public enum FoodService {
         }
 
         return results
+    }
+
+    /// Time-of-day re-rank that can never override match quality (#930).
+    /// The old boost sorted purely on keyword-contains, so at dinner the
+    /// "curry" keyword hoisted "Egg Curry" above the exact match "Egg" and
+    /// the confirm sheet pre-selected 520 kcal of egg curry for "log 2 eggs".
+    /// Boost now only reorders *within* a match tier (exact → prefix → rest,
+    /// vs the spell-corrected query), preserving searchFoodsRanked's #271
+    /// guarantee. Stable: equal-tier/equal-boost rows keep their DB order.
+    /// `nonisolated` + pure so Tier-0 can pin the invariant without a DB.
+    nonisolated static func rerankPreservingMatchQuality(
+        _ results: [Food], query: String, boostKeywords: [String]
+    ) -> [Food] {
+        let q = query.lowercased()
+        func tier(_ f: Food) -> Int {
+            let name = f.name.lowercased()
+            if name == q { return 0 }
+            if name.hasPrefix(q) { return 1 }
+            return 2
+        }
+        func boosted(_ f: Food) -> Bool {
+            boostKeywords.contains { f.name.lowercased().contains($0) }
+        }
+        return results.enumerated().sorted { a, b in
+            let (ta, tb) = (tier(a.element), tier(b.element))
+            if ta != tb { return ta < tb }
+            let (ba, bb) = (boosted(a.element), boosted(b.element))
+            if ba != bb { return ba }
+            return a.offset < b.offset
+        }.map(\.element)
     }
 
     /// Search saved recipes by name.

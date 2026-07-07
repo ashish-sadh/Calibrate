@@ -17,6 +17,9 @@ final class AIChatViewModel {
     var showingFoodSearch = false
     var foodSearchQuery = ""
     var foodSearchServings: Double? = nil
+    /// Exact food name the Coach preview card resolved to — the confirm sheet
+    /// pre-selects this row so preview and sheet never disagree (#930).
+    var foodSearchResolvedName: String? = nil
     var foodSearchMealType: MealType? = nil
     var showingWorkout = false
     var workoutTemplate: WorkoutTemplate? = nil

@@ -138,20 +138,68 @@ final class FoodSearchGoldSetTests: XCTestCase {
 
     // MARK: - Ranking: Exact Name at Top
 
+    // Was assertion-free ("ranking depends on time-of-day boost —
+    // informational") — which is precisely how #930 shipped: at dinner the
+    // "curry" keyword hoisted "Egg Curry" above the exact match "Egg" and
+    // the confirm sheet pre-selected 520 kcal of egg curry for "log 2 eggs".
+    // The boost can no longer cross match tiers, so this asserts hard now.
+
     func testExactNameRanksFirst() {
-        let cases: [(query: String, exactName: String)] = [
-            ("egg", "Egg (whole, boiled)"),
-            ("banana", "Banana"),
-            ("apple", "Apple"),
-        ]
-        for (query, name) in cases {
-            let results = FoodService.searchFood(query: query)
-            let inTopThree = results.prefix(3).contains(where: { $0.name == name })
-            if !inTopThree {
-                print("RANK MISS: '\(name)' not in top 3 for query '\(query)' — got \(results.prefix(3).map(\.name))")
-            }
-            // Ranking depends on time-of-day boost — informational, not a hard failure
+        // Every ingredient here has a plain entry in foods.json — whatever
+        // the wall clock says, the base ingredient beats any dish.
+        for query in ["egg", "rice", "paneer", "banana", "apple", "idli"] {
+            let top = FoodService.searchFood(query: query).first?.name.lowercased()
+            XCTAssertEqual(top, query, "'\(query)' must resolve to the base ingredient, not a dish")
         }
+    }
+
+    // MARK: - #930: boost is tier-bound (pure, no DB)
+
+    func testRerankNeverLiftsBoostedDishAboveExactMatch() {
+        // DB order deliberately has the dish first (as if use_count promoted
+        // it) and the boost keyword matches the dish — the exact match must
+        // still come out on top.
+        let curry = Food(name: "Egg Curry", category: "Indian Staples",
+                         servingSize: 200, servingUnit: "g", calories: 260)
+        let egg = Food(name: "Egg", category: "Eggs",
+                       servingSize: 50, servingUnit: "g", calories: 72)
+        let out = FoodService.rerankPreservingMatchQuality(
+            [curry, egg], query: "egg", boostKeywords: ["curry"])
+        XCTAssertEqual(out.first?.name, "Egg")
+    }
+
+    func testRerankBoostsWithinSameTier() {
+        // Both are phrase-tier for "wrap" — here the time-of-day boost is
+        // still allowed to reorder (that's its job).
+        let veggie = Food(name: "Veggie Wrap", category: "US Staples",
+                          servingSize: 180, servingUnit: "g", calories: 300)
+        let chicken = Food(name: "Grilled Chicken Wrap", category: "US Staples",
+                           servingSize: 200, servingUnit: "g", calories: 350)
+        let out = FoodService.rerankPreservingMatchQuality(
+            [veggie, chicken], query: "wrap", boostKeywords: ["chicken"])
+        XCTAssertEqual(out.first?.name, "Grilled Chicken Wrap")
+    }
+
+    func testRerankIsStableWithoutBoost() {
+        let a = Food(name: "Egg Dosa", category: "Indian",
+                     servingSize: 150, servingUnit: "g", calories: 220)
+        let b = Food(name: "Egg Korma", category: "Indian Protein",
+                     servingSize: 220, servingUnit: "g", calories: 320)
+        let out = FoodService.rerankPreservingMatchQuality(
+            [a, b], query: "egg", boostKeywords: [])
+        XCTAssertEqual(out.map(\.name), ["Egg Dosa", "Egg Korma"])
+    }
+
+    func testFindFoodTwoEggsCarriesFullMacros() {
+        // Done-When 1+2: "2 eggs" → the plain egg at servings 2, with real
+        // macros (the bug card showed 0g fat for eggs).
+        guard let match = AIActionExecutor.findFood(query: "egg", servings: 2, gramAmount: nil) else {
+            XCTFail("findFood must resolve 'egg'"); return
+        }
+        XCTAssertEqual(match.food.name, "Egg")
+        XCTAssertEqual(match.servings, 2)
+        XCTAssertGreaterThan(match.food.fatG, 0, "eggs have fat — 0g fat was the #930 card bug")
+        XCTAssertGreaterThan(match.food.proteinG, 0)
     }
 
     // MARK: - New Foods Sprint #215 (30 items)

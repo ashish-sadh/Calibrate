@@ -158,7 +158,11 @@ final class PipelineE2EEval: XCTestCase {
         XCTAssertEqual(result.tool, "log_food", "Should route to log_food. Got: \(result.tool ?? "nil")")
         let name = result.toolParams["name"] ?? result.toolParams["query"] ?? ""
         XCTAssertTrue(name.lowercased().contains("egg"), "Should extract 'egg'. Got: '\(name)'")
-        print("✅ log 2 eggs → \(result.tool ?? "nil") name=\(name) response=\(result.finalResponse)")
+        // #930: the count must survive extraction — "2 eggs" logging 1 serving
+        // of the wrong thing was half the bug.
+        let servings = result.toolParams["amount"] ?? result.toolParams["servings"] ?? ""
+        XCTAssertTrue(servings.contains("2"), "Should extract servings=2. Got: '\(servings)'")
+        print("✅ log 2 eggs → \(result.tool ?? "nil") name=\(name) servings=\(servings) response=\(result.finalResponse)")
     }
 
     func testFoodInfo_caloriesInFood() async {

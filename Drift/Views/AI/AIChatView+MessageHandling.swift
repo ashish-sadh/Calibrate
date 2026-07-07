@@ -817,17 +817,24 @@ extension AIChatViewModel {
         guard let intent = AIActionExecutor.parseFoodIntent(resolved) else { return false }
         foodSearchQuery = intent.query
         foodSearchServings = intent.servings
+        foodSearchResolvedName = nil
         let detectedMeal = intent.mealHint.flatMap { MealType(rawValue: $0) } ?? MealType.fromHour()
         foodSearchMealType = detectedMeal
         if let match = AIActionExecutor.findFood(query: intent.query, servings: intent.servings, gramAmount: intent.gramAmount) {
             let f = match.food
             let s = match.servings
             foodSearchServings = s
+            // Single source of truth (#930): the confirm sheet pre-selects THIS
+            // food, not its own re-search's top hit — preview card and sheet
+            // can no longer disagree ("Egg" card → "Egg Curry" sheet).
+            foodSearchResolvedName = f.name
             let servingText = Self.smartServingText(food: f, servings: s, gramAmount: intent.gramAmount)
+            // .rounded(), not truncation — Egg ×2 has 9.6g fat; Int() showed 9
+            // and turned 0.8g carbs into the "0g carbs" the bug report flagged.
             let card = FoodCardData(
-                name: f.name, calories: Int(f.calories * s),
-                proteinG: Int(f.proteinG * s), carbsG: Int(f.carbsG * s),
-                fatG: Int(f.fatG * s), servingText: servingText,
+                name: f.name, calories: Int((f.calories * s).rounded()),
+                proteinG: Int((f.proteinG * s).rounded()), carbsG: Int((f.carbsG * s).rounded()),
+                fatG: Int((f.fatG * s).rounded()), servingText: servingText,
                 mealType: detectedMeal)
             messages.append(ChatMessage(role: .assistant, text: "Opening to confirm...", foodCard: card))
         } else {

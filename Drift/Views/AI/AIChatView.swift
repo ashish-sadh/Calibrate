@@ -109,7 +109,7 @@ struct AIChatView: View {
         .sheet(isPresented: $vm.showingFoodSearch, onDismiss: { vm.mealLogRevision += 1 }) {
             // FoodSearchView owns its own NavigationStack + toolbar Done — no
             // outer wrapper, or the sheet shows two "Done" buttons.
-            FoodSearchView(viewModel: FoodLogViewModel(), initialQuery: vm.foodSearchQuery, initialServings: vm.foodSearchServings, initialMealType: vm.foodSearchMealType)
+            FoodSearchView(viewModel: FoodLogViewModel(), initialQuery: vm.foodSearchQuery, initialServings: vm.foodSearchServings, initialMealType: vm.foodSearchMealType, initialSelection: vm.foodSearchResolvedName)
         }
         .sheet(isPresented: $vm.showingWorkout) {
             if let template = vm.workoutTemplate {
