@@ -197,17 +197,33 @@ struct MealTimelineRow: Equatable, Identifiable {
 }
 
 extension MealTimelineSection {
+    // Hoisted to static — `rows(from:)` is called on every dashboard render and
+    // was allocating three date formatters each time (formatter init is
+    // surprisingly heavy). (#951)
+    private static let isoFrac: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return f
+    }()
+    private static let isoNoFrac: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        f.formatOptions = [.withInternetDateTime]
+        return f
+    }()
+    private static let timeFmt: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "h:mm a"
+        return f
+    }()
+
     /// Build the row list from today's `[FoodEntry]`. Sorted by `loggedAt`
     /// ascending so the earliest meal sits at the top of the rail.
     /// Unparseable timestamps fall to the end of the list rather than crash —
     /// the dashboard never wants to render a partial row.
     static func rows(from entries: [FoodEntry]) -> [MealTimelineRow] {
-        let iso = ISO8601DateFormatter()
-        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        let isoNoFrac = ISO8601DateFormatter()
-        isoNoFrac.formatOptions = [.withInternetDateTime]
-        let timeFmt = DateFormatter()
-        timeFmt.dateFormat = "h:mm a"
+        let iso = Self.isoFrac
+        let isoNoFrac = Self.isoNoFrac
+        let timeFmt = Self.timeFmt
 
         let sorted = entries.sorted { a, b in
             let da = iso.date(from: a.loggedAt) ?? isoNoFrac.date(from: a.loggedAt) ?? .distantFuture

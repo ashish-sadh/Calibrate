@@ -296,9 +296,30 @@ public struct WeightGoal: Codable, Sendable {
 
     // MARK: - Persistence
 
+    // Memoize the decoded goal keyed on the raw stored bytes. load() is called
+    // 6–8× per dashboard render; each call re-read UserDefaults + re-ran
+    // JSONDecoder. The cache re-decodes only when the stored blob actually
+    // changes (save()/clear() write new/absent bytes), so there is no staleness.
+    // NSLock-guarded because load() is reachable off-main (AI context builders). (#951)
+    private static let cacheLock = NSLock()
+    nonisolated(unsafe) private static var cachedData: Data?
+    nonisolated(unsafe) private static var cachedGoal: WeightGoal?
+
     public static func load() -> WeightGoal? {
-        guard let data = UserDefaults.standard.data(forKey: storageKey),
-              let goal = try? JSONDecoder().decode(WeightGoal.self, from: data) else { return nil }
+        let data = UserDefaults.standard.data(forKey: storageKey)
+        cacheLock.lock()
+        if data == cachedData {
+            let cached = cachedGoal
+            cacheLock.unlock()
+            return cached
+        }
+        cacheLock.unlock()
+
+        guard let data, let goal = try? JSONDecoder().decode(WeightGoal.self, from: data) else {
+            cacheLock.lock(); cachedData = data; cachedGoal = nil; cacheLock.unlock()
+            return nil
+        }
+        cacheLock.lock(); cachedData = data; cachedGoal = goal; cacheLock.unlock()
         return goal
     }
 

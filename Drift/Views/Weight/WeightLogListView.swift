@@ -33,7 +33,20 @@ struct WeightLogListView: View {
             .sorted { $0.id > $1.id }
     }
 
+    /// Predecessor (next-older) entry for each entry id, precomputed once per
+    /// render. Rows used to each scan the global `entries` array with
+    /// `firstIndex` → O(n²) for the whole list; this is O(n). (#950)
+    private var predecessorByID: [Int64: WeightEntry] {
+        var map: [Int64: WeightEntry] = [:]
+        map.reserveCapacity(entries.count)
+        for i in entries.indices where i + 1 < entries.count {
+            if let id = entries[i].id { map[id] = entries[i + 1] }
+        }
+        return map
+    }
+
     var body: some View {
+        let predecessors = predecessorByID
         VStack(alignment: .leading, spacing: 16) {
             ForEach(monthGroups) { group in
                 VStack(alignment: .leading, spacing: 0) {
@@ -50,10 +63,11 @@ struct WeightLogListView: View {
                     }
                     .padding(.bottom, 8)
 
-                    // Entries
-                    VStack(spacing: 0) {
+                    // Entries — LazyVStack so long histories don't build every
+                    // row up front. (#950)
+                    LazyVStack(spacing: 0) {
                         ForEach(Array(group.entries.enumerated()), id: \.element.id) { index, entry in
-                            entryRow(entry: entry, index: index, allEntries: entries)
+                            entryRow(entry: entry, predecessor: entry.id.flatMap { predecessors[$0] })
 
                             if index < group.entries.count - 1 {
                                 Divider().overlay(Theme.separator)
@@ -66,7 +80,7 @@ struct WeightLogListView: View {
         }
     }
 
-    private func entryRow(entry: WeightEntry, index: Int, allEntries: [WeightEntry]) -> some View {
+    private func entryRow(entry: WeightEntry, predecessor: WeightEntry?) -> some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("\(String(format: "%.1f", unit.convert(fromKg: entry.weightKg))) \(unit.displayName)")
@@ -79,9 +93,7 @@ struct WeightLogListView: View {
             Spacer()
 
             // Change vs previous entry (skip if gap > 90 days — misleading with old data)
-            if let globalIdx = allEntries.firstIndex(where: { $0.id == entry.id }),
-               globalIdx < allEntries.count - 1 {
-                let prev = allEntries[globalIdx + 1]
+            if let prev = predecessor {
                 let daysBetween = abs(Calendar.current.dateComponents([.day],
                     from: DateFormatters.dateOnly.date(from: prev.date) ?? Date(),
                     to: DateFormatters.dateOnly.date(from: entry.date) ?? Date()).day ?? 0)

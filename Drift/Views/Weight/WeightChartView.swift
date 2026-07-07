@@ -20,11 +20,30 @@ struct WeightChartView: View {
     /// sets the initial visible WINDOW via `.chartXVisibleDomain`. The EMA values
     /// are the ones the calculator produced across all history. Series building
     /// lives in DriftCore (`WeightChartSeries`) so the mapping is Tier-0 tested.
+    /// Memoizes the built series so a render (and every scroll frame) doesn't
+    /// rebuild it ~11× — the property is read by many chart marks + derived
+    /// properties. The cache key is (granularity, unit, point count, currentEMA):
+    /// any add/delete changes the count, and any weight edit — even mid-history —
+    /// changes currentEMA (the EMA depends on every point), so there is no
+    /// staleness. (#950)
+    private final class SeriesCache {
+        private var key = ""
+        private var value: [WeightChartSeries.Point] = []
+        func points(key: String, build: () -> [WeightChartSeries.Point]) -> [WeightChartSeries.Point] {
+            if key != self.key { value = build(); self.key = key }
+            return value
+        }
+    }
+    @State private var seriesCache = SeriesCache()
+
     private var displayPoints: [WeightChartSeries.Point] {
         guard let trend else { return [] }
-        return granularity == .weekly
-            ? WeightChartSeries.weekly(trend.dataPoints, unit: unit)
-            : WeightChartSeries.daily(trend.dataPoints, unit: unit)
+        let key = "\(granularity)-\(unit)-\(trend.dataPoints.count)-\(trend.currentEMA)"
+        return seriesCache.points(key: key) {
+            granularity == .weekly
+                ? WeightChartSeries.weekly(trend.dataPoints, unit: unit)
+                : WeightChartSeries.daily(trend.dataPoints, unit: unit)
+        }
     }
 
     /// The selected-range slice — drives the Average / Difference / date-range
