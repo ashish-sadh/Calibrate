@@ -510,6 +510,17 @@ final class ExerciseVoiceLogViewModel {
         }
         phase = .parsing
 
+        // Cloud-first (#969): the on-device Apple Foundation Model
+        // pattern-completes a single utterance into a whole stereotypical workout
+        // ("3 sets of back extensions" → squat/deadlift/curl/…), silently logging
+        // exercises the user never said. The bigger Nebius cloud model extracts
+        // only what was stated. Falls through to on-device FM when the cloud is
+        // unconfigured / unreachable / returns nothing.
+        if let entries = await NebiusExerciseLogger.parse(text), !entries.isEmpty {
+            appendDrafts(entries.map { mapToDraft($0) })
+            return
+        }
+
         // Route through FoundationModelsExerciseExtractor (iOS 26+). On
         // `.unavailable` (FM kill-switch off / iOS<26) or a parser hiccup we fall
         // back to a single editable entry seeded with the raw text rather than
@@ -561,7 +572,8 @@ final class ExerciseVoiceLogViewModel {
         }
     }
 
-    @available(macOS 26, iOS 26, *)
+    // No availability gate: FMExerciseEntry is version-agnostic and the cloud
+    // (Nebius) path calls this on all iOS versions, not just 26+. (#969)
     private func mapToDraft(_ entry: FMExerciseEntry) -> ExerciseDraft {
         // strength → sets/reps/weight; cardio/mobility/sports → duration.
         let isDuration = entry.category != .strength

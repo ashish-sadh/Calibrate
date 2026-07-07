@@ -84,7 +84,14 @@ struct DriftApp: App {
                             if Preferences.preferredAIBackend == .foundationModels {
                                 Preferences.preferredAIBackend = .llamaCpp
                                 Log.app.info("FM NO-GO migration (#872): reset preferredAIBackend .foundationModels → .llamaCpp; user lands on the on-device download chooser")
-                                await AIBackendCoordinator.applyPreferredBackend()
+                                // Only install the local backend when cloud is NOT
+                                // configured. With a Nebius team key present, the
+                                // cloud-default flip just below installs the remote
+                                // backend, so loading the multi-GB GGUF here would
+                                // burn CPU/battery on a model we immediately discard. (#948)
+                                if !AppConfig.coachCloudConfigured {
+                                    await AIBackendCoordinator.applyPreferredBackend()
+                                }
                             }
                         }
                         // Drift Coach is cloud-first. On the first launch carrying a

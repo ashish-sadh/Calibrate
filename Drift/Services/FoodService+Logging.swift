@@ -11,8 +11,9 @@ extension FoodService {
     static func logRecipe(_ recipe: Food, servings: Double, mealType: MealType,
                           loggedAt: String? = nil, viewModel: FoodLogViewModel) -> Bool {
         if recipe.expandOnLog, let items = recipe.recipeItems, !items.isEmpty {
-            for item in items {
-                viewModel.quickAdd(
+            // Batch so an N-ingredient recipe reloads + refreshes the widget once. (#949)
+            viewModel.quickAddBatch(items.map { item in
+                FoodLogViewModel.BatchFoodItem(
                     name: item.name,
                     calories: item.calories * servings,
                     proteinG: item.proteinG * servings,
@@ -24,7 +25,7 @@ extension FoodService {
                     servingSizeG: item.servingSizeG * servings,
                     servings: 1
                 )
-            }
+            })
             return true
         }
         viewModel.quickAdd(

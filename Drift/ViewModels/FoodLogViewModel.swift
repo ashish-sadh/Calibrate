@@ -169,11 +169,11 @@ final class FoodLogViewModel {
     func logCombo(_ combo: Food) {
         guard let items = combo.recipeItems else { return }
         let mealType = autoMealType
-        for item in items {
-            quickAdd(name: item.name, calories: item.calories, proteinG: item.proteinG,
-                     carbsG: item.carbsG, fatG: item.fatG, fiberG: item.fiberG,
-                     mealType: mealType, servingSizeG: item.servingSizeG, servings: 1)
-        }
+        quickAddBatch(items.map {
+            BatchFoodItem(name: $0.name, calories: $0.calories, proteinG: $0.proteinG,
+                          carbsG: $0.carbsG, fatG: $0.fatG, fiberG: $0.fiberG,
+                          mealType: mealType, servingSizeG: $0.servingSizeG)
+        })
         try? database.trackFoodUsage(name: combo.name, foodId: combo.id, servings: 1,
                                      calories: combo.calories, proteinG: combo.proteinG,
                                      carbsG: combo.carbsG, fatG: combo.fatG, fiberG: combo.fiberG,
@@ -286,23 +286,42 @@ final class FoodLogViewModel {
                         perItemServings: [UUID: Double] = [:],
                         mealType: MealType,
                         loggedAt: String? = nil) {
-        for item in items {
+        quickAddBatch(items.compactMap { item -> BatchFoodItem? in
             let s = (perItemServings[item.id] ?? 1) * recipeServings
-            guard s > 0 else { continue }
-            quickAdd(name: item.name,
-                     calories: item.calories * s,
-                     proteinG: item.proteinG * s,
-                     carbsG: item.carbsG * s,
-                     fatG: item.fatG * s,
-                     fiberG: item.fiberG * s,
-                     mealType: mealType,
-                     loggedAt: loggedAt,
-                     servingSizeG: item.servingSizeG * s,
-                     servings: 1)
-        }
+            guard s > 0 else { return nil }
+            return BatchFoodItem(name: item.name,
+                                 calories: item.calories * s,
+                                 proteinG: item.proteinG * s,
+                                 carbsG: item.carbsG * s,
+                                 fatG: item.fatG * s,
+                                 fiberG: item.fiberG * s,
+                                 mealType: mealType,
+                                 loggedAt: loggedAt,
+                                 servingSizeG: item.servingSizeG * s,
+                                 servings: 1)
+        })
     }
 
-    func quickAdd(name: String, calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double, mealType: MealType, loggedAt: String? = nil, servingSizeG: Double = 0, servings: Double = 1, date: String? = nil) {
+    /// One food entry queued for a batched insert. (#949)
+    struct BatchFoodItem {
+        let name: String
+        let calories: Double
+        let proteinG: Double
+        let carbsG: Double
+        let fatG: Double
+        let fiberG: Double
+        let mealType: MealType
+        var loggedAt: String? = nil
+        var servingSizeG: Double = 0
+        var servings: Double = 1
+        var date: String? = nil
+    }
+
+    /// Insert ONE entry (creating the meal log if needed) WITHOUT reloading the
+    /// day or posting `.foodEntryAdded`. Callers batch those so an N-item log
+    /// reloads + refreshes the widget + notifies ONCE, not N times. (#949)
+    @discardableResult
+    private func quickAddCore(name: String, calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double, mealType: MealType, loggedAt: String? = nil, servingSizeG: Double = 0, servings: Double = 1, date: String? = nil) -> Bool {
         do {
             let date = date ?? dateString
             let mealLogs = try database.fetchMealLogs(for: date)
@@ -314,7 +333,7 @@ final class FoodLogViewModel {
                 mealLog = newLog
             }
 
-            guard let mealLogId = mealLog?.id else { return }
+            guard let mealLogId = mealLog?.id else { return false }
 
             let now = DateFormatters.iso8601.string(from: Date())
             var entry = FoodEntry(
@@ -347,15 +366,41 @@ final class FoodLogViewModel {
                     loggedAt: Date()
                 ))
             }
-            loadTodayMeals()
-            // Tell the Food-diary surface (which lives on its OWN viewModel
-            // instance and only reloads on this notification) that an entry
-            // landed — otherwise logging from the FAB's LogMealSheet writes to
-            // the DB but the diary behind it never refreshes (field bug).
-            NotificationCenter.default.post(name: .foodEntryAdded, object: nil)
+            return true
         } catch {
             Log.foodLog.error("Failed to quick add: \(error.localizedDescription)")
+            return false
         }
+    }
+
+    func quickAdd(name: String, calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double, mealType: MealType, loggedAt: String? = nil, servingSizeG: Double = 0, servings: Double = 1, date: String? = nil) {
+        quickAddCore(name: name, calories: calories, proteinG: proteinG, carbsG: carbsG, fatG: fatG, fiberG: fiberG, mealType: mealType, loggedAt: loggedAt, servingSizeG: servingSizeG, servings: servings, date: date)
+        loadTodayMeals()
+        // Tell the Food-diary surface (which lives on its OWN viewModel
+        // instance and only reloads on this notification) that an entry
+        // landed — otherwise logging from the FAB's LogMealSheet writes to
+        // the DB but the diary behind it never refreshes (field bug).
+        NotificationCenter.default.post(name: .foodEntryAdded, object: nil)
+    }
+
+    /// Batch insert — each item is written individually (identical per-item
+    /// semantics to `quickAdd`), but the day reload + widget refresh +
+    /// `.foodEntryAdded` post fire exactly ONCE at the end. An N-item
+    /// recipe/combo/copy used to trigger N reloads + N widget refreshes. (#949)
+    func quickAddBatch(_ items: [BatchFoodItem]) {
+        guard !items.isEmpty else { return }
+        var any = false
+        for it in items {
+            if quickAddCore(name: it.name, calories: it.calories, proteinG: it.proteinG,
+                            carbsG: it.carbsG, fatG: it.fatG, fiberG: it.fiberG,
+                            mealType: it.mealType, loggedAt: it.loggedAt,
+                            servingSizeG: it.servingSizeG, servings: it.servings, date: it.date) {
+                any = true
+            }
+        }
+        guard any else { return }
+        loadTodayMeals()
+        NotificationCenter.default.post(name: .foodEntryAdded, object: nil)
     }
 
     func updateEntryLoggedAt(id: Int64, loggedAt: String) {
@@ -465,6 +510,7 @@ final class FoodLogViewModel {
             let iso = DateFormatters.iso8601
             let todayDate = selectedDate
             let cal = Calendar.current
+            var batch: [BatchFoodItem] = []
             for log in logs {
                 guard let logId = log.id else { continue }
                 let entries = try database.fetchFoodEntries(forMealLog: logId)
@@ -483,12 +529,13 @@ final class FoodLogViewModel {
                     }
                     // Reclassify by the entry's actual hour — don't carry over yesterday's meal category
                     let mealType = MealType.fromHour(entryHour)
-                    quickAdd(name: entry.foodName, calories: entry.totalCalories,
-                             proteinG: entry.totalProtein, carbsG: entry.totalCarbs,
-                             fatG: entry.totalFat, fiberG: entry.totalFiber,
-                             mealType: mealType, loggedAt: mappedLoggedAt)
+                    batch.append(BatchFoodItem(name: entry.foodName, calories: entry.totalCalories,
+                                               proteinG: entry.totalProtein, carbsG: entry.totalCarbs,
+                                               fatG: entry.totalFat, fiberG: entry.totalFiber,
+                                               mealType: mealType, loggedAt: mappedLoggedAt))
                 }
             }
+            quickAddBatch(batch)
         } catch {
             Log.foodLog.error("Failed to copy from yesterday: \(error.localizedDescription)")
         }
@@ -498,7 +545,7 @@ final class FoodLogViewModel {
         let cal = Calendar.current
         let todayDate = Date()
         let iso = DateFormatters.iso8601
-        for entry in entries {
+        quickAddBatch(entries.map { entry in
             let mappedLoggedAt: String
             if let original = iso.date(from: entry.loggedAt) ?? DateFormatters.sqliteDatetime.date(from: entry.loggedAt) {
                 let time = cal.dateComponents([.hour, .minute, .second], from: original)
@@ -509,12 +556,12 @@ final class FoodLogViewModel {
                 mappedLoggedAt = iso.string(from: todayDate)
             }
             let mealType = MealType(rawValue: entry.mealType ?? "") ?? autoMealType
-            quickAdd(name: entry.foodName, calories: entry.totalCalories,
-                     proteinG: entry.totalProtein, carbsG: entry.totalCarbs,
-                     fatG: entry.totalFat, fiberG: entry.totalFiber,
-                     mealType: mealType, loggedAt: mappedLoggedAt,
-                     servingSizeG: entry.servingSizeG, date: DateFormatters.todayString)
-        }
+            return BatchFoodItem(name: entry.foodName, calories: entry.totalCalories,
+                                 proteinG: entry.totalProtein, carbsG: entry.totalCarbs,
+                                 fatG: entry.totalFat, fiberG: entry.totalFiber,
+                                 mealType: mealType, loggedAt: mappedLoggedAt,
+                                 servingSizeG: entry.servingSizeG, date: DateFormatters.todayString)
+        })
     }
 
     func swapEntries(_ movedIndex: Int, _ targetIndex: Int, in entries: [FoodEntry]) {
