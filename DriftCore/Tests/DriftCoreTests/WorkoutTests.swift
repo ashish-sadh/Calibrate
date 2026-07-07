@@ -1594,3 +1594,34 @@ import GRDB
     #expect(names.first == "log_activity")
     #expect(names.first != "log_food")
 }
+
+// MARK: - #939: performed order preserved (never alphabetical/hash order)
+
+@Test func buildSummaryPreservesPerformedOrderWarmupsFirst() async throws {
+    let suffix = Int.random(in: 100000...999999)
+    var w = Workout(name: "Order Test \(suffix)", date: "2026-07-07", createdAt: "")
+    try WorkoutService.saveWorkout(&w)
+    guard let wid = w.id else { Issue.record("no workout id"); return }
+    defer { try? WorkoutService.deleteWorkout(id: wid) }
+
+    // Performed order: warmup, then Zebra BEFORE Apple — alphabetical would
+    // flip them; the old Array(Set(...)) randomized them per read.
+    try WorkoutService.saveSets([
+        WorkoutSet(workoutId: wid, exerciseName: "Warm Zed \(suffix)", setOrder: 0, reps: 10, isWarmup: true, exerciseOrder: 0),
+        WorkoutSet(workoutId: wid, exerciseName: "Zebra Curl \(suffix)", setOrder: 0, weightLbs: 20, reps: 10, isWarmup: false, exerciseOrder: 1),
+        WorkoutSet(workoutId: wid, exerciseName: "Zebra Curl \(suffix)", setOrder: 1, weightLbs: 20, reps: 8, isWarmup: false, exerciseOrder: 1),
+        WorkoutSet(workoutId: wid, exerciseName: "Apple Row \(suffix)", setOrder: 0, weightLbs: 50, reps: 8, isWarmup: false, exerciseOrder: 2),
+    ])
+    let summary = try WorkoutService.buildSummary(for: w)
+    #expect(summary.exercises == ["Warm Zed \(suffix)", "Zebra Curl \(suffix)", "Apple Row \(suffix)"],
+            "got \(summary.exercises)")
+
+    // #938: the unified share builder reads the SAME persisted data — non-empty,
+    // contains every exercise, in the performed order.
+    let share = try WorkoutService.shareText(forWorkoutId: wid)
+    #expect(share.contains("Order Test \(suffix)"))
+    for name in summary.exercises { #expect(share.contains(name), "share missing \(name)") }
+    let zebraPos = share.range(of: "Zebra Curl \(suffix)")!.lowerBound
+    let applePos = share.range(of: "Apple Row \(suffix)")!.lowerBound
+    #expect(zebraPos < applePos, "share must keep performed order, not alphabetical")
+}

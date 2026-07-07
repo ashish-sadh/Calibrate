@@ -782,15 +782,11 @@ struct ActiveWorkoutView: View {
             }
             try WorkoutService.saveSets(allSets)
             if andDismiss {
-                // Build completion share text + check milestones
-                let totalVolLbs = allSets.reduce(0.0) { $0 + (($1.weightLbs ?? 0) * Double($1.reps ?? 0)) }
-                let exerciseNames = exercises.map(\.name).filter { !$0.isEmpty }
-                let duration = workout.durationDisplay
-                var shareLines = ["💪 \(workout.name)"]
-                if !duration.isEmpty { shareLines.append("⏱ \(duration)") }
-                shareLines.append("🏋️ \(Int(totalVolLbs)) lbs total volume")
-                shareLines.append("\(exerciseNames.count) exercises · \(allSets.count) sets")
-                completionShareText = shareLines.joined(separator: "\n")
+                // #938: share the PERSISTED workout via the same builder History
+                // uses — the old inline snapshot could render an empty summary
+                // (e.g. when no set rows qualified) while History looked fine.
+                completionShareText = (try? WorkoutService.shareText(forWorkoutId: wid))
+                    ?? "\u{1F4AA} \(workout.name)"
 
                 // Check milestone
                 if let count = try? WorkoutService.totalWorkoutCount() {

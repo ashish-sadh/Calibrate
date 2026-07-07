@@ -19,24 +19,10 @@ struct WorkoutDetailView: View {
     @State private var editSetWeight = ""
     @State private var editSetReps = ""
 
+    // #938: one share builder for completion + History — lives in
+    // WorkoutService so the two surfaces can never diverge.
     private var shareText: String {
-        var t = "💪 \(summary.workout.name)\n📅 \(formatDate(summary.workout.date))\n"
-        if !summary.workout.durationDisplay.isEmpty { t += "⏱ \(summary.workout.durationDisplay)  " }
-        t += "🏋️ \(Int(summary.totalVolume)) lbs\n"
-        if let notes = summary.workout.notes, !notes.isEmpty { t += "📝 \(notes)\n" }
-        t += "\n"
-        let grouped = Dictionary(grouping: sets) { $0.exerciseName }
-        for ex in summary.exercises {
-            if let exSets = grouped[ex] {
-                t += "\(ex)\n"
-                for s in exSets {
-                    let prefix = s.isWarmup ? "  W\(s.setOrder). " : "  \(s.setOrder). "
-                    t += "\(prefix)\(s.display)\n"
-                }
-                t += "\n"
-            }
-        }
-        t += "Logged with Drift"; return t
+        WorkoutService.shareText(for: summary, sets: sets)
     }
 
     var body: some View {

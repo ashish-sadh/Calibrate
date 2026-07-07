@@ -223,7 +223,21 @@ public enum WorkoutService {
             return WorkoutSummary(workout: workout, exercises: [], totalSets: 0, totalVolume: 0, prs: 0, bestSets: [])
         }
         let sets = try fetchSets(forWorkout: wid)
-        let exercises = Array(Set(sets.map(\.exerciseName)))
+        // #939: preserve performed order. fetchSets returns sets ordered by
+        // exercise_order/set_order; the old Array(Set(...)) hashed that away,
+        // so detail + share rendered a random order every read. Ordered
+        // dedup by first appearance, warmup exercises grouped first.
+        var seenNames = Set<String>()
+        var warmupNames: [String] = []
+        var workingNames: [String] = []
+        for s in sets where seenNames.insert(s.exerciseName).inserted {
+            if s.isWarmup {
+                warmupNames.append(s.exerciseName)
+            } else {
+                workingNames.append(s.exerciseName)
+            }
+        }
+        let exercises = warmupNames + workingNames
 
         let workingSets = sets.filter { !$0.isWarmup }
         let totalVolume = workingSets.reduce(0.0) { $0 + ($1.weightLbs ?? 0) * Double($1.reps ?? 0) }
@@ -240,6 +254,44 @@ public enum WorkoutService {
 
         return WorkoutSummary(workout: workout, exercises: exercises, totalSets: workingSets.count,
                               totalVolume: totalVolume, prs: 0, bestSets: bestSets)
+    }
+
+    // MARK: - Share text (#938: ONE builder for completion sheet + History)
+
+    /// Render the share summary from a summary + its sets. Pure — both share
+    /// surfaces call this, so they can never diverge; #939's ordered
+    /// `summary.exercises` drives the exercise sequence (warmups first,
+    /// performed order).
+    public static func shareText(for summary: WorkoutSummary, sets: [WorkoutSet]) -> String {
+        var t = "\u{1F4AA} \(summary.workout.name)\n\u{1F4C5} \(summary.workout.date)\n"
+        if !summary.workout.durationDisplay.isEmpty { t += "\u{23F1} \(summary.workout.durationDisplay)  " }
+        t += "\u{1F3CB} \(Int(summary.totalVolume)) lbs\n"
+        if let notes = summary.workout.notes, !notes.isEmpty { t += "\u{1F4DD} \(notes)\n" }
+        t += "\n"
+        let grouped = Dictionary(grouping: sets) { $0.exerciseName }
+        for ex in summary.exercises {
+            guard let exSets = grouped[ex] else { continue }
+            t += "\(ex)\n"
+            for s in exSets {
+                let prefix = s.isWarmup ? "  W\(s.setOrder). " : "  \(s.setOrder). "
+                t += "\(prefix)\(s.display)\n"
+            }
+            t += "\n"
+        }
+        t += "Logged with Drift"
+        return t
+    }
+
+    /// Share text for a just-saved workout — reads the PERSISTED rows, so the
+    /// completion sheet shares exactly what History will show (never a stale
+    /// or empty in-memory snapshot, #938).
+    public static func shareText(forWorkoutId id: Int64) throws -> String {
+        guard let workout = try db.reader.read({ try Workout.fetchOne($0, id: id) }) else {
+            throw DatabaseError(message: "workout \(id) not found")
+        }
+        let summary = try buildSummary(for: workout)
+        let sets = try fetchSets(forWorkout: id)
+        return shareText(for: summary, sets: sets)
     }
 
     /// Unique exercise names from all workouts.
