@@ -333,14 +333,18 @@ import Testing
 
 @Test func goalWeeklyRate() async throws {
     // Lose 10kg in 6 months ≈ 26 weeks → -0.385 kg/week
-    let g = WeightGoal(targetWeightKg: 50.0, monthsToAchieve: 6, startDate: "2026-01-01", startWeightKg: 60.0)
+    // startDate = today keeps the 6-month deadline in the future; a hardcoded
+    // past date collapses weeksRemaining → 0 → requiredWeeklyRate 0 (date-bomb).
+    let today = DateFormatters.dateOnly.string(from: Date())
+    let g = WeightGoal(targetWeightKg: 50.0, monthsToAchieve: 6, startDate: today, startWeightKg: 60.0)
     let rate = g.requiredWeeklyRate(currentWeightKg: 60.0)
     #expect(rate < 0, "Should be negative for loss")
     #expect(rate >= -1.0, "Should be capped at -1.0 kg/week")
 }
 
 @Test func goalOnTrack() async throws {
-    let g = WeightGoal(targetWeightKg: 50.0, monthsToAchieve: 6, startDate: "2026-01-01", startWeightKg: 60.0)
+    let today = DateFormatters.dateOnly.string(from: Date())
+    let g = WeightGoal(targetWeightKg: 50.0, monthsToAchieve: 6, startDate: today, startWeightKg: 60.0)
     let rate = g.requiredWeeklyRate(currentWeightKg: 60)
     #expect(g.isOnTrack(actualWeeklyRateKg: rate, currentWeightKg: 60) == .onTrack)
     #expect(g.isOnTrack(actualWeeklyRateKg: rate * 2, currentWeightKg: 60) == .ahead)
@@ -348,7 +352,8 @@ import Testing
 }
 
 @Test func goalGaining() async throws {
-    let g = WeightGoal(targetWeightKg: 70.0, monthsToAchieve: 6, startDate: "2026-01-01", startWeightKg: 60.0)
+    let today = DateFormatters.dateOnly.string(from: Date())
+    let g = WeightGoal(targetWeightKg: 70.0, monthsToAchieve: 6, startDate: today, startWeightKg: 60.0)
     #expect(g.totalChangeKg > 0)
     #expect(g.requiredWeeklyRate(currentWeightKg: 60.0) > 0)
     #expect(g.requiredDailyDeficit(currentWeightKg: 60.0) > 0) // surplus
