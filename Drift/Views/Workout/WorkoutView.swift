@@ -23,6 +23,11 @@ struct WorkoutView: View {
     @State private var selectedTemplate: WorkoutTemplate? = nil
     @State private var previewTemplate: WorkoutTemplate? = nil
     @State private var editingTemplateForEdit: WorkoutTemplate? = nil
+    /// #premium-polish: what to present once the preview sheet finishes
+    /// dismissing — set before clearing `previewTemplate`, run in the sheet's
+    /// onDismiss. Replaces an asyncAfter(0.3) dead gap between the two sheets.
+    private enum PreviewFollowUp { case start(WorkoutTemplate), edit(WorkoutTemplate) }
+    @State private var previewFollowUp: PreviewFollowUp? = nil
     @State private var renameTemplateId: Int64?
     @State private var renameTemplateName = ""
     @State private var showingRenameAlert = false
@@ -362,22 +367,30 @@ struct WorkoutView: View {
         .sheet(isPresented: $showingExerciseBrowser) {
             ExerciseBrowserView()
         }
-        .sheet(item: $previewTemplate) { t in
+        .sheet(item: $previewTemplate, onDismiss: {
+            // #premium-polish: present the follow-up ONLY after the preview has
+            // finished dismissing — no timer, no race, no dead gap between sheets.
+            switch previewFollowUp {
+            case .start(let template):
+                WorkoutService.clearSession()
+                selectedTemplate = template
+                showingNewWorkout = true
+            case .edit(let template):
+                editingTemplateForEdit = template
+            case nil:
+                break
+            }
+            previewFollowUp = nil
+        }) { t in
             TemplatePreviewSheet(
                 template: t,
                 onStartWorkout: { template in
+                    previewFollowUp = .start(template)
                     previewTemplate = nil
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        WorkoutService.clearSession()
-                        selectedTemplate = template
-                        showingNewWorkout = true
-                    }
                 },
                 onEditTemplate: { template in
+                    previewFollowUp = .edit(template)
                     previewTemplate = nil
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        editingTemplateForEdit = template
-                    }
                 },
                 onDismiss: { previewTemplate = nil },
                 onReload: { loadData() }

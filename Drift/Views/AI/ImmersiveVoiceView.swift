@@ -60,8 +60,13 @@ struct ImmersiveVoiceView: View {
                 .accessibilityIdentifier("coach-talk-to-text")
                 .padding(.bottom, 24)
             }
-            .animation(.easeInOut(duration: 0.25), value: caption)
-            .animation(.easeInOut(duration: 0.25), value: proposal != nil)
+            // #premium-polish: key the layout animation to caption PRESENCE,
+            // not its content — keyed to the full string it re-fired on every
+            // partial transcript while speaking, so the caption + surrounding
+            // layout were perpetually mid-animation (text wobble/reflow). The
+            // streaming text now updates unanimated; appear/disappear still eases.
+            .animation(Theme.Motion.passive, value: caption.isEmpty)
+            .animation(Theme.Motion.passive, value: proposal != nil)
         }
     }
 
