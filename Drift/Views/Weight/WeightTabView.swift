@@ -44,25 +44,11 @@ struct WeightTabView: View {
                             unit: viewModel.weightUnit,
                             granularity: viewModel.granularity,
                             rawEntries: viewModel.entries,
-                            rangeStart: viewModel.selectedTimeRange.days.flatMap { Calendar.current.date(byAdding: .day, value: -$0, to: Date()) },
-                            dailyCaloriesByDate: viewModel.dailyCaloriesByDate,
-                            showCaloriesOverlay: viewModel.showCaloriesOverlay
+                            rangeStart: viewModel.selectedTimeRange.days.flatMap { Calendar.current.date(byAdding: .day, value: -$0, to: Date()) }
                         )
-                        .frame(height: 320)
-
-                        // Scale vs Trend legend — names the two chart marks
-                        // (quiet grey scale dots vs the ink trend line).
-                        HStack(spacing: 18) {
-                            HStack(spacing: 5) {
-                                Circle().fill(Theme.textTertiary.opacity(0.5)).frame(width: 6, height: 6)
-                                Text("Scale").font(.caption2.weight(.medium)).foregroundStyle(Theme.textSecondary)
-                            }
-                            HStack(spacing: 5) {
-                                Capsule().fill(Theme.chartTrend).frame(width: 16, height: 3)
-                                Text("Trend").font(.caption2.weight(.medium)).foregroundStyle(Theme.textSecondary)
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
+                        .frame(height: 340)
+                        // Legend moved INTO WeightChartView (#932) so the trend
+                        // swatch tracks the goal-aware line colour.
 
                         // Big change banner
                         bigChangeBanner
@@ -276,17 +262,8 @@ struct WeightTabView: View {
                 }
                 .accessibilityLabel(viewModel.granularity == .daily ? "Granularity: Daily" : "Granularity: Weekly")
 
-                Button {
-                    viewModel.toggleCaloriesOverlay()
-                } label: {
-                    Image(systemName: "flame.fill")
-                        .font(.caption.weight(.bold))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .background(viewModel.showCaloriesOverlay ? Theme.accent.opacity(0.3) : Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 6))
-                        .foregroundStyle(viewModel.showCaloriesOverlay ? Theme.accent : .secondary)
-                }
-                .accessibilityLabel(viewModel.showCaloriesOverlay ? "Hide calorie overlay" : "Show calorie overlay")
+                // The calorie-overlay flame toggle lived here — removed with
+                // the overlay itself (#932, operator-approved removal).
 
                 // V7 polish: per-screen chat icon dropped in favor of
                 // the single bottom-right ChatIconButton in

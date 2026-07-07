@@ -223,7 +223,6 @@ final class BackupPackagerTests: XCTestCase {
     func testAllowlistContainsOnlyRealAndSerializableKeys() {
         let expected: Set<String> = [
             "weight_unit",
-            "drift_weight_chart_calories",
             "drift_cycle_fertile_window",
             "drift_ai_enabled",
             "drift_conversation_history_enabled",

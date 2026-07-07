@@ -8,8 +8,6 @@ struct WeightChartView: View {
     let granularity: WeightViewModel.Granularity
     var rawEntries: [WeightEntry] = []
     var rangeStart: Date? = nil
-    var dailyCaloriesByDate: [String: Double] = [:]
-    var showCaloriesOverlay: Bool = false
 
     /// X-value the user is touching, via `.chartXSelection` — coexists with the
     /// scroll gesture (the old DragGesture overlay would have eaten the scroll).
@@ -20,18 +18,18 @@ struct WeightChartView: View {
     /// ALL trend points (full history) — the chart PLOTS these so you can scroll
     /// through your whole timeline. `rangeStart` no longer filters the data; it
     /// sets the initial visible WINDOW via `.chartXVisibleDomain`. The EMA values
-    /// are the ones the calculator produced across all history.
-    private var displayPoints: [(date: Date, actual: Double?, ema: Double)] {
+    /// are the ones the calculator produced across all history. Series building
+    /// lives in DriftCore (`WeightChartSeries`) so the mapping is Tier-0 tested.
+    private var displayPoints: [WeightChartSeries.Point] {
         guard let trend else { return [] }
-        if granularity == .weekly { return weeklyAggregated(trend.dataPoints) }
-        return trend.dataPoints.map {
-            ($0.date, $0.actualWeight.map { unit.convert(fromKg: $0) }, unit.convert(fromKg: $0.emaWeight))
-        }
+        return granularity == .weekly
+            ? WeightChartSeries.weekly(trend.dataPoints, unit: unit)
+            : WeightChartSeries.daily(trend.dataPoints, unit: unit)
     }
 
     /// The selected-range slice — drives the Average / Difference / date-range
     /// HEADER so those numbers track the window you start on (not 2 years).
-    private var rangePoints: [(date: Date, actual: Double?, ema: Double)] {
+    private var rangePoints: [WeightChartSeries.Point] {
         guard let start = rangeStart else { return displayPoints }
         return displayPoints.filter { $0.date >= start }
     }
@@ -75,21 +73,6 @@ struct WeightChartView: View {
         return (nearest.date, nearest.actual ?? nearest.ema)
     }
 
-    private func weeklyAggregated(_ points: [WeightTrendCalculator.WeightDataPoint]) -> [(date: Date, actual: Double?, ema: Double)] {
-        let calendar = Calendar.current
-        var weeks: [Date: (actuals: [Double], emas: [Double])] = [:]
-        for p in points {
-            let ws = calendar.dateInterval(of: .weekOfYear, for: p.date)?.start ?? p.date
-            if let a = p.actualWeight { weeks[ws, default: ([], [])].actuals.append(a) }
-            weeks[ws, default: ([], [])].emas.append(p.emaWeight)
-        }
-        return weeks.sorted { $0.key < $1.key }.map { ws, data in
-            let avgA = data.actuals.isEmpty ? nil : unit.convert(fromKg: data.actuals.reduce(0, +) / Double(data.actuals.count))
-            let avgE = data.emas.isEmpty ? 0 : unit.convert(fromKg: data.emas.reduce(0, +) / Double(data.emas.count))
-            return (ws, avgA, avgE)
-        }
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             if trend != nil {
@@ -123,42 +106,9 @@ struct WeightChartView: View {
                     }
                 }
 
-                // Toggle is ON but no bars rendered = no calorie data in
-                // chart range. Without this caption, tapping the flame looks
-                // like a silent no-op (most pronounced at 1W/1M when the
-                // user hasn't logged calories yet for the visible window).
-                if showCaloriesOverlay && scaledCalorieBars() == nil {
-                    HStack(spacing: 4) {
-                        Image(systemName: "flame.fill")
-                            .font(.caption2)
-                            .foregroundStyle(Theme.accent.opacity(0.7))
-                        Text("No calories logged in this range — log meals to see the overlay.")
-                            .font(.caption2).foregroundStyle(.secondary)
-                    }
-                }
             }
 
             Chart {
-                // Optional calorie bars in the background — scaled to fit the
-                // weight Y range so a single scale renders cleanly. The
-                // trailing axis labels show calories explicitly so the
-                // shared scale isn't read as weight.
-                if showCaloriesOverlay, let calBars = scaledCalorieBars() {
-                    ForEach(calBars, id: \.date) { bar in
-                        BarMark(
-                            x: .value("", bar.date),
-                            yStart: .value("", bar.scaledMin),
-                            yEnd: .value("", bar.scaledMax)
-                        )
-                        // 0.18 was too faint on dark theme — users reported
-                        // "I tap the flame and nothing happens". Bumped to
-                        // 0.35 so sparse-day bars are visibly purple against
-                        // the background without competing with the EMA line.
-                        .foregroundStyle(Theme.accent.opacity(0.35))
-                        .cornerRadius(2)
-                    }
-                }
-
                 // Current value reference line (accent, horizontal) —
                 // anchored to the latest *actual* weight so the user's
                 // most recent weigh-in is the line you see, not the
@@ -175,45 +125,43 @@ struct WeightChartView: View {
                         }
                 }
 
-                // V7 mobile fix (2026-05-21 field report): user said "I
-                // definitely gained, something is wrong" — chart line
-                // (smoothed EMA) looked flat while the cards reported
-                // a clear deficit. They were both reading the same DB
-                // but plotting different signals. Now we draw BOTH
-                // lines: actual weights in coral, EMA in grey. The
-                // coral line is what drives the Difference number,
-                // the rule line, and the tap callout, so the user can
-                // verify their raw data with their eyes instead of
-                // having to interpret a smoothing curve.
-                // Raw weigh-ins as faint dots sitting ON the actual value — the
-                // honest day-to-day spread around the trend. Replaces the old
-                // connected grey line, whose catmullRom interpolation overshot
-                // each spike into loopy artifacts and made the chart look noisy.
-                // A scatter reads cleaner and is the truthful representation of
-                // discrete weigh-ins.
-                ForEach(displayPoints.indices, id: \.self) { i in
-                    if let actual = displayPoints[i].actual {
-                        PointMark(
-                            x: .value("", displayPoints[i].date),
-                            y: .value("Scale", actual)
-                        )
-                        .foregroundStyle(Theme.textTertiary.opacity(0.4))
-                        .symbolSize(granularity == .weekly ? 26 : 14)
-                    }
+                // Raw scale readings — connected by a thin light line with a
+                // marker on each actual weigh-in (#932, the TrendWeight /
+                // Happy Scale pattern: you see the real day-to-day path, not
+                // isolated dots). The 2026-05 connected line was removed for
+                // catmullRom loop artifacts; this one interpolates LINEARLY —
+                // straight segments between readings can't overshoot a spike.
+                // Gaps (days without a weigh-in) are skipped so the line
+                // connects reading→reading rather than dropping to zero.
+                ForEach(Array(displayPoints.enumerated().filter { $0.element.actual != nil }), id: \.offset) { i, p in
+                    LineMark(
+                        x: .value("", p.date),
+                        y: .value("Scale", p.actual ?? 0),
+                        series: .value("Series", "Scale")
+                    )
+                    .foregroundStyle(Theme.textTertiary.opacity(0.35))
+                    .lineStyle(StrokeStyle(lineWidth: 1, lineCap: .round, lineJoin: .round))
+                    .interpolationMethod(.linear)
+
+                    PointMark(
+                        x: .value("", p.date),
+                        y: .value("Scale", p.actual ?? 0)
+                    )
+                    .foregroundStyle(Theme.textTertiary.opacity(0.5))
+                    .symbolSize(granularity == .weekly ? 26 : 14)
                 }
 
-                // Trend (EMA) is the HERO — solid ink, the smoothed signal the
-                // cards report, with a dot at each weigh-in. Recolored off coral
-                // (which read as an "alarm") to ink so the only colour on the
-                // chart is the goal-direction signals + the single coral "current"
-                // dot. Ink is V7's structural colour, so it belongs here.
+                // Trend (EMA) is the HERO — the heavier smoothed line drawn
+                // over the raw path, goal-aware per tenets: green when the
+                // window's trend moves toward the goal, red when against it,
+                // neutral ink when flat (#932).
                 ForEach(displayPoints.indices, id: \.self) { i in
                     LineMark(
                         x: .value("", displayPoints[i].date),
                         y: .value("Trend", displayPoints[i].ema),
                         series: .value("Series", "Trend")
                     )
-                    .foregroundStyle(Theme.chartTrend)
+                    .foregroundStyle(trendColor)
                     .lineStyle(StrokeStyle(lineWidth: 2.5, lineCap: .round, lineJoin: .round))
                     .interpolationMethod(.catmullRom)
                 }
@@ -226,7 +174,7 @@ struct WeightChartView: View {
                                 x: .value("", displayPoints[i].date),
                                 y: .value("Trend", displayPoints[i].ema)
                             )
-                            .foregroundStyle(Theme.chartTrend)
+                            .foregroundStyle(trendColor)
                             .symbolSize(22)
                         }
                     }
@@ -295,23 +243,35 @@ struct WeightChartView: View {
                 }
             }
             .chartYAxis {
+                // Single weight axis (#932) — the leading kcal axis left with
+                // the calorie overlay.
                 AxisMarks(position: .trailing) {
                     AxisValueLabel().foregroundStyle(Theme.textSecondary)
-                }
-                if showCaloriesOverlay, let bars = scaledCalorieBars() {
-                    AxisMarks(position: .leading, values: leadingAxisTicks(bars: bars)) { value in
-                        if let scaled = value.as(Double.self),
-                           let cal = unscaleCalorie(value: scaled, bars: bars) {
-                            AxisValueLabel { Text("\(Int(cal))").font(.caption2) }
-                                .foregroundStyle(Theme.accent.opacity(0.7))
-                        }
-                    }
                 }
             }
             // Tap / long-press to read a value — `.chartXSelection` instead of a
             // DragGesture overlay so it coexists with the horizontal scroll
             // gesture (the old minimumDistance-0 drag would have eaten the scroll).
             .chartXSelection(value: $selectedDate)
+
+            // Scale vs Trend legend — the light connected reading line with
+            // markers vs the heavier smoothed trend. Lives WITH the chart
+            // (moved from WeightTabView, #932) so the trend swatch always
+            // matches the goal-aware line colour actually drawn above.
+            HStack(spacing: 18) {
+                HStack(spacing: 5) {
+                    ZStack {
+                        Capsule().fill(Theme.textTertiary.opacity(0.35)).frame(width: 16, height: 1.5)
+                        Circle().fill(Theme.textTertiary.opacity(0.5)).frame(width: 5, height: 5)
+                    }
+                    Text("Scale").font(.caption2.weight(.medium)).foregroundStyle(Theme.textSecondary)
+                }
+                HStack(spacing: 5) {
+                    Capsule().fill(trendColor).frame(width: 16, height: 3)
+                    Text("Trend").font(.caption2.weight(.medium)).foregroundStyle(Theme.textSecondary)
+                }
+                Spacer()
+            }
         }
         .card()
         .accessibilityElement(children: .combine)
@@ -348,53 +308,18 @@ struct WeightChartView: View {
         return l - f
     }
 
-    // MARK: - Calorie overlay helpers (#669)
+    // MARK: - Goal-aware trend colour (#932)
 
-    private struct ScaledCalorieBar {
-        let date: Date
-        let calories: Double
-        let scaledMin: Double  // bar bottom — bottom of weight Y range
-        let scaledMax: Double  // bar top — calories projected onto weight Y range
+    /// Green when the smoothed trend moves toward the goal, red when against
+    /// it, neutral ink when flat. Defaults to a losing goal when none is set
+    /// (tenet). Static so the legend can use the identical mapping.
+    static func trendColor(emaDelta: Double?, goalChangeKg: Double?) -> Color {
+        guard let d = emaDelta, abs(d) > 0.05 else { return Theme.chartTrend }
+        let gainIsGood = (goalChangeKg ?? -1) > 0
+        return (d > 0) == gainIsGood ? Theme.deficit : Theme.surplus
     }
 
-    private struct CalorieScaling {
-        let weightLow: Double
-        let weightHigh: Double
-        let maxCalories: Double
-    }
-
-    private func calorieScaling() -> CalorieScaling? {
-        let weights = displayPoints.map(\.ema) + displayPoints.compactMap(\.actual)
-        guard let lo = weights.min(), let hi = weights.max(), hi > lo else { return nil }
-        let cals = dailyCaloriesByDate.values.filter { $0 > 0 }
-        guard let maxCal = cals.max(), maxCal > 0 else { return nil }
-        // Pad weight range so calorie bars don't paint over weight extremes.
-        let pad = max(0.5, (hi - lo) * 0.1)
-        return CalorieScaling(weightLow: lo - pad, weightHigh: hi + pad, maxCalories: maxCal)
-    }
-
-    private func scaledCalorieBars() -> [ScaledCalorieBar]? {
-        guard let scaling = calorieScaling() else { return nil }
-        let span = scaling.weightHigh - scaling.weightLow
-        return dailyCaloriesByDate.compactMap { entry in
-            guard entry.value > 0, let date = DateFormatters.dateOnly.date(from: entry.key) else { return nil }
-            let frac = entry.value / scaling.maxCalories
-            let top = scaling.weightLow + frac * span
-            return ScaledCalorieBar(date: date, calories: entry.value, scaledMin: scaling.weightLow, scaledMax: top)
-        }.sorted { $0.date < $1.date }
-    }
-
-    private func leadingAxisTicks(bars: [ScaledCalorieBar]) -> [Double] {
-        guard let scaling = calorieScaling() else { return [] }
-        let span = scaling.weightHigh - scaling.weightLow
-        return [0.0, 0.5, 1.0].map { scaling.weightLow + $0 * span }
-    }
-
-    private func unscaleCalorie(value scaledY: Double, bars: [ScaledCalorieBar]) -> Double? {
-        guard let scaling = calorieScaling() else { return nil }
-        let span = scaling.weightHigh - scaling.weightLow
-        guard span > 0 else { return nil }
-        let frac = (scaledY - scaling.weightLow) / span
-        return frac * scaling.maxCalories
+    private var trendColor: Color {
+        Self.trendColor(emaDelta: totalDifference, goalChangeKg: WeightGoal.load()?.totalChangeKg)
     }
 }

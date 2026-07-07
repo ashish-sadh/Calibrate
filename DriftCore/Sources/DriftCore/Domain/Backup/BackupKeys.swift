@@ -15,7 +15,6 @@ public enum BackupKeys {
     public static let userDefaultsAllowlist: [String] = [
         // Units / display
         "weight_unit",                                  // Preferences.weightUnit (String enum raw)
-        "drift_weight_chart_calories",                  // Preferences.weightChartCaloriesEnabled (Bool, may be unset)
         "drift_cycle_fertile_window",                   // Preferences.cycleFertileWindow (Bool)
 
         // AI / chat
