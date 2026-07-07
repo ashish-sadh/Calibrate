@@ -12,14 +12,18 @@ struct DriftCoachSheet: View {
     /// Optional pre-filled user message — used by "Edit in chat" from
     /// VoiceLogSheet to hand off the raw transcript into the chat input.
     let prefill: String
+    /// #936: Ask-AI seeds fire as a turn immediately; edit-in-chat (false)
+    /// leaves the prefill in the input for the user to refine.
+    let autoSubmit: Bool
 
-    init(prefill: String = "") {
+    init(prefill: String = "", autoSubmit: Bool = false) {
         self.prefill = prefill
+        self.autoSubmit = autoSubmit
     }
 
     var body: some View {
         NavigationStack {
-            AIChatView(prefill: prefill)
+            AIChatView(prefill: prefill, autoSubmit: autoSubmit)
                 .background(Theme.background.ignoresSafeArea())
                 .navigationTitle("Drift Coach")
                 .navigationBarTitleDisplayMode(.inline)

@@ -148,7 +148,10 @@ extension V6CoachingNudge {
         center.post(
             name: .openDriftCoach, object: nil,
             userInfo: ["prefill": NudgeCoachSeed.prompt(title: payload.title,
-                                                        detail: payload.detail)])
+                                                        detail: payload.detail),
+                       // #936: nudge questions fire immediately — only the
+                       // edit-in-chat hand-off leaves text in the input.
+                       "autoSubmit": true])
     }
 }
 

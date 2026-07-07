@@ -14,9 +14,11 @@ struct AIChatView: View {
     /// Optional pre-filled input — used by VoiceLogSheet's "Edit in chat"
     /// hand-off so the user can refine a transcript before sending.
     let prefill: String
+    let autoSubmit: Bool
 
-    init(prefill: String = "") {
+    init(prefill: String = "", autoSubmit: Bool = false) {
         self.prefill = prefill
+        self.autoSubmit = autoSubmit
     }
 
     var body: some View {
@@ -154,7 +156,7 @@ struct AIChatView: View {
             if vm.messages.isEmpty {
                 vm.messages.append(AIChatViewModel.ChatMessage(role: .assistant, text: vm.pageInsight))
             }
-            if !prefill.isEmpty && vm.inputText.isEmpty {
+            if !prefill.isEmpty && vm.inputText.isEmpty && !autoSubmit {
                 vm.inputText = prefill
                 inputFocused = true
             }
@@ -169,6 +171,13 @@ struct AIChatView: View {
                 AIBackendCoordinator.installCoachBackend()
             } else if !vm.aiService.isModelLoaded && vm.aiService.state == .ready {
                 vm.aiService.loadModel()
+            }
+            // #936: Ask-AI questions fire as a real turn immediately — never
+            // left stuck in the input. AFTER the backend install above, or
+            // the very first turn races the cloud brain and falls to Gemma.
+            if autoSubmit && !prefill.isEmpty && vm.inputText.isEmpty {
+                vm.inputText = prefill
+                vm.sendMessage()
             }
         }
         .onDisappear {
@@ -272,11 +281,10 @@ struct AIChatView: View {
     /// mid-reply. Prevents duplicated callback logic / double-sends.
     func startOrStopVoice() {
         if vm.voiceService.isSpeaking { vm.voiceService.stop(); return }
-        // Talking to the coach implies it talks back — turn on Apple TTS
-        // (CoachVoiceService) for this session when starting a voice turn.
-        if !vm.speechService.isRecording && !vm.voiceOutputEnabled {
-            vm.toggleVoiceOutput()
-        }
+        // #937: voice INPUT does not imply voice OUTPUT. The old force-enable
+        // here overrode the user's explicit speaker-OFF toggle — dictating a
+        // message made the phone talk back unexpectedly. Replies speak only
+        // when the speaker toggle is ON.
         beginListening()
     }
 

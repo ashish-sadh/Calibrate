@@ -32,6 +32,7 @@ struct ContentView: View {
     /// Optional text routed into Drift Coach when "Edit in chat" is
     /// tapped on the VoiceLogSheet confirmation card.
     @State private var driftCoachPrefill: String = ""
+    @State private var driftCoachAutoSubmit: Bool = false
 
     init(syncComplete: Binding<Bool>, launchStage: LaunchStage = .starting) {
         self._syncComplete = syncComplete
@@ -92,7 +93,7 @@ struct ContentView: View {
                 PhotoLogFlowView(foodLog: photoLogVM)
             }
             .sheet(isPresented: $showingDriftCoach) {
-                DriftCoachSheet(prefill: driftCoachPrefill)
+                DriftCoachSheet(prefill: driftCoachPrefill, autoSubmit: driftCoachAutoSubmit)
             }
             .onReceive(NotificationCenter.default.publisher(for: .openDriftCoach)) { notification in
                 if let prefill = notification.userInfo?["prefill"] as? String {
@@ -100,6 +101,8 @@ struct ContentView: View {
                 } else {
                     driftCoachPrefill = ""
                 }
+                // #936: Ask-AI seeds auto-submit; edit-in-chat stays editable.
+                driftCoachAutoSubmit = (notification.userInfo?["autoSubmit"] as? Bool) ?? false
                 showingDriftCoach = true
             }
 

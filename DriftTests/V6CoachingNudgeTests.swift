@@ -169,6 +169,8 @@ final class V6CoachingNudgeTests: XCTestCase {
                       "Seed must carry the actual missed supplement names so the Coach's first answer uses real data")
         XCTAssertTrue(prefill?.contains("3+ days") == true,
                       "Seed must carry how long the supplements have been missed")
+        XCTAssertEqual(received?.userInfo?["autoSubmit"] as? Bool, true,
+                       "#936: Ask AI must auto-submit the seeded turn, not leave it in the input")
     }
 
     func testOpenDriftCoachNameMatchesContentViewContract() {
