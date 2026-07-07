@@ -254,4 +254,6 @@
 {"build":321,"date":"2026-07-03T17:28:56-07:00","description":"chore: TestFlight build 321","fixes":[],"features":[]},
 {"build":322,"date":"2026-07-03T21:39:35-07:00","description":"chore: TestFlight build 322","fixes":[],"features":[]},
 {"build":323,"date":"2026-07-04T01:35:25-07:00","description":"chore: TestFlight build 323","fixes":[],"features":[]}
+,
+{"build": 327, "date": "2026-07-07T04:01:10.490-07:00", "description": "chore: TestFlight build 327", "fixes": [], "features": []}
 ]
