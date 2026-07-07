@@ -481,8 +481,14 @@ extension AIChatViewModel {
         if handleMealLogging(lower) { return true }
         let resolved = resolvePronouns(lower)
         if handleCalorieWithoutFood(resolved) { return true }
-        if handleMultiFoodIntent(resolved) { return true }
+        // #898: composed ("X with Y and Z") BEFORE plain multi ("A and B"). Both
+        // split on "and"/",", but only the composed parser also splits on the
+        // "with"/"plus" connector — running multi first grabs "2 rotis with dal
+        // and a bowl of curd" on its " and " and mis-splits (dal swallowed into
+        // the roti item). Composed returns nil without a connector, so plain
+        // "eggs and toast" still falls through to multi.
         if handleComposedFoodIntent(resolved) { return true }
+        if handleMultiFoodIntent(resolved) { return true }
         if handleSingleFoodIntent(resolved) { return true }
         if handleActivityLogging(lower) { return true }
         if handleWeightIntent(lower) { return true }

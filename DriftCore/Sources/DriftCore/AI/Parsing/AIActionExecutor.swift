@@ -210,6 +210,21 @@ public enum AIActionExecutor {
         return intents.count > 1 ? intents : nil
     }
 
+    /// Unified multi-item meal parse — composition ("X with N Y", "plus") takes
+    /// precedence over plain "and"/"," splitting so "2 rotis with dal and a bowl
+    /// of curd" → [roti×2, dal, curd] (not [rotis with dal, curd]). Composed
+    /// only fires on a real connector, so plain "rice, dal and curd" falls
+    /// through to `parseMultiFoodIntent`. Single dishes (no connector, no
+    /// "and"/",") return nil so they stay on the single-food path. #898
+    ///
+    /// One source of truth for every multi-item food surface: the deterministic
+    /// iOS chat path AND the Nebius/agent fallback (where the LLM otherwise
+    /// collapses "paneer butter masala with 2 naan" into one ×2 search, dropping
+    /// the naan). Per-item quantity rides on each `FoodIntent.servings`.
+    public static func parseMultiItemMeal(_ text: String) -> [FoodIntent]? {
+        ComposedFoodParser.parse(text) ?? parseMultiFoodIntent(text)
+    }
+
     /// Ask the LLM to estimate nutrition for an unknown food.
     /// Returns a prompt that will get structured nutrition data back.
     public static func nutritionEstimationPrompt(food: String, servings: Double?) -> String {
@@ -324,7 +339,14 @@ public enum AIActionExecutor {
                                                    "tbsp", "tablespoon", "tablespoons",
                                                    "tsp", "teaspoon", "teaspoons"]
         let countUnitsLeading: Set<String> = ["scoop", "scoops", "piece", "pieces", "slice", "slices",
-                                               "serving", "servings", "portion", "portions"]
+                                               "serving", "servings", "portion", "portions",
+                                               // #898: Indian-first serving containers — "a bowl of curd",
+                                               // "2 katori dal", "a plate of rice", "a glass of lassi" → strip
+                                               // the container, qty = the count. Each maps to ~1 serving.
+                                               // (Rare edge "N glass noodles" mis-strips; ungrammatical + the
+                                               // recipe builder is editable, vs. today's silent container-in-name.)
+                                               "bowl", "bowls", "katori", "katoris",
+                                               "plate", "plates", "glass", "glasses"]
         let leadingWords = text.split(separator: " ").map(String.init)
 
         let multiplierWords: [String: Double] = ["double": 2.0, "twice": 2.0, "triple": 3.0, "2x": 2.0, "3x": 3.0]

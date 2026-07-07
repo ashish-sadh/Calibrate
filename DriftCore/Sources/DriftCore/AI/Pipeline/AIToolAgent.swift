@@ -191,6 +191,18 @@ public enum AIToolAgent {
         // Only for high-confidence action commands (undo, delete, greetings)
         if let toolCall = ToolRanker.tryRulePick(query: normalized, screen: screen) {
             logTiming("Phase 1 (rules)", start: pipelineStart)
+            // #898: the rule path collapses multi-item meals — extractParams
+            // binds the first number to the whole query ("paneer butter masala
+            // with 2 naan" → ×2 paneer, naan dropped). When the rule already
+            // says log_food and the raw message parses into ≥2 items, take the
+            // per-item path instead. Gated on the rule's own log_food verdict,
+            // so info/compare queries never reach the meal splitter.
+            if toolCall.tool == "log_food",
+               let intents = AIActionExecutor.parseMultiItemMeal(normalized), intents.count > 1 {
+                return await executeMultiItemFoodDisclosure(
+                    intents: intents, mealHint: toolCall.params.values["meal"], onToken: onToken
+                )
+            }
             return await executeTool(toolCall)
         }
 
@@ -304,13 +316,24 @@ public enum AIToolAgent {
                         }
                     } else {
                         onStep(toolStepMessage(for: call.tool))
-                        // #178: multi-item food → stream per-item results before recipe builder
-                        if toolName == "log_food",
-                           let name = call.params.values["name"],
-                           name.contains(",") {
-                            return await executeMultiItemFoodDisclosure(
-                                name: name, mealHint: call.params.values["meal"], onToken: onToken
-                            )
+                        // #898/#178: multi-item food → recover each item WITH its own
+                        // quantity before the recipe builder. The LLM collapses Indian
+                        // "X with N Y" / "A and B and C" into a single ×N food search
+                        // (e.g. "paneer butter masala with 2 naan" → ×2 paneer, naan
+                        // dropped), so parse the RAW message deterministically — composed
+                        // ("with"/"plus") first, then "and"/comma. Falls back to the
+                        // LLM-extracted comma'd name for anything the parsers miss.
+                        if toolName == "log_food" {
+                            if let intents = AIActionExecutor.parseMultiItemMeal(message), intents.count > 1 {
+                                return await executeMultiItemFoodDisclosure(
+                                    intents: intents, mealHint: call.params.values["meal"], onToken: onToken
+                                )
+                            }
+                            if let name = call.params.values["name"], name.contains(",") {
+                                return await executeMultiItemFoodDisclosure(
+                                    name: name, mealHint: call.params.values["meal"], onToken: onToken
+                                )
+                            }
                         }
                         return await executeToolChain(initial: call, message: message, history: history)
                     }
@@ -448,6 +471,57 @@ public enum AIToolAgent {
         ConversationState.shared.captureToolSummary("Multi-item log: \(summary)")
         let action = ToolAction.openRecipeBuilder(items: resolvedNames, mealName: mealHint)
         return AgentOutput(text: summaryLines.joined(separator: "\n"), action: action, toolsCalled: ["log_food"])
+    }
+
+    /// #898: multi-item variant that PRESERVES per-item quantity. Each parsed
+    /// `FoodIntent` carries its own servings/grams; the recipe-builder items keep
+    /// that quantity encoded ("2 naan") so the iOS consumer (resolveRecipeItem →
+    /// extractAmount) re-applies it. Resolves each item in parallel and streams
+    /// the resolved name + calories as it lands (progressive disclosure), final
+    /// order matching input order.
+    static func executeMultiItemFoodDisclosure(
+        intents: [FoodIntent],
+        mealHint: String?,
+        onToken: @escaping @Sendable (String) -> Void
+    ) async -> AgentOutput {
+        var resultsByIndex = [(Int, String, String)]()  // (index, itemString, summaryLine)
+        await withTaskGroup(of: (Int, String, String).self) { group in
+            for (index, intent) in intents.enumerated() {
+                group.addTask {
+                    let itemString = Self.recipeItemString(for: intent)
+                    if let match = AIActionExecutor.findFood(
+                        query: intent.query, servings: intent.servings, gramAmount: intent.gramAmount
+                    ) {
+                        let cal = Int(match.food.calories * match.servings)
+                        return (index, itemString, "\(match.food.name) — \(cal) cal")
+                    }
+                    return (index, itemString, intent.query.capitalized)
+                }
+            }
+            for await (idx, itemString, line) in group {
+                onToken(line + "\n")  // stream as each task finishes
+                resultsByIndex.append((idx, itemString, line))
+            }
+        }
+
+        let sorted = resultsByIndex.sorted { $0.0 < $1.0 }
+        let itemStrings = sorted.map { $0.1 }
+        let summaryLines = sorted.map { $0.2 }
+
+        ConversationState.shared.captureToolSummary("Multi-item log: \(itemStrings.joined(separator: ", "))")
+        let action = ToolAction.openRecipeBuilder(items: itemStrings, mealName: mealHint)
+        return AgentOutput(text: summaryLines.joined(separator: "\n"), action: action, toolsCalled: ["log_food"])
+    }
+
+    /// Re-encode a parsed `FoodIntent`'s quantity into a recipe-builder item
+    /// string ("2 naan", "100g paneer") so the iOS consumer re-applies it via
+    /// `extractAmount`. Mirrors `buildMealFromIntents` on the iOS side.
+    /// `nonisolated` — pure, called from the off-MainActor resolve task group.
+    private nonisolated static func recipeItemString(for intent: FoodIntent) -> String {
+        var s = intent.query
+        if let srv = intent.servings, srv != 1 { s = "\(String(format: "%g", srv)) \(s)" }
+        if let g = intent.gramAmount { s = "\(Int(g))g \(s)" }
+        return s
     }
 
     // MARK: - Multi-Intent Execution (Stage 0.5)
