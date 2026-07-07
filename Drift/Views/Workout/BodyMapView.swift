@@ -26,17 +26,60 @@ struct BodyMapView: View {
 
     static let muscleGroups = ["Chest", "Back", "Shoulders", "Arms", "Core", "Legs"]
 
+    /// UI group → library body-model slugs (#929). Drives the recovery
+    /// coloring on the anatomical figures.
+    private static let groupSlugs: [String: [String]] = [
+        "Chest": ["chest"],
+        "Back": ["upper-back", "lower-back", "trapezius"],
+        "Shoulders": ["deltoids"],
+        "Arms": ["biceps", "triceps", "forearm"],
+        "Core": ["abs", "obliques"],
+        "Legs": ["quadriceps", "hamstring", "gluteal", "calves", "adductors"],
+    ]
+
+    /// Recovery status painted onto the body model. Untrained groups keep
+    /// the neutral base fill so the figure reads calm, not alarming.
+    private var recoverySlugColors: [String: Color] {
+        var colors: [String: Color] = [:]
+        for group in Self.muscleGroups {
+            let status = muscleStatus[group] ?? .untrained
+            guard status != .untrained else { continue }
+            let intensity = 0.45 + volumeIntensity(for: group) * 0.45
+            for slug in Self.groupSlugs[group] ?? [] {
+                colors[slug] = status.color.opacity(intensity)
+            }
+        }
+        return colors
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Muscle Recovery").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+
+            // Anatomical recovery figures (#929) — replace the old SF-symbol
+            // icons: green = recovered, orange = moderate, red = recovering,
+            // neutral = not trained recently.
+            HStack(spacing: 24) {
+                VStack(spacing: 2) {
+                    MuscleBodyView(side: .front, slugColors: recoverySlugColors)
+                    Text("Front").font(.caption2).foregroundStyle(.tertiary)
+                }
+                VStack(spacing: 2) {
+                    MuscleBodyView(side: .back, slugColors: recoverySlugColors)
+                    Text("Back").font(.caption2).foregroundStyle(.tertiary)
+                }
+            }
+            .frame(height: 170)
+            .frame(maxWidth: .infinity)
+            .accessibilityHidden(true)  // the group buttons below carry the text
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
                 ForEach(Self.muscleGroups, id: \.self) { group in
                     let status = muscleStatus[group] ?? .untrained
                     Button { selectedGroup = selectedGroup == group ? nil : group } label: {
                         VStack(spacing: 3) {
-                            Image(systemName: iconFor(group)).font(.title3).foregroundStyle(status.color)
                             Text(group).font(.caption2.weight(.semibold))
+                                .foregroundStyle(status.color)
                             if let days = daysSince[group] {
                                 Text(days == 0 ? "Today" : "\(days)d ago")
                                     .font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
@@ -155,18 +198,6 @@ struct BodyMapView: View {
     }
 
     // MARK: - Icons
-
-    private func iconFor(_ group: String) -> String {
-        switch group {
-        case "Chest": "figure.arms.open"
-        case "Back": "figure.walk"
-        case "Shoulders": "figure.flexibility"
-        case "Arms": "figure.boxing"
-        case "Core": "figure.core.training"
-        case "Legs": "figure.run"
-        default: "figure.stand"
-        }
-    }
 
     // MARK: - Data Loading
 

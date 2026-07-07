@@ -370,7 +370,7 @@ import Testing
 private let compoundLifts = [
     "Barbell Full Squat", "Barbell Deadlift", "Barbell Bench Press - Medium Grip",
     "Overhead Press", "Bent Over Barbell Row", "Pull-Up", "Dips - Triceps Version",
-    "Romanian Deadlift", "Front Squat (Clean Grip)", "Sumo Deadlift",
+    "Romanian Deadlift", "Front Squat", "Sumo Deadlift",
     "Barbell Incline Bench Press - Medium Grip", "Close-Grip Barbell Bench Press",
     "Seated Cable Rows", "Lat Pulldown", "Leg Press", "Lying Leg Curls",
     "Leg Extensions", "Barbell Hip Thrust", "Face Pull", "Arnold Press",

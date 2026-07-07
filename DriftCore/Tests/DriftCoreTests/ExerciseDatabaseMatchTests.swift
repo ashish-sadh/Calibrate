@@ -92,3 +92,40 @@ import Testing
     #expect(!all.isEmpty)  // fixture loaded (else the assertion below is vacuous)
     #expect(all.allSatisfy { $0.trackingType == nil })
 }
+
+// MARK: - Catalog dedup guard (#929)
+
+@Test func catalogHasNoExactDuplicateNames() {
+    // The 2026-07-07 audit found the "duplicates" were mostly legitimate
+    // variants (Turkish Get-Up lunge vs squat style); the one true dup —
+    // Front Squat (Clean Grip) ≡ Front Squat — was merged. This guard keeps
+    // exact-name dups from creeping back in.
+    let names = ExerciseDatabase.all.map { $0.name.lowercased() }
+    #expect(names.count == Set(names).count, "exercises.json has exact-name duplicates")
+}
+
+@Test func mergedDuplicatesStayMerged() {
+    #expect(ExerciseDatabase.all.first { $0.name == "Front Squat (Clean Grip)" } == nil)
+    #expect(ExerciseDatabase.all.first { $0.name == "Front Squat" } != nil,
+            "the kept canonical entry must still exist")
+}
+
+// MARK: - Pose asset mapping (#929)
+
+@Test func poseAssetNameDerivesFromImageUrl() {
+    #expect(ExercisePoses.assetBaseName(
+        fromImageUrl: "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Front_Squat/0.jpg"
+    ) == "Front_Squat")
+    #expect(ExercisePoses.assetBaseName(fromImageUrl: nil) == nil)
+    #expect(ExercisePoses.assetBaseName(fromImageUrl: "https://example.com/other.jpg") == nil)
+    #expect(ExercisePoses.assetBaseName(fromImageUrl: "free-exercise-db/main/exercises//0.jpg") == nil)
+}
+
+@Test func mostCatalogEntriesHavePoseMapping() {
+    // 931/959 at ingestion (2026-07-07). Guard against the mapping silently
+    // collapsing — e.g. a catalog refresh rewriting imageUrls off-dataset.
+    let mapped = ExerciseDatabase.all.filter {
+        ExercisePoses.assetBaseName(fromImageUrl: $0.imageUrl) != nil
+    }
+    #expect(mapped.count >= 900, "pose mapping collapsed: \(mapped.count)/\(ExerciseDatabase.all.count)")
+}

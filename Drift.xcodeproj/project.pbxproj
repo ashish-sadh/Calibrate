@@ -71,6 +71,7 @@
 		51CBDEF0E20717FDB4B0460B /* BackupServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AE6A77FE92E8A4DDC4AFDC3 /* BackupServiceTests.swift */; };
 		51D36C1D00F25F64F54D70BF /* HealthKitService+Sleep.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4902DF0863C6F54F0D1BC3BA /* HealthKitService+Sleep.swift */; };
 		5284981F1135EBAFC55F5BFE /* llama.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4101CD9171B652C6B8D1BB4E /* llama.xcframework */; };
+		583BB0DD3A12EB6567D9A888 /* ExercisePoses in Resources */ = {isa = PBXBuildFile; fileRef = 70967B704173BE9C3F988E68 /* ExercisePoses */; };
 		5922FEA8C28BC870E2677ED4 /* FoodService+Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = B45542A3C86D7B44E55451F5 /* FoodService+Logging.swift */; };
 		59437F91C9FAE1B0869EB766 /* ServingMultiplierStepper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C993D1A0F278A3A9A4E02F2 /* ServingMultiplierStepper.swift */; };
 		5A6FF40412DE467AB6BDAF6D /* CombosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD6164BEC39C20085C879296 /* CombosView.swift */; };
@@ -168,6 +169,7 @@
 		D81FBCA09BF00517DBEF07AA /* VoiceLogSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375826994E169F864E5A69C1 /* VoiceLogSheet.swift */; };
 		D8DCF736FEE3123E530756CA /* CycleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 163C4017D9AEE2E0927DC907 /* CycleView.swift */; };
 		D8E7B7B5446C1B3CB3BBF5FC /* DomainExtractorEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4200A9F331B35DB8ACB881A3 /* DomainExtractorEval.swift */; };
+		D92847B800D43A1FDEE6F98D /* PoseCrossfadeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0489BE1B8FFAFEAFD32F53F9 /* PoseCrossfadeView.swift */; };
 		DA416FC020E2523119C7E6A7 /* DriftCore in Frameworks */ = {isa = PBXBuildFile; productRef = 474D4520B459A2F8572DBAA1 /* DriftCore */; };
 		DA902B342D14AE8625D4E25D /* MealTextLoggerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C2C3D0BBB59A233D5483FA1 /* MealTextLoggerTests.swift */; };
 		DC947891799CF8AC7D747102 /* MealTimelineSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA98672D7F186556C86D15C /* MealTimelineSection.swift */; };
@@ -269,6 +271,7 @@
 		029FE8C8F52268339F742BFA /* FoodLogSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodLogSheet.swift; sourceTree = "<group>"; };
 		0362D19A4F7D1ABB43FB48F8 /* GoalProgressCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalProgressCard.swift; sourceTree = "<group>"; };
 		04037279FDE1F5FFE95EC83D /* MealTextLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealTextLogger.swift; sourceTree = "<group>"; };
+		0489BE1B8FFAFEAFD32F53F9 /* PoseCrossfadeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoseCrossfadeView.swift; sourceTree = "<group>"; };
 		08E33CA6BE80D735A37ED745 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0966429FFAED4C7FF2D68C11 /* WidgetDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDataProvider.swift; sourceTree = "<group>"; };
 		0BFC0D10ECB1BBDADD1D1CCB /* ConfirmationCardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmationCardTests.swift; sourceTree = "<group>"; };
@@ -355,6 +358,7 @@
 		6AEB8D23DD72A1974C8C09E5 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		6B6C02FCD909BDE67D229EC1 /* CycleCalculationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleCalculationTests.swift; sourceTree = "<group>"; };
 		6E7AB5CF548B4E61C45C1485 /* GoalSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalSetupView.swift; sourceTree = "<group>"; };
+		70967B704173BE9C3F988E68 /* ExercisePoses */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ExercisePoses; path = Drift/ExercisePoses; sourceTree = SOURCE_ROOT; };
 		722CE8B3925ADAFCD540ED0C /* UnitConversionEndToEndTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnitConversionEndToEndTests.swift; sourceTree = "<group>"; };
 		72ADCE850F5C06D2C23A57DC /* SpeechRecognitionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognitionService.swift; sourceTree = "<group>"; };
 		733818AD9667283F81C5D1C5 /* DashboardView+Cards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DashboardView+Cards.swift"; sourceTree = "<group>"; };
@@ -549,6 +553,7 @@
 		1DCFB184D941DDFAE30E78F8 = {
 			isa = PBXGroup;
 			children = (
+				70967B704173BE9C3F988E68 /* ExercisePoses */,
 				DF13210FEF8ED80B93DD4A50 /* Drift */,
 				F4B015D112A49ACBB40A883E /* DriftLLMEvalMacOS */,
 				230C4300561292D969C89B4E /* DriftTests */,
@@ -779,6 +784,7 @@
 				EDFC1B5E83F6D2661A50BA65 /* ExercisePickerView.swift */,
 				F903A8403298174A90CF5781 /* ExerciseVoiceLogSheet.swift */,
 				5E85736ADE942E8D527F8160 /* MuscleHighlightCard.swift */,
+				0489BE1B8FFAFEAFD32F53F9 /* PoseCrossfadeView.swift */,
 				DF5558013233863F54F6915F /* TemplatePreviewSheet.swift */,
 				C004CB5B32E81B2A39730FE7 /* WorkoutDetailView.swift */,
 				AB2998A31AEC29094C6F4062 /* WorkoutView.swift */,
@@ -1086,6 +1092,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA43792497E2FC36FF55F58C /* Assets.xcassets in Resources */,
+				583BB0DD3A12EB6567D9A888 /* ExercisePoses in Resources */,
 				D3A7ACF42E8B98CCF0BBFBE9 /* FoodDatabase.db in Resources */,
 				3D01268D3E9F35381A819628 /* foods.db in Resources */,
 			);
@@ -1188,6 +1195,7 @@
 				8EB4BE714AEE5821234D7198 /* PhotoLogSettingsView.swift in Sources */,
 				51943F743F3F4638E4D7EBAA /* PhotoLogTool.swift in Sources */,
 				30C7E754FFFD0B3E4FD62CC6 /* PlantPointsCardView.swift in Sources */,
+				D92847B800D43A1FDEE6F98D /* PoseCrossfadeView.swift in Sources */,
 				ADA6493D219411505EF2DA36 /* Preferences+PhotoLog.swift in Sources */,
 				3A45CB30EFB91DF5C4E468AD /* QuickAddView.swift in Sources */,
 				A30F63FA377687747C8CFC2F /* RestorePickerView.swift in Sources */,

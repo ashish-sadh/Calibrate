@@ -190,13 +190,24 @@ struct ExerciseDetailView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
-                // Hero: anatomical muscle diagram (#929) — replaces the old
-                // remote imageUrl AsyncImage (render-time network fetch).
-                if let info, !info.primaryMuscles.isEmpty || !info.secondaryMuscles.isEmpty {
-                    MuscleHighlightCard(
-                        primaryMuscles: info.primaryMuscles,
-                        secondaryMuscles: info.secondaryMuscles
-                    )
+                // Hero (#929): pose crossfade demo (bundled, public-domain
+                // free-exercise-db pack) + the anatomical muscle diagram.
+                // Replaces the old remote imageUrl AsyncImage. Exercises
+                // without pose assets show the diagram alone — never a
+                // broken frame.
+                if let info {
+                    if let poses = PoseCrossfadeView(imageUrl: info.imageUrl) {
+                        poses
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 190)
+                            .background(Color.white, in: RoundedRectangle(cornerRadius: 12))
+                    }
+                    if !info.primaryMuscles.isEmpty || !info.secondaryMuscles.isEmpty {
+                        MuscleHighlightCard(
+                            primaryMuscles: info.primaryMuscles,
+                            secondaryMuscles: info.secondaryMuscles
+                        )
+                    }
                 }
 
                 VStack(alignment: .leading, spacing: 8) {

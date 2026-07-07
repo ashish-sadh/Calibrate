@@ -54,6 +54,16 @@ targets:
         # (e.g. legacy chat BYOK path superseded by the Nebius team-key coach).
         excludes:
           - "Archive"
+          # Pose photo pack (#929) — bundled via the folder reference below,
+          # not compiled sources.
+          - "ExercisePoses"
+      # Exercise pose pack (free-exercise-db, public domain — see
+      # scripts/ingest-exercise-poses.sh). Folder reference with a resources
+      # build phase: ships as an "ExercisePoses/" bundle subdirectory, one
+      # pbxproj entry for ~1.7k HEICs instead of flattening the bundle root.
+      - path: Drift/ExercisePoses
+        type: folder
+        buildPhase: resources
     resources:
       - path: Drift/Resources
     settings:
