@@ -110,6 +110,10 @@ struct MoreTabView: View {
             .scrollContentBackground(.hidden)
             .background(Theme.background.ignoresSafeArea())
             .navigationTitle("More")
+            // #premium-polish: inline to match the other three tab roots — the
+            // large title made the nav bar jump ~50pt taller on every swap
+            // to/from More (the swap is instant, so the header hard-cut).
+            .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.light, for: .navigationBar)
             // V7: per-tab ChatIconButton dropped — bottom-right
             // floating ChatIconButton in ContentView covers all tabs.

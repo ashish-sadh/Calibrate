@@ -272,10 +272,16 @@ private struct PillTabBar: View {
                 Button {
                     guard selected != tab else { return }
                     Haptics.tabSelect()
-                    // Instant content switch (NOT wrapped in withAnimation — that
-                    // forced a laggy cross-fade of the full tab pages). The pill
-                    // highlight slides via the scoped .animation below.
-                    selected = tab
+                    // #premium-polish: cross-fade the content on the SAME ~0.22s
+                    // curve the pill slides on, so the indicator and the page
+                    // move as one gesture (the old instant swap teleported the
+                    // page while the pill was still mid-slide — the "buggy tab
+                    // transition"). The earlier withAnimation attempt felt laggy
+                    // because the incoming tab blocked the main thread loading
+                    // its DB data mid-fade; those loads are now deferred past
+                    // the swap frame (FoodTabView/WeightTabView onAppear), so a
+                    // two-already-alive-page cross-fade is cheap and smooth.
+                    withAnimation(Theme.Motion.passive) { selected = tab }
                 } label: {
                     VStack(spacing: 2) {
                         Image(systemName: tab.icon)
@@ -309,12 +315,34 @@ private struct PillTabBar: View {
     }
 }
 
-/// Light haptic for tab/nav taps — the tactile half of "premium feel".
+/// Haptics — the tactile half of "premium feel". Generators are held warm
+/// (`.prepare()` after each fire) so the next tap has minimal latency.
+/// #premium-polish extended these beyond tab-select to cover the core
+/// confirm moments (meal logged, weight saved, milestone) that were silent.
 enum Haptics {
     @MainActor private static let selection = UISelectionFeedbackGenerator()
+    @MainActor private static let notify = UINotificationFeedbackGenerator()
+    @MainActor private static let impactLight = UIImpactFeedbackGenerator(style: .light)
+
+    /// Tab / nav / segment selection — a soft tick.
     @MainActor static func tabSelect() {
         selection.selectionChanged()
         selection.prepare()   // keep it warm for the next tap (lower latency)
+    }
+    /// A logged/saved action succeeded (meal logged, weight saved).
+    @MainActor static func success() {
+        notify.notificationOccurred(.success)
+        notify.prepare()
+    }
+    /// A celebratory beat (milestone, PR).
+    @MainActor static func celebrate() {
+        notify.notificationOccurred(.success)
+        notify.prepare()
+    }
+    /// A light confirming tap for secondary actions (add set, toggle).
+    @MainActor static func lightTap() {
+        impactLight.impactOccurred()
+        impactLight.prepare()
     }
 }
 

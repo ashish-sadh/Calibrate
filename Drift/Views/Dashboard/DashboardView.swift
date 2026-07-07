@@ -101,7 +101,7 @@ struct DashboardView: View {
                                 }
                                 .contentShape(Rectangle())
                             }
-                            .buttonStyle(.plain)
+                            .pressable()
                             .accessibilityLabel("How's it going? Tap to send a quick note")
 
                             Button {
@@ -159,7 +159,7 @@ struct DashboardView: View {
 
                     // ── Today ──
                     // Nutrition hero (macro rings) → Food tab
-                    Button { selectedTab = 2 } label: { calorieBalanceCard }.buttonStyle(.plain)
+                    Button { selectedTab = 2 } label: { calorieBalanceCard }.pressable()
 
                     // V7 Phase 2 log-methods row — Snap · Voice · Search · Recent.
                     // Always visible regardless of whether food was logged so
@@ -223,11 +223,11 @@ struct DashboardView: View {
                     sectionHeader("Activity")
 
                     // Active/Steps → Exercise tab
-                    Button { selectedTab = 3 } label: { healthRow }.buttonStyle(.plain)
+                    Button { selectedTab = 3 } label: { healthRow }.pressable()
 
                     // Apple Health Workouts — show if any today
                     if !viewModel.todayWorkouts.isEmpty {
-                        Button { selectedTab = 3 } label: { workoutCard }.buttonStyle(.plain)
+                        Button { selectedTab = 3 } label: { workoutCard }.pressable()
                     }
 
                     // Weekly workout consistency card
@@ -420,7 +420,7 @@ struct DashboardView: View {
                 } label: {
                     GoalProgressCard(goal: goal, currentWeightKg: current, trendWeightKg: viewModel.trendWeight)
                 }
-                .buttonStyle(.plain)
+                .pressable()
             } else {
                 HStack(spacing: 10) {
                     Image(systemName: "target")

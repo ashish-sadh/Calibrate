@@ -121,7 +121,10 @@ struct FoodTabView: View {
                             .frame(width: 44, height: 44)
                             .background(Theme.cardBackground, in: Circle())
                             .overlay(Circle().strokeBorder(Theme.separator, lineWidth: 0.5))
-                            .shadow(color: Color.black.opacity(0.08), radius: 14, x: 0, y: 4)
+                            // #premium-polish: was an ad-hoc r14/0.08 shadow that
+                            // read as a heavy blob next to the layered card shadow
+                            // on the chat button (identical chrome). Unified.
+                            .shadowSoft()
                     }
                     .accessibilityLabel("Snap a meal")
                     .accessibilityIdentifier("food-snap-shortcut")
@@ -141,8 +144,7 @@ struct FoodTabView: View {
             }
             .sheet(item: $suggestionFoodToLog) { food in
                 FoodLogSheet(food: food, foodLog: viewModel) {
-                    copiedToTodayName = food.name
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedToTodayName = nil }
+                    flashCopied(food.name)
                     reload()
                 }
             }
@@ -157,7 +159,16 @@ struct FoodTabView: View {
                         .padding(.bottom, 20)
                 }
             }
-            .animation(.easeInOut(duration: 0.3), value: copiedToTodayName)
+            .animation(Theme.Motion.passive, value: copiedToTodayName)
+            // #premium-polish: ONE self-cancelling dismissal (SwiftUI restarts
+            // the task when `copiedToTodayName` changes, cancelling the prior
+            // sleep) — replaces six copy-pasted uncancelled 2s timers that
+            // dismissed the WRONG toast when the user copied two meals quickly.
+            .task(id: copiedToTodayName) {
+                guard copiedToTodayName != nil else { return }
+                try? await Task.sleep(for: .seconds(2))
+                copiedToTodayName = nil
+            }
             .sheet(isPresented: $showingSearch, onDismiss: { reload() }) {
                 FoodSearchView(viewModel: viewModel, initialMealType: searchMealType)
             }
@@ -169,8 +180,7 @@ struct FoodTabView: View {
             }
             .sheet(item: $comboToLog) { combo in
                 ComboLogSheet(combo: combo, viewModel: viewModel) {
-                    copiedToTodayName = combo.name
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedToTodayName = nil }
+                    flashCopied(combo.name)
                     reload()
                 }
             }
@@ -185,8 +195,7 @@ struct FoodTabView: View {
             .sheet(item: $editingEntry) { entry in
                 EditFoodEntrySheet(entry: entry, viewModel: viewModel,
                     onCopiedToToday: { name in
-                        copiedToTodayName = name
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedToTodayName = nil }
+                        flashCopied(name)
                     },
                     onDone: { reload() })
             }
@@ -207,8 +216,7 @@ struct FoodTabView: View {
                 Button("Copy") {
                     if let entry = copyToTodayEntry {
                         viewModel.copyEntryToToday(entry)
-                        copiedToTodayName = entry.foodName
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedToTodayName = nil }
+                        flashCopied(entry.foodName)
                     }
                     copyToTodayEntry = nil
                 }
@@ -232,14 +240,21 @@ struct FoodTabView: View {
                 Button("Cancel", role: .cancel) {}
                 Button("Copy") {
                     viewModel.copyAllToToday(entries: viewModel.todayEntries)
-                    copiedToTodayName = "all \(viewModel.todayEntries.count) items"
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedToTodayName = nil }
+                    flashCopied("all \(viewModel.todayEntries.count) items")
                 }
             } message: {
                 let totalCal = viewModel.todayEntries.reduce(0) { $0 + $1.totalCalories }
                 Text("Copy \(viewModel.todayEntries.count) items (\(Int(totalCal)) cal) to today?")
             }
-            .onAppear { AIScreenTracker.shared.currentScreen = .food; reload() }
+            .onAppear {
+                AIScreenTracker.shared.currentScreen = .food
+                // #premium-polish: TabView keeps this view ALIVE, so onAppear
+                // fires on every re-selection and its synchronous DB reads
+                // hitched the tab-swap frame. Defer past the swap so the tab
+                // appears instantly (data is already on screen from last
+                // visit); the refresh lands a frame later, imperceptibly.
+                Task { @MainActor in reload() }
+            }
             // `.openPhotoLog` is owned by ContentView's listener +
             // fullScreenCover — see ContentView.swift:80. Reloads on
             // dismiss come through `.foodEntryAdded` instead so this
@@ -265,6 +280,14 @@ struct FoodTabView: View {
         viewModel.loadSuggestions()
         viewModel.loadPlantPoints()
         loggedDays = viewModel.loggedDays(last: 30)
+    }
+
+    /// Show the "Added … to today" toast + a success haptic. The `.task(id:)`
+    /// on the overlay owns dismissal, so setting the name is all that's needed
+    /// — no per-site timer (#premium-polish).
+    private func flashCopied(_ name: String) {
+        Haptics.success()
+        copiedToTodayName = name
     }
 
     // MARK: - Date Navigator
@@ -597,8 +620,7 @@ struct FoodTabView: View {
             }
             Button {
                 viewModel.copyGroupToToday(entries)
-                copiedToTodayName = "\(entries.count) items"
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2) { copiedToTodayName = nil }
+                flashCopied("\(entries.count) items")
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "doc.on.doc").font(.caption2)

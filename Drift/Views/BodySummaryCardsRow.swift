@@ -86,7 +86,7 @@ struct BodySummaryCardsRow: View {
             )
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .pressable()
         .accessibilityLabel(payload.accessibilityLabel)
         .accessibilityHint("Open \(payload.label.lowercased()) details on the Body tab")
         .accessibilityIdentifier("body-summary-\(payload.label.lowercased())")

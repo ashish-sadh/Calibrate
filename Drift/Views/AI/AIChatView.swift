@@ -106,6 +106,15 @@ struct AIChatView: View {
 
             inputBar
             }
+            // #premium-polish: chat's primary interaction snapped on every turn
+            // — the suggestions row, thinking indicator and undo chip appeared
+            // and vanished with hard layout jumps (their `.transition`s were
+            // dead without an animation driving the state change). Drive the
+            // layout changes on the shared passive curve so bubbles, the
+            // thinking dots and the undo chip ease in/out.
+            .animation(Theme.Motion.passive, value: vm.messages.count)
+            .animation(Theme.Motion.passive, value: vm.isGenerating)
+            .animation(Theme.Motion.passive, value: vm.pendingUndoEntryIds.isEmpty)
             }
         }
         .sheet(isPresented: $vm.showingFoodSearch, onDismiss: { vm.mealLogRevision += 1 }) {

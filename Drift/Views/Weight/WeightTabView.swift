@@ -129,10 +129,18 @@ struct WeightTabView: View {
         }
         .onChange(of: viewModel.milestoneMessage) { _, message in
             if message != nil {
+                // #premium-polish: single motion spec (the `.animation(value:)`
+                // on the overlay drives scale+opacity on Motion.hero) plus a
+                // celebratory haptic — the moment was silent and its entrance
+                // never played because three animation specs fought.
+                Haptics.celebrate()
                 showMilestone = true
                 DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-                    withAnimation(.easeOut(duration: 0.5)) { showMilestone = false }
-                    viewModel.milestoneMessage = nil
+                    showMilestone = false
+                    // Clear the message after the exit animation settles.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        viewModel.milestoneMessage = nil
+                    }
                 }
             }
         }
@@ -150,15 +158,22 @@ struct WeightTabView: View {
                 // (renders dark on light theme over the chart) — solid
                 // ink + white text matches the V7 primary-CTA convention
                 // and keeps the celebratory shadow pop intact.
-                .background(Theme.ink, in: RoundedRectangle(cornerRadius: 16))
-                .shadow(color: Theme.accent.opacity(0.3), radius: 20)
+                .background(Theme.ink, in: RoundedRectangle(cornerRadius: Theme.radiusCard, style: .continuous))
+                // #premium-polish: the ONE intentional colored shadow, now named
+                // (was an ad-hoc coral `.shadow` that read as a random glow).
+                .shadowGlow()
                 .scaleEffect(showMilestone ? 1.0 : 0.8)
                 .opacity(showMilestone ? 1.0 : 0)
-                .animation(.spring(response: 0.4, dampingFraction: 0.6), value: showMilestone)
-                .transition(.scale.combined(with: .opacity))
+                .animation(Theme.Motion.hero, value: showMilestone)
             }
         }
-        .onAppear { AIScreenTracker.shared.currentScreen = .weight; viewModel.loadEntries() }
+        .onAppear {
+            AIScreenTracker.shared.currentScreen = .weight
+            // #premium-polish: defer the full-history fetch + trend recompute
+            // past the tab-swap frame (TabView keeps this view alive; the chart
+            // is already on screen). Removes the hitch on every switch to Body.
+            Task { @MainActor in viewModel.loadEntries() }
+        }
         .task {
             #if !targetEnvironment(simulator)
             let _ = try? await HealthKitService.shared.syncWeight()

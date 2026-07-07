@@ -176,7 +176,12 @@ struct FoodSearchView: View {
                         return // Don't focus search — sheet is already open
                     }
                 }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { searchFocused = true }
+                // #premium-polish: was a hardcoded 300ms dead gap before the
+                // keyboard rose — the core search path felt sluggish on every
+                // open. Defer one runloop tick instead (lets the sheet's
+                // presentation transaction commit) so the keyboard comes up
+                // with the sheet, not a third-second later.
+                Task { @MainActor in searchFocused = true }
             }
     }
 

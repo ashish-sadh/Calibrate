@@ -161,6 +161,30 @@ enum Theme {
     static let cardCornerRadius: CGFloat = 18   // #premium-polish: softer corners read more refined/flowy (was 16)
     static let cardPadding: CGFloat = 16
 
+    // MARK: - Corner-radius scale (#premium-polish)
+    //
+    // Three steps so adjacent surfaces agree instead of drifting across ~15
+    // ad-hoc radii. Always paired with `.continuous` corners (squircle) — the
+    // Apple-standard curve. `radiusCard` aliases `cardCornerRadius`.
+    static let radiusChip: CGFloat = 10       // chips, tiny inline controls
+    static let radiusControl: CGFloat = 14    // banners, buttons, inset tiles
+    static let radiusCard: CGFloat = cardCornerRadius   // cards / sheets (18)
+
+    // MARK: - Motion (#premium-polish)
+    //
+    // One motion vocabulary instead of ~16 ad-hoc curve/duration combos.
+    // `interactive` for taps/toggles (crisp settle), `passive` for content
+    // appearing/reflowing, `hero` for deliberate showpiece draws (rings,
+    // celebrations). Everything premium moves on one of these three.
+    enum Motion {
+        /// Taps, toggles, selection highlights — a crisp snappy settle.
+        static let interactive: Animation = .snappy(duration: 0.22, extraBounce: 0.05)
+        /// Content appearing / reflowing (chat bubbles, rows, sheets).
+        static let passive: Animation = .easeOut(duration: 0.22)
+        /// Deliberate showpiece motion (ring draws, milestone celebrations).
+        static let hero: Animation = .spring(response: 0.5, dampingFraction: 0.72)
+    }
+
     // MARK: - Shadows (V6 glass depth)
     //
     // Apply via View modifiers below: `.shadowSoft()` / `.shadowPop()` /
@@ -260,6 +284,33 @@ extension View {
     func shadowRaise() -> some View {
         self.shadow(color: Color.black.opacity(0.07), radius: 14, x: 0, y: 4)
     }
+    /// Celebratory accent glow — the ONE intentional colored shadow (weight
+    /// milestone). Named so it reads as a deliberate flourish, not the "random
+    /// coral shadow" an ad-hoc `.shadow(Theme.accent…)` looks like. #premium-polish
+    func shadowGlow(_ color: Color = Theme.accent) -> some View {
+        self.shadow(color: color.opacity(0.28), radius: 20, x: 0, y: 6)
+    }
+}
+
+// MARK: - Pressable card (#premium-polish)
+
+/// Tap feedback for cards/rows that use `Button { } label: { }` with
+/// `.buttonStyle(.plain)` — those render dead to the touch (no pressed
+/// state) until the destination appears. This gives a subtle scale + dim
+/// on press so every tappable surface acknowledges the finger, the way
+/// Apple's own list rows do. Cheap (a transform, no layout). #premium-polish
+struct PressableCardStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.98 : 1)
+            .opacity(configuration.isPressed ? 0.85 : 1)
+            .animation(Theme.Motion.interactive, value: configuration.isPressed)
+    }
+}
+
+extension View {
+    /// Apply the shared pressed-state feedback. Use on card/row buttons.
+    func pressable() -> some View { buttonStyle(PressableCardStyle()) }
 }
 
 // MARK: - Card View Modifier

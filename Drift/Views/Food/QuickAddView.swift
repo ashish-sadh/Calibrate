@@ -377,7 +377,9 @@ private struct IngredientPickerView: View {
                         amount = servings == Double(Int(servings)) ? "\(Int(servings))" : String(format: "%.1f", servings)
                     }
                 } else {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { searchFocused = true }
+                    // #premium-polish: next-runloop focus instead of a 300ms
+                    // dead gap — keyboard rises with the sheet.
+                    Task { @MainActor in searchFocused = true }
                 }
             }
         }

@@ -220,7 +220,10 @@ struct WeightChartView: View {
                                 RoundedRectangle(cornerRadius: 8, style: .continuous)
                                     .strokeBorder(Theme.separator, lineWidth: 0.5)
                             )
-                            .shadow(color: Color.black.opacity(0.10), radius: 4, x: 0, y: 2)
+                            // #premium-polish: was a 4th ad-hoc shadow recipe;
+                            // use the shared card elevation so the scrub callout
+                            // matches every other floating chrome surface.
+                            .shadowSoft()
                         }
                 }
             }

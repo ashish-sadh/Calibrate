@@ -45,7 +45,7 @@ struct LogMethodCardsRow: View {
                     )
                     .contentShape(Rectangle())
                 }
-                .buttonStyle(.plain)
+                .pressable()
                 .accessibilityLabel(card.accessibilityLabel)
                 .accessibilityHint(card.accessibilityHint)
                 .accessibilityIdentifier("log-method-\(card.rawValue)")

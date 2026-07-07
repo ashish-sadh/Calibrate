@@ -166,7 +166,12 @@ struct CycleView: View {
                     Circle()
                         .fill(Theme.ink)
                         .frame(width: 12, height: 12)
-                        .shadow(color: .black.opacity(0.3), radius: 2)
+                        // #premium-polish: a white ring separates the dot from
+                        // the phase bar cleanly; the old 0.3-black shadow was
+                        // 3-6× darker than any theme elevation and read as a
+                        // smudge on the light bar.
+                        .overlay(Circle().strokeBorder(Theme.cardBackground, lineWidth: 2))
+                        .shadow(color: .black.opacity(0.12), radius: 1.5, x: 0, y: 1)
                         .offset(x: width * progress - 6)
                 }
             }

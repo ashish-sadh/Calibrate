@@ -797,6 +797,8 @@ struct ActiveWorkoutView: View {
                         completionMilestone = count == 1 ? "First workout!" : "Workout #\(count)!"
                     }
                 }
+                // #premium-polish: finishing a workout was a silent moment.
+                Haptics.celebrate()
                 showingCompletionSheet = true
             }
         } catch { Log.app.error("Save workout: \(error.localizedDescription)") }

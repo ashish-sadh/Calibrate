@@ -140,7 +140,7 @@ struct MealTimelineSection: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .pressable()
         .accessibilityLabel(row.accessibilityLabel)
         .accessibilityHint(isExpanded ? "Hide details" : "Show details")
         .accessibilityIdentifier("meal-timeline-row-\(row.id)")
