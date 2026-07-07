@@ -13,26 +13,16 @@ public extension Notification.Name {
     /// Posted by the V6 Dashboard quick-log row's "Search" chip. FoodTabView
     /// flips `showingSearch` to present FoodSearchView.
     static let openFoodSearch = Notification.Name("drift.openFoodSearch")
-    /// Posted by the V6 Dashboard quick-log row's "Voice" chip after enabling
-    /// AI. FloatingAIAssistant listens and auto-expands so the user sees the
-    /// chat + mic button on the first tap instead of a stranded corner bubble.
-    /// V7: FloatingAIAssistant is gone (replaced by DriftCoachSheet) — the
-    /// Voice chip now posts `.openLogMeal(mode: .voice)` instead and the
-    /// notification below is retained for backwards-compat in case a
-    /// straggler call site still posts it.
-    static let expandAIAssistant = Notification.Name("drift.expandAIAssistant")
-
     /// V7: posted by the Dashboard quick-log chips (Snap/Voice/Search/Recent)
     /// to open the unified Log-a-Meal sheet at a specific mode. ContentView
     /// listens, sets its `pendingLogMealMode` state, and flips the sheet
     /// presentation. `userInfo["mode"]` is a `LogMealMode` rawValue string.
     static let openLogMeal = Notification.Name("drift.openLogMeal")
 
-    /// V7: posted by VoiceLogSheet's "Edit in chat" button to hand off
-    /// a transcript into the Drift Coach chat input. ContentView listens
-    /// and presents `DriftCoachSheet(prefill: userInfo["prefill"])`.
-    /// Replaces the V6 `.expandAIAssistant` notification, which had no
-    /// listener after the FloatingAIAssistant overlay was retired.
+    /// V7: the canonical "open Drift Coach" signal — posted by VoiceLogSheet's
+    /// "Edit in chat" button and the Today coaching nudge's Ask AI pill (#928).
+    /// ContentView listens and presents
+    /// `DriftCoachSheet(prefill: userInfo["prefill"])`.
     static let openDriftCoach = Notification.Name("drift.openDriftCoach")
 
     /// 2026-05-24: broadcast by ContentView when the Photo Log

@@ -202,10 +202,7 @@ struct DashboardView: View {
                     ) {
                         V6CoachingNudge(
                             payload: nudge,
-                            onAskAI: {
-                                NotificationCenter.default.post(
-                                    name: .expandAIAssistant, object: nil)
-                            },
+                            onAskAI: { V6CoachingNudge.askAI(payload: nudge) },
                             onDismiss: nudge.dismissKey.map { key in
                                 {
                                     withAnimation {

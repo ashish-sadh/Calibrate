@@ -136,4 +136,45 @@ final class V6CoachingNudgeTests: XCTestCase {
         XCTAssertTrue(payload.accessibilityLabel.lowercased().contains("coaching"),
                       "Label should announce itself as a coaching nudge so it's not mistaken for a generic card")
     }
+
+    // MARK: - Ask AI action (#928)
+
+    func testAskAIPostsOpenDriftCoachSeededWithNudgeContext() {
+        // The Ask AI pill must present the chat surface: askAI(payload:) posts
+        // `.openDriftCoach`, the exact notification ContentView observes to
+        // flip `showingDriftCoach` and present DriftCoachSheet(prefill:). The
+        // V6 `.expandAIAssistant` post it replaced had no listener — a silent
+        // no-op pill. Asserts the name AND that the prefill carries the
+        // nudge's real data, not a cold open.
+        let payload = V6CoachingNudgePayload(
+            icon: "pills.fill",
+            title: "Supplements missed",
+            detail: "Creatine, Electrolytes — not taken in 3+ days",
+            dismissKey: "supplements_missed",
+            showAskAI: true
+        )
+        let center = NotificationCenter()
+        var received: Notification?
+        let token = center.addObserver(
+            forName: .openDriftCoach, object: nil, queue: nil
+        ) { received = $0 }
+        defer { center.removeObserver(token) }
+
+        V6CoachingNudge.askAI(payload: payload, center: center)
+
+        XCTAssertNotNil(received, "Ask AI must post .openDriftCoach — the notification ContentView maps to presenting the Coach sheet")
+        let prefill = received?.userInfo?["prefill"] as? String
+        XCTAssertNotNil(prefill, "Ask AI must seed the Coach via userInfo[\"prefill\"] — ContentView's contract")
+        XCTAssertTrue(prefill?.contains("Creatine") == true,
+                      "Seed must carry the actual missed supplement names so the Coach's first answer uses real data")
+        XCTAssertTrue(prefill?.contains("3+ days") == true,
+                      "Seed must carry how long the supplements have been missed")
+    }
+
+    func testOpenDriftCoachNameMatchesContentViewContract() {
+        // Mirrors LogMealSheetTests' rawValue pin: DashboardView posts by
+        // Notification.Name while ContentView observes the same constant —
+        // pinning the string catches an accidental rename of either side.
+        XCTAssertEqual(Notification.Name.openDriftCoach.rawValue, "drift.openDriftCoach")
+    }
 }

@@ -137,6 +137,19 @@ extension V6CoachingNudge {
             showAskAI: aiEnabled
         )
     }
+
+    /// Ask-AI action for the nudge card (#928): opens Drift Coach seeded with
+    /// this card's real data by posting the V7 `.openDriftCoach` notification
+    /// that ContentView observes (`DriftCoachSheet(prefill:)`). The V6
+    /// `.expandAIAssistant` post it replaces had no listener after the
+    /// floating bubble was retired, so the pill was a silent no-op.
+    static func askAI(payload: V6CoachingNudgePayload,
+                      center: NotificationCenter = .default) {
+        center.post(
+            name: .openDriftCoach, object: nil,
+            userInfo: ["prefill": NudgeCoachSeed.prompt(title: payload.title,
+                                                        detail: payload.detail)])
+    }
 }
 
 #if DEBUG
