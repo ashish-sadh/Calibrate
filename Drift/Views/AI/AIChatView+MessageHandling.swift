@@ -1083,6 +1083,12 @@ extension AIChatViewModel {
             convState.phase = .idle
             return false
         }
+        // A stale / duplicated phase reply can carry a currentDay past the plan
+        // length; days[currentDay] below would trap. Bail to idle instead. (#959)
+        guard currentDay < days.count else {
+            convState.phase = .idle
+            return false
+        }
 
         // Exit commands
         if ["done", "cancel", "nevermind", "stop", "no thanks"].contains(lower) {

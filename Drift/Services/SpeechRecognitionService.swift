@@ -195,9 +195,12 @@ final class SpeechRecognitionService: @unchecked Sendable {
                 return
             }
 
-            // Audio tap writes to currentRequest (survives segment restarts)
+            // Audio tap writes to currentRequest (survives segment restarts).
+            // Serialize the append onto audioQueue — the same queue endAudio()
+            // and teardown use — so append can never race with endAudio() on the
+            // CoreAudio thread (data race → over-release / append-after-end). (#959)
             inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
-                self?.currentRequest?.append(buffer)
+                self?.audioQueue.async { self?.currentRequest?.append(buffer) }
             }
             engine.prepare()
 

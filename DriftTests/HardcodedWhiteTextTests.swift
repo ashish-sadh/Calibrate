@@ -37,7 +37,9 @@ final class HardcodedWhiteTextTests: XCTestCase {
         ("BiomarkersTabView.swift", ".background(Theme.accent, in: RoundedRectangle"),
         ("LabReportUploadView.swift", ".background(Theme.accent, in: RoundedRectangle"),
         ("BackupOnboardingSheet.swift", ".background(Theme.ink, in: RoundedRectangle"),
-        ("WeightTabView.swift", ".background(Theme.ink, in: RoundedRectangle(cornerRadius: 16))"),
+        // Milestone "New Low!/High!" toast — white on solid Theme.ink. Snippet is
+        // radius-value-free so tokenizing the corner radius (#962) doesn't re-break it.
+        ("WeightTabView.swift", ".background(Theme.ink, in: RoundedRectangle"),
         ("WorkoutView.swift", ".background(Theme.ink, in: RoundedRectangle(cornerRadius: 12))"),
         // Solid ink (V7 selected-chip pattern) — white reads on black
         ("FoodTabView.swift", "? Theme.ink : Color.clear, in: RoundedRectangle"),

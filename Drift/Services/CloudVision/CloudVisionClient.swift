@@ -529,7 +529,11 @@ struct GeminiVisionClient: CloudVisionClient {
     /// Compose the `generateContent` URL with the key in the query string.
     /// The key never appears in headers or logs outside this getter.
     var endpoint: URL {
-        URL(string: "\(endpointBase)/\(model):generateContent?key=\(apiKey)")!
+        // Percent-encode the key — a pasted BYOK key with a space / newline /
+        // non-ASCII char would otherwise make URL(string:) return nil and crash
+        // the force-unwrap when Photo Log runs. (#959)
+        let encodedKey = apiKey.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
+        return URL(string: "\(endpointBase)/\(model):generateContent?key=\(encodedKey)")!
     }
 
     func analyze(image: Data, prompt: String) async throws -> PhotoLogResponse {

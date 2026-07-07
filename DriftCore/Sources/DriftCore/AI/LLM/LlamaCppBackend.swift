@@ -8,6 +8,7 @@ public final class LlamaCppBackend: AIBackend, @unchecked Sendable {
     private var context: OpaquePointer?                     // llama_context *
     private let modelPath: URL
     private var isGemma: Bool = false  // Gemma uses different chat template
+    private var contextCapacity: Int32 = 6144  // n_ctx set during _load(); bounds prompt length (#953)
     private let threadOverride: Int?  // nil = auto, set lower for parallel eval
 
     public var isLoaded: Bool { model != nil && context != nil }
@@ -63,6 +64,7 @@ public final class LlamaCppBackend: AIBackend, @unchecked Sendable {
         let trainCtx = llama_model_n_ctx_train(m)
         ctxParams.n_ctx = min(6144, UInt32(trainCtx))
         ctxParams.n_batch = min(6144, UInt32(trainCtx))
+        self.contextCapacity = Int32(ctxParams.n_ctx)
 
         // Dynamic thread count based on device cores (or explicit override for parallel eval)
         let coreCount = ProcessInfo.processInfo.activeProcessorCount
@@ -96,11 +98,20 @@ public final class LlamaCppBackend: AIBackend, @unchecked Sendable {
             var cpuParams = llama_model_default_params()
             cpuParams.n_gpu_layers = 0
             var devList: [ggml_backend_dev_t?] = []
+            let cpuModelOpt: OpaquePointer?
             if let cpuDev {
                 devList = [cpuDev, nil]
-                cpuParams.devices = UnsafeMutablePointer(mutating: devList.withUnsafeBufferPointer { $0.baseAddress })
+                // The devices buffer must stay valid for the ENTIRE load — a
+                // baseAddress escaping withUnsafeBufferPointer is only defined
+                // inside the closure, so run the load inside it. (#953)
+                cpuModelOpt = devList.withUnsafeMutableBufferPointer { buf in
+                    cpuParams.devices = buf.baseAddress
+                    return llama_model_load_from_file(cPath, cpuParams)
+                }
+            } else {
+                cpuModelOpt = llama_model_load_from_file(cPath, cpuParams)
             }
-            guard let cpuModel = withExtendedLifetime(devList, { llama_model_load_from_file(cPath, cpuParams) }) else {
+            guard let cpuModel = cpuModelOpt else {
                 throw LoadError.modelLoadFailed
             }
             model = cpuModel
@@ -222,7 +233,7 @@ public final class LlamaCppBackend: AIBackend, @unchecked Sendable {
         var tokens = tokenize(text: fullPrompt, addBos: true)
         guard !tokens.isEmpty else { return "" }
 
-        let maxPromptTokens = 6144 - 512 - 16 // context - generation - safety margin
+        let maxPromptTokens = Int(contextCapacity) - 512 - 16 // context - generation - safety margin
         if tokens.count > maxPromptTokens {
             Log.app.info("AI: prompt truncated \(tokens.count) → \(maxPromptTokens) tokens")
             tokens = Array(tokens.prefix(maxPromptTokens))
@@ -232,9 +243,15 @@ public final class LlamaCppBackend: AIBackend, @unchecked Sendable {
         let mem = llama_get_memory(context)
         if let mem { llama_memory_clear(mem, true) }
 
-        // Process prompt
-        let promptBatch = llama_batch_get_one(&tokens, Int32(tokens.count))
-        if llama_decode(context, promptBatch) != 0 { return "" }
+        // Process prompt — llama_batch_get_one aliases the token buffer without
+        // copying, so the buffer must outlive the llama_decode that reads it.
+        // Keep both inside one withUnsafeMutableBufferPointer scope. (#953)
+        var promptDecodeFailed = false
+        tokens.withUnsafeMutableBufferPointer { buf in
+            let promptBatch = llama_batch_get_one(buf.baseAddress, Int32(buf.count))
+            if llama_decode(context, promptBatch) != 0 { promptDecodeFailed = true }
+        }
+        if promptDecodeFailed { return "" }
 
         // Build per-call sampler — freed when this call returns
         let callSampler = makeSampler(temperature: temperature)
@@ -282,10 +299,14 @@ public final class LlamaCppBackend: AIBackend, @unchecked Sendable {
                 if tailStr.contains("<|im_end|>") || tailStr.contains("<end_of_turn>") { break }
             }
 
-            // Feed token back
+            // Feed token back — buffer must outlive get_one+decode (#953)
             var tokenArr = [newToken]
-            let nextBatch = llama_batch_get_one(&tokenArr, 1)
-            if llama_decode(context, nextBatch) != 0 { break }
+            var decodeFailed = false
+            tokenArr.withUnsafeMutableBufferPointer { buf in
+                let nextBatch = llama_batch_get_one(buf.baseAddress, 1)
+                if llama_decode(context, nextBatch) != 0 { decodeFailed = true }
+            }
+            if decodeFailed { break }
         }
 
         guard !outputBuf.isEmpty else { return "" }
@@ -320,10 +341,14 @@ public final class LlamaCppBackend: AIBackend, @unchecked Sendable {
         // out from under it. Skip; LocalAIService's idle-unload Timer
         // re-fires periodically, so the next quiet window will catch
         // this.
+        // Hold the lock across the whole free — releasing it before the free
+        // (as before) left a window where a new inference could set
+        // inferenceInFlight=true and capture the pointers between the unlock
+        // and llama_free, then segfault when we yank them. beginInference()
+        // blocks on the same lock, so holding it here serializes free vs. start. (#953)
         inferenceLock.lock()
-        let busy = inferenceInFlight
-        inferenceLock.unlock()
-        if busy {
+        defer { inferenceLock.unlock() }
+        if inferenceInFlight {
             Log.app.info("AI: unload deferred — inference in flight")
             return
         }
