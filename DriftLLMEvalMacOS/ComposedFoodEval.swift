@@ -92,6 +92,22 @@ final class ComposedFoodEval: XCTestCase {
         await assertLogsFood("had chicken with vegetables", baseMustContain: "chicken")
     }
 
+    // MARK: - #942: space-separated multi-item (no connector)
+
+    // The headline "eggs avocado → Eggs Benedict" class. The LLM's only job
+    // is routing to log_food; the deterministic segmentation downstream
+    // (AIActionExecutor.parseMultiItemMeal → per-item disclosure) is pinned
+    // by Tier-0 MultiItemMealParseTests. End-to-end Nebius runs live in the
+    // #942 DriftChatSim battery (before/after attached to the issue).
+
+    func testEggsAvocado_routesToLogFood() async {
+        await assertLogsFood("log eggs avocado", baseMustContain: "egg")
+    }
+
+    func testBananaPeanutButter_routesToLogFood() async {
+        await assertLogsFood("banana peanut butter", baseMustContain: "banana")
+    }
+
     // MARK: - "plus" and "alongside" connectors (3 cases)
 
     func testProteinShakePlusBanana_routesToLogFood() async {

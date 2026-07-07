@@ -222,7 +222,18 @@ public enum AIActionExecutor {
     /// collapses "paneer butter masala with 2 naan" into one ×2 search, dropping
     /// the naan). Per-item quantity rides on each `FoodIntent.servings`.
     public static func parseMultiItemMeal(_ text: String) -> [FoodIntent]? {
-        ComposedFoodParser.parse(text) ?? parseMultiFoodIntent(text)
+        if let composed = ComposedFoodParser.parse(text) { return composed }
+        if let split = parseMultiFoodIntent(text) { return split }
+        // #942 B1: space-separated items with no connector ("eggs avocado",
+        // "rice dal") — greedy DB-coverage segmentation. Conservative: only
+        // fires when every token resolves to a real food.
+        guard let segments = segmentFoodItems(text) else { return nil }
+        let intents = segments.compactMap { segment -> FoodIntent? in
+            let (amount, food, grams) = extractAmount(from: segment)
+            guard !food.isEmpty, !isFoodNameVacuous(food) else { return nil }
+            return FoodIntent(query: food, servings: amount, gramAmount: grams)
+        }
+        return intents.count > 1 ? intents : nil
     }
 
     /// Ask the LLM to estimate nutrition for an unknown food.
