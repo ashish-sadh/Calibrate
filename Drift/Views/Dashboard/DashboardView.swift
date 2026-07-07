@@ -164,7 +164,7 @@ struct DashboardView: View {
                     // V7 Phase 2 log-methods row — Snap · Voice · Search · Recent.
                     // Always visible regardless of whether food was logged so
                     // first-time users have 4 clear entry points into logging.
-                    LogMethodCardsRow(selectedTab: $selectedTab, aiEnabled: $aiEnabled)
+                    LogMethodCardsRow()
 
                     // V7 Phase 2 (#821) — vertical meal timeline. Replaces
                     // the V6 4-slot Breakfast/Lunch/Dinner/Snacks list with a

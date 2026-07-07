@@ -8,7 +8,8 @@ import DriftCore
 ///
 ///   - **Snap** → routes to PhotoLog (camera-first verb, bypasses the
 ///     segmented sheet so users go straight to capture).
-///   - **Voice** → opens `LogMealSheet` at the Voice segment.
+///   - **Describe** → opens `LogMealSheet` at the Describe segment
+///     (type or speak, #935 merged the old Voice/Text pair).
 ///   - **Search** → opens `LogMealSheet` at the Search segment.
 ///   - **Recent** → opens `LogMealSheet` at the Recent segment.
 ///
@@ -17,9 +18,6 @@ import DriftCore
 /// Tap handlers fan out via `NotificationCenter` so the Food tab / AI
 /// overlay react without Dashboard owning those sheet bindings.
 struct LogMethodCardsRow: View {
-    @Binding var selectedTab: Int
-    @Binding var aiEnabled: Bool
-
     var body: some View {
         LazyVGrid(
             columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4),
@@ -122,17 +120,9 @@ enum LogMethodCard: String, CaseIterable, Identifiable {
 
 #if DEBUG
 #Preview("LogMethodCardsRow") {
-    StatefulPreview()
+    LogMethodCardsRow()
         .padding()
         .background(Theme.background)
         .preferredColorScheme(.light)
-}
-
-private struct StatefulPreview: View {
-    @State private var tab = 0
-    @State private var ai = false
-    var body: some View {
-        LogMethodCardsRow(selectedTab: $tab, aiEnabled: $ai)
-    }
 }
 #endif
