@@ -9,14 +9,22 @@ cd "${CLAUDE_PROJECT_DIR:-.}"
 
 # Skip the dirty-state check for an INTERACTIVE session (takeover / dev work)
 # when autopilot is the active worker — it owns the working tree, and its OWN
-# sessions still pass this gate (commit-or-abandon discipline). Match the current
-# `claude -p /<skill>` invocation format (the old `(execute|run.*autopilot|sprint)`
-# pattern stopped matching, so this gate wrongly blocked interactive takeover
-# sessions whenever a senior/junior/planning session had files mid-edit). Only
-# skip when NOT autonomous — autopilot's own sessions (DRIFT_AUTONOMOUS=1) must
-# still be held to the clean-state gate below.
+# sessions still pass this gate (commit-or-abandon discipline). Only skip when
+# NOT autonomous — autopilot's own sessions (DRIFT_AUTONOMOUS=1) must still be
+# held to the clean-state gate below.
+#
+# #931: the old detector `pgrep -f 'claude .*-p .*/(senior|...)'` never matched
+# the REAL autopilot process, which runs as the versioned headless binary
+# `.../share/claude/versions/<ver>/... --print ...` (long-form `--print`, no
+# visible `/<skill>` token). So the skip never fired and interactive takeover
+# sessions were wrongly told to commit a concurrent session's mid-edit files.
+# Detect autopilot by its actual signature: a headless `--print`/`-p` claude
+# process (the versioned path or the LATEST alias), plus the legacy pattern as
+# a fallback. An interactive session is bare `claude` WITHOUT `--print`, so it
+# never self-matches.
 if [ "${DRIFT_AUTONOMOUS:-0}" != "1" ] && \
-   pgrep -f 'claude .*-p .*/(senior|junior|planning|design-doc|testflight|admin-replies|knowledge-curate|ui-evaluator|ui-review)' > /dev/null 2>&1; then
+   { pgrep -f 'claude/versions/.*(--print| -p )' > /dev/null 2>&1 || \
+     pgrep -f 'claude .*-p .*/(senior|junior|planning|design-doc|testflight|admin-replies|knowledge-curate|ui-evaluator|ui-review)' > /dev/null 2>&1; }; then
   exit 0
 fi
 
