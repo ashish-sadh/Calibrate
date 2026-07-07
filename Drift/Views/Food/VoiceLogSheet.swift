@@ -125,7 +125,14 @@ struct VoiceLogSheet: View {
                 .accessibilityIdentifier("describe-meal-field")
 
             Spacer()
-
+        }
+        // Keyboard-safe (#933): the Cancel/Continue row was bottom-anchored in
+        // the VStack with fixed padding, so focusing the field slid the
+        // keyboard OVER it — you could type a meal but not reach the submit
+        // button. As a bottom safe-area inset the row rides ABOVE the
+        // keyboard (the keyboard extends the bottom safe area), and the
+        // Spacer()s absorb the compression.
+        .safeAreaInset(edge: .bottom) {
             HStack(spacing: 12) {
                 Button("Cancel") { dismiss() }
                     .buttonStyle(.bordered)
@@ -143,7 +150,8 @@ struct VoiceLogSheet: View {
                 .accessibilityIdentifier("describe-meal-submit")
             }
             .padding(.horizontal, 24)
-            .padding(.bottom, 24)
+            .padding(.vertical, 12)
+            .background(Theme.background)
         }
     }
 
