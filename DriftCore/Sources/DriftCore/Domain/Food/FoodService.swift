@@ -461,14 +461,14 @@ public enum FoodService {
                 try? AppDatabase.shared.deleteFoodEntry(id: lastId)
                 DriftPlatform.widget?.refresh()
                 ConversationState.shared.dropRecentEntry(id: lastId)
-                return "Removed \(last.foodName) (\(Int(last.entry.calories)) cal)."
+                return "Removed \(last.foodName) (\(Int(last.entry.totalCalories)) cal)."
             }
             return "Couldn't find '\(name)' in today's food log."
         }
         try? AppDatabase.shared.deleteFoodEntry(id: entryId)
         DriftPlatform.widget?.refresh()
         ConversationState.shared.dropRecentEntry(id: entryId)
-        return "Removed \(found.foodName) (\(Int(found.entry.calories)) cal)."
+        return "Removed \(found.foodName) (\(Int(found.entry.totalCalories)) cal)."
     }
 
     // MARK: - Edit Meal
@@ -629,22 +629,22 @@ public enum FoodService {
     // MARK: - Copy Yesterday
 
     /// Preview yesterday's food entries without copying. Returns summary for confirmation.
-    public static func previewYesterday() -> String {
+    public static func previewYesterday(db: AppDatabase = .shared) -> String {
         guard let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) else {
             return "Couldn't determine yesterday's date."
         }
         let yesterdayStr = DateFormatters.dateOnly.string(from: yesterday)
-        guard let mealLogs = try? AppDatabase.shared.fetchMealLogs(for: yesterdayStr), !mealLogs.isEmpty else {
+        guard let mealLogs = try? db.fetchMealLogs(for: yesterdayStr), !mealLogs.isEmpty else {
             return "No food logged yesterday."
         }
         var names: [String] = []
         var totalCal = 0.0
         for ml in mealLogs {
             guard let mlId = ml.id,
-                  let entries = try? AppDatabase.shared.fetchFoodEntries(forMealLog: mlId) else { continue }
+                  let entries = try? db.fetchFoodEntries(forMealLog: mlId) else { continue }
             for entry in entries {
                 names.append(entry.foodName)
-                totalCal += entry.calories
+                totalCal += entry.totalCalories  // #979: calories × servings, not per-serving
             }
         }
         if names.isEmpty { return "No entries to copy from yesterday." }
@@ -654,24 +654,36 @@ public enum FoodService {
     }
 
     /// Copy all of yesterday's food entries to today. Returns confirmation.
-    public static func copyYesterday() -> String {
+    public static func copyYesterday(db: AppDatabase = .shared) -> String {
         guard let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date()) else {
             return "Couldn't determine yesterday's date."
         }
         let yesterdayStr = DateFormatters.dateOnly.string(from: yesterday)
         let todayStr = DateFormatters.todayString
-        guard let mealLogs = try? AppDatabase.shared.fetchMealLogs(for: yesterdayStr), !mealLogs.isEmpty else {
+        guard let mealLogs = try? db.fetchMealLogs(for: yesterdayStr), !mealLogs.isEmpty else {
             return "No food logged yesterday."
         }
 
+        // #980: reuse today's existing meal log for a given meal type instead of
+        // creating a duplicate when today already has (or gets) one of that type.
+        var todayLogByType: [String: Int64] = [:]
+        for existing in (try? db.fetchMealLogs(for: todayStr)) ?? [] {
+            if let id = existing.id { todayLogByType[existing.mealType] = id }
+        }
         var copied = 0
         for ml in mealLogs {
             guard let mlId = ml.id,
-                  let entries = try? AppDatabase.shared.fetchFoodEntries(forMealLog: mlId),
+                  let entries = try? db.fetchFoodEntries(forMealLog: mlId),
                   !entries.isEmpty else { continue }
-            // Create a meal log for today with same meal type
-            var newLog = MealLog(date: todayStr, mealType: ml.mealType)
-            guard let _ = try? AppDatabase.shared.saveMealLog(&newLog), let newLogId = newLog.id else { continue }
+            let newLogId: Int64
+            if let existing = todayLogByType[ml.mealType] {
+                newLogId = existing
+            } else {
+                var newLog = MealLog(date: todayStr, mealType: ml.mealType)
+                guard (try? db.saveMealLog(&newLog)) != nil, let id = newLog.id else { continue }
+                newLogId = id
+                todayLogByType[ml.mealType] = id
+            }
             for entry in entries {
                 // Preserve yesterday's time-of-day but with today's date
                 let adjustedLoggedAt: String
@@ -691,14 +703,14 @@ public enum FoodService {
                                           calories: entry.calories, proteinG: entry.proteinG,
                                           carbsG: entry.carbsG, fatG: entry.fatG,
                                           fiberG: entry.fiberG, loggedAt: adjustedLoggedAt)
-                try? AppDatabase.shared.saveFoodEntry(&newEntry)
+                try? db.saveFoodEntry(&newEntry)
                 copied += 1
             }
         }
         if copied == 0 { return "No entries to copy from yesterday." }
         let cal = mealLogs.flatMap { ml in
-            (try? AppDatabase.shared.fetchFoodEntries(forMealLog: ml.id ?? 0)) ?? []
-        }.reduce(0.0) { $0 + $1.calories }
+            (try? db.fetchFoodEntries(forMealLog: ml.id ?? 0)) ?? []
+        }.reduce(0.0) { $0 + $1.totalCalories }  // #979: calories × servings
         DriftPlatform.widget?.refresh()
         return "Copied \(copied) items from yesterday (\(Int(cal)) cal total)."
     }

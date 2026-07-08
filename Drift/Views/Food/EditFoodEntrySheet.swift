@@ -262,12 +262,18 @@ struct EditFoodEntrySheet: View {
                                 if entry.foodId == nil && editName != entry.foodName {
                                     FoodService.updateFoodEntryName(id: id, name: editName)
                                 }
+                                // #1004: editCal/editP/… hold the DISPLAYED TOTAL
+                                // (entry.macro × multiplier). Store them as PER-SERVING
+                                // (÷ servings) so updateEntryServings doesn't multiply the
+                                // total a second time (the old code double-counted, so
+                                // bumping servings silently ballooned the logged calories).
+                                let s = multiplier > 0 ? multiplier : 1
                                 FoodService.updateFoodEntryMacros(
-                                    id: id, calories: Double(editCal) ?? entry.calories,
-                                    proteinG: Double(editP) ?? entry.proteinG,
-                                    carbsG: Double(editC) ?? entry.carbsG,
-                                    fatG: Double(editF) ?? entry.fatG,
-                                    fiberG: Double(editFb) ?? entry.fiberG)
+                                    id: id, calories: (Double(editCal) ?? entry.calories * s) / s,
+                                    proteinG: (Double(editP) ?? entry.proteinG * s) / s,
+                                    carbsG: (Double(editC) ?? entry.carbsG * s) / s,
+                                    fatG: (Double(editF) ?? entry.fatG * s) / s,
+                                    fiberG: (Double(editFb) ?? entry.fiberG * s) / s)
                                 if multiplier > 0, multiplier != entry.servings {
                                     viewModel.updateEntryServings(id: id, servings: multiplier)
                                 }

@@ -437,3 +437,32 @@ private func seedDay(_ db: AppDatabase, date: String, meals: [(type: String, kca
     }
     #expect(cal == 999, "collided saved_food must be recovered with the user's macros, got \(String(describing: cal))")
 }
+
+// MARK: - #979/#980: copy-yesterday servings total + meal-log dedup
+
+@Test @MainActor func copyYesterdayServingsTotalAndMealLogDedup() throws {
+    let db = try AppDatabase.empty()
+    let cal = Calendar.current
+    let yesterday = DateFormatters.dateOnly.string(from: cal.date(byAdding: .day, value: -1, to: Date())!)
+    let today = DateFormatters.todayString
+
+    // Yesterday: one breakfast entry logged with servings=2 → true total 140, not 70.
+    var ylog = MealLog(date: yesterday, mealType: "breakfast")
+    try db.saveMealLog(&ylog)
+    var yentry = FoodEntry(mealLogId: ylog.id ?? 0, foodName: "Eggs979", servingSizeG: 50, servings: 2,
+                           calories: 70, date: yesterday, mealType: "breakfast")
+    try db.saveFoodEntry(&yentry)
+    // Today ALREADY has a breakfast log (the #980 duplicate scenario).
+    var tlog = MealLog(date: today, mealType: "breakfast")
+    try db.saveMealLog(&tlog)
+
+    // #979: reported totals use calories × servings (140), not per-serving (70).
+    #expect(FoodService.previewYesterday(db: db).contains("140"), "previewYesterday must report the servings-scaled total")
+    #expect(FoodService.copyYesterday(db: db).contains("140"), "copyYesterday must report the servings-scaled total")
+
+    // #980: today's breakfast log is reused, not duplicated.
+    let breakfastLogs = try db.fetchMealLogs(for: today).filter { $0.mealType == "breakfast" }
+    #expect(breakfastLogs.count == 1, "copyYesterday must reuse today's breakfast log, not create a duplicate")
+    #expect(try db.fetchFoodEntries(for: today).contains { $0.foodName == "Eggs979" && $0.servings == 2 },
+            "the copied entry landed under today's breakfast with servings preserved")
+}
