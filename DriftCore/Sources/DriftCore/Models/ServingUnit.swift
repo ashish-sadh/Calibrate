@@ -565,21 +565,24 @@ public struct FoodUnit: Hashable {
         if name.contains("scoop") { return FoodUnit(label: "scoop", gramsEquivalent: ss) }
         // Almond butter → tbsp (before almond rule which excludes "butter" forms)
         if name.contains("almond butter") { return FoodUnit(label: "tbsp", gramsEquivalent: 16) }
-        // Peanut butter — tbsp (peanut excluded from generic butter word rule)
+        // Peanut butter — tbsp. #1011: a real PB tbsp is ~16 g (matches almond butter
+        // above), not 32 g; the old 32 g logged "1 tbsp" as ~188 cal (two tablespoons).
         if name.contains("peanut butter") || name.contains("pb2") {
-            return FoodUnit(label: "tbsp", gramsEquivalent: 32)
+            return FoodUnit(label: "tbsp", gramsEquivalent: 16)
         }
 
-        // Nuts — show count as secondary unit (exclude bars which contain nut names e.g. "Built Bar (Coconut Almond)")
+        // Nuts — default to "handful" (a concrete ~serving portion) rather than a vague
+        // "serving"; the per-nut count pill (almond/cashew/…) is still offered for
+        // precision. #1010: "1 serving" read as ambiguous and count-switch showed "18.7".
         if name.contains("almond") && !name.contains("milk") && !name.contains("butter") &&
            !name.contains("flour") && !name.contains("bar") {
-            return FoodUnit(label: "serving", gramsEquivalent: ss)
+            return FoodUnit(label: "handful", gramsEquivalent: ss)
         }
         if name.contains("cashew") && !name.contains("butter") && !name.contains("bar") && !name.contains("pesto") {
-            return FoodUnit(label: "serving", gramsEquivalent: ss)
+            return FoodUnit(label: "handful", gramsEquivalent: ss)
         }
-        if name.contains("pistachio") { return FoodUnit(label: "serving", gramsEquivalent: ss) }
-        if name.contains("walnut") { return FoodUnit(label: "serving", gramsEquivalent: ss) }
+        if name.contains("pistachio") { return FoodUnit(label: "handful", gramsEquivalent: ss) }
+        if name.contains("walnut") { return FoodUnit(label: "handful", gramsEquivalent: ss) }
 
         // Protein powder — measured by scoop
         if name.contains("protein powder") {

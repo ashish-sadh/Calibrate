@@ -137,6 +137,19 @@ final class SmartUnitsGoldSetTests: XCTestCase {
         XCTAssertTrue(hasCashew, "Cashews should include 'cashew' count unit")
     }
 
+    // #1010: nuts default to a concrete "handful", not a vague "serving".
+    func testNutsDefaultToHandful() {
+        XCTAssertEqual(primaryUnit(for: "Almonds (raw)", size: 28), "handful")
+        XCTAssertEqual(primaryUnit(for: "Cashews (roasted)", size: 28), "handful")
+        XCTAssertEqual(primaryUnit(for: "Walnuts", size: 28), "handful")
+    }
+
+    // #1011: peanut butter tbsp is ~16 g (a real tablespoon), matching almond butter.
+    func testPeanutButterTbspIs16g() {
+        let tbsp = FoodUnit.smartUnits(for: food("Peanut Butter", size: 32)).first(where: { $0.label == "tbsp" })
+        XCTAssertEqual(tbsp?.gramsEquivalent, 16, "PB tbsp must be ~16g, not 32g")
+    }
+
     // MARK: - Specific Protein & Vegetable Units
 
     func testMeatPortionsGetPieceUnit() {
