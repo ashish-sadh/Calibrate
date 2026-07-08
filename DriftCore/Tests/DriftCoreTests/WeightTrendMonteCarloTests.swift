@@ -152,8 +152,9 @@ struct WeightTrendMonteCarloTests {
             worstDramatic = max(worstDramatic, t.pctDramatic)
         }
         // MEASURED 2026-07-08 (baseline, MK gate):
-        //   flat-iid: 2.8–10.6% dramatic · flat-ar1 (persistent water
-        //   episodes): 10.0–27.8% · weekend pattern: 16.7% · cycle28: 90.8%.
+        //   flat-iid: 2.8–11.1% dramatic · flat-ar1 (persistent water
+        //   episodes): 10.6–33.3% (raised from 27.8% by the slow-trend
+        //   escalation, see bound below) · weekend: 18.3% · cycle28: 90.8%.
         // Two findings this harness surfaced on its first run:
         //   1. KNOWN GAP — 28-day cycle oscillation reads as a confident
         //      trend ~91% of the time (a 21d window sees a half-period as a
@@ -166,7 +167,13 @@ struct WeightTrendMonteCarloTests {
         let iidWorst = ["flat-iid daily", "flat-iid 60%", "flat-iid every3"].map { results[$0]?.pctDramatic ?? 0 }.max() ?? 0
         let ar1Worst = ["flat-ar1 daily", "flat-ar1 60%", "flat-ar1 every3"].map { results[$0]?.pctDramatic ?? 0 }.max() ?? 0
         #expect(iidWorst < 14, "iid-noise dramatic-phantom rate regressed: \(iidWorst)%")
-        #expect(ar1Worst < 32, "AR1 water-episode dramatic-phantom rate regressed: \(ar1Worst)% (known weak spot, do not let it grow)")
+        // 2026-07-08 slow-trend escalation: AR1 rose 27.8% → 33.3% — the
+        // DELIBERATE cost of the operator's "Holding steady should be rare"
+        // directive (bought +8-20pts detection on 0.15-0.3 kg/wk trends and
+        // 81→91% on the contaminated-bulk field shape, with iid families
+        // unchanged). Persistent water episodes remain the #1024 Kalman
+        // target; this bound stops the leak from growing further.
+        #expect(ar1Worst < 36, "AR1 water-episode dramatic-phantom rate regressed: \(ar1Worst)% (known weak spot, do not let it grow)")
         #expect((results["weekend"]?.pctDramatic ?? 0) < 22, "weekend-pattern phantom rate regressed")
         #expect((results["cycle28"]?.pctDramatic ?? 0) < 95, "cycle28 canary — currently ~91% (known gap, #1024); if you fixed it, LOWER this bound")
     }

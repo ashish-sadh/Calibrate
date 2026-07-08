@@ -143,6 +143,17 @@ public enum WeightTrendCalculator {
     /// days".
     static let significanceZThreshold: Double = 2.0
 
+    /// Escalation window for SLOW trends (operator directive 2026-07-08:
+    /// "Holding steady should be rare"). A real 0.15–0.3 kg/wk trend often
+    /// can't clear the report ramp on 21 days of noisy points — but it can
+    /// on a longer window (more Mann–Kendall pairs = more power, and for a
+    /// SUSTAINED slow trend the older points are still representative).
+    /// Escalation is guarded (see calculateTrend): only when the recent
+    /// window itself shows an above-band slope of the SAME sign — recent
+    /// flatness is affirmative evidence of maintaining and must never be
+    /// overridden by stale history (#842 / regimeChange_recentMaintenance).
+    static let slowTrendWindowDays = 35
+
     /// Minimum raw weigh-ins in the window before the trend test can even be
     /// assessed. With ≤3 points there are too few pairs for Mann–Kendall to
     /// mean anything; treat as not-reportable → maintaining.
@@ -326,7 +337,17 @@ public enum WeightTrendCalculator {
         //   inside the ramp             → real-but-young trend fades in,
         //     scaled by confidence (no hard boundary to flap across)
         //   Z ≥ significanceZThreshold  → full value, confident framing.
-        let rate = weeklyRateForWindow(points: dataPoints, windowDays: config.regressionWindowDays)
+        var rate = weeklyRateForWindow(points: dataPoints, windowDays: config.regressionWindowDays)
+        // Slow-trend escalation: recent window is directional but below full
+        // confidence → let the 35d window certify it, if it agrees in sign
+        // and is MORE confident. Recent-flat (sub-band) never escalates.
+        if let p = rate, p.zStat < Self.reportRampFullZ,
+           abs(p.kgPerWeek) >= config.maintainingThresholdKgPerWeek,
+           let wide = weeklyRateForWindow(points: dataPoints, windowDays: Self.slowTrendWindowDays),
+           wide.zStat >= Self.significanceZThreshold,   // wide window must be CONFIDENT (Z≥2.0), not merely improved — a 35d slice of flat noise can reach the ramp band by chance without ever being a trend (caught by flatNoise seed 99 at Z≈1.7)
+           (wide.kgPerWeek > 0) == (p.kgPerWeek > 0) {
+            rate = wide
+        }
         let hasInsufficientData = (rate == nil)
         let rawRate = clampRate(rate?.kgPerWeek ?? 0)
         let zStat = rate?.zStat ?? 0
