@@ -83,19 +83,27 @@ struct WeightEntryView: View {
         }
     }
 
+    /// #999: parse a decimal that may use ',' as the separator (comma-decimal locales),
+    /// where `Double("72,5")` returns nil and the entry would silently fail to save.
+    private func decimal(_ s: String) -> Double? {
+        Double(s.replacingOccurrences(of: ",", with: "."))
+    }
+
     private func save() {
-        guard let value = Double(weightText), value > 0 else { return }
+        guard let value = decimal(weightText), value > 0 else { return }
         onSave(value, selectedDate)
 
         // Save body comp if any fields filled
         let comp = BodyComposition(
             date: DateFormatters.dateOnly.string(from: selectedDate),
-            bodyFatPct: Double(bodyFatText),
-            bmi: Double(bmiText),
-            waterPct: Double(waterText),
-            muscleMassKg: Double(muscleMassText),
-            boneMassKg: Double(boneMassText),
-            visceralFat: Double(visceralFatText)
+            bodyFatPct: decimal(bodyFatText),
+            bmi: decimal(bmiText),
+            waterPct: decimal(waterText),
+            // #1005: Muscle/Bone are entered in the user's unit (lbs for lbs users) but
+            // stored as kg — convert instead of storing the raw lbs value.
+            muscleMassKg: decimal(muscleMassText).map { unit.convertToKg($0) },
+            boneMassKg: decimal(boneMassText).map { unit.convertToKg($0) },
+            visceralFat: decimal(visceralFatText)
         )
         if comp.hasData {
             onSaveBodyComp?(comp)

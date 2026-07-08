@@ -43,7 +43,8 @@ struct ServingInputView: View {
                                 let currentAmount = Double(amount) ?? 0
                                 let grams = currentAmount * oldUnit.gramsEquivalent
                                 let converted = newUnit.gramsEquivalent > 0 ? grams / newUnit.gramsEquivalent : currentAmount
-                                amount = converted == Double(Int(converted)) ? "\(Int(converted))" : String(format: "%.1f", converted)
+                                // #1006: Int(converted) traps on huge/NaN input; use format specifiers, which don't.
+                                amount = converted.truncatingRemainder(dividingBy: 1) == 0 ? String(format: "%.0f", converted) : String(format: "%.1f", converted)
                             }
                         } label: {
                             Text(units[i].label)
@@ -68,7 +69,7 @@ struct ServingInputView: View {
             // UI doesn't advertise a guessed gram figure as ground truth.
             if unit.label != "g" && unit.label != "ml" && totalGrams > 0 {
                 let gramPrefix = unit.isEstimate ? "≈ " : "= "
-                Text("\(gramPrefix)\(totalGrams < 10 ? String(format: "%.1f", totalGrams) : "\(Int(totalGrams))")g")
+                Text("\(gramPrefix)\(totalGrams < 10 ? String(format: "%.1f", totalGrams) : String(format: "%.0f", totalGrams))g")
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(Theme.textSecondary)
             }

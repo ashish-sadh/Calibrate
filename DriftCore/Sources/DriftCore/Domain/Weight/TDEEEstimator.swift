@@ -453,7 +453,9 @@ public final class TDEEEstimator {
         guard let count = try? db.daysWithFoodLogged(
             from: DateFormatters.dateOnly.string(from: twoWeeksAgo),
             to: DateFormatters.dateOnly.string(from: today)) else { return 0 }
-        return Double(count) / 14.0
+        // #1000: the range (today-14 … today) is INCLUSIVE = 15 days, so count can
+        // reach 15. Divide by 15 and clamp so the consistency ratio never exceeds 1.0.
+        return min(1.0, Double(count) / 15.0)
     }
 
     // MARK: - Cache
