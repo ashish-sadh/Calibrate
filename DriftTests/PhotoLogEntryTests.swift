@@ -29,6 +29,25 @@ private func sampleItem(name: String = "dal",
     #expect(item.proteinPerGram == 0)
 }
 
+// #1043: a plate of 3 idli (150 g total, count 3) stores per-PIECE weight (50 g), so the
+// invariant grams == amount × gramsPerServingUnit holds and nudging the count scales
+// proportionally — not by the whole-plate weight (the old ~3× corruption).
+@Test func editableItemCountUnitStoresPerPieceWeight() {
+    let plate = PhotoLogItem(name: "Idli", grams: 150, calories: 195,
+                             proteinG: 6, carbsG: 40, fatG: 1, confidence: .high,
+                             servingUnit: "pieces", servingAmount: 3)
+    var item = PhotoLogEditableItem(from: plate)
+    #expect(abs(item.gramsPerServingUnit - 50) < 0.01)
+    #expect(abs(item.grams - item.servingAmount * item.gramsPerServingUnit) < 0.01)
+
+    item.setAmount(4)  // ate 4, not 3
+    #expect(abs(item.grams - 200) < 0.01)   // 4 × 50, not 4 × 150
+    #expect(abs(item.calories - 260) < 1)   // 4 × per-piece 65 cal, not 4 × 195
+
+    item.setAmount(1.5)  // "half" of 3
+    #expect(abs(item.grams - 75) < 0.01)    // 1.5 × 50, not 1.5 × 150
+}
+
 // MARK: - Serving unit picker
 
 @Test func suggestedUnitMatchesKeywords() {

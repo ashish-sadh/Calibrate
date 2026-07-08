@@ -48,8 +48,8 @@ struct PhotoLogEditableItem: Identifiable, Equatable {
     var fatPerGram: Double
     var fiberPerGram: Double
 
-    /// LLM's original grams for this food — used as the 1-piece / 1-slice
-    /// baseline weight when the user picks `.pieces` or `.slices`.
+    /// Per-unit baseline weight for `.pieces` / `.slices` (grams ÷ original count) —
+    /// #1043: NOT the plate total, so scaling the count stays proportional.
     let originalGrams: Double
 
     init(from item: PhotoLogItem, id: UUID = UUID()) {
@@ -77,30 +77,42 @@ struct PhotoLogEditableItem: Identifiable, Equatable {
             self.fatPerGram = 0
             self.fiberPerGram = 0
         }
-        self.originalGrams = self.grams
         self.ingredients = item.ingredients ?? []
 
         // Prefer LLM-returned serving_unit + serving_amount. The LLM sees
         // the photo and knows "1.5 slices of pizza" vs "0.75 cup rice" is
         // more natural than the Swift keyword guess. Fall back to the
         // keyword heuristic if the model didn't return anything.
+        let resolvedUnit: PhotoLogServingUnit
+        let resolvedAmount: Double
         if let aiUnit = PhotoLogServingUnit.parse(item.servingUnit) {
-            self.servingUnit = aiUnit
+            resolvedUnit = aiUnit
             if let aiAmount = item.servingAmount, aiAmount > 0 {
-                self.servingAmount = aiAmount
+                resolvedAmount = aiAmount
             } else if let gpu = aiUnit.fixedGramsPerUnit, gpu > 0 {
-                self.servingAmount = self.grams / gpu
+                resolvedAmount = self.grams / gpu
             } else {
-                self.servingAmount = self.originalGrams > 0 ? 1 : 0
+                resolvedAmount = self.grams > 0 ? 1 : 0
             }
         } else {
             let suggested = PhotoLogServingUnit.suggested(forName: item.name)
-            self.servingUnit = suggested
+            resolvedUnit = suggested
             if let gpu = suggested.fixedGramsPerUnit {
-                self.servingAmount = gpu > 0 ? self.grams / gpu : 0
+                resolvedAmount = gpu > 0 ? self.grams / gpu : 0
             } else {
-                self.servingAmount = self.originalGrams > 0 ? 1 : 0
+                resolvedAmount = self.grams > 0 ? 1 : 0
             }
+        }
+        self.servingUnit = resolvedUnit
+        self.servingAmount = resolvedAmount
+        // #1043: for count units (pieces/slices) the LLM's `grams` is the PLATE TOTAL and
+        // `serving_amount` is the COUNT, so one unit weighs grams / count — not the whole
+        // plate. Store the per-unit weight so `grams == servingAmount × gramsPerServingUnit`
+        // holds and nudging the count (3→4 idli) scales by ~50 g, not 150 g.
+        if resolvedUnit.fixedGramsPerUnit == nil, resolvedAmount > 0 {
+            self.originalGrams = self.grams / resolvedAmount
+        } else {
+            self.originalGrams = self.grams
         }
     }
 
