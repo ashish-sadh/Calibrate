@@ -806,6 +806,14 @@ extension AppDatabase {
     /// which bumps CFBundleVersion. (#947)
     private static let foodsSeedVersionKey = "drift_foods_seed_version"
 
+    /// #998: clear the seed fast-path keys so `seedFoodsFromJSON()` re-syncs the food
+    /// catalog from the current bundle on next launch — used after a backup restore
+    /// replaced the DB with the backup's (possibly older) curated foods.
+    public static func invalidateFoodSeedCache() {
+        UserDefaults.standard.removeObject(forKey: foodsJSONHashKey)
+        UserDefaults.standard.removeObject(forKey: foodsSeedVersionKey)
+    }
+
     /// Seed or refresh the food DB from the bundled `foods.json`.
     ///
     /// Runs on every cold start but exits in O(1) when `foods.json` hasn't

@@ -65,6 +65,25 @@ final class BackupRestorerTests: XCTestCase {
         XCTAssertNil(defaults.object(forKey: "drift_not_allowlisted"))
     }
 
+    // #997: restore REPLACES allowlisted prefs — a key absent from the backup is cleared,
+    // not left at the stale current-device value.
+    func testRestoreClearsAllowlistedKeyAbsentFromBackup() throws {
+        defaults.set("lbs", forKey: "weight_unit")  // stale current-device value
+        let backupURL = try makeBackup(
+            seedRows: 1, schemaVersion: Migrations.currentVersion,
+            withDefaults: ["drift_health_nudges": true]  // NOTE: no weight_unit
+        )
+        let dest = workDir.appendingPathComponent("restored-997.sqlite")
+        _ = try BackupRestorer().restore(
+            from: backupURL, toDatabasePath: dest, userDefaults: defaults,
+            currentSchemaVersion: Migrations.currentVersion,
+            scratchDir: workDir.appendingPathComponent("scratch997", isDirectory: true)
+        )
+        XCTAssertNil(defaults.object(forKey: "weight_unit"),
+                     "allowlisted key absent from the backup must be cleared, not left stale")
+        XCTAssertTrue(defaults.bool(forKey: "drift_health_nudges"))
+    }
+
     // MARK: - Corruption
 
     func testCorruptManifestChecksumReturnsCorrupted() throws {

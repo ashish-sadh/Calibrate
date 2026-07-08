@@ -298,7 +298,10 @@ public final class BackupService: @unchecked Sendable {
 
     private func startUploadMonitor(for url: URL) {
         let query = NSMetadataQuery()
-        query.searchScopes = [NSMetadataQueryUbiquitousDocumentsScope]
+        // #995: backups live in <container>/Backups/ (the app-private Data area), NOT
+        // Documents — include the Data scope or the upload monitor never finds the file
+        // and "Last backed up" never updates.
+        query.searchScopes = [NSMetadataQueryUbiquitousDocumentsScope, NSMetadataQueryUbiquitousDataScope]
         query.predicate = NSPredicate(
             format: "%K == %@",
             NSMetadataItemFSNameKey,

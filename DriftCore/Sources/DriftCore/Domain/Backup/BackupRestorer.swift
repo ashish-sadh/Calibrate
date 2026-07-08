@@ -75,6 +75,11 @@ public struct BackupRestorer {
 
         try atomicReplace(source: extractedDB, destination: databaseURL)
 
+        // #998: the restored DB carries the backup's (possibly older) curated food
+        // catalog. Clear the seed fast-path so seedFoodsFromJSON() re-syncs foods from
+        // the current bundle onto the restored DB on next launch, instead of skipping.
+        AppDatabase.invalidateFoodSeedCache()
+
         try applyPreferences(from: extractedPrefs, to: userDefaults)
 
         return manifest
@@ -156,16 +161,18 @@ public struct BackupRestorer {
     private func applyPreferences(from url: URL, to defaults: UserDefaults) throws {
         let data = try Data(contentsOf: url)
         let dict = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
-        let allow = Set(BackupKeys.userDefaultsAllowlist)
-        for (key, value) in dict where allow.contains(key) {
-            // JSON `null` deserializes to NSNull, which is NOT property-list
-            // compatible — `defaults.set(NSNull(), forKey:)` raises an
-            // uncatchable NSInvalidArgumentException. Drift-produced backups
-            // can't contain null (the Packager's `jsonSafeValue` strips it),
-            // but a hand-crafted or cross-version backup would crash here.
-            // Symmetric primitive filter mirrors `BackupPackager.jsonSafeValue`.
-            guard let safe = primitiveValue(value) else { continue }
-            defaults.set(safe, forKey: key)
+        // #997: REPLACE (not merge) the allowlisted prefs. Iterating the allowlist and
+        // clearing keys ABSENT from the backup means a stale current-device value (e.g.
+        // a weight goal the backup didn't have) doesn't survive the restore.
+        // primitiveValue() returns nil for NSNull, so a null/incompatible value also
+        // clears the key rather than raising the uncatchable exception `defaults.set`
+        // would throw (mirrors BackupPackager.jsonSafeValue).
+        for key in BackupKeys.userDefaultsAllowlist {
+            if let value = dict[key], let safe = primitiveValue(value) {
+                defaults.set(safe, forKey: key)
+            } else {
+                defaults.removeObject(forKey: key)
+            }
         }
     }
 

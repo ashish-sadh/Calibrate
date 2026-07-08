@@ -466,3 +466,13 @@ private func seedDay(_ db: AppDatabase, date: String, meals: [(type: String, kca
     #expect(try db.fetchFoodEntries(for: today).contains { $0.foodName == "Eggs979" && $0.servings == 2 },
             "the copied entry landed under today's breakfast with servings preserved")
 }
+
+// MARK: - #998: restore invalidates the seed fast-path so foods re-sync
+
+@Test func invalidateFoodSeedCacheClearsSeedKeys() {
+    UserDefaults.standard.set("somehash", forKey: "drift_foods_json_hash")
+    UserDefaults.standard.set("335", forKey: "drift_foods_seed_version")
+    AppDatabase.invalidateFoodSeedCache()
+    #expect(UserDefaults.standard.string(forKey: "drift_foods_json_hash") == nil)
+    #expect(UserDefaults.standard.string(forKey: "drift_foods_seed_version") == nil)
+}
