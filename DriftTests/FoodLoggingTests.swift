@@ -1646,9 +1646,10 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
     let withExplicit = goal.macroTargets(actualTDEE: 2800)
     #expect(withExplicit != nil)
 
-    // The base for 120kg at moderate activity: raw = 2619, under 2700 soft cap, so = 2619
+    // The base for 120kg at moderate activity: raw = (10·120 + 834.5) × 1.55 ≈ 3153,
+    // above the 3000 soft cap → 3000 + 153 × 0.3 ≈ 3046
     let base = TDEEEstimator.computeBase(weightKg: 120, activityMultiplier: 29)
-    #expect(base < 2700, "120kg moderate should be under soft cap, got \(Int(base))")
+    #expect(base > 3000 && base < 3153, "120kg moderate should be soft-capped (~3046), got \(Int(base))")
 }
 
 // MARK: - Diet Preference Tests (4 tests)
@@ -2263,34 +2264,36 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
 }
 
 @Test func tdeeBaseAnchor70kg() async throws {
+    // Sex-averaged Mifflin default: (10·70 + 834.5) × 1.55 ≈ 2378
     let base = TDEEEstimator.computeBase(weightKg: 70, activityMultiplier: 29)
-    #expect(abs(base - 2000) < 1, "70kg at moderate = 2000 anchor")
+    #expect(abs(base - 2378.5) < 1, "70kg at moderate ≈ 2378 (sex-averaged Mifflin default)")
 }
 
 @Test func tdeeBaseLightPerson() async throws {
     let base = TDEEEstimator.computeBase(weightKg: 53.8, activityMultiplier: 29)
-    #expect(base > 1700 && base < 1800, "53.8kg should be ~1,754, got \(Int(base))")
+    #expect(base > 2050 && base < 2200, "53.8kg should be ~2,127, got \(Int(base))")
 }
 
 @Test func tdeeBaseHeavyPerson() async throws {
     let base = TDEEEstimator.computeBase(weightKg: 78.4, activityMultiplier: 29)
-    #expect(base > 2050 && base < 2200, "78.4kg should be ~2,117 (not 2,585), got \(Int(base))")
+    #expect(base > 2450 && base < 2570, "78.4kg should be ~2,509, got \(Int(base))")
 }
 
 @Test func tdeeBaseVeryHeavy() async throws {
     let base = TDEEEstimator.computeBase(weightKg: 110, activityMultiplier: 29)
-    #expect(base > 2400 && base < 2600, "110kg should be ~2,508 with diminishing returns, got \(Int(base))")
+    #expect(base > 2900 && base < 3010, "110kg should be ~2,999 (just under the 3000 soft cap), got \(Int(base))")
 }
 
 // Group 2: Activity slider
 @Test func tdeeActivitySedentary() async throws {
     let base = TDEEEstimator.computeBase(weightKg: 78.4, activityMultiplier: 22)
-    #expect(base > 1500 && base < 1700, "Sedentary 78.4kg ~1,606, got \(Int(base))")
+    #expect(base > 1880 && base < 2000, "Sedentary 78.4kg ~1,942, got \(Int(base))")
 }
 
 @Test func tdeeActivityAthlete() async throws {
     let base = TDEEEstimator.computeBase(weightKg: 78.4, activityMultiplier: 36)
-    #expect(base > 2500 && base < 2700, "Athlete 78.4kg ~2,628, got \(Int(base))")
+    // Raw (1618.5 × 1.9 ≈ 3075) exceeds the 3000 soft cap → ~3023
+    #expect(base > 3000 && base < 3075, "Athlete 78.4kg ~3,023 (soft-capped), got \(Int(base))")
 }
 
 // Group 3: Mifflin-St Jeor
@@ -2341,12 +2344,12 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
 
 // Group 4: Mifflin correction dampening
 @Test func mifflinCorrectionDampened() async throws {
-    let base = TDEEEstimator.computeBase(weightKg: 78.4, activityMultiplier: 29) // ~2117
+    let base = TDEEEstimator.computeBase(weightKg: 78.4, activityMultiplier: 29) // ~2509
     let config = TDEEEstimator.TDEEConfig(activityMultiplier: 29, appleHealthTrust: 1.0, manualAdjustment: 0,
                                             age: 36, heightCm: 185, sex: .male)
     let (mifflin, confidence) = TDEEEstimator.computeMifflin(weightKg: 78.4, config: config)! // ~2736, 1.0
-    let corrected = base + (mifflin - base) * 0.4 * confidence // ~2365
-    #expect(corrected > 2300 && corrected < 2400, "Dampened correction should be ~2,365, got \(Int(corrected))")
+    let corrected = base + (mifflin - base) * 0.7 * confidence // ~2668
+    #expect(corrected > 2600 && corrected < 2720, "Dampened correction should be ~2,668, got \(Int(corrected))")
     #expect(corrected < mifflin, "Correction must be less than raw Mifflin")
     #expect(corrected > base, "Correction must be more than base for tall active male")
 }
@@ -2362,8 +2365,8 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
     let (maleMifflin, maleConf) = TDEEEstimator.computeMifflin(weightKg: 78, config: maleConfig)!
     let (femaleMifflin, femaleConf) = TDEEEstimator.computeMifflin(weightKg: 78, config: femaleConfig)!
 
-    let maleResult = base + (maleMifflin - base) * 0.4 * maleConf
-    let femaleResult = base + (femaleMifflin - base) * 0.4 * femaleConf
+    let maleResult = base + (maleMifflin - base) * 0.7 * maleConf
+    let femaleResult = base + (femaleMifflin - base) * 0.7 * femaleConf
 
     #expect(maleResult - femaleResult > 250, "Same 78kg: male should be >250 cal higher than older shorter female, got \(Int(maleResult - femaleResult))")
 }
@@ -2372,16 +2375,16 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
 @Test func diminishingReturns() async throws {
     let at70 = TDEEEstimator.computeBase(weightKg: 70, activityMultiplier: 29)
     let at140 = TDEEEstimator.computeBase(weightKg: 140, activityMultiplier: 29)
-    // sqrt scaling: doubling weight should NOT double TDEE
+    // BMR has a fixed component + soft cap: doubling weight should NOT double TDEE
     let ratio = at140 / at70
     #expect(ratio < 1.5, "Doubling weight should increase TDEE by < 50%, got \(String(format: "%.0f", (ratio-1)*100))%")
-    #expect(ratio > 1.3, "But should still increase meaningfully")
+    #expect(ratio > 1.25, "But should still increase meaningfully")
 }
 
 // Group 7: Edge cases
 @Test func tdeeMinimumFloor() async throws {
     // Even with extreme negative adjustment, should floor at 1200
-    var base = TDEEEstimator.computeBase(weightKg: 45, activityMultiplier: 22) // ~1216
+    var base = TDEEEstimator.computeBase(weightKg: 45, activityMultiplier: 22) // ~1541
     base = max(1200, base + (-500)) // adjustment -500
     #expect(base >= 1200, "TDEE should never go below 1200")
 }
@@ -2433,17 +2436,17 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
 
 // MARK: - TDEE Comprehensive Demographic Tests
 
-// Soft cap: base formula should never exceed ~2800 without profile data
+// Soft cap: base formula compresses extremes above 3000 without profile data
 @Test func tdeeBaseSoftCapPreventsExtreme() async throws {
-    // 110kg athlete: raw would be ~3114, soft cap should bring it under 2850
+    // 110kg athlete: raw would be ~3676, soft cap compresses to ~3203
     let heavy = TDEEEstimator.computeBase(weightKg: 110, activityMultiplier: 36)
-    #expect(heavy < 2850, "110kg athlete base should be soft-capped, got \(Int(heavy))")
-    #expect(heavy > 2700, "Should still be higher than moderate, got \(Int(heavy))")
+    #expect(heavy < 3250, "110kg athlete base should be soft-capped, got \(Int(heavy))")
+    #expect(heavy > 3100, "Should still be higher than moderate, got \(Int(heavy))")
 
-    // 140kg athlete: raw would be ~3514, soft cap should keep it well under 3000
+    // 140kg athlete: raw would be ~4246, soft cap compresses to ~3374
     let veryHeavy = TDEEEstimator.computeBase(weightKg: 140, activityMultiplier: 36)
-    #expect(veryHeavy < 3000, "140kg athlete base must stay under 3000 without profile, got \(Int(veryHeavy))")
-    #expect(veryHeavy > 2800, "But still meaningful, got \(Int(veryHeavy))")
+    #expect(veryHeavy < 3450, "140kg athlete base must stay compressed without profile, got \(Int(veryHeavy))")
+    #expect(veryHeavy > 3300, "But still meaningful, got \(Int(veryHeavy))")
 }
 
 @Test func tdeeBaseSoftCapDoesNotAffectNormal() async throws {
@@ -2452,9 +2455,9 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
     let at70 = TDEEEstimator.computeBase(weightKg: 70, activityMultiplier: 29)
     let at85 = TDEEEstimator.computeBase(weightKg: 85, activityMultiplier: 29)
 
-    #expect(at53 > 1700 && at53 < 1800, "53kg moderate unchanged, got \(Int(at53))")
-    #expect(abs(at70 - 2000) < 1, "70kg anchor unchanged, got \(Int(at70))")
-    #expect(at85 > 2100 && at85 < 2250, "85kg moderate unchanged, got \(Int(at85))")
+    #expect(at53 > 2050 && at53 < 2180, "53kg moderate ~2115, got \(Int(at53))")
+    #expect(abs(at70 - 2378.5) < 1, "70kg anchor ~2378, got \(Int(at70))")
+    #expect(at85 > 2550 && at85 < 2680, "85kg moderate ~2611, got \(Int(at85))")
 }
 
 // Age group tests: Mifflin-St Jeor across demographics
@@ -2516,36 +2519,36 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
         for act in activities {
             let base = TDEEEstimator.computeBase(weightKg: w, activityMultiplier: act)
 
-            // Without Mifflin: base alone should be 1200-2950
+            // Without Mifflin: base alone should be 1200-3300 (soft-capped)
             #expect(base >= 1200, "Base too low for \(w)kg/act\(act): \(Int(base))")
-            #expect(base < 2950, "Base too high for \(w)kg/act\(act) without profile: \(Int(base))")
+            #expect(base < 3300, "Base too high for \(w)kg/act\(act) without profile: \(Int(base))")
 
-            // With Mifflin (male, 30, 175cm): blended should be 1200-3200
+            // With Mifflin (male, 30, 175cm): blended should be 1200-4000
             let maleConfig = TDEEEstimator.TDEEConfig(activityMultiplier: act, appleHealthTrust: 1.0, manualAdjustment: 0,
                                                         age: 30, heightCm: 175, sex: .male)
             if let (mifflin, conf) = TDEEEstimator.computeMifflin(weightKg: w, config: maleConfig) {
-                let blended = base + (mifflin - base) * 0.4 * conf
+                let blended = base + (mifflin - base) * 0.7 * conf
                 #expect(blended >= 1200, "Blended too low for \(w)kg male: \(Int(blended))")
-                #expect(blended < 3500, "Blended too high for \(w)kg male: \(Int(blended))")
+                #expect(blended < 4000, "Blended too high for \(w)kg male: \(Int(blended))")
             }
 
             // With Mifflin (female, 30, 165cm): blended should be lower
             let femaleConfig = TDEEEstimator.TDEEConfig(activityMultiplier: act, appleHealthTrust: 1.0, manualAdjustment: 0,
                                                           age: 30, heightCm: 165, sex: .female)
             if let (mifflin, conf) = TDEEEstimator.computeMifflin(weightKg: w, config: femaleConfig) {
-                let blended = base + (mifflin - base) * 0.4 * conf
+                let blended = base + (mifflin - base) * 0.7 * conf
                 #expect(blended >= 1200, "Blended too low for \(w)kg female: \(Int(blended))")
-                #expect(blended < 3200, "Blended too high for \(w)kg female: \(Int(blended))")
+                #expect(blended < 3650, "Blended too high for \(w)kg female: \(Int(blended))")
             }
         }
     }
 }
 
-// The 53kg user case: with weight trend correction, should be ~1800
-@Test func tdee53kgWithWeightTrendShouldBe1800ish() async throws {
+// The 53kg user case: weight trend correction pulls the base toward observed reality
+@Test func tdee53kgWithWeightTrendConvergesTowardObserved() async throws {
     // Simulates: 53kg, moderate activity, losing 0.5kg/week, eating ~1400 cal/day
     let base = TDEEEstimator.computeBase(weightKg: 53, activityMultiplier: 29)
-    // base ~1738
+    // base ~2115
 
     // Weight trend TDEE: avgIntake - deficit = 1400 - (-428) = 1828
     let weeklyRate = -0.5 // losing
@@ -2555,8 +2558,10 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
 
     // Apply 0.3 dampening (same as TDEEEstimator.refresh)
     let blended = base + (trendTDEE - base) * 0.3
-    #expect(blended > 1750 && blended < 1850,
-            "53kg with trend should be ~1800, got \(Int(blended))")
+    #expect(blended > trendTDEE && blended < base,
+            "Trend correction must pull the base TOWARD the observed TDEE, got \(Int(blended))")
+    #expect(blended > 1950 && blended < 2110,
+            "53kg with trend should be ~2029, got \(Int(blended))")
 }
 
 // Test that higher intake + same trend = higher TDEE (sanity)
@@ -2580,20 +2585,20 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
 // Test weight × activity matrix: every combo produces a sane result
 @Test func tdeeBaseWeightActivityMatrix() async throws {
     let cases: [(weight: Double, activity: Double, min: Int, max: Int, label: String)] = [
-        (45, 22, 1150, 1350, "45kg sedentary"),
-        (45, 29, 1500, 1650, "45kg moderate"),
-        (45, 36, 1850, 2050, "45kg athlete"),
-        (53, 22, 1250, 1400, "53kg sedentary"),
-        (53, 29, 1700, 1800, "53kg moderate"),
-        (53, 36, 2050, 2250, "53kg athlete"),
-        (70, 22, 1450, 1600, "70kg sedentary"),
-        (70, 29, 1950, 2050, "70kg moderate"),
-        (70, 36, 2400, 2550, "70kg athlete"),
-        (85, 29, 2150, 2300, "85kg moderate"),
-        (100, 29, 2300, 2500, "100kg moderate"),
-        (100, 36, 2700, 2850, "100kg athlete"),  // soft cap region
-        (120, 29, 2550, 2700, "120kg moderate"),
-        (120, 36, 2750, 2950, "120kg athlete"),  // soft cap region
+        (45, 22, 1490, 1590, "45kg sedentary"),
+        (45, 29, 1940, 2040, "45kg moderate"),
+        (45, 36, 2390, 2490, "45kg athlete"),
+        (53, 22, 1590, 1690, "53kg sedentary"),
+        (53, 29, 2065, 2165, "53kg moderate"),
+        (53, 36, 2540, 2645, "53kg athlete"),
+        (70, 22, 1790, 1890, "70kg sedentary"),
+        (70, 29, 2330, 2430, "70kg moderate"),
+        (70, 36, 2865, 2965, "70kg athlete"),
+        (85, 29, 2560, 2660, "85kg moderate"),
+        (100, 29, 2795, 2895, "100kg moderate"),
+        (100, 36, 3095, 3195, "100kg athlete"),  // soft cap region
+        (120, 29, 2995, 3095, "120kg moderate"), // soft cap region
+        (120, 36, 3210, 3310, "120kg athlete"),  // soft cap region
     ]
 
     for c in cases {
@@ -2688,12 +2693,13 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
 // MARK: - TDEE Soft Cap Regression
 
 @Test func tdeeSoftCapStillApplies() async throws {
-    // Verify soft cap at 2700 is still in place after all the refactoring
+    // Verify soft cap at 3000 is still in place after all the refactoring
     let heavyAthlete = TDEEEstimator.computeBase(weightKg: 120, activityMultiplier: 36)
-    #expect(heavyAthlete < 2950, "120kg athlete should be soft-capped: \(Int(heavyAthlete))")
+    // Raw would be ~3866; soft cap compresses to ~3260
+    #expect(heavyAthlete < 3300, "120kg athlete should be soft-capped: \(Int(heavyAthlete))")
 
     let normalModerate = TDEEEstimator.computeBase(weightKg: 70, activityMultiplier: 29)
-    #expect(abs(normalModerate - 2000) < 1, "70kg moderate should still be 2000 anchor: \(Int(normalModerate))")
+    #expect(abs(normalModerate - 2378.5) < 1, "70kg moderate should be ~2378 (sex-averaged Mifflin default): \(Int(normalModerate))")
 }
 
 // MARK: - Adaptive TDEE Tests (DISABLED — feature reverted)

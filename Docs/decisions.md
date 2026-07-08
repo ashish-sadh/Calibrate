@@ -315,3 +315,29 @@ Total agent-file line counts after curation (all unchanged, well under cap):
 - principal-engineer: 127 / 300 cap
 - product-designer: 118 / 300 cap
 - qa-tester: 91 / 250 cap
+
+### TDEE base formula: sqrt curve → sex-averaged Mifflin default (2026-07-07)
+
+Pre-release audit of TDEE/deficit found the no-profile base `2000·√(w/70)·(act/29)` systematically
+lowballed heavier users: 100 kg no-profile got 2390 vs Mifflin ~3020 / "15 kcal per lb" ~3300; even a
+FULL profile only pulled 0.4 of the gap (2642, still −12% vs Mifflin). This was the top field-complaint
+cluster ("people of different weight groups / people who haven't filled up profile well").
+
+Decisions:
+1. `computeBase` = sex-averaged Mifflin with default assumptions (age 30, 170 cm): `(10w + 834.5) ×
+   activityFactor`, soft cap raised 2700 → 3000 (0.3 compression above). Linear in weight; tracks the
+   lb×15 heuristic for typical weights without exploding at extremes.
+2. Mifflin correction weight 0.4 → 0.7 (× profile confidence): a real profile is strictly better
+   information than the base's default assumptions; still dampened so a typo'd age can't own the number.
+3. `fetchWeightTrendTDEE` now guards `trend.hasInsufficientData`: a calibrating trend publishes
+   deficit 0 as a PLACEHOLDER, and anchoring `TDEE = intake − 0` against it told dieting users their
+   maintenance was their intake — the "app recommends less calories when I skip/partial-log" complaint.
+   No real trend ⇒ no trend anchor (the qualified-day median + 50% consistency gate already handle
+   partial logs; this closes the sparse-weigh-in hole).
+4. Blend extracted to pure `TDEEEstimator.blend(...)` so Tier-0 tests drive every source combination
+   without DB/HealthKit; sanity-band tests now pin base within ±15% of sex-averaged Mifflin across
+   45–140 kg and full-profile within ±12% of true Mifflin, so a future "conservative" curve can't
+   silently reintroduce the lowball.
+
+Existing users will see a one-time TDEE step-up (e.g. +450 for 100 kg no-profile). That's the fix
+working, not a regression — the old number was the complaint.

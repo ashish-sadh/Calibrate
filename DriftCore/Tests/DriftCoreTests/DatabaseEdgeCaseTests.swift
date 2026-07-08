@@ -301,3 +301,82 @@ import GRDB
     #expect(decoded.sodiumMg == 480)
     #expect(decoded.sugarG == 3)
 }
+
+// MARK: - Qualified daily calories (TDEE partial-log guard, V7 #3)
+
+/// Seed one day of food: each (mealType, kcal) pair becomes a meal log + entry.
+@discardableResult
+private func seedDay(_ db: AppDatabase, date: String, meals: [(type: String, kcal: Double)],
+                     servings: Double = 1) throws -> Int {
+    for meal in meals {
+        var log = MealLog(date: date, mealType: meal.type)
+        try db.saveMealLog(&log)
+        var entry = FoodEntry(mealLogId: log.id ?? 0, foodName: "test-\(meal.type)",
+                              servingSizeG: 100, servings: servings,
+                              calories: meal.kcal / servings, date: date, mealType: meal.type)
+        try db.saveFoodEntry(&entry)
+    }
+    return meals.count
+}
+
+@Test func qualifiedCaloriesIncludesFullDays() async throws {
+    let db = try AppDatabase.empty()
+    try seedDay(db, date: "2020-01-01", meals: [("breakfast", 500), ("lunch", 800), ("dinner", 700)])
+    let totals = try db.fetchQualifiedDailyCalories(from: "2020-01-01", to: "2020-01-31")
+    #expect(totals == [2000])
+}
+
+@Test func qualifiedCaloriesExcludesTeaOnlyDay() async throws {
+    // The exact field failure: a lone 50-kcal tea day must NOT count as a
+    // full logging day and drag the TDEE median toward zero.
+    let db = try AppDatabase.empty()
+    try seedDay(db, date: "2020-01-01", meals: [("breakfast", 500), ("lunch", 800), ("dinner", 700)])
+    try seedDay(db, date: "2020-01-02", meals: [("snack", 50)])
+    let totals = try db.fetchQualifiedDailyCalories(from: "2020-01-01", to: "2020-01-31")
+    #expect(totals == [2000], "Tea-only day must be excluded, got \(totals)")
+}
+
+@Test func qualifiedCaloriesExcludesTooFewMealTypes() async throws {
+    // 1400 kcal across only two meal types: fails the ≥3 distinct-meal gate.
+    let db = try AppDatabase.empty()
+    try seedDay(db, date: "2020-01-01", meals: [("lunch", 700), ("dinner", 700)])
+    let totals = try db.fetchQualifiedDailyCalories(from: "2020-01-01", to: "2020-01-31")
+    #expect(totals.isEmpty, "Two-meal day must not qualify, got \(totals)")
+}
+
+@Test func qualifiedCaloriesExcludesLowKcalDayEvenWithThreeMeals() async throws {
+    // Three meals logged but only 700 kcal total: below the 800 kcal floor.
+    let db = try AppDatabase.empty()
+    try seedDay(db, date: "2020-01-01", meals: [("breakfast", 200), ("lunch", 300), ("dinner", 200)])
+    let totals = try db.fetchQualifiedDailyCalories(from: "2020-01-01", to: "2020-01-31")
+    #expect(totals.isEmpty, "700-kcal day must not qualify, got \(totals)")
+}
+
+@Test func qualifiedCaloriesMultipliesServings() async throws {
+    // 2 servings × 400 kcal entries: daily total must use calories × servings.
+    let db = try AppDatabase.empty()
+    try seedDay(db, date: "2020-01-01",
+                meals: [("breakfast", 600), ("lunch", 800), ("dinner", 800)], servings: 2)
+    let totals = try db.fetchQualifiedDailyCalories(from: "2020-01-01", to: "2020-01-31")
+    #expect(totals == [2200])
+}
+
+@Test func qualifiedCaloriesSkippedDaysSimplyAbsent() async throws {
+    // Skipped days produce NO rows — they never read as "ate zero".
+    let db = try AppDatabase.empty()
+    try seedDay(db, date: "2020-01-01", meals: [("breakfast", 500), ("lunch", 800), ("dinner", 700)])
+    // 2020-01-02 … 2020-01-05 skipped entirely
+    try seedDay(db, date: "2020-01-06", meals: [("breakfast", 600), ("lunch", 700), ("dinner", 800)])
+    let totals = try db.fetchQualifiedDailyCalories(from: "2020-01-01", to: "2020-01-31")
+    #expect(totals.sorted() == [2000, 2100], "Only logged days count, got \(totals)")
+}
+
+@Test func daysWithFoodLoggedCountsAnyLoggedDay() async throws {
+    // Consistency counter counts ANY logged day (even partial) — it gates
+    // whether the trend anchor runs at all, not which days feed the median.
+    let db = try AppDatabase.empty()
+    try seedDay(db, date: "2020-01-01", meals: [("breakfast", 500), ("lunch", 800), ("dinner", 700)])
+    try seedDay(db, date: "2020-01-02", meals: [("snack", 50)])
+    let days = try db.daysWithFoodLogged(from: "2020-01-01", to: "2020-01-31")
+    #expect(days == 2)
+}

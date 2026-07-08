@@ -257,6 +257,78 @@ struct WeightTDEEScenarioTests {
         #expect(abs(t.estimatedDailyDeficit) < 100, "Pure noise must never produce a dramatic surplus/deficit; got \(t.estimatedDailyDeficit) kcal/day (seed \(seed), \(t.weeklyRateKg) kg/wk)")
     }
 
+    // MARK: - TDEE sanity band across weight groups (the "lb×15" complaint)
+
+    /// Sex-averaged Mifflin (moderate activity 1.55, defaults age 30 / 170cm)
+    /// — the physiologically defensible reference the base must track.
+    static func mifflinSexAveraged(weightKg: Double, activityFactor: Double = 1.55) -> Double {
+        (10 * weightKg + 6.25 * 170 - 150 + (5.0 - 161.0) / 2) * activityFactor
+    }
+
+    @Test(arguments: [45.0, 55.0, 70.0, 85.0, 100.0, 120.0, 140.0])
+    func base_tracksMifflinAcrossWeightGroups(weightKg: Double) async throws {
+        // No profile filled in: the base must sit within ±15% of sex-averaged
+        // Mifflin. The old 2000·√(w/70) curve failed this from 85kg up (−22%
+        // at 85kg, −30% at 120kg) — the top field complaint from heavier
+        // users and users who never completed their profile.
+        let base = TDEEEstimator.computeBase(weightKg: weightKg, activityMultiplier: 29)
+        let reference = Self.mifflinSexAveraged(weightKg: weightKg)
+        let deviation = abs(base - reference) / reference
+        #expect(deviation < 0.15,
+                "\(Int(weightKg))kg no-profile base \(Int(base)) deviates \(Int(deviation * 100))% from Mifflin \(Int(reference))")
+        #expect(base >= 1200)
+    }
+
+    @Test(arguments: [45.0, 55.0, 70.0, 85.0, 100.0, 120.0],
+                     [TDEEEstimator.Sex.male, TDEEEstimator.Sex.female])
+    func fullProfile_landsNearMifflin(weightKg: Double, sex: TDEEEstimator.Sex) async throws {
+        // With a complete profile the estimate must land close to the real
+        // Mifflin for that person — the profile is the best information we
+        // have before measured data arrives.
+        var config = TDEEEstimator.TDEEConfig.default
+        config.age = 35
+        config.heightCm = sex == .male ? 175 : 162
+        config.sex = sex
+        let (mifflin, _) = TDEEEstimator.computeMifflin(weightKg: weightKg, config: config)!
+        let r = TDEEEstimator.blend(weightKg: weightKg, config: config, appleHealthTDEE: nil, weightTrendTDEE: nil)
+        let deviation = abs(r.tdee - mifflin) / mifflin
+        #expect(deviation < 0.12,
+                "\(Int(weightKg))kg \(sex.rawValue) full-profile \(Int(r.tdee)) deviates \(Int(deviation * 100))% from Mifflin \(Int(mifflin))")
+    }
+
+    @Test func base_isMonotonicInWeight() async throws {
+        // Heavier must never mean a LOWER estimate, at any activity level.
+        for act in [22.0, 29.0, 36.0] {
+            var prev = 0.0
+            for w in stride(from: 40.0, through: 180.0, by: 5) {
+                let base = TDEEEstimator.computeBase(weightKg: w, activityMultiplier: act)
+                #expect(base > prev, "base(\(w)kg, act \(act)) = \(base) not > base(\(w - 5)kg) = \(prev)")
+                prev = base
+            }
+        }
+    }
+
+    // MARK: - Sparse weigh-ins must not drag TDEE toward intake
+
+    @Test func insufficientTrend_neverAnchorsTDEEToIntake() async throws {
+        // A calibrating trend (<14d span) publishes deficit 0 as a PLACEHOLDER.
+        // Anchoring TDEE = intake − 0 against it tells a dieter their
+        // maintenance IS their (deficit) intake. The blend must not see a
+        // trend anchor at all in that state — mirrored here through the same
+        // pure pieces the estimator composes.
+        let cal = Calendar.current; let today = Date()
+        func d(_ ago: Int) -> String { DateFormatters.dateOnly.string(from: cal.date(byAdding: .day, value: -ago, to: today)!) }
+        // Two weigh-ins 5 days apart: insufficient span.
+        let t = try #require(WeightTrendCalculator.calculateTrend(entries: [(d(5), 80.0), (d(0), 79.8)]))
+        #expect(t.hasInsufficientData)
+        // The estimator's guard: insufficient trend ⇒ no trend TDEE ⇒ blend
+        // falls back to base, NOT toward the 1500 kcal the user is eating.
+        let base = TDEEEstimator.computeBase(weightKg: 80, activityMultiplier: 29)
+        let r = TDEEEstimator.blend(weightKg: 80, config: .default, appleHealthTDEE: nil, weightTrendTDEE: nil)
+        #expect(abs(r.tdee - base) < 0.001,
+                "With no real trend the estimate must stay at base \(Int(base)), got \(Int(r.tdee))")
+    }
+
     // MARK: - Calorie target never recommends below the safety floor
 
     @Test(arguments: [900.0, 1100.0, 1400.0, 1800.0, 2400.0, 3200.0],

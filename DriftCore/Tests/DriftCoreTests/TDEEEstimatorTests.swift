@@ -4,9 +4,10 @@ import Testing
 
 // MARK: - computeBase (5 tests)
 
-@Test func computeBaseAt70kgActivity29Is2000() {
+@Test func computeBaseAt70kgActivity29MatchesSexAveragedMifflin() {
+    // Base = sex-averaged Mifflin default (age 30, 170cm): (10·70 + 834.5) × 1.55 ≈ 2378
     let base = TDEEEstimator.computeBase(weightKg: 70, activityMultiplier: 29)
-    #expect(abs(base - 2000) < 1)
+    #expect(abs(base - 2378.5) < 1)
 }
 
 @Test func computeBaseNilWeightIs2000() {
@@ -25,14 +26,15 @@ import Testing
     #expect(heavy > light)
 }
 
-@Test func computeBaseSoftCapAbove2700() {
-    // Very heavy person with high activity would exceed 2700 without cap
+@Test func computeBaseSoftCapAbove3000() {
+    // Very heavy person with high activity would exceed 3000 without cap
     let capped = TDEEEstimator.computeBase(weightKg: 200, activityMultiplier: 36)
-    // Should be higher than 2700 but compressed (30% of excess above cap)
-    #expect(capped > 2700)
-    // Uncapped raw would be: 2000 * sqrt(200/70) * (36/29) ≈ 4238
-    // With cap: 2700 + (4238 - 2700) * 0.3 ≈ 3161
-    #expect(capped < 4238) // definitely compressed
+    // Should be higher than 3000 but compressed (30% of excess above cap)
+    #expect(capped > 3000)
+    // Uncapped raw would be: (10·200 + 834.5) × 1.9 ≈ 5386
+    // With cap: 3000 + (5386 - 3000) * 0.3 ≈ 3716
+    #expect(abs(capped - 3715.7) < 2)
+    #expect(capped < 5386) // definitely compressed
 }
 
 // MARK: - computeMifflin (7 tests)
@@ -200,6 +202,117 @@ import Testing
     let e = TDEEEstimator.Estimate(tdee: 2000, source: .bodyWeight, confidence: .low,
                                    timestamp: Date(), activeSources: ["Weight"])
     #expect(e.explanation.contains("body weight"))
+}
+
+// MARK: - blend (pure pipeline — every correction combination, no I/O)
+
+@Test func blendNoCorrectionsIsBase() {
+    let r = TDEEEstimator.blend(weightKg: 70, config: .default, appleHealthTDEE: nil, weightTrendTDEE: nil)
+    let base = TDEEEstimator.computeBase(weightKg: 70, activityMultiplier: 29)
+    #expect(abs(r.tdee - base) < 0.001)
+    #expect(r.sources == ["Weight"])
+    #expect(r.bestSource == .bodyWeight)
+}
+
+@Test func blendNilWeightFallsBackToDefault() {
+    let r = TDEEEstimator.blend(weightKg: nil, config: .default, appleHealthTDEE: nil, weightTrendTDEE: nil)
+    #expect(r.tdee == 2000)
+    #expect(r.sources == ["Default"])
+}
+
+@Test func blendFullProfilePullsTowardMifflin() {
+    var config = TDEEEstimator.TDEEConfig.default
+    config.age = 30; config.heightCm = 175; config.sex = .male
+    let base = TDEEEstimator.computeBase(weightKg: 100, activityMultiplier: 29)
+    let (mifflin, conf) = TDEEEstimator.computeMifflin(weightKg: 100, config: config)!
+    let r = TDEEEstimator.blend(weightKg: 100, config: config, appleHealthTDEE: nil, weightTrendTDEE: nil)
+    let expected = base + (mifflin - base) * TDEEEstimator.mifflinCorrectionWeight * conf
+    #expect(abs(r.tdee - expected) < 0.001)
+    #expect(r.bestSource == .mifflin)
+    // The whole point of the 0.7 weight: a full profile must land the
+    // estimate close to Mifflin (the old 0.4 left a 100kg male 12% short).
+    #expect(abs(r.tdee - mifflin) / mifflin < 0.05,
+            "Full profile must land within 5% of Mifflin, got \(Int(r.tdee)) vs \(Int(mifflin))")
+}
+
+@Test func blendAppleHealthPullsHalfway() {
+    let base = TDEEEstimator.computeBase(weightKg: 70, activityMultiplier: 29)
+    let r = TDEEEstimator.blend(weightKg: 70, config: .default, appleHealthTDEE: 2800, weightTrendTDEE: nil)
+    #expect(abs(r.tdee - (base + (2800 - base) * 0.5)) < 0.001)
+    #expect(r.sources.contains("Apple Health"))
+}
+
+@Test func blendTrendPullIsDampenedTo30Percent() {
+    // Under-logging user: trend anchor says 1400 while base says ~2378.
+    // The pull is capped at 30% so one bad anchor can't crater the estimate
+    // (the "app thinks my maintenance is low" complaint).
+    let base = TDEEEstimator.computeBase(weightKg: 70, activityMultiplier: 29)
+    let r = TDEEEstimator.blend(weightKg: 70, config: .default, appleHealthTDEE: nil, weightTrendTDEE: 1400)
+    #expect(abs(r.tdee - (base + (1400 - base) * 0.3)) < 0.001)
+    #expect(r.tdee > 2000, "A single low anchor must not crater the estimate, got \(Int(r.tdee))")
+    #expect(r.bestSource == .blended)
+}
+
+@Test func blendFloorsAt1200() {
+    var config = TDEEEstimator.TDEEConfig.default
+    config.manualAdjustment = -5000
+    let r = TDEEEstimator.blend(weightKg: 45, config: config, appleHealthTDEE: nil, weightTrendTDEE: nil)
+    #expect(r.tdee == 1200, "TDEE must floor at 1200, got \(r.tdee)")
+}
+
+@Test func blendAllSourcesAccumulateAndBlend() {
+    var config = TDEEEstimator.TDEEConfig.default
+    config.age = 30; config.heightCm = 175; config.sex = .male
+    let r = TDEEEstimator.blend(weightKg: 80, config: config, appleHealthTDEE: 2900, weightTrendTDEE: 2750)
+    #expect(r.sources.count == 4) // Weight + Profile + Apple Health + Weight Trend
+    #expect(r.bestSource == .blended)
+    #expect(r.tdee > 2400 && r.tdee < 3000, "All-sources blend should land between anchors, got \(Int(r.tdee))")
+}
+
+// MARK: - trendAnchoredTDEE (pure aggregation of the weight-trend anchor)
+
+@Test func trendAnchorRequiresFiveQualifiedDays() {
+    let four: [Double] = [2000, 2000, 2000, 2000]
+    #expect(TDEEEstimator.trendAnchoredTDEE(qualifiedDailyTotals: four, estimatedDailyDeficit: 0) == nil)
+    let five: [Double] = four + [2000]
+    #expect(TDEEEstimator.trendAnchoredTDEE(qualifiedDailyTotals: five, estimatedDailyDeficit: 0) == 2000)
+}
+
+@Test func trendAnchorIsMedianMinusDeficit() {
+    // Losing ~0.5 kg/wk → daily balance ≈ −550. Eating 1800 median → TDEE 2350.
+    let t = TDEEEstimator.trendAnchoredTDEE(
+        qualifiedDailyTotals: [1800, 1750, 1850, 1800, 1800],
+        estimatedDailyDeficit: -550)
+    #expect(t == 2350)
+}
+
+@Test func trendAnchorRejectsImplausiblyLowResult() {
+    // Median 900 while "gaining" 500/day → implied TDEE 400. Nonsense data
+    // must never become an anchor that drags the estimate down.
+    let t = TDEEEstimator.trendAnchoredTDEE(
+        qualifiedDailyTotals: [900, 900, 900, 900, 900],
+        estimatedDailyDeficit: 500)
+    #expect(t == nil)
+}
+
+@Test func trendAnchorOutlierDaysDoNotDrag() {
+    // One feast (4500) and one under-logged qualified day (850) around a
+    // steady 2000: the median holds at 2000, so the anchor is unmoved.
+    let t = TDEEEstimator.trendAnchoredTDEE(
+        qualifiedDailyTotals: [2000, 4500, 2000, 850, 2000, 2000, 2000],
+        estimatedDailyDeficit: 0)
+    #expect(t == 2000)
+}
+
+@Test func trendAnchorStableWhenDaysSkipped() throws {
+    // Same qualified days ± a few skipped days in between: skipped days
+    // produce NO totals (they're simply absent), so the anchor is identical —
+    // skipping days must not read as "eats less" (the field complaint).
+    let fullWeek: [Double] = [2100, 2000, 2050, 1950, 2000, 2000, 2100]
+    let withSkips: [Double] = [2100, 2000, 2050, 1950, 2000] // two days just missing
+    let a = try #require(TDEEEstimator.trendAnchoredTDEE(qualifiedDailyTotals: fullWeek, estimatedDailyDeficit: -300))
+    let b = try #require(TDEEEstimator.trendAnchoredTDEE(qualifiedDailyTotals: withSkips, estimatedDailyDeficit: -300))
+    #expect(abs(a - b) <= 50, "Skipping days moved the anchor by \(abs(a - b)) kcal")
 }
 
 // MARK: - loadConfig / saveConfig (MainActor, uses UserDefaults)
