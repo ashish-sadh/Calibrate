@@ -296,7 +296,7 @@ public enum FoodService {
 
     /// Single source of truth for daily calorie target. All calorie "remaining" displays should use this.
     public static func resolvedCalorieTarget() -> Int {
-        let currentKg = WeightTrendService.shared.latestWeightKg ?? 80
+        let currentKg = WeightTrendService.shared.trendWeight ?? 80
         if let goalTarget = WeightGoal.load()?.macroTargets(currentWeightKg: currentKg)?.calorieTarget {
             return max(1200, Int(goalTarget))
         }
@@ -333,7 +333,7 @@ public enum FoodService {
         var response = "\(totals.remaining > 0 ? totals.remaining : 0) cal remaining (\(totals.eaten)/\(totals.target))"
 
         // Protein context
-        if let goal = WeightGoal.load(), let targets = goal.macroTargets(currentWeightKg: WeightTrendService.shared.latestWeightKg) {
+        if let goal = WeightGoal.load(), let targets = goal.macroTargets(currentWeightKg: WeightTrendService.shared.trendWeight) {
             let pLeft = max(0, Int(targets.proteinG) - totals.proteinG)
             if pLeft > 20 { response += ". Still need \(pLeft)g protein" }
         }
@@ -392,7 +392,7 @@ public enum FoodService {
         let totals = getDailyTotals()
         let calBudget = caloriesLeft ?? max(0, totals.remaining)
         let protBudget = proteinNeeded ?? {
-            if let goal = WeightGoal.load(), let targets = goal.macroTargets(currentWeightKg: WeightTrendService.shared.latestWeightKg) {
+            if let goal = WeightGoal.load(), let targets = goal.macroTargets(currentWeightKg: WeightTrendService.shared.trendWeight) {
                 return max(0, Int(targets.proteinG) - totals.proteinG)
             }
             return 50
@@ -709,7 +709,7 @@ public enum FoodService {
     public static func explainCalories() -> String {
         let totals = getDailyTotals()
         let tdee = TDEEEstimator.shared.current?.tdee ?? 2000
-        let currentKg = WeightTrendService.shared.latestWeightKg ?? 80
+        let currentKg = WeightTrendService.shared.trendWeight ?? 80
         let deficit = WeightGoal.load()?.requiredDailyDeficit(currentWeightKg: currentKg) ?? 0
 
         var lines: [String] = []

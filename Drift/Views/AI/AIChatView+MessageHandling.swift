@@ -912,7 +912,7 @@ extension AIChatViewModel {
 
         var msg = "You have \(totals.remaining) cal remaining today"
         if let goal = WeightGoal.load(),
-           let targets = goal.macroTargets(currentWeightKg: WeightTrendService.shared.latestWeightKg) {
+           let targets = goal.macroTargets(currentWeightKg: WeightTrendService.shared.trendWeight) {
             let protLeft = max(0, Int(targets.proteinG) - totals.proteinG)
             if protLeft > 10 { msg += " and still need \(protLeft)g protein" }
         }

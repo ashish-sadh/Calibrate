@@ -50,7 +50,7 @@ public enum BehaviorInsightService {
     private static func proteinStreakAlert() -> BehaviorInsight? {
         guard Preferences.alertDismissedUntil(key: "protein_streak") < Date().timeIntervalSince1970 else { return nil }
         guard let goal = WeightGoal.load(),
-              let targets = goal.macroTargets(),
+              let targets = goal.macroTargets(currentWeightKg: WeightTrendService.shared.trendWeight),
               targets.proteinG > 0 else { return nil }
 
         let db = AppDatabase.shared
@@ -365,7 +365,7 @@ public enum BehaviorInsightService {
     /// Requires: active goal with protein target + 2 weeks of food logs.
     private static func proteinAdherenceInsight() -> BehaviorInsight? {
         guard let goal = WeightGoal.load(),
-              let targets = goal.macroTargets() else { return nil }
+              let targets = goal.macroTargets(currentWeightKg: WeightTrendService.shared.trendWeight) else { return nil }
 
         let db = AppDatabase.shared
         let calendar = Calendar.current

@@ -39,7 +39,7 @@ enum WidgetDataProvider {
         defaults.set(Date().timeIntervalSince1970, forKey: lastUpdatedKey)
 
         // Write macro targets if a weight goal exists
-        let currentKg = WeightTrendService.shared.latestWeightKg ?? 80
+        let currentKg = WeightTrendService.shared.trendWeight ?? 80
         if let goal = WeightGoal.load(), let macros = goal.macroTargets(currentWeightKg: currentKg) {
             defaults.set(Int(macros.proteinG), forKey: proteinTargetKey)
             defaults.set(Int(macros.carbsG), forKey: carbsTargetKey)

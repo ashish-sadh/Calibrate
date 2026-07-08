@@ -483,7 +483,7 @@ final class FoodLogViewModel {
     }
 
     var macroTargets: WeightGoal.MacroTargets? {
-        WeightGoal.load()?.macroTargets(currentWeightKg: WeightTrendService.shared.latestWeightKg)
+        WeightGoal.load()?.macroTargets(currentWeightKg: WeightTrendService.shared.trendWeight)
     }
 
     func toggleFavorite(name: String, foodId: Int64?) {

@@ -175,7 +175,7 @@ public enum AIRuleEngine {
         let today = DateFormatters.todayString
         let nutrition = (try? AppDatabase.shared.fetchDailyNutrition(for: today)) ?? .zero
         let tdee = TDEEEstimator.shared.current?.tdee ?? 2000
-        let currentKg = WeightTrendService.shared.latestWeightKg ?? 80
+        let currentKg = WeightTrendService.shared.trendWeight ?? 80
         let deficit = WeightGoal.load()?.requiredDailyDeficit(currentWeightKg: currentKg) ?? 0
         let target = max(500, tdee + deficit) // Floor at 500 to prevent negative
 
@@ -190,7 +190,7 @@ public enum AIRuleEngine {
             var response = "\(Int(remaining)) cal left (\(Int(nutrition.calories))/\(Int(target)))"
 
             // Protein context
-            if let goal = WeightGoal.load(), let targets = goal.macroTargets(currentWeightKg: WeightTrendService.shared.latestWeightKg) {
+            if let goal = WeightGoal.load(), let targets = goal.macroTargets(currentWeightKg: WeightTrendService.shared.trendWeight) {
                 let pLeft = max(0, Int(targets.proteinG - nutrition.proteinG))
                 if pLeft > 20 { response += ". Still need \(pLeft)g protein" }
             }

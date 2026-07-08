@@ -107,7 +107,7 @@ public enum AIContextBuilder {
         // Macro targets — pre-computed remaining macros for meal suggestions
         let nutrition = (try? AppDatabase.shared.fetchDailyNutrition(for: today)) ?? .zero
         if let goal = WeightGoal.load(),
-           let targets = goal.macroTargets(currentWeightKg: WeightTrendService.shared.latestWeightKg) {
+           let targets = goal.macroTargets(currentWeightKg: WeightTrendService.shared.trendWeight) {
             let pLeft = max(0, Int(targets.proteinG - nutrition.proteinG))
             let cLeft = max(0, Int(targets.carbsG - nutrition.carbsG))
             let fLeft = max(0, Int(targets.fatG - nutrition.fatG))
