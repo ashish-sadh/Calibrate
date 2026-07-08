@@ -83,9 +83,11 @@ extension AppDatabase {
             try? db.execute(sql: "DELETE FROM medication_log")
             try? db.execute(sql: "DELETE FROM medication")
         }
-        // Clear the seed hash so seedFoodsFromJSON() actually runs (hash-gated
-        // skip otherwise — would leave the food table empty after the wipe).
+        // Clear the seed hash + version token so seedFoodsFromJSON() actually
+        // runs (both gates would otherwise skip it — leaving the food table
+        // empty after the wipe).
         UserDefaults.standard.removeObject(forKey: Self.foodsJSONHashKey)
+        UserDefaults.standard.removeObject(forKey: Self.foodsSeedVersionKey)
         // Re-seed default foods
         try seedFoodsFromJSON()
         Log.database.info("Factory reset complete - all data deleted, foods re-seeded")
@@ -794,6 +796,12 @@ extension AppDatabase {
     /// to skip the seed loop on launches where the bundle didn't change.
     private static let foodsJSONHashKey = "drift_foods_json_hash"
 
+    /// UserDefaults key for the CFBundleVersion of the last successful seed. A
+    /// cheap fast-path gate so a normal launch skips the 1.8MB read + SHA-256
+    /// entirely — foods.json is bundled, so it only changes on an app update,
+    /// which bumps CFBundleVersion. (#947)
+    private static let foodsSeedVersionKey = "drift_foods_seed_version"
+
     /// Seed or refresh the food DB from the bundled `foods.json`.
     ///
     /// Runs on every cold start but exits in O(1) when `foods.json` hasn't
@@ -812,6 +820,26 @@ extension AppDatabase {
     /// scoped to DB-sourced rows; user-scanned foods (source='barcode',
     /// 'recipe', 'photo_log', 'custom') are never overwritten.
     public func seedFoodsFromJSON() throws {
+        let bundleVersion = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? ""
+
+        // Fast path (#947): skip the 1.8MB file read + SHA-256 that otherwise ran
+        // on the MAIN THREAD on every launch. foods.json is bundled, so it can
+        // only change via an app update, which bumps CFBundleVersion. If we
+        // already seeded for THIS build and the table is populated, there is
+        // nothing to do. Guards:
+        //   • foodCount>0 keeps in-memory test DBs (which start empty) seeding.
+        //   • hashPresent honors the "clear drift_foods_json_hash to force a
+        //     reseed" contract (factoryReset + tests) — a cleared hash means
+        //     someone wants the full delete+reinsert to run, so don't short it.
+        let hashPresent = !(UserDefaults.standard.string(forKey: Self.foodsJSONHashKey) ?? "").isEmpty
+        if !bundleVersion.isEmpty, hashPresent,
+           bundleVersion == UserDefaults.standard.string(forKey: Self.foodsSeedVersionKey) {
+            let foodCount = try dbWriter.read { db in
+                try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM food") ?? 0
+            }
+            if foodCount > 0 { return }
+        }
+
         guard let url = Bundle.module.url(forResource: "foods", withExtension: "json"),
               let data = try? Data(contentsOf: url) else {
             return
@@ -832,7 +860,6 @@ extension AppDatabase {
         // `AppDatabase.empty()` gets a fresh food table, so without this
         // check the UserDefaults hash set by an earlier test would make
         // later tests skip seeding and see an empty DB).
-        let bundleVersion = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? ""
         var hashInput = Data(bundleVersion.utf8)
         hashInput.append(data)
         let currentHash = SHA256.hash(data: hashInput)
@@ -843,6 +870,9 @@ extension AppDatabase {
             try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM food") ?? 0
         }
         if foodCount > 0 && currentHash == lastHash {
+            // Bytes unchanged — record the version token so the NEXT launch takes
+            // the fast path above and skips this read+hash entirely. (#947)
+            UserDefaults.standard.set(bundleVersion, forKey: Self.foodsSeedVersionKey)
             return
         }
 
@@ -902,9 +932,10 @@ extension AppDatabase {
             }
         }
 
-        // Only write the hash after a successful seed so a mid-seed crash
-        // leaves us in a state that retries on next launch.
+        // Only write the hash + version token after a successful seed so a
+        // mid-seed crash leaves us in a state that retries on next launch.
         UserDefaults.standard.set(currentHash, forKey: Self.foodsJSONHashKey)
+        UserDefaults.standard.set(bundleVersion, forKey: Self.foodsSeedVersionKey)
     }
 
     /// Count of rows in the food table. Used by Settings to show users a

@@ -9,7 +9,10 @@ public enum FoodService {
     // MARK: - Search
 
     /// Search foods by name. Returns ranked results (usage, relevance, time-of-day boost).
-    public static func searchFood(query: String) -> [Food] {
+    /// `nonisolated`: touches only thread-safe state (SpellCorrectService's
+    /// immutable static tables + GRDB's concurrent-read pool), so per-keystroke
+    /// callers can run it OFF the main thread instead of hitching the UI. (#946)
+    public nonisolated static func searchFood(query: String) -> [Food] {
         let corrected = SpellCorrectService.correct(query)
         var results = (try? AppDatabase.shared.searchFoodsRanked(query: corrected)) ?? []
 

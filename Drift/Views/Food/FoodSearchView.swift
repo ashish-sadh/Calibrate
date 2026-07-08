@@ -36,6 +36,7 @@ struct FoodSearchView: View {
     @State private var onlineResults: [Food] = []
     @State private var isSearchingOnline = false
     @State private var onlineSearchTask: Task<Void, Never>?
+    @State private var searchDebounceTask: Task<Void, Never>?
     @State private var recentlyLoggedFoods: [Food] = []
     @FocusState private var searchFocused: Bool
 
@@ -68,21 +69,39 @@ struct FoodSearchView: View {
                         .textFieldStyle(.plain)
                         .focused($searchFocused)
                         .onChange(of: query) { _, q in
-                            var localResults = q.isEmpty ? [] : FoodService.searchFood(query: q)
-                            // Fuzzy fallback: if no results, try dropping last char
-                            if localResults.isEmpty && q.count >= 4 {
-                                localResults = FoodService.searchFood(query: String(q.dropLast()))
-                            }
-                            results = localResults
-                            matchingRecipes = q.isEmpty ? [] : FoodService.searchRecipes(query: q)
-                            onlineResults = []
-                            // Smart trigger: search online when local results are insufficient (opt-in only)
+                            // Debounce + off-main (#946): each keystroke used to run
+                            // Levenshtein over 5,460 foods + full-table LIKE scans
+                            // synchronously on the main thread. Now cancel the
+                            // in-flight search, wait for a typing pause, run the heavy
+                            // local search OFF the main thread, and publish on main.
+                            searchDebounceTask?.cancel()
                             onlineSearchTask?.cancel()
-                            if Preferences.onlineFoodSearchEnabled && q.count >= 3 && results.count < 5 {
-                                onlineSearchTask = Task {
-                                    try? await Task.sleep(for: .milliseconds(500))
-                                    guard !Task.isCancelled else { return }
-                                    await searchOnline(query: q)
+                            if q.isEmpty {
+                                results = []; matchingRecipes = []; onlineResults = []
+                                return
+                            }
+                            searchDebounceTask = Task {
+                                try? await Task.sleep(for: .milliseconds(200))
+                                guard !Task.isCancelled else { return }
+                                let localResults = await Task.detached { () -> [Food] in
+                                    var r = FoodService.searchFood(query: q)
+                                    // Fuzzy fallback: if no results, try dropping last char
+                                    if r.isEmpty && q.count >= 4 {
+                                        r = FoodService.searchFood(query: String(q.dropLast()))
+                                    }
+                                    return r
+                                }.value
+                                guard !Task.isCancelled else { return }
+                                results = localResults
+                                matchingRecipes = FoodService.searchRecipes(query: q)
+                                onlineResults = []
+                                // Smart trigger: search online when local results are insufficient (opt-in only)
+                                if Preferences.onlineFoodSearchEnabled && q.count >= 3 && results.count < 5 {
+                                    onlineSearchTask = Task {
+                                        try? await Task.sleep(for: .milliseconds(500))
+                                        guard !Task.isCancelled else { return }
+                                        await searchOnline(query: q)
+                                    }
                                 }
                             }
                         }

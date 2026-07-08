@@ -294,6 +294,7 @@ private struct IngredientPickerView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var query = ""
     @State private var results: [Food] = []
+    @State private var searchDebounceTask: Task<Void, Never>?
     @State private var selectedFood: Food?
     @State private var amount = "1"
     @State private var selectedUnitIndex = 0
@@ -323,7 +324,17 @@ private struct IngredientPickerView: View {
                         .textFieldStyle(.plain).autocorrectionDisabled()
                         .focused($searchFocused)
                         .onChange(of: query) { _, q in
-                            results = q.isEmpty ? [] : FoodService.searchFood(query: q)
+                            // Debounce + off-main (#946): don't run the 5,460-food
+                            // Levenshtein + LIKE scans on the main thread per keystroke.
+                            searchDebounceTask?.cancel()
+                            if q.isEmpty { results = []; return }
+                            searchDebounceTask = Task {
+                                try? await Task.sleep(for: .milliseconds(200))
+                                guard !Task.isCancelled else { return }
+                                let found = await Task.detached { FoodService.searchFood(query: q) }.value
+                                guard !Task.isCancelled else { return }
+                                results = found
+                            }
                         }
                     if !query.isEmpty {
                         Button { query = ""; results = [] } label: {
