@@ -5107,7 +5107,7 @@
     "nova_group": 3
   },
   {
-    "name": "A\u00e7a\u00ed Bowl (medium)",
+    "name": "Açaí Bowl (medium)",
     "category": "US Staples",
     "serving_size": 300,
     "serving_unit": "g",
@@ -5117,7 +5117,7 @@
     "fat_g": 18,
     "fiber_g": 8,
     "ingredients": [
-      "A\u00e7a\u00ed Bowl (medium)"
+      "Açaí Bowl (medium)"
     ],
     "nova_group": 3
   },
@@ -9696,7 +9696,7 @@
     "nova_group": 3
   },
   {
-    "name": "Costco A\u00e7a\u00ed Bowl (food court)",
+    "name": "Costco Açaí Bowl (food court)",
     "category": "Costco",
     "serving_size": 355,
     "serving_unit": "g",
@@ -9706,7 +9706,7 @@
     "fat_g": 19,
     "fiber_g": 7,
     "ingredients": [
-      "Costco A\u00e7a\u00ed Bowl (food court)"
+      "Costco Açaí Bowl (food court)"
     ],
     "nova_group": 3
   },
@@ -10402,7 +10402,7 @@
     "nova_group": 4
   },
   {
-    "name": "Starbucks Caff\u00e8 Latte (Grande, 2% milk)",
+    "name": "Starbucks Caffè Latte (Grande, 2% milk)",
     "category": "Beverages",
     "serving_size": 473,
     "serving_unit": "ml",
@@ -10412,7 +10412,7 @@
     "fat_g": 7,
     "fiber_g": 0,
     "ingredients": [
-      "Starbucks Caff\u00e8 Latte (Grande, 2% milk)"
+      "Starbucks Caffè Latte (Grande, 2% milk)"
     ],
     "nova_group": 3
   },
@@ -25081,7 +25081,7 @@
     "ingredients": [
       "fries",
       "cheese sauce",
-      "jalape\u00f1os",
+      "jalapeños",
       "sour cream"
     ],
     "nova_group": 4
@@ -28652,7 +28652,7 @@
       "beef",
       "onion",
       "tomato",
-      "jalape\u00f1o",
+      "jalapeño",
       "rosemary",
       "Ethiopian spices",
       "butter"
@@ -39405,7 +39405,7 @@
       "onions",
       "garlic",
       "rosemary",
-      "jalape\u00f1o"
+      "jalapeño"
     ],
     "nova_group": 1
   },
@@ -39696,7 +39696,7 @@
     "nova_group": 2
   },
   {
-    "name": "Smorrebr\u00f8d",
+    "name": "Smorrebrød",
     "category": "Scandinavian",
     "serving_size": 120,
     "serving_unit": "g",
@@ -41220,7 +41220,7 @@
     "source": "USDA"
   },
   {
-    "name": "Mushroom, Lion'S Mane",
+    "name": "Mushroom, Lion's Mane",
     "category": "Vegetables",
     "serving_size": 100,
     "serving_unit": "g",
@@ -49269,7 +49269,7 @@
     "nova_group": 1
   },
   {
-    "name": "Knekkebr\u00f8d with Cream Cheese",
+    "name": "Knekkebrød with Cream Cheese",
     "category": "International Breakfast",
     "serving_size": 90,
     "serving_unit": "g",
@@ -49287,7 +49287,7 @@
     "nova_group": 3
   },
   {
-    "name": "Salte\u00f1a (Bolivian Breakfast Pastry)",
+    "name": "Salteña (Bolivian Breakfast Pastry)",
     "category": "International Breakfast",
     "serving_size": 120,
     "serving_unit": "g",
@@ -49350,7 +49350,7 @@
     "nova_group": 3
   },
   {
-    "name": "Greek Frapp\u00e9 (Iced Instant Coffee)",
+    "name": "Greek Frappé (Iced Instant Coffee)",
     "category": "International Breakfast",
     "serving_size": 250,
     "serving_unit": "ml",
@@ -49381,7 +49381,7 @@
       "eggs",
       "spinach",
       "tomatillo",
-      "jalape\u00f1o",
+      "jalapeño",
       "onion",
       "garlic",
       "olive oil",
@@ -49443,7 +49443,7 @@
       "eggs",
       "butter",
       "onion",
-      "jalape\u00f1o",
+      "jalapeño",
       "tomato",
       "spices"
     ],
@@ -49991,7 +49991,7 @@
     "nova_group": 4
   },
   {
-    "name": "Jalape\u00f1o Poppers (4 pieces)",
+    "name": "Jalapeño Poppers (4 pieces)",
     "category": "American Diner",
     "serving_size": 100,
     "serving_unit": "g",
@@ -50001,7 +50001,7 @@
     "fat_g": 19,
     "fiber_g": 1.5,
     "ingredients": [
-      "jalape\u00f1os",
+      "jalapeños",
       "cream cheese",
       "cheddar cheese",
       "bread crumbs",
@@ -51425,7 +51425,7 @@
       "chicken",
       "hominy",
       "tomatillo",
-      "jalape\u00f1o",
+      "jalapeño",
       "epazote",
       "pepitas",
       "cabbage"
@@ -51748,7 +51748,7 @@
     "fiber_g": 4.0,
     "ingredients": [
       "masa harina",
-      "chicharr\u00f3n",
+      "chicharrón",
       "salsa verde",
       "cheese",
       "onion"
@@ -53316,7 +53316,7 @@
     "nova_group": 1
   },
   {
-    "name": "P\u00e3o de Queijo (Brazilian Cheese Bread, 3 pieces)",
+    "name": "Pão de Queijo (Brazilian Cheese Bread, 3 pieces)",
     "category": "Brazilian",
     "serving_size": 90,
     "serving_unit": "g",
@@ -53414,7 +53414,7 @@
     "nova_group": 1
   },
   {
-    "name": "Vatap\u00e1 (Brazilian Shrimp Bread Paste)",
+    "name": "Vatapá (Brazilian Shrimp Bread Paste)",
     "category": "Brazilian",
     "serving_size": 200,
     "serving_unit": "g",
@@ -53436,7 +53436,7 @@
     "nova_group": 1
   },
   {
-    "name": "Acaraj\u00e9 (Black-Eyed Pea Fritter)",
+    "name": "Acarajé (Black-Eyed Pea Fritter)",
     "category": "Brazilian",
     "serving_size": 120,
     "serving_unit": "g",
@@ -53450,7 +53450,7 @@
       "onion",
       "palm oil",
       "dried shrimp",
-      "vatap\u00e1",
+      "vatapá",
       "caruru"
     ],
     "nova_group": 1
@@ -54074,7 +54074,7 @@
     "nova_group": 1
   },
   {
-    "name": "\u017burek (Polish sour rye soup)",
+    "name": "Żurek (Polish sour rye soup)",
     "category": "Polish",
     "serving_size": 300,
     "serving_unit": "ml",
@@ -54113,7 +54113,7 @@
     "nova_group": 2
   },
   {
-    "name": "Go\u0142\u0105bki (Polish stuffed cabbage rolls)",
+    "name": "Gołąbki (Polish stuffed cabbage rolls)",
     "category": "Polish",
     "serving_size": 200,
     "serving_unit": "g",
@@ -55334,22 +55334,6 @@
     "nova_group": 3
   },
   {
-    "name": "Skyr (Icelandic Yogurt)",
-    "category": "Dairy",
-    "serving_size": 150,
-    "serving_unit": "g",
-    "calories": 105,
-    "protein_g": 17.0,
-    "carbs_g": 8.0,
-    "fat_g": 0.5,
-    "fiber_g": 0.0,
-    "ingredients": [
-      "skimmed milk",
-      "live cultures"
-    ],
-    "nova_group": 1
-  },
-  {
     "name": "Kefir (Plain)",
     "category": "Dairy",
     "serving_size": 240,
@@ -55378,26 +55362,6 @@
     "ingredients": [
       "skimmed milk",
       "live cultures"
-    ],
-    "nova_group": 1
-  },
-  {
-    "name": "Paneer Bhurji",
-    "category": "Indian Protein",
-    "serving_size": 200,
-    "serving_unit": "g",
-    "calories": 320,
-    "protein_g": 18.0,
-    "carbs_g": 8.0,
-    "fat_g": 24.0,
-    "fiber_g": 1.5,
-    "ingredients": [
-      "paneer",
-      "onion",
-      "tomato",
-      "capsicum",
-      "oil",
-      "spices"
     ],
     "nova_group": 1
   },
@@ -55825,7 +55789,7 @@
     "nova_group": 3
   },
   {
-    "name": "Cocido Madrile\u00f1o",
+    "name": "Cocido Madrileño",
     "category": "Spanish",
     "serving_size": 400,
     "serving_unit": "g",
@@ -56071,29 +56035,6 @@
     "nova_group": 1
   },
   {
-    "name": "Mapo Tofu",
-    "category": "Chinese",
-    "serving_size": 250,
-    "serving_unit": "g",
-    "calories": 230,
-    "protein_g": 14,
-    "carbs_g": 12,
-    "fat_g": 14,
-    "fiber_g": 2,
-    "ingredients": [
-      "silken tofu",
-      "ground pork",
-      "doubanjiang",
-      "fermented black beans",
-      "Sichuan pepper",
-      "garlic",
-      "ginger",
-      "scallion",
-      "chili oil"
-    ],
-    "nova_group": 2
-  },
-  {
     "name": "Scallion Pancake (Cong You Bing)",
     "category": "Chinese",
     "serving_size": 100,
@@ -56134,48 +56075,6 @@
     "nova_group": 2
   },
   {
-    "name": "Egg Drop Soup",
-    "category": "Chinese",
-    "serving_size": 250,
-    "serving_unit": "g",
-    "calories": 75,
-    "protein_g": 5,
-    "carbs_g": 6,
-    "fat_g": 3,
-    "fiber_g": 0,
-    "ingredients": [
-      "chicken broth",
-      "egg",
-      "cornstarch",
-      "scallion",
-      "white pepper",
-      "sesame oil"
-    ],
-    "nova_group": 2
-  },
-  {
-    "name": "Wonton Soup",
-    "category": "Chinese",
-    "serving_size": 300,
-    "serving_unit": "g",
-    "calories": 220,
-    "protein_g": 14,
-    "carbs_g": 22,
-    "fat_g": 8,
-    "fiber_g": 1,
-    "ingredients": [
-      "wonton wrappers",
-      "ground pork",
-      "shrimp",
-      "ginger",
-      "scallion",
-      "chicken broth",
-      "bok choy",
-      "sesame oil"
-    ],
-    "nova_group": 3
-  },
-  {
     "name": "Taiwanese Beef Noodle Soup",
     "category": "Taiwanese",
     "serving_size": 450,
@@ -56199,7 +56098,7 @@
     "nova_group": 2
   },
   {
-    "name": "Oyster Vermicelli (\u00d4-\u00e1-m\u012b-su\u00e0nn)",
+    "name": "Oyster Vermicelli (Ô-á-mī-suànn)",
     "category": "Taiwanese",
     "serving_size": 300,
     "serving_unit": "g",
@@ -56238,7 +56137,7 @@
     "nova_group": 3
   },
   {
-    "name": "Pineapple Cake (F\u00e8ngl\u00eds\u016b)",
+    "name": "Pineapple Cake (Fènglísū)",
     "category": "Taiwanese",
     "serving_size": 50,
     "serving_unit": "g",
@@ -56382,28 +56281,6 @@
     "nova_group": 1
   },
   {
-    "name": "Empanadas (Beef)",
-    "category": "Argentinian",
-    "serving_size": 120,
-    "serving_unit": "g",
-    "calories": 340,
-    "protein_g": 14,
-    "carbs_g": 32,
-    "fat_g": 17,
-    "fiber_g": 1,
-    "ingredients": [
-      "wheat flour",
-      "ground beef",
-      "onion",
-      "hard-boiled egg",
-      "olive",
-      "cumin",
-      "paprika",
-      "butter"
-    ],
-    "nova_group": 3
-  },
-  {
     "name": "Milanesa (Argentine Schnitzel)",
     "category": "Argentinian",
     "serving_size": 200,
@@ -56443,7 +56320,7 @@
     "nova_group": 3
   },
   {
-    "name": "Guly\u00e1s (Hungarian Goulash)",
+    "name": "Gulyás (Hungarian Goulash)",
     "category": "Hungarian",
     "serving_size": 300,
     "serving_unit": "g",
@@ -56466,7 +56343,7 @@
     "nova_group": 1
   },
   {
-    "name": "L\u00e1ngos",
+    "name": "Lángos",
     "category": "Hungarian",
     "serving_size": 150,
     "serving_unit": "g",
@@ -56487,7 +56364,7 @@
     "nova_group": 4
   },
   {
-    "name": "T\u00f6lt\u00f6tt K\u00e1poszta (Stuffed Cabbage)",
+    "name": "Töltött Káposzta (Stuffed Cabbage)",
     "category": "Hungarian",
     "serving_size": 300,
     "serving_unit": "g",
@@ -56509,7 +56386,7 @@
     "nova_group": 1
   },
   {
-    "name": "Hal\u00e1szl\u00e9 (Hungarian Fisherman's Soup)",
+    "name": "Halászlé (Hungarian Fisherman's Soup)",
     "category": "Hungarian",
     "serving_size": 300,
     "serving_unit": "g",
@@ -56527,30 +56404,6 @@
       "salt"
     ],
     "nova_group": 1
-  },
-  {
-    "name": "Char Kway Teow",
-    "category": "Singaporean",
-    "serving_size": 300,
-    "serving_unit": "g",
-    "calories": 510,
-    "protein_g": 22,
-    "carbs_g": 60,
-    "fat_g": 22,
-    "fiber_g": 2,
-    "ingredients": [
-      "flat rice noodles",
-      "cockles",
-      "shrimp",
-      "egg",
-      "bean sprouts",
-      "Chinese sausage",
-      "chives",
-      "dark soy sauce",
-      "chili paste",
-      "lard"
-    ],
-    "nova_group": 3
   },
   {
     "name": "Chilli Crab",
@@ -56576,48 +56429,6 @@
     "nova_group": 2
   },
   {
-    "name": "Satay",
-    "category": "Singaporean",
-    "serving_size": 150,
-    "serving_unit": "g",
-    "calories": 310,
-    "protein_g": 26,
-    "carbs_g": 14,
-    "fat_g": 16,
-    "fiber_g": 2,
-    "ingredients": [
-      "chicken",
-      "coconut milk",
-      "turmeric",
-      "lemongrass",
-      "galangal",
-      "peanut sauce",
-      "ketupat"
-    ],
-    "nova_group": 2
-  },
-  {
-    "name": "Nasi Lemak",
-    "category": "Singaporean",
-    "serving_size": 350,
-    "serving_unit": "g",
-    "calories": 520,
-    "protein_g": 22,
-    "carbs_g": 56,
-    "fat_g": 24,
-    "fiber_g": 3,
-    "ingredients": [
-      "coconut rice",
-      "fried chicken",
-      "sambal",
-      "anchovies",
-      "peanuts",
-      "cucumber",
-      "hard-boiled egg"
-    ],
-    "nova_group": 3
-  },
-  {
     "name": "Bifanas (Portuguese Pork Sandwich)",
     "category": "Portuguese",
     "serving_size": 200,
@@ -56639,7 +56450,7 @@
     "nova_group": 3
   },
   {
-    "name": "Carne de Porco \u00e0 Alentejana",
+    "name": "Carne de Porco à Alentejana",
     "category": "Portuguese",
     "serving_size": 300,
     "serving_unit": "g",
@@ -56685,91 +56496,6 @@
     "nova_group": 2
   },
   {
-    "name": "Dal Baati Churma",
-    "category": "Rajasthani",
-    "serving_size": 350,
-    "serving_unit": "g",
-    "calories": 680,
-    "protein_g": 18,
-    "carbs_g": 85,
-    "fat_g": 28,
-    "fiber_g": 10,
-    "ingredients": [
-      "mixed lentils",
-      "whole wheat flour",
-      "ghee",
-      "jaggery",
-      "semolina",
-      "bay leaf",
-      "cloves",
-      "red chilli"
-    ],
-    "nova_group": 2
-  },
-  {
-    "name": "Ker Sangri",
-    "category": "Rajasthani",
-    "serving_size": 150,
-    "serving_unit": "g",
-    "calories": 210,
-    "protein_g": 6,
-    "carbs_g": 22,
-    "fat_g": 11,
-    "fiber_g": 7,
-    "ingredients": [
-      "ker berries",
-      "sangri beans",
-      "dried red chilli",
-      "coriander powder",
-      "mustard oil",
-      "turmeric",
-      "amchur"
-    ],
-    "nova_group": 1
-  },
-  {
-    "name": "Laal Maas",
-    "category": "Rajasthani",
-    "serving_size": 300,
-    "serving_unit": "g",
-    "calories": 380,
-    "protein_g": 34,
-    "carbs_g": 8,
-    "fat_g": 24,
-    "fiber_g": 2,
-    "ingredients": [
-      "mutton",
-      "Mathania dried red chillies",
-      "garlic",
-      "yogurt",
-      "ghee",
-      "onion",
-      "coriander powder"
-    ],
-    "nova_group": 1
-  },
-  {
-    "name": "Gatte Ki Sabzi",
-    "category": "Rajasthani",
-    "serving_size": 250,
-    "serving_unit": "g",
-    "calories": 310,
-    "protein_g": 10,
-    "carbs_g": 32,
-    "fat_g": 16,
-    "fiber_g": 4,
-    "ingredients": [
-      "besan (chickpea flour)",
-      "yogurt",
-      "oil",
-      "turmeric",
-      "red chilli powder",
-      "coriander seeds",
-      "asafoetida"
-    ],
-    "nova_group": 2
-  },
-  {
     "name": "Mawa Kachori",
     "category": "Rajasthani",
     "serving_size": 80,
@@ -56790,52 +56516,6 @@
       "oil (for frying)"
     ],
     "nova_group": 3
-  },
-  {
-    "name": "Handvo",
-    "category": "Gujarati",
-    "serving_size": 150,
-    "serving_unit": "g",
-    "calories": 200,
-    "protein_g": 9,
-    "carbs_g": 28,
-    "fat_g": 7,
-    "fiber_g": 4,
-    "ingredients": [
-      "rice",
-      "chana dal",
-      "urad dal",
-      "bottle gourd",
-      "yogurt",
-      "sesame seeds",
-      "mustard seeds",
-      "curry leaves",
-      "oil"
-    ],
-    "nova_group": 1
-  },
-  {
-    "name": "Undhiyu",
-    "category": "Gujarati",
-    "serving_size": 300,
-    "serving_unit": "g",
-    "calories": 320,
-    "protein_g": 11,
-    "carbs_g": 38,
-    "fat_g": 14,
-    "fiber_g": 9,
-    "ingredients": [
-      "surti papdi (flat beans)",
-      "sweet potato",
-      "potato",
-      "raw banana",
-      "yam",
-      "methi muthia (fenugreek dumplings)",
-      "coconut",
-      "coriander",
-      "oil"
-    ],
-    "nova_group": 1
   },
   {
     "name": "Sev Tameta Nu Shaak",
@@ -56860,29 +56540,6 @@
     "nova_group": 3
   },
   {
-    "name": "Dabeli",
-    "category": "Gujarati",
-    "serving_size": 120,
-    "serving_unit": "g",
-    "calories": 290,
-    "protein_g": 7,
-    "carbs_g": 42,
-    "fat_g": 11,
-    "fiber_g": 3,
-    "ingredients": [
-      "potato",
-      "dabeli masala",
-      "pav bun",
-      "tamarind chutney",
-      "coriander chutney",
-      "pomegranate",
-      "sev",
-      "peanuts",
-      "onion"
-    ],
-    "nova_group": 3
-  },
-  {
     "name": "Mohanthal",
     "category": "Gujarati",
     "serving_size": 60,
@@ -56902,49 +56559,6 @@
       "saffron"
     ],
     "nova_group": 3
-  },
-  {
-    "name": "Gongura Mutton",
-    "category": "Andhra",
-    "serving_size": 300,
-    "serving_unit": "g",
-    "calories": 370,
-    "protein_g": 36,
-    "carbs_g": 8,
-    "fat_g": 21,
-    "fiber_g": 3,
-    "ingredients": [
-      "mutton",
-      "gongura (sorrel leaves)",
-      "onion",
-      "garlic",
-      "ginger",
-      "red chilli",
-      "oil",
-      "fenugreek seeds",
-      "coriander"
-    ],
-    "nova_group": 1
-  },
-  {
-    "name": "Pesarattu",
-    "category": "Andhra",
-    "serving_size": 150,
-    "serving_unit": "g",
-    "calories": 190,
-    "protein_g": 11,
-    "carbs_g": 30,
-    "fat_g": 4,
-    "fiber_g": 5,
-    "ingredients": [
-      "whole green moong dal",
-      "ginger",
-      "green chilli",
-      "onion",
-      "cumin",
-      "oil"
-    ],
-    "nova_group": 1
   },
   {
     "name": "Golichina Mamsam",
@@ -56991,50 +56605,6 @@
     "nova_group": 1
   },
   {
-    "name": "Sauerbraten",
-    "category": "German",
-    "serving_size": 300,
-    "serving_unit": "g",
-    "calories": 420,
-    "protein_g": 38,
-    "carbs_g": 18,
-    "fat_g": 21,
-    "fiber_g": 1,
-    "ingredients": [
-      "beef (pot roast)",
-      "red wine vinegar",
-      "red wine",
-      "onion",
-      "carrot",
-      "celery",
-      "bay leaf",
-      "juniper berries",
-      "gingersnap cookies"
-    ],
-    "nova_group": 2
-  },
-  {
-    "name": "Bratwurst",
-    "category": "German",
-    "serving_size": 100,
-    "serving_unit": "g",
-    "calories": 300,
-    "protein_g": 14,
-    "carbs_g": 3,
-    "fat_g": 26,
-    "fiber_g": 0,
-    "ingredients": [
-      "pork",
-      "veal",
-      "marjoram",
-      "nutmeg",
-      "white pepper",
-      "caraway seeds",
-      "pork casing"
-    ],
-    "nova_group": 3
-  },
-  {
     "name": "Kartoffelsuppe (German Potato Soup)",
     "category": "German",
     "serving_size": 350,
@@ -57058,7 +56628,7 @@
     "nova_group": 2
   },
   {
-    "name": "Flammkuchen (Tarte Flamb\u00e9e)",
+    "name": "Flammkuchen (Tarte Flambée)",
     "category": "German",
     "serving_size": 200,
     "serving_unit": "g",
@@ -57069,7 +56639,7 @@
     "fiber_g": 2,
     "ingredients": [
       "thin dough",
-      "cr\u00e8me fra\u00eeche",
+      "crème fraîche",
       "onion",
       "lardons (bacon)",
       "flour",
@@ -57280,7 +56850,7 @@
     "nova_group": 2
   },
   {
-    "name": "Pabell\u00f3n Criollo",
+    "name": "Pabellón Criollo",
     "category": "Venezuelan",
     "serving_size": 400,
     "serving_unit": "g",
@@ -57316,7 +56886,7 @@
       "red beans",
       "white rice",
       "ground beef",
-      "chicharr\u00f3n (fried pork belly)",
+      "chicharrón (fried pork belly)",
       "chorizo",
       "fried egg",
       "plantain",
@@ -57534,7 +57104,7 @@
     "cup_size_g": 168.0
   },
   {
-    "name": "Andrea'S, Gluten Free Soft Dinner Roll",
+    "name": "Andrea's, Gluten Free Soft Dinner Roll",
     "category": "Grains & Pasta",
     "serving_size": 100,
     "serving_unit": "g",
@@ -58263,7 +57833,7 @@
     "sodium_mg": 180.0
   },
   {
-    "name": "Denny'S, French Fries",
+    "name": "Denny's, French Fries",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -58277,7 +57847,7 @@
     "sugar_g": 0.85
   },
   {
-    "name": "Denny'S, Top Sirloin Steak",
+    "name": "Denny's, Top Sirloin Steak",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -58781,7 +58351,7 @@
     "cup_size_g": 247.0
   },
   {
-    "name": "Pears, Raw, Bartlett (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Pears, Raw, Bartlett",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -58797,7 +58367,7 @@
     "cup_size_g": 140.0
   },
   {
-    "name": "Pears, Raw, Bosc (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Pears, Raw, Bosc",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -58813,7 +58383,7 @@
     "cup_size_g": 140.0
   },
   {
-    "name": "Pears, Raw, Green Anjou (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Pears, Raw, Green Anjou",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -58976,7 +58546,7 @@
     "sugar_g": 10.6
   },
   {
-    "name": "Apples, Raw, Fuji, With Skin (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Apples, Raw, Fuji, With Skin",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -59074,7 +58644,7 @@
     "cup_size_g": 135.0
   },
   {
-    "name": "Pork, Fresh, Leg (Ham), Rump Half, Separable Lean Only, Raw (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Pork, Fresh, Leg (Ham), Rump Half, Separable Lean Only, Raw",
     "category": "Proteins",
     "serving_size": 100,
     "serving_unit": "g",
@@ -59807,7 +59377,7 @@
     "sugar_g": 11.1
   },
   {
-    "name": "Nabisco, Nabisco Snackwell'S Fat Free Devil'S Food Cookie Cakes",
+    "name": "Nabisco, Nabisco Snackwell's Fat Free Devil's Food Cookie Cakes",
     "category": "Grains & Pasta",
     "serving_size": 100,
     "serving_unit": "g",
@@ -59946,7 +59516,7 @@
     "sugar_g": 1.75
   },
   {
-    "name": "Schiff,Tiger'S Milk Bar",
+    "name": "Schiff,Tiger's Milk Bar",
     "category": "Desserts",
     "serving_size": 100,
     "serving_unit": "g",
@@ -59974,7 +59544,7 @@
     "cup_size_g": 336.0
   },
   {
-    "name": "Topping, Smucker'S Magic Shell",
+    "name": "Topping, Smucker's Magic Shell",
     "category": "Desserts",
     "serving_size": 100,
     "serving_unit": "g",
@@ -60116,7 +59686,7 @@
     "piece_size_g": 11.0
   },
   {
-    "name": "Candies, Hershey'S Golden Almond Solitaires",
+    "name": "Candies, Hershey's Golden Almond Solitaires",
     "category": "Desserts",
     "serving_size": 100,
     "serving_unit": "g",
@@ -61037,7 +60607,7 @@
     "sodium_mg": 414.0
   },
   {
-    "name": "Denny'S, Mozzarella Cheese Sticks",
+    "name": "Denny's, Mozzarella Cheese Sticks",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -61051,7 +60621,7 @@
     "sugar_g": 2.83
   },
   {
-    "name": "Denny'S, Golden Fried Shrimp",
+    "name": "Denny's, Golden Fried Shrimp",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -61079,7 +60649,7 @@
     "sugar_g": 1.67
   },
   {
-    "name": "Carrabba'S Italian Grill, Spaghetti With Meat Sauce",
+    "name": "Carrabba's Italian Grill, Spaghetti With Meat Sauce",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -61432,7 +61002,7 @@
     "sodium_mg": 4.0
   },
   {
-    "name": "Raisins, Dark, Seedless (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Raisins, Dark, Seedless",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -61488,7 +61058,7 @@
     "source": "USDA"
   },
   {
-    "name": "Strawberries, Frozen, Unsweetened (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Strawberries, Frozen, Unsweetened",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -61618,7 +61188,7 @@
     "cup_size_g": 251.0
   },
   {
-    "name": "Apples, Raw, Red Delicious, With Skin (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Apples, Raw, Red Delicious, With Skin",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -61634,7 +61204,7 @@
     "cup_size_g": 109.0
   },
   {
-    "name": "Apples, Raw, Granny Smith, With Skin (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Apples, Raw, Granny Smith, With Skin",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -61650,7 +61220,7 @@
     "cup_size_g": 109.0
   },
   {
-    "name": "Apples, Raw, Gala, With Skin (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Apples, Raw, Gala, With Skin",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -62641,7 +62211,7 @@
     "cup_size_g": 156.0
   },
   {
-    "name": "Corn, Sweet, Yellow, Frozen, Kernels Cut Off Cob, Unprepared (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Corn, Sweet, Yellow, Frozen, Kernels Cut Off Cob, Unprepared",
     "category": "Vegetables",
     "serving_size": 100,
     "serving_unit": "g",
@@ -62980,7 +62550,7 @@
     "cup_size_g": 56.0
   },
   {
-    "name": "Potato Wedges, Frozen (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Potato Wedges, Frozen",
     "category": "Vegetables",
     "serving_size": 100,
     "serving_unit": "g",
@@ -63188,7 +62758,7 @@
     "cup_size_g": 170.0
   },
   {
-    "name": "Sweet Potato, Raw, Unprepared (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Sweet Potato, Raw, Unprepared",
     "category": "Vegetables",
     "serving_size": 100,
     "serving_unit": "g",
@@ -63634,7 +63204,7 @@
     "sodium_mg": 1.0
   },
   {
-    "name": "Seeds, Sunflower Seed Butter, With Salt Added (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Seeds, Sunflower Seed Butter, With Salt Added",
     "category": "Nuts & Seeds",
     "serving_size": 100,
     "serving_unit": "g",
@@ -63935,7 +63505,7 @@
     "sodium_mg": 57.0
   },
   {
-    "name": "Candies, Hershey'S Skor Toffee Bar",
+    "name": "Candies, Hershey's Skor Toffee Bar",
     "category": "Desserts",
     "serving_size": 100,
     "serving_unit": "g",
@@ -63993,7 +63563,7 @@
     "sugar_g": 47.2
   },
   {
-    "name": "Candies, Reese'S Peanut Butter Cups",
+    "name": "Candies, Reese's Peanut Butter Cups",
     "category": "Desserts",
     "serving_size": 100,
     "serving_unit": "g",
@@ -64008,7 +63578,7 @@
     "cup_size_g": 17.0
   },
   {
-    "name": "Candies, Reese'S Pieces Candy",
+    "name": "Candies, Reese's Pieces Candy",
     "category": "Desserts",
     "serving_size": 100,
     "serving_unit": "g",
@@ -64344,7 +63914,7 @@
     "cup_size_g": 170.0
   },
   {
-    "name": "Rice, Brown, Medium-Grain, Cooked (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Rice, Brown, Medium-Grain, Cooked",
     "category": "Grains & Cereals",
     "serving_size": 100,
     "serving_unit": "g",
@@ -64491,7 +64061,7 @@
     "cup_size_g": 115.0
   },
   {
-    "name": "Wheat Flour, Whole-Grain (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Wheat Flour, Whole-Grain",
     "category": "Grains & Cereals",
     "serving_size": 100,
     "serving_unit": "g",
@@ -64535,7 +64105,7 @@
     "cup_size_g": 84.0
   },
   {
-    "name": "Pasta, Whole-Wheat, Cooked (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Pasta, Whole-Wheat, Cooked",
     "category": "Grains & Cereals",
     "serving_size": 100,
     "serving_unit": "g",
@@ -65214,7 +64784,7 @@
     "sugar_g": 1.57
   },
   {
-    "name": "Applebee'S, Double Crunch Shrimp",
+    "name": "Applebee's, Double Crunch Shrimp",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -65228,7 +64798,7 @@
     "sugar_g": 1.07
   },
   {
-    "name": "Applebee'S, French Fries",
+    "name": "Applebee's, French Fries",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -65241,7 +64811,7 @@
     "sodium_mg": 618.0
   },
   {
-    "name": "Applebee'S, Mozzarella Sticks",
+    "name": "Applebee's, Mozzarella Sticks",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -65255,7 +64825,7 @@
     "sugar_g": 2.8
   },
   {
-    "name": "T.G.I. Friday'S, Classic Sirloin Steak (10 Oz)",
+    "name": "T.G.I. Friday's, Classic Sirloin Steak (10 Oz)",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -65269,7 +64839,7 @@
     "sugar_g": 0.46
   },
   {
-    "name": "Applebee'S, Chili",
+    "name": "Applebee's, Chili",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -65284,7 +64854,7 @@
     "cup_size_g": 136.0
   },
   {
-    "name": "T.G.I. Friday'S, Chicken Fingers",
+    "name": "T.G.I. Friday's, Chicken Fingers",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -65298,7 +64868,7 @@
     "sugar_g": 0.23
   },
   {
-    "name": "Applebee'S, Coleslaw",
+    "name": "Applebee's, Coleslaw",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -65312,7 +64882,7 @@
     "sugar_g": 9.33
   },
   {
-    "name": "Denny'S, Chicken Strips",
+    "name": "Denny's, Chicken Strips",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -65326,7 +64896,7 @@
     "sugar_g": 0.29
   },
   {
-    "name": "Denny'S, Coleslaw",
+    "name": "Denny's, Coleslaw",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -65340,7 +64910,7 @@
     "sugar_g": 8.16
   },
   {
-    "name": "Denny'S, Hash Browns",
+    "name": "Denny's, Hash Browns",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -65355,7 +64925,7 @@
     "cup_size_g": 94.0
   },
   {
-    "name": "Carrabba'S Italian Grill, Lasagne",
+    "name": "Carrabba's Italian Grill, Lasagne",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -65427,7 +64997,7 @@
     "sugar_g": 2.04
   },
   {
-    "name": "Carrabba'S Italian Grill, Cheese Ravioli With Marinara Sauce",
+    "name": "Carrabba's Italian Grill, Cheese Ravioli With Marinara Sauce",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -65834,7 +65404,7 @@
     "sodium_mg": 735.0
   },
   {
-    "name": "Orange Juice, Raw (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Orange Juice, Raw",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -66323,7 +65893,7 @@
     "cup_size_g": 150.0
   },
   {
-    "name": "Jew'S Ear, (Pepeao)",
+    "name": "Jew's Ear, (Pepeao)",
     "category": "Vegetables",
     "serving_size": 100,
     "serving_unit": "g",
@@ -66615,7 +66185,7 @@
     "cup_size_g": 256.0
   },
   {
-    "name": "Spinach, Frozen, Chopped Or Leaf, Unprepared (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Spinach, Frozen, Chopped Or Leaf, Unprepared",
     "category": "Vegetables",
     "serving_size": 100,
     "serving_unit": "g",
@@ -66671,7 +66241,7 @@
     "cup_size_g": 35.0
   },
   {
-    "name": "Sweet Potato, Frozen, Unprepared (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Sweet Potato, Frozen, Unprepared",
     "category": "Vegetables",
     "serving_size": 100,
     "serving_unit": "g",
@@ -66829,7 +66399,7 @@
     "cup_size_g": 119.0
   },
   {
-    "name": "Corn, Sweet, Yellow, Canned, No Salt Added, Solids And Liquids (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Corn, Sweet, Yellow, Canned, No Salt Added, Solids And Liquids",
     "category": "Vegetables",
     "serving_size": 100,
     "serving_unit": "g",
@@ -67529,7 +67099,7 @@
     "cup_size_g": 180.0
   },
   {
-    "name": "Candies, Hershey'S Pot Of Gold Almond Bar",
+    "name": "Candies, Hershey's Pot Of Gold Almond Bar",
     "category": "Desserts",
     "serving_size": 100,
     "serving_unit": "g",
@@ -67585,7 +67155,7 @@
     "sugar_g": 47.6
   },
   {
-    "name": "Candies, Hershey'S Milk Chocolate With Almond Bites",
+    "name": "Candies, Hershey's Milk Chocolate With Almond Bites",
     "category": "Desserts",
     "serving_size": 100,
     "serving_unit": "g",
@@ -67599,7 +67169,7 @@
     "sugar_g": 44.6
   },
   {
-    "name": "Candies, Reese'S Bites",
+    "name": "Candies, Reese's Bites",
     "category": "Desserts",
     "serving_size": 100,
     "serving_unit": "g",
@@ -67613,7 +67183,7 @@
     "sugar_g": 48.0
   },
   {
-    "name": "Candies, Reese'S Nutrageous Candy Bar",
+    "name": "Candies, Reese's Nutrageous Candy Bar",
     "category": "Desserts",
     "serving_size": 100,
     "serving_unit": "g",
@@ -67851,7 +67421,7 @@
     "cup_size_g": 173.0
   },
   {
-    "name": "Rice, Brown, Long-Grain, Raw (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Rice, Brown, Long-Grain, Raw",
     "category": "Grains & Cereals",
     "serving_size": 100,
     "serving_unit": "g",
@@ -67866,7 +67436,7 @@
     "cup_size_g": 185.0
   },
   {
-    "name": "Rice, Brown, Long-Grain, Cooked (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Rice, Brown, Long-Grain, Cooked",
     "category": "Grains & Cereals",
     "serving_size": 100,
     "serving_unit": "g",
@@ -67881,7 +67451,7 @@
     "cup_size_g": 202.0
   },
   {
-    "name": "Oats (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Oats",
     "category": "Grains & Cereals",
     "serving_size": 100,
     "serving_unit": "g",
@@ -67895,7 +67465,7 @@
     "cup_size_g": 156.0
   },
   {
-    "name": "Rice, Brown, Medium-Grain, Raw (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Rice, Brown, Medium-Grain, Raw",
     "category": "Grains & Cereals",
     "serving_size": 100,
     "serving_unit": "g",
@@ -68083,7 +67653,7 @@
     "cup_size_g": 160.0
   },
   {
-    "name": "Pasta, Whole-Wheat, Dry (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Pasta, Whole-Wheat, Dry",
     "category": "Grains & Cereals",
     "serving_size": 100,
     "serving_unit": "g",
@@ -68753,7 +68323,7 @@
     "sugar_g": 12.9
   },
   {
-    "name": "Applebee'S, 9 Oz House Sirloin Steak",
+    "name": "Applebee's, 9 Oz House Sirloin Steak",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -68766,7 +68336,7 @@
     "sodium_mg": 604.0
   },
   {
-    "name": "T.G.I. Friday'S, French Fries",
+    "name": "T.G.I. Friday's, French Fries",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -68779,7 +68349,7 @@
     "sodium_mg": 409.0
   },
   {
-    "name": "T.G.I. Friday'S, Fried Mozzarella",
+    "name": "T.G.I. Friday's, Fried Mozzarella",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -68793,7 +68363,7 @@
     "sugar_g": 1.45
   },
   {
-    "name": "Applebee'S, Crunchy Onion Rings",
+    "name": "Applebee's, Crunchy Onion Rings",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -68807,7 +68377,7 @@
     "sugar_g": 4.48
   },
   {
-    "name": "Applebee'S, Chicken Tenders Platter",
+    "name": "Applebee's, Chicken Tenders Platter",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -68835,7 +68405,7 @@
     "sugar_g": 11.1
   },
   {
-    "name": "Denny'S, Onion Rings",
+    "name": "Denny's, Onion Rings",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -68849,7 +68419,7 @@
     "sugar_g": 4.76
   },
   {
-    "name": "Denny'S, Spaghetti And Meatballs",
+    "name": "Denny's, Spaghetti And Meatballs",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -68907,7 +68477,7 @@
     "sugar_g": 1.77
   },
   {
-    "name": "Carrabba'S Italian Grill, Spaghetti With Pomodoro Sauce",
+    "name": "Carrabba's Italian Grill, Spaghetti With Pomodoro Sauce",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -68935,7 +68505,7 @@
     "sugar_g": 2.89
   },
   {
-    "name": "Carrabba'S Italian Grill, Chicken Parmesan Without Cavatappi Pasta",
+    "name": "Carrabba's Italian Grill, Chicken Parmesan Without Cavatappi Pasta",
     "category": "Fast Food",
     "serving_size": 100,
     "serving_unit": "g",
@@ -69339,7 +68909,7 @@
     "cup_size_g": 140.0
   },
   {
-    "name": "Oranges, Raw, Navels (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Oranges, Raw, Navels",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -69400,7 +68970,7 @@
     "cup_size_g": 230.0
   },
   {
-    "name": "Peaches, Canned, Extra Light Syrup, Solids And Liquids (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Peaches, Canned, Extra Light Syrup, Solids And Liquids",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -69442,7 +69012,7 @@
     "cup_size_g": 242.0
   },
   {
-    "name": "Pears, Canned, Extra Light Syrup Pack, Solids And Liquids (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Pears, Canned, Extra Light Syrup Pack, Solids And Liquids",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -69497,7 +69067,7 @@
     "cup_size_g": 165.0
   },
   {
-    "name": "Beans, Snap, Green, Frozen, All Styles, Unprepared (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Beans, Snap, Green, Frozen, All Styles, Unprepared",
     "category": "Vegetables",
     "serving_size": 100,
     "serving_unit": "g",
@@ -69512,7 +69082,7 @@
     "cup_size_g": 121.0
   },
   {
-    "name": "Broccoli, Frozen, Spears, Unprepared (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Broccoli, Frozen, Spears, Unprepared",
     "category": "Vegetables",
     "serving_size": 100,
     "serving_unit": "g",
@@ -69600,7 +69170,7 @@
     "cup_size_g": 178.0
   },
   {
-    "name": "Carrots, Frozen, Unprepared (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Carrots, Frozen, Unprepared",
     "category": "Vegetables",
     "serving_size": 100,
     "serving_unit": "g",
@@ -69841,7 +69411,7 @@
     "cup_size_g": 175.0
   },
   {
-    "name": "Peas, Green, Frozen, Unprepared (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Peas, Green, Frozen, Unprepared",
     "category": "Vegetables",
     "serving_size": 100,
     "serving_unit": "g",
@@ -69887,7 +69457,7 @@
     "cup_size_g": 150.0
   },
   {
-    "name": "Potatoes, Russet, Flesh And Skin, Raw (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Potatoes, Russet, Flesh And Skin, Raw",
     "category": "Vegetables",
     "serving_size": 100,
     "serving_unit": "g",
@@ -70702,7 +70272,7 @@
     "sugar_g": 1.93
   },
   {
-    "name": "Mcdonald'S, Filet-O-Fish",
+    "name": "Mcdonald's, Filet-O-Fish",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -70716,7 +70286,7 @@
     "sugar_g": 3.67
   },
   {
-    "name": "Mcdonald'S, Cheeseburger",
+    "name": "Mcdonald's, Cheeseburger",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -70730,7 +70300,7 @@
     "sugar_g": 6.22
   },
   {
-    "name": "Mcdonald'S, Quarter Pounder",
+    "name": "Mcdonald's, Quarter Pounder",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -70744,7 +70314,7 @@
     "sugar_g": 5.13
   },
   {
-    "name": "Wendy'S, Frosty Dairy Dessert",
+    "name": "Wendy's, Frosty Dairy Dessert",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -70940,7 +70510,7 @@
     "sugar_g": 2.79
   },
   {
-    "name": "Domino'S 14\" Pepperoni Pizza, Crunchy Thin Crust",
+    "name": "Domino's 14\" Pepperoni Pizza, Crunchy Thin Crust",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -70954,7 +70524,7 @@
     "sugar_g": 3.65
   },
   {
-    "name": "Domino'S 14\" Sausage Pizza, Crunchy Thin Crust",
+    "name": "Domino's 14\" Sausage Pizza, Crunchy Thin Crust",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -71295,7 +70865,7 @@
     "cup_size_g": 180.0
   },
   {
-    "name": "Tomato Products, Canned, Paste, Without Salt Added (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Tomato Products, Canned, Paste, Without Salt Added",
     "category": "Vegetables",
     "serving_size": 100,
     "serving_unit": "g",
@@ -72079,7 +71649,7 @@
     "sugar_g": 3.0
   },
   {
-    "name": "Mcdonald'S, Hamburger",
+    "name": "Mcdonald's, Hamburger",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -72093,7 +71663,7 @@
     "sugar_g": 6.03
   },
   {
-    "name": "Mcdonald'S, Quarter Pounder With Cheese",
+    "name": "Mcdonald's, Quarter Pounder With Cheese",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -72107,7 +71677,7 @@
     "sugar_g": 4.91
   },
   {
-    "name": "Mcdonald'S, Big Mac",
+    "name": "Mcdonald's, Big Mac",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -72121,7 +71691,7 @@
     "sugar_g": 3.97
   },
   {
-    "name": "Mcdonald'S, French Fries",
+    "name": "Mcdonald's, French Fries",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -72136,7 +71706,7 @@
     "piece_size_g": 154.0
   },
   {
-    "name": "Wendy'S, Homestyle Chicken Fillet Sandwich",
+    "name": "Wendy's, Homestyle Chicken Fillet Sandwich",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -72149,7 +71719,7 @@
     "sodium_mg": 401.0
   },
   {
-    "name": "Wendy'S, Ultimate Chicken Grill Sandwich",
+    "name": "Wendy's, Ultimate Chicken Grill Sandwich",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -72162,7 +71732,7 @@
     "sodium_mg": 427.0
   },
   {
-    "name": "Wendy'S, Chicken Nuggets",
+    "name": "Wendy's, Chicken Nuggets",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -72176,7 +71746,7 @@
     "sugar_g": 0.08
   },
   {
-    "name": "Wendy'S, French Fries",
+    "name": "Wendy's, French Fries",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -72272,7 +71842,7 @@
     "sodium_mg": 1140.0
   },
   {
-    "name": "Domino'S 14\" Sausage Pizza, Classic Hand-Tossed Crust",
+    "name": "Domino's 14\" Sausage Pizza, Classic Hand-Tossed Crust",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -72286,7 +71856,7 @@
     "sugar_g": 3.92
   },
   {
-    "name": "Domino'S 14\" Sausage Pizza, Ultimate Deep Dish Crust",
+    "name": "Domino's 14\" Sausage Pizza, Ultimate Deep Dish Crust",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -72328,7 +71898,7 @@
     "sugar_g": 2.72
   },
   {
-    "name": "Wend'Ys, Crispy Chicken Sandwich",
+    "name": "Wend'ys, Crispy Chicken Sandwich",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -72385,7 +71955,7 @@
     "sugar_g": 12.7
   },
   {
-    "name": "Mcdonald'S, Southern Style Chicken Biscuit",
+    "name": "Mcdonald's, Southern Style Chicken Biscuit",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -72576,7 +72146,7 @@
     "sugar_g": 2.64
   },
   {
-    "name": "Yogurt, Greek, Plain, Nonfat (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Yogurt, Greek, Plain, Nonfat",
     "category": "Dairy",
     "serving_size": 100,
     "serving_unit": "g",
@@ -73411,7 +72981,7 @@
     "cup_size_g": 112.0
   },
   {
-    "name": "Cheese, Cheddar, Reduced Fat (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Cheese, Cheddar, Reduced Fat",
     "category": "Dairy",
     "serving_size": 100,
     "serving_unit": "g",
@@ -74403,7 +73973,7 @@
     "cup_size_g": 242.0
   },
   {
-    "name": "Apples, Raw, With Skin (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Apples, Raw, With Skin",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -74433,7 +74003,7 @@
     "cup_size_g": 193.0
   },
   {
-    "name": "Apples, Frozen, Unsweetened, Unheated (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Apples, Frozen, Unsweetened, Unheated",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -74448,7 +74018,7 @@
     "cup_size_g": 173.0
   },
   {
-    "name": "Applesauce, Canned, Unsweetened, Without Added Ascorbic Acid (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Applesauce, Canned, Unsweetened, Without Added Ascorbic Acid",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -74492,7 +74062,7 @@
     "cup_size_g": 119.0
   },
   {
-    "name": "Cherries, Tart, Dried, Sweetened (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Cherries, Tart, Dried, Sweetened",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -74539,7 +74109,7 @@
     "cup_size_g": 132.0
   },
   {
-    "name": "Cherries, Sour, Red, Frozen, Unsweetened (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Cherries, Sour, Red, Frozen, Unsweetened",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -74598,7 +74168,7 @@
     "cup_size_g": 110.0
   },
   {
-    "name": "Cranberries, Dried, Sweetened (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Cranberries, Dried, Sweetened",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -74613,7 +74183,7 @@
     "cup_size_g": 160.0
   },
   {
-    "name": "Custard-Apple, (Bullock'S-Heart)",
+    "name": "Custard-Apple, (Bullock's-Heart)",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -74655,7 +74225,7 @@
     "cup_size_g": 145.0
   },
   {
-    "name": "Beef, Ground, 85% Lean Meat / 15% Fat, Raw (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Beef, Ground, 85% Lean Meat / 15% Fat, Raw",
     "category": "Proteins",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75133,7 +74703,7 @@
     "cup_size_g": 119.0
   },
   {
-    "name": "Pasta, Whole Grain, 51% Whole Wheat, Remaining Enriched Semolina, Cooked (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Pasta, Whole Grain, 51% Whole Wheat, Remaining Enriched Semolina, Cooked",
     "category": "Grains & Cereals",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75148,7 +74718,7 @@
     "cup_size_g": 116.0
   },
   {
-    "name": "Pasta, Whole Grain, 51% Whole Wheat, Remaining Enriched Semolina, Dry (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Pasta, Whole Grain, 51% Whole Wheat, Remaining Enriched Semolina, Dry",
     "category": "Grains & Cereals",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75219,7 +74789,7 @@
     "sugar_g": 2.67
   },
   {
-    "name": "Domino'S 14\" Cheese Pizza, Crunchy Thin Crust",
+    "name": "Domino's 14\" Cheese Pizza, Crunchy Thin Crust",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75233,7 +74803,7 @@
     "sugar_g": 4.09
   },
   {
-    "name": "Domino'S 14\" Pepperoni Pizza, Classic Hand-Tossed Crust",
+    "name": "Domino's 14\" Pepperoni Pizza, Classic Hand-Tossed Crust",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75247,7 +74817,7 @@
     "sugar_g": 3.69
   },
   {
-    "name": "Domino'S 14\" Pepperoni Pizza, Ultimate Deep Dish Crust",
+    "name": "Domino's 14\" Pepperoni Pizza, Ultimate Deep Dish Crust",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75261,7 +74831,7 @@
     "sugar_g": 3.91
   },
   {
-    "name": "Domino'S 14\" Extravaganzza Feast Pizza, Classic Hand-Tossed Crust",
+    "name": "Domino's 14\" Extravaganzza Feast Pizza, Classic Hand-Tossed Crust",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75387,7 +74957,7 @@
     "sugar_g": 3.04
   },
   {
-    "name": "Mcdonald'S, Sausage Mcgriddles",
+    "name": "Mcdonald's, Sausage Mcgriddles",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75401,7 +74971,7 @@
     "sugar_g": 11.2
   },
   {
-    "name": "Mcdonald'S, Vanilla Reduced Fat Ice Cream Cone",
+    "name": "Mcdonald's, Vanilla Reduced Fat Ice Cream Cone",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75415,7 +74985,7 @@
     "sugar_g": 19.5
   },
   {
-    "name": "Mcdonald'S, Strawberry Sundae",
+    "name": "Mcdonald's, Strawberry Sundae",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75429,7 +74999,7 @@
     "sugar_g": 25.3
   },
   {
-    "name": "Mcdonald'S, Sausage Burrito",
+    "name": "Mcdonald's, Sausage Burrito",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75443,7 +75013,7 @@
     "sugar_g": 2.57
   },
   {
-    "name": "Mcdonald'S, Big Breakfast",
+    "name": "Mcdonald's, Big Breakfast",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75457,7 +75027,7 @@
     "sugar_g": 0.93
   },
   {
-    "name": "Mcdonald'S, Double Cheeseburger",
+    "name": "Mcdonald's, Double Cheeseburger",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75471,7 +75041,7 @@
     "sugar_g": 4.23
   },
   {
-    "name": "Mcdonald'S, Double Quarter Pounder With Cheese",
+    "name": "Mcdonald's, Double Quarter Pounder With Cheese",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75485,7 +75055,7 @@
     "sugar_g": 3.49
   },
   {
-    "name": "Mcdonald'S, Big Mac (Without Big Mac Sauce)",
+    "name": "Mcdonald's, Big Mac (Without Big Mac Sauce)",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75499,7 +75069,7 @@
     "sugar_g": 3.7
   },
   {
-    "name": "Mcdonald'S, Sausage Mcmuffin With Egg",
+    "name": "Mcdonald's, Sausage Mcmuffin With Egg",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75513,7 +75083,7 @@
     "sugar_g": 1.57
   },
   {
-    "name": "Mcdonald'S, Bacon Egg & Cheese Biscuit",
+    "name": "Mcdonald's, Bacon Egg & Cheese Biscuit",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75527,7 +75097,7 @@
     "sugar_g": 2.18
   },
   {
-    "name": "Mcdonald'S, Sausage Biscuit",
+    "name": "Mcdonald's, Sausage Biscuit",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75541,7 +75111,7 @@
     "sugar_g": 1.97
   },
   {
-    "name": "Mcdonald'S, Sausage Biscuit With Egg",
+    "name": "Mcdonald's, Sausage Biscuit With Egg",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75555,7 +75125,7 @@
     "sugar_g": 1.43
   },
   {
-    "name": "Mcdonald'S Bacon Ranch Salad With Crispy Chicken",
+    "name": "Mcdonald's Bacon Ranch Salad With Crispy Chicken",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75569,7 +75139,7 @@
     "sugar_g": 1.53
   },
   {
-    "name": "Mcdonald'S, Bacon Ranch Salad Without Chicken",
+    "name": "Mcdonald's, Bacon Ranch Salad Without Chicken",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75583,7 +75153,7 @@
     "sugar_g": 2.14
   },
   {
-    "name": "Mcdonald'S, Side Salad",
+    "name": "Mcdonald's, Side Salad",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75597,7 +75167,7 @@
     "sugar_g": 2.24
   },
   {
-    "name": "Mcdonald'S, Fruit 'N Yogurt Parfait",
+    "name": "Mcdonald's, Fruit 'N Yogurt Parfait",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75611,7 +75181,7 @@
     "sugar_g": 12.8
   },
   {
-    "name": "Burger King, Croissan'Wich With Egg And Cheese",
+    "name": "Burger King, Croissan'wich With Egg And Cheese",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -75989,7 +75559,7 @@
     "tbsp_size_g": 15.0
   },
   {
-    "name": "Egg, Whole, Raw, Frozen, Pasteurized (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Egg, Whole, Raw, Frozen, Pasteurized",
     "category": "Dairy",
     "serving_size": 100,
     "serving_unit": "g",
@@ -76033,7 +75603,7 @@
     "tbsp_size_g": 16.5
   },
   {
-    "name": "Kraft Breakstone'S Reduced Fat Sour Cream",
+    "name": "Kraft Breakstone's Reduced Fat Sour Cream",
     "category": "Dairy",
     "serving_size": 100,
     "serving_unit": "g",
@@ -76048,7 +75618,7 @@
     "tbsp_size_g": 15.5
   },
   {
-    "name": "Kraft Breakstone'S Free Fat Free Sour Cream",
+    "name": "Kraft Breakstone's Free Fat Free Sour Cream",
     "category": "Dairy",
     "serving_size": 100,
     "serving_unit": "g",
@@ -76478,7 +76048,7 @@
     "tbsp_size_g": 13.6
   },
   {
-    "name": "Oil, Industrial, Soy (Partially Hydrogenated)  And Cottonseed, Principal Use As A Tortilla Shortening",
+    "name": "Oil, Industrial, Soy (Partially Hydrogenated) And Cottonseed, Principal Use As A Tortilla Shortening",
     "category": "Oils & Fats",
     "serving_size": 100,
     "serving_unit": "g",
@@ -77294,7 +76864,7 @@
     "sodium_mg": 76.0
   },
   {
-    "name": "Lamb, Australian, Imported, Fresh, Shoulder, Whole (Arm And Blade), Separable Lean Only,   Trimmed To 1/8\" Fat",
+    "name": "Lamb, Australian, Imported, Fresh, Shoulder, Whole (Arm And Blade), Separable Lean Only, Trimmed To 1/8\" Fat",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -78244,7 +77814,7 @@
     "cup_size_g": 246.0
   },
   {
-    "name": "Campbell'S Chunky, Old Fashioned Vegetable Beef Soup",
+    "name": "Campbell's Chunky, Old Fashioned Vegetable Beef Soup",
     "category": "Condiments",
     "serving_size": 100,
     "serving_unit": "g",
@@ -78313,7 +77883,7 @@
     "sodium_mg": 1220.0
   },
   {
-    "name": "Mother'S Loaf, Pork",
+    "name": "Mother's Loaf, Pork",
     "category": "Proteins",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79265,7 +78835,7 @@
     "sugar_g": 3.71
   },
   {
-    "name": "Domino'S 14\" Cheese Pizza, Classic Hand-Tossed Crust",
+    "name": "Domino's 14\" Cheese Pizza, Classic Hand-Tossed Crust",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79279,7 +78849,7 @@
     "sugar_g": 4.02
   },
   {
-    "name": "Domino'S 14\" Cheese Pizza, Ultimate Deep Dish Crust",
+    "name": "Domino's 14\" Cheese Pizza, Ultimate Deep Dish Crust",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79293,7 +78863,7 @@
     "sugar_g": 4.22
   },
   {
-    "name": "Papa John'S 14\" Cheese Pizza, Original Crust",
+    "name": "Papa John's 14\" Cheese Pizza, Original Crust",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79307,7 +78877,7 @@
     "sugar_g": 5.32
   },
   {
-    "name": "Papa John'S 14\" Pepperoni Pizza, Original Crust",
+    "name": "Papa John's 14\" Pepperoni Pizza, Original Crust",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79321,7 +78891,7 @@
     "sugar_g": 4.84
   },
   {
-    "name": "Papa John'S 14\" The Works Pizza, Original Crust",
+    "name": "Papa John's 14\" The Works Pizza, Original Crust",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79335,7 +78905,7 @@
     "sugar_g": 4.84
   },
   {
-    "name": "Papa John'S 14\" Cheese Pizza, Thin Crust",
+    "name": "Papa John's 14\" Cheese Pizza, Thin Crust",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79405,7 +78975,7 @@
     "sugar_g": 2.47
   },
   {
-    "name": "Mcdonald'S, Chicken Mcnuggets",
+    "name": "Mcdonald's, Chicken Mcnuggets",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79419,7 +78989,7 @@
     "sugar_g": 0.08
   },
   {
-    "name": "Mcdonald'S, Hash Brown",
+    "name": "Mcdonald's, Hash Brown",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79433,7 +79003,7 @@
     "sugar_g": 0.54
   },
   {
-    "name": "Mcdonald'S, Hotcakes (Plain)",
+    "name": "Mcdonald's, Hotcakes (Plain)",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79447,7 +79017,7 @@
     "sugar_g": 8.84
   },
   {
-    "name": "Mcdonald'S, Hot Caramel Sundae",
+    "name": "Mcdonald's, Hot Caramel Sundae",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79461,7 +79031,7 @@
     "sugar_g": 23.5
   },
   {
-    "name": "Mcdonald'S, Hot Fudge Sundae",
+    "name": "Mcdonald's, Hot Fudge Sundae",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79475,7 +79045,7 @@
     "sugar_g": 26.9
   },
   {
-    "name": "Mcdonald'S, Mcflurry With M&M'S Candies",
+    "name": "Mcdonald's, Mcflurry With M&M'S Candies",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79490,7 +79060,7 @@
     "piece_size_g": 504.0
   },
   {
-    "name": "Mcdonald'S, Mcflurry With Oreo Cookies",
+    "name": "Mcdonald's, Mcflurry With Oreo Cookies",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79505,7 +79075,7 @@
     "piece_size_g": 487.0
   },
   {
-    "name": "Mcdonald'S, Mcchicken Sandwich",
+    "name": "Mcdonald's, Mcchicken Sandwich",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79519,7 +79089,7 @@
     "sugar_g": 3.57
   },
   {
-    "name": "Mcdonald'S, Mcchicken Sandwich (Without Mayonnaise)",
+    "name": "Mcdonald's, Mcchicken Sandwich (Without Mayonnaise)",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79533,7 +79103,7 @@
     "sugar_g": 4.16
   },
   {
-    "name": "Mcdonald'S, Egg Mcmuffin",
+    "name": "Mcdonald's, Egg Mcmuffin",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79547,7 +79117,7 @@
     "sugar_g": 2.13
   },
   {
-    "name": "Mcdonald'S, Sausage Mcmuffin",
+    "name": "Mcdonald's, Sausage Mcmuffin",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79561,7 +79131,7 @@
     "sugar_g": 1.93
   },
   {
-    "name": "Mcdonald'S, Hotcakes And Sausage",
+    "name": "Mcdonald's, Hotcakes And Sausage",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79575,7 +79145,7 @@
     "sugar_g": 7.29
   },
   {
-    "name": "Mcdonald'S, Hotcakes (With 2 Pats Margarine & Syrup)",
+    "name": "Mcdonald's, Hotcakes (With 2 Pats Margarine & Syrup)",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79589,7 +79159,7 @@
     "sugar_g": 20.6
   },
   {
-    "name": "Mcdonald'S, Bacon Ranch Salad With Grilled Chicken",
+    "name": "Mcdonald's, Bacon Ranch Salad With Grilled Chicken",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79603,7 +79173,7 @@
     "sugar_g": 1.73
   },
   {
-    "name": "Mcdonald'S, Fruit 'N Yogurt Parfait (Without Granola)",
+    "name": "Mcdonald's, Fruit 'N Yogurt Parfait (Without Granola)",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79617,7 +79187,7 @@
     "sugar_g": 11.9
   },
   {
-    "name": "Mcdonald'S, Filet-O-Fish (Without Tartar Sauce)",
+    "name": "Mcdonald's, Filet-O-Fish (Without Tartar Sauce)",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79631,7 +79201,7 @@
     "sugar_g": 4.27
   },
   {
-    "name": "Burger King, Croissan'Wich With Sausage And Cheese",
+    "name": "Burger King, Croissan'wich With Sausage And Cheese",
     "category": "Grocery",
     "serving_size": 100,
     "serving_unit": "g",
@@ -79860,21 +79430,6 @@
     "fiber_g": 0.0,
     "source": "USDA",
     "sodium_mg": 690.0
-  },
-  {
-    "name": "Cheese, Cheddar (Includes Foods For Usda'S Food Distribution Program)",
-    "category": "Dairy",
-    "serving_size": 100,
-    "serving_unit": "g",
-    "calories": 403.0,
-    "protein_g": 22.9,
-    "carbs_g": 3.37,
-    "fat_g": 33.3,
-    "fiber_g": 0.0,
-    "source": "USDA",
-    "sodium_mg": 653.0,
-    "sugar_g": 0.48,
-    "cup_size_g": 244.0
   },
   {
     "name": "Cheese, Cheshire",
@@ -80837,7 +80392,7 @@
     "sodium_mg": 53.0
   },
   {
-    "name": "Fish, Tuna, Light, Canned In Water, Drained Solids (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Fish, Tuna, Light, Canned In Water, Drained Solids",
     "category": "Seafood",
     "serving_size": 100,
     "serving_unit": "g",
@@ -81902,7 +81457,7 @@
     "cup_size_g": 60.0
   },
   {
-    "name": "Apples, Frozen, Unsweetened, Heated (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Apples, Frozen, Unsweetened, Heated",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -81916,7 +81471,7 @@
     "cup_size_g": 206.0
   },
   {
-    "name": "Apricots, Canned, Extra Light Syrup Pack, With Skin, Solids And Liquids (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Apricots, Canned, Extra Light Syrup Pack, With Skin, Solids And Liquids",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -81975,7 +81530,7 @@
     "cup_size_g": 250.0
   },
   {
-    "name": "Blueberries, Wild, Frozen (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Blueberries, Wild, Frozen",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -81989,7 +81544,7 @@
     "cup_size_g": 140.0
   },
   {
-    "name": "Blueberries, Frozen, Unsweetened (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Blueberries, Frozen, Unsweetened",
     "category": "Fruits",
     "serving_size": 100,
     "serving_unit": "g",
@@ -82273,7 +81828,7 @@
     "cup_size_g": 146.0
   },
   {
-    "name": "Peanut Butter, Smooth Style, With Salt (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Peanut Butter, Smooth Style, With Salt",
     "category": "Proteins",
     "serving_size": 100,
     "serving_unit": "g",
@@ -82522,7 +82077,7 @@
     "cup_size_g": 92.0
   },
   {
-    "name": "Peanut Butter, Smooth (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Peanut Butter, Smooth",
     "category": "Proteins",
     "serving_size": 100,
     "serving_unit": "g",
@@ -83097,7 +82652,7 @@
     "cup_size_g": 252.0
   },
   {
-    "name": "Campbell'S Chunky, Classic Chicken Noodle Soup",
+    "name": "Campbell's Chunky, Classic Chicken Noodle Soup",
     "category": "Condiments",
     "serving_size": 100,
     "serving_unit": "g",
@@ -83112,7 +82667,7 @@
     "cup_size_g": 243.0
   },
   {
-    "name": "Campbell'S Chunky, Hearty Beef Barley Soup",
+    "name": "Campbell's Chunky, Hearty Beef Barley Soup",
     "category": "Condiments",
     "serving_size": 100,
     "serving_unit": "g",
@@ -83127,7 +82682,7 @@
     "cup_size_g": 206.0
   },
   {
-    "name": "Campbell'S Chunky, New England Clam Chowder",
+    "name": "Campbell's Chunky, New England Clam Chowder",
     "category": "Condiments",
     "serving_size": 100,
     "serving_unit": "g",
@@ -84619,7 +84174,7 @@
     "cup_size_g": 28.0
   },
   {
-    "name": "Martha White Foods, Martha White'S Chewy Fudge Brownie Mix",
+    "name": "Martha White Foods, Martha White's Chewy Fudge Brownie Mix",
     "category": "Grains & Pasta",
     "serving_size": 100,
     "serving_unit": "g",
@@ -84633,7 +84188,7 @@
     "sugar_g": 54.8
   },
   {
-    "name": "Martha White Foods, Martha White'S Buttermilk Biscuit Mix",
+    "name": "Martha White Foods, Martha White's Buttermilk Biscuit Mix",
     "category": "Grains & Pasta",
     "serving_size": 100,
     "serving_unit": "g",
@@ -84767,7 +84322,7 @@
     "sodium_mg": 119.0
   },
   {
-    "name": "Beans, Great Northern, Mature Seeds, Raw (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Beans, Great Northern, Mature Seeds, Raw",
     "category": "Proteins",
     "serving_size": 100,
     "serving_unit": "g",
@@ -84782,7 +84337,7 @@
     "cup_size_g": 183.0
   },
   {
-    "name": "Beans, Pinto, Mature Seeds, Raw (Includes Foods For Usda'S Food Distribution Program)",
+    "name": "Beans, Pinto, Mature Seeds, Raw",
     "category": "Proteins",
     "serving_size": 100,
     "serving_unit": "g",
@@ -85444,29 +84999,6 @@
     "sodium_mg": 82.0
   },
   {
-    "name": "Jollof Rice",
-    "category": "West African",
-    "serving_size": 200,
-    "serving_unit": "g",
-    "calories": 330,
-    "protein_g": 7,
-    "carbs_g": 60,
-    "fat_g": 8,
-    "fiber_g": 2,
-    "ingredients": [
-      "long grain rice",
-      "tomato",
-      "red bell pepper",
-      "onion",
-      "palm oil",
-      "scotch bonnet",
-      "chicken stock",
-      "bay leaf",
-      "thyme"
-    ],
-    "nova_group": 2
-  },
-  {
     "name": "Fried Plantain",
     "category": "West African",
     "serving_size": 100,
@@ -85503,27 +85035,6 @@
     "nova_group": 2
   },
   {
-    "name": "Egusi Soup",
-    "category": "West African",
-    "serving_size": 200,
-    "serving_unit": "g",
-    "calories": 380,
-    "protein_g": 16,
-    "carbs_g": 12,
-    "fat_g": 30,
-    "fiber_g": 4,
-    "ingredients": [
-      "egusi (melon seeds)",
-      "palm oil",
-      "leafy greens",
-      "stockfish",
-      "crayfish",
-      "onion",
-      "scotch bonnet"
-    ],
-    "nova_group": 2
-  },
-  {
     "name": "Akara",
     "category": "West African",
     "serving_size": 100,
@@ -85539,63 +85050,6 @@
       "scotch bonnet",
       "salt",
       "vegetable oil"
-    ],
-    "nova_group": 2
-  },
-  {
-    "name": "Puff Puff",
-    "category": "West African",
-    "serving_size": 100,
-    "serving_unit": "g",
-    "calories": 340,
-    "protein_g": 6,
-    "carbs_g": 42,
-    "fat_g": 16,
-    "fiber_g": 1,
-    "ingredients": [
-      "plain flour",
-      "yeast",
-      "sugar",
-      "nutmeg",
-      "salt",
-      "vegetable oil"
-    ],
-    "nova_group": 4
-  },
-  {
-    "name": "Fufu",
-    "category": "West African",
-    "serving_size": 300,
-    "serving_unit": "g",
-    "calories": 330,
-    "protein_g": 3,
-    "carbs_g": 77,
-    "fat_g": 2,
-    "fiber_g": 4,
-    "ingredients": [
-      "cassava",
-      "plantain"
-    ],
-    "nova_group": 1
-  },
-  {
-    "name": "Groundnut Soup",
-    "category": "West African",
-    "serving_size": 250,
-    "serving_unit": "g",
-    "calories": 450,
-    "protein_g": 22,
-    "carbs_g": 14,
-    "fat_g": 35,
-    "fiber_g": 5,
-    "ingredients": [
-      "groundnut paste",
-      "palm oil",
-      "chicken",
-      "tomato",
-      "onion",
-      "scotch bonnet",
-      "crayfish"
     ],
     "nova_group": 2
   },
@@ -85616,65 +85070,6 @@
       "vegetable oil",
       "crayfish",
       "egg"
-    ],
-    "nova_group": 2
-  },
-  {
-    "name": "Chin Chin",
-    "category": "West African",
-    "serving_size": 100,
-    "serving_unit": "g",
-    "calories": 460,
-    "protein_g": 8,
-    "carbs_g": 60,
-    "fat_g": 20,
-    "fiber_g": 2,
-    "ingredients": [
-      "plain flour",
-      "sugar",
-      "butter",
-      "egg",
-      "nutmeg",
-      "vanilla",
-      "vegetable oil"
-    ],
-    "nova_group": 4
-  },
-  {
-    "name": "Injera",
-    "category": "Ethiopian",
-    "serving_size": 100,
-    "serving_unit": "g",
-    "calories": 130,
-    "protein_g": 5,
-    "carbs_g": 26,
-    "fat_g": 1,
-    "fiber_g": 3,
-    "ingredients": [
-      "teff flour",
-      "water",
-      "salt"
-    ],
-    "nova_group": 1
-  },
-  {
-    "name": "Doro Wat",
-    "category": "Ethiopian",
-    "serving_size": 200,
-    "serving_unit": "g",
-    "calories": 290,
-    "protein_g": 26,
-    "carbs_g": 8,
-    "fat_g": 16,
-    "fiber_g": 2,
-    "ingredients": [
-      "chicken",
-      "berbere spice",
-      "onion",
-      "niter kibbeh",
-      "garlic",
-      "ginger",
-      "hard-boiled egg"
     ],
     "nova_group": 2
   },
@@ -85700,46 +85095,6 @@
     "nova_group": 1
   },
   {
-    "name": "Shiro Wat",
-    "category": "Ethiopian",
-    "serving_size": 200,
-    "serving_unit": "g",
-    "calories": 240,
-    "protein_g": 12,
-    "carbs_g": 34,
-    "fat_g": 7,
-    "fiber_g": 6,
-    "ingredients": [
-      "shiro powder (chickpea flour)",
-      "onion",
-      "niter kibbeh",
-      "berbere spice",
-      "garlic"
-    ],
-    "nova_group": 1
-  },
-  {
-    "name": "Tibs",
-    "category": "Ethiopian",
-    "serving_size": 200,
-    "serving_unit": "g",
-    "calories": 360,
-    "protein_g": 36,
-    "carbs_g": 6,
-    "fat_g": 20,
-    "fiber_g": 1,
-    "ingredients": [
-      "beef",
-      "onion",
-      "green pepper",
-      "tomato",
-      "niter kibbeh",
-      "rosemary",
-      "mitmita"
-    ],
-    "nova_group": 2
-  },
-  {
     "name": "Gomen",
     "category": "Ethiopian",
     "serving_size": 200,
@@ -85755,45 +85110,6 @@
       "onion",
       "garlic",
       "ginger"
-    ],
-    "nova_group": 1
-  },
-  {
-    "name": "Kitfo",
-    "category": "Ethiopian",
-    "serving_size": 150,
-    "serving_unit": "g",
-    "calories": 380,
-    "protein_g": 28,
-    "carbs_g": 2,
-    "fat_g": 28,
-    "fiber_g": 0,
-    "ingredients": [
-      "lean ground beef",
-      "niter kibbeh",
-      "mitmita",
-      "cardamom"
-    ],
-    "nova_group": 1
-  },
-  {
-    "name": "Ful Medames",
-    "category": "Ethiopian",
-    "serving_size": 200,
-    "serving_unit": "g",
-    "calories": 210,
-    "protein_g": 12,
-    "carbs_g": 32,
-    "fat_g": 5,
-    "fiber_g": 8,
-    "ingredients": [
-      "fava beans",
-      "olive oil",
-      "lemon",
-      "garlic",
-      "cumin",
-      "onion",
-      "tomato"
     ],
     "nova_group": 1
   },
@@ -85816,28 +85132,6 @@
       "paprika",
       "oregano",
       "lemon"
-    ],
-    "nova_group": 2
-  },
-  {
-    "name": "Lahmacun",
-    "category": "Turkish",
-    "serving_size": 100,
-    "serving_unit": "g",
-    "calories": 270,
-    "protein_g": 12,
-    "carbs_g": 35,
-    "fat_g": 9,
-    "fiber_g": 2,
-    "ingredients": [
-      "plain flour",
-      "minced lamb",
-      "tomato",
-      "onion",
-      "red pepper",
-      "parsley",
-      "cumin",
-      "paprika"
     ],
     "nova_group": 2
   },
@@ -85921,28 +85215,6 @@
     "nova_group": 1
   },
   {
-    "name": "Kofte",
-    "category": "Turkish",
-    "serving_size": 100,
-    "serving_unit": "g",
-    "calories": 250,
-    "protein_g": 18,
-    "carbs_g": 8,
-    "fat_g": 16,
-    "fiber_g": 1,
-    "ingredients": [
-      "minced beef",
-      "minced lamb",
-      "onion",
-      "breadcrumbs",
-      "parsley",
-      "cumin",
-      "coriander",
-      "egg"
-    ],
-    "nova_group": 2
-  },
-  {
     "name": "Chelo Kabab",
     "category": "Persian",
     "serving_size": 350,
@@ -85983,26 +85255,6 @@
       "dried limes",
       "onion",
       "turmeric"
-    ],
-    "nova_group": 2
-  },
-  {
-    "name": "Fesenjan",
-    "category": "Persian",
-    "serving_size": 200,
-    "serving_unit": "g",
-    "calories": 460,
-    "protein_g": 22,
-    "carbs_g": 30,
-    "fat_g": 30,
-    "fiber_g": 4,
-    "ingredients": [
-      "chicken",
-      "walnut",
-      "pomegranate molasses",
-      "onion",
-      "turmeric",
-      "cinnamon"
     ],
     "nova_group": 2
   },

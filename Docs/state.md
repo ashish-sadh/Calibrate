@@ -8,7 +8,7 @@ AI-first local health tracker. AI chat is the primary interface — every data e
 - **Tests:** ~1252 iOS DriftTests + ~1729 macOS DriftCoreTests (cross-platform pure-logic suite, ~7s warm); LLM eval ~160+ cases in DriftLLMEvalMacOS
 - **AI Eval:** 400+ scenarios in eval harness + LLM eval (~130-case gold set in IntentRoutingEval)
 - **Per-tool Reliability (Gemma 4, 50-query gold set):** log_food 10/10 (100%), edit_meal 9/10 (90%, tuned +10% from 80%), log_weight 10/10 (100%), mark_supplement 10/10 (100%), food_info 9/10 (90%) — overall 48/50 (96%)
-- **Foods:** 5,420 (curated down from 11,162 at build 237 — dropped verbose USDA SR Legacy bulk variants; hand-curated Indian-first + international cuisine retained. Ceiling enforced at 6,000 by FoodDBSizeTests.)
+- **Foods:** 5,424 (curated down from 11,162 at build 237 — dropped verbose USDA SR Legacy bulk variants; hand-curated Indian-first + international cuisine retained. #1015/#1017 removed 36 duplicate rows, stripped 57 USDA distribution-program name suffixes, and de-title-cased 169 apostrophe names. Ceiling enforced at 6,000, cleanliness by FoodDBSizeTests.)
 - **Exercises:** 960 (free-exercise-db)
 - **Biomarkers:** 71 across 9 categories
 - **AI Tools:** 35 registered tools (23 core + 12 insight); 11 analytical insight engines (cross_domain_insight, weight_trend_prediction, glp1_insight, supplement_insight, food_timing_insight, sleep_food_correlation, exercise_volume_summary, glucose_food_correlation, progressive_overload_check, glucose_spike_analysis, cycle_biomarker_correlation)
