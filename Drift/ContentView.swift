@@ -92,7 +92,16 @@ struct ContentView: View {
             }) {
                 PhotoLogFlowView(foodLog: photoLogVM)
             }
-            .sheet(isPresented: $showingDriftCoach) {
+            .sheet(isPresented: $showingDriftCoach, onDismiss: {
+                // A prefill (Ask-AI seed / edit-in-chat handoff) is one-shot.
+                // Without this reset the NEXT open via ChatIconButton — which
+                // only flips `showingDriftCoach` — re-created the sheet with
+                // the stale prefill, and autoSubmit re-fired the same question
+                // (field complaint 2026-07-07: "stuck on the prefilled
+                // message").
+                driftCoachPrefill = ""
+                driftCoachAutoSubmit = false
+            }) {
                 DriftCoachSheet(prefill: driftCoachPrefill, autoSubmit: driftCoachAutoSubmit)
             }
             .onReceive(NotificationCenter.default.publisher(for: .openDriftCoach)) { notification in
