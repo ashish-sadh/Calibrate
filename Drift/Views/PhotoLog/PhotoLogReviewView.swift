@@ -22,12 +22,13 @@ struct PhotoLogReviewView: View {
 
     @State private var mealType: MealType = .snack
     @State private var mealTypeResolved = false
+    @State private var everHadItems = false  // #1044: distinguish user-cleared from no-detection
 
     var body: some View {
         NavigationStack {
             Group {
                 if items.isEmpty {
-                    emptyState
+                    if everHadItems { clearedState } else { emptyState }
                 } else {
                     content
                 }
@@ -40,7 +41,7 @@ struct PhotoLogReviewView: View {
                     Button("Cancel") { dismiss() }
                 }
             }
-            .onAppear(perform: resolveDefaultMealType)
+            .onAppear { resolveDefaultMealType(); if !items.isEmpty { everHadItems = true } }
         }
     }
 
@@ -193,6 +194,40 @@ struct PhotoLogReviewView: View {
         .padding(24)
     }
 
+    /// #1044: the user deleted every detected item — keep the good analysis, don't blame the
+    /// photo, and offer to add an item manually rather than only re-taking.
+    private var clearedState: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "tray")
+                .font(.system(size: Theme.FontSize.hero))
+                .foregroundStyle(Theme.textTertiary)
+            Text("No items left")
+                .font(.headline)
+                .multilineTextAlignment(.center)
+            Text("You removed every detected item. Add one manually, or take another photo.")
+                .font(.caption)
+                .foregroundStyle(Theme.textSecondary)
+                .multilineTextAlignment(.center)
+            Button {
+                items.append(.blank())
+            } label: {
+                Label("Add item", systemImage: "plus.circle.fill")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.accent)
+            .padding(.top, 8)
+            Button {
+                onRetake()
+            } label: {
+                Label("Take another", systemImage: "arrow.clockwise")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+        }
+        .padding(24)
+    }
+
     // MARK: - Behavior
 
     /// Resolve the default meal period the first time this view appears.
@@ -206,7 +241,7 @@ struct PhotoLogReviewView: View {
     }
 
     private func logSelected() {
-        for item in items where item.selected {
+        for item in items where item.selected && item.isLoggable {  // #1044: skip blank rows
             // #1029: for a count/portion unit with quantity > 1, persist PER-UNIT nutrition and
             // log servings = the quantity, so "2 pieces" logs as servings 2 × a 780-cal piece
             // (correctable with the servings field) rather than one 1560-cal "serving". Grams

@@ -48,6 +48,14 @@ private func sampleItem(name: String = "dal",
     #expect(abs(item.grams - 75) < 0.01)    // 1.5 × 50, not 1.5 × 150
 }
 
+// #1044: a blank/unnamed/0-cal row (an unfilled "Add item") is not loggable — no diary
+// entry, no empty-named food written to the catalog.
+@Test func blankItemIsNotLoggable() {
+    #expect(PhotoLogEditableItem.blank().isLoggable == false)
+    let named = PhotoLogEditableItem(from: sampleItem(name: "Dal", grams: 100, calories: 180))
+    #expect(named.isLoggable == true)
+}
+
 // MARK: - Serving unit picker
 
 @Test func suggestedUnitMatchesKeywords() {

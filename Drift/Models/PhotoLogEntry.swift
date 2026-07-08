@@ -52,6 +52,12 @@ struct PhotoLogEditableItem: Identifiable, Equatable {
     /// #1043: NOT the plate total, so scaling the count stays proportional.
     let originalGrams: Double
 
+    /// #1044: a blank/unnamed/0-cal row (e.g. an unfilled "Add item") must not be logged
+    /// to the diary or written to the searchable food catalog.
+    var isLoggable: Bool {
+        !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && calories > 0
+    }
+
     init(from item: PhotoLogItem, id: UUID = UUID()) {
         self.id = id
         self.name = item.name
