@@ -6,6 +6,18 @@ import DriftCore
 @MainActor
 public enum AIContextBuilder {
 
+    /// One-line weight assessment relative to the user's goal. Returns nil when
+    /// there is NO goal — #984: the old `?? 0` default treated a no-goal user as a
+    /// losing goal. Pure so it is unit-testable without the shared WeightTrendService.
+    nonisolated static func weightAssessment(goalTargetKg: Double?, currentEMA: Double, weeklyRateKg: Double) -> String? {
+        guard let goalTarget = goalTargetKg else { return nil }
+        let isLosingGoal = goalTarget < currentEMA
+        if isLosingGoal && weeklyRateKg < -0.15 { return "Assessment: losing at healthy pace" }
+        if isLosingGoal && weeklyRateKg > 0 { return "Assessment: gaining despite losing goal — review intake" }
+        if !isLosingGoal && weeklyRateKg > 0.1 { return "Assessment: gaining as planned" }
+        return nil
+    }
+
     // MARK: - Base Context (always included)
 
     public static func baseContext() -> String {
@@ -134,14 +146,11 @@ public enum AIContextBuilder {
                     lines.append("30d: \(String(format: "%+.1f", u.convert(fromKg: d30)))\(u.displayName)")
                 }
 
-                // Pre-computed assessment
-                let isLosingGoal = (WeightGoal.load()?.targetWeightKg ?? 0) < trend.currentEMA
-                if isLosingGoal && trend.weeklyRateKg < -0.15 {
-                    lines.append("Assessment: losing at healthy pace")
-                } else if isLosingGoal && trend.weeklyRateKg > 0 {
-                    lines.append("Assessment: gaining despite losing goal — review intake")
-                } else if !isLosingGoal && trend.weeklyRateKg > 0.1 {
-                    lines.append("Assessment: gaining as planned")
+                // #984: assess only relative to a goal that actually exists.
+                if let assessment = weightAssessment(goalTargetKg: WeightGoal.load()?.targetWeightKg,
+                                                     currentEMA: trend.currentEMA,
+                                                     weeklyRateKg: trend.weeklyRateKg) {
+                    lines.append(assessment)
                 }
 
             // Goal progress

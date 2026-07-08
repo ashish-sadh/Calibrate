@@ -201,7 +201,9 @@ public struct WeightGoal: Codable, Sendable {
             carbs = carbsTargetG ?? max(0, remainingCal / 4)
         }
 
-        let effectiveCal = protein * 4 + carbs * 4 + fat * 9
+        // #983: honor the user's explicit calorie goal — the macro-breakdown sum can
+        // exceed it (protein minimum + fat floor), which must not inflate the ring target.
+        let effectiveCal = calorieTargetOverride ?? (protein * 4 + carbs * 4 + fat * 9)
         return MacroTargets(proteinG: protein, carbsG: carbs, fatG: fat,
                             fiberG: Self.defaultFiberG(calories: effectiveCal),
                             calorieTarget: effectiveCal, isLosing: isLosing, preference: pref,
@@ -260,7 +262,10 @@ public struct WeightGoal: Codable, Sendable {
         let startToCurrent = currentWeightKg - startWeightKg
         guard startToTarget != 0 else { return 1 }
         let ratio = startToCurrent / startToTarget
-        if ratio >= 1.0 && remainingDistance <= totalDistance * 0.5 { return 1.0 }
+        // #982: ratio >= 1 means current has reached or passed the target in the goal
+        // direction — that is 100% done, no matter how far past (the old extra
+        // `remainingDistance <= totalDistance*0.5` guard wrongly reset big overshoots to 0%).
+        if ratio >= 1.0 { return 1.0 }
         if ratio < 0 { return 0.0 }
         let fromRatio = min(1, ratio)
         let fromRemaining = max(0, 1 - remainingDistance / max(totalDistance, remainingDistance))

@@ -394,6 +394,29 @@ import GRDB
     #expect(g.progress(currentWeightKg: 48) == 1.0, "Can't exceed 100%")
 }
 
+// #982: a LARGE overshoot (past the target by > half the journey) must still read 100%.
+@Test func goalProgressLargeOvershootIsComplete() async throws {
+    let g = WeightGoal(targetWeightKg: 90, monthsToAchieve: 3, startDate: "2026-01-01", startWeightKg: 100)
+    #expect(g.progress(currentWeightKg: 79) == 1.0, "Overshooting the goal must still read 100%, not 0%")
+}
+
+// #983: an explicit calorie goal must be the ring target, not the (possibly inflated) macro sum.
+@Test func explicitCalorieGoalRespectedInMacroTarget() async throws {
+    let g = WeightGoal(targetWeightKg: 95, monthsToAchieve: 4, startDate: "2026-01-01",
+                       startWeightKg: 110, dietPreference: .highProtein, calorieTargetOverride: 1500)
+    let m = g.macroTargets(currentWeightKg: 110)!
+    #expect(abs(m.calorieTarget - 1500) < 1, "Ring target must equal the user's 1500 kcal goal, got \(m.calorieTarget)")
+}
+
+// #984: a no-goal user must NOT be assessed as a losing goal (old `?? 0` default bug).
+@Test func weightAssessmentNoGoalIsSilent() async throws {
+    #expect(AIContextBuilder.weightAssessment(goalTargetKg: nil, currentEMA: 80, weeklyRateKg: 0.3) == nil,
+            "No goal → no goal-relative assessment")
+    #expect(AIContextBuilder.weightAssessment(goalTargetKg: 75, currentEMA: 80, weeklyRateKg: 0.3)
+            == "Assessment: gaining despite losing goal — review intake",
+            "A real losing goal that is gaining still fires the review message")
+}
+
 @Test func goalProgressNoChange() async throws {
     let g = WeightGoal(targetWeightKg: 50, monthsToAchieve: 6, startDate: "2026-01-01", startWeightKg: 60)
     #expect(g.progress(currentWeightKg: 60) == 0.0)
