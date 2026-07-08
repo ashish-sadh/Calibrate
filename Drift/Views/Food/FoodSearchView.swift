@@ -783,7 +783,15 @@ struct FoodSearchView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Log") {
-                        viewModel.logFood(food, servings: multiplier, mealType: logMealType, loggedAt: logTime)
+                        // Anchor the picker's time-of-day to the VIEWED day —
+                        // logTime's date component is always "today", so a
+                        // past-day log would otherwise get a today timestamp
+                        // (past-day logging fix, 2026-07-08).
+                        let cal = Calendar.current
+                        let hm = cal.dateComponents([.hour, .minute], from: logTime)
+                        let composed = cal.date(bySettingHour: hm.hour ?? 12, minute: hm.minute ?? 0,
+                                                second: 0, of: viewModel.selectedDate) ?? logTime
+                        viewModel.logFood(food, servings: multiplier, mealType: logMealType, loggedAt: composed)
                         viewModel.loadSuggestions()
                         refreshSearch()
                         loggedCount += 1

@@ -707,7 +707,9 @@ struct FoodTabView: View {
                     // was flipped. User pointed out it still defaulted
                     // to Recent — these explicit overrides were the
                     // reason.
-                    userInfo: ["mode": LogMealMode.search.rawValue]
+                    // "date": log lands on the VIEWED day, not always today
+                    // (past-day logging fix, 2026-07-08).
+                    userInfo: ["mode": LogMealMode.search.rawValue, "date": viewModel.selectedDate]
                     )
                 } label: {
                     HStack {
@@ -963,7 +965,9 @@ struct FoodTabView: View {
                     // was flipped. User pointed out it still defaulted
                     // to Recent — these explicit overrides were the
                     // reason.
-                    userInfo: ["mode": LogMealMode.search.rawValue]
+                    // "date": log lands on the VIEWED day, not always today
+                    // (past-day logging fix, 2026-07-08).
+                    userInfo: ["mode": LogMealMode.search.rawValue, "date": viewModel.selectedDate]
                     )
                 } label: {
                     Label("Add food", systemImage: "plus")

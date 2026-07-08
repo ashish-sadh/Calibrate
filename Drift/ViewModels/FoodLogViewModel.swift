@@ -31,6 +31,25 @@ final class FoodLogViewModel {
         MealType.resolve(now: Date(), recentEntries: todayEntries)
     }
 
+    /// Timestamp for a NEW entry. Today → real wall-clock now, so entries
+    /// sort by the actual order they were logged. A PAST day (back-filled
+    /// log) → the meal-type's canonical hour on that day, so it sorts
+    /// sensibly by meal instead of clustering at "now" with a wrong time
+    /// (past-day logging fix, 2026-07-08 — new logs while viewing an earlier
+    /// day were landing with today's timestamp).
+    func entryTimestamp(mealType: MealType, on day: Date? = nil) -> Date {
+        let target = day ?? selectedDate
+        if Calendar.current.isDateInToday(target) { return Date() }
+        let hour: Int
+        switch mealType {
+        case .breakfast: hour = 8
+        case .lunch:     hour = 13
+        case .dinner:    hour = 19
+        case .snack:     hour = 12
+        }
+        return Calendar.current.date(bySettingHour: hour, minute: 0, second: 0, of: target) ?? target
+    }
+
     init(database: AppDatabase = .shared) {
         self.database = database
         #if targetEnvironment(simulator)
@@ -187,9 +206,11 @@ final class FoodLogViewModel {
         NotificationCenter.default.post(name: .foodEntryAdded, object: nil)
     }
 
-    func logFood(_ food: Food, servings: Double, mealType: MealType, loggedAt: Date = Date()) {
+    func logFood(_ food: Food, servings: Double, mealType: MealType, loggedAt: Date? = nil) {
         do {
             let date = dateString
+            // nil ⇒ derive: now for today, meal-canonical time for a past day.
+            let effectiveLoggedAt = loggedAt ?? entryTimestamp(mealType: mealType)
 
             // Find or create meal log for this meal type + date
             let mealLogs = try database.fetchMealLogs(for: date)
@@ -214,7 +235,7 @@ final class FoodLogViewModel {
                 carbsG: food.carbsG,
                 fatG: food.fatG,
                 fiberG: food.fiberG,
-                loggedAt: ISO8601DateFormatter().string(from: loggedAt),
+                loggedAt: ISO8601DateFormatter().string(from: effectiveLoggedAt),
                 date: date,
                 mealType: mealType.rawValue
             )
@@ -223,11 +244,13 @@ final class FoodLogViewModel {
                                          calories: food.calories, proteinG: food.proteinG,
                                          carbsG: food.carbsG, fatG: food.fatG, fiberG: food.fiberG,
                                          servingSizeG: food.servingSize)
-            if let id = entry.id {
+            // Conversation "recent entries" are a today-only shortcut — don't
+            // push back-filled past-day logs into it.
+            if let id = entry.id, isToday {
                 ConversationState.shared.pushRecentEntry(.init(
                     id: id, name: food.name, mealType: mealType.rawValue,
                     calories: food.calories.isFinite ? Int(food.calories.rounded()) : 0,
-                    loggedAt: loggedAt
+                    loggedAt: effectiveLoggedAt
                 ))
             }
             loadTodayMeals()
@@ -335,7 +358,12 @@ final class FoodLogViewModel {
 
             guard let mealLogId = mealLog?.id else { return false }
 
-            let now = DateFormatters.iso8601.string(from: Date())
+            // nil loggedAt ⇒ derive from the TARGET day: now for today,
+            // meal-canonical time for a back-filled past day (so it doesn't
+            // land with a wrong "now" timestamp on an earlier day).
+            let parsedDay = DateFormatters.dateOnly.date(from: date) ?? Date()
+            let effectiveLoggedAt = loggedAt
+                ?? DateFormatters.iso8601.string(from: entryTimestamp(mealType: mealType, on: parsedDay))
             var entry = FoodEntry(
                 mealLogId: mealLogId,
                 foodName: name,
@@ -346,7 +374,7 @@ final class FoodLogViewModel {
                 carbsG: carbsG,
                 fatG: fatG,
                 fiberG: fiberG,
-                loggedAt: loggedAt ?? now,
+                loggedAt: effectiveLoggedAt,
                 date: date,
                 mealType: mealType.rawValue
             )

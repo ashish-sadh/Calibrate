@@ -282,6 +282,51 @@ import Testing
     #expect(food == nil)
 }
 
+// MARK: - Past-day logging (2026-07-08 field bug: new log landed on today)
+
+@Test @MainActor func logFoodToPastDayLandsOnThatDayWithSameDayTimestamp() throws {
+    let db = try AppDatabase.empty()
+    let vm = FoodLogViewModel(database: db)
+    let cal = Calendar.current
+    let threeDaysAgo = cal.date(byAdding: .day, value: -3, to: Date())!
+    let pastStr = DateFormatters.dateOnly.string(from: threeDaysAgo)
+    vm.selectedDate = threeDaysAgo
+
+    let food = Food(name: "Poha", category: "Indian", servingSize: 100, servingUnit: "g", calories: 250)
+    vm.logFood(food, servings: 1, mealType: .breakfast)
+
+    // Lands on the viewed day...
+    let pastEntries = try db.fetchFoodEntries(for: pastStr)
+    #expect(pastEntries.count == 1, "log must land on the viewed past day")
+    #expect(pastEntries.first?.foodName == "Poha")
+    // ...and NOT on today.
+    let todayEntries = try db.fetchFoodEntries(for: DateFormatters.todayString)
+    #expect(todayEntries.isEmpty, "past-day log must not leak onto today (the field bug)")
+    // Timestamp is on the past day (canonical breakfast hour), not now.
+    let ts = try #require(pastEntries.first?.loggedAt)
+    let tsDate = try #require(ISO8601DateFormatter().date(from: ts) ?? DateFormatters.iso8601.date(from: ts))
+    #expect(cal.isDate(tsDate, inSameDayAs: threeDaysAgo),
+            "past-day entry timestamp must be on that day, not today's clock time")
+}
+
+@Test @MainActor func quickAddToPastDayUsesCanonicalMealTime() throws {
+    let db = try AppDatabase.empty()
+    let vm = FoodLogViewModel(database: db)
+    let cal = Calendar.current
+    let yesterday = cal.date(byAdding: .day, value: -1, to: Date())!
+    vm.selectedDate = yesterday
+
+    vm.quickAdd(name: "Dal", calories: 180, proteinG: 12, carbsG: 20, fatG: 4, fiberG: 6,
+                mealType: .dinner, servingSizeG: 200, servings: 1)
+
+    let entries = try db.fetchFoodEntries(for: DateFormatters.dateOnly.string(from: yesterday))
+    #expect(entries.count == 1)
+    let ts = try #require(entries.first?.loggedAt)
+    let tsDate = try #require(ISO8601DateFormatter().date(from: ts) ?? DateFormatters.iso8601.date(from: ts))
+    #expect(cal.isDate(tsDate, inSameDayAs: yesterday))
+    #expect(cal.component(.hour, from: tsDate) == 19, "dinner back-fill should use canonical 19:00")
+}
+
 // MARK: - Recipe Expand-On-Log (#190)
 
 @Test @MainActor func logRecipeAggregatedByDefault() throws {

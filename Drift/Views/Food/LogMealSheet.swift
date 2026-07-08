@@ -56,8 +56,17 @@ struct LogMealSheet: View {
     // default not Recent". Most "Add Food" taps come from intent to
     // log something specific (typed query); Recent is for repeat
     // loggers and still one tap away in the segmented picker.
-    init(initialMode: LogMealMode = .search) {
+    //
+    // `date` seeds the sheet's own FoodLogViewModel so logs land on the day
+    // the user is VIEWING, not always today (past-day logging fix,
+    // 2026-07-08). Defaults to today: the Dashboard cards / global entry
+    // points pass nothing, only the Food-diary "+ Add food" passes the
+    // viewed date.
+    init(initialMode: LogMealMode = .search, date: Date = Date()) {
         _mode = State(initialValue: initialMode)
+        let vm = FoodLogViewModel()
+        vm.selectedDate = date
+        _foodLogVM = State(initialValue: vm)
     }
 
     var body: some View {
