@@ -476,3 +476,19 @@ private func seedDay(_ db: AppDatabase, date: String, meals: [(type: String, kca
     #expect(UserDefaults.standard.string(forKey: "drift_foods_json_hash") == nil)
     #expect(UserDefaults.standard.string(forKey: "drift_foods_seed_version") == nil)
 }
+
+// #1032: "what did I eat" returns a meal-by-meal listing + total, not just totals.
+@Test @MainActor func diaryListingGroupsMealsWithTotal() throws {
+    let db = AppDatabase.shared
+    let date = "2099-03-15"  // far-future unique date so the shared DB can't collide
+    var log = MealLog(date: date, mealType: "breakfast")
+    try db.saveMealLog(&log)
+    var entry = FoodEntry(mealLogId: log.id!, foodId: nil, foodName: "Idli1032",
+                          servingSizeG: 100, servings: 2, calories: 115,
+                          proteinG: 4, carbsG: 20, fatG: 1, fiberG: 1,
+                          loggedAt: "", date: date, mealType: "breakfast")
+    try db.saveFoodEntry(&entry)
+    let listing = try #require(FoodService.diaryListing(for: date))
+    #expect(listing.contains("Breakfast: Idli1032 230cal"))  // 115 × 2 servings
+    #expect(listing.contains("Total: 230 cal"))
+}

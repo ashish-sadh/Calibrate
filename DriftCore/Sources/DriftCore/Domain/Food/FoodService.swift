@@ -81,6 +81,25 @@ public enum FoodService {
         }.map(\.element)
     }
 
+    /// #1032: a meal-by-meal listing of a day's diary ("Breakfast: Idli 230cal, …") + total.
+    /// Returns nil when nothing is logged that day.
+    public static func diaryListing(for dateStr: String) -> String? {
+        guard let logs = try? AppDatabase.shared.fetchMealLogs(for: dateStr), !logs.isEmpty else { return nil }
+        var lines: [String] = []
+        var total = 0.0
+        for log in logs {
+            guard let logId = log.id,
+                  let entries = try? AppDatabase.shared.fetchFoodEntries(forMealLog: logId),
+                  !entries.isEmpty else { continue }
+            let foods = entries.map { "\($0.foodName) \(Int($0.totalCalories))cal" }.joined(separator: ", ")
+            lines.append("\(log.mealType.capitalized): \(foods)")
+            total += entries.reduce(0) { $0 + $1.totalCalories }
+        }
+        guard !lines.isEmpty else { return nil }
+        lines.append("Total: \(Int(total)) cal")
+        return lines.joined(separator: "\n")
+    }
+
     /// Search saved recipes by name.
     public static func searchRecipes(query: String) -> [SavedFood] {
         (try? AppDatabase.shared.searchRecipes(query: query)) ?? []

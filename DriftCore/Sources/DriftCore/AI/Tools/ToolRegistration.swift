@@ -147,6 +147,12 @@ public enum ToolRegistration {
                 let isMacroIntake = !isLookupPhrase && !isSuggestPhrase &&
                     (macroWords.contains(trimmedQuery) ||
                      (macroWords.contains { query.contains($0) } && hasPersonalSignal))
+                // #1032: "what did I eat" / "what's in my diary" / "list my meals" want the
+                // MEAL LIST, not a food lookup or the "how am I doing" totals summary.
+                let isDiaryListing = query.contains("what did i eat") || query.contains("what have i eaten") ||
+                    query.contains("what did i log") || query.contains("what have i logged") ||
+                    query.contains("list my meal") || query.contains("show my meal") ||
+                    query.contains("what's in my") || query.contains("what is in my")
 
                 // Nutrition lookup for specific food: "calories in banana", "estimate calories for samosa"
                 if !query.isEmpty {
@@ -183,7 +189,7 @@ public enum ToolRegistration {
                         foodName == "weekly" || foodName == "this week" ||
                         foodName == "daily"
 
-                    if !isDiaryQuery && !isSummaryQuery && !isMacroIntake {
+                    if !isDiaryQuery && !isSummaryQuery && !isMacroIntake && !isDiaryListing {
                         if !foodName.isEmpty, let result = FoodService.getNutrition(name: foodName) {
                             AIDataCache.shared.lastFoodLookupFood = result.food
                             return .text("\(result.perServing) Say 'log \(result.food.name.lowercased())' to add it.")
@@ -203,6 +209,19 @@ public enum ToolRegistration {
                             return .text("\(desc) Say 'log \(best.name.lowercased())' to add it.")
                         }
                     }
+                }
+
+                // #1032: meal-by-meal listing for "what did I eat" phrasings (the data already
+                // lives in foodContext; here we return it as the answer instead of totals).
+                if isDiaryListing {
+                    let isYesterday = query.contains("yesterday")
+                    let dateStr = isYesterday
+                        ? DateFormatters.dateOnly.string(from: Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date())
+                        : DateFormatters.todayString
+                    if let listing = FoodService.diaryListing(for: dateStr) {
+                        return .text(listing)
+                    }
+                    return .text("Nothing logged \(isYesterday ? "yesterday" : "today") yet.")
                 }
 
                 let n = (try? AppDatabase.shared.fetchDailyNutrition(for: DateFormatters.todayString)) ?? .zero
