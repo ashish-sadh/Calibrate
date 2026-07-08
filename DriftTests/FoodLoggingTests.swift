@@ -1257,8 +1257,9 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
     let paneer = try db.searchFoods(query: "paneer")
     guard let p = paneer.first else { return }
     let units = FoodUnit.smartUnits(for: p)
-    #expect(units.contains(where: { $0.label == "cup" }), "Paneer should have cup option")
-    #expect(units.contains(where: { $0.label == "g" }), "Paneer should have grams option")
+    // #1014: paneer is a solid — defaults to grams, with no misleading cup option.
+    #expect(units.first?.label == "g", "Paneer should default to grams")
+    #expect(!units.contains(where: { $0.label == "cup" }), "Paneer should not offer a cup unit")
 }
 
 @Test func searchGheeSmartUnit() async throws {
@@ -2124,8 +2125,8 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
     let yogurt = Food(name: "Greek Yogurt", category: "Dairy", servingSize: 170, servingUnit: "g", calories: 100)
     let units = FoodUnit.smartUnits(for: yogurt)
     #expect(units.first?.label == "cup", "Yogurt should default to cup")
-    // 1 cup yogurt ≈ 245g
-    #expect(units.first!.gramsEquivalent == 245)
+    // #1014: 1 cup = the food's seeded 170 g serving (no ~20% inflation over the seed).
+    #expect(units.first!.gramsEquivalent == 170)
 }
 
 @Test func smartUnitsOatsCup() async throws {
@@ -3965,9 +3966,10 @@ enum TestError: Error { case msg(String); init(_ s: String) { self = .msg(s) } }
     #expect(FoodUnit.smartUnits(for: food).first?.label == "cup", "Cottage cheese should default to cup")
 }
 
-@Test func smartUnitPaneerShowsCup() {
+@Test func smartUnitPaneerShowsGrams() {
     let food = Food(name: "Paneer", category: "Dairy", servingSize: 150, servingUnit: "g", calories: 398)
-    #expect(FoodUnit.smartUnits(for: food).first?.label == "cup", "Paneer (standalone) should default to cup")
+    // #1014: paneer is a solid — people log it by weight/cubes, not cups.
+    #expect(FoodUnit.smartUnits(for: food).first?.label == "g", "Paneer (standalone) defaults to grams")
 }
 
 @Test func smartUnitKoftaShowsBowl() {
