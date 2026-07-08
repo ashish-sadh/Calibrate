@@ -187,6 +187,23 @@ final class SmartUnitsGoldSetTests: XCTestCase {
         XCTAssertEqual(cup?.gramsEquivalent, 200, "1 cup of curd = its 200 g serving, not 245")
     }
 
+    // #1049: ml-seeded liquids default to a human measure (cup/can), not raw ml.
+    func testLiquidCoffeeDefaultsToCup() {
+        let coffee = Food(name: "Coffee (with milk)", category: "Beverages", servingSize: 240, servingUnit: "ml", calories: 60)
+        XCTAssertEqual(FoodUnit.smartUnits(for: coffee).first?.label, "cup")
+    }
+
+    func testCanSizedLiquidDefaultsToCan() {
+        let soda = Food(name: "Cola", category: "Beverages", servingSize: 355, servingUnit: "ml", calories: 140)
+        XCTAssertEqual(FoodUnit.smartUnits(for: soda).first?.label, "can")
+    }
+
+    func testNonStandardLiquidNotForcedToCup() {
+        // 200 ml is >10% from any standard measure → keeps ml/generic, no weird "1.04 cup".
+        let juice = Food(name: "Juice", category: "Beverages", servingSize: 200, servingUnit: "ml", calories: 90)
+        XCTAssertNotEqual(FoodUnit.smartUnits(for: juice).first?.label, "cup")
+    }
+
     // MARK: - Specific Protein & Vegetable Units
 
     func testMeatPortionsGetPieceUnit() {

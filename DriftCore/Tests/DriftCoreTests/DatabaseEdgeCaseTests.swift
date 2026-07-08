@@ -480,7 +480,13 @@ private func seedDay(_ db: AppDatabase, date: String, meals: [(type: String, kca
 // #1032: "what did I eat" returns a meal-by-meal listing + total, not just totals.
 @Test @MainActor func diaryListingGroupsMealsWithTotal() throws {
     let db = AppDatabase.shared
-    let date = "2099-03-15"  // far-future unique date so the shared DB can't collide
+    let date = "2099-03-15"
+    // The shared DB persists across runs — clear any residue for this date so the total is
+    // deterministic (this test seeds exactly one entry).
+    try db.writer.write { conn in
+        try conn.execute(sql: "DELETE FROM food_entry WHERE date = ?", arguments: [date])
+        try conn.execute(sql: "DELETE FROM meal_log WHERE date = ?", arguments: [date])
+    }
     var log = MealLog(date: date, mealType: "breakfast")
     try db.saveMealLog(&log)
     var entry = FoodEntry(mealLogId: log.id!, foodId: nil, foodName: "Idli1032",

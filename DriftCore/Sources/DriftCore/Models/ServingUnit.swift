@@ -226,12 +226,34 @@ public struct FoodUnit: Hashable {
         return keywordFallback ?? 240
     }
 
+    /// #1049: map a liquid serving size (ml) to a human measure so the sheet defaults to
+    /// "1 cup = 240ml" instead of a machine-like "240 ml". Returns nil for sizes that don't
+    /// fit a standard measure within ±10% — those keep ml (no weird "1.04 cup"). The unit's
+    /// gramsEquivalent is the seeded serving, so "1 <measure>" logs exactly the seed.
+    static func humanLiquidUnit(servingSizeML ss: Double) -> FoodUnit? {
+        guard ss > 0 else { return nil }
+        let measures: [(String, Double)] = [
+            ("fl oz", 30), ("cup", 240), ("can", 330), ("can", 355), ("16 fl oz", 473), ("bottle", 500),
+        ]
+        for (label, ml) in measures where abs(ss - ml) <= ml * 0.10 {
+            return FoodUnit(label: label, gramsEquivalent: ss)
+        }
+        return nil
+    }
+
     public static func smartUnits(for food: Food) -> [FoodUnit] {
         let lower = food.name.lowercased()
         let words = Set(lower.split(whereSeparator: { !$0.isLetter }).map { String($0) })
         var units: [FoodUnit] = []
 
-        let primary = primaryUnit(for: lower, servingSize: food.servingSize, words: words, servingUnit: food.servingUnit)
+        // #1049: liquids seeded in ml default to the human measure ("1 cup = 240ml") rather
+        // than "240 ml", when the serving fits a standard measure (±10%).
+        let primary: FoodUnit
+        if food.servingUnit.lowercased() == "ml", let human = humanLiquidUnit(servingSizeML: food.servingSize) {
+            primary = human
+        } else {
+            primary = primaryUnit(for: lower, servingSize: food.servingSize, words: words, servingUnit: food.servingUnit)
+        }
         units.append(primary)
 
         if primary.label != "g" {
