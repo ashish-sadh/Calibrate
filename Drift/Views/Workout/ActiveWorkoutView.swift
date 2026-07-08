@@ -278,9 +278,15 @@ struct ActiveWorkoutView: View {
                         // always populated (mirrors WorkoutDetailView's ShareSheet pattern).
                         let vc = UIActivityViewController(
                             activityItems: [completionShareText], applicationActivities: nil)
-                        if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                           let root = scene.windows.first?.rootViewController {
-                            root.present(vc, animated: true)
+                        if let scene = UIApplication.shared.connectedScenes
+                               .compactMap({ $0 as? UIWindowScene }).first,
+                           let root = (scene.windows.first(where: { $0.isKeyWindow }) ?? scene.windows.first)?.rootViewController {
+                            // #1023: the completion sheet is already presented from `root`, so
+                            // presenting the share sheet from root silently no-ops. Walk to the
+                            // top-most presented controller and present from there.
+                            var top = root
+                            while let presented = top.presentedViewController { top = presented }
+                            top.present(vc, animated: true)
                         }
                     } label: {
                         Label("Share", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity)

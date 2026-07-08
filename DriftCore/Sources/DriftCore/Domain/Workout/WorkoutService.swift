@@ -91,8 +91,10 @@ public enum WorkoutService {
             if ex.isDuration {
                 let mins = ex.durationMinutes ?? 0
                 let secs: Int? = mins > 0 ? mins * 60 : nil
+                // #986: a duration exercise can still be weighted (weighted carry / plank) — keep the weight.
+                let weight = (ex.weightLbs ?? 0) > 0 ? ex.weightLbs : nil
                 rows.append(WorkoutSet(workoutId: workoutId, exerciseName: name, setOrder: 1,
-                                       weightLbs: nil, reps: nil, isWarmup: false,
+                                       weightLbs: weight, reps: nil, isWarmup: false,
                                        durationSec: secs, exerciseOrder: index))
             } else {
                 let count = max(1, ex.sets ?? 1)
@@ -327,22 +329,28 @@ public enum WorkoutService {
     /// Calculate workout streak: consecutive weeks with at least 1 workout.
     public static func workoutStreak() throws -> (current: Int, longest: Int) {
         let counts = try weeklyWorkoutCounts(weeks: 52)
+        return streak(fromWeeklyCounts: counts.map(\.count))
+    }
+
+    /// Pure streak over chronological (oldest→newest) weekly workout counts. The CURRENT
+    /// streak is the leading run of active weeks from the newest, and a break locks it.
+    /// #985: the old code overwrote `current` with a trailing (older) run, reporting a
+    /// non-zero streak after a recent break.
+    static func streak(fromWeeklyCounts counts: [Int]) -> (current: Int, longest: Int) {
         var current = 0
         var longest = 0
-        var streak = 0
-
-        // Count from most recent week backwards
-        for week in counts.reversed() {
-            if week.count > 0 {
-                streak += 1
-                longest = max(longest, streak)
+        var run = 0
+        var currentLocked = false
+        for count in counts.reversed() {  // newest first
+            if count > 0 {
+                run += 1
+                longest = max(longest, run)
+                if !currentLocked { current = run }
             } else {
-                if current == 0 { current = streak } // First break = current streak
-                streak = 0
+                run = 0
+                currentLocked = true
             }
         }
-        if current == 0 { current = streak } // Still going
-        longest = max(longest, streak)
         return (current, longest)
     }
 

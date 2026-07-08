@@ -1525,6 +1525,36 @@ import GRDB
     #expect(rows.allSatisfy { $0.weightLbs == nil })
 }
 
+// #986: a weighted duration exercise (weighted carry / plank) keeps its weight.
+@Test func buildVoiceLogSets_weightedDurationKeepsWeight() {
+    let exercises = [WorkoutService.VoiceLoggedExercise(name: "farmer carry", isDuration: true, weightLbs: 45, durationMinutes: 1)]
+    let rows = WorkoutService.buildVoiceLogSets(workoutId: 7, exercises: exercises)
+    #expect(rows.count == 1)
+    #expect(rows.first?.weightLbs == 45)
+    #expect(rows.first?.durationSec == 60)
+}
+
+// MARK: - workoutStreak (#985)
+
+@Test func streak_zeroAfterRecentBreak() {
+    // chronological oldest→newest: two active weeks, then a 2-week break.
+    let s = WorkoutService.streak(fromWeeklyCounts: [2, 3, 0, 0])
+    #expect(s.current == 0, "a recent break means the current streak is 0")
+    #expect(s.longest == 2)
+}
+
+@Test func streak_countsLeadingRunOnly() {
+    let s = WorkoutService.streak(fromWeeklyCounts: [1, 0, 2, 3])  // newest two weeks active
+    #expect(s.current == 2)
+    #expect(s.longest == 2)
+}
+
+@Test func streak_allActive() {
+    let s = WorkoutService.streak(fromWeeklyCounts: [1, 1, 1, 1])
+    #expect(s.current == 4)
+    #expect(s.longest == 4)
+}
+
 @Test func buildVoiceLogSets_blankNameSkippedButPreservesOriginalOrder() {
     let exercises = [
         WorkoutService.VoiceLoggedExercise(name: "  ", isDuration: false, sets: 3, reps: 10),
