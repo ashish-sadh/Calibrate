@@ -204,6 +204,24 @@ final class SmartUnitsGoldSetTests: XCTestCase {
         XCTAssertNotEqual(FoodUnit.smartUnits(for: juice).first?.label, "cup")
     }
 
+    // #1048: a scanned beverage's default amount + primary unit logs the real serving, not ~0
+    // (the barcode sheet previously hardcoded amount "1" on an ml unit → ~0.4 cal).
+    func testBeverageDefaultAmountGivesRealCalories() {
+        // 330 ml can → primary "can" (330 g), defaultAmount "1" → 1 × 330 / 330 = full serving.
+        let soda = Food(name: "Cola", category: "Beverages", servingSize: 330, servingUnit: "ml", calories: 139)
+        let primary = FoodUnit.smartUnits(for: soda).first!
+        let amount = Double(FoodUnit.defaultAmount(for: soda)) ?? 0
+        let multiplier = (amount * primary.gramsEquivalent) / soda.servingSize
+        XCTAssertEqual(soda.calories * multiplier, 139, accuracy: 1)
+
+        // A truly non-standard ml size stays ml-primary; defaultAmount prefills the serving,
+        // not 1 — so it still logs the real calories, not 1 ml worth.
+        let odd = Food(name: "Tonic", category: "Beverages", servingSize: 187, servingUnit: "ml", calories: 75)
+        let oddPrimary = FoodUnit.smartUnits(for: odd).first!
+        let oddAmount = Double(FoodUnit.defaultAmount(for: odd)) ?? 0
+        XCTAssertEqual(odd.calories * (oddAmount * oddPrimary.gramsEquivalent) / odd.servingSize, 75, accuracy: 1)
+    }
+
     // MARK: - Specific Protein & Vegetable Units
 
     func testMeatPortionsGetPieceUnit() {

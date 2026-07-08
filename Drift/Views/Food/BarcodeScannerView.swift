@@ -270,15 +270,22 @@ struct BarcodeLookupView: View {
 
     // MARK: - Product View (from barcode lookup)
 
+    /// #1048: the scanned product as a `Food` (per-serving macros) — single source for the
+    /// preview, the default-amount seed, and logging, so all three agree.
+    private func productFood(_ p: OpenFoodFactsService.Product) -> Food {
+        let servingG = (p.servingSizeG ?? 100) / Double(p.piecesPerServing ?? 1)
+        return Food(name: [p.name, p.brand].compactMap { $0 }.joined(separator: " - "),
+                    category: "Scanned", servingSize: servingG, servingUnit: "g",
+                    calories: p.calories * servingG / 100,
+                    proteinG: p.proteinG * servingG / 100,
+                    carbsG: p.carbsG * servingG / 100,
+                    fatG: p.fatG * servingG / 100,
+                    fiberG: p.fiberG * servingG / 100)
+    }
+
     private func productView(_ p: OpenFoodFactsService.Product) -> some View {
         let servingG = (p.servingSizeG ?? 100) / Double(p.piecesPerServing ?? 1)
-        let food = Food(name: [p.name, p.brand].compactMap { $0 }.joined(separator: " - "),
-                        category: "Scanned", servingSize: servingG, servingUnit: "g",
-                        calories: p.calories * servingG / 100,
-                        proteinG: p.proteinG * servingG / 100,
-                        carbsG: p.carbsG * servingG / 100,
-                        fatG: p.fatG * servingG / 100,
-                        fiberG: p.fiberG * servingG / 100)
+        let food = productFood(p)
         let units = FoodUnit.smartUnits(for: food)
         let safeIndex = min(selectedUnitIndex, max(units.count - 1, 0))
         let unit = units.isEmpty ? FoodUnit(label: "g", gramsEquivalent: 1) : units[safeIndex]
@@ -359,7 +366,9 @@ struct BarcodeLookupView: View {
                     novaGroup: nil
                 )
                 product = p
-                amount = "1"; selectedUnitIndex = 0
+                // #1048: seed a realistic serving (defaultAmount), not a hardcoded "1", so an
+                // ml-primary beverage doesn't preview/log ~0 cal (1 ml of a 330 ml can).
+                amount = FoodUnit.defaultAmount(for: productFood(p)); selectedUnitIndex = 0
                 isLooking = false
                 return
             }
@@ -368,7 +377,9 @@ struct BarcodeLookupView: View {
             do {
                 let p = try await OpenFoodFactsService.lookup(barcode: barcode)
                 product = p
-                amount = "1"; selectedUnitIndex = 0
+                // #1048: seed a realistic serving (defaultAmount), not a hardcoded "1", so an
+                // ml-primary beverage doesn't preview/log ~0 cal (1 ml of a 330 ml can).
+                amount = FoodUnit.defaultAmount(for: productFood(p)); selectedUnitIndex = 0
                 // Cache locally for next time
                 FoodService.cacheBarcodeProduct(BarcodeCache(from: p))
                 Log.foodLog.info("Barcode cached: \(p.name)")
