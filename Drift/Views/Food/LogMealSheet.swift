@@ -49,7 +49,7 @@ struct LogMealSheet: View {
 
     @State private var mode: LogMealMode
     @State private var foodLogVM = FoodLogViewModel()
-    @State private var recentFoods: [Food] = []
+    @State private var recentEntries: [RecentEntry] = []
     @State private var showingPhotoLog = false
 
     // Default mode changed 2026-05-24 — user feedback: "make Search
@@ -110,7 +110,10 @@ struct LogMealSheet: View {
             .fullScreenCover(isPresented: $showingPhotoLog) {
                 PhotoLogFlowView(foodLog: foodLogVM)
             }
-            .task { recentFoods = FoodService.fetchRecentFoods(limit: 30) }
+            // #1030: Recent must reflect foods ACTUALLY LOGGED (photo/AI/manual/custom
+            // included), not just DB-catalog foods. fetchRecentEntryNames reads food_usage
+            // directly — the same source FoodSearchView's recents use, so both surfaces match.
+            .task { recentEntries = (try? AppDatabase.shared.fetchRecentEntryNames(limit: 30)) ?? [] }
             // V7: Snap-segment auto-triggers PhotoLog so the user
             // doesn't see two screens in sequence ("Snap your plate"
             // empty state, then the real PhotoLog). Bounces back to
@@ -179,7 +182,7 @@ struct LogMealSheet: View {
 
     private var recentContent: some View {
         Group {
-            if recentFoods.isEmpty {
+            if recentEntries.isEmpty {
                 emptyState(
                     icon: "tray",
                     title: "No recent foods yet",
@@ -188,8 +191,8 @@ struct LogMealSheet: View {
             } else {
                 ScrollView {
                     LazyVStack(spacing: 8) {
-                        ForEach(recentFoods) { food in
-                            recentRow(food)
+                        ForEach(recentEntries) { entry in
+                            recentRow(entry)
                         }
                     }
                     .padding(.horizontal, 16)
@@ -199,22 +202,22 @@ struct LogMealSheet: View {
         }
     }
 
-    private func recentRow(_ food: Food) -> some View {
+    private func recentRow(_ entry: RecentEntry) -> some View {
         Button {
-            logFood(food)
+            logEntry(entry)
         } label: {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(food.name)
+                    Text(entry.name)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Theme.textPrimary)
                         .multilineTextAlignment(.leading)
-                    Text("\(formatServing(food)) · \(String(format: "%.0f", food.proteinG))g P")
+                    Text(entry.macroSummary)
                         .font(.caption2)
                         .foregroundStyle(Theme.textSecondary)
                 }
                 Spacer()
-                Text("\(Int(food.calories))")
+                Text("\(Int(entry.calories))")
                     .font(.headline.weight(.bold).monospacedDigit())
                     .foregroundStyle(Theme.textPrimary)
                 Image(systemName: "plus.circle.fill")
@@ -229,21 +232,27 @@ struct LogMealSheet: View {
             )
         }
         .buttonStyle(.plain)
-        .accessibilityIdentifier("log-meal-recent-\(food.id ?? -1)")
+        .accessibilityIdentifier("log-meal-recent-\(entry.name)")
     }
 
-    private func logFood(_ food: Food) {
-        foodLogVM.quickAdd(
-            name: food.name,
-            calories: food.calories,
-            proteinG: food.proteinG,
-            carbsG: food.carbsG,
-            fatG: food.fatG,
-            fiberG: food.fiberG,
-            mealType: defaultMealType(),
-            servingSizeG: food.servingSize,
-            servings: 1
-        )
+    private func logEntry(_ entry: RecentEntry) {
+        // #1030: re-log exactly what was logged before — a DB food via its catalog row,
+        // a recipe/manual/photo entry via its stored macros (mirrors FoodSearchView recents).
+        if entry.isDBFood, let food = FoodService.findByName(entry.name) {
+            foodLogVM.quickLogFood(food)
+        } else {
+            foodLogVM.quickAdd(
+                name: entry.name,
+                calories: entry.calories,
+                proteinG: entry.proteinG,
+                carbsG: entry.carbsG,
+                fatG: entry.fatG,
+                fiberG: entry.fiberG,
+                mealType: defaultMealType(),
+                servingSizeG: entry.servingSize,
+                servings: 1
+            )
+        }
         // After a Recent-tap log, route to the Food Diary so the user
         // sees the entry land in today's timeline. Same intent as the
         // Done-button navigate above.
@@ -253,17 +262,6 @@ struct LogMealSheet: View {
             userInfo: ["tab": 2]
         )
         dismiss()
-    }
-
-    private func formatServing(_ food: Food) -> String {
-        // Food doesn't ship a one-liner servingDescription. Compose from
-        // servingSize + servingUnit, falling back to "1 serving" when the
-        // unit is empty (typical for ad-hoc entries).
-        let unit = food.servingUnit.isEmpty ? "serving" : food.servingUnit
-        let qty = food.servingSize.truncatingRemainder(dividingBy: 1) == 0
-            ? String(Int(food.servingSize))
-            : String(format: "%.1f", food.servingSize)
-        return "\(qty) \(unit)"
     }
 
     private func defaultMealType() -> MealType {
