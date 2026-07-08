@@ -324,15 +324,16 @@ struct FoodTabView: View {
             }
             .sheet(isPresented: $showingDatePicker) {
                 NavigationStack {
-                    DatePicker("Go to date", selection: Binding(
-                        get: { viewModel.selectedDate },
-                        set: { date in
-                            viewModel.goToDate(date)
-                            loggedDays = viewModel.loggedDays(last: 30)
-                        }
-                    ), displayedComponents: .date)
-                    .datePickerStyle(.graphical)
-                    .padding()
+                    // Custom month grid (not the native .graphical picker) so
+                    // days with logged meals carry a dot — see MealCalendarPicker.
+                    MealCalendarPicker(
+                        selectedDate: viewModel.selectedDate,
+                        viewModel: viewModel
+                    ) { date in
+                        viewModel.goToDate(date)
+                        loggedDays = viewModel.loggedDays(last: 30)
+                        showingDatePicker = false
+                    }
                     .navigationTitle("Select Date").navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) { Button("Done") { showingDatePicker = false } }
@@ -342,7 +343,7 @@ struct FoodTabView: View {
                         }
                     }
                 }
-                .presentationDetents([.medium])
+                .presentationDetents([.medium, .large])
             }
 
             // Horizontal scrollable day strip — 37 days visible at any

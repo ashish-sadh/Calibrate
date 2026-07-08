@@ -600,4 +600,30 @@ final class FoodLogViewModel {
         }
         return result
     }
+
+    /// Calories logged per day within the calendar month containing `date`,
+    /// keyed by `startOfDay`. Powers the month-grid picker's per-day "food
+    /// logged" dots — unlike `loggedDays(last:)`, this works for any month
+    /// the user scrolls back to, not just a trailing window from today.
+    /// Only days with a positive total are returned; callers treat a missing
+    /// key as "nothing logged".
+    func loggedDays(inMonth date: Date) -> [Date: Double] {
+        let cal = Calendar.current
+        guard let monthInterval = cal.dateInterval(of: .month, for: date) else { return [:] }
+        // dateInterval.end is the first instant of the *next* month — step
+        // back a day so the query's end bound lands on this month's last day.
+        let lastDay = cal.date(byAdding: .day, value: -1, to: monthInterval.end) ?? monthInterval.end
+        let startStr = DateFormatters.dateOnly.string(from: monthInterval.start)
+        let endStr = DateFormatters.dateOnly.string(from: lastDay)
+
+        let dailyCals = (try? database.fetchDailyCalories(from: startStr, to: endStr)) ?? [:]
+
+        var result: [Date: Double] = [:]
+        for (dateStr, cals) in dailyCals where cals > 0 {
+            if let d = DateFormatters.dateOnly.date(from: dateStr) {
+                result[cal.startOfDay(for: d)] = cals
+            }
+        }
+        return result
+    }
 }

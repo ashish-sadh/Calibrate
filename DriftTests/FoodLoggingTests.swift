@@ -4201,6 +4201,30 @@ enum TestError: Error { case msg(String); init(_ s: String) { self = .msg(s) } }
     #expect(totalLogged == 0, "Empty DB should have no logged calories")
 }
 
+@Test func loggedDaysInMonthKeysOnlyDaysWithFood() async throws {
+    let db = try AppDatabase.empty()
+    let vm = await FoodLogViewModel(database: db)
+    await vm.quickAdd(name: "Lunch", calories: 500, proteinG: 20, carbsG: 60, fatG: 15, fiberG: 3,
+                      mealType: .lunch)
+    let result = await vm.loggedDays(inMonth: Date())
+    let todayKey = Calendar.current.startOfDay(for: Date())
+    #expect((result[todayKey] ?? 0) >= 500, "Today (this month) should carry its logged calories")
+    // Unlike loggedDays(last:), inMonth zero-fills nothing — every returned
+    // day is a real "has food" day so the picker can dot exactly those.
+    #expect(result.values.allSatisfy { $0 > 0 }, "inMonth returns only days with a positive total")
+}
+
+@Test func loggedDaysInMonthEmptyForMonthWithNoData() async throws {
+    let db = try AppDatabase.empty()
+    let vm = await FoodLogViewModel(database: db)
+    await vm.quickAdd(name: "Lunch", calories: 500, proteinG: 20, carbsG: 60, fatG: 15, fiberG: 3,
+                      mealType: .lunch)
+    // A month a year back is well outside today's log — expect nothing.
+    let lastYear = Calendar.current.date(byAdding: .year, value: -1, to: Date())!
+    let result = await vm.loggedDays(inMonth: lastYear)
+    #expect(result.isEmpty, "A month with no logs should return an empty map")
+}
+
 // MARK: - yesterdayCalories Tests (2 tests)
 
 @Test func yesterdayCaloriesReturnsNilWhenNothingLogged() async throws {
