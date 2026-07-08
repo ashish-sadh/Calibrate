@@ -111,6 +111,11 @@ extension AIActionExecutor {
     static func tightFoodMatch(_ query: String) -> Food? {
         let q = query.lowercased().trimmingCharacters(in: .whitespaces)
         guard q.count >= 3 else { return nil }
+        // A bare qualifier/container word is never a food by itself, at ANY
+        // tier — "cup" must not become "Cup Noodles" via the prefix tier or
+        // "cup of oatmeal" segments into ["cup", "oatmeal"] and the
+        // single-item qualifier-stripping path never runs (#942 regression).
+        guard !foodQualifierWords.contains(q) else { return nil }
         let singular = q.hasSuffix("s") && q.count > 3 ? String(q.dropLast()) : q
         for candidate in singular == q ? [q] : [singular, q] {
             guard let results = try? AppDatabase.shared.searchFoodsRanked(query: candidate),
@@ -139,14 +144,23 @@ extension AIActionExecutor {
         return nil
     }
 
-    /// Cooking/preparation adjectives — a closed class that must never count
-    /// as standalone foods during segmentation (#942).
+    /// Cooking/preparation adjectives + container/measure words — a closed
+    /// class that must never count as standalone foods during segmentation
+    /// (#942). Without the container words, "bowl of rice" segmented into
+    /// ["bowl", "rice"] ("bowl" boundary-matched compounds like "Acai Bowl")
+    /// and findFood bailed before its qualifier-stripping path could run.
+    /// Genuine compounds ("acai bowl") are safe: greedy longest-run matches
+    /// the full compound before a bare container word is ever tried alone.
     static let foodQualifierWords: Set<String> = [
         "grilled", "boiled", "fried", "roasted", "baked", "steamed", "raw",
         "cooked", "toasted", "fresh", "plain", "large", "small", "medium",
         "supreme", "deluxe", "homemade", "style", "spicy", "sweet", "hot",
         "cold", "dry", "wet", "mini", "jumbo", "extra", "double", "half",
         "whole", "sliced", "diced", "chopped", "mashed", "scrambled",
+        "bowl", "bowls", "cup", "cups", "glass", "glasses", "plate", "plates",
+        "slice", "slices", "piece", "pieces", "scoop", "scoops", "handful",
+        "handfuls", "serving", "servings", "portion", "portions", "mug", "mugs",
+        "bottle", "bottles", "can", "cans",
     ]
 
     /// Segment a space-separated multi-item description into per-food strings
