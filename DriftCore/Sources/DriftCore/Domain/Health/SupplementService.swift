@@ -70,7 +70,11 @@ public enum SupplementService {
         var added: [String] = []
         var alreadyHad: [String] = []
         for canonical in KnownSupplements.recognize(in: phrase) {
-            if let inStack = existing.first(where: { $0.name.lowercased() == canonical.lowercased() }) {
+            // #987: match an existing supplement fuzzily (canonical "Vitamin D" marks a
+            // stored "Vitamin D3") instead of exact-equality, which inserted a duplicate.
+            let inStackMatch = existing.first(where: { $0.name.lowercased() == canonical.lowercased() })
+                ?? matchingSupplements(query: canonical, among: existing).first
+            if let inStack = inStackMatch {
                 guard let id = inStack.id else { continue }
                 try? AppDatabase.shared.setSupplementTaken(supplementId: id, date: date, taken: true)
                 alreadyHad.append(inStack.name)
@@ -105,7 +109,12 @@ public enum SupplementService {
             guard n.count >= 2 else { return false }
             // Name appears as a whole word/phrase in the utterance, OR a short
             // clean query is a substring of the name ("vitamin d" → "Vitamin D3").
-            return paddedQuery.contains(" \(n) ") || (q.count >= 3 && n.contains(q))
+            if paddedQuery.contains(" \(n) ") || (q.count >= 3 && n.contains(q)) { return true }
+            // #987: also match the base name when the stored name carries a trailing
+            // variant digit — "i took my vitamin d" (a full sentence) → stored "Vitamin D3".
+            let nBase = n.replacingOccurrences(of: #"\s*\d+$"#, with: "", options: .regularExpression)
+                .trimmingCharacters(in: .whitespaces)
+            return nBase.count >= 3 && nBase != n && paddedQuery.contains(" \(nBase) ")
         }
     }
 

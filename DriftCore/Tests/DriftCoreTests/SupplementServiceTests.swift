@@ -60,6 +60,14 @@ import Testing
     #expect(Set(matched.map(\.name)) == ["Vitamin D", "Omega 3"])
 }
 
+// #987: "I took my vitamin D" marks the stored preset "Vitamin D3" (a superset name)
+// instead of being treated as a new supplement and duplicated.
+@Test @MainActor func matchingSupplementsMatchesSupersetPresetName() {
+    let supps = [Supplement(name: "Vitamin D3"), Supplement(name: "Omega 3")]
+    let matched = SupplementService.matchingSupplements(query: "I took my vitamin D this morning", among: supps)
+    #expect(matched.map(\.name) == ["Vitamin D3"])
+}
+
 @Test @MainActor func matchingSupplementsHandlesPunctuationAndPartialQuery() {
     let supps = [Supplement(name: "Omega-3"), Supplement(name: "Vitamin D3")]
     // "omega 3" matches stored "Omega-3" despite the hyphen.

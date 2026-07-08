@@ -92,7 +92,9 @@ public enum MedicationService {
             current.brandName = resolvedBrand ?? current.brandName
             current.doseAmount = doseAmount
             current.doseUnit = doseUnit
-            current.scheduleType = scheduleType
+            // #988: don't clobber a stored "weekly" with the default "daily" when the user
+            // re-adds without restating the schedule — only take an explicitly non-default value.
+            current.scheduleType = (scheduleType == "daily") ? current.scheduleType : scheduleType
             current.reminderTime = reminderTime ?? current.reminderTime
             current.reminderDay = reminderDay ?? current.reminderDay
             current.startDate = startDate ?? current.startDate

@@ -117,6 +117,19 @@ private func unique(_ stem: String) -> String { "\(stem)_\(UUID().uuidString.pre
     #expect(byBrand.doseAmount == 1.0)
 }
 
+// #988: re-adding a weekly medication WITHOUT restating the schedule must not reset it to daily.
+@MainActor
+@Test func addMedicationProfileReAddKeepsWeeklySchedule() async throws {
+    let name = unique("semaglutide")
+    _ = MedicationService.addMedicationProfile(name: name, doseAmount: 0.5, doseUnit: "mg",
+                                               scheduleType: "weekly", reminderDay: 1)
+    // User re-adds ("I'm on <name> 1mg") — scheduleType defaults to "daily".
+    _ = MedicationService.addMedicationProfile(name: name, doseAmount: 1.0, doseUnit: "mg")
+    let profile = try #require(try AppDatabase.shared.findMedication(named: name))
+    #expect(profile.scheduleType == "weekly", "re-add with default daily must not clobber stored weekly")
+    #expect(profile.doseAmount == 1.0, "dose IS updated on re-add")
+}
+
 @MainActor
 @Test func addMedicationProfileNormalizesNameToLowercase() async throws {
     let raw = "  \(unique("Metformin"))  "

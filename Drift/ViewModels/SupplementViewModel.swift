@@ -72,21 +72,26 @@ final class SupplementViewModel {
             let endStr = DateFormatters.dateOnly.string(from: endDate)
 
             let allLogs = try database.fetchSupplementLogs(from: startStr, to: endStr)
-            let supplementCount = supplements.count
 
-            // Group logs by date
-            var byDate: [String: Int] = [:] // date -> count of taken
-            for log in allLogs where log.taken {
-                byDate[log.date, default: 0] += 1
+            // Group logs by date, and infer when each supplement started being tracked (its
+            // earliest log in the window). #989: applying today's supplement COUNT to all 60
+            // past days made adding a new supplement retroactively tank historical adherence.
+            var byDate: [String: Int] = [:] // date -> count taken
+            var firstSeen: [Int64: String] = [:] // supplementId -> earliest log date
+            for log in allLogs {
+                if log.taken { byDate[log.date, default: 0] += 1 }
+                if let seen = firstSeen[log.supplementId] { firstSeen[log.supplementId] = min(seen, log.date) }
+                else { firstSeen[log.supplementId] = log.date }
             }
 
-            // Build 60-day grid
+            // Build 60-day grid — each day's total is the supplements already tracked by then.
             var days: [DayConsistency] = []
             for dayOffset in (0..<60).reversed() {
                 guard let date = cal.date(byAdding: .day, value: -dayOffset, to: endDate) else { continue }
                 let dateStr = DateFormatters.dateOnly.string(from: date)
                 let taken = byDate[dateStr] ?? 0
-                days.append(DayConsistency(id: dateStr, date: date, taken: taken, total: supplementCount))
+                let activeTotal = firstSeen.values.reduce(0) { $0 + ($1 <= dateStr ? 1 : 0) }
+                days.append(DayConsistency(id: dateStr, date: date, taken: taken, total: max(activeTotal, taken)))
             }
             consistencyData = days
         } catch {
