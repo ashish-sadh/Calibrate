@@ -135,11 +135,15 @@ public enum AIActionExecutor {
     /// callers in iOS pass `Preferences.weightUnit` to honor user preference.
     public static func parseWeightIntent(_ text: String, defaultUnit: WeightUnit = .lbs) -> WeightIntent? {
         let lower = text.lowercased()
-        guard lower.contains("i weigh") || lower.contains("weight is") || lower.contains("weight:")
+        let mentionsWeight = lower.contains("i weigh") || lower.contains("weight is") || lower.contains("weight:")
               || lower.contains("weighed in") || lower.contains("scale says") || lower.contains("i'm at ")
-              || lower.contains("log weight") || lower.contains("my weight") else { return nil }
+              || lower.contains("log weight") || lower.contains("my weight")
+        // #992: "my weight goal is 75" / "target weight 70" set a GOAL, not a weigh-in —
+        // don't log a body-weight entry for goal/target phrasing.
+        guard mentionsWeight, !lower.contains("goal"), !lower.contains("target") else { return nil }
 
-        let pattern = #"(\d+\.?\d*)\s*(kg|lbs|lb|pounds?)?"#
+        // #994: accept spelled-out kg units ("kilos", "kilograms") too, not just "kg".
+        let pattern = #"(\d+\.?\d*)\s*(kgs?|kilograms?|kilos?|lbs|lb|pounds?)?"#
         guard let regex = try? NSRegularExpression(pattern: pattern),
               let match = regex.firstMatch(in: lower, range: NSRange(lower.startIndex..., in: lower)),
               let numRange = Range(match.range(at: 1), in: lower),
@@ -151,7 +155,7 @@ public enum AIActionExecutor {
         let unit: WeightUnit
         if let unitRange = Range(match.range(at: 2), in: lower) {
             let unitStr = String(lower[unitRange])
-            unit = unitStr.hasPrefix("kg") ? .kg : .lbs
+            unit = (unitStr.hasPrefix("kg") || unitStr.hasPrefix("kilo")) ? .kg : .lbs
         } else {
             unit = defaultUnit
         }
@@ -571,7 +575,9 @@ public enum AIActionExecutor {
 
         if let num = Double(firstStr) {
             let food = parts.count > 1 ? String(parts[1]) : ""
-            if num > 10 {
+            // #991: a realistic count can exceed 10 (12 eggs, 20 almonds). Keep count+food
+            // when a food word follows; only drop a bare number or an absurd count.
+            if num > 100 || (num > 10 && food.isEmpty) {
                 return (nil, text, nil)
             }
             return (num, food.trimmingCharacters(in: .whitespaces), nil)
@@ -579,7 +585,7 @@ public enum AIActionExecutor {
 
         let connectors: Set<String> = ["with", "of", "and", "plus", "w/", "x"]
         for i in 1..<allWords.count {
-            if let num = Double(allWords[i]), num > 0, num <= 10 {
+            if let num = Double(allWords[i]), num > 0, num <= 100 {  // #991: allow realistic counts > 10
                 var foodWords = Array(allWords[0..<i])
                 while let last = foodWords.last, connectors.contains(last.lowercased()) {
                     foodWords.removeLast()

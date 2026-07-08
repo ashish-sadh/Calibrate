@@ -520,7 +520,10 @@ extension AIChatViewModel {
     }
 
     private func handleConfirmation(_ lower: String) -> Bool {
-        guard lower == "yes" || lower == "yeah" || lower == "yep" || lower == "confirm" || lower == "sure" else { return false }
+        // #993: accept any affirmation ("ok", "yup", "go ahead", "do it", …), not just 5
+        // hardcoded words — otherwise a valid confirmation silently fails to log the pending
+        // activity/weight. AffirmationParser is safety-biased (negatives win, unclear on doubt).
+        guard AffirmationParser.verdict(lower) == .yes else { return false }
         guard let lastAssistant = messages.last(where: { $0.role == .assistant }),
               lastAssistant.text.contains("Log") && (lastAssistant.text.contains("Say yes") || lastAssistant.text.contains("Say 'yes'")) else { return false }
 

@@ -59,6 +59,26 @@ final class UnitConversionTests: XCTestCase {
         XCTAssertEqual(grams!, 56.699, accuracy: 0.01)
     }
 
+    // #991: a count > 10 with a food word keeps the count (was dropped + food name polluted).
+    func testExtractAmount_highCount_keepsCountAndFood() {
+        let (servings, food, grams) = AIActionExecutor.extractAmount(from: "15 eggs")
+        XCTAssertEqual(servings, 15)
+        XCTAssertEqual(food.lowercased(), "eggs")
+        XCTAssertNil(grams)
+    }
+
+    // #992: a weight GOAL must not log a body-weight entry.
+    func testParseWeightIntent_goalPhrasingReturnsNil() {
+        XCTAssertNil(AIActionExecutor.parseWeightIntent("my weight goal is 75"))
+        XCTAssertNotNil(AIActionExecutor.parseWeightIntent("i weigh 165 lbs"), "a real weigh-in still parses")
+    }
+
+    // #994: spelled-out "kilos"/"kilograms" parse as kg even when the default is lbs.
+    func testParseWeightIntent_spelledOutKilos() {
+        XCTAssertEqual(AIActionExecutor.parseWeightIntent("i weigh 70 kilos", defaultUnit: .lbs)?.unit, .kg)
+        XCTAssertEqual(AIActionExecutor.parseWeightIntent("my weight is 68 kilograms", defaultUnit: .lbs)?.unit, .kg)
+    }
+
     func testExtractAmount_cup_convertsToGrams() {
         // oats = 80g/cup (food-aware, was flat 240g)
         let (servings, food, grams) = AIActionExecutor.extractAmount(from: "1 cup oats")
