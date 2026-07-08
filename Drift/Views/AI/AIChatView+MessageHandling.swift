@@ -967,6 +967,8 @@ extension AIChatViewModel {
             if num <= suggestions.count {
                 let food = suggestions[num - 1]
                 foodSearchQuery = food.name
+                foodSearchResolvedName = food.name   // #1031: carry the resolved identity so the
+                foodSearchResolvedId = food.id        // sheet opens THIS food, not a re-ranked one
                 foodSearchServings = 1.0
                 foodSearchMealType = MealType(rawValue: mealName)
                 let card = FoodCardData(

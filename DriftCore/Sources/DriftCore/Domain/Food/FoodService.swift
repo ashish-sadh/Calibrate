@@ -61,8 +61,13 @@ public enum FoodService {
         func tier(_ f: Food) -> Int {
             let name = f.name.lowercased()
             if name == q { return 0 }
-            if name.hasPrefix(q) { return 1 }
-            return 2
+            // #1031: a parenthetical/comma VARIANT of the exact term ("Tofu (firm)",
+            // "Tofu, Fried") outranks a compound that merely starts with it ("Tofu Yogurt",
+            // "Tofu Scramble"), so a generic query resolves to the canonical base food rather
+            // than a distinct compound whose use_count tiebreak happens to win.
+            if name.hasPrefix(q + " (") || name.hasPrefix(q + ",") { return 1 }
+            if name.hasPrefix(q) { return 2 }
+            return 3
         }
         func boosted(_ f: Food) -> Bool {
             boostKeywords.contains { f.name.lowercased().contains($0) }

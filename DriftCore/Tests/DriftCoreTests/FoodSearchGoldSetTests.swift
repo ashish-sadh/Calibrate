@@ -190,6 +190,29 @@ final class FoodSearchGoldSetTests: XCTestCase {
         XCTAssertEqual(out.map(\.name), ["Egg Dosa", "Egg Korma"])
     }
 
+    // #1031: a parenthetical/comma VARIANT of the exact term outranks a compound that merely
+    // starts with it — so 'tofu' resolves to 'Tofu (firm)', not 'Tofu Yogurt' (use_count junk).
+    func testRerankVariantOutranksCompound() {
+        // DB order puts the compound first (as if use_count promoted it).
+        let compound = Food(name: "Tofu Yogurt", category: "Dairy",
+                            servingSize: 150, servingUnit: "g", calories: 90)
+        let variant = Food(name: "Tofu (firm)", category: "Protein",
+                           servingSize: 100, servingUnit: "g", calories: 144)
+        let out = FoodService.rerankPreservingMatchQuality(
+            [compound, variant], query: "tofu", boostKeywords: [])
+        XCTAssertEqual(out.first?.name, "Tofu (firm)")
+    }
+
+    func testRerankCommaVariantOutranksCompound() {
+        let compound = Food(name: "Pizza Logs", category: "Snacks",
+                            servingSize: 100, servingUnit: "g", calories: 250)
+        let variant = Food(name: "Pizza, Cheese", category: "US Staples",
+                           servingSize: 120, servingUnit: "g", calories: 285)
+        let out = FoodService.rerankPreservingMatchQuality(
+            [compound, variant], query: "pizza", boostKeywords: [])
+        XCTAssertEqual(out.first?.name, "Pizza, Cheese")
+    }
+
     func testFindFoodTwoEggsCarriesFullMacros() {
         // Done-When 1+2: "2 eggs" → the plain egg at servings 2, with real
         // macros (the bug card showed 0g fat for eggs).
