@@ -11,6 +11,7 @@ struct FoodSearchView: View {
     /// preview and the confirm sheet can't disagree (#930: "Egg" card opened
     /// a sheet pre-selected to "Egg Curry").
     var initialSelection: String? = nil
+    var initialSelectionId: Int64? = nil  // #978: prefer id over name to disambiguate same-named rows
     /// When embedded in a host sheet that already supplies nav chrome
     /// (LogMealSheet's NavigationStack + Done), drop our own NavigationStack +
     /// toolbar so the user doesn't see two "Done" buttons (field bug 2026-05-29).
@@ -175,9 +176,10 @@ struct FoodSearchView: View {
                     results = FoodService.searchFood(query: initialQuery)
                     // Auto-select the caller's already-resolved food when given
                     // (single source of truth, #930); else the top search hit.
-                    let resolved = initialSelection.flatMap { sel in
-                        results.first(where: { $0.name == sel })
-                    }
+                    // #978: prefer an exact food-id match (the card was built from THIS
+                    // row); a name-only match can land on a different same-named row.
+                    let resolved = initialSelectionId.flatMap { id in results.first(where: { $0.id == id }) }
+                        ?? initialSelection.flatMap { sel in results.first(where: { $0.name == sel }) }
                     if let bestMatch = resolved ?? results.first {
                         if let servings = initialServings {
                             // Pre-fill with specified servings

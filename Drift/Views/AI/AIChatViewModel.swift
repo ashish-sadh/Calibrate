@@ -20,6 +20,9 @@ final class AIChatViewModel {
     /// Exact food name the Coach preview card resolved to — the confirm sheet
     /// pre-selects this row so preview and sheet never disagree (#930).
     var foodSearchResolvedName: String? = nil
+    /// #978: resolve the confirm sheet by food ID (not just name) so an ambiguous name
+    /// (e.g. two "Egg" rows with different macros) can't make the card and sheet disagree.
+    var foodSearchResolvedId: Int64? = nil
     var foodSearchMealType: MealType? = nil
     var showingWorkout = false
     var workoutTemplate: WorkoutTemplate? = nil

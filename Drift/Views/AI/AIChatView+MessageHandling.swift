@@ -821,6 +821,7 @@ extension AIChatViewModel {
         foodSearchQuery = intent.query
         foodSearchServings = intent.servings
         foodSearchResolvedName = nil
+        foodSearchResolvedId = nil
         let detectedMeal = intent.mealHint.flatMap { MealType(rawValue: $0) } ?? MealType.fromHour()
         foodSearchMealType = detectedMeal
         if let match = AIActionExecutor.findFood(query: intent.query, servings: intent.servings, gramAmount: intent.gramAmount) {
@@ -831,6 +832,7 @@ extension AIChatViewModel {
             // food, not its own re-search's top hit — preview card and sheet
             // can no longer disagree ("Egg" card → "Egg Curry" sheet).
             foodSearchResolvedName = f.name
+            foodSearchResolvedId = f.id
             let servingText = Self.smartServingText(food: f, servings: s, gramAmount: intent.gramAmount)
             // .rounded(), not truncation — Egg ×2 has 9.6g fat; Int() showed 9
             // and turned 0.8g carbs into the "0g carbs" the bug report flagged.
