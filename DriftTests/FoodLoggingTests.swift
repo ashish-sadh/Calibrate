@@ -305,11 +305,12 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
     #expect(units.first?.gramsEquivalent == 15)
 }
 
-@Test func smartUnitMilkShowsMl() async throws {
+@Test func smartUnitMilkShowsCup() async throws {
     let food = Food(name: "Milk (whole)", category: "Dairy", servingSize: 244, servingUnit: "ml", calories: 150)
     let units = FoodUnit.smartUnits(for: food)
-    #expect(units.first?.label == "ml", "Milk should show 'ml' as primary unit")
-    #expect(units.contains(where: { $0.label == "cup" }), "Milk should also have cup option")
+    // #1049: a ~1-cup serving (244 ml) of milk defaults to the human "cup", ml still offered.
+    #expect(units.first?.label == "cup", "Milk should default to 'cup' (244 ml ≈ 1 cup)")
+    #expect(units.contains(where: { $0.label == "ml" }), "Milk should still have an ml option")
 }
 
 @Test func smartUnitRiceShowsCupPrimary() async throws {

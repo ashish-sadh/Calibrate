@@ -246,13 +246,17 @@ public struct FoodUnit: Hashable {
         let words = Set(lower.split(whereSeparator: { !$0.isLetter }).map { String($0) })
         var units: [FoodUnit] = []
 
-        // #1049: liquids seeded in ml default to the human measure ("1 cup = 240ml") rather
-        // than "240 ml", when the serving fits a standard measure (±10%).
+        // #1049: liquids seeded in ml default to a human measure ("1 cup = 240ml") rather than
+        // "240 ml" — but ONLY when the keyword rules would otherwise give a GENERIC unit. A
+        // specific rule (soup/stock → bowl) still wins, so we don't clobber a good default.
+        let keyword = primaryUnit(for: lower, servingSize: food.servingSize, words: words, servingUnit: food.servingUnit)
         let primary: FoodUnit
-        if food.servingUnit.lowercased() == "ml", let human = humanLiquidUnit(servingSizeML: food.servingSize) {
+        if food.servingUnit.lowercased() == "ml",
+           keyword.label == "serving" || keyword.label == "ml",
+           let human = humanLiquidUnit(servingSizeML: food.servingSize) {
             primary = human
         } else {
-            primary = primaryUnit(for: lower, servingSize: food.servingSize, words: words, servingUnit: food.servingUnit)
+            primary = keyword
         }
         units.append(primary)
 
