@@ -65,13 +65,13 @@ struct GlucoseTabView: View {
                 if readings.isEmpty {
                     VStack(spacing: 12) {
                         Image(systemName: "waveform.path.ecg")
-                            .font(.system(size: 40))
+                            .font(.system(size: Theme.FontSize.display2))
                             .foregroundStyle(Theme.accent.opacity(0.5))
                         Text("No Glucose Data").font(.headline)
                         Text(dataSource == .appleHealth
                              ? "No glucose data in Apple Health for this period."
                              : "Import a CSV file to see glucose data.")
-                            .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                            .font(.caption).foregroundStyle(Theme.textSecondary).multilineTextAlignment(.center)
                     }
                     .padding(.top, 40)
                 } else {
@@ -84,7 +84,7 @@ struct GlucoseTabView: View {
                 }
 
                 if let result = importResult {
-                    Text(result).font(.caption).foregroundStyle(.secondary)
+                    Text(result).font(.caption).foregroundStyle(Theme.textSecondary)
                 }
             }
             .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
@@ -127,7 +127,7 @@ struct GlucoseTabView: View {
                     Text("Glucose").font(.subheadline.weight(.semibold))
                     Spacer()
                     Text("\(data.count) readings · \(DateFormatters.shortDisplay.string(from: first)) – \(DateFormatters.shortDisplay.string(from: last))")
-                        .font(.caption2).foregroundStyle(.tertiary)
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
             }
 
@@ -175,13 +175,13 @@ struct GlucoseTabView: View {
             .chartYAxis {
                 AxisMarks(values: [70, 100, 140, 180]) {
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3)).foregroundStyle(.secondary.opacity(0.3))
-                    AxisValueLabel().foregroundStyle(.secondary)
+                    AxisValueLabel().foregroundStyle(Theme.textSecondary)
                 }
             }
             .chartXAxis {
                 AxisMarks(values: .automatic(desiredCount: 5)) {
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3)).foregroundStyle(.secondary.opacity(0.2))
-                    AxisValueLabel(format: xAxisFormat).foregroundStyle(.secondary)
+                    AxisValueLabel(format: xAxisFormat).foregroundStyle(Theme.textSecondary)
                 }
             }
             .frame(width: chartWidth, height: 250)
@@ -210,7 +210,7 @@ struct GlucoseTabView: View {
     private func legendDot(_ label: String, color: Color) -> some View {
         HStack(spacing: 3) {
             Circle().fill(color).frame(width: 6, height: 6)
-            Text(label).font(.caption2).foregroundStyle(.secondary)
+            Text(label).font(.caption2).foregroundStyle(Theme.textSecondary)
         }
     }
 
@@ -316,7 +316,7 @@ struct GlucoseTabView: View {
     private func statPill(_ label: String, value: String, unit: String) -> some View {
         VStack(spacing: 2) {
             Text(value).font(.subheadline.weight(.bold).monospacedDigit())
-            Text(label).font(.caption2).foregroundStyle(.secondary)
+            Text(label).font(.caption2).foregroundStyle(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity).card()
     }
@@ -376,36 +376,36 @@ struct GlucoseTabView: View {
         return AnyView(
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text("Fasting / Fat Burning").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                    Text("Fasting / Fat Burning").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                     Spacer()
                     Text(String(format: "%.0f%%", fastingPct))
                         .font(.caption.weight(.bold).monospacedDigit())
                         .foregroundStyle(fastingPct > 50 ? Theme.deficit : Theme.fatYellow)
-                    Text("of monitored time").font(.caption2).foregroundStyle(.tertiary)
+                    Text("of monitored time").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
 
                 HStack(spacing: 8) {
                     VStack(spacing: 2) {
                         Text(String(format: "%.1fh", avgDailyFasting)).font(.subheadline.weight(.bold).monospacedDigit())
-                        Text("Avg Daily").font(.caption2).foregroundStyle(.secondary)
+                        Text("Avg Daily").font(.caption2).foregroundStyle(Theme.textSecondary)
                     }.frame(maxWidth: .infinity).card()
 
                     VStack(spacing: 2) {
                         Text(String(format: "%.1fh", totalFastingHours)).font(.subheadline.weight(.bold).monospacedDigit())
-                        Text("Total").font(.caption2).foregroundStyle(.secondary)
+                        Text("Total").font(.caption2).foregroundStyle(Theme.textSecondary)
                     }.frame(maxWidth: .infinity).card()
 
                     if let longest = fastingWindows.max(by: { $0.end.timeIntervalSince($0.start) < $1.end.timeIntervalSince($1.start) }) {
                         VStack(spacing: 2) {
                             Text(String(format: "%.1fh", longest.end.timeIntervalSince(longest.start) / 3600))
                                 .font(.subheadline.weight(.bold).monospacedDigit())
-                            Text("Longest").font(.caption2).foregroundStyle(.secondary)
+                            Text("Longest").font(.caption2).foregroundStyle(Theme.textSecondary)
                         }.frame(maxWidth: .infinity).card()
                     }
                 }
 
                 Text("Periods where glucose stayed below 100 mg/dL for 1+ hour. Your body is likely burning fat during these windows.")
-                    .font(.caption2).foregroundStyle(.tertiary)
+                    .font(.caption2).foregroundStyle(Theme.textTertiary)
             }
             .card()
         )
@@ -415,7 +415,7 @@ struct GlucoseTabView: View {
 
     private var spikesCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Glucose Events").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+            Text("Glucose Events").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
 
             ForEach(spikes.prefix(5)) { spike in
                 HStack {
@@ -429,7 +429,7 @@ struct GlucoseTabView: View {
                         .foregroundStyle(Theme.surplus)
                     Text(formatEventTime(spike.date))
                         .font(.caption2.monospacedDigit())
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Theme.textTertiary)
                 }
             }
 
@@ -445,7 +445,7 @@ struct GlucoseTabView: View {
                         .foregroundStyle(Theme.calorieBlue)
                     Text(formatEventTime(dip.date))
                         .font(.caption2.monospacedDigit())
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Theme.textTertiary)
                 }
             }
         }

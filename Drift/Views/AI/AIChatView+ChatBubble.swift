@@ -26,7 +26,7 @@ extension AIChatView {
 
     var thinkingIndicator: some View {
         HStack(alignment: .bottom, spacing: 6) {
-            Image(systemName: "sparkles").font(.system(size: 10))
+            Image(systemName: "sparkles").font(.system(size: Theme.FontSize.micro))
                 .foregroundStyle(Theme.accent)
                 .frame(width: 20, height: 20)
                 .background(Theme.accent.opacity(0.12), in: Circle())
@@ -46,7 +46,7 @@ extension AIChatView {
                             ? "\(baseLabel) (\(String(format: "%.1f", elapsed))s)"
                             : baseLabel
                         Text(display)
-                            .font(.caption2).foregroundStyle(.tertiary)
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
                     .id(baseLabel)
                     .transition(.asymmetric(
@@ -101,7 +101,7 @@ extension AIChatView {
             }
 
             if msg.role == .assistant {
-                Image(systemName: "sparkles").font(.system(size: 10))
+                Image(systemName: "sparkles").font(.system(size: Theme.FontSize.micro))
                     .foregroundStyle(Theme.accent)
                     .frame(width: 20, height: 20)
                     .background(Theme.accent.opacity(0.12), in: Circle())
@@ -115,7 +115,7 @@ extension AIChatView {
                         .resizable()
                         .scaledToFill()
                         .frame(width: 200, height: 150)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .clipShape(RoundedRectangle(cornerRadius: Theme.radiusSmall))
                 }
 
                 if !msg.text.isEmpty {
@@ -208,7 +208,7 @@ extension AIChatView {
                     } label: {
                         HStack(spacing: 4) {
                             Image(systemName: "arrow.clockwise")
-                                .font(.system(size: 10, weight: .medium))
+                                .font(.system(size: Theme.FontSize.micro, weight: .medium))
                             Text("Retry")
                                 .font(.caption.weight(.medium))
                         }

@@ -59,7 +59,7 @@ struct GoalView: View {
                             .font(.subheadline.weight(.medium))
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered).tint(Theme.ink)
+                    .buttonStyle(.bordered).tint(Theme.accent)
                     macroTargetsCard(goal)
                     paceCard(goal)
                     deficitCard(goal)
@@ -83,7 +83,7 @@ struct GoalView: View {
                         Label("Set Weight Goal", systemImage: "target")
                             .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.borderedProminent).tint(Theme.ink)
+                    .buttonStyle(.borderedProminent).tint(Theme.accent)
                 }
             }
             .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
@@ -129,7 +129,7 @@ struct GoalView: View {
 
         return VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Daily Targets").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                Text("Daily Targets").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                 Spacer()
                 Text(pref.displayName).font(.caption.weight(.medium)).foregroundStyle(Theme.accent)
             }
@@ -148,17 +148,17 @@ struct GoalView: View {
                     Text("\(explanation.source): \(explanation.detail)")
                         .font(.caption2)
                 }
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Theme.textTertiary)
                 .fixedSize(horizontal: false, vertical: true)
 
                 let fatMin = WeightGoal.minimumFatG(bodyweightKg: weight, calorieTarget: t.calorieTarget)
                 if t.fatG <= fatMin + 3 {
                     Text("Fat at minimum (\(Int(fatMin))g) for hormonal health")
-                        .font(.caption2).foregroundStyle(.secondary)
+                        .font(.caption2).foregroundStyle(Theme.textSecondary)
                 }
             } else {
                 Text("Set a calorie target or log weight + food to see macro targets")
-                    .font(.caption).foregroundStyle(.tertiary)
+                    .font(.caption).foregroundStyle(Theme.textTertiary)
             }
         }
         .card()
@@ -167,7 +167,7 @@ struct GoalView: View {
     private func targetPill(_ value: String, label: String, color: Color) -> some View {
         VStack(spacing: 2) {
             Text(value).font(.subheadline.weight(.bold).monospacedDigit())
-            Text(label).font(.caption2).foregroundStyle(.secondary)
+            Text(label).font(.caption2).foregroundStyle(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 6)
@@ -183,7 +183,7 @@ struct GoalView: View {
 
         return VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Pace").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                Text("Pace").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                 Spacer()
                 Text(status.label)
                     .font(.caption.weight(.bold))
@@ -193,26 +193,26 @@ struct GoalView: View {
             HStack(spacing: 12) {
                 VStack(spacing: 3) {
                     Text("Required")
-                        .font(.caption2).foregroundStyle(.tertiary)
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
                     Text(String(format: "%.2f", unit.convert(fromKg: goal.requiredWeeklyRate(currentWeightKg: currentWeightKg ?? goal.startWeightKg))))
                         .font(.subheadline.weight(.bold).monospacedDigit())
                     Text("\(unit.displayName)/wk")
-                        .font(.caption2).foregroundStyle(.tertiary)
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
                 .frame(maxWidth: .infinity).card()
 
                 VStack(spacing: 3) {
                     Text("Actual")
-                        .font(.caption2).foregroundStyle(.tertiary)
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
                     if let rate = actualWeeklyRate {
                         Text(String(format: "%.2f", unit.convert(fromKg: rate)))
                             .font(.subheadline.weight(.bold).monospacedDigit())
                             .foregroundStyle(statusColor)
                     } else {
-                        Text("--").font(.subheadline.weight(.bold)).foregroundStyle(.tertiary)
+                        Text("--").font(.subheadline.weight(.bold)).foregroundStyle(Theme.textTertiary)
                     }
                     Text("\(unit.displayName)/wk")
-                        .font(.caption2).foregroundStyle(.tertiary)
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
                 .frame(maxWidth: .infinity).card()
             }
@@ -236,28 +236,28 @@ struct GoalView: View {
         }
 
         return VStack(alignment: .leading, spacing: 10) {
-            Text("Daily Target").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+            Text("Daily Target").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
 
             HStack(spacing: 12) {
                 VStack(spacing: 3) {
-                    Text("Target").font(.caption2).foregroundStyle(.tertiary)
+                    Text("Target").font(.caption2).foregroundStyle(Theme.textTertiary)
                     Text(String(format: "%+.0f", deficit))
                         .font(.subheadline.weight(.bold).monospacedDigit())
                         .foregroundStyle(goalColor(deficit))
-                    Text("kcal/day").font(.caption2).foregroundStyle(.tertiary)
+                    Text("kcal/day").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
                 .frame(maxWidth: .infinity).card()
 
                 VStack(spacing: 3) {
-                    Text("Actual").font(.caption2).foregroundStyle(.tertiary)
+                    Text("Actual").font(.caption2).foregroundStyle(Theme.textTertiary)
                     if let deficit = actualDailyDeficit {
                         Text(String(format: "%+.0f", deficit))
                             .font(.subheadline.weight(.bold).monospacedDigit())
                             .foregroundStyle(goalColor(deficit))
                     } else {
-                        Text("--").font(.subheadline.weight(.bold)).foregroundStyle(.tertiary)
+                        Text("--").font(.subheadline.weight(.bold)).foregroundStyle(Theme.textTertiary)
                     }
-                    Text("kcal/day").font(.caption2).foregroundStyle(.tertiary)
+                    Text("kcal/day").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
                 .frame(maxWidth: .infinity).card()
             }
@@ -272,7 +272,7 @@ struct GoalView: View {
         let losing = goal.isLosing(currentWeightKg: currentWeightKg ?? goal.startWeightKg)
 
         return VStack(alignment: .leading, spacing: 8) {
-            Text("Projection").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+            Text("Projection").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
 
             if let rate = actualWeeklyRate, let current = currentWeightKg, abs(rate) > 0.01 {
                 let remaining = goal.remainingKg(currentWeightKg: current)
@@ -285,23 +285,23 @@ struct GoalView: View {
 
                     HStack(spacing: 12) {
                         VStack(spacing: 3) {
-                            Text("At current pace").font(.caption2).foregroundStyle(.tertiary)
+                            Text("At current pace").font(.caption2).foregroundStyle(Theme.textTertiary)
                             if let date = projectedDate {
                                 Text(DateFormatters.shortDisplay.string(from: date))
                                     .font(.subheadline.weight(.bold))
                             }
-                            Text("\(Int(weeksToGoal)) weeks").font(.caption2).foregroundStyle(.tertiary)
+                            Text("\(Int(weeksToGoal)) weeks").font(.caption2).foregroundStyle(Theme.textTertiary)
                         }
                         .frame(maxWidth: .infinity).card()
 
                         VStack(spacing: 3) {
-                            Text("Goal date").font(.caption2).foregroundStyle(.tertiary)
+                            Text("Goal date").font(.caption2).foregroundStyle(Theme.textTertiary)
                             if let date = goal.targetDate {
                                 Text(DateFormatters.shortDisplay.string(from: date))
                                     .font(.subheadline.weight(.bold))
                             }
                             if let weeks = goal.weeksRemaining {
-                                Text("\(Int(weeks)) weeks").font(.caption2).foregroundStyle(.tertiary)
+                                Text("\(Int(weeks)) weeks").font(.caption2).foregroundStyle(Theme.textTertiary)
                             }
                         }
                         .frame(maxWidth: .infinity).card()
@@ -325,32 +325,32 @@ struct GoalView: View {
                     VStack(spacing: 6) {
                         HStack(spacing: 12) {
                             VStack(spacing: 3) {
-                                Text("At current pace").font(.caption2).foregroundStyle(.tertiary)
+                                Text("At current pace").font(.caption2).foregroundStyle(Theme.textTertiary)
                                 Text("Wrong direction")
                                     .font(.subheadline.weight(.bold)).foregroundStyle(Theme.surplus)
                             }
                             .frame(maxWidth: .infinity).card()
 
                             VStack(spacing: 3) {
-                                Text("Goal date").font(.caption2).foregroundStyle(.tertiary)
+                                Text("Goal date").font(.caption2).foregroundStyle(Theme.textTertiary)
                                 if let date = goal.targetDate {
                                     Text(DateFormatters.shortDisplay.string(from: date))
                                         .font(.subheadline.weight(.bold))
                                 }
                                 if let weeks = goal.weeksRemaining {
-                                    Text("\(Int(weeks)) weeks").font(.caption2).foregroundStyle(.tertiary)
+                                    Text("\(Int(weeks)) weeks").font(.caption2).foregroundStyle(Theme.textTertiary)
                                 }
                             }
                             .frame(maxWidth: .infinity).card()
                         }
 
                         Text("Your weight trend is currently moving the other way. Follow your calorie target and this will adjust as your trend catches up.")
-                            .font(.caption).foregroundStyle(.secondary)
+                            .font(.caption).foregroundStyle(Theme.textSecondary)
                     }
                 }
             } else {
                 Text("Need more weight data to project")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(Theme.textSecondary)
             }
         }
         .card()
@@ -361,11 +361,11 @@ struct GoalView: View {
     private var emptyState: some View {
         VStack(spacing: 16) {
             Image(systemName: "target")
-                .font(.system(size: 48))
+                .font(.system(size: Theme.FontSize.display4))
                 .foregroundStyle(Theme.accent.opacity(0.5))
             Text("No Goal Set").font(.headline)
             Text("Set a target weight and timeline to track your deficit and see if you're on pace.")
-                .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                .font(.subheadline).foregroundStyle(Theme.textSecondary).multilineTextAlignment(.center)
                 .padding(.horizontal, 20)
         }
         .padding(.top, 40)

@@ -116,7 +116,7 @@ struct FoodTabView: View {
                         NotificationCenter.default.post(name: .openPhotoLog, object: nil)
                     } label: {
                         Image(systemName: "camera.viewfinder")
-                            .font(.system(size: 17, weight: .semibold))
+                            .font(.system(size: Theme.FontSize.body, weight: .semibold))
                             .foregroundStyle(Theme.ink)
                             .frame(width: 44, height: 44)
                             .background(Theme.cardBackground, in: Circle())
@@ -318,8 +318,8 @@ struct FoodTabView: View {
             Button { showingDatePicker = true } label: {
                 HStack(spacing: 4) {
                     Text(DateFormatters.monthYear.string(from: viewModel.selectedDate))
-                        .font(.caption.weight(.medium)).foregroundStyle(.secondary)
-                    Image(systemName: "chevron.down").font(.caption2).foregroundStyle(.tertiary)
+                        .font(.caption.weight(.medium)).foregroundStyle(Theme.textSecondary)
+                    Image(systemName: "chevron.down").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
             }
             .sheet(isPresented: $showingDatePicker) {
@@ -375,7 +375,7 @@ struct FoodTabView: View {
                                 }
                                 .frame(width: 44)
                                 .padding(.vertical, 6)
-                                .background(isSelected ? Theme.ink : Color.clear, in: RoundedRectangle(cornerRadius: 10))
+                                .background(isSelected ? Theme.ink : Color.clear, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
                             }
                             .buttonStyle(.plain)
                             .id(day)
@@ -406,11 +406,11 @@ struct FoodTabView: View {
                         Text("Viewing \(DateFormatters.dayDisplay.string(from: viewModel.selectedDate))")
                             .font(.caption.weight(.medium))
                         Text("· Tap to return to today")
-                            .font(.caption2).foregroundStyle(.secondary)
+                            .font(.caption2).foregroundStyle(Theme.textSecondary)
                     }
                     .padding(.vertical, 8).padding(.horizontal, 12)
                     .frame(maxWidth: .infinity)
-                    .background(Theme.fatYellow.opacity(0.1), in: RoundedRectangle(cornerRadius: 10))
+                    .background(Theme.fatYellow.opacity(0.1), in: RoundedRectangle(cornerRadius: Theme.radiusChip))
                 }
                 .buttonStyle(.plain)
 
@@ -424,7 +424,7 @@ struct FoodTabView: View {
                         }
                         .padding(.vertical, 6).padding(.horizontal, 12)
                         .frame(maxWidth: .infinity)
-                        .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 10))
+                        .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
                     }
                     .buttonStyle(.plain)
                 }
@@ -444,9 +444,9 @@ struct FoodTabView: View {
                 Text("\(Int(n.calories))")
                     .font(.title.weight(.bold).monospacedDigit())
                 if let t = targets {
-                    Text("/ \(Int(t.calorieTarget))").font(.subheadline.monospacedDigit()).foregroundStyle(.tertiary)
+                    Text("/ \(Int(t.calorieTarget))").font(.subheadline.monospacedDigit()).foregroundStyle(Theme.textTertiary)
                 }
-                Text("kcal").font(.subheadline).foregroundStyle(.secondary)
+                Text("kcal").font(.subheadline).foregroundStyle(Theme.textSecondary)
                 Spacer()
                 if let t = targets {
                     let remaining = Int(t.calorieTarget - n.calories)
@@ -485,13 +485,13 @@ struct FoodTabView: View {
                     Text("\(String(format: pp.total == Double(Int(pp.total)) ? "%.0f" : "%.1f", pp.total))/30")
                         .font(.caption.weight(.semibold).monospacedDigit())
                     Text(viewModel.isToday ? "plants this week" : "plants that week")
-                        .font(.caption2).foregroundStyle(.secondary)
+                        .font(.caption2).foregroundStyle(Theme.textSecondary)
                     if viewModel.dailyNewPlants > 0 && viewModel.isToday {
                         Text("+\(viewModel.dailyNewPlants) new today")
                             .font(.caption2.weight(.medium)).foregroundStyle(Theme.plantGreen)
                     }
                     Spacer()
-                    Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.tertiary)
+                    Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
                 .contentShape(Rectangle())
                 .onTapGesture { showingPlantPointsDetail = true }
@@ -561,11 +561,11 @@ struct FoodTabView: View {
     private func comboChip(name: String, calories: Int) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             HStack(spacing: 3) {
-                Image(systemName: "fork.knife").font(.system(size: 9, weight: .semibold))
+                Image(systemName: "fork.knife").font(.system(size: Theme.FontSize.nano, weight: .semibold))
                     .foregroundStyle(Theme.textSecondary)
                 Text(name).font(.caption.weight(.semibold)).lineLimit(1).foregroundStyle(Theme.textPrimary)
             }
-            Text("\(calories) cal").font(.system(size: 10)).foregroundStyle(Theme.textTertiary)
+            Text("\(calories) cal").font(.system(size: Theme.FontSize.micro)).foregroundStyle(Theme.textTertiary)
         }
         .padding(.horizontal, 9).padding(.vertical, 5)
         .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 8))
@@ -575,7 +575,7 @@ struct FoodTabView: View {
     private func recentChip(name: String, calories: Int) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(name).font(.caption.weight(.medium)).lineLimit(1)
-            Text("\(calories) cal").font(.system(size: 10)).foregroundStyle(.secondary)
+            Text("\(calories) cal").font(.system(size: Theme.FontSize.micro)).foregroundStyle(Theme.textSecondary)
         }
         .padding(.horizontal, 9).padding(.vertical, 5)
         .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.secondary.opacity(0.25), lineWidth: 1))
@@ -601,7 +601,7 @@ struct FoodTabView: View {
                         }.buttonStyle(.plain)
                     }
                     Button { showingCombos = true } label: {
-                        Text("···").font(.subheadline).foregroundStyle(.tertiary)
+                        Text("···").font(.subheadline).foregroundStyle(Theme.textTertiary)
                             .frame(width: 28, height: 28)
                     }.buttonStyle(.plain)
                 }
@@ -634,8 +634,8 @@ struct FoodTabView: View {
             .buttonStyle(.plain)
         }
         .padding(.vertical, 4)
-        .background(Color.secondary.opacity(0.05), in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.secondary.opacity(0.15)))
+        .background(Color.secondary.opacity(0.05), in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radiusSmall).strokeBorder(Color.secondary.opacity(0.15)))
     }
 
     // MARK: - Food Diary
@@ -683,7 +683,7 @@ struct FoodTabView: View {
                 Spacer()
                 if !viewModel.todayEntries.isEmpty {
                     Text("\(viewModel.todayEntries.count) items")
-                        .font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
+                        .font(.caption.monospacedDigit()).foregroundStyle(Theme.textTertiary)
                 }
             }
             .padding(.bottom, 10)
@@ -718,7 +718,7 @@ struct FoodTabView: View {
                         // (FAB / chat bubble) and explicit
                         // confirmations (Save/Done).
                         Image(systemName: "plus.circle").font(.subheadline).foregroundStyle(Theme.textPrimary)
-                        Text("Add food").font(.subheadline).foregroundStyle(.secondary)
+                        Text("Add food").font(.subheadline).foregroundStyle(Theme.textSecondary)
                         Spacer()
                     }
                 }.buttonStyle(.plain)
@@ -797,7 +797,7 @@ struct FoodTabView: View {
             Button(action: onToggle) {
                 Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Theme.textTertiary)
             }
             .buttonStyle(.plain)
             .accessibilityLabel(isCollapsed ? "Expand \(meal.displayName)" : "Collapse \(meal.displayName)")
@@ -836,7 +836,7 @@ struct FoodTabView: View {
                             Text(time).foregroundStyle(Theme.textTertiary)
                             if isCopiedEntry(entry) {
                                 Image(systemName: "doc.on.doc")
-                                    .font(.system(size: 10))
+                                    .font(.system(size: Theme.FontSize.micro))
                                     .foregroundStyle(Theme.accent.opacity(0.5))
                             }
                         }
@@ -859,7 +859,7 @@ struct FoodTabView: View {
                     viewModel.deleteEntry(id: id)
                     reload()
                 } label: {
-                    Image(systemName: "xmark.circle.fill").font(.caption2).foregroundStyle(.quaternary)
+                    Image(systemName: "xmark.circle.fill").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
                 .accessibilityLabel("Delete entry")
                 .buttonStyle(.plain).padding(.leading, 4)
@@ -937,14 +937,14 @@ struct FoodTabView: View {
         VStack(spacing: 0) {
             Spacer().frame(height: 20)
             Image(systemName: "fork.knife.circle")
-                .font(.system(size: 44))
+                .font(.system(size: Theme.FontSize.display3))
                 .foregroundStyle(Theme.accent.opacity(0.18))
             Spacer().frame(height: 10)
             Text("Nothing logged yet")
-                .font(.subheadline.weight(.medium)).foregroundStyle(.tertiary)
+                .font(.subheadline.weight(.medium)).foregroundStyle(Theme.textTertiary)
             Spacer().frame(height: 4)
             Text("Use a combo above or tap + to start")
-                .font(.caption2).foregroundStyle(.quaternary)
+                .font(.caption2).foregroundStyle(Theme.textTertiary)
                 .multilineTextAlignment(.center)
             Spacer().frame(height: 16)
             HStack(spacing: 10) {
@@ -978,7 +978,7 @@ struct FoodTabView: View {
                             .font(.caption.weight(.semibold))
                             .padding(.horizontal, 14).padding(.vertical, 7)
                             .background(Color.secondary.opacity(0.08), in: Capsule())
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.textSecondary)
                     }
                     .buttonStyle(.plain)
                 }
@@ -988,7 +988,7 @@ struct FoodTabView: View {
                 try? AppDatabase.shared.seedTestData()
                 reload()
             } label: {
-                Text("Seed sample data").font(.caption2).foregroundStyle(.quaternary)
+                Text("Seed sample data").font(.caption2).foregroundStyle(Theme.textTertiary)
             }
             .padding(.top, 12)
             #endif
@@ -1001,11 +1001,11 @@ struct FoodTabView: View {
         Button(action: action) {
             VStack(spacing: 4) {
                 Image(systemName: icon).font(.subheadline).foregroundStyle(Theme.accent)
-                Text(label).font(.caption2).foregroundStyle(.secondary)
+                Text(label).font(.caption2).foregroundStyle(Theme.textSecondary)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
-            .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
+            .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
         }.buttonStyle(.plain)
     }
 
@@ -1070,13 +1070,13 @@ struct FoodTabView: View {
             }
 
             HStack(spacing: 4) {
-                Text("Less").font(.caption2).foregroundStyle(.tertiary)
+                Text("Less").font(.caption2).foregroundStyle(Theme.textTertiary)
                 ForEach([0.0, 500.0, 1000.0, 2000.0], id: \.self) { cal in
                     RoundedRectangle(cornerRadius: 2)
                         .fill(cal > 0 ? Theme.accent.opacity(min(1, cal / 2000)) : Theme.cardBackgroundElevated)
                         .frame(width: 10, height: 10)
                 }
-                Text("More").font(.caption2).foregroundStyle(.tertiary)
+                Text("More").font(.caption2).foregroundStyle(Theme.textTertiary)
             }
         }
         .card()

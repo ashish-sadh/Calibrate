@@ -39,10 +39,10 @@ struct AIChatInsightsView: View {
                     .font(.caption2).foregroundStyle(Theme.accent)
                 Spacer()
                 Text("\(totalTurns) turns")
-                    .font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                    .font(.caption).foregroundStyle(Theme.textSecondary).monospacedDigit()
             }
             Text("No raw query text is stored. Only a short hash, the routed tool, and success or failure.")
-                .font(.caption).foregroundStyle(.tertiary)
+                .font(.caption).foregroundStyle(Theme.textTertiary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .card()
@@ -51,13 +51,13 @@ struct AIChatInsightsView: View {
     private var emptyState: some View {
         VStack(spacing: 10) {
             Image(systemName: "chart.bar.doc.horizontal")
-                .font(.title2).foregroundStyle(.tertiary)
+                .font(.title2).foregroundStyle(Theme.textTertiary)
             Text("No chat turns recorded yet.")
-                .font(.subheadline).foregroundStyle(.secondary)
+                .font(.subheadline).foregroundStyle(Theme.textSecondary)
             Text(Preferences.chatTelemetryEnabled
                  ? "Send a chat message to populate this view."
                  : "Turn on AI Chat Telemetry in Settings to start recording.")
-                .font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
+                .font(.caption).foregroundStyle(Theme.textTertiary).multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 24)
@@ -67,7 +67,7 @@ struct AIChatInsightsView: View {
     private var latencyCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Latency")
-                .font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
             HStack(spacing: 20) {
                 statTile(label: "p50", value: "\(latency.p50) ms")
                 statTile(label: "p95", value: "\(latency.p95) ms")
@@ -81,9 +81,9 @@ struct AIChatInsightsView: View {
     private func toolCard(title: String, stats: [ChatTelemetryService.ToolStat], emphasizeFailures: Bool) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
             if stats.isEmpty {
-                Text("—").font(.caption).foregroundStyle(.tertiary)
+                Text("—").font(.caption).foregroundStyle(Theme.textTertiary)
             } else {
                 ForEach(stats, id: \.tool) { stat in
                     HStack {
@@ -95,7 +95,7 @@ struct AIChatInsightsView: View {
                                 .font(.caption2).foregroundStyle(Theme.surplus)
                         }
                         Text("\(stat.count)")
-                            .font(.caption).foregroundStyle(.secondary).monospacedDigit()
+                            .font(.caption).foregroundStyle(Theme.textSecondary).monospacedDigit()
                     }
                 }
             }
@@ -107,7 +107,7 @@ struct AIChatInsightsView: View {
     private func statTile(label: String, value: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(value).font(Theme.fontStat).foregroundStyle(.primary)
-            Text(label).font(.caption2).foregroundStyle(.tertiary)
+            Text(label).font(.caption2).foregroundStyle(Theme.textTertiary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

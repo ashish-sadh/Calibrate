@@ -58,7 +58,7 @@ struct WorkoutView: View {
                             Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.white.opacity(0.6))
                         }
                         .padding(12)
-                        .background(Theme.ink, in: RoundedRectangle(cornerRadius: 12))
+                        .background(Theme.ink, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
                     }.buttonStyle(.plain)
                 }
 
@@ -67,7 +67,7 @@ struct WorkoutView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "flame.fill").font(.caption).foregroundStyle(Theme.stepsOrange)
                         Text("\(Int(activeCalories))").font(.subheadline.weight(.bold).monospacedDigit())
-                        Text("active cal").font(.caption2).foregroundStyle(.secondary)
+                        Text("active cal").font(.caption2).foregroundStyle(Theme.textSecondary)
                     }
                     .frame(maxWidth: .infinity).card()
 
@@ -75,7 +75,7 @@ struct WorkoutView: View {
                         Image(systemName: "figure.walk").font(.caption).foregroundStyle(Theme.deficit)
                         Text(steps >= 1000 ? String(format: "%.1fk", steps/1000) : "\(Int(steps))")
                             .font(.subheadline.weight(.bold).monospacedDigit())
-                        Text("steps").font(.caption2).foregroundStyle(.secondary)
+                        Text("steps").font(.caption2).foregroundStyle(Theme.textSecondary)
                     }
                     .frame(maxWidth: .infinity).card()
                 }
@@ -85,9 +85,9 @@ struct WorkoutView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
                             Image(systemName: "heart.fill").font(.caption).foregroundStyle(Theme.heartRed)
-                            Text("Apple Health").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                            Text("Apple Health").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                             Spacer()
-                            Text("\(healthWorkouts.count) \(healthWorkouts.count == 1 ? "workout" : "workouts") this week").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
+                            Text("\(healthWorkouts.count) \(healthWorkouts.count == 1 ? "workout" : "workouts") this week").font(.caption.monospacedDigit()).foregroundStyle(Theme.textTertiary)
                         }
 
                         ForEach(healthWorkouts.prefix(5)) { w in
@@ -99,12 +99,12 @@ struct WorkoutView: View {
                                 VStack(alignment: .leading, spacing: 1) {
                                     Text(w.type).font(.caption.weight(.semibold))
                                     Text(DateFormatters.dayDisplay.string(from: w.date))
-                                        .font(.caption2).foregroundStyle(.quaternary)
+                                        .font(.caption2).foregroundStyle(Theme.textTertiary)
                                 }
                                 Spacer()
                                 VStack(alignment: .trailing, spacing: 1) {
-                                    Text(w.durationDisplay).font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
-                                    Text("\(Int(w.calories)) cal").font(.caption2.monospacedDigit()).foregroundStyle(.tertiary)
+                                    Text(w.durationDisplay).font(.caption2.monospacedDigit()).foregroundStyle(Theme.textSecondary)
+                                    Text("\(Int(w.calories)) cal").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
                                 }
                             }
                         }
@@ -140,7 +140,7 @@ struct WorkoutView: View {
                         showingNewWorkout = true
                     } label: {
                         Label("Start Workout", systemImage: "plus.circle.fill").frame(maxWidth: .infinity)
-                    }.buttonStyle(.borderedProminent).tint(Theme.ink)
+                    }.buttonStyle(.borderedProminent).tint(Theme.accent)
 
                     Button {
                         if let smart = ExerciseService.buildSmartSession() {
@@ -150,7 +150,7 @@ struct WorkoutView: View {
                     } label: {
                         Label("Coach Me", systemImage: "brain.head.profile").frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.bordered).tint(Theme.ink)
+                    .buttonStyle(.bordered).tint(Theme.accent)
                 }
 
                 // Conversational entry — voice/text exercise logging (epic #867,
@@ -170,7 +170,7 @@ struct WorkoutView: View {
                         }
                         Spacer()
                         Image(systemName: "chevron.right")
-                            .font(.caption2).foregroundStyle(.tertiary)
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .card()
@@ -187,10 +187,10 @@ struct WorkoutView: View {
                 // Templates
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text("Templates").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                        Text("Templates").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                         Spacer()
                         if !templates.isEmpty {
-                            Text("\(templates.count)").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
+                            Text("\(templates.count)").font(.caption.monospacedDigit()).foregroundStyle(Theme.textTertiary)
                         }
                         Menu {
                             Button { showingCreateTemplate = true } label: {
@@ -247,10 +247,10 @@ struct WorkoutView: View {
                                                     return base + " · \(wm.count) \(label)"
                                                 }()
                                                 Text(exerciseText)
-                                                    .font(.caption2).foregroundStyle(.tertiary)
+                                                    .font(.caption2).foregroundStyle(Theme.textTertiary)
                                             }
                                             Spacer()
-                                            Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.tertiary)
+                                            Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.textTertiary)
                                         }
                                         .padding(.vertical, 6)
                                     }
@@ -266,14 +266,14 @@ struct WorkoutView: View {
                 // Browse exercises
                 Button { showingExerciseBrowser = true } label: {
                     Label("Browse Exercises", systemImage: "dumbbell").frame(maxWidth: .infinity)
-                }.buttonStyle(.bordered).tint(Theme.ink)
+                }.buttonStyle(.bordered).tint(Theme.accent)
 
                 // History — collapsible
                 if workouts.isEmpty && !isLoading {
                     VStack(spacing: 12) {
-                        Image(systemName: "dumbbell.fill").font(.system(size: 40)).foregroundStyle(Theme.accent.opacity(0.5))
+                        Image(systemName: "dumbbell.fill").font(.system(size: Theme.FontSize.display2)).foregroundStyle(Theme.accent.opacity(0.5))
                         Text("No Workouts Yet").font(.headline)
-                        Text("Start a workout above, or import your history").font(.caption).foregroundStyle(.secondary)
+                        Text("Start a workout above, or import your history").font(.caption).foregroundStyle(Theme.textSecondary)
                         Button { showingImport = true } label: {
                             Label("Import from Strong / Hevy", systemImage: "square.and.arrow.down")
                                 .font(.caption)
@@ -292,7 +292,7 @@ struct WorkoutView: View {
                                     .font(.subheadline.weight(.semibold))
                                 Spacer()
                                 Text("\(workouts.count) workouts")
-                                    .font(.caption).foregroundStyle(.tertiary)
+                                    .font(.caption).foregroundStyle(Theme.textTertiary)
                                 Image(systemName: "chevron.down")
                                     .font(.caption2.weight(.bold))
                                     .foregroundStyle(Theme.accent)
@@ -470,7 +470,7 @@ struct WorkoutView: View {
             // This week
             VStack(spacing: 2) {
                 Text("\(thisWeek)").font(.title2.weight(.bold).monospacedDigit())
-                Text("this week").font(.caption2).foregroundStyle(.tertiary)
+                Text("this week").font(.caption2).foregroundStyle(Theme.textTertiary)
             }.frame(maxWidth: .infinity)
 
             Divider().frame(height: 28)
@@ -478,7 +478,7 @@ struct WorkoutView: View {
             // Total
             VStack(spacing: 2) {
                 Text("\(total)").font(.title2.weight(.bold).monospacedDigit())
-                Text("in 12 wks").font(.caption2).foregroundStyle(.tertiary)
+                Text("in 12 wks").font(.caption2).foregroundStyle(Theme.textTertiary)
             }.frame(maxWidth: .infinity)
         }
         .card()
@@ -491,10 +491,10 @@ struct WorkoutView: View {
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: "chart.line.uptrend.xyaxis").font(.caption).foregroundStyle(Theme.accent)
-                Text("Plateau Alert").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                Text("Plateau Alert").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                 Spacer()
                 if hasMore {
-                    Text("\(overloadAlerts.count)").font(.caption2).foregroundStyle(.tertiary)
+                    Text("\(overloadAlerts.count)").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
             }
 
@@ -506,14 +506,14 @@ struct WorkoutView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(info.exercise).font(.caption.weight(.semibold))
                         Text("\(info.sessionsChecked) sessions without progress — \(info.suggestion)")
-                            .font(.caption2).foregroundStyle(.secondary)
+                            .font(.caption2).foregroundStyle(Theme.textSecondary)
                     }
                     Spacer()
                     Button {
                         ProgressiveOverloadService.dismiss(exercise: info.exercise)
                         overloadAlerts = ProgressiveOverloadService.allPlateaus()
                     } label: {
-                        Image(systemName: "xmark").font(.caption2).foregroundStyle(.tertiary)
+                        Image(systemName: "xmark").font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
                 }
             }
@@ -536,12 +536,12 @@ struct WorkoutView: View {
             HStack {
                 Text(s.workout.name).font(.subheadline.weight(.semibold))
                 Spacer()
-                Text(formatDate(s.workout.date)).font(.caption).foregroundStyle(.tertiary)
+                Text(formatDate(s.workout.date)).font(.caption).foregroundStyle(Theme.textTertiary)
             }
             HStack(spacing: 12) {
-                if !s.workout.durationDisplay.isEmpty { Label(s.workout.durationDisplay, systemImage: "clock").font(.caption).foregroundStyle(.secondary) }
-                Label("\(Int(wu.convertFromLbs(s.totalVolume))) \(wu.displayName)", systemImage: "scalemass").font(.caption).foregroundStyle(.secondary)
-                Label("\(s.exercises.count) exercises", systemImage: "dumbbell").font(.caption).foregroundStyle(.secondary)
+                if !s.workout.durationDisplay.isEmpty { Label(s.workout.durationDisplay, systemImage: "clock").font(.caption).foregroundStyle(Theme.textSecondary) }
+                Label("\(Int(wu.convertFromLbs(s.totalVolume))) \(wu.displayName)", systemImage: "scalemass").font(.caption).foregroundStyle(Theme.textSecondary)
+                Label("\(s.exercises.count) exercises", systemImage: "dumbbell").font(.caption).foregroundStyle(Theme.textSecondary)
             }
             // Muscle group chips
             let bodyParts = Array(Set(s.exercises.map { ExerciseDatabase.bodyPart(for: $0) })).sorted()
@@ -550,7 +550,7 @@ struct WorkoutView: View {
                     ForEach(bodyParts.prefix(4), id: \.self) { part in
                         HStack(spacing: 2) {
                             Image(systemName: muscleIcon(part)).font(.system(size: 8))
-                            Text(part).font(.system(size: 9))
+                            Text(part).font(.system(size: Theme.FontSize.nano))
                         }
                         .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(Theme.accent.opacity(0.1), in: Capsule())
@@ -559,13 +559,13 @@ struct WorkoutView: View {
                 }
             }
             if let notes = s.workout.notes, !notes.isEmpty {
-                Text(notes).font(.caption2).foregroundStyle(.tertiary).lineLimit(1)
+                Text(notes).font(.caption2).foregroundStyle(Theme.textTertiary).lineLimit(1)
             }
             ForEach(s.bestSets.prefix(3), id: \.exercise) { best in
                 HStack {
-                    Text(abbreviate(best.exercise)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                    Text(abbreviate(best.exercise)).font(.caption).foregroundStyle(Theme.textSecondary).lineLimit(1)
                     Spacer()
-                    Text("\(Int(wu.convertFromLbs(best.weight))) \(wu.displayName) × \(best.reps)").font(.caption.monospacedDigit()).foregroundStyle(.tertiary)
+                    Text("\(Int(wu.convertFromLbs(best.weight))) \(wu.displayName) × \(best.reps)").font(.caption.monospacedDigit()).foregroundStyle(Theme.textTertiary)
                 }
             }
         }.card()
@@ -609,7 +609,7 @@ struct WorkoutView: View {
     /// enclosing ViewBuilder past the type-checker's budget.
     private var emptyTemplatesActions: some View {
         VStack(spacing: 12) {
-            Text("No templates yet").font(.caption).foregroundStyle(.tertiary)
+            Text("No templates yet").font(.caption).foregroundStyle(Theme.textTertiary)
             HStack(spacing: 12) {
                 Button { showingImport = true } label: {
                     Label("Import", systemImage: "square.and.arrow.down").font(.caption)
@@ -656,10 +656,10 @@ struct WorkoutView: View {
                 .font(.subheadline.weight(.semibold))
             Spacer()
             Text("Best: \(longest)w")
-                .font(.caption).foregroundStyle(.secondary)
+                .font(.caption).foregroundStyle(Theme.textSecondary)
         }
         .padding(.horizontal, 12).padding(.vertical, 8)
-        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: 10))
+        .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: Theme.radiusChip))
     }
 }
 

@@ -51,10 +51,10 @@ struct MacroRingsView: View {
             VStack(spacing: 1) {
                 let remaining = Int(calorieTarget - calories)
                 Text("\(abs(remaining))")
-                    .font(.system(size: 18, weight: .bold, design: .rounded).monospacedDigit())
+                    .font(.system(size: Theme.FontSize.large, weight: .bold, design: .rounded).monospacedDigit())
                 Text(remaining >= 0 ? "left" : "over")
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: Theme.FontSize.nano, weight: .medium))
+                    .foregroundStyle(Theme.textSecondary)
             }
 
             if showTooltip {
@@ -122,9 +122,9 @@ struct MacroRingsView: View {
         // dark blob over saturated chart colors on light theme (see
         // WeightChartView annotation fix). Solid surface + hairline +
         // soft shadow is the V7 chrome pattern.
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: Theme.radiusChip, style: .continuous)
                 .strokeBorder(Theme.separator, lineWidth: 0.5)
         )
         .shadow(color: Color.black.opacity(0.12), radius: 6, x: 0, y: 2)
@@ -143,20 +143,20 @@ struct MacroRingsView: View {
         return HStack(spacing: 6) {
             Circle().fill(ring.identityColor).frame(width: 6, height: 6)
             Text(ring.label)
-                .font(.system(size: 9, weight: .semibold))
+                .font(.system(size: Theme.FontSize.nano, weight: .semibold))
                 .foregroundStyle(ring.identityColor)
                 .lineLimit(1)
                 .frame(width: 46, alignment: .leading)
             Text("\(Int(ring.value))/\(Int(ring.target))\(ring.unit)")
-                .font(.system(size: 9).monospacedDigit())
-                .foregroundStyle(.secondary)
+                .font(.system(size: Theme.FontSize.nano).monospacedDigit())
+                .foregroundStyle(Theme.textSecondary)
                 .lineLimit(1)
             if calPct > 0 {
                 Text("·")
-                    .font(.system(size: 9)).foregroundStyle(.tertiary)
+                    .font(.system(size: Theme.FontSize.nano)).foregroundStyle(Theme.textTertiary)
                 Text("\(Int(calPct))%")
-                    .font(.system(size: 9).monospacedDigit())
-                    .foregroundStyle(.tertiary)
+                    .font(.system(size: Theme.FontSize.nano).monospacedDigit())
+                    .foregroundStyle(Theme.textTertiary)
                     .lineLimit(1)
             }
             Spacer(minLength: 0)

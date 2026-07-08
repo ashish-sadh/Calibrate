@@ -127,16 +127,16 @@ struct V6LegendItem: View {
             HStack(spacing: 5) {
                 Circle().fill(ring.color).frame(width: 7, height: 7)
                 Text(ring.label)
-                    .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: Theme.FontSize.tiny, weight: .semibold))
+                    .foregroundStyle(Theme.textSecondary)
             }
             HStack(spacing: 0) {
                 Text("\(Int(ring.value))")
-                    .font(.system(size: 15, weight: .bold, design: .rounded).monospacedDigit())
+                    .font(.system(size: Theme.FontSize.subheadline, weight: .bold, design: .rounded).monospacedDigit())
                     .foregroundStyle(.primary)
                 Text("/\(Int(ring.target))\(ring.unit)")
-                    .font(.system(size: 15, weight: .medium, design: .rounded).monospacedDigit())
-                    .foregroundStyle(.tertiary)
+                    .font(.system(size: Theme.FontSize.subheadline, weight: .medium, design: .rounded).monospacedDigit())
+                    .foregroundStyle(Theme.textTertiary)
             }
         }
         .frame(maxWidth: .infinity)
@@ -161,11 +161,11 @@ struct V6LegendItem: View {
             center: AnyView(
                 VStack(spacing: 4) {
                     Text("1,450")
-                        .font(.system(size: 36, weight: .bold, design: .rounded).monospacedDigit())
+                        .font(.system(size: Theme.FontSize.display1, weight: .bold, design: .rounded).monospacedDigit())
                     Text("KCAL")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(size: Theme.FontSize.tiny, weight: .semibold))
                         .tracking(1.5)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
                 }
             )
         )

@@ -27,7 +27,7 @@ struct ServingInputView: View {
                 .multilineTextAlignment(.center)
                 .padding(.vertical, 10)
                 .padding(.horizontal, 20)
-                .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
+                .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
 
             // Unit pills
             ScrollView(.horizontal, showsIndicators: false) {
@@ -70,7 +70,7 @@ struct ServingInputView: View {
                 let gramPrefix = unit.isEstimate ? "≈ " : "= "
                 Text("\(gramPrefix)\(totalGrams < 10 ? String(format: "%.1f", totalGrams) : "\(Int(totalGrams))")g")
                     .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
             }
 
             // Quick amount buttons

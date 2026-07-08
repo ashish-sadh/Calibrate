@@ -66,13 +66,13 @@ struct DashboardView: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("Complete your profile").font(.caption.weight(.medium))
                                     Text("Add age, sex & height for better calorie targets")
-                                        .font(.caption2).foregroundStyle(.secondary)
+                                        .font(.caption2).foregroundStyle(Theme.textSecondary)
                                 }
                                 Spacer()
-                                Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.tertiary)
+                                Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.textTertiary)
                             }
                             .padding(10)
-                            .background(Theme.accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+                            .background(Theme.accent.opacity(0.08), in: RoundedRectangle(cornerRadius: Theme.radiusChip))
                         }.tint(.primary)
                     }
 
@@ -95,7 +95,7 @@ struct DashboardView: View {
                                         Text("How's it going?")
                                             .font(.caption.weight(.medium))
                                         Text("Tap to send a quick note")
-                                            .font(.caption2).foregroundStyle(.secondary)
+                                            .font(.caption2).foregroundStyle(Theme.textSecondary)
                                     }
                                     Spacer(minLength: 0)
                                 }
@@ -110,7 +110,7 @@ struct DashboardView: View {
                             } label: {
                                 Image(systemName: "xmark")
                                     .font(.caption2)
-                                    .foregroundStyle(.tertiary)
+                                    .foregroundStyle(Theme.textTertiary)
                                     .padding(8)
                                     .contentShape(Rectangle())
                             }
@@ -118,7 +118,7 @@ struct DashboardView: View {
                             .accessibilityLabel("Dismiss feedback prompt")
                         }
                         .padding(10)
-                        .background(Theme.accent.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+                        .background(Theme.accent.opacity(0.08), in: RoundedRectangle(cornerRadius: Theme.radiusChip))
                     }
 
                     // Stale-backup banner (#561) — appears when last successful
@@ -135,31 +135,36 @@ struct DashboardView: View {
                                     Text("Last backed up \(days) days ago")
                                         .font(.caption.weight(.medium))
                                     Text("Tap to fix")
-                                        .font(.caption2).foregroundStyle(.secondary)
+                                        .font(.caption2).foregroundStyle(Theme.textSecondary)
                                 }
                                 Spacer()
-                                Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.tertiary)
+                                Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.textTertiary)
                             }
                             .padding(10)
-                            .background(Theme.surplus.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+                            .background(Theme.surplus.opacity(0.08), in: RoundedRectangle(cornerRadius: Theme.radiusChip))
                         }.tint(.primary)
                     }
 
                     // Privacy banner
                     HStack(spacing: 6) {
                         Image(systemName: "lock.shield.fill")
-                            .font(.system(size: 11))
+                            .font(.system(size: Theme.FontSize.tiny))
                             .foregroundStyle(Theme.deficit)
                         Text("All data stays on your device.")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.secondary)
+                            .font(.system(size: Theme.FontSize.tiny))
+                            .foregroundStyle(Theme.textSecondary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 4)
 
                     // ── Today ──
-                    // Nutrition hero (macro rings) → Food tab
-                    Button { selectedTab = 2 } label: { calorieBalanceCard }.pressable()
+                    // Nutrition hero (macro rings) → Food tab. Skeleton while the
+                    // first load runs so it doesn't jump-cut from empty. (#963)
+                    if viewModel.isLoading {
+                        SkeletonCalorieBalanceCard()
+                    } else {
+                        Button { selectedTab = 2 } label: { calorieBalanceCard }.pressable()
+                    }
 
                     // V7 Phase 2 log-methods row — Snap · Voice · Search · Recent.
                     // Always visible regardless of whether food was logged so
@@ -170,22 +175,30 @@ struct DashboardView: View {
                     // the V6 4-slot Breakfast/Lunch/Dinner/Snacks list with a
                     // single dot-rail of every FoodEntry logged today. Empty
                     // state nudges the user to the Snap card above.
-                    MealTimelineSection(entries: viewModel.todayFoodEntries)
+                    if viewModel.isLoading {
+                        SkeletonMealTimelineSection()
+                    } else {
+                        MealTimelineSection(entries: viewModel.todayFoodEntries)
+                    }
 
                     // V7 Phase 2 (#821) — body summary 3-card row. WEIGHT /
                     // SLEEP / READINESS. Tap any card to jump to the Body
                     // tab. Goal-aware coloring on WEIGHT only.
-                    BodySummaryCardsRow(
-                        payloads: BodySummaryCardsRow.payloads(
-                            weightKg: viewModel.latestWeight ?? viewModel.trendWeight,
-                            weeklyRateKg: viewModel.weeklyRate,
-                            sleepHours: viewModel.sleepHours,
-                            recoveryScore: viewModel.recoveryScore,
-                            hrvMs: viewModel.hrvMs,
-                            goalDirection: goalDirection
-                        ),
-                        onTapBody: { selectedTab = 1 }
-                    )
+                    if viewModel.isLoading {
+                        SkeletonBodySummaryCardsRow()
+                    } else {
+                        BodySummaryCardsRow(
+                            payloads: BodySummaryCardsRow.payloads(
+                                weightKg: viewModel.latestWeight ?? viewModel.trendWeight,
+                                weeklyRateKg: viewModel.weeklyRate,
+                                sleepHours: viewModel.sleepHours,
+                                recoveryScore: viewModel.recoveryScore,
+                                hrvMs: viewModel.hrvMs,
+                                goalDirection: goalDirection
+                            ),
+                            onTapBody: { selectedTab = 1 }
+                        )
+                    }
 
                     // V6 coaching nudge — anatomy step 6 of `v6-today.jsx`.
                     // Replaces the legacy multi-card ForEach over
@@ -349,12 +362,12 @@ struct DashboardView: View {
                 Image(systemName: "flame.circle.fill").foregroundStyle(Theme.stepsOrange)
                 Text("Workouts").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.stepsOrange)
                 Spacer()
-                Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.tertiary)
+                Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.textTertiary)
             }
 
             if let w = latest {
                 Text("You burned \(totalCal) calories during \(workouts.count == 1 ? "your last workout" : "\(workouts.count) workouts").")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(Theme.textSecondary)
 
                 ForEach(workouts.prefix(3)) { w in
                     HStack(spacing: 10) {
@@ -368,7 +381,7 @@ struct DashboardView: View {
                                 Text(w.durationDisplay).font(.caption2.monospacedDigit())
                                 Text("\(Int(w.calories)) cal").font(.caption2.monospacedDigit())
                             }
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(Theme.textTertiary)
                         }
                     }
                 }
@@ -395,7 +408,7 @@ struct DashboardView: View {
                 .font(.subheadline.weight(.bold).monospacedDigit())
             Text(label)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity)
         .card()
@@ -424,12 +437,12 @@ struct DashboardView: View {
             } else {
                 HStack(spacing: 10) {
                     Image(systemName: "target")
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Theme.textTertiary)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("No weight goal set")
-                            .font(.subheadline).foregroundStyle(.tertiary)
+                            .font(.subheadline).foregroundStyle(Theme.textTertiary)
                         Text("Set a goal to see calorie targets and track progress")
-                            .font(.caption2).foregroundStyle(.quaternary)
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
                     Spacer()
                 }
@@ -450,7 +463,7 @@ struct DashboardView: View {
                 // Recovery + Sleep scores
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Recovery").font(.caption).foregroundStyle(.secondary)
+                        Text("Recovery").font(.caption).foregroundStyle(Theme.textSecondary)
                         Text("\(viewModel.recoveryScore)")
                             .font(.title2.weight(.bold).monospacedDigit())
                             .foregroundStyle(Theme.scoreColor(viewModel.recoveryScore))
@@ -466,7 +479,7 @@ struct DashboardView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Sleep").font(.caption).foregroundStyle(.secondary)
+                        Text("Sleep").font(.caption).foregroundStyle(Theme.textSecondary)
                         Text(viewModel.sleepHours > 0 ? String(format: "%.1fh", viewModel.sleepHours) : "--")
                             .font(.title2.weight(.bold).monospacedDigit())
                             .foregroundStyle(viewModel.sleepHours > 0 ? .primary : .tertiary)
@@ -488,18 +501,18 @@ struct DashboardView: View {
                         }
                     }
                     Spacer()
-                    Text("Last night").font(.caption2).foregroundStyle(.quaternary)
+                    Text("Last night").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
             } else {
                 HStack(spacing: 10) {
                     Image(systemName: "waveform.path")
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Theme.textTertiary)
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Body Rhythm")
-                            .font(.subheadline).foregroundStyle(.tertiary)
+                            .font(.subheadline).foregroundStyle(Theme.textTertiary)
                         Text("Sleep, recovery, and vitals from Apple Health")
-                            .font(.caption2).foregroundStyle(.quaternary)
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
                     Spacer()
                 }
@@ -526,7 +539,7 @@ struct DashboardView: View {
                 .foregroundStyle(viewModel.supplementsTaken == viewModel.supplementsTotal ? Theme.deficit : .secondary)
             Text("taken")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
         }
         .card()
     }
@@ -538,7 +551,7 @@ struct DashboardView: View {
             HStack(spacing: 6) {
                 Image(systemName: "lightbulb.fill")
                     .font(.caption).foregroundStyle(Theme.fatYellow)
-                Text("Insights").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                Text("Insights").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                 Spacer()
             }
             ForEach(viewModel.behaviorInsights) { insight in
@@ -552,7 +565,7 @@ struct DashboardView: View {
                             .font(.caption.weight(.semibold))
                         Text(insight.detail)
                             .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.textSecondary)
                             .lineLimit(3)
                     }
                 }

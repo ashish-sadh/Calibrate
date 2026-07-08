@@ -13,7 +13,7 @@ extension AIChatView {
     var inputBar: some View {
         HStack(spacing: 8) {
             Image(systemName: "sparkles")
-                .font(.system(size: 12))
+                .font(.system(size: Theme.FontSize.caption))
                 .foregroundStyle(Theme.accent.opacity(0.6))
 
             VStack(alignment: .leading, spacing: 6) {
@@ -28,8 +28,8 @@ extension AIChatView {
                             photoPickerItem = nil
                         } label: {
                             Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 16))
-                                .foregroundStyle(.secondary)
+                                .font(.system(size: Theme.FontSize.base))
+                                .foregroundStyle(Theme.textSecondary)
                         }
                         .buttonStyle(.plain)
                         .accessibilityLabel("Remove photo")
@@ -98,7 +98,7 @@ extension AIChatView {
         // (Qwen2.5-VL); an explicit cloud touch-point when sent.
         PhotosPicker(selection: $photoPickerItem, matching: .images) {
             Image(systemName: vm.pendingPhotoData != nil ? "camera.fill" : "camera")
-                .font(.system(size: 18))
+                .font(.system(size: Theme.FontSize.large))
                 .foregroundStyle(vm.pendingPhotoData != nil ? Theme.accent : .secondary)
         }
         .disabled(vm.isGenerating)
@@ -125,7 +125,7 @@ extension AIChatView {
         } label: {
             Image(systemName: vm.voiceService.isSpeaking ? "stop.circle.fill"
                     : (vm.voiceOutputEnabled ? "speaker.wave.2.fill" : "speaker.slash"))
-                .font(.system(size: 18))
+                .font(.system(size: Theme.FontSize.large))
                 .foregroundStyle(vm.voiceService.isSpeaking || vm.voiceOutputEnabled ? Theme.accent : .secondary)
         }
         .accessibilityLabel(vm.voiceService.isSpeaking ? "Stop speaking"
@@ -135,8 +135,8 @@ extension AIChatView {
             startOrStopVoice()   // shared with the hero listening circle
         } label: {
             Image(systemName: "mic")
-                .font(.system(size: 18))
-                .foregroundStyle(.secondary)
+                .font(.system(size: Theme.FontSize.large))
+                .foregroundStyle(Theme.textSecondary)
         }
         .accessibilityLabel("Voice input")
         .disabled(vm.isGenerating)

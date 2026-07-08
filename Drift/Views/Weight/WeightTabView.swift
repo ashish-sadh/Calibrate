@@ -213,7 +213,7 @@ struct WeightTabView: View {
                             dismissedOutlierDate = latest.date
                         } label: {
                             Text("That's correct").font(.caption2.weight(.medium))
-                        }.buttonStyle(.bordered).tint(Theme.deficit)
+                        }.buttonStyle(.bordered).tint(Theme.accent)
 
                         Button {
                             editingEntry = latest
@@ -229,7 +229,7 @@ struct WeightTabView: View {
                     }
                 }
                 .padding(12)
-                .background(Theme.fatYellow.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+                .background(Theme.fatYellow.opacity(0.08), in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
             }
         }
     }
@@ -277,7 +277,7 @@ struct WeightTabView: View {
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
                         .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 6))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
                 }
                 .accessibilityLabel(viewModel.granularity == .daily ? "Granularity: Daily" : "Granularity: Weekly")
 
@@ -308,7 +308,7 @@ struct WeightTabView: View {
                     Spacer()
                     Text("\(viewModel.allEntries.count) entries")
                         .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Theme.textTertiary)
                     Image(systemName: "chevron.down")
                         .font(.caption2.weight(.bold))
                         .foregroundStyle(Theme.accent)
@@ -338,7 +338,7 @@ struct WeightTabView: View {
             Spacer()
 
             Image(systemName: "scalemass.fill")
-                .font(.system(size: 44))
+                .font(.system(size: Theme.FontSize.display3))
                 .foregroundStyle(Theme.accent.opacity(0.4))
 
             VStack(spacing: 6) {
@@ -346,7 +346,7 @@ struct WeightTabView: View {
                     .font(.title3.weight(.semibold))
                 Text("Log your first weigh-in or sync from Apple Health to start tracking your progress.")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
                     .multilineTextAlignment(.center)
                     .lineSpacing(2)
             }

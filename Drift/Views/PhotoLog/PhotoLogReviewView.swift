@@ -55,7 +55,7 @@ struct PhotoLogReviewView: View {
                     Section {
                         Text(notes)
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.textSecondary)
                     } header: {
                         Text("Notes")
                     }
@@ -80,7 +80,7 @@ struct PhotoLogReviewView: View {
                 Spacer()
                 Text("\(items.count) item\(items.count == 1 ? "" : "s") detected")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
             }
         }
     }
@@ -146,7 +146,7 @@ struct PhotoLogReviewView: View {
     private func totalStat(_ value: String, _ label: String) -> some View {
         VStack(spacing: 2) {
             Text(value).font(Theme.fontHeadline).foregroundStyle(Theme.textPrimary)
-            Text(label).font(.caption2).foregroundStyle(.secondary)
+            Text(label).font(.caption2).foregroundStyle(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity)
     }
@@ -171,14 +171,14 @@ struct PhotoLogReviewView: View {
     private var emptyState: some View {
         VStack(spacing: 16) {
             Image(systemName: "questionmark.circle")
-                .font(.system(size: 56))
+                .font(.system(size: Theme.FontSize.hero))
                 .foregroundStyle(Theme.textTertiary)
             Text("We couldn't spot any food in that photo.")
                 .font(.headline)
                 .multilineTextAlignment(.center)
             Text("Try one with the meal centered and in good light.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center)
             Button {
                 onRetake()
@@ -316,7 +316,7 @@ private struct PhotoLogItemRow: View {
                     }
                     Text("\(Int(item.calories.rounded())) cal · \(Int(item.grams.rounded()))g")
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
                 }
 
                 Spacer(minLength: 8)
@@ -375,7 +375,7 @@ private struct PhotoLogItemRow: View {
             }
             .padding(.vertical, 8)
             .padding(.horizontal, 12)
-            .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 10))
+            .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
 
             ForEach(searchResults, id: \.name) { food in
                 Button {
@@ -392,7 +392,7 @@ private struct PhotoLogItemRow: View {
                         Spacer()
                         Text("\(Int(food.calories.rounded())) cal · \(Int(food.servingSize.rounded()))g")
                             .font(.caption2)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.textSecondary)
                     }
                     .padding(.vertical, 6)
                     .padding(.horizontal, 12)
@@ -533,7 +533,7 @@ private struct PhotoLogItemRow: View {
             }
             .padding(.vertical, 6)
             .padding(.horizontal, 8)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.textSecondary)
             .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 8))
         }
     }
@@ -607,7 +607,7 @@ private struct PhotoLogItemRow: View {
                 .foregroundStyle(Theme.deficit)
             Text(item.ingredients.joined(separator: ", "))
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
                 .lineLimit(2)
             Spacer()
         }

@@ -116,7 +116,7 @@ struct VoiceLogSheet: View {
                         .fill(Theme.ink.opacity(0.12))
                         .frame(width: 96, height: 96)
                     Image(systemName: "keyboard")
-                        .font(.system(size: 36, weight: .semibold))
+                        .font(.system(size: Theme.FontSize.display1, weight: .semibold))
                         .foregroundStyle(Theme.ink)
                 }
                 .accessibilityIdentifier("describe-meal-icon")
@@ -145,7 +145,7 @@ struct VoiceLogSheet: View {
                     viewModel.beginListening()
                 } label: {
                     Image(systemName: "mic.fill")
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(.system(size: Theme.FontSize.large, weight: .semibold))
                         .foregroundStyle(Theme.accent)
                         .frame(width: 36, height: 36)
                         .background(Theme.accent.opacity(0.12), in: Circle())
@@ -156,9 +156,9 @@ struct VoiceLogSheet: View {
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
-            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
+            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
             .overlay(
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: Theme.radiusControl)
                     .strokeBorder(Theme.separator, lineWidth: 0.5)
             )
             .padding(.horizontal, 24)
@@ -262,7 +262,7 @@ struct VoiceLogSheet: View {
         VStack(spacing: 16) {
             Spacer()
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 36))
+                .font(.system(size: Theme.FontSize.display1))
                 .foregroundStyle(Theme.surplus)
             Text("Couldn't hear that")
                 .font(.headline.weight(.semibold))
@@ -280,7 +280,7 @@ struct VoiceLogSheet: View {
                 } label: {
                     Label("Try again", systemImage: "arrow.clockwise")
                 }
-                .buttonStyle(.borderedProminent).tint(Theme.ink)
+                .buttonStyle(.borderedProminent).tint(Theme.accent)
             }
             .padding(.bottom, 24)
         }

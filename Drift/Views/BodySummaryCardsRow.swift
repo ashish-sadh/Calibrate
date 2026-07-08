@@ -33,7 +33,7 @@ struct BodySummaryCardsRow: View {
                         .fill(payload.tone)
                         .frame(width: 7, height: 7)
                     Text(payload.label)
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(size: Theme.FontSize.tiny, weight: .bold))
                         .tracking(0.4)
                         .foregroundStyle(Theme.textSecondary)
                         .lineLimit(1)
@@ -44,19 +44,19 @@ struct BodySummaryCardsRow: View {
                 if let value = payload.value {
                     HStack(alignment: .firstTextBaseline, spacing: 3) {
                         Text(value)
-                            .font(.system(size: 22, weight: .bold, design: .rounded).monospacedDigit())
+                            .font(.system(size: Theme.FontSize.title2, weight: .bold, design: .rounded).monospacedDigit())
                             .foregroundStyle(payload.valueColor)
                             .lineLimit(1)
                             .minimumScaleFactor(0.6)
                         if !payload.unit.isEmpty {
                             Text(payload.unit)
-                                .font(.system(size: 11, weight: .semibold))
+                                .font(.system(size: Theme.FontSize.tiny, weight: .semibold))
                                 .foregroundStyle(Theme.textTertiary)
                         }
                     }
                     if let detail = payload.detail {
                         Text(detail)
-                            .font(.system(size: 11))
+                            .font(.system(size: Theme.FontSize.tiny))
                             .foregroundStyle(Theme.textTertiary)
                             .lineLimit(1)
                             .minimumScaleFactor(0.75)
@@ -67,7 +67,7 @@ struct BodySummaryCardsRow: View {
                     // a "--" placeholder. The label header above still
                     // identifies which card this is.
                     Text(payload.emptyText)
-                        .font(.system(size: 12))
+                        .font(.system(size: Theme.FontSize.caption))
                         .foregroundStyle(Theme.textSecondary)
                         .lineLimit(3)
                         .minimumScaleFactor(0.85)
@@ -79,9 +79,9 @@ struct BodySummaryCardsRow: View {
             .padding(.top, 12)
             .padding(.bottom, 12)
             .frame(maxWidth: .infinity, minHeight: 96, alignment: .topLeading)
-            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
+            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
             .overlay(
-                RoundedRectangle(cornerRadius: 14)
+                RoundedRectangle(cornerRadius: Theme.radiusControl)
                     .strokeBorder(Theme.separator, lineWidth: 0.5)
             )
             .contentShape(Rectangle())

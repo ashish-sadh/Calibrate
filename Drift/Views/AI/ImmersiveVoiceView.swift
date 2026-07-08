@@ -106,7 +106,7 @@ struct ImmersiveVoiceView: View {
             }
         }
         .padding(18)
-        .background(RoundedRectangle(cornerRadius: 18).fill(Theme.cardBackground))
-        .overlay(RoundedRectangle(cornerRadius: 18).stroke(Theme.separator, lineWidth: 1))
+        .background(RoundedRectangle(cornerRadius: Theme.radiusCard).fill(Theme.cardBackground))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radiusCard).stroke(Theme.separator, lineWidth: 1))
     }
 }

@@ -84,7 +84,7 @@ struct RestorePickerView: View {
     private var loadingCard: some View {
         HStack(spacing: 10) {
             ProgressView().tint(Theme.accent)
-            Text("Checking iCloud…").font(.subheadline).foregroundStyle(.secondary)
+            Text("Checking iCloud…").font(.subheadline).foregroundStyle(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 6)
@@ -95,7 +95,7 @@ struct RestorePickerView: View {
         VStack(alignment: .leading, spacing: 6) {
             Text("No backups found").font(.subheadline.weight(.medium))
             Text("Backups will appear here once you tap Back Up Now or after a nightly automatic backup runs on this iCloud account.")
-                .font(.caption).foregroundStyle(.secondary)
+                .font(.caption).foregroundStyle(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, 4)
@@ -114,13 +114,13 @@ struct RestorePickerView: View {
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(Theme.textPrimary)
                     Text("Drift \(backup.appVersion) (\(backup.appBuild))")
-                        .font(.caption2).foregroundStyle(.tertiary)
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
                 Spacer()
                 if isRestoring, pendingRestore?.id == backup.id {
                     ProgressView().tint(Theme.accent)
                 } else {
-                    Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                    Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.textTertiary)
                 }
             }
             .padding(.vertical, 6)

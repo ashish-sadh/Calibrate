@@ -21,7 +21,7 @@ extension AIChatView {
                 Spacer()
                 Text("\(card.items.reduce(0) { $0 + $1.calories }) cal")
                     .font(.caption2.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
             }
 
             Divider().overlay(Theme.separator)
@@ -32,7 +32,7 @@ extension AIChatView {
                         Text(item.name)
                             .font(.caption.weight(.medium))
                         Text("\(item.grams)g · \(item.protein)P \(item.carbs)C \(item.fat)F")
-                            .font(.system(size: 9)).foregroundStyle(.tertiary)
+                            .font(.system(size: Theme.FontSize.nano)).foregroundStyle(Theme.textTertiary)
                     }
                     Spacer()
                     Text("\(item.calories) cal")
@@ -49,11 +49,11 @@ extension AIChatView {
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "pencil")
-                            .font(.system(size: 10, weight: .medium))
+                            .font(.system(size: Theme.FontSize.micro, weight: .medium))
                         Text("Edit")
                             .font(.caption.weight(.medium))
                     }
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
                     .padding(.horizontal, 12).padding(.vertical, 6)
                     .background(Capsule().fill(Color.white.opacity(0.06)))
                     .overlay(Capsule().strokeBorder(Color.white.opacity(0.1), lineWidth: 0.5))
@@ -67,7 +67,7 @@ extension AIChatView {
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 10, weight: .medium))
+                            .font(.system(size: Theme.FontSize.micro, weight: .medium))
                         Text("Log all")
                             .font(.caption.weight(.semibold))
                     }
@@ -81,9 +81,9 @@ extension AIChatView {
             }
         }
         .padding(12)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: Theme.radiusControl)
                 .strokeBorder(Theme.calorieBlue.opacity(0.25), lineWidth: 0.5)
         )
     }
@@ -100,11 +100,11 @@ extension AIChatView {
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "cloud.fill")
-                        .font(.system(size: 9))
+                        .font(.system(size: Theme.FontSize.nano))
                     Text("via \(provider)")
-                        .font(.system(size: 10))
+                        .font(.system(size: Theme.FontSize.micro))
                 }
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Theme.textTertiary)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 3)
                 .background(Color.white.opacity(0.05), in: Capsule())
@@ -116,7 +116,7 @@ extension AIChatView {
                         .font(.subheadline.weight(.semibold))
                     Text("Your API key, no Drift servers. Messages go directly to \(provider)'s API and are subject to their privacy policy.")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
                 }
                 .padding(16)
                 .presentationCompactAdaptation(.popover)
@@ -137,7 +137,7 @@ extension AIChatView {
                     .lineLimit(1)
                 Spacer()
                 Text("per \(card.servingSize)\(card.servingUnit)")
-                    .font(.caption2).foregroundStyle(.secondary)
+                    .font(.caption2).foregroundStyle(Theme.textSecondary)
             }
 
             HStack(spacing: 0) {
@@ -151,7 +151,7 @@ extension AIChatView {
                         Text(item.label == "cal" ? "\(item.value)" : "\(item.value)g")
                             .font(.caption.weight(.bold).monospacedDigit())
                             .foregroundStyle(item.color)
-                        Text(item.label).font(.system(size: 9)).foregroundStyle(.tertiary)
+                        Text(item.label).font(.system(size: Theme.FontSize.nano)).foregroundStyle(Theme.textTertiary)
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -159,9 +159,9 @@ extension AIChatView {
 
             HStack {
                 Text("per 100g:")
-                    .font(.system(size: 9)).foregroundStyle(.tertiary)
+                    .font(.system(size: Theme.FontSize.nano)).foregroundStyle(Theme.textTertiary)
                 Text("\(card.calories100g) cal · \(card.proteinG100g)g P · \(card.carbsG100g)g C · \(card.fatG100g)g F")
-                    .font(.system(size: 9)).foregroundStyle(.secondary)
+                    .font(.system(size: Theme.FontSize.nano)).foregroundStyle(Theme.textSecondary)
             }
 
             Button {
@@ -174,9 +174,9 @@ extension AIChatView {
             }
         }
         .padding(10)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Theme.radiusSmall)
                 .strokeBorder(Theme.calorieBlue.opacity(0.2), lineWidth: 0.5)
         )
     }
@@ -217,7 +217,7 @@ extension AIChatView {
                     Text("\(card.calories)")
                         .font(.subheadline.weight(.bold).monospacedDigit())
                         .foregroundStyle(Theme.calorieBlue)
-                    Text("cal").font(.system(size: 9)).foregroundStyle(.tertiary)
+                    Text("cal").font(.system(size: Theme.FontSize.nano)).foregroundStyle(Theme.textTertiary)
                 }
                 .frame(maxWidth: .infinity)
 
@@ -225,7 +225,7 @@ extension AIChatView {
                     Text("\(card.proteinG)g")
                         .font(.caption.weight(.bold).monospacedDigit())
                         .foregroundStyle(Theme.proteinRed)
-                    Text("protein").font(.system(size: 9)).foregroundStyle(.tertiary)
+                    Text("protein").font(.system(size: Theme.FontSize.nano)).foregroundStyle(Theme.textTertiary)
                 }
                 .frame(maxWidth: .infinity)
 
@@ -233,7 +233,7 @@ extension AIChatView {
                     Text("\(card.carbsG)g")
                         .font(.caption.weight(.bold).monospacedDigit())
                         .foregroundStyle(Theme.carbsGreen)
-                    Text("carbs").font(.system(size: 9)).foregroundStyle(.tertiary)
+                    Text("carbs").font(.system(size: Theme.FontSize.nano)).foregroundStyle(Theme.textTertiary)
                 }
                 .frame(maxWidth: .infinity)
 
@@ -241,15 +241,15 @@ extension AIChatView {
                     Text("\(card.fatG)g")
                         .font(.caption.weight(.bold).monospacedDigit())
                         .foregroundStyle(Theme.fatYellow)
-                    Text("fat").font(.system(size: 9)).foregroundStyle(.tertiary)
+                    Text("fat").font(.system(size: Theme.FontSize.nano)).foregroundStyle(Theme.textTertiary)
                 }
                 .frame(maxWidth: .infinity)
             }
         }
         .padding(10)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Theme.radiusSmall)
                 .strokeBorder(Theme.calorieBlue.opacity(0.2), lineWidth: 0.5)
         )
     }
@@ -265,7 +265,7 @@ extension AIChatView {
                     .font(.subheadline.weight(.bold).monospacedDigit())
                 if let trend = card.trend {
                     Text(trend)
-                        .font(.caption2).foregroundStyle(.secondary)
+                        .font(.caption2).foregroundStyle(Theme.textSecondary)
                 }
             }
             Spacer()
@@ -273,9 +273,9 @@ extension AIChatView {
                 .foregroundStyle(Theme.deficit).font(.title3)
         }
         .padding(10)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Theme.radiusSmall)
                 .strokeBorder(Theme.accent.opacity(0.2), lineWidth: 0.5)
         )
     }
@@ -293,11 +293,11 @@ extension AIChatView {
                     HStack(spacing: 8) {
                         if let mins = card.durationMin {
                             Label("\(mins) min", systemImage: "clock")
-                                .font(.caption2).foregroundStyle(.secondary)
+                                .font(.caption2).foregroundStyle(Theme.textSecondary)
                         }
                         if let count = card.exerciseCount {
                             Label("\(count) exercises", systemImage: "list.bullet")
-                                .font(.caption2).foregroundStyle(.secondary)
+                                .font(.caption2).foregroundStyle(Theme.textSecondary)
                         }
                     }
                 }
@@ -324,9 +324,9 @@ extension AIChatView {
             }
         }
         .padding(10)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Theme.radiusSmall)
                 .strokeBorder(Theme.accentSecondary.opacity(0.2), lineWidth: 0.5)
         )
     }
@@ -356,9 +356,9 @@ extension AIChatView {
                 .foregroundStyle(Theme.accent.opacity(0.6)).font(.title3)
         }
         .padding(10)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Theme.radiusSmall)
                 .strokeBorder(Theme.accent.opacity(0.2), lineWidth: 0.5)
         )
     }
@@ -387,9 +387,9 @@ extension AIChatView {
             if !card.remaining.isEmpty {
                 HStack(spacing: 4) {
                     Image(systemName: "circle")
-                        .font(.system(size: 6)).foregroundStyle(.tertiary)
+                        .font(.system(size: 6)).foregroundStyle(Theme.textTertiary)
                     Text("Need: \(card.remaining.joined(separator: ", "))")
-                        .font(.caption2).foregroundStyle(.secondary)
+                        .font(.caption2).foregroundStyle(Theme.textSecondary)
                         .lineLimit(2)
                 }
             } else {
@@ -397,14 +397,14 @@ extension AIChatView {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.caption).foregroundStyle(Theme.deficit)
                     Text("All done for today")
-                        .font(.caption2).foregroundStyle(.secondary)
+                        .font(.caption2).foregroundStyle(Theme.textSecondary)
                 }
             }
         }
         .padding(10)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Theme.radiusSmall)
                 .strokeBorder(Theme.accent.opacity(0.2), lineWidth: 0.5)
         )
     }
@@ -420,7 +420,7 @@ extension AIChatView {
                     .font(.subheadline.weight(.bold))
                 if let dose = card.doseDisplay {
                     Text(dose)
-                        .font(.caption2).foregroundStyle(.secondary)
+                        .font(.caption2).foregroundStyle(Theme.textSecondary)
                 }
             }
             Spacer()
@@ -428,9 +428,9 @@ extension AIChatView {
                 .foregroundStyle(Theme.deficit).font(.title3)
         }
         .padding(10)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Theme.radiusSmall)
                 .strokeBorder(Theme.accent.opacity(0.2), lineWidth: 0.5)
         )
     }
@@ -458,7 +458,7 @@ extension AIChatView {
                         Text(String(format: "%.1f", hours))
                             .font(.subheadline.weight(.bold).monospacedDigit())
                             .foregroundStyle(.indigo)
-                        Text("hours").font(.system(size: 9)).foregroundStyle(.tertiary)
+                        Text("hours").font(.system(size: Theme.FontSize.nano)).foregroundStyle(Theme.textTertiary)
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -468,7 +468,7 @@ extension AIChatView {
                         Text("\(score)")
                             .font(.subheadline.weight(.bold).monospacedDigit())
                             .foregroundStyle(score >= 70 ? .green : score >= 40 ? .orange : .red)
-                        Text("recovery").font(.system(size: 9)).foregroundStyle(.tertiary)
+                        Text("recovery").font(.system(size: Theme.FontSize.nano)).foregroundStyle(Theme.textTertiary)
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -478,7 +478,7 @@ extension AIChatView {
                         Text("\(hrv)")
                             .font(.subheadline.weight(.bold).monospacedDigit())
                             .foregroundStyle(Theme.accent)
-                        Text("HRV ms").font(.system(size: 9)).foregroundStyle(.tertiary)
+                        Text("HRV ms").font(.system(size: Theme.FontSize.nano)).foregroundStyle(Theme.textTertiary)
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -488,7 +488,7 @@ extension AIChatView {
                         Text("\(rhr)")
                             .font(.subheadline.weight(.bold).monospacedDigit())
                             .foregroundStyle(Theme.proteinRed)
-                        Text("RHR").font(.system(size: 9)).foregroundStyle(.tertiary)
+                        Text("RHR").font(.system(size: Theme.FontSize.nano)).foregroundStyle(Theme.textTertiary)
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -497,16 +497,16 @@ extension AIChatView {
             if let rem = card.remHours, let deep = card.deepHours {
                 HStack(spacing: 12) {
                     Label(String(format: "%.1fh REM", rem), systemImage: "brain.head.profile")
-                        .font(.caption2).foregroundStyle(.secondary)
+                        .font(.caption2).foregroundStyle(Theme.textSecondary)
                     Label(String(format: "%.1fh deep", deep), systemImage: "bed.double.fill")
-                        .font(.caption2).foregroundStyle(.secondary)
+                        .font(.caption2).foregroundStyle(Theme.textSecondary)
                 }
             }
         }
         .padding(10)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Theme.radiusSmall)
                 .strokeBorder(Color.indigo.opacity(0.2), lineWidth: 0.5)
         )
     }
@@ -529,7 +529,7 @@ extension AIChatView {
                     .font(.caption.weight(.semibold))
                 Spacer()
                 Text("\(card.readingCount) readings")
-                    .font(.caption2).foregroundStyle(.tertiary)
+                    .font(.caption2).foregroundStyle(Theme.textTertiary)
             }
 
             HStack(spacing: 0) {
@@ -537,7 +537,7 @@ extension AIChatView {
                     Text("\(card.avgMgdl)")
                         .font(.subheadline.weight(.bold).monospacedDigit())
                         .foregroundStyle(Theme.warn)
-                    Text("avg mg/dL").font(.system(size: 9)).foregroundStyle(.tertiary)
+                    Text("avg mg/dL").font(.system(size: Theme.FontSize.nano)).foregroundStyle(Theme.textTertiary)
                 }
                 .frame(maxWidth: .infinity)
 
@@ -545,7 +545,7 @@ extension AIChatView {
                     Text("\(card.minMgdl)–\(card.maxMgdl)")
                         .font(.caption.weight(.bold).monospacedDigit())
                         .foregroundStyle(Theme.textPrimary)
-                    Text("range").font(.system(size: 9)).foregroundStyle(.tertiary)
+                    Text("range").font(.system(size: Theme.FontSize.nano)).foregroundStyle(Theme.textTertiary)
                 }
                 .frame(maxWidth: .infinity)
 
@@ -553,7 +553,7 @@ extension AIChatView {
                     Text("\(card.inZonePct)%")
                         .font(.caption.weight(.bold).monospacedDigit())
                         .foregroundStyle(card.inZonePct >= 70 ? .green : .orange)
-                    Text("in zone").font(.system(size: 9)).foregroundStyle(.tertiary)
+                    Text("in zone").font(.system(size: Theme.FontSize.nano)).foregroundStyle(Theme.textTertiary)
                 }
                 .frame(maxWidth: .infinity)
 
@@ -561,15 +561,15 @@ extension AIChatView {
                     Text("\(card.spikeCount)")
                         .font(.caption.weight(.bold).monospacedDigit())
                         .foregroundStyle(card.spikeCount == 0 ? .green : .red)
-                    Text("spikes").font(.system(size: 9)).foregroundStyle(.tertiary)
+                    Text("spikes").font(.system(size: Theme.FontSize.nano)).foregroundStyle(Theme.textTertiary)
                 }
                 .frame(maxWidth: .infinity)
             }
         }
         .padding(10)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Theme.radiusSmall)
                 .strokeBorder(Theme.warn.opacity(0.2), lineWidth: 0.5)
         )
     }
@@ -594,7 +594,7 @@ extension AIChatView {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.caption).foregroundStyle(Theme.deficit)
                     Text("All markers in optimal range")
-                        .font(.caption2).foregroundStyle(.secondary)
+                        .font(.caption2).foregroundStyle(Theme.textSecondary)
                 }
             } else {
                 VStack(alignment: .leading, spacing: 4) {
@@ -608,20 +608,20 @@ extension AIChatView {
                             Spacer()
                             Text(marker.value)
                                 .font(.caption2.monospacedDigit())
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Theme.textSecondary)
                         }
                     }
                     if card.outOfRange.count > 4 {
                         Text("+\(card.outOfRange.count - 4) more")
-                            .font(.caption2).foregroundStyle(.tertiary)
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
                 }
             }
         }
         .padding(10)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Theme.radiusSmall)
                 .strokeBorder(Color.cyan.opacity(0.2), lineWidth: 0.5)
         )
     }
@@ -657,9 +657,9 @@ extension AIChatView {
             }
         }
         .padding(10)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Theme.radiusSmall)
                 .strokeBorder(Theme.separator, lineWidth: 0.5)
         )
     }

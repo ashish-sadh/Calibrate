@@ -44,9 +44,9 @@ struct MealTimelineSection: View {
                         }
                     }
                 }
-                .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+                .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: Theme.radiusSmall)
                         .strokeBorder(Theme.separator, lineWidth: 0.5)
                 )
             }
@@ -71,16 +71,16 @@ struct MealTimelineSection: View {
                 .font(.title3)
                 .foregroundStyle(Theme.textTertiary)
             Text(Self.emptyStateText)
-                .font(.system(size: 13))
+                .font(.system(size: Theme.FontSize.footnote))
                 .foregroundStyle(Theme.textSecondary)
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: Theme.radiusSmall)
                 .strokeBorder(Theme.separator, lineWidth: 0.5)
         )
         .accessibilityElement(children: .combine)
@@ -112,7 +112,7 @@ struct MealTimelineSection: View {
                         .font(.system(size: 14.5, weight: .semibold, design: .rounded).monospacedDigit())
                         .foregroundStyle(Theme.textPrimary)
                     Text("kcal")
-                        .font(.system(size: 11))
+                        .font(.system(size: Theme.FontSize.tiny))
                         .foregroundStyle(Theme.textTertiary)
                 }
 
@@ -148,7 +148,7 @@ struct MealTimelineSection: View {
 
     private func chip(_ text: String, color: Color) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .medium))
+            .font(.system(size: Theme.FontSize.tiny, weight: .medium))
             .foregroundStyle(color)
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
@@ -159,7 +159,7 @@ struct MealTimelineSection: View {
         HStack(spacing: 3) {
             RoundedRectangle(cornerRadius: 1).fill(color).frame(width: 2, height: 9)
             Text("\(Int(grams.rounded()))g \(label)")
-                .font(.system(size: 11, weight: .medium).monospacedDigit())
+                .font(.system(size: Theme.FontSize.tiny, weight: .medium).monospacedDigit())
                 .foregroundStyle(Theme.textSecondary)
         }
         .padding(.horizontal, 5)

@@ -34,15 +34,15 @@ struct SleepRecoveryView: View {
                         emptyState
                     } else if r.hrvMs == 0 {
                         Text("A fitness-tracking watch that syncs with Apple Health provides HRV and resting heart rate data.")
-                            .font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
+                            .font(.caption).foregroundStyle(Theme.textTertiary).multilineTextAlignment(.center)
                     } else if r.sleepHours == 0 {
                         Text("No sleep data detected. Use a sleep tracker that writes to Apple Health.")
-                            .font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
+                            .font(.caption).foregroundStyle(Theme.textTertiary).multilineTextAlignment(.center)
                     }
                 } else if isLoading {
                     VStack(spacing: 12) {
                         ProgressView().tint(.secondary)
-                        Text("Loading health data...").font(.caption).foregroundStyle(.tertiary)
+                        Text("Loading health data...").font(.caption).foregroundStyle(Theme.textTertiary)
                     }.frame(height: 200)
                 } else {
                     emptyState
@@ -62,9 +62,9 @@ struct SleepRecoveryView: View {
 
     private func recoveryHero(_ r: RecoveryEstimator.DailyRecovery) -> some View {
         VStack(spacing: 8) {
-            Text("Recovery").font(.caption.weight(.medium)).foregroundStyle(.secondary)
+            Text("Recovery").font(.caption.weight(.medium)).foregroundStyle(Theme.textSecondary)
             Text("\(r.recoveryScore)")
-                .font(.system(size: 56, weight: .bold).monospacedDigit())
+                .font(.system(size: Theme.FontSize.hero, weight: .bold).monospacedDigit())
                 .foregroundStyle(Theme.scoreColor(r.recoveryScore))
 
             // Thin gradient progress bar
@@ -86,7 +86,7 @@ struct SleepRecoveryView: View {
                     hrvMs: baselines.hrvMs, restingHR: baselines.restingHR,
                     sleepHours: baselines.sleepHours, baselines: baselines)
                 Text("Your avg: \(avgRecovery)")
-                    .font(.caption2).foregroundStyle(.tertiary)
+                    .font(.caption2).foregroundStyle(Theme.textTertiary)
             }
         }
         .card()
@@ -131,7 +131,7 @@ struct SleepRecoveryView: View {
                     if value > 0 {
                         Text(name == "Respiratory" ? String(format: "%.1f", value) : "\(Int(value))")
                             .font(.subheadline.weight(.bold).monospacedDigit())
-                        Text(unit).font(.caption2).foregroundStyle(.tertiary)
+                        Text(unit).font(.caption2).foregroundStyle(Theme.textTertiary)
                         if let bl = baseline, bl > 0 {
                             let dev = RecoveryEstimator.deviation(current: value, baseline: bl, higherIsBetter: higherIsBetter)
                             Text("\(dev.arrow)\(dev.pct)%")
@@ -139,7 +139,7 @@ struct SleepRecoveryView: View {
                                 .foregroundStyle(dev.favorable ? Theme.deficit : Theme.surplus)
                         }
                     } else {
-                        Text("--").font(.subheadline.weight(.bold)).foregroundStyle(.tertiary)
+                        Text("--").font(.subheadline.weight(.bold)).foregroundStyle(Theme.textTertiary)
                     }
                 }
                 .padding(.vertical, 10)
@@ -165,8 +165,8 @@ struct SleepRecoveryView: View {
                     }
                 }
                 .chartYScale(domain: .automatic(includesZero: false))
-                .chartXAxis { AxisMarks(values: .automatic(desiredCount: 4)) { AxisValueLabel(format: .dateTime.weekday(.abbreviated)).foregroundStyle(.secondary) } }
-                .chartYAxis { AxisMarks(position: .trailing) { AxisValueLabel().foregroundStyle(.secondary) } }
+                .chartXAxis { AxisMarks(values: .automatic(desiredCount: 4)) { AxisValueLabel(format: .dateTime.weekday(.abbreviated)).foregroundStyle(Theme.textSecondary) } }
+                .chartYAxis { AxisMarks(position: .trailing) { AxisValueLabel().foregroundStyle(Theme.textSecondary) } }
                 .frame(height: 80)
                 .padding(.bottom, 8)
                 .transition(.opacity)
@@ -179,7 +179,7 @@ struct SleepRecoveryView: View {
     private func sleepScoreSection(_ r: RecoveryEstimator.DailyRecovery) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("Sleep").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                Text("Sleep").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                 Spacer()
                 Text("\(r.sleepScore)")
                     .font(.title2.weight(.bold).monospacedDigit())
@@ -200,25 +200,25 @@ struct SleepRecoveryView: View {
             HStack(spacing: 16) {
                 VStack(spacing: 1) {
                     Text(String(format: "%.1fh", r.sleepHours)).font(.subheadline.weight(.bold).monospacedDigit())
-                    Text("slept").font(.caption2).foregroundStyle(.tertiary)
+                    Text("slept").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
                 VStack(spacing: 1) {
-                    Text(String(format: "%.1fh", r.sleepNeeded)).font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
-                    Text("needed").font(.caption2).foregroundStyle(.tertiary)
+                    Text(String(format: "%.1fh", r.sleepNeeded)).font(.subheadline.monospacedDigit()).foregroundStyle(Theme.textSecondary)
+                    Text("needed").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
                 let diff = r.sleepHours - r.sleepNeeded
                 VStack(spacing: 1) {
                     Text("\(diff >= 0 ? "+" : "")\(String(format: "%.1f", diff))h")
                         .font(.subheadline.weight(.bold).monospacedDigit())
                         .foregroundStyle(diff >= 0 ? Theme.deficit : Theme.surplus)
-                    Text("balance").font(.caption2).foregroundStyle(.tertiary)
+                    Text("balance").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
                 if let start = r.sleepDetail?.bedStart, let end = r.sleepDetail?.bedEnd {
                     Spacer()
                     VStack(spacing: 1) {
                         Text("\(formatTime(start)) – \(formatTime(end))")
-                            .font(.caption2.monospacedDigit()).foregroundStyle(.tertiary)
-                        Text("bed time").font(.caption2).foregroundStyle(.quaternary)
+                            .font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
+                        Text("bed time").font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
                 }
             }
@@ -226,7 +226,7 @@ struct SleepRecoveryView: View {
             // Explain sleep need breakdown
             let needExplain = sleepNeedExplanation(r)
             if !needExplain.isEmpty {
-                Text(needExplain).font(.caption2).foregroundStyle(.tertiary)
+                Text(needExplain).font(.caption2).foregroundStyle(Theme.textTertiary)
             }
 
             // Sleep stages
@@ -264,8 +264,8 @@ struct SleepRecoveryView: View {
     private func stagePill(_ name: String, hours: Double, total: Double, color: Color) -> some View {
         VStack(spacing: 1) {
             Text(String(format: "%.1fh", hours)).font(.caption2.weight(.bold).monospacedDigit())
-            Text(name).font(.caption2).foregroundStyle(.secondary)
-            if total > 0 { Text("\(Int(hours / total * 100))%").font(.caption2.monospacedDigit()).foregroundStyle(.tertiary) }
+            Text(name).font(.caption2).foregroundStyle(Theme.textSecondary)
+            if total > 0 { Text("\(Int(hours / total * 100))%").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary) }
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 4)
@@ -282,14 +282,14 @@ struct SleepRecoveryView: View {
 
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Sleep Trend").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                Text("Sleep Trend").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                 Spacer()
                 HStack(spacing: 8) {
                     HStack(spacing: 3) { Circle().fill(Theme.deficit).frame(width: 6, height: 6); Text("Good").font(.caption2) }
                     HStack(spacing: 3) { Circle().fill(Theme.fatYellow).frame(width: 6, height: 6); Text("Fair").font(.caption2) }
                     HStack(spacing: 3) { Circle().fill(Theme.surplus).frame(width: 6, height: 6); Text("Low").font(.caption2) }
                 }
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Theme.textTertiary)
             }
 
             Chart {
@@ -298,7 +298,7 @@ struct SleepRecoveryView: View {
                     .foregroundStyle(.secondary.opacity(0.3))
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
                     .annotation(position: .topTrailing, spacing: 2) {
-                        Text("need").font(.caption2).foregroundStyle(.tertiary)
+                        Text("need").font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
 
                 ForEach(recent.indices, id: \.self) { i in
@@ -319,16 +319,16 @@ struct SleepRecoveryView: View {
                 }
             }
             .chartYScale(domain: 0...10)
-            .chartYAxis { AxisMarks(values: [0, 5, 10]) { AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3)).foregroundStyle(.secondary.opacity(0.2)); AxisValueLabel().foregroundStyle(.secondary) } }
+            .chartYAxis { AxisMarks(values: [0, 5, 10]) { AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3)).foregroundStyle(.secondary.opacity(0.2)); AxisValueLabel().foregroundStyle(Theme.textSecondary) } }
             .chartXAxis {
                 AxisMarks(values: .automatic(desiredCount: 7)) {
-                    AxisValueLabel(format: .dateTime.weekday(.narrow)).foregroundStyle(.secondary)
+                    AxisValueLabel(format: .dateTime.weekday(.narrow)).foregroundStyle(Theme.textSecondary)
                 }
             }
             .frame(height: 140)
 
             Text("avg \(String(format: "%.1f", avg))h · need \(String(format: "%.1f", need))h")
-                .font(.caption2).foregroundStyle(.tertiary)
+                .font(.caption2).foregroundStyle(Theme.textTertiary)
         }
         .card()
     }
@@ -346,7 +346,7 @@ struct SleepRecoveryView: View {
 
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Activity Load").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                Text("Activity Load").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                 Spacer()
                 Text(r.activityLoad.rawValue)
                     .font(.caption.weight(.bold))
@@ -373,7 +373,7 @@ struct SleepRecoveryView: View {
                     Text("\(Int(r.steps)) steps").font(.caption2.monospacedDigit())
                 }
             }
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.textSecondary)
         }
         .card()
     }
@@ -390,7 +390,7 @@ struct SleepRecoveryView: View {
                     ForEach(insights, id: \.self) { insight in
                         HStack(alignment: .top, spacing: 8) {
                             Image(systemName: "lightbulb.fill").font(.caption2).foregroundStyle(Theme.fatYellow)
-                            Text(insight).font(.caption).foregroundStyle(.secondary)
+                            Text(insight).font(.caption).foregroundStyle(Theme.textSecondary)
                         }
                     }
                 }
@@ -404,10 +404,10 @@ struct SleepRecoveryView: View {
     private var emptyState: some View {
         VStack(spacing: 12) {
             Image(systemName: "bed.double.fill")
-                .font(.system(size: 48)).foregroundStyle(Theme.sleepIndigo.opacity(0.5))
+                .font(.system(size: Theme.FontSize.display4)).foregroundStyle(Theme.sleepIndigo.opacity(0.5))
             Text("No Sleep Data").font(.headline)
             Text("Wear a fitness-tracking watch to bed or use a sleep tracker that syncs with Apple Health.")
-                .font(.caption).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                .font(.caption).foregroundStyle(Theme.textSecondary).multilineTextAlignment(.center)
         }
         .padding(.top, 40)
     }

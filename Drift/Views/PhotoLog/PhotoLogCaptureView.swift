@@ -90,7 +90,7 @@ struct PhotoLogCaptureView: View {
         // dashed-border camera card from the V7 reference mocks 16.
         VStack(spacing: 6) {
             Image(systemName: "camera")
-                .font(.system(size: 44, weight: .light))
+                .font(.system(size: Theme.FontSize.display3, weight: .light))
                 .foregroundStyle(Theme.textSecondary)
             Text("Snap a meal to log it")
                 .font(.headline)
@@ -136,7 +136,7 @@ struct PhotoLogCaptureView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(10)
-            .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 10))
+            .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
         }
         .buttonStyle(.plain)
         .disabled(hasKey)
@@ -155,7 +155,7 @@ struct PhotoLogCaptureView: View {
             Spacer()
         }
         .padding(10)
-        .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 10))
+        .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
     }
 
     private var byokTipBanner: some View {
@@ -166,7 +166,7 @@ struct PhotoLogCaptureView: View {
                     .foregroundStyle(Theme.textSecondary)
                 Text("Drift supports BYOK — bring your own OpenAI, Gemini, or Anthropic API key for AI food photo scanning. Tap ⚙️ to add a key.")
                     .font(.caption2)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
                 Spacer()
                 Button {
                     Preferences.hasSeenPhotoLogTip = true
@@ -194,7 +194,7 @@ struct PhotoLogCaptureView: View {
             }
         }
         .padding(10)
-        .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 10))
+        .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
     }
 
     private var captureButtons: some View {

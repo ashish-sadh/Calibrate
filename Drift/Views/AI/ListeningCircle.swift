@@ -58,7 +58,7 @@ struct ListeningCircle: View {
                         ProgressView().scaleEffect(1.4 * (size / 150)).tint(tint)
                     } else {
                         Image(systemName: glyph)
-                            .font(.system(size: 44 * (size / 150), weight: .medium))
+                            .font(.system(size: Theme.FontSize.display3 * (size / 150), weight: .medium))
                             .foregroundStyle(tint)
                     }
                 }

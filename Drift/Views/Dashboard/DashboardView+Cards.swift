@@ -27,14 +27,14 @@ extension DashboardView {
         return VStack(spacing: 12) {
             // Section header
             HStack {
-                Text("Daily Average").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                Text("Daily Average").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                 Spacer()
                 HStack(spacing: 4) {
-                    Text("14-day").font(.caption2).foregroundStyle(.tertiary)
+                    Text("14-day").font(.caption2).foregroundStyle(Theme.textTertiary)
                     Button {
                         withAnimation(.easeInOut(duration: 0.2)) { showDeficitExplainer.toggle() }
                     } label: {
-                        Image(systemName: "info.circle").font(.caption).foregroundStyle(.tertiary)
+                        Image(systemName: "info.circle").font(.caption).foregroundStyle(Theme.textTertiary)
                     }
                     .accessibilityLabel("Daily average info")
                 }
@@ -47,10 +47,10 @@ extension DashboardView {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text("\(Int(tdee))")
                             .font(.title.weight(.bold).monospacedDigit())
-                        Text("kcal/day").font(.caption).foregroundStyle(.tertiary)
+                        Text("kcal/day").font(.caption).foregroundStyle(Theme.textTertiary)
                     }
-                    Text("Est. Expenditure").font(.caption).foregroundStyle(.secondary)
-                    Text("Log weight to see energy balance").font(.caption2).foregroundStyle(.quaternary)
+                    Text("Est. Expenditure").font(.caption).foregroundStyle(Theme.textSecondary)
+                    Text("Log weight to see energy balance").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
                 .padding(.vertical, 8)
             } else if viewModel.dailyDeficit != nil {
@@ -59,7 +59,7 @@ extension DashboardView {
                         Text("~\(Int(intake))")
                             .font(.title3.weight(.bold).monospacedDigit())
                         Text("eating")
-                            .font(.caption).foregroundStyle(.tertiary)
+                            .font(.caption).foregroundStyle(Theme.textTertiary)
                     }
                     .frame(maxWidth: .infinity)
 
@@ -75,9 +75,9 @@ extension DashboardView {
                             Text("\(Int(abs(deficit)))")
                                 .font(.title3.weight(.bold).monospacedDigit())
                             Text(deficitLabel)
-                                .font(.caption2.weight(.medium)).foregroundStyle(.secondary)
+                                .font(.caption2.weight(.medium)).foregroundStyle(Theme.textSecondary)
                             Text("/day")
-                                .font(.caption2).foregroundStyle(.tertiary)
+                                .font(.caption2).foregroundStyle(Theme.textTertiary)
                         }
                     }
                     .frame(width: 88, height: 88)
@@ -86,7 +86,7 @@ extension DashboardView {
                         Text("\(Int(tdee))")
                             .font(.title3.weight(.bold).monospacedDigit())
                         Text("burning")
-                            .font(.caption).foregroundStyle(.tertiary)
+                            .font(.caption).foregroundStyle(Theme.textTertiary)
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -102,7 +102,7 @@ extension DashboardView {
                     ? "Target: \(Int(t.calorieTarget)) kcal/day · \(String(format: "%.1f", remainingAbs)) \(unit.displayName) to \(losing ? "lose" : "gain")"
                     : "Target: eat \(Int(t.calorieTarget)) kcal/day to \(losing ? "lose" : "gain") \(String(format: "%.1f", remainingAbs)) \(unit.displayName)"
                 Text(targetText)
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(Theme.textSecondary)
             }
 
             // Expandable detail (only when we have actual data to explain)
@@ -113,26 +113,26 @@ extension DashboardView {
                         let required = goal.requiredDailyDeficit(currentWeightKg: currentKg)
                         HStack(spacing: 16) {
                             VStack(spacing: 2) {
-                                Text("Required").font(.caption2).foregroundStyle(.tertiary)
+                                Text("Required").font(.caption2).foregroundStyle(Theme.textTertiary)
                                 Text("\(required < 0 ? "" : "+")\(Int(required))")
                                     .font(.caption.weight(.bold).monospacedDigit())
                                     .foregroundStyle(isGoalAligned(required) ? Theme.deficit : Theme.surplus)
                             }
                             VStack(spacing: 2) {
-                                Text("Current").font(.caption2).foregroundStyle(.tertiary)
+                                Text("Current").font(.caption2).foregroundStyle(Theme.textTertiary)
                                 Text("\(deficit < 0 ? "" : "+")\(Int(deficit))")
                                     .font(.caption.weight(.bold).monospacedDigit())
                                     .foregroundStyle(isGoalAligned(deficit) ? Theme.deficit : Theme.surplus)
                             }
-                            Text("kcal/day").font(.caption2).foregroundStyle(.quaternary)
+                            Text("kcal/day").font(.caption2).foregroundStyle(Theme.textTertiary)
                         }
                     }
                     if let rate = viewModel.weeklyRate {
                         let config = WeightTrendCalculator.loadConfig()
                         Text("Trend: \(String(format: "%+.2f", Preferences.weightUnit.convert(fromKg: rate))) \(Preferences.weightUnit.displayName)/wk → \(String(format: "%+.0f", deficit)) kcal/day")
-                            .font(.caption2).foregroundStyle(.tertiary)
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
                         Text("Based on \(config.regressionWindowDays)-day weight trend.")
-                            .font(.caption2).foregroundStyle(.quaternary)
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
                 }
                 .transition(.opacity)
@@ -185,16 +185,16 @@ extension DashboardView {
                 // No goal: just show eaten + macros chip row
                 HStack {
                     Text("Nutrition")
-                        .font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                        .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                     Spacer()
-                    Text("Today").font(.caption).foregroundStyle(.tertiary)
+                    Text("Today").font(.caption).foregroundStyle(Theme.textTertiary)
                 }
 
                 HStack(alignment: .firstTextBaseline, spacing: 3) {
                     Text("\(Int(viewModel.todayNutrition.calories))")
                         .font(.title3.weight(.bold).monospacedDigit())
                         .foregroundStyle(Theme.calorieBlue)
-                    Text("kcal eaten").font(.caption).foregroundStyle(.secondary)
+                    Text("kcal eaten").font(.caption).foregroundStyle(Theme.textSecondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -214,7 +214,7 @@ extension DashboardView {
             RoundedRectangle(cornerRadius: 1).fill(color).frame(width: 2, height: 10)
             Text("\(Int(value))g \(label)")
                 .font(.caption2.weight(.medium).monospacedDigit())
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
         }
         .padding(.horizontal, 6).padding(.vertical, 3)
         .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))

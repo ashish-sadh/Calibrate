@@ -43,19 +43,19 @@ struct QuickAddView: View {
                         TextField("Combo name", text: $recipeName)
                             .font(.headline)
                             .padding(12)
-                            .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 12))
+                            .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
                     }
 
                     // Ingredients
                     VStack(alignment: .leading, spacing: 0) {
-                        Text("FOOD ITEMS").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                        Text("FOOD ITEMS").font(.caption2.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                             .padding(.bottom, 8)
 
                         if items.isEmpty {
                             VStack(spacing: 8) {
                                 Image(systemName: "fork.knife").font(.title2).foregroundStyle(Theme.accent.opacity(0.4))
                                 Text("Add food items to build your combo")
-                                    .font(.subheadline).foregroundStyle(.tertiary)
+                                    .font(.subheadline).foregroundStyle(Theme.textTertiary)
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 16)
@@ -67,16 +67,16 @@ struct QuickAddView: View {
                                     Text(item.name).font(.subheadline).lineLimit(1)
                                     HStack(spacing: 4) {
                                         if !item.portionText.isEmpty {
-                                            Text(item.portionText).font(.caption2).foregroundStyle(.tertiary)
-                                            Text("\u{00B7}").font(.caption2).foregroundStyle(.quaternary)
+                                            Text(item.portionText).font(.caption2).foregroundStyle(Theme.textTertiary)
+                                            Text("\u{00B7}").font(.caption2).foregroundStyle(Theme.textTertiary)
                                         }
                                         Text("\(Int(item.calories)) cal")
-                                            .font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                                            .font(.caption2.monospacedDigit()).foregroundStyle(Theme.textSecondary)
                                     }
                                 }
                                 Spacer()
                                 Button { items.remove(at: i) } label: {
-                                    Image(systemName: "xmark.circle.fill").font(.caption).foregroundStyle(.tertiary)
+                                    Image(systemName: "xmark.circle.fill").font(.caption).foregroundStyle(Theme.textTertiary)
                                 }
                                 .accessibilityLabel("Remove food item")
                                 .buttonStyle(.plain)
@@ -100,7 +100,7 @@ struct QuickAddView: View {
                     if !items.isEmpty {
                         VStack(spacing: 6) {
                             HStack {
-                                Text("Total").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                                Text("Total").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                                 Spacer()
                                 Text("\(Int(total.cal)) cal").font(.subheadline.weight(.bold).monospacedDigit())
                             }
@@ -114,7 +114,7 @@ struct QuickAddView: View {
 
                         // Servings
                         HStack {
-                            Text("Servings").font(.caption).foregroundStyle(.secondary)
+                            Text("Servings").font(.caption).foregroundStyle(Theme.textSecondary)
                             Spacer()
                             TextField("1", text: $recipeServings)
                                 .keyboardType(.decimalPad)
@@ -123,7 +123,7 @@ struct QuickAddView: View {
                                 .frame(width: 50)
                         }
                         .padding(.horizontal, 16).padding(.vertical, 10)
-                        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
+                        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
 
                         // Expand on log toggle (#190) — enabled only for multi-item recipes.
                         // When on, re-logging this recipe inserts one FoodEntry per
@@ -133,17 +133,17 @@ struct QuickAddView: View {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("Log items individually").font(.subheadline)
                                     Text("Adds each ingredient as a separate entry")
-                                        .font(.caption2).foregroundStyle(.tertiary)
+                                        .font(.caption2).foregroundStyle(Theme.textTertiary)
                                 }
                             }
                             .tint(Theme.accent)
                             .padding(.horizontal, 16).padding(.vertical, 8)
-                            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
+                            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
                         }
 
                         // Time picker
                         DatePicker("Time", selection: $recipeLogTime, displayedComponents: .hourAndMinute)
-                            .font(.subheadline).foregroundStyle(.secondary)
+                            .font(.subheadline).foregroundStyle(Theme.textSecondary)
 
                         Button {
                             saveAndLogRecipe()
@@ -319,7 +319,7 @@ private struct IngredientPickerView: View {
             VStack(spacing: 0) {
                 // Search bar
                 HStack {
-                    Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                    Image(systemName: "magnifyingglass").foregroundStyle(Theme.textSecondary)
                     TextField("Search food", text: $query)
                         .textFieldStyle(.plain).autocorrectionDisabled()
                         .focused($searchFocused)
@@ -338,7 +338,7 @@ private struct IngredientPickerView: View {
                         }
                     if !query.isEmpty {
                         Button { query = ""; results = [] } label: {
-                            Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                            Image(systemName: "xmark.circle.fill").foregroundStyle(Theme.textSecondary)
                         }
                         .accessibilityLabel("Clear search")
                     }
@@ -459,7 +459,7 @@ private struct IngredientPickerView: View {
                         } label: {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(food.name).font(.subheadline)
-                                Text(food.macroSummary).font(.caption).foregroundStyle(.secondary)
+                                Text(food.macroSummary).font(.caption).foregroundStyle(Theme.textSecondary)
                             }
                         }.tint(.primary)
                     }
@@ -476,7 +476,7 @@ private struct IngredientPickerView: View {
                         } label: {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(food.name).font(.subheadline)
-                                Text(food.macroSummary).font(.caption).foregroundStyle(.secondary)
+                                Text(food.macroSummary).font(.caption).foregroundStyle(Theme.textSecondary)
                             }
                         }.tint(.primary)
                     }
@@ -502,7 +502,7 @@ private struct IngredientPickerView: View {
                         } label: {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(ing.name).font(.subheadline)
-                                Text("\(Int(ing.caloriesPer100g)) cal/100g").font(.caption).foregroundStyle(.secondary)
+                                Text("\(Int(ing.caloriesPer100g)) cal/100g").font(.caption).foregroundStyle(Theme.textSecondary)
                             }
                         }.tint(.primary)
                     }
@@ -536,7 +536,7 @@ private struct IngredientPickerView: View {
                 VStack(spacing: 4) {
                     Text(food.name).font(.headline)
                     Text("\(food.macroSummary) per \(Int(food.servingSize))\(food.servingUnit)")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.caption).foregroundStyle(Theme.textSecondary)
                 }
 
                 // Shared serving input
@@ -548,7 +548,7 @@ private struct IngredientPickerView: View {
                     Text("\(Int(food.calories * multiplier)) cal")
                         .font(.title3.weight(.bold).monospacedDigit())
                     Text("\(Int(food.proteinG * multiplier))P \u{00B7} \(Int(food.carbsG * multiplier))C \u{00B7} \(Int(food.fatG * multiplier))F")
-                        .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                        .font(.caption.monospacedDigit()).foregroundStyle(Theme.textSecondary)
                 }
                 .padding(.vertical, 12)
 

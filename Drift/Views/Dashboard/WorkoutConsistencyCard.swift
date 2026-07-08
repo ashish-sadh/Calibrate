@@ -17,13 +17,13 @@ struct WorkoutConsistencyCard: View {
                 )
             VStack(alignment: .leading, spacing: 2) {
                 Text(insight.title).font(.caption.weight(.semibold))
-                Text(insight.detail).font(.caption2).foregroundStyle(.secondary)
+                Text(insight.detail).font(.caption2).foregroundStyle(Theme.textSecondary)
             }
             Spacer()
             Button(action: onDismiss) {
                 Image(systemName: "xmark")
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Theme.textTertiary)
                     .padding(6)
                     .background(Theme.cardBackgroundElevated, in: Circle())
             }

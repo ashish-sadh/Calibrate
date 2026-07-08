@@ -214,9 +214,9 @@ struct LogMealSheet: View {
                     .accessibilityHidden(true)
             }
             .padding(12)
-            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 12))
+            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: Theme.radiusSmall)
                     .strokeBorder(Theme.separator, lineWidth: 0.5)
             )
         }
@@ -282,7 +282,7 @@ struct LogMealSheet: View {
         VStack(spacing: 12) {
             Spacer()
             Image(systemName: icon)
-                .font(.system(size: 40, weight: .light))
+                .font(.system(size: Theme.FontSize.display2, weight: .light))
                 .foregroundStyle(Theme.textTertiary)
             Text(title)
                 .font(.headline.weight(.semibold))

@@ -39,12 +39,12 @@ struct ClarificationCard: View {
             HStack(spacing: 8) {
                 if let icon = option.displayIcon {
                     Image(systemName: icon)
-                        .font(.system(size: 13))
+                        .font(.system(size: Theme.FontSize.footnote))
                         .foregroundStyle(Theme.accent)
                         .frame(width: 20)
                 } else {
                     Text("\(option.id)")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(size: Theme.FontSize.tiny, weight: .bold))
                         .foregroundStyle(Theme.accent)
                         .frame(width: 20, height: 20)
                         .background(Theme.accent.opacity(0.12), in: Circle())
@@ -56,8 +56,8 @@ struct ClarificationCard: View {
                         .foregroundStyle(Theme.textPrimary)
                     if let hint = option.secondaryText {
                         Text(hint)
-                            .font(.system(size: 10))
-                            .foregroundStyle(.tertiary)
+                            .font(.system(size: Theme.FontSize.micro))
+                            .foregroundStyle(Theme.textTertiary)
                     }
                 }
 
@@ -66,9 +66,9 @@ struct ClarificationCard: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 9)
             .frame(maxWidth: .infinity)
-            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
+            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
             .overlay(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: Theme.radiusChip)
                     .strokeBorder(Theme.accent.opacity(0.2), lineWidth: 0.5)
             )
         }
@@ -85,20 +85,20 @@ struct ClarificationCard: View {
         } label: {
             HStack(spacing: 8) {
                 Image(systemName: "pencil")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: Theme.FontSize.footnote))
+                    .foregroundStyle(Theme.textSecondary)
                     .frame(width: 20)
                 Text("Other (type answer)")
                     .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 9)
             .frame(maxWidth: .infinity)
-            .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
+            .background(Color.white.opacity(0.04), in: RoundedRectangle(cornerRadius: Theme.radiusChip))
             .overlay(
-                RoundedRectangle(cornerRadius: 10)
+                RoundedRectangle(cornerRadius: Theme.radiusChip)
                     .strokeBorder(Theme.separator, lineWidth: 0.5)
             )
         }

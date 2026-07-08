@@ -23,7 +23,7 @@ struct GoalProgressCard: View {
                     .font(.subheadline.weight(.semibold))
                 Spacer()
                 if let days = goal.daysRemaining {
-                    Text("\(days)d left").font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                    Text("\(days)d left").font(.caption.monospacedDigit()).foregroundStyle(Theme.textSecondary)
                 }
             }
 
@@ -43,13 +43,13 @@ struct GoalProgressCard: View {
                     .font(.caption2.weight(.bold)).foregroundStyle(Theme.accent)
                 Spacer()
                 Text("\(String(format: "%.1f", abs(unit.convert(fromKg: remaining)))) \(unit.displayName) to go")
-                    .font(.caption2).foregroundStyle(.secondary)
+                    .font(.caption2).foregroundStyle(Theme.textSecondary)
             }
 
             // Now weight
             HStack(spacing: 4) {
                 Text("Now \(String(format: "%.1f", unit.convert(fromKg: currentWeightKg))) \(unit.displayName)")
-                    .font(.caption2).foregroundStyle(.secondary)
+                    .font(.caption2).foregroundStyle(Theme.textSecondary)
                 Spacer()
             }
 
@@ -57,9 +57,9 @@ struct GoalProgressCard: View {
             if let trend = trendWeightKg, abs(trend - currentWeightKg) > 0.5 {
                 HStack(spacing: 4) {
                     Text("Trend Weight: \(String(format: "%.1f", unit.convert(fromKg: trend))) \(unit.displayName)")
-                        .font(.caption2).foregroundStyle(.tertiary)
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
                     Button { showTrendInfo = true } label: {
-                        Image(systemName: "info.circle").font(.caption2).foregroundStyle(.quaternary)
+                        Image(systemName: "info.circle").font(.caption2).foregroundStyle(Theme.textTertiary)
                     }.buttonStyle(.plain)
                     .accessibilityLabel("Trend weight info")
                     Spacer()
@@ -69,14 +69,14 @@ struct GoalProgressCard: View {
             // Started weight
             HStack(spacing: 4) {
                 Text("Started: \(String(format: "%.1f", unit.convert(fromKg: goal.startWeightKg))) \(unit.displayName)")
-                    .font(.caption2).foregroundStyle(.tertiary)
+                    .font(.caption2).foregroundStyle(Theme.textTertiary)
                 Button { showStartedInfo = true } label: {
-                    Image(systemName: "info.circle").font(.caption2).foregroundStyle(.quaternary)
+                    Image(systemName: "info.circle").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }.buttonStyle(.plain)
                 .accessibilityLabel("Starting weight info")
                 if let startDate = DateFormatters.dateOnly.date(from: goal.startDate) {
                     Text("· \(DateFormatters.shortDisplay.string(from: startDate))")
-                        .font(.caption2).foregroundStyle(.quaternary)
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
                 Spacer()
             }

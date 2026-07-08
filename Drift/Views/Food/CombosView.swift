@@ -93,7 +93,7 @@ struct CombosView: View {
                         Text(combo.name).font(.subheadline.weight(.medium)).lineLimit(1)
                     }
                     Text(items.isEmpty ? combo.macroSummary : "\(items.count) items · \(Int(totalCal)) cal · \(Int(totalP))g P")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.caption).foregroundStyle(Theme.textSecondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
@@ -103,7 +103,7 @@ struct CombosView: View {
             Button { edit(combo) } label: {
                 Image(systemName: "pencil")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
                     .padding(8)
                     .background(Theme.cardBackgroundElevated, in: Circle())
             }
@@ -126,10 +126,10 @@ struct CombosView: View {
 
     private var emptyState: some View {
         VStack(spacing: 16) {
-            Image(systemName: "fork.knife.circle").font(.system(size: 48)).foregroundStyle(.tertiary)
+            Image(systemName: "fork.knife.circle").font(.system(size: Theme.FontSize.display4)).foregroundStyle(Theme.textTertiary)
             Text("No combos yet").font(.headline)
             Text("Foods you log together often will appear here automatically, or create one with +")
-                .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                .font(.subheadline).foregroundStyle(Theme.textSecondary).multilineTextAlignment(.center)
             Button { showingBuilder = true } label: {
                 Label("Create Combo", systemImage: "plus")
                     .font(.subheadline.weight(.semibold))

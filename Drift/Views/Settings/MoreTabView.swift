@@ -152,7 +152,7 @@ struct MoreTabView: View {
                         .fill(color.opacity(0.15))
                         .frame(width: 36, height: 36)
                     Image(systemName: icon)
-                        .font(.system(size: 15, weight: .semibold))
+                        .font(.system(size: Theme.FontSize.subheadline, weight: .semibold))
                         .foregroundStyle(color)
                 }
                 VStack(alignment: .leading, spacing: 2) {
@@ -216,7 +216,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Body Weight Unit")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
                     Picker("Body Weight Unit", selection: $weightUnit) {
                         Text("kg").tag(WeightUnit.kg)
                         Text("lbs").tag(WeightUnit.lbs)
@@ -224,7 +224,7 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                     .onChange(of: weightUnit) { _, v in Preferences.weightUnit = v }
                     Text("Affects body weight tracking only. Exercise weights are always shown in lbs.")
-                        .font(.caption2).foregroundStyle(.tertiary)
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
                 .card()
 
@@ -234,7 +234,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Apple Health")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
 
                     Button {
                         Task {
@@ -254,7 +254,7 @@ struct SettingsView: View {
                                 Spacer()
                             }
                             Text("Grant permission to read weight, sleep, vitals, and activity")
-                                .font(.caption2).foregroundStyle(.tertiary)
+                                .font(.caption2).foregroundStyle(Theme.textTertiary)
                         }
                     }
 
@@ -276,7 +276,7 @@ struct SettingsView: View {
                                 Spacer()
                             }
                             Text("Import new weight data from Apple Health")
-                                .font(.caption2).foregroundStyle(.tertiary)
+                                .font(.caption2).foregroundStyle(Theme.textTertiary)
                         }
                     }
 
@@ -298,7 +298,7 @@ struct SettingsView: View {
                                 Spacer()
                             }
                             Text("Clear sync history and re-import all weight data")
-                                .font(.caption2).foregroundStyle(.tertiary)
+                                .font(.caption2).foregroundStyle(Theme.textTertiary)
                         }
                     }
 
@@ -343,7 +343,7 @@ struct SettingsView: View {
                             }
                         }
                         Text("Calories eaten, protein, carbs, fat, fiber — written as you log")
-                            .font(.caption2).foregroundStyle(.tertiary)
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
                         if let reason = Preferences.healthNutritionAutoDisableReason, !healthNutritionWrite {
                             Text(reason).font(.caption2).foregroundStyle(Theme.warn)
                         }
@@ -361,7 +361,7 @@ struct SettingsView: View {
                                     if pastSyncRunning { ProgressView().scaleEffect(0.7) }
                                 }
                                 Text("Write your logged history to Health — re-running never duplicates")
-                                    .font(.caption2).foregroundStyle(.tertiary)
+                                    .font(.caption2).foregroundStyle(Theme.textTertiary)
                             }
                         }
                         .disabled(pastSyncRunning)
@@ -396,10 +396,10 @@ struct SettingsView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("iCloud Backup").font(.subheadline.weight(.medium))
                             Text("Daily snapshot of your data to iCloud Drive")
-                                .font(.caption2).foregroundStyle(.tertiary)
+                                .font(.caption2).foregroundStyle(Theme.textTertiary)
                         }
                         Spacer()
-                        Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                        Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.textTertiary)
                             .accessibilityHidden(true)
                     }
                     .padding(.vertical, 10)
@@ -414,7 +414,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Export Data")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
 
                     Button {
                         if let url = exportWorkoutsCSV() {
@@ -453,7 +453,7 @@ struct SettingsView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Online Food Search").font(.subheadline.weight(.medium))
                             Text("Search USDA & Open Food Facts when local results are limited")
-                                .font(.caption2).foregroundStyle(.tertiary)
+                                .font(.caption2).foregroundStyle(Theme.textTertiary)
                         }
                         Spacer()
                         Toggle("", isOn: Binding(
@@ -464,7 +464,7 @@ struct SettingsView: View {
                     }
                     if Preferences.onlineFoodSearchEnabled {
                         Text("Only food search terms are sent — no personal data, no tracking.")
-                            .font(.caption2).foregroundStyle(.tertiary)
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
                             .padding(.leading, 36)
                     }
                 }
@@ -488,10 +488,10 @@ struct SettingsView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Notifications").font(.subheadline.weight(.medium))
                             Text("Health nudges, meal reminders, medication, GLP-1")
-                                .font(.caption2).foregroundStyle(.tertiary)
+                                .font(.caption2).foregroundStyle(Theme.textTertiary)
                         }
                         Spacer()
-                        Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                        Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.textTertiary)
                             .accessibilityHidden(true)
                     }
                     .padding(.vertical, 10)
@@ -510,7 +510,7 @@ struct SettingsView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("AI Chat Telemetry").font(.subheadline.weight(.medium))
                             Text("Stored on this device. Nothing is transmitted until you tap Export JSON.")
-                                .font(.caption2).foregroundStyle(.tertiary)
+                                .font(.caption2).foregroundStyle(Theme.textTertiary)
                         }
                         Spacer()
                         // Custom binding instead of .onChange — otherwise the
@@ -540,7 +540,7 @@ struct SettingsView: View {
                     }
                     if telemetryEnabled {
                         Text("Full query + response text is stored locally, alongside the routed tool and outcome. Use Export JSON to share a transcript with the Drift team to improve multi-turn reliability. Nothing leaves this device until you do.")
-                            .font(.caption2).foregroundStyle(.tertiary)
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
                             .padding(.leading, 36)
 
                         HStack(spacing: 12) {
@@ -552,7 +552,7 @@ struct SettingsView: View {
                             }
                             Spacer()
                             Text("\(telemetryCount) turns")
-                                .font(.caption2).foregroundStyle(.tertiary).monospacedDigit()
+                                .font(.caption2).foregroundStyle(Theme.textTertiary).monospacedDigit()
                         }
                         .padding(.leading, 36)
                         .padding(.top, 4)
@@ -608,10 +608,10 @@ struct SettingsView: View {
                             .foregroundStyle(Theme.textSecondary).frame(width: 24)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Algorithm").font(.subheadline.weight(.medium))
-                            Text("TDEE & calorie target settings").font(.caption2).foregroundStyle(.tertiary)
+                            Text("TDEE & calorie target settings").font(.caption2).foregroundStyle(Theme.textTertiary)
                         }
                         Spacer()
-                        Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                        Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.textTertiary)
                             .accessibilityHidden(true)
                     }
                     .padding(.vertical, 10)
@@ -909,7 +909,7 @@ struct NotificationsSettingsView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Smart Meal Reminders").font(.subheadline.weight(.medium))
                             Text("Quiet nudge ~30 min after your typical meal time, only if you haven't logged it yet")
-                                .font(.caption2).foregroundStyle(.tertiary)
+                                .font(.caption2).foregroundStyle(Theme.textTertiary)
                         }
                         Spacer()
                         Toggle("", isOn: Binding(
@@ -928,7 +928,7 @@ struct NotificationsSettingsView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text("Use my eating patterns").font(.caption.weight(.medium))
                                 Text("Learn from the last 30 days. Needs 10+ entries per meal — falls back to defaults below threshold.")
-                                    .font(.caption2).foregroundStyle(.tertiary)
+                                    .font(.caption2).foregroundStyle(Theme.textTertiary)
                             }
                             Spacer()
                             Toggle("", isOn: Binding(
@@ -989,7 +989,7 @@ struct NotificationsSettingsView: View {
                     .foregroundStyle(Theme.textSecondary).frame(width: 24)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title).font(.subheadline.weight(.medium))
-                    Text(subtitle).font(.caption2).foregroundStyle(.tertiary)
+                    Text(subtitle).font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
                 Spacer()
                 Toggle("", isOn: isOn)

@@ -25,10 +25,10 @@ struct TemplatePreviewSheet: View {
                                     ExerciseThumbnail(info: ExerciseDatabase.info(for: ex.name), size: 40)
                                     VStack(alignment: .leading, spacing: 1) {
                                         Text(ex.name).font(.subheadline)
-                                        if let notes = ex.notes { Text(notes).font(.caption2).foregroundStyle(.secondary).italic() }
+                                        if let notes = ex.notes { Text(notes).font(.caption2).foregroundStyle(Theme.textSecondary).italic() }
                                     }
                                     Spacer()
-                                    Text("\(ex.sets) sets").font(.caption2).foregroundStyle(.tertiary)
+                                    Text("\(ex.sets) sets").font(.caption2).foregroundStyle(Theme.textTertiary)
                                 }
                             }.tint(.primary)
                         }
@@ -46,20 +46,20 @@ struct TemplatePreviewSheet: View {
                                     VStack(alignment: .leading, spacing: 1) {
                                         Text(ex.name).font(.subheadline)
                                         HStack(spacing: 4) {
-                                            Text("\(ex.sets) sets").font(.caption2).foregroundStyle(.tertiary)
+                                            Text("\(ex.sets) sets").font(.caption2).foregroundStyle(Theme.textTertiary)
                                             if let lastW = try? WorkoutService.lastWeight(for: ex.name) {
-                                                Text("\u{00B7}").font(.caption2).foregroundStyle(.quaternary)
-                                                Text("\(Int(Preferences.weightUnit.convertFromLbs(lastW))) \(Preferences.weightUnit.displayName)").font(.caption2.monospacedDigit()).foregroundStyle(.tertiary)
+                                                Text("\u{00B7}").font(.caption2).foregroundStyle(Theme.textTertiary)
+                                                Text("\(Int(Preferences.weightUnit.convertFromLbs(lastW))) \(Preferences.weightUnit.displayName)").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
                                             }
                                             if let notes = ex.notes {
-                                                Text("\u{00B7}").font(.caption2).foregroundStyle(.quaternary)
-                                                Text(notes).font(.caption2).foregroundStyle(.secondary).italic()
+                                                Text("\u{00B7}").font(.caption2).foregroundStyle(Theme.textTertiary)
+                                                Text(notes).font(.caption2).foregroundStyle(Theme.textSecondary).italic()
                                             }
                                         }
                                     }
                                     Spacer()
                                     Text("\(ex.restSeconds/60):\(String(format: "%02d", ex.restSeconds%60))")
-                                        .font(.caption2.monospacedDigit()).foregroundStyle(.tertiary)
+                                        .font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
                                 }
                             }.tint(.primary)
                         }

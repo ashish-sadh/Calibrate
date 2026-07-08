@@ -25,7 +25,7 @@ struct AIView: View {
                     case .loading:
                         VStack(spacing: 16) {
                             ProgressView()
-                            Text("Loading AI...").font(.subheadline).foregroundStyle(.secondary)
+                            Text("Loading AI...").font(.subheadline).foregroundStyle(Theme.textSecondary)
                         }
                     case .ready:
                         AIChatView()
@@ -64,7 +64,7 @@ struct AIView: View {
             Spacer()
 
             Image(systemName: "arrow.down.circle")
-                .font(.system(size: 48))
+                .font(.system(size: Theme.FontSize.display4))
                 .foregroundStyle(Theme.accent.opacity(0.6))
                 .symbolEffect(.pulse)
 
@@ -81,7 +81,7 @@ struct AIView: View {
 
             Text("Downloading AI model. This only happens once.")
                 .font(.caption)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Theme.textTertiary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 
@@ -95,10 +95,10 @@ struct AIView: View {
         VStack(spacing: 16) {
             Spacer()
             Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 40))
+                .font(.system(size: Theme.FontSize.display2))
                 .foregroundStyle(Theme.surplus.opacity(0.6))
             Text("Setup Failed").font(.headline)
-            Text(message).font(.caption).foregroundStyle(.secondary)
+            Text(message).font(.caption).foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center).padding(.horizontal, 32)
             Button {
                 Task { await aiService.downloadModel() }
@@ -115,13 +115,13 @@ struct AIView: View {
         VStack(spacing: 16) {
             Spacer()
             Image(systemName: "externaldrive.badge.xmark")
-                .font(.system(size: 40))
-                .foregroundStyle(.secondary)
+                .font(.system(size: Theme.FontSize.display2))
+                .foregroundStyle(Theme.textSecondary)
             Text("Not Enough Storage").font(.headline)
-            Text(message).font(.caption).foregroundStyle(.secondary)
+            Text(message).font(.caption).foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center).padding(.horizontal, 32)
             Text("Free up some space and try again.")
-                .font(.caption2).foregroundStyle(.tertiary)
+                .font(.caption2).foregroundStyle(Theme.textTertiary)
             Spacer()
         }
     }

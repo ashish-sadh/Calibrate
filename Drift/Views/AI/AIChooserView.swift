@@ -29,13 +29,13 @@ struct AIChooserView: View {
     private var heading: some View {
         VStack(spacing: 8) {
             Image(systemName: "sparkles")
-                .font(.system(size: 40))
+                .font(.system(size: Theme.FontSize.display2))
                 .foregroundStyle(Theme.accent.opacity(0.7))
             Text("Pick your AI")
                 .font(.title2.weight(.bold))
             Text("Either works. You can switch later from inside the chat.")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 12)
         }
@@ -106,7 +106,7 @@ struct AIChooserView: View {
             }
             Text("Drift never collects messages, photos, or telemetry. Drift Coach (cloud) sends only your message to the model. On-device AI sends nothing anywhere.")
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Theme.textTertiary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
         }
@@ -127,13 +127,13 @@ struct AIChooserView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
                 Image(systemName: icon)
-                    .font(.system(size: 18))
+                    .font(.system(size: Theme.FontSize.large))
                     .foregroundStyle(tint)
                     .frame(width: 32, height: 32)
                     .background(tint.opacity(0.12), in: Circle())
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title).font(.subheadline.weight(.bold))
-                    Text(tagline).font(.caption).foregroundStyle(.secondary)
+                    Text(tagline).font(.caption).foregroundStyle(Theme.textSecondary)
                 }
             }
 
@@ -144,7 +144,7 @@ struct AIChooserView: View {
                             .font(.caption2).foregroundStyle(tint.opacity(0.8))
                             .frame(width: 16)
                         Text(bullet.1)
-                            .font(.caption).foregroundStyle(.secondary)
+                            .font(.caption).foregroundStyle(Theme.textSecondary)
                     }
                 }
             }
@@ -162,11 +162,11 @@ struct AIChooserView: View {
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: Theme.radiusControl)
                 .fill(Theme.cardBackground)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: Theme.radiusControl)
                 .strokeBorder(tint.opacity(0.25), lineWidth: 0.5)
         )
     }

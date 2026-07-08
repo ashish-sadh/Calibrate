@@ -37,25 +37,25 @@ struct V6CoachingNudge: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: payload.icon)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(size: Theme.FontSize.base, weight: .semibold))
                 .foregroundStyle(Theme.accent)
                 .frame(width: 36, height: 36)
                 .background(Theme.accent.opacity(0.12), in: Circle())
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(payload.title)
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.system(size: Theme.FontSize.subheadline, weight: .bold, design: .rounded))
                     .foregroundStyle(Theme.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
                 Text(payload.detail)
-                    .font(.system(size: 13))
+                    .font(.system(size: Theme.FontSize.footnote))
                     .foregroundStyle(Theme.textSecondary)
                     .lineSpacing(1.5)
                     .fixedSize(horizontal: false, vertical: true)
                 if payload.showAskAI {
                     Button(action: onAskAI) {
                         Text("Ask AI")
-                            .font(.system(size: 12, weight: .semibold))
+                            .font(.system(size: Theme.FontSize.caption, weight: .semibold))
                             .foregroundStyle(Theme.accent)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
@@ -71,7 +71,7 @@ struct V6CoachingNudge: View {
             if let onDismiss {
                 Button(action: onDismiss) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 11, weight: .semibold))
+                        .font(.system(size: Theme.FontSize.tiny, weight: .semibold))
                         .foregroundStyle(Theme.textTertiary)
                         .frame(width: 22, height: 22)
                         .contentShape(Rectangle())
@@ -83,9 +83,9 @@ struct V6CoachingNudge: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: Theme.radiusControl)
                 .strokeBorder(Theme.separator, lineWidth: 0.5)
         )
         .accessibilityElement(children: .combine)

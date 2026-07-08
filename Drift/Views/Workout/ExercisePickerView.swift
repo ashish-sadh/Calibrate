@@ -53,11 +53,11 @@ struct ExercisePickerView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 HStack {
-                    Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                    Image(systemName: "magnifyingglass").foregroundStyle(Theme.textSecondary)
                     TextField("Search exercises", text: $query).textFieldStyle(.plain).autocorrectionDisabled()
                         .focused($searchFocused)
                     if !query.isEmpty {
-                        Button { query = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary) }
+                        Button { query = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(Theme.textSecondary) }
                     }
                 }
                 .padding()
@@ -142,7 +142,7 @@ struct ExercisePickerView: View {
                         Text(name).font(.subheadline)
                         Spacer()
                         if let lastW = try? WorkoutService.lastWeight(for: name) {
-                            Text("\(Int(Preferences.weightUnit.convertFromLbs(lastW))) \(Preferences.weightUnit.displayName)").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                            Text("\(Int(Preferences.weightUnit.convertFromLbs(lastW))) \(Preferences.weightUnit.displayName)").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textSecondary)
                         }
                     }
                     HStack(spacing: 4) {
@@ -170,7 +170,7 @@ struct ExercisePickerView: View {
     private func muscleChip(_ bodyPart: String) -> some View {
         HStack(spacing: 2) {
             Image(systemName: muscleIcon(bodyPart)).font(.system(size: 8))
-            Text(bodyPart).font(.system(size: 9))
+            Text(bodyPart).font(.system(size: Theme.FontSize.nano))
         }
         .padding(.horizontal, 6).padding(.vertical, 2)
         .background(Theme.accent.opacity(0.1), in: Capsule())
@@ -180,11 +180,11 @@ struct ExercisePickerView: View {
     private func equipmentChip(_ equipment: String) -> some View {
         HStack(spacing: 2) {
             Image(systemName: equipmentIcon(equipment)).font(.system(size: 8))
-            Text(equipment.capitalized).font(.system(size: 9))
+            Text(equipment.capitalized).font(.system(size: Theme.FontSize.nano))
         }
         .padding(.horizontal, 6).padding(.vertical, 2)
         .background(Color.secondary.opacity(0.1), in: Capsule())
-        .foregroundStyle(.secondary)
+        .foregroundStyle(Theme.textSecondary)
     }
 
     private func muscleIcon(_ bodyPart: String) -> String {

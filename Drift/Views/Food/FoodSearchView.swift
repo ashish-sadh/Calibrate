@@ -64,7 +64,7 @@ struct FoodSearchView: View {
         VStack(spacing: 0) {
                 // Search bar
                 HStack {
-                    Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                    Image(systemName: "magnifyingglass").foregroundStyle(Theme.textSecondary)
                     TextField("Search food or recipe", text: $query)
                         .textFieldStyle(.plain)
                         .focused($searchFocused)
@@ -107,7 +107,7 @@ struct FoodSearchView: View {
                         }
                     if !query.isEmpty {
                         Button { query = ""; results = []; matchingRecipes = [] } label: {
-                            Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
+                            Image(systemName: "xmark.circle.fill").foregroundStyle(Theme.textSecondary)
                         }
                         .accessibilityLabel("Clear search")
                     }
@@ -127,7 +127,7 @@ struct FoodSearchView: View {
                     if isSearchingOnline {
                         VStack(spacing: 12) {
                             ProgressView().tint(.secondary)
-                            Text("Searching online...").font(.caption).foregroundStyle(.tertiary)
+                            Text("Searching online...").font(.caption).foregroundStyle(Theme.textTertiary)
                         }.frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
                         noResultsView
@@ -250,10 +250,10 @@ struct FoodSearchView: View {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(combo.name).font(.subheadline.weight(.medium))
                                         Text(itemCount > 0 ? "\(itemCount) items · \(Int(totalCal)) cal" : "\(Int(totalCal)) cal")
-                                            .font(.caption).foregroundStyle(.secondary)
+                                            .font(.caption).foregroundStyle(Theme.textSecondary)
                                     }
                                     Spacer()
-                                    Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.tertiary)
+                                    Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.textTertiary)
                                 }
                                 .padding(.vertical, 4)
                             }
@@ -295,7 +295,7 @@ struct FoodSearchView: View {
 
     private func suggestionSection<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(title).font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+            Text(title).font(.caption2.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                 .padding(.horizontal, 16)
             content()
         }
@@ -307,11 +307,11 @@ struct FoodSearchView: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 1) {
                         Text(food.name).font(.subheadline).lineLimit(1)
-                        Text(food.macroSummary).font(.caption2).foregroundStyle(.secondary)
+                        Text(food.macroSummary).font(.caption2).foregroundStyle(Theme.textSecondary)
                     }
                     Spacer()
-                    Text("\(Int(food.calories))").font(.caption.weight(.medium).monospacedDigit()).foregroundStyle(.secondary)
-                    Text("cal").font(.caption2).foregroundStyle(.tertiary)
+                    Text("\(Int(food.calories))").font(.caption.weight(.medium).monospacedDigit()).foregroundStyle(Theme.textSecondary)
+                    Text("cal").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
             }.buttonStyle(.plain)
 
@@ -353,11 +353,11 @@ struct FoodSearchView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 1) {
                             Text(entry.name).font(.subheadline).lineLimit(1)
-                            Text(entry.macroSummary).font(.caption2).foregroundStyle(.secondary)
+                            Text(entry.macroSummary).font(.caption2).foregroundStyle(Theme.textSecondary)
                         }
                         Spacer()
-                        Text("\(Int(entry.calories))").font(.caption.weight(.medium).monospacedDigit()).foregroundStyle(.secondary)
-                        Text("cal").font(.caption2).foregroundStyle(.tertiary)
+                        Text("\(Int(entry.calories))").font(.caption.weight(.medium).monospacedDigit()).foregroundStyle(Theme.textSecondary)
+                        Text("cal").font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
                 }.buttonStyle(.plain)
             } else {
@@ -366,11 +366,11 @@ struct FoodSearchView: View {
                     Image(systemName: "bookmark.fill").font(.caption2).foregroundStyle(Theme.accent.opacity(0.7))
                     VStack(alignment: .leading, spacing: 1) {
                         Text(entry.name).font(.subheadline).lineLimit(1)
-                        Text(entry.macroSummary).font(.caption2).foregroundStyle(.secondary)
+                        Text(entry.macroSummary).font(.caption2).foregroundStyle(Theme.textSecondary)
                     }
                     Spacer()
-                    Text("\(Int(entry.calories))").font(.caption.weight(.medium).monospacedDigit()).foregroundStyle(.secondary)
-                    Text("cal").font(.caption2).foregroundStyle(.tertiary)
+                    Text("\(Int(entry.calories))").font(.caption.weight(.medium).monospacedDigit()).foregroundStyle(Theme.textSecondary)
+                    Text("cal").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
             }
 
@@ -435,8 +435,8 @@ struct FoodSearchView: View {
 
     private var noResultsView: some View {
         VStack(spacing: 12) {
-            Image(systemName: "magnifyingglass").font(.title2).foregroundStyle(.tertiary)
-            Text("No results for \"\(query)\"").font(.subheadline).foregroundStyle(.secondary)
+            Image(systemName: "magnifyingglass").font(.title2).foregroundStyle(Theme.textTertiary)
+            Text("No results for \"\(query)\"").font(.subheadline).foregroundStyle(Theme.textSecondary)
             Button { showingManual = true } label: {
                 Label("Enter manually", systemImage: "pencil").font(.subheadline)
             }.buttonStyle(.bordered)
@@ -474,7 +474,7 @@ struct FoodSearchView: View {
                                                 .background(Theme.accent.opacity(0.15), in: Capsule())
                                         }
                                     }
-                                    Text(recipe.macroSummary).font(.caption).foregroundStyle(.secondary)
+                                    Text(recipe.macroSummary).font(.caption).foregroundStyle(Theme.textSecondary)
                                 }
                                 Spacer()
                                 Image(systemName: "plus.circle.fill").foregroundStyle(Theme.accent)
@@ -516,7 +516,7 @@ struct FoodSearchView: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(food.name).font(.subheadline)
                                 Text("\(food.macroSummary) \u{00B7} \(unitInfo)")
-                                    .font(.caption).foregroundStyle(.secondary)
+                                    .font(.caption).foregroundStyle(Theme.textSecondary)
                             }
                         }
                         .tint(.primary)
@@ -557,7 +557,7 @@ struct FoodSearchView: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(food.name).font(.subheadline).lineLimit(1)
-                                    Text(food.macroSummary).font(.caption).foregroundStyle(.secondary)
+                                    Text(food.macroSummary).font(.caption).foregroundStyle(Theme.textSecondary)
                                 }
                                 Spacer()
                                 Image(systemName: "plus.circle.fill").foregroundStyle(Theme.accent)
@@ -576,7 +576,7 @@ struct FoodSearchView: View {
                 Section {
                     HStack(spacing: 8) {
                         ProgressView().scaleEffect(0.7)
-                        Text("Searching online...").font(.caption).foregroundStyle(.tertiary)
+                        Text("Searching online...").font(.caption).foregroundStyle(Theme.textTertiary)
                     }
                 }
             }
@@ -671,7 +671,7 @@ struct FoodSearchView: View {
                         let perText = (currentLabel == "g" || currentLabel == "ml")
                             ? "\(food.macroSummary) per \(Int(food.servingSize))\(food.servingUnit)"
                             : "\(Int(food.calories * scale))cal \(Int(food.proteinG * scale))P \(Int(food.carbsG * scale))C \(Int(food.fatG * scale))F per 1 \(currentLabel) (\(Int(unit.gramsEquivalent))g)"
-                        Text(perText).font(.caption).foregroundStyle(.secondary)
+                        Text(perText).font(.caption).foregroundStyle(Theme.textSecondary)
                     }
                     .padding(.top, 8)
 
@@ -684,7 +684,7 @@ struct FoodSearchView: View {
                         HStack(alignment: .firstTextBaseline, spacing: 4) {
                             Text("\(Int(food.calories * multiplier))")
                                 .font(.title.weight(.bold).monospacedDigit())
-                            Text("cal").font(.subheadline).foregroundStyle(.secondary)
+                            Text("cal").font(.subheadline).foregroundStyle(Theme.textSecondary)
                         }
 
                         HStack(spacing: 8) {
@@ -695,7 +695,7 @@ struct FoodSearchView: View {
 
                         if food.fiberG > 0 {
                             Text("\(MacroFormatter.fiber(food.fiberG * multiplier))g fiber")
-                                .font(.caption).foregroundStyle(.secondary)
+                                .font(.caption).foregroundStyle(Theme.textSecondary)
                         }
                     }
                     .card()
@@ -704,12 +704,12 @@ struct FoodSearchView: View {
 
                 // Time picker
                 DatePicker("Time", selection: $logTime, displayedComponents: .hourAndMinute)
-                    .font(.subheadline).foregroundStyle(.secondary)
+                    .font(.subheadline).foregroundStyle(Theme.textSecondary)
                     .padding(.horizontal, 16).padding(.vertical, 8)
 
                 // Meal type picker
                 HStack {
-                    Text("Meal").font(.subheadline).foregroundStyle(.secondary)
+                    Text("Meal").font(.subheadline).foregroundStyle(Theme.textSecondary)
                     Spacer()
                     Menu {
                         ForEach(MealType.allCases, id: \.self) { type in
@@ -844,7 +844,7 @@ private struct EditRecipeSheet: View {
         HStack {
             Text(label); Spacer()
             TextField("0", text: value).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80)
-            Text(unit).font(.caption).foregroundStyle(.secondary).frame(width: 35)
+            Text(unit).font(.caption).foregroundStyle(Theme.textSecondary).frame(width: 35)
         }
     }
 }
@@ -854,7 +854,7 @@ extension FoodSearchView {
         HStack {
             Text(label); Spacer()
             TextField("0", text: value).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80)
-            Text(unit).font(.caption).foregroundStyle(.secondary).frame(width: 35)
+            Text(unit).font(.caption).foregroundStyle(Theme.textSecondary).frame(width: 35)
         }
     }
 

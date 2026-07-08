@@ -82,7 +82,7 @@ struct BackupSettingsView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Automatic Backups (iCloud)").font(.subheadline.weight(.medium))
                     Text("Daily snapshot of your Drift data to iCloud Drive")
-                        .font(.caption2).foregroundStyle(.tertiary)
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
                 Spacer()
                 Toggle("", isOn: $backupEnabled).labelsHidden().tint(Theme.ink)
@@ -90,10 +90,10 @@ struct BackupSettingsView: View {
 
             if let date = lastSuccessfulDate {
                 Text("Last backed up: \(BackupSettingsView.relativeFormatter.localizedString(for: date, relativeTo: Date()))")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(Theme.textSecondary)
             } else if backupEnabled {
                 Text("No backups yet — first backup runs tonight at 3 AM, or tap Back Up Now.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(Theme.textSecondary)
             }
 
             if let err = lastBackupError {
@@ -145,7 +145,7 @@ struct BackupSettingsView: View {
                     Image(systemName: "arrow.down.to.line").foregroundStyle(Theme.textSecondary).frame(width: 24)
                     Text("Restore from Backup…").foregroundStyle(Theme.textPrimary)
                     Spacer()
-                    Image(systemName: "chevron.right").font(.caption).foregroundStyle(.tertiary)
+                    Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.textTertiary)
                 }
                 .padding(.vertical, 6)
             }
@@ -159,16 +159,16 @@ struct BackupSettingsView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("Included")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
                 Text("Your food log, weight history, recipes, workouts, biomarkers, and app preferences.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(Theme.textSecondary)
 
                 Text("Not included")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
                     .padding(.top, 4)
                 Text("Photos, HealthKit data (Apple syncs this separately), and security keys.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(Theme.textSecondary)
             }
             .padding(.top, 6)
         } label: {

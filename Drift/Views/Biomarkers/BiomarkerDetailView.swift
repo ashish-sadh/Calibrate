@@ -66,7 +66,7 @@ struct BiomarkerDetailView: View {
 
             Text(definition.description)
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
 
             // Category tags
             FlowLayout(spacing: 6) {
@@ -77,7 +77,7 @@ struct BiomarkerDetailView: View {
                         .padding(.vertical, 4)
                         .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 6))
                         .overlay(RoundedRectangle(cornerRadius: 6).stroke(Theme.separator, lineWidth: 1))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
                 }
             }
         }
@@ -98,7 +98,7 @@ struct BiomarkerDetailView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
-        .background(statusTintColor(status).opacity(0.12), in: RoundedRectangle(cornerRadius: 14))
+        .background(statusTintColor(status).opacity(0.12), in: RoundedRectangle(cornerRadius: Theme.radiusControl))
     }
 
     // MARK: - Latest Value
@@ -107,14 +107,14 @@ struct BiomarkerDetailView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text("LATEST")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
 
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text(formatValue(latestResult?.normalizedValue ?? 0))
-                    .font(.system(size: 40, weight: .bold, design: .rounded))
+                    .font(.system(size: Theme.FontSize.display2, weight: .bold, design: .rounded))
                 Text(definition.unit)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -209,12 +209,12 @@ struct BiomarkerDetailView: View {
             .chartYAxis {
                 AxisMarks(values: chartYAxisValues) { mark in
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3)).foregroundStyle(.secondary.opacity(0.3))
-                    AxisValueLabel().foregroundStyle(.secondary)
+                    AxisValueLabel().foregroundStyle(Theme.textSecondary)
                 }
             }
             .chartXAxis {
                 AxisMarks { mark in
-                    AxisValueLabel(format: .dateTime.month(.abbreviated).day()).foregroundStyle(.secondary)
+                    AxisValueLabel(format: .dateTime.month(.abbreviated).day()).foregroundStyle(Theme.textSecondary)
                 }
             }
             .frame(height: 220)
@@ -267,7 +267,7 @@ struct BiomarkerDetailView: View {
                 .frame(width: 12, height: 2)
             Text(label)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
         }
     }
 
@@ -290,7 +290,7 @@ struct BiomarkerDetailView: View {
                         .font(.subheadline.weight(.bold).monospacedDigit())
                     Text(result.normalizedUnit)
                         .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Theme.textTertiary)
                 }
                 .padding(.vertical, 8)
 
@@ -308,7 +308,7 @@ struct BiomarkerDetailView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("IMPACT ON HEALTHSPAN")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
 
             Text(definition.whyItMatters)
                 .font(.subheadline)
@@ -317,7 +317,7 @@ struct BiomarkerDetailView: View {
             if !definition.impactCategories.isEmpty {
                 Text("IMPACTED CATEGORIES")
                     .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Theme.textTertiary)
                     .padding(.top, 4)
 
                 FlowLayout(spacing: 6) {
@@ -391,7 +391,7 @@ struct BiomarkerDetailView: View {
                     Spacer()
                     Image(systemName: expandedSections.contains(key) ? "chevron.up" : "chevron.down")
                         .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Theme.textTertiary)
                 }
                 .contentShape(Rectangle())
                 .padding(.vertical, 8)
@@ -401,7 +401,7 @@ struct BiomarkerDetailView: View {
             if expandedSections.contains(key) {
                 Text(content)
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
                     .padding(.bottom, 8)
             }
 

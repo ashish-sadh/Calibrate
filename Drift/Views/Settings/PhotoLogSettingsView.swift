@@ -62,7 +62,7 @@ struct PhotoLogSettingsView: View {
                 .font(.subheadline.weight(.semibold))
             Text("Photo Log sends your meal photos to the provider you choose (Anthropic or OpenAI). It turns on once you save an API key below. Everything else in Drift stays on your device. You pay for your own API key — Drift never sees your photos or key.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
         }
         .card()
     }
@@ -96,18 +96,18 @@ struct PhotoLogSettingsView: View {
                     Text(provider.displayName).font(.subheadline.weight(.semibold))
                     Spacer()
                     Image(systemName: "chevron.up.chevron.down")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.caption).foregroundStyle(Theme.textSecondary)
                 }
                 .padding(.vertical, 10).padding(.horizontal, 12)
-                .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 10))
+                .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
             }
             // Tier / cost line for the currently selected provider. Makes the
             // Gemini free-tier path discoverable so new users don't assume
             // every option costs money.
             Text(provider.pricingLine)
-                .font(.caption).foregroundStyle(.secondary)
+                .font(.caption).foregroundStyle(Theme.textSecondary)
             Text("Keys for the other providers stay saved — switching back keeps you signed in.")
-                .font(.caption2).foregroundStyle(.tertiary)
+                .font(.caption2).foregroundStyle(Theme.textTertiary)
         }
         .card()
     }
@@ -122,7 +122,7 @@ struct PhotoLogSettingsView: View {
                 Text("Model").font(.subheadline.weight(.medium))
                 Spacer()
                 Text("\(provider.availableModels.count) available")
-                    .font(.caption2).foregroundStyle(.tertiary)
+                    .font(.caption2).foregroundStyle(Theme.textTertiary)
             }
             Menu {
                 ForEach(provider.availableModels, id: \.self) { m in
@@ -144,17 +144,17 @@ struct PhotoLogSettingsView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(model).font(.subheadline.weight(.semibold))
                         Text(CloudVisionProvider.modelDescription(model))
-                            .font(.caption2).foregroundStyle(.secondary)
+                            .font(.caption2).foregroundStyle(Theme.textSecondary)
                     }
                     Spacer()
                     Image(systemName: "chevron.up.chevron.down")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.caption).foregroundStyle(Theme.textSecondary)
                 }
                 .padding(.vertical, 10).padding(.horizontal, 12)
-                .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 10))
+                .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
             }
             Text("Paid-tier models (Claude Opus, GPT-4o, Gemini 2.5 Pro) require billing on the provider. Test Connection below surfaces the provider's actual error — quota exhaustion, key scope, or model-not-available — verbatim.")
-                .font(.caption2).foregroundStyle(.tertiary)
+                .font(.caption2).foregroundStyle(Theme.textTertiary)
         }
         .card()
     }
@@ -168,7 +168,7 @@ struct PhotoLogSettingsView: View {
                 keyInputRow
             }
             Text("Stored in iOS Keychain, protected by Face ID. Never uploaded.")
-                .font(.caption2).foregroundStyle(.tertiary)
+                .font(.caption2).foregroundStyle(Theme.textTertiary)
         }
         .card()
     }

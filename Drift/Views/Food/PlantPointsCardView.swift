@@ -61,10 +61,10 @@ struct PlantPointsCardView: View {
                     .font(.title2.weight(.bold).monospacedDigit())
                     .foregroundStyle(Theme.plantGreen)
                 if isWeekly {
-                    Text("/ 30").font(.subheadline.monospacedDigit()).foregroundStyle(.tertiary)
+                    Text("/ 30").font(.subheadline.monospacedDigit()).foregroundStyle(Theme.textTertiary)
                 }
                 Text(pp.plantCount == 1 ? "plant" : "plants")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(Theme.textSecondary)
                 Spacer()
                 if plantPeriod == .day && viewModel.dailyNewPlants > 0 {
                     Text("+\(viewModel.dailyNewPlants) new this week")
@@ -105,7 +105,7 @@ struct PlantPointsCardView: View {
                 }
                 if pp.plantCount == 0 {
                     Text("No plant foods logged yet")
-                        .font(.caption).foregroundStyle(.tertiary)
+                        .font(.caption).foregroundStyle(Theme.textTertiary)
                 }
                 Spacer()
             }
@@ -115,9 +115,9 @@ struct PlantPointsCardView: View {
                 Button { showingPlantList.toggle() } label: {
                     HStack(spacing: 4) {
                         Text(showingPlantList ? "Hide plants" : "Show plants")
-                            .font(.caption2).foregroundStyle(.secondary)
+                            .font(.caption2).foregroundStyle(Theme.textSecondary)
                         Image(systemName: showingPlantList ? "chevron.up" : "chevron.down")
-                            .font(.caption2).foregroundStyle(.tertiary)
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
                 }
                 .buttonStyle(.plain)
@@ -190,7 +190,7 @@ struct PlantPointsCardView: View {
                 FlowLayout(spacing: 4) {
                     ForEach(pp.uniqueHerbsSpices, id: \.self) { name in
                         Text(name.capitalized)
-                            .font(.caption2).foregroundStyle(.secondary)
+                            .font(.caption2).foregroundStyle(Theme.textSecondary)
                             .padding(.horizontal, 8).padding(.vertical, 3)
                             .background(Theme.fatYellow.opacity(0.1), in: Capsule())
                     }

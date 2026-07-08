@@ -53,7 +53,7 @@ struct AddSupplementView: View {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text(supp.name).font(.subheadline)
-                                        Text("\(supp.dosage) \(supp.unit)").font(.caption).foregroundStyle(.secondary)
+                                        Text("\(supp.dosage) \(supp.unit)").font(.caption).foregroundStyle(Theme.textSecondary)
                                     }
                                     Spacer()
                                     Image(systemName: "plus.circle").foregroundStyle(Theme.accent)

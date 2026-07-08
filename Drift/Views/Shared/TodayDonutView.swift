@@ -41,7 +41,7 @@ struct TodayDonutView: View {
                             ).monospacedDigit())
                             .foregroundStyle(Theme.textPrimary)
                         Text("KCAL")
-                            .font(.system(size: 10, weight: .semibold))
+                            .font(.system(size: Theme.FontSize.micro, weight: .semibold))
                             .tracking(1.5)
                             .foregroundStyle(Theme.textSecondary)
                     }
@@ -74,16 +74,16 @@ struct TodayDonutView: View {
         HStack(alignment: .top, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text("TODAY'S INTAKE")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: Theme.FontSize.tiny, weight: .bold))
                     .tracking(0.9)
                     .foregroundStyle(Theme.textTertiary)
                 Text(payload.titleText)
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(.system(size: Theme.FontSize.base, weight: .semibold, design: .rounded))
                     .foregroundStyle(Theme.textPrimary)
             }
             Spacer(minLength: 0)
             Text("\(payload.pctOfGoal)% of goal")
-                .font(.system(size: 11, weight: .bold))
+                .font(.system(size: Theme.FontSize.tiny, weight: .bold))
                 .foregroundStyle(Theme.accent)
                 .padding(.horizontal, 9)
                 .padding(.vertical, 5)

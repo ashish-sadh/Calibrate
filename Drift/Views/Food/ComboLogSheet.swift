@@ -98,14 +98,14 @@ struct ComboLogSheet: View {
         }
         .padding(.vertical, 12)
         .frame(maxWidth: .infinity)
-        .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 12))
+        .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
         .animation(.easeInOut(duration: 0.2), value: totalCal)
     }
 
     private func macroStat(label: String, value: Int) -> some View {
         VStack(spacing: 2) {
             Text("\(value)").font(.title3.weight(.semibold).monospacedDigit())
-            Text(label).font(.caption2).foregroundStyle(.secondary)
+            Text(label).font(.caption2).foregroundStyle(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity)
     }
@@ -113,7 +113,7 @@ struct ComboLogSheet: View {
     private var itemList: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("FOOD ITEMS")
-                .font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                .font(.caption2.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                 .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 6)
             VStack(spacing: 1) {
                 ForEach($logItems) { $item in
@@ -121,7 +121,7 @@ struct ComboLogSheet: View {
                 }
             }
         }
-        .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 12))
+        .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
     }
 
     private func itemRow(item: Binding<ComboLogItem>) -> some View {
@@ -140,7 +140,7 @@ struct ComboLogSheet: View {
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(item.wrappedValue.enabled ? .primary : .secondary)
                 Text("\(Int(item.wrappedValue.totalCal)) cal · \(Int(item.wrappedValue.totalP))g P")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(Theme.textSecondary)
             }
 
             Spacer()
@@ -155,15 +155,15 @@ struct ComboLogSheet: View {
 
     private var noItemsFallback: some View {
         VStack(spacing: 8) {
-            Image(systemName: "fork.knife").font(.system(size: 36)).foregroundStyle(.tertiary)
+            Image(systemName: "fork.knife").font(.system(size: Theme.FontSize.display1)).foregroundStyle(Theme.textTertiary)
             Text(combo.name).font(.headline)
-            Text(combo.macroSummary).font(.subheadline).foregroundStyle(.secondary)
+            Text(combo.macroSummary).font(.subheadline).foregroundStyle(Theme.textSecondary)
             Text("This combo was saved in an older format.\nAll macros will be logged as a single entry.")
-                .font(.caption).foregroundStyle(.tertiary).multilineTextAlignment(.center)
+                .font(.caption).foregroundStyle(Theme.textTertiary).multilineTextAlignment(.center)
         }
         .padding(24)
         .frame(maxWidth: .infinity)
-        .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 12))
+        .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
     }
 
     private func deleteCombo() {

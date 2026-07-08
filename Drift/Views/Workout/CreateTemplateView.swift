@@ -117,18 +117,18 @@ struct CreateTemplateView: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text(ex.name).font(.subheadline)
                     HStack(spacing: 4) {
-                        Text("\(ex.sets) sets").font(.caption2).foregroundStyle(.tertiary)
-                        Text("\u{00B7}").font(.caption2).foregroundStyle(.quaternary)
+                        Text("\(ex.sets) sets").font(.caption2).foregroundStyle(Theme.textTertiary)
+                        Text("\u{00B7}").font(.caption2).foregroundStyle(Theme.textTertiary)
                         Text("\(ex.restSeconds/60):\(String(format: "%02d", ex.restSeconds%60)) rest")
-                            .font(.caption2).foregroundStyle(.tertiary)
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
                         if let notes = ex.notes, !notes.isEmpty {
-                            Text("\u{00B7}").font(.caption2).foregroundStyle(.quaternary)
-                            Text(notes).font(.caption2).foregroundStyle(.secondary).italic()
+                            Text("\u{00B7}").font(.caption2).foregroundStyle(Theme.textTertiary)
+                            Text(notes).font(.caption2).foregroundStyle(Theme.textSecondary).italic()
                         }
                     }
                 }
                 Spacer()
-                Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.quaternary)
+                Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.textTertiary)
             }
         }.tint(.primary)
     }

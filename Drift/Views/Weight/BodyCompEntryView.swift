@@ -99,7 +99,7 @@ struct BodyCompEntryView: View {
                 .multilineTextAlignment(.trailing)
                 .frame(width: 80)
             if !unit.isEmpty {
-                Text(unit).foregroundStyle(.secondary).frame(width: 35, alignment: .leading)
+                Text(unit).foregroundStyle(Theme.textSecondary).frame(width: 35, alignment: .leading)
             }
         }
     }

@@ -32,8 +32,8 @@ extension AIChatView {
             Text(vm.activeBackend == .remote
                 ? "Drift Coach \u{00B7} cloud-powered for faster, smarter answers. Messages leave your device when this is on."
                 : "On-device \u{00B7} runs entirely on your phone. Free, private, no internet needed.")
-                .font(.system(size: 10))
-                .foregroundStyle(.secondary)
+                .font(.system(size: Theme.FontSize.micro))
+                .foregroundStyle(Theme.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 14)
                 .animation(.easeInOut(duration: 0.2), value: vm.activeBackend)
@@ -51,20 +51,20 @@ extension AIChatView {
                     .foregroundStyle(selected ? Theme.accent : .secondary)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.system(size: Theme.FontSize.footnote, weight: .semibold))
                         .foregroundStyle(selected ? .primary : .secondary)
                     Text(subtitle)
-                        .font(.system(size: 11))
+                        .font(.system(size: Theme.FontSize.tiny))
                         .foregroundStyle(selected ? Theme.accent.opacity(0.8) : Color.secondary.opacity(0.6))
                 }
                 Spacer()
             }
             .padding(.horizontal, 12).padding(.vertical, 10)
             .background(
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: Theme.radiusSmall)
                     .fill(selected ? Theme.accent.opacity(0.08) : Color.white.opacity(0.04))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: Theme.radiusSmall)
                             .strokeBorder(selected ? Theme.accent.opacity(0.5) : Color.white.opacity(0.08), lineWidth: 1)
                     )
             )

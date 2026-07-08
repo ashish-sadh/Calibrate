@@ -114,10 +114,10 @@ struct AlgorithmSettingsView: View {
 
     private var heroCard: some View {
         VStack(spacing: 8) {
-            Text("Your TDEE").font(.caption).foregroundStyle(.secondary)
+            Text("Your TDEE").font(.caption).foregroundStyle(Theme.textSecondary)
             Text("\(liveTDEE)")
-                .font(.system(size: 48, weight: .bold).monospacedDigit())
-            Text("kcal/day").font(.caption).foregroundStyle(.tertiary)
+                .font(.system(size: Theme.FontSize.display4, weight: .bold).monospacedDigit())
+            Text("kcal/day").font(.caption).foregroundStyle(Theme.textTertiary)
 
             // Target + goal context
             if let target = liveCalorieTarget, let goal = WeightGoal.load() {
@@ -132,27 +132,27 @@ struct AlgorithmSettingsView: View {
                         .font(.caption2.weight(.bold).monospacedDigit())
                         .foregroundStyle(Theme.accent)
                     Text("to \(isLosing ? "lose" : "gain") \(String(format: "%.1f", remaining)) \(unit.displayName)")
-                        .font(.caption2).foregroundStyle(.quaternary)
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
 
                 // Required vs actual deficit/surplus
                 Divider().frame(width: 40).overlay(Color.white.opacity(0.1))
                 HStack(spacing: 12) {
                     VStack(spacing: 1) {
-                        Text("Required").font(.caption).foregroundStyle(.tertiary)
+                        Text("Required").font(.caption).foregroundStyle(Theme.textTertiary)
                         Text("\(requiredDeficit < 0 ? "" : "+")\(Int(requiredDeficit))")
                             .font(.caption2.weight(.bold).monospacedDigit())
                             .foregroundStyle(isLosing ? (requiredDeficit < 0 ? Theme.deficit : Theme.surplus) : (requiredDeficit > 0 ? Theme.deficit : Theme.surplus))
                     }
                     if let deficit = liveDeficit {
                         VStack(spacing: 1) {
-                            Text("Current").font(.caption).foregroundStyle(.tertiary)
+                            Text("Current").font(.caption).foregroundStyle(Theme.textTertiary)
                             Text("\(deficit < 0 ? "" : "+")\(Int(deficit))")
                                 .font(.caption2.weight(.bold).monospacedDigit())
                                 .foregroundStyle(isLosing ? (deficit < 0 ? Theme.deficit : Theme.surplus) : (deficit > 0 ? Theme.deficit : Theme.surplus))
                         }
                     }
-                    Text("kcal/day").font(.caption).foregroundStyle(.quaternary)
+                    Text("kcal/day").font(.caption).foregroundStyle(Theme.textTertiary)
                 }
             } else if liveCalorieTarget != nil {
                 // Has TDEE target but no goal
@@ -195,7 +195,7 @@ struct AlgorithmSettingsView: View {
                         .foregroundStyle(Theme.accent)
                     Image(systemName: "chevron.down")
                         .font(.caption2.weight(.bold))
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Theme.textTertiary)
                         .rotationEffect(.degrees(expandedSection == id ? 0 : -90))
                 }
                 .padding(.vertical, 12)
@@ -216,7 +216,7 @@ struct AlgorithmSettingsView: View {
         VStack(alignment: .leading, spacing: 6) {
             Slider(value: $tdeeConfig.activityMultiplier, in: 22...36, step: 1).tint(Theme.accent)
             HStack {
-                Text("Sedentary").font(.caption2).foregroundStyle(.tertiary)
+                Text("Sedentary").font(.caption2).foregroundStyle(Theme.textTertiary)
                 Spacer()
                 if tdeeConfig.activityMultiplier != 29 {
                     Button { tdeeConfig.activityMultiplier = 29 } label: {
@@ -224,10 +224,10 @@ struct AlgorithmSettingsView: View {
                     }
                 }
                 Spacer()
-                Text("Athlete").font(.caption2).foregroundStyle(.tertiary)
+                Text("Athlete").font(.caption2).foregroundStyle(Theme.textTertiary)
             }
             Text("Sets your baseline. Refined by profile and Apple Health as data arrives.")
-                .font(.caption2).foregroundStyle(.tertiary)
+                .font(.caption2).foregroundStyle(Theme.textTertiary)
         }
     }
 
@@ -247,11 +247,11 @@ struct AlgorithmSettingsView: View {
     private var profileContent: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("More data = more accurate. Auto-filled from Apple Health.")
-                .font(.caption2).foregroundStyle(.tertiary)
+                .font(.caption2).foregroundStyle(Theme.textTertiary)
 
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Sex").font(.caption2).foregroundStyle(.secondary)
+                    Text("Sex").font(.caption2).foregroundStyle(Theme.textSecondary)
                     Picker("", selection: Binding(
                         get: { tdeeConfig.sex },
                         set: { tdeeConfig.sex = $0 }
@@ -264,7 +264,7 @@ struct AlgorithmSettingsView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Age").font(.caption2).foregroundStyle(.secondary)
+                    Text("Age").font(.caption2).foregroundStyle(Theme.textSecondary)
                     TextField("—", value: $tdeeConfig.age, format: .number)
                         .keyboardType(.numberPad)
                         .focused($isFieldFocused)
@@ -277,7 +277,7 @@ struct AlgorithmSettingsView: View {
             }
 
             HStack(spacing: 8) {
-                Text("Height").font(.caption2).foregroundStyle(.secondary)
+                Text("Height").font(.caption2).foregroundStyle(Theme.textSecondary)
                 TextField("cm", value: $tdeeConfig.heightCm, format: .number)
                     .keyboardType(.decimalPad)
                     .focused($isFieldFocused)
@@ -286,11 +286,11 @@ struct AlgorithmSettingsView: View {
                     .padding(.vertical, 6)
                     .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 8))
                     .frame(width: 80)
-                Text("cm").font(.caption2).foregroundStyle(.tertiary)
+                Text("cm").font(.caption2).foregroundStyle(Theme.textTertiary)
                 if let h = tdeeConfig.heightCm {
                     let totalInches = h / 2.54
                     Text("(\(Int(totalInches / 12))'\(Int(totalInches.truncatingRemainder(dividingBy: 12)))\")")
-                        .font(.caption2).foregroundStyle(.tertiary)
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
             }
         }
@@ -302,7 +302,7 @@ struct AlgorithmSettingsView: View {
         VStack(alignment: .leading, spacing: 6) {
             Slider(value: $tdeeConfig.manualAdjustment, in: -500...500, step: 25).tint(Theme.accent)
             HStack {
-                Text("-500").font(.caption2).foregroundStyle(.tertiary)
+                Text("-500").font(.caption2).foregroundStyle(Theme.textTertiary)
                 Spacer()
                 if tdeeConfig.manualAdjustment != 0 {
                     Button { tdeeConfig.manualAdjustment = 0 } label: {
@@ -310,10 +310,10 @@ struct AlgorithmSettingsView: View {
                     }
                 }
                 Spacer()
-                Text("+500").font(.caption2).foregroundStyle(.tertiary)
+                Text("+500").font(.caption2).foregroundStyle(Theme.textTertiary)
             }
             Text("Adjust if your TDEE doesn't match other tools.")
-                .font(.caption2).foregroundStyle(.tertiary)
+                .font(.caption2).foregroundStyle(Theme.textTertiary)
         }
     }
 
@@ -325,10 +325,10 @@ struct AlgorithmSettingsView: View {
                 withAnimation(.easeInOut(duration: 0.2)) { showAdvanced.toggle() }
             } label: {
                 HStack {
-                    Text("Advanced").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                    Text("Advanced").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                     Spacer()
                     Image(systemName: "chevron.down")
-                        .font(.caption2.weight(.bold)).foregroundStyle(.tertiary)
+                        .font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary)
                         .rotationEffect(.degrees(showAdvanced ? 0 : -90))
                 }
             }
@@ -338,7 +338,7 @@ struct AlgorithmSettingsView: View {
                 VStack(spacing: 10) {
                     // Data sources — from the shared TDEE estimator (same as Dashboard)
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Active Data Sources").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+                        Text("Active Data Sources").font(.caption.weight(.semibold)).foregroundStyle(Theme.textTertiary)
                         HStack(spacing: 10) {
                             let est = TDEEEstimator.shared.cachedOrSync()
                             ForEach(est.activeSources, id: \.self) { source in
@@ -363,7 +363,7 @@ struct AlgorithmSettingsView: View {
                                     }
                                 }
                             }
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(Theme.textTertiary)
                         }
                     }
 
@@ -371,7 +371,7 @@ struct AlgorithmSettingsView: View {
 
                     // Presets
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("Estimation Style").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+                        Text("Estimation Style").font(.caption.weight(.semibold)).foregroundStyle(Theme.textTertiary)
                         presetRow("Conservative", detail: "Smoother, cautious", isSelected: activePreset == "conservative") {
                             config = .conservative; tdeeConfig.appleHealthTrust = 1.0
                         }
@@ -387,13 +387,13 @@ struct AlgorithmSettingsView: View {
 
                     // How it works
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("How it works").font(.caption.weight(.semibold)).foregroundStyle(.tertiary)
+                        Text("How it works").font(.caption.weight(.semibold)).foregroundStyle(Theme.textTertiary)
                         howItWorksRow("1", "Apple Health", "Resting + active energy (7-day avg)")
                         howItWorksRow("2", "Profile", "Age, height, sex (Mifflin-St Jeor)")
                         howItWorksRow("3", "Food Log", "Your intake vs weight change")
                         howItWorksRow("4", "Body Weight", "Baseline from weight + activity")
                         Text("Each source refines the estimate. More data = more accurate.")
-                            .font(.caption2).foregroundStyle(.quaternary)
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
 
                     // Reset
@@ -454,7 +454,7 @@ struct AlgorithmSettingsView: View {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                     .font(.caption).foregroundStyle(isSelected ? Theme.accent : Color.gray.opacity(0.4))
                 Text(name).font(.caption)
-                Text(detail).font(.caption2).foregroundStyle(.tertiary)
+                Text(detail).font(.caption2).foregroundStyle(Theme.textTertiary)
             }
             .padding(.vertical, 2)
         }
@@ -465,7 +465,7 @@ struct AlgorithmSettingsView: View {
         HStack(alignment: .top, spacing: 6) {
             Text(num).font(.caption.weight(.bold)).foregroundStyle(Theme.accent)
                 .frame(width: 14, height: 14).background(Theme.accent.opacity(0.15), in: Circle())
-            Text("\(title): ").font(.caption2.weight(.semibold)) + Text(detail).font(.caption2).foregroundStyle(.tertiary)
+            Text("\(title): ").font(.caption2.weight(.semibold)) + Text(detail).font(.caption2).foregroundStyle(Theme.textTertiary)
         }
     }
 

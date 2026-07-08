@@ -105,9 +105,9 @@ struct ExerciseVoiceLogSheet: View {
                 .foregroundStyle(Theme.textPrimary)
                 .lineLimit(1...4)
                 .padding(14)
-                .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
+                .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 14)
+                    RoundedRectangle(cornerRadius: Theme.radiusControl)
                         .strokeBorder(Theme.separator, lineWidth: 0.5)
                 )
                 .padding(.horizontal, 24)
@@ -246,9 +246,9 @@ struct ExerciseVoiceLogSheet: View {
                             .font(.subheadline.weight(.medium))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
-                            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
+                            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
                             .overlay(
-                                RoundedRectangle(cornerRadius: 14)
+                                RoundedRectangle(cornerRadius: Theme.radiusControl)
                                     .strokeBorder(Theme.separator, lineWidth: 0.5)
                             )
                     }
@@ -332,9 +332,9 @@ struct ExerciseVoiceLogSheet: View {
             }
         }
         .padding(12)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
         .overlay(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: Theme.radiusControl)
                 .strokeBorder(isNew ? Theme.ink : Theme.separator, lineWidth: isNew ? 1.5 : 0.5)
         )
         .animation(.easeOut(duration: 0.25), value: isNew)
@@ -351,7 +351,7 @@ struct ExerciseVoiceLogSheet: View {
                 .padding(.vertical, 7)
                 .background(Theme.background, in: RoundedRectangle(cornerRadius: 8))
             Text(label)
-                .font(.system(size: 9, weight: .medium))
+                .font(.system(size: Theme.FontSize.nano, weight: .medium))
                 .foregroundStyle(Theme.textTertiary)
         }
     }
@@ -362,7 +362,7 @@ struct ExerciseVoiceLogSheet: View {
         VStack(spacing: 16) {
             Spacer()
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 36))
+                .font(.system(size: Theme.FontSize.display1))
                 .foregroundStyle(Theme.fatYellow)
             Text("Couldn't log that")
                 .font(.headline.weight(.semibold))

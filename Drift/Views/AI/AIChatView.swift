@@ -87,7 +87,7 @@ struct AIChatView: View {
                 HStack(spacing: 6) {
                     ProgressView().scaleEffect(0.6)
                     Text("Preparing AI assistant...")
-                        .font(.caption2).foregroundStyle(.tertiary)
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
                 .padding(.horizontal, 14).padding(.vertical, 4)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -349,7 +349,7 @@ struct AIChatView: View {
             Button { vm.undoProposedMeal() } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "arrow.uturn.backward")
-                        .font(.system(size: 11, weight: .medium))
+                        .font(.system(size: Theme.FontSize.tiny, weight: .medium))
                     Text("Undo")
                         .font(.caption.weight(.semibold))
                 }

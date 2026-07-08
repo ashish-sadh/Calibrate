@@ -62,9 +62,9 @@ struct BarcodeScannerView: UIViewControllerRepresentable {
             view.addSubview(overlay)
             let scanArea = CGRect(x: view.bounds.width * 0.1, y: view.bounds.height * 0.3, width: view.bounds.width * 0.8, height: view.bounds.height * 0.15)
             let path = UIBezierPath(rect: overlay.bounds)
-            path.append(UIBezierPath(roundedRect: scanArea, cornerRadius: 12).reversing())
+            path.append(UIBezierPath(roundedRect: scanArea, cornerRadius: Theme.radiusSmall).reversing())
             let mask = CAShapeLayer(); mask.path = path.cgPath; overlay.layer.mask = mask
-            let border = CAShapeLayer(); border.path = UIBezierPath(roundedRect: scanArea, cornerRadius: 12).cgPath
+            let border = CAShapeLayer(); border.path = UIBezierPath(roundedRect: scanArea, cornerRadius: Theme.radiusSmall).cgPath
             border.strokeColor = UIColor.white.withAlphaComponent(0.6).cgColor; border.fillColor = UIColor.clear.cgColor; border.lineWidth = 2
             view.layer.addSublayer(border)
             let label = UILabel(); label.text = "Point camera at barcode"; label.textColor = .white; label.font = .systemFont(ofSize: 14, weight: .medium)
@@ -112,13 +112,13 @@ struct BarcodeLookupView: View {
                 } else if isLooking {
                     VStack(spacing: 16) {
                         ProgressView()
-                        Text("Looking up barcode...").font(.subheadline).foregroundStyle(.secondary)
-                        if let b = scannedBarcode { Text(b).font(.caption.monospacedDigit()).foregroundStyle(.tertiary) }
+                        Text("Looking up barcode...").font(.subheadline).foregroundStyle(Theme.textSecondary)
+                        if let b = scannedBarcode { Text(b).font(.caption.monospacedDigit()).foregroundStyle(Theme.textTertiary) }
                     }
                 } else if isProcessingOCR {
                     VStack(spacing: 16) {
                         ProgressView()
-                        Text("Reading nutrition label...").font(.subheadline).foregroundStyle(.secondary)
+                        Text("Reading nutrition label...").font(.subheadline).foregroundStyle(Theme.textSecondary)
                     }
                 } else if let product {
                     productView(product)
@@ -152,8 +152,8 @@ struct BarcodeLookupView: View {
     private var notFoundView: some View {
         VStack(spacing: 16) {
             Image(systemName: "barcode.viewfinder")
-                .font(.system(size: 40)).foregroundStyle(Theme.surplus)
-            Text(error ?? "Product not found").font(.subheadline).foregroundStyle(.secondary)
+                .font(.system(size: Theme.FontSize.display2)).foregroundStyle(Theme.surplus)
+            Text(error ?? "Product not found").font(.subheadline).foregroundStyle(Theme.textSecondary)
 
             VStack(spacing: 10) {
                 Button {
@@ -198,7 +198,7 @@ struct BarcodeLookupView: View {
                         Text("Nutrition Label Scan").font(.subheadline.weight(.semibold))
                     }
                     Text("Review and edit the values below. OCR may not be perfect.")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.caption).foregroundStyle(Theme.textSecondary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .card()
@@ -291,9 +291,9 @@ struct BarcodeLookupView: View {
                 // Product info
                 VStack(alignment: .leading, spacing: 4) {
                     Text(p.name).font(.headline)
-                    if let brand = p.brand { Text(brand).font(.subheadline).foregroundStyle(.secondary) }
+                    if let brand = p.brand { Text(brand).font(.subheadline).foregroundStyle(Theme.textSecondary) }
                     let perText = "\(Int(p.calories))cal · \(Int(p.proteinG))P \(Int(p.carbsG))C \(Int(p.fatG))F per 100g"
-                    Text(perText).font(.caption).foregroundStyle(.tertiary)
+                    Text(perText).font(.caption).foregroundStyle(Theme.textTertiary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading).card()
 
@@ -305,8 +305,8 @@ struct BarcodeLookupView: View {
                 VStack(spacing: 8) {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text("\(Int(food.calories * multiplier))")
-                            .font(.system(size: 36, weight: .bold).monospacedDigit())
-                        Text("cal").font(.subheadline).foregroundStyle(.secondary)
+                            .font(.system(size: Theme.FontSize.display1, weight: .bold).monospacedDigit())
+                        Text("cal").font(.subheadline).foregroundStyle(Theme.textSecondary)
                     }
                     HStack(spacing: 12) {
                         mpill("\(Int(food.proteinG * multiplier))g", label: "P", color: Theme.proteinRed)
@@ -317,7 +317,7 @@ struct BarcodeLookupView: View {
                 }.card()
 
                 DatePicker("Time", selection: $barcodeLogTime, displayedComponents: .hourAndMinute)
-                    .font(.subheadline).foregroundStyle(.secondary)
+                    .font(.subheadline).foregroundStyle(Theme.textSecondary)
 
                 Button { logProduct(p) } label: {
                     Label("Log Food", systemImage: "plus.circle.fill").frame(maxWidth: .infinity)
@@ -334,7 +334,7 @@ struct BarcodeLookupView: View {
     private func mpill(_ value: String, label: String, color: Color) -> some View {
         VStack(spacing: 2) {
             Text(value).font(.caption.weight(.bold).monospacedDigit())
-            Text(label).font(.caption2).foregroundStyle(.secondary)
+            Text(label).font(.caption2).foregroundStyle(Theme.textSecondary)
         }
         .frame(maxWidth: .infinity).padding(.vertical, 6).background(color.opacity(0.15), in: RoundedRectangle(cornerRadius: 8))
     }
@@ -438,7 +438,7 @@ struct NutritionPhotoCaptureView: View {
                 Image(systemName: "camera.viewfinder")
                     .font(.system(size: 60)).foregroundStyle(Theme.accent.opacity(0.5))
                 Text("Capture the nutrition label")
-                    .font(.subheadline).foregroundStyle(.secondary)
+                    .font(.subheadline).foregroundStyle(Theme.textSecondary)
 
                 VStack(spacing: 10) {
                     Button {

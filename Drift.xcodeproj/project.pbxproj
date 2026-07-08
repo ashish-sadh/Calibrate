@@ -24,6 +24,7 @@
 		15E39B1D0294AB6762CE9EE8 /* ClarificationFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F86480D874FB7BC3461695E4 /* ClarificationFlowTests.swift */; };
 		16B57C56AAF7844EC90BE404 /* MealTextLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04037279FDE1F5FFE95EC83D /* MealTextLogger.swift */; };
 		1706838F0C81E8CA30C39676 /* SleepRecoveryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0EA24C208A1C32DB52709A4 /* SleepRecoveryView.swift */; };
+		1C57C00A9DAD04EB9EC21313 /* DashboardSkeletons.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA809F63AA1ED36B1AB94C0C /* DashboardSkeletons.swift */; };
 		1D4B4658B68B40350E20F753 /* ComposedFoodEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6EEDE4BB88D55A2579A27D /* ComposedFoodEval.swift */; };
 		1E11E5682458FC83023281D7 /* WeightInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A039993077E4BE9F83149249 /* WeightInsightsView.swift */; };
 		1E41F060499A92A9EFB59BE1 /* BiomarkerDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 155E590DFD0A95014B993B9D /* BiomarkerDetailView.swift */; };
@@ -66,6 +67,7 @@
 		4BC91D0B7BC47D50583B7B4E /* CoachingBriefCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9693A1E065B9E2D3DA846EF /* CoachingBriefCard.swift */; };
 		4C31E5F32057829ABAA0840A /* DriftApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC6712FB46945A6FE1AAB0E0 /* DriftApp.swift */; };
 		4CEFAE0D5714919583BD7E3A /* V6CoachingNudgeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E88F42C0C954DCD310138696 /* V6CoachingNudgeTests.swift */; };
+		4D0053011FF3D8F0D19F69FE /* LowContrastSystemColorsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93C66225F8E6B3FE36556318 /* LowContrastSystemColorsTests.swift */; };
 		4DD9FE391AA88704F0FC8943 /* MealTimelineSectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9093C753C621E7F22710C344 /* MealTimelineSectionTests.swift */; };
 		51943F743F3F4638E4D7EBAA /* PhotoLogTool.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAC05282764E0169FEFB3D88 /* PhotoLogTool.swift */; };
 		51CBDEF0E20717FDB4B0460B /* BackupServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7AE6A77FE92E8A4DDC4AFDC3 /* BackupServiceTests.swift */; };
@@ -379,6 +381,7 @@
 		8F4CF97949C6569223B2997F /* AIBackendCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIBackendCoordinator.swift; sourceTree = "<group>"; };
 		9093C753C621E7F22710C344 /* MealTimelineSectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealTimelineSectionTests.swift; sourceTree = "<group>"; };
 		9317E4AADEC72D6DC385E722 /* LabReportDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabReportDetailView.swift; sourceTree = "<group>"; };
+		93C66225F8E6B3FE36556318 /* LowContrastSystemColorsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LowContrastSystemColorsTests.swift; sourceTree = "<group>"; };
 		967917DDF4130B1A30B42ABA /* CloudVisionClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudVisionClient.swift; sourceTree = "<group>"; };
 		9A4575ED692EF5D3BFDBC775 /* AIChatInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatInsightsView.swift; sourceTree = "<group>"; };
 		9ADFC025483E1D1D5A39857E /* ClarificationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClarificationCard.swift; sourceTree = "<group>"; };
@@ -423,6 +426,7 @@
 		C6C5FCF45E66161B45683C82 /* LabReportOCR+Biomarkers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LabReportOCR+Biomarkers.swift"; sourceTree = "<group>"; };
 		C8C8E55C6396731BC65D49AB /* FoundationModelsChatParityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelsChatParityTests.swift; sourceTree = "<group>"; };
 		C92BBFFC16E3948FD5DABA59 /* USDAFallbackEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = USDAFallbackEval.swift; sourceTree = "<group>"; };
+		CA809F63AA1ED36B1AB94C0C /* DashboardSkeletons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardSkeletons.swift; sourceTree = "<group>"; };
 		CB66CE8222D505237BF36996 /* AmbiguityEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbiguityEval.swift; sourceTree = "<group>"; };
 		CBA094F99189B3E26DB18B04 /* TodayDonutViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayDonutViewTests.swift; sourceTree = "<group>"; };
 		CCE57CE0133752BC4B5C80F3 /* CloudVisionKeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudVisionKeyTests.swift; sourceTree = "<group>"; };
@@ -623,6 +627,7 @@
 				5D1E187818C8B9D2196B4B9D /* LabReportOCRTests.swift */,
 				FC00E0CF9EA4AC9ADEF6D8F0 /* LogMealSheetTests.swift */,
 				54876336F0C254359603DBC4 /* LogMethodCardsRowTests.swift */,
+				93C66225F8E6B3FE36556318 /* LowContrastSystemColorsTests.swift */,
 				B637DFADAD7FF587E499B6A7 /* MealLogUnificationTests.swift */,
 				2C2C3D0BBB59A233D5483FA1 /* MealTextLoggerTests.swift */,
 				9093C753C621E7F22710C344 /* MealTimelineSectionTests.swift */,
@@ -719,6 +724,7 @@
 		79C427A9E8C6F8EEFCEEA012 /* Dashboard */ = {
 			isa = PBXGroup;
 			children = (
+				CA809F63AA1ED36B1AB94C0C /* DashboardSkeletons.swift */,
 				DD2565511DFA43570D0CE9EA /* DashboardView.swift */,
 				733818AD9667283F81C5D1C5 /* DashboardView+Cards.swift */,
 				E0EA24C208A1C32DB52709A4 /* SleepRecoveryView.swift */,
@@ -1151,6 +1157,7 @@
 				6191E6C9B6E6F21E8BE507EF /* CreateTemplateView.swift in Sources */,
 				D8DCF736FEE3123E530756CA /* CycleView.swift in Sources */,
 				8224D8220B6D9328EDDDB648 /* DEXAOverviewView.swift in Sources */,
+				1C57C00A9DAD04EB9EC21313 /* DashboardSkeletons.swift in Sources */,
 				7821B033A6CDE13D6ED6040C /* DashboardView+Cards.swift in Sources */,
 				FE2EC2B62CB693DA85CD1544 /* DashboardView.swift in Sources */,
 				2CCF5E1D415E462AE9997DD4 /* DashboardViewModel.swift in Sources */,
@@ -1275,6 +1282,7 @@
 				92F6CD33F11BF82738AAF81C /* LabReportOCRTests.swift in Sources */,
 				2DBEBC3C1C0A2223F64A721A /* LogMealSheetTests.swift in Sources */,
 				78192B1D7BAC70E4F0C5C077 /* LogMethodCardsRowTests.swift in Sources */,
+				4D0053011FF3D8F0D19F69FE /* LowContrastSystemColorsTests.swift in Sources */,
 				CFCC147069ADCB2E367DA3D4 /* MealLogUnificationTests.swift in Sources */,
 				DA902B342D14AE8625D4E25D /* MealTextLoggerTests.swift in Sources */,
 				4DD9FE391AA88704F0FC8943 /* MealTimelineSectionTests.swift in Sources */,

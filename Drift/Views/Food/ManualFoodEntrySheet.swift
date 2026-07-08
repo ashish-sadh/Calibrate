@@ -41,19 +41,19 @@ struct ManualFoodEntrySheet: View {
                     TextField("Food name", text: $name)
                         .font(.body)
                         .padding(12)
-                        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
+                        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
 
                     // Calories — hero
                     VStack(spacing: 4) {
-                        Text("Calories").font(.caption2).foregroundStyle(.tertiary)
+                        Text("Calories").font(.caption2).foregroundStyle(Theme.textTertiary)
                         TextField("0", text: $cal)
                             .keyboardType(.numberPad)
-                            .font(.system(size: 44, weight: .bold).monospacedDigit())
+                            .font(.system(size: Theme.FontSize.display3, weight: .bold).monospacedDigit())
                             .multilineTextAlignment(.center)
-                        Text("kcal").font(.caption).foregroundStyle(.secondary)
+                        Text("kcal").font(.caption).foregroundStyle(Theme.textSecondary)
                         if macroCalories > 0 && !cal.isEmpty && macroCalories != enteredCal {
                             Text("Macros sum to \(macroCalories) kcal")
-                                .font(.caption2).foregroundStyle(.tertiary)
+                                .font(.caption2).foregroundStyle(Theme.textTertiary)
                         }
                     }
                     .padding(.vertical, 8)
@@ -67,22 +67,22 @@ struct ManualFoodEntrySheet: View {
 
                     // Fiber — optional, smaller
                     HStack {
-                        Text("Fiber").font(.caption).foregroundStyle(.secondary)
+                        Text("Fiber").font(.caption).foregroundStyle(Theme.textSecondary)
                         Spacer()
                         TextField("0", text: $fiber)
                             .keyboardType(.decimalPad)
                             .font(.subheadline.monospacedDigit())
                             .multilineTextAlignment(.trailing)
                             .frame(width: 60)
-                        Text("g").font(.caption).foregroundStyle(.tertiary)
+                        Text("g").font(.caption).foregroundStyle(Theme.textTertiary)
                     }
                     .padding(.horizontal, 16).padding(.vertical, 10)
-                    .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
+                    .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
 
                     // Serving size — optional
                     VStack(spacing: 8) {
                         HStack {
-                            Text("Serving").font(.caption).foregroundStyle(.secondary)
+                            Text("Serving").font(.caption).foregroundStyle(Theme.textSecondary)
                             Spacer()
                             TextField("1", text: $serving)
                                 .keyboardType(.decimalPad)
@@ -105,13 +105,13 @@ struct ManualFoodEntrySheet: View {
                         }
                     }
                     .padding(.horizontal, 16).padding(.vertical, 10)
-                    .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
+                    .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
 
                     // Log time — defaults to now, user can change
                     DatePicker("Log time", selection: $logTime, displayedComponents: .hourAndMinute)
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.caption).foregroundStyle(Theme.textSecondary)
                         .padding(.horizontal, 16).padding(.vertical, 10)
-                        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
+                        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 12)
@@ -150,16 +150,16 @@ struct ManualFoodEntrySheet: View {
 
     private func macroField(_ label: String, value: Binding<String>, unit: String, color: Color) -> some View {
         VStack(spacing: 4) {
-            Text(label).font(.caption2).foregroundStyle(.tertiary)
+            Text(label).font(.caption2).foregroundStyle(Theme.textTertiary)
             TextField("0", text: value)
                 .keyboardType(.decimalPad)
                 .font(.title3.weight(.semibold).monospacedDigit())
                 .multilineTextAlignment(.center)
-            Text(unit).font(.caption2).foregroundStyle(.tertiary)
+            Text(unit).font(.caption2).foregroundStyle(Theme.textTertiary)
         }
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity)
-        .background(color.opacity(0.18), in: RoundedRectangle(cornerRadius: 12))
-        .overlay(RoundedRectangle(cornerRadius: 12).stroke(color.opacity(0.35), lineWidth: 1))
+        .background(color.opacity(0.18), in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radiusSmall).stroke(color.opacity(0.35), lineWidth: 1))
     }
 }

@@ -30,14 +30,14 @@ struct WorkoutDetailView: View {
             VStack(spacing: 14) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(summary.workout.name).font(.headline)
-                    Text(formatDate(summary.workout.date)).font(.caption).foregroundStyle(.secondary)
+                    Text(formatDate(summary.workout.date)).font(.caption).foregroundStyle(Theme.textSecondary)
                     HStack(spacing: 12) {
                         if !summary.workout.durationDisplay.isEmpty { Label(summary.workout.durationDisplay, systemImage: "clock") }
                         Label("\(Int(summary.totalVolume)) lbs", systemImage: "scalemass")
                         Label("\(summary.totalSets) sets", systemImage: "number")
-                    }.font(.caption).foregroundStyle(.secondary)
+                    }.font(.caption).foregroundStyle(Theme.textSecondary)
                     if let notes = summary.workout.notes, !notes.isEmpty {
-                        Text(notes).font(.caption).foregroundStyle(.tertiary).italic()
+                        Text(notes).font(.caption).foregroundStyle(Theme.textTertiary).italic()
                     }
                 }.frame(maxWidth: .infinity, alignment: .leading).card()
 
@@ -51,9 +51,9 @@ struct WorkoutDetailView: View {
                                 Text(ex).font(.subheadline.weight(.semibold))
                                 Spacer()
                                 if exVolumeLbs > 0 {
-                                    Text("\(Int(exVolumeLbs)) lbs").font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                                    Text("\(Int(exVolumeLbs)) lbs").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textSecondary)
                                 }
-                                Text(muscleGroup(for: ex)).font(.caption2).foregroundStyle(.tertiary)
+                                Text(muscleGroup(for: ex)).font(.caption2).foregroundStyle(Theme.textTertiary)
                             }
                             ForEach(exSets, id: \.id) { s in
                                 HStack {
@@ -61,7 +61,7 @@ struct WorkoutDetailView: View {
                                         .foregroundStyle(s.isWarmup ? Theme.fatYellow : .primary).frame(width: 20)
                                     Text(s.display).font(.subheadline.monospacedDigit())
                                     Spacer()
-                                    if let rm = s.estimated1RM { Text("1RM: \(Int(rm)) lbs").font(.caption2.monospacedDigit()).foregroundStyle(.tertiary) }
+                                    if let rm = s.estimated1RM { Text("1RM: \(Int(rm)) lbs").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary) }
                                 }
                                 .contentShape(Rectangle())
                                 .onTapGesture {

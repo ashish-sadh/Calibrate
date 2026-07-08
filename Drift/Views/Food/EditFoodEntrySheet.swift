@@ -101,17 +101,17 @@ struct EditFoodEntrySheet: View {
                             let perText = (currentLabel == "g" || currentLabel == "ml")
                                 ? "\(Int(entry.calories))cal per \(Int(entry.servingSizeG))g"
                                 : "\(Int(entry.calories * scale))cal \(Int(entry.proteinG * scale))P \(Int(entry.carbsG * scale))C \(Int(entry.fatG * scale))F per 1 \(currentLabel) (\(Int(currentUnit.gramsEquivalent))g)"
-                            Text(perText).font(.caption).foregroundStyle(.secondary)
+                            Text(perText).font(.caption).foregroundStyle(Theme.textSecondary)
                         } else {
                             Text("\(Int(entry.calories))cal per serving")
-                                .font(.caption).foregroundStyle(.secondary)
+                                .font(.caption).foregroundStyle(Theme.textSecondary)
                         }
                     }
                     .padding(.top, 8)
 
                     // Compact time picker
                     HStack {
-                        Image(systemName: "clock").font(.caption).foregroundStyle(.tertiary)
+                        Image(systemName: "clock").font(.caption).foregroundStyle(Theme.textTertiary)
                         DatePicker("", selection: $editEntryTime, displayedComponents: .hourAndMinute)
                             .labelsHidden()
                     }
@@ -146,7 +146,7 @@ struct EditFoodEntrySheet: View {
                         // Quick-add — serving amount (descriptive, macros are the total)
                         VStack(spacing: 8) {
                             HStack {
-                                Text("Servings").font(.caption).foregroundStyle(.secondary)
+                                Text("Servings").font(.caption).foregroundStyle(Theme.textSecondary)
                                 Spacer()
                                 TextField("1", text: $editAmount)
                                     .keyboardType(.decimalPad)
@@ -156,12 +156,12 @@ struct EditFoodEntrySheet: View {
                             }
                         }
                         .padding(.horizontal, 16).padding(.vertical, 10)
-                        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 10))
+                        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
 
                         // Editable total macros
                         VStack(spacing: 8) {
                             HStack {
-                                Text("Cal").font(.caption.weight(.medium)).foregroundStyle(.secondary).frame(width: 30)
+                                Text("Cal").font(.caption.weight(.medium)).foregroundStyle(Theme.textSecondary).frame(width: 30)
                                 TextField("0", text: $editCal).keyboardType(.numberPad).font(.title2.weight(.bold).monospacedDigit()).multilineTextAlignment(.center)
                             }
                             HStack(spacing: 12) {
@@ -177,7 +177,7 @@ struct EditFoodEntrySheet: View {
                         VStack(spacing: 8) {
                             if overrideMacros {
                                 HStack {
-                                    Text("Cal").font(.caption.weight(.medium)).foregroundStyle(.secondary).frame(width: 30)
+                                    Text("Cal").font(.caption.weight(.medium)).foregroundStyle(Theme.textSecondary).frame(width: 30)
                                     TextField("0", text: $editCal).keyboardType(.numberPad).font(.title2.weight(.bold).monospacedDigit()).multilineTextAlignment(.center)
                                 }
                                 HStack(spacing: 12) {
@@ -190,7 +190,7 @@ struct EditFoodEntrySheet: View {
                                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                                     Text("\(Int(entry.calories * multiplier))")
                                         .font(.title.weight(.bold).monospacedDigit())
-                                    Text("cal").font(.subheadline).foregroundStyle(.secondary)
+                                    Text("cal").font(.subheadline).foregroundStyle(Theme.textSecondary)
                                 }
                                 HStack(spacing: 8) {
                                     macroChip("P", value: entry.proteinG * multiplier, color: Theme.proteinRed)
@@ -342,13 +342,13 @@ struct EditFoodEntrySheet: View {
                 Button { showingRecipeEditor = true } label: {
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Ingredients").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                            Text("Ingredients").font(.caption.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                             Text(dbFood.ingredientList.joined(separator: ", "))
-                                .font(.caption).foregroundStyle(.tertiary)
+                                .font(.caption).foregroundStyle(Theme.textTertiary)
                                 .multilineTextAlignment(.leading)
                         }
                         Spacer()
-                        Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.tertiary)
+                        Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
                 }
                 .buttonStyle(.plain)
@@ -356,9 +356,9 @@ struct EditFoodEntrySheet: View {
                 .padding(.horizontal, 4)
             } else {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Ingredients").font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                    Text("Ingredients").font(.caption.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                     Text(dbFood.ingredientList.joined(separator: ", "))
-                        .font(.caption).foregroundStyle(.tertiary)
+                        .font(.caption).foregroundStyle(Theme.textTertiary)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 4)

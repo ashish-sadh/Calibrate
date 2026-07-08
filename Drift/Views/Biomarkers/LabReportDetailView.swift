@@ -14,7 +14,7 @@ struct LabReportDetailView: View {
                 if results.isEmpty {
                     Text("No biomarkers extracted from this report.")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
                         .padding(.top, 40)
                 } else {
                     summaryDonut
@@ -60,7 +60,7 @@ struct LabReportDetailView: View {
                         .font(.headline)
                     Text(report.displayDate)
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
                 }
                 Spacer()
             }
@@ -70,12 +70,12 @@ struct LabReportDetailView: View {
             HStack {
                 Label("\(report.markerCount) biomarkers scanned", systemImage: "chart.bar.fill")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
                 Spacer()
                 if let name = report.labName {
                     Text(name)
                         .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Theme.textTertiary)
                 }
             }
         }
@@ -151,7 +151,7 @@ struct LabReportDetailView: View {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(group.category.uppercased())
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
                         .padding(.bottom, 8)
 
                     ForEach(group.items, id: \.0.biomarkerId) { result, def in

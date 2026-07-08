@@ -97,16 +97,16 @@ struct WeightChartView: View {
             if trend != nil {
                 HStack(alignment: .firstTextBaseline) {
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Average").font(.caption2).foregroundStyle(.tertiary)
+                        Text("Average").font(.caption2).foregroundStyle(Theme.textTertiary)
                         HStack(alignment: .firstTextBaseline, spacing: 3) {
                             Text(String(format: "%.1f", averageWeight)).font(.title2.weight(.bold).monospacedDigit())
-                            Text(unit.displayName).font(.caption).foregroundStyle(.secondary)
+                            Text(unit.displayName).font(.caption).foregroundStyle(Theme.textSecondary)
                         }
                     }
                     Spacer()
                     if let diff = totalDifference {
                         VStack(alignment: .trailing, spacing: 2) {
-                            Text("Difference").font(.caption2).foregroundStyle(.tertiary)
+                            Text("Difference").font(.caption2).foregroundStyle(Theme.textTertiary)
                             Text("\(diff >= 0 ? "+" : "")\(String(format: "%.1f", diff)) \(unit.displayName)")
                                 .font(.title3.weight(.bold).monospacedDigit())
                                 .foregroundStyle(diff < 0 ? Theme.deficit : diff > 0 ? Theme.surplus : .secondary)
@@ -117,7 +117,7 @@ struct WeightChartView: View {
                 if let f = rangePoints.first?.date, let l = rangePoints.last?.date {
                     HStack(alignment: .firstTextBaseline, spacing: 12) {
                         Text("\(DateFormatters.shortDisplay.string(from: f)) – \(DateFormatters.shortDisplay.string(from: l))")
-                            .font(.caption2).foregroundStyle(.tertiary)
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
                         Spacer()
                         // Legend lives once, below the chart (Scale / Trend) —
                         // the old header legend here duplicated it and had stale
@@ -218,7 +218,7 @@ struct WeightChartView: View {
                             VStack(spacing: 2) {
                                 Text(sel.date.formatted(.dateTime.month(.abbreviated).day()))
                                     .font(.caption2)
-                                    .foregroundStyle(.secondary)
+                                    .foregroundStyle(Theme.textSecondary)
                                 Text(String(format: "%.1f \(unit.displayName)", sel.value))
                                     .font(.caption.weight(.bold).monospacedDigit())
                                     .foregroundStyle(.primary)

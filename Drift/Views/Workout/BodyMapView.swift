@@ -54,7 +54,7 @@ struct BodyMapView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Muscle Recovery").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+            Text("Muscle Recovery").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
 
             // Anatomical recovery figures (#929) — replace the old SF-symbol
             // icons: green = recovered, orange = moderate, red = recovering,
@@ -62,11 +62,11 @@ struct BodyMapView: View {
             HStack(spacing: 24) {
                 VStack(spacing: 2) {
                     MuscleBodyView(side: .front, slugColors: recoverySlugColors)
-                    Text("Front").font(.caption2).foregroundStyle(.tertiary)
+                    Text("Front").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
                 VStack(spacing: 2) {
                     MuscleBodyView(side: .back, slugColors: recoverySlugColors)
-                    Text("Back").font(.caption2).foregroundStyle(.tertiary)
+                    Text("Back").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
             }
             .frame(height: 170)
@@ -82,13 +82,13 @@ struct BodyMapView: View {
                                 .foregroundStyle(status.color)
                             if let days = daysSince[group] {
                                 Text(days == 0 ? "Today" : "\(days)d ago")
-                                    .font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
+                                    .font(.caption2.monospacedDigit()).foregroundStyle(Theme.textSecondary)
                             } else {
-                                Text("\u{2014}").font(.caption2).foregroundStyle(.quaternary)
+                                Text("\u{2014}").font(.caption2).foregroundStyle(Theme.textTertiary)
                             }
                             if let count = weeklySetCounts[group], count > 0 {
                                 Text("\(count) sets")
-                                    .font(.caption2.monospacedDigit()).foregroundStyle(.tertiary)
+                                    .font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
                             }
                         }
                         .frame(maxWidth: .infinity).padding(.vertical, 8)
@@ -127,9 +127,9 @@ struct BodyMapView: View {
             if status == .untrained {
                 // Not trained recently — encourage with suggestions
                 HStack(spacing: 6) {
-                    Image(systemName: "exclamationmark.triangle.fill").font(.caption).foregroundStyle(.secondary)
+                    Image(systemName: "exclamationmark.triangle.fill").font(.caption).foregroundStyle(Theme.textSecondary)
                     Text("You haven't trained \(group.lowercased()) in over a week.")
-                        .font(.caption).foregroundStyle(.secondary)
+                        .font(.caption).foregroundStyle(Theme.textSecondary)
                 }
                 if !matchingTemplates.isEmpty {
                     ForEach(matchingTemplates) { t in quickStartButton(template: t) }
@@ -137,7 +137,7 @@ struct BodyMapView: View {
                     let standards = standardExercises(for: group)
                     if !standards.isEmpty {
                         Text("Try: \(standards.joined(separator: ", "))")
-                            .font(.caption2).foregroundStyle(.tertiary)
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
                 }
             } else {
@@ -148,7 +148,7 @@ struct BodyMapView: View {
                 }
                 if !recent.isEmpty {
                     Text(recent.prefix(4).joined(separator: ", "))
-                        .font(.caption2).foregroundStyle(.tertiary).lineLimit(2)
+                        .font(.caption2).foregroundStyle(Theme.textTertiary).lineLimit(2)
                 }
                 ForEach(matchingTemplates) { t in quickStartButton(template: t) }
             }

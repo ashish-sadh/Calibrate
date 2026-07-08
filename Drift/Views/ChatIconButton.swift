@@ -13,7 +13,7 @@ struct ChatIconButton: View {
     var body: some View {
         Button { isPresented = true } label: {
             Image(systemName: "bubble.left.and.text.bubble.right")
-                .font(.system(size: 17, weight: .semibold))
+                .font(.system(size: Theme.FontSize.body, weight: .semibold))
                 .foregroundStyle(Theme.ink)
                 .frame(width: 44, height: 44)
                 .background(Theme.cardBackground, in: Circle())

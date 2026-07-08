@@ -49,13 +49,13 @@ struct BiomarkersTabView: View {
     private var emptyState: some View {
         VStack(spacing: 16) {
             Image(systemName: "cross.case.fill")
-                .font(.system(size: 44))
+                .font(.system(size: Theme.FontSize.display3))
                 .foregroundStyle(Theme.accent.opacity(0.5))
             Text("No Lab Reports")
                 .font(.headline)
             Text("Upload a lab report (PDF or photo) to track your blood biomarkers over time.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center)
             Button {
                 showingUpload = true
@@ -64,7 +64,7 @@ struct BiomarkersTabView: View {
                     .font(.subheadline.weight(.medium))
                     .padding(.horizontal, 20)
                     .padding(.vertical, 10)
-                    .background(Theme.accent, in: RoundedRectangle(cornerRadius: 10))
+                    .background(Theme.accent, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
                     .foregroundStyle(.white)
             }
         }
@@ -105,10 +105,10 @@ struct BiomarkersTabView: View {
                 // Center label
                 VStack(spacing: 2) {
                     Text("\(total)")
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .font(.system(size: Theme.FontSize.display1, weight: .bold, design: .rounded))
                     Text("BIOMARKERS")
                         .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
                 }
             }
 
@@ -122,7 +122,7 @@ struct BiomarkersTabView: View {
             if let latest = reports.first {
                 Text("Last updated: \(latest.displayDate)")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Theme.textTertiary)
             }
         }
         .card()
@@ -135,7 +135,7 @@ struct BiomarkersTabView: View {
                 .foregroundStyle(color)
             Text(label)
                 .font(.caption2)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
             Text("\(count)")
                 .font(.caption2.weight(.bold))
         }
@@ -147,7 +147,7 @@ struct BiomarkersTabView: View {
         VStack(alignment: .leading, spacing: 8) {
             Text("LAB REPORTS")
                 .font(.caption.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
 
             ForEach(reports) { report in
                 NavigationLink {
@@ -163,12 +163,12 @@ struct BiomarkersTabView: View {
                                 .foregroundStyle(.primary)
                             Text("\(report.displayDate) · \(report.markerCount) biomarkers")
                                 .font(.caption2)
-                                .foregroundStyle(.tertiary)
+                                .foregroundStyle(Theme.textTertiary)
                         }
                         Spacer()
                         Image(systemName: "chevron.right")
                             .font(.caption2)
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(Theme.textTertiary)
                     }
                     .contentShape(Rectangle())
                     .padding(.vertical, 6)
@@ -188,13 +188,13 @@ struct BiomarkersTabView: View {
     private var searchBar: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Theme.textTertiary)
             TextField("Search for Vitamin D, Cortisol, etc.", text: $searchText)
                 .font(.subheadline)
                 .foregroundStyle(.primary)
         }
         .padding(10)
-        .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
+        .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
     }
 
     private var filterChips: some View {
@@ -267,7 +267,7 @@ struct BiomarkersTabView: View {
                         Spacer()
                         Text("\(group.items.count) Biomarkers")
                             .font(.caption2)
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(Theme.textTertiary)
                     }
                     .padding(.bottom, 8)
 
@@ -360,10 +360,10 @@ struct BiomarkerRow: View {
                     .font(.subheadline.weight(.bold).monospacedDigit())
                 Text(result.normalizedUnit)
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Theme.textTertiary)
                 Image(systemName: "chevron.right")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Theme.textTertiary)
             }
 
             HStack {
@@ -382,7 +382,7 @@ struct BiomarkerRow: View {
                         Image(systemName: "cpu")
                             .font(.system(size: 8))
                         Text("AI")
-                            .font(.system(size: 9, weight: .medium))
+                            .font(.system(size: Theme.FontSize.nano, weight: .medium))
                     }
                     .foregroundStyle(Theme.surplus.opacity(0.7))
                 }

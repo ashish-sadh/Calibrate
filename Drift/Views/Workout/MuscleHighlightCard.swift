@@ -85,7 +85,7 @@ struct MuscleHighlightCard: View {
                         .font(.caption.weight(.bold))
                     Text(info.function)
                         .font(.caption2)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
                         .multilineTextAlignment(.center)
                 }
             }
@@ -102,7 +102,7 @@ struct MuscleHighlightCard: View {
                            primarySlugs: primarySlugs,
                            secondarySlugs: secondarySlugs)
             Text(side == .front ? "Front" : "Back")
-                .font(.caption2).foregroundStyle(.tertiary)
+                .font(.caption2).foregroundStyle(Theme.textTertiary)
         }
     }
 

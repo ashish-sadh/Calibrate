@@ -59,13 +59,13 @@ struct LabReportUploadView: View {
     private var headerSection: some View {
         VStack(spacing: 8) {
             Image(systemName: "doc.text.viewfinder")
-                .font(.system(size: 44))
+                .font(.system(size: Theme.FontSize.display3))
                 .foregroundStyle(Theme.accent)
             Text("Upload a Lab Report")
                 .font(.headline)
             Text("Upload a PDF of your blood test results. Drift will automatically extract biomarker values.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center)
         }
     }
@@ -91,12 +91,12 @@ struct LabReportUploadView: View {
                         .foregroundStyle(.primary)
                     Text(subtitle)
                         .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Theme.textTertiary)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Theme.textTertiary)
             }
             .contentShape(Rectangle())
             .padding(.vertical, 10)
@@ -111,7 +111,7 @@ struct LabReportUploadView: View {
                 .tint(Theme.accent)
             Text("Extracting biomarkers...")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
         }
         .padding(.vertical, 20)
     }
@@ -122,10 +122,10 @@ struct LabReportUploadView: View {
             // Extracted count
             VStack(spacing: 4) {
                 Text("\(output.results.count)")
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                    .font(.system(size: Theme.FontSize.display1, weight: .bold, design: .rounded))
                 Text("biomarkers extracted")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
             }
 
             // Accuracy warning — shown whenever Gemma was involved in parsing (not just per-result AI)
@@ -150,7 +150,7 @@ struct LabReportUploadView: View {
                 HStack {
                     Text("Lab: \(detected)")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
                     Spacer()
                 }
                 .card()
@@ -160,7 +160,7 @@ struct LabReportUploadView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("EXTRACTED BIOMARKERS")
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
 
                 ForEach(output.results.prefix(10), id: \.biomarkerId) { result in
                     HStack {
@@ -176,7 +176,7 @@ struct LabReportUploadView: View {
                             .font(.caption.weight(.bold).monospacedDigit())
                         Text(result.unit)
                             .font(.caption2)
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(Theme.textTertiary)
                     }
                     .padding(.vertical, 2)
                 }
@@ -184,7 +184,7 @@ struct LabReportUploadView: View {
                 if output.results.count > 10 {
                     Text("+ \(output.results.count - 10) more...")
                         .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(Theme.textTertiary)
                 }
             }
             .card()
@@ -197,7 +197,7 @@ struct LabReportUploadView: View {
                     .font(.subheadline.weight(.semibold))
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(Theme.accent, in: RoundedRectangle(cornerRadius: 10))
+                    .background(Theme.accent, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
                     .foregroundStyle(.white)
             }
         }
@@ -214,8 +214,8 @@ struct LabReportUploadView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(Theme.surplus.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Theme.surplus.opacity(0.3), lineWidth: 1))
+        .background(Theme.surplus.opacity(0.12), in: RoundedRectangle(cornerRadius: Theme.radiusChip))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radiusChip).stroke(Theme.surplus.opacity(0.3), lineWidth: 1))
     }
 
     private var privacyNote: some View {
@@ -229,7 +229,7 @@ struct LabReportUploadView: View {
             }
             Text("Lab reports are encrypted with AES-256 and stored locally on your device using iOS Data Protection. They never leave your phone. Drift does not collect, transmit, or share any of your health data.")
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Theme.textTertiary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)

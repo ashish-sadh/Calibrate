@@ -22,7 +22,7 @@ extension GoalView {
                             .font(.caption2).foregroundStyle(Theme.fatYellow)
                     }
                     Image(systemName: profileExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption2).foregroundStyle(.tertiary)
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
             }
             .buttonStyle(.plain)
@@ -49,7 +49,7 @@ extension GoalView {
 
     private var sexPicker: some View {
         HStack {
-            Text("Sex").font(.subheadline).foregroundStyle(.secondary)
+            Text("Sex").font(.subheadline).foregroundStyle(Theme.textSecondary)
             Spacer()
             Picker("", selection: Binding(
                 get: { tdeeConfig.sex },
@@ -64,7 +64,7 @@ extension GoalView {
 
     private var agePicker: some View {
         HStack {
-            Text("Age").font(.subheadline).foregroundStyle(.secondary)
+            Text("Age").font(.subheadline).foregroundStyle(Theme.textSecondary)
             Spacer()
             Picker("", selection: Binding(
                 get: { tdeeConfig.age != nil ? rangeFromAge(tdeeConfig.age) : "" },
@@ -86,7 +86,7 @@ extension GoalView {
     private var heightInput: some View {
         VStack(spacing: 6) {
             HStack {
-                Text("Height").font(.subheadline).foregroundStyle(.secondary)
+                Text("Height").font(.subheadline).foregroundStyle(Theme.textSecondary)
                 Spacer()
                 Picker("", selection: $heightInFeet) {
                     Text("cm").tag(false)
@@ -108,7 +108,7 @@ extension GoalView {
                     .keyboardType(.numberPad)
                     .multilineTextAlignment(.trailing)
                     .frame(width: 35)
-                    Text("ft").font(.caption).foregroundStyle(.tertiary)
+                    Text("ft").font(.caption).foregroundStyle(Theme.textTertiary)
                     TextField("in", text: Binding(
                         get: {
                             guard let cm = tdeeConfig.heightCm else { return "" }
@@ -119,7 +119,7 @@ extension GoalView {
                     .keyboardType(.numberPad)
                     .multilineTextAlignment(.trailing)
                     .frame(width: 35)
-                    Text("in").font(.caption).foregroundStyle(.tertiary)
+                    Text("in").font(.caption).foregroundStyle(Theme.textTertiary)
                 } else {
                     TextField("Not set", text: Binding(
                         get: { tdeeConfig.heightCm.map { "\(Int($0))" } ?? "" },
@@ -132,7 +132,7 @@ extension GoalView {
                     .keyboardType(.numberPad)
                     .multilineTextAlignment(.trailing)
                     .frame(width: 60)
-                    Text("cm").font(.caption).foregroundStyle(.tertiary)
+                    Text("cm").font(.caption).foregroundStyle(Theme.textTertiary)
                 }
             }
         }
@@ -141,7 +141,7 @@ extension GoalView {
     private var weightInput: some View {
         VStack(spacing: 6) {
             HStack {
-                Text("Weight").font(.subheadline).foregroundStyle(.secondary)
+                Text("Weight").font(.subheadline).foregroundStyle(Theme.textSecondary)
                 Spacer()
                 Picker("", selection: $weightUnit) {
                     Text("kg").tag(WeightUnit.kg)
@@ -177,7 +177,7 @@ extension GoalView {
                             saveWeight(kg: kg)
                         }
                     }
-                Text(weightUnit.displayName).font(.caption).foregroundStyle(.tertiary)
+                Text(weightUnit.displayName).font(.caption).foregroundStyle(Theme.textTertiary)
             }
         }
     }
@@ -192,7 +192,7 @@ extension GoalView {
                     .transition(.opacity)
             } else {
                 Text("Changes save automatically")
-                    .font(.caption2).foregroundStyle(.quaternary)
+                    .font(.caption2).foregroundStyle(Theme.textTertiary)
             }
         }
     }

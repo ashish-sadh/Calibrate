@@ -87,14 +87,14 @@ struct CycleView: View {
         VStack(spacing: 12) {
             if let day = currentCycleDay {
                 Text("Day \(day)")
-                    .font(.system(size: 48, weight: .bold).monospacedDigit())
+                    .font(.system(size: Theme.FontSize.display4, weight: .bold).monospacedDigit())
                     .foregroundStyle(.pink)
 
                 if let avg = averageCycleLength {
                     if let phase = CycleCalculations.currentPhase(cycleDay: day, cycleLength: avg) {
                         Text(phase)
                             .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.textSecondary)
                     }
                 }
             }
@@ -117,7 +117,7 @@ struct CycleView: View {
 
     private func summaryRow(label: String, value: String) -> some View {
         HStack {
-            Text(label).font(.subheadline).foregroundStyle(.secondary)
+            Text(label).font(.subheadline).foregroundStyle(Theme.textSecondary)
             Spacer()
             Text(value).font(.subheadline.weight(.medium))
         }
@@ -134,7 +134,7 @@ struct CycleView: View {
         return VStack(alignment: .leading, spacing: 10) {
             Text("Cycle Timeline")
                 .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
 
             GeometryReader { geo in
                 let width = geo.size.width
@@ -182,11 +182,11 @@ struct CycleView: View {
                 ForEach(phases) { phase in
                     VStack(spacing: 2) {
                         Text(phase.name)
-                            .font(.system(size: 11, weight: phase.id == currentId ? .semibold : .regular))
+                            .font(.system(size: Theme.FontSize.tiny, weight: phase.id == currentId ? .semibold : .regular))
                             .foregroundStyle(phase.color)
                         Text(phase.dayRange)
-                            .font(.system(size: 10))
-                            .foregroundStyle(.tertiary)
+                            .font(.system(size: Theme.FontSize.micro))
+                            .foregroundStyle(Theme.textTertiary)
                     }
                     .frame(maxWidth: .infinity)
                 }
@@ -238,7 +238,7 @@ struct CycleView: View {
         return VStack(alignment: .leading, spacing: 10) {
             Text("Body Signals")
                 .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
 
             Chart(points) { point in
                 if let hrv = point.hrvMs {
@@ -271,13 +271,13 @@ struct CycleView: View {
                         // a hairline that reads on light cards.
                         .foregroundStyle(Theme.separator)
                     AxisValueLabel()
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
                 }
             }
             .chartXAxis {
                 AxisMarks(values: .automatic(desiredCount: 6)) { _ in
                     AxisValueLabel()
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
                 }
             }
             .frame(height: 160)
@@ -288,7 +288,7 @@ struct CycleView: View {
                 if hasRHR { legendDot(color: Theme.heartRed, label: "RHR (bpm)") }
             }
             .font(.caption2)
-            .foregroundStyle(.secondary)
+            .foregroundStyle(Theme.textSecondary)
             .frame(maxWidth: .infinity)
         }
         .card()
@@ -318,11 +318,11 @@ struct CycleView: View {
             HStack {
                 Text("Cycle Length")
                     .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
                 Spacer()
                 Text("Avg \(avg) days")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Theme.textTertiary)
             }
 
             Chart {
@@ -331,8 +331,8 @@ struct CycleView: View {
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
                     .annotation(position: .trailing, alignment: .leading) {
                         Text("28")
-                            .font(.system(size: 10))
-                            .foregroundStyle(.tertiary)
+                            .font(.system(size: Theme.FontSize.micro))
+                            .foregroundStyle(Theme.textTertiary)
                     }
 
                 ForEach(Array(data.enumerated()), id: \.offset) { _, item in
@@ -346,7 +346,7 @@ struct CycleView: View {
                     .annotation(position: .top) {
                         Text("\(item.length)d")
                             .font(.caption2.weight(.medium))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.textSecondary)
                     }
                 }
             }
@@ -355,7 +355,7 @@ struct CycleView: View {
             .chartXAxis {
                 AxisMarks { _ in
                     AxisValueLabel()
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
                 }
             }
             .frame(height: 120)
@@ -363,7 +363,7 @@ struct CycleView: View {
             if lengths.count >= 2 {
                 Text("Range \(minLen)–\(maxLen) days")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Theme.textTertiary)
                     .frame(maxWidth: .infinity)
             }
         }
@@ -381,11 +381,11 @@ struct CycleView: View {
                         .foregroundStyle(.purple)
                     Text("Fertile Window")
                         .font(.caption.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
                     if !window.isFromOvulationTest {
                         Text("(estimated)")
                             .font(.caption2)
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(Theme.textTertiary)
                     }
                 }
 
@@ -408,7 +408,7 @@ struct CycleView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Recent Periods")
                 .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
 
             let reversedPeriods = Array(periods.reversed().prefix(6))
             ForEach(Array(reversedPeriods.enumerated()), id: \.element.startDate) { index, period in
@@ -422,15 +422,15 @@ struct CycleView: View {
                     VStack(alignment: .trailing, spacing: 1) {
                         Text("\(period.days.count) days · \(period.dominantFlowDisplay)")
                             .font(.caption)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.textSecondary)
                         // Cycle length (gap to next period)
                         if index < reversedPeriods.count - 1 {
                             let nextPeriod = reversedPeriods[index + 1]
                             let gap = Calendar.current.dateComponents([.day], from: nextPeriod.startDate, to: period.startDate).day ?? 0
                             if gap > 0 {
                                 Text("\(gap)-day cycle")
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(.tertiary)
+                                    .font(.system(size: Theme.FontSize.tiny))
+                                    .foregroundStyle(Theme.textTertiary)
                             }
                         }
                     }
@@ -473,7 +473,7 @@ struct CycleView: View {
             }
             Text("Drift reads from Apple Health and stores nothing externally. No accounts, no cloud, no tracking.")
                 .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(Theme.textTertiary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
@@ -485,13 +485,13 @@ struct CycleView: View {
     private var emptyState: some View {
         VStack(spacing: 12) {
             Image(systemName: "circle.circle")
-                .font(.system(size: 40))
+                .font(.system(size: Theme.FontSize.display2))
                 .foregroundStyle(.pink.opacity(0.4))
             Text("No Cycle Data")
                 .font(.headline)
             Text("Track your cycle in the Health app or a connected app to see it here.")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)

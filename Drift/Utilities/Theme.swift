@@ -167,8 +167,36 @@ enum Theme {
     // ad-hoc radii. Always paired with `.continuous` corners (squircle) — the
     // Apple-standard curve. `radiusCard` aliases `cardCornerRadius`.
     static let radiusChip: CGFloat = 10       // chips, tiny inline controls
+    static let radiusSmall: CGFloat = 12      // small tiles / inline pills (#962)
     static let radiusControl: CGFloat = 14    // banners, buttons, inset tiles
     static let radiusCard: CGFloat = cardCornerRadius   // cards / sheets (18)
+
+    // MARK: - Type-size scale (#961)
+    //
+    // Named tokens for the ad-hoc `.system(size: N)` literals scattered across
+    // the views — a single source of truth so the scale can be tuned in one
+    // place. Values match the existing sizes (tokenization is appearance-neutral);
+    // weight stays at each call site. Odd one-off sizes may remain literal.
+    enum FontSize {
+        static let nano: CGFloat = 9
+        static let micro: CGFloat = 10
+        static let tiny: CGFloat = 11
+        static let caption: CGFloat = 12
+        static let footnote: CGFloat = 13
+        static let subheadline: CGFloat = 15
+        static let base: CGFloat = 16
+        static let body: CGFloat = 17
+        static let large: CGFloat = 18
+        static let title3: CGFloat = 20
+        static let title2: CGFloat = 22
+        static let title: CGFloat = 28
+        static let largeTitle: CGFloat = 34
+        static let display1: CGFloat = 36
+        static let display2: CGFloat = 40
+        static let display3: CGFloat = 44
+        static let display4: CGFloat = 48
+        static let hero: CGFloat = 56
+    }
 
     // MARK: - Motion (#premium-polish)
     //

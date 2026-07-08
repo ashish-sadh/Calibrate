@@ -75,14 +75,14 @@ struct ActiveWorkoutView: View {
                                 Label(DateFormatters.dayDisplay.string(from: Date()), systemImage: "calendar")
                                 Label(formatDuration(elapsedSeconds), systemImage: "clock")
                             }
-                            .font(.caption).foregroundStyle(.secondary)
+                            .font(.caption).foregroundStyle(Theme.textSecondary)
                         }
                     }.padding(.horizontal, 12)
 
                     // Notes (collapsed by default)
                     if !workoutNotes.isEmpty || exercises.count > 0 {
                         TextField("Workout notes...", text: $workoutNotes, axis: .vertical)
-                            .font(.caption).foregroundStyle(.secondary)
+                            .font(.caption).foregroundStyle(Theme.textSecondary)
                             .lineLimit(1...3)
                             .padding(.horizontal, 16)
                     }
@@ -130,7 +130,7 @@ struct ActiveWorkoutView: View {
                     if !exercises.isEmpty {
                         Button { showingFinishOptions = true } label: {
                             Text("Finish").frame(maxWidth: .infinity)
-                        }.buttonStyle(.borderedProminent).tint(Theme.deficit).padding(.horizontal, 12)
+                        }.buttonStyle(.borderedProminent).tint(Theme.accent).padding(.horizontal, 12)
 
                         Button("Cancel Workout", role: .destructive) {
                             workoutEnded = true
@@ -151,7 +151,7 @@ struct ActiveWorkoutView: View {
                             WorkoutService.clearSession(); stopTimers(); dismiss()
                         }
                     } label: {
-                        Image(systemName: "xmark.circle").foregroundStyle(.secondary)
+                        Image(systemName: "xmark.circle").foregroundStyle(Theme.textSecondary)
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
@@ -170,7 +170,7 @@ struct ActiveWorkoutView: View {
                     ScrollView {
                     VStack(spacing: 20) {
                         Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 48))
+                            .font(.system(size: Theme.FontSize.display4))
                             .foregroundStyle(Theme.deficit)
                             .padding(.top, 24)
 
@@ -180,18 +180,18 @@ struct ActiveWorkoutView: View {
                         HStack(spacing: 16) {
                             VStack(spacing: 2) {
                                 Text(formatDuration(elapsedSeconds)).font(.title3.weight(.bold).monospacedDigit())
-                                Text("Duration").font(.caption2).foregroundStyle(.tertiary)
+                                Text("Duration").font(.caption2).foregroundStyle(Theme.textTertiary)
                             }
                             Divider().frame(height: 28)
                             VStack(spacing: 2) {
                                 Text("\(exercises.count)").font(.title3.weight(.bold).monospacedDigit())
-                                Text("Exercises").font(.caption2).foregroundStyle(.tertiary)
+                                Text("Exercises").font(.caption2).foregroundStyle(Theme.textTertiary)
                             }
                             Divider().frame(height: 28)
                             VStack(spacing: 2) {
                                 let totalSets = exercises.flatMap(\.sets).filter(\.done).count
                                 Text("\(totalSets)").font(.title3.weight(.bold).monospacedDigit())
-                                Text("Sets").font(.caption2).foregroundStyle(.tertiary)
+                                Text("Sets").font(.caption2).foregroundStyle(Theme.textTertiary)
                             }
                         }
                         .card()
@@ -203,7 +203,7 @@ struct ActiveWorkoutView: View {
                         }
                         .tint(Theme.accent)
                         .padding(.horizontal, 16).padding(.vertical, 10)
-                        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
+                        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
 
                         // Favorite all exercises toggle
                         Toggle(isOn: $favoriteAllToggle) {
@@ -212,13 +212,13 @@ struct ActiveWorkoutView: View {
                         }
                         .tint(Theme.fatYellow)
                         .padding(.horizontal, 16).padding(.vertical, 10)
-                        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
+                        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
 
                         if saveAsTemplateToggle {
                             TextField("Template name", text: $templateName)
                                 .font(.subheadline)
                                 .padding(12)
-                                .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 10))
+                                .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
                         }
 
                         Button {
@@ -238,7 +238,7 @@ struct ActiveWorkoutView: View {
                         } label: {
                             Text("Save Workout").font(.headline).frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.borderedProminent).tint(Theme.deficit)
+                        .buttonStyle(.borderedProminent).tint(Theme.accent)
                         .padding(.bottom, 16)
                     }
                     .padding(.horizontal, 16)
@@ -261,15 +261,15 @@ struct ActiveWorkoutView: View {
             } content: {
                 VStack(spacing: 20) {
                     if let milestone = completionMilestone {
-                        Text("🎉").font(.system(size: 48))
+                        Text("🎉").font(.system(size: Theme.FontSize.display4))
                         Text(milestone).font(.title2.weight(.bold))
                     } else {
-                        Text("💪").font(.system(size: 48))
+                        Text("💪").font(.system(size: Theme.FontSize.display4))
                         Text("Workout Complete").font(.title2.weight(.bold))
                     }
 
                     Text(completionShareText)
-                        .font(.subheadline).foregroundStyle(.secondary)
+                        .font(.subheadline).foregroundStyle(Theme.textSecondary)
                         .multilineTextAlignment(.center)
 
                     Button {
@@ -288,7 +288,7 @@ struct ActiveWorkoutView: View {
                     .buttonStyle(.bordered)
 
                     Button("Done") { showingCompletionSheet = false }
-                        .buttonStyle(.borderedProminent).tint(Theme.deficit)
+                        .buttonStyle(.borderedProminent).tint(Theme.accent)
                         .frame(maxWidth: .infinity)
                 }
                 .padding(24)
@@ -383,7 +383,7 @@ struct ActiveWorkoutView: View {
                     Text(exercises[ei].name).font(.subheadline.weight(.bold))
                         .foregroundStyle(exercises[ei].isWarmupExercise ? Theme.fatYellow : Theme.calorieBlue)
                 }
-                Text(guessGroup(exercises[ei].name)).font(.caption2).foregroundStyle(.tertiary)
+                Text(guessGroup(exercises[ei].name)).font(.caption2).foregroundStyle(Theme.textTertiary)
                 Spacer()
                 // Rest time customizer
                 Menu {
@@ -411,7 +411,7 @@ struct ActiveWorkoutView: View {
                         Label("Remove Exercise", systemImage: "trash")
                     }
                 } label: {
-                    Image(systemName: "xmark.circle.fill").font(.subheadline).foregroundStyle(.tertiary)
+                    Image(systemName: "xmark.circle.fill").font(.subheadline).foregroundStyle(Theme.textTertiary)
                 }
                 .accessibilityLabel("Exercise options")
             }
@@ -421,18 +421,18 @@ struct ActiveWorkoutView: View {
                 get: { exercises[ei].notes ?? "" },
                 set: { exercises[ei].notes = $0.isEmpty ? nil : $0 }
             ))
-            .font(.caption2).foregroundStyle(.secondary).italic()
+            .font(.caption2).foregroundStyle(Theme.textSecondary).italic()
 
             // Column headers
             let assisted = isAssistedExercise(exercises[ei].name)
             let isDuration = WorkoutSet.isDurationExercise(exercises[ei].name)
             HStack(spacing: 0) {
-                Text("Set").font(.caption2.weight(.bold)).foregroundStyle(.tertiary).frame(width: 28, alignment: .leading)
-                Text("Previous").font(.caption2.weight(.bold)).foregroundStyle(.tertiary).frame(width: 85, alignment: .leading)
-                Text(assisted ? "-lbs" : "lbs").font(.caption2.weight(.bold)).foregroundStyle(.tertiary).frame(width: 55)
-                Text(isDuration ? "Time (s)" : "Reps").font(.caption2.weight(.bold)).foregroundStyle(.tertiary).frame(width: 50)
+                Text("Set").font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary).frame(width: 28, alignment: .leading)
+                Text("Previous").font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary).frame(width: 85, alignment: .leading)
+                Text(assisted ? "-lbs" : "lbs").font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary).frame(width: 55)
+                Text(isDuration ? "Time (s)" : "Reps").font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary).frame(width: 50)
                 Spacer()
-                Text("✓").font(.caption2.weight(.bold)).foregroundStyle(.tertiary).frame(width: 30)
+                Text("✓").font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary).frame(width: 30)
             }
 
             // Sets
@@ -450,7 +450,7 @@ struct ActiveWorkoutView: View {
 
                         // Previous
                         Text(si < exercises[ei].previousSets.count ? exercises[ei].previousSets[si] : "—")
-                            .font(.caption2.monospacedDigit()).foregroundStyle(.tertiary).frame(width: 85, alignment: .leading)
+                            .font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary).frame(width: 85, alignment: .leading)
 
                         // Weight
                         TextField(si < exercises[ei].previousSets.count ? prevWeight(exercises[ei].previousSets[si]) : "0",
@@ -492,7 +492,7 @@ struct ActiveWorkoutView: View {
                             exercises[ei].sets.removeAll(where: { $0.id == set.id })
                             if exercises[ei].sets.isEmpty { exercises.remove(at: ei) }
                         } label: {
-                            Image(systemName: "xmark").font(.system(size: 10)).foregroundStyle(.quaternary)
+                            Image(systemName: "xmark").font(.system(size: Theme.FontSize.micro)).foregroundStyle(Theme.textTertiary)
                         }.frame(width: 20).accessibilityLabel("Delete set")
                     }
                     .padding(.vertical, 2)
@@ -518,7 +518,7 @@ struct ActiveWorkoutView: View {
                 exercises[ei].sets.append(ActiveSet(weight: last?.weight ?? "", reps: last?.reps ?? ""))
             } label: {
                 Text("+ Set")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(Theme.textSecondary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 6)
                     .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 6))

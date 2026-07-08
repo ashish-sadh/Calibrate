@@ -17,7 +17,7 @@ struct BackupOnboardingSheet: View {
         VStack(spacing: 20) {
             Spacer().frame(height: 8)
             Image(systemName: "icloud.and.arrow.up")
-                .font(.system(size: 56, weight: .regular))
+                .font(.system(size: Theme.FontSize.hero, weight: .regular))
                 .foregroundStyle(Theme.accent)
                 .padding(.bottom, 4)
 
@@ -27,7 +27,7 @@ struct BackupOnboardingSheet: View {
 
             Text("Drift saves your food log, weight history, recipes, and workouts to your iCloud Drive every night. If you ever lose your phone or switch devices, your data comes back exactly as it was.")
                 .font(.subheadline)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 12)
 
@@ -50,7 +50,7 @@ struct BackupOnboardingSheet: View {
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(Theme.ink, in: RoundedRectangle(cornerRadius: 12))
+                        .background(Theme.ink, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
                         .foregroundStyle(.white)
                 }
                 .buttonStyle(.plain)
@@ -62,7 +62,7 @@ struct BackupOnboardingSheet: View {
                 } label: {
                     Text("Not now")
                         .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Theme.textSecondary)
                         .padding(.vertical, 8)
                 }
                 .buttonStyle(.plain)
@@ -85,7 +85,7 @@ struct BackupOnboardingSheet: View {
                 .padding(.top, 2)
             Text(text)
                 .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(Theme.textSecondary)
             Spacer(minLength: 0)
         }
     }

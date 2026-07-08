@@ -55,7 +55,7 @@ struct GoalSetupView: View {
                             HStack {
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(pref.displayName).font(.subheadline)
-                                    Text(pref.subtitle).font(.caption2).foregroundStyle(.secondary)
+                                    Text(pref.subtitle).font(.caption2).foregroundStyle(Theme.textSecondary)
                                 }
                                 Spacer()
                                 if pref == dietPref {
@@ -75,7 +75,7 @@ struct GoalSetupView: View {
                                 .keyboardType(.numberPad)
                                 .multilineTextAlignment(.trailing)
                                 .frame(width: 60)
-                            Text("g").font(.caption).foregroundStyle(.secondary)
+                            Text("g").font(.caption).foregroundStyle(Theme.textSecondary)
                         }
                         HStack {
                             Text("Carbs")
@@ -84,7 +84,7 @@ struct GoalSetupView: View {
                                 .keyboardType(.numberPad)
                                 .multilineTextAlignment(.trailing)
                                 .frame(width: 60)
-                            Text("g").font(.caption).foregroundStyle(.secondary)
+                            Text("g").font(.caption).foregroundStyle(Theme.textSecondary)
                         }
                         HStack {
                             Text("Fat")
@@ -93,7 +93,7 @@ struct GoalSetupView: View {
                                 .keyboardType(.numberPad)
                                 .multilineTextAlignment(.trailing)
                                 .frame(width: 60)
-                            Text("g").font(.caption).foregroundStyle(.secondary)
+                            Text("g").font(.caption).foregroundStyle(Theme.textSecondary)
                         }
                     } header: {
                         Text("Custom Macros")
@@ -146,14 +146,14 @@ struct GoalSetupView: View {
                             + (Double(customCarbs) ?? 0) * 4
                             + (Double(customFat) ?? 0) * 9
                         if allMacrosSet {
-                            Text("\(Int(impliedCal))").foregroundStyle(.secondary)
+                            Text("\(Int(impliedCal))").foregroundStyle(Theme.textSecondary)
                         } else {
                             TextField("auto", text: $calorieTarget)
                                 .keyboardType(.numberPad)
                                 .multilineTextAlignment(.trailing)
                                 .frame(width: 80)
                         }
-                        Text("kcal").font(.caption).foregroundStyle(.secondary)
+                        Text("kcal").font(.caption).foregroundStyle(Theme.textSecondary)
                     }
                 } header: {
                     Text("Calorie Target")
@@ -197,7 +197,7 @@ struct GoalSetupView: View {
 
                             VStack(alignment: .leading, spacing: 6) {
                                 Text("This means:")
-                                    .font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+                                    .font(.caption.weight(.semibold)).foregroundStyle(Theme.textSecondary)
 
                                 if hasAnyCustomMacro, let m = macros {
                                     // Honest macro-based projection: what will actually happen vs TDEE
@@ -226,7 +226,7 @@ struct GoalSetupView: View {
                                     }
                                     if m.fatWasClamped {
                                         Text("Fat raised to safe minimum (\(Int(m.fatG))g).")
-                                            .font(.caption).foregroundStyle(.secondary)
+                                            .font(.caption).foregroundStyle(Theme.textSecondary)
                                     }
                                     Text("\u{2022} \(Int(m.proteinG))g protein \u{00B7} \(Int(m.carbsG))g carbs \u{00B7} \(Int(m.fatG))g fat")
                                         .font(.caption).foregroundStyle(Theme.accent)
@@ -247,7 +247,7 @@ struct GoalSetupView: View {
                                             .font(.caption).foregroundStyle(Theme.accent)
                                     } else {
                                         Text("\u{2022} Set a calorie target above to see macro breakdown")
-                                            .font(.caption).foregroundStyle(.tertiary)
+                                            .font(.caption).foregroundStyle(Theme.textTertiary)
                                     }
                                     if abs(dailyDeficit) > 1000 {
                                         Text("Aggressive — consider extending the timeline")

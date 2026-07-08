@@ -123,7 +123,7 @@ struct FoodLogSheet: View {
             Spacer(minLength: 0)
         }
         .padding(10)
-        .background(Theme.surplus.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+        .background(Theme.surplus.opacity(0.08), in: RoundedRectangle(cornerRadius: Theme.radiusChip))
         .accessibilityIdentifier("food-log-multipiece-warning")
     }
 
@@ -144,7 +144,7 @@ struct FoodLogSheet: View {
             let perText = (currentLabel == "g" || currentLabel == "ml")
                 ? "\(food.macroSummary) per \(Int(food.servingSize))\(food.servingUnit)"
                 : "\(Int(food.calories * scale))cal \(Int(food.proteinG * scale))P \(Int(food.carbsG * scale))C \(Int(food.fatG * scale))F per 1 \(currentLabel) (\(gramPrefix)\(Int(unit.gramsEquivalent))g)"
-            Text(perText).font(.caption).foregroundStyle(.secondary)
+            Text(perText).font(.caption).foregroundStyle(Theme.textSecondary)
         }
         .padding(.top, 8)
     }
@@ -154,7 +154,7 @@ struct FoodLogSheet: View {
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text("\(Int(food.calories * multiplier))")
                     .font(.title.weight(.bold).monospacedDigit())
-                Text("cal").font(.subheadline).foregroundStyle(.secondary)
+                Text("cal").font(.subheadline).foregroundStyle(Theme.textSecondary)
             }
             HStack(spacing: 8) {
                 macroChip("P", value: food.proteinG * multiplier, color: Theme.proteinRed)
@@ -163,7 +163,7 @@ struct FoodLogSheet: View {
             }
             if food.fiberG > 0 {
                 Text("\(MacroFormatter.fiber(food.fiberG * multiplier))g fiber")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(Theme.textSecondary)
             }
         }
         .card()
@@ -172,13 +172,13 @@ struct FoodLogSheet: View {
     private var timeAndMealPicker: some View {
         VStack(spacing: 10) {
             HStack {
-                Text("Time").font(.subheadline).foregroundStyle(.secondary)
+                Text("Time").font(.subheadline).foregroundStyle(Theme.textSecondary)
                 Spacer()
                 DatePicker("", selection: $logTime, displayedComponents: .hourAndMinute)
                     .labelsHidden()
             }
             HStack {
-                Text("Meal").font(.subheadline).foregroundStyle(.secondary)
+                Text("Meal").font(.subheadline).foregroundStyle(Theme.textSecondary)
                 Spacer()
                 Menu {
                     ForEach(MealType.allCases, id: \.self) { type in

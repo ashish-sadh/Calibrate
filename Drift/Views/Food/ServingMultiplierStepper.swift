@@ -37,7 +37,7 @@ struct ServingMultiplierStepper: View {
                     .onChange(of: focused) { _, now in if !now { commitText() } }
                     .submitLabel(.done)
                     .onSubmit { commitText(); focused = false }
-                Text("×").font(.caption2).foregroundStyle(.secondary)
+                Text("×").font(.caption2).foregroundStyle(Theme.textSecondary)
             }
 
             Button { commit(servings + step) } label: {

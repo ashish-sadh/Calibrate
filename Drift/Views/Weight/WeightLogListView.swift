@@ -59,7 +59,7 @@ struct WeightLogListView: View {
                         let median = sorted.isEmpty ? 0 : sorted[sorted.count / 2]
                         Text("~\(String(format: "%.1f", unit.convert(fromKg: median))) \(unit.displayName)")
                             .font(.caption.monospacedDigit())
-                            .foregroundStyle(.tertiary)
+                            .foregroundStyle(Theme.textTertiary)
                     }
                     .padding(.bottom, 8)
 
@@ -87,7 +87,7 @@ struct WeightLogListView: View {
                     .font(.body.weight(.semibold).monospacedDigit())
                 Text(formatDate(entry.date))
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
             }
 
             Spacer()

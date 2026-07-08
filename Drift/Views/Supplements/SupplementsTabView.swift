@@ -20,7 +20,7 @@ struct SupplementsTabView: View {
                                 .foregroundStyle(viewModel.takenCount == viewModel.totalCount && viewModel.totalCount > 0 ? Theme.deficit : .primary)
                             Text("taken today")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Theme.textSecondary)
                         }
                         Spacer()
                         VStack(alignment: .trailing, spacing: 2) {
@@ -29,7 +29,7 @@ struct SupplementsTabView: View {
                                 .foregroundStyle(viewModel.currentStreak > 0 ? Theme.accent : .secondary)
                             Text("day streak")
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Theme.textSecondary)
                         }
                     }
                     .card()
@@ -70,7 +70,7 @@ struct SupplementsTabView: View {
                                             .foregroundStyle(.primary)
                                         if !supplement.dosageDisplay.isEmpty {
                                             Text(supplement.dosageDisplay)
-                                                .font(.caption).foregroundStyle(.tertiary)
+                                                .font(.caption).foregroundStyle(Theme.textTertiary)
                                         }
                                     }
 
@@ -82,7 +82,7 @@ struct SupplementsTabView: View {
                                             SupplementService.deleteSupplement(id: id)
                                             viewModel.loadSupplements()
                                         } label: {
-                                            Image(systemName: "xmark.circle.fill").font(.caption2).foregroundStyle(.tertiary)
+                                            Image(systemName: "xmark.circle.fill").font(.caption2).foregroundStyle(Theme.textTertiary)
                                         }
                                         .buttonStyle(.plain)
                                         .accessibilityLabel("Delete \(supplement.name)")
@@ -92,7 +92,7 @@ struct SupplementsTabView: View {
                                        let log = viewModel.todayLogs[supplement.id ?? 0],
                                        let takenAt = log.takenAt {
                                         Text(formatTime(takenAt))
-                                            .font(.caption2.monospacedDigit()).foregroundStyle(.tertiary)
+                                            .font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
                                     }
                                 }
                                 .padding(.vertical, 12)
@@ -124,10 +124,10 @@ struct SupplementsTabView: View {
                     if viewModel.supplements.isEmpty {
                         VStack(spacing: 12) {
                             Image(systemName: "pill")
-                                .font(.system(size: 40))
+                                .font(.system(size: Theme.FontSize.display2))
                                 .foregroundStyle(Theme.accent.opacity(0.5))
                             Text("No supplements yet")
-                                .font(.subheadline).foregroundStyle(.secondary)
+                                .font(.subheadline).foregroundStyle(Theme.textSecondary)
                             Button { showingAdd = true } label: {
                                 Label("Add Supplement", systemImage: "plus.circle.fill")
                                     .font(.caption)
@@ -174,13 +174,13 @@ struct SupplementsTabView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("Consistency")
-                    .font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                 Spacer()
                 Text("\(Int(viewModel.thirtyDayAverage * 100))%")
                     .font(.caption.weight(.bold).monospacedDigit())
                     .foregroundStyle(viewModel.thirtyDayAverage > 0.8 ? Theme.deficit : viewModel.thirtyDayAverage > 0.5 ? Theme.fatYellow : Theme.surplus)
                 Text("last 30d")
-                    .font(.caption2).foregroundStyle(.tertiary)
+                    .font(.caption2).foregroundStyle(Theme.textTertiary)
             }
 
             // GitHub-style heatmap grid (60 days, 7 rows)
@@ -202,19 +202,19 @@ struct SupplementsTabView: View {
 
             // Legend
             HStack(spacing: 4) {
-                Text("Less").font(.caption2).foregroundStyle(.tertiary)
+                Text("Less").font(.caption2).foregroundStyle(Theme.textTertiary)
                 ForEach([0.0, 0.33, 0.66, 1.0], id: \.self) { ratio in
                     RoundedRectangle(cornerRadius: 2)
                         .fill(colorForRatio(ratio))
                         .frame(width: 12, height: 12)
                 }
-                Text("All").font(.caption2).foregroundStyle(.tertiary)
+                Text("All").font(.caption2).foregroundStyle(Theme.textTertiary)
                 Spacer()
 
                 // Month labels
                 if let first = viewModel.consistencyData.first, let last = viewModel.consistencyData.last {
                     Text("\(DateFormatters.shortDisplay.string(from: first.date)) – \(DateFormatters.shortDisplay.string(from: last.date))")
-                        .font(.caption2).foregroundStyle(.tertiary)
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
             }
 
@@ -236,14 +236,14 @@ struct SupplementsTabView: View {
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3)).foregroundStyle(.secondary.opacity(0.2))
                     AxisValueLabel {
                         if let v = value.as(Double.self) {
-                            Text("\(Int(v * 100))%").font(.caption2).foregroundStyle(.tertiary)
+                            Text("\(Int(v * 100))%").font(.caption2).foregroundStyle(Theme.textTertiary)
                         }
                     }
                 }
             }
             .chartXAxis {
                 AxisMarks(values: .automatic(desiredCount: 4)) {
-                    AxisValueLabel(format: .dateTime.month(.abbreviated).day()).font(.caption2).foregroundStyle(.tertiary)
+                    AxisValueLabel(format: .dateTime.month(.abbreviated).day()).font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
             }
             .frame(height: 80)

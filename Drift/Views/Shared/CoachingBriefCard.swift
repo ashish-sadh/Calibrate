@@ -55,7 +55,7 @@ struct CoachingBriefCard: View {
 
     private var header: some View {
         Text("Today's Brief")
-            .font(.system(size: 16, weight: .bold, design: .rounded))
+            .font(.system(size: Theme.FontSize.base, weight: .bold, design: .rounded))
             .foregroundStyle(Theme.ink)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)
@@ -92,11 +92,11 @@ struct CoachingBriefCard: View {
 
             VStack(alignment: .leading, spacing: 5) {
                 Text(item.title)
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.system(size: Theme.FontSize.subheadline, weight: .semibold, design: .rounded))
                     .foregroundStyle(Theme.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
                 Text(item.detail)
-                    .font(.system(size: 13))
+                    .font(.system(size: Theme.FontSize.footnote))
                     .foregroundStyle(Theme.textSecondary)
                     .lineSpacing(1.5)
                     .fixedSize(horizontal: false, vertical: true)
@@ -107,7 +107,7 @@ struct CoachingBriefCard: View {
                         Image(systemName: "sparkles")
                         Text("Ask Coach")
                     }
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: Theme.FontSize.caption, weight: .semibold))
                     .foregroundStyle(Self.accentColor(for: item.alignment))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
@@ -126,7 +126,7 @@ struct CoachingBriefCard: View {
                 onDismiss(item)
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: Theme.FontSize.tiny, weight: .semibold))
                     .foregroundStyle(Theme.textTertiary)
                     .frame(width: 24, height: 24)
                     .contentShape(Rectangle())
@@ -144,17 +144,17 @@ struct CoachingBriefCard: View {
     private var thinDataNudge: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: "sparkles")
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(size: Theme.FontSize.base, weight: .semibold))
                 .foregroundStyle(Theme.textSecondary)
                 .frame(width: 32, height: 32)
                 .background(Theme.separator.opacity(0.6), in: Circle())
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("Building your brief")
-                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .font(.system(size: Theme.FontSize.subheadline, weight: .semibold, design: .rounded))
                     .foregroundStyle(Theme.textPrimary)
                 Text("Log a few days and I'll start spotting patterns across your meals, sleep, and training.")
-                    .font(.system(size: 13))
+                    .font(.system(size: Theme.FontSize.footnote))
                     .foregroundStyle(Theme.textSecondary)
                     .lineSpacing(1.5)
                     .fixedSize(horizontal: false, vertical: true)

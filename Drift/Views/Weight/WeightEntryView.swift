@@ -35,7 +35,7 @@ struct WeightEntryView: View {
                             .keyboardType(.decimalPad)
                             .font(.title.monospacedDigit())
                         Text(unit.displayName)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Theme.textSecondary)
                     }
                 }
 
@@ -112,7 +112,7 @@ struct WeightEntryView: View {
                 .multilineTextAlignment(.trailing)
                 .frame(width: 80)
             if !unit.isEmpty {
-                Text(unit).foregroundStyle(.secondary).frame(width: 35, alignment: .leading)
+                Text(unit).foregroundStyle(Theme.textSecondary).frame(width: 35, alignment: .leading)
             }
         }
     }

@@ -48,7 +48,7 @@ struct DEXAOverviewView: View {
                             ProgressView()
                             Text("Analysing PDF...")
                                 .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Theme.textSecondary)
                         }
                         .frame(maxWidth: .infinity)
                         .card()
@@ -60,7 +60,7 @@ struct DEXAOverviewView: View {
                                 .foregroundStyle(msg.isError ? Theme.surplus : Theme.deficit)
                             Text(msg.text)
                                 .font(.caption)
-                                .foregroundStyle(.secondary)
+                                .foregroundStyle(Theme.textSecondary)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .card()
@@ -87,11 +87,11 @@ struct DEXAOverviewView: View {
     private func overviewCards(latest: DEXAScan, previous: DEXAScan?) -> some View {
         VStack(spacing: 10) {
             HStack {
-                Text("Latest Scan").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                Text("Latest Scan").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                 Spacer()
-                Text(formatDate(latest.scanDate)).font(.caption).foregroundStyle(.tertiary)
+                Text(formatDate(latest.scanDate)).font(.caption).foregroundStyle(Theme.textTertiary)
                 if let loc = latest.location {
-                    Text("· \(loc)").font(.caption2).foregroundStyle(.tertiary)
+                    Text("· \(loc)").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
             }
 
@@ -123,7 +123,7 @@ struct DEXAOverviewView: View {
 
     private func overviewCard(_ title: String, value: String, delta: Double?, deltaUnit: String, lowerBetter: Bool) -> some View {
         VStack(spacing: 4) {
-            Text(title).font(.caption).foregroundStyle(.secondary)
+            Text(title).font(.caption).foregroundStyle(Theme.textSecondary)
             Text(value).font(.title3.weight(.bold).monospacedDigit())
             if let d = delta {
                 let good = lowerBetter ? d < -0.01 : d > 0.01
@@ -135,7 +135,7 @@ struct DEXAOverviewView: View {
             } else {
                 Text("vs prev scan")
                     .font(.caption2)
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Theme.textTertiary)
             }
         }
         .frame(maxWidth: .infinity).card()
@@ -144,7 +144,7 @@ struct DEXAOverviewView: View {
     private func miniStat(_ label: String, value: String) -> some View {
         VStack(spacing: 2) {
             Text(value).font(.caption.weight(.bold).monospacedDigit())
-            Text(label).font(.caption2).foregroundStyle(.tertiary)
+            Text(label).font(.caption2).foregroundStyle(Theme.textTertiary)
         }
         .frame(maxWidth: .infinity).card()
     }
@@ -153,7 +153,7 @@ struct DEXAOverviewView: View {
 
     private var regionalBreakdown: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Regional Breakdown").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+            Text("Regional Breakdown").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
 
             let arms = selectedScanRegions.first { $0.region == "arms" }
             let legs = selectedScanRegions.first { $0.region == "legs" }
@@ -187,16 +187,16 @@ struct DEXAOverviewView: View {
                     VStack(spacing: 1) {
                         Text(r.fatMassLbs.map { String(format: "%.1f", $0) } ?? "--")
                             .font(.caption.monospacedDigit()).foregroundStyle(Theme.surplus)
-                        Text("fat").font(.caption2).foregroundStyle(.tertiary)
+                        Text("fat").font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
                     VStack(spacing: 1) {
                         Text(r.leanMassLbs.map { String(format: "%.1f", $0) } ?? "--")
                             .font(.caption.weight(.bold).monospacedDigit()).foregroundStyle(Theme.deficit)
-                        Text("lean").font(.caption2).foregroundStyle(.tertiary)
+                        Text("lean").font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
                 }
             } else {
-                Text("--").foregroundStyle(.tertiary)
+                Text("--").foregroundStyle(Theme.textTertiary)
             }
         }
         .padding(.vertical, 8)
@@ -215,7 +215,7 @@ struct DEXAOverviewView: View {
         return Group {
             if hasData {
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Muscle Balance (L/R)").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                    Text("Muscle Balance (L/R)").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
 
                     VStack(spacing: 0) {
                         balanceHeader
@@ -238,10 +238,10 @@ struct DEXAOverviewView: View {
         HStack {
             Text("").frame(width: 50)
             Spacer()
-            Text("Fat%").font(.caption2.weight(.semibold)).foregroundStyle(.tertiary).frame(width: 40)
-            Text("Fat").font(.caption2.weight(.semibold)).foregroundStyle(.tertiary).frame(width: 35)
-            Text("Lean").font(.caption2.weight(.semibold)).foregroundStyle(.tertiary).frame(width: 35)
-            Text("Total").font(.caption2.weight(.semibold)).foregroundStyle(.tertiary).frame(width: 35)
+            Text("Fat%").font(.caption2.weight(.semibold)).foregroundStyle(Theme.textTertiary).frame(width: 40)
+            Text("Fat").font(.caption2.weight(.semibold)).foregroundStyle(Theme.textTertiary).frame(width: 35)
+            Text("Lean").font(.caption2.weight(.semibold)).foregroundStyle(Theme.textTertiary).frame(width: 35)
+            Text("Total").font(.caption2.weight(.semibold)).foregroundStyle(Theme.textTertiary).frame(width: 35)
         }
         .padding(.vertical, 4)
     }
@@ -258,7 +258,7 @@ struct DEXAOverviewView: View {
                 Text(r.leanMassLbs.map { String(format: "%.1f", $0) } ?? "--")
                     .font(.caption.weight(.bold).monospacedDigit()).foregroundStyle(Theme.deficit).frame(width: 35)
                 Text(r.totalMassLbs.map { String(format: "%.1f", $0) } ?? "--")
-                    .font(.caption.monospacedDigit()).foregroundStyle(.secondary).frame(width: 35)
+                    .font(.caption.monospacedDigit()).foregroundStyle(Theme.textSecondary).frame(width: 35)
             }
         }
         .padding(.vertical, 6)
@@ -273,7 +273,7 @@ struct DEXAOverviewView: View {
         }()
 
         return VStack(alignment: .leading, spacing: 14) {
-            Text("Trends").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+            Text("Trends").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
 
             trendChart("Body Fat %", data: sorted.compactMap { s in
                 guard let d = df.date(from: s.scanDate), let v = s.bodyFatPct else { return nil }; return (d, v)
@@ -314,13 +314,13 @@ struct DEXAOverviewView: View {
                 .chartYScale(domain: .automatic(includesZero: false))
                 .chartXAxis {
                     AxisMarks(values: .automatic(desiredCount: 4)) {
-                        AxisValueLabel(format: .dateTime.month(.abbreviated).year(.twoDigits)).foregroundStyle(.secondary)
+                        AxisValueLabel(format: .dateTime.month(.abbreviated).year(.twoDigits)).foregroundStyle(Theme.textSecondary)
                     }
                 }
                 .chartYAxis {
                     AxisMarks(position: .trailing) {
                         AxisGridLine(stroke: StrokeStyle(lineWidth: 0.3)).foregroundStyle(.secondary.opacity(0.2))
-                        AxisValueLabel().foregroundStyle(.secondary)
+                        AxisValueLabel().foregroundStyle(Theme.textSecondary)
                     }
                 }
                 .frame(height: 120)
@@ -334,7 +334,7 @@ struct DEXAOverviewView: View {
     private var scanComparison: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Text("All Scans (\(scans.count))").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                Text("All Scans (\(scans.count))").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                 Spacer()
                 if scans.count > 0 {
                     Button { showingDeleteAll = true } label: {
@@ -402,10 +402,10 @@ struct DEXAOverviewView: View {
     private var emptyState: some View {
         VStack(spacing: 16) {
             Image(systemName: "figure.stand")
-                .font(.system(size: 48)).foregroundStyle(Theme.accent.opacity(0.5))
+                .font(.system(size: Theme.FontSize.display4)).foregroundStyle(Theme.accent.opacity(0.5))
             Text("No DEXA Scans").font(.headline)
             Text("Upload a BodySpec PDF report to see your body composition data with trends and regional breakdown.")
-                .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                .font(.subheadline).foregroundStyle(Theme.textSecondary).multilineTextAlignment(.center)
                 .padding(.horizontal, 20)
         }
         .padding(.top, 40)
@@ -542,7 +542,7 @@ struct DEXAEntryView: View {
         HStack {
             Text(label); Spacer()
             TextField("0", text: value).keyboardType(.decimalPad).multilineTextAlignment(.trailing).frame(width: 80)
-            Text(unit).font(.caption).foregroundStyle(.secondary).frame(width: 45, alignment: .leading)
+            Text(unit).font(.caption).foregroundStyle(Theme.textSecondary).frame(width: 45, alignment: .leading)
         }
     }
 

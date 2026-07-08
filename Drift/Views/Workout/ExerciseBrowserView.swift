@@ -57,7 +57,7 @@ struct ExerciseBrowserView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 HStack {
-                    Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+                    Image(systemName: "magnifyingglass").foregroundStyle(Theme.textSecondary)
                     TextField("Search exercises", text: $query).textFieldStyle(.plain).autocorrectionDisabled()
                 }
                 .padding()
@@ -97,7 +97,7 @@ struct ExerciseBrowserView: View {
                                         }
                                         if !ex.primaryMuscles.isEmpty {
                                             Text(ex.primaryMuscles.prefix(2).map(\.capitalized).joined(separator: ", "))
-                                                .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
+                                                .font(.caption2).foregroundStyle(Theme.textSecondary).lineLimit(1)
                                         }
                                     }
                                 }
@@ -134,7 +134,7 @@ struct ExerciseBrowserView: View {
     private func muscleChip(_ bodyPart: String) -> some View {
         HStack(spacing: 2) {
             Image(systemName: muscleIcon(bodyPart)).font(.system(size: 8))
-            Text(bodyPart).font(.system(size: 9))
+            Text(bodyPart).font(.system(size: Theme.FontSize.nano))
         }
         .padding(.horizontal, 6).padding(.vertical, 2)
         .background(Theme.accent.opacity(0.1), in: Capsule())
@@ -144,11 +144,11 @@ struct ExerciseBrowserView: View {
     private func equipmentChip(_ equipment: String) -> some View {
         HStack(spacing: 2) {
             Image(systemName: equipmentIcon(equipment)).font(.system(size: 8))
-            Text(equipment.capitalized).font(.system(size: 9))
+            Text(equipment.capitalized).font(.system(size: Theme.FontSize.nano))
         }
         .padding(.horizontal, 6).padding(.vertical, 2)
         .background(Color.secondary.opacity(0.1), in: Capsule())
-        .foregroundStyle(.secondary)
+        .foregroundStyle(Theme.textSecondary)
     }
 
     private func muscleIcon(_ bodyPart: String) -> String {
@@ -200,7 +200,7 @@ struct ExerciseDetailView: View {
                         poses
                             .frame(maxWidth: .infinity)
                             .frame(height: 190)
-                            .background(Color.white, in: RoundedRectangle(cornerRadius: 12))
+                            .background(Color.white, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
                     }
                     if !info.primaryMuscles.isEmpty || !info.secondaryMuscles.isEmpty {
                         MuscleHighlightCard(
@@ -243,16 +243,16 @@ struct ExerciseDetailView: View {
 
                         if !info.primaryMuscles.isEmpty {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Primary muscles").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                                Text("Primary muscles").font(.caption2.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                                 Text(info.primaryMuscles.map(\.capitalized).joined(separator: ", "))
                                     .font(.caption).foregroundStyle(.primary)
                             }
                         }
                         if !info.secondaryMuscles.isEmpty {
                             VStack(alignment: .leading, spacing: 2) {
-                                Text("Secondary muscles").font(.caption2.weight(.semibold)).foregroundStyle(.secondary)
+                                Text("Secondary muscles").font(.caption2.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                                 Text(info.secondaryMuscles.map(\.capitalized).joined(separator: ", "))
-                                    .font(.caption).foregroundStyle(.tertiary)
+                                    .font(.caption).foregroundStyle(Theme.textTertiary)
                             }
                         }
 
@@ -270,12 +270,12 @@ struct ExerciseDetailView: View {
 
                 if history.isEmpty {
                     VStack(spacing: 8) {
-                        Image(systemName: "clock").font(.title2).foregroundStyle(.tertiary)
-                        Text("No history yet").font(.subheadline).foregroundStyle(.secondary)
+                        Image(systemName: "clock").font(.title2).foregroundStyle(Theme.textTertiary)
+                        Text("No history yet").font(.subheadline).foregroundStyle(Theme.textSecondary)
                     }.padding(.top, 20)
                 } else {
                     VStack(alignment: .leading, spacing: 6) {
-                        Text("History").font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+                        Text("History").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                         ForEach(history.prefix(20), id: \.id) { s in
                             HStack {
                                 Text(s.isWarmup ? "W" : "\(s.setOrder)")
@@ -285,7 +285,7 @@ struct ExerciseDetailView: View {
                                 Text(s.display).font(.subheadline.monospacedDigit())
                                 Spacer()
                                 if let rm = s.estimated1RM {
-                                    Text("1RM: \(Int(rm))").font(.caption2.monospacedDigit()).foregroundStyle(.tertiary)
+                                    Text("1RM: \(Int(rm))").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
                                 }
                             }
                         }

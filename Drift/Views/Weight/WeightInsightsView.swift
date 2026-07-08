@@ -158,17 +158,17 @@ struct WeightInsightsView: View {
             // Users reported the bar "disappeared" — restore it as an always-on
             // smoothed number, useful even when close to current.
             HStack(spacing: 6) {
-                Image(systemName: "chart.line.downtrend.xyaxis").font(.caption2).foregroundStyle(.tertiary)
+                Image(systemName: "chart.line.downtrend.xyaxis").font(.caption2).foregroundStyle(Theme.textTertiary)
                 Text("Trend Weight: \(String(format: "%.1f", unit.convert(fromKg: trend.currentEMA))) \(unit.displayName)")
-                    .font(.caption.monospacedDigit()).foregroundStyle(.secondary)
+                    .font(.caption.monospacedDigit()).foregroundStyle(Theme.textSecondary)
                 Button { showTrendInfo = true } label: {
-                    Image(systemName: "info.circle").font(.caption2).foregroundStyle(.quaternary)
+                    Image(systemName: "info.circle").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }.buttonStyle(.plain)
                 .accessibilityLabel("Trend weight info")
                 Spacer()
             }
             .padding(.horizontal, 8).padding(.vertical, 6)
-            .hairlineCard(cornerRadius: 10)
+            .hairlineCard(cornerRadius: Theme.radiusChip)
 
             // Compact weight-change chips
             weightChangesRow
@@ -196,7 +196,7 @@ struct WeightInsightsView: View {
             HStack {
                 Text("Body Composition")
                     .font(.caption.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Theme.textSecondary)
                 Spacer()
                 if let onAdd = onAddBodyComp {
                     Button { onAdd() } label: {
@@ -212,9 +212,9 @@ struct WeightInsightsView: View {
                 // Empty state — invite user to add
                 Button { onAddBodyComp?() } label: {
                     HStack {
-                        Image(systemName: "figure.arms.open").foregroundStyle(.secondary)
+                        Image(systemName: "figure.arms.open").foregroundStyle(Theme.textSecondary)
                         Text("Track body fat, BMI, water % — tap to add")
-                            .font(.caption).foregroundStyle(.secondary)
+                            .font(.caption).foregroundStyle(Theme.textSecondary)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
@@ -222,7 +222,7 @@ struct WeightInsightsView: View {
                     // which is effectively invisible on the white
                     // card. Theme.pillBackground gives the soft-grey
                     // inset that matches the rest of the V7 surfaces.
-                    .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 14))
+                    .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
                 }
                 .buttonStyle(.plain)
             } else {
@@ -264,11 +264,11 @@ struct WeightInsightsView: View {
 
     private func bodyCompCard(label: String, value: Double, unit: String, previous: Double?) -> some View {
         VStack(spacing: 4) {
-            Text(label).font(.caption2).foregroundStyle(.secondary)
+            Text(label).font(.caption2).foregroundStyle(Theme.textSecondary)
             HStack(spacing: 2) {
                 Text(String(format: "%.1f", value))
                     .font(.title3.weight(.bold).monospacedDigit())
-                if !unit.isEmpty { Text(unit).font(.caption2).foregroundStyle(.tertiary) }
+                if !unit.isEmpty { Text(unit).font(.caption2).foregroundStyle(Theme.textTertiary) }
             }
             if let prev = previous {
                 let delta = value - prev
@@ -282,7 +282,7 @@ struct WeightInsightsView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 12)
-        .hairlineCard(cornerRadius: 14)
+        .hairlineCard(cornerRadius: Theme.radiusControl)
     }
 
     private func bodyCompChartSheet(title: String, entries: [(date: String, value: Double)]) -> some View {
@@ -299,19 +299,19 @@ struct WeightInsightsView: View {
                     // Header — matches weight chart style
                     HStack(alignment: .firstTextBaseline) {
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Latest").font(.caption2).foregroundStyle(.tertiary)
+                            Text("Latest").font(.caption2).foregroundStyle(Theme.textTertiary)
                             HStack(alignment: .firstTextBaseline, spacing: 3) {
                                 Text(String(format: "%.1f", parsed.last?.value ?? 0))
                                     .font(.title2.weight(.bold).monospacedDigit())
                                 Text(title.contains("%") ? "%" : "")
-                                    .font(.caption).foregroundStyle(.secondary)
+                                    .font(.caption).foregroundStyle(Theme.textSecondary)
                             }
                         }
                         Spacer()
                         if let first = parsed.first?.value, let last = parsed.last?.value {
                             let diff = last - first
                             VStack(alignment: .trailing, spacing: 2) {
-                                Text("Change").font(.caption2).foregroundStyle(.tertiary)
+                                Text("Change").font(.caption2).foregroundStyle(Theme.textTertiary)
                                 Text(String(format: "%+.1f", diff))
                                     .font(.title3.weight(.bold).monospacedDigit())
                                     .foregroundStyle(diff < 0 ? Theme.deficit : diff > 0 ? Theme.surplus : .secondary)
@@ -322,7 +322,7 @@ struct WeightInsightsView: View {
                     // Date range
                     if let f = parsed.first?.date, let l = parsed.last?.date {
                         Text("\(DateFormatters.shortDisplay.string(from: f)) – \(DateFormatters.shortDisplay.string(from: l))")
-                            .font(.caption2).foregroundStyle(.tertiary)
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
 
                     // Chart — matches weight chart styling
@@ -356,12 +356,12 @@ struct WeightInsightsView: View {
                     .chartXAxis {
                         AxisMarks(values: .automatic(desiredCount: 4)) {
                             AxisValueLabel(format: .dateTime.month(.abbreviated).day())
-                                .foregroundStyle(.tertiary)
+                                .foregroundStyle(Theme.textTertiary)
                         }
                     }
                     .chartYAxis {
                         AxisMarks(position: .trailing) {
-                            AxisValueLabel().foregroundStyle(.tertiary)
+                            AxisValueLabel().foregroundStyle(Theme.textTertiary)
                         }
                     }
                     .frame(height: 220)
@@ -403,7 +403,7 @@ struct WeightInsightsView: View {
 
         return AnyView(
             Text("You tend to weigh least on \(dayNames[light.key])s and most on \(dayNames[heavy.key])s")
-                .font(.caption2).foregroundStyle(.tertiary)
+                .font(.caption2).foregroundStyle(Theme.textTertiary)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
                 .padding(.top, 4)
@@ -478,7 +478,7 @@ struct WeightInsightsView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
         .padding(.horizontal, 8)
-        .hairlineCard(cornerRadius: 14)
+        .hairlineCard(cornerRadius: Theme.radiusControl)
     }
 
     // MARK: - Weight Changes Row
@@ -493,7 +493,7 @@ struct WeightInsightsView: View {
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 12)
-        .hairlineCard(cornerRadius: 14)
+        .hairlineCard(cornerRadius: Theme.radiusControl)
     }
 
     /// One trend-change row: period · sparkline of the trend over that window ·

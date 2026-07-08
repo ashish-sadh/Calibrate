@@ -27,7 +27,7 @@ struct LogMethodCardsRow: View {
                 Button { fire(card) } label: {
                     VStack(spacing: 6) {
                         Image(systemName: card.icon)
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(.system(size: Theme.FontSize.large, weight: .semibold))
                             .foregroundStyle(Theme.textPrimary)
                             .frame(height: 22)
                         Text(card.label)
@@ -38,9 +38,9 @@ struct LogMethodCardsRow: View {
                     }
                     .frame(maxWidth: .infinity, minHeight: 56)
                     .padding(.vertical, 10)
-                    .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: 14))
+                    .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 14)
+                        RoundedRectangle(cornerRadius: Theme.radiusControl)
                             .strokeBorder(Theme.separator, lineWidth: 0.5)
                     )
                     .contentShape(Rectangle())

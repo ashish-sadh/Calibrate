@@ -49,7 +49,7 @@ struct PhotoLogFlowView: View {
                 Text("Analyzing your meal…")
                     .font(.headline)
                 Text("One photo → one call. Usually 3–6 seconds.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(Theme.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
                 Spacer()
@@ -87,13 +87,13 @@ struct PhotoLogFlowView: View {
         NavigationStack {
             VStack(spacing: 16) {
                 Image(systemName: "questionmark.circle")
-                    .font(.system(size: 56))
+                    .font(.system(size: Theme.FontSize.hero))
                     .foregroundStyle(Theme.textTertiary)
                 Text("We couldn't spot any food in that photo.")
                     .font(.headline)
                     .multilineTextAlignment(.center)
                 Text("Try one with the meal centered and in good light.")
-                    .font(.caption).foregroundStyle(.secondary)
+                    .font(.caption).foregroundStyle(Theme.textSecondary)
                     .multilineTextAlignment(.center)
                 Button {
                     state = .capture
@@ -120,7 +120,7 @@ struct PhotoLogFlowView: View {
         NavigationStack {
             VStack(spacing: 16) {
                 Image(systemName: "exclamationmark.triangle")
-                    .font(.system(size: 56))
+                    .font(.system(size: Theme.FontSize.hero))
                     .foregroundStyle(Theme.surplus)
                 Text(message)
                     .font(.headline)
