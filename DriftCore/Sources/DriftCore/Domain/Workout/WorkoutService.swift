@@ -9,14 +9,17 @@ public enum WorkoutService {
     // MARK: - CRUD
 
     public static func saveWorkout(_ workout: inout Workout) throws {
-        try db.writer.write { [workout] dbConn in
-            var m = workout
+        // Capture the assigned id from WITHIN the write transaction. The old code read
+        // back `Workout.order(id desc).fetchOne` — the highest id in the whole table —
+        // which returns the WRONG row whenever another workout is inserted concurrently
+        // (parallel tests, or a background save racing a foreground one). That mis-assigned
+        // id also corrupted every subsequent saveSets/buildSummary/shareText for the workout.
+        var m = workout
+        try db.writer.write { dbConn in
             try m.save(dbConn)
+            if m.id == nil { m.id = dbConn.lastInsertedRowID }
         }
-        // Read back to get the assigned ID
-        workout = try db.reader.read { dbConn in
-            try Workout.order(Column("id").desc).fetchOne(dbConn)
-        } ?? workout
+        workout = m
     }
 
     public static func updateSet(id: Int64, weightLbs: Double?, reps: Int?, durationSec: Int? = nil) throws {
