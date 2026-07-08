@@ -222,7 +222,7 @@ struct FoodSearchView: View {
                     }.buttonStyle(.bordered).tint(Theme.accent)
 
                     Button { showingRecipeBuilder = true } label: {
-                        Label("Recipe", systemImage: "list.bullet.rectangle").font(.caption)
+                        Label("Build", systemImage: "list.bullet.rectangle").font(.caption)
                     }.buttonStyle(.bordered).tint(Theme.accent)
 
                     Button { showingManual = true } label: {

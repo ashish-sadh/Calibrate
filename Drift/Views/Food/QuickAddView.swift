@@ -161,7 +161,7 @@ struct QuickAddView: View {
             }
             .scrollDismissesKeyboard(.interactively)
             .background(Theme.background)
-            .navigationTitle("Combo / Recipe").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Build a Meal").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 if editingRecipeID != nil {
@@ -308,6 +308,8 @@ private struct IngredientPickerView: View {
     @State private var manualServing = "1"
     @State private var manualServingUnit = "serving"
     @FocusState private var searchFocused: Bool
+    @State private var addedCount = 0
+    @State private var addedCal = 0.0
 
     private var ingredientResults: [RawIngredient] {
         if query.isEmpty { return [] }
@@ -358,10 +360,16 @@ private struct IngredientPickerView: View {
             .navigationTitle(editingItem != nil ? "Edit Food Item" : "Add Food Item").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { dismiss() }
+                    Button(editingItem != nil ? "Cancel" : "Done") { dismiss() }
+                }
+                if addedCount > 0 {
+                    ToolbarItem(placement: .principal) {
+                        Text("\(addedCount) added \u{00B7} \(Int(addedCal)) cal")
+                            .font(.caption.weight(.medium)).foregroundStyle(Theme.textSecondary)
+                    }
                 }
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Add") { addSelectedIngredient(); dismiss() }
+                    Button(editingItem != nil ? "Save" : "Add") { addSelectedIngredient() }
                         .fontWeight(.semibold)
                         .disabled(!canAddSelected)
                 }
@@ -452,16 +460,22 @@ private struct IngredientPickerView: View {
             if query.isEmpty && !filteredRecent.isEmpty {
                 Section("Recent") {
                     ForEach(filteredRecent) { food in
-                        Button {
-                            amount = FoodUnit.defaultAmount(for: food)
-                            selectedUnitIndex = 0
-                            selectedFood = food
-                        } label: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(food.name).font(.subheadline)
-                                Text(food.macroSummary).font(.caption).foregroundStyle(Theme.textSecondary)
-                            }
-                        }.tint(.primary)
+                        HStack {
+                            Button {
+                                amount = FoodUnit.defaultAmount(for: food)
+                                selectedUnitIndex = 0
+                                selectedFood = food
+                            } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(food.name).font(.subheadline)
+                                    Text(food.macroSummary).font(.caption).foregroundStyle(Theme.textSecondary)
+                                }
+                            }.tint(.primary)
+                            Spacer()
+                            Button { quickAdd(food) } label: {
+                                Image(systemName: "plus.circle.fill").font(.title3).foregroundStyle(Theme.accent)
+                            }.buttonStyle(.plain).accessibilityLabel("Add \(food.name)")
+                        }
                     }
                 }
             }
@@ -469,16 +483,22 @@ private struct IngredientPickerView: View {
             if !results.isEmpty {
                 Section("Foods") {
                     ForEach(results) { food in
-                        Button {
-                            amount = FoodUnit.defaultAmount(for: food)
-                            selectedUnitIndex = 0
-                            selectedFood = food
-                        } label: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(food.name).font(.subheadline)
-                                Text(food.macroSummary).font(.caption).foregroundStyle(Theme.textSecondary)
-                            }
-                        }.tint(.primary)
+                        HStack {
+                            Button {
+                                amount = FoodUnit.defaultAmount(for: food)
+                                selectedUnitIndex = 0
+                                selectedFood = food
+                            } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(food.name).font(.subheadline)
+                                    Text(food.macroSummary).font(.caption).foregroundStyle(Theme.textSecondary)
+                                }
+                            }.tint(.primary)
+                            Spacer()
+                            Button { quickAdd(food) } label: {
+                                Image(systemName: "plus.circle.fill").font(.title3).foregroundStyle(Theme.accent)
+                            }.buttonStyle(.plain).accessibilityLabel("Add \(food.name)")
+                        }
                     }
                 }
             }
@@ -486,25 +506,23 @@ private struct IngredientPickerView: View {
             if !ingredientResults.isEmpty {
                 Section("Raw Ingredients") {
                     ForEach(ingredientResults) { ing in
-                        Button {
-                            let gpp = ing.gramsPerPiece
-                            let scale = gpp / 100.0
-                            let food = Food(name: ing.name, category: "Ingredient",
-                                            servingSize: gpp, servingUnit: "g",
-                                            calories: ing.caloriesPer100g * scale,
-                                            proteinG: ing.proteinPer100g * scale,
-                                            carbsG: ing.carbsPer100g * scale,
-                                            fatG: ing.fatPer100g * scale,
-                                            fiberG: ing.fiberPer100g * scale)
-                            amount = FoodUnit.defaultAmount(for: food)
-                            selectedUnitIndex = 0
-                            selectedFood = food
-                        } label: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(ing.name).font(.subheadline)
-                                Text("\(Int(ing.caloriesPer100g)) cal/100g").font(.caption).foregroundStyle(Theme.textSecondary)
-                            }
-                        }.tint(.primary)
+                        HStack {
+                            Button {
+                                let food = ingredientFood(ing)
+                                amount = FoodUnit.defaultAmount(for: food)
+                                selectedUnitIndex = 0
+                                selectedFood = food
+                            } label: {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(ing.name).font(.subheadline)
+                                    Text("\(Int(ing.caloriesPer100g)) cal/100g").font(.caption).foregroundStyle(Theme.textSecondary)
+                                }
+                            }.tint(.primary)
+                            Spacer()
+                            Button { quickAdd(ingredientFood(ing)) } label: {
+                                Image(systemName: "plus.circle.fill").font(.title3).foregroundStyle(Theme.accent)
+                            }.buttonStyle(.plain).accessibilityLabel("Add \(ing.name)")
+                        }
                     }
                 }
             }
@@ -555,9 +573,8 @@ private struct IngredientPickerView: View {
                 // Add button
                 Button {
                     addSelectedIngredient()
-                    dismiss()
                 } label: {
-                    Text("Add to Combo").font(.headline).frame(maxWidth: .infinity)
+                    Text(editingItem != nil ? "Save Changes" : "Add to meal").font(.headline).frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent).tint(Theme.accent)
             }
@@ -580,25 +597,61 @@ private struct IngredientPickerView: View {
     }
 
 
-    private func addSelectedIngredient() {
-        guard let food = selectedFood else { return }
+    private func makeItem(from food: Food, amount: String, unitIndex: Int) -> QuickAddView.RecipeItem {
         let units = FoodUnit.smartUnits(for: food)
-        let safeIndex = min(selectedUnitIndex, max(units.count - 1, 0))
+        let safeIndex = min(unitIndex, max(units.count - 1, 0))
         let unit = units.isEmpty ? FoodUnit(label: "g", gramsEquivalent: 1) : units[safeIndex]
         let amountNum = Double(amount) ?? 0
         let totalGrams = amountNum * unit.gramsEquivalent
         let multiplier = food.servingSize > 0 ? totalGrams / food.servingSize : amountNum
-        let portionText = formatPortion(amount: amount, unitLabel: unit.label)
-        onAdd(QuickAddView.RecipeItem(
+        return QuickAddView.RecipeItem(
             name: food.name,
-            portionText: portionText,
+            portionText: formatPortion(amount: amount, unitLabel: unit.label),
             calories: food.calories * multiplier,
             proteinG: food.proteinG * multiplier,
             carbsG: food.carbsG * multiplier,
             fatG: food.fatG * multiplier,
             fiberG: food.fiberG * multiplier,
             servingSizeG: totalGrams
-        ))
+        )
+    }
+
+    /// #1019: commit an item and STAY OPEN — reset to the search list and refocus so the
+    /// next ingredient is one tap away, instead of dismissing after every single add.
+    /// Edit mode (a single item) still dismisses, preserving its behavior.
+    private func commit(_ item: QuickAddView.RecipeItem) {
+        onAdd(item)
+        if editingItem != nil { dismiss(); return }
+        addedCount += 1
+        addedCal += item.calories
+        selectedFood = nil
+        query = ""
+        results = []
+        amount = "1"
+        selectedUnitIndex = 0
+        searchFocused = true
+    }
+
+    private func addSelectedIngredient() {
+        guard let food = selectedFood else { return }
+        commit(makeItem(from: food, amount: amount, unitIndex: selectedUnitIndex))
+    }
+
+    /// #1019: one-tap add at the food's default serving, skipping the serving picker.
+    private func quickAdd(_ food: Food) {
+        commit(makeItem(from: food, amount: FoodUnit.defaultAmount(for: food), unitIndex: 0))
+    }
+
+    private func ingredientFood(_ ing: RawIngredient) -> Food {
+        let gpp = ing.gramsPerPiece
+        let scale = gpp / 100.0
+        return Food(name: ing.name, category: "Ingredient",
+                    servingSize: gpp, servingUnit: "g",
+                    calories: ing.caloriesPer100g * scale,
+                    proteinG: ing.proteinPer100g * scale,
+                    carbsG: ing.carbsPer100g * scale,
+                    fatG: ing.fatPer100g * scale,
+                    fiberG: ing.fiberPer100g * scale)
     }
 
     // MARK: - Manual Ingredient Sheet
