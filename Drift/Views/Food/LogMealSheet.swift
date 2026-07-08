@@ -128,6 +128,14 @@ struct LogMealSheet: View {
                     mode = .recent
                 }
             }
+            // A successful Snap log routes to the Food diary (PhotoLogFlowView
+            // posts .navigateToTab) — this sheet must get out of the way so the
+            // user actually SEES the diary instead of bouncing back to
+            // "Log a meal" (field complaint 2026-07-07). Cancel/retake still
+            // land on Recent via the onChange above.
+            .onReceive(NotificationCenter.default.publisher(for: .photoLogCompleted)) { _ in
+                dismiss()
+            }
         }
     }
 

@@ -34,6 +34,13 @@ public extension Notification.Name {
     /// first Snap tap from Dashboard silently swallowed the
     /// present and only the second tap opened it.
     static let foodEntryAdded = Notification.Name("drift.foodEntryAdded")
+
+    /// 2026-07-07: posted by PhotoLogFlowView when the user actually LOGS
+    /// the reviewed meal (not on cancel/retake). LogMealSheet listens and
+    /// dismisses itself so a successful Snap lands the user on the Food
+    /// diary to verify the entry — instead of bouncing back to the
+    /// "Log a meal" page (field complaint).
+    static let photoLogCompleted = Notification.Name("drift.photoLogCompleted")
 }
 
 // MARK: - Tool Registry Execution (iOS-side)

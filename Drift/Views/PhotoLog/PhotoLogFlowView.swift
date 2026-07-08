@@ -77,7 +77,16 @@ struct PhotoLogFlowView: View {
                    notes: notes,
                    photo: capturedPhoto,
                    foodLog: foodLog,
-                   onLogged: { dismiss() },
+                   onLogged: {
+                       // Successful log → land the user on the Food diary so
+                       // they can verify the entry (same convention as the
+                       // Log-a-Meal sheet's Done / Recent-tap paths), and let
+                       // any presenting sheet (LogMealSheet) dismiss itself.
+                       NotificationCenter.default.post(
+                           name: .navigateToTab, object: nil, userInfo: ["tab": 2])
+                       NotificationCenter.default.post(name: .photoLogCompleted, object: nil)
+                       dismiss()
+                   },
                    onRetake: { state = .capture })
     }
 
