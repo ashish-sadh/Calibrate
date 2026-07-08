@@ -58,6 +58,13 @@ struct WeightChartView: View {
     private var lastChartDate: Date { displayPoints.last?.date ?? Date() }
     private var firstChartDate: Date { displayPoints.first?.date ?? lastChartDate.addingTimeInterval(-86_400) }
 
+    /// Trailing breathing room past the last weigh-in (~4% of the visible
+    /// window). Without it the "you are here" dot sits ON the plot's clip
+    /// edge — half the dot and its value label were swallowed by the y-axis
+    /// gutter (field complaint 2026-07-07).
+    private var trailingPadSeconds: TimeInterval { visibleSeconds * 0.04 }
+    private var paddedLastChartDate: Date { lastChartDate.addingTimeInterval(trailingPadSeconds) }
+
     /// Width of the visible window in seconds = the selected range (All = full span).
     private var visibleSeconds: TimeInterval {
         let total = max(86_400, lastChartDate.timeIntervalSince(firstChartDate))
@@ -80,7 +87,9 @@ struct WeightChartView: View {
     }
 
     private func anchorScrollToLatest() {
-        scrollX = lastChartDate.addingTimeInterval(-visibleSeconds)
+        // Anchor to the PADDED end so the trailing breathing room (and the
+        // fully-visible latest dot) is on screen, not scrolled past.
+        scrollX = paddedLastChartDate.addingTimeInterval(-visibleSeconds)
     }
 
     /// The data point nearest the user's `.chartXSelection` touch (nil = none).
@@ -133,15 +142,13 @@ struct WeightChartView: View {
                 // most recent weigh-in is the line you see, not the
                 // smoothed trend value (which can sit several pounds
                 // away after a sharp move).
+                // Value label moved off the RuleMark's trailing edge — there it
+                // collided with the y-axis gutter and got clipped to a sliver
+                // (field complaint 2026-07-07); it now rides the coral dot below.
                 if let currentActual = displayPoints.last(where: { $0.actual != nil })?.actual {
                     RuleMark(y: .value("", currentActual))
                         .foregroundStyle(Theme.textTertiary.opacity(0.22))
                         .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 4]))
-                        .annotation(position: .trailing, spacing: 4) {
-                            Text(String(format: "%.1f", currentActual))
-                                .font(.caption.weight(.bold).monospacedDigit())
-                                .foregroundStyle(Theme.accent)
-                        }
                 }
 
                 // Raw scale readings — connected by a thin light line with a
@@ -207,6 +214,14 @@ struct WeightChartView: View {
                     PointMark(x: .value("", last.date), y: .value("Scale", actual))
                         .foregroundStyle(Theme.accent)
                         .symbolSize(70)
+                        // Latest value rides the dot, fitted INSIDE the plot so
+                        // neither the axis gutter nor the top edge can clip it.
+                        .annotation(position: .top, spacing: 5,
+                                    overflowResolution: .init(x: .fit(to: .plot), y: .fit(to: .plot))) {
+                            Text(String(format: "%.1f", actual))
+                                .font(.caption.weight(.bold).monospacedDigit())
+                                .foregroundStyle(Theme.accent)
+                        }
                 }
 
                 // Selected point callout
@@ -247,7 +262,7 @@ struct WeightChartView: View {
                 }
             }
             .chartYScale(domain: visibleYDomain)
-            .chartXScale(domain: firstChartDate...lastChartDate)
+            .chartXScale(domain: firstChartDate...paddedLastChartDate)
             .chartScrollableAxes(.horizontal)
             .chartXVisibleDomain(length: visibleSeconds)
             .chartScrollPosition(x: $scrollX)

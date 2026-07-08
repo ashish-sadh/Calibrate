@@ -151,7 +151,19 @@ public enum WeightTrendCalculator {
         /// "—" / a "calibrating" state instead of the value.
         public let hasInsufficientData: Bool
 
-        init(currentEMA: Double, previousEMA: Double, weeklyRateKg: Double, estimatedDailyDeficit: Double, trendDirection: TrendDirection, projection30Day: Double?, dataPoints: [WeightDataPoint], weightChanges: WeightChanges, config: AlgorithmConfig, rateWindowDays: Int, hasInsufficientData: Bool = false) {
+        /// The UNGATED weekly rate (kg/wk): the clamped OLS slope BEFORE the
+        /// significance gate and maintaining-band collapse zero it out.
+        /// Display-only transparency (field ask 2026-07-07: "say whatever
+        /// number it is — don't hide the math"). Downstream consumers (TDEE
+        /// anchor, direction, projection) must keep using `weeklyRateKg`,
+        /// which stays honest about statistical flatness. 0 when calibrating.
+        public let rawWeeklyRateKg: Double
+
+        /// Daily energy balance implied by the ungated rate — same
+        /// transparency caveat as `rawWeeklyRateKg`.
+        public var rawEstimatedDailyDeficit: Double { rawWeeklyRateKg * config.kcalPerKg / 7 }
+
+        init(currentEMA: Double, previousEMA: Double, weeklyRateKg: Double, estimatedDailyDeficit: Double, trendDirection: TrendDirection, projection30Day: Double?, dataPoints: [WeightDataPoint], weightChanges: WeightChanges, config: AlgorithmConfig, rateWindowDays: Int, hasInsufficientData: Bool = false, rawWeeklyRateKg: Double = 0) {
             self.currentEMA = currentEMA
             self.previousEMA = previousEMA
             self.weeklyRateKg = weeklyRateKg
@@ -163,6 +175,7 @@ public enum WeightTrendCalculator {
             self.config = config
             self.rateWindowDays = rateWindowDays
             self.hasInsufficientData = hasInsufficientData
+            self.rawWeeklyRateKg = rawWeeklyRateKg
         }
     }
 
@@ -326,7 +339,8 @@ public enum WeightTrendCalculator {
             weightChanges: calculateWeightChanges(dataPoints: dataPoints),
             config: config,
             rateWindowDays: rateWindowDays,
-            hasInsufficientData: hasInsufficientData
+            hasInsufficientData: hasInsufficientData,
+            rawWeeklyRateKg: clampRate(rate?.kgPerWeek ?? 0)
         )
     }
 

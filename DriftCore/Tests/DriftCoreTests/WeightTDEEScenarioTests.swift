@@ -329,6 +329,37 @@ struct WeightTDEEScenarioTests {
                 "With no real trend the estimate must stay at base \(Int(base)), got \(Int(r.tdee))")
     }
 
+    // MARK: - Raw rate transparency (2026-07-07 "don't hide the math")
+
+    @Test func maintainingTrend_stillExposesRawRateForDisplay() async throws {
+        // A gently-drifting-but-sub-significance trajectory collapses the
+        // GATED rate to 0 (maintaining) — but the raw measured slope must
+        // survive on rawWeeklyRateKg so the UI can show the actual number
+        // instead of "≈0.0". The gated value stays authoritative for TDEE/
+        // direction/projection.
+        let es = Self.entries(days: 40, cadence: 1, startKg: 54.5, ratePerDayKg: 0.008, noiseKg: 1.2, seed: 21)
+        let t = try #require(WeightTrendCalculator.calculateTrend(entries: es))
+        #expect(t.rawWeeklyRateKg.isFinite)
+        #expect(abs(t.rawWeeklyRateKg) <= WeightTrendCalculator.maxAbsWeeklyRateKg + 1e-6)
+        if t.trendDirection == .maintaining {
+            #expect(t.weeklyRateKg == 0, "Gated rate collapses to 0 when maintaining")
+            #expect(t.rawEstimatedDailyDeficit == t.rawWeeklyRateKg * t.config.kcalPerKg / 7)
+        }
+        // Whatever the gate decided, raw and gated must agree in sign when
+        // both are non-zero (raw is the pre-gate version of the same slope).
+        if t.weeklyRateKg != 0 && t.rawWeeklyRateKg != 0 {
+            #expect((t.weeklyRateKg > 0) == (t.rawWeeklyRateKg > 0))
+        }
+    }
+
+    @Test func insufficientData_rawRateIsZeroPlaceholder() async throws {
+        let cal = Calendar.current; let today = Date()
+        func d(_ ago: Int) -> String { DateFormatters.dateOnly.string(from: cal.date(byAdding: .day, value: -ago, to: today)!) }
+        let t = try #require(WeightTrendCalculator.calculateTrend(entries: [(d(5), 80.0), (d(0), 79.8)]))
+        #expect(t.hasInsufficientData)
+        #expect(t.rawWeeklyRateKg == 0, "Calibrating state must not publish a raw rate either")
+    }
+
     // MARK: - Calorie target never recommends below the safety floor
 
     @Test(arguments: [900.0, 1100.0, 1400.0, 1800.0, 2400.0, 3200.0],

@@ -56,16 +56,18 @@ struct WeightInsightsView: View {
                         nudge: "Log a few more days"
                     )
                 } else if trend.trendDirection == .maintaining {
-                    // Statistically flat: the trend isn't distinguishable from
-                    // noise, so we DON'T print a precise "+0.00" that implies a
-                    // measured rate — we say "holding steady".
+                    // Statistically flat — but show the ACTUAL measured slope
+                    // instead of "≈0.0" (field ask 2026-07-07: "say whatever
+                    // number it is, don't hide the math"). Grey + the
+                    // "Holding steady" nudge keep the honest framing: this
+                    // number is below the noise threshold.
                     metricCell(
                         id: "weekly",
                         label: "Weekly",
-                        value: "≈0.0",
+                        value: String(format: "%+.2f", unit.convert(fromKg: trend.rawWeeklyRateKg)),
                         valueUnit: "\(unit.displayName)/wk",
                         color: Theme.textSecondary,
-                        tooltip: "Your weight is holding steady over the past \(trend.rateWindowDays) days — the day-to-day ups and downs are mostly water, not a real trend.",
+                        tooltip: "The raw measured slope over the past \(trend.rateWindowDays) days. It's below the noise threshold — statistically your weight is holding steady; the day-to-day ups and downs are mostly water.",
                         nudge: "Holding steady"
                     )
                 } else {
@@ -96,18 +98,19 @@ struct WeightInsightsView: View {
                         nudge: "Log a few more days"
                     )
                 } else if trend.trendDirection == .maintaining {
-                    // Weight is statistically flat — reporting a confident
-                    // "Est. Deficit −248" or "Est. Surplus +185" here (the sign
-                    // of which flips with the chart range on noisy data) is the
-                    // exact field bug. Say "holding steady" instead of inventing
-                    // an energy balance the data can't support.
+                    // Statistically flat — show the raw implied balance number
+                    // for transparency (field ask 2026-07-07), but keep it
+                    // GREY with the "Holding steady" nudge: the 2026-05-29
+                    // field bug was printing this as a confident goal-colored
+                    // "Est. Deficit −248" whose sign flipped with the chart
+                    // range. The number is visible; the verdict stays honest.
                     metricCell(
                         id: "deficit",
                         label: "Est. Balance",
-                        value: "≈0",
+                        value: String(format: "%+.0f", trend.rawEstimatedDailyDeficit),
                         valueUnit: "kcal/day",
                         color: Theme.textSecondary,
-                        tooltip: "Your weight is holding steady over the past \(trend.rateWindowDays) days — there's no clear surplus or deficit. Keep logging; a real trend will surface once it rises above day-to-day water noise.",
+                        tooltip: "The raw energy balance implied by the measured slope over the past \(trend.rateWindowDays) days. It's below the noise threshold — statistically your weight is holding steady, so treat this as noise, not a verdict.",
                         nudge: "Holding steady"
                     )
                 } else {
