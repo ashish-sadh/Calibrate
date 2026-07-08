@@ -23,7 +23,7 @@ struct PhotoLogFlowView: View {
         Group {
             switch state {
             case .capture:
-                PhotoLogCaptureView { image in
+                PhotoLogCaptureView(foodLog: foodLog) { image in
                     runAnalysis(on: image)
                 }
             case .analyzing:

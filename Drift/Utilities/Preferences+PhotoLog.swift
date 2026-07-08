@@ -6,14 +6,6 @@ import DriftCore
 extension Preferences {
 
     private static let photoLogProviderKey = "drift_photo_log_provider"
-    private static let photoLogTipDismissedKey = "drift_photo_log_tip_dismissed"
-
-    /// True once the user has dismissed the BYOK onboarding tip. Persisted so
-    /// the tip stays hidden across app restarts.
-    static var hasSeenPhotoLogTip: Bool {
-        get { UserDefaults.standard.bool(forKey: photoLogTipDismissedKey) }
-        set { UserDefaults.standard.set(newValue, forKey: photoLogTipDismissedKey) }
-    }
 
     /// Currently active cloud provider for Photo Log. Default is Gemini (free tier).
     static var photoLogProvider: CloudVisionProvider {

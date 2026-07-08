@@ -9,26 +9,28 @@ import AVFoundation
 /// capture advances to `PhotoLogReviewView`. Cancel unwinds without any
 /// network calls. #224 / #267.
 struct PhotoLogCaptureView: View {
+    /// Shared food-log VM — barcode scanning logs straight into it so the
+    /// entry lands in the same place a photo-logged meal would. #224 / #267.
+    let foodLog: FoodLogViewModel
     let onCaptured: (UIImage) -> Void
     @Environment(\.dismiss) private var dismiss
     @State private var showingCamera = false
     @State private var showingLibrary = false
+    @State private var showingBarcode = false
     @State private var showingCameraDeniedAlert = false
     @State private var selectedItem: PhotosPickerItem? = nil
     @State private var libraryLoadError: String? = nil
-    @State private var showTip: Bool = !Preferences.hasSeenPhotoLogTip &&
-        !CloudVisionProvider.allCases.contains(where: { CloudVisionKey.has(provider: $0) })
     @State private var showingSettings = false
+
+    private var hasKey: Bool {
+        CloudVisionProvider.allCases.contains { CloudVisionKey.has(provider: $0) }
+    }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
                 header
-                if showTip {
-                    byokTipBanner
-                }
-                privacyBanner
-                costBanner
+                infoBanner
                 Spacer()
                 captureButtons
                 if let libraryLoadError {
@@ -58,11 +60,11 @@ struct PhotoLogCaptureView: View {
                         }
                 }
                     }
-            .onChange(of: showingSettings) { _, isShowing in
-                if !isShowing {
-                    let hasProvider = CloudVisionProvider.allCases.contains { CloudVisionKey.has(provider: $0) }
-                    if hasProvider { showTip = false }
-                }
+            .sheet(isPresented: $showingBarcode) {
+                // Barcode scanning needs NO API key (OpenFoodFacts is free),
+                // so it's the working fallback for users who haven't set up
+                // BYOK — and logs into the same shared VM as a photo log.
+                BarcodeLookupView(viewModel: foodLog)
             }
             .fullScreenCover(isPresented: $showingCamera) {
                 // CameraView calls its own `dismiss()` internally to close the
@@ -102,29 +104,25 @@ struct PhotoLogCaptureView: View {
         .padding(.top, 8)
     }
 
-    private var privacyBanner: some View {
-        // V7 polish: dropped the coral cloud icon — single grey glyph
-        // matches the rest of the privacy/info chrome in V7 and stops
-        // competing with brand colour.
-        //
-        // Mobile review fix: the copy mentions "Your key, your data" but
-        // when the user *doesn't* have a key the banner gave no path to
-        // get one — they had to know to look under Settings → Photo Log.
-        // Making the whole banner a button to BYOK settings when
-        // no key is configured. When a key is present the banner stays
-        // non-tappable (no useful destination).
-        let hasKey = CloudVisionProvider.allCases.contains { CloudVisionKey.has(provider: $0) }
-        return Button {
+    /// Single adaptive info line — replaces the old three-banner stack
+    /// (BYOK tip + privacy + cost) that made this screen look busy. When no
+    /// key is configured it's a tappable prompt to set one up; when a key is
+    /// present it states where the photo goes and what it roughly costs.
+    /// Barcode scanning below works regardless, so this only speaks to the
+    /// AI-photo path.
+    @ViewBuilder
+    private var infoBanner: some View {
+        Button {
             if !hasKey { showingSettings = true }
         } label: {
             HStack(alignment: .firstTextBaseline, spacing: 6) {
                 Image(systemName: "cloud").foregroundStyle(Theme.textTertiary)
                 if hasKey {
-                    Text("This single photo is sent to \(Preferences.photoLogProvider.displayName). Your key, your data — Drift never sees either.")
+                    Text("Photo sent to \(Preferences.photoLogProvider.displayName) · \(Preferences.photoLogProvider.pricingLine). Your key, your data.")
                         .font(.caption2).foregroundStyle(Theme.textSecondary)
                         .multilineTextAlignment(.leading)
                 } else {
-                    (Text("Photo Log uses your own AI key (\(Preferences.photoLogProvider.displayName), OpenAI, or Anthropic). ")
+                    (Text("Photo scanning needs your own AI key (Claude, OpenAI, or Gemini). ")
                         .foregroundStyle(Theme.textSecondary)
                      + Text("Tap to set one up →")
                         .foregroundStyle(Theme.accent)
@@ -141,60 +139,6 @@ struct PhotoLogCaptureView: View {
         .buttonStyle(.plain)
         .disabled(hasKey)
         .accessibilityIdentifier("photo-log-privacy-banner")
-    }
-
-    private var costBanner: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "creditcard")
-                .font(.caption).foregroundStyle(Theme.textTertiary)
-            // Provider-aware — previously hardcoded "~2¢ per photo" which was
-            // accurate for Anthropic Sonnet but misleading for OpenAI mini
-            // (~30× cheaper) and wrong for Gemini Flash (free tier).
-            Text(Preferences.photoLogProvider.pricingLine)
-                .font(.caption2).foregroundStyle(Theme.textSecondary)
-            Spacer()
-        }
-        .padding(10)
-        .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
-    }
-
-    private var byokTipBanner: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .top, spacing: 8) {
-                Image(systemName: "key.fill")
-                    .font(.caption)
-                    .foregroundStyle(Theme.textSecondary)
-                Text("Drift supports BYOK — bring your own OpenAI, Gemini, or Anthropic API key for AI food photo scanning. Tap ⚙️ to add a key.")
-                    .font(.caption2)
-                    .foregroundStyle(Theme.textSecondary)
-                Spacer()
-                Button {
-                    Preferences.hasSeenPhotoLogTip = true
-                    withAnimation { showTip = false }
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(Theme.textTertiary)
-                }
-                .accessibilityLabel("Dismiss tip")
-            }
-            HStack {
-                Spacer()
-                Button("Got it") {
-                    Preferences.hasSeenPhotoLogTip = true
-                    withAnimation { showTip = false }
-                }
-                .font(.caption.weight(.medium))
-                .foregroundStyle(Theme.textSecondary)
-                Button("Set Up Key") {
-                    showingSettings = true
-                }
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Theme.ink)
-            }
-        }
-        .padding(10)
-        .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
     }
 
     private var captureButtons: some View {
@@ -234,6 +178,20 @@ struct PhotoLogCaptureView: View {
             }
             .buttonStyle(.bordered)
             .tint(Theme.textPrimary)
+
+            // Barcode is a co-equal scan path — and the ONLY one that works
+            // without a BYOK key. Surfacing it here means users without a
+            // configured provider still have a fast, free way to log
+            // packaged food instead of a dead-end.
+            Button {
+                showingBarcode = true
+            } label: {
+                Label("Scan a barcode", systemImage: "barcode.viewfinder")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            .tint(Theme.textPrimary)
+            .accessibilityIdentifier("photo-log-scan-barcode")
         }
     }
 
