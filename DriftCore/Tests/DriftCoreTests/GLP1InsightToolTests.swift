@@ -137,6 +137,32 @@ struct GLP1InsightToolTests {
         #expect(GLP1InsightTool.missedWeeksInLast30Days(dates: [], now: Date()) == 4)
     }
 
+    // MARK: - #990: biweekly cadence
+
+    @Test func inferCadenceWeeks_biweeklyVsWeekly() {
+        let cal = Calendar.current
+        let now = Date()
+        let biweekly = [0, 14, 28, 42].map { cal.date(byAdding: .day, value: -$0, to: now)! }
+        let weekly = [0, 7, 14, 21].map { cal.date(byAdding: .day, value: -$0, to: now)! }
+        #expect(GLP1InsightTool.inferCadenceWeeks(dates: biweekly) == 2)
+        #expect(GLP1InsightTool.inferCadenceWeeks(dates: weekly) == 1)
+    }
+
+    @Test func weeklyStreak_biweekly_notBrokenByOffWeek() {
+        let cal = Calendar.current
+        let now = Date()
+        // Perfectly-adherent biweekly: doses 5, 3, 1 weeks ago — the intervening weeks are expected off-weeks.
+        let doses = [-5, -3, -1].map { cal.date(byAdding: .weekOfYear, value: $0, to: mondayOfWeek(now))! }
+        #expect(GLP1InsightTool.weeklyStreak(dates: doses, now: now, cadenceWeeks: 2) >= 2)
+    }
+
+    @Test func missedWeeks_biweekly_adherentIsZero() {
+        let cal = Calendar.current
+        let now = Date()
+        let doses = [-1, -3].map { cal.date(byAdding: .weekOfYear, value: $0, to: mondayOfWeek(now))! }
+        #expect(GLP1InsightTool.missedWeeksInLast30Days(dates: doses, now: now, cadenceWeeks: 2) == 0)
+    }
+
     // MARK: - weightDelta
 
     @Test func weightDelta_lossTwelveKg() {

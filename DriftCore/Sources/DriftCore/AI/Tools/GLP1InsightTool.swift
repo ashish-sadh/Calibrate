@@ -63,8 +63,9 @@ public enum GLP1InsightTool {
 
         let now = Date()
         let daysSince = daysBetween(firstDate, now)
-        let streak = weeklyStreak(dates: doseDates, now: now)
-        let missed = missedWeeksInLast30Days(dates: doseDates, now: now)
+        let cadenceWeeks = inferCadenceWeeks(dates: doseDates)  // #990: 1 = weekly, 2 = biweekly
+        let streak = weeklyStreak(dates: doseDates, now: now, cadenceWeeks: cadenceWeeks)
+        let missed = missedWeeksInLast30Days(dates: doseDates, now: now, cadenceWeeks: cadenceWeeks)
 
         let weights = (try? AppDatabase.shared.fetchWeightEntries()) ?? []
         let deltaKg = weightDelta(weights: weights, since: firstDate)
@@ -72,7 +73,7 @@ public enum GLP1InsightTool {
 
         return formatInsight(medName: medName, daysSince: daysSince, weekStreak: streak,
                              weeksMissed: missed, weightDeltaKg: deltaKg,
-                             lastDoseDate: lastDoseDate, now: now)
+                             lastDoseDate: lastDoseDate, now: now, cadenceWeeks: cadenceWeeks)
     }
 
     // MARK: - Pure helpers (nonisolated for testability)
@@ -99,44 +100,57 @@ public enum GLP1InsightTool {
 
     /// Count consecutive calendar weeks (Mon–Sun) ending before `now` that have ≥1 dose.
     /// The current (incomplete) week is skipped — it can't break the streak.
-    nonisolated public static func weeklyStreak(dates: [Date], now: Date = Date()) -> Int {
+    nonisolated public static func weeklyStreak(dates: [Date], now: Date = Date(), cadenceWeeks: Int = 1) -> Int {
         var cal = Calendar.current
         cal.firstWeekday = 2  // Monday — locale-independent week boundaries (matches test mondayOfWeek; avoids US Sunday-locale drift)
+        let step = max(cadenceWeeks, 1)  // #990: 2 for biweekly meds so an expected off-week isn't a break
         var weekStart = cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) ?? now
         var streak = 0
-        var isCurrentWeek = true
+        var isCurrentPeriod = true
 
         for _ in 0..<104 {
-            let weekEnd = cal.date(byAdding: .weekOfYear, value: 1, to: weekStart) ?? weekStart
-            let hasDose = dates.contains { $0 >= weekStart && $0 < weekEnd }
+            let periodEnd = cal.date(byAdding: .weekOfYear, value: step, to: weekStart) ?? weekStart
+            let hasDose = dates.contains { $0 >= weekStart && $0 < periodEnd }
 
             if hasDose {
                 streak += 1
-            } else if !isCurrentWeek {
+            } else if !isCurrentPeriod {
                 break
             }
 
-            isCurrentWeek = false
-            guard let prev = cal.date(byAdding: .weekOfYear, value: -1, to: weekStart) else { break }
+            isCurrentPeriod = false
+            guard let prev = cal.date(byAdding: .weekOfYear, value: -step, to: weekStart) else { break }
             weekStart = prev
         }
         return streak
     }
 
     /// Count completed calendar weeks in the last 30 days with no dose logged.
-    nonisolated public static func missedWeeksInLast30Days(dates: [Date], now: Date = Date()) -> Int {
+    nonisolated public static func missedWeeksInLast30Days(dates: [Date], now: Date = Date(), cadenceWeeks: Int = 1) -> Int {
         var cal = Calendar.current
         cal.firstWeekday = 2  // Monday — locale-independent week boundaries (matches test mondayOfWeek; avoids US Sunday-locale drift)
+        let step = max(cadenceWeeks, 1)  // #990: count missed DOSING periods, not calendar weeks, for biweekly meds
         var weekStart = cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now)) ?? now
         var missed = 0
-        for _ in 0..<4 {
-            guard let prev = cal.date(byAdding: .weekOfYear, value: -1, to: weekStart) else { break }
+        for _ in 0..<(4 / step) {
+            guard let prev = cal.date(byAdding: .weekOfYear, value: -step, to: weekStart) else { break }
             weekStart = prev
-            let weekEnd = cal.date(byAdding: .weekOfYear, value: 1, to: weekStart) ?? weekStart
-            let hasDose = dates.contains { $0 >= weekStart && $0 < weekEnd }
+            let periodEnd = cal.date(byAdding: .weekOfYear, value: step, to: weekStart) ?? weekStart
+            let hasDose = dates.contains { $0 >= weekStart && $0 < periodEnd }
             if !hasDose { missed += 1 }
         }
         return missed
+    }
+
+    /// #990: infer dosing cadence in weeks from the dose history (median gap), so a biweekly
+    /// GLP-1 (≈14-day spacing) isn't scored as a weekly med with constant "missed weeks".
+    nonisolated public static func inferCadenceWeeks(dates: [Date]) -> Int {
+        guard dates.count >= 3 else { return 1 }  // too few doses to tell — assume weekly
+        let sorted = dates.sorted()
+        var gaps: [Int] = []
+        for i in 1..<sorted.count { gaps.append(daysBetween(sorted[i - 1], sorted[i])) }
+        gaps.sort()
+        return gaps[gaps.count / 2] >= 10 ? 2 : 1  // ≈14-day median ⇒ biweekly
     }
 
     /// Weight change (kg) from the closest weight at/after `since` to the most recent weight.
@@ -157,7 +171,8 @@ public enum GLP1InsightTool {
         weeksMissed: Int,
         weightDeltaKg: Double?,
         lastDoseDate: Date,
-        now: Date = Date()
+        now: Date = Date(),
+        cadenceWeeks: Int = 1
     ) -> String {
         var parts: [String] = []
 
@@ -184,9 +199,9 @@ public enum GLP1InsightTool {
             }
         }
 
-        // Next dose reminder (GLP-1 is weekly)
+        // Next dose reminder — cadence-aware (weekly or biweekly). #990
         let daysSinceLast = daysBetween(lastDoseDate, now)
-        let daysUntilNext = 7 - daysSinceLast
+        let daysUntilNext = cadenceWeeks * 7 - daysSinceLast
         if daysUntilNext <= 0 {
             parts.append("Next dose: overdue by \(-daysUntilNext) day\(-daysUntilNext == 1 ? "" : "s") — take it today.")
         } else if daysUntilNext == 1 {
