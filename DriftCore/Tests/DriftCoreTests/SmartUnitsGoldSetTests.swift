@@ -174,6 +174,19 @@ final class SmartUnitsGoldSetTests: XCTestCase {
         XCTAssertNil(FoodUnit.unitFromSeededServingUnit("cup", servingSize: 3))        // count-convention (tiny ss)
     }
 
+    // #1014: paneer is a solid — defaults to grams, not "1 cup".
+    func testPaneerDefaultsToGramsNotCup() {
+        let units = FoodUnit.smartUnits(for: food("Paneer", size: 150))
+        XCTAssertEqual(units.first?.label, "g")
+        XCTAssertFalse(units.contains { $0.label == "cup" }, "paneer should not offer a cup unit")
+    }
+
+    // #1014: a cup reflects the food's seeded serving, not a fixed 240/245 (~20% over).
+    func testCupWeightReconcilesToServingSize() {
+        let cup = FoodUnit.smartUnits(for: food("Curd (plain)", size: 200)).first(where: { $0.label == "cup" })
+        XCTAssertEqual(cup?.gramsEquivalent, 200, "1 cup of curd = its 200 g serving, not 245")
+    }
+
     // MARK: - Specific Protein & Vegetable Units
 
     func testMeatPortionsGetPieceUnit() {

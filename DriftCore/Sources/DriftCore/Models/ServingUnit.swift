@@ -217,6 +217,15 @@ public struct FoodUnit: Hashable {
         return FoodUnit(label: u, gramsEquivalent: ss)
     }
 
+    /// #1014: a "1 cup" serving should reflect the food's own seeded portion (curd 200 g,
+    /// chai 200 ml) rather than a fixed 240/245 that silently over-reports ~20%. Only when
+    /// the seeded serving isn't cup-scale do we fall back to a known/default cup weight.
+    private static func resolvedCupGrams(servingSize: Double, override: Double? = nil, keywordFallback: Double? = nil) -> Double {
+        if let override { return override }
+        if servingSize >= 100 { return servingSize }
+        return keywordFallback ?? 240
+    }
+
     public static func smartUnits(for food: Food) -> [FoodUnit] {
         let lower = food.name.lowercased()
         let words = Set(lower.split(whereSeparator: { !$0.isLetter }).map { String($0) })
@@ -230,10 +239,10 @@ public struct FoodUnit: Hashable {
         }
 
         let cupFoods = ["rice", "dal", "oats", "cereal", "flour", "lentil", "chickpea",
-                        "rajma", "chole", "paneer", "tofu", "quinoa", "pasta", "beans",
+                        "rajma", "chole", "tofu", "quinoa", "pasta", "beans",
                         "peas", "corn", "yogurt", "curd", "poha", "upma", "khichdi"]
         if cupFoods.contains(where: { lower.contains($0) }) && primary.label != "cup" {
-            let cupWeight = food.cupSizeG ?? cupGramsIfKnown(for: lower) ?? 240
+            let cupWeight = resolvedCupGrams(servingSize: food.servingSize, override: food.cupSizeG, keywordFallback: cupGramsIfKnown(for: lower))
             units.append(FoodUnit(label: "cup", gramsEquivalent: cupWeight))
         }
 
@@ -263,7 +272,7 @@ public struct FoodUnit: Hashable {
         let coffeeFoods = ["coffee", "espresso", "americano", "latte", "cappuccino", "mocha"]
         if coffeeFoods.contains(where: { lower.contains($0) }) {
             if !units.contains(where: { $0.label == "cup" }) {
-                units.append(FoodUnit(label: "cup", gramsEquivalent: 240))
+                units.append(FoodUnit(label: "cup", gramsEquivalent: resolvedCupGrams(servingSize: food.servingSize, override: food.cupSizeG)))
             }
             if !units.contains(where: { $0.label == "ml" }) {
                 units.append(FoodUnit(label: "ml", gramsEquivalent: 1))
@@ -315,7 +324,7 @@ public struct FoodUnit: Hashable {
                 units.append(FoodUnit(label: "fl oz", gramsEquivalent: 29.5735))
             }
             if !units.contains(where: { $0.label == "cup" }) {
-                units.append(FoodUnit(label: "cup", gramsEquivalent: 240))
+                units.append(FoodUnit(label: "cup", gramsEquivalent: resolvedCupGrams(servingSize: food.servingSize, override: food.cupSizeG)))
             }
         }
 
@@ -1019,12 +1028,14 @@ public struct FoodUnit: Hashable {
         if name.contains("tofu") { return FoodUnit(label: "cup", gramsEquivalent: 126) }
 
         // Paneer standalone → cup (curry/masala dishes already exited above via curry rule)
-        if name.contains("paneer") { return FoodUnit(label: "cup", gramsEquivalent: 150) }
+        // #1014: paneer is a solid — people log it by weight (or cubes), not cups.
+        if name.contains("paneer") { return FoodUnit(label: "g", gramsEquivalent: 1) }
 
         // Yogurt / curd — measured in cups
         if words.contains("yogurt") || words.contains("curd") || words.contains("dahi") ||
            name.contains("yoghurt") || name.contains("raita") {
-            return FoodUnit(label: "cup", gramsEquivalent: cupGrams(for: name))
+            // #1014: reconcile the cup toward the seeded serving so it doesn't over-report ~20%.
+            return FoodUnit(label: "cup", gramsEquivalent: resolvedCupGrams(servingSize: servingSize, keywordFallback: cupGrams(for: name)))
         }
 
         // Indian grain dishes — measured by cup
