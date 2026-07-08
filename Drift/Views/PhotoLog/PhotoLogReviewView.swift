@@ -207,7 +207,13 @@ struct PhotoLogReviewView: View {
 
     private func logSelected() {
         for item in items where item.selected {
-            foodLog.logFood(photoLogFood(for: item), servings: 1, mealType: mealType)
+            // #1029: for a count/portion unit with quantity > 1, persist PER-UNIT nutrition and
+            // log servings = the quantity, so "2 pieces" logs as servings 2 × a 780-cal piece
+            // (correctable with the servings field) rather than one 1560-cal "serving". Grams
+            // mode already treats grams as the serving size.
+            let perUnit = item.servingUnit != .grams && item.servingAmount > 1
+            let servings = perUnit ? item.servingAmount : 1
+            foodLog.logFood(photoLogFood(for: item, perUnit: perUnit), servings: servings, mealType: mealType)
         }
         onLogged()
         dismiss()
@@ -220,22 +226,25 @@ struct PhotoLogReviewView: View {
     /// exists, so we don't pollute the DB with duplicates; in that case
     /// food_id stays nil on the FoodEntry and plant-points name-fallbacks
     /// to the existing curated Food's ingredients.
-    private func photoLogFood(for item: PhotoLogEditableItem) -> Food {
+    private func photoLogFood(for item: PhotoLogEditableItem, perUnit: Bool) -> Food {
         let ingredientsJSON: String? = {
             guard !item.ingredients.isEmpty else { return nil }
             let data = try? JSONEncoder().encode(item.ingredients)
             return data.flatMap { String(data: $0, encoding: .utf8) }
         }()
+        // #1029: when logging by a count/portion unit, store PER-UNIT values (per-piece grams
+        // + macros) so the Food row scales correctly on re-log and the entry reads "per 1 piece".
+        let divisor = perUnit ? max(item.servingAmount, 1) : 1
         var food = Food(
             name: item.name,
             category: "Photo Log",
-            servingSize: max(item.grams, 1),
-            servingUnit: "g",
-            calories: item.calories,
-            proteinG: item.proteinG,
-            carbsG: item.carbsG,
-            fatG: item.fatG,
-            fiberG: item.fiberG,
+            servingSize: max(perUnit ? item.gramsPerServingUnit : item.grams, 1),
+            servingUnit: perUnit ? item.servingUnit.label : "g",
+            calories: item.calories / divisor,
+            proteinG: item.proteinG / divisor,
+            carbsG: item.carbsG / divisor,
+            fatG: item.fatG / divisor,
+            fiberG: item.fiberG / divisor,
             ingredients: ingredientsJSON,
             source: "photo_log"
         )
