@@ -139,7 +139,7 @@ struct ComboLogSheet: View {
                 Text(item.wrappedValue.recipeItem.name)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(item.wrappedValue.enabled ? .primary : .secondary)
-                Text("\(Int(item.wrappedValue.totalCal)) cal · \(Int(item.wrappedValue.totalP))g P")
+                Text("\(item.wrappedValue.totalCal.safeInt) cal · \(item.wrappedValue.totalP.safeInt)g P")
                     .font(.caption).foregroundStyle(Theme.textSecondary)
             }
 

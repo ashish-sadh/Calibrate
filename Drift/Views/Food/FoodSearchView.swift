@@ -706,7 +706,7 @@ struct FoodSearchView: View {
                         let scale = (currentLabel == "g" || currentLabel == "ml" || food.servingSize <= 0) ? 1.0 : unit.gramsEquivalent / food.servingSize
                         let perText = (currentLabel == "g" || currentLabel == "ml")
                             ? "\(food.macroSummary) per \(Int(food.servingSize))\(food.servingUnit)"
-                            : "\(Int(food.calories * scale))cal \(Int(food.proteinG * scale))P \(Int(food.carbsG * scale))C \(Int(food.fatG * scale))F per 1 \(currentLabel) (\(Int(unit.gramsEquivalent))g)"
+                            : "\((food.calories * scale).safeInt)cal \((food.proteinG * scale).safeInt)P \((food.carbsG * scale).safeInt)C \((food.fatG * scale).safeInt)F per 1 \(currentLabel) (\(Int(unit.gramsEquivalent))g)"
                         Text(perText).font(.caption).foregroundStyle(Theme.textSecondary)
                     }
                     .padding(.top, 8)
@@ -718,7 +718,7 @@ struct FoodSearchView: View {
                     // Total nutrition
                     VStack(spacing: 8) {
                         HStack(alignment: .firstTextBaseline, spacing: 4) {
-                            Text("\(Int(food.calories * multiplier))")
+                            Text("\((food.calories * multiplier).safeInt)")
                                 .font(.title.weight(.bold).monospacedDigit())
                             Text("cal").font(.subheadline).foregroundStyle(Theme.textSecondary)
                         }

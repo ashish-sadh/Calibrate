@@ -74,6 +74,6 @@ struct ServingMultiplierStepper: View {
 
     /// "1", "1.5", "1.25" — integers without a trailing .0, fractions trimmed.
     static func format(_ v: Double) -> String {
-        v.truncatingRemainder(dividingBy: 1) == 0 ? "\(Int(v))" : String(format: "%g", v)
+        v.truncatingRemainder(dividingBy: 1) == 0 ? "\(v.safeInt)" : String(format: "%g", v)
     }
 }

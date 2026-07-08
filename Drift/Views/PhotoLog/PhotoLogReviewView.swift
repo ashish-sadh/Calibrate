@@ -323,7 +323,7 @@ private struct PhotoLogItemRow: View {
                                 .foregroundStyle(Theme.accent)
                         }
                     }
-                    Text("\(Int(item.calories.rounded())) cal · \(Int(item.grams.rounded()))g")
+                    Text("\(item.calories.rounded().safeInt) cal · \(item.grams.rounded().safeInt)g")
                         .font(.caption2)
                         .foregroundStyle(Theme.textSecondary)
                 }
@@ -399,7 +399,7 @@ private struct PhotoLogItemRow: View {
                             .foregroundStyle(Theme.textPrimary)
                             .lineLimit(1)
                         Spacer()
-                        Text("\(Int(food.calories.rounded())) cal · \(Int(food.servingSize.rounded()))g")
+                        Text("\(food.calories.rounded().safeInt) cal · \(food.servingSize.rounded().safeInt)g")
                             .font(.caption2)
                             .foregroundStyle(Theme.textSecondary)
                     }
@@ -586,7 +586,7 @@ private struct PhotoLogItemRow: View {
         Binding(
             get: {
                 let v = currentValue(for: field)
-                return v == floor(v) ? String(Int(v.rounded())) : String(format: "%.1f", v)
+                return v == floor(v) ? String(v.rounded().safeInt) : String(format: "%.1f", v)
             },
             set: { newValue in
                 guard let parsed = Double(newValue) else { return }
@@ -631,7 +631,7 @@ private struct PhotoLogItemRow: View {
     private func syncAmountText() {
         let v = item.servingAmount
         if v == floor(v) {
-            amountText = String(Int(v.rounded()))
+            amountText = String(v.rounded().safeInt)
         } else {
             amountText = String(format: "%.1f", v)
         }

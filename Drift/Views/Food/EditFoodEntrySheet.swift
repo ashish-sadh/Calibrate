@@ -188,7 +188,7 @@ struct EditFoodEntrySheet: View {
                                 }
                             } else {
                                 HStack(alignment: .firstTextBaseline, spacing: 4) {
-                                    Text("\(Int(entry.calories * multiplier))")
+                                    Text("\((entry.calories * multiplier).safeInt)")
                                         .font(.title.weight(.bold).monospacedDigit())
                                     Text("cal").font(.subheadline).foregroundStyle(Theme.textSecondary)
                                 }
@@ -205,11 +205,11 @@ struct EditFoodEntrySheet: View {
                             Button {
                                 if !overrideMacros {
                                     // Pre-fill with current computed values
-                                    editCal = "\(Int(entry.calories * multiplier))"
-                                    editP = "\(Int(entry.proteinG * multiplier))"
-                                    editC = "\(Int(entry.carbsG * multiplier))"
-                                    editF = "\(Int(entry.fatG * multiplier))"
-                                    editFb = "\(Int(entry.fiberG * multiplier))"
+                                    editCal = "\((entry.calories * multiplier).safeInt)"
+                                    editP = "\((entry.proteinG * multiplier).safeInt)"
+                                    editC = "\((entry.carbsG * multiplier).safeInt)"
+                                    editF = "\((entry.fatG * multiplier).safeInt)"
+                                    editFb = "\((entry.fiberG * multiplier).safeInt)"
                                 }
                                 overrideMacros.toggle()
                             } label: {

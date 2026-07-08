@@ -297,10 +297,10 @@ struct PhotoLogTotals: Equatable {
     static func sum(_ items: [PhotoLogEditableItem]) -> PhotoLogTotals {
         var totals = PhotoLogTotals.zero
         for item in items where item.selected {
-            totals.calories += Int(item.calories.rounded())
-            totals.proteinG += Int(item.proteinG.rounded())
-            totals.carbsG += Int(item.carbsG.rounded())
-            totals.fatG += Int(item.fatG.rounded())
+            totals.calories += item.calories.rounded().safeInt  // #1036: editable macros can be huge
+            totals.proteinG += item.proteinG.rounded().safeInt
+            totals.carbsG += item.carbsG.rounded().safeInt
+            totals.fatG += item.fatG.rounded().safeInt
             totals.selectedCount += 1
         }
         return totals

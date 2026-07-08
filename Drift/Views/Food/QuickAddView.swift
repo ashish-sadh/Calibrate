@@ -569,9 +569,9 @@ private struct IngredientPickerView: View {
 
                 // Nutrition preview
                 VStack(spacing: 4) {
-                    Text("\(Int(food.calories * multiplier)) cal")
+                    Text("\((food.calories * multiplier).safeInt) cal")
                         .font(.title3.weight(.bold).monospacedDigit())
-                    Text("\(Int(food.proteinG * multiplier))P \u{00B7} \(Int(food.carbsG * multiplier))C \u{00B7} \(Int(food.fatG * multiplier))F")
+                    Text("\((food.proteinG * multiplier).safeInt)P \u{00B7} \((food.carbsG * multiplier).safeInt)C \u{00B7} \((food.fatG * multiplier).safeInt)F")
                         .font(.caption.monospacedDigit()).foregroundStyle(Theme.textSecondary)
                 }
                 .padding(.vertical, 12)

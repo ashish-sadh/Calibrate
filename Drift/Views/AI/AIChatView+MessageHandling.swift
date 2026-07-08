@@ -10,7 +10,7 @@ extension AIChatViewModel {
     /// Format a food amount using its natural unit (piece, ml, cup, tbsp, etc.)
     /// instead of always showing "N serving". Mirrors the unit FoodSearchView shows.
     static func smartServingText(food: Food, servings: Double, gramAmount: Double?) -> String {
-        if let grams = gramAmount { return "\(Int(grams))g" }
+        if let grams = gramAmount { return "\(grams.safeInt)g" }
         let units = FoodUnit.smartUnits(for: food)
         guard let primary = units.first, primary.label != "serving",
               food.servingSize > 0, primary.gramsEquivalent > 0 else {
@@ -392,7 +392,7 @@ extension AIChatViewModel {
         }
         let names = entries.prefix(3).map(\.foodName).joined(separator: ", ")
         let extra = entries.count > 3 ? " and more" : ""
-        let totalCal = Int(entries.reduce(0) { $0 + $1.calories * $1.servings })
+        let totalCal = (entries.reduce(0) { $0 + $1.calories * $1.servings }).safeInt
         narrate("Your usual \(slot): \(names)\(extra) — about \(totalCal) cal. Review and log below.")
         showingMealReview = true
         return true
@@ -810,7 +810,7 @@ extension AIChatViewModel {
         let foodText = intents.map { intent in
             var s = intent.query
             if let srv = intent.servings, srv != 1 { s = "\(String(format: "%g", srv)) \(s)" }
-            if let g = intent.gramAmount { s = "\(Int(g))g \(s)" }
+            if let g = intent.gramAmount { s = "\(g.safeInt)g \(s)" }
             return s
         }.joined(separator: " and ")
         buildMealFromText(foodText, mealName: mealName)
@@ -837,9 +837,9 @@ extension AIChatViewModel {
             // .rounded(), not truncation — Egg ×2 has 9.6g fat; Int() showed 9
             // and turned 0.8g carbs into the "0g carbs" the bug report flagged.
             let card = FoodCardData(
-                name: f.name, calories: Int((f.calories * s).rounded()),
-                proteinG: Int((f.proteinG * s).rounded()), carbsG: Int((f.carbsG * s).rounded()),
-                fatG: Int((f.fatG * s).rounded()), servingText: servingText,
+                name: f.name, calories: (f.calories * s).rounded().safeInt,
+                proteinG: (f.proteinG * s).rounded().safeInt, carbsG: (f.carbsG * s).rounded().safeInt,
+                fatG: (f.fatG * s).rounded().safeInt, servingText: servingText,
                 mealType: detectedMeal)
             messages.append(ChatMessage(role: .assistant, text: "Opening to confirm...", foodCard: card))
         } else {
@@ -1025,9 +1025,9 @@ extension AIChatViewModel {
                     let s = match.servings
                     let servingText = Self.smartServingText(food: f, servings: s, gramAmount: intent.gramAmount)
                     let card = FoodCardData(
-                        name: f.name, calories: Int(f.calories * s),
-                        proteinG: Int(f.proteinG * s), carbsG: Int(f.carbsG * s),
-                        fatG: Int(f.fatG * s), servingText: servingText)
+                        name: f.name, calories: (f.calories * s).safeInt,
+                        proteinG: (f.proteinG * s).safeInt, carbsG: (f.carbsG * s).safeInt,
+                        fatG: (f.fatG * s).safeInt, servingText: servingText)
                     messages.append(ChatMessage(role: .assistant, text: "Opening to confirm...", foodCard: card))
                 } else {
                     messages.append(ChatMessage(role: .assistant, text: "Searching for \(intent.query)..."))
@@ -1446,7 +1446,7 @@ extension AIChatViewModel {
         let items = rawItems.compactMap { raw -> ProposedMealCardData.Item? in
             guard let name = raw["name"] as? String, !name.isEmpty else { return nil }
             func intVal(_ key: String) -> Int {
-                (raw[key] as? Int) ?? Int((raw[key] as? Double) ?? 0)
+                (raw[key] as? Int) ?? ((raw[key] as? Double) ?? 0).safeInt  // #1036: model JSON may exceed Int64
             }
             return ProposedMealCardData.Item(
                 name: name,
