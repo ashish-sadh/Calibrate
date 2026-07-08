@@ -11,6 +11,11 @@ struct ExercisePickerView: View {
     @State private var selectedBodyPartFilter: String? = nil
     @State private var favs: Set<String> = WorkoutService.exerciseFavorites
     @FocusState private var searchFocused: Bool
+    /// Batch selection (2026-07-07 field ask): tapping a row used to add +
+    /// dismiss immediately, so building a 4-exercise workout meant reopening
+    /// this sheet 4 times. Rows now TOGGLE into this ordered list; one
+    /// "Add N" button hands them all to `onSelect` and dismisses once.
+    @State private var selected: [String] = []
 
     private var results: [ExerciseDatabase.ExerciseInfo] {
         var list = query.isEmpty ? ExerciseDatabase.allWithCustom : ExerciseDatabase.search(query: query)
@@ -119,8 +124,32 @@ struct ExercisePickerView: View {
             }
             .navigationTitle("Add Exercise").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+            // One tap per exercise, one dismiss for the whole batch.
+            .safeAreaInset(edge: .bottom) {
+                if !selected.isEmpty {
+                    Button {
+                        selected.forEach(onSelect)
+                        dismiss()
+                    } label: {
+                        Text("Add \(selected.count) Exercise\(selected.count == 1 ? "" : "s")")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 14)
+                            .background(Theme.accent, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
+                            .foregroundStyle(.white)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 4)
+                    .background(.thinMaterial)
+                    .accessibilityIdentifier("exercise-picker-add-batch")
+                }
+            }
             .sheet(isPresented: $showingCustom) {
-                CustomExerciseSheet { name in onSelect(name); dismiss() }
+                // Custom exercise joins the batch (selected + visible in the
+                // list) instead of add-and-dismiss, same as any other row.
+                CustomExerciseSheet { name in
+                    if !selected.contains(name) { selected.append(name) }
+                }
             }
             .onAppear {
                 favs = WorkoutService.exerciseFavorites
@@ -129,9 +158,19 @@ struct ExercisePickerView: View {
         }
     }
 
+    private func toggleSelection(_ name: String) {
+        if let idx = selected.firstIndex(of: name) {
+            selected.remove(at: idx)
+        } else {
+            selected.append(name)
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        }
+    }
+
     private func exerciseRow(name: String, bodyPart: String, equipment: String? = nil) -> some View {
         let info = ExerciseDatabase.info(for: name)
-        return Button { onSelect(name); dismiss() } label: {
+        let isSelected = selected.contains(name)
+        return Button { toggleSelection(name) } label: {
             HStack(spacing: 10) {
                 ExerciseThumbnail(info: info, size: 44)
                 VStack(alignment: .leading, spacing: 4) {
@@ -144,6 +183,10 @@ struct ExercisePickerView: View {
                         if let lastW = try? WorkoutService.lastWeight(for: name) {
                             Text("\(Int(Preferences.weightUnit.convertFromLbs(lastW))) \(Preferences.weightUnit.displayName)").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textSecondary)
                         }
+                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                            .font(.title3)
+                            .foregroundStyle(isSelected ? Theme.accent : Theme.textTertiary.opacity(0.5))
+                            .accessibilityLabel(isSelected ? "Selected" : "Not selected")
                     }
                     HStack(spacing: 4) {
                         if !bodyPart.isEmpty {

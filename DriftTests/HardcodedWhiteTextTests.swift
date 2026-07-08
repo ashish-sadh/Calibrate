@@ -52,6 +52,8 @@ final class HardcodedWhiteTextTests: XCTestCase {
         ("ManualFoodEntrySheet.swift", "? Theme.ink : Theme.cardBackgroundElevated, in: Capsule()"),
         ("EditFoodEntrySheet.swift", "? Theme.ink : Theme.cardBackgroundElevated,"),
         ("ExercisePickerView.swift", "? Theme.ink : Theme.cardBackgroundElevated, in: RoundedRectangle"),
+        // Batch "Add N Exercises" CTA — white on solid Theme.accent (coral)
+        ("ExercisePickerView.swift", ".background(Theme.accent, in: RoundedRectangle(cornerRadius: Theme.radiusControl))"),
         ("ExerciseBrowserView.swift", "? Theme.ink : Theme.cardBackgroundElevated, in: RoundedRectangle"),
         ("BiomarkersTabView.swift", "? Theme.ink : Theme.cardBackground, in: RoundedRectangle"),
         ("WorkoutView.swift", "Theme.ink"),
