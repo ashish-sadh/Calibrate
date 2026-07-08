@@ -197,12 +197,32 @@ public struct FoodUnit: Hashable {
     }
 
     /// Returns food-appropriate units. First unit is the most natural for this food.
+    /// #1012: synthesize a friendly default unit from the food's seeded `serving_unit`
+    /// so a keyword miss doesn't fall back to a vague "serving". Returns nil for
+    /// grams/ml/empty, count-convention rows (tiny serving), or multi-word / embedded-digit
+    /// junk ("4 oz", "6 wings") — those keep the generic default rather than guessing wrong.
+    static func unitFromSeededServingUnit(_ raw: String, servingSize ss: Double) -> FoodUnit? {
+        guard ss >= 15 else { return nil }   // tiny serving ⇒ likely a count, not grams-scale
+        var u = raw.lowercased().trimmingCharacters(in: .whitespaces)
+        guard !u.isEmpty else { return nil }
+        if u.hasPrefix("1 ") { u = String(u.dropFirst(2)) }   // "1 cup" → "cup"
+        let singular = ["cups": "cup", "pieces": "piece", "slices": "slice", "bowls": "bowl",
+                        "scoops": "scoop", "bars": "bar", "servings": "serving", "plates": "plate"]
+        u = singular[u] ?? u
+        guard u != "g", u != "ml", u != "serving", !u.isEmpty,
+              u.rangeOfCharacter(from: .decimalDigits) == nil,           // "40g" / "4 oz" leftover
+              u.rangeOfCharacter(from: .whitespacesAndNewlines) == nil   // multi-word junk
+        else { return nil }
+        // The seed's serving IS one whole unit, so 1 <serving_unit> == servingSize grams.
+        return FoodUnit(label: u, gramsEquivalent: ss)
+    }
+
     public static func smartUnits(for food: Food) -> [FoodUnit] {
         let lower = food.name.lowercased()
         let words = Set(lower.split(whereSeparator: { !$0.isLetter }).map { String($0) })
         var units: [FoodUnit] = []
 
-        let primary = primaryUnit(for: lower, servingSize: food.servingSize, words: words)
+        let primary = primaryUnit(for: lower, servingSize: food.servingSize, words: words, servingUnit: food.servingUnit)
         units.append(primary)
 
         if primary.label != "g" {
@@ -393,7 +413,7 @@ public struct FoodUnit: Hashable {
         return unit
     }
 
-    private static func primaryUnit(for name: String, servingSize: Double, words: Set<String> = []) -> FoodUnit {
+    private static func primaryUnit(for name: String, servingSize: Double, words: Set<String> = [], servingUnit: String = "") -> FoodUnit {
         let ss = servingSize > 0 ? servingSize : 100
 
         // Countable items
@@ -1340,7 +1360,9 @@ public struct FoodUnit: Hashable {
             return FoodUnit(label: "serving", gramsEquivalent: ss)
         }
 
-        return FoodUnit(label: "serving", gramsEquivalent: ss)
+        // #1012: a keyword miss should prefer the food's own seeded serving_unit over a
+        // vague generic "serving" — so unit coverage no longer depends solely on keywords.
+        return unitFromSeededServingUnit(servingUnit, servingSize: ss) ?? FoodUnit(label: "serving", gramsEquivalent: ss)
     }
 
     /// Known per-piece gram weights keyed by name substring.

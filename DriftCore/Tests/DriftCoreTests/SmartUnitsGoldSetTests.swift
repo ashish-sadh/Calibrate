@@ -150,6 +150,30 @@ final class SmartUnitsGoldSetTests: XCTestCase {
         XCTAssertEqual(tbsp?.gramsEquivalent, 16, "PB tbsp must be ~16g, not 32g")
     }
 
+    // MARK: - #1012: seeded serving_unit drives the default on a keyword miss
+
+    func testSeededServingUnitDrivesDefaultOnKeywordMiss() {
+        // A nonsense name that hits no keyword rule; its seeded 'bowl' unit should win.
+        let f = Food(name: "Zzyxw Blorptn", category: "Test", servingSize: 300,
+                     servingUnit: "bowl", calories: 400)
+        XCTAssertEqual(FoodUnit.smartUnits(for: f).first?.label, "bowl")
+    }
+
+    func testGramServingUnitKeepsGenericDefaultOnKeywordMiss() {
+        // 'g' serving_unit → no synthesis; keyword miss keeps the generic 'serving'.
+        let f = Food(name: "Zzyxw Blorptn", category: "Test", servingSize: 100,
+                     servingUnit: "g", calories: 100)
+        XCTAssertEqual(FoodUnit.smartUnits(for: f).first?.label, "serving")
+    }
+
+    func testUnitFromSeededServingUnitNormalizesAndGuards() {
+        XCTAssertEqual(FoodUnit.unitFromSeededServingUnit("1 cup", servingSize: 240)?.label, "cup")
+        XCTAssertEqual(FoodUnit.unitFromSeededServingUnit("slices", servingSize: 30)?.label, "slice")
+        XCTAssertNil(FoodUnit.unitFromSeededServingUnit("g", servingSize: 100))
+        XCTAssertNil(FoodUnit.unitFromSeededServingUnit("6 wings", servingSize: 180))  // multi-word/digit junk
+        XCTAssertNil(FoodUnit.unitFromSeededServingUnit("cup", servingSize: 3))        // count-convention (tiny ss)
+    }
+
     // MARK: - Specific Protein & Vegetable Units
 
     func testMeatPortionsGetPieceUnit() {
