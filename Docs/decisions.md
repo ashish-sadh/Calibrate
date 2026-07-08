@@ -369,3 +369,28 @@ Decisions:
 
 Result on operator's data: +0.40 kg/wk → +437 kcal/day → 30d projection +3.7 lbs — coherent with the
 competing tracker (0.38 / 418 / +1.7 kg) while our heavier smoothing stays calmer on spikes.
+
+### Trend report gate: OLS-t → Mann–Kendall Z (2026-07-08 morning)
+
+Field falsification within 12 hours of the t-ramp shipping: the operator's REAL 21-day window — 9
+weigh-ins, one +3.8 lb water spike, a 10-day logging gap — scored t=0.96, BELOW the measured pure-noise
+ceiling (0.89–1.00 across seeds), so the ramp zeroed a trend that was visibly real (14d/30d trend deltas
+read "+1.4/+1.6 Increase" on the same screen as "Weekly ≈0.0 Holding steady"). The 2026-07-07 t=1.73
+calibration for this dataset was an artifact: the reconstruction invented points inside the logging gap.
+
+Root cause is structural, not calibration: OLS-t is wrecked by exactly the two shapes real dieters
+produce — a single spike (huge squared residual craters R²) and gaps (few points inflate the slope's
+standard error). Rank-based Mann–Kendall counts concordant pairs instead of fitting a line: measured
+separation on the pinned datasets is decisive — noise seeds Z=0.33–1.00, May flat user Z=0.34, the real
+gap+spike bulk Z=1.68, genuine trends Z=2.6–6.3, weekly sparse logger Z=2.6.
+
+Decisions:
+1. `trendZStatistic` (MK with tie correction + continuity correction) replaces `tStatistic`; `rSquared`
+   deleted (dead). Report ramp on Z: 0 at 1.15, full at 1.65; confident flag at Z ≥ 2.0.
+2. The operator's exact 9-point dataset is pinned as
+   `regression_gapAndSpikeRealTrend_reportsNotHoldingSteady` — gaining, reported rate, visible surplus.
+3. This pulls item 2 of #1024 forward; #1024 keeps daily-grid interpolation + expenditure-card surface.
+
+Method note for future gate changes: calibrate on the pinned real datasets FIRST (scratch diagnostic,
+measure, place constants in the measured gap) — the t-ramp shipped on a reconstructed dataset and was
+falsified by the real one the next morning.

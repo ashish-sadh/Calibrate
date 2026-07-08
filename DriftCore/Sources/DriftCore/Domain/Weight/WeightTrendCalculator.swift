@@ -115,34 +115,37 @@ public enum WeightTrendCalculator {
     /// still flips the reported sign within ~1-1.5 weeks.
     static let rateSmoothingHalfLifeDays: Double = 8
 
-    /// The rate is published scaled by a RAMP on |t| (slope ÷ its standard
-    /// error of the raw weigh-ins): weight 0 at `reportRampStartT`, full at
-    /// `reportRampFullT`. Below the ramp the slope's sign is set by which
-    /// noisy endpoints the window caught — publishing it recreates the
+    /// The rate is published scaled by a RAMP on the Mann–Kendall Z of the
+    /// raw weigh-ins (see `trendZStatistic`): weight 0 at `reportRampStartZ`,
+    /// full at `reportRampFullZ`. Below the ramp the slope's sign is set by
+    /// which noisy endpoints the window caught — publishing it recreates the
     /// 2026-05-29 field bug (flat ±3 lb oscillator shown "Est. Deficit −248"
     /// / "Est. Surplus +185" depending on window). A ramp rather than a hard
     /// bar so one new weigh-in near the boundary can't flip the card between
     /// 0 and full value (the "changes constantly" complaint).
     ///
-    /// Calibration (2026-07-07, measured on the pinned datasets):
-    ///   pure-noise seeds t = 0.15–0.89 · the May flat-noisy user t = 0.26 ·
-    ///   a real-but-young bulk through daily water scatter t = 1.73 ·
-    ///   established cuts/bulks t = 2.3–12. The 1.0–1.6 ramp sits in the
+    /// Calibration (2026-07-08, measured on the pinned datasets — replaces
+    /// the OLS-t gate, whose spike/gap fragility zeroed a REAL field trend
+    /// at t=0.96 while pure noise reached t=0.89):
+    ///   pure-noise seeds Z = 0.33–1.00 · the May flat-noisy user Z = 0.34 ·
+    ///   the 2026-07-08 real bulk (9 points, one water spike, a 10-day
+    ///   logging gap) Z = 1.68 · gentle-drift/established trends Z = 2.6–6.3
+    ///   · weekly sparse logger Z = 2.6. The 1.15–1.65 ramp sits in the
     ///   empirical gap: noise stays zeroed, a genuine young trend gets
     ///   REPORTED (operator decision: "it's fine to report surplus — don't
     ///   say holding steady under a climbing chart").
-    static let reportRampStartT: Double = 1.0
-    static let reportRampFullT: Double = 1.6
+    static let reportRampStartZ: Double = 1.15
+    static let reportRampFullZ: Double = 1.65
 
-    /// The stricter bar (~95% two-sided) at which the trend is flagged
-    /// CONFIDENT (`trendIsSignificant`). Between `reportTThreshold` and this,
-    /// the rate is shown with "Early trend — firming up" framing; above it,
-    /// "Based on last N days".
-    static let significanceTThreshold: Double = 2.0
+    /// The stricter bar at which the trend is flagged CONFIDENT
+    /// (`trendIsSignificant`). Between the ramp and this, the rate is shown
+    /// with "Early trend — firming up" framing; above it, "Based on last N
+    /// days".
+    static let significanceZThreshold: Double = 2.0
 
-    /// Minimum raw weigh-ins in the window before significance can even be
-    /// assessed. With ≤3 points the OLS fits (near-)perfectly by construction, so
-    /// the t-test is meaningless; treat as not-significant → maintaining.
+    /// Minimum raw weigh-ins in the window before the trend test can even be
+    /// assessed. With ≤3 points there are too few pairs for Mann–Kendall to
+    /// mean anything; treat as not-reportable → maintaining.
     static let minPointsForSignificance = 4
 
     // MARK: - Public Types
@@ -316,18 +319,18 @@ public enum WeightTrendCalculator {
         let previousEMA = dataPoints.count >= 2 ? dataPoints[dataPoints.count - 2].emaWeight : currentEMA
 
         // ── Weekly rate = OLS slope of the medium-smoothed (8d) series over
-        // the trailing window, published on a TWO-TIER t-test (2026-07-07
-        // recalibration of the 2026-05-29 gate):
-        //   t below the 1.0–1.6 ramp    → pure oscillation; publish 0 /
+        // the trailing window, published on a TWO-TIER Mann–Kendall test
+        // (2026-07-08 recalibration of the 2026-05-29 gate):
+        //   Z below the 1.15–1.65 ramp  → pure oscillation; publish 0 /
         //     maintaining (the May phantom-deficit fix, unchanged in spirit)
         //   inside the ramp             → real-but-young trend fades in,
         //     scaled by confidence (no hard boundary to flap across)
-        //   t ≥ significanceTThreshold  → full value, confident framing.
+        //   Z ≥ significanceZThreshold  → full value, confident framing.
         let rate = weeklyRateForWindow(points: dataPoints, windowDays: config.regressionWindowDays)
         let hasInsufficientData = (rate == nil)
         let rawRate = clampRate(rate?.kgPerWeek ?? 0)
-        let tStat = rate?.tStat ?? 0
-        let rampWeight = min(1, max(0, (tStat - Self.reportRampStartT) / (Self.reportRampFullT - Self.reportRampStartT)))
+        let zStat = rate?.zStat ?? 0
+        let rampWeight = min(1, max(0, (zStat - Self.reportRampStartZ) / (Self.reportRampFullZ - Self.reportRampStartZ)))
         let reportedRate = rawRate * rampWeight
         // Below the maintaining band ⇒ report exactly flat (rate 0): a slope
         // that tiny is "holding steady", and a non-zero deficit beside a
@@ -364,7 +367,7 @@ public enum WeightTrendCalculator {
             rateWindowDays: rateWindowDays,
             hasInsufficientData: hasInsufficientData,
             rawWeeklyRateKg: rawRate,
-            trendIsSignificant: tStat >= Self.significanceTThreshold
+            trendIsSignificant: zStat >= Self.significanceZThreshold
         )
     }
 
@@ -394,7 +397,7 @@ public enum WeightTrendCalculator {
     /// weekly/fortnightly weigher still gets a rate — but never past it, so stale
     /// weigh-ins can't anchor the slope (#842). Sparse cadences stay safe because
     /// the smoothing is time-weighted (decay by elapsed days).
-    static func weeklyRateForWindow(points: [WeightDataPoint], windowDays: Int) -> (kgPerWeek: Double, windowDays: Int, tStat: Double)? {
+    static func weeklyRateForWindow(points: [WeightDataPoint], windowDays: Int) -> (kgPerWeek: Double, windowDays: Int, zStat: Double)? {
         func windowed(_ days: Int) -> [WeightDataPoint] {
             guard let start = Calendar.current.date(byAdding: .day, value: -days, to: Date()) else { return [] }
             return points.filter { $0.date >= start }
@@ -424,49 +427,49 @@ public enum WeightTrendCalculator {
         }
         let slopePerDay = slopeOfSeries(smoothed)
         let span = max(1, daysBetween(first.date, last.date))
-        // The t-statistic is judged on the RAW weigh-ins of the SAME window
+        // The Z-statistic is judged on the RAW weigh-ins of the SAME window
         // the magnitude uses — a smoothed series' autocorrelation fakes
-        // |t| 3–11 on genuinely flat data.
-        return (slopePerDay * 7, min(used, span), tStatistic(pts))
+        // confidence on genuinely flat data.
+        return (slopePerDay * 7, min(used, span), trendZStatistic(pts))
     }
 
     /// How statistically distinguishable from flat is the trailing trend?
-    /// Runs OLS on the raw weigh-ins and returns the slope's t-statistic,
-    /// `|t| = sqrt(R²·(n-2)/(1-R²))`. 0 when there are too few points to
-    /// judge (the caller's report bar then keeps the rate unpublished);
-    /// effectively-infinite for an exact fit on ≥4 points (a real line).
-    /// Compared against `reportTThreshold` (publish at all) and
-    /// `significanceTThreshold` (confident framing).
-    static func tStatistic(_ points: [WeightDataPoint]) -> Double {
-        let samples = points.map { (date: $0.date, weight: $0.actualWeight ?? $0.emaWeight) }
-        guard samples.count >= minPointsForSignificance else { return 0 }
-        let r2 = rSquared(samples)
-        guard r2 < 1 else { return .greatestFiniteMagnitude } // exact fit on ≥4 points ⇒ real line
-        let n = Double(samples.count)
-        return (r2 * (n - 2) / (1 - r2)).squareRoot()
-    }
+    /// Mann–Kendall Z on the raw weigh-ins: counts concordant vs discordant
+    /// pairs (does each later reading sit above each earlier one?) instead
+    /// of fitting a line. Rank-based, so it is robust to exactly the two
+    /// shapes OLS-t failed on in the field (2026-07-08): a single water
+    /// spike (one huge squared residual craters R²) and a logging gap
+    /// (thin points inflate the slope's standard error). A real-but-young
+    /// bulk with a spike + 10-day gap scored t≈0.96 (indistinguishable from
+    /// the 0.89 noise ceiling) but MK Z≈1.67 — cleanly separated.
+    /// 0 when there are too few points (the caller's report ramp then keeps
+    /// the rate unpublished). Ties count 0 and shrink the variance term.
+    static func trendZStatistic(_ points: [WeightDataPoint]) -> Double {
+        let ys = points.map { $0.actualWeight ?? $0.emaWeight }
+        let n = ys.count
+        guard n >= minPointsForSignificance else { return 0 }
 
-    /// Coefficient of determination (R²) of a least-squares line through
-    /// (day-offset, weight) samples. 0 = the line explains nothing (flat noise),
-    /// 1 = perfect fit. Clamped to [0, 1].
-    static func rSquared(_ samples: [(date: Date, weight: Double)]) -> Double {
-        guard samples.count >= 2 else { return 0 }
-        let ref = samples[0].date
-        let xs = samples.map { Double(Calendar.current.dateComponents([.day], from: ref, to: $0.date).day ?? 0) }
-        let ys = samples.map(\.weight)
-        let n = Double(samples.count)
-        let sumX = xs.reduce(0, +), sumY = ys.reduce(0, +)
-        let sumXY = zip(xs, ys).reduce(0) { $0 + $1.0 * $1.1 }
-        let sumX2 = xs.reduce(0) { $0 + $1 * $1 }
-        let denom = n * sumX2 - sumX * sumX
-        guard denom != 0 else { return 0 }
-        let slope = (n * sumXY - sumX * sumY) / denom
-        let intercept = (sumY - slope * sumX) / n
-        let meanY = sumY / n
-        let ssTot = ys.reduce(0) { $0 + ($1 - meanY) * ($1 - meanY) }
-        let ssRes = zip(xs, ys).reduce(0) { $0 + pow($1.1 - (slope * $1.0 + intercept), 2) }
-        guard ssTot > 0 else { return 0 }
-        return min(1, max(0, 1 - ssRes / ssTot))
+        var s = 0
+        for i in 0..<(n - 1) {
+            for j in (i + 1)..<n {
+                let d = ys[j] - ys[i]
+                if d > 0 { s += 1 } else if d < 0 { s -= 1 }
+            }
+        }
+
+        // Variance with tie correction: group identical values, subtract
+        // t(t-1)(2t+5)/18 per tie group of size t.
+        var variance = Double(n * (n - 1) * (2 * n + 5)) / 18.0
+        var counts: [Double: Int] = [:]
+        for y in ys { counts[y, default: 0] += 1 }
+        for (_, t) in counts where t > 1 {
+            variance -= Double(t * (t - 1) * (2 * t + 5)) / 18.0
+        }
+        guard variance > 0 else { return 0 }
+
+        // Continuity correction (±1) — standard for the normal approximation.
+        let sAdj = s > 0 ? Double(s) - 1 : (s < 0 ? Double(s) + 1 : 0)
+        return abs(sAdj) / variance.squareRoot()
     }
 
     /// Span-based sufficiency: ≥2 points spanning ≥ `minRateSpanDays`.

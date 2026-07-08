@@ -371,6 +371,34 @@ struct WeightTDEEScenarioTests {
         #expect(t.rawWeeklyRateKg == 0, "Calibrating state must not publish a raw rate either")
     }
 
+    // MARK: - Field regression 2026-07-08: gap+spike real trend must report
+
+    @Test func regression_gapAndSpikeRealTrend_reportsNotHoldingSteady() async throws {
+        // The operator's EXACT weigh-in window that exposed the OLS-t gate:
+        // 9 points — a steady climb, one +3.8 lb water spike (day -15), and a
+        // 10-day logging gap — while the 14d/30d trend deltas both showed
+        // "+1.4/+1.6 Increase" on the same screen. OLS-t scored 0.96 (below
+        // the pure-noise ceiling of ~0.9, unreportable); Mann–Kendall scores
+        // Z≈1.68 (clear monotonic trend). The cards must report a gain, not
+        // "Holding steady" under a visibly climbing chart.
+        let cal = Calendar.current; let today = Date()
+        func d(_ ago: Int) -> String { DateFormatters.dateOnly.string(from: cal.date(byAdding: .day, value: -ago, to: today)!) }
+        let lbs: [(ago: Int, lb: Double)] = [
+            (20, 118.4), (19, 119.3), (17, 119.3), (16, 119.8), (15, 123.6),
+            (14, 121.8), (13, 120.4), (3, 121.5), (2, 120.2),
+        ]
+        let es = lbs.map { (d($0.ago), $0.lb / 2.20462) }
+        let t = try #require(WeightTrendCalculator.calculateTrend(entries: es))
+        Self.assertSane(t, "gap-and-spike real trend")
+        #expect(!t.hasInsufficientData)
+        #expect(t.trendDirection == .gaining,
+                "A consistent climb through a spike + logging gap must READ as gaining, got \(t.trendDirection)")
+        #expect(t.weeklyRateKg > 0.08,
+                "Rate must be reported (not ramp-zeroed), got \(t.weeklyRateKg) kg/wk")
+        #expect(t.estimatedDailyDeficit > 50,
+                "A visible surplus must be shown, got \(t.estimatedDailyDeficit) kcal/day")
+    }
+
     // MARK: - Calorie target never recommends below the safety floor
 
     @Test(arguments: [900.0, 1100.0, 1400.0, 1800.0, 2400.0, 3200.0],
