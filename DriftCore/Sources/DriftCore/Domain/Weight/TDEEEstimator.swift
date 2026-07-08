@@ -347,23 +347,60 @@ public final class TDEEEstimator {
             from: DateFormatters.dateOnly.string(from: fourWeeksAgo),
             to: DateFormatters.dateOnly.string(from: today))
         else { return nil }
+        let floor = Self.ledgerPlausibilityFloor(
+            weightKg: WeightTrendService.shared.latestWeightKg,
+            config: Self.loadConfig())
         return Self.trendAnchoredTDEE(qualifiedDailyTotals: totals,
-                                      estimatedDailyDeficit: trend.estimatedDailyDeficit)
+                                      estimatedDailyDeficit: trend.estimatedDailyDeficit,
+                                      plausibilityFloor: floor)
     }
 
     /// Pure aggregation step of the weight-trend anchor: median of qualified-
     /// log daily kcals minus the trend's daily energy balance. Nil unless
     /// there are ≥5 qualified days with a sane median (> 500 kcal) and the
-    /// implied TDEE is plausible (> 800 kcal). Nonisolated for Tier-0 tests.
+    /// implied TDEE clears `plausibilityFloor`. Nonisolated for Tier-0 tests.
+    ///
+    /// The floor is the LEDGER-TRUST check (field ask 2026-07-07): an implied
+    /// TDEE below ~BMR is thermodynamically impossible to sustain — e.g.
+    /// logging 1,200/day with FLAT weight implies maintenance of 1,200, which
+    /// can only mean the logging is incomplete. Distrust the ledger and fall
+    /// back to the (higher, safer) formula estimate rather than telling the
+    /// user their maintenance is their under-logged intake. A genuine dieter
+    /// is unaffected: eating 1,200 while actually LOSING implies
+    /// 1,200 + deficit, which clears the floor.
     nonisolated static func trendAnchoredTDEE(
         qualifiedDailyTotals: [Double],
-        estimatedDailyDeficit: Double
+        estimatedDailyDeficit: Double,
+        plausibilityFloor: Double = 800
     ) -> Double? {
         guard qualifiedDailyTotals.count >= 5,
               let intake = median(qualifiedDailyTotals),
               intake > 500 else { return nil }
         let tdee = intake - estimatedDailyDeficit
-        return tdee > 800 ? tdee : nil
+        return tdee > plausibilityFloor ? tdee : nil
+    }
+
+    /// Sex-averaged Mifflin BMR with default assumptions (age 30, 170 cm) —
+    /// the same anchor `computeBase` scales by activity.
+    nonisolated static func defaultBMR(weightKg: Double) -> Double {
+        10 * weightKg + 834.5
+    }
+
+    /// The ledger-trust floor for `trendAnchoredTDEE`: 90% of BMR (profile
+    /// Mifflin when complete, sex-averaged default otherwise). The 10% margin
+    /// absorbs metabolic adaptation and BMR-formula error so genuinely small/
+    /// adapted users aren't wrongly distrusted.
+    nonisolated static func ledgerPlausibilityFloor(weightKg: Double?, config: TDEEConfig) -> Double {
+        guard let w = weightKg else { return 800 }
+        let bmr: Double
+        if config.hasMifflinProfile,
+           let (mifflinTDEE, confidence) = computeMifflin(weightKg: w, config: config),
+           confidence == 1.0 {
+            bmr = mifflinTDEE / config.mifflinActivityFactor
+        } else {
+            bmr = defaultBMR(weightKg: w)
+        }
+        return bmr * 0.9
     }
 
     /// 7-day average daily kcal *without* the qualified-day filter.

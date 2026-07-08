@@ -304,6 +304,55 @@ import Testing
     #expect(t == 2000)
 }
 
+// MARK: - Ledger-trust floor (implausible logging must not become the anchor)
+
+@Test func ledgerTrust_flatWeightWithSubBMRLoggingIsDistrusted() {
+    // The field scenario: user logs ~1200/day (3 meals, days qualify) but
+    // weight is FLAT. Implied maintenance 1200 < BMR ≈ 1534 (70kg) — the
+    // ledger is thermodynamically incomplete. Anchor must be dropped so
+    // TDEE falls back to the (higher) formula estimate.
+    let floor = TDEEEstimator.ledgerPlausibilityFloor(weightKg: 70, config: .default)
+    let anchor = TDEEEstimator.trendAnchoredTDEE(
+        qualifiedDailyTotals: [1200, 1150, 1250, 1200, 1180],
+        estimatedDailyDeficit: 0,
+        plausibilityFloor: floor)
+    #expect(anchor == nil, "Sub-BMR implied maintenance must be distrusted, floor was \(Int(floor))")
+}
+
+@Test func ledgerTrust_genuineDieterClearsTheFloor() {
+    // Same 1200 intake but ACTUALLY losing 0.5 kg/wk (deficit −550):
+    // implied TDEE 1750 > floor — physics is consistent, ledger trusted.
+    let floor = TDEEEstimator.ledgerPlausibilityFloor(weightKg: 70, config: .default)
+    let anchor = TDEEEstimator.trendAnchoredTDEE(
+        qualifiedDailyTotals: [1200, 1150, 1250, 1200, 1180],
+        estimatedDailyDeficit: -550,
+        plausibilityFloor: floor)
+    #expect(anchor == 1750)
+}
+
+@Test func ledgerTrust_floorUsesProfileBMRWhenComplete() {
+    // Small female full profile: her true BMR (~1288 for 55kg/160cm/35y) is
+    // well below the sex-averaged default (1384.5) — the floor must follow
+    // HER Mifflin so a genuinely small eater isn't wrongly distrusted.
+    var config = TDEEEstimator.TDEEConfig.default
+    config.age = 35; config.heightCm = 160; config.sex = .female
+    let floor = TDEEEstimator.ledgerPlausibilityFloor(weightKg: 55, config: config)
+    // BMR = 550 + 1000 − 175 − 161 = 1214; floor = 1092.6
+    #expect(abs(floor - 1092.6) < 1, "got \(floor)")
+    let defaultFloor = TDEEEstimator.ledgerPlausibilityFloor(weightKg: 55, config: .default)
+    #expect(floor < defaultFloor)
+}
+
+@Test func ledgerTrust_noWeightFallsBackToLegacyFloor() {
+    #expect(TDEEEstimator.ledgerPlausibilityFloor(weightKg: nil, config: .default) == 800)
+}
+
+@Test func defaultBMRMatchesComputeBaseAnchor() {
+    // computeBase = defaultBMR × activity factor — the two must stay in sync.
+    let base = TDEEEstimator.computeBase(weightKg: 70, activityMultiplier: 29)
+    #expect(abs(base - TDEEEstimator.defaultBMR(weightKg: 70) * 1.55) < 0.01)
+}
+
 @Test func trendAnchorStableWhenDaysSkipped() throws {
     // Same qualified days ± a few skipped days in between: skipped days
     // produce NO totals (they're simply absent), so the anchor is identical —
