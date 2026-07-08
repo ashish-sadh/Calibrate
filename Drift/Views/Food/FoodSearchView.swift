@@ -28,6 +28,8 @@ struct FoodSearchView: View {
     @State private var logTime = Date()
     @State private var selectedMealType: MealType? = nil
     @State private var loggedCount = 0
+    @State private var justLoggedText: String?   // #1025: transient "Added X" confirmation
+    @State private var toastToken = 0
     @State private var showingRecipeBuilder = false
     @State private var showingScanner = false
     @State private var editingRecipe: SavedFood?
@@ -47,9 +49,13 @@ struct FoodSearchView: View {
     var body: some View {
         if embedded {
             searchContent
+                .overlay(alignment: .top) { loggedToast }
+                .animation(.spring(duration: 0.3), value: justLoggedText)
         } else {
             NavigationStack {
                 searchContent
+                    .overlay(alignment: .top) { loggedToast }
+                    .animation(.spring(duration: 0.3), value: justLoggedText)
                     .navigationTitle(loggedCount > 0 ? "Add Food (\(loggedCount) logged)" : "Add Food")
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
@@ -58,6 +64,36 @@ struct FoodSearchView: View {
                         }
                     }
             }
+        }
+    }
+
+    /// #1025: every add-to-diary action fires a haptic + a transient toast, so a tap is
+    /// always visibly acknowledged (previously silent → users double-logged), including in
+    /// embedded mode where the "(N logged)" nav chrome is hidden.
+    private func confirmLog(_ name: String, calories: Double) {
+        loggedCount += 1
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        justLoggedText = "Added \(name) · \(Int(calories.rounded())) cal"
+        toastToken += 1
+        let mine = toastToken
+        Task {
+            try? await Task.sleep(for: .milliseconds(1500))
+            if toastToken == mine { justLoggedText = nil }
+        }
+    }
+
+    @ViewBuilder private var loggedToast: some View {
+        if let text = justLoggedText {
+            HStack(spacing: 6) {
+                Image(systemName: "checkmark.circle.fill")
+                Text(text).font(.subheadline.weight(.semibold)).lineLimit(1)
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 16).padding(.vertical, 10)
+            .background(Theme.accent, in: Capsule())   // neutral confirmation — not a goal-aware good/bad signal
+            .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
+            .padding(.top, 8)
+            .transition(.move(edge: .top).combined(with: .opacity))
         }
     }
 
@@ -321,8 +357,7 @@ struct FoodSearchView: View {
                 let lastUsed = viewModel.recentEntries.first(where: { $0.name == food.name })?.lastServings ?? 1
                 viewModel.logFood(food, servings: lastUsed, mealType: effectiveMealType)
                 viewModel.loadSuggestions()
-                loggedCount += 1
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                confirmLog(food.name, calories: food.calories * lastUsed)
             } label: {
                 Image(systemName: "plus.circle.fill").foregroundStyle(Theme.accent)
             }
@@ -386,8 +421,7 @@ struct FoodSearchView: View {
                                        mealType: effectiveMealType)
                 }
                 viewModel.loadSuggestions()
-                loggedCount += 1
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                confirmLog(entry.name, calories: entry.calories)
             } label: {
                 Image(systemName: "plus.circle.fill").foregroundStyle(Theme.accent)
             }
@@ -459,7 +493,7 @@ struct FoodSearchView: View {
                             FoodService.logRecipe(recipe, servings: 1, mealType: effectiveMealType,
                                                   viewModel: viewModel)
                             viewModel.loadSuggestions()
-                            loggedCount += 1
+                            confirmLog(recipe.name, calories: recipe.calories)
                         } label: {
                             HStack {
                                 Image(systemName: "bookmark.fill").font(.caption2).foregroundStyle(Theme.accent.opacity(0.7))
