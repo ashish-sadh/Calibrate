@@ -281,12 +281,14 @@ import GRDB
 @Test func staleStartWeight_progressWithStaleStart() async throws {
     let goal = WeightGoal(targetWeightKg: 90, monthsToAchieve: 3, startDate: "2026-01-01", startWeightKg: 75.9)
 
-    // With stale start (75.9) and current far from target (102 vs 90),
-    // progress should NOT be 100%. The remaining distance (12 kg) is too large.
+    // #982: start 75.9 → target 90 is a GAIN goal; current 101.8 has gained PAST the
+    // 90 target (overshot in the goal direction), so progress reads 100% — reaching or
+    // exceeding the target is done, no matter how far past. (The old code wrongly read
+    // this as "12 kg remaining"; being 12 kg past the target is not 12 kg short of it.)
     let progress = goal.progress(currentWeightKg: 101.8)
-    #expect(progress < 0.3, "Should show low progress with 12 kg remaining, got \(progress)")
+    #expect(progress == 1.0, "Overshooting the goal in the goal direction reads 100%, got \(progress)")
 
-    // After re-baseline: start=101.8, target=90, current=101.8 → 0%
+    // Re-baseline is the real fix for a stale start: start=101.8, target=90, current=101.8 → 0%
     let rebaselined = WeightGoal(targetWeightKg: 90, monthsToAchieve: 3, startDate: "2026-04-01", startWeightKg: 101.8)
     #expect(rebaselined.progress(currentWeightKg: 101.8) == 0.0, "Just started → 0%")
     #expect(rebaselined.progress(currentWeightKg: 95) > 0.5, "Halfway there")

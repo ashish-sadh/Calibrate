@@ -201,9 +201,18 @@ public struct WeightGoal: Codable, Sendable {
             carbs = carbsTargetG ?? max(0, remainingCal / 4)
         }
 
-        // #983: honor the user's explicit calorie goal — the macro-breakdown sum can
-        // exceed it (protein minimum + fat floor), which must not inflate the ring target.
-        let effectiveCal = calorieTargetOverride ?? (protein * 4 + carbs * 4 + fat * 9)
+        // #983: honor the user's explicit calorie goal on the ring — the macro-breakdown
+        // sum can exceed it (protein minimum + fat floor) and must not inflate the target.
+        // BUT if the user pinned specific macro grams, the honest macro sum wins (they
+        // explicitly chose those macros), even above the calorie goal.
+        let computedCal = protein * 4 + carbs * 4 + fat * 9
+        let anyExplicitMacro = proteinTargetG != nil || carbsTargetG != nil || fatTargetG != nil
+        let effectiveCal: Double
+        if let override = calorieTargetOverride, !anyExplicitMacro {
+            effectiveCal = override
+        } else {
+            effectiveCal = computedCal
+        }
         return MacroTargets(proteinG: protein, carbsG: carbs, fatG: fat,
                             fiberG: Self.defaultFiberG(calories: effectiveCal),
                             calorieTarget: effectiveCal, isLosing: isLosing, preference: pref,
