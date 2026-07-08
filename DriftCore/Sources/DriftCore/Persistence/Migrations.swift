@@ -9,7 +9,7 @@ public enum Migrations {
     /// fails with `Int.fetchOne(grdb_migrations) != currentVersion`.
     /// Stamped into the backup manifest so restore can detect a
     /// forward/backward migration scenario.
-    public static let currentVersion = 38
+    public static let currentVersion = 39
 
     public static func registerAll(_ migrator: inout DatabaseMigrator) {
         // v1: Weight tracking
@@ -633,5 +633,38 @@ public enum Migrations {
             try db.create(index: "idx_medication_log_taken_at", on: "medication_log", columns: ["taken_at"])
             try db.create(index: "idx_medication_log_med_taken", on: "medication_log", columns: ["medication_id", "taken_at"])
         }
+
+        // v39: Recover saved_food rows that v25 silently dropped. #1003 — v25's
+        // `WHERE NOT EXISTS (… LOWER(f.name)=LOWER(sf.name))` skipped any saved
+        // favorite/recipe whose name case-insensitively collided with a seeded
+        // food, discarding the user's own macros. `saved_food` is never dropped, so
+        // recover the collided rows under a disambiguated "<name> (Saved)" name.
+        migrator.registerMigration("v39_recover_collided_saved_food") { db in
+            try Migrations.recoverCollidedSavedFood(db)
+        }
+    }
+
+    /// #1003: copy `saved_food` rows that v25 dropped on a case-insensitive name
+    /// collision into `food` under a disambiguated "<name> (Saved)" name, preserving
+    /// the user's own macros. No-op when `saved_food` is absent or nothing collides.
+    /// Extracted so the v39 migration and its regression test share one code path.
+    static func recoverCollidedSavedFood(_ db: Database) throws {
+        let hasSavedFood = (try Int.fetchOne(db, sql:
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='saved_food'") ?? 0) > 0
+        guard hasSavedFood else { return }
+        try db.execute(sql: """
+            INSERT INTO food (name, category, serving_size, serving_unit, calories,
+                              protein_g, carbs_g, fat_g, fiber_g, ingredients,
+                              source, is_recipe, sort_order, default_servings)
+            SELECT sf.name || ' (Saved)',
+                   CASE WHEN sf.is_recipe THEN 'Recipe' ELSE 'Saved' END,
+                   1.0, 'serving', sf.calories,
+                   sf.protein_g, sf.carbs_g, sf.fat_g, sf.fiber_g, sf.ingredients,
+                   'recipe', sf.is_recipe, sf.sort_order, sf.default_servings
+            FROM saved_food sf
+            WHERE EXISTS (SELECT 1 FROM food f WHERE LOWER(f.name) = LOWER(sf.name))
+              AND NOT EXISTS (SELECT 1 FROM food f2
+                              WHERE LOWER(f2.name) = LOWER(sf.name || ' (Saved)'))
+            """)
     }
 }

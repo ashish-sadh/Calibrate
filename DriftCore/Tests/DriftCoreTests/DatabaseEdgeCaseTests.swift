@@ -380,3 +380,60 @@ private func seedDay(_ db: AppDatabase, date: String, meals: [(type: String, kca
     let days = try db.daysWithFoodLogged(from: "2020-01-01", to: "2020-01-31")
     #expect(days == 2)
 }
+
+// MARK: - #1001: clearAutopilotSeedData must NOT delete real user entries
+
+@Test func clearAutopilotSeedDataPreservesUserEntries() async throws {
+    let db = try AppDatabase.empty()
+    var log = MealLog(date: "2026-07-07", mealType: "dinner")
+    try db.saveMealLog(&log)
+    // Names/calories that matched the old destructive seed list (Roti/Dosa/Egg@72).
+    for (name, cal) in [("Roti", 104.0), ("Dosa", 168.0), ("Egg", 72.0)] {
+        var e = FoodEntry(mealLogId: log.id ?? 0, foodName: name, servingSizeG: 50,
+                          calories: cal, date: "2026-07-07", mealType: "dinner")
+        try db.saveFoodEntry(&e)
+    }
+    try db.clearAutopilotSeedData()
+    let names = Set(try db.fetchFoodEntries(for: "2026-07-07").map(\.foodName))
+    #expect(names == ["Roti", "Dosa", "Egg"], "real user entries must survive, got \(names)")
+}
+
+// MARK: - #1002: factoryReset must clear body_composition + daily_medication
+
+@Test func factoryResetClearsBodyCompositionAndDailyMedication() throws {
+    let db = try AppDatabase.empty()
+    try db.writer.write { d in
+        try d.execute(sql: "INSERT INTO body_composition (date, body_fat_pct) VALUES ('2026-07-07', 18)")
+        try d.execute(sql: "INSERT INTO daily_medication (name, logged_at) VALUES ('Ozempic', '2026-07-07T10:00:00Z')")
+    }
+    try db.factoryReset()
+    let (bc, dm) = try db.reader.read { d in
+        (try Int.fetchOne(d, sql: "SELECT COUNT(*) FROM body_composition") ?? -1,
+         try Int.fetchOne(d, sql: "SELECT COUNT(*) FROM daily_medication") ?? -1)
+    }
+    #expect(bc == 0, "factoryReset must wipe body_composition, got \(bc)")
+    #expect(dm == 0, "factoryReset must wipe daily_medication, got \(dm)")
+}
+
+// MARK: - #1003: recover saved_food rows v25 dropped on a name collision
+
+@Test func recoverCollidedSavedFoodPreservesUserMacros() throws {
+    let db = try AppDatabase.empty()
+    try db.writer.write { d in
+        try d.execute(sql: """
+            INSERT INTO food (name, category, serving_size, serving_unit, calories, source)
+            VALUES ('Paneer', 'Indian', 100, 'g', 265, 'database')
+            """)
+        // The user's OWN saved food with the same name but different macros — v25
+        // silently dropped it on the case-insensitive collision.
+        try d.execute(sql: """
+            INSERT INTO saved_food (name, calories, protein_g, carbs_g, fat_g, fiber_g)
+            VALUES ('paneer', 999, 42, 3, 80, 1)
+            """)
+        try Migrations.recoverCollidedSavedFood(d)
+    }
+    let cal = try db.reader.read { d -> Double? in
+        try Row.fetchOne(d, sql: "SELECT calories FROM food WHERE LOWER(name) = 'paneer (saved)'")?["calories"]
+    }
+    #expect(cal == 999, "collided saved_food must be recovered with the user's macros, got \(String(describing: cal))")
+}

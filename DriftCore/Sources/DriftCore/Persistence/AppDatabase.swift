@@ -82,6 +82,10 @@ extension AppDatabase {
             try? db.execute(sql: "DELETE FROM water_entry")
             try? db.execute(sql: "DELETE FROM medication_log")
             try? db.execute(sql: "DELETE FROM medication")
+            // #1002: these were missed, so "delete all data" left real rows behind.
+            try? db.execute(sql: "DELETE FROM body_composition")
+            try? db.execute(sql: "DELETE FROM daily_medication")
+            try? db.execute(sql: "DELETE FROM search_miss")
         }
         // Clear the seed hash + version token so seedFoodsFromJSON() actually
         // runs (both gates would otherwise skip it — leaving the food table

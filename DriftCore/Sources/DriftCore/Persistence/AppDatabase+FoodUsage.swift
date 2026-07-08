@@ -317,36 +317,18 @@ extension AppDatabase {
         }
     }
 
-    /// Insert sample food entries across the past 5 days for testing history grouping.
-    /// One-time cleanup: removes food entries and combos inserted by autopilot seed.
-    /// Safe to call repeatedly — guarded by UserDefaults flag at call site.
-    public func clearAutopilotSeedData() throws {
-        // Foods the user confirmed they never logged — safe to delete entirely
-        let distinctlySeeded = ["Dosa", "Sambar", "Dal Tadka", "Roti"]
-        // Generic foods seeded with exact calorie values — match by name + cal
-        let genericSeeded: [String: Double] = [
-            "Egg": 72, "Milk (2%)": 122, "Protein Powder": 120, "Chole": 269, "Rice": 206
-        ]
-        // Auto-detected combo names generated from the seeded clusters
-        let seededComboNames = [
-            "dosa + sambar", "chole + rice", "dal tadka + roti",
-            "egg + milk (2%) + protein powder", "egg + milk + protein powder"
-        ]
-        try writer.write { db in
-            for name in distinctlySeeded {
-                try db.execute(sql: "DELETE FROM food_entry WHERE food_name = ?", arguments: [name])
-                try db.execute(sql: "DELETE FROM food_usage WHERE food_name = ?", arguments: [name])
-            }
-            for (name, cal) in genericSeeded {
-                try db.execute(sql: "DELETE FROM food_entry WHERE food_name = ? AND ABS(calories - ?) < 0.5",
-                               arguments: [name, cal])
-            }
-            for name in seededComboNames {
-                try db.execute(sql: "DELETE FROM food WHERE LOWER(name) = ? AND source = 'recipe'",
-                               arguments: [name])
-            }
-        }
-    }
+    /// #1001: NEUTRALIZED — now a no-op.
+    ///
+    /// This one-time cleanup previously ran `DELETE FROM food_entry WHERE food_name
+    /// IN ('Dosa','Sambar','Dal Tadka','Roti')` plus Egg/Rice/Chole/Milk/Protein
+    /// Powder matched by exact calorie, to scrub seed data off one autopilot-dev
+    /// device. Shipped to real users, it silently destroyed their genuinely-logged
+    /// Indian-staple entries on the first launch after update — the blast radius was
+    /// essentially every active user. There is no marker distinguishing seeder-inserted
+    /// rows from real user rows, so the delete cannot be scoped safely; it is therefore
+    /// a no-op. Kept (not deleted) so the flag-gated call site and the regression test
+    /// asserting user rows survive stay valid.
+    public func clearAutopilotSeedData() throws {}
 
     /// Wipe all auto-detected combos (category='Combo', source='recipe').
     /// Manually-created combos via QuickAddView have no category set — they survive.
