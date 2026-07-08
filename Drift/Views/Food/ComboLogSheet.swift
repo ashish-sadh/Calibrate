@@ -180,10 +180,19 @@ struct ComboLogSheet: View {
                                proteinG: combo.proteinG, carbsG: combo.carbsG,
                                fatG: combo.fatG, fiberG: combo.fiberG,
                                mealType: mealType, servingSizeG: combo.servingSize, servings: 1)
+        } else if !combo.expandOnLog {
+            // #1027: a recipe logs as ONE aggregated entry under its name (matching logging
+            // it from search), not one diary entry per ingredient. Combos expand; recipes don't.
+            viewModel.quickAdd(name: combo.name,
+                               calories: checkedItems.reduce(0) { $0 + $1.totalCal },
+                               proteinG: checkedItems.reduce(0) { $0 + $1.totalP },
+                               carbsG: checkedItems.reduce(0) { $0 + $1.totalC },
+                               fatG: checkedItems.reduce(0) { $0 + $1.totalF },
+                               fiberG: checkedItems.reduce(0) { $0 + $1.recipeItem.fiberG * $1.servings },
+                               mealType: mealType, servingSizeG: combo.servingSize, servings: 1)
         } else {
-            // Shared helper: one FoodEntry per checked item, scaled by the
-            // per-item stepper. AI chat's QuickAddView expand path uses the
-            // same helper so the diary rows match.
+            // Combo → one FoodEntry per checked item, scaled by the per-item stepper. AI
+            // chat's QuickAddView expand path uses the same helper so the diary rows match.
             let perItem = Dictionary(uniqueKeysWithValues:
                 checkedItems.map { ($0.recipeItem.id, $0.servings) })
             viewModel.logRecipeItems(checkedItems.map { $0.recipeItem },

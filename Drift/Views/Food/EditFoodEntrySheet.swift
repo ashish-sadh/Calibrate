@@ -213,7 +213,7 @@ struct EditFoodEntrySheet: View {
                                 }
                                 overrideMacros.toggle()
                             } label: {
-                                Text(overrideMacros ? "Use serving calculation" : "Edit macros")
+                                Text(overrideMacros ? "Reset to auto" : "Edit macros")
                                     .font(.caption).foregroundStyle(Theme.accent)
                             }
                         }
