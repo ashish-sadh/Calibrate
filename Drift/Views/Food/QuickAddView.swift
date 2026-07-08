@@ -383,17 +383,23 @@ private struct IngredientPickerView: View {
                     results = FoodService.searchFood(query: item.name)
                     if let food = results.first, food.name.lowercased() == item.name.lowercased() {
                         selectedFood = food
-                        // Derive servings from total grams (primary) or calories (fallback for
-                        // items logged before servingSizeG was stored as total grams).
-                        let servings: Double
-                        if food.servingSize > 0 && item.servingSizeG > 0 {
-                            servings = item.servingSizeG / food.servingSize
-                        } else if food.calories > 0 {
-                            servings = item.calories / food.calories
+                        // #1034: `amount` is interpreted in the unit at `selectedUnitIndex`, which
+                        // stays at 0 (= smartUnits.first). Compute it in THAT unit's grams, not in
+                        // "servings" — otherwise a gram-serving food (unit[0] = "g", gramsEquivalent
+                        // 1) reads "1 serving" as "1 gram" and Save collapses the item to ~0 cal.
+                        // Derive the item's real grams first (servingSizeG, or calories for older
+                        // entries), then divide by the default unit's grams.
+                        let itemGrams: Double
+                        if item.servingSizeG > 0 {
+                            itemGrams = item.servingSizeG
+                        } else if food.calories > 0 && food.servingSize > 0 {
+                            itemGrams = (item.calories / food.calories) * food.servingSize
                         } else {
-                            servings = 1
+                            itemGrams = food.servingSize
                         }
-                        amount = servings == Double(Int(servings)) ? "\(Int(servings))" : String(format: "%.1f", servings)
+                        let unitGrams = FoodUnit.smartUnits(for: food).first?.gramsEquivalent ?? 1
+                        let amt = unitGrams > 0 ? itemGrams / unitGrams : 1
+                        amount = amt == Double(Int(amt)) ? "\(Int(amt))" : String(format: "%.1f", amt)
                     }
                 } else {
                     // #premium-polish: next-runloop focus instead of a 300ms
