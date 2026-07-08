@@ -573,6 +573,9 @@ struct ActiveWorkoutView: View {
         return parts.count > 1 ? parts[1].trimmingCharacters(in: .whitespaces) : "0"
     }
 
+    /// #1022: display a weight trimming trailing zeros — 42.5 → "42.5", 40.0 → "40".
+    private func fmtWeight(_ v: Double) -> String { String(format: "%g", v) }
+
     private func isAssistedExercise(_ name: String) -> Bool {
         let e = name.lowercased()
         return e.contains("assisted") || e.contains("assist")
@@ -742,7 +745,7 @@ struct ActiveWorkoutView: View {
         } ?? []
 
         let previous = lastSession.prefix(5).map { s in
-            "\(Int(s.weightLbs ?? 0)) lbs \u{00D7} \(s.reps ?? 0)"
+            "\(fmtWeight(s.weightLbs ?? 0)) lbs \u{00D7} \(s.reps ?? 0)"
         }
 
         let count = setCount ?? (lastSession.isEmpty ? 3 : max(lastSession.count, 3))
@@ -750,7 +753,7 @@ struct ActiveWorkoutView: View {
         for i in 0..<count {
             if i < lastSession.count {
                 let s = lastSession[i]
-                sets.append(ActiveSet(weight: s.weightLbs.map { String(Int($0)) } ?? "",
+                sets.append(ActiveSet(weight: s.weightLbs.map { fmtWeight($0) } ?? "",
                                       reps: s.reps.map { String($0) } ?? "", isWarmup: isWarmup))
             } else {
                 sets.append(ActiveSet(weight: "", reps: "", isWarmup: isWarmup))
@@ -782,7 +785,7 @@ struct ActiveWorkoutView: View {
             for (ei, ex) in exercises.enumerated() {
                 let isDuration = WorkoutSet.isDurationExercise(ex.name)
                 for (si, s) in ex.sets.enumerated() where s.done {
-                    let w = Double(s.weight) ?? 0
+                    let w = Double(s.weight.replacingOccurrences(of: ",", with: ".")) ?? 0  // #1022: comma-decimal locales
                     let r = Int(s.reps) ?? 0
                     let dur = isDuration ? (Int(s.reps) ?? 0) : nil // duration exercises store seconds in reps field
                     guard r > 0 || (isDuration && (dur ?? 0) > 0) else { continue }
@@ -796,7 +799,7 @@ struct ActiveWorkoutView: View {
                 for (ei, ex) in exercises.enumerated() {
                     let isDuration = WorkoutSet.isDurationExercise(ex.name)
                     for (si, s) in ex.sets.enumerated() {
-                        let w = Double(s.weight) ?? 0
+                        let w = Double(s.weight.replacingOccurrences(of: ",", with: ".")) ?? 0  // #1022: comma-decimal locales
                         let r = Int(s.reps) ?? 0
                         let dur = isDuration ? (Int(s.reps) ?? 0) : nil
                         guard r > 0 || (isDuration && (dur ?? 0) > 0) else { continue }
