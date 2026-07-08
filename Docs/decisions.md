@@ -341,3 +341,31 @@ Decisions:
 
 Existing users will see a one-time TDEE step-up (e.g. +450 for 100 kg no-profile). That's the fix
 working, not a regression — the old number was the complaint.
+
+### Weight-trend rate: significance zeroing → two-tier confidence ramp (2026-07-07 evening)
+
+Operator field session (their own bulk data, cross-checked against a competing tracker): the 2026-05-29
+significance gate zeroed a REAL young trend — chart visibly climbing +1.4 lbs over 5 weeks, cards stuck
+on "≈0 · Holding steady", Projected flat — while Weekly (raw, added that morning) showed +1.25 lbs/wk.
+Operator: "it's fine to report surplus — why is it saying holding steady?" But removing the gate outright
+resurrected the May bug verbatim (flat-noisy pinned dataset read −256 kcal/day; original complaint −248).
+
+Measured t-statistics on the pinned datasets found an empirical gap:
+pure-noise seeds 0.15–0.89 · May flat-noisy user 0.26 · operator's real-but-young bulk 1.73 ·
+established cuts/bulks 2.3–12.
+
+Decisions:
+1. Rate smoothing half-life 5d → 8d: the 5d slope overshot a bulk-start week (+0.57 kg/wk → +622 kcal/day
+   vs ~0.40 the smoothed trend supports); the full 14d display EMA was tried and REJECTED — it kept the
+   wrong SIGN 3+ weeks after a regime change (regimeChange_* tests, the "+1.2 lbs but −213 deficit" class).
+2. Publish the rate scaled by a CONFIDENCE RAMP on the raw-window t-stat: weight 0 at t=1.0, full at
+   t=1.6 (constants reportRampStartT/reportRampFullT). Noise stays zeroed (max noise t 0.89), young real
+   trends fade in, and no hard boundary exists for one weigh-in to flap the card across (stability test
+   caught a 270-kcal flip at a hard bar).
+3. significanceTThreshold (2.0) survives as trendIsSignificant — UI framing only: "Early trend — firming
+   up" between ramp and 2.0, "Based on last N days" above.
+4. Weekly, Est. Balance, AND Projected now all derive from the same reported rate — the operator's
+   screenshot showed "Weekly +1.25 / Projected +0.0 in 30d" side by side, which read as broken math.
+
+Result on operator's data: +0.40 kg/wk → +437 kcal/day → 30d projection +3.7 lbs — coherent with the
+competing tracker (0.38 / 418 / +1.7 kg) while our heavier smoothing stays calmer on spikes.

@@ -329,27 +329,38 @@ struct WeightTDEEScenarioTests {
                 "With no real trend the estimate must stay at base \(Int(base)), got \(Int(r.tdee))")
     }
 
-    // MARK: - Raw rate transparency (2026-07-07 "don't hide the math")
+    // MARK: - EMA-slope rate (2026-07-07 operator decision: always report)
 
-    @Test func maintainingTrend_stillExposesRawRateForDisplay() async throws {
-        // A gently-drifting-but-sub-significance trajectory collapses the
-        // GATED rate to 0 (maintaining) — but the raw measured slope must
-        // survive on rawWeeklyRateKg so the UI can show the actual number
-        // instead of "≈0.0". The gated value stays authoritative for TDEE/
-        // direction/projection.
+    @Test func emaSlopeRate_isAlwaysReportedWithConfidenceFlag() async throws {
+        // A gentle real drift (+0.056 kg/wk-ish) through heavy noise: the
+        // published rate is the EMA slope — reported even when the raw
+        // weigh-ins don't clear statistical significance. Confidence rides
+        // the trendIsSignificant flag instead of zeroing the number.
         let es = Self.entries(days: 40, cadence: 1, startKg: 54.5, ratePerDayKg: 0.008, noiseKg: 1.2, seed: 21)
         let t = try #require(WeightTrendCalculator.calculateTrend(entries: es))
         #expect(t.rawWeeklyRateKg.isFinite)
         #expect(abs(t.rawWeeklyRateKg) <= WeightTrendCalculator.maxAbsWeeklyRateKg + 1e-6)
         if t.trendDirection == .maintaining {
-            #expect(t.weeklyRateKg == 0, "Gated rate collapses to 0 when maintaining")
-            #expect(t.rawEstimatedDailyDeficit == t.rawWeeklyRateKg * t.config.kcalPerKg / 7)
+            #expect(t.weeklyRateKg == 0, "Sub-band slope collapses to 0 (genuinely flat)")
+        } else {
+            #expect(t.weeklyRateKg == t.rawWeeklyRateKg, "Published rate IS the (clamped) EMA slope — no significance zeroing")
         }
-        // Whatever the gate decided, raw and gated must agree in sign when
-        // both are non-zero (raw is the pre-gate version of the same slope).
-        if t.weeklyRateKg != 0 && t.rawWeeklyRateKg != 0 {
-            #expect((t.weeklyRateKg > 0) == (t.rawWeeklyRateKg > 0))
-        }
+        #expect(t.rawEstimatedDailyDeficit == t.rawWeeklyRateKg * t.config.kcalPerKg / 7)
+    }
+
+    @Test func emaSlopeRate_calmOnSpikeButPresentOnRealTrend() async throws {
+        // The 622-vs-418 field case in miniature: a steady gain with one big
+        // water spike. The EMA slope must (a) still REPORT a surplus-side
+        // rate (no "holding steady" hedge on a real climb), (b) not be
+        // dramatically inflated by the single spike day.
+        var es = Self.entries(days: 35, cadence: 1, startKg: 53.5, ratePerDayKg: 0.055, noiseKg: 0.4, seed: 11)
+        es[30].weightKg += 1.7   // one salty-meal / water spike near the end
+        let t = try #require(WeightTrendCalculator.calculateTrend(entries: es))
+        Self.assertSane(t, "spiked-gain")
+        #expect(t.weeklyRateKg > 0.1, "A real gain must be reported, got \(t.weeklyRateKg) kg/wk")
+        // True rate is 0.385 kg/wk; the spike must not balloon it (the old
+        // light-smooth slope overshot ~60% on this shape).
+        #expect(t.weeklyRateKg < 0.55, "Spike inflated the EMA slope too much: \(t.weeklyRateKg) kg/wk")
     }
 
     @Test func insufficientData_rawRateIsZeroPlaceholder() async throws {

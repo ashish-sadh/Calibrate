@@ -56,18 +56,18 @@ struct WeightInsightsView: View {
                         nudge: "Log a few more days"
                     )
                 } else if trend.trendDirection == .maintaining {
-                    // Statistically flat — but show the ACTUAL measured slope
-                    // instead of "≈0.0" (field ask 2026-07-07: "say whatever
-                    // number it is, don't hide the math"). Grey + the
-                    // "Holding steady" nudge keep the honest framing: this
-                    // number is below the noise threshold.
+                    // Genuinely flat trend slope (below the maintaining band,
+                    // ~±0.05 kg/wk) — "≈0" is the honest number here, not a
+                    // gate hiding a real one (2026-07-07: the significance
+                    // gate no longer zeroes the rate; only tiny slopes land
+                    // in this branch).
                     metricCell(
                         id: "weekly",
                         label: "Weekly",
-                        value: String(format: "%+.2f", unit.convert(fromKg: trend.rawWeeklyRateKg)),
+                        value: "≈0.0",
                         valueUnit: "\(unit.displayName)/wk",
                         color: Theme.textSecondary,
-                        tooltip: "The raw measured slope over the past \(trend.rateWindowDays) days. It's below the noise threshold — statistically your weight is holding steady; the day-to-day ups and downs are mostly water.",
+                        tooltip: "Your trend line is flat over the past \(trend.rateWindowDays) days (raw slope \(String(format: "%+.2f", unit.convert(fromKg: trend.rawWeeklyRateKg))) \(unit.displayName)/wk) — the day-to-day ups and downs are mostly water.",
                         nudge: "Holding steady"
                     )
                 } else {
@@ -80,8 +80,8 @@ struct WeightInsightsView: View {
                         color: changeColor(rate),
                         direction: directionIcon(rate),
                         directionColor: changeColor(rate),
-                        tooltip: "Your typical weekly rate of change over the past \(trend.rateWindowDays) days.",
-                        nudge: "Based on last \(trend.rateWindowDays) days"
+                        tooltip: "The slope of your smoothed trend line over the past \(trend.rateWindowDays) days\(trend.trendIsSignificant ? "." : " — an early read; day-to-day scatter is still large relative to this trend, so expect it to firm up with more weigh-ins.")",
+                        nudge: trend.trendIsSignificant ? "Based on last \(trend.rateWindowDays) days" : "Early trend — firming up"
                     )
                 }
             }
@@ -98,19 +98,17 @@ struct WeightInsightsView: View {
                         nudge: "Log a few more days"
                     )
                 } else if trend.trendDirection == .maintaining {
-                    // Statistically flat — show the raw implied balance number
-                    // for transparency (field ask 2026-07-07), but keep it
-                    // GREY with the "Holding steady" nudge: the 2026-05-29
-                    // field bug was printing this as a confident goal-colored
-                    // "Est. Deficit −248" whose sign flipped with the chart
-                    // range. The number is visible; the verdict stays honest.
+                    // Genuinely flat trend slope — ≈0 is the measurement, not
+                    // a gate (2026-07-07: rate now comes from the smoothed
+                    // trend's slope and is always reported; only sub-band
+                    // slopes land here).
                     metricCell(
                         id: "deficit",
                         label: "Est. Balance",
-                        value: String(format: "%+.0f", trend.rawEstimatedDailyDeficit),
+                        value: "≈0",
                         valueUnit: "kcal/day",
                         color: Theme.textSecondary,
-                        tooltip: "The raw energy balance implied by the measured slope over the past \(trend.rateWindowDays) days. It's below the noise threshold — statistically your weight is holding steady, so treat this as noise, not a verdict.",
+                        tooltip: "Your trend line is flat over the past \(trend.rateWindowDays) days — no meaningful surplus or deficit is showing.",
                         nudge: "Holding steady"
                     )
                 } else {
@@ -126,8 +124,8 @@ struct WeightInsightsView: View {
                         color: deficitColor,
                         direction: directionIcon(deficit),
                         directionColor: deficitColor,
-                        tooltip: "Estimated daily caloric \(deficit < 0 ? "deficit" : "surplus") based on your weight trend over the past \(trend.rateWindowDays) days.",
-                        nudge: "Based on last \(trend.rateWindowDays) days"
+                        tooltip: "Estimated daily caloric \(deficit < 0 ? "deficit" : "surplus") based on your smoothed weight trend over the past \(trend.rateWindowDays) days.\(trend.trendIsSignificant ? "" : " Early read — it will firm up as weigh-ins accumulate.")",
+                        nudge: trend.trendIsSignificant ? "Based on last \(trend.rateWindowDays) days" : "Early trend — firming up"
                     )
                 }
 
