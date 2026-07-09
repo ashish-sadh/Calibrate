@@ -221,7 +221,10 @@ struct FoodLogSheet: View {
     }
 
     private func logAndDismiss() {
-        foodLog.logFood(food, servings: multiplier, mealType: mealType, loggedAt: logTime)
+        // Anchor the picker's time-of-day onto the VM's viewed day (no-op for
+        // today) — past-day logs must not carry a today timestamp.
+        foodLog.logFood(food, servings: multiplier, mealType: mealType,
+                        loggedAt: foodLog.anchoredToSelectedDay(logTime))
         onLogged()
         dismiss()
     }

@@ -27,12 +27,22 @@ import DriftCore
 /// transcript into the Drift Coach chat via NotificationCenter.
 struct VoiceLogSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var viewModel = VoiceLogViewModel()
+    @State private var viewModel: VoiceLogViewModel
     /// Buffer for the "Describe your meal" field. Kept as view state so a
     /// parse error → "Try again" returns the user here with text intact;
     /// dictation fills the same buffer (#935: type or speak, one input).
     @State private var draft = ""
     @FocusState private var fieldFocused: Bool
+
+    /// `date` seeds the internal FoodLogViewModel so a Describe log lands on
+    /// the day the user is viewing, not always today — this was the last
+    /// LogMealSheet tab still logging past-day entries onto today (past-day
+    /// logging fix, 2026-07-09). Defaults to today for standalone use.
+    init(date: Date = Date()) {
+        let vm = VoiceLogViewModel()
+        vm.foodLog.selectedDate = date
+        _viewModel = State(initialValue: vm)
+    }
 
     var body: some View {
         VStack(spacing: 0) {

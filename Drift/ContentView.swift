@@ -87,7 +87,14 @@ struct ContentView: View {
                     pendingLogMealMode = .recent
                 }
             }
-            .onReceive(NotificationCenter.default.publisher(for: .openPhotoLog)) { _ in
+            .onReceive(NotificationCenter.default.publisher(for: .openPhotoLog)) { notification in
+                // Target day: diary camera shortcut passes the viewed date;
+                // Dashboard Snap chip passes none → today. Setting it every
+                // time also fixes a stale-day bug: photoLogVM is created once
+                // per app session, so without this reset a snap after
+                // midnight logged to the PREVIOUS day (past-day logging fix,
+                // 2026-07-09).
+                photoLogVM.selectedDate = notification.userInfo?["date"] as? Date ?? Date()
                 showingPhotoLog = true
             }
             .fullScreenCover(isPresented: $showingPhotoLog, onDismiss: {

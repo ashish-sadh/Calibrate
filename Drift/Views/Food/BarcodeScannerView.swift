@@ -416,7 +416,10 @@ struct BarcodeLookupView: View {
         let amountNum = Double(amount) ?? 1
         let totalGrams = amountNum * unit.gramsEquivalent
         let multiplier = servingG > 0 ? totalGrams / servingG : amountNum
-        viewModel.logFood(food, servings: multiplier, mealType: viewModel.autoMealType, loggedAt: barcodeLogTime)
+        // Anchor the picker's time-of-day onto the viewed day (no-op for
+        // today) — past-day logs must not carry a today timestamp.
+        viewModel.logFood(food, servings: multiplier, mealType: viewModel.autoMealType,
+                          loggedAt: viewModel.anchoredToSelectedDay(barcodeLogTime))
         dismiss()
     }
 

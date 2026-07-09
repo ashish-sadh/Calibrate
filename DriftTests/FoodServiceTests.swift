@@ -327,6 +327,50 @@ import Testing
     #expect(cal.component(.hour, from: tsDate) == 19, "dinner back-fill should use canonical 19:00")
 }
 
+@Test @MainActor func anchoredToSelectedDayMovesTimeOntoViewedDay() throws {
+    let db = try AppDatabase.empty()
+    let vm = FoodLogViewModel(database: db)
+    let cal = Calendar.current
+    let twoDaysAgo = cal.date(byAdding: .day, value: -2, to: Date())!
+    vm.selectedDate = twoDaysAgo
+
+    // A time picker always hands back a today-dated Date; the helper must
+    // carry the hour/minute onto the viewed day.
+    let pickedTime = cal.date(bySettingHour: 9, minute: 45, second: 0, of: Date())!
+    let anchored = vm.anchoredToSelectedDay(pickedTime)
+    #expect(cal.isDate(anchored, inSameDayAs: twoDaysAgo))
+    #expect(cal.component(.hour, from: anchored) == 9)
+    #expect(cal.component(.minute, from: anchored) == 45)
+
+    // Viewing today → passthrough, exact instant preserved.
+    vm.selectedDate = Date()
+    #expect(vm.anchoredToSelectedDay(pickedTime) == pickedTime)
+}
+
+@Test @MainActor func explicitTodayAnchoredLoggedAtOnPastDayStillLandsOnViewedDay() throws {
+    // The leak class behind the 2026-07-09 follow-up report: sheets passing
+    // an explicit today-dated loggedAt. The DAY comes from selectedDate
+    // regardless; after routing through anchoredToSelectedDay the timestamp
+    // agrees with the day too.
+    let db = try AppDatabase.empty()
+    let vm = FoodLogViewModel(database: db)
+    let cal = Calendar.current
+    let twoDaysAgo = cal.date(byAdding: .day, value: -2, to: Date())!
+    vm.selectedDate = twoDaysAgo
+
+    let food = Food(name: "Chai", category: "Beverages", servingSize: 240, servingUnit: "ml", calories: 90)
+    let picked = cal.date(bySettingHour: 17, minute: 30, second: 0, of: Date())!
+    vm.logFood(food, servings: 1, mealType: .snack, loggedAt: vm.anchoredToSelectedDay(picked))
+
+    let entries = try db.fetchFoodEntries(for: DateFormatters.dateOnly.string(from: twoDaysAgo))
+    #expect(entries.count == 1)
+    let ts = try #require(entries.first?.loggedAt)
+    let tsDate = try #require(ISO8601DateFormatter().date(from: ts) ?? DateFormatters.iso8601.date(from: ts))
+    #expect(cal.isDate(tsDate, inSameDayAs: twoDaysAgo))
+    #expect(cal.component(.hour, from: tsDate) == 17)
+    #expect(try db.fetchFoodEntries(for: DateFormatters.todayString).isEmpty)
+}
+
 // MARK: - Recipe Expand-On-Log (#190)
 
 @Test @MainActor func logRecipeAggregatedByDefault() throws {

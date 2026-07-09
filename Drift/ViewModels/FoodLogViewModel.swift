@@ -50,6 +50,19 @@ final class FoodLogViewModel {
         return Calendar.current.date(bySettingHour: hour, minute: 0, second: 0, of: target) ?? target
     }
 
+    /// Anchor a time-of-day (from an hour/minute DatePicker, whose date
+    /// component is always "today") onto the day this VM is viewing. Sheets
+    /// with a Time picker (search, barcode, manual entry, suggestions) must
+    /// route their chosen time through this, or a past-day log gets a
+    /// today-dated timestamp (past-day logging fix, 2026-07-08/09).
+    func anchoredToSelectedDay(_ time: Date) -> Date {
+        let cal = Calendar.current
+        guard !cal.isDateInToday(selectedDate) else { return time }
+        let hm = cal.dateComponents([.hour, .minute], from: time)
+        return cal.date(bySettingHour: hm.hour ?? 12, minute: hm.minute ?? 0,
+                        second: 0, of: selectedDate) ?? selectedDate
+    }
+
     init(database: AppDatabase = .shared) {
         self.database = database
         #if targetEnvironment(simulator)

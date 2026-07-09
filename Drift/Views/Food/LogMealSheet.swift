@@ -175,7 +175,10 @@ struct LogMealSheet: View {
         case .recent: recentContent
         case .search: searchContent
         // #935: one Describe method — type or speak into the same input.
-        case .describe: VoiceLogSheet()
+        // Seeded with the sheet's target day so a past-day Describe log
+        // lands on the viewed day (2026-07-09 — this tab was the leak the
+        // 2026-07-08 fix missed: it built its own today-VM).
+        case .describe: VoiceLogSheet(date: foodLogVM.selectedDate)
         case .snap:
             // Brief placeholder while PhotoLogFlowView covers — the
             // .onAppear / .onChange handlers above flip showingPhotoLog

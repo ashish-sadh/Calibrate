@@ -113,7 +113,11 @@ struct FoodTabView: View {
                 HStack {
                     Spacer()
                     Button {
-                        NotificationCenter.default.post(name: .openPhotoLog, object: nil)
+                        // "date": snap from the diary logs to the VIEWED day
+                        // (past-day logging fix, 2026-07-09); the Dashboard
+                        // Snap chip posts no date → today.
+                        NotificationCenter.default.post(name: .openPhotoLog, object: nil,
+                                                        userInfo: ["date": viewModel.selectedDate])
                     } label: {
                         Image(systemName: "camera.viewfinder")
                             .font(.system(size: Theme.FontSize.body, weight: .semibold))

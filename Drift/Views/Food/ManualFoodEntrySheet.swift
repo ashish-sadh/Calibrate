@@ -133,7 +133,9 @@ struct ManualFoodEntrySheet: View {
                         case "tbsp": servingVal * 15
                         default: 0
                         }
-                        let loggedAtStr = ISO8601DateFormatter().string(from: logTime)
+                        // Anchor the picker's time-of-day onto the viewed day —
+                        // past-day logs must not carry a today timestamp.
+                        let loggedAtStr = ISO8601DateFormatter().string(from: viewModel.anchoredToSelectedDay(logTime))
                         viewModel.quickAdd(name: name.isEmpty ? "Quick Add" : name,
                                            calories: totalCal, proteinG: p, carbsG: c, fatG: f,
                                            fiberG: Double(fiber) ?? 0, mealType: viewModel.autoMealType,
