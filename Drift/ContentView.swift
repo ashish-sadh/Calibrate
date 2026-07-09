@@ -15,17 +15,22 @@ struct ContentView: View {
     var launchStage: LaunchStage
 
     @State private var selectedTab: PrimaryTab = .today
-    /// Drives the LogMealSheet presentation *and* its initial segment.
-    /// Using `.sheet(item:)` (not a separate `isPresented` + mode pair)
-    /// so the sheet always opens on the requested segment — the
-    /// two-@State version raced and opened on `.recent` regardless of
-    /// the `.openLogMeal` mode. Set by the Dashboard quick-log chips.
-    @State private var pendingLogMealMode: LogMealMode?
-    /// Day the Log-a-Meal sheet should target. The Food diary's "+ Add food"
-    /// passes the viewed date (via `.openLogMeal` userInfo["date"]) so a
-    /// back-filled log lands on that day; global entry points (Dashboard
-    /// cards) omit it → today. Past-day logging fix, 2026-07-08.
-    @State private var pendingLogMealDate: Date = Date()
+    /// Everything the Log-a-Meal sheet needs, folded into ONE `.sheet(item:)`
+    /// payload. History demands it: the original two-@State version (bool +
+    /// mode) raced and opened on `.recent` regardless of the requested mode;
+    /// then the 2026-07-08 past-day fix reintroduced the same race by adding
+    /// the target date as a SECOND @State next to the item — first
+    /// presentation after picking a past day evaluated the sheet closure
+    /// with the stale (today) date, second attempt worked ("flaky" field
+    /// report, 2026-07-09). Mode + date now travel atomically in the item.
+    struct LogMealRequest: Identifiable {
+        let id = UUID()
+        let mode: LogMealMode
+        /// Target day: the Food diary's "+ Add food" passes its viewed date;
+        /// global entry points (Dashboard cards) omit it → today.
+        let date: Date
+    }
+    @State private var pendingLogMeal: LogMealRequest?
     /// V7 polish: Snap chip routes directly here instead of through
     /// the Log-a-Meal sheet — user expected camera-first.
     @State private var showingPhotoLog = false
@@ -67,8 +72,8 @@ struct ContentView: View {
                 tabBarOverlay
             }
             .background(Theme.background.ignoresSafeArea())
-            .sheet(item: $pendingLogMealMode) { mode in
-                LogMealSheet(initialMode: mode, date: pendingLogMealDate)
+            .sheet(item: $pendingLogMeal) { request in
+                LogMealSheet(initialMode: request.mode, date: request.date)
             }
             .onReceive(NotificationCenter.default.publisher(for: .navigateToTab)) { notification in
                 if let tab = notification.userInfo?["tab"] as? Int,
@@ -77,15 +82,13 @@ struct ContentView: View {
                 }
             }
             .onReceive(NotificationCenter.default.publisher(for: .openLogMeal)) { notification in
-                // Read the target day BEFORE flipping the item that presents
-                // the sheet. Absent ⇒ today (Dashboard/global entry points).
-                pendingLogMealDate = notification.userInfo?["date"] as? Date ?? Date()
-                if let rawMode = notification.userInfo?["mode"] as? String,
-                   let mode = LogMealMode(rawValue: rawMode) {
-                    pendingLogMealMode = mode
-                } else {
-                    pendingLogMealMode = .recent
-                }
+                // ONE atomic item: mode + target day (absent ⇒ today for
+                // Dashboard/global entry points). Never split across two
+                // @States — see LogMealRequest's doc comment for the races.
+                let mode = (notification.userInfo?["mode"] as? String)
+                    .flatMap(LogMealMode.init(rawValue:)) ?? .recent
+                let date = notification.userInfo?["date"] as? Date ?? Date()
+                pendingLogMeal = LogMealRequest(mode: mode, date: date)
             }
             .onReceive(NotificationCenter.default.publisher(for: .openPhotoLog)) { notification in
                 // Target day: diary camera shortcut passes the viewed date;
