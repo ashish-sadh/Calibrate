@@ -643,9 +643,9 @@
   "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Bench_Press_-_Medium_Grip/0.jpg",
   "instructions": [
    "Setup: Grip slightly wider than shoulder-width; arch upper back, feet flat; retract and depress scapulae.",
-   "Execution: Lower bar to lower chest with elbows ~60\u00b0 from torso; press in a slight arc back up.",
-   "Common error: Elbows flaring to 90\u00b0 \u2014 increases shoulder impingement risk; tuck them slightly.",
-   "Common error: Bouncing off chest \u2014 control the eccentric; brief pause at bottom."
+   "Execution: Lower bar to lower chest with elbows ~60° from torso; press in a slight arc back up.",
+   "Common error: Elbows flaring to 90° — increases shoulder impingement risk; tuck them slightly.",
+   "Common error: Bouncing off chest — control the eccentric; brief pause at bottom."
   ]
  },
  {
@@ -697,8 +697,8 @@
   "instructions": [
    "Setup: Bar over mid-foot, hip-width stance; hinge to grip just outside legs; neutral spine.",
    "Execution: Push the floor away, drag bar up shins; once past knees, drive hips forward to lockout.",
-   "Common error: Lower-back rounding \u2014 brace harder and hinge rather than squat the pull.",
-   "Common error: Bar drifting forward \u2014 keep it close to body throughout the lift."
+   "Common error: Lower-back rounding — brace harder and hinge rather than squat the pull.",
+   "Common error: Bar drifting forward — keep it close to body throughout the lift."
   ]
  },
  {
@@ -721,7 +721,7 @@
    "Setup: Bar on upper traps; feet shoulder-width, toes slightly out; brace core before unracking.",
    "Execution: Break at hips and knees simultaneously; descend until thighs are parallel or below.",
    "Drive: Push through full foot back to standing; keep chest up throughout.",
-   "Common error: Knees caving inward (valgus) \u2014 actively push knees out over toes."
+   "Common error: Knees caving inward (valgus) — actively push knees out over toes."
   ]
  },
  {
@@ -787,8 +787,8 @@
   "instructions": [
    "Setup: Upper back on bench edge; padded bar across hips; feet flat, hip-width, close to body.",
    "Execution: Drive hips up to full extension (body parallel to floor); squeeze glutes hard at the top.",
-   "Common error: Overextending the lower back \u2014 keep ribs down and pelvis neutral at lockout.",
-   "Common error: Feet too far away \u2014 reduces glute activation; bring feet closer to your hips."
+   "Common error: Overextending the lower back — keep ribs down and pelvis neutral at lockout.",
+   "Common error: Feet too far away — reduces glute activation; bring feet closer to your hips."
   ]
  },
  {
@@ -806,10 +806,10 @@
   "level": "beginner",
   "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Incline_Bench_Press_-_Medium_Grip/0.jpg",
   "instructions": [
-   "Setup: Bench at 30\u201345\u00b0; grip same as flat bench; retract shoulder blades against the pad.",
+   "Setup: Bench at 30–45°; grip same as flat bench; retract shoulder blades against the pad.",
    "Execution: Lower to upper chest; press up and slightly back to the starting position.",
-   "Common error: Bench angle above 45\u00b0 \u2014 shifts load from upper chest to front deltoids.",
-   "Common error: Wrists bent back \u2014 stack wrists over elbows and keep them neutral."
+   "Common error: Bench angle above 45° — shifts load from upper chest to front deltoids.",
+   "Common error: Wrists bent back — stack wrists over elbows and keep them neutral."
   ]
  },
  {
@@ -1057,7 +1057,8 @@
   "equipment": "other",
   "category": "strongman",
   "level": "beginner",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bear_Crawl_Sled_Drags/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bear_Crawl_Sled_Drags/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "Behind Head Chest Stretch",
@@ -1229,10 +1230,10 @@
   "level": "beginner",
   "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bent_Over_Barbell_Row/0.jpg",
   "instructions": [
-   "Setup: Hip-hinge to ~45\u00b0 torso angle; overhand grip wider than shoulder-width; neutral spine.",
+   "Setup: Hip-hinge to ~45° torso angle; overhand grip wider than shoulder-width; neutral spine.",
    "Execution: Drive elbows back and up to lower sternum; squeeze shoulder blades at top.",
-   "Common error: Using hip momentum \u2014 initiate the pull with your back, not a lower-body thrust.",
-   "Common error: Rounding the back \u2014 engage lats before starting the pull."
+   "Common error: Using hip momentum — initiate the pull with your back, not a lower-body thrust.",
+   "Common error: Rounding the back — engage lats before starting the pull."
   ]
  },
  {
@@ -1359,7 +1360,8 @@
   "equipment": "other",
   "category": "cardio",
   "level": "beginner",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bicycling/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bicycling/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "Bicycling, Stationary",
@@ -1375,7 +1377,8 @@
   "equipment": "machine",
   "category": "cardio",
   "level": "beginner",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bicycling_Stationary/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bicycling_Stationary/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "Board Press",
@@ -1466,22 +1469,6 @@
   "category": "strength",
   "level": "beginner",
   "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bodyweight_Squat/0.jpg"
- },
- {
-  "name": "Bodyweight Walking Lunge",
-  "bodyPart": "Legs",
-  "primaryMuscles": [
-   "quadriceps"
-  ],
-  "secondaryMuscles": [
-   "calves",
-   "glutes",
-   "hamstrings"
-  ],
-  "equipment": "body only",
-  "category": "strength",
-  "level": "beginner",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bodyweight_Walking_Lunge/0.jpg"
  },
  {
   "name": "Bosu Ball Cable Crunch With Side Bends",
@@ -2570,8 +2557,8 @@
   "instructions": [
    "Setup: Shoulder-width grip; lie flat and retract scapulae; elbows tucked close to torso.",
    "Execution: Lower bar to lower chest; press focusing on triceps extension; elbows stay in throughout.",
-   "Common error: Grip too narrow \u2014 causes wrist strain; shoulder-width is sufficient.",
-   "Common error: Elbows flaring out \u2014 defeats triceps focus; keep them at ~30\u00b0 from torso."
+   "Common error: Grip too narrow — causes wrist strain; shoulder-width is sufficient.",
+   "Common error: Elbows flaring out — defeats triceps focus; keep them at ~30° from torso."
   ]
  },
  {
@@ -2709,20 +2696,6 @@
   "category": "strongman",
   "level": "intermediate",
   "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Conans_Wheel/0.jpg"
- },
- {
-  "name": "Concentration Curls",
-  "bodyPart": "Arms",
-  "primaryMuscles": [
-   "biceps"
-  ],
-  "secondaryMuscles": [
-   "forearms"
-  ],
-  "equipment": "dumbbell",
-  "category": "strength",
-  "level": "beginner",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Concentration_Curls/0.jpg"
  },
  {
   "name": "Cross-Body Crunch",
@@ -3142,9 +3115,9 @@
   "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dips_-_Triceps_Version/0.jpg",
   "instructions": [
    "Setup: Grip parallel bars, arms straight; stay upright (lean forward to shift load to chest).",
-   "Execution: Lower until elbows reach 90\u00b0; press back to full extension without locking out aggressively.",
-   "Common error: Dropping too deep \u2014 strains shoulders; stop at 90\u00b0 elbow bend.",
-   "Common error: Elbows flaring wide \u2014 keep them tucked close to the torso."
+   "Execution: Lower until elbows reach 90°; press back to full extension without locking out aggressively.",
+   "Common error: Dropping too deep — strains shoulders; stop at 90° elbow bend.",
+   "Common error: Elbows flaring wide — keep them tucked close to the torso."
   ]
  },
  {
@@ -3442,22 +3415,6 @@
   "category": "strength",
   "level": "beginner",
   "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Incline_Shoulder_Raise/0.jpg"
- },
- {
-  "name": "Dumbbell Lunges",
-  "bodyPart": "Legs",
-  "primaryMuscles": [
-   "quadriceps"
-  ],
-  "secondaryMuscles": [
-   "calves",
-   "glutes",
-   "hamstrings"
-  ],
-  "equipment": "dumbbell",
-  "category": "strength",
-  "level": "beginner",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Lunges/0.jpg"
  },
  {
   "name": "Dumbbell Lying One-Arm Rear Lateral Raise",
@@ -3871,7 +3828,8 @@
   "equipment": "machine",
   "category": "cardio",
   "level": "intermediate",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Elliptical_Trainer/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Elliptical_Trainer/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "Exercise Ball Crunch",
@@ -3965,8 +3923,8 @@
   "instructions": [
    "Setup: Cable at face height with rope attachment; step back far enough for full extension.",
    "Execution: Pull rope to either side of face with elbows high and flared; externally rotate at peak.",
-   "Common error: Elbows dropping below shoulder height \u2014 shifts load to biceps, not rear delts.",
-   "Common error: Too much weight \u2014 use a light load and focus on the contraction and external rotation."
+   "Common error: Elbows dropping below shoulder height — shifts load to biceps, not rear delts.",
+   "Common error: Too much weight — use a light load and focus on the contraction and external rotation."
   ]
  },
  {
@@ -3986,7 +3944,8 @@
   "equipment": "other",
   "category": "strongman",
   "level": "intermediate",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Farmers_Walk/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Farmers_Walk/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "Fast Skipping",
@@ -4553,18 +4512,6 @@
   "level": "beginner",
   "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Hack_Squat/0.jpg",
   "youtubeUrl": "https://www.youtube.com/results?search_query=hack%20squat%20form%20tutorial"
- },
- {
-  "name": "Hammer Curls",
-  "bodyPart": "Arms",
-  "primaryMuscles": [
-   "biceps"
-  ],
-  "secondaryMuscles": [],
-  "equipment": "dumbbell",
-  "category": "strength",
-  "level": "beginner",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Hammer_Curls/0.jpg"
  },
  {
   "name": "Hammer Grip Incline DB Bench Press",
@@ -5311,7 +5258,8 @@
   "equipment": "body only",
   "category": "plyometrics",
   "level": "beginner",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Isometric_Chest_Squeezes/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Isometric_Chest_Squeezes/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "Isometric Neck Exercise - Front And Back",
@@ -5323,7 +5271,8 @@
   "equipment": "body only",
   "category": "strength",
   "level": "beginner",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Isometric_Neck_Exercise_-_Front_And_Back/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Isometric_Neck_Exercise_-_Front_And_Back/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "Isometric Neck Exercise - Sides",
@@ -5335,7 +5284,8 @@
   "equipment": "body only",
   "category": "strength",
   "level": "beginner",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Isometric_Neck_Exercise_-_Sides/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Isometric_Neck_Exercise_-_Sides/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "Isometric Wipers",
@@ -5455,7 +5405,8 @@
   "equipment": "machine",
   "category": "cardio",
   "level": "beginner",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Jogging_Treadmill/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Jogging_Treadmill/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "Keg Load",
@@ -6067,24 +6018,6 @@
   "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg-Up_Hamstring_Stretch/0.jpg"
  },
  {
-  "name": "Leg Extensions",
-  "bodyPart": "Legs",
-  "primaryMuscles": [
-   "quadriceps"
-  ],
-  "secondaryMuscles": [],
-  "equipment": "machine",
-  "category": "strength",
-  "level": "beginner",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Extensions/0.jpg",
-  "instructions": [
-   "Setup: Back against pad; knee at the joint edge; align machine axis with your knee joint.",
-   "Execution: Extend to near full lockout; hold 1 second; lower slowly over 3 seconds.",
-   "Common error: Rushing the eccentric \u2014 the lowering phase builds quad strength; control it.",
-   "Common error: Seat too far back \u2014 shifts shear force onto the knee; adjust the seat forward."
-  ]
- },
- {
   "name": "Leg Lift",
   "bodyPart": "Legs",
   "primaryMuscles": [
@@ -6116,9 +6049,9 @@
   "youtubeUrl": "https://www.youtube.com/results?search_query=leg%20press%20form%20tutorial",
   "instructions": [
    "Setup: Feet shoulder-width, mid-platform; toes slightly out; lower back flat against pad.",
-   "Execution: Lower sled until knees reach 90\u00b0; press through full foot; avoid locking knees at top.",
-   "Common error: Knees caving inward \u2014 push them out in line with toes throughout.",
-   "Common error: Hips rising off pad \u2014 reduces ROM and loads the lower back."
+   "Execution: Lower sled until knees reach 90°; press through full foot; avoid locking knees at top.",
+   "Common error: Knees caving inward — push them out in line with toes throughout.",
+   "Common error: Hips rising off pad — reduces ROM and loads the lower back."
   ]
  },
  {
@@ -6611,24 +6544,6 @@
   "category": "strength",
   "level": "intermediate",
   "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_High_Bench_Barbell_Curl/0.jpg"
- },
- {
-  "name": "Lying Leg Curls",
-  "bodyPart": "Legs",
-  "primaryMuscles": [
-   "hamstrings"
-  ],
-  "secondaryMuscles": [],
-  "equipment": "machine",
-  "category": "strength",
-  "level": "beginner",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_Leg_Curls/0.jpg",
-  "instructions": [
-   "Setup: Lie face down; pad rests just above heels; hips flat on the bench.",
-   "Execution: Curl heels toward glutes through full range; brief hold at top; lower slowly.",
-   "Common error: Hips rising off the pad \u2014 reduces hamstring isolation; keep them down.",
-   "Common error: Short range \u2014 aim for full contraction then full extension every rep."
-  ]
  },
  {
   "name": "Lying Machine Squat",
@@ -7596,7 +7511,8 @@
   "equipment": "other",
   "category": "stretching",
   "level": "beginner",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/One_Handed_Hang/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/One_Handed_Hang/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "One Knee To Chest",
@@ -7937,7 +7853,8 @@
   "category": "strength",
   "level": "beginner",
   "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Plank/0.jpg",
-  "youtubeUrl": "https://www.youtube.com/results?search_query=plank%20form%20tutorial%20core"
+  "youtubeUrl": "https://www.youtube.com/results?search_query=plank%20form%20tutorial%20core",
+  "trackingType": "time"
  },
  {
   "name": "Plate Pinch",
@@ -8163,7 +8080,8 @@
   "equipment": "other",
   "category": "strongman",
   "level": "intermediate",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Power_Stairs/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Power_Stairs/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "Preacher Curl",
@@ -8235,7 +8153,8 @@
   "equipment": "other",
   "category": "cardio",
   "level": "beginner",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Prowler_Sprint/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Prowler_Sprint/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "Pull Through",
@@ -8841,7 +8760,8 @@
   "equipment": "other",
   "category": "strongman",
   "level": "intermediate",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Rickshaw_Carry/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Rickshaw_Carry/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "Rickshaw Deadlift",
@@ -8938,8 +8858,8 @@
   "instructions": [
    "Setup: Start standing with bar at hips; push hips back with a slight knee bend to hinge forward.",
    "Execution: Lower bar along shins until hamstring stretch; drive hips forward to return to standing.",
-   "Common error: Excessive knee bend \u2014 this becomes a conventional deadlift; keep knees soft and stable.",
-   "Common error: Lower-back rounding \u2014 stop when your back rounds; hamstring flexibility is the limit."
+   "Common error: Excessive knee bend — this becomes a conventional deadlift; keep knees soft and stable.",
+   "Common error: Lower-back rounding — stop when your back rounds; hamstring flexibility is the limit."
   ]
  },
  {
@@ -8974,7 +8894,8 @@
   "equipment": "other",
   "category": "strength",
   "level": "intermediate",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Rope_Climb/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Rope_Climb/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "Rope Crunch",
@@ -9077,7 +8998,8 @@
   "equipment": "machine",
   "category": "cardio",
   "level": "beginner",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Running_Treadmill/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Running_Treadmill/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "Russian Twist",
@@ -9266,8 +9188,8 @@
   "instructions": [
    "Setup: Cable at low position; sit with soft knee bend; grip handles with back upright.",
    "Execution: Drive elbows back to ribcage, squeezing shoulder blades; control the return to full stretch.",
-   "Common error: Torso swinging \u2014 initiate with elbows and back, not a lower-body lean.",
-   "Common error: No stretch at the front \u2014 allow a slight forward lean with scapular protraction."
+   "Common error: Torso swinging — initiate with elbows and back, not a lower-body lean.",
+   "Common error: No stretch at the front — allow a slight forward lean with scapular protraction."
   ]
  },
  {
@@ -10152,7 +10074,8 @@
   "equipment": "other",
   "category": "strongman",
   "level": "beginner",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Sled_Drag_-_Harness/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Sled_Drag_-_Harness/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "Sled Overhead Backward Walk",
@@ -10198,7 +10121,8 @@
   "equipment": "other",
   "category": "strongman",
   "level": "beginner",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Sled_Push/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Sled_Push/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "Sled Reverse Flye",
@@ -10835,7 +10759,7 @@
   "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Split_Squat_with_Dumbbells/0.jpg"
  },
  {
-  "name": "Split Squats",
+  "name": "Split Squat",
   "bodyPart": "Legs",
   "primaryMuscles": [
    "hamstrings"
@@ -10846,7 +10770,7 @@
    "quadriceps"
   ],
   "equipment": "body only",
-  "category": "stretching",
+  "category": "strength",
   "level": "intermediate",
   "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Split_Squats/0.jpg"
  },
@@ -10953,7 +10877,8 @@
   "equipment": "machine",
   "category": "cardio",
   "level": "intermediate",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Stairmaster/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Stairmaster/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "Standing Alternating Dumbbell Press",
@@ -11104,18 +11029,6 @@
   "category": "strength",
   "level": "beginner",
   "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Standing_Cable_Wood_Chop/0.jpg"
- },
- {
-  "name": "Standing Calf Raises",
-  "bodyPart": "Legs",
-  "primaryMuscles": [
-   "calves"
-  ],
-  "secondaryMuscles": [],
-  "equipment": "machine",
-  "category": "strength",
-  "level": "beginner",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Standing_Calf_Raises/0.jpg"
  },
  {
   "name": "Standing Concentration Curl",
@@ -11766,10 +11679,10 @@
   "level": "intermediate",
   "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Sumo_Deadlift/0.jpg",
   "instructions": [
-   "Setup: Wide stance, toes 30\u201345\u00b0 out; grip bar inside legs; hips low, neutral spine, chest up.",
+   "Setup: Wide stance, toes 30–45° out; grip bar inside legs; hips low, neutral spine, chest up.",
    "Execution: Push knees out over toes and press floor away; lock out hips and knees simultaneously.",
-   "Common error: Knees collapsing inward \u2014 drive them out aggressively from the floor.",
-   "Common error: Hips rising too fast \u2014 maintain hip angle off the floor until bar clears knees."
+   "Common error: Knees collapsing inward — drive them out aggressively from the floor.",
+   "Common error: Hips rising too fast — maintain hip angle off the floor until bar clears knees."
   ]
  },
  {
@@ -12101,7 +12014,8 @@
   "equipment": "body only",
   "category": "cardio",
   "level": "beginner",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Trail_Running_Walking/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Trail_Running_Walking/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "Trap Bar Deadlift",
@@ -12458,7 +12372,8 @@
   "equipment": "machine",
   "category": "cardio",
   "level": "beginner",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Walking_Treadmill/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Walking_Treadmill/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "Weighted Ball Hyperextension",
@@ -12829,7 +12744,8 @@
   "equipment": "other",
   "category": "strongman",
   "level": "intermediate",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Yoke_Walk/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Yoke_Walk/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "Zercher Squats",
@@ -12971,7 +12887,9 @@
    "forearms",
    "chest",
    "quadriceps"
-  ]
+  ],
+  "trackingType": "time",
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Battling_Ropes/0.jpg"
  },
  {
   "name": "Wall Ball",
@@ -13003,7 +12921,9 @@
    "biceps",
    "hamstrings",
    "calves"
-  ]
+  ],
+  "trackingType": "time",
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Rowing_Stationary/0.jpg"
  },
  {
   "name": "Kettlebell Goblet Squat",
@@ -13019,7 +12939,8 @@
    "hamstrings",
    "calves",
    "abdominals"
-  ]
+  ],
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Goblet_Squat/0.jpg"
  },
  {
   "name": "Kettlebell Clean and Press",
@@ -13034,7 +12955,8 @@
    "triceps",
    "forearms",
    "abdominals"
-  ]
+  ],
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Clean_and_Press/0.jpg"
  },
  {
   "name": "Bear Crawl",
@@ -13051,7 +12973,8 @@
    "chest",
    "triceps"
   ],
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bear_Crawl_Sled_Drags/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bear_Crawl_Sled_Drags/0.jpg",
+  "trackingType": "time"
  },
  {
   "name": "Dumbbell Chest Fly",
@@ -13064,7 +12987,8 @@
   ],
   "secondaryMuscles": [
    "shoulders"
-  ]
+  ],
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Flyes/0.jpg"
  },
  {
   "name": "Cable Chest Fly",
@@ -13077,7 +13001,8 @@
   ],
   "secondaryMuscles": [
    "shoulders"
-  ]
+  ],
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Crossover/0.jpg"
  },
  {
   "name": "Bulgarian Split Squat",
@@ -13092,7 +13017,8 @@
    "glutes",
    "hamstrings",
    "calves"
-  ]
+  ],
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Split_Squat_with_Dumbbells/0.jpg"
  },
  {
   "name": "Bodyweight Bulgarian Split Squat",
@@ -13106,7 +13032,8 @@
   "secondaryMuscles": [
    "glutes",
    "hamstrings"
-  ]
+  ],
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Split_Squat_with_Dumbbells/0.jpg"
  },
  {
   "name": "Cable Seated Row",
@@ -13120,7 +13047,8 @@
   "secondaryMuscles": [
    "biceps",
    "lats"
-  ]
+  ],
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Seated_Cable_Rows/0.jpg"
  },
  {
   "name": "Machine Seated Row",
@@ -13134,7 +13062,8 @@
   "secondaryMuscles": [
    "biceps",
    "lats"
-  ]
+  ],
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Seated_Cable_Rows/0.jpg"
  },
  {
   "name": "Pendlay Row",
@@ -13149,7 +13078,8 @@
    "biceps",
    "lats",
    "lower back"
-  ]
+  ],
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bent_Over_Barbell_Row/0.jpg"
  },
  {
   "name": "Ab Wheel Rollout",
@@ -13164,7 +13094,8 @@
    "shoulders",
    "lats"
   ],
-  "youtubeUrl": "https://www.youtube.com/results?search_query=ab%20wheel%20rollout%20form%20tutorial"
+  "youtubeUrl": "https://www.youtube.com/results?search_query=ab%20wheel%20rollout%20form%20tutorial",
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Ab_Rollout/0.jpg"
  },
  {
   "name": "Hip Abduction Machine",
@@ -13177,7 +13108,8 @@
   ],
   "secondaryMuscles": [
    "glutes"
-  ]
+  ],
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Thigh_Abductor/0.jpg"
  },
  {
   "name": "Hip Adduction Machine",
@@ -13188,7 +13120,8 @@
   "primaryMuscles": [
    "adductors"
   ],
-  "secondaryMuscles": []
+  "secondaryMuscles": [],
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Thigh_Adductor/0.jpg"
  },
  {
   "name": "Dragon Flag",
@@ -13216,7 +13149,8 @@
   "secondaryMuscles": [
    "quadriceps",
    "triceps"
-  ]
+  ],
+  "trackingType": "time"
  },
  {
   "name": "Pike Push-Up",
@@ -13243,7 +13177,8 @@
   ],
   "secondaryMuscles": [
    "hamstrings"
-  ]
+  ],
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Hip_Thrust/0.jpg"
  },
  {
   "name": "Machine Chest Press",
@@ -13408,7 +13343,8 @@
   ],
   "secondaryMuscles": [
    "triceps"
-  ]
+  ],
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Decline_Barbell_Bench_Press/0.jpg"
  },
  {
   "name": "Dumbbell Press",
@@ -13480,7 +13416,8 @@
   "primaryMuscles": [
    "chest"
   ],
-  "secondaryMuscles": []
+  "secondaryMuscles": [],
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Butterfly/0.jpg"
  },
  {
   "name": "Shoulder Press",
@@ -13512,9 +13449,10 @@
   "instructions": [
    "Setup: Barbell at collarbone height; grip just outside shoulders; brace core and squeeze glutes.",
    "Execution: Press vertically, tuck chin back as bar passes face; lock out overhead with ears between arms.",
-   "Common error: Excessive lower-back arch \u2014 engage glutes and abs to stay neutral.",
-   "Common error: Bar drifting forward \u2014 aim straight up, not out in front."
-  ]
+   "Common error: Excessive lower-back arch — engage glutes and abs to stay neutral.",
+   "Common error: Bar drifting forward — aim straight up, not out in front."
+  ],
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Shoulder_Press/0.jpg"
  },
  {
   "name": "Arnold Press",
@@ -13533,8 +13471,8 @@
   "instructions": [
    "Setup: Dumbbells at shoulder level, palms facing you; sit upright with core braced.",
    "Execution: As you press up, rotate palms to face forward by full extension; reverse the rotation on descent.",
-   "Common error: Rushing the rotation \u2014 the rotation IS the exercise; control it through the full ROM.",
-   "Common error: Leaning back excessively \u2014 keep back flat and avoid using momentum."
+   "Common error: Rushing the rotation — the rotation IS the exercise; control it through the full ROM.",
+   "Common error: Leaning back excessively — keep back flat and avoid using momentum."
   ]
  },
  {
@@ -13678,10 +13616,10 @@
   "youtubeUrl": "https://www.youtube.com/results?search_query=lat%20pulldown%20form%20tutorial",
   "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/One_Arm_Lat_Pulldown/0.jpg",
   "instructions": [
-   "Setup: Wide overhand grip; thighs secured under pads; slight backward lean (~15\u00b0).",
+   "Setup: Wide overhand grip; thighs secured under pads; slight backward lean (~15°).",
    "Execution: Pull bar to upper chest driving elbows toward hips; return slowly to full arm extension.",
-   "Common error: Pulling behind the neck \u2014 increases cervical risk; always pull to the front.",
-   "Common error: Using momentum \u2014 control the weight; slow the eccentric phase."
+   "Common error: Pulling behind the neck — increases cervical risk; always pull to the front.",
+   "Common error: Using momentum — control the weight; slow the eccentric phase."
   ]
  },
  {
@@ -13701,9 +13639,9 @@
   "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Scapular_Pull-Up/0.jpg",
   "instructions": [
    "Setup: Overhand grip slightly wider than shoulders; full hang with shoulders active (not shrugged).",
-   "Execution: Drive elbows toward hips to pull chin above bar; lower slowly over 2\u20133 seconds.",
-   "Common error: Kipping or swinging \u2014 strict form builds far more strength.",
-   "Common error: Partial range \u2014 start from a dead hang each rep for full muscle recruitment."
+   "Execution: Drive elbows toward hips to pull chin above bar; lower slowly over 2–3 seconds.",
+   "Common error: Kipping or swinging — strict form builds far more strength.",
+   "Common error: Partial range — start from a dead hang each rep for full muscle recruitment."
   ]
  },
  {
@@ -13819,7 +13757,9 @@
   "primaryMuscles": [
    "biceps"
   ],
-  "secondaryMuscles": [],
+  "secondaryMuscles": [
+   "forearms"
+  ],
   "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Concentration_Curls/0.jpg"
  },
  {
@@ -13831,7 +13771,8 @@
   "primaryMuscles": [
    "triceps"
   ],
-  "secondaryMuscles": []
+  "secondaryMuscles": [],
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Triceps_Pushdown/0.jpg"
  },
  {
   "name": "Tricep Rope Pushdown",
@@ -13842,7 +13783,8 @@
   "primaryMuscles": [
    "triceps"
   ],
-  "secondaryMuscles": []
+  "secondaryMuscles": [],
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Triceps_Pushdown_-_Rope_Attachment/0.jpg"
  },
  {
   "name": "Overhead Tricep Extension",
@@ -13853,7 +13795,8 @@
   "primaryMuscles": [
    "triceps"
   ],
-  "secondaryMuscles": []
+  "secondaryMuscles": [],
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Triceps_Overhead_Extension_with_Rope/0.jpg"
  },
  {
   "name": "Dumbbell Tricep Extension",
@@ -13892,7 +13835,8 @@
   "secondaryMuscles": [
    "chest",
    "shoulders"
-  ]
+  ],
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dips_-_Triceps_Version/0.jpg"
  },
  {
   "name": "Squat",
@@ -13929,8 +13873,8 @@
   "instructions": [
    "Setup: Bar on front deltoids; elbows high with upper arms parallel to floor; feet shoulder-width.",
    "Execution: Squat with upright torso; keep elbows high throughout to prevent bar rolling off shoulders.",
-   "Common error: Elbows dropping \u2014 causes bar to roll; build wrist and thoracic flexibility.",
-   "Common error: Forward lean \u2014 front squat demands more upper-back and ankle mobility than back squat."
+   "Common error: Elbows dropping — causes bar to roll; build wrist and thoracic flexibility.",
+   "Common error: Forward lean — front squat demands more upper-back and ankle mobility than back squat."
   ]
  },
  {
@@ -14004,7 +13948,13 @@
   ],
   "secondaryMuscles": [],
   "youtubeUrl": "https://www.youtube.com/results?search_query=leg%20extension%20form%20tutorial",
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Extensions/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Leg_Extensions/0.jpg",
+  "instructions": [
+   "Setup: Back against pad; knee at the joint edge; align machine axis with your knee joint.",
+   "Execution: Extend to near full lockout; hold 1 second; lower slowly over 3 seconds.",
+   "Common error: Rushing the eccentric — the lowering phase builds quad strength; control it.",
+   "Common error: Seat too far back — shifts shear force onto the knee; adjust the seat forward."
+  ]
  },
  {
   "name": "Leg Curl",
@@ -14033,7 +13983,13 @@
   "secondaryMuscles": [
    "calves"
   ],
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_Leg_Curls/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Lying_Leg_Curls/0.jpg",
+  "instructions": [
+   "Setup: Lie face down; pad rests just above heels; hips flat on the bench.",
+   "Execution: Curl heels toward glutes through full range; brief hold at top; lower slowly.",
+   "Common error: Hips rising off the pad — reduces hamstring isolation; keep them down.",
+   "Common error: Short range — aim for full contraction then full extension every rep."
+  ]
  },
  {
   "name": "Calf Raise",

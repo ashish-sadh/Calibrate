@@ -85,12 +85,20 @@ import Testing
     #expect(timed.trackingType == .time)
 }
 
-@Test func exerciseInfo_catalogDecodesWithNilTrackingType() {
-    // Back-compat: exercises.json has no trackingType field, so the optional
-    // decodes to nil (treated as reps by the resolver) rather than throwing.
+@Test func exerciseInfo_catalogTrackingTypeDecodes() {
+    // 2026-07-09: genuinely time-based catalog exercises now DECLARE
+    // trackingType=time in the JSON (the data-driven timer/reps fix); the
+    // rest decode to nil (⇒ reps). Verify both decode cleanly and the
+    // declared-time set is present and sane.
     let all = ExerciseDatabase.all
-    #expect(!all.isEmpty)  // fixture loaded (else the assertion below is vacuous)
-    #expect(all.allSatisfy { $0.trackingType == nil })
+    #expect(!all.isEmpty)
+    let timed = all.filter { $0.trackingType == .time }
+    #expect(timed.count >= 20, "expected the curated time allow-list, got \(timed.count)")
+    #expect(timed.contains { $0.name == "Plank" })
+    #expect(timed.contains { $0.name == "Farmer's Walk" })
+    // No rep movement was wrongly tagged time in the data.
+    #expect(!timed.contains { $0.name == "Walking Lunge" })
+    #expect(!timed.contains { $0.name == "Hang Clean" })
 }
 
 // MARK: - Catalog dedup guard (#929)

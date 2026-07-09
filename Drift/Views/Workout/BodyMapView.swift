@@ -181,7 +181,7 @@ struct BodyMapView: View {
         case "Chest": return ["Dumbbell Bench Press", "Incline DB Press", "Dips"]
         case "Back": return ["Lat Pulldown", "Dumbbell Row", "Face Pull"]
         case "Shoulders": return ["Shoulder Press", "Lateral Raise", "Rear Delt Fly"]
-        case "Arms": return ["Bicep Curl", "Hammer Curls", "Tricep Pushdown"]
+        case "Arms": return ["Bicep Curl", "Hammer Curl", "Tricep Pushdown"]
         case "Core": return ["Leg Raise", "Plank", "Cable Crunch"]
         case "Legs": return ["Squat", "Romanian Deadlift", "Leg Press"]
         default: return []

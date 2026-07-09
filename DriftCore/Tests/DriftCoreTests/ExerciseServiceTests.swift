@@ -372,8 +372,8 @@ private let compoundLifts = [
     "Overhead Press", "Bent Over Barbell Row", "Pull-Up", "Dips - Triceps Version",
     "Romanian Deadlift", "Front Squat", "Sumo Deadlift",
     "Barbell Incline Bench Press - Medium Grip", "Close-Grip Barbell Bench Press",
-    "Seated Cable Rows", "Lat Pulldown", "Leg Press", "Lying Leg Curls",
-    "Leg Extensions", "Barbell Hip Thrust", "Face Pull", "Arnold Press",
+    "Seated Cable Rows", "Lat Pulldown", "Leg Press", "Lying Leg Curl",
+    "Leg Extension", "Barbell Hip Thrust", "Face Pull", "Arnold Press",
 ]
 
 @Test @MainActor func allCompoundLiftsHaveInstructions() {

@@ -9,7 +9,7 @@ public enum Migrations {
     /// fails with `Int.fetchOne(grdb_migrations) != currentVersion`.
     /// Stamped into the backup manifest so restore can detect a
     /// forward/backward migration scenario.
-    public static let currentVersion = 39
+    public static let currentVersion = 40
 
     public static func registerAll(_ migrator: inout DatabaseMigrator) {
         // v1: Weight tracking
@@ -642,7 +642,33 @@ public enum Migrations {
         migrator.registerMigration("v39_recover_collided_saved_food") { db in
             try Migrations.recoverCollidedSavedFood(db)
         }
+
+        // #exercise-cleanup (2026-07-09): the exercise catalog merged 8
+        // duplicate/plural entries into their canonical names. Logged sets
+        // reference the exercise by NAME string, so rewrite history to the
+        // kept name — otherwise a user's past "Dumbbell Lunges" sets orphan
+        // from the catalog (no image, no progression, wrong tracking type).
+        migrator.registerMigration("v40_exercise_rename_merges") { db in
+            for (old, new) in Migrations.exerciseRenameMap {
+                try db.execute(sql: "UPDATE workout_set SET exercise_name = ? WHERE exercise_name = ?",
+                               arguments: [new, old])
+            }
+        }
     }
+
+    /// Old→canonical exercise name map applied to logged history by the v40
+    /// migration. Kept in code (not just the JSON edit) so past workouts stay
+    /// linked to the surviving catalog entry after the 2026-07-09 dedup.
+    static let exerciseRenameMap: [String: String] = [
+        "Dumbbell Lunges": "Dumbbell Lunge",
+        "Concentration Curls": "Concentration Curl",
+        "Hammer Curls": "Hammer Curl",
+        "Leg Extensions": "Leg Extension",
+        "Lying Leg Curls": "Lying Leg Curl",
+        "Standing Calf Raises": "Standing Calf Raise",
+        "Bodyweight Walking Lunge": "Walking Lunge",
+        "Split Squats": "Split Squat",
+    ]
 
     /// #1003: copy `saved_food` rows that v25 dropped on a case-insensitive name
     /// collision into `food` under a disambiguated "<name> (Saved)" name, preserving

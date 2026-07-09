@@ -159,6 +159,14 @@ public enum ExerciseDatabase {
                 existing.imageUrl = imageUrl
                 changed = true
             }
+            // Backfill trackingType for customs persisted before the field
+            // existed (a nil-tracking "Ladder Drill" would otherwise resolve
+            // to reps under catalog-authority). Only sets when the name
+            // classifies as time — reps is the default anyway.
+            if existing.trackingType == nil, classifyTrackingType(name) == .time {
+                existing.trackingType = .time
+                changed = true
+            }
             if let primaryMuscles,
                existing.primaryMuscles == [existing.bodyPart.lowercased()] {
                 existing = ExerciseInfo(name: existing.name, bodyPart: existing.bodyPart,
@@ -229,23 +237,53 @@ public enum ExerciseDatabase {
         "speed ladder", "footwork drill",
     ]
 
-    /// Family roots for names Drift doesn't declare explicitly (imported or
-    /// catalog variants): holds, planks, carries, hangs. Substring match is a
-    /// *fallback default* here — the per-exercise `trackingType` attribute and
-    /// `timeBasedExerciseNames` take precedence. Kept verbatim from the prior
-    /// `WorkoutSet.isDurationExercise` keywords so no existing exercise regresses.
-    static let timeBasedFamilies: [String] = [
-        "plank", "hold", "hang", "wall sit", "l-sit", "dead hang",
-        "farmer", "carry", "walk", "battle rope", "rope climb",
-        "sled", "prowler", "isometric",
+    /// WHOLE-WORD time cues for names Drift doesn't declare explicitly (custom
+    /// exercises the user types, unseen imports). The per-exercise
+    /// `trackingType` attribute and `timeBasedExerciseNames` take precedence;
+    /// this is only the fallback for un-cataloged names.
+    ///
+    /// 2026-07-09 rewrite: the old list did naive SUBSTRING matching, which
+    /// mis-timed ~15 rep exercises — "walk" caught *Walking Lunge*, "hang"
+    /// caught every *Hang Clean/Snatch* and *Hanging Leg Raise*, "sled" caught
+    /// *Sled Row/Reverse Flye*, "plank" caught *Push Up to Side Plank*. Now:
+    ///  • matching is whole-word (token-based), so "walk"≠"walking lunge" and
+    ///    a bare "hang" (the hold) ≠ "hang clean" (the Olympic lift);
+    ///  • ambiguous roots that are usually a POSITION not a hold ("hang",
+    ///    "sled", "walk") are gone — a genuine timed carry/cardio is caught by
+    ///    an explicit phrase below or its catalog `trackingType`.
+    static let timeBasedWords: Set<String> = [
+        "plank", "hold", "wall-sit", "l-sit", "isometric", "carry",
+    ]
+    /// Multi-word time phrases (checked as substrings — these are unambiguous).
+    static let timeBasedPhrases: [String] = [
+        "wall sit", "dead hang", "farmer's walk", "farmers walk",
+        "battle rope", "rope climb", "bear crawl", "treadmill",
+        "elliptical", "stationary bike", "jump rope", "jumping rope",
     ]
 
-    /// The tracking type for an exercise name, resolved data-first: an explicit
-    /// per-exercise `trackingType` on the catalog entry wins; otherwise classify
-    /// by declared time-based names then family roots (fallback), else reps.
+    /// The tracking type for an exercise name, resolved data-first:
+    ///  1. An explicit per-exercise `trackingType` (catalog OR an upgraded
+    ///     custom) always wins — e.g. "Plank" ⇒ time.
+    ///  2. Otherwise, a BUNDLED-CATALOG rep exercise is authoritative reps,
+    ///     even when its name contains a time word: "Push Up to Side Plank",
+    ///     "Hang Clean", "Sled Row" stay reps (2026-07-09 — the core fix; the
+    ///     old substring classifier mis-timed all of these).
+    ///  3. Otherwise (user custom or unknown name) fall to the whole-word
+    ///     classifier so "Side Plank", "Wall Sit", "Ladder Drill" are timed.
+    ///     This also rescues stale customs persisted with a nil trackingType
+    ///     before the field existed.
     public static func trackingType(for name: String) -> TrackingType {
-        if let declared = info(for: name)?.trackingType { return declared }
+        if let t = info(for: name)?.trackingType { return t }
+        if bundledCatalogContains(name) { return .reps }
         return classifyTrackingType(name)
+    }
+
+    /// True when `name` is an exact (case-insensitive) entry in the bundled
+    /// exercises.json — NOT counting user customs. Lets `trackingType(for:)`
+    /// treat catalog reps as authoritative while still classifying customs.
+    static func bundledCatalogContains(_ name: String) -> Bool {
+        let q = name.lowercased()
+        return all.contains { $0.name.lowercased() == q }
     }
 
     /// Pure name-based classification (no catalog lookup) — used when *creating*
@@ -253,7 +291,11 @@ public enum ExerciseDatabase {
     static func classifyTrackingType(_ name: String) -> TrackingType {
         let n = name.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         if timeBasedExerciseNames.contains(n) { return .time }
-        if timeBasedFamilies.contains(where: { n.contains($0) }) { return .time }
+        if timeBasedPhrases.contains(where: { n.contains($0) }) { return .time }
+        // Whole-word match: tokenize on non-alphanumerics so "plank" hits
+        // "side plank" but "hang" does NOT hit "hang clean" (a rep lift).
+        let words = Set(n.split(whereSeparator: { !$0.isLetter && !$0.isNumber }).map(String.init))
+        if !words.isDisjoint(with: timeBasedWords) { return .time }
         return .reps
     }
 }
