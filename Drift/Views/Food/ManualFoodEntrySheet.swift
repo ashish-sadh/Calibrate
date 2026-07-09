@@ -37,6 +37,11 @@ struct ManualFoodEntrySheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
+                    // Past-day target must be visible on the committing
+                    // surface itself (2026-07-09 field ask).
+                    if !viewModel.isToday {
+                        PastDayLogBadge(date: viewModel.selectedDate)
+                    }
                     // Name
                     TextField("Food name", text: $name)
                         .font(.body)

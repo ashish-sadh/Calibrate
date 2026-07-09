@@ -49,6 +49,13 @@ struct PhotoLogReviewView: View {
 
     private var content: some View {
         VStack(spacing: 0) {
+            // Past-day target must be visible on the committing surface —
+            // covers Snap review AND the Describe confirm (MealReviewSheet
+            // wraps this view). 2026-07-09 field ask.
+            if !foodLog.isToday {
+                PastDayLogBadge(date: foodLog.selectedDate)
+                    .padding(.top, 8)
+            }
             List {
                 overallSection
                 itemsSection

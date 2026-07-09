@@ -171,6 +171,12 @@ struct FoodLogSheet: View {
 
     private var timeAndMealPicker: some View {
         VStack(spacing: 10) {
+            // Past-day target must be visible on the committing surface
+            // itself (2026-07-09 field ask).
+            if !foodLog.isToday {
+                PastDayLogBadge(date: foodLog.selectedDate)
+                    .frame(maxWidth: .infinity)
+            }
             HStack {
                 Text("Time").font(.subheadline).foregroundStyle(Theme.textSecondary)
                 Spacer()

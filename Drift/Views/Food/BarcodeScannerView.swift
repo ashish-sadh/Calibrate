@@ -323,6 +323,13 @@ struct BarcodeLookupView: View {
                     }
                 }.card()
 
+                // Past-day target must be visible on the committing surface
+                // itself (2026-07-09 field ask).
+                if !viewModel.isToday {
+                    PastDayLogBadge(date: viewModel.selectedDate)
+                        .frame(maxWidth: .infinity)
+                }
+
                 DatePicker("Time", selection: $barcodeLogTime, displayedComponents: .hourAndMinute)
                     .font(.subheadline).foregroundStyle(Theme.textSecondary)
 

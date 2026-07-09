@@ -53,7 +53,11 @@ struct FoodSearchView: View {
                 .animation(.spring(duration: 0.3), value: justLoggedText)
         } else {
             NavigationStack {
+                // Standalone mode (diary meal-section "+" / search icon):
+                // surface the past-day target here — embedded mode gets the
+                // badge from LogMealSheet's header (2026-07-09 field ask).
                 searchContent
+                    .pastDayLogBadge(for: viewModel)
                     .overlay(alignment: .top) { loggedToast }
                     .animation(.spring(duration: 0.3), value: justLoggedText)
                     .navigationTitle(loggedCount > 0 ? "Add Food (\(loggedCount) logged)" : "Add Food")
@@ -737,6 +741,14 @@ struct FoodSearchView: View {
                     .card()
                 }
                 .padding(.horizontal, 16)
+
+                // Past-day target: this sheet covers every banner beneath it —
+                // the warning must ride the surface itself (2026-07-09).
+                if !viewModel.isToday {
+                    PastDayLogBadge(date: viewModel.selectedDate)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 4)
+                }
 
                 // Time picker
                 DatePicker("Time", selection: $logTime, displayedComponents: .hourAndMinute)

@@ -40,6 +40,11 @@ struct ComboLogSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
+                    // Past-day target must be visible on the committing
+                    // surface itself (2026-07-09 field ask).
+                    if !viewModel.isToday {
+                        PastDayLogBadge(date: viewModel.selectedDate)
+                    }
                     macroSummary
                     if logItems.isEmpty {
                         noItemsFallback

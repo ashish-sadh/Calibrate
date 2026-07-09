@@ -161,6 +161,12 @@ struct LogMealSheet: View {
             Text("Tap a recent item or use a method below")
                 .font(.subheadline)
                 .foregroundStyle(Theme.textSecondary)
+            // Past-day target must stay visible here — the diary's "Viewing"
+            // banner is covered by this sheet (2026-07-09 field ask).
+            if !foodLogVM.isToday {
+                PastDayLogBadge(date: foodLogVM.selectedDate)
+                    .padding(.top, 2)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 16)
