@@ -191,6 +191,45 @@ final class BackupRestorerTests: XCTestCase {
         XCTAssertEqual(appliedCount, Migrations.currentVersion)
     }
 
+    /// 2026-07-09 field bug: HealthKit query anchors are positions in the
+    /// SOURCE device's HK change ledger. Restored onto a new phone they are
+    /// foreign garbage — anchored weight syncs return 0 forever ("granted
+    /// permissions, has Health data, sync does nothing"). Restore must clear
+    /// the anchor table so the restored install re-imports from scratch.
+    func testRestoreClearsHealthKitAnchors() throws {
+        let backupURL = try makeBackup(
+            seedRows: 1,
+            schemaVersion: 1,
+            includeRealMigrations: true,
+            extraSQL: [
+                // Pre-create the anchor table + stamp its migration as applied
+                // (same pattern as weight_entry above) so the forward-migration
+                // replay doesn't recreate an existing table.
+                """
+                CREATE TABLE hk_sync_anchor (
+                    data_type TEXT NOT NULL PRIMARY KEY,
+                    last_anchor BLOB
+                )
+                """,
+                "INSERT INTO grdb_migrations VALUES('v5_hk_sync')",
+                "INSERT INTO hk_sync_anchor VALUES('bodyMass', X'DEADBEEF')",
+            ]
+        )
+
+        let dest = workDir.appendingPathComponent("dest-anchors.sqlite")
+        XCTAssertNoThrow(try BackupRestorer().restore(
+            from: backupURL,
+            toDatabasePath: dest,
+            userDefaults: defaults
+        ))
+
+        let queue = try DatabaseQueue(path: dest.path)
+        let anchorCount = try queue.read { db in
+            try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM hk_sync_anchor") ?? -1
+        }
+        XCTAssertEqual(anchorCount, 0, "restore must clear foreign HealthKit anchors")
+    }
+
     // MARK: - Crash defense: hand-crafted preferences
 
     /// Regression test for the crash audit (#687). JSON `null` deserializes
@@ -515,7 +554,8 @@ final class BackupRestorerTests: XCTestCase {
         seedRows: Int,
         schemaVersion: Int,
         withDefaults extraDefaults: [String: Any] = [:],
-        includeRealMigrations: Bool = false
+        includeRealMigrations: Bool = false,
+        extraSQL: [String] = []
     ) throws -> URL {
         let dbURL = workDir.appendingPathComponent("source-\(UUID().uuidString).sqlite")
         let dbQueue = try DatabaseQueue(path: dbURL.path)
@@ -545,6 +585,14 @@ final class BackupRestorerTests: XCTestCase {
                     )
                     """)
                 try db.execute(sql: "CREATE INDEX idx_weight_entry_date ON weight_entry(date)")
+            }
+        }
+
+        // Runs AFTER the migration-ledger block so extraSQL can stamp
+        // additional migrations as applied (grdb_migrations exists by now).
+        if !extraSQL.isEmpty {
+            try dbQueue.write { db in
+                for sql in extraSQL { try db.execute(sql: sql) }
             }
         }
 

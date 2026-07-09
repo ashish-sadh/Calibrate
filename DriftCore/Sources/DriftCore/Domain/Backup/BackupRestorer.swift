@@ -138,6 +138,15 @@ public struct BackupRestorer {
     private func migrateForward(at dbURL: URL) throws {
         let queue = try DatabaseQueue(path: dbURL.path)
         try AppDatabase.runMigrations(on: queue)
+        // HealthKit query anchors are positions in the SOURCE device's HK
+        // change ledger — restored onto a different device (the common
+        // new-phone flow) they are foreign garbage: anchored syncs start
+        // "after" data that was never delivered here, so Apple Health weight
+        // import silently returns 0 forever (field report 2026-07-09).
+        // Restored installs must re-import from scratch.
+        try queue.write { db in
+            try db.execute(sql: "DELETE FROM hk_sync_anchor")
+        }
     }
 
     private func atomicReplace(source: URL, destination: URL) throws {

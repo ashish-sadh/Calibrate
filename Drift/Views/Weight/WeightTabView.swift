@@ -12,6 +12,9 @@ struct WeightTabView: View {
     @State private var showMilestone = false
     @State private var editingEntry: WeightEntry?
     @AppStorage("drift_dismissed_outlier") private var dismissedOutlierDate = ""
+    /// Outcome of the empty-state "Sync from Apple Health" attempt — the sync
+    /// must never be silent (field report 2026-07-09).
+    @State private var syncFeedback: String?
 
     var body: some View {
         NavigationStack {
@@ -354,8 +357,29 @@ struct WeightTabView: View {
             VStack(spacing: 10) {
                 Button {
                     Task {
-                        _ = try? await HealthKitService.shared.syncWeight()
-                        viewModel.loadEntries()
+                        // First-sync surface — three fixes (field report
+                        // 2026-07-09: "granted permissions, has Health data,
+                        // sync does nothing"):
+                        // 1. Request authorization HERE — if the launch sheet
+                        //    never completed, read is notDetermined and the
+                        //    query throws (previously swallowed by try?).
+                        // 2. FULL resync (clears the anchor) — an install
+                        //    whose first launch-sync raced an ungranted sheet
+                        //    saved a poisoned anchor that hides all historical
+                        //    samples forever. Empty state ⇒ nothing is
+                        //    incremental; full import is always correct here.
+                        // 3. Visible outcome either way — silence read as
+                        //    "broken".
+                        syncFeedback = "Syncing…"
+                        do {
+                            try await HealthKitService.shared.requestAuthorization()
+                            let count = try await HealthKitService.shared.fullResyncWeight()
+                            viewModel.loadEntries()
+                            syncFeedback = count > 0 ? nil :
+                                "No weight data found. If Apple Health has your weight, enable Weight under Settings → Privacy & Security → Health → Drift."
+                        } catch {
+                            syncFeedback = "Sync failed: \(error.localizedDescription)"
+                        }
                     }
                 } label: {
                     Label("Sync from Apple Health", systemImage: "heart.fill")
@@ -363,6 +387,13 @@ struct WeightTabView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(Theme.accent)
+
+                if let syncFeedback {
+                    Text(syncFeedback)
+                        .font(.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                        .multilineTextAlignment(.center)
+                }
 
                 Button { showingAddWeight = true } label: {
                     Label("Log Weight Manually", systemImage: "plus")

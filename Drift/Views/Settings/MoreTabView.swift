@@ -262,7 +262,12 @@ struct SettingsView: View {
                         Task {
                             do {
                                 let count = try await HealthKitService.shared.syncWeight()
-                                syncStatus = "Synced \(count) weight entries"
+                                // 0 with no local entries usually means read
+                                // access is off — iOS hides read-denial from
+                                // apps, so guide instead of just saying "0"
+                                // (field report 2026-07-09).
+                                syncStatus = count > 0 ? "Synced \(count) weight entries" :
+                                    "No new weight found. If Apple Health has your weight, enable Weight under Settings → Privacy & Security → Health → Drift, then try Full Re-sync."
                             } catch {
                                 syncStatus = "Sync failed: \(error.localizedDescription)"
                             }

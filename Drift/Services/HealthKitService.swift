@@ -144,8 +144,19 @@ final class HealthKitService {
             count += 1
         }
 
-        if let newAnchor {
+        // Persist the anchor ONLY when this sync either delivered samples or
+        // we already had an anchor (a prior sync proved read access). Saving
+        // a FIRST-sync anchor from an EMPTY result poisons the install:
+        // read-denial is indistinguishable from "no data" (HK privacy), so a
+        // launch sync racing an ungranted/partial permission sheet returned
+        // 0 + a valid anchor — and once the user later enabled read access,
+        // every anchored sync started AFTER their historical weigh-ins and
+        // returned 0 forever (field report 2026-07-09: "new user, has Health
+        // data, granted permissions, sync does nothing").
+        if let newAnchor, !samples.isEmpty || anchor != nil {
             try saveAnchor(newAnchor, for: "bodyMass", database: database)
+        } else if newAnchor != nil {
+            Log.healthKit.info("First sync returned 0 samples — anchor NOT saved (read may be denied); next sync retries full history")
         }
         Log.healthKit.info("Synced \(count) weight entries from HealthKit")
         return count
