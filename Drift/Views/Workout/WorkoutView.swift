@@ -40,6 +40,7 @@ struct WorkoutView: View {
     @State private var activeCalories: Double = 0
     @State private var steps: Double = 0
     @State private var showHistory = false
+    @State private var showAllTemplates = false
     @State private var healthWorkouts: [HealthWorkout] = []
     @State private var streak: (current: Int, longest: Int)?
     /// Freshness stamp — tab re-selection within 30s skips the reload.
@@ -167,9 +168,13 @@ struct WorkoutView: View {
                     if templates.isEmpty {
                         emptyTemplatesActions
                     } else {
-                        ScrollView {
-                            VStack(spacing: 0) {
-                                ForEach(templates) { t in
+                        // Plain stack, not a nested ScrollView — the capped
+                        // inner scroller fought the page scroll (field report
+                        // 2026-07-09: template scroll "confused with page
+                        // scroll"). The page owns scrolling; long lists
+                        // collapse behind Show all.
+                        VStack(spacing: 0) {
+                            ForEach(showAllTemplates ? templates : Array(templates.prefix(5))) { t in
                                     Button {
                                         previewTemplate = t
                                     } label: {
@@ -196,15 +201,39 @@ struct WorkoutView: View {
                                         .padding(.vertical, 6)
                                     }
                                     .buttonStyle(.plain)
+                            }
+                            if templates.count > 5 {
+                                Button {
+                                    withAnimation(.easeInOut(duration: 0.2)) { showAllTemplates.toggle() }
+                                } label: {
+                                    Text(showAllTemplates ? "Show fewer" : "Show all \(templates.count)")
+                                        .font(.caption.weight(.medium))
+                                        .foregroundStyle(Theme.accent)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 6)
                                 }
+                                .buttonStyle(.plain)
                             }
                         }
-                        .frame(maxHeight: min(CGFloat(templates.count) * 50, 250))
                     }
                 }
                 .card()
 
-                // Browse exercises
+                // Browse row lives with the action cluster — stranded at the
+                // very bottom it was dead weight (field report 2026-07-09).
+                Button { showingExerciseBrowser = true } label: {
+                    HStack {
+                        Label("Browse Exercises", systemImage: "dumbbell")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(Theme.textPrimary)
+                        Spacer()
+                        Text("950+").font(.caption2).foregroundStyle(Theme.textTertiary)
+                        Image(systemName: "chevron.right")
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
+                    }
+                    .card()
+                }
+                .buttonStyle(.plain)
 
                 // Analytics below the fold — operator call 2026-07-09:
                 // gym users reach Start Workout / templates first; burn
@@ -280,10 +309,6 @@ struct WorkoutView: View {
                     }
                     consistencyChart
                 }
-
-                Button { showingExerciseBrowser = true } label: {
-                    Label("Browse Exercises", systemImage: "dumbbell").frame(maxWidth: .infinity)
-                }.buttonStyle(.bordered).tint(Theme.accent)
 
                 // History — collapsible
                 if workouts.isEmpty && !isLoading {
