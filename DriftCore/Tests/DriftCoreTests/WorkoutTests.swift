@@ -953,16 +953,21 @@ import GRDB
     }
 }
 
-@Test func sessionExpiresAfter5Hours() async throws {
-    // Save an old session and verify loadSession returns nil for it
-    // NOTE: concurrent tests may write their own sessions, so we verify by name
+@Test func sessionExpiresAfter5HoursIdle() async throws {
+    // Expiry is driven by time since the LAST save (saveSession stamps
+    // lastSavedAt = now), not since startTime — an old start alone no longer
+    // expires a session (2026-07-09 auto-save rework).
+    let name = "ExpiredTest_\(UUID().uuidString.prefix(4))"
     WorkoutService.clearSession()
-    let oldTime = Date().addingTimeInterval(-6 * 3600) // 6 hours ago
-    WorkoutService.saveSession(.init(workoutName: "ExpiredTest", startTime: oldTime, exercises: []))
-    let loaded = WorkoutService.loadSession()
-    // loadSession should return nil for expired sessions, or a DIFFERENT session from concurrent tests
-    if let loaded {
-        #expect(loaded.workoutName != "ExpiredTest", "Our expired session should not be returned, but found it")
+    let oldTime = Date().addingTimeInterval(-6 * 3600) // started 6 hours ago
+    WorkoutService.saveSession(.init(workoutName: name, startTime: oldTime, exercises: []))
+    // Just saved → still active despite the old start.
+    if let loaded = WorkoutService.loadSession() {
+        // (concurrent tests may have swapped in their own session)
+        if loaded.workoutName == name {
+            // 5h+ past the last save → expired (empty → dropped, no auto-save).
+            #expect(WorkoutService.loadSession(now: Date().addingTimeInterval(6 * 3600)) == nil)
+        }
     }
     WorkoutService.clearSession()
 }
@@ -1677,4 +1682,89 @@ import GRDB
     let zebraPos = share.range(of: "Zebra Curl \(suffix)")!.lowerBound
     let applePos = share.range(of: "Apple Row \(suffix)")!.lowerBound
     #expect(zebraPos < applePos, "share must keep performed order, not alphabetical")
+}
+
+// MARK: - Abandoned session auto-save (field report 2026-07-09: operator lost
+// a logged workout — the 5h expiry silently DISCARDED the session)
+
+private func sessionExercise(name: String, sets: [(w: String, r: String, done: Bool)]) -> WorkoutService.SavedSession.SessionExercise {
+    .init(name: name, isWarmup: false, notes: nil, restTime: 90,
+          sets: sets.map { .init(weight: $0.w, reps: $0.r, done: $0.done, isWarmup: false) })
+}
+
+@Test func abandonedSessionWithDoneSetsIsSavedAsWorkout() throws {
+    let db = try AppDatabase.empty()
+    let start = DateFormatters.dateOnly.date(from: "2026-07-08")!.addingTimeInterval(18 * 3600)
+    let session = WorkoutService.SavedSession(
+        workoutName: "Evening Push",
+        startTime: start,
+        exercises: [
+            sessionExercise(name: "Bench Press", sets: [("135", "10", true), ("135", "8", true), ("", "", false)]),
+            sessionExercise(name: "Shoulder Press", sets: [("60", "12", true)]),
+        ],
+        lastSavedAt: start.addingTimeInterval(45 * 60))
+    WorkoutService.finalizeAbandonedSession(session, into: db)
+
+    let workouts = try db.reader.read { try Workout.fetchAll($0) }
+    #expect(workouts.count == 1)
+    #expect(workouts[0].name == "Evening Push")
+    #expect(workouts[0].date == "2026-07-08")           // dated the day it happened
+    #expect(workouts[0].durationSeconds == 45 * 60)     // start → last activity
+    let sets = try db.reader.read { try WorkoutSet.fetchAll($0) }
+    #expect(sets.count == 3)                            // only sets with data
+    #expect(Set(sets.map(\.exerciseName)) == ["Bench Press", "Shoulder Press"])
+}
+
+@Test func abandonedSessionWithTypedButUntickedSetsStillSaves() throws {
+    let db = try AppDatabase.empty()
+    let start = Date(timeIntervalSince1970: 1_780_000_000)
+    let session = WorkoutService.SavedSession(
+        workoutName: "Forgot To Tick",
+        startTime: start,
+        exercises: [sessionExercise(name: "Squat", sets: [("185", "5", false), ("185", "5", false)])])
+    WorkoutService.finalizeAbandonedSession(session, into: db)
+    let sets = try db.reader.read { try WorkoutSet.fetchAll($0) }
+    #expect(sets.count == 2, "typed-in work must not be lost just because Done was never ticked")
+}
+
+@Test func abandonedEmptySessionIsNotSaved() throws {
+    let db = try AppDatabase.empty()
+    let session = WorkoutService.SavedSession(
+        workoutName: "Ghost",
+        startTime: Date(timeIntervalSince1970: 1_780_000_000),
+        exercises: [sessionExercise(name: "Bench Press", sets: [("", "", false)])])
+    WorkoutService.finalizeAbandonedSession(session, into: db)
+    let workouts = try db.reader.read { try Workout.fetchAll($0) }
+    #expect(workouts.isEmpty, "nothing logged → nothing to auto-save")
+}
+
+// Both tests below share the real UserDefaults session key — serialized so
+// they can't clobber each other under the parallel runner.
+@Suite(.serialized) struct AbandonedSessionPersistenceTests {
+
+@Test func loadSessionKeepsFreshSessionAndExpiryUsesLastActivity() throws {
+    defer { WorkoutService.clearSession() }
+    let start = Date().addingTimeInterval(-6 * 3600)     // started 6h ago…
+    WorkoutService.saveSession(.init(workoutName: "Long Gym Day", startTime: start,
+                                     exercises: []))     // …but saved just now
+    // Idle time (not total age) drives expiry — an active 6h session survives.
+    #expect(WorkoutService.loadSession() != nil)
+    // 5h+ after the LAST save it expires (empty session → dropped, no workout).
+    #expect(WorkoutService.loadSession(now: Date().addingTimeInterval(6 * 3600)) == nil)
+    #expect(!WorkoutService.hasActiveSession)
+}
+
+@Test func legacySessionPayloadWithoutLastSavedAtDecodes() throws {
+    defer { WorkoutService.clearSession() }
+    // Simulate a payload written by a build that predates lastSavedAt.
+    struct LegacySession: Codable {
+        let workoutName: String; let startTime: Date
+        let exercises: [WorkoutService.SavedSession.SessionExercise]
+    }
+    let legacy = LegacySession(workoutName: "Old Build", startTime: Date().addingTimeInterval(-600), exercises: [])
+    UserDefaults.standard.set(try JSONEncoder().encode(legacy), forKey: "drift_active_workout_session")
+    let restored = WorkoutService.loadSession()
+    #expect(restored?.workoutName == "Old Build")
+    #expect(restored?.lastSavedAt == nil)   // falls back to startTime for expiry
+}
 }

@@ -389,11 +389,15 @@ public enum WorkoutService {
         public let workoutName: String
         public let startTime: Date
         public let exercises: [SessionExercise]
+        /// Stamped by saveSession on every persist. Optional so payloads
+        /// written by older builds still decode (they fall back to startTime).
+        public var lastSavedAt: Date?
 
-        public init(workoutName: String, startTime: Date, exercises: [SessionExercise]) {
+        public init(workoutName: String, startTime: Date, exercises: [SessionExercise], lastSavedAt: Date? = nil) {
             self.workoutName = workoutName
             self.startTime = startTime
             self.exercises = exercises
+            self.lastSavedAt = lastSavedAt
         }
 
         public struct SessionExercise: Codable {
@@ -428,20 +432,80 @@ public enum WorkoutService {
     }
 
     public static func saveSession(_ session: SavedSession) {
-        if let data = try? JSONEncoder().encode(session) {
+        var stamped = session
+        stamped.lastSavedAt = Date()
+        if let data = try? JSONEncoder().encode(stamped) {
             UserDefaults.standard.set(data, forKey: sessionKey)
         }
     }
 
-    public static func loadSession() -> SavedSession? {
+    /// Sessions idle for 5+ hours are treated as abandoned — but NEVER
+    /// silently discarded (field report 2026-07-09: operator lost a full
+    /// logged workout by leaving the phone without tapping Finish). Any
+    /// entered sets are auto-saved as a completed workout dated to the day
+    /// it actually happened; only a session with nothing logged is dropped.
+    public static func loadSession(now: Date = Date()) -> SavedSession? {
         guard let data = UserDefaults.standard.data(forKey: sessionKey),
               let session = try? JSONDecoder().decode(SavedSession.self, from: data) else { return nil }
-        // Expire after 5 hours
-        if Date().timeIntervalSince(session.startTime) > 5 * 3600 {
+        let lastActivity = session.lastSavedAt ?? session.startTime
+        if now.timeIntervalSince(lastActivity) > 5 * 3600 {
+            finalizeAbandonedSession(session, into: db)
             clearSession()
             return nil
         }
         return session
+    }
+
+    /// Convert an abandoned session's entered sets into a real workout.
+    /// Mirrors ActiveWorkoutView.saveWorkout: completed (done) sets win;
+    /// if none were ticked done, any set with data still counts — losing
+    /// typed-in work is worse than saving an unticked set.
+    /// Internal + db-injected for tests.
+    static func finalizeAbandonedSession(_ session: SavedSession, into db: AppDatabase) {
+        func buildSets(for wid: Int64, requireDone: Bool) -> [WorkoutSet] {
+            var sets: [WorkoutSet] = []
+            for (ei, ex) in session.exercises.enumerated() {
+                let isDuration = WorkoutSet.isDurationExercise(ex.name)
+                for (si, s) in ex.sets.enumerated() where s.done || !requireDone {
+                    let w = Double(s.weight.replacingOccurrences(of: ",", with: ".")) ?? 0
+                    let r = Int(s.reps) ?? 0
+                    let dur = isDuration ? (Int(s.reps) ?? 0) : nil
+                    guard r > 0 || (isDuration && (dur ?? 0) > 0) else { continue }
+                    sets.append(WorkoutSet(workoutId: wid, exerciseName: ex.name, setOrder: si + 1,
+                                           weightLbs: w > 0 ? w : nil, reps: isDuration ? nil : r,
+                                           isWarmup: s.isWarmup || ex.isWarmup,
+                                           durationSec: dur, exerciseOrder: ei))
+                }
+            }
+            return sets
+        }
+        // Probe with a placeholder id — only touch the DB if there is data.
+        let hasData = !buildSets(for: 0, requireDone: true).isEmpty || !buildSets(for: 0, requireDone: false).isEmpty
+        guard hasData else { return }
+        do {
+            let lastActivity = session.lastSavedAt ?? session.startTime
+            let duration = max(60, Int(lastActivity.timeIntervalSince(session.startTime)))
+            var workout = Workout(name: session.workoutName,
+                                  date: DateFormatters.dateOnly.string(from: session.startTime),
+                                  durationSeconds: duration,
+                                  notes: "Auto-saved — workout was left unfinished",
+                                  createdAt: ISO8601DateFormatter().string(from: session.startTime))
+            var m = workout
+            try db.writer.write { dbConn in
+                try m.save(dbConn)
+                if m.id == nil { m.id = dbConn.lastInsertedRowID }
+            }
+            workout = m
+            guard let wid = workout.id else { return }
+            var sets = buildSets(for: wid, requireDone: true)
+            if sets.isEmpty { sets = buildSets(for: wid, requireDone: false) }
+            try db.writer.write { dbConn in
+                for var s in sets { try s.insert(dbConn) }
+            }
+            Log.app.info("Auto-saved abandoned workout session '\(session.workoutName)' with \(sets.count) sets")
+        } catch {
+            Log.app.error("Auto-save abandoned session failed: \(error.localizedDescription)")
+        }
     }
 
     public static func clearSession() {
