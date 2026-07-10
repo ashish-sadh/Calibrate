@@ -13,6 +13,9 @@ public struct FoodEntry: Identifiable, Codable, Sendable {
     public var carbsG: Double
     public var fatG: Double
     public var fiberG: Double
+    /// Portion exactly as the user logged it ("150 g", "2 rotis") — beats
+    /// the keyword guesser in portionText. Nil for legacy/derived entries.
+    public var loggedPortion: String?
     public var createdAt: String
     public var loggedAt: String
     public var date: String?         // "YYYY-MM-DD" — which day this belongs to
@@ -35,6 +38,7 @@ public struct FoodEntry: Identifiable, Codable, Sendable {
         case mealType = "meal_type"
         case sodiumMg = "sodium_mg"
         case sugarG = "sugar_g"
+        case loggedPortion = "logged_portion"
     }
 
     public init(
@@ -54,7 +58,8 @@ public struct FoodEntry: Identifiable, Codable, Sendable {
         date: String? = nil,
         mealType: String? = nil,
         sodiumMg: Double? = nil,
-        sugarG: Double? = nil
+        sugarG: Double? = nil,
+        loggedPortion: String? = nil
     ) {
         self.id = id
         self.mealLogId = mealLogId
@@ -73,6 +78,7 @@ public struct FoodEntry: Identifiable, Codable, Sendable {
         self.mealType = mealType
         self.sodiumMg = sodiumMg
         self.sugarG = sugarG
+        self.loggedPortion = loggedPortion
     }
 
     /// Convenience init that copies all macro/micronutrient fields from a Food at log-time.
@@ -115,6 +121,8 @@ extension FoodEntry: FetchableRecord, PersistableRecord {
 extension FoodEntry {
     /// Human-readable portion text: "2 eggs", "200g", etc.
     public var portionText: String {
+        // What the user actually picked always wins over keyword guessing.
+        if let p = loggedPortion, !p.isEmpty { return p }
         guard servingSizeG > 0 else { return "" }
         let totalG = servingSizeG * servings
         let lower = foodName.lowercased()

@@ -246,6 +246,17 @@ public struct FoodUnit: Hashable {
         let words = Set(lower.split(whereSeparator: { !$0.isLetter }).map { String($0) })
         var units: [FoodUnit] = []
 
+        // Scanned products carry the label's REAL serving — that beats any
+        // name-keyword inference (2026-07-10 field case: "Honey" in "Rip Van
+        // Wafels ... Honey & Oats" defaulted a 33g wafel to 1 tbsp = 21g).
+        // ml-seeded scans fall through so liquids still get the cup logic.
+        if food.category == "Scanned", food.servingSize > 0,
+           food.servingUnit.lowercased() != "ml" {
+            return [FoodUnit(label: "serving", gramsEquivalent: food.servingSize),
+                    FoodUnit(label: "g", gramsEquivalent: 1),
+                    FoodUnit(label: "oz", gramsEquivalent: 28.3495)]
+        }
+
         // #1049: liquids seeded in ml default to a human measure ("1 cup = 240ml") rather than
         // "240 ml" — but ONLY when the keyword rules would otherwise give a GENERIC unit. A
         // specific rule (soup/stock → bowl) still wins, so we don't clobber a good default.

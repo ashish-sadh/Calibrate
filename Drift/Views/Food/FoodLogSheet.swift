@@ -229,8 +229,14 @@ struct FoodLogSheet: View {
     private func logAndDismiss() {
         // Anchor the picker's time-of-day onto the VM's viewed day (no-op for
         // today) — past-day logs must not carry a today timestamp.
+        // Store the portion EXACTLY as picked ("150 g", "1.5 cups") so the
+        // diary can't re-guess units (#1013: 150 g paneer displayed "1.5 cups").
+        let amt = Double(amount) ?? 0
+        let amtText = amt == Double(Int(amt)) ? "\(Int(amt))" : String(format: "%.1f", amt)
+        let portion = amt > 0 ? "\(amtText) \(unit.label)" : nil
         foodLog.logFood(food, servings: multiplier, mealType: mealType,
-                        loggedAt: foodLog.anchoredToSelectedDay(logTime))
+                        loggedAt: foodLog.anchoredToSelectedDay(logTime),
+                        loggedPortion: portion)
         onLogged()
         dismiss()
     }

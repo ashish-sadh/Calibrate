@@ -234,7 +234,7 @@ final class FoodLogViewModel {
         NotificationCenter.default.post(name: .foodEntryAdded, object: nil)
     }
 
-    func logFood(_ food: Food, servings: Double, mealType: MealType, loggedAt: Date? = nil) {
+    func logFood(_ food: Food, servings: Double, mealType: MealType, loggedAt: Date? = nil, loggedPortion: String? = nil) {
         FeatureUsage.record("action.log_food")
         do {
             let date = dateString
@@ -266,7 +266,8 @@ final class FoodLogViewModel {
                 fiberG: food.fiberG,
                 loggedAt: ISO8601DateFormatter().string(from: effectiveLoggedAt),
                 date: date,
-                mealType: mealType.rawValue
+                mealType: mealType.rawValue,
+                loggedPortion: loggedPortion
             )
             try database.saveFoodEntry(&entry)
             try? database.trackFoodUsage(name: food.name, foodId: food.id, servings: servings,

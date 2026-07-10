@@ -9,7 +9,7 @@ public enum Migrations {
     /// fails with `Int.fetchOne(grdb_migrations) != currentVersion`.
     /// Stamped into the backup manifest so restore can detect a
     /// forward/backward migration scenario.
-    public static let currentVersion = 40
+    public static let currentVersion = 41
 
     public static func registerAll(_ migrator: inout DatabaseMigrator) {
         // v1: Weight tracking
@@ -652,6 +652,15 @@ public enum Migrations {
             for (old, new) in Migrations.exerciseRenameMap {
                 try db.execute(sql: "UPDATE workout_set SET exercise_name = ? WHERE exercise_name = ?",
                                arguments: [new, old])
+            }
+        }
+
+        // v41: store the portion EXACTLY as the user logged it ("150 g",
+        // "2 rotis") — portionText guessed units by name keywords and showed
+        // "1.5 cups" for a 150 g paneer log (#1013 repro, 2026-07-10).
+        migrator.registerMigration("v41_logged_portion") { db in
+            try db.alter(table: "food_entry") { t in
+                t.add(column: "logged_portion", .text)
             }
         }
     }

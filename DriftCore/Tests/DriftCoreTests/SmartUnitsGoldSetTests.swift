@@ -471,3 +471,97 @@ final class SuspiciousPieceCheckTests: XCTestCase {
         XCTAssertNotNil(range, "Lookup must be case-insensitive")
     }
 }
+
+// MARK: - Field-report weirdness battery (2026-07-10, operator: "good by
+// default — user doesn't do math"). Covers #1010/#1011/#1049 + the Rip Van
+// wafel barcode case.
+
+extension SmartUnitsGoldSetTests {
+
+    private func unit(_ f: Food) -> FoodUnit? { FoodUnit.smartUnits(for: f).first }
+
+    /// Beverages default to a human cup, never raw ml (#1049 field: "coffee
+    /// defaulting to ml").
+    func testBeveragesDefaultToCup() {
+        let drinks: [(String, Double)] = [
+            ("Coffee", 240), ("Black Coffee", 240), ("Coffee (black)", 240),
+            ("Chai", 240), ("Green Tea", 240), ("Masala Chai", 240),
+            ("Orange Juice", 240), ("Buttermilk", 240),
+        ]
+        var misses: [String] = []
+        for (name, ml) in drinks {
+            let f = Food(name: name, category: "Test", servingSize: ml, servingUnit: "ml", calories: 50)
+            let u = unit(f)
+            if u?.label != "cup" { misses.append("\(name) → \(u?.label ?? "nil")") }
+        }
+        XCTAssertTrue(misses.isEmpty, "beverages should default to cup: \(misses)")
+    }
+
+    /// Milk seeded in ml (244) must be cup, not "244 ml".
+    func testMilkDefaultsToCup() {
+        let f = Food(name: "Milk (2%)", category: "Dairy", servingSize: 244, servingUnit: "ml", calories: 122)
+        XCTAssertEqual(unit(f)?.label, "cup", "milk → cup, got \(unit(f)?.label ?? "nil")")
+    }
+
+    /// Scanned products carry the label's real serving — that beats any
+    /// name-keyword inference. Rip Van wafel field case: name contains
+    /// "Honey" → old code defaulted to 1 tbsp (21g/72cal) for a 33g wafel.
+    func testScannedProductServingBeatsNameKeywords() {
+        let wafel = Food(name: "Wafels European Snack Honey & Oats - Rip Van",
+                         category: "Scanned", servingSize: 33, servingUnit: "g", calories: 342)
+        let u = unit(wafel)
+        XCTAssertEqual(u?.label, "serving", "scanned wafel → serving, got \(u?.label ?? "nil")")
+        XCTAssertEqual(u?.gramsEquivalent ?? 0, 33, accuracy: 0.01, "serving must be the label's 33g")
+    }
+
+    /// Plain nuts: primary is the concrete "handful" (#1010 landed
+    /// decision — no math), with a per-piece count unit ONE TAP away.
+    func testPlainNutsHandfulPrimaryWithCountAvailable() {
+        for (name, count) in [("Almonds", "almond"), ("Cashews", "cashew")] {
+            let f = Food(name: name, category: "Nuts", servingSize: 28, servingUnit: "g", calories: 160)
+            let units = FoodUnit.smartUnits(for: f)
+            XCTAssertEqual(units.first?.label, "handful", "\(name) primary → handful")
+            XCTAssertTrue(units.contains { $0.label == count }, "\(name) must offer \(count) count")
+        }
+        // Derivatives must NOT count-default
+        let milk = Food(name: "Almond Milk", category: "Dairy", servingSize: 240, servingUnit: "ml", calories: 30)
+        XCTAssertNotEqual(FoodUnit.smartUnits(for: milk).first?.label, "almond")
+    }
+
+    /// Peanut butter: 1 tbsp must be ~16g (#1011 field: "PB tbsp 2x" — a
+    /// 32g-serving seed leaking into the tbsp weight doubles every log).
+    func testPeanutButterTbspIsSingleTbsp() {
+        let f = Food(name: "Peanut Butter", category: "Spreads", servingSize: 32, servingUnit: "g", calories: 190)
+        let units = FoodUnit.smartUnits(for: f)
+        guard let tbsp = units.first(where: { $0.label == "tbsp" }) else {
+            return XCTFail("peanut butter should offer tbsp: \(units.map(\.label))")
+        }
+        XCTAssertEqual(tbsp.gramsEquivalent, 16, accuracy: 3, "1 tbsp PB ≈ 16g, got \(tbsp.gramsEquivalent)")
+    }
+
+    /// Whole fruits count by the piece.
+    func testBananaDefaultsToPiece() {
+        let f = Food(name: "Banana", category: "Fruit", servingSize: 118, servingUnit: "g", calories: 105)
+        let label = unit(f)?.label ?? ""
+        XCTAssertTrue(label == "piece" || label == "banana", "banana → piece, got \(label)")
+    }
+
+    /// Rice serves by the cup/bowl, not grams.
+    func testCookedRiceDefaultsToCupOrBowl() {
+        let f = Food(name: "Rice", category: "Grains", servingSize: 186, servingUnit: "g", calories: 205)
+        let label = unit(f)?.label ?? ""
+        XCTAssertTrue(label == "cup" || label == "bowl", "rice → cup/bowl, got \(label)")
+    }
+}
+
+extension SmartUnitsGoldSetTests {
+    /// The stored logged portion beats the keyword guesser (#1013: a 150 g
+    /// paneer log displayed "1.5 cups").
+    func testLoggedPortionBeatsKeywordGuess() {
+        var e = FoodEntry(foodName: "Paneer", servingSizeG: 100, servings: 1.5,
+                          calories: 265, loggedPortion: "150 g")
+        XCTAssertEqual(e.portionText, "150 g")
+        e.loggedPortion = nil
+        XCTAssertTrue(e.portionText.contains("cup"), "legacy entries keep the keyword fallback")
+    }
+}
