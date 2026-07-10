@@ -51,6 +51,8 @@ Each entry tagged with its maintenance status. **Auto-maintained** = a script or
 | `Docs/development-sop.md` | Reference (canonical) | **The dev SOP** — module layout (DriftCore vs iOS), build, test tier map, AI eval, DriftChatSim, feature checklist. Human-facing mirror of this file's workflow rules. |
 | `Docs/testing.md` | Reference (pointer) | Test-authoring patterns + simulator utilities; defers the workflow to `development-sop.md`. |
 | `Docs/develop.md` | Reference (pointer) | Prereqs, USDA key, dependencies; defers the workflow to `development-sop.md`. |
+| `Docs/body-diagram.md` | Reference | Muscle-figure system: react-native-body-highlighter source, extraction pipeline, gender selection, data quirks. |
+| `Docs/exercise-pose-sourcing.md` | Reference | How to source + convert exercise demo pose photos (source ladder, HEIC pipeline, guard tests). |
 | `Docs/principles/` | Reference | Code quality cards (Clean Code, Design Patterns, DDD, SwiftUI). |
 | `Docs/refactor/` | Manual — durable refactor plans | Multi-day refactor proposals committed for later pickup. |
 | `Docs/audits/` | Manual — point-in-time audits | Historical audit snapshots. |
