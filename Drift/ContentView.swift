@@ -173,10 +173,20 @@ struct ContentView: View {
         TabView(selection: $selectedTab) {
             DashboardView(syncComplete: $syncComplete, selectedTab: selectedTabBindingLegacy)
                 .toolbar(.hidden, for: .tabBar)
+                // Per-page, like .toolbar above: applied on the TabView
+                // container this inset never reached the pages, so last
+                // rows (workout history — field report 2026-07-10) slid
+                // under the floating pill bar.
+                .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: 78) }
                 .tag(PrimaryTab.today)
                 .accessibilityIdentifier("tab-today-content")
             FoodTabView(selectedTab: selectedTabBindingLegacy)
                 .toolbar(.hidden, for: .tabBar)
+                // Per-page, like .toolbar above: applied on the TabView
+                // container this inset never reached the pages, so last
+                // rows (workout history — field report 2026-07-10) slid
+                // under the floating pill bar.
+                .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: 78) }
                 .tag(PrimaryTab.food)
                 .accessibilityIdentifier("tab-food-content")
             // Workout promoted to a first-class tab 2026-07-09 (was a
@@ -186,27 +196,34 @@ struct ContentView: View {
                 WorkoutView(selectedTab: selectedTabBindingLegacy)
             }
             .toolbar(.hidden, for: .tabBar)
+                // Per-page, like .toolbar above: applied on the TabView
+                // container this inset never reached the pages, so last
+                // rows (workout history — field report 2026-07-10) slid
+                // under the floating pill bar.
+                .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: 78) }
             .tag(PrimaryTab.workout)
             .accessibilityIdentifier("tab-workout-content")
             WeightTabView(syncComplete: $syncComplete, selectedTab: selectedTabBindingLegacy)
                 .toolbar(.hidden, for: .tabBar)
+                // Per-page, like .toolbar above: applied on the TabView
+                // container this inset never reached the pages, so last
+                // rows (workout history — field report 2026-07-10) slid
+                // under the floating pill bar.
+                .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: 78) }
                 .tag(PrimaryTab.body)
                 .accessibilityIdentifier("tab-body-content")
             MoreTabView(selectedTab: selectedTabBindingLegacy)
                 .toolbar(.hidden, for: .tabBar)
+                // Per-page, like .toolbar above: applied on the TabView
+                // container this inset never reached the pages, so last
+                // rows (workout history — field report 2026-07-10) slid
+                // under the floating pill bar.
+                .safeAreaInset(edge: .bottom, spacing: 0) { Color.clear.frame(height: 78) }
                 .tag(PrimaryTab.more)
                 .accessibilityIdentifier("tab-more-content")
         }
-        // V7 polish: floating PillTabBar + FAB sit in the bottom 78pt of
-        // the screen but don't contribute to the safe area (they live
-        // in an overlay ZStack). Without this inset, ScrollViews inside
-        // the tab destinations let their last row slide *under* the
-        // tab bar — the V7 mobile review surfaced this as "content
-        // gets cut off at the bottom" and contributed to the
-        // "UI not flowing" complaint.
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            Color.clear.frame(height: 78)
-        }
+        // (bottom inset is applied per page above — container-applied
+        // modifiers don't propagate into TabView pages)
     }
 
     private var tabBarOverlay: some View {

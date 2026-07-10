@@ -346,7 +346,12 @@ struct WorkoutView: View {
 
                         if showHistory {
                             ForEach(workouts, id: \.workout.id) { s in
-                                NavigationLink { WorkoutDetailView(summary: s) { loadData() } } label: { workoutCard(s) }.tint(.primary)
+                                NavigationLink { WorkoutDetailView(summary: s) { loadData() } } label: {
+                                    // contentShape: the card's whitespace was
+                                    // not tappable — history rows felt "very
+                                    // hard to click" (field report 2026-07-10).
+                                    workoutCard(s).contentShape(Rectangle())
+                                }.tint(.primary)
                                     .contextMenu {
                                         if let wid = s.workout.id {
                                             Button(role: .destructive) {

@@ -494,6 +494,48 @@ struct FoodSearchView: View {
 
     private var searchResultsList: some View {
         List {
+            // Food results. Recipes are excluded here — they surface in
+            // "Your Recipes" above with the proper expand-on-log flow; the
+            // flat row would log the combined blob as one item (search-first
+            // fix 2026-07-09: everything reachable by typing, no tab switch).
+            let plainResults = results.filter { !$0.isRecipe }
+            if !plainResults.isEmpty {
+                Section("Foods") {
+                    ForEach(plainResults) { food in
+                        Button { selectFood(food) } label: {
+                            let primaryUnit = FoodUnit.smartUnits(for: food).first?.label ?? "serving"
+                            let unitInfo = primaryUnit == "g" || primaryUnit == "ml"
+                                ? "\(Int(food.servingSize))\(food.servingUnit)"
+                                : "1 \(primaryUnit)"
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(food.name).font(.subheadline)
+                                Text("\(food.macroSummary) \u{00B7} \(unitInfo)")
+                                    .font(.caption).foregroundStyle(Theme.textSecondary)
+                            }
+                        }
+                        .tint(.primary)
+                        .swipeActions(edge: .leading) {
+                            Button {
+                                FoodService.toggleFavorite(name: food.name, foodId: food.id)
+                                viewModel.loadSuggestions()
+                            } label: {
+                                Label("Favorite", systemImage: "star")
+                            }.tint(Theme.fatYellow)
+                        }
+                        .swipeActions(edge: .trailing) {
+                            // Only allow deleting user-added foods (Scanned category)
+                            if food.category == "Scanned", let fid = food.id {
+                                Button(role: .destructive) {
+                                    FoodService.deleteScannedFood(id: fid, name: food.name)
+                                    viewModel.loadSuggestions()
+                                    refreshSearch()
+                                } label: { Label("Delete", systemImage: "trash") }
+                            }
+                        }
+                    }
+                }
+            }
+
             // Matching recipes
             if !matchingRecipes.isEmpty {
                 Section("Your Recipes") {
@@ -549,48 +591,6 @@ struct FoodSearchView: View {
                 }
             }
 
-            // Food results. Recipes are excluded here — they surface in
-            // "Your Recipes" above with the proper expand-on-log flow; the
-            // flat row would log the combined blob as one item (search-first
-            // fix 2026-07-09: everything reachable by typing, no tab switch).
-            let plainResults = results.filter { !$0.isRecipe }
-            if !plainResults.isEmpty {
-                Section("Foods") {
-                    ForEach(plainResults) { food in
-                        Button { selectFood(food) } label: {
-                            let primaryUnit = FoodUnit.smartUnits(for: food).first?.label ?? "serving"
-                            let unitInfo = primaryUnit == "g" || primaryUnit == "ml"
-                                ? "\(Int(food.servingSize))\(food.servingUnit)"
-                                : "1 \(primaryUnit)"
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(food.name).font(.subheadline)
-                                Text("\(food.macroSummary) \u{00B7} \(unitInfo)")
-                                    .font(.caption).foregroundStyle(Theme.textSecondary)
-                            }
-                        }
-                        .tint(.primary)
-                        .swipeActions(edge: .leading) {
-                            Button {
-                                FoodService.toggleFavorite(name: food.name, foodId: food.id)
-                                viewModel.loadSuggestions()
-                            } label: {
-                                Label("Favorite", systemImage: "star")
-                            }.tint(Theme.fatYellow)
-                        }
-                        .swipeActions(edge: .trailing) {
-                            // Only allow deleting user-added foods (Scanned category)
-                            if food.category == "Scanned", let fid = food.id {
-                                Button(role: .destructive) {
-                                    FoodService.deleteScannedFood(id: fid, name: food.name)
-                                    viewModel.loadSuggestions()
-                                    refreshSearch()
-                                } label: { Label("Delete", systemImage: "trash") }
-                            }
-                        }
-                    }
-                }
-            }
-
             // Online results — deduplicated against local AND within themselves
             let localNames = Set(results.map { normalizeForDedup($0.name) })
             var seenOnline = Set<String>()
@@ -631,6 +631,9 @@ struct FoodSearchView: View {
             }
         }
         .listStyle(.plain)
+        // Results scroll dismisses the keyboard — it trapped the list
+        // behind the keyboard during user-testing (2026-07-09).
+        .scrollDismissesKeyboard(.immediately)
     }
 
     // MARK: - Online Search
