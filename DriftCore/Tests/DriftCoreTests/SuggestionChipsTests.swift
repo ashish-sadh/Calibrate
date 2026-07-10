@@ -118,3 +118,50 @@ private func setUsage(_ db: AppDatabase, name: String, foodId: Int64?,
     let chips = try db.fetchSuggestionChips(limit: 3)
     #expect(chips.map(\.name) == ["Food 6", "Food 5", "Food 4"])
 }
+
+// MARK: - Auto-combo naming (design pass 2026-07-09: "Dal + + Chicken" bug)
+
+@Test func autoComboNameDropsEmptyAndConnectorSegments() throws {
+    let db = try makeDB()
+    // Same 3-item session on two distinct dates → becomes a combo.
+    let iso = ISO8601DateFormatter()
+    for (date, base) in [("2026-07-01", 1_782_000_000.0), ("2026-07-02", 1_782_086_400.0)] {
+        var log = MealLog(date: date, mealType: "lunch")
+        try db.saveMealLog(&log)
+        for (i, name) in ["Oatmeal w/ Berries", "", "Chicken Biryani Special"].enumerated() {
+            try db.writer.write { dbc in
+                var e = FoodEntry(mealLogId: log.id!, foodName: name, servingSizeG: 100, servings: 1,
+                                  calories: 200, proteinG: 10, carbsG: 20, fatG: 5, fiberG: 2,
+                                  createdAt: iso.string(from: Date(timeIntervalSince1970: base)),
+                                  loggedAt: iso.string(from: Date(timeIntervalSince1970: base + Double(i * 60))),
+                                  date: date, mealType: "lunch")
+                try e.insert(dbc)
+            }
+        }
+    }
+    try db.detectAndSaveCombos()
+    let names = try db.reader.read { dbc in
+        try String.fetchAll(dbc, sql: "SELECT name FROM food WHERE source = 'recipe' AND is_recipe = 1")
+    }
+    #expect(names.count == 1, "expected one auto combo, got \(names)")
+    let name = names[0]
+    #expect(!name.contains("+ +"), "empty segment leaked: \(name)")
+    #expect(!name.contains("w/"), "trailing connector leaked: \(name)")
+    #expect(name.contains("Oatmeal"))
+    #expect(name.contains("Chicken Biryani"))
+}
+
+@Test func detectHealsPreviouslyMalformedComboNames() throws {
+    let db = try makeDB()
+    try db.writer.write { dbc in
+        var bad = Food(name: "Dal + + Chicken biryani", category: "Combo",
+                       servingSize: 100, servingUnit: "serving", calories: 500,
+                       source: "recipe", isRecipe: true)
+        try bad.insert(dbc)
+    }
+    try db.detectAndSaveCombos()   // no entries → nothing regenerates, but bad row is healed away
+    let count = try db.reader.read { dbc in
+        try Int.fetchOne(dbc, sql: "SELECT COUNT(*) FROM food WHERE name LIKE '%+ +%'") ?? -1
+    }
+    #expect(count == 0)
+}

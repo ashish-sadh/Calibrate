@@ -1,33 +1,59 @@
 import SwiftUI
 import DriftCore
 
-// MARK: - Profile Card (sex, age, height, weight form)
+// MARK: - Profile link row (Weight Goal keeps the TDEE connection visible)
 
 extension GoalView {
-
+    /// Compact row replacing the old inline collapsible profile form —
+    /// Profile is identity, not goal config, so it lives on its own screen
+    /// (operator call 2026-07-09), reachable from More AND from here.
     var profileCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Button {
-                withAnimation { profileExpanded.toggle() }
-            } label: {
-                HStack {
-                    Label("Your Profile", systemImage: "person.crop.circle")
-                        .font(.subheadline.weight(.semibold))
-                    Spacer()
-                    if profileComplete {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.caption).foregroundStyle(Theme.deficit)
-                    } else {
-                        Text("Improve accuracy")
-                            .font(.caption2).foregroundStyle(Theme.fatYellow)
-                    }
-                    Image(systemName: profileExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption2).foregroundStyle(Theme.textTertiary)
+        NavigationLink { ProfileView() } label: {
+            HStack {
+                Label("Your Profile", systemImage: "person.crop.circle")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.textPrimary)
+                Spacer()
+                if profileComplete {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.caption).foregroundStyle(Theme.deficit)
+                } else {
+                    Text("Improve accuracy")
+                        .font(.caption2).foregroundStyle(Theme.fatYellow)
                 }
+                Image(systemName: "chevron.right")
+                    .font(.caption2).foregroundStyle(Theme.textTertiary)
             }
-            .buttonStyle(.plain)
+            .card()
+        }
+        .buttonStyle(.plain)
+    }
 
-            if profileExpanded {
+    var profileComplete: Bool {
+        (tdeeConfig.sex != nil || tdeeConfig.sexUndisclosed == true)
+            && tdeeConfig.age != nil && tdeeConfig.heightCm != nil
+    }
+}
+
+// MARK: - Profile screen (sex, age, height, weight)
+
+/// Standalone profile editor — pushed from More → Profile and from
+/// Weight Goal's profile row. Feeds TDEE (sex/age/height) and the weight
+/// log (weight field writes a real WeightEntry).
+struct ProfileView: View {
+    @State private var tdeeConfig = TDEEEstimator.loadConfig()
+    @State private var showSaved = false
+    @State private var heightInFeet = false
+    @State private var weightUnit: WeightUnit = Preferences.weightUnit
+    @State private var weightText = ""
+    @State private var currentWeightKg: Double?
+    @FocusState private var weightFocused: Bool
+
+    private let ageRanges = ["18-24", "25-34", "35-44", "45-54", "55-64", "65+"]
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
                 VStack(spacing: 10) {
                     sexPicker
                     agePicker
@@ -35,17 +61,35 @@ extension GoalView {
                     weightInput
                     saveFeedback
                 }
-                .padding(.top, 4)
+                .card()
+
+                Text("Sex, age and height personalize your calorie targets. Weight entries go to your weight log.")
+                    .font(.caption2).foregroundStyle(Theme.textTertiary)
+                    .padding(.horizontal, 4)
             }
+            .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
         }
-        .card()
+        .scrollContentBackground(.hidden)
+        .background(Theme.background.ignoresSafeArea())
+        .navigationTitle("Profile")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarColorScheme(.light, for: .navigationBar)
         .onAppear {
+            let service = WeightTrendService.shared
+            currentWeightKg = service.latestWeightKg ?? service.trendWeight
+            if let kg = currentWeightKg {
+                weightText = String(format: "%.1f", weightUnit.convert(fromKg: kg))
+            }
             tryAutoFillProfile()
-            if !profileComplete { profileExpanded = true }
         }
     }
 
-    // MARK: - Profile Fields
+    private var profileComplete: Bool {
+        (tdeeConfig.sex != nil || tdeeConfig.sexUndisclosed == true)
+            && tdeeConfig.age != nil && tdeeConfig.heightCm != nil
+    }
+
+    // MARK: - Fields
 
     private var sexPicker: some View {
         HStack {
@@ -206,9 +250,31 @@ extension GoalView {
         }
     }
 
-    // MARK: - Profile Helpers
+    // MARK: - Helpers
 
-    func updateHeightFromFtIn(ft: String?, inches: String?) {
+    private func ageFromRange(_ range: String) -> Int {
+        switch range {
+        case "18-24": return 21
+        case "25-34": return 30
+        case "35-44": return 40
+        case "45-54": return 50
+        case "55-64": return 60
+        default: return 70
+        }
+    }
+
+    private func rangeFromAge(_ age: Int?) -> String {
+        switch age ?? 0 {
+        case 18...24: return "18-24"
+        case 25...34: return "25-34"
+        case 35...44: return "35-44"
+        case 45...54: return "45-54"
+        case 55...64: return "55-64"
+        default: return "65+"
+        }
+    }
+
+    private func updateHeightFromFtIn(ft: String?, inches: String?) {
         let currentCm = tdeeConfig.heightCm ?? 170
         let totalInches = Int(currentCm / 2.54)
         let currentFt = totalInches / 12
@@ -222,20 +288,21 @@ extension GoalView {
         }
     }
 
-    var profileComplete: Bool {
-        // An explicit "N/A" on sex counts as answered — don't nag with
-        // "Improve accuracy" for a deliberate choice.
-        (tdeeConfig.sex != nil || tdeeConfig.sexUndisclosed == true)
-            && tdeeConfig.age != nil && tdeeConfig.heightCm != nil
-    }
-
-    func saveWeight(kg: Double) {
+    private func saveWeight(kg: Double) {
         var entry = WeightEntry(date: DateFormatters.todayString, weightKg: kg)
         WeightServiceAPI.saveWeightEntry(&entry)
         WeightTrendService.shared.refresh()
         currentWeightKg = WeightTrendService.shared.trendWeight
-        actualWeeklyRate = WeightTrendService.shared.weeklyRate
-        actualDailyDeficit = WeightTrendService.shared.dailyDeficit
+        flashSaved()
+    }
+
+    private func saveProfile(showFeedback: Bool = true) {
+        TDEEEstimator.saveConfig(tdeeConfig)
+        Task { await TDEEEstimator.shared.refresh() }
+        if showFeedback { flashSaved() }
+    }
+
+    private func flashSaved() {
         withAnimation { showSaved = true }
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(1.5))
@@ -243,19 +310,7 @@ extension GoalView {
         }
     }
 
-    func saveProfile(showFeedback: Bool = true) {
-        TDEEEstimator.saveConfig(tdeeConfig)
-        Task { await TDEEEstimator.shared.refresh() }
-        if showFeedback {
-            withAnimation { showSaved = true }
-            Task { @MainActor in
-                try? await Task.sleep(for: .seconds(1.5))
-                withAnimation { showSaved = false }
-            }
-        }
-    }
-
-    func tryAutoFillProfile() {
+    private func tryAutoFillProfile() {
         guard !profileComplete else { return }
         Task {
             let profile = await HealthKitService.shared.fetchUserProfile()

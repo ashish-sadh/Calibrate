@@ -8,20 +8,41 @@ struct ExerciseThumbnail: View {
     let size: CGFloat
 
     // #929: the remote imageUrl AsyncImage is gone — it fetched from the
-    // network at render time (privacy + scroll jank) for a low-value photo.
-    // Rows show the body-part glyph; the detail view owns the anatomy card.
+    // network at render time (privacy + scroll jank). Rows now show the
+    // BUNDLED start-pose photo (on-disk HEIC, ~6KB — no network, no jank);
+    // glyph fallback for the few exercises without one. The old all-coral
+    // glyph tiles read as a wall of identical pink squares (design pass
+    // 2026-07-09).
     var body: some View {
-        fallback
-            .frame(width: size, height: size)
-            .clipShape(RoundedRectangle(cornerRadius: size * 0.18))
+        Group {
+            if let pose = poseImage {
+                Image(uiImage: pose)
+                    .resizable().scaledToFill()
+                    .frame(width: size, height: size)
+                    .background(Color.white)
+            } else {
+                fallback
+                    .frame(width: size, height: size)
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: size * 0.18))
+        .overlay(RoundedRectangle(cornerRadius: size * 0.18)
+            .strokeBorder(Theme.separator, lineWidth: 0.5))
+    }
+
+    private var poseImage: UIImage? {
+        guard let base = ExercisePoses.assetBaseName(fromImageUrl: info?.imageUrl),
+              let url = Bundle.main.url(forResource: "\(base)-0", withExtension: "heic",
+                                        subdirectory: "ExercisePoses") else { return nil }
+        return UIImage(contentsOfFile: url.path)
     }
 
     private var fallback: some View {
         Image(systemName: bodyPartIcon(info?.bodyPart ?? ""))
             .font(.system(size: size * 0.38))
-            .foregroundStyle(Theme.accent)
+            .foregroundStyle(Theme.textSecondary)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Theme.accent.opacity(0.1))
+            .background(Theme.cardBackgroundElevated)
     }
 
     private func bodyPartIcon(_ bodyPart: String) -> String {

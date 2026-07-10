@@ -65,77 +65,6 @@ struct WorkoutView: View {
                     }.buttonStyle(.plain)
                 }
 
-                // Today's burn metrics
-                HStack(spacing: 10) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "flame.fill").font(.caption).foregroundStyle(Theme.stepsOrange)
-                        Text("\(Int(activeCalories))").font(.subheadline.weight(.bold).monospacedDigit())
-                        Text("active cal").font(.caption2).foregroundStyle(Theme.textSecondary)
-                    }
-                    .frame(maxWidth: .infinity).card()
-
-                    HStack(spacing: 4) {
-                        Image(systemName: "figure.walk").font(.caption).foregroundStyle(Theme.deficit)
-                        Text(steps >= 1000 ? String(format: "%.1fk", steps/1000) : "\(Int(steps))")
-                            .font(.subheadline.weight(.bold).monospacedDigit())
-                        Text("steps").font(.caption2).foregroundStyle(Theme.textSecondary)
-                    }
-                    .frame(maxWidth: .infinity).card()
-                }
-
-                // Apple Health Workouts (last 7 days)
-                if !healthWorkouts.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            Image(systemName: "heart.fill").font(.caption).foregroundStyle(Theme.heartRed)
-                            Text("Apple Health").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
-                            Spacer()
-                            Text("\(healthWorkouts.count) \(healthWorkouts.count == 1 ? "workout" : "workouts") this week").font(.caption.monospacedDigit()).foregroundStyle(Theme.textTertiary)
-                        }
-
-                        ForEach(healthWorkouts.prefix(5)) { w in
-                            HStack(spacing: 10) {
-                                Image(systemName: "figure.strengthtraining.traditional")
-                                    .font(.caption).foregroundStyle(Theme.stepsOrange)
-                                    .frame(width: 28, height: 28)
-                                    .background(Theme.stepsOrange.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
-                                VStack(alignment: .leading, spacing: 1) {
-                                    Text(w.type).font(.caption.weight(.semibold))
-                                    Text(DateFormatters.dayDisplay.string(from: w.date))
-                                        .font(.caption2).foregroundStyle(Theme.textTertiary)
-                                }
-                                Spacer()
-                                VStack(alignment: .trailing, spacing: 1) {
-                                    Text(w.durationDisplay).font(.caption2.monospacedDigit()).foregroundStyle(Theme.textSecondary)
-                                    Text("\(Int(w.calories)) cal").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
-                                }
-                            }
-                        }
-                    }
-                    .card()
-                }
-
-                // Body recovery map
-                BodyMapView { template in
-                    WorkoutService.clearSession()
-                    selectedTemplate = template
-                    showingNewWorkout = true
-                }
-
-                // Progressive overload alerts
-                if !overloadAlerts.isEmpty {
-                    overloadCard
-                }
-
-                if !weeklyCounts.isEmpty {
-                    // Streak computed in loadData — a DB call in `body`
-                    // re-ran on every render pass (perf 2026-07-09).
-                    if let streak, streak.current > 0 {
-                        streakRow(current: streak.current, longest: streak.longest)
-                    }
-                    consistencyChart
-                }
-
                 // Start buttons
                 HStack(spacing: 10) {
                     Button {
@@ -276,6 +205,82 @@ struct WorkoutView: View {
                 .card()
 
                 // Browse exercises
+
+                // Analytics below the fold — operator call 2026-07-09:
+                // gym users reach Start Workout / templates first; burn
+                // chips, Apple Health list, recovery map and consistency
+                // are review content, not mid-session actions.
+                // Today's burn metrics
+                HStack(spacing: 10) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "flame.fill").font(.caption).foregroundStyle(Theme.stepsOrange)
+                        Text("\(Int(activeCalories))").font(.subheadline.weight(.bold).monospacedDigit())
+                        Text("active cal").font(.caption2).foregroundStyle(Theme.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity).card()
+
+                    HStack(spacing: 4) {
+                        Image(systemName: "figure.walk").font(.caption).foregroundStyle(Theme.deficit)
+                        Text(steps >= 1000 ? String(format: "%.1fk", steps/1000) : "\(Int(steps))")
+                            .font(.subheadline.weight(.bold).monospacedDigit())
+                        Text("steps").font(.caption2).foregroundStyle(Theme.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity).card()
+                }
+
+                // Apple Health Workouts (last 7 days)
+                if !healthWorkouts.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Image(systemName: "heart.fill").font(.caption).foregroundStyle(Theme.heartRed)
+                            Text("Apple Health").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
+                            Spacer()
+                            Text("\(healthWorkouts.count) \(healthWorkouts.count == 1 ? "workout" : "workouts") this week").font(.caption.monospacedDigit()).foregroundStyle(Theme.textTertiary)
+                        }
+
+                        ForEach(healthWorkouts.prefix(5)) { w in
+                            HStack(spacing: 10) {
+                                Image(systemName: "figure.strengthtraining.traditional")
+                                    .font(.caption).foregroundStyle(Theme.stepsOrange)
+                                    .frame(width: 28, height: 28)
+                                    .background(Theme.stepsOrange.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(w.type).font(.caption.weight(.semibold))
+                                    Text(DateFormatters.dayDisplay.string(from: w.date))
+                                        .font(.caption2).foregroundStyle(Theme.textTertiary)
+                                }
+                                Spacer()
+                                VStack(alignment: .trailing, spacing: 1) {
+                                    Text(w.durationDisplay).font(.caption2.monospacedDigit()).foregroundStyle(Theme.textSecondary)
+                                    Text("\(Int(w.calories)) cal").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
+                                }
+                            }
+                        }
+                    }
+                    .card()
+                }
+
+                // Body recovery map
+                BodyMapView { template in
+                    WorkoutService.clearSession()
+                    selectedTemplate = template
+                    showingNewWorkout = true
+                }
+
+                // Progressive overload alerts
+                if !overloadAlerts.isEmpty {
+                    overloadCard
+                }
+
+                if !weeklyCounts.isEmpty {
+                    // Streak computed in loadData — a DB call in `body`
+                    // re-ran on every render pass (perf 2026-07-09).
+                    if let streak, streak.current > 0 {
+                        streakRow(current: streak.current, longest: streak.longest)
+                    }
+                    consistencyChart
+                }
+
                 Button { showingExerciseBrowser = true } label: {
                     Label("Browse Exercises", systemImage: "dumbbell").frame(maxWidth: .infinity)
                 }.buttonStyle(.bordered).tint(Theme.accent)

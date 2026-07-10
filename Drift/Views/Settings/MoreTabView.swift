@@ -62,6 +62,15 @@ struct MoreTabView: View {
                     }
 
                     section("APP") {
+                        // Profile is identity, not goal config — its own row
+                        // (operator call 2026-07-09); Weight Goal keeps a
+                        // compact link so the TDEE connection stays visible.
+                        navRow(icon: "person.crop.circle", title: "Profile",
+                               subtitle: "Sex · age · height · weight",
+                               color: Theme.chartTrend) {
+                            ProfileView()
+                        }
+                        rowDivider
                         navRow(icon: "target", title: "Weight Goal",
                                subtitle: "Target weight, timeline, plan",
                                color: Theme.macroFat) {

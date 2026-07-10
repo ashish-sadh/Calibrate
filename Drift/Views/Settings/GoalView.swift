@@ -113,6 +113,9 @@ struct GoalView: View {
         .onAppear {
             AIScreenTracker.shared.currentScreen = .goal
             goal = WeightGoal.load()
+            // Profile edits now happen on the pushed ProfileView — re-read
+            // the config so targets reflect them on return.
+            tdeeConfig = TDEEEstimator.loadConfig()
             loadCurrentData()
         }
     }

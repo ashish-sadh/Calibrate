@@ -238,6 +238,15 @@ extension AppDatabase {
     /// Groups entries logged within 25 minutes on the same date into sessions;
     /// signatures appearing on 2+ distinct dates become saved recipe combos.
     public func detectAndSaveCombos() throws {
+        // Heal previously-generated malformed names ("Dal + + Chicken",
+        // trailing "+") — they regenerate below with the fixed segmenting.
+        _ = try? writer.write { db in
+            try db.execute(sql: """
+                DELETE FROM food WHERE source = 'recipe' AND is_recipe = 1
+                  AND LOWER(COALESCE(category,'')) = 'combo'
+                  AND (name LIKE '%+ +%' OR name LIKE '% +' OR name LIKE '+%')
+                """)
+        }
         struct EntryRow {
             let date: String; let name: String
             let calories: Double; let proteinG: Double
@@ -314,9 +323,20 @@ extension AppDatabase {
             guard let json = try? JSONEncoder().encode(recipeItems),
                   let ingredientsJson = String(data: json, encoding: .utf8) else { continue }
 
+            // Segment = first two words of each item, minus trailing connector
+            // tokens ("Oatmeal w/ Berries" → "Oatmeal", not "Oatmeal w/"), and
+            // empty names dropped — they used to render "Dal + + Chicken"
+            // (design pass field bug 2026-07-09).
+            let connectors: Set<String> = ["w/", "with", "and", "&", "+", "-"]
             let comboName = items.prefix(4)
-                .map { $0.name.split(separator: " ").prefix(2).joined(separator: " ") }
+                .map { item -> String in
+                    var words = item.name.split(separator: " ").prefix(2).map(String.init)
+                    while let last = words.last, connectors.contains(last.lowercased()) { words.removeLast() }
+                    return words.joined(separator: " ")
+                }
+                .filter { !$0.isEmpty }
                 .joined(separator: " + ")
+            guard !comboName.isEmpty else { continue }
             let totalCal = items.reduce(0) { $0 + $1.cal }
             let totalP = items.reduce(0) { $0 + $1.p }
             let totalC = items.reduce(0) { $0 + $1.c }

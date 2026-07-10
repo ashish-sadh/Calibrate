@@ -140,12 +140,16 @@ extension DashboardView {
 
             // Data sources
             HStack(spacing: 4) {
+                // Quiet gray, not coral — these are metadata, and coral is
+                // reserved for brand/CTA (V7 discipline). Coral tinting made
+                // them read as four competing action chips (design pass
+                // 2026-07-09).
                 ForEach(est.activeSources, id: \.self) { source in
                     Text(source)
                         .font(.caption2.weight(.medium))
                         .padding(.horizontal, 5).padding(.vertical, 2)
-                        .background(Theme.accent.opacity(0.12), in: RoundedRectangle(cornerRadius: 4))
-                        .foregroundStyle(Theme.accent.opacity(0.8))
+                        .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 4))
+                        .foregroundStyle(Theme.textSecondary)
                 }
                 Spacer()
             }
