@@ -10,19 +10,11 @@ struct MoreTabView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
-                    section("ACTIVITY") {
-                        // Food Diary was briefly a More row (c6a475fb) — pulled
-                        // out 2026-05-20 once user said "I think food diary
-                        // is fine even if it's on the main" and asked for
-                        // it as a visible tab. It's now the Food tab,
-                        // alongside Today / Body / More. Only Exercise
-                        // stays under Activity here (no top-level home).
-                        navRow(icon: "dumbbell.fill", title: "Exercise",
-                               subtitle: "Strength, cardio, mobility",
-                               color: Theme.macroKcal) {
-                            WorkoutView(selectedTab: $selectedTab)
-                        }
-                    }
+                    // ACTIVITY section removed 2026-07-09: its only row was
+                    // Exercise, which is now the Workout TAB (operator: "keep
+                    // exercises on the front"). Same journey Food took —
+                    // briefly a More row (c6a475fb), promoted to a tab
+                    // 2026-05-20 when it felt "almost gone".
 
                     section("HEALTH") {
                         // Weight lives on the Body tab (the canonical screen); the

@@ -78,7 +78,7 @@ Stage 5: LLM fallback with context (~10-20s)                  → conversation
 - Plant points: ingredient-based counting (57 composite dishes), spice blend expansion, barcode ingredients
 
 ## Tab Structure
-Dashboard | Weight | Food | Exercise | More
+Today | Food | Workout | Body | More (floating Drift Coach bubble bottom-right)
 
 ## Apple Developer
 - Team ID: ZJ5H5XH82A

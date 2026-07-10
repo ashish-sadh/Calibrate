@@ -165,21 +165,38 @@ struct ContentView: View {
         // NavigationStack on tab-swap, raising "client attempt to
         // nest wrapped navigation controllers." Dropping `.page`
         // keeps all tabs alive without the nav-bar nesting conflict.
+        // NOTE: `.toolbar(.hidden, for: .tabBar)` must be applied to EACH
+        // page's content — on the TabView container it is ignored, and the
+        // native bar (four EMPTY items, since pages have no .tabItem)
+        // rendered as a blurred ghost strip behind the PillTabBar — the
+        // "two tab bars overlayed" shadow from the 2026-07-09 field report.
         TabView(selection: $selectedTab) {
             DashboardView(syncComplete: $syncComplete, selectedTab: selectedTabBindingLegacy)
+                .toolbar(.hidden, for: .tabBar)
                 .tag(PrimaryTab.today)
                 .accessibilityIdentifier("tab-today-content")
             FoodTabView(selectedTab: selectedTabBindingLegacy)
+                .toolbar(.hidden, for: .tabBar)
                 .tag(PrimaryTab.food)
                 .accessibilityIdentifier("tab-food-content")
+            // Workout promoted to a first-class tab 2026-07-09 (was a
+            // More-buried NavigationLink). Needs its own stack: as a push
+            // destination it borrowed More's.
+            NavigationStack {
+                WorkoutView(selectedTab: selectedTabBindingLegacy)
+            }
+            .toolbar(.hidden, for: .tabBar)
+            .tag(PrimaryTab.workout)
+            .accessibilityIdentifier("tab-workout-content")
             WeightTabView(syncComplete: $syncComplete, selectedTab: selectedTabBindingLegacy)
+                .toolbar(.hidden, for: .tabBar)
                 .tag(PrimaryTab.body)
                 .accessibilityIdentifier("tab-body-content")
             MoreTabView(selectedTab: selectedTabBindingLegacy)
+                .toolbar(.hidden, for: .tabBar)
                 .tag(PrimaryTab.more)
                 .accessibilityIdentifier("tab-more-content")
         }
-        .toolbar(.hidden, for: .tabBar)
         // V7 polish: floating PillTabBar + FAB sit in the bottom 78pt of
         // the screen but don't contribute to the safe area (they live
         // in an overlay ZStack). Without this inset, ScrollViews inside
@@ -228,13 +245,18 @@ struct ContentView: View {
 // MARK: - Primary tabs
 
 enum PrimaryTab: Int, CaseIterable, Identifiable {
-    case today = 0, food = 1, body = 2, more = 3
+    // 2026-07-09: Workout promoted from a More-buried NavigationLink to a
+    // first-class tab (operator: "keep exercises on the front"), restoring
+    // the old 5-tab shape — Today | Food | Workout | Body | More. Body
+    // (weight) stays a tab: weight is Drift's core longitudinal dataset.
+    case today = 0, food = 1, workout = 2, body = 3, more = 4
     var id: Int { rawValue }
 
     var label: String {
         switch self {
         case .today: "Today"
         case .food: "Food"
+        case .workout: "Workout"
         case .body: "Body"
         case .more: "More"
         }
@@ -243,6 +265,7 @@ enum PrimaryTab: Int, CaseIterable, Identifiable {
         switch self {
         case .today: "target"
         case .food: "fork.knife"
+        case .workout: "dumbbell.fill"
         case .body: "figure"
         case .more: "line.3.horizontal"
         }
@@ -251,20 +274,23 @@ enum PrimaryTab: Int, CaseIterable, Identifiable {
         switch self {
         case .today: "tab-today"
         case .food: "tab-food"
+        case .workout: "tab-workout"
         case .body: "tab-body"
         case .more: "tab-more"
         }
     }
 
     /// Map V7 tab → legacy 5-tab index used by inner-view bindings.
-    /// Today=0 (was Drift=0), Food=2 (was Food=2), Body=1 (was Weight=1),
-    /// More=4 (was More=4). Food was briefly dropped in the 3-tab
-    /// collapse (c0e4f674) and re-added 2026-05-20 after the food
-    /// diary felt "almost gone" — user wanted it as a visible tab.
+    /// Today=0 (was Drift=0), Food=2 (was Food=2), Workout=3 (was
+    /// Exercise=3 — also the AI nav table's index, so Coach "open my
+    /// workouts" lands here again), Body=1 (was Weight=1), More=4.
+    /// Food was briefly dropped in the 3-tab collapse (c0e4f674) and
+    /// re-added 2026-05-20 after the food diary felt "almost gone".
     var legacyIndex: Int {
         switch self {
         case .today: 0
         case .food: 2
+        case .workout: 3
         case .body: 1
         case .more: 4
         }
@@ -277,6 +303,7 @@ enum PrimaryTab: Int, CaseIterable, Identifiable {
         case 0: self = .today
         case 1: self = .body
         case 2: self = .food
+        case 3: self = .workout
         case 4: self = .more
         default: return nil
         }
@@ -313,8 +340,15 @@ private struct PillTabBar: View {
                     VStack(spacing: 2) {
                         Image(systemName: tab.icon)
                             .font(.system(size: 18, weight: .semibold))
+                            // Fixed icon slot: SF Symbols differ in intrinsic
+                            // height (dumbbell vs fork.knife), which pushed
+                            // labels off a shared baseline — the wobble read
+                            // as clutter once the bar went to five tabs.
+                            .frame(height: 22)
                         Text(tab.label)
                             .font(.system(size: 10, weight: .semibold))
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
                     }
                     .foregroundStyle(isSelected ? Theme.ink : Theme.textTertiary)
                     .frame(maxWidth: .infinity)
