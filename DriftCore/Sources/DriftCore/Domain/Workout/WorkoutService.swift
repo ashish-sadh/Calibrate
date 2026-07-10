@@ -130,6 +130,50 @@ public enum WorkoutService {
         return workout
     }
 
+    // MARK: - Usual-workout replay ("log my usual push day")
+
+    /// Most-recent workout whose name contains `query` (case-insensitive).
+    /// Empty query = the most recent workout, full stop. Pure — Tier-0 tested.
+    public static func mostRecentWorkout(matching query: String, in workouts: [Workout]) -> Workout? {
+        let q = query.lowercased().trimmingCharacters(in: .whitespaces)
+        return workouts.first { q.isEmpty || $0.name.lowercased().contains(q) }
+    }
+
+    /// Clone a session's sets onto a new workout id: weights/reps/duration/
+    /// warmup/order carry over (that's the "usual"); RPE does NOT — felt
+    /// effort is per-day and cloning it would fabricate data. Pure.
+    public static func clonedSets(from source: [WorkoutSet], to workoutId: Int64) -> [WorkoutSet] {
+        source.map { s in
+            WorkoutSet(workoutId: workoutId, exerciseName: s.exerciseName,
+                       setOrder: s.setOrder, weightLbs: s.weightLbs, reps: s.reps,
+                       isWarmup: s.isWarmup, durationSec: s.durationSec,
+                       exerciseOrder: s.exerciseOrder)
+        }
+    }
+
+    /// "Log my usual push day": replay the most recent matching workout
+    /// set-for-set as a completed workout on `date`. Returns nil when nothing
+    /// matches or the source has no sets — the caller narrates the miss.
+    @discardableResult
+    public static func replayMostRecentWorkout(matching query: String, on date: Date = Date())
+        throws -> (workout: Workout, sets: [WorkoutSet])? {
+        let workouts = try fetchWorkouts(limit: 90)
+        guard let source = mostRecentWorkout(matching: query, in: workouts),
+              let sourceId = source.id else { return nil }
+        let sourceSets = try fetchSets(forWorkout: sourceId)
+        guard !sourceSets.isEmpty else { return nil }
+
+        var workout = Workout(name: source.name,
+                              date: DateFormatters.dateOnly.string(from: date),
+                              durationSeconds: nil, notes: nil,
+                              createdAt: ISO8601DateFormatter().string(from: date))
+        try saveWorkout(&workout)
+        guard let wid = workout.id else { return nil }
+        let cloned = clonedSets(from: sourceSets, to: wid)
+        try saveSets(cloned)
+        return (workout, cloned)
+    }
+
     public static func fetchWorkouts(limit: Int = 100) throws -> [Workout] {
         try db.reader.read { dbConn in
             try Workout.order(Column("date").desc).limit(limit).fetchAll(dbConn)

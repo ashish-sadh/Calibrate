@@ -35,3 +35,34 @@ import Testing
     #expect(sets == nil)
     #expect(name == "bench press")
 }
+
+// MARK: - Usual-workout replay (pure helpers)
+
+@MainActor
+@Test func mostRecentWorkout_matchesByNameNewestFirst() {
+    let workouts = [
+        Workout(name: "Push Day", date: "2026-07-09", createdAt: "2026-07-09"),
+        Workout(name: "Pull Day", date: "2026-07-08", createdAt: "2026-07-08"),
+        Workout(name: "Push Day", date: "2026-07-05", createdAt: "2026-07-05"),
+    ]
+    #expect(WorkoutService.mostRecentWorkout(matching: "push", in: workouts)?.date == "2026-07-09")
+    #expect(WorkoutService.mostRecentWorkout(matching: "pull", in: workouts)?.name == "Pull Day")
+    #expect(WorkoutService.mostRecentWorkout(matching: "", in: workouts)?.date == "2026-07-09")
+    #expect(WorkoutService.mostRecentWorkout(matching: "yoga", in: workouts) == nil)
+}
+
+@MainActor
+@Test func clonedSets_carryPlanDropRPEAndRetarget() {
+    var source = WorkoutSet(workoutId: 7, exerciseName: "Bench Press", setOrder: 2,
+                            weightLbs: 135, reps: 8, isWarmup: false,
+                            durationSec: nil, exerciseOrder: 1)
+    source.rpe = 9
+    let cloned = WorkoutService.clonedSets(from: [source], to: 42)
+    #expect(cloned.count == 1)
+    let c = cloned[0]
+    #expect(c.workoutId == 42)
+    #expect(c.exerciseName == "Bench Press")
+    #expect(c.setOrder == 2 && c.weightLbs == 135 && c.reps == 8 && c.exerciseOrder == 1)
+    #expect(c.rpe == nil, "felt effort must not clone — it would fabricate data")
+    #expect(c.id == nil, "clone is a fresh unsaved row")
+}

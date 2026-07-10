@@ -360,6 +360,9 @@ extension AIChatViewModel {
         // Phase 6b: "log my usual lunch" — recall + narrate + open editable sheet.
         // Runs before food parsing so "usual lunch" isn't treated as a food name.
         if resolved("usual_meal", handleUsualMeal(lower)) { return }
+        // Phase 6c: "log my usual push day" — replay the last matching workout
+        // set-for-set (the workout twin of #usual-meal).
+        if resolved("usual_workout", handleUsualWorkout(lower)) { return }
         // Phase 7: Food & activity intent parsing
         if resolved("food_intent", handleFoodIntentParsing(lower, originalText: normalized)) { return }
         // Phase 8: AI pipeline fallback
@@ -400,6 +403,44 @@ extension AIChatViewModel {
         let totalCal = (entries.reduce(0) { $0 + $1.calories * $1.servings }).safeInt
         narrate("Your usual \(slot): \(names)\(extra) — about \(totalCal) cal. Review and log below.")
         showingMealReview = true
+        return true
+    }
+
+    /// Phase 6c: "log my usual push day" / "did my usual workout" — replay the
+    /// most recent matching workout set-for-set as today's session. #usual-meal's
+    /// workout twin: one sentence logs the whole thing, history keeps it honest.
+    private func handleUsualWorkout(_ lower: String) -> Bool {
+        let verbs = ["log ", "did ", "i did ", "just did ", "finished ", "i finished "]
+        guard let verb = verbs.first(where: { lower.hasPrefix($0) }) else { return false }
+        var rest = String(lower.dropFirst(verb.count))
+        var sawUsual = false
+        for prefix in ["my usual ", "the usual ", "usual ", "my "] where rest.hasPrefix(prefix) {
+            sawUsual = prefix.contains("usual")
+            rest = String(rest.dropFirst(prefix.count))
+            break
+        }
+        // Must smell like a workout session, not food/weight: "push day",
+        // "usual workout", "leg session". Bare "log my workout" stays with the
+        // exercise-list flow (handleWorkoutLoggingTrigger).
+        let sessionWords = ["workout", "session", "day", "lifting", "gym"]
+        guard sessionWords.contains(where: { rest.contains($0) }) else { return false }
+        var query = rest
+        for word in sessionWords { query = query.replacingOccurrences(of: word, with: "") }
+        query = query.trimmingCharacters(in: .whitespaces)
+        guard sawUsual || !query.isEmpty else { return false }
+
+        guard let (workout, sets) = try? WorkoutService.replayMostRecentWorkout(matching: query) else {
+            let what = query.isEmpty ? "recent workout" : "\(query) workout"
+            narrate("I don't have a \(what) on record yet — start one from the Workout tab or list the exercises and I'll log them.")
+            return true
+        }
+        // Order-preserving exercise summary
+        var seen = Set<String>()
+        let names = sets.sorted { $0.exerciseOrder < $1.exerciseOrder }
+            .map(\.exerciseName).filter { seen.insert($0).inserted }
+        let preview = names.prefix(4).joined(separator: ", ") + (names.count > 4 ? " and more" : "")
+        let working = sets.filter { !$0.isWarmup }.count
+        narrate("Logged \(workout.name) — \(names.count) exercises, \(working) sets, same as last time: \(preview). Open the Workout tab to tweak anything.")
         return true
     }
 
