@@ -34,7 +34,9 @@ struct PhotoLogReviewView: View {
                 }
             }
             .background(Theme.background)
-            .navigationTitle("Review Photo Log")
+            // Text/voice meals reuse this screen with photo == nil — calling
+            // it "Review Photo Log" there confused the operator (2026-07-09).
+            .navigationTitle(photo == nil ? "Review Meal" : "Review Photo Log")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {

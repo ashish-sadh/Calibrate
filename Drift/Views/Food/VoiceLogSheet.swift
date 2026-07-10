@@ -79,6 +79,14 @@ struct VoiceLogSheet: View {
             // keyboard accessory toolbar carries Cancel/Continue (#966), so
             // hiding this avoids a duplicate row stacked at the same spot.
             if case .typing = viewModel.phase, !fieldFocused { typingBottomBar }
+            // While the keyboard is UP, this sheet's keyboard safe area
+            // undershoots by roughly the accessory bar (#966 note below), so
+            // the accessory Cancel/Continue rendered ON TOP of the text field
+            // (field report 2026-07-09). A spacer the accessory's height
+            // lifts the field clear.
+            if case .typing = viewModel.phase, fieldFocused {
+                Color.clear.frame(height: 52)
+            }
         }
         // .container only — the keyboard inset must still propagate so the
         // inset row rides above the keyboard. ignoresSafeArea() = .all would

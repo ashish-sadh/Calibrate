@@ -46,6 +46,28 @@ public final class BackupMonitor: @unchecked Sendable {
         ) as? Date else { return }
 
         let gap = now.timeIntervalSince(last)
+
+        // Catch-up: BGTaskScheduler's 3am slot is discretionary — iOS skips
+        // it freely (low battery, no charger, usage patterns), which made
+        // "daily backups" aspirational. If backups are on and the last one
+        // is >24h old, just run one now in the background (operator call
+        // 2026-07-09: keep it simple, daily). The ring buffer bounds disk
+        // (7 daily + 4 weekly snapshots).
+        if gap > 24 * 60 * 60,
+           userDefaults.bool(forKey: "drift_backup_enabled"),
+           !catchUpRunning {
+            catchUpRunning = true
+            Task.detached(priority: .background) { [weak self] in
+                defer { self?.catchUpRunning = false }
+                do {
+                    _ = try await BackupService.shared.performBackup()
+                    Log.app.info("Foreground catch-up backup completed")
+                } catch {
+                    Log.app.error("Catch-up backup failed: \(error.localizedDescription)")
+                }
+            }
+        }
+
         let threshold = TimeInterval(Self.staleThresholdDays * 24 * 60 * 60)
         guard gap > threshold else { return }
 
@@ -56,4 +78,7 @@ public final class BackupMonitor: @unchecked Sendable {
             userInfo: ["daysSinceBackup": days]
         )
     }
+
+    /// Re-entrancy guard for the catch-up (foregrounding twice quickly).
+    private var catchUpRunning = false
 }
