@@ -37,6 +37,16 @@ struct ActiveWorkoutView: View {
     @State private var showingCompletionSheet = false
     @State private var completionShareText = ""
     @State private var completionMilestone: String? = nil
+    // Command strip — say it, don't hunt for it: "add face pulls",
+    // "drop curls", "last bench?" (exercise-UX design 2026-07-10)
+    @State private var commandText = ""
+    @State private var commandFeedback: CommandFeedback? = nil
+    @FocusState private var commandFocused: Bool
+
+    struct CommandFeedback {
+        let text: String
+        var undo: (() -> Void)? = nil
+    }
 
     struct ActiveExercise: Identifiable {
         let id = UUID()
@@ -142,6 +152,7 @@ struct ActiveWorkoutView: View {
             }
             .scrollDismissesKeyboard(.interactively)
             .background(Theme.background)
+            .safeAreaInset(edge: .bottom, spacing: 0) { commandStrip }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -777,6 +788,128 @@ struct ActiveWorkoutView: View {
         let finalNotes = notes ?? ExerciseService.formTip(for: name).map { "Tip: \($0)" }
         exercises.append(ActiveExercise(name: name, restTime: restTime, isWarmupExercise: isWarmup,
                                          notes: finalNotes, sets: sets, previousSets: Array(previous)))
+    }
+
+    // MARK: - Command strip ("add face pulls" / "drop curls" / "last bench?")
+
+    private var commandStrip: some View {
+        VStack(spacing: 6) {
+            if let feedback = commandFeedback {
+                HStack(spacing: 8) {
+                    Text(feedback.text)
+                        .font(.caption).foregroundStyle(Theme.textSecondary)
+                        .lineLimit(2)
+                    Spacer(minLength: 4)
+                    if let undo = feedback.undo {
+                        Button("Undo") {
+                            undo()
+                            commandFeedback = nil
+                        }
+                        .font(.caption.weight(.semibold)).tint(Theme.accent)
+                    }
+                    Button {
+                        commandFeedback = nil
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.caption).foregroundStyle(Theme.textTertiary)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Dismiss")
+                }
+                .padding(.horizontal, 12).padding(.vertical, 8)
+                .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 12))
+                .transition(.opacity)
+            }
+            HStack(spacing: 8) {
+                Image(systemName: "sparkles")
+                    .font(.caption).foregroundStyle(Theme.accent.opacity(0.6))
+                TextField("add face pulls · drop curls · last bench?", text: $commandText)
+                    .font(.subheadline)
+                    .focused($commandFocused)
+                    .submitLabel(.send)
+                    .onSubmit { runCommand() }
+                    .accessibilityIdentifier("workout-command-input")
+                if !commandText.isEmpty {
+                    Button { runCommand() } label: {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.title3).foregroundStyle(Theme.ink)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Run command")
+                }
+            }
+            .padding(.horizontal, 12).padding(.vertical, 8)
+            .background(RoundedRectangle(cornerRadius: 16).fill(Theme.pillBackground))
+        }
+        .padding(.horizontal, 12).padding(.vertical, 6)
+        .background(Theme.background.opacity(0.97))
+        .animation(.easeInOut(duration: 0.2), value: commandFeedback?.text)
+    }
+
+    private func runCommand() {
+        let raw = commandText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else { return }
+        commandText = ""
+        switch WorkoutCommandParser.parse(raw) {
+        case .remove(let query):
+            removeExercise(matching: query)
+        case .history(let query):
+            showHistory(for: query)
+        case .add(let query, let sets):
+            addFromCommand(query, sets: sets, original: raw)
+        }
+    }
+
+    private func removeExercise(matching query: String) {
+        let idx = exercises.firstIndex { $0.name.lowercased().contains(query) }
+            ?? ExerciseDatabase.match(name: query).flatMap { info in
+                exercises.firstIndex { $0.name == info.name }
+            }
+        guard let idx else {
+            commandFeedback = CommandFeedback(text: "No \"\(query)\" in this workout.")
+            return
+        }
+        let removed = exercises.remove(at: idx)
+        commandFeedback = CommandFeedback(text: "Removed \(removed.name).") {
+            exercises.insert(removed, at: min(idx, exercises.count))
+        }
+    }
+
+    private func showHistory(for query: String) {
+        // Prefer an exercise already in this session, then the catalog.
+        let name = exercises.first { $0.name.lowercased().contains(query) }?.name
+            ?? ExerciseService.resolveExerciseName(query)
+        guard let name, !query.isEmpty else {
+            commandFeedback = CommandFeedback(text: "Which exercise? Try \"last bench press?\"")
+            return
+        }
+        let history = (try? WorkoutService.fetchExerciseHistory(name: name)) ?? []
+        guard let lastWorkoutId = history.first?.workoutId else {
+            commandFeedback = CommandFeedback(text: "No history for \(name) yet.")
+            return
+        }
+        let last = history.filter { $0.workoutId == lastWorkoutId }.sorted { $0.setOrder < $1.setOrder }
+        let unit = Preferences.weightUnit
+        let sets = last.prefix(5).map { s -> String in
+            let weight = s.weightLbs.map { "\(Int(unit.convertFromLbs($0)))\(unit.displayName)" } ?? "bw"
+            return "\(weight)×\(s.reps ?? s.durationSec ?? 0)"
+        }.joined(separator: ", ")
+        commandFeedback = CommandFeedback(text: "\(name) last time: \(sets)")
+    }
+
+    private func addFromCommand(_ query: String, sets: Int?, original: String) {
+        guard !query.isEmpty,
+              let name = ExerciseDatabase.match(name: query)?.name
+                ?? ExerciseService.resolveExerciseName(query) else {
+            commandFeedback = CommandFeedback(text: "Couldn't find \"\(original)\" in the exercise library.")
+            return
+        }
+        addExercise(name: name, setCount: sets)
+        let ghost = exercises.last?.previousSets.first.map { " — last: \($0)" } ?? ""
+        let addedId = exercises.last?.id
+        commandFeedback = CommandFeedback(text: "Added \(name)\(ghost).") {
+            if let addedId { exercises.removeAll { $0.id == addedId } }
+        }
     }
 
     private func saveWorkout(andDismiss: Bool = true) {
