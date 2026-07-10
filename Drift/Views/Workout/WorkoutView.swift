@@ -199,15 +199,23 @@ struct WorkoutView: View {
                             Button { showingImport = true } label: {
                                 Label("Import from Strong / Hevy", systemImage: "square.and.arrow.down")
                             }
+                            // Numbered icons, not star/star.fill — the filled
+                            // star read as "Package II is favorited" (field
+                            // report 2026-07-09).
                             Button {
                                 loadPackage(DefaultTemplates.loadCurated, name: "Drift Package I")
                             } label: {
-                                Label("Load Drift Package I", systemImage: "star")
+                                Label("Load Drift Package I", systemImage: "1.circle")
                             }
                             Button {
                                 loadPackage(DefaultTemplates.loadPackageII, name: "Drift Package II")
                             } label: {
-                                Label("Load Drift Package II", systemImage: "star.fill")
+                                Label("Load Drift Package II", systemImage: "2.circle")
+                            }
+                            Button {
+                                loadPackage(DefaultTemplates.loadPackageIII, name: "Drift Package III")
+                            } label: {
+                                Label("Load Drift Package III (Bands)", systemImage: "3.circle")
                             }
                             if !templates.isEmpty {
                                 Divider()
@@ -601,11 +609,19 @@ struct WorkoutView: View {
                 Button { showingImport = true } label: {
                     Label("Import", systemImage: "square.and.arrow.down").font(.caption)
                 }.buttonStyle(.bordered)
-                Button { loadPackage(DefaultTemplates.loadCurated, name: "Drift Package I") } label: {
-                    Label("Package I", systemImage: "star").font(.caption)
-                }.buttonStyle(.bordered).tint(Theme.accent)
-                Button { loadPackage(DefaultTemplates.loadPackageII, name: "Drift Package II") } label: {
-                    Label("Package II", systemImage: "star.fill").font(.caption)
+                // Three packages don't fit as siblings — collapse into a menu.
+                Menu {
+                    Button { loadPackage(DefaultTemplates.loadCurated, name: "Drift Package I") } label: {
+                        Label("Drift Package I", systemImage: "1.circle")
+                    }
+                    Button { loadPackage(DefaultTemplates.loadPackageII, name: "Drift Package II") } label: {
+                        Label("Drift Package II", systemImage: "2.circle")
+                    }
+                    Button { loadPackage(DefaultTemplates.loadPackageIII, name: "Drift Package III") } label: {
+                        Label("Drift Package III (Bands)", systemImage: "3.circle")
+                    }
+                } label: {
+                    Label("Drift Packages", systemImage: "square.stack.3d.up").font(.caption)
                 }.buttonStyle(.bordered).tint(Theme.accent)
             }
         }

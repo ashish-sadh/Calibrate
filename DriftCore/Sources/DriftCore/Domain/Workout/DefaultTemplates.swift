@@ -3,25 +3,21 @@ import Foundation
 /// Seeds default workout templates on demand. Respects user edits — only adds
 /// templates/exercises that don't already exist by name.
 ///
-/// Two packages (#940):
-///  - **Drift Package I** — the original curated programs 1–4.
+/// Three packages:
+///  - **Drift Package I** — the original curated programs 1–4 (#940).
 ///  - **Drift Package II** — the Srijith training program (total-body free
 ///    weights / dumbbells / circuits / strength + pull & push days).
+///  - **Drift Package III** — the whiteboard resistance band program
+///    (A/B days, imported 2026-07-09).
+/// Packages load ONLY from the Templates menu — never on install. Loading
+/// skips templates the user already has by name, and none arrive favorited
+/// (field report: seeded `isFavorite` stars looked random).
 /// Every custom exercise registered here carries real catalog muscle slugs
 /// (drives the anatomy diagram) and, where a genuine free-exercise-db analog
 /// exists, an imageUrl so the bundled pose crossfade resolves (#929). A nil
 /// fedDir means the movement has no honest photo analog — the muscle diagram
 /// is the fallback, never a wrong demo.
 public enum DefaultTemplates {
-    private static let seededKey = "drift_default_templates_v3"
-
-    /// Legacy auto-seed (no longer called from app launch).
-    static func seedIfNeeded() {
-        guard !UserDefaults.standard.bool(forKey: seededKey) else { return }
-        loadCurated()
-        UserDefaults.standard.set(true, forKey: seededKey)
-    }
-
     /// Load Drift Package I templates on demand. Skips any that already exist by name.
     @discardableResult
     public static func loadCurated() -> Int {
@@ -35,6 +31,14 @@ public enum DefaultTemplates {
     public static func loadPackageII() -> Int {
         let added = load(templates: packageII)
         Log.app.info("Loaded \(added) Drift Package II templates")
+        return added
+    }
+
+    /// Load Drift Package III templates (whiteboard resistance A/B) on demand.
+    @discardableResult
+    public static func loadPackageIII() -> Int {
+        let added = load(templates: packageIII)
+        Log.app.info("Loaded \(added) Drift Package III templates")
         return added
     }
 
@@ -148,6 +152,11 @@ public enum DefaultTemplates {
         .init(name: "Seated Hamstring Curl", bodyPart: "Legs", muscles: ["hamstrings"], fedDir: "Seated_Leg_Curl"),
         .init(name: "Single Leg Deadlift", bodyPart: "Legs", muscles: ["hamstrings", "glutes"], fedDir: "Kettlebell_One-Legged_Deadlift"),
         .init(name: "Single-Leg RDL", bodyPart: "Legs", muscles: ["hamstrings", "glutes"], fedDir: "Kettlebell_One-Legged_Deadlift"),
+        // Package III (resistance band program) gaps — no free-exercise-db
+        // band analog; diagram-only until the operator approves visuals.
+        .init(name: "B-Stance RDL", bodyPart: "Legs", muscles: ["hamstrings", "glutes"]),
+        .init(name: "Banded Bent-Over Row", bodyPart: "Back", muscles: ["middle back", "lats", "biceps"]),
+        .init(name: "Banded Bicep Curl", bodyPart: "Arms", muscles: ["biceps"]),
         .init(name: "Cossack Squats", bodyPart: "Legs", muscles: ["quadriceps", "adductors"]),
         .init(name: "Single Leg Hip Thrust", bodyPart: "Legs", muscles: ["glutes", "hamstrings"], fedDir: "Barbell_Hip_Thrust"),
         .init(name: "Walking Lunges", bodyPart: "Legs", muscles: ["quadriceps", "glutes"], fedDir: "Bodyweight_Walking_Lunge"),
@@ -245,7 +254,7 @@ public enum DefaultTemplates {
                 e("Seated Incline Bicep Curl", rest: 75, notes: "13-15 reps, 60° bench"),
                 e("Seated Calf Raise", rest: 60, notes: "12 reps — optional"),
                 e("Sled Push", sets: 1, rest: 60, notes: "4 pushes or 1 mile air bike — optional cardio"),
-            ]), createdAt: now, isFavorite: true),
+            ]), createdAt: now),
 
             WorkoutTemplate(name: "Total Body Dumbbells", exercisesJson: json([
                 w("World's Greatest Stretch", sets: 1, notes: "hold 45-60 secs"),
@@ -259,7 +268,7 @@ public enum DefaultTemplates {
                 e("Incline Y Raise", rest: 75, notes: "8-12 reps, 30° bench, 2-5 lbs"),
                 e("Skull Crushers", rest: 45, notes: "12-15 reps — optional"),
                 e("Wall Sit", sets: 1, rest: 60, notes: "35-45 secs"),
-            ]), createdAt: now, isFavorite: true),
+            ]), createdAt: now),
 
             WorkoutTemplate(name: "Dumbbell Circuits", exercisesJson: json([
                 e("Walking Lunges", sets: 4, rest: 45, notes: "Circuit 1 — 12 alternating"),
@@ -311,6 +320,34 @@ public enum DefaultTemplates {
         ]
     }
 
+    // MARK: - Package III (whiteboard resistance band program, imported 2026-07-09)
+    //
+    // Band-specific catalog entries are preferred (they carry honest band
+    // pose photos); gaps get customs — Banded Bent-Over Row / Banded Bicep
+    // Curl / B-Stance RDL / Banded Lateral Walks have no free-exercise-db
+    // band analog, so they start diagram-only pending operator-approved
+    // visuals.
+
+    static var packageIII: [WorkoutTemplate] {
+        [
+            WorkoutTemplate(name: "Resistance Band A", exercisesJson: json([
+                e("Bulgarian Split Squat", notes: "12 per leg"),
+                e("Push-Ups", notes: "12-15 reps"),
+                e("Banded Bent-Over Row", notes: "15 reps"),
+                e("Shoulder Press - With Bands", notes: "15-20 reps"),
+                e("Banded Bicep Curl", notes: "15-20 reps"),
+            ]), createdAt: now),
+
+            WorkoutTemplate(name: "Resistance Band B", exercisesJson: json([
+                e("B-Stance RDL", notes: "12 per leg"),
+                e("Cross Over - With Bands", notes: "15-20 reps, band chest fly"),
+                e("Band Pull Apart", notes: "15 reps"),
+                e("Banded Lateral Walks", notes: "20 per leg"),
+                e("Speed Band Overhead Triceps", notes: "15-20 reps, tricep extension"),
+            ]), createdAt: now),
+        ]
+    }
+
     // MARK: - Program 4 (Current - Start 3/12/26)
 
     private static var program4: [WorkoutTemplate] {
@@ -327,7 +364,7 @@ public enum DefaultTemplates {
                 e("Leg Raise", rest: 90, notes: "8-10 reps, Captain's Chair"),
                 e("Crunch Machine", rest: 90, notes: "8-12 reps"),
                 e("Back Extension", rest: 90, notes: "8-12 reps"),
-            ]), createdAt: now, isFavorite: true),
+            ]), createdAt: now),
 
             WorkoutTemplate(name: "Day 2 - Forearms/Accessories", exercisesJson: json([
                 w("Rope Pulling Machine", sets: 1, rest: 30, notes: "5 mins"),
@@ -340,7 +377,7 @@ public enum DefaultTemplates {
                 e("Farmer's Walk", rest: 75, notes: "30-45 secs"),
                 e("Shoulder Press", rest: 75, notes: "10-15 reps"),
                 e("Lateral Raise", rest: 75, notes: "10-15 reps"),
-            ]), createdAt: now, isFavorite: true),
+            ]), createdAt: now),
 
             WorkoutTemplate(name: "Day 3 - Chest/Core", exercisesJson: json([
                 w("Banded Shoulder Rotations", notes: "2x10"),
@@ -354,7 +391,7 @@ public enum DefaultTemplates {
                 e("Yoga Ball Pike", rest: 75, notes: "8-12 reps"),
                 e("Woodchopper", rest: 75, notes: "8-15 reps, SS w/ Paloff Press"),
                 e("Decline Crunch", rest: 75, notes: "8-15 reps, use weight"),
-            ]), createdAt: now, isFavorite: true),
+            ]), createdAt: now),
 
             WorkoutTemplate(name: "Day 4 - Lower/Forearms", exercisesJson: json([
                 w("Ladder Drill", sets: 1, rest: 30, notes: "2-5 mins"),
@@ -369,7 +406,7 @@ public enum DefaultTemplates {
                 e("Hammer Curl", rest: 75, notes: "8-15 reps"),
                 e("Barbell Wrist Rolls", rest: 75, notes: "10-15 reps"),
                 e("Plate Pinches", rest: 75, notes: "20-30 secs"),
-            ]), createdAt: now, isFavorite: true),
+            ]), createdAt: now),
         ]
     }
 

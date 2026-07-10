@@ -174,6 +174,33 @@ import Testing
     }
 }
 
+@Test func packageIIITemplatesDecodeAndResolve() throws {
+    let templates = DefaultTemplates.packageIII
+    #expect(templates.count == 2)
+    #expect(templates.map(\.name) == ["Resistance Band A", "Resistance Band B"])
+    let customNames = Set(DefaultTemplates.customExercises.map { $0.name.lowercased() })
+    let catalogNames = Set(ExerciseDatabase.all.map { $0.name.lowercased() })
+    for t in templates {
+        let exercises = try JSONDecoder().decode(
+            [WorkoutTemplate.TemplateExercise].self, from: Data(t.exercisesJson.utf8))
+        #expect(exercises.count == 5, "\(t.name) should have 5 exercises")
+        for ex in exercises {
+            let n = ex.name.lowercased()
+            #expect(customNames.contains(n) || catalogNames.contains(n),
+                    "\(t.name): '\(ex.name)' resolves to neither catalog nor custom registry — no diagram/pose")
+        }
+    }
+}
+
+// Field report 2026-07-09: seeded templates arrived pre-starred ("why is II
+// fav randomly on install"). Favorites are the user's call — no package may
+// ship one.
+@Test func noPackageTemplateArrivesFavorited() {
+    for t in DefaultTemplates.packageI + DefaultTemplates.packageII + DefaultTemplates.packageIII {
+        #expect(!t.isFavorite, "\(t.name) is seeded as favorite")
+    }
+}
+
 @Test func packageITemplateExercisesAllResolve() throws {
     let customNames = Set(DefaultTemplates.customExercises.map { $0.name.lowercased() })
     let catalogNames = Set(ExerciseDatabase.all.map { $0.name.lowercased() })
