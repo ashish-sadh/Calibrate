@@ -246,21 +246,22 @@ public struct FoodUnit: Hashable {
         let words = Set(lower.split(whereSeparator: { !$0.isLetter }).map { String($0) })
         var units: [FoodUnit] = []
 
-        // Scanned products carry the label's REAL serving — that beats any
-        // name-keyword inference (2026-07-10 field case: "Honey" in "Rip Van
-        // Wafels ... Honey & Oats" defaulted a 33g wafel to 1 tbsp = 21g).
-        // ml-seeded scans fall through so liquids still get the cup logic.
-        if food.category == "Scanned", food.servingSize > 0,
-           food.servingUnit.lowercased() != "ml" {
-            return [FoodUnit(label: "serving", gramsEquivalent: food.servingSize),
-                    FoodUnit(label: "g", gramsEquivalent: 1),
-                    FoodUnit(label: "oz", gramsEquivalent: 28.3495)]
-        }
 
         // #1049: liquids seeded in ml default to a human measure ("1 cup = 240ml") rather than
         // "240 ml" — but ONLY when the keyword rules would otherwise give a GENERIC unit. A
         // specific rule (soup/stock → bowl) still wins, so we don't clobber a good default.
-        let keyword = primaryUnit(for: lower, servingSize: food.servingSize, words: words, servingUnit: food.servingUnit)
+        var keyword = primaryUnit(for: lower, servingSize: food.servingSize, words: words, servingUnit: food.servingUnit)
+        // Scanned products: a tbsp/tsp keyword hit whose grams are well under
+        // the label's serving means the keyword matched an INGREDIENT word in
+        // the product name, not the product ("Honey" in "Rip Van Wafels …
+        // Honey & Oats" → 1 tbsp = 21g for a 33g wafel, field case
+        // 2026-07-10). Real condiment scans (olive oil, 15g serving ≈ 1 tbsp)
+        // pass the check untouched.
+        if food.category == "Scanned", food.servingSize > 0,
+           keyword.label == "tbsp" || keyword.label == "tsp",
+           food.servingSize > keyword.gramsEquivalent * 1.4 {
+            keyword = FoodUnit(label: "serving", gramsEquivalent: food.servingSize)
+        }
         let primary: FoodUnit
         if food.servingUnit.lowercased() == "ml",
            keyword.label == "serving" || keyword.label == "ml",
@@ -472,6 +473,9 @@ public struct FoodUnit: Hashable {
             return FoodUnit(label: "egg", gramsEquivalent: ss)
         }
         if name.contains("meatball") { return FoodUnit(label: "meatball", gramsEquivalent: ss) }
+        if name.contains("waffle") || name.contains("wafel") {
+            return FoodUnit(label: "piece", gramsEquivalent: ss)
+        }
 
         // Batter / dough — measured in cups (must come before dosa/idli rule)
         // Exclude consumed forms: sourdough/bread (→slice), doughnut (→piece), cookie dough (flavor)

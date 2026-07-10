@@ -510,8 +510,14 @@ extension SmartUnitsGoldSetTests {
         let wafel = Food(name: "Wafels European Snack Honey & Oats - Rip Van",
                          category: "Scanned", servingSize: 33, servingUnit: "g", calories: 342)
         let u = unit(wafel)
-        XCTAssertEqual(u?.label, "serving", "scanned wafel → serving, got \(u?.label ?? "nil")")
-        XCTAssertEqual(u?.gramsEquivalent ?? 0, 33, accuracy: 0.01, "serving must be the label's 33g")
+        XCTAssertEqual(u?.label, "piece", "scanned wafel → piece (a wafel is countable), got \(u?.label ?? "nil")")
+        XCTAssertEqual(u?.gramsEquivalent ?? 0, 33, accuracy: 0.01, "1 wafel = the label's 33g")
+        // The ingredient-word guard: a granola with honey in the NAME and a
+        // 40g serving must not become tbsp.
+        let granola = Food(name: "Honey Almond Granola - Nature Valley",
+                           category: "Scanned", servingSize: 40, servingUnit: "g", calories: 190)
+        let g = unit(granola)
+        XCTAssertNotEqual(g?.label, "tbsp", "ingredient-word tbsp hijack: got \(g?.label ?? "nil")")
     }
 
     /// Plain nuts: primary is the concrete "handful" (#1010 landed
