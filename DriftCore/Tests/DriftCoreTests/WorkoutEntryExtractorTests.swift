@@ -138,3 +138,32 @@ import Testing
     #expect(result[0].sets == 3 && result[0].reps == 10)
 }
 
+// MARK: - FMExerciseEntry → WorkoutExercise mapper (cloud/FM extraction → chat workout)
+
+@Test func mapEntry_strengthWithDefaults() {
+    let e = FMExerciseEntry(exerciseName: "bench press", category: .strength)
+    let mapped = AIActionParser.workoutExercise(from: e)
+    #expect(mapped == AIActionParser.WorkoutExercise(name: "bench press", sets: 3, reps: 10, weight: nil))
+}
+
+@Test func mapEntry_lbsDisplayPassesWeightThrough() {
+    let e = FMExerciseEntry(exerciseName: "bench press", sets: 3, reps: 8, weight: 135, category: .strength)
+    let mapped = AIActionParser.workoutExercise(from: e, displayUnit: .lbs)
+    #expect(mapped?.weight == 135)
+}
+
+@Test func mapEntry_kgDisplayConvertsFromCanonicalLbs() {
+    // Extractors store lbs ("at 60 kg" → 132 lbs); a kg user must see 60 back, not 132
+    let e = FMExerciseEntry(exerciseName: "deadlift", sets: 5, reps: 5, weight: 132, category: .strength)
+    let mapped = AIActionParser.workoutExercise(from: e, displayUnit: .kg)
+    #expect(mapped?.weight == 60)
+}
+
+@Test func mapEntry_nonStrengthReturnsNil() {
+    // Cardio/mobility/sports must not synthesize sets/reps rows
+    let cardio = FMExerciseEntry(exerciseName: "running", durationMinutes: 20, category: .cardio)
+    let mobility = FMExerciseEntry(exerciseName: "surya namaskar", sets: 12, category: .mobility)
+    #expect(AIActionParser.workoutExercise(from: cardio) == nil)
+    #expect(AIActionParser.workoutExercise(from: mobility) == nil)
+}
+

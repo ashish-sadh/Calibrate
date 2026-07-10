@@ -643,31 +643,52 @@ extension AIChatViewModel {
             return false
         }
         convState.phase = .idle
-        let exercises = AIActionParser.parseWorkoutExercises(lower)
-        if !exercises.isEmpty {
-            pendingExercises = exercises
-            let templateExercises = exercises.map { e in
-                var notes = "\(e.reps) reps"
-                if let w = e.weight { notes += " @ \(Int(w)) \(Preferences.weightUnit.displayName)" }
-                return WorkoutTemplate.TemplateExercise(name: e.name, sets: e.sets, notes: notes)
+        messages.append(ChatMessage(role: .assistant, text: "Building your workout..."))
+        let statusIdx = messages.count - 1
+        Task {
+            // Cloud-first: the coach Qwen model extracts only what was said
+            // (same #969 anti-hallucination path the voice sheet uses); offline
+            // falls back to the on-device FM extractor, then the comma regex.
+            var exercises: [AIActionParser.WorkoutExercise] = []
+            var nonStrengthOnly = false
+            if let entries = await NebiusExerciseLogger.parse(lower), !entries.isEmpty {
+                exercises = entries.compactMap {
+                    AIActionParser.workoutExercise(from: $0, displayUnit: Preferences.weightUnit)
+                }
+                nonStrengthOnly = exercises.isEmpty
             }
-            if let json = try? JSONEncoder().encode(templateExercises),
-               let jsonStr = String(data: json, encoding: .utf8) {
-                let summary = exercises.map { e in
-                    var s = "\(e.name) \(e.sets)x\(e.reps)"
-                    if let w = e.weight { s += " @ \(Int(w)) \(Preferences.weightUnit.displayName)" }
-                    return s
-                }.joined(separator: ", ")
-                messages.append(ChatMessage(role: .assistant, text: "Workout (\(exercises.count) exercises): \(summary). Say \"done\" to start, or add more."))
-                workoutTemplate = WorkoutTemplate(
-                    name: "AI Workout",
-                    exercisesJson: jsonStr,
-                    createdAt: DateFormatters.iso8601.string(from: Date()))
+            if exercises.isEmpty && !nonStrengthOnly {
+                exercises = await AIActionParser.parseWorkoutExercisesAsync(lower)
             }
-        } else {
-            convState.phase = .awaitingExercises
-            messages.append(ChatMessage(role: .assistant,
-                text: "I couldn't parse that. Try: bench press 3x10 at 135, squats 3x8"))
+            guard statusIdx < messages.count else { return }
+            if !exercises.isEmpty {
+                pendingExercises = exercises
+                let templateExercises = exercises.map { e in
+                    var notes = "\(e.reps) reps"
+                    if let w = e.weight { notes += " @ \(Int(w)) \(Preferences.weightUnit.displayName)" }
+                    return WorkoutTemplate.TemplateExercise(name: e.name, sets: e.sets, notes: notes)
+                }
+                if let json = try? JSONEncoder().encode(templateExercises),
+                   let jsonStr = String(data: json, encoding: .utf8) {
+                    let summary = exercises.map { e in
+                        var s = "\(e.name) \(e.sets)x\(e.reps)"
+                        if let w = e.weight { s += " @ \(Int(w)) \(Preferences.weightUnit.displayName)" }
+                        return s
+                    }.joined(separator: ", ")
+                    messages[statusIdx] = ChatMessage(role: .assistant, text: "Workout (\(exercises.count) exercises): \(summary). Say \"done\" to start, or add more.")
+                    workoutTemplate = WorkoutTemplate(
+                        name: "AI Workout",
+                        exercisesJson: jsonStr,
+                        createdAt: DateFormatters.iso8601.string(from: Date()))
+                }
+            } else if nonStrengthOnly {
+                messages[statusIdx] = ChatMessage(role: .assistant,
+                    text: "That sounds like cardio or a sport — say \"log activity running 20 min\" to record it, or list strength exercises (bench press 3x10) to build a workout.")
+            } else {
+                convState.phase = .awaitingExercises
+                messages[statusIdx] = ChatMessage(role: .assistant,
+                    text: "I couldn't parse that. Try: bench press 3x10 at 135, squats 3x8")
+            }
         }
         return true
     }
