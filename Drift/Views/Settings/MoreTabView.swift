@@ -236,38 +236,23 @@ struct SettingsView: View {
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(Theme.textSecondary)
 
+                    // ONE import action (2026-07-09 simplification — was three
+                    // rows: Request Access / Sync Weight / Full Re-sync).
+                    // Authorization is folded in (iOS only shows the sheet
+                    // when undetermined), and a manual sync always does the
+                    // FULL, idempotent import: incremental-vs-full was an
+                    // implementation detail no user should have to pick —
+                    // and the buried Full Re-sync was the only escape from a
+                    // poisoned anchor (same-day field report).
                     Button {
                         Task {
                             do {
                                 try await HealthKitService.shared.requestAuthorization()
-                                syncStatus = "Health access granted"
-                            } catch {
-                                syncStatus = "Access denied: \(error.localizedDescription)"
-                            }
-                            clearStatus()
-                        }
-                    } label: {
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack {
-                                Image(systemName: "heart.fill").foregroundStyle(Theme.heartRed)
-                                Text("Request Health Access")
-                                Spacer()
-                            }
-                            Text("Grant permission to read weight, sleep, vitals, and activity")
-                                .font(.caption2).foregroundStyle(Theme.textTertiary)
-                        }
-                    }
-
-                    Button {
-                        Task {
-                            do {
-                                let count = try await HealthKitService.shared.syncWeight()
-                                // 0 with no local entries usually means read
-                                // access is off — iOS hides read-denial from
-                                // apps, so guide instead of just saying "0"
-                                // (field report 2026-07-09).
-                                syncStatus = count > 0 ? "Synced \(count) weight entries" :
-                                    "No new weight found. If Apple Health has your weight, enable Weight under Settings → Privacy & Security → Health → Drift, then try Full Re-sync."
+                                let weight = try await HealthKitService.shared.fullResyncWeight()
+                                let bodyComp = (try? await HealthKitService.shared.syncBodyComposition()) ?? 0
+                                syncStatus = weight + bodyComp > 0
+                                    ? "Imported \(weight) weight + \(bodyComp) body-composition entries"
+                                    : "No data found. If Apple Health has your weight, enable Weight under Settings → Privacy & Security → Health → Drift, then sync again."
                             } catch {
                                 syncStatus = "Sync failed: \(error.localizedDescription)"
                             }
@@ -276,33 +261,11 @@ struct SettingsView: View {
                     } label: {
                         VStack(alignment: .leading, spacing: 2) {
                             HStack {
-                                Image(systemName: "arrow.triangle.2.circlepath").foregroundStyle(Theme.textSecondary)
-                                Text("Sync Weight")
+                                Image(systemName: "arrow.triangle.2.circlepath").foregroundStyle(Theme.heartRed)
+                                Text("Sync from Apple Health")
                                 Spacer()
                             }
-                            Text("Import new weight data from Apple Health")
-                                .font(.caption2).foregroundStyle(Theme.textTertiary)
-                        }
-                    }
-
-                    Button {
-                        Task {
-                            do {
-                                let count = try await HealthKitService.shared.fullResyncWeight()
-                                syncStatus = "Re-synced \(count) entries from all history"
-                            } catch {
-                                syncStatus = "Re-sync failed: \(error.localizedDescription)"
-                            }
-                            clearStatus()
-                        }
-                    } label: {
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack {
-                                Image(systemName: "arrow.clockwise").foregroundStyle(.orange)
-                                Text("Full Re-sync")
-                                Spacer()
-                            }
-                            Text("Clear sync history and re-import all weight data")
+                            Text("Import weight & body data — asks for access if needed, safe to run anytime")
                                 .font(.caption2).foregroundStyle(Theme.textTertiary)
                         }
                     }
