@@ -5,6 +5,26 @@ import Testing
 // MARK: - WeightServiceAPI Tests
 // Tests for validation, unit conversion, history filtering, and describe logic.
 
+// MARK: - fetchAllWeightDates (HK sync-heal probe support)
+
+@Test func fetchAllWeightDatesIncludesHiddenRows() async throws {
+    // The sync-heal probe compares HK days against ALL local dates — a
+    // user-deleted (hidden) HK day must count as "already known" or the
+    // probe would force a full-history resync on every launch.
+    let db = try AppDatabase.empty()
+    var kept = WeightEntry(date: "2026-07-01", weightKg: 80, source: "healthkit", syncedFromHk: true)
+    var deleted = WeightEntry(date: "2026-07-02", weightKg: 80.5, source: "healthkit", syncedFromHk: true)
+    try db.saveWeightEntry(&kept)
+    try db.saveWeightEntry(&deleted)
+    let deletedId = try #require(db.fetchWeightEntries().first { $0.date == "2026-07-02" }?.id)
+    try db.deleteWeightEntry(id: deletedId)
+
+    let visible = try db.fetchWeightEntries().map(\.date)
+    #expect(visible == ["2026-07-01"], "hidden row must not be visible")
+    let all = try db.fetchAllWeightDates()
+    #expect(all == ["2026-07-01", "2026-07-02"], "probe dates must include the hidden row")
+}
+
 // MARK: - logWeight Validation
 
 @Test @MainActor func logWeightTooLowKgReturnsNil() async throws {

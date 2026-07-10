@@ -115,7 +115,24 @@ final class HealthKitService {
         let anchor = try loadAnchor(for: "bodyMass", database: database)
         Log.healthKit.info("Syncing weight (anchor: \(anchor != nil ? "exists" : "none"))")
 
-        let (samples, newAnchor) = try await queryAnchoredWeight(type: weightType, anchor: anchor)
+        var (samples, newAnchor) = try await queryAnchoredWeight(type: weightType, anchor: anchor)
+
+        // Self-heal: an anchored sync that says "nothing new" while Apple
+        // Health visibly holds weight days we don't have locally means the
+        // anchor is lying — pre-2026-07-09 installs saved anchors under
+        // denied read, and there is no UI path to heal once the user has ANY
+        // local entries (the empty-state resync button never shows; the
+        // Settings one is buried). Probe a 90-day window (bypasses the
+        // anchor); any unsynced non-hidden day proves it → redo this sync
+        // over full history. Only runs on empty anchored results, one
+        // bounded query, and a read-denial no-op (the probe returns 0 too).
+        // Field report 2026-07-10: "weight still not syncing from Apple even
+        // though permission is there".
+        if samples.isEmpty, anchor != nil,
+           try await hkHasUnsyncedWeightDay(type: weightType, database: database) {
+            Log.healthKit.info("Anchored sync empty but HK has unsynced weight days — anchor stale/poisoned; full-history resync")
+            (samples, newAnchor) = try await queryAnchoredWeight(type: weightType, anchor: nil)
+        }
 
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
@@ -214,6 +231,26 @@ final class HealthKitService {
         Log.healthKit.info("Synced \(count) body composition entries from HealthKit")
         return count
         #endif
+    }
+
+    /// True when Apple Health holds a bodyMass sample (last 90 days) on a day
+    /// with no local weight entry — proof an anchored sync is hiding data.
+    /// Compares against ALL local dates including hidden rows, so a
+    /// user-deleted HK day never re-triggers the heal.
+    private func hkHasUnsyncedWeightDay(type: HKQuantityType, database: AppDatabase) async throws -> Bool {
+        let probe = try await queryRecentSamples(type: type, days: 90)
+        guard !probe.isEmpty else { return false }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        let localDates = try database.fetchAllWeightDates()
+        return Self.hasUnsyncedDay(hkDays: probe.map { formatter.string(from: $0.startDate) },
+                                   localDates: localDates)
+    }
+
+    /// Pure decision — extracted for tests.
+    nonisolated static func hasUnsyncedDay(hkDays: [String], localDates: Set<String>) -> Bool {
+        hkDays.contains { !localDates.contains($0) }
     }
 
     private func queryRecentSamples(type: HKQuantityType, days: Int) async throws -> [HKQuantitySample] {

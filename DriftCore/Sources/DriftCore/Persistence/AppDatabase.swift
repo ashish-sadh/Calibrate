@@ -132,6 +132,16 @@ extension AppDatabase {
         }
     }
 
+    /// Every weight-entry date INCLUDING hidden (user-deleted) rows. Sync
+    /// probes must treat a deleted HealthKit day as "already known" — the
+    /// hidden-filtered fetch would re-flag that day as unsynced and force a
+    /// full-history resync on every launch.
+    public func fetchAllWeightDates() throws -> Set<String> {
+        try dbWriter.read { db in
+            Set(try String.fetchAll(db, sql: "SELECT date FROM weight_entry"))
+        }
+    }
+
     public func fetchWeightEntries(from startDate: String? = nil, to endDate: String? = nil) throws -> [WeightEntry] {
         try dbWriter.read { db in
             var request = WeightEntry.filter(Column("hidden") == false).order(Column("date").desc)
