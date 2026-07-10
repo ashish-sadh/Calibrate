@@ -31,17 +31,23 @@ public final class TDEEEstimator {
         public var age: Int?
         public var heightCm: Double?
         public var sex: Sex?
+        /// True when the user explicitly chose "N/A" — distinguishes
+        /// "declined to say" (never auto-fill from HealthKit, treat profile
+        /// as answered) from "not set yet". Optional so configs saved by
+        /// older builds still decode (synthesized Decodable has no defaults).
+        public var sexUndisclosed: Bool?
 
         public var adaptiveTDEE: Double?
         public var adaptiveDataPoints: Int = 0
 
-        init(activityMultiplier: Double, appleHealthTrust: Double, manualAdjustment: Double, age: Int? = nil, heightCm: Double? = nil, sex: Sex? = nil, adaptiveTDEE: Double? = nil, adaptiveDataPoints: Int = 0) {
+        init(activityMultiplier: Double, appleHealthTrust: Double, manualAdjustment: Double, age: Int? = nil, heightCm: Double? = nil, sex: Sex? = nil, sexUndisclosed: Bool? = nil, adaptiveTDEE: Double? = nil, adaptiveDataPoints: Int = 0) {
             self.activityMultiplier = activityMultiplier
             self.appleHealthTrust = appleHealthTrust
             self.manualAdjustment = manualAdjustment
             self.age = age
             self.heightCm = heightCm
             self.sex = sex
+            self.sexUndisclosed = sexUndisclosed
             self.adaptiveTDEE = adaptiveTDEE
             self.adaptiveDataPoints = adaptiveDataPoints
         }

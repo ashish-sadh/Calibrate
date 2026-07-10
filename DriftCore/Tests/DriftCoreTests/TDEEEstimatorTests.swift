@@ -454,3 +454,30 @@ import Testing
     #expect(consistency >= 0)
     #expect(consistency <= 1)
 }
+
+// MARK: - "N/A" sex declaration (inclusivity, 2026-07-09)
+
+@Test func configWithSexUndisclosedRoundTrips() throws {
+    var config = TDEEEstimator.TDEEConfig.default
+    config.sex = nil
+    config.sexUndisclosed = true
+    let data = try JSONEncoder().encode(config)
+    let back = try JSONDecoder().decode(TDEEEstimator.TDEEConfig.self, from: data)
+    #expect(back.sex == nil)
+    #expect(back.sexUndisclosed == true)
+    // Undisclosed sex → no personalized Mifflin; sex-averaged base applies.
+    #expect(!back.hasMifflinProfile)
+}
+
+@Test func configPayloadFromOlderBuildWithoutSexUndisclosedDecodes() throws {
+    // Payload shape written before the field existed — must not fail decode
+    // (a decode failure silently resets the whole profile to .default).
+    let legacy = """
+    {"activityMultiplier": 29, "appleHealthTrust": 1.0, "manualAdjustment": 0,
+     "age": 30, "heightCm": 170, "sex": "female", "adaptiveDataPoints": 3}
+    """
+    let config = try JSONDecoder().decode(TDEEEstimator.TDEEConfig.self, from: Data(legacy.utf8))
+    #expect(config.sex == .female)
+    #expect(config.sexUndisclosed == nil)
+    #expect(config.age == 30)
+}

@@ -53,12 +53,21 @@ extension GoalView {
             Spacer()
             Picker("", selection: Binding(
                 get: { tdeeConfig.sex },
-                set: { tdeeConfig.sex = $0; saveProfile() }
+                set: {
+                    tdeeConfig.sex = $0
+                    // "N/A" is an explicit answer (inclusivity, 2026-07-09):
+                    // remember it so HealthKit auto-fill doesn't overwrite it
+                    // and the profile counts as answered. TDEE math falls
+                    // back to the sex-averaged Mifflin base.
+                    tdeeConfig.sexUndisclosed = ($0 == nil)
+                    saveProfile()
+                }
             )) {
                 Text("Male").tag(TDEEEstimator.Sex?.some(.male))
                 Text("Female").tag(TDEEEstimator.Sex?.some(.female))
+                Text("N/A").tag(TDEEEstimator.Sex?.none)
             }
-            .pickerStyle(.segmented).frame(width: 160)
+            .pickerStyle(.segmented).frame(width: 210)
         }
     }
 
@@ -214,7 +223,10 @@ extension GoalView {
     }
 
     var profileComplete: Bool {
-        tdeeConfig.sex != nil && tdeeConfig.age != nil && tdeeConfig.heightCm != nil
+        // An explicit "N/A" on sex counts as answered — don't nag with
+        // "Improve accuracy" for a deliberate choice.
+        (tdeeConfig.sex != nil || tdeeConfig.sexUndisclosed == true)
+            && tdeeConfig.age != nil && tdeeConfig.heightCm != nil
     }
 
     func saveWeight(kg: Double) {
@@ -248,7 +260,9 @@ extension GoalView {
         Task {
             let profile = await HealthKitService.shared.fetchUserProfile()
             var changed = false
-            if tdeeConfig.sex == nil, let sex = profile.sex { tdeeConfig.sex = sex; changed = true }
+            // Never auto-fill sex over an explicit "N/A".
+            if tdeeConfig.sex == nil, tdeeConfig.sexUndisclosed != true,
+               let sex = profile.sex { tdeeConfig.sex = sex; changed = true }
             if tdeeConfig.age == nil, let age = profile.age { tdeeConfig.age = age; changed = true }
             if tdeeConfig.heightCm == nil, let h = profile.heightCm { tdeeConfig.heightCm = h; changed = true }
             if changed { saveProfile(showFeedback: false) }
