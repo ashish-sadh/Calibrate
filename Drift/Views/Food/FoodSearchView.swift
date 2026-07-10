@@ -41,6 +41,7 @@ struct FoodSearchView: View {
     @State private var onlineSearchTask: Task<Void, Never>?
     @State private var searchDebounceTask: Task<Void, Never>?
     @State private var recentlyLoggedFoods: [Food] = []
+    @State private var yourFoods: [Food] = []
     @FocusState private var searchFocused: Bool
 
     private var effectiveMealType: MealType { initialMealType ?? viewModel.autoMealType }
@@ -211,6 +212,13 @@ struct FoodSearchView: View {
             .onAppear {
                 viewModel.loadSuggestions()
                 recentlyLoggedFoods = FoodService.recentFoods(limit: 8)
+                // Frequency-then-recency blend for the personalized empty
+                // state — the foods the user actually taps, one section, no
+                // duplicates (operator 2026-07-10: "Popular" is wrong there).
+                var seen = Set<String>()
+                yourFoods = (FoodService.frequentFoods(limit: 8) + recentlyLoggedFoods)
+                    .filter { seen.insert($0.name.lowercased()).inserted }
+                    .prefix(8).map { $0 }
                 if !initialQuery.isEmpty {
                     query = initialQuery
                     results = FoodService.searchFood(query: initialQuery)
@@ -327,11 +335,27 @@ struct FoodSearchView: View {
                     }
                 }
 
-                // Popular foods — always shown
-                suggestionSection("POPULAR") {
-                    let starters = popularFoods()
-                    ForEach(starters) { food in
-                        foodSuggestionRow(food)
+                // Embedded (Log-a-meal Search tab): ONE personalized section —
+                // the foods the user actually logs, frequency-then-recency.
+                // Keeps the 2026-07-09 de-clutter rule (the Recent tab owns the
+                // full recents/combos/favorites stack) while killing the junk
+                // "Popular" default (operator field report 2026-07-10).
+                if embedded, !yourFoods.isEmpty {
+                    suggestionSection("YOUR FOODS") {
+                        ForEach(yourFoods) { food in
+                            foodSuggestionRow(food)
+                        }
+                    }
+                }
+
+                // Popular foods — cold-start browse fodder only. Hidden in the
+                // embedded sheet once the user has any history of their own.
+                if !embedded || yourFoods.isEmpty {
+                    suggestionSection("POPULAR") {
+                        let starters = popularFoods()
+                        ForEach(starters) { food in
+                            foodSuggestionRow(food)
+                        }
                     }
                 }
             }
@@ -839,8 +863,14 @@ struct FoodSearchView: View {
                      "Banana", "Chicken", "Rice", "Oats", "Avocado"]
         var result: [Food] = []
         for name in names {
+            // Canonical matches only: "Milk" may resolve to "Milk (2%)", but
+            // fuzzy junk like "Bread Improver - Wallaby" for "Bread" must be
+            // dropped, not shown as a starter (field report 2026-07-10).
             if let food = FoodService.findByName(name) {
-                result.append(food)
+                let f = food.name.lowercased(), n = name.lowercased()
+                if f == n || f.hasPrefix(n + " (") || f.hasPrefix(n + ",") {
+                    result.append(food)
+                }
             }
         }
         return result

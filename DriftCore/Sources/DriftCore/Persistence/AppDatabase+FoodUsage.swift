@@ -84,6 +84,21 @@ extension AppDatabase {
         }
     }
 
+    /// Lowercased names of foods the user has actually logged (use_count ≥
+    /// `minUses`). Feeds the search rerank so the user's own foods win within
+    /// a match tier (field report 2026-07-10: personal history must beat the
+    /// generic time-of-day boost).
+    public func fetchUsedFoodNames(minUses: Int = 1) throws -> Set<String> {
+        try reader.read { db in
+            let rows = try String.fetchAll(db, sql: """
+                SELECT COALESCE(f.name, fu.food_name) FROM food_usage fu
+                LEFT JOIN food f ON f.id = fu.food_id
+                WHERE fu.use_count >= ?
+                """, arguments: [minUses])
+            return Set(rows.map { $0.lowercased() })
+        }
+    }
+
     /// Most-logged foods by usage count.
     public func fetchFrequentFoods(limit: Int = 10) throws -> [Food] {
         try reader.read { db in

@@ -36,7 +36,9 @@ public enum FoodService {
         case 15..<18: boostKeywords = ["protein", "shake", "bar", "almonds", "fruit", "snack"]
         default: boostKeywords = ["chicken", "fish", "paneer", "rice", "pasta", "vegetables", "curry"]
         }
-        results = rerankPreservingMatchQuality(results, query: corrected, boostKeywords: boostKeywords)
+        let usedNames = (try? AppDatabase.shared.fetchUsedFoodNames()) ?? []
+        results = rerankPreservingMatchQuality(results, query: corrected,
+                                               boostKeywords: boostKeywords, usedNames: usedNames)
 
         // Track queries that return no local results — used for food DB prioritization
         if results.isEmpty {
@@ -52,10 +54,14 @@ public enum FoodService {
     /// the confirm sheet pre-selected 520 kcal of egg curry for "log 2 eggs".
     /// Boost now only reorders *within* a match tier (exact → prefix → rest,
     /// vs the spell-corrected query), preserving searchFoodsRanked's #271
-    /// guarantee. Stable: equal-tier/equal-boost rows keep their DB order.
+    /// guarantee. Within a tier, foods the user has actually logged
+    /// (`usedNames`) outrank the generic time-of-day boost — personal history
+    /// beats "it's dinner, so curry" (field report 2026-07-10). Stable:
+    /// equal-key rows keep their DB order.
     /// `nonisolated` + pure so Tier-0 can pin the invariant without a DB.
     nonisolated static func rerankPreservingMatchQuality(
-        _ results: [Food], query: String, boostKeywords: [String]
+        _ results: [Food], query: String, boostKeywords: [String],
+        usedNames: Set<String> = []
     ) -> [Food] {
         let q = query.lowercased()
         func tier(_ f: Food) -> Int {
@@ -75,6 +81,9 @@ public enum FoodService {
         return results.enumerated().sorted { a, b in
             let (ta, tb) = (tier(a.element), tier(b.element))
             if ta != tb { return ta < tb }
+            let (ua, ub) = (usedNames.contains(a.element.name.lowercased()),
+                            usedNames.contains(b.element.name.lowercased()))
+            if ua != ub { return ua }
             let (ba, bb) = (boosted(a.element), boosted(b.element))
             if ba != bb { return ba }
             return a.offset < b.offset
@@ -142,6 +151,11 @@ public enum FoodService {
     /// Fetch recently used foods.
     public static func fetchRecentFoods(limit: Int = 10) -> [Food] {
         (try? AppDatabase.shared.fetchRecentFoods(limit: limit)) ?? []
+    }
+
+    /// Most-logged foods by usage count (use_count > 1).
+    public static func frequentFoods(limit: Int = 8) -> [Food] {
+        (try? AppDatabase.shared.fetchFrequentFoods(limit: limit)) ?? []
     }
 
     /// Fetch the most recently logged foods from actual food_entry records.

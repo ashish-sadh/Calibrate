@@ -203,6 +203,33 @@ final class FoodSearchGoldSetTests: XCTestCase {
         XCTAssertEqual(out.first?.name, "Tofu (firm)")
     }
 
+    // Field report 2026-07-10: within a tier the user's own logged food beats the
+    // generic time-of-day boost — a never-logged "Egg Curry" must not outrank the
+    // daily-logged "Egg Bhurji" just because it's dinnertime.
+    func testRerankUsedFoodBeatsTimeOfDayBoostWithinTier() {
+        let curry = Food(name: "Egg Curry", category: "Indian Staples",
+                         servingSize: 200, servingUnit: "g", calories: 260)
+        let bhurji = Food(name: "Egg Bhurji", category: "Indian Staples",
+                          servingSize: 150, servingUnit: "g", calories: 210)
+        let out = FoodService.rerankPreservingMatchQuality(
+            [curry, bhurji], query: "egg", boostKeywords: ["curry"],
+            usedNames: ["egg bhurji"])
+        XCTAssertEqual(out.first?.name, "Egg Bhurji")
+    }
+
+    // The personal boost is tier-bound like the time-of-day boost: a used
+    // phrase-tier dish must never outrank an unused exact match (#930 rule).
+    func testRerankUsedFoodNeverLiftsAcrossTier() {
+        let sandwich = Food(name: "Masala Egg Sandwich", category: "Indian Staples",
+                            servingSize: 180, servingUnit: "g", calories: 340)
+        let egg = Food(name: "Egg", category: "Eggs",
+                       servingSize: 50, servingUnit: "g", calories: 72)
+        let out = FoodService.rerankPreservingMatchQuality(
+            [sandwich, egg], query: "egg", boostKeywords: [],
+            usedNames: ["masala egg sandwich"])
+        XCTAssertEqual(out.first?.name, "Egg")
+    }
+
     func testRerankCommaVariantOutranksCompound() {
         let compound = Food(name: "Pizza Logs", category: "Snacks",
                             servingSize: 100, servingUnit: "g", calories: 250)
