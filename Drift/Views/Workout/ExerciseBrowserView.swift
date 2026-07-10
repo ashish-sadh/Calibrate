@@ -158,7 +158,9 @@ struct ExerciseBrowserView: View {
             Text(bodyPart).font(.system(size: Theme.FontSize.nano))
         }
         .padding(.horizontal, 6).padding(.vertical, 2)
-        .background(Theme.accent.opacity(0.1), in: Capsule())
+        // Quiet gray — 100 coral chips per screen fought the new photo
+        // thumbnails (design pass 2026-07-10); coral stays CTA-only.
+        .background(Theme.pillBackground, in: Capsule())
         .foregroundStyle(Theme.accent)
     }
 
@@ -247,7 +249,7 @@ struct ExerciseDetailView: View {
 
                     if let info {
                         HStack(spacing: 6) {
-                            detailTag(info.bodyPart, icon: "figure.strengthtraining.traditional", color: Theme.accent)
+                            detailTag(info.bodyPart, icon: "figure.strengthtraining.traditional", color: .secondary)
                             detailTag(info.equipment, icon: "wrench.and.screwdriver", color: .secondary)
                             detailTag(info.level.capitalized, icon: "chart.bar", color: .secondary)
                         }

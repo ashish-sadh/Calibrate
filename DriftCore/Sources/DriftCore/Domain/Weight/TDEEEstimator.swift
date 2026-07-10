@@ -228,7 +228,10 @@ public final class TDEEEstimator {
 
         if let w = weightKg, let (mifflin, confidence) = computeMifflin(weightKg: w, config: config) {
             tdee += (mifflin - tdee) * mifflinCorrectionWeight * confidence
-            sources.append("Profile\(confidence < 1 ? " (partial)" : "")")
+            // Plain "Profile" — "(partial)" read as debug-speak on the
+            // Dashboard chip (design pass 2026-07-10); the profile screen
+            // itself shows what's missing.
+            sources.append("Profile")
             bestSource = .mifflin
         }
 
