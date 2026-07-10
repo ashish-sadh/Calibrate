@@ -10,7 +10,9 @@ import DriftCore
 /// One body view (front or back) with per-muscle fills, drawn in a single
 /// Canvas — the model is ~80 paths per side; never make each path a view.
 struct MuscleBodyView: View {
-    var gender: BodyDiagram.Gender = .male
+    /// Defaults to the profile-derived figure so every call site (recovery
+    /// map, exercise diagrams) shows the user's own body type.
+    var gender: BodyDiagram.Gender = BodyDiagram.userGender
     let side: BodyDiagram.Side
     /// Library slugs → strong highlight.
     var primarySlugs: Set<String> = []

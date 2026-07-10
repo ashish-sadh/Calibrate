@@ -105,3 +105,45 @@ struct BodyDiagramTests {
         #expect(abs((path?.boundingBox.minX ?? 0) - -5.25) < 0.001)
     }
 }
+
+// MARK: - Profile-derived figure (2026-07-09 inclusivity)
+
+// Serialized: reads/writes the real drift_tdee_config UserDefaults key.
+@Suite(.serialized) struct UserGenderFigureTests {
+    @MainActor private func withConfigSex(_ sex: TDEEEstimator.Sex?, _ body: () -> Void) {
+        let key = "drift_tdee_config"
+        let snapshot = UserDefaults.standard.data(forKey: key)
+        defer { UserDefaults.standard.set(snapshot, forKey: key) }
+        var config = TDEEEstimator.loadConfig()
+        config.sex = sex
+        TDEEEstimator.saveConfig(config)
+        body()
+    }
+
+    @Test @MainActor func femaleProfileGetsFemaleFigure() {
+        withConfigSex(.female) { #expect(BodyDiagram.userGender == .female) }
+    }
+
+    @Test @MainActor func maleProfileGetsMaleFigure() {
+        withConfigSex(.male) { #expect(BodyDiagram.userGender == .male) }
+    }
+
+    @Test @MainActor func unsetSexDefaultsToMaleFigure() {
+        withConfigSex(nil) { #expect(BodyDiagram.userGender == .male) }
+    }
+
+    // The female models must highlight every real muscle the male ones do —
+    // a slug regression here would silently un-highlight muscles for women.
+    @Test func femaleModelsCoverEveryMappedMuscleSlug() {
+        let driftMuscles = ["abdominals", "adductors", "biceps", "calves", "chest",
+                            "forearms", "glutes", "hamstrings", "lats", "lower back",
+                            "middle back", "neck", "quadriceps", "shoulders", "traps", "triceps"]
+        let femaleSlugs = Set((BodyDiagram.model(gender: .female, side: .front)?.muscles.keys ?? [String: [CGPath]]().keys).map { $0 })
+            .union((BodyDiagram.model(gender: .female, side: .back)?.muscles.keys ?? [String: [CGPath]]().keys).map { $0 })
+        for m in driftMuscles {
+            for slug in BodyDiagram.librarySlugs(forDriftMuscle: m) {
+                #expect(femaleSlugs.contains(slug), "female models missing slug '\(slug)' for \(m)")
+            }
+        }
+    }
+}

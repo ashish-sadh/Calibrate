@@ -54,6 +54,20 @@ public enum BodyDiagram {
         models["\(gender.rawValue)\(side == .front ? "Front" : "Back")"]
     }
 
+    /// Figure to render for THIS user: follows profile sex (Settings →
+    /// Profile), male when unset (2026-07-09 inclusivity call — women should
+    /// see a female figure on the recovery map and muscle diagrams).
+    /// Female slug coverage matches male for every real muscle; only the
+    /// cosmetic `ankles`/`head` back regions are absent.
+    public static var userGender: Gender {
+        // Decodes only the sex field of the TDEE config — TDEEEstimator is
+        // MainActor-isolated and this must stay callable from any context.
+        struct SexProbe: Decodable { let sex: TDEEEstimator.Sex? }
+        guard let data = UserDefaults.standard.data(forKey: "drift_tdee_config"),
+              let probe = try? JSONDecoder().decode(SexProbe.self, from: data) else { return .male }
+        return probe.sex == .female ? .female : .male
+    }
+
     // MARK: - Drift muscle slugs → library regions
 
     /// Maps Drift's 17 exercise-catalog muscle names onto library slugs.
