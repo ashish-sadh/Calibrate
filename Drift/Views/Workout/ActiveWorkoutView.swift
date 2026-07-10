@@ -395,8 +395,11 @@ struct ActiveWorkoutView: View {
                 NavigationLink {
                     ExerciseDetailView(exerciseName: exercises[ei].name, info: ExerciseDatabase.info(for: exercises[ei].name))
                 } label: {
+                    // Ink, not coral (calorieBlue aliases the brand coral) —
+                    // five coral titles per screen drowned the real CTAs
+                    // (design pass 2026-07-10). Warmups keep the amber cue.
                     Text(exercises[ei].name).font(.subheadline.weight(.bold))
-                        .foregroundStyle(exercises[ei].isWarmupExercise ? Theme.fatYellow : Theme.calorieBlue)
+                        .foregroundStyle(exercises[ei].isWarmupExercise ? Theme.fatYellow : Theme.textPrimary)
                 }
                 Text(guessGroup(exercises[ei].name)).font(.caption2).foregroundStyle(Theme.textTertiary)
                 Spacer()
@@ -408,10 +411,11 @@ struct ActiveWorkoutView: View {
                         }
                     }
                 } label: {
+                    // Quiet gray rest chip — the coral pill read as a CTA.
                     Text("\(exercises[ei].restTime / 60):\(String(format: "%02d", exercises[ei].restTime % 60))")
-                        .font(.caption2.monospacedDigit()).foregroundStyle(Theme.accent)
+                        .font(.caption2.monospacedDigit()).foregroundStyle(Theme.textSecondary)
                         .padding(.horizontal, 6).padding(.vertical, 2)
-                        .background(Theme.accent.opacity(0.15), in: RoundedRectangle(cornerRadius: 4))
+                        .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: 4))
                 }
                 Menu {
                     let name = exercises[ei].name

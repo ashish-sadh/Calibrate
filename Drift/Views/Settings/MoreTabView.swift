@@ -224,7 +224,7 @@ struct SettingsView: View {
                     }
                     .pickerStyle(.segmented)
                     .onChange(of: weightUnit) { _, v in Preferences.weightUnit = v }
-                    Text("Affects body weight tracking only. Exercise weights are always shown in lbs.")
+                    Text("Body weight only — exercise weights stay in lbs.")
                         .font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
                 .card()
@@ -260,14 +260,22 @@ struct SettingsView: View {
                             clearStatus()
                         }
                     } label: {
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack {
-                                Image(systemName: "arrow.triangle.2.circlepath").foregroundStyle(Theme.heartRed)
+                        // Settings row grammar (design pass 2026-07-10):
+                        // subheadline titles, leading captions — unstyled
+                        // body-size titles + auto-centered captions read
+                        // "so ugly / not premium" in the field.
+                        HStack(spacing: 12) {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .foregroundStyle(Theme.heartRed).frame(width: 24)
+                            VStack(alignment: .leading, spacing: 2) {
                                 Text("Sync from Apple Health")
-                                Spacer()
+                                    .font(.subheadline.weight(.medium)).foregroundStyle(Theme.textPrimary)
+                                Text("Import weight & body data — safe to run anytime")
+                                    .font(.caption2).foregroundStyle(Theme.textTertiary)
+                                    .multilineTextAlignment(.leading)
                             }
-                            Text("Import weight & body data — asks for access if needed, safe to run anytime")
-                                .font(.caption2).foregroundStyle(Theme.textTertiary)
+                            Spacer()
+                            Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.textTertiary)
                         }
                     }
 
@@ -306,13 +314,18 @@ struct SettingsView: View {
                                 }
                             }
                         )) {
-                            HStack {
-                                Image(systemName: "fork.knife.circle.fill").foregroundStyle(Theme.heartRed)
+                            HStack(spacing: 12) {
+                                Image(systemName: "fork.knife.circle.fill")
+                                    .foregroundStyle(Theme.heartRed).frame(width: 24)
                                 Text("Write Nutrition to Health")
+                                    .font(.subheadline.weight(.medium)).foregroundStyle(Theme.textPrimary)
                             }
                         }
+                        .tint(Theme.ink)
                         Text("Calories eaten, protein, carbs, fat, fiber — written as you log")
                             .font(.caption2).foregroundStyle(Theme.textTertiary)
+                            .multilineTextAlignment(.leading)
+                            .padding(.leading, 36)
                         if let reason = Preferences.healthNutritionAutoDisableReason, !healthNutritionWrite {
                             Text(reason).font(.caption2).foregroundStyle(Theme.warn)
                         }
@@ -322,15 +335,18 @@ struct SettingsView: View {
                         Button {
                             showingPastSyncOptions = true
                         } label: {
-                            VStack(alignment: .leading, spacing: 2) {
-                                HStack {
-                                    Image(systemName: "clock.arrow.circlepath").foregroundStyle(Theme.textSecondary)
+                            HStack(spacing: 12) {
+                                Image(systemName: "clock.arrow.circlepath")
+                                    .foregroundStyle(Theme.textSecondary).frame(width: 24)
+                                VStack(alignment: .leading, spacing: 2) {
                                     Text(pastSyncRunning ? "Syncing past data…" : "Sync Past Data…")
-                                    Spacer()
-                                    if pastSyncRunning { ProgressView().scaleEffect(0.7) }
+                                        .font(.subheadline.weight(.medium)).foregroundStyle(Theme.textPrimary)
+                                    Text("Writes your logged history — never duplicates")
+                                        .font(.caption2).foregroundStyle(Theme.textTertiary)
+                                        .multilineTextAlignment(.leading)
                                 }
-                                Text("Write your logged history to Health — re-running never duplicates")
-                                    .font(.caption2).foregroundStyle(Theme.textTertiary)
+                                Spacer()
+                                if pastSyncRunning { ProgressView().scaleEffect(0.7) }
                             }
                         }
                         .disabled(pastSyncRunning)
@@ -390,10 +406,12 @@ struct SettingsView: View {
                             shareFile(url)
                         }
                     } label: {
-                        HStack {
-                            Image(systemName: "dumbbell.fill").foregroundStyle(Theme.textSecondary)
+                        HStack(spacing: 12) {
+                            Image(systemName: "dumbbell.fill").foregroundStyle(Theme.textSecondary).frame(width: 24)
                             Text("Export Workouts (CSV)")
+                                .font(.subheadline.weight(.medium)).foregroundStyle(Theme.textPrimary)
                             Spacer()
+                            Image(systemName: "square.and.arrow.up").font(.caption).foregroundStyle(Theme.textTertiary)
                         }
                     }
 
@@ -402,10 +420,12 @@ struct SettingsView: View {
                             shareFile(url)
                         }
                     } label: {
-                        HStack {
-                            Image(systemName: "fork.knife").foregroundStyle(Theme.textSecondary)
+                        HStack(spacing: 12) {
+                            Image(systemName: "fork.knife").foregroundStyle(Theme.textSecondary).frame(width: 24)
                             Text("Export Food Logs (CSV)")
+                                .font(.subheadline.weight(.medium)).foregroundStyle(Theme.textPrimary)
                             Spacer()
+                            Image(systemName: "square.and.arrow.up").font(.caption).foregroundStyle(Theme.textTertiary)
                         }
                     }
                 }
