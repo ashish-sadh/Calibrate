@@ -92,7 +92,7 @@ public enum DefaultTemplates {
         .init(name: "Ladder Drill", bodyPart: "Full Body", muscles: ["quadriceps", "calves"]),
         .init(name: "90/90 Hip Stretch + Extensions", bodyPart: "Legs", muscles: ["glutes"]),
         .init(name: "90/90 Switches", bodyPart: "Legs", muscles: ["glutes"]),
-        .init(name: "Banded Lateral Walks", bodyPart: "Legs", muscles: ["glutes"]),
+        .init(name: "Banded Lateral Walks", bodyPart: "Legs", muscles: ["glutes"], fedDir: "Banded_Lateral_Walks"),
         .init(name: "Down Dog to Plank", bodyPart: "Core", muscles: ["abdominals", "shoulders"]),
         .init(name: "World's Greatest Stretch", bodyPart: "Full Body", muscles: ["hamstrings", "glutes"]),
         // Chest
@@ -153,10 +153,13 @@ public enum DefaultTemplates {
         .init(name: "Single Leg Deadlift", bodyPart: "Legs", muscles: ["hamstrings", "glutes"], fedDir: "Kettlebell_One-Legged_Deadlift"),
         .init(name: "Single-Leg RDL", bodyPart: "Legs", muscles: ["hamstrings", "glutes"], fedDir: "Kettlebell_One-Legged_Deadlift"),
         // Package III (resistance band program) gaps — no free-exercise-db
-        // band analog; diagram-only until the operator approves visuals.
-        .init(name: "B-Stance RDL", bodyPart: "Legs", muscles: ["hamstrings", "glutes"]),
-        .init(name: "Banded Bent-Over Row", bodyPart: "Back", muscles: ["middle back", "lats", "biceps"]),
-        .init(name: "Banded Bicep Curl", bodyPart: "Arms", muscles: ["biceps"]),
+        // band analog. Pose pairs were sourced from the web (operator-approved,
+        // 2026-07-09) and dropped into Drift/ExercisePoses under minted
+        // FED-style dir names; fedDir here is purely a bundle key — the URL
+        // it expands to is never fetched (see PoseCrossfadeView).
+        .init(name: "B-Stance RDL", bodyPart: "Legs", muscles: ["hamstrings", "glutes"], fedDir: "B_Stance_RDL"),
+        .init(name: "Banded Bent-Over Row", bodyPart: "Back", muscles: ["middle back", "lats", "biceps"], fedDir: "Banded_Bent_Over_Row"),
+        .init(name: "Banded Bicep Curl", bodyPart: "Arms", muscles: ["biceps"], fedDir: "Banded_Bicep_Curl"),
         .init(name: "Cossack Squats", bodyPart: "Legs", muscles: ["quadriceps", "adductors"]),
         .init(name: "Single Leg Hip Thrust", bodyPart: "Legs", muscles: ["glutes", "hamstrings"], fedDir: "Barbell_Hip_Thrust"),
         .init(name: "Walking Lunges", bodyPart: "Legs", muscles: ["quadriceps", "glutes"], fedDir: "Bodyweight_Walking_Lunge"),
@@ -323,10 +326,9 @@ public enum DefaultTemplates {
     // MARK: - Package III (whiteboard resistance band program, imported 2026-07-09)
     //
     // Band-specific catalog entries are preferred (they carry honest band
-    // pose photos); gaps get customs — Banded Bent-Over Row / Banded Bicep
-    // Curl / B-Stance RDL / Banded Lateral Walks have no free-exercise-db
-    // band analog, so they start diagram-only pending operator-approved
-    // visuals.
+    // pose photos); the four customs with no free-exercise-db band analog
+    // use web-sourced pose pairs bundled under minted asset names (see the
+    // custom-exercise registry note).
 
     static var packageIII: [WorkoutTemplate] {
         [
