@@ -4,8 +4,8 @@
 AI-first local health tracker. AI chat is the primary interface — every data entry doable through conversation. Traditional UI for visual analytics and fallback. No cloud, no accounts. Published on TestFlight as "Drift Fitness" (bundle: com.drift.health).
 
 ## Numbers
-- **Version:** 0.1.0, Build 234
-- **Tests:** ~1252 iOS DriftTests + ~1729 macOS DriftCoreTests (cross-platform pure-logic suite, ~7s warm); LLM eval ~160+ cases in DriftLLMEvalMacOS
+- **Version:** 0.1.0, Build 343
+- **Tests:** ~1260 iOS DriftTests + ~1829 macOS DriftCoreTests (cross-platform pure-logic suite); LLM eval ~160+ cases in DriftLLMEvalMacOS
 - **AI Eval:** 400+ scenarios in eval harness + LLM eval (~130-case gold set in IntentRoutingEval)
 - **Per-tool Reliability (Gemma 4, 50-query gold set):** log_food 10/10 (100%), edit_meal 9/10 (90%, tuned +10% from 80%), log_weight 10/10 (100%), mark_supplement 10/10 (100%), food_info 9/10 (90%) — overall 48/50 (96%)
 - **Foods:** 5,424 (curated down from 11,162 at build 237 — dropped verbose USDA SR Legacy bulk variants; hand-curated Indian-first + international cuisine retained. #1015/#1017 removed 36 duplicate rows, stripped 57 USDA distribution-program name suffixes, and de-title-cased 169 apostrophe names. Ceiling enforced at 6,000, cleanliness by FoodDBSizeTests.)
@@ -13,7 +13,7 @@ AI-first local health tracker. AI chat is the primary interface — every data e
 - **Biomarkers:** 71 across 9 categories
 - **AI Tools:** 35 registered tools (23 core + 12 insight); 11 analytical insight engines (cross_domain_insight, weight_trend_prediction, glp1_insight, supplement_insight, food_timing_insight, sleep_food_correlation, exercise_volume_summary, glucose_food_correlation, progressive_overload_check, glucose_spike_analysis, cycle_biomarker_correlation)
 - **TTFT Benchmark:** ChatLatencyBenchmark (20 queries × 3 runs, 1.3× regression threshold, opt-in via DRIFT_LATENCY_BENCH=1) — 4 scenarios: single-item, multi-item (gates TTFT), confirmation-card (gates completion_ms), clarify-round-trip (gates turn1+turn2 total)
-- **AI Chat Features:** 25+ (see `Docs/ai-parity.md`)
+- **AI Chat Features:** 25+ (see `Docs/ai-parity.md`); Coach interview "set me up" → TrainingProfile → Qwen-generated weekly routine (equipment-filtered, grounded, offline fallback); "log my usual push day" replay; tappable quick-reply chips; ActiveWorkout command strip ("add face pulls" / "drop curls" / "last bench?")
 - **Confirmation Cards:** 8 types (food, weight, workout, navigation, supplement, sleep, glucose, biomarker)
 
 ## Tech Stack
