@@ -115,7 +115,7 @@ public enum AIActionParser {
         guard Preferences.fmWorkoutExtractEnabled else { return parseWorkoutExercises(input) }
         do {
             let entries = try await FoundationModelsExerciseExtractor.extract(text: input)
-            let mapped = entries.compactMap(fmExerciseToWorkout)
+            let mapped = entries.compactMap { workoutExercise(from: $0) }
             return mapped.isEmpty ? parseWorkoutExercises(input) : mapped
         } catch {
             return parseWorkoutExercises(input)
@@ -125,13 +125,16 @@ public enum AIActionParser {
     /// Map one `FMExerciseEntry` to the existing strength-shaped
     /// `WorkoutExercise`; returns nil for non-strength categories so the
     /// caller doesn't synthesize empty sets/reps for cardio/mobility/sports.
-    private static func fmExerciseToWorkout(_ entry: FMExerciseEntry) -> WorkoutExercise? {
+    /// Extractor weights are canonically lbs; `displayUnit` converts them to
+    /// the unit the caller will show/echo (rounded, note-text precision).
+    public static func workoutExercise(from entry: FMExerciseEntry,
+                                       displayUnit: WeightUnit = .lbs) -> WorkoutExercise? {
         guard entry.category == .strength else { return nil }
         return WorkoutExercise(
             name: entry.exerciseName,
             sets: entry.sets ?? 3,
             reps: entry.reps ?? 10,
-            weight: entry.weight
+            weight: entry.weight.map { displayUnit.convertFromLbs($0).rounded() }
         )
     }
 
