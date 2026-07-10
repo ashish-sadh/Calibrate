@@ -142,9 +142,14 @@ public enum ExerciseDatabase {
     /// muscle slugs (they drive the anatomy diagram); `imageUrl` may point
     /// into free-exercise-db so the bundled pose crossfade resolves (#929).
     /// Both optional — plain user-created exercises pass just name+bodyPart.
+    /// `imageUrlAuthoritative`: the DefaultTemplates registry owns its
+    /// customs' visuals (imageUrl is not user-editable anywhere), so a
+    /// registry pose fix must propagate to installs that stored the old
+    /// value — fill-only would pin the first-ever URL forever.
     public static func addCustomExercise(name: String, bodyPart: String,
                                          primaryMuscles: [String]? = nil,
-                                         imageUrl: String? = nil) {
+                                         imageUrl: String? = nil,
+                                         imageUrlAuthoritative: Bool = false) {
         customLock.lock()
         defer { customLock.unlock() }
         var customs = customExercises
@@ -155,7 +160,8 @@ public enum ExerciseDatabase {
             // overwrite ones already set (user edits win).
             var existing = customs[idx]
             var changed = false
-            if existing.imageUrl == nil, let imageUrl {
+            if existing.imageUrl == nil || (imageUrlAuthoritative && existing.imageUrl != imageUrl),
+               imageUrl != nil {
                 existing.imageUrl = imageUrl
                 changed = true
             }

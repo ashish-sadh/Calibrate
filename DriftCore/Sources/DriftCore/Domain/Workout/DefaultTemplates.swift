@@ -77,7 +77,8 @@ public enum DefaultTemplates {
                 primaryMuscles: c.muscles,
                 imageUrl: c.fedDir.map {
                     "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/\($0)/0.jpg"
-                })
+                },
+                imageUrlAuthoritative: true)
         }
     }
 
@@ -157,7 +158,9 @@ public enum DefaultTemplates {
         // 2026-07-09) and dropped into Drift/ExercisePoses under minted
         // FED-style dir names; fedDir here is purely a bundle key — the URL
         // it expands to is never fetched (see PoseCrossfadeView).
-        .init(name: "B-Stance RDL", bodyPart: "Legs", muscles: ["hamstrings", "glutes"], fedDir: "B_Stance_RDL"),
+        // Operator does this with the band looped behind the neck — the
+        // bundled Band Good Morning photos show exactly that setup.
+        .init(name: "B-Stance RDL", bodyPart: "Legs", muscles: ["hamstrings", "glutes"], fedDir: "Band_Good_Morning"),
         .init(name: "Banded Bent-Over Row", bodyPart: "Back", muscles: ["middle back", "lats", "biceps"], fedDir: "Banded_Bent_Over_Row"),
         .init(name: "Banded Bicep Curl", bodyPart: "Arms", muscles: ["biceps"], fedDir: "Banded_Bicep_Curl"),
         .init(name: "Cossack Squats", bodyPart: "Legs", muscles: ["quadriceps", "adductors"]),

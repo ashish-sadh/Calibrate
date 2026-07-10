@@ -233,3 +233,25 @@ import Testing
     #expect(info?.primaryMuscles == ["quadriceps"])
     #expect(ExercisePoses.assetBaseName(fromImageUrl: info?.imageUrl) == "Goblet_Squat")
 }
+
+// Registry pose fixes must reach installs that stored the old URL (the
+// B-Stance RDL fedDir moved from a minted asset to Band_Good_Morning,
+// 2026-07-09); fill-only would pin the first-ever URL forever. Without
+// the authoritative flag the stored value still wins.
+@Test @MainActor func authoritativeImageUrlOverwritesStaleRegistryValue() {
+    let name = "Test Authoritative Exercise \(UUID().uuidString.prefix(6))"
+    let key = "drift_custom_exercises"
+    let snapshot = UserDefaults.standard.data(forKey: key)
+    defer { UserDefaults.standard.set(snapshot, forKey: key) }
+    let old = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Old_Dir/0.jpg"
+    let new = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Band_Good_Morning/0.jpg"
+    ExerciseDatabase.addCustomExercise(name: name, bodyPart: "Legs", imageUrl: old)
+
+    ExerciseDatabase.addCustomExercise(name: name, bodyPart: "Legs", imageUrl: new)
+    var info = ExerciseDatabase.allWithCustom.first { $0.name == name }
+    #expect(ExercisePoses.assetBaseName(fromImageUrl: info?.imageUrl) == "Old_Dir")
+
+    ExerciseDatabase.addCustomExercise(name: name, bodyPart: "Legs", imageUrl: new, imageUrlAuthoritative: true)
+    info = ExerciseDatabase.allWithCustom.first { $0.name == name }
+    #expect(ExercisePoses.assetBaseName(fromImageUrl: info?.imageUrl) == "Band_Good_Morning")
+}
