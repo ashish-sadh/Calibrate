@@ -57,8 +57,11 @@ public enum BodyDiagram {
     /// Figure to render for THIS user: follows profile sex (Settings →
     /// Profile), male when unset (2026-07-09 inclusivity call — women should
     /// see a female figure on the recovery map and muscle diagrams).
-    /// Female slug coverage matches male for every real muscle; only the
-    /// cosmetic `ankles`/`head` back regions are absent.
+    /// Female slug coverage matches male for every real muscle. The female
+    /// BACK artwork has no separate `head`/`ankles` slivers because its
+    /// figure draws those areas as `hair` and `feet` (verified against the
+    /// pinned upstream source) — nothing is missing visually, and no Drift
+    /// muscle ever maps to those cosmetic slugs.
     public static var userGender: Gender {
         // Decodes only the sex field of the TDEE config — TDEEEstimator is
         // MainActor-isolated and this must stay callable from any context.
