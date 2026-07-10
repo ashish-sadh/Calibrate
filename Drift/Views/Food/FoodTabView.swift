@@ -99,6 +99,7 @@ struct FoodTabView: View {
             }
             .scrollContentBackground(.hidden)
             .background(Theme.background.ignoresSafeArea())
+            .floatingTabBarClearance()
             .navigationTitle("Food")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.light, for: .navigationBar)

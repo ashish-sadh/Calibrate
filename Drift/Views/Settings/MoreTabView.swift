@@ -110,6 +110,7 @@ struct MoreTabView: View {
             }
             .scrollContentBackground(.hidden)
             .background(Theme.background.ignoresSafeArea())
+            .floatingTabBarClearance()
             .navigationTitle("More")
             // #premium-polish: inline to match the other three tab roots — the
             // large title made the nav bar jump ~50pt taller on every swap

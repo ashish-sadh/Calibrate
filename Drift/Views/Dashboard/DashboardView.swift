@@ -276,6 +276,7 @@ struct DashboardView: View {
             }
             .scrollContentBackground(.hidden)
             .background(Theme.background.ignoresSafeArea())
+            .floatingTabBarClearance()
             // 2026-05-19: was .dark when the app was dark-themed. Now light.
             .toolbarColorScheme(.light, for: .navigationBar)
             .navigationBarTitleDisplayMode(.inline)

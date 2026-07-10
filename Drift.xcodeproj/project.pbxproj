@@ -143,6 +143,7 @@
 		AA43792497E2FC36FF55F58C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 08E33CA6BE80D735A37ED745 /* Assets.xcassets */; };
 		AD32A3FE644C22A43CA474EF /* DebugSeedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCBE3BA3D70586AC0F3ED34E /* DebugSeedData.swift */; };
 		ADA6493D219411505EF2DA36 /* Preferences+PhotoLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CFCC1379789784011A217E4 /* Preferences+PhotoLog.swift */; };
+		ADDD7CCA7EA9B8017F76F366 /* FloatingTabBarClearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7920DF1B15D67121A0B8212 /* FloatingTabBarClearance.swift */; };
 		AE471C946CA1823B1985EDA9 /* PipelineE2EEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = A434AE755701CCB89A111516 /* PipelineE2EEval.swift */; };
 		B2654B50471C75496A1AA0D7 /* NutritionLabelOCR.swift in Sources */ = {isa = PBXBuildFile; fileRef = 418816F51F38F19F65BC3D77 /* NutritionLabelOCR.swift */; };
 		B8CAE0734166CD113EE590E8 /* WidgetDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0DCFCDAFF06DBAD3CA13DB /* WidgetDataTests.swift */; };
@@ -475,6 +476,7 @@
 		F57B8BA8C0B119CF10614F14 /* HealthKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitService.swift; sourceTree = "<group>"; };
 		F73428EA4B69D7713A6140D4 /* BackupServiceProbeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupServiceProbeTests.swift; sourceTree = "<group>"; };
 		F78E3B6C1497F6A200DF8095 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		F7920DF1B15D67121A0B8212 /* FloatingTabBarClearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingTabBarClearance.swift; sourceTree = "<group>"; };
 		F7D747073BCD9310AB76B496 /* LabReportUploadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabReportUploadView.swift; sourceTree = "<group>"; };
 		F82FD7245B0E99CA6CB7090F /* BackupSchedulerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupSchedulerTests.swift; sourceTree = "<group>"; };
 		F86480D874FB7BC3461695E4 /* ClarificationFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClarificationFlowTests.swift; sourceTree = "<group>"; };
@@ -686,6 +688,7 @@
 			isa = PBXGroup;
 			children = (
 				A9693A1E065B9E2D3DA846EF /* CoachingBriefCard.swift */,
+				F7920DF1B15D67121A0B8212 /* FloatingTabBarClearance.swift */,
 				0362D19A4F7D1ABB43FB48F8 /* GoalProgressCard.swift */,
 				A411F4544692EA6196F07C9C /* MacroRingsView.swift */,
 				7C1DB27256E400287AFC0488 /* NumericFieldSelectAll.swift */,
@@ -1180,6 +1183,7 @@
 				E312846BA4FBD129108D7C82 /* ExerciseBrowserView.swift in Sources */,
 				6327143E6A1E3CD8CFEEB252 /* ExercisePickerView.swift in Sources */,
 				F0CB7EA523C146E03E90E798 /* ExerciseVoiceLogSheet.swift in Sources */,
+				ADDD7CCA7EA9B8017F76F366 /* FloatingTabBarClearance.swift in Sources */,
 				E3CEF38E5F1D8E62C22B5543 /* FoodLogSheet.swift in Sources */,
 				A2ACB0BE8811077162EBE463 /* FoodLogViewModel.swift in Sources */,
 				D681045AF7657C38E75D4D86 /* FoodSearchView.swift in Sources */,

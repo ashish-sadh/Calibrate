@@ -20,6 +20,7 @@ struct WeightTabView: View {
         NavigationStack {
             if viewModel.entries.isEmpty {
                 emptyState
+                    .floatingTabBarClearance()
             } else {
                 ScrollView {
                     VStack(spacing: 14) {
@@ -70,6 +71,7 @@ struct WeightTabView: View {
                     .padding(.top, 8)
                     .padding(.bottom, 24)
                 }
+                .floatingTabBarClearance()
             }
         }
         .navigationTitle("Weight")
