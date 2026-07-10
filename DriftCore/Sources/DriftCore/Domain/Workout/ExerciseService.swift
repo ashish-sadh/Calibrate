@@ -321,13 +321,21 @@ public enum ExerciseService {
     /// One-line form tip for common exercises. Matched by keyword in exercise name.
     public static func formTip(for exercise: String) -> String? {
         let e = exercise.lowercased()
-        // Chest
-        if e.contains("bench press") && !e.contains("close") { return "Drive feet into floor, retract shoulder blades" }
+        // Chest — incline/decline BEFORE the generic bench-press rule, or
+        // they'd get the flat-bench cue (2026-07-09 accuracy audit).
         if e.contains("incline") && e.contains("press") { return "30-45 degree angle, control the negative" }
+        if e.contains("decline") && e.contains("press") { return "Slight decline, elbows ~45\u{00B0}, bar to lower chest" }
+        if e.contains("bench press") && !e.contains("close") { return "Drive feet into floor, retract shoulder blades" }
         if e.contains("fly") || e.contains("flye") { return "Slight bend in elbows, squeeze at the top" }
         if e.contains("push up") || e.contains("pushup") { return "Core tight, elbows 45 degrees from body" }
         if e.contains("dip") { return "Lean forward for chest, upright for triceps" }
-        // Back
+        // Back — equipment-specific deadlifts before the barbell cue ("bar
+        // close to shins" is wrong for trap bar / dumbbells / sumo).
+        if e.contains("trap bar") || e.contains("hex bar") { return "Stand mid-frame, neutral grip at sides, drive through mid-foot" }
+        if e.contains("sumo") && e.contains("deadlift") { return "Wide stance, toes out, knees track over toes, hips low" }
+        if (e.contains("dumbbell") || e.contains("kettlebell") || e.contains("cable")) && e.contains("deadlift") && !e.contains("romanian") && !e.contains("stiff") {
+            return "Hips back, flat back, keep the weights close to your legs"
+        }
         if e.contains("deadlift") && !e.contains("romanian") { return "Brace core, push floor away, bar close to shins" }
         if e.contains("romanian") || e.contains("rdl") { return "Hinge at hips, slight knee bend, feel the hamstring stretch" }
         if e.contains("barbell row") || e.contains("bent over row") { return "Pull to lower chest, squeeze shoulder blades" }

@@ -208,16 +208,15 @@ import Testing
     #expect(ExerciseService.formTip(for: "") == nil)
 }
 
-// "incline bench press" matches the bench-press rule (contains "bench press"),
-// while "incline dumbbell press" falls through to the incline rule.
+// 2026-07-09 accuracy fix: incline rules run BEFORE the generic bench-press
+// rule, so EVERY incline press (dumbbell, barbell, smith) gets the incline
+// cue instead of the flat-bench "drive feet into floor" cue.
 @Test @MainActor func formTipInclinePressVsInclineBenchPress() {
     let inclineDumbbell = ExerciseService.formTip(for: "incline dumbbell press")
     let inclineBench = ExerciseService.formTip(for: "incline bench press")
-    // Both return a tip
-    #expect(inclineDumbbell != nil)
-    #expect(inclineBench != nil)
-    // Dumbbell incline hits the incline rule; bench hits the bench-press rule first
-    #expect(inclineDumbbell != inclineBench)
+    #expect(inclineDumbbell?.contains("30-45") == true)
+    #expect(inclineBench?.contains("30-45") == true)
+    #expect(ExerciseService.formTip(for: "bench press")?.contains("Drive feet") == true)
 }
 
 // MARK: - resolveSplitType
@@ -336,10 +335,19 @@ import Testing
 }
 
 @Test @MainActor func exerciseInstructionsIncludesFormTipWhenAvailable() {
-    guard let info = ExerciseDatabase.search(query: "bench press").first else { return }
-    let instructions = ExerciseService.exerciseInstructions(info)
-    // bench press has a known form tip
-    #expect(instructions.contains("Form:"))
+    // Every catalog entry now carries real instructions, so the "Form:" tip
+    // fallback only fires for entries WITHOUT them (customs).
+    let bare = ExerciseDatabase.ExerciseInfo(
+        name: "Bench Press", bodyPart: "Chest", primaryMuscles: ["chest"],
+        secondaryMuscles: [], equipment: "barbell", category: "strength",
+        level: "intermediate")
+    #expect(ExerciseService.exerciseInstructions(bare).contains("Form:"))
+    // A catalog entry with real instructions shows them, not the fallback.
+    if let info = ExerciseDatabase.search(query: "bench press").first {
+        let instructions = ExerciseService.exerciseInstructions(info)
+        #expect(!instructions.contains("Form:"))
+        #expect(instructions.count > 100)
+    }
 }
 
 // MARK: - getProgressiveOverload (empty DB → insufficientData)
@@ -392,4 +400,34 @@ private let compoundLifts = [
     #expect(text.contains("Setup:"), "Should include Setup cue")
     #expect(text.contains("Execution:"), "Should include Execution cue")
     #expect(text.contains("Common error:"), "Should include Common error cue")
+}
+
+// MARK: - Instruction accuracy (2026-07-09 audit: trap bar got the barbell
+// "bar close to shins" cue; incline/decline presses got the flat-bench cue)
+
+@Test func everyCatalogEntryHasInstructions() {
+    for e in ExerciseDatabase.all {
+        #expect(!(e.instructions ?? []).isEmpty, "\(e.name) has no instructions")
+    }
+}
+
+@Test @MainActor func trapBarDeadliftInstructionsAreTrapBarSpecific() {
+    let e = ExerciseDatabase.all.first { $0.name == "Trap Bar Deadlift" }
+    let text = (e?.instructions ?? []).joined(separator: " ").lowercased()
+    #expect(text.contains("handle"), "trap bar instructions should mention the handles")
+    #expect(!text.contains("close to shins"))
+    // The short cue is also equipment-aware now.
+    #expect(ExerciseService.formTip(for: "Trap Bar Deadlift")?.contains("frame") == true)
+}
+
+@Test @MainActor func formTipEquipmentAndStanceBranches() {
+    #expect(ExerciseService.formTip(for: "Sumo Deadlift with Bands")?.contains("Wide stance") == true)
+    #expect(ExerciseService.formTip(for: "Dumbbell Deadlift")?.contains("weights close") == true)
+    #expect(ExerciseService.formTip(for: "Kettlebell One-Legged Deadlift")?.contains("weights close") == true)
+    // Barbell deadlift keeps the classic cue.
+    #expect(ExerciseService.formTip(for: "Barbell Deadlift")?.contains("close to shins") == true)
+    // Incline/decline no longer inherit the flat-bench cue.
+    #expect(ExerciseService.formTip(for: "Incline Bench Press")?.contains("30-45") == true)
+    #expect(ExerciseService.formTip(for: "Decline Bench Press")?.contains("lower chest") == true)
+    #expect(ExerciseService.formTip(for: "Bench Press")?.contains("Drive feet") == true)
 }
