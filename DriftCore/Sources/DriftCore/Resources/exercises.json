@@ -12806,7 +12806,8 @@
    "triceps",
    "glutes",
    "hamstrings"
-  ]
+  ],
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Burpee_Demo/0.jpg"
  },
  {
   "name": "Burpee (with Push-Up)",
@@ -13018,7 +13019,7 @@
    "hamstrings",
    "calves"
   ],
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Split_Squat_with_Dumbbells/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dumbbell_Bulgarian_Split_Squat/0.jpg"
  },
  {
   "name": "Bodyweight Bulgarian Split Squat",
@@ -13033,7 +13034,7 @@
    "glutes",
    "hamstrings"
   ],
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Split_Squat_with_Dumbbells/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Bodyweight_Bulgarian_Split_Squat/0.jpg"
  },
  {
   "name": "Cable Seated Row",
@@ -13135,7 +13136,8 @@
   "secondaryMuscles": [
    "lower back",
    "glutes"
-  ]
+  ],
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Dragon_Flag_Demo/0.jpg"
  },
  {
   "name": "L-Sit",
@@ -13178,7 +13180,7 @@
   "secondaryMuscles": [
    "hamstrings"
   ],
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Barbell_Hip_Thrust/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Single_Leg_Glute_Bridge/0.jpg"
  },
  {
   "name": "Machine Chest Press",
@@ -13193,7 +13195,7 @@
    "triceps",
    "shoulders"
   ],
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Chest_Press/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Machine_Bench_Press/0.jpg"
  },
  {
   "name": "Machine Shoulder Press",
@@ -13207,7 +13209,7 @@
   "secondaryMuscles": [
    "triceps"
   ],
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Shoulder_Press/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Machine_Shoulder_Military_Press/0.jpg"
  },
  {
   "name": "Machine Leg Curl",
@@ -13221,7 +13223,7 @@
   "secondaryMuscles": [
    "calves"
   ],
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Ball_Leg_Curl/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Seated_Leg_Curl/0.jpg"
  },
  {
   "name": "Machine Leg Extension",
@@ -13260,7 +13262,7 @@
    "shoulders"
   ],
   "secondaryMuscles": [],
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Side_Lateral_Raise/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Standing_Cable_Lateral_Raise/0.jpg"
  },
  {
   "name": "Cable Reverse Fly",
@@ -13274,7 +13276,7 @@
   "secondaryMuscles": [
    "middle back"
   ],
-  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Reverse_Flyes/0.jpg"
+  "imageUrl": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Cable_Rear_Delt_Fly/0.jpg"
  },
  {
   "name": "Cable Curl",
