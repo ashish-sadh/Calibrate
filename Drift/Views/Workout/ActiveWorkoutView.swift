@@ -29,6 +29,7 @@ struct ActiveWorkoutView: View {
     @State private var activeRestSetIndex: Int? = nil
     @State private var workoutEnded = false  // prevents re-persisting after finish/cancel
     @State private var showingFinishOptions = false
+    @State private var showingCloseOptions = false
     @State private var templateName = ""
     @State private var showingTemplateName = false
     @State private var saveAsTemplateToggle = false
@@ -144,14 +145,22 @@ struct ActiveWorkoutView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Menu {
-                        Button("Minimize (keep running)") { persistSession(); dismiss() }
-                        Button("Cancel Workout", role: .destructive) {
+                    // Native confirmation dialog, not a bare Menu popover —
+                    // discarding a workout is consequential and the naked
+                    // two-row menu read as unfinished chrome (field report
+                    // 2026-07-09). Labels say what actually happens.
+                    Button { showingCloseOptions = true } label: {
+                        Image(systemName: "xmark.circle").foregroundStyle(Theme.textSecondary)
+                    }
+                    .confirmationDialog("Workout in progress", isPresented: $showingCloseOptions, titleVisibility: .visible) {
+                        Button("Minimize — timer keeps running") { persistSession(); dismiss() }
+                        Button("Discard workout", role: .destructive) {
                             workoutEnded = true
                             WorkoutService.clearSession(); stopTimers(); dismiss()
                         }
-                    } label: {
-                        Image(systemName: "xmark.circle").foregroundStyle(Theme.textSecondary)
+                        Button("Keep going", role: .cancel) {}
+                    } message: {
+                        Text("Minimized workouts stay in the Workout tab. Discarding deletes the logged sets.")
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
@@ -767,6 +776,7 @@ struct ActiveWorkoutView: View {
     }
 
     private func saveWorkout(andDismiss: Bool = true) {
+        FeatureUsage.record("action.finish_workout")
         workoutEnded = true
         stopTimers()
         WorkoutService.clearSession()

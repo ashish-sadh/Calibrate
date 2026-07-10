@@ -235,6 +235,7 @@ final class FoodLogViewModel {
     }
 
     func logFood(_ food: Food, servings: Double, mealType: MealType, loggedAt: Date? = nil) {
+        FeatureUsage.record("action.log_food")
         do {
             let date = dateString
             // nil ⇒ derive: now for today, meal-canonical time for a past day.
@@ -373,6 +374,7 @@ final class FoodLogViewModel {
     /// reloads + refreshes the widget + notifies ONCE, not N times. (#949)
     @discardableResult
     private func quickAddCore(name: String, calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double, mealType: MealType, loggedAt: String? = nil, servingSizeG: Double = 0, servings: Double = 1, date: String? = nil) -> Bool {
+        FeatureUsage.record("action.quick_add")
         do {
             let date = date ?? dateString
             let mealLogs = try database.fetchMealLogs(for: date)

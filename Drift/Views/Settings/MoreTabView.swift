@@ -439,6 +439,26 @@ struct SettingsView: View {
                 }
                 .card()
 
+                // Usage Insights — on-device feature counters (operator
+                // decision 2026-07-09: metrics yes, cloud no). Sharing is an
+                // explicit user action, never automatic.
+                NavigationLink { UsageInsightsView() } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "chart.bar")
+                            .foregroundStyle(Theme.textSecondary).frame(width: 24)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Usage Insights").font(.subheadline.weight(.medium))
+                                .foregroundStyle(Theme.textPrimary)
+                            Text("What you use most — counted on this device only")
+                                .font(.caption2).foregroundStyle(Theme.textTertiary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.textTertiary)
+                    }
+                    .card()
+                }
+                .buttonStyle(.plain)
+
                 Text("NOTIFICATIONS").sectionHeading().frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 8)
 
@@ -966,5 +986,78 @@ struct NotificationsSettingsView: View {
             }
         }
         .card()
+    }
+}
+
+
+// MARK: - Usage Insights (on-device feature counters)
+
+struct UsageInsightsView: View {
+    @State private var rows: [(event: String, count: Int)] = []
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                if rows.isEmpty {
+                    Text("No usage recorded yet — counts build up as you use the app.")
+                        .font(.caption).foregroundStyle(Theme.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.vertical, 32)
+                } else {
+                    VStack(spacing: 0) {
+                        ForEach(rows, id: \.event) { row in
+                            HStack {
+                                Text(displayName(row.event))
+                                    .font(.subheadline)
+                                Spacer()
+                                Text("\(row.count)")
+                                    .font(.subheadline.weight(.semibold).monospacedDigit())
+                                    .foregroundStyle(Theme.textSecondary)
+                            }
+                            .padding(.vertical, 8)
+                            if row.event != rows.last?.event { Divider() }
+                        }
+                    }
+                    .card()
+
+                    ShareLink(item: FeatureUsage.exportText()) {
+                        Label("Share with the developer", systemImage: "square.and.arrow.up")
+                            .font(.subheadline.weight(.medium))
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered).tint(Theme.ink)
+
+                    Button(role: .destructive) {
+                        FeatureUsage.reset(); rows = []
+                    } label: {
+                        Text("Reset counts").font(.caption)
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.plain).foregroundStyle(Theme.surplus)
+                }
+
+                Text("Counts live only on this phone. Nothing is sent anywhere unless you tap Share.")
+                    .font(.caption2).foregroundStyle(Theme.textTertiary)
+            }
+            .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
+        }
+        .scrollContentBackground(.hidden)
+        .background(Theme.background.ignoresSafeArea())
+        .navigationTitle("Usage Insights")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear { rows = FeatureUsage.all() }
+    }
+
+    private func displayName(_ event: String) -> String {
+        if let screen = event.split(separator: ".").last, event.hasPrefix("screen.") {
+            return "Screen: \(screen)"
+        }
+        switch event {
+        case "action.log_food": return "Foods logged"
+        case "action.quick_add": return "Quick adds"
+        case "action.finish_workout": return "Workouts finished"
+        case "action.coach_message": return "Coach messages"
+        default: return event
+        }
     }
 }

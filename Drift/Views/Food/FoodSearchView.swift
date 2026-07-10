@@ -271,8 +271,13 @@ struct FoodSearchView: View {
                 }
                 .padding(.horizontal, 16)
 
-                // Recent foods — from actual logged entries, shown first for 1-tap re-logging
-                if !recentlyLoggedFoods.isEmpty {
+                // Recent foods — from actual logged entries, shown first for 1-tap re-logging.
+                // Hidden when embedded in LogMealSheet: the sheet's Recent tab
+                // already owns recents/combos/favorites/frequent — stacking
+                // them again under Search made the tab a confusing wall
+                // (operator field report 2026-07-09). Embedded Search = search
+                // field + method chips + POPULAR browse fodder only.
+                if !embedded, !recentlyLoggedFoods.isEmpty {
                     suggestionSection("RECENT") {
                         ForEach(recentlyLoggedFoods) { food in
                             foodSuggestionRow(food)
@@ -281,7 +286,7 @@ struct FoodSearchView: View {
                 }
 
                 // Combos & recipes
-                if !viewModel.combos.isEmpty {
+                if !embedded, !viewModel.combos.isEmpty {
                     suggestionSection("COMBOS") {
                         ForEach(viewModel.combos) { combo in
                             let totalCal = combo.recipeItems?.reduce(0) { $0 + $1.calories } ?? combo.calories
@@ -305,7 +310,7 @@ struct FoodSearchView: View {
                 }
 
                 // User favorites (starred items)
-                if !viewModel.favoriteFoods.isEmpty {
+                if !embedded, !viewModel.favoriteFoods.isEmpty {
                     suggestionSection("\u{2B50} FAVORITES") {
                         ForEach(viewModel.favoriteFoods) { entry in
                             recentEntryRow(entry)
@@ -314,7 +319,7 @@ struct FoodSearchView: View {
                 }
 
                 // Frequent foods
-                if !viewModel.frequentFoods.isEmpty {
+                if !embedded, !viewModel.frequentFoods.isEmpty {
                     suggestionSection("FREQUENTLY USED") {
                         ForEach(viewModel.frequentFoods) { food in
                             foodSuggestionRow(food)
