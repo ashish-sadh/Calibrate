@@ -158,7 +158,7 @@ struct LogMealSheet: View {
             Text("Log a meal")
                 .font(.largeTitle.weight(.bold))
                 .foregroundStyle(Theme.textPrimary)
-            Text("Tap a recent item or use a method below")
+            Text("What did you eat?")
                 .font(.subheadline)
                 .foregroundStyle(Theme.textSecondary)
             // Past-day target must stay visible here — the diary's "Viewing"

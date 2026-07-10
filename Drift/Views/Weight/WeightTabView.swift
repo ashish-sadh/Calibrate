@@ -281,7 +281,8 @@ struct WeightTabView: View {
                         Text("Weekly").tag(WeightViewModel.Granularity.weekly)
                     }
                 } label: {
-                    Text(viewModel.granularity == .daily ? "D" : "W")
+                    // Full word, not a cryptic single letter (design pass).
+                    Text(viewModel.granularity == .daily ? "Daily" : "Weekly")
                         .font(.caption.weight(.bold))
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)

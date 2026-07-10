@@ -272,7 +272,7 @@ struct WorkoutView: View {
                     overloadCard
                 }
 
-                if !weeklyCounts.isEmpty {
+                if weeklyCounts.reduce(0, { $0 + $1.count }) > 0 {
                     // Streak computed in loadData — a DB call in `body`
                     // re-ran on every render pass (perf 2026-07-09).
                     if let streak, streak.current > 0 {

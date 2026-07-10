@@ -56,13 +56,15 @@ struct DashboardView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 14) {
-                    // Profile nudge (if incomplete)
+                    // Profile nudge (if incomplete). Quiet gray, links straight
+                    // to the standalone Profile screen; an explicit "N/A" sex
+                    // counts as answered (was nagging N/A users forever).
                     let config = TDEEEstimator.loadConfig()
-                    if config.sex == nil || config.age == nil || config.heightCm == nil {
-                        NavigationLink { GoalView() } label: {
+                    if (config.sex == nil && config.sexUndisclosed != true) || config.age == nil || config.heightCm == nil {
+                        NavigationLink { ProfileView() } label: {
                             HStack(spacing: 8) {
                                 Image(systemName: "person.crop.circle.badge.plus")
-                                    .font(.subheadline).foregroundStyle(Theme.accent)
+                                    .font(.subheadline).foregroundStyle(Theme.ink)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("Complete your profile").font(.caption.weight(.medium))
                                     Text("Add age, sex & height for better calorie targets")
@@ -72,7 +74,8 @@ struct DashboardView: View {
                                 Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.textTertiary)
                             }
                             .padding(10)
-                            .background(Theme.accent.opacity(0.08), in: RoundedRectangle(cornerRadius: Theme.radiusChip))
+                            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
+                            .overlay(RoundedRectangle(cornerRadius: Theme.radiusChip).strokeBorder(Theme.separator))
                         }.tint(.primary)
                     }
 
