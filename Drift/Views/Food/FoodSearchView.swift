@@ -549,10 +549,14 @@ struct FoodSearchView: View {
                 }
             }
 
-            // Food results
-            if !results.isEmpty {
+            // Food results. Recipes are excluded here — they surface in
+            // "Your Recipes" above with the proper expand-on-log flow; the
+            // flat row would log the combined blob as one item (search-first
+            // fix 2026-07-09: everything reachable by typing, no tab switch).
+            let plainResults = results.filter { !$0.isRecipe }
+            if !plainResults.isEmpty {
                 Section("Foods") {
-                    ForEach(results) { food in
+                    ForEach(plainResults) { food in
                         Button { selectFood(food) } label: {
                             let primaryUnit = FoodUnit.smartUnits(for: food).first?.label ?? "serving"
                             let unitInfo = primaryUnit == "g" || primaryUnit == "ml"
