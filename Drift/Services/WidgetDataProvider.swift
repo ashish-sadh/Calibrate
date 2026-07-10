@@ -22,8 +22,24 @@ enum WidgetDataProvider {
     static let lastUpdatedKey = "widget_last_updated"
     static let dateKey = "widget_date"
 
-    /// Write current daily totals to shared UserDefaults and reload widget timelines.
+    /// Trailing debounce (2s): refreshWidgetData is called from every
+    /// loadTodayMeals — every tab visit and every logged item hit
+    /// getDailyTotals + WidgetCenter.reloadAllTimelines (system-budgeted).
+    /// Coalescing to the last call keeps the widget just as fresh
+    /// (perf 2026-07-09).
+    private static var pendingRefresh: Task<Void, Never>?
+
     static func refreshWidgetData() {
+        pendingRefresh?.cancel()
+        pendingRefresh = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+            refreshWidgetDataNow()
+        }
+    }
+
+    /// Write current daily totals to shared UserDefaults and reload widget timelines.
+    static func refreshWidgetDataNow() {
         guard let defaults = UserDefaults(suiteName: suiteName) else { return }
 
         let totals = FoodService.getDailyTotals()

@@ -303,14 +303,21 @@ struct DashboardView: View {
             }
             .onAppear {
                 AIScreenTracker.shared.currentScreen = .dashboard
-                Task { await viewModel.loadToday() }
+                // loadToday lives in .task below (it also re-fires on every
+                // re-selection) — the duplicate here raced it on each tab
+                // switch (perf 2026-07-09).
                 refreshFeedbackPrompt()
             }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .active { refreshFeedbackPrompt() }
             }
             .task {
-                await viewModel.loadToday()
+                // Skip when data is <30s fresh — a quick tab-away-and-back
+                // re-ran the full HK/DB load otherwise. .refreshable and
+                // syncComplete below still force it.
+                if Date().timeIntervalSince(viewModel.lastFullLoadAt) > 30 {
+                    await viewModel.loadToday()
+                }
                 // Auto-refresh every 3 minutes
                 while !Task.isCancelled {
                     try? await Task.sleep(for: .seconds(180))

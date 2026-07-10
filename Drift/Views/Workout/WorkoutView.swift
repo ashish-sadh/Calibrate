@@ -41,6 +41,9 @@ struct WorkoutView: View {
     @State private var steps: Double = 0
     @State private var showHistory = false
     @State private var healthWorkouts: [HealthWorkout] = []
+    @State private var streak: (current: Int, longest: Int)?
+    /// Freshness stamp — tab re-selection within 30s skips the reload.
+    @State private var lastLoadedAt = Date.distantPast
 
     var body: some View {
         ScrollView {
@@ -125,8 +128,9 @@ struct WorkoutView: View {
                 }
 
                 if !weeklyCounts.isEmpty {
-                    // Streak display
-                    if let streak = try? WorkoutService.workoutStreak(), streak.current > 0 {
+                    // Streak computed in loadData — a DB call in `body`
+                    // re-ran on every render pass (perf 2026-07-09).
+                    if let streak, streak.current > 0 {
                         streakRow(current: streak.current, longest: streak.longest)
                     }
                     consistencyChart
@@ -436,7 +440,16 @@ struct WorkoutView: View {
         } message: {
             Text(importResult ?? "Done")
         }
-        .onAppear { AIScreenTracker.shared.currentScreen = .exercise; loadData() }
+        .onAppear {
+            AIScreenTracker.shared.currentScreen = .exercise
+            // Deferred one frame so the tab swap renders instantly (same
+            // treatment Food/Weight already had), and skipped entirely when
+            // data is <30s fresh — explicit paths (workout saved, template
+            // edited) still call loadData() directly.
+            if Date().timeIntervalSince(lastLoadedAt) > 30 {
+                Task { @MainActor in loadData() }
+            }
+        }
         .onChange(of: showingNewWorkout) { _, showing in if !showing { loadData() } }
         .onChange(of: showingCreateTemplate) { _, showing in if !showing { loadData() } }
         .task {
@@ -636,10 +649,14 @@ struct WorkoutView: View {
 
     private func loadData() {
         isLoading = true
+        lastLoadedAt = Date()
         // Load independently so one failure doesn't block the others
         do {
             let raw = try WorkoutService.fetchWorkouts(limit: 500)
-            workouts = try raw.map { try WorkoutService.buildSummary(for: $0) }
+            // Batched: ONE sets query for all workouts. The old per-workout
+            // buildSummary was up to 500 serial queries on the tab-switch
+            // frame (perf field report 2026-07-09).
+            workouts = try WorkoutService.buildSummaries(for: raw)
         } catch { Log.app.error("Workout load: \(error.localizedDescription)") }
         do {
             weeklyCounts = try WorkoutService.weeklyWorkoutCounts(weeks: 12)
@@ -647,6 +664,7 @@ struct WorkoutView: View {
         do {
             templates = try WorkoutService.fetchTemplates()
         } catch { Log.app.error("Templates load: \(error.localizedDescription)") }
+        streak = try? WorkoutService.workoutStreak()
         overloadAlerts = ProgressiveOverloadService.allPlateaus()
         isLoading = false
     }

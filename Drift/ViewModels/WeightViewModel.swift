@@ -75,7 +75,11 @@ final class WeightViewModel {
         self.database = database
     }
 
+    /// Freshness stamp for the tab-switch guard in WeightTabView.
+    var lastLoadedAt = Date.distantPast
+
     func loadEntries() {
+        lastLoadedAt = Date()
         // Re-read unit preference on every load (fixes stale unit after Settings toggle)
         weightUnit = Preferences.weightUnit
         do {

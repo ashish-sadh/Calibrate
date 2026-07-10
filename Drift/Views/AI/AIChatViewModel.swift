@@ -153,16 +153,27 @@ final class AIChatViewModel {
     /// Injectable for tests; production uses the shared singleton.
     let persistence: ConversationStatePersistence
 
+    // nonisolated(unsafe): written once in init, read in deinit (which is
+    // nonisolated on a @MainActor class) — no concurrent access.
+    nonisolated(unsafe) private var saveObserver: NSObjectProtocol?
+
     init(persistence: ConversationStatePersistence = .shared) {
         self.persistence = persistence
         restorePersistedConversation()
         // Save on scenePhase background (posted by DriftApp) — captures phases set by
         // async handlers that sendMessage's defer missed.
-        NotificationCenter.default.addObserver(
+        // Token retained + removed in deinit: each coach-sheet presentation
+        // makes a fresh VM, and unremoved block observers accumulated for
+        // the life of the session (perf 2026-07-09).
+        saveObserver = NotificationCenter.default.addObserver(
             forName: .saveConversationState, object: nil, queue: .main
         ) { [weak self] _ in
             Task { @MainActor in self?.saveConversationState() }
         }
+    }
+
+    deinit {
+        if let saveObserver { NotificationCenter.default.removeObserver(saveObserver) }
     }
 
     /// Apply any fresh on-disk snapshot to the singleton and VM-local pending state.

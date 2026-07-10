@@ -185,6 +185,15 @@ final class FoodLogViewModel {
         favoriteFoods = (try? database.fetchFavoriteEntryNames()) ?? []
         combos = (try? database.fetchCombos()) ?? []
         suggestionChips = (try? database.fetchSuggestionChips()) ?? []
+        // Combo auto-detection scans the WHOLE food_entry table + writes —
+        // it used to run on EVERY suggestions load (every tab visit, every
+        // logged item), the dominant progressive-lag source (field report
+        // 2026-07-09: "slower after a couple of minutes"). A combo needs
+        // 2+ distinct DATES to form, so once per calendar day is
+        // behaviorally identical.
+        let today = DateFormatters.dateOnly.string(from: Date())
+        guard UserDefaults.standard.string(forKey: "drift_combo_detect_day") != today else { return }
+        UserDefaults.standard.set(today, forKey: "drift_combo_detect_day")
         Task.detached(priority: .background) { [weak self] in
             try? await Task.sleep(nanoseconds: 500_000_000)
             if !UserDefaults.standard.bool(forKey: "didClearAutopilotSeedV1") {

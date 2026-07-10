@@ -15,6 +15,8 @@ struct FoodTabView: View {
     @State private var showingPlantPointsDetail = false
     @State private var copiedToTodayName: String? = nil
     @State private var foodSortMode: FoodSortMode = .time
+    /// Freshness stamp — tab re-selection within 30s skips the reload.
+    @State private var lastReloadAt = Date.distantPast
     @State private var showingConfirmLog = false
     @State private var confirmPrefill: AIChatViewModel.ManualFoodPrefill?
     @State private var copyToTodayEntry: FoodEntry?
@@ -257,7 +259,11 @@ struct FoodTabView: View {
                 // hitched the tab-swap frame. Defer past the swap so the tab
                 // appears instantly (data is already on screen from last
                 // visit); the refresh lands a frame later, imperceptibly.
-                Task { @MainActor in reload() }
+                // <30s-fresh data skips entirely — every mutation path
+                // (.foodEntryAdded, sheet dismissals) still forces reload().
+                if Date().timeIntervalSince(lastReloadAt) > 30 {
+                    Task { @MainActor in reload() }
+                }
             }
             // `.openPhotoLog` is owned by ContentView's listener +
             // fullScreenCover — see ContentView.swift:80. Reloads on
@@ -278,7 +284,14 @@ struct FoodTabView: View {
         }
     }
 
+    /// Hoisted from dateNav — building a DateFormatter on every body eval
+    /// is measurable during the tab-swap animation (perf 2026-07-09).
+    private static let weekdayFormatter: DateFormatter = {
+        let f = DateFormatter(); f.dateFormat = "EEE"; return f
+    }()
+
     private func reload() {
+        lastReloadAt = Date()
         foodSortMode = .time
         viewModel.loadTodayMeals()
         viewModel.loadSuggestions()
@@ -313,9 +326,7 @@ struct FoodTabView: View {
         let days: [Date] = (-scrollBackDays...scrollForwardDays).compactMap {
             cal.date(byAdding: .day, value: $0, to: today)
         }
-        let dayFormatter: DateFormatter = {
-            let f = DateFormatter(); f.dateFormat = "EEE"; return f
-        }()
+        let dayFormatter = Self.weekdayFormatter
 
         return VStack(spacing: 8) {
             // Month label — tap to open calendar

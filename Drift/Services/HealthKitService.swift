@@ -448,49 +448,128 @@ final class HealthKitService {
     // Sleep & Recovery in HealthKitService+Sleep.swift
 
     // MARK: - History Methods (for baselines + sparklines)
+    //
+    // ONE HealthKit query per metric (2026-07-09 perf, epic #1008): the old
+    // helpers looped one round-trip PER DAY — ~86 serial queries on every
+    // Dashboard load, the shared root cause of the tab-switch lag reports.
+    // `.discreteMostRecent` per day matches the old "latest reading of the
+    // day" semantics.
 
     func fetchHRVHistory(days: Int) async throws -> [(date: Date, ms: Double)] {
-        var result: [(Date, Double)] = []
-        let cal = Calendar.current
-        for i in 0..<days {
-            guard let date = cal.date(byAdding: .day, value: -i, to: Date()) else { continue }
-            let ms = try await fetchHRV(for: date)
-            if ms > 0 { result.append((date, ms)) }
-        }
-        return result.reversed()
+        #if targetEnvironment(simulator)
+        return simulatedHistory(days: days, value: 48)
+        #else
+        return try await fetchDailyMostRecent(identifier: .heartRateVariabilitySDNN,
+                                              unit: .secondUnit(with: .milli), days: days)
+        #endif
     }
 
     func fetchRestingHeartRateHistory(days: Int) async throws -> [(date: Date, bpm: Double)] {
-        var result: [(Date, Double)] = []
-        let cal = Calendar.current
-        for i in 0..<days {
-            guard let date = cal.date(byAdding: .day, value: -i, to: Date()) else { continue }
-            let bpm = try await fetchRestingHeartRate(for: date)
-            if bpm > 0 { result.append((date, bpm)) }
-        }
-        return result.reversed()
+        #if targetEnvironment(simulator)
+        return simulatedHistory(days: days, value: 62)
+        #else
+        return try await fetchDailyMostRecent(identifier: .restingHeartRate,
+                                              unit: .count().unitDivided(by: .minute()), days: days)
+        #endif
     }
 
     func fetchRespiratoryRateHistory(days: Int) async throws -> [(date: Date, rpm: Double)] {
-        var result: [(Date, Double)] = []
-        let cal = Calendar.current
-        for i in 0..<days {
-            guard let date = cal.date(byAdding: .day, value: -i, to: Date()) else { continue }
-            let rpm = try await fetchRespiratoryRate(for: date)
-            if rpm > 0 { result.append((date, rpm)) }
-        }
-        return result.reversed()
+        #if targetEnvironment(simulator)
+        return simulatedHistory(days: days, value: 15)
+        #else
+        return try await fetchDailyMostRecent(identifier: .respiratoryRate,
+                                              unit: .count().unitDivided(by: .minute()), days: days)
+        #endif
     }
 
     func fetchSleepHistory(days: Int) async throws -> [(date: Date, hours: Double)] {
-        var result: [(Date, Double)] = []
+        #if targetEnvironment(simulator)
+        return simulatedHistory(days: days, value: 7.4)
+        #else
+        guard isAvailable, days > 0,
+              let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else { return [] }
         let cal = Calendar.current
-        for i in 0..<days {
-            guard let date = cal.date(byAdding: .day, value: -i, to: Date()) else { continue }
-            let hours = try await fetchSleepHours(for: date)
-            result.append((date, hours))
+        let today = cal.startOfDay(for: Date())
+        guard let oldestDay = cal.date(byAdding: .day, value: -(days - 1), to: today),
+              let windowStart = cal.date(byAdding: .hour, value: -6, to: oldestDay),
+              let windowEnd = cal.date(byAdding: .hour, value: 12, to: today) else { return [] }
+        let predicate = HKQuery.predicateForSamples(withStart: windowStart, end: windowEnd, options: [])
+        let all: [HKCategorySample] = try await withCheckedThrowingContinuation { continuation in
+            let query = HKSampleQuery(sampleType: sleepType, predicate: predicate, limit: HKObjectQueryNoLimit,
+                                      sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]) { _, samples, error in
+                if let error { continuation.resume(throwing: error); return }
+                continuation.resume(returning: (samples ?? []).compactMap { $0 as? HKCategorySample })
+            }
+            healthStore.execute(query)
         }
-        return result.reversed()
+        // Same per-night window + stage rules as fetchSleepDetail: 6pm the
+        // evening before → noon of the day; detailed stages (REM/Deep/Core)
+        // win over asleepUnspecified/inBed (multi-source double counting);
+        // 14h sanity cap.
+        var result: [(Date, Double)] = []
+        for i in stride(from: days - 1, through: 0, by: -1) {
+            guard let day = cal.date(byAdding: .day, value: -i, to: today),
+                  let evening = cal.date(byAdding: .hour, value: -6, to: day),
+                  let noon = cal.date(byAdding: .hour, value: 12, to: day) else { continue }
+            var rem = 0.0, deep = 0.0, light = 0.0, asleep = 0.0, inBed = 0.0
+            for s in all where s.startDate < noon && s.endDate > evening {
+                let dur = s.endDate.timeIntervalSince(s.startDate) / 3600
+                switch s.value {
+                case HKCategoryValueSleepAnalysis.asleepREM.rawValue: rem += dur
+                case HKCategoryValueSleepAnalysis.asleepDeep.rawValue: deep += dur
+                case HKCategoryValueSleepAnalysis.asleepCore.rawValue: light += dur
+                case HKCategoryValueSleepAnalysis.asleepUnspecified.rawValue: asleep += dur
+                case HKCategoryValueSleepAnalysis.awake.rawValue: break
+                case HKCategoryValueSleepAnalysis.inBed.rawValue: inBed += dur
+                default: asleep += dur
+                }
+            }
+            let stages = rem + deep + light
+            let total = stages > 0 ? stages : (asleep > 0 ? asleep : inBed)
+            result.append((day, min(total, 14.0)))
+        }
+        return result
+        #endif
+    }
+
+    /// Per-day most-recent value of a quantity type over a window — one
+    /// HKStatisticsCollectionQuery instead of one query per day. Days with
+    /// no reading are omitted (the old loops filtered `> 0` the same way).
+    private func fetchDailyMostRecent(identifier: HKQuantityTypeIdentifier, unit: HKUnit,
+                                      days: Int) async throws -> [(Date, Double)] {
+        guard isAvailable, days > 0,
+              let qType = HKQuantityType.quantityType(forIdentifier: identifier) else { return [] }
+        let cal = Calendar.current
+        let anchor = cal.startOfDay(for: Date())
+        guard let start = cal.date(byAdding: .day, value: -(days - 1), to: anchor),
+              let end = cal.date(byAdding: .day, value: 1, to: anchor) else { return [] }
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
+        var interval = DateComponents(); interval.day = 1
+        return try await withCheckedThrowingContinuation { continuation in
+            let query = HKStatisticsCollectionQuery(quantityType: qType,
+                                                    quantitySamplePredicate: predicate,
+                                                    options: .discreteMostRecent,
+                                                    anchorDate: anchor,
+                                                    intervalComponents: interval)
+            query.initialResultsHandler = { _, collection, error in
+                if let error { continuation.resume(throwing: error); return }
+                var result: [(Date, Double)] = []
+                collection?.enumerateStatistics(from: start, to: end) { stats, _ in
+                    if let v = stats.mostRecentQuantity()?.doubleValue(for: unit), v > 0 {
+                        result.append((stats.startDate, v))
+                    }
+                }
+                continuation.resume(returning: result)
+            }
+            healthStore.execute(query)
+        }
+    }
+
+    private func simulatedHistory(days: Int, value: Double) -> [(Date, Double)] {
+        let cal = Calendar.current
+        return stride(from: days - 1, through: 0, by: -1).compactMap { i in
+            cal.date(byAdding: .day, value: -i, to: Date()).map { ($0, value) }
+        }
     }
 
     // Nutrition write-back lives in HealthNutritionSyncService (#934) — the

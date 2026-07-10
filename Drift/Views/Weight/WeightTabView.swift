@@ -175,10 +175,16 @@ struct WeightTabView: View {
             // #premium-polish: defer the full-history fetch + trend recompute
             // past the tab-swap frame (TabView keeps this view alive; the chart
             // is already on screen). Removes the hitch on every switch to Body.
-            Task { @MainActor in viewModel.loadEntries() }
+            // <30s-fresh data skips entirely; edits/sync still force reload.
+            if Date().timeIntervalSince(viewModel.lastLoadedAt) > 30 {
+                Task { @MainActor in viewModel.loadEntries() }
+            }
         }
         .task {
             #if !targetEnvironment(simulator)
+            // HK weight sync only re-runs when stale — it was a fresh
+            // anchored query + full reload on every tab re-selection.
+            guard Date().timeIntervalSince(viewModel.lastLoadedAt) > 30 else { return }
             let _ = try? await HealthKitService.shared.syncWeight()
             viewModel.loadEntries()
             #endif

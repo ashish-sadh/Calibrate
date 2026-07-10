@@ -12,7 +12,7 @@ import Testing
     defaults.removeObject(forKey: WidgetDataProvider.calorieTargetKey)
     defaults.removeObject(forKey: WidgetDataProvider.dateKey)
 
-    WidgetDataProvider.refreshWidgetData()
+    WidgetDataProvider.refreshWidgetDataNow()  // Now variant: tests assert the write, not the 2s debounce
 
     // Should write a calorie target (always > 0 even with no goal)
     let target = defaults.integer(forKey: WidgetDataProvider.calorieTargetKey)
@@ -32,7 +32,7 @@ import Testing
     let totals = FoodService.getDailyTotals()
     let defaults = UserDefaults(suiteName: "group.com.drift.health")!
 
-    WidgetDataProvider.refreshWidgetData()
+    WidgetDataProvider.refreshWidgetDataNow()  // Now variant: tests assert the write, not the 2s debounce
 
     let eaten = defaults.integer(forKey: WidgetDataProvider.caloriesEatenKey)
     let target = defaults.integer(forKey: WidgetDataProvider.calorieTargetKey)
@@ -64,11 +64,11 @@ import Testing
 @Test @MainActor func widgetDataRefreshIsIdempotent() async throws {
     let defaults = UserDefaults(suiteName: "group.com.drift.health")!
 
-    WidgetDataProvider.refreshWidgetData()
+    WidgetDataProvider.refreshWidgetDataNow()  // Now variant: tests assert the write, not the 2s debounce
     let target1 = defaults.integer(forKey: WidgetDataProvider.calorieTargetKey)
     let eaten1 = defaults.integer(forKey: WidgetDataProvider.caloriesEatenKey)
 
-    WidgetDataProvider.refreshWidgetData()
+    WidgetDataProvider.refreshWidgetDataNow()  // Now variant: tests assert the write, not the 2s debounce
     let target2 = defaults.integer(forKey: WidgetDataProvider.calorieTargetKey)
     let eaten2 = defaults.integer(forKey: WidgetDataProvider.caloriesEatenKey)
 

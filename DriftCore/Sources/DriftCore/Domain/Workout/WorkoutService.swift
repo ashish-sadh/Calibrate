@@ -228,6 +228,28 @@ public enum WorkoutService {
             return WorkoutSummary(workout: workout, exercises: [], totalSets: 0, totalVolume: 0, prs: 0, bestSets: [])
         }
         let sets = try fetchSets(forWorkout: wid)
+        return summarize(workout, sets: sets)
+    }
+
+    /// Batched summaries: ONE query for all workouts' sets instead of one
+    /// per workout — `fetchWorkouts(500).map(buildSummary)` was 500 serial
+    /// queries on the tab-switch frame (perf field report 2026-07-09).
+    public static func buildSummaries(for workouts: [Workout]) throws -> [WorkoutSummary] {
+        let ids = workouts.compactMap(\.id)
+        guard !ids.isEmpty else { return workouts.map { summarize($0, sets: []) } }
+        let all = try db.reader.read { dbConn in
+            try WorkoutSet
+                .filter(ids.contains(Column("workout_id")))
+                .order(Column("exercise_order").asc, Column("set_order").asc, Column("id").asc)
+                .fetchAll(dbConn)
+        }
+        let byWorkout = Dictionary(grouping: all, by: \.workoutId)
+        return workouts.map { summarize($0, sets: $0.id.flatMap { byWorkout[$0] } ?? []) }
+    }
+
+    /// Pure summary construction from already-fetched sets (must be in
+    /// exercise_order/set_order — see #939 ordering note below).
+    private static func summarize(_ workout: Workout, sets: [WorkoutSet]) -> WorkoutSummary {
         // #939: preserve performed order. fetchSets returns sets ordered by
         // exercise_order/set_order; the old Array(Set(...)) hashed that away,
         // so detail + share rendered a random order every read. Ordered

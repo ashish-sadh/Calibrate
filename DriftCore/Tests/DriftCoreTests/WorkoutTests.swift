@@ -166,7 +166,8 @@ import GRDB
     let url = FileManager.default.temporaryDirectory.appendingPathComponent("strong_dur.csv")
     try csv.write(to: url, atomically: true, encoding: .utf8)
     _ = try WorkoutService.importStrongCSV(url: url)
-    let w = try WorkoutService.fetchWorkouts(limit: 10)
+    // limit high enough that parallel tests' inserts can't crowd it out
+    let w = try WorkoutService.fetchWorkouts(limit: 500)
     let longWorkout = w.first(where: { $0.name == "Long" })
     #expect(longWorkout?.durationSeconds == 5400, "1.5h = 5400s, got \(longWorkout?.durationSeconds ?? -1)")
     try FileManager.default.removeItem(at: url)
@@ -1767,4 +1768,33 @@ private func sessionExercise(name: String, sets: [(w: String, r: String, done: B
     #expect(restored?.workoutName == "Old Build")
     #expect(restored?.lastSavedAt == nil)   // falls back to startTime for expiry
 }
+}
+
+// MARK: - Batched summaries (perf 2026-07-09: one sets query, not one per workout)
+
+@Test func buildSummariesMatchesPerWorkoutBuildSummary() throws {
+    let suffix = UUID().uuidString.prefix(6)
+    var w1 = Workout(name: "Batch A \(suffix)", date: "2026-07-01", durationSeconds: 1800, createdAt: "2026-07-01T10:00:00Z")
+    var w2 = Workout(name: "Batch B \(suffix)", date: "2026-07-02", durationSeconds: 2400, createdAt: "2026-07-02T10:00:00Z")
+    var w3 = Workout(name: "Batch Empty \(suffix)", date: "2026-07-03", durationSeconds: nil, createdAt: "2026-07-03T10:00:00Z")
+    try WorkoutService.saveWorkout(&w1)
+    try WorkoutService.saveWorkout(&w2)
+    try WorkoutService.saveWorkout(&w3)
+    try WorkoutService.saveSets([
+        WorkoutSet(workoutId: w1.id!, exerciseName: "Warm \(suffix)", setOrder: 1, reps: 10, isWarmup: true, exerciseOrder: 0),
+        WorkoutSet(workoutId: w1.id!, exerciseName: "Bench \(suffix)", setOrder: 1, weightLbs: 135, reps: 8, isWarmup: false, exerciseOrder: 1),
+        WorkoutSet(workoutId: w1.id!, exerciseName: "Bench \(suffix)", setOrder: 2, weightLbs: 140, reps: 6, isWarmup: false, exerciseOrder: 1),
+        WorkoutSet(workoutId: w2.id!, exerciseName: "Squat \(suffix)", setOrder: 1, weightLbs: 185, reps: 5, isWarmup: false, exerciseOrder: 0),
+    ])
+    let workouts = [w1, w2, w3]
+    let batched = try WorkoutService.buildSummaries(for: workouts)
+    let single = try workouts.map { try WorkoutService.buildSummary(for: $0) }
+    #expect(batched.count == single.count)
+    for (b, s) in zip(batched, single) {
+        #expect(b.workout.id == s.workout.id)
+        #expect(b.exercises == s.exercises, "exercise order must match per-workout build")
+        #expect(b.totalSets == s.totalSets)
+        #expect(b.totalVolume == s.totalVolume)
+        #expect(b.bestSets.map(\.0) == s.bestSets.map(\.0))
+    }
 }

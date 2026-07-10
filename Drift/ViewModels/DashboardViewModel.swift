@@ -59,9 +59,13 @@ final class DashboardViewModel {
         self.database = database
     }
 
+    /// Freshness stamp for the tab-switch guard in DashboardView.task.
+    var lastFullLoadAt = Date.distantPast
+
     func loadToday() async {
         guard !isLoading else { return }
         isLoading = true
+        lastFullLoadAt = Date()
         defer { isLoading = false }
         let today = DateFormatters.todayString
 

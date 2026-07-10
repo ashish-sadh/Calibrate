@@ -55,6 +55,9 @@ struct DriftApp: App {
                     // Listener-based so the singleton doesn't need a VM reference.
                     if newPhase == .background || newPhase == .inactive {
                         NotificationCenter.default.post(name: .saveConversationState, object: nil)
+                        // Flush any debounced widget refresh before suspension
+                        // so a just-logged meal always reaches the widget.
+                        WidgetDataProvider.refreshWidgetDataNow()
                     }
                     if newPhase == .active {
                         BackupMonitor.shared.checkOnForeground()
