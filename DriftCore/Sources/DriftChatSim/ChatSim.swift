@@ -137,6 +137,7 @@ enum ChatSim {
         case .planningMeals(let m, let i): return "planningMeals(\(m), iter \(i))"
         case .planningWorkout(let s, let d, let t): return "planningWorkout(\(s), day \(d)/\(t))"
         case .awaitingClarification(let opts): return "awaitingClarification(\(opts.count) opts)"
+        case .interviewing(let step): return "interviewing(step \(step))"
         }
     }
 

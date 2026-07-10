@@ -302,6 +302,9 @@ extension AIChatViewModel {
 
         messages.append(ChatMessage(role: .user, text: normalized))
 
+        // One-shot chips answer exactly one turn — handlers repopulate below.
+        quickReplies = []
+
         let lower = normalized.lowercased()
 
         // Log EVERY resolved turn (voice + typed, deterministic + LLM) to the
@@ -350,7 +353,8 @@ extension AIChatViewModel {
         if resolved("clarification", handleClarificationResponse(lower)) { return }
         // Phase 5: Multi-turn conversation state
         if resolved("multi_turn", handleMultiTurnState(lower, originalText: normalized)) { return }
-        // Phase 6: Planning triggers (split builder, meal planning)
+        // Phase 6: Planning triggers (interview, split builder, meal planning)
+        if resolved("interview", handleInterviewTrigger(lower)) { return }
         if resolved("workout_split", handleWorkoutSplitTrigger(lower)) { return }
         if resolved("meal_planning", handleMealPlanningTrigger(lower)) { return }
         // Phase 6b: "log my usual lunch" — recall + narrate + open editable sheet.
@@ -466,8 +470,9 @@ extension AIChatViewModel {
         return true
     }
 
-    /// Phase 5: Multi-turn conversation handlers — resume pending workout, split, meal plan, or meal.
+    /// Phase 5: Multi-turn conversation handlers — resume pending interview, workout, split, meal plan, or meal.
     private func handleMultiTurnState(_ lower: String, originalText: String) -> Bool {
+        if handlePendingInterview(lower, originalText: originalText) { return true }
         if handlePendingWorkout(lower) { return true }
         if handlePendingWorkoutSplit(lower) { return true }
         if handlePendingMealPlan(lower) { return true }

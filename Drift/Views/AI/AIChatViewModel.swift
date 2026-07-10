@@ -32,6 +32,9 @@ final class AIChatViewModel {
     /// speaks each reply aloud after it finalizes. #coach-rework.
     var voiceService = CoachVoiceService.shared
     var pendingExercises: [AIActionParser.WorkoutExercise] = []
+    /// One-shot tappable replies for the CURRENT question (interview steps,
+    /// confirmations). Overrides smartSuggestions until the setter clears it.
+    var quickReplies: [String] = []
     var showingRecipeBuilder = false
     var pendingRecipeItems: [QuickAddView.RecipeItem] = []
     var pendingRecipeName = ""

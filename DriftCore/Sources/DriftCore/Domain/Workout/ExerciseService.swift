@@ -269,15 +269,23 @@ public enum ExerciseService {
 
     /// Suggest exercises for a given day of a split.
     /// Returns 4-6 exercises: user history prioritized, then DB exercises for the target body parts.
-    public static func suggestForSplitDay(splitType: String, dayIndex: Int) -> [ExerciseDatabase.ExerciseInfo] {
+    public static func suggestForSplitDay(splitType: String, dayIndex: Int,
+                                          availableEquipment: Set<String>? = nil) -> [ExerciseDatabase.ExerciseInfo] {
         guard let days = splitDefinitions[splitType], dayIndex < days.count else { return [] }
         let dayParts = days[dayIndex].parts
         let userExercises = Set((try? WorkoutService.recentExerciseNames(limit: 100)) ?? [])
         // Equipment-aware, same rule as buildSmartSession: home profile →
         // only exercises the user can actually do ("body only" always in).
-        let profile = TrainingProfile.load()
-        let available: Set<String> = profile?.restrictsEquipment == true
-            ? Set((profile?.equipment ?? []) + ["body only"]) : []
+        // Callers with their own profile in hand (RoutinePlanGenerator) pass
+        // the set explicitly; default derives from the stored profile.
+        let available: Set<String>
+        if let availableEquipment {
+            available = availableEquipment
+        } else {
+            let profile = TrainingProfile.load()
+            available = profile?.restrictsEquipment == true
+                ? Set((profile?.equipment ?? []) + ["body only"]) : []
+        }
 
         // Gather candidates from each body part
         var candidates: [ExerciseDatabase.ExerciseInfo] = []

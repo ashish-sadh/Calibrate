@@ -6,6 +6,14 @@ import DriftCore
 extension AIChatViewModel {
 
     var smartSuggestions: [String] {
+        // Explicit one-shot replies (interview questions, confirmations) win
+        // over every derived source; the flow that sets them clears them.
+        if !quickReplies.isEmpty { return quickReplies }
+        // Clarification options as tappable chips — typing "1"/"first" still
+        // works (resolveClarificationPick), tapping is just faster.
+        if case .awaitingClarification(let options) = convState.phase {
+            return options.map(\.label)
+        }
         // During meal planning, show planning-specific pills
         if case .planningMeals = convState.phase {
             return ["1", "2", "3", "More options", "Done planning"]
