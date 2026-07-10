@@ -212,6 +212,28 @@ public enum ExerciseDatabase {
         allWithCustom.filter { $0.bodyPart == part }
     }
 
+    // MARK: - Equipment
+
+    /// Catalog equipment slugs as they appear in exercises.json.
+    public static let equipmentSlugs: Set<String> = [
+        "body only", "barbell", "dumbbell", "cable", "machine", "kettlebells",
+        "bands", "medicine ball", "exercise ball", "foam roll", "e-z curl bar",
+        "other",
+    ]
+
+    /// True when the exercise can be done with the given equipment.
+    /// Bodyweight ("body only") is always doable; an empty set means
+    /// no restriction (full gym).
+    public static func isDoable(_ info: ExerciseInfo, with available: Set<String>) -> Bool {
+        available.isEmpty || info.equipment == "body only" || available.contains(info.equipment)
+    }
+
+    /// Exercises doable with the given equipment (home-workout filter for
+    /// the smart session, split builder, and interview routine generator).
+    public static func filtered(byEquipment available: Set<String>) -> [ExerciseInfo] {
+        allWithCustom.filter { isDoable($0, with: available) }
+    }
+
     public static func info(for name: String) -> ExerciseInfo? {
         allWithCustom.first { $0.name.lowercased() == name.lowercased() }
     }

@@ -205,6 +205,12 @@ public enum AIContextBuilder {
     public static func workoutContext() -> String {
         var lines: [String] = []
 
+        // Training profile (interview answers): equipment, experience,
+        // constraints — the Coach must honor these in every suggestion.
+        if let profile = TrainingProfile.load(), !profile.summary.isEmpty {
+            lines.append("Training profile: \(profile.summary)")
+        }
+
         if let workouts = try? WorkoutService.fetchWorkouts(limit: 10) {
             if let last = workouts.first {
                 let daysAgo = Calendar.current.dateComponents([.day], from: DateFormatters.dateOnly.date(from: last.date) ?? Date(), to: Date()).day ?? 0

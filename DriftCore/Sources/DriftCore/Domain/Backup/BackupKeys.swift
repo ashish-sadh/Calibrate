@@ -40,6 +40,7 @@ public enum BackupKeys {
 
         // Goal / planning state — Codable Data blobs (round-trip via dataB64Prefix)
         "drift_weight_goal",                            // WeightGoal Codable Data (Models/WeightGoal.swift)
+        "drift_training_profile",                       // TrainingProfile Codable Data (Models/TrainingProfile.swift)
         "drift_tdee_config",                            // TDEEEstimator.TDEEConfig Codable Data (Domain/Weight/TDEEEstimator.swift)
         "drift_algorithm_config",                       // WeightTrendCalculator.AlgorithmConfig Codable Data (Domain/Weight/WeightTrendCalculator.swift)
 

@@ -49,13 +49,28 @@ public enum ExerciseService {
             }
         }
 
-        // Gather candidates: user history first, then DB
+        // Gather candidates: user history first, then DB. When the profile
+        // restricts equipment (home training), drop exercises the user can't
+        // actually do — unknown names (customs) get the benefit of the doubt.
+        // "body only" keeps the set non-empty for a no-equipment home user —
+        // an empty set would read as "no restriction" to isDoable.
+        let profile = TrainingProfile.load()
+        let available: Set<String> = profile?.restrictsEquipment == true
+            ? Set((profile?.equipment ?? []) + ["body only"]) : []
+        func doable(_ name: String) -> Bool {
+            guard !available.isEmpty else { return true }
+            guard let info = ExerciseDatabase.info(for: name) else { return true }
+            return ExerciseDatabase.isDoable(info, with: available)
+        }
         let groupLower = targetPart.lowercased()
         let fromHistory = userExerciseSet.filter {
-            ExerciseDatabase.bodyPart(for: $0).lowercased().contains(groupLower)
+            ExerciseDatabase.bodyPart(for: $0).lowercased().contains(groupLower) && doable($0)
         }
-        let fromDB = ExerciseDatabase.search(query: targetPart).map(\.name)
+        let fromDB = ExerciseDatabase.search(query: targetPart).filter { ExerciseDatabase.isDoable($0, with: available) }.map(\.name)
         let candidates = Array(Set(Array(fromHistory) + fromDB))
+        if !available.isEmpty {
+            reasonLines.append("Filtered to your equipment: \(available.sorted().joined(separator: ", "))")
+        }
 
         let picked = Array(candidates.prefix(5))
         if picked.isEmpty { return nil }
@@ -258,11 +273,17 @@ public enum ExerciseService {
         guard let days = splitDefinitions[splitType], dayIndex < days.count else { return [] }
         let dayParts = days[dayIndex].parts
         let userExercises = Set((try? WorkoutService.recentExerciseNames(limit: 100)) ?? [])
+        // Equipment-aware, same rule as buildSmartSession: home profile →
+        // only exercises the user can actually do ("body only" always in).
+        let profile = TrainingProfile.load()
+        let available: Set<String> = profile?.restrictsEquipment == true
+            ? Set((profile?.equipment ?? []) + ["body only"]) : []
 
         // Gather candidates from each body part
         var candidates: [ExerciseDatabase.ExerciseInfo] = []
         for part in dayParts {
             let partExercises = ExerciseDatabase.byBodyPart(part)
+                .filter { ExerciseDatabase.isDoable($0, with: available) }
             // User's exercises first, then others
             let sorted = partExercises.sorted { a, b in
                 let aUsed = userExercises.contains(a.name)
