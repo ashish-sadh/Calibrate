@@ -193,6 +193,29 @@ extension AppDatabase {
         }
     }
 
+    /// Unified suggestion chips: combos AND recently-used foods in ONE ranking —
+    /// favorites first, then most-clicked (use_count), then last_used. Field
+    /// report 2026-07-09: the strip showed all combos before any recent item,
+    /// so a twice-logged auto-combo outranked a daily-logged food. Never-used
+    /// combos still qualify (they're user-saved and have macros); plain foods
+    /// need a usage row to have any signal at all.
+    public func fetchSuggestionChips(limit: Int = 10) throws -> [Food] {
+        try reader.read { db in
+            try Food.fetchAll(db, sql: """
+                SELECT f.* FROM food f
+                LEFT JOIN food_usage fu ON fu.food_id = f.id OR LOWER(fu.food_name) = LOWER(f.name)
+                WHERE (f.source = 'recipe' AND f.is_recipe = 1) OR fu.food_name IS NOT NULL
+                GROUP BY f.id
+                ORDER BY
+                    MAX(COALESCE(fu.is_favorite, 0)) DESC,
+                    MAX(COALESCE(fu.use_count, 0)) DESC,
+                    MAX(COALESCE(fu.last_used, '')) DESC,
+                    f.name
+                LIMIT ?
+                """, arguments: [limit])
+        }
+    }
+
     /// Fetch combos (recipes with isRecipe=true) ranked by pinned → use_count → last_used.
     public func fetchCombos(limit: Int = 8) throws -> [Food] {
         try reader.read { db in

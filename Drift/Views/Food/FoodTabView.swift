@@ -586,24 +586,32 @@ struct FoodTabView: View {
         .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.secondary.opacity(0.25), lineWidth: 1))
     }
 
+    // A combo and a plain food can share a name (usage rows join both);
+    // keep only the higher-ranked occurrence.
+    private var dedupedSuggestionChips: [Food] {
+        var seen = Set<String>()
+        return viewModel.suggestionChips.filter { seen.insert($0.name.lowercased()).inserted }
+    }
+
     private var suggestionStrip: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("Suggestions").font(.caption2.weight(.semibold)).foregroundStyle(Theme.textSecondary)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
-                    ForEach(viewModel.combos.prefix(5)) { combo in
-                        let totalCal = combo.recipeItems?.reduce(0) { $0 + $1.calories } ?? combo.calories
-                        Button { comboToLog = combo } label: {
-                            comboChip(name: combo.name, calories: Int(totalCal))
-                        }.buttonStyle(.plain)
-                    }
-                    let comboNames = Set(viewModel.combos.map { $0.name.lowercased() })
-                    ForEach(viewModel.recentFoods.prefix(6).filter { !comboNames.contains($0.name.lowercased()) }) { food in
-                        Button {
-                            suggestionFoodToLog = food
-                        } label: {
-                            recentChip(name: food.name, calories: Int(food.calories))
-                        }.buttonStyle(.plain)
+                    // One ranking for combos AND recents — most-clicked first
+                    // (field report 2026-07-09: all combos used to render before
+                    // any recent, burying daily-logged foods behind auto-combos).
+                    ForEach(dedupedSuggestionChips.prefix(10)) { item in
+                        if item.isRecipe {
+                            let totalCal = item.recipeItems?.reduce(0) { $0 + $1.calories } ?? item.calories
+                            Button { comboToLog = item } label: {
+                                comboChip(name: item.name, calories: Int(totalCal))
+                            }.buttonStyle(.plain)
+                        } else {
+                            Button { suggestionFoodToLog = item } label: {
+                                recentChip(name: item.name, calories: Int(item.calories))
+                            }.buttonStyle(.plain)
+                        }
                     }
                     Button { showingCombos = true } label: {
                         Text("···").font(.subheadline).foregroundStyle(Theme.textTertiary)

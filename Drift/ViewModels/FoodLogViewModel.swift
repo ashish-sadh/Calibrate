@@ -20,6 +20,8 @@ final class FoodLogViewModel {
     var weeklyPlantPoints: PlantPointsService.PlantPoints = .init(uniquePlants: [], uniqueHerbsSpices: [])
     var dailyNewPlants: Int = 0
     var combos: [Food] = []
+    /// Unified suggestion strip: combos + recents in one most-clicked-first ranking.
+    var suggestionChips: [Food] = []
 
     var dateString: String {
         DateFormatters.dateOnly.string(from: selectedDate)
@@ -182,6 +184,7 @@ final class FoodLogViewModel {
         savedRecipes = (try? database.fetchFavorites()) ?? []
         favoriteFoods = (try? database.fetchFavoriteEntryNames()) ?? []
         combos = (try? database.fetchCombos()) ?? []
+        suggestionChips = (try? database.fetchSuggestionChips()) ?? []
         Task.detached(priority: .background) { [weak self] in
             try? await Task.sleep(nanoseconds: 500_000_000)
             if !UserDefaults.standard.bool(forKey: "didClearAutopilotSeedV1") {
@@ -193,7 +196,10 @@ final class FoodLogViewModel {
                 UserDefaults.standard.set(true, forKey: "didClearAutoCombosV1")
             }
             try? AppDatabase.shared.detectAndSaveCombos()
-            await MainActor.run { self?.combos = (try? AppDatabase.shared.fetchCombos()) ?? [] }
+            await MainActor.run {
+                self?.combos = (try? AppDatabase.shared.fetchCombos()) ?? []
+                self?.suggestionChips = (try? AppDatabase.shared.fetchSuggestionChips()) ?? []
+            }
         }
     }
 
