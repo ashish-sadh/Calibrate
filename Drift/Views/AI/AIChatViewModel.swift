@@ -84,10 +84,14 @@ final class AIChatViewModel {
     var voiceOutputEnabled: Bool = Preferences.coachVoiceEnabled
 
     /// Flip voice talk-mode. Persists the preference; silences any in-flight
-    /// speech when turning off.
+    /// speech when turning off. Tapping the speaker is EXPLICIT intent either
+    /// way — an explicit OFF is the only thing that keeps a voice conversation
+    /// silent (field report 2026-07-10: "voice is always off"), and an
+    /// explicit ON clears that mute.
     func toggleVoiceOutput() {
         voiceOutputEnabled.toggle()
         Preferences.coachVoiceEnabled = voiceOutputEnabled
+        Preferences.coachVoiceExplicitlyMuted = !voiceOutputEnabled
         if !voiceOutputEnabled { voiceService.stop() }
     }
 
@@ -98,16 +102,23 @@ final class AIChatViewModel {
     /// sheet dismiss/re-present. #coach-talk-mode
     var talkModeEnabled: Bool = Preferences.coachTalkModeEnabled
 
-    /// Flip immersive talk-mode. #937: entering talk mode NO LONGER force-
-    /// enables voice replies (the old path even persisted the override,
-    /// permanently flipping an explicit speaker-OFF) — with the speaker off,
-    /// talk mode shows replies as captions. Turning OFF still silences
+    /// Flip immersive talk-mode. Entering talk mode enables voice replies for
+    /// the SESSION unless the user explicitly muted the speaker — #937's real
+    /// sin was PERSISTING the force-enable (permanently flipping an explicit
+    /// speaker-OFF), so the session enable never touches Preferences and an
+    /// explicit mute always wins (captions). Turning OFF still silences
     /// speech and stops any active recording so the mic doesn't keep
     /// listening behind the text UI.
     func toggleTalkMode() {
         talkModeEnabled.toggle()
         Preferences.coachTalkModeEnabled = talkModeEnabled
-        if !talkModeEnabled {
+        if talkModeEnabled {
+            // Opening the voice surface means the coach should talk back —
+            // SESSION-scoped enable (never written to Preferences; #937 is
+            // about the persisted flip), and skipped when the user explicitly
+            // muted the speaker (captions stay). Field report 2026-07-10.
+            if !Preferences.coachVoiceExplicitlyMuted { voiceOutputEnabled = true }
+        } else {
             voiceService.stop()
             speechService.forceStop()
         }

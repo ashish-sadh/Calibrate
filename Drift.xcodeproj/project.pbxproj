@@ -205,6 +205,7 @@
 		E5611698773A5EEF24F10014 /* EditFoodEntrySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F30EC2EF2E12E44F63B37582 /* EditFoodEntrySheet.swift */; };
 		E5C9ACF7CCAED656F70B23F9 /* PhotoLogReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A30BB3C9CCE28A9A758EF /* PhotoLogReviewView.swift */; };
 		E63F9BB35572B3EF11BF9DE5 /* HardEvalSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DEC3049742676C1201A6847 /* HardEvalSet.swift */; };
+		E66DE06D850651D735389F76 /* CoachVoiceGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F48489CA1FCF03AEB3E0EB4 /* CoachVoiceGateTests.swift */; };
 		EA461A149CE8C537C738BF00 /* GRDB in Frameworks */ = {isa = PBXBuildFile; productRef = 8D44ABA58001AC21A70DEA3A /* GRDB */; };
 		EDBADA2C372F712D791B9CB3 /* LabReportDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9317E4AADEC72D6DC385E722 /* LabReportDetailView.swift */; };
 		EE5FAB515DD08A8837C600BB /* BackupMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5FA6ED1844CBEB6F82E743EA /* BackupMonitor.swift */; };
@@ -308,6 +309,7 @@
 		1D2E86F78FA3B9DFA023EF4B /* ClarificationCardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClarificationCardTests.swift; sourceTree = "<group>"; };
 		1D6EEDE4BB88D55A2579A27D /* ComposedFoodEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposedFoodEval.swift; sourceTree = "<group>"; };
 		1D783FD1AF8952C1C8CECD29 /* SupplementViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupplementViewModel.swift; sourceTree = "<group>"; };
+		1F48489CA1FCF03AEB3E0EB4 /* CoachVoiceGateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachVoiceGateTests.swift; sourceTree = "<group>"; };
 		20576FEB4A7F0371596D08E6 /* QuickAddView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickAddView.swift; sourceTree = "<group>"; };
 		20F12007183DC0602FA4B0F3 /* WorkoutConsistencyCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutConsistencyCard.swift; sourceTree = "<group>"; };
 		21311CD0AE82F339C988BDD2 /* ExerciseBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseBrowserView.swift; sourceTree = "<group>"; };
@@ -628,6 +630,7 @@
 				57BE014AD72F4F5691483658 /* CloudVisionClientTests.swift */,
 				CCE57CE0133752BC4B5C80F3 /* CloudVisionKeyTests.swift */,
 				FFF4B2F66E0DB512E078D472 /* CoachingBriefCardTests.swift */,
+				1F48489CA1FCF03AEB3E0EB4 /* CoachVoiceGateTests.swift */,
 				0BFC0D10ECB1BBDADD1D1CCB /* ConfirmationCardTests.swift */,
 				E6C4AF4636637C2EF46CD085 /* ConversationStatePersistenceTests.swift */,
 				6B6C02FCD909BDE67D229EC1 /* CycleCalculationTests.swift */,
@@ -1295,6 +1298,7 @@
 				15E39B1D0294AB6762CE9EE8 /* ClarificationFlowTests.swift in Sources */,
 				D1D942D61F82FB570F804517 /* CloudVisionClientTests.swift in Sources */,
 				3CFFACEC0432AE8EC5E7ECF4 /* CloudVisionKeyTests.swift in Sources */,
+				E66DE06D850651D735389F76 /* CoachVoiceGateTests.swift in Sources */,
 				E179EE03D1DABC1B5FBBFFB3 /* CoachingBriefCardTests.swift in Sources */,
 				0E9D1FE15EFC96D35A4D6CBC /* ConfirmationCardTests.swift in Sources */,
 				94F5CD3A73D0EAA80DCEA612 /* ConversationStatePersistenceTests.swift in Sources */,

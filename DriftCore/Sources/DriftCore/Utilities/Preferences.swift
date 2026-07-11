@@ -151,7 +151,7 @@ public enum Preferences {
         set { UserDefaults.standard.set(newValue, forKey: waterGoalMlKey) }
     }
 
-    // MARK: - Smart Meal Reminders
+    // MARK: - Coach Voice / Talk Mode
 
     private static let coachVoiceKey = "drift_coach_voice_enabled"
     private static let coachVoiceV2MigratedKey = "drift_coach_voice_v2_migrated"
@@ -174,6 +174,19 @@ public enum Preferences {
         guard !UserDefaults.standard.bool(forKey: coachVoiceV2MigratedKey) else { return }
         UserDefaults.standard.set(false, forKey: coachVoiceKey)
         UserDefaults.standard.set(true, forKey: coachVoiceV2MigratedKey)
+    }
+
+    private static let coachVoiceMutedKey = "drift_coach_voice_muted"
+
+    /// True only after the user EXPLICITLY toggled the speaker off. Separates
+    /// "never chose" (a voice turn speaks its reply back — the mic is consent
+    /// to hear the answer) from "asked for silence" (captions everywhere).
+    /// #937 forbade persisting an automatic ON; persisting an explicit mute is
+    /// the user's own choice. Field report 2026-07-10: "voice is always off —
+    /// it should follow whether the voice thing is open."
+    public static var coachVoiceExplicitlyMuted: Bool {
+        get { UserDefaults.standard.bool(forKey: coachVoiceMutedKey) }
+        set { UserDefaults.standard.set(newValue, forKey: coachVoiceMutedKey) }
     }
 
     private static let coachTalkModeKey = "drift_coach_talk_mode_enabled"
