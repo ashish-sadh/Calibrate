@@ -2925,5 +2925,18 @@
    "\"Log my usual push day\" replays your last matching workout set-for-set",
    "Tappable quick-reply chips for clarification questions in chat"
   ]
+ },
+ {
+  "build": 345,
+  "date": "2026-07-12T08:50:15-0700",
+  "description": "Voice replies on by default, Cindy program as Package I, weight-sync self-heal hardening",
+  "fixes": [
+   "coach voice replies: the speaker toggle is the single switch and now defaults ON \u2014 talk mode and mic turns speak out of the box; an explicit speaker-off sticks",
+   "weight sync self-heals a stale/poisoned Apple Health anchor automatically (follow-up to 344's fix)"
+  ],
+  "features": [
+   "Drift Package I: Cindy full-body program (leg press, DB chest press, TRX rows, hanging leg raises, back extensions + optional wrist work)",
+   "Workout packages renumbered: I Cindy, II Srijith, III resistance bands, IV original curated programs"
+  ]
  }
 ]
