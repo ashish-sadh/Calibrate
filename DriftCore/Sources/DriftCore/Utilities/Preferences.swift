@@ -155,38 +155,39 @@ public enum Preferences {
 
     private static let coachVoiceKey = "drift_coach_voice_enabled"
     private static let coachVoiceV2MigratedKey = "drift_coach_voice_v2_migrated"
+    private static let coachVoiceV3MigratedKey = "drift_coach_voice_v3_migrated"
 
-    /// Drift Coach voice talk-mode: when ON, the coach speaks its replies aloud
-    /// (on-device TTS via `CoachVoiceService`) so the user can talk to it and
-    /// hear it back while cards render on screen. Default OFF — opt-in via the
-    /// speaker toggle in the chat input bar. #coach-rework.
+    /// Drift Coach voice: when ON, the coach speaks its replies aloud
+    /// (ElevenLabs when provisioned, on-device TTS fallback). The speaker
+    /// toggle in the chat input bar is the SINGLE source of truth for spoken
+    /// replies — typed turns, mic turns, and talk mode all honor it (operator
+    /// call 2026-07-11). Default ON: a voice-first coach that ships mute reads
+    /// as broken (field report 2026-07-10).
     public static var coachVoiceEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: coachVoiceKey) }
+        get {
+            guard UserDefaults.standard.object(forKey: coachVoiceKey) != nil else { return true }
+            return UserDefaults.standard.bool(forKey: coachVoiceKey)
+        }
         set { UserDefaults.standard.set(newValue, forKey: coachVoiceKey) }
     }
 
-    /// One-time migration: the pre-#937 bug in toggleTalkMode persistently wrote
-    /// coachVoiceEnabled=true even when voice was meant to be off. The #937 fix
-    /// was forward-only (stopped new force-enables) but didn't clear the poisoned
-    /// value. Call this once at launch to reset any affected device to the correct
-    /// default-off state. (#968)
+    /// One-time migrations for the coach voice flag.
+    /// v2 (#968): the pre-#937 bug persistently wrote coachVoiceEnabled=true
+    /// even when voice was meant off — reset affected devices.
+    /// v3 (2026-07-11): v2 stamped FALSE onto every install, which — combined
+    /// with all speak paths gating on this one flag — shipped a mute coach.
+    /// Clear the stored value once so everyone picks up the new default-ON;
+    /// from here the speaker toggle records real user choice and persists
+    /// normally.
     public static func migrateCoachVoiceIfNeeded() {
-        guard !UserDefaults.standard.bool(forKey: coachVoiceV2MigratedKey) else { return }
-        UserDefaults.standard.set(false, forKey: coachVoiceKey)
-        UserDefaults.standard.set(true, forKey: coachVoiceV2MigratedKey)
-    }
-
-    private static let coachVoiceMutedKey = "drift_coach_voice_muted"
-
-    /// True only after the user EXPLICITLY toggled the speaker off. Separates
-    /// "never chose" (a voice turn speaks its reply back — the mic is consent
-    /// to hear the answer) from "asked for silence" (captions everywhere).
-    /// #937 forbade persisting an automatic ON; persisting an explicit mute is
-    /// the user's own choice. Field report 2026-07-10: "voice is always off —
-    /// it should follow whether the voice thing is open."
-    public static var coachVoiceExplicitlyMuted: Bool {
-        get { UserDefaults.standard.bool(forKey: coachVoiceMutedKey) }
-        set { UserDefaults.standard.set(newValue, forKey: coachVoiceMutedKey) }
+        if !UserDefaults.standard.bool(forKey: coachVoiceV2MigratedKey) {
+            UserDefaults.standard.set(false, forKey: coachVoiceKey)
+            UserDefaults.standard.set(true, forKey: coachVoiceV2MigratedKey)
+        }
+        if !UserDefaults.standard.bool(forKey: coachVoiceV3MigratedKey) {
+            UserDefaults.standard.removeObject(forKey: coachVoiceKey)
+            UserDefaults.standard.set(true, forKey: coachVoiceV3MigratedKey)
+        }
     }
 
     private static let coachTalkModeKey = "drift_coach_talk_mode_enabled"

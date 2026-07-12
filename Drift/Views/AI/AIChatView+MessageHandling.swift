@@ -219,14 +219,6 @@ extension AIChatViewModel {
     /// turn. Keeps the post-fix + voice-flag bookkeeping in one place so the View
     /// just hands over raw transcript. #coach-talk-mode
     func submitVoiceTurn(_ raw: String) {
-        // Voice in → voice out: the mic IS consent to hear the answer, for
-        // this session only (never persisted — #937 forbids flipping the
-        // stored preference) and never over an explicit speaker mute.
-        // Field report 2026-07-10: "voice is always off — it should follow
-        // whether the voice thing is open".
-        if !voiceOutputEnabled && !Preferences.coachVoiceExplicitlyMuted {
-            voiceOutputEnabled = true
-        }
         let text = VoiceTranscriptionPostFixer.fix(raw)
         if let turnId = pendingProposalTurnId,
            let card = messages.first(where: { $0.id == turnId })?.proposedMealCard {
