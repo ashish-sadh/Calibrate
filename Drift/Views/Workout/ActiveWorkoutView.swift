@@ -42,6 +42,11 @@ struct ActiveWorkoutView: View {
     @State private var commandText = ""
     @State private var commandFeedback: CommandFeedback? = nil
     @FocusState private var commandFocused: Bool
+    // Coach toast — transient encouragement on set/exercise milestones
+    // (operator 2026-07-12: "feels like a real coach and it disappears")
+    @State private var coachToast: String? = nil
+    @State private var coachToastToken = 0
+    @State private var encouragementTick = 0
 
     struct CommandFeedback {
         let text: String
@@ -56,6 +61,9 @@ struct ActiveWorkoutView: View {
         var notes: String?                   // trainer notes (e.g. "6-8 reps")
         var sets: [ActiveSet]
         var previousSets: [String]
+        /// Last session's top working weight (lbs) — the beat-last-time toast
+        /// baseline. Nil (no toast) for restored sessions and fresh exercises.
+        var lastMaxWeight: Double? = nil
     }
 
     struct ActiveSet: Identifiable {
@@ -153,6 +161,20 @@ struct ActiveWorkoutView: View {
             .scrollDismissesKeyboard(.interactively)
             .background(Theme.background)
             .safeAreaInset(edge: .bottom, spacing: 0) { commandStrip }
+            .overlay(alignment: .top) {
+                if let toast = coachToast {
+                    Text(toast)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 18).padding(.vertical, 10)
+                        .background(Theme.ink, in: Capsule())
+                        .shadowSoft()
+                        .padding(.top, 8)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .allowsHitTesting(false)
+                        .accessibilityIdentifier("coach-toast")
+                }
+            }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -505,6 +527,9 @@ struct ActiveWorkoutView: View {
                             let nowDone = !set.done
                             $set.done.wrappedValue = nowDone
                             if nowDone {
+                                // Celebrate BEFORE the auto-add below — the bonus
+                                // set would otherwise hide "exercise complete".
+                                celebrateSetDone(exerciseIndex: ei, setIndex: si)
                                 startRest(exerciseIndex: ei, setIndex: si, duration: exercises[ei].restTime)
                                 // Auto-add next set prefilled with same weight/reps
                                 if si == exercises[ei].sets.count - 1 && (!set.weight.isEmpty || !set.reps.isEmpty) {
@@ -787,7 +812,46 @@ struct ActiveWorkoutView: View {
         // Auto-add form tip if no notes provided
         let finalNotes = notes ?? ExerciseService.formTip(for: name).map { "Tip: \($0)" }
         exercises.append(ActiveExercise(name: name, restTime: restTime, isWarmupExercise: isWarmup,
-                                         notes: finalNotes, sets: sets, previousSets: Array(previous)))
+                                         notes: finalNotes, sets: sets, previousSets: Array(previous),
+                                         lastMaxWeight: lastSession.compactMap(\.weightLbs).max()))
+    }
+
+    // MARK: - Coach toast (transient encouragement on milestones)
+
+    /// Pick and show the coach line for a just-completed set. Priority:
+    /// beat-last-time > exercise/workout complete > plain set-done. Warmup
+    /// sets stay quiet — cheering a warmup reads as sarcasm.
+    private func celebrateSetDone(exerciseIndex ei: Int, setIndex si: Int) {
+        let ex = exercises[ei]
+        guard !ex.isWarmupExercise, !ex.sets[si].isWarmup else { return }
+        encouragementTick += 1
+
+        let weight = Double(ex.sets[si].weight.replacingOccurrences(of: ",", with: "."))
+        if let weight, let lastMax = ex.lastMaxWeight, weight > lastMax + 0.09 {
+            showCoachToast(WorkoutEncouragement.line(for: .beatLastTime, tick: encouragementTick))
+            return
+        }
+        if ex.sets.allSatisfy(\.done) {
+            let remaining = exercises.filter { $0.id != ex.id && !$0.sets.allSatisfy(\.done) }.count
+            let event: WorkoutEncouragement.Event =
+                remaining == 0 ? .workoutComplete : .exerciseComplete(remaining: remaining)
+            showCoachToast(WorkoutEncouragement.line(for: event, tick: encouragementTick))
+            return
+        }
+        showCoachToast(WorkoutEncouragement.line(for: .setDone, tick: encouragementTick))
+    }
+
+    /// Float the line in, hold ~2.5s, fade out — unless a newer toast
+    /// superseded it (token guard).
+    private func showCoachToast(_ text: String) {
+        coachToastToken += 1
+        let token = coachToastToken
+        withAnimation(.spring(duration: 0.3)) { coachToast = text }
+        Task {
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            guard token == coachToastToken else { return }
+            withAnimation(.easeOut(duration: 0.4)) { coachToast = nil }
+        }
     }
 
     // MARK: - Command strip ("add face pulls" / "drop curls" / "last bench?")
