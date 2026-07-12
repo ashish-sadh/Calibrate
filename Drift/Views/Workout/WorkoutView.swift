@@ -139,12 +139,17 @@ struct WorkoutView: View {
                             Button {
                                 loadPackage(DefaultTemplates.loadPackageI, name: "Drift Package I")
                             } label: {
-                                Label("Load Drift Package I (Bands)", systemImage: "1.circle")
+                                Label("Load Drift Package I", systemImage: "1.circle")
                             }
                             Button {
                                 loadPackage(DefaultTemplates.loadPackageII, name: "Drift Package II")
                             } label: {
                                 Label("Load Drift Package II", systemImage: "2.circle")
+                            }
+                            Button {
+                                loadPackage(DefaultTemplates.loadPackageIII, name: "Drift Package III")
+                            } label: {
+                                Label("Load Drift Package III (Bands)", systemImage: "3.circle")
                             }
                             Button {
                                 loadPackage(DefaultTemplates.loadPackageIV, name: "Drift Package IV")
@@ -660,10 +665,13 @@ struct WorkoutView: View {
                 // Three packages don't fit as siblings — collapse into a menu.
                 Menu {
                     Button { loadPackage(DefaultTemplates.loadPackageI, name: "Drift Package I") } label: {
-                        Label("Drift Package I (Bands)", systemImage: "1.circle")
+                        Label("Drift Package I", systemImage: "1.circle")
                     }
                     Button { loadPackage(DefaultTemplates.loadPackageII, name: "Drift Package II") } label: {
                         Label("Drift Package II", systemImage: "2.circle")
+                    }
+                    Button { loadPackage(DefaultTemplates.loadPackageIII, name: "Drift Package III") } label: {
+                        Label("Drift Package III (Bands)", systemImage: "3.circle")
                     }
                     Button { loadPackage(DefaultTemplates.loadPackageIV, name: "Drift Package IV") } label: {
                         Label("Drift Package IV", systemImage: "4.circle")

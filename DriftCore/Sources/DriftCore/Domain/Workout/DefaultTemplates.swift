@@ -3,12 +3,14 @@ import Foundation
 /// Seeds default workout templates on demand. Respects user edits — only adds
 /// templates/exercises that don't already exist by name.
 ///
-/// Three packages (renumbered 2026-07-11 — operator: the latest-sent program
+/// Four packages (renumbered 2026-07-11 — operator: the latest-sent program
 /// gets top billing):
-///  - **Drift Package I** — the whiteboard resistance band program
-///    (A/B days, imported 2026-07-09; was Package III).
+///  - **Drift Package I** — the Cindy full-body program (trainer text,
+///    received 2026-07-11).
 ///  - **Drift Package II** — the Srijith training program (total-body free
 ///    weights / dumbbells / circuits / strength + pull & push days).
+///  - **Drift Package III** — the whiteboard resistance band program
+///    (A/B days, imported 2026-07-09).
 ///  - **Drift Package IV** — the original curated programs 1–4 (#940;
 ///    was Package I).
 /// Packages load ONLY from the Templates menu — never on install. Loading
@@ -20,7 +22,7 @@ import Foundation
 /// fedDir means the movement has no honest photo analog — the muscle diagram
 /// is the fallback, never a wrong demo.
 public enum DefaultTemplates {
-    /// Load Drift Package I templates (whiteboard resistance A/B) on demand.
+    /// Load Drift Package I templates (Cindy full-body program) on demand.
     /// Skips any that already exist by name.
     @discardableResult
     public static func loadPackageI() -> Int {
@@ -34,6 +36,14 @@ public enum DefaultTemplates {
     public static func loadPackageII() -> Int {
         let added = load(templates: packageII)
         Log.app.info("Loaded \(added) Drift Package II templates")
+        return added
+    }
+
+    /// Load Drift Package III templates (whiteboard resistance A/B) on demand.
+    @discardableResult
+    public static func loadPackageIII() -> Int {
+        let added = load(templates: packageIII)
+        Log.app.info("Loaded \(added) Drift Package III templates")
         return added
     }
 
@@ -156,7 +166,7 @@ public enum DefaultTemplates {
         .init(name: "Seated Hamstring Curl", bodyPart: "Legs", muscles: ["hamstrings"], fedDir: "Seated_Leg_Curl"),
         .init(name: "Single Leg Deadlift", bodyPart: "Legs", muscles: ["hamstrings", "glutes"], fedDir: "Kettlebell_One-Legged_Deadlift"),
         .init(name: "Single-Leg RDL", bodyPart: "Legs", muscles: ["hamstrings", "glutes"], fedDir: "Kettlebell_One-Legged_Deadlift"),
-        // Package I (resistance band program) gaps — no free-exercise-db
+        // Package III (resistance band program) gaps — no free-exercise-db
         // band analog. Pose pairs were sourced from the web (operator-approved,
         // 2026-07-09) and dropped into Drift/ExercisePoses under minted
         // FED-style dir names; fedDir here is purely a bundle key — the URL
@@ -248,6 +258,28 @@ public enum DefaultTemplates {
         program4 + program3 + program2 + program1
     }
 
+    // MARK: - Package I (Cindy full-body program, trainer text received 2026-07-11)
+    //
+    // "Hi Ashish! Here's your HW" — leg press, dumbbell chest press, TRX rows,
+    // hanging leg raises (AMRAP, control the descent), back extension; forearm
+    // work after if there's time. All names resolve: catalog rows for four,
+    // the registered "TRX Rows" / "Wrist Flexion" / "Wrist Extension" customs
+    // for the rest.
+
+    static var packageI: [WorkoutTemplate] {
+        [
+            WorkoutTemplate(name: "Cindy Full Body", exercisesJson: json([
+                e("Leg Press", notes: "8-10 reps"),
+                e("Dumbbell Bench Press", notes: "8-10 reps — dumbbell chest press"),
+                e("TRX Rows", notes: "8-12 reps"),
+                e("Hanging Leg Raise", notes: "AMRAP — control the descent"),
+                e("Hyperextensions (Back Extensions)", notes: "8-12 reps"),
+                e("Wrist Extension", rest: 45, notes: "optional — if time, 10-15 reps"),
+                e("Wrist Flexion", rest: 45, notes: "optional — if time, 10-15 reps"),
+            ]), createdAt: now),
+        ]
+    }
+
     // MARK: - Package II (Srijith program, imported 2026-07-07)
 
     static var packageII: [WorkoutTemplate] {
@@ -329,14 +361,14 @@ public enum DefaultTemplates {
         ]
     }
 
-    // MARK: - Package I (whiteboard resistance band program, imported 2026-07-09; was Package III)
+    // MARK: - Package III (whiteboard resistance band program, imported 2026-07-09)
     //
     // Band-specific catalog entries are preferred (they carry honest band
     // pose photos); the four customs with no free-exercise-db band analog
     // use web-sourced pose pairs bundled under minted asset names (see the
     // custom-exercise registry note).
 
-    static var packageI: [WorkoutTemplate] {
+    static var packageIII: [WorkoutTemplate] {
         [
             WorkoutTemplate(name: "Resistance Band A", exercisesJson: json([
                 e("Bulgarian Split Squat", notes: "12 per leg"),

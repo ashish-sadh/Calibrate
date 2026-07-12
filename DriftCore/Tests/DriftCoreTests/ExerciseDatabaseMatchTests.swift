@@ -174,9 +174,29 @@ import Testing
     }
 }
 
+@Test func packageITemplatesDecodeAndResolve() throws {
+    // The Cindy full-body program (trainer text, 2026-07-11): five working
+    // exercises + two optional forearm finishers, every name resolving to
+    // catalog or the custom registry.
+    let cindy = DefaultTemplates.packageI
+    #expect(cindy.map(\.name) == ["Cindy Full Body"])
+    let customs = Set(DefaultTemplates.customExercises.map { $0.name.lowercased() })
+    let catalog = Set(ExerciseDatabase.all.map { $0.name.lowercased() })
+    for t in cindy {
+        let exercises = try JSONDecoder().decode(
+            [WorkoutTemplate.TemplateExercise].self, from: Data(t.exercisesJson.utf8))
+        #expect(exercises.count == 7, "\(t.name) should have 5 working + 2 optional exercises")
+        for ex in exercises {
+            let n = ex.name.lowercased()
+            #expect(customs.contains(n) || catalog.contains(n),
+                    "\(t.name): '\(ex.name)' resolves to neither catalog nor custom registry — no diagram/pose")
+        }
+    }
+}
+
 @Test func bandPackageTemplatesDecodeAndResolve() throws {
-    // The whiteboard band program — Package I since the 2026-07-11 renumber.
-    let templates = DefaultTemplates.packageI
+    // The whiteboard band program — Package III.
+    let templates = DefaultTemplates.packageIII
     #expect(templates.count == 2)
     #expect(templates.map(\.name) == ["Resistance Band A", "Resistance Band B"])
     let customNames = Set(DefaultTemplates.customExercises.map { $0.name.lowercased() })
@@ -197,7 +217,8 @@ import Testing
 // fav randomly on install"). Favorites are the user's call — no package may
 // ship one.
 @Test func noPackageTemplateArrivesFavorited() {
-    for t in DefaultTemplates.packageI + DefaultTemplates.packageII + DefaultTemplates.packageIV {
+    for t in DefaultTemplates.packageI + DefaultTemplates.packageII
+           + DefaultTemplates.packageIII + DefaultTemplates.packageIV {
         #expect(!t.isFavorite, "\(t.name) is seeded as favorite")
     }
 }
