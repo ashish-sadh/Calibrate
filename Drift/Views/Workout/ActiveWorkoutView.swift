@@ -798,7 +798,7 @@ struct ActiveWorkoutView: View {
                 HStack(spacing: 8) {
                     Text(feedback.text)
                         .font(.caption).foregroundStyle(Theme.textSecondary)
-                        .lineLimit(2)
+                        .lineLimit(6)
                     Spacer(minLength: 4)
                     if let undo = feedback.undo {
                         Button("Undo") {
@@ -823,7 +823,7 @@ struct ActiveWorkoutView: View {
             HStack(spacing: 8) {
                 Image(systemName: "sparkles")
                     .font(.caption).foregroundStyle(Theme.accent.opacity(0.6))
-                TextField("add face pulls · drop curls · last bench?", text: $commandText)
+                TextField("what's next · form tips for squat · ask anything", text: $commandText)
                     .font(.subheadline)
                     .focused($commandFocused)
                     .submitLabel(.send)
@@ -855,9 +855,90 @@ struct ActiveWorkoutView: View {
             removeExercise(matching: query)
         case .history(let query):
             showHistory(for: query)
+        case .next:
+            showNextExercise()
+        case .formTip(let query):
+            showFormTip(for: query)
+        case .ask(let question):
+            askCoach(question)
         case .add(let query, let sets):
             addFromCommand(query, sets: sets, original: raw)
         }
+    }
+
+    private func showNextExercise() {
+        guard let next = exercises.first(where: { $0.sets.contains { !$0.done } }) else {
+            commandFeedback = CommandFeedback(text: "Everything's done — hit Finish when you're ready 💪")
+            return
+        }
+        let remaining = next.sets.filter { !$0.done }.count
+        var text = "Next: \(next.name) — \(remaining) set\(remaining == 1 ? "" : "s") to go."
+        if let previous = next.previousSets.first { text += " Last time: \(previous)." }
+        commandFeedback = CommandFeedback(text: text)
+    }
+
+    private func showFormTip(for query: String) {
+        let name = exercises.first { $0.name.lowercased().contains(query) }?.name
+            ?? ExerciseDatabase.match(name: query)?.name
+            ?? ExerciseService.resolveExerciseName(query)
+        guard !query.isEmpty, let name else {
+            commandFeedback = CommandFeedback(text: "Which exercise? Try \"form tips for deadlift\".")
+            return
+        }
+        var lines: [String] = []
+        if let tip = ExerciseService.formTip(for: name) { lines.append(tip) }
+        if let info = ExerciseDatabase.info(for: name) {
+            if lines.isEmpty, let cues = info.instructions?.prefix(2) {
+                lines.append(contentsOf: cues)
+            }
+            let muscles = info.primaryMuscles.joined(separator: ", ")
+            if !muscles.isEmpty { lines.append("Works: \(muscles)") }
+        }
+        guard !lines.isEmpty else {
+            // Nothing local for this movement — let the coach answer instead.
+            askCoach("Quick form cues for \(name)?")
+            return
+        }
+        commandFeedback = CommandFeedback(text: "\(name) — " + lines.joined(separator: " · "))
+    }
+
+    /// Open question → cloud coach, with the live session as context. The
+    /// deterministic intents above never touch the network; this is the one
+    /// path that does, and it says so ("Thinking…") instead of freezing.
+    private func askCoach(_ question: String) {
+        guard AIBackendCoordinator.hasCoachCloud else {
+            commandFeedback = CommandFeedback(text: "Coach questions need the cloud connection — try from the chat.")
+            return
+        }
+        commandFeedback = CommandFeedback(text: "Thinking…")
+        let context = coachSessionContext()
+        Task {
+            AIBackendCoordinator.installCoachBackend()
+            let reply = await LocalAIService.shared.respondDirect(
+                systemPrompt: """
+                You are Drift Coach answering DURING a live workout. Be a concise \
+                gym buddy: 1-3 short sentences, concrete, no markdown, no greetings. \
+                Use the session context when it's relevant; never invent numbers.
+                """,
+                message: "Session: \(context)\n\nQuestion: \(question)")
+            let trimmed = reply.trimmingCharacters(in: .whitespacesAndNewlines)
+            commandFeedback = CommandFeedback(
+                text: trimmed.isEmpty ? "Didn't catch an answer — try that again." : trimmed)
+        }
+    }
+
+    private func coachSessionContext() -> String {
+        var parts = ["\(workoutName), \(formatDuration(elapsedSeconds)) in"]
+        for ex in exercises {
+            let done = ex.sets.filter(\.done).count
+            var line = "\(ex.name) \(done)/\(ex.sets.count) sets"
+            if let previous = ex.previousSets.first { line += " (last time \(previous))" }
+            parts.append(line)
+        }
+        if let profile = TrainingProfile.load(), !profile.summary.isEmpty {
+            parts.append("profile: \(profile.summary)")
+        }
+        return parts.joined(separator: "; ")
     }
 
     private func removeExercise(matching query: String) {

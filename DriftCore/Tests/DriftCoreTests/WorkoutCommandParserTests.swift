@@ -36,6 +36,34 @@ import Testing
     #expect(name == "bench press")
 }
 
+@Test func parse_nextVariants() {
+    #expect(WorkoutCommandParser.parse("next") == .next)
+    #expect(WorkoutCommandParser.parse("what's next?") == .next)
+    #expect(WorkoutCommandParser.parse("what exercise next") == .next)
+    #expect(WorkoutCommandParser.parse("what should i do next") == .next)
+}
+
+@Test func parse_formTipVariants() {
+    #expect(WorkoutCommandParser.parse("form tips for deadlift") == .formTip(query: "deadlift"))
+    #expect(WorkoutCommandParser.parse("how do i squat") == .formTip(query: "squat"))
+    #expect(WorkoutCommandParser.parse("how to correct my bench form?") == .formTip(query: "bench"))
+    #expect(WorkoutCommandParser.parse("technique for hanging leg raise") == .formTip(query: "hanging leg raise"))
+}
+
+@Test func parse_openQuestionsGoToTheCoach() {
+    #expect(WorkoutCommandParser.parse("should i go heavier on bench?")
+            == .ask(question: "should i go heavier on bench?"))
+    #expect(WorkoutCommandParser.parse("am i resting too long")
+            == .ask(question: "am i resting too long"))
+}
+
+@Test func parse_shortHistoryShorthandStillWorks() {
+    // One/two-word "?" shorthand keeps the quick-lookup feel; long questions
+    // with "?" go to the coach instead.
+    #expect(WorkoutCommandParser.parse("bench?") == .history(query: "bench"))
+    #expect(WorkoutCommandParser.parse("last squat?") == .history(query: "squat"))
+}
+
 // MARK: - Usual-workout replay (pure helpers)
 
 @MainActor
