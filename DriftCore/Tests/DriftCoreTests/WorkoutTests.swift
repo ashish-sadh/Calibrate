@@ -1357,11 +1357,19 @@ import GRDB
 
 // MARK: - Default Templates Load Tests
 
-@Test func loadCuratedIsIdempotent() async throws {
-    // Loading curated twice should not create duplicates
-    let first = DefaultTemplates.loadCurated()
-    let second = DefaultTemplates.loadCurated()
+@Test func loadPackageIVIsIdempotent() async throws {
+    // Loading a package twice should not create duplicates
+    let first = DefaultTemplates.loadPackageIV()
+    let second = DefaultTemplates.loadPackageIV()
     // Second call must add 0 — all names already exist
+    #expect(second == 0, "Second load should skip all duplicates, got \(second)")
+    #expect(first >= 0)
+}
+
+@Test func loadPackageIIsIdempotent() async throws {
+    // The renumbered band package (was III) keeps the same guarantee
+    let first = DefaultTemplates.loadPackageI()
+    let second = DefaultTemplates.loadPackageI()
     #expect(second == 0, "Second load should skip all duplicates, got \(second)")
     #expect(first >= 0)
 }

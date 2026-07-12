@@ -137,9 +137,9 @@ struct WorkoutView: View {
                             // star read as "Package II is favorited" (field
                             // report 2026-07-09).
                             Button {
-                                loadPackage(DefaultTemplates.loadCurated, name: "Drift Package I")
+                                loadPackage(DefaultTemplates.loadPackageI, name: "Drift Package I")
                             } label: {
-                                Label("Load Drift Package I", systemImage: "1.circle")
+                                Label("Load Drift Package I (Bands)", systemImage: "1.circle")
                             }
                             Button {
                                 loadPackage(DefaultTemplates.loadPackageII, name: "Drift Package II")
@@ -147,9 +147,9 @@ struct WorkoutView: View {
                                 Label("Load Drift Package II", systemImage: "2.circle")
                             }
                             Button {
-                                loadPackage(DefaultTemplates.loadPackageIII, name: "Drift Package III")
+                                loadPackage(DefaultTemplates.loadPackageIV, name: "Drift Package IV")
                             } label: {
-                                Label("Load Drift Package III (Bands)", systemImage: "3.circle")
+                                Label("Load Drift Package IV", systemImage: "4.circle")
                             }
                             if !templates.isEmpty {
                                 Divider()
@@ -659,14 +659,14 @@ struct WorkoutView: View {
                 }.buttonStyle(.bordered)
                 // Three packages don't fit as siblings — collapse into a menu.
                 Menu {
-                    Button { loadPackage(DefaultTemplates.loadCurated, name: "Drift Package I") } label: {
-                        Label("Drift Package I", systemImage: "1.circle")
+                    Button { loadPackage(DefaultTemplates.loadPackageI, name: "Drift Package I") } label: {
+                        Label("Drift Package I (Bands)", systemImage: "1.circle")
                     }
                     Button { loadPackage(DefaultTemplates.loadPackageII, name: "Drift Package II") } label: {
                         Label("Drift Package II", systemImage: "2.circle")
                     }
-                    Button { loadPackage(DefaultTemplates.loadPackageIII, name: "Drift Package III") } label: {
-                        Label("Drift Package III (Bands)", systemImage: "3.circle")
+                    Button { loadPackage(DefaultTemplates.loadPackageIV, name: "Drift Package IV") } label: {
+                        Label("Drift Package IV", systemImage: "4.circle")
                     }
                 } label: {
                     Label("Drift Packages", systemImage: "square.stack.3d.up").font(.caption)

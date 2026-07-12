@@ -174,8 +174,9 @@ import Testing
     }
 }
 
-@Test func packageIIITemplatesDecodeAndResolve() throws {
-    let templates = DefaultTemplates.packageIII
+@Test func bandPackageTemplatesDecodeAndResolve() throws {
+    // The whiteboard band program — Package I since the 2026-07-11 renumber.
+    let templates = DefaultTemplates.packageI
     #expect(templates.count == 2)
     #expect(templates.map(\.name) == ["Resistance Band A", "Resistance Band B"])
     let customNames = Set(DefaultTemplates.customExercises.map { $0.name.lowercased() })
@@ -196,15 +197,16 @@ import Testing
 // fav randomly on install"). Favorites are the user's call — no package may
 // ship one.
 @Test func noPackageTemplateArrivesFavorited() {
-    for t in DefaultTemplates.packageI + DefaultTemplates.packageII + DefaultTemplates.packageIII {
+    for t in DefaultTemplates.packageI + DefaultTemplates.packageII + DefaultTemplates.packageIV {
         #expect(!t.isFavorite, "\(t.name) is seeded as favorite")
     }
 }
 
-@Test func packageITemplateExercisesAllResolve() throws {
+@Test func packageIVTemplateExercisesAllResolve() throws {
+    // The original curated programs — Package IV since the 2026-07-11 renumber.
     let customNames = Set(DefaultTemplates.customExercises.map { $0.name.lowercased() })
     let catalogNames = Set(ExerciseDatabase.all.map { $0.name.lowercased() })
-    for t in DefaultTemplates.packageI {
+    for t in DefaultTemplates.packageIV {
         let exercises = try JSONDecoder().decode(
             [WorkoutTemplate.TemplateExercise].self, from: Data(t.exercisesJson.utf8))
         for ex in exercises {

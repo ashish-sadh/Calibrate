@@ -3,12 +3,14 @@ import Foundation
 /// Seeds default workout templates on demand. Respects user edits — only adds
 /// templates/exercises that don't already exist by name.
 ///
-/// Three packages:
-///  - **Drift Package I** — the original curated programs 1–4 (#940).
+/// Three packages (renumbered 2026-07-11 — operator: the latest-sent program
+/// gets top billing):
+///  - **Drift Package I** — the whiteboard resistance band program
+///    (A/B days, imported 2026-07-09; was Package III).
 ///  - **Drift Package II** — the Srijith training program (total-body free
 ///    weights / dumbbells / circuits / strength + pull & push days).
-///  - **Drift Package III** — the whiteboard resistance band program
-///    (A/B days, imported 2026-07-09).
+///  - **Drift Package IV** — the original curated programs 1–4 (#940;
+///    was Package I).
 /// Packages load ONLY from the Templates menu — never on install. Loading
 /// skips templates the user already has by name, and none arrive favorited
 /// (field report: seeded `isFavorite` stars looked random).
@@ -18,9 +20,10 @@ import Foundation
 /// fedDir means the movement has no honest photo analog — the muscle diagram
 /// is the fallback, never a wrong demo.
 public enum DefaultTemplates {
-    /// Load Drift Package I templates on demand. Skips any that already exist by name.
+    /// Load Drift Package I templates (whiteboard resistance A/B) on demand.
+    /// Skips any that already exist by name.
     @discardableResult
-    public static func loadCurated() -> Int {
+    public static func loadPackageI() -> Int {
         let added = load(templates: packageI)
         Log.app.info("Loaded \(added) Drift Package I templates")
         return added
@@ -34,11 +37,11 @@ public enum DefaultTemplates {
         return added
     }
 
-    /// Load Drift Package III templates (whiteboard resistance A/B) on demand.
+    /// Load Drift Package IV templates (original curated programs 1–4) on demand.
     @discardableResult
-    public static func loadPackageIII() -> Int {
-        let added = load(templates: packageIII)
-        Log.app.info("Loaded \(added) Drift Package III templates")
+    public static func loadPackageIV() -> Int {
+        let added = load(templates: packageIV)
+        Log.app.info("Loaded \(added) Drift Package IV templates")
         return added
     }
 
@@ -153,7 +156,7 @@ public enum DefaultTemplates {
         .init(name: "Seated Hamstring Curl", bodyPart: "Legs", muscles: ["hamstrings"], fedDir: "Seated_Leg_Curl"),
         .init(name: "Single Leg Deadlift", bodyPart: "Legs", muscles: ["hamstrings", "glutes"], fedDir: "Kettlebell_One-Legged_Deadlift"),
         .init(name: "Single-Leg RDL", bodyPart: "Legs", muscles: ["hamstrings", "glutes"], fedDir: "Kettlebell_One-Legged_Deadlift"),
-        // Package III (resistance band program) gaps — no free-exercise-db
+        // Package I (resistance band program) gaps — no free-exercise-db
         // band analog. Pose pairs were sourced from the web (operator-approved,
         // 2026-07-09) and dropped into Drift/ExercisePoses under minted
         // FED-style dir names; fedDir here is purely a bundle key — the URL
@@ -239,9 +242,9 @@ public enum DefaultTemplates {
         .init(name: name, sets: sets, restSeconds: rest, notes: notes)
     }
 
-    // MARK: - Package I (original curated programs)
+    // MARK: - Package IV (original curated programs; was Package I)
 
-    static var packageI: [WorkoutTemplate] {
+    static var packageIV: [WorkoutTemplate] {
         program4 + program3 + program2 + program1
     }
 
@@ -326,14 +329,14 @@ public enum DefaultTemplates {
         ]
     }
 
-    // MARK: - Package III (whiteboard resistance band program, imported 2026-07-09)
+    // MARK: - Package I (whiteboard resistance band program, imported 2026-07-09; was Package III)
     //
     // Band-specific catalog entries are preferred (they carry honest band
     // pose photos); the four customs with no free-exercise-db band analog
     // use web-sourced pose pairs bundled under minted asset names (see the
     // custom-exercise registry note).
 
-    static var packageIII: [WorkoutTemplate] {
+    static var packageI: [WorkoutTemplate] {
         [
             WorkoutTemplate(name: "Resistance Band A", exercisesJson: json([
                 e("Bulgarian Split Squat", notes: "12 per leg"),
