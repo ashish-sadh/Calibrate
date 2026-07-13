@@ -434,8 +434,21 @@ public enum WeightTrendCalculator {
         // Medium re-smoothing for the slope: a time-weighted EMA
         // (`rateSmoothingHalfLifeDays`) over the window's actual weights,
         // then OLS on the smoothed series.
+        //
+        // Spike-proof the smoother's seed: when the window's opening weigh-in
+        // is an OUTLIER against its first-5 cohort (>0.75 kg — a water spike,
+        // not day-to-day noise), seed with the cohort median instead. A
+        // single-point seed anchored the whole smoothed series on the spike
+        // and every estimator read "fell from the spike" ≈ −400 kcal/day
+        // (field scenario 2026-07-13: the Jun 23 56.1 spike was day 1 of the
+        // 21-day window). Conditional on purpose — an unconditional median
+        // seed nudged the cycle28 Monte-Carlo family over its phantom bound
+        // (95.8% vs <95); normal openings keep the exact tuned baseline.
+        let openers = pts.prefix(5).map { $0.actualWeight ?? $0.emaWeight }
+        let firstY = pts[0].actualWeight ?? pts[0].emaWeight
+        let openerMedian = median(of: openers)
         var smoothed: [(date: Date, weight: Double)] = []
-        var s = pts[0].actualWeight ?? pts[0].emaWeight
+        var s = abs(firstY - openerMedian) > 0.75 ? openerMedian : firstY
         var prev = pts[0].date
         smoothed.append((pts[0].date, s))
         for p in pts.dropFirst() {
@@ -522,6 +535,7 @@ public enum WeightTrendCalculator {
     public static func linearRegressionSlope(points: [WeightDataPoint]) -> Double {
         slopeOfSeries(points.map { (date: $0.date, weight: $0.emaWeight) })
     }
+
 
     /// Median of a numeric array. For even-count, mean of the two middle elements.
     static func median(of values: [Double]) -> Double {

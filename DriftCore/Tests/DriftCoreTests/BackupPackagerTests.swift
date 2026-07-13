@@ -246,6 +246,9 @@ final class BackupPackagerTests: XCTestCase {
             "drift_algorithm_config",
             "drift_custom_exercises",
             "drift_exercise_favorites",
+            // TrainingProfile (coach interview answers) — Codable Data blob,
+            // read/written by Models/TrainingProfile.swift since 2026-07-10.
+            "drift_training_profile",
         ]
         XCTAssertEqual(Set(BackupKeys.userDefaultsAllowlist), expected)
         // No dotted-camelCase keys (the pre-#700 fictional set used these).
