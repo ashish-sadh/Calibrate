@@ -2938,5 +2938,18 @@
    "Drift Package I: Cindy full-body program (leg press, DB chest press, TRX rows, hanging leg raises, back extensions + optional wrist work)",
    "Workout packages renumbered: I Cindy, II Srijith, III resistance bands, IV original curated programs"
   ]
+ },
+ {
+  "build": 346,
+  "date": "2026-07-13T11:30:43-0700",
+  "description": "Weight-trend accuracy fix, mid-workout coach (Q&A + encouragement toasts)",
+  "fixes": [
+   "weight trend: a water spike at the window's start no longer reads as a big deficit (field case: -400 kcal/day where the true 3-week balance was ~flat); validated against the Monte-Carlo population gate",
+   "Holding steady now also shows the rough balance (\"~+60 kcal/day\") as a soft gray read \u2014 direction without false precision"
+  ],
+  "features": [
+   "mid-workout coach: ask the strip \"what's next\", \"form tips for squat\", or anything open-ended (answered with your live session as context)",
+   "coach toasts: short encouragement pops when you check off sets \u2014 beat-last-time, exercise done, board cleared; disappears on its own"
+  ]
  }
 ]
