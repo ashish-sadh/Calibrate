@@ -98,17 +98,23 @@ struct WeightInsightsView: View {
                         nudge: "Log a few more days"
                     )
                 } else if trend.trendDirection == .maintaining {
-                    // Genuinely flat trend slope — ≈0 is the measurement, not
-                    // a gate (2026-07-07: rate now comes from the smoothed
-                    // trend's slope and is always reported; only sub-band
-                    // slopes land here).
+                    // Flat trend. When the raw (pre-gate) estimate is
+                    // non-trivial, show it as a SOFT number (operator
+                    // 2026-07-13: "rough number, soft") — gray, ~ prefix,
+                    // rounded to 10s, never goal-colored: the confidence gate
+                    // decided this is noise-level, so it must not wear the
+                    // certainty costume of the significant branch below.
+                    let softBalance = (trend.rawEstimatedDailyDeficit / 10).rounded() * 10
+                    let showSoft = abs(softBalance) >= 30
                     metricCell(
                         id: "deficit",
                         label: "Est. Balance",
-                        value: "≈0",
+                        value: showSoft ? String(format: "~%+.0f", softBalance) : "≈0",
                         valueUnit: "kcal/day",
                         color: Theme.textSecondary,
-                        tooltip: "Your trend line is flat over the past \(trend.rateWindowDays) days — no meaningful surplus or deficit is showing.",
+                        tooltip: showSoft
+                            ? "Roughly \(String(format: "%+.0f", softBalance)) kcal/day — within noise of maintenance over the past \(trend.rateWindowDays) days. A soft read, not a target."
+                            : "Your trend line is flat over the past \(trend.rateWindowDays) days — no meaningful surplus or deficit is showing.",
                         nudge: "Holding steady"
                     )
                 } else {
