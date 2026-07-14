@@ -49,7 +49,7 @@ struct MoreTabView: View {
                         }
                         rowDivider
                         navRow(icon: "camera.on.rectangle", title: "Progress Photos",
-                               subtitle: "Photos & measurements",
+                               subtitle: "Photos & measurements · on-device only",
                                color: Theme.macroFat) {
                             ProgressGalleryView()
                         }

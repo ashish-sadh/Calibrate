@@ -14,6 +14,7 @@ struct TimerCameraView: View {
     @State private var seconds = 0          // 0 = Off (instant capture)
     @State private var countdown: Int?
     @State private var cancelled = false
+    @State private var permissionDenied = false
 
     private let options = [0, 3, 5, 10]      // 0 shown as "Off"
 
@@ -21,6 +22,25 @@ struct TimerCameraView: View {
         ZStack {
             Color.black.ignoresSafeArea()
             CameraPreview(session: cam.session).ignoresSafeArea()
+
+            if permissionDenied {
+                VStack(spacing: 10) {
+                    Image(systemName: "video.slash").font(.title)
+                        .foregroundStyle(.white.opacity(0.7))
+                    Text("Camera access needed")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.9))
+                    Text("Enable it in Settings → Drift → Camera.")
+                        .font(.caption).foregroundStyle(.white.opacity(0.7))
+                    Button("Open Settings") {
+                        if let url = URL(string: UIApplication.openSettingsURLString) {
+                            UIApplication.shared.open(url)
+                        }
+                    }
+                    .font(.caption.weight(.semibold))
+                    .buttonStyle(.bordered).tint(.white)
+                }
+            }
 
             if let countdown {
                 Text("\(countdown)")
@@ -48,10 +68,14 @@ struct TimerCameraView: View {
                 }
                 .padding()
                 Spacer()
-                controls
+                if !permissionDenied { controls }
             }
         }
-        .onAppear { cam.configure(); cam.start() }
+        .onAppear {
+            let status = AVCaptureDevice.authorizationStatus(for: .video)
+            permissionDenied = (status == .denied || status == .restricted)
+            cam.configure(); cam.start()
+        }
         .onDisappear { cancelled = true; cam.stop() }
     }
 

@@ -63,8 +63,10 @@ struct ProgressPhotoViewerView: View {
                     }
                 }
                 Spacer()
-                iconButton(comparing ? "rectangle" : "rectangle.split.2x1", active: comparing) {
-                    withAnimation { comparing.toggle() }
+                if entries.count >= 2 {
+                    iconButton(comparing ? "rectangle" : "rectangle.split.2x1", active: comparing) {
+                        withAnimation { comparing.toggle() }
+                    }
                 }
                 if !comparing, let date = current?.date {
                     iconButton("pencil") { onEdit(date); dismiss() }
@@ -141,22 +143,44 @@ struct ProgressPhotoViewerView: View {
         let now = current?.measurement
         let sites = pose.relevantSites
         return VStack(spacing: 4) {
-            // Weight delta first (always relevant).
+            // Weight delta first (always relevant). Direction-of-good follows
+            // the user's weight goal; neutral when no goal is set.
             if let tw = entries[safe: compareIndex].flatMap({ weightByDate[$0.date] }),
                let nw = current.flatMap({ weightByDate[$0.date] }) {
-                deltaRow("Weight", then: tw, now: nw, unit: Preferences.weightUnit.displayName, toDisplay: { inInches ? $0 * 2.20462 : $0 })
+                deltaRow("Weight", then: tw, now: nw, unit: Preferences.weightUnit.displayName,
+                         lowerBetter: weightLowerBetter, toDisplay: { inInches ? $0 * 2.20462 : $0 })
             }
             ForEach(sites, id: \.self) { site in
                 if let t = then?.value(for: site), let n = now?.value(for: site) {
-                    deltaRow(site.displayName, then: t, now: n, unit: inInches ? "in" : "cm", toDisplay: { inInches ? $0 / 2.54 : $0 })
+                    deltaRow(site.displayName, then: t, now: n, unit: inInches ? "in" : "cm",
+                             lowerBetter: Self.lowerBetter(site), toDisplay: { inInches ? $0 / 2.54 : $0 })
                 }
             }
         }
         .padding(.horizontal, 20)
     }
 
-    private func deltaRow(_ name: String, then: Double, now: Double, unit: String, toDisplay: (Double) -> Double) -> some View {
+    /// Goal-aware color direction per site: smaller waist/hips read as
+    /// progress; bigger muscle girths (chest, arms, thighs…) read as progress.
+    /// A +2 cm chest must not wear the "against goal" color.
+    static func lowerBetter(_ site: MeasurementSite) -> Bool {
+        site == .waist || site == .hips
+    }
+
+    /// nil = no goal set → neutral coloring for weight.
+    private var weightLowerBetter: Bool? {
+        guard let goal = WeightGoal.load() else { return nil }
+        return goal.targetWeightKg < goal.startWeightKg
+    }
+
+    private func deltaRow(_ name: String, then: Double, now: Double, unit: String,
+                          lowerBetter: Bool?, toDisplay: (Double) -> Double) -> some View {
         let t = toDisplay(then), n = toDisplay(now), d = n - t
+        let color: Color = {
+            guard abs(d) >= 0.05 else { return .white.opacity(0.5) }
+            guard let lowerBetter else { return .white.opacity(0.85) }   // neutral
+            return (lowerBetter ? d < 0 : d > 0) ? Theme.deficit : Theme.stepsOrange
+        }()
         return HStack {
             Text(name).font(.caption).foregroundStyle(.white.opacity(0.85))
             Spacer()
@@ -165,7 +189,7 @@ struct ProgressPhotoViewerView: View {
             Text(fmt(n)).font(.caption.monospacedDigit()).foregroundStyle(.white.opacity(0.85))
             Text("\(d >= 0 ? "+" : "−")\(fmt(abs(d)))")
                 .font(.caption.weight(.semibold).monospacedDigit())
-                .foregroundStyle(abs(d) < 0.05 ? .white.opacity(0.5) : (d < 0 ? Theme.deficit : Theme.stepsOrange))
+                .foregroundStyle(color)
                 .frame(width: 52, alignment: .trailing)
         }
     }

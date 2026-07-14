@@ -131,6 +131,14 @@ struct AddProgressEntryView: View {
                     poseTile(pose)
                 }
             }
+            HStack(spacing: 5) {
+                Image(systemName: "lock.shield.fill")
+                    .font(.system(size: Theme.FontSize.micro))
+                    .foregroundStyle(Theme.deficit)
+                Text("Stored only on this iPhone — never uploaded.")
+                    .font(.caption2)
+                    .foregroundStyle(Theme.textTertiary)
+            }
         }
         // Picker lives here (not on the root) so the view carrying the camera
         // cover and the view carrying the picker are different — one

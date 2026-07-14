@@ -28,6 +28,7 @@ struct ProgressGalleryView: View {
                 if entries.isEmpty {
                     emptyState
                 } else {
+                    privacyBanner
                     actionRow
                     if photoEntries.count >= 2 { timelineSection }
                     ForEach(entries, id: \.date) { entry in
@@ -62,6 +63,24 @@ struct ProgressGalleryView: View {
                 onEdit: { date in editingDate = date; showingAdd = true })
         }
         .onAppear(perform: reload)
+    }
+
+    // MARK: - Privacy banner
+
+    /// The dashboard's lock-shield line, repeated where it matters most —
+    /// people are understandably wary about body photos. Matches the
+    /// "All data stays on your device." pattern on Today.
+    private var privacyBanner: some View {
+        HStack(spacing: 6) {
+            Image(systemName: "lock.shield.fill")
+                .font(.system(size: Theme.FontSize.tiny))
+                .foregroundStyle(Theme.deficit)
+            Text("Photos never leave your device — not uploaded, not analyzed in the cloud.")
+                .font(.system(size: Theme.FontSize.tiny))
+                .foregroundStyle(Theme.textSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 4)
     }
 
     // MARK: - Empty state
