@@ -169,6 +169,7 @@ public final class BackupService: @unchecked Sendable {
                 appMetadata: appMetadata(),
                 timestamp: timestamp,
                 destination: tempURL,
+                photosDirectory: ProgressPhotoStore.directory,
                 progress: progress
             )
             progress?(.movingToCloud)
@@ -226,7 +227,8 @@ public final class BackupService: @unchecked Sendable {
         return try restorer.restore(
             from: backupURL,
             toDatabasePath: databaseURL,
-            userDefaults: userDefaults
+            userDefaults: userDefaults,
+            photosDirectory: ProgressPhotoStore.directory
         )
     }
 

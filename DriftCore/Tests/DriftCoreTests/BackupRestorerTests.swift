@@ -550,12 +550,61 @@ final class BackupRestorerTests: XCTestCase {
 
     // MARK: - Helpers
 
+    // MARK: - Progress photos in the archive (2026-07-14)
+
+    func testPhotosRoundTripInBackup() throws {
+        let photosSrc = workDir.appendingPathComponent("photos-src", isDirectory: true)
+        try FileManager.default.createDirectory(at: photosSrc, withIntermediateDirectories: true)
+        let jpgA = Data((0..<2048).map { UInt8($0 % 251) })
+        let jpgB = Data((0..<1024).map { UInt8(($0 * 7) % 253) })
+        try jpgA.write(to: photosSrc.appendingPathComponent("2026-07-01_front.jpg"))
+        try jpgB.write(to: photosSrc.appendingPathComponent("2026-07-01_left.jpg"))
+        try Data("not a photo".utf8).write(to: photosSrc.appendingPathComponent("notes.txt")) // non-jpg ignored
+
+        let backupURL = try makeBackup(
+            seedRows: 3, schemaVersion: Migrations.currentVersion, photosDir: photosSrc)
+
+        let photosDest = workDir.appendingPathComponent("photos-dest", isDirectory: true)
+        let dest = workDir.appendingPathComponent("restored-photos.sqlite")
+        _ = try BackupRestorer().restore(
+            from: backupURL,
+            toDatabasePath: dest,
+            userDefaults: defaults,
+            currentSchemaVersion: Migrations.currentVersion,
+            scratchDir: workDir.appendingPathComponent("scratch-photos", isDirectory: true),
+            photosDirectory: photosDest
+        )
+
+        XCTAssertEqual(try Data(contentsOf: photosDest.appendingPathComponent("2026-07-01_front.jpg")), jpgA)
+        XCTAssertEqual(try Data(contentsOf: photosDest.appendingPathComponent("2026-07-01_left.jpg")), jpgB)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: photosDest.appendingPathComponent("notes.txt").path))
+    }
+
+    func testBackupWithoutPhotosRestoresCleanlyIntoPhotoDirectory() throws {
+        // Older backups carry no photos/ entries — restoring with a photos
+        // destination must be a silent no-op, not a failure.
+        let backupURL = try makeBackup(seedRows: 2, schemaVersion: Migrations.currentVersion)
+        let photosDest = workDir.appendingPathComponent("photos-empty-dest", isDirectory: true)
+        let dest = workDir.appendingPathComponent("restored-nophotos.sqlite")
+        XCTAssertNoThrow(try BackupRestorer().restore(
+            from: backupURL,
+            toDatabasePath: dest,
+            userDefaults: defaults,
+            currentSchemaVersion: Migrations.currentVersion,
+            scratchDir: workDir.appendingPathComponent("scratch-nophotos", isDirectory: true),
+            photosDirectory: photosDest
+        ))
+        let contents = (try? FileManager.default.contentsOfDirectory(atPath: photosDest.path)) ?? []
+        XCTAssertTrue(contents.isEmpty)
+    }
+
     private func makeBackup(
         seedRows: Int,
         schemaVersion: Int,
         withDefaults extraDefaults: [String: Any] = [:],
         includeRealMigrations: Bool = false,
-        extraSQL: [String] = []
+        extraSQL: [String] = [],
+        photosDir: URL? = nil
     ) throws -> URL {
         let dbURL = workDir.appendingPathComponent("source-\(UUID().uuidString).sqlite")
         let dbQueue = try DatabaseQueue(path: dbURL.path)
@@ -606,7 +655,8 @@ final class BackupRestorerTests: XCTestCase {
             dbWriter: dbQueue,
             userDefaults: buildDefaults,
             appMetadata: .init(appBuild: "1042", appVersion: "2.1.0", schemaVersion: schemaVersion),
-            destination: destination
+            destination: destination,
+            photosDirectory: photosDir
         )
         return destination
     }

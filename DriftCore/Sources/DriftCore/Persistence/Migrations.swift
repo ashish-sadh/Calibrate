@@ -9,7 +9,7 @@ public enum Migrations {
     /// fails with `Int.fetchOne(grdb_migrations) != currentVersion`.
     /// Stamped into the backup manifest so restore can detect a
     /// forward/backward migration scenario.
-    public static let currentVersion = 41
+    public static let currentVersion = 43
 
     public static func registerAll(_ migrator: inout DatabaseMigrator) {
         // v1: Weight tracking

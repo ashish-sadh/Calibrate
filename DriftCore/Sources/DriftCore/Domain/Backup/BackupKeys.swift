@@ -61,4 +61,7 @@ public enum BackupKeys {
     public static let databaseFileName = "drift.sqlite"
     public static let preferencesFileName = "preferences.json"
     public static let backupFileExtension = "driftbackup"
+    /// Zip-entry prefix for progress-photo JPEGs (2026-07-14). Older builds
+    /// ignore these entries; older backups simply don't have them.
+    public static let photosPrefix = "photos/"
 }

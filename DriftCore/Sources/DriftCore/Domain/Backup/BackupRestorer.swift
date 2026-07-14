@@ -28,7 +28,8 @@ public struct BackupRestorer {
         toDatabasePath databaseURL: URL,
         userDefaults: UserDefaults,
         currentSchemaVersion: Int = Migrations.currentVersion,
-        scratchDir: URL? = nil
+        scratchDir: URL? = nil,
+        photosDirectory: URL? = nil
     ) throws -> BackupManifest {
         let workDir = scratchDir ?? FileManager.default.temporaryDirectory
             .appendingPathComponent("drift-restore-\(UUID().uuidString)", isDirectory: true)
@@ -82,7 +83,38 @@ public struct BackupRestorer {
 
         try applyPreferences(from: extractedPrefs, to: userDefaults)
 
+        // Progress photos (2026-07-14): best-effort AFTER the DB swap — a
+        // corrupt photo must not abort a successful data restore. Each entry
+        // is checksum-verified; failures are skipped (the gallery filters
+        // rows whose file is missing).
+        if let photosDirectory {
+            restorePhotos(archive: archive, manifest: manifest, into: photosDirectory)
+        }
+
         return manifest
+    }
+
+    /// Extract every `photos/` entry into `directory`, verifying checksums.
+    /// Per-file failures are logged and skipped, never thrown.
+    private func restorePhotos(archive: Archive, manifest: BackupManifest, into directory: URL) {
+        let photoKeys = manifest.files.keys.filter { $0.hasPrefix(BackupKeys.photosPrefix) }
+        guard !photoKeys.isEmpty else { return }
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        for key in photoKeys.sorted() {
+            guard let entry = archive[key], let expected = manifest.files[key] else { continue }
+            var collected = Data()
+            guard (try? archive.extract(entry) { collected.append($0) }) != nil else {
+                Log.app.error("Backup restore: photo extract failed for \(key)")
+                continue
+            }
+            let hash = SHA256.hash(data: collected).map { String(format: "%02x", $0) }.joined()
+            guard hash == expected.sha256, Int64(collected.count) == expected.sizeBytes else {
+                Log.app.error("Backup restore: photo checksum mismatch for \(key)")
+                continue
+            }
+            let filename = String(key.dropFirst(BackupKeys.photosPrefix.count))
+            try? collected.write(to: directory.appendingPathComponent(filename), options: .atomic)
+        }
     }
 
     // MARK: - Steps

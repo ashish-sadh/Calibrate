@@ -34,6 +34,7 @@ public struct BackupPackager {
         timestamp: Date = Date(),
         destination: URL,
         scratchDir: URL? = nil,
+        photosDirectory: URL? = nil,
         progress: BackupProgressHandler? = nil
     ) throws -> BackupManifest {
         let workDir = scratchDir ?? FileManager.default.temporaryDirectory
@@ -52,24 +53,44 @@ public struct BackupPackager {
         let dbEntry = try fileEntry(for: dbSnapshotURL)
         let prefsEntry = try fileEntry(for: prefsURL)
 
+        var files: [String: BackupManifest.FileEntry] = [
+            BackupKeys.databaseFileName: dbEntry,
+            BackupKeys.preferencesFileName: prefsEntry,
+        ]
+        // Progress photos (operator 2026-07-14): included under photos/ so a
+        // Drift-backup restore brings the physique photos back with the data.
+        // Older builds simply ignore the extra entries (format version
+        // unchanged); older backups without photos restore as before.
+        var photoEntries: [(name: String, url: URL)] = []
+        if let photosDirectory,
+           let names = try? FileManager.default.contentsOfDirectory(atPath: photosDirectory.path) {
+            for name in names.sorted() where name.lowercased().hasSuffix(".jpg") {
+                let url = photosDirectory.appendingPathComponent(name)
+                let key = BackupKeys.photosPrefix + name
+                files[key] = try fileEntry(for: url)
+                photoEntries.append((key, url))
+            }
+        }
+
         let manifest = BackupManifest(
             appBuild: appMetadata.appBuild,
             appVersion: appMetadata.appVersion,
             timestamp: timestamp,
             schemaVersion: appMetadata.schemaVersion,
-            files: [
-                BackupKeys.databaseFileName: dbEntry,
-                BackupKeys.preferencesFileName: prefsEntry,
-            ]
+            files: files
         )
         let manifestURL = workDir.appendingPathComponent(BackupKeys.manifestFileName)
         try BackupManifest.encoder().encode(manifest).write(to: manifestURL)
 
-        progress?(.compressing(bytes: dbEntry.sizeBytes + prefsEntry.sizeBytes))
-        try writeZip(
-            entries: [manifestURL, dbSnapshotURL, prefsURL],
-            to: destination
-        )
+        let totalBytes = files.values.reduce(Int64(0)) { $0 + $1.sizeBytes }
+        progress?(.compressing(bytes: totalBytes))
+        var zipEntries: [(name: String, url: URL)] = [
+            (BackupKeys.manifestFileName, manifestURL),
+            (BackupKeys.databaseFileName, dbSnapshotURL),
+            (BackupKeys.preferencesFileName, prefsURL),
+        ]
+        zipEntries.append(contentsOf: photoEntries)
+        try writeZip(entries: zipEntries, to: destination)
         return manifest
     }
 
@@ -119,7 +140,7 @@ public struct BackupPackager {
         return BackupManifest.FileEntry(sha256: hex, sizeBytes: Int64(data.count))
     }
 
-    private func writeZip(entries: [URL], to destination: URL) throws {
+    private func writeZip(entries: [(name: String, url: URL)], to destination: URL) throws {
         if FileManager.default.fileExists(atPath: destination.path) {
             try FileManager.default.removeItem(at: destination)
         }
@@ -128,13 +149,15 @@ public struct BackupPackager {
         }
         for entry in entries {
             do {
+                // JPEGs are already compressed — store, don't deflate.
+                let method: CompressionMethod = entry.name.hasPrefix(BackupKeys.photosPrefix) ? .none : .deflate
                 try archive.addEntry(
-                    with: entry.lastPathComponent,
-                    fileURL: entry,
-                    compressionMethod: .deflate
+                    with: entry.name,
+                    fileURL: entry.url,
+                    compressionMethod: method
                 )
             } catch {
-                throw BackupPackagerError.zipAddEntryFailed("\(entry.lastPathComponent): \(error)")
+                throw BackupPackagerError.zipAddEntryFailed("\(entry.name): \(error)")
             }
         }
     }
