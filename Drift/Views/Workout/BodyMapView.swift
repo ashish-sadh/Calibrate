@@ -10,6 +10,10 @@ struct BodyMapView: View {
     @State private var recentExercises: [String: [String]] = [:] // group → exercise names
     @State private var weeklySetCounts: [String: Int] = [:]
     @State private var selectedGroup: String?
+    // Soreness check-in — one quiet question/day; answers tune the
+    // per-group recovery estimate that drives the coloring above.
+    @State private var sorenessState = MuscleSoreness.loadState()
+    @State private var sorenessQuestion: String?
 
     enum MuscleStatus: Sendable {
         case recovered, moderate, recovering, untrained
@@ -103,6 +107,34 @@ struct BodyMapView: View {
                 }
             }
 
+            // Soreness check-in — a single quiet line, one question per
+            // day. Answers teach the model how long THIS user's muscles
+            // take to recover; deliberately whisper-weight so it never
+            // competes with the figures above.
+            if let group = sorenessQuestion {
+                HStack(spacing: 8) {
+                    Text("Still sore in \(group.lowercased())?")
+                        .font(.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                    Spacer(minLength: 4)
+                    sorenessChip("Yes") { answerSoreness(group: group, stillSore: true) }
+                    sorenessChip("No") { answerSoreness(group: group, stillSore: false) }
+                    Button { dismissSoreness(group: group) } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(Theme.textTertiary)
+                            .frame(width: 20, height: 20)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Dismiss soreness question")
+                }
+                .padding(.top, 2)
+                .transition(.opacity)
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("soreness-checkin")
+            }
+
             // Contextual panel for selected group
             if let group = selectedGroup {
                 groupPanel(group)
@@ -153,6 +185,18 @@ struct BodyMapView: View {
                 ForEach(matchingTemplates) { t in quickStartButton(template: t) }
             }
         }
+    }
+
+    private func sorenessChip(_ label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(Theme.textSecondary)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 4)
+                .background(Theme.cardBackgroundElevated, in: Capsule())
+        }
+        .buttonStyle(.plain)
     }
 
     private func quickStartButton(template: WorkoutTemplate) -> some View {
@@ -241,18 +285,56 @@ struct BodyMapView: View {
         let dateFmt = DateFormatter()
         dateFmt.dateFormat = "MMM d"
 
+        var hoursSinceByGroup: [String: Double] = [:]
         for group in Self.muscleGroups {
             if let d = lastWorked[group] { lastTrainedDate[group] = dateFmt.string(from: d) }
             if let lastDate = lastWorked[group] {
                 let days = cal.dateComponents([.day], from: lastDate, to: today).day ?? 999
                 daysSince[group] = days
-                if days <= 1 { muscleStatus[group] = .recovering }
-                else if days <= 2 { muscleStatus[group] = .moderate }
-                else if days <= 7 { muscleStatus[group] = .recovered }
-                else { muscleStatus[group] = .untrained }
+                if days > 7 {
+                    muscleStatus[group] = .untrained
+                } else {
+                    // Learned per-group recovery estimate (default 72h
+                    // reproduces the old hardcoded day thresholds). Workout
+                    // dates are day-granular, hence days × 24.
+                    let hours = Double(days) * 24
+                    hoursSinceByGroup[group] = hours
+                    let estimate = MuscleSoreness.recoveryHours(for: group, state: sorenessState)
+                    switch MuscleSoreness.status(hoursSince: hours, recoveryHours: estimate) {
+                    case .recovering: muscleStatus[group] = .recovering
+                    case .moderate: muscleStatus[group] = .moderate
+                    case .recovered: muscleStatus[group] = .recovered
+                    }
+                }
             } else {
                 muscleStatus[group] = .untrained
             }
         }
+
+        sorenessQuestion = MuscleSoreness.questionCandidate(
+            hoursSinceByGroup: hoursSinceByGroup,
+            state: sorenessState,
+            today: DateFormatters.dateOnly.string(from: today))
+    }
+
+    // MARK: - Soreness Check-in
+
+    private func answerSoreness(group: String, stillSore: Bool) {
+        guard let days = daysSince[group] else { return }
+        MuscleSoreness.applyResponse(
+            group: group, stillSore: stillSore, hoursSince: Double(days) * 24,
+            today: DateFormatters.dateOnly.string(from: Date()),
+            state: &sorenessState)
+        MuscleSoreness.saveState(sorenessState)
+        withAnimation(.easeOut(duration: 0.25)) { sorenessQuestion = nil }
+        loadMuscleStatus()   // recolor with the updated estimate
+    }
+
+    private func dismissSoreness(group: String) {
+        MuscleSoreness.markAsked(
+            group: group, today: DateFormatters.dateOnly.string(from: Date()),
+            state: &sorenessState)
+        MuscleSoreness.saveState(sorenessState)
+        withAnimation(.easeOut(duration: 0.25)) { sorenessQuestion = nil }
     }
 }
