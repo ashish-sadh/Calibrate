@@ -5,8 +5,9 @@ import Foundation
 ///
 /// Four packages (renumbered 2026-07-11 — operator: the latest-sent program
 /// gets top billing):
-///  - **Drift Package I** — the Cindy full-body program (trainer text,
-///    received 2026-07-11).
+///  - **Drift Package I** — trainer program: the full-body session
+///    (2026-07-11) + Program 5 upper/lower split (training-log PDF,
+///    2026-07-13).
 ///  - **Drift Package II** — the Srijith training program (total-body free
 ///    weights / dumbbells / circuits / strength + pull & push days).
 ///  - **Drift Package III** — the whiteboard resistance band program
@@ -22,7 +23,7 @@ import Foundation
 /// fedDir means the movement has no honest photo analog — the muscle diagram
 /// is the fallback, never a wrong demo.
 public enum DefaultTemplates {
-    /// Load Drift Package I templates (Cindy full-body program) on demand.
+    /// Load Drift Package I templates (trainer full-body + Program 5) on demand.
     /// Skips any that already exist by name.
     @discardableResult
     public static func loadPackageI() -> Int {
@@ -258,7 +259,11 @@ public enum DefaultTemplates {
         program4 + program3 + program2 + program1
     }
 
-    // MARK: - Package I (Cindy full-body program, trainer text received 2026-07-11)
+    // MARK: - Package I (trainer program: full-body session + Program 5
+    // upper/lower split from the training-log PDF, added 2026-07-13; the
+    // PDF's Program 5 tables carry a copy-pasted "Program #4 (Start 07/26)"
+    // header — the 07/26 date + the section title page confirm it IS #5.
+    // Trainer name removed per operator.)
     //
     // "Hi Ashish! Here's your HW" — leg press, dumbbell chest press, TRX rows,
     // hanging leg raises (AMRAP, control the descent), back extension; forearm
@@ -268,7 +273,7 @@ public enum DefaultTemplates {
 
     static var packageI: [WorkoutTemplate] {
         [
-            WorkoutTemplate(name: "Cindy Full Body", exercisesJson: json([
+            WorkoutTemplate(name: "Full Body", exercisesJson: json([
                 e("Leg Press", notes: "8-10 reps"),
                 e("Dumbbell Bench Press", notes: "8-10 reps — dumbbell chest press"),
                 e("TRX Rows", notes: "8-12 reps"),
@@ -276,6 +281,59 @@ public enum DefaultTemplates {
                 e("Hyperextensions (Back Extensions)", notes: "8-12 reps"),
                 e("Wrist Extension", rest: 45, notes: "optional — if time, 10-15 reps"),
                 e("Wrist Flexion", rest: 45, notes: "optional — if time, 10-15 reps"),
+            ]), createdAt: now),
+
+            // Program 5 (07/26) — 4-day upper/lower split. Warmups are the
+            // doc's easy circuits (lower: 90/90 + lateral walks; upper: band
+            // rotations + pull aparts); wrist warmups skipped on upper days
+            // because wrist work is already in the working sets.
+            WorkoutTemplate(name: "P5 Day 1 - Lower + Core", exercisesJson: json([
+                w("90/90 Switches", sets: 1, notes: "10 per side"),
+                w("Banded Lateral Walks", notes: "2x12"),
+                e("Trap Bar Deadlift", rest: 150, notes: "8-10 reps"),
+                e("Cossack Squats", rest: 105, notes: "8-12 reps"),
+                e("Copenhagen Planks", rest: 60, notes: "8-15 reps"),
+                e("Dragon Flags", rest: 75, notes: "8-12 reps — or yoga ball pikes"),
+                e("Back Extension", rest: 75, notes: "8-12 reps"),
+                e("Hip Abduction Machine", rest: 60, notes: "8-12 reps"),
+            ]), createdAt: now),
+
+            WorkoutTemplate(name: "P5 Day 2 - Upper", exercisesJson: json([
+                w("Banded Shoulder Rotations", notes: "2x10"),
+                w("Banded Pull Aparts (Palms Up)", notes: "2x10"),
+                w("Banded Pull Aparts (Palms Down)", notes: "2x10"),
+                e("Dumbbell Bench Press", rest: 105, notes: "8-10 reps — dumbbell chest press"),
+                e("TRX Rows", rest: 105, notes: "8-10 reps"),
+                e("Pull-Up", rest: 105, notes: "8-10 reps"),
+                e("Shoulder Press", rest: 90, notes: "8-12 reps"),
+                e("Hammer Curl", rest: 75, notes: "8-12 reps"),
+                e("Wrist Extension", rest: 60, notes: "8-15 reps"),
+                e("Wrist Flexion", rest: 60, notes: "8-15 reps — wrist curls"),
+            ]), createdAt: now),
+
+            WorkoutTemplate(name: "P5 Day 3 - Lower + Core", exercisesJson: json([
+                w("90/90 Switches", sets: 1, notes: "10 per side"),
+                w("Banded Lateral Walks", notes: "2x12"),
+                e("Leg Press", rest: 150, notes: "8-10 reps"),
+                e("B-Stance RDL", rest: 120, notes: "8-12 reps"),
+                e("Leg Raise", rest: 75, notes: "8-12 reps"),
+                e("Seated Hamstring Curl", rest: 90, notes: "8-10 reps"),
+                e("Leg Extension", rest: 90, notes: "8-10 reps"),
+                e("Hip Abduction Machine", rest: 60, notes: "8-12 reps"),
+                e("Calf Raises", rest: 60, notes: "8-12 reps"),
+            ]), createdAt: now),
+
+            WorkoutTemplate(name: "P5 Day 4 - Upper", exercisesJson: json([
+                w("Banded Shoulder Rotations", notes: "2x10"),
+                w("Banded Pull Aparts (Palms Up)", notes: "2x10"),
+                w("Banded Pull Aparts (Palms Down)", notes: "2x10"),
+                e("Incline Chest Press", rest: 150, notes: "8-10 reps"),
+                e("Dips", rest: 150, notes: "8-10 reps"),
+                e("High Rows", rest: 105, notes: "8-12 reps — midback"),
+                e("Reverse Curls", rest: 105, notes: "8-12 reps"),
+                e("Overhead Tricep Extensions", rest: 75, notes: "8-12 reps"),
+                e("Wrist Extension", rest: 60, notes: "8-15 reps"),
+                e("Wrist Flexion", rest: 60, notes: "8-15 reps — wrist curls"),
             ]), createdAt: now),
         ]
     }

@@ -175,17 +175,20 @@ import Testing
 }
 
 @Test func packageITemplatesDecodeAndResolve() throws {
-    // The Cindy full-body program (trainer text, 2026-07-11): five working
-    // exercises + two optional forearm finishers, every name resolving to
-    // catalog or the custom registry.
-    let cindy = DefaultTemplates.packageI
-    #expect(cindy.map(\.name) == ["Cindy Full Body"])
+    // Trainer program (name removed per operator, 2026-07-13): the full-body
+    // session + Program 5's 4-day upper/lower split from the training-log
+    // PDF, every name resolving to catalog or the custom registry.
+    let pkg = DefaultTemplates.packageI
+    #expect(pkg.map(\.name) == ["Full Body",
+                                "P5 Day 1 - Lower + Core", "P5 Day 2 - Upper",
+                                "P5 Day 3 - Lower + Core", "P5 Day 4 - Upper"])
+    #expect(!pkg.contains { $0.name.localizedCaseInsensitiveContains("cindy") })
     let customs = Set(DefaultTemplates.customExercises.map { $0.name.lowercased() })
     let catalog = Set(ExerciseDatabase.all.map { $0.name.lowercased() })
-    for t in cindy {
+    for t in pkg {
         let exercises = try JSONDecoder().decode(
             [WorkoutTemplate.TemplateExercise].self, from: Data(t.exercisesJson.utf8))
-        #expect(exercises.count == 7, "\(t.name) should have 5 working + 2 optional exercises")
+        #expect(exercises.count >= 7, "\(t.name) unexpectedly small: \(exercises.count)")
         for ex in exercises {
             let n = ex.name.lowercased()
             #expect(customs.contains(n) || catalog.contains(n),
