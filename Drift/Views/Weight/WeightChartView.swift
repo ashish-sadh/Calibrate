@@ -270,13 +270,25 @@ struct WeightChartView: View {
             .onChange(of: rangeStart) { _, _ in anchorScrollToLatest() }
             .onChange(of: granularity) { _, _ in anchorScrollToLatest() }
             .chartXAxis {
-                // V7: include day so a single-day range doesn't render
-                // "May May May" — when displayPoints all sit in one
-                // month the formatter would otherwise emit identical
-                // labels across desiredCount=4 ticks.
+                // Span-aware labels. One fixed format can't serve both ends:
+                // month+day on the All range rendered five identical "Jan 1"
+                // ticks across years (field report 2026-07-14), and
+                // month-only on a single-day range rendered "May May May"
+                // (the V7 fix). Pick by the visible window:
+                //   ≤ ~3.5 months  → "Jul 8"
+                //   ≤ ~1.5 years   → "Jul 2026"
+                //   beyond         → "2026"
                 AxisMarks(values: .automatic(desiredCount: 4)) {
-                    AxisValueLabel(format: .dateTime.month(.abbreviated).day())
-                        .foregroundStyle(Theme.textSecondary)
+                    if visibleSeconds > 550 * 86_400 {
+                        AxisValueLabel(format: .dateTime.year())
+                            .foregroundStyle(Theme.textSecondary)
+                    } else if visibleSeconds > 110 * 86_400 {
+                        AxisValueLabel(format: .dateTime.month(.abbreviated).year())
+                            .foregroundStyle(Theme.textSecondary)
+                    } else {
+                        AxisValueLabel(format: .dateTime.month(.abbreviated).day())
+                            .foregroundStyle(Theme.textSecondary)
+                    }
                 }
             }
             .chartYAxis {
