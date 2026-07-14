@@ -678,15 +678,18 @@ public enum ToolRegistration {
                 }
                 // General workout info: suggestion + history + streak
                 var lines: [String] = [ExerciseService.suggestWorkout()]
-                // Recent workouts from HealthKit
-                if let hk = DriftPlatform.health, let recent = try? await hk.fetchRecentWorkouts(days: 7), !recent.isEmpty {
+                // Recent workouts — Drift-logged sessions MERGED with watch/
+                // Health events. This list was HealthKit-only, so the user's
+                // own logged workouts (the richest data we have) were invisible
+                // while their walks showed up (field report 2026-07-14).
+                let drift = (try? WorkoutService.fetchWorkouts(limit: 5)) ?? []
+                let hkWorkouts: [(date: Date, type: String, duration: TimeInterval, calories: Double)] =
+                    (try? await DriftPlatform.health?.fetchRecentWorkouts(days: 7))?
+                        .map { ($0.date, $0.type, $0.duration, $0.calories) } ?? []
+                let merged = WorkoutService.mergedRecentWorkoutLines(drift: drift, health: hkWorkouts)
+                if !merged.isEmpty {
                     lines.append("Recent workouts:")
-                    for w in recent.prefix(5) {
-                        let dur = Int(w.duration / 60)
-                        let cal = Int(w.calories)
-                        let day = DateFormatters.shortDisplay.string(from: w.date)
-                        lines.append("  \(day): \(w.type) — \(dur) min, \(cal) cal")
-                    }
+                    lines.append(contentsOf: merged)
                 }
                 // Streak info
                 if let streak = try? WorkoutService.workoutStreak() {

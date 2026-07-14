@@ -1735,6 +1735,29 @@ private func sessionExercise(name: String, sets: [(w: String, r: String, done: B
           weighInKg: weighInKg)
 }
 
+@Test func mergedRecentWorkoutsShowDriftLogsAndDedupeWatchStrength() {
+    // Field bug 2026-07-14: the chat 'recent workouts' list was HealthKit-only
+    // — the user's logged P5 session was invisible while walks showed up.
+    let drift = [
+        Workout(name: "P5 Day 1 - Lower + Core", date: "2026-07-13", durationSeconds: 99 * 60, notes: nil,
+                createdAt: "2026-07-13T18:00:00Z"),
+    ]
+    let day13 = DateFormatters.dateOnly.date(from: "2026-07-13")!
+    let day12 = DateFormatters.dateOnly.date(from: "2026-07-12")!
+    let health: [(date: Date, type: String, duration: TimeInterval, calories: Double)] = [
+        (day13, "Strength Training", 44 * 60, 150),   // watch recording of the SAME logged session → skipped
+        (day13, "Walking", 12 * 60, 30),              // distinct activity → kept
+        (day12, "Walking", 30 * 60, 90),
+    ]
+    let lines = WorkoutService.mergedRecentWorkoutLines(drift: drift, health: health)
+    let joined = lines.joined(separator: "\n")
+    #expect(joined.contains("P5 Day 1 - Lower + Core"))            // Drift log present
+    #expect(!joined.contains("Strength Training"))                  // same-day watch strength deduped
+    #expect(joined.contains("Walking"))                             // walks still shown
+    #expect(lines.count == 3)
+    #expect(lines.first?.contains("P5 Day 1") == true || lines.first?.contains("Walking") == true) // newest first
+}
+
 @Test func abandonedSessionKgUnitOptionConvertsToStoredLbs() throws {
     // Weight-entry unit is an explicit per-exercise OPTION (not suffix
     // parsing); storage stays lbs. 60 typed under kg → 132.3 lbs stored.

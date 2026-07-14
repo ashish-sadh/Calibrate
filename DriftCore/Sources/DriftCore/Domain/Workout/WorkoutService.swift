@@ -612,6 +612,33 @@ public enum WorkoutService {
         loadSession() != nil
     }
 
+    /// Merge Drift-logged workouts with watch/Health events into display lines,
+    /// newest first, capped at 6. Watch STRENGTH sessions on a day with a
+    /// Drift-logged workout are skipped — same session recorded twice.
+    /// Pure so Tier-0 can pin the merge (field bug 2026-07-14: the chat tool
+    /// listed only HealthKit, hiding the user's own logged workouts).
+    public static func mergedRecentWorkoutLines(
+        drift: [Workout],
+        health: [(date: Date, type: String, duration: TimeInterval, calories: Double)]
+    ) -> [String] {
+        var entries: [(date: Date, line: String)] = []
+        var driftDates = Set<String>()
+        for w in drift {
+            guard let d = DateFormatters.dateOnly.date(from: w.date) else { continue }
+            driftDates.insert(w.date)
+            let dur = w.durationSeconds.map { " — \(Int($0) / 60) min" } ?? ""
+            entries.append((d, "  \(DateFormatters.shortDisplay.string(from: d)): \(w.name)\(dur)"))
+        }
+        for w in health.prefix(5) {
+            let t = w.type.lowercased()
+            let strengthy = t.contains("strength") || t.contains("traditional")
+                || t.contains("functional") || t == "workout"
+            if strengthy && driftDates.contains(DateFormatters.dateOnly.string(from: w.date)) { continue }
+            entries.append((w.date, "  \(DateFormatters.shortDisplay.string(from: w.date)): \(w.type) — \(Int(w.duration / 60)) min, \(Int(w.calories)) cal"))
+        }
+        return entries.sorted { $0.date > $1.date }.prefix(6).map(\.line)
+    }
+
     // MARK: - Strong CSV Import
 
     public struct ImportResult: Sendable {
