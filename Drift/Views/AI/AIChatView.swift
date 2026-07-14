@@ -10,6 +10,7 @@ struct AIChatView: View {
     @State var vm = AIChatViewModel()
     @FocusState var inputFocused: Bool
     @State var photoPickerItem: PhotosPickerItem? = nil
+    @Environment(\.dismiss) private var dismiss
 
     /// Optional pre-filled input — used by VoiceLogSheet's "Edit in chat"
     /// hand-off so the user can refine a transcript before sending.
@@ -38,6 +39,7 @@ struct AIChatView: View {
                     onExit: { vm.toggleTalkMode() })
             } else {
             VStack(spacing: 0) {
+            coachHeader
             if isEmptyState {
                 // Voice-first hero: a big tap-to-talk circle. The user can also
                 // type or attach an image via the input bar below.
@@ -195,22 +197,88 @@ struct AIChatView: View {
         }
         .onChange(of: vm.rearmMicTick) { _, _ in rearmMic() }
         .onChange(of: vm.talkModeEnabled) { _, on in handleTalkModeChange(on) }
-        .toolbar {
-            ToolbarItem(placement: .topBarLeading) { talkModeToggleButton }
+    }
+
+    // MARK: - Header (voice cluster + title + close)
+
+    /// Custom sheet header replacing the system nav bar. Voice is the coach's
+    /// marquee interaction, so its controls sit top-leading at full tap size:
+    /// the speaker is THE mute switch for spoken replies (#937 single source
+    /// of truth — it used to hide in the input bar behind the recording
+    /// controls), and the waveform beside it enters hands-free talk mode.
+    /// Replaces the old speaker-slash talk-mode icon that read as "muted"
+    /// while speech stayed on.
+    var coachHeader: some View {
+        ZStack {
+            Text("Drift Coach")
+                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                .foregroundStyle(Theme.textPrimary)
+            HStack {
+                voiceCluster
+                Spacer()
+                closeButton
+            }
         }
+        .padding(.horizontal, 12)
+        .padding(.top, 12)
+        .padding(.bottom, 6)
+    }
+
+    /// Speaker (mute switch) + waveform (talk mode) in one floating capsule.
+    var voiceCluster: some View {
+        HStack(spacing: 2) {
+            Button {
+                Haptics.lightTap()
+                if vm.voiceService.isSpeaking { vm.voiceService.stop() } else { vm.toggleVoiceOutput() }
+            } label: {
+                Image(systemName: vm.voiceOutputEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .symbolEffect(.variableColor.iterative, isActive: vm.voiceService.isSpeaking)
+                    .foregroundStyle(vm.voiceOutputEnabled ? Color.white : Theme.textSecondary)
+                    .frame(width: 42, height: 36)
+                    .background {
+                        if vm.voiceOutputEnabled { Capsule().fill(Theme.accent) }
+                    }
+                    .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(vm.voiceOutputEnabled ? "Mute spoken replies" : "Speak replies aloud")
+            .accessibilityIdentifier("coach-speaker-toggle")
+
+            Button {
+                Haptics.lightTap()
+                vm.toggleTalkMode()
+            } label: {
+                Image(systemName: "waveform")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Theme.textSecondary)
+                    .frame(width: 42, height: 36)
+                    .contentShape(Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Talk mode")
+            .accessibilityIdentifier("coach-talk-toggle")
+        }
+        .padding(3)
+        .background(Capsule().fill(Theme.cardBackground).shadow(color: .black.opacity(0.06), radius: 6, y: 2))
+        .animation(Theme.Motion.passive, value: vm.voiceOutputEnabled)
+    }
+
+    /// Circular close — replaces the sheet's plain "Done" text button.
+    var closeButton: some View {
+        Button { dismiss() } label: {
+            Image(systemName: "xmark")
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(Theme.textSecondary)
+                .frame(width: 34, height: 34)
+                .background(Circle().fill(Theme.cardBackground).shadow(color: .black.opacity(0.06), radius: 6, y: 2))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Close")
+        .accessibilityIdentifier("drift-coach-done")
     }
 
     // MARK: - Immersive talk-mode
-
-    /// The top speaker button — master switch into/out of full-screen talk-mode.
-    var talkModeToggleButton: some View {
-        Button { vm.toggleTalkMode() } label: {
-            Image(systemName: vm.talkModeEnabled ? "speaker.wave.2.fill" : "speaker.slash")
-                .foregroundStyle(vm.talkModeEnabled ? Theme.accent : Theme.textSecondary)
-        }
-        .accessibilityLabel(vm.talkModeEnabled ? "Talk mode on" : "Talk mode off")
-        .accessibilityIdentifier("coach-talk-toggle")
-    }
 
     /// Live caption under the immersive circle: your words while listening, the
     /// coach's last reply while it speaks / awaits a confirm, blank otherwise

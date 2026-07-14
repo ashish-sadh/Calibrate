@@ -113,23 +113,9 @@ extension AIChatView {
         }
         .accessibilityLabel("Attach photo")
 
-        // Voice replies toggle — the coach speaks its answers aloud when on,
-        // pairing with the mic for a full talk-to-it experience. While speaking,
-        // becomes a stop button.
-        Button {
-            if vm.voiceService.isSpeaking {
-                vm.voiceService.stop()
-            } else {
-                vm.toggleVoiceOutput()
-            }
-        } label: {
-            Image(systemName: vm.voiceService.isSpeaking ? "stop.circle.fill"
-                    : (vm.voiceOutputEnabled ? "speaker.wave.2.fill" : "speaker.slash"))
-                .font(.system(size: Theme.FontSize.large))
-                .foregroundStyle(vm.voiceService.isSpeaking || vm.voiceOutputEnabled ? Theme.accent : .secondary)
-        }
-        .accessibilityLabel(vm.voiceService.isSpeaking ? "Stop speaking"
-            : (vm.voiceOutputEnabled ? "Voice replies on" : "Voice replies off"))
+        // Voice-replies toggle lives in the coach header now (one visible
+        // mute switch, always on screen — it used to vanish behind the
+        // recording controls mid-dictation, which is how #937 recurred).
 
         Button {
             startOrStopVoice()   // shared with the hero listening circle
