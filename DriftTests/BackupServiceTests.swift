@@ -206,7 +206,10 @@ final class BackupServiceTests: XCTestCase {
 
         service.recordUploadFailure(quotaError)
 
-        XCTAssertEqual(service.lastBackupError, "quotaExceeded")
+        // Stored message is the USER-FACING copy, not the raw enum case —
+        // `String(describing:)` dumps leaked into Settings verbatim
+        // (field screenshot 2026-07-14).
+        XCTAssertEqual(service.lastBackupError, BackupError.quotaExceeded.userMessage)
     }
 
     func testRecordUploadFailureMapsArbitraryErrorWithDescription() {
@@ -221,12 +224,12 @@ final class BackupServiceTests: XCTestCase {
 
         let surfaced = service.lastBackupError ?? ""
         XCTAssertTrue(
-            surfaced.contains("upload failed"),
-            "Expected surfaced error to mention 'upload failed', got: \(surfaced)"
+            surfaced.contains("Couldn't reach iCloud"),
+            "Expected friendly transient-upload copy, got: \(surfaced)"
         )
-        XCTAssertTrue(
-            surfaced.contains("offline"),
-            "Expected surfaced error to include localizedDescription, got: \(surfaced)"
+        XCTAssertFalse(
+            surfaced.contains("invalidFormat"),
+            "Raw enum dump must never surface, got: \(surfaced)"
         )
     }
 

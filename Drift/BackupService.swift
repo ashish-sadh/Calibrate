@@ -278,11 +278,14 @@ public final class BackupService: @unchecked Sendable {
         if ns.domain == NSCocoaErrorDomain && ns.code == NSFileWriteOutOfSpaceError {
             return .quotaExceeded
         }
+        if ns.domain == NSURLErrorDomain {
+            return .uploadFailed(ns.localizedDescription)   // connectivity, not a format problem
+        }
         return .invalidFormat("write failed: \(error.localizedDescription)")
     }
 
     private func recordError(_ err: BackupError) {
-        userDefaults.set(String(describing: err), forKey: Self.lastBackupErrorKey)
+        userDefaults.set(err.userMessage, forKey: Self.lastBackupErrorKey)
     }
 
     private func pruneRingBuffer(excluding newURL: URL) {
@@ -363,9 +366,13 @@ public final class BackupService: @unchecked Sendable {
         if error.domain == NSCocoaErrorDomain && error.code == NSFileWriteOutOfSpaceError {
             mapped = .quotaExceeded
         } else {
-            mapped = .invalidFormat("upload failed: \(error.localizedDescription)")
+            // Anything else surfaced by the upload monitor is a transient
+            // iCloud/network failure, NOT a format problem — it was previously
+            // mapped to .invalidFormat and its raw enum dump rendered in
+            // Settings (field screenshot 2026-07-14).
+            mapped = .uploadFailed(error.localizedDescription)
         }
-        userDefaults.set(String(describing: mapped), forKey: Self.lastBackupErrorKey)
+        userDefaults.set(mapped.userMessage, forKey: Self.lastBackupErrorKey)
         NotificationCenter.default.post(name: .driftBackupUploadStateChanged, object: nil)
     }
 
