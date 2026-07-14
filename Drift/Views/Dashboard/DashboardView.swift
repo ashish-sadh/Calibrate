@@ -296,9 +296,14 @@ struct DashboardView: View {
             .toolbar {
                 ToolbarItem(placement: .principal) {
                     HStack(spacing: 6) {
-                        Image(systemName: "d.circle.fill")
-                            .font(.title3)
-                            .foregroundStyle(Theme.accent)
+                        // The real brand mark (BrandMark = the App Store icon),
+                        // not a lookalike SF Symbol — the header is the most-
+                        // seen brand surface, it should match the icon on the
+                        // home screen (operator 2026-07-14).
+                        Image("BrandMark")
+                            .resizable()
+                            .frame(width: 24, height: 24)
+                            .clipShape(RoundedRectangle(cornerRadius: 6))
                         Text("Drift")
                             .font(.headline.weight(.bold))
                             // 2026-05-19: was inheriting the system nav title
