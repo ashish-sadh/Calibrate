@@ -13,6 +13,12 @@ import DriftCore
 /// the spec.
 struct MealTimelineSection: View {
     let entries: [FoodEntry]
+    /// Header "+" — opens the Log-a-meal sheet. Field feedback 2026-07-13:
+    /// "it's hard to edit food diary down here… add can be just simple plus".
+    var onAdd: (() -> Void)?
+    /// Row swipe-to-delete. Same feedback: "Delete can be simple swipe."
+    /// Only rows with a persisted entry id get the swipe affordance.
+    var onDelete: ((Int64) -> Void)?
     @State private var expandedRowID: String?
 
     private static let emptyStateText = "Log your first meal — try the Snap card above"
@@ -36,7 +42,7 @@ struct MealTimelineSection: View {
                 // target stays the row body.
                 VStack(spacing: 0) {
                     ForEach(Array(rows.enumerated()), id: \.element.id) { idx, row in
-                        compactRow(row: row)
+                        deletableRow(row: row)
                         if idx < rows.count - 1 {
                             Divider()
                                 .overlay(Theme.separator.opacity(0.6))
@@ -45,6 +51,7 @@ struct MealTimelineSection: View {
                     }
                 }
                 .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
+                .clipShape(RoundedRectangle(cornerRadius: Theme.radiusSmall))
                 .overlay(
                     RoundedRectangle(cornerRadius: Theme.radiusSmall)
                         .strokeBorder(Theme.separator, lineWidth: 0.5)
@@ -55,14 +62,30 @@ struct MealTimelineSection: View {
     }
 
     private var sectionHeader: some View {
-        Text("Today's meals")
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(Theme.textTertiary)
-            .textCase(.uppercase)
-            .tracking(0.8)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.top, 4)
-            .padding(.bottom, 6)
+        HStack(spacing: 8) {
+            Text("Today's meals")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Theme.textTertiary)
+                .textCase(.uppercase)
+                .tracking(0.8)
+            Spacer(minLength: 0)
+            if let onAdd {
+                Button(action: onAdd) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(Theme.textTertiary)
+                        // Small glyph, honest tap target.
+                        .frame(width: 32, height: 26)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Add a meal")
+                .accessibilityIdentifier("meal-timeline-add")
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.top, 4)
+        .padding(.bottom, 6)
     }
 
     private var emptyState: some View {
@@ -86,6 +109,24 @@ struct MealTimelineSection: View {
         .accessibilityElement(children: .combine)
         .accessibilityLabel(Self.emptyStateText)
         .accessibilityIdentifier("meal-timeline-empty")
+    }
+
+    /// Wraps `compactRow` in the drag-to-reveal delete affordance when the
+    /// row is DB-persisted and the section has a delete handler. The rows
+    /// live in a plain VStack inside the Dashboard ScrollView — `.swipeActions`
+    /// is List-only, hence the custom reveal.
+    @ViewBuilder
+    private func deletableRow(row: MealTimelineRow) -> some View {
+        if let entryId = row.entryId, let onDelete {
+            SwipeToDeleteContainer(
+                accessibilityDeleteLabel: "Delete \(row.foodName)",
+                onDelete: { onDelete(entryId) }
+            ) {
+                compactRow(row: row)
+            }
+        } else {
+            compactRow(row: row)
+        }
     }
 
     @ViewBuilder
@@ -165,6 +206,79 @@ struct MealTimelineSection: View {
         .padding(.horizontal, 5)
         .padding(.vertical, 3)
         .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
+    }
+}
+
+/// Drag-to-reveal delete for card rows that live outside a `List`
+/// (`.swipeActions` is List-only). Swipe left to reveal a trash button;
+/// tap it to delete, tap the row or swipe right to close. The drag only
+/// claims clearly-horizontal translations so it doesn't fight the
+/// Dashboard ScrollView's vertical scroll.
+private struct SwipeToDeleteContainer<Content: View>: View {
+    let accessibilityDeleteLabel: String
+    let onDelete: () -> Void
+    @ViewBuilder let content: () -> Content
+
+    @State private var offsetX: CGFloat = 0
+    @State private var isRevealed = false
+
+    private let revealWidth: CGFloat = 68
+
+    var body: some View {
+        ZStack(alignment: .trailing) {
+            Button {
+                close()
+                onDelete()
+            } label: {
+                Image(systemName: "trash.fill")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: revealWidth)
+                    .frame(maxHeight: .infinity)
+                    .background(Theme.surplus)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(accessibilityDeleteLabel)
+
+            content()
+                .background(Theme.cardBackground)
+                .offset(x: offsetX)
+                // Tap-catcher while revealed: a stray tap closes the reveal
+                // instead of expanding the row underneath.
+                .overlay {
+                    if isRevealed {
+                        Color.clear
+                            .contentShape(Rectangle())
+                            .onTapGesture { close() }
+                    }
+                }
+                .gesture(
+                    DragGesture(minimumDistance: 20)
+                        .onChanged { value in
+                            guard abs(value.translation.width) > abs(value.translation.height) else { return }
+                            let base: CGFloat = isRevealed ? -revealWidth : 0
+                            // Rubber-band a little past the reveal, never right of rest.
+                            offsetX = min(0, max(-revealWidth - 20, base + value.translation.width))
+                        }
+                        .onEnded { value in
+                            let opening = !isRevealed && value.translation.width < -revealWidth * 0.5
+                            let staysOpen = isRevealed && value.translation.width < 20
+                            withAnimation(.spring(response: 0.28, dampingFraction: 0.85)) {
+                                isRevealed = opening || staysOpen
+                                offsetX = isRevealed ? -revealWidth : 0
+                            }
+                        }
+                )
+        }
+        .accessibilityAction(named: "Delete") { onDelete() }
+    }
+
+    private func close() {
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.85)) {
+            isRevealed = false
+            offsetX = 0
+        }
     }
 }
 

@@ -45,6 +45,9 @@ final class HardcodedWhiteTextTests: XCTestCase {
         // Mid-workout coach toast ("Good set 👊") — white on a solid Theme.ink
         // capsule, same contrast pairing as the milestone toast above.
         ("ActiveWorkoutView.swift", ".background(Theme.ink, in: Capsule())"),
+        // Swipe-to-delete trash glyph — white on solid Theme.surplus (red),
+        // the standard iOS destructive-swipe contrast pairing.
+        ("MealTimelineSection.swift", ".background(Theme.surplus)"),
         ("WorkoutView.swift", ".background(Theme.ink, in: RoundedRectangle(cornerRadius: 12))"),
         // Solid ink (V7 selected-chip pattern) — white reads on black
         ("FoodTabView.swift", "? Theme.ink : Color.clear, in: RoundedRectangle"),

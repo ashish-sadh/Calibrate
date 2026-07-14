@@ -181,7 +181,20 @@ struct DashboardView: View {
                     if viewModel.isLoading {
                         SkeletonMealTimelineSection()
                     } else {
-                        MealTimelineSection(entries: viewModel.todayFoodEntries)
+                        MealTimelineSection(
+                            entries: viewModel.todayFoodEntries,
+                            onAdd: {
+                                NotificationCenter.default.post(
+                                    name: .openLogMeal,
+                                    object: nil,
+                                    userInfo: ["mode": LogMealMode.search.rawValue]
+                                )
+                            },
+                            onDelete: { id in
+                                try? AppDatabase.shared.deleteFoodEntry(id: id)
+                                Task { await viewModel.loadToday() }
+                            }
+                        )
                     }
 
                     // V7 Phase 2 (#821) — body summary 3-card row. WEIGHT /
