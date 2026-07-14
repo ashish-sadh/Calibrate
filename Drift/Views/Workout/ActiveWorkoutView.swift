@@ -67,10 +67,15 @@ struct ActiveWorkoutView: View {
         /// Reps↔timer tracking. Defaults to the name classifier; user-flippable
         /// per exercise from the exercise menu (operator 2026-07-14).
         var trackByTime: Bool = false
+        /// Weight-entry unit for this exercise's fields. Storage stays lbs
+        /// (`WorkoutSet.weightLbs`); this only sets how typed numbers are read.
+        /// Explicit OPTION, not suffix parsing (operator 2026-07-14). Defaults
+        /// from the app-wide weight-unit preference.
+        var weighInKg: Bool = Preferences.weightUnit == .kg
 
         init(name: String, restTime: Int = 90, isWarmupExercise: Bool = false,
              notes: String? = nil, sets: [ActiveSet], previousSets: [String],
-             lastMaxWeight: Double? = nil, trackByTime: Bool? = nil) {
+             lastMaxWeight: Double? = nil, trackByTime: Bool? = nil, weighInKg: Bool? = nil) {
             self.name = name
             self.restTime = restTime
             self.isWarmupExercise = isWarmupExercise
@@ -79,6 +84,13 @@ struct ActiveWorkoutView: View {
             self.previousSets = previousSets
             self.lastMaxWeight = lastMaxWeight
             self.trackByTime = trackByTime ?? WorkoutSet.isDurationExercise(name)
+            self.weighInKg = weighInKg ?? (Preferences.weightUnit == .kg)
+        }
+
+        /// Interpret a typed weight in this exercise's unit → stored lbs.
+        func enteredWeightLbs(_ text: String) -> Double? {
+            guard let v = Double(text.replacingOccurrences(of: ",", with: ".")), v > 0 else { return nil }
+            return weighInKg ? v * 2.20462 : v
         }
     }
 
@@ -506,7 +518,16 @@ struct ActiveWorkoutView: View {
             HStack(spacing: 0) {
                 Text("Set").font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary).frame(width: 28, alignment: .leading)
                 Text("Previous").font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary).frame(width: 85, alignment: .leading)
-                Text(assisted ? "-lbs" : "lbs").font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary).frame(width: 55)
+                // Tappable unit OPTION per exercise — kg lifters pick kg here
+                // instead of converting in their head (stored as lbs).
+                Menu {
+                    Button("lbs") { exercises[ei].weighInKg = false }
+                    Button("kg") { exercises[ei].weighInKg = true }
+                } label: {
+                    Text("\(assisted ? "-" : "")\(exercises[ei].weighInKg ? "kg" : "lbs") ▾")
+                        .font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary).frame(width: 55)
+                }
+                .accessibilityLabel("Weight unit, currently \(exercises[ei].weighInKg ? "kilograms" : "pounds")")
                 Text(isDuration ? "Time (s)" : "Reps").font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary).frame(width: 50)
                 Spacer()
                 Text("✓").font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary).frame(width: 30)
@@ -795,7 +816,8 @@ struct ActiveWorkoutView: View {
                     WorkoutService.SavedSession.SessionSet(
                         weight: s.weight, reps: s.reps, done: s.done, isWarmup: s.isWarmup)
                 },
-                trackByTime: ex.trackByTime)
+                trackByTime: ex.trackByTime,
+                weighInKg: ex.weighInKg)
         }
         WorkoutService.saveSession(.init(workoutName: workoutName, startTime: startTime, exercises: sessionExercises))
     }
@@ -810,7 +832,8 @@ struct ActiveWorkoutView: View {
                 notes: ex.notes,
                 sets: ex.sets.map { s in ActiveSet(weight: s.weight, reps: s.reps, done: s.done, isWarmup: s.isWarmup) },
                 previousSets: [],
-                trackByTime: ex.trackByTime)
+                trackByTime: ex.trackByTime,
+                weighInKg: ex.weighInKg)
         }
         return true
     }
@@ -861,7 +884,7 @@ struct ActiveWorkoutView: View {
         guard !ex.isWarmupExercise, !ex.sets[si].isWarmup else { return }
         encouragementTick += 1
 
-        let weight = FlexibleUnitInput.weightLbs(from: ex.sets[si].weight)
+        let weight = ex.enteredWeightLbs(ex.sets[si].weight)
         if let weight, let lastMax = ex.lastMaxWeight, weight > lastMax + 0.09 {
             showCoachToast(WorkoutEncouragement.line(for: .beatLastTime, tick: encouragementTick))
             return
@@ -1112,8 +1135,7 @@ struct ActiveWorkoutView: View {
             for (ei, ex) in exercises.enumerated() {
                 let isDuration = ex.trackByTime
                 for (si, s) in ex.sets.enumerated() where s.done {
-                    // FlexibleUnitInput: bare = lbs, "60kg" converts; comma decimals (#1022).
-                    let w = FlexibleUnitInput.weightLbs(from: s.weight) ?? 0
+                    let w = ex.enteredWeightLbs(s.weight) ?? 0   // per-exercise lbs/kg option; comma decimals (#1022)
                     let r = Int(s.reps) ?? 0
                     let dur = isDuration ? (Int(s.reps) ?? 0) : nil // duration exercises store seconds in reps field
                     guard r > 0 || (isDuration && (dur ?? 0) > 0) else { continue }
@@ -1127,7 +1149,7 @@ struct ActiveWorkoutView: View {
                 for (ei, ex) in exercises.enumerated() {
                     let isDuration = ex.trackByTime
                     for (si, s) in ex.sets.enumerated() {
-                        let w = FlexibleUnitInput.weightLbs(from: s.weight) ?? 0
+                        let w = ex.enteredWeightLbs(s.weight) ?? 0
                         let r = Int(s.reps) ?? 0
                         let dur = isDuration ? (Int(s.reps) ?? 0) : nil
                         guard r > 0 || (isDuration && (dur ?? 0) > 0) else { continue }

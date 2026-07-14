@@ -62,7 +62,8 @@ struct AddProgressEntryView: View {
         let old = entryInInches
         entryInInches.toggle()
         func convert(_ text: String) -> String {
-            guard let cm = FlexibleUnitInput.lengthCm(from: text, assumeInches: old) else { return text }
+            guard let v = Double(text.replacingOccurrences(of: ",", with: ".")), v > 0 else { return text }
+            let cm = old ? v * 2.54 : v
             return String(format: "%.1f", entryInInches ? cm / 2.54 : cm)
         }
         for site in MeasurementSite.allCases {

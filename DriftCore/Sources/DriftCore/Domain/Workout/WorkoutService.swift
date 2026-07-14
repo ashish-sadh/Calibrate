@@ -488,14 +488,18 @@ public enum WorkoutService {
             /// Per-exercise reps↔timer override (nil = classify by name).
             /// Optional so payloads from older builds still decode.
             public var trackByTime: Bool?
+            /// Weight-entry unit option: typed numbers are kg when true
+            /// (nil/false = lbs, the field's historical meaning).
+            public var weighInKg: Bool?
 
-            public init(name: String, isWarmup: Bool, notes: String?, restTime: Int, sets: [SessionSet], trackByTime: Bool? = nil) {
+            public init(name: String, isWarmup: Bool, notes: String?, restTime: Int, sets: [SessionSet], trackByTime: Bool? = nil, weighInKg: Bool? = nil) {
                 self.name = name
                 self.isWarmup = isWarmup
                 self.notes = notes
                 self.restTime = restTime
                 self.sets = sets
                 self.trackByTime = trackByTime
+                self.weighInKg = weighInKg
             }
         }
 
@@ -554,8 +558,9 @@ public enum WorkoutService {
             var sets: [WorkoutSet] = []
             for (ei, ex) in session.exercises.enumerated() {
                 let isDuration = ex.trackByTime ?? WorkoutSet.isDurationExercise(ex.name)
+                let kgFactor = (ex.weighInKg ?? false) ? 2.20462 : 1.0
                 for (si, s) in ex.sets.enumerated() where s.done || !requireDone {
-                    let w = FlexibleUnitInput.weightLbs(from: s.weight) ?? 0
+                    let w = (Double(s.weight.replacingOccurrences(of: ",", with: ".")) ?? 0) * kgFactor
                     let r = Int(s.reps) ?? 0
                     let dur = isDuration ? (Int(s.reps) ?? 0) : nil
                     guard r > 0 || (isDuration && (dur ?? 0) > 0) else { continue }

@@ -1729,9 +1729,30 @@ import GRDB
 // MARK: - Abandoned session auto-save (field report 2026-07-09: operator lost
 // a logged workout — the 5h expiry silently DISCARDED the session)
 
-private func sessionExercise(name: String, sets: [(w: String, r: String, done: Bool)]) -> WorkoutService.SavedSession.SessionExercise {
+private func sessionExercise(name: String, sets: [(w: String, r: String, done: Bool)], weighInKg: Bool? = nil) -> WorkoutService.SavedSession.SessionExercise {
     .init(name: name, isWarmup: false, notes: nil, restTime: 90,
-          sets: sets.map { .init(weight: $0.w, reps: $0.r, done: $0.done, isWarmup: false) })
+          sets: sets.map { .init(weight: $0.w, reps: $0.r, done: $0.done, isWarmup: false) },
+          weighInKg: weighInKg)
+}
+
+@Test func abandonedSessionKgUnitOptionConvertsToStoredLbs() throws {
+    // Weight-entry unit is an explicit per-exercise OPTION (not suffix
+    // parsing); storage stays lbs. 60 typed under kg → 132.3 lbs stored.
+    let db = try AppDatabase.empty()
+    let start = Date(timeIntervalSince1970: 1_780_100_000)
+    let session = WorkoutService.SavedSession(
+        workoutName: "Metric Day", startTime: start,
+        exercises: [
+            sessionExercise(name: "Squat", sets: [("60", "5", true)], weighInKg: true),
+            sessionExercise(name: "Bench Press", sets: [("135", "5", true)]),   // nil = lbs
+        ],
+        lastSavedAt: start.addingTimeInterval(30 * 60))
+    WorkoutService.finalizeAbandonedSession(session, into: db)
+    let sets = try db.reader.read { try WorkoutSet.fetchAll($0) }
+    let squat = sets.first { $0.exerciseName == "Squat" }
+    let bench = sets.first { $0.exerciseName == "Bench Press" }
+    #expect(abs((squat?.weightLbs ?? 0) - 60 * 2.20462) < 0.01)
+    #expect(bench?.weightLbs == 135)
 }
 
 @Test func abandonedSessionWithDoneSetsIsSavedAsWorkout() throws {

@@ -159,10 +159,12 @@ public enum BodyMeasurementAnalysis {
                 out[site.rawValue] = original
                 continue
             }
-            // Forgiving units: bare numbers use the form's display unit, but an
-            // explicit suffix always wins ("86cm" on an inches form works).
-            guard let cm = FlexibleUnitInput.lengthCm(from: text, assumeInches: inInches), cm > 0 else { continue }
-            out[site.rawValue] = cm
+            // Plain numbers only (comma decimals accepted) — the unit comes
+            // from the form's explicit cm⇄in option, not suffix parsing
+            // (operator 2026-07-14: "give them options, no text parsing").
+            let normalized = text.replacingOccurrences(of: ",", with: ".")
+            guard let shown = Double(normalized), shown > 0 else { continue }
+            out[site.rawValue] = inInches ? shown * 2.54 : shown
         }
         return out
     }
