@@ -285,10 +285,14 @@ struct LabReportUploadView: View {
             guard let reportId = report.id else { return }
 
             let biomarkerResults = output.results.map { extracted in
-                let normalized = BiomarkerKnowledgeBase.normalize(
+                // Convert value AND reference bounds together so they stay on the
+                // same scale (#biomarker-accuracy 2026-07-14).
+                let normalized = BiomarkerKnowledgeBase.normalizeResult(
                     biomarkerId: extracted.biomarkerId,
                     value: extracted.value,
-                    fromUnit: extracted.unit
+                    fromUnit: extracted.unit,
+                    referenceLow: extracted.referenceLow,
+                    referenceHigh: extracted.referenceHigh
                 )
                 return BiomarkerResult(
                     reportId: reportId,
@@ -297,8 +301,8 @@ struct LabReportUploadView: View {
                     unit: extracted.unit,
                     normalizedValue: normalized.value,
                     normalizedUnit: normalized.unit,
-                    referenceLow: extracted.referenceLow,
-                    referenceHigh: extracted.referenceHigh,
+                    referenceLow: normalized.referenceLow,
+                    referenceHigh: normalized.referenceHigh,
                     confidence: extracted.confidence,
                     isAIParsed: extracted.isAIParsed
                 )

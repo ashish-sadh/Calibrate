@@ -10,7 +10,7 @@ import Foundation
 public enum LabAliases {
 
     public static let byBiomarkerId: [String: [String]] = [
-        "total_cholesterol": ["cholesterol, total", "cholesterol,total", "total cholesterol", "cholesterol - total", "serum cholesterol"],
+        "total_cholesterol": ["cholesterol, total", "cholesterol,total", "total cholesterol", "cholesterol - total", "serum cholesterol", "t. cholesterol", "t.cholesterol", "s. cholesterol", "s.cholesterol"],
         "hdl_cholesterol": ["hdl cholesterol", "hdl-c", "hdl chol", "hdl - cholesterol", "cholesterol - hdl", "hdl"],
         "ldl_cholesterol": ["ldl cholesterol", "ldl-cholesterol", "ldl-c", "ldl chol calc", "ldl chol", "ldl - cholesterol", "cholesterol - ldl", "ldl"],
         "vldl_cholesterol": ["vldl cholesterol", "vldl-c", "vldl chol", "vldl"],
@@ -18,7 +18,9 @@ public enum LabAliases {
         "non_hdl_cholesterol": ["non hdl cholesterol", "non-hdl cholesterol", "non hdl", "non-hdl"],
         "apolipoprotein_b": ["apolipoprotein b", "apo b", "apob"],
         "lipoprotein_a": ["lipoprotein (a)", "lipoprotein(a)", "lp(a)"],
-        "glucose": ["glucose, fasting", "fasting glucose", "glucose fasting", "fasting blood sugar", "blood glucose", "glucose"],
+        "glucose": ["glucose, fasting", "fasting glucose", "glucose fasting", "fasting blood sugar",
+                    "post prandial blood sugar", "random blood sugar", "blood glucose",
+                    "blood sugar", "rbs", "fbs", "ppbs", "glucose"],
         "hba1c": ["hemoglobin a1c", "hba1c", "glycated hemoglobin", "glycosylated hemoglobin", "hb a1c", "a1c"],
         "insulin": ["insulin, fasting", "fasting insulin", "insulin"],
         "homa_ir": ["homa-ir", "homa ir", "homa index"],
@@ -37,7 +39,7 @@ public enum LabAliases {
         "free_t3": ["free t3", "ft3", "t3, free", "free triiodothyronine"],
         "total_t4": ["total t4", "t4, total", "thyroxine (t4)", "thyroxine total", "t4 total"],
         "total_t3": ["total t3", "t3, total", "triiodothyronine (t3)", "triiodothyronine total", "t3 total"],
-        "vitamin_d": ["vitamin d,25-oh", "vitamin d, 25-oh", "vitamin d 25-oh", "25-hydroxyvitamin d", "25 oh vitamin d", "25(oh)d", "vitamin d (25-oh)", "vitamin d3", "vitamin d"],
+        "vitamin_d": ["vitamin d,25-oh", "vitamin d, 25-oh", "vitamin d 25-oh", "25-hydroxyvitamin d", "25 oh vitamin d", "25(oh)d", "vitamin d (25-oh)", "vitamin d3", "vitamin d", "vit d3", "vit. d3", "vit d", "vit. d", "vit-d"],
         "vitamin_b12": ["vitamin b12", "vitamin b-12", "b-12", "b12", "cobalamin", "cyanocobalamin"],
         "folate": ["folate", "folic acid", "serum folate"],
         "iron": ["iron, total", "iron,total", "serum iron", "iron"],

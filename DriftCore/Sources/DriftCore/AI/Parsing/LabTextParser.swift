@@ -58,16 +58,30 @@ public enum LabTextParser {
 
     // MARK: - Entry point
 
+    /// Normalize the two micro-sign codepoints OCR emits (U+00B5 µ, U+03BC μ)
+    /// to ASCII "u" so unit detection ("µmol/L" → "umol/L") and the SI
+    /// conversion table actually fire. Without this, "Creatinine 80 µmol/L"
+    /// fell through to the default mg/dL unit and stored 80 mg/dL (2026-07-14).
+    public static func normalizeMicroSign(_ s: String) -> String {
+        s.replacingOccurrences(of: "\u{00B5}", with: "u")
+         .replacingOccurrences(of: "\u{03BC}", with: "u")
+    }
+
     /// Parse OCR/PDF text into biomarker rows. Deterministic and pure.
     public static func parse(text: String) -> Output {
-        let rawLines = text.components(separatedBy: .newlines)
+        let rawLines = normalizeMicroSign(text).components(separatedBy: .newlines)
         let lines = rawLines.map { line in
             line.replacingOccurrences(of: #"Page\s*%?\s*\d+\s*of\s*\d+"#, with: "", options: .regularExpression)
                 .trimmingCharacters(in: .whitespaces)
         }
 
         let labName = detectLabName(from: lines)
-        let reportDate = detectReportDate(from: lines)
+        // Indian labs write DD/MM/YYYY; US labs MM/DD/YYYY. When the lab is a
+        // known Indian provider, prefer day-first for the ambiguous ≤12/≤12 case.
+        let indianLabs: Set<String> = ["Thyrocare", "Dr Lal PathLabs", "SRL Diagnostics",
+                                       "Metropolis", "Apollo Diagnostics", "Agilus Diagnostics", "Neuberg Diagnostics"]
+        let dayFirst = labName.map { indianLabs.contains($0) } ?? false
+        let reportDate = detectReportDate(from: lines, dayFirst: dayFirst)
         let mergedLines = mergeMultiLineEntries(lines)
 
         var results: [Parsed] = []
@@ -112,6 +126,13 @@ public enum LabTextParser {
                     if !aliasAtWordBoundary(alias, in: lower, matchRange: range) { continue }
                     if needsWordBoundaryCheck(definition.id, alias: alias, afterMatch: lower[range.upperBound...]) {
                         continue
+                    }
+                    // No HDL alias may match a "Non-HDL Cholesterol" line — that's
+                    // a different biomarker. Applies to every hdl-prefixed alias
+                    // ("hdl", "hdl cholesterol", …), keyed on the text before it.
+                    if definition.id == "hdl_cholesterol" {
+                        let before = String(lower[..<range.lowerBound])
+                        if before.hasSuffix("non-") || before.hasSuffix("non ") || before.hasSuffix("non–") { continue }
                     }
                     candidates.append(Candidate(lineIndex: i, aliasLength: alias.count, matchStart: range.lowerBound))
                 }
@@ -175,7 +196,9 @@ public enum LabTextParser {
         case "albumin":
             if alias == "albumin" && after.hasPrefix("/globulin") { return true }
         case "iron":
+            // Not TIBC, and not "Iron Saturation" / "Iron % Saturation".
             if alias == "iron" && after.hasPrefix(" binding") { return true }
+            if alias == "iron" && (after.hasPrefix(" saturation") || after.hasPrefix(" % saturation") || after.hasPrefix(" sat")) { return true }
         case "alt":
             if alias == "alt" && after.hasPrefix("ernative") { return true }
         case "ast":
@@ -213,7 +236,11 @@ public enum LabTextParser {
             if afterNumLower.hasPrefix("-oh") || afterNumLower.hasPrefix("-hydroxy") { continue }
             if beforeNum.hasSuffix("/") || afterNum.hasPrefix("/") { continue }
             if value == 0 && afterTrimmed.hasPrefix("1") { continue }
-            if value > 10000 && definition.absoluteHigh < 1000 { continue }
+            // Reject a wildly-out-of-scale number ONLY when it isn't an absolute
+            // cell count. Indian reports give WBC/platelets as absolute cells
+            // ("12500 cells/uL", "450000 /cumm"); without the unit check the
+            // guard dropped the real count and grabbed the range low instead.
+            if value > 10000 && definition.absoluteHigh < 1000 && !looksLikeAbsoluteCount(afterTrimmed, fullLine) { continue }
             if beforeNum.hasSuffix("-") || beforeNum.hasSuffix("–") { continue }
             if afterNum.hasPrefix(":") { continue }
             if beforeNum.hasSuffix(":") { continue }
@@ -230,6 +257,14 @@ public enum LabTextParser {
             )
         }
         return nil
+    }
+
+    /// True when an absolute-cell-count unit sits near the value — the only
+    /// case where a 5-figure result is legitimate for a K/uL-scaled marker.
+    static func looksLikeAbsoluteCount(_ afterNumber: String, _ fullLine: String) -> Bool {
+        let hay = (afterNumber + " " + fullLine).lowercased()
+        return hay.contains("cells/ul") || hay.contains("cells/cumm") || hay.contains("/cumm")
+            || hay.contains("cumm") || hay.contains("/ul")
     }
 
     static func detectUnit(afterNumber: String, fullLine: String, defaultUnit: String) -> String {
@@ -404,7 +439,7 @@ public enum LabTextParser {
         return nil
     }
 
-    static func detectReportDate(from lines: [String]) -> String? {
+    static func detectReportDate(from lines: [String], dayFirst: Bool = false) -> String? {
         let monthMap = ["jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
                         "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12]
 
@@ -412,30 +447,35 @@ public enum LabTextParser {
             let lower = line.lowercased()
             guard lower.contains("collect") else { continue }
             if lower.contains("received") { continue }
-            if let date = extractFirstDate(from: line, monthMap: monthMap) { return date }
+            if let date = extractFirstDate(from: line, monthMap: monthMap, dayFirst: dayFirst) { return date }
         }
         for line in lines.prefix(50) {
             let lower = line.lowercased()
             guard lower.contains("received on") || lower.contains("date entered") || lower.contains("reported") else { continue }
-            if let date = extractFirstDate(from: line, monthMap: monthMap) { return date }
+            if let date = extractFirstDate(from: line, monthMap: monthMap, dayFirst: dayFirst) { return date }
         }
         for line in lines.prefix(40) {
             let lower = line.lowercased()
             if lower.contains("reference") || lower.contains("range") || lower.contains("result") { continue }
-            if let date = extractFirstDate(from: line, monthMap: monthMap) { return date }
+            if let date = extractFirstDate(from: line, monthMap: monthMap, dayFirst: dayFirst) { return date }
         }
         return nil
     }
 
-    static func extractFirstDate(from line: String, monthMap: [String: Int]) -> String? {
-        // MM/DD/YYYY or DD/MM/YYYY — ambiguous; assume US MM/DD unless first > 12.
+    static func extractFirstDate(from line: String, monthMap: [String: Int], dayFirst: Bool = false) -> String? {
+        // MM/DD/YYYY (US) vs DD/MM/YYYY (Indian/intl). When the first field > 12
+        // the order is unambiguous; otherwise use `dayFirst` (set for detected
+        // Indian labs) to break the tie instead of always assuming US.
         if let regex = try? NSRegularExpression(pattern: #"(\d{1,2})/(\d{1,2})/(\d{4})"#),
            let match = regex.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)),
            let r1 = Range(match.range(at: 1), in: line), let a = Int(line[r1]),
            let r2 = Range(match.range(at: 2), in: line), let b = Int(line[r2]),
            let r3 = Range(match.range(at: 3), in: line), let y = Int(line[r3]),
            y > 2000 {
-            let (m, d) = (a > 12 && b <= 12) ? (b, a) : (a, b)   // DD/MM fallback for Indian reports
+            let (m, d): (Int, Int)
+            if a > 12 && b <= 12 { (m, d) = (b, a) }        // first field must be the day
+            else if b > 12 && a <= 12 { (m, d) = (a, b) }   // second field must be the day → US
+            else { (m, d) = dayFirst ? (b, a) : (a, b) }    // ambiguous → lab-origin tiebreak
             if m >= 1, m <= 12, d >= 1, d <= 31 {
                 return String(format: "%04d-%02d-%02d", y, m, d)
             }

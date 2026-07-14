@@ -88,26 +88,59 @@ public enum BiomarkerKnowledgeBase {
         "calcium": ["mmol/L": 4.008, "mmol/l": 4.008],
         // Cortisol: nmol/L -> ug/dL (divide by 27.59)
         "cortisol": ["nmol/L": 1.0 / 27.59, "nmol/l": 1.0 / 27.59],
+        // WBC / platelets reported as absolute cells -> K/uL (2026-07-14: Indian
+        // reports use cells/uL and /cumm; without this the value stayed 7200 vs
+        // a 1–30 K/uL range and showed a false out-of-range status).
+        "wbc": ["cells/uL": 0.001, "cells/ul": 0.001, "/cumm": 0.001, "cells/cumm": 0.001, "cumm": 0.001],
+        "platelets": ["cells/uL": 0.001, "cells/ul": 0.001, "/cumm": 0.001, "cells/cumm": 0.001, "cumm": 0.001, "lakh/cumm": 100.0],
+        // Thyroid free hormones — pmol/L is the international default (~13× off
+        // if stored raw).
+        "free_t4": ["pmol/L": 0.0777, "pmol/l": 0.0777],
+        "free_t3": ["pmol/L": 0.651, "pmol/l": 0.651],
+        "estradiol": ["pmol/L": 1.0 / 3.671, "pmol/l": 1.0 / 3.671],
+        // Common international SI units with no prior conversion.
+        "uric_acid": ["umol/L": 1.0 / 59.48, "umol/l": 1.0 / 59.48],
+        "magnesium": ["mmol/L": 2.43, "mmol/l": 2.43],
+        "phosphorus": ["mmol/L": 3.097, "mmol/l": 3.097],
+        "urea": ["mmol/L": 6.006, "mmol/l": 6.006],   // urea mmol/L -> mg/dL
     ]
+
+    /// Conversion multiplier to the standard unit for a marker, or nil when
+    /// none applies (already-standard or unknown). Shared by value AND
+    /// reference-bound conversion so they never end up on different scales.
+    public static func conversionMultiplier(biomarkerId: String, fromUnit: String) -> Double? {
+        guard let def = byId[biomarkerId] else { return nil }
+        let cleanFrom = fromUnit.trimmingCharacters(in: .whitespaces)
+            .replacingOccurrences(of: "\u{00B5}", with: "u")
+            .replacingOccurrences(of: "\u{03BC}", with: "u")
+        if cleanFrom == def.unit || cleanFrom.lowercased() == def.unit.lowercased() { return 1.0 }
+        return unitConversions[biomarkerId]?[cleanFrom]
+    }
 
     /// Normalize a value from source unit to the standard unit for a biomarker.
     public static func normalize(biomarkerId: String, value: Double, fromUnit: String) -> (value: Double, unit: String) {
         guard let def = byId[biomarkerId] else { return (value, fromUnit) }
-
-        // Already in standard unit
-        let standardUnit = def.unit
         let cleanFrom = fromUnit.trimmingCharacters(in: .whitespaces)
-        if cleanFrom == standardUnit || cleanFrom.lowercased() == standardUnit.lowercased() {
-            return (value, standardUnit)
+            .replacingOccurrences(of: "\u{00B5}", with: "u")
+            .replacingOccurrences(of: "\u{03BC}", with: "u")
+        if let multiplier = conversionMultiplier(biomarkerId: biomarkerId, fromUnit: cleanFrom) {
+            return (value * multiplier, def.unit)
         }
-
-        // Check conversion table
-        if let conversions = unitConversions[biomarkerId],
-           let multiplier = conversions[cleanFrom] {
-            return (value * multiplier, standardUnit)
-        }
-
-        // No conversion found — return as-is
+        // No conversion found — return as-is (with the micro-sign cleaned).
         return (value, cleanFrom)
+    }
+
+    /// Convert a value AND its reference bounds together so they never end up on
+    /// different scales (2026-07-14 fix: value was converted while the stored
+    /// reference bounds stayed in the source unit).
+    public static func normalizeResult(
+        biomarkerId: String, value: Double, fromUnit: String,
+        referenceLow: Double?, referenceHigh: Double?
+    ) -> (value: Double, unit: String, referenceLow: Double?, referenceHigh: Double?) {
+        let (v, u) = normalize(biomarkerId: biomarkerId, value: value, fromUnit: fromUnit)
+        guard let m = conversionMultiplier(biomarkerId: biomarkerId, fromUnit: fromUnit), m != 1.0 else {
+            return (v, u, referenceLow, referenceHigh)
+        }
+        return (v, u, referenceLow.map { $0 * m }, referenceHigh.map { $0 * m })
     }
 }
