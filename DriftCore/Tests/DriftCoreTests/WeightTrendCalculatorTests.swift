@@ -365,11 +365,16 @@ func deficitRespondsToConfig() async throws {
 }
 
 @Test func configSaveLoad() async throws {
+    // Restore by REMOVING the key, not by saving .default: a persisted
+    // "default" freezes whatever today's compiled defaults are, and leaks
+    // into every loadConfig()-based test in later runs (2026-07-13: a
+    // kalman-default experiment run persisted engine=.kalman here and
+    // silently flipped the whole gold suite's engine).
+    defer { UserDefaults.standard.removeObject(forKey: "drift_algorithm_config") }
     var c = WeightTrendCalculator.AlgorithmConfig.default
     c.kcalPerKg = 7777
     WeightTrendCalculator.saveConfig(c)
     #expect(WeightTrendCalculator.loadConfig().kcalPerKg == 7777)
-    WeightTrendCalculator.saveConfig(.default)
 }
 
 @Test func configPresetOrdering() async throws {

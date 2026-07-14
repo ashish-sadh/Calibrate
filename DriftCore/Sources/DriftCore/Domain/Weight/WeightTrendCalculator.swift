@@ -46,18 +46,49 @@ public enum WeightTrendCalculator {
         /// `emaHalfLifeDays`, a time-weighted parameterization).
         public var emaAlpha: Double
 
+        /// Which rate estimator runs inside the protective layers (estimation
+        /// unification P1, 2026-07-13). `.kalman` = local-linear-trend filter
+        /// with posterior-CI confidence; `.heuristic` = the 8d-resmooth OLS +
+        /// Mann–Kendall stack, kept as the rollback/fallback engine. The
+        /// layers around the estimator (outlier pre-filter, display EMA,
+        /// evidence bound, insufficiency, maintaining band, clamp, conflict
+        /// gate) are engine-independent.
+        public enum Engine: String, Codable, Sendable {
+            case heuristic, kalman
+        }
+        public var engine: Engine
+
         init(
             emaHalfLifeDays: Double,
             regressionWindowDays: Int,
             kcalPerKg: Double,
             maintainingThresholdKgPerWeek: Double,
-            emaAlpha: Double = 0.1
+            emaAlpha: Double = 0.1,
+            engine: Engine = .heuristic
         ) {
             self.emaHalfLifeDays = emaHalfLifeDays
             self.regressionWindowDays = regressionWindowDays
             self.kcalPerKg = kcalPerKg
             self.maintainingThresholdKgPerWeek = maintainingThresholdKgPerWeek
             self.emaAlpha = emaAlpha
+            self.engine = engine
+        }
+
+        // Custom Codable: configs persisted before the `engine` field decode
+        // with the current default instead of failing.
+        private enum CodingKeys: String, CodingKey {
+            case emaHalfLifeDays, regressionWindowDays, kcalPerKg,
+                 maintainingThresholdKgPerWeek, emaAlpha, engine
+        }
+
+        public init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            emaHalfLifeDays = try c.decode(Double.self, forKey: .emaHalfLifeDays)
+            regressionWindowDays = try c.decode(Int.self, forKey: .regressionWindowDays)
+            kcalPerKg = try c.decode(Double.self, forKey: .kcalPerKg)
+            maintainingThresholdKgPerWeek = try c.decode(Double.self, forKey: .maintainingThresholdKgPerWeek)
+            emaAlpha = try c.decodeIfPresent(Double.self, forKey: .emaAlpha) ?? 0.1
+            engine = try c.decodeIfPresent(Engine.self, forKey: .engine) ?? .heuristic
         }
 
         public static let `default` = AlgorithmConfig(
@@ -142,6 +173,17 @@ public enum WeightTrendCalculator {
     /// with "Early trend — firming up" framing; above it, "Based on last N
     /// days".
     static let significanceZThreshold: Double = 2.0
+
+    /// Kalman-engine publication ramp (estimation unification P1,
+    /// 2026-07-13). The posterior z = |rate|/std lives on a different scale
+    /// than Mann–Kendall Z — probe measurements with the default filter
+    /// config: flat noise ≈ 0.4, sparse/weekly real trends ≈ 0.75–0.85,
+    /// 10-day regime change ≈ 0.95, steady 0.35 kg/wk ≈ 1.2. Calibrated so
+    /// the pinned gold scenarios publish and the Monte-Carlo flat families
+    /// hold their phantom bounds; recalibrate ONLY with both suites green.
+    static let kalmanRampStartZ = 0.65
+    static let kalmanRampFullZ = 0.95
+    static let kalmanSignificanceZ = 1.15
 
     /// Escalation window for SLOW trends (operator directive 2026-07-08:
     /// "Holding steady should be rare"). A real 0.15–0.3 kg/wk trend often
@@ -353,21 +395,49 @@ public enum WeightTrendCalculator {
         //   inside the ramp             → real-but-young trend fades in,
         //     scaled by confidence (no hard boundary to flap across)
         //   Z ≥ significanceZThreshold  → full value, confident framing.
-        var rate = weeklyRateForWindow(points: dataPoints, windowDays: config.regressionWindowDays)
-        // Slow-trend escalation: recent window is directional but below full
-        // confidence → let the 35d window certify it, if it agrees in sign
-        // and is MORE confident. Recent-flat (sub-band) never escalates.
-        if let p = rate, p.zStat < Self.reportRampFullZ,
+        var rate: (kgPerWeek: Double, windowDays: Int, zStat: Double)?
+        let engineRampFull: Double
+        switch config.engine {
+        case .kalman:
+            // Estimation-unification engine (P1): local-linear-trend Kalman
+            // over the same 45d evidence bound; recency weighting is
+            // intrinsic (rate time-constant ≈ 6–7d), confidence
+            // z = |rate|/posteriorStd feeds the engine-calibrated ramp below.
+            // No re-smooth, no spike seed — those were OLS compensations.
+            rate = kalmanRateForWindow(points: dataPoints)
+            engineRampFull = Self.kalmanRampFullZ
+        case .heuristic:
+            rate = weeklyRateForWindow(points: dataPoints, windowDays: config.regressionWindowDays)
+            engineRampFull = Self.reportRampFullZ
+        }
+        // Slow-trend escalation — a PROTECTIVE LAYER shared by both engines
+        // (operator 2026-07-13: keep the learned fallbacks around the simpler
+        // core). A genuine 0.1–0.35 kg/wk trend is below any short-window
+        // estimator's confidence floor; the 35d Mann–Kendall window certifies
+        // it (more pairs = more power) when it is CONFIDENT (Z≥2.0 — flatNoise
+        // seed 99 reaches 1.7 by chance) and agrees in sign. Recent-flat
+        // (sub-band) never escalates: recent flat is affirmative evidence of
+        // maintaining (#842 / regimeChange_recentMaintenance).
+        if let p = rate, p.zStat < engineRampFull,
            abs(p.kgPerWeek) >= config.maintainingThresholdKgPerWeek,
            let wide = weeklyRateForWindow(points: dataPoints, windowDays: Self.slowTrendWindowDays),
-           wide.zStat >= Self.significanceZThreshold,   // wide window must be CONFIDENT (Z≥2.0), not merely improved — a 35d slice of flat noise can reach the ramp band by chance without ever being a trend (caught by flatNoise seed 99 at Z≈1.7)
+           wide.zStat >= Self.significanceZThreshold,
            (wide.kgPerWeek > 0) == (p.kgPerWeek > 0) {
-            rate = wide
+            // The certified rate carries MK confidence (Z≥2.0 > both engines'
+            // full-ramp constants) — publishes at full weight either way.
+            rate = (wide.kgPerWeek, wide.windowDays, wide.zStat)
         }
         let hasInsufficientData = (rate == nil)
         let rawRate = clampRate(rate?.kgPerWeek ?? 0)
         let zStat = rate?.zStat ?? 0
-        let rampWeight = min(1, max(0, (zStat - Self.reportRampStartZ) / (Self.reportRampFullZ - Self.reportRampStartZ)))
+        // The ramp is engine-calibrated: Mann–Kendall Z and a Kalman
+        // posterior z are different statistics on different scales (probe
+        // 2026-07-13: real trends land ~1.7–2.6 on MK, ~0.75–1.15 on the
+        // posterior). Same ramp semantics, engine-specific constants.
+        let (rampStart, rampFull, significanceZ) = config.engine == .kalman
+            ? (Self.kalmanRampStartZ, Self.kalmanRampFullZ, Self.kalmanSignificanceZ)
+            : (Self.reportRampStartZ, Self.reportRampFullZ, Self.significanceZThreshold)
+        let rampWeight = min(1, max(0, (zStat - rampStart) / (rampFull - rampStart)))
         let reportedRate = rawRate * rampWeight
         // Below the maintaining band ⇒ report exactly flat (rate 0): a slope
         // that tiny is "holding steady", and a non-zero deficit beside a
@@ -404,7 +474,7 @@ public enum WeightTrendCalculator {
             rateWindowDays: rateWindowDays,
             hasInsufficientData: hasInsufficientData,
             rawWeeklyRateKg: rawRate,
-            trendIsSignificant: zStat >= Self.significanceZThreshold
+            trendIsSignificant: zStat >= significanceZ
         )
     }
 
@@ -481,6 +551,25 @@ public enum WeightTrendCalculator {
         // the magnitude uses — a smoothed series' autocorrelation fakes
         // confidence on genuinely flat data.
         return (slopePerDay * 7, min(used, span), trendZStatistic(pts))
+    }
+
+    /// Kalman-engine rate: run the local-linear-trend filter over the same
+    /// 45-day evidence bound the heuristic uses (stale weigh-ins can't anchor
+    /// the rate either way, #842 — a protective layer, not an estimator
+    /// choice), with the same span-based sufficiency contract. `zStat` is the
+    /// posterior confidence |rate|/std, consumed by the identical publication
+    /// ramp downstream.
+    static func kalmanRateForWindow(
+        points: [WeightDataPoint],
+        config: KalmanWeightTrend.Config = .default
+    ) -> (kgPerWeek: Double, windowDays: Int, zStat: Double)? {
+        guard let start = Calendar.current.date(byAdding: .day, value: -maxRateLookbackDays, to: Date()) else { return nil }
+        let pts = points.filter { $0.date >= start }
+        guard isSufficient(pts), let first = pts.first, let last = pts.last else { return nil }
+        let observations = pts.map { (date: $0.date, weightKg: $0.actualWeight ?? $0.emaWeight) }
+        guard let out = KalmanWeightTrend.run(observations: observations, config: config) else { return nil }
+        let span = max(1, daysBetween(first.date, last.date))
+        return (out.weeklyRateKg, min(maxRateLookbackDays, span), out.rateZ)
     }
 
     /// How statistically distinguishable from flat is the trailing trend?
