@@ -189,6 +189,22 @@ public enum WeightTrendCalculator {
         /// transparency caveat as `rawWeeklyRateKg`.
         public var rawEstimatedDailyDeficit: Double { rawWeeklyRateKg * config.kcalPerKg / 7 }
 
+        /// True when the short-window energy estimate disagrees in SIGN with
+        /// the 30-day trend change — e.g. "Est. Deficit −170/day" printed next
+        /// to "30-day +1.0 lbs Increase" on the same screen (field report
+        /// 2026-07-13: a 5-day water plunge bent the 20-day slope negative on
+        /// a body that gained over the month). The UI renders the soft gray
+        /// treatment instead of goal-colored confidence while the signals
+        /// argue; a genuine regime change clears within ~a week as the 30-day
+        /// delta rolls over. The 0.15 kg dead-band keeps a young-but-real
+        /// trend (30-day near zero) publishing normally.
+        public var energySignalConflicts: Bool {
+            guard let thirtyDay = weightChanges.thirtyDay, weeklyRateKg != 0 else { return false }
+            let deadbandKg = 0.15
+            return (weeklyRateKg < 0 && thirtyDay > deadbandKg)
+                || (weeklyRateKg > 0 && thirtyDay < -deadbandKg)
+        }
+
         /// True when the raw weigh-ins' slope clears the statistical noise
         /// threshold. Since 2026-07-07 this is a CONFIDENCE hint for the UI
         /// ("early trend" vs "based on last N days") — it no longer zeroes

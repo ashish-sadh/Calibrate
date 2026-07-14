@@ -32,6 +32,37 @@ enum FieldScenario20260713 {
     }
 }
 
+// MARK: - energySignalConflicts (short-window rate vs 30-day change)
+
+private func makeTrend(rateKgPerWeek: Double, thirtyDayKg: Double?) -> WeightTrendCalculator.WeightTrend {
+    WeightTrendCalculator.WeightTrend(
+        currentEMA: 54.0, previousEMA: 54.0,
+        weeklyRateKg: rateKgPerWeek,
+        estimatedDailyDeficit: rateKgPerWeek * 7700 / 7,
+        trendDirection: rateKgPerWeek < 0 ? .losing : (rateKgPerWeek > 0 ? .gaining : .maintaining),
+        projection30Day: nil, dataPoints: [],
+        weightChanges: .init(threeDay: nil, sevenDay: nil, fourteenDay: nil,
+                             thirtyDay: thirtyDayKg, ninetyDay: nil),
+        config: .default, rateWindowDays: 20)
+}
+
+@Test func conflictWhenShortRateOpposesThirtyDay() {
+    // The field screen: −0.34 lbs/wk (−0.15 kg/wk) next to 30-day +1.0 lbs (+0.45 kg)
+    #expect(makeTrend(rateKgPerWeek: -0.15, thirtyDayKg: 0.45).energySignalConflicts)
+    #expect(makeTrend(rateKgPerWeek: 0.2, thirtyDayKg: -0.5).energySignalConflicts)
+}
+
+@Test func noConflictWhenSignsAgreeOrThirtyDayIsQuiet() {
+    #expect(!makeTrend(rateKgPerWeek: -0.2, thirtyDayKg: -0.6).energySignalConflicts,
+            "agreeing signals publish normally")
+    #expect(!makeTrend(rateKgPerWeek: -0.15, thirtyDayKg: 0.1).energySignalConflicts,
+            "a near-zero 30-day is a young trend, not a conflict (dead-band)")
+    #expect(!makeTrend(rateKgPerWeek: -0.15, thirtyDayKg: nil).energySignalConflicts,
+            "no 30-day data → nothing to conflict with")
+    #expect(!makeTrend(rateKgPerWeek: 0, thirtyDayKg: 0.5).energySignalConflicts,
+            "maintaining has no sign to conflict")
+}
+
 @Test func waterPlungeMustNotReadAsLargeDeficit() {
     let t = WeightTrendCalculator.calculateTrend(
         entries: FieldScenario20260713.entries(),

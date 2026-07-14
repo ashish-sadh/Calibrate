@@ -70,6 +70,19 @@ struct WeightInsightsView: View {
                         tooltip: "Your trend line is flat over the past \(trend.rateWindowDays) days (raw slope \(String(format: "%+.2f", unit.convert(fromKg: trend.rawWeeklyRateKg))) \(unit.displayName)/wk) — the day-to-day ups and downs are mostly water.",
                         nudge: "Holding steady"
                     )
+                } else if trend.energySignalConflicts {
+                    // Short-window rate disagrees in sign with the 30-day
+                    // change (water plunge vs monthly picture) — soft gray,
+                    // ~ prefix, no goal colors until the signals agree.
+                    metricCell(
+                        id: "weekly",
+                        label: "Weekly",
+                        value: String(format: "~%+.2f", unit.convert(fromKg: trend.weeklyRateKg)),
+                        valueUnit: "\(unit.displayName)/wk",
+                        color: Theme.textSecondary,
+                        tooltip: "The last \(trend.rateWindowDays) days point \(trend.weeklyRateKg < 0 ? "down" : "up"), but your 30-day trend points the other way — recent days are likely water. Treat this as a soft read until they agree.",
+                        nudge: "Signals disagree — firming up"
+                    )
                 } else {
                     let rate = trend.weeklyRateKg
                     metricCell(
@@ -116,6 +129,20 @@ struct WeightInsightsView: View {
                             ? "Roughly \(String(format: "%+.0f", softBalance)) kcal/day — within noise of maintenance over the past \(trend.rateWindowDays) days. A soft read, not a target."
                             : "Your trend line is flat over the past \(trend.rateWindowDays) days — no meaningful surplus or deficit is showing.",
                         nudge: "Holding steady"
+                    )
+                } else if trend.energySignalConflicts {
+                    // "−170 deficit" next to "30-day +1.0 Increase" is the
+                    // contradiction class (field 2026-07-13) — soften until
+                    // the windows agree.
+                    let softBalance = (trend.estimatedDailyDeficit / 10).rounded() * 10
+                    metricCell(
+                        id: "deficit",
+                        label: "Est. Balance",
+                        value: String(format: "~%+.0f", softBalance),
+                        valueUnit: "kcal/day",
+                        color: Theme.textSecondary,
+                        tooltip: "The last \(trend.rateWindowDays) days suggest \(String(format: "%+.0f", softBalance)) kcal/day, but your 30-day trend disagrees — recent days are likely water. A soft read, not a target.",
+                        nudge: "Recent dip — firming up"
                     )
                 } else {
                     let deficit = trend.estimatedDailyDeficit
