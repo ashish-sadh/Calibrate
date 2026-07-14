@@ -328,16 +328,13 @@ public enum FoodService {
     /// tokens, sorted — so "AG1 - Athletic Greens", "Athletic Greens - AG1"
     /// and "Ag1  (athletic greens)" all collapse to the same key.
     nonisolated public static func normalizedFoodKey(_ name: String) -> String {
-        name.lowercased()
-            .components(separatedBy: CharacterSet.alphanumerics.inverted)
-            .filter { !$0.isEmpty }
-            .sorted()
-            .joined(separator: " ")
+        Food.normalizedKey(name)
     }
 
     /// Display name for an OpenFoodFacts product. Appends the brand only when
     /// it adds information — "AG1" + brand "AG1" must not become "AG1 - AG1".
-    nonisolated static func offDisplayName(name: String?, brand: String?) -> String {
+    /// Public: FoodSearchView's online path builds the same names.
+    nonisolated public static func offDisplayName(name: String?, brand: String?) -> String {
         let n = (name ?? "").trimmingCharacters(in: .whitespaces)
         let b = (brand ?? "").trimmingCharacters(in: .whitespaces)
         if n.isEmpty { return b }

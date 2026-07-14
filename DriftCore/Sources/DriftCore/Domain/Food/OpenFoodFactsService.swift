@@ -172,7 +172,7 @@ public enum OpenFoodFactsService {
     }
 
     /// Try to parse serving size like "30g", "100 ml", "8 fl oz", "1 cup (240g)" into grams.
-    static func parseServingSize(_ str: String?) -> Double? {
+    public static func parseServingSize(_ str: String?) -> Double? {
         guard let str else { return nil }
         let cleaned = str.lowercased()
         // Look for number followed by 'g'

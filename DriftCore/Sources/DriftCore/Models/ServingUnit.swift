@@ -213,13 +213,13 @@ public struct FoodUnit: Hashable {
               u.rangeOfCharacter(from: .decimalDigits) == nil,           // "40g" / "4 oz" leftover
               u.rangeOfCharacter(from: .whitespacesAndNewlines) == nil   // multi-word junk
         else { return nil }
-        // A "scoop" of exactly 100 g is almost never a real scoop — it's
+        // A small-measure label at exactly 100 g is almost never real — it's
         // per-100g fallback data (online imports and LLM-created foods default
-        // servingSize to 100) wearing a scoop label. AG1 field bug 2026-07-14:
-        // "1 scoop (100g) = 416 cal" for a 12 g / 50 cal product. Real scoops
-        // run ~5–60 g (mass gainers excepted, but those seed real scoop sizes,
-        // not the 100 default). Fall back to grams.
-        if u == "scoop" && ss == 100 { return nil }
+        // servingSize to 100) wearing a unit label. AG1 field bug 2026-07-14:
+        // "1 scoop (100g) = 416 cal" for a 12 g / 50 cal product. No seeded
+        // row trips this (audit: scoops seed 5–150 g real weights, tbsp ≤20 g),
+        // so it's a pure guard against import regressions. Fall back to grams.
+        if ["scoop", "tbsp", "tsp", "shot"].contains(u) && ss == 100 { return nil }
         // The seed's serving IS one whole unit, so 1 <serving_unit> == servingSize grams.
         return FoodUnit(label: u, gramsEquivalent: ss)
     }

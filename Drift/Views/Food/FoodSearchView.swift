@@ -685,7 +685,10 @@ struct FoodSearchView: View {
                 return nil
             }()
             var food = Food(
-                name: [p.name, p.brand].compactMap { $0 }.joined(separator: " - "),
+                // Brand only when it adds information (no "AG1 - AG1"); the
+                // normalized-key dedupe in saveScannedFood stops rebranded
+                // duplicates from persisting (audit 2026-07-14).
+                name: FoodService.offDisplayName(name: p.name, brand: p.brand),
                 category: "Online",
                 servingSize: servingG,
                 servingUnit: "g",

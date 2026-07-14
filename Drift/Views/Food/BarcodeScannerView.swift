@@ -252,10 +252,16 @@ struct BarcodeLookupView: View {
     }
 
     private func logOCRResult() {
+        // The label's macros are PER SERVING, so the stored serving size must
+        // be the label's serving, not a hardcoded 100 g — saving "AG1: 50 cal"
+        // as a 100 g serving made every later gram-based log 8× off (inverse
+        // of the AG1 phantom-scoop bug; audit 2026-07-14). 100 g only when the
+        // label's serving size can't be parsed.
+        let labelServingG = OpenFoodFactsService.parseServingSize(ocrResult?.servingSize)
         var food = Food(
             name: editName.isEmpty ? "Scanned Food" : editName,
             category: "Scanned",
-            servingSize: 100, servingUnit: "g",
+            servingSize: labelServingG ?? 100, servingUnit: "g",
             calories: Double(editCalories) ?? 0,
             proteinG: Double(editProtein) ?? 0,
             carbsG: Double(editCarbs) ?? 0,

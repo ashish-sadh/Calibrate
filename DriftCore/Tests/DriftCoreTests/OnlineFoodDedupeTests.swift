@@ -80,6 +80,36 @@ struct OnlineFoodDedupeTests {
         #expect(!survivors.contains(dupe3))
     }
 
+    @Test func saveScannedFoodRejectsNormalizedDuplicates() throws {
+        // The choke-point fix: EVERY caller (FoodSearchView, chat fallback,
+        // barcode, OCR) goes through saveScannedFood, so same-token dupes
+        // ("AG1"/"Ag1"/"ag1!") can't persist regardless of surface. Brand-
+        // AUGMENTED names ("Athletic Greens - AG1") carry extra tokens and are
+        // deliberately allowed — token-subset matching would wrongly reject
+        // real distinct products like "AG1 Travel Packs".
+        let db = try AppDatabase.empty()
+        _ = try insertFood(db, name: "Ag1", category: "Supplements & Shakes", calories: 50)
+        var caseDupe = Food(name: "AG1", category: "Online",
+                            servingSize: 100, servingUnit: "g",
+                            calories: 416, proteinG: 16, carbsG: 50, fatG: 0, fiberG: 17)
+        try db.saveScannedFood(&caseDupe)
+        var punctDupe = Food(name: " ag1! ", category: "Online",
+                             servingSize: 100, servingUnit: "g",
+                             calories: 416, proteinG: 16, carbsG: 50, fatG: 0, fiberG: 17)
+        try db.saveScannedFood(&punctDupe)
+        var genuinelyNew = Food(name: "AG1 Travel Packs", category: "Online",
+                                servingSize: 100, servingUnit: "g",
+                                calories: 50, proteinG: 2, carbsG: 6, fatG: 0, fiberG: 2)
+        try db.saveScannedFood(&genuinelyNew)
+
+        let names = try db.reader.read { try String.fetchAll($0, sql: "SELECT name FROM food ORDER BY name") }
+        #expect(names.contains("Ag1"))
+        #expect(!names.contains("AG1"))                       // case dupe rejected
+        #expect(!names.contains(" ag1! "))                    // punctuation dupe rejected
+        #expect(names.contains("AG1 Travel Packs"))           // real product saved
+        #expect(names.count == 2, "got \(names)")
+    }
+
     @Test func dedupeNeverDeletesNonOnlineRows() throws {
         let db = try AppDatabase.empty()
         let a = try insertFood(db, name: "Paneer Tikka", category: "Indian", calories: 300)

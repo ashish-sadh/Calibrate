@@ -1016,10 +1016,18 @@ extension AppDatabase {
 
     /// Save a scanned/OCR food to the food table so it appears in future searches.
     /// Skips if a food with the same name already exists.
+    /// Insert a scanned/online food unless the catalog already has this
+    /// product. Dedupe is on the NORMALIZED key (lowercase alnum tokens,
+    /// sorted), not the exact name — the exact check let "AG1", "Ag1",
+    /// "AG1 - Athletic Greens" and "Athletic Greens - AG1" accumulate as
+    /// separate permanent rows across every caller (FoodSearchView, chat
+    /// fallback, barcode, OCR). Single choke point per audit 2026-07-14.
     public func saveScannedFood(_ food: inout Food) throws {
         food.source = food.source ?? "barcode"
+        let key = Food.normalizedKey(food.name)
         try dbWriter.write { db in
-            let exists = try Food.filter(Column("name") == food.name).fetchCount(db) > 0
+            let names = try String.fetchAll(db, sql: "SELECT name FROM food")
+            let exists = names.contains { Food.normalizedKey($0) == key }
             if !exists {
                 try food.insert(db)
             }

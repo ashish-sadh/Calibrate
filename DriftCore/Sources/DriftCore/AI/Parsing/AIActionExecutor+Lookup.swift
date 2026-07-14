@@ -12,8 +12,22 @@ extension AIActionExecutor {
     /// Search local DB for food. If gram amount is provided, converts to servings using food's serving size.
     public static func findFood(query: String, servings: Double?, gramAmount: Double? = nil) -> FoodMatch? {
         func resolveServings(for food: Food) -> Double {
-            if let grams = gramAmount, food.servingSize > 0 {
-                return grams / food.servingSize
+            if let grams = gramAmount {
+                // grams ÷ servingSize is only meaningful when servingSize IS
+                // grams. ~28 seed rows store a COUNT there ("Chia Seeds" ss=2
+                // tbsp, "Falafel (3 pieces)" ss=3) — dividing 30 g by 2 gave
+                // 15 servings = 2,070 cal (audit 2026-07-14). For count-unit
+                // rows, convert via the piece weight when known, else treat
+                // the request as one serving rather than inventing a blowup.
+                let unit = food.servingUnit.lowercased()
+                let gramScale = unit == "g" || unit == "ml" || food.servingSize >= 15
+                if gramScale, food.servingSize > 0 {
+                    return grams / food.servingSize
+                }
+                if let piece = food.pieceSizeG, piece > 0, food.servingSize > 0 {
+                    return grams / (piece * food.servingSize)
+                }
+                return servings ?? 1
             }
             return servings ?? 1
         }

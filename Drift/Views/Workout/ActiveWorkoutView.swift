@@ -64,6 +64,22 @@ struct ActiveWorkoutView: View {
         /// Last session's top working weight (lbs) — the beat-last-time toast
         /// baseline. Nil (no toast) for restored sessions and fresh exercises.
         var lastMaxWeight: Double? = nil
+        /// Reps↔timer tracking. Defaults to the name classifier; user-flippable
+        /// per exercise from the exercise menu (operator 2026-07-14).
+        var trackByTime: Bool = false
+
+        init(name: String, restTime: Int = 90, isWarmupExercise: Bool = false,
+             notes: String? = nil, sets: [ActiveSet], previousSets: [String],
+             lastMaxWeight: Double? = nil, trackByTime: Bool? = nil) {
+            self.name = name
+            self.restTime = restTime
+            self.isWarmupExercise = isWarmupExercise
+            self.notes = notes
+            self.sets = sets
+            self.previousSets = previousSets
+            self.lastMaxWeight = lastMaxWeight
+            self.trackByTime = trackByTime ?? WorkoutSet.isDurationExercise(name)
+        }
     }
 
     struct ActiveSet: Identifiable {
@@ -364,11 +380,11 @@ struct ActiveWorkoutView: View {
                     let working = t.exercises.filter { !$0.isWarmup }
                     // Add warmup exercises
                     for ex in warmups {
-                        addExercise(name: ex.name, setCount: ex.sets, restTime: ex.restSeconds, isWarmup: true, notes: ex.notes)
+                        addExercise(name: ex.name, setCount: ex.sets, restTime: ex.restSeconds, isWarmup: true, notes: ex.notes, trackByTime: ex.isDuration)
                     }
                     // Add working exercises
                     for ex in working {
-                        addExercise(name: ex.name, setCount: ex.sets, restTime: ex.restSeconds, notes: ex.notes)
+                        addExercise(name: ex.name, setCount: ex.sets, restTime: ex.restSeconds, notes: ex.notes, trackByTime: ex.isDuration)
                     }
                 }
             }
@@ -458,6 +474,15 @@ struct ActiveWorkoutView: View {
                     } label: {
                         Label(isFav ? "Unfavorite" : "Favorite", systemImage: isFav ? "star.slash" : "star")
                     }
+                    // Flip between rep counting and a seconds timer — planks,
+                    // farmer carries, or any exercise the name classifier got
+                    // wrong (operator 2026-07-14).
+                    Button {
+                        exercises[ei].trackByTime.toggle()
+                    } label: {
+                        Label(exercises[ei].trackByTime ? "Track by Reps" : "Track by Time",
+                              systemImage: exercises[ei].trackByTime ? "number" : "timer")
+                    }
                     Divider()
                     Button(role: .destructive) { exercises.remove(at: ei) } label: {
                         Label("Remove Exercise", systemImage: "trash")
@@ -477,7 +502,7 @@ struct ActiveWorkoutView: View {
 
             // Column headers
             let assisted = isAssistedExercise(exercises[ei].name)
-            let isDuration = WorkoutSet.isDurationExercise(exercises[ei].name)
+            let isDuration = exercises[ei].trackByTime
             HStack(spacing: 0) {
                 Text("Set").font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary).frame(width: 28, alignment: .leading)
                 Text("Previous").font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary).frame(width: 85, alignment: .leading)
@@ -769,7 +794,8 @@ struct ActiveWorkoutView: View {
                 sets: ex.sets.map { s in
                     WorkoutService.SavedSession.SessionSet(
                         weight: s.weight, reps: s.reps, done: s.done, isWarmup: s.isWarmup)
-                })
+                },
+                trackByTime: ex.trackByTime)
         }
         WorkoutService.saveSession(.init(workoutName: workoutName, startTime: startTime, exercises: sessionExercises))
     }
@@ -783,14 +809,15 @@ struct ActiveWorkoutView: View {
                 name: ex.name, restTime: ex.restTime, isWarmupExercise: ex.isWarmup,
                 notes: ex.notes,
                 sets: ex.sets.map { s in ActiveSet(weight: s.weight, reps: s.reps, done: s.done, isWarmup: s.isWarmup) },
-                previousSets: [])
+                previousSets: [],
+                trackByTime: ex.trackByTime)
         }
         return true
     }
 
     // MARK: - Add Exercise (with prefill)
 
-    private func addExercise(name: String, setCount: Int? = nil, restTime: Int = 90, isWarmup: Bool = false, notes: String? = nil) {
+    private func addExercise(name: String, setCount: Int? = nil, restTime: Int = 90, isWarmup: Bool = false, notes: String? = nil, trackByTime: Bool? = nil) {
         let allHistory = (try? WorkoutService.fetchExerciseHistory(name: name)) ?? []
 
         // Get the most recent workout's sets for this exercise (in set_order)
@@ -820,7 +847,8 @@ struct ActiveWorkoutView: View {
         let finalNotes = notes ?? ExerciseService.formTip(for: name).map { "Tip: \($0)" }
         exercises.append(ActiveExercise(name: name, restTime: restTime, isWarmupExercise: isWarmup,
                                          notes: finalNotes, sets: sets, previousSets: Array(previous),
-                                         lastMaxWeight: lastSession.compactMap(\.weightLbs).max()))
+                                         lastMaxWeight: lastSession.compactMap(\.weightLbs).max(),
+                                         trackByTime: trackByTime))
     }
 
     // MARK: - Coach toast (transient encouragement on milestones)
@@ -833,7 +861,7 @@ struct ActiveWorkoutView: View {
         guard !ex.isWarmupExercise, !ex.sets[si].isWarmup else { return }
         encouragementTick += 1
 
-        let weight = Double(ex.sets[si].weight.replacingOccurrences(of: ",", with: "."))
+        let weight = FlexibleUnitInput.weightLbs(from: ex.sets[si].weight)
         if let weight, let lastMax = ex.lastMaxWeight, weight > lastMax + 0.09 {
             showCoachToast(WorkoutEncouragement.line(for: .beatLastTime, tick: encouragementTick))
             return
@@ -1082,9 +1110,10 @@ struct ActiveWorkoutView: View {
             }
             var allSets: [WorkoutSet] = []
             for (ei, ex) in exercises.enumerated() {
-                let isDuration = WorkoutSet.isDurationExercise(ex.name)
+                let isDuration = ex.trackByTime
                 for (si, s) in ex.sets.enumerated() where s.done {
-                    let w = Double(s.weight.replacingOccurrences(of: ",", with: ".")) ?? 0  // #1022: comma-decimal locales
+                    // FlexibleUnitInput: bare = lbs, "60kg" converts; comma decimals (#1022).
+                    let w = FlexibleUnitInput.weightLbs(from: s.weight) ?? 0
                     let r = Int(s.reps) ?? 0
                     let dur = isDuration ? (Int(s.reps) ?? 0) : nil // duration exercises store seconds in reps field
                     guard r > 0 || (isDuration && (dur ?? 0) > 0) else { continue }
@@ -1096,9 +1125,9 @@ struct ActiveWorkoutView: View {
             }
             if allSets.isEmpty {
                 for (ei, ex) in exercises.enumerated() {
-                    let isDuration = WorkoutSet.isDurationExercise(ex.name)
+                    let isDuration = ex.trackByTime
                     for (si, s) in ex.sets.enumerated() {
-                        let w = Double(s.weight.replacingOccurrences(of: ",", with: ".")) ?? 0  // #1022: comma-decimal locales
+                        let w = FlexibleUnitInput.weightLbs(from: s.weight) ?? 0
                         let r = Int(s.reps) ?? 0
                         let dur = isDuration ? (Int(s.reps) ?? 0) : nil
                         guard r > 0 || (isDuration && (dur ?? 0) > 0) else { continue }
@@ -1135,7 +1164,8 @@ struct ActiveWorkoutView: View {
         let templateExercises = exercises.map { ex in
             WorkoutTemplate.TemplateExercise(name: ex.name, sets: ex.sets.count,
                                              isWarmup: ex.isWarmupExercise,
-                                             restSeconds: ex.restTime, notes: ex.notes)
+                                             restSeconds: ex.restTime, notes: ex.notes,
+                                             isDuration: ex.trackByTime)
         }
         if let json = try? JSONEncoder().encode(templateExercises),
            let jsonStr = String(data: json, encoding: .utf8) {

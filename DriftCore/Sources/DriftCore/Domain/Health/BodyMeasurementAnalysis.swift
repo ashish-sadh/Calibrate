@@ -159,9 +159,10 @@ public enum BodyMeasurementAnalysis {
                 out[site.rawValue] = original
                 continue
             }
-            let normalized = text.replacingOccurrences(of: ",", with: ".")
-            guard let shown = Double(normalized), shown > 0 else { continue }
-            out[site.rawValue] = inInches ? shown * 2.54 : shown
+            // Forgiving units: bare numbers use the form's display unit, but an
+            // explicit suffix always wins ("86cm" on an inches form works).
+            guard let cm = FlexibleUnitInput.lengthCm(from: text, assumeInches: inInches), cm > 0 else { continue }
+            out[site.rawValue] = cm
         }
         return out
     }

@@ -144,6 +144,7 @@ struct TemplateExerciseEditor: View {
     @State private var restSeconds: Int
     @State private var notes: String
     @State private var isWarmup: Bool
+    @State private var trackByTime: Bool
 
     init(exercise: WorkoutTemplate.TemplateExercise, onSave: @escaping (WorkoutTemplate.TemplateExercise) -> Void) {
         self.exercise = exercise
@@ -152,6 +153,7 @@ struct TemplateExerciseEditor: View {
         _restSeconds = State(initialValue: exercise.restSeconds)
         _notes = State(initialValue: exercise.notes ?? "")
         _isWarmup = State(initialValue: exercise.isWarmup)
+        _trackByTime = State(initialValue: exercise.isDuration ?? WorkoutSet.isDurationExercise(exercise.name))
     }
 
     var body: some View {
@@ -171,6 +173,13 @@ struct TemplateExerciseEditor: View {
                     }
 
                     Toggle("Warmup exercise", isOn: $isWarmup)
+
+                    // Reps vs seconds timer — planks/carries or anything the
+                    // name classifier got wrong (operator 2026-07-14).
+                    Picker("Track by", selection: $trackByTime) {
+                        Text("Reps").tag(false)
+                        Text("Time").tag(true)
+                    }
                 }
 
                 Section("Notes") {
@@ -183,7 +192,8 @@ struct TemplateExerciseEditor: View {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Save") {
                         onSave(.init(name: exercise.name, sets: sets, isWarmup: isWarmup,
-                                     restSeconds: restSeconds, notes: notes.isEmpty ? nil : notes))
+                                     restSeconds: restSeconds, notes: notes.isEmpty ? nil : notes,
+                                     isDuration: trackByTime))
                         dismiss()
                     }.fontWeight(.semibold)
                 }

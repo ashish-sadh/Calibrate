@@ -164,13 +164,17 @@ public struct WorkoutTemplate: Identifiable, Codable, Sendable, FetchableRecord,
         public var isWarmup: Bool = false
         public var restSeconds: Int = 90
         public var notes: String?
+        /// Per-exercise reps↔timer override (nil = classify by name via
+        /// `WorkoutSet.isDurationExercise`). Set when the user flips the
+        /// tracking mode in a workout/template edit.
+        public var isDuration: Bool?
 
-        public init(name: String, sets: Int, isWarmup: Bool = false, restSeconds: Int = 90, notes: String? = nil) {
+        public init(name: String, sets: Int, isWarmup: Bool = false, restSeconds: Int = 90, notes: String? = nil, isDuration: Bool? = nil) {
             self.name = name; self.sets = sets; self.isWarmup = isWarmup
-            self.restSeconds = restSeconds; self.notes = notes
+            self.restSeconds = restSeconds; self.notes = notes; self.isDuration = isDuration
         }
 
-        // Backward-compatible decoding (old templates without warmup/rest)
+        // Backward-compatible decoding (old templates without warmup/rest/isDuration)
         public init(from decoder: Decoder) throws {
             let c = try decoder.container(keyedBy: CodingKeys.self)
             name = try c.decode(String.self, forKey: .name)
@@ -178,10 +182,11 @@ public struct WorkoutTemplate: Identifiable, Codable, Sendable, FetchableRecord,
             isWarmup = (try? c.decode(Bool.self, forKey: .isWarmup)) ?? false
             restSeconds = (try? c.decode(Int.self, forKey: .restSeconds)) ?? 90
             notes = try? c.decode(String.self, forKey: .notes)
+            isDuration = try? c.decode(Bool.self, forKey: .isDuration)
         }
 
         private enum CodingKeys: String, CodingKey {
-            case name, sets, isWarmup, restSeconds, notes
+            case name, sets, isWarmup, restSeconds, notes, isDuration
         }
     }
 

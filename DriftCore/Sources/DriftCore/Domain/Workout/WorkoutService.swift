@@ -485,13 +485,17 @@ public enum WorkoutService {
             public let notes: String?
             public let restTime: Int
             public let sets: [SessionSet]
+            /// Per-exercise reps↔timer override (nil = classify by name).
+            /// Optional so payloads from older builds still decode.
+            public var trackByTime: Bool?
 
-            public init(name: String, isWarmup: Bool, notes: String?, restTime: Int, sets: [SessionSet]) {
+            public init(name: String, isWarmup: Bool, notes: String?, restTime: Int, sets: [SessionSet], trackByTime: Bool? = nil) {
                 self.name = name
                 self.isWarmup = isWarmup
                 self.notes = notes
                 self.restTime = restTime
                 self.sets = sets
+                self.trackByTime = trackByTime
             }
         }
 
@@ -549,9 +553,9 @@ public enum WorkoutService {
         func buildSets(for wid: Int64, requireDone: Bool) -> [WorkoutSet] {
             var sets: [WorkoutSet] = []
             for (ei, ex) in session.exercises.enumerated() {
-                let isDuration = WorkoutSet.isDurationExercise(ex.name)
+                let isDuration = ex.trackByTime ?? WorkoutSet.isDurationExercise(ex.name)
                 for (si, s) in ex.sets.enumerated() where s.done || !requireDone {
-                    let w = Double(s.weight.replacingOccurrences(of: ",", with: ".")) ?? 0
+                    let w = FlexibleUnitInput.weightLbs(from: s.weight) ?? 0
                     let r = Int(s.reps) ?? 0
                     let dur = isDuration ? (Int(s.reps) ?? 0) : nil
                     guard r > 0 || (isDuration && (dur ?? 0) > 0) else { continue }

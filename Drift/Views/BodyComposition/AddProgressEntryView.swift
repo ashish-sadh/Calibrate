@@ -47,8 +47,29 @@ struct AddProgressEntryView: View {
 
     struct CameraTarget: Identifiable { let pose: ProgressPose; var id: String { pose.rawValue } }
 
-    private var inInches: Bool { Preferences.weightUnit == .lbs }
+    /// Entry unit for the measurement fields. Starts from the weight-unit
+    /// preference but is flippable in-form ("take whatever" — someone on the
+    /// lbs/in preference may know their waist in cm). The parser additionally
+    /// honors explicit suffixes ("86cm") regardless of this toggle.
+    @State private var entryInInches: Bool = Preferences.weightUnit == .lbs
+    private var inInches: Bool { entryInInches }
     private var unitLabel: String { inInches ? "in" : "cm" }
+
+    /// Flip the form's unit, converting whatever is already typed/loaded so
+    /// values keep their meaning (loadedText converts identically, preserving
+    /// the untouched-field original-cm guarantee).
+    private func toggleEntryUnit() {
+        let old = entryInInches
+        entryInInches.toggle()
+        func convert(_ text: String) -> String {
+            guard let cm = FlexibleUnitInput.lengthCm(from: text, assumeInches: old) else { return text }
+            return String(format: "%.1f", entryInInches ? cm / 2.54 : cm)
+        }
+        for site in MeasurementSite.allCases {
+            if let t = measurements[site], !t.isEmpty { measurements[site] = convert(t) }
+            if let lt = loadedText[site] { loadedText[site] = convert(lt) }
+        }
+    }
 
     private var dateString: String {
         let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.locale = Locale(identifier: "en_US_POSIX")
@@ -192,13 +213,21 @@ struct AddProgressEntryView: View {
     private var measurementsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("MEASUREMENTS (\(unitLabel.uppercased()))")
+                Text("MEASUREMENTS")
                     .font(.caption.weight(.semibold)).foregroundStyle(Theme.textSecondary)
-                Spacer()
                 if !ghostCm.isEmpty {
-                    Text("carried from last check-in")
+                    Text("· carried from last check-in")
                         .font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
+                Spacer()
+                Picker("Unit", selection: Binding(
+                    get: { entryInInches },
+                    set: { if $0 != entryInInches { toggleEntryUnit() } })) {
+                    Text("cm").tag(false)
+                    Text("in").tag(true)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 100)
             }
             ForEach(MeasurementSite.Group.allCases, id: \.self) { group in
                 let sites = MeasurementSite.displayOrder.filter { $0.group == group }

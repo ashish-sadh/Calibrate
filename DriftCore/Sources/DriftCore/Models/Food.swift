@@ -155,3 +155,17 @@ extension Food: FetchableRecord, PersistableRecord {
         id = inserted.rowID
     }
 }
+
+extension Food {
+    /// Canonical duplicate key for a food name: lowercase, alphanumeric-only
+    /// tokens, sorted — "AG1 - Athletic Greens", "Athletic Greens - AG1" and
+    /// "Ag1" all collapse to one key. Lives on the model so Persistence
+    /// (saveScannedFood) and Domain (searchWithFallback) share one definition.
+    public static func normalizedKey(_ name: String) -> String {
+        name.lowercased()
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { !$0.isEmpty }
+            .sorted()
+            .joined(separator: " ")
+    }
+}
