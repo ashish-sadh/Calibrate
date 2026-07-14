@@ -18,6 +18,21 @@ struct ProgressTrackingTests {
         #expect(!m.isEmpty)
     }
 
+    @Test func poseRelevantSitesAreSideAppropriate() {
+        // Front shows torso girths; sides show that side's limbs + waist.
+        #expect(ProgressPose.front.relevantSites.contains(.chest))
+        #expect(ProgressPose.front.relevantSites.contains(.waist))
+        #expect(ProgressPose.left.relevantSites.contains(.leftBicep))
+        #expect(ProgressPose.left.relevantSites.contains(.leftThigh))
+        #expect(!ProgressPose.left.relevantSites.contains(.rightBicep))
+        #expect(ProgressPose.right.relevantSites.contains(.rightCalf))
+        #expect(!ProgressPose.right.relevantSites.contains(.leftCalf))
+        // Every pose surfaces the waist (the universal reference).
+        for pose in ProgressPose.allCases {
+            #expect(pose.relevantSites.contains(.waist))
+        }
+    }
+
     @Test func measurementSiteMetadata() {
         #expect(MeasurementSite.leftBicep.mirror == .rightBicep)
         #expect(MeasurementSite.waist.mirror == nil)

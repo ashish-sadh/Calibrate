@@ -9,10 +9,15 @@ struct ProgressGalleryView: View {
     @State private var entries: [ProgressEntry] = []
     @State private var weightByDate: [String: Double] = [:]
     @State private var showingAdd = false
-    @State private var showingCompare = false
     @State private var showingCharts = false
     @State private var editingDate: String?
     @State private var timelinePose: ProgressPose = .front
+    @State private var viewing: ViewerTarget?
+
+    private struct ViewerTarget: Identifiable {
+        let date: String; let pose: ProgressPose; var comparing: Bool = false
+        var id: String { "\(date)-\(pose.rawValue)-\(comparing)" }
+    }
 
     private var inInches: Bool { Preferences.weightUnit == .lbs }
     private var photoEntries: [ProgressEntry] { entries.filter(\.hasPhotos) }
@@ -47,11 +52,14 @@ struct ProgressGalleryView: View {
         .sheet(isPresented: $showingAdd, onDismiss: reload) {
             AddProgressEntryView(existingDate: editingDate)
         }
-        .sheet(isPresented: $showingCompare) {
-            ProgressCompareView(entries: photoEntries)
-        }
         .sheet(isPresented: $showingCharts) {
             ProgressChartsView(entries: entries, weightByDate: weightByDate)
+        }
+        .fullScreenCover(item: $viewing) { target in
+            ProgressPhotoViewerView(
+                entries: photoEntries, weightByDate: weightByDate,
+                startDate: target.date, startPose: target.pose, startComparing: target.comparing,
+                onEdit: { date in editingDate = date; showingAdd = true })
         }
         .onAppear(perform: reload)
     }
@@ -85,8 +93,10 @@ struct ProgressGalleryView: View {
 
     private var actionRow: some View {
         HStack(spacing: 8) {
-            if photoEntries.count >= 2 {
-                actionButton("Compare", icon: "rectangle.split.2x1") { showingCompare = true }
+            if photoEntries.count >= 2, let latest = photoEntries.first {
+                actionButton("Compare", icon: "rectangle.split.2x1") {
+                    viewing = ViewerTarget(date: latest.date, pose: .front, comparing: true)
+                }
             }
             if entries.contains(where: { $0.measurement?.isEmpty == false }) || weightByDate.count >= 2 {
                 actionButton("Trends", icon: "chart.xyaxis.line") { showingCharts = true }
@@ -134,7 +144,7 @@ struct ProgressGalleryView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
                         ForEach(Array(posed), id: \.0) { date, photo in
-                            Button { editingDate = date; showingAdd = true } label: {
+                            Button { viewing = ViewerTarget(date: date, pose: timelinePose) } label: {
                                 VStack(spacing: 4) {
                                     if let img = ProgressPhotoStore.load(photo.filename) {
                                         Image(uiImage: img).resizable().scaledToFill()
@@ -158,11 +168,9 @@ struct ProgressGalleryView: View {
     // MARK: - Entry card
 
     private func entryCard(_ entry: ProgressEntry) -> some View {
-        Button {
-            editingDate = entry.date
-            showingAdd = true
-        } label: {
-            VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 10) {
+            // Header row taps → edit. Photos tap → full-screen viewer.
+            Button { editingDate = entry.date; showingAdd = true } label: {
                 HStack {
                     Text(formatDate(entry.date)).font(.subheadline.weight(.semibold))
                     Spacer()
@@ -171,45 +179,56 @@ struct ProgressGalleryView: View {
                         Text(String(format: "%.1f %@", shown, Preferences.weightUnit.displayName))
                             .font(.caption).foregroundStyle(Theme.textSecondary)
                     }
-                    Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.textTertiary)
+                    Image(systemName: "pencil").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
-                if entry.hasPhotos {
-                    HStack(spacing: 6) {
-                        ForEach(ProgressPose.allCases, id: \.self) { pose in
-                            poseThumb(entry.photo(for: pose), pose: pose)
-                        }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if entry.hasPhotos {
+                HStack(spacing: 6) {
+                    ForEach(ProgressPose.allCases, id: \.self) { pose in
+                        poseThumb(entry, pose: pose)
                     }
                 }
-                if let m = entry.measurement, !m.isEmpty {
-                    Text(measurementSummary(m))
-                        .font(.caption2).foregroundStyle(Theme.textTertiary)
-                        .lineLimit(1)
-                }
             }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
-            .overlay(RoundedRectangle(cornerRadius: Theme.radiusControl).strokeBorder(Theme.separator, lineWidth: 0.5))
+            if let m = entry.measurement, !m.isEmpty {
+                Text(measurementSummary(m))
+                    .font(.caption2).foregroundStyle(Theme.textTertiary)
+                    .lineLimit(1)
+            }
         }
-        .buttonStyle(.plain)
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radiusControl).strokeBorder(Theme.separator, lineWidth: 0.5))
     }
 
-    private func poseThumb(_ photo: ProgressPhoto?, pose: ProgressPose) -> some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 8).fill(Theme.cardBackgroundElevated)
-            if let photo, let img = ProgressPhotoStore.load(photo.filename) {
-                Image(uiImage: img).resizable().scaledToFill()
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
-            } else {
-                VStack(spacing: 2) {
-                    Image(systemName: "camera").font(.caption2).foregroundStyle(Theme.textTertiary)
-                    Text(pose.shortName).font(.system(size: 8)).foregroundStyle(Theme.textTertiary)
+    private func poseThumb(_ entry: ProgressEntry, pose: ProgressPose) -> some View {
+        let photo = entry.photo(for: pose)
+        return Button {
+            // Open the viewer at the first pose that actually has a photo,
+            // preferring the tapped one.
+            let target = photo != nil ? pose : (ProgressPose.allCases.first { entry.photo(for: $0) != nil } ?? pose)
+            viewing = ViewerTarget(date: entry.date, pose: target)
+        } label: {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8).fill(Theme.cardBackgroundElevated)
+                if let photo, let img = ProgressPhotoStore.load(photo.filename) {
+                    Image(uiImage: img).resizable().scaledToFill()
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                } else {
+                    VStack(spacing: 2) {
+                        Image(systemName: "camera").font(.caption2).foregroundStyle(Theme.textTertiary)
+                        Text(pose.shortName).font(.system(size: 8)).foregroundStyle(Theme.textTertiary)
+                    }
                 }
             }
+            .frame(height: 84)
+            .frame(maxWidth: .infinity)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
         }
-        .frame(height: 84)
-        .frame(maxWidth: .infinity)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .buttonStyle(.plain)
     }
 
     // MARK: - Helpers

@@ -23,6 +23,19 @@ public enum ProgressPose: String, CaseIterable, Codable, Sendable {
         case .right: "Right"
         }
     }
+
+    /// Measurement sites most visible / relevant to this pose — surfaced as
+    /// stat overlays on the photo viewer. Front shows torso girths, the sides
+    /// show that side's limbs, back shows the posterior chain girths. Weight is
+    /// shown separately (always).
+    public var relevantSites: [MeasurementSite] {
+        switch self {
+        case .front: [.shoulders, .chest, .waist, .hips]
+        case .back:  [.shoulders, .waist, .hips]
+        case .left:  [.leftBicep, .leftForearm, .waist, .leftThigh, .leftCalf]
+        case .right: [.rightBicep, .rightForearm, .waist, .rightThigh, .rightCalf]
+        }
+    }
 }
 
 /// Metadata for one progress photo. The image bytes live on disk in the app

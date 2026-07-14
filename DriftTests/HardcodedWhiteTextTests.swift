@@ -53,6 +53,19 @@ final class HardcodedWhiteTextTests: XCTestCase {
         ("AddProgressEntryView.swift", ".background(.black.opacity(0.45), in: Capsule())"),
         // Progress empty-state CTA — white on solid Theme.accent (coral).
         ("ProgressGalleryView.swift", ".background(Theme.accent, in: RoundedRectangle(cornerRadius: Theme.radiusChip))"),
+        // Self-timer camera overlay — all white text sits on the live camera
+        // feed / translucent-black chrome (countdown, close/flip buttons,
+        // shutter ring). Standard camera-UI contrast.
+        ("TimerCameraView.swift", ".shadow(radius: 8)"),
+        ("TimerCameraView.swift", ".background(.black.opacity(0.4), in: Circle())"),
+        ("TimerCameraView.swift", "Circle().strokeBorder(.white, lineWidth: 4)"),
+        ("TimerCameraView.swift", "Circle().fill(.white).frame(width: 60, height: 60)"),
+        // Full-screen photo viewer — the entire view sits on Color.black; all
+        // white text (date/weight header, compare date menus, stat overlays) is
+        // legitimate camera-roll contrast.
+        ("ProgressPhotoViewerView.swift", "if let date = current?.date {"),
+        ("ProgressPhotoViewerView.swift", "Image(systemName: \"chevron.down\").font(.system(size: 9))"),
+        ("ProgressPhotoViewerView.swift", ".background(.black.opacity(0.45), in: RoundedRectangle(cornerRadius: 8))"),
         ("WorkoutView.swift", ".background(Theme.ink, in: RoundedRectangle(cornerRadius: 12))"),
         // Solid ink (V7 selected-chip pattern) — white reads on black
         ("FoodTabView.swift", "? Theme.ink : Color.clear, in: RoundedRectangle"),
