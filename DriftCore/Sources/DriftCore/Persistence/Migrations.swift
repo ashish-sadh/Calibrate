@@ -685,6 +685,50 @@ public enum Migrations {
                 t.uniqueKey(["date", "pose"])
             }
         }
+
+        migrator.registerMigration("v43_dedupe_online_foods") { db in
+            try dedupeOnlineFoods(db)
+        }
+    }
+
+    /// v43: online-search imports saved every result permanently and deduped
+    /// only on the exact lowercase name, so one product accumulated as "AG1",
+    /// "Ag1", "AG1 - Athletic Greens", "Athletic Greens - AG1"… (field bug
+    /// 2026-07-14). Collapse by normalized token key: a curated/user row beats
+    /// Online rows; among Online dupes the oldest survives. Never deletes
+    /// non-Online rows. Normalization is INLINED (frozen) — do not swap for
+    /// the live FoodService helper, or later helper changes would rewrite what
+    /// this migration meant. Extracted so the migration and its regression
+    /// test share one code path (recoverCollidedSavedFood pattern).
+    static func dedupeOnlineFoods(_ db: Database) throws {
+        func key(_ name: String) -> String {
+            name.lowercased()
+                .components(separatedBy: CharacterSet.alphanumerics.inverted)
+                .filter { !$0.isEmpty }
+                .sorted()
+                .joined(separator: " ")
+        }
+        let rows = try Row.fetchAll(db, sql: "SELECT id, name, category FROM food")
+        var groups: [String: [(id: Int64, isOnline: Bool)]] = [:]
+        for row in rows {
+            let id: Int64 = row["id"]
+            let name: String = row["name"]
+            let category: String? = row["category"]
+            groups[key(name), default: []].append((id, category == "Online"))
+        }
+        var toDelete: [Int64] = []
+        for (_, members) in groups where members.count > 1 {
+            let hasCanonical = members.contains { !$0.isOnline }
+            let online = members.filter(\.isOnline).sorted { $0.id < $1.id }
+            if hasCanonical {
+                toDelete.append(contentsOf: online.map(\.id))
+            } else if online.count > 1 {
+                toDelete.append(contentsOf: online.dropFirst().map(\.id))
+            }
+        }
+        for id in toDelete {
+            try db.execute(sql: "DELETE FROM food WHERE id = ?", arguments: [id])
+        }
     }
 
     /// Old→canonical exercise name map applied to logged history by the v40

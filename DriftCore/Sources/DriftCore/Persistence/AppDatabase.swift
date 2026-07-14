@@ -985,6 +985,14 @@ extension AppDatabase {
         }
     }
 
+    /// All food names — used to dedupe online-search imports against the whole
+    /// catalog (not just the current query's local hits).
+    public func fetchAllFoodNames() throws -> [String] {
+        try dbWriter.read { db in
+            try String.fetchAll(db, sql: "SELECT name FROM food")
+        }
+    }
+
     public func searchFoods(query: String, limit: Int = 50) throws -> [Food] {
         try dbWriter.read { db in
             if query.isEmpty { return [] }

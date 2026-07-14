@@ -278,10 +278,15 @@ public enum FoodService {
         let off = await offProducts
 
         var online: [Food] = []
-        let localNames = Set(local.map { $0.name.lowercased() })
+        // Dedupe on the normalized token key, not the exact lowercase name —
+        // "AG1", "Ag1", "AG1 - Athletic Greens" and "Athletic Greens - AG1"
+        // are the same product but all passed the exact check and got saved as
+        // permanent junk rows crowding search (AG1 field bug 2026-07-14).
+        // Compare against ALL local foods, not just this query's results.
+        var seenKeys = Set(((try? AppDatabase.shared.fetchAllFoodNames()) ?? local.map(\.name)).map(normalizedFoodKey))
 
         for item in usda {
-            guard !localNames.contains(item.name.lowercased()) else { continue }
+            guard seenKeys.insert(normalizedFoodKey(item.name)).inserted else { continue }
             var food = Food(
                 name: item.name, category: "Online",
                 servingSize: item.servingSizeG, servingUnit: "g",
@@ -295,8 +300,8 @@ public enum FoodService {
         }
 
         for p in off {
-            let name = [p.name, p.brand].compactMap { $0 }.joined(separator: " - ")
-            guard !localNames.contains(name.lowercased()) else { continue }
+            let name = offDisplayName(name: p.name, brand: p.brand)
+            guard seenKeys.insert(normalizedFoodKey(name)).inserted else { continue }
             let servingG = p.servingSizeG ?? 100
             // OpenFoodFacts gives "3 pieces (85g)" → pieces=3, servingG=85.
             // piece weight = 85 / 3 = ~28g. Propagate so ServingUnit stops
@@ -317,6 +322,28 @@ public enum FoodService {
         }
 
         return local + online
+    }
+
+    /// Canonical duplicate key for a food name: lowercase, alphanumeric-only
+    /// tokens, sorted — so "AG1 - Athletic Greens", "Athletic Greens - AG1"
+    /// and "Ag1  (athletic greens)" all collapse to the same key.
+    nonisolated public static func normalizedFoodKey(_ name: String) -> String {
+        name.lowercased()
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { !$0.isEmpty }
+            .sorted()
+            .joined(separator: " ")
+    }
+
+    /// Display name for an OpenFoodFacts product. Appends the brand only when
+    /// it adds information — "AG1" + brand "AG1" must not become "AG1 - AG1".
+    nonisolated static func offDisplayName(name: String?, brand: String?) -> String {
+        let n = (name ?? "").trimmingCharacters(in: .whitespaces)
+        let b = (brand ?? "").trimmingCharacters(in: .whitespaces)
+        if n.isEmpty { return b }
+        if b.isEmpty { return n }
+        if n.lowercased().contains(b.lowercased()) || b.lowercased().contains(n.lowercased()) { return n }
+        return "\(n) - \(b)"
     }
 
     // MARK: - Nutrition Lookup

@@ -1,0 +1,93 @@
+import Testing
+import Foundation
+import GRDB
+@testable import DriftCore
+
+/// Tier 0 — the AG1 field-bug fix set (2026-07-14): online-import dedupe,
+/// brand-join naming, the phantom "1 scoop (100g)" serving, and the v43
+/// cleanup migration.
+struct OnlineFoodDedupeTests {
+
+    // MARK: - Normalized key
+
+    @Test func normalizedKeyCollapsesRebrandings() {
+        let variants = ["AG1", "Ag1", "ag1", " AG1 ", "AG1!"]
+        let keys = Set(variants.map(FoodService.normalizedFoodKey))
+        #expect(keys.count == 1)
+        // Token-order-insensitive: "AG1 - Athletic Greens" == "Athletic Greens - AG1".
+        #expect(FoodService.normalizedFoodKey("AG1 - Athletic Greens")
+                == FoodService.normalizedFoodKey("Athletic Greens - AG1"))
+        // But genuinely different products stay distinct.
+        #expect(FoodService.normalizedFoodKey("AG1")
+                != FoodService.normalizedFoodKey("AG1 Travel Packs"))
+    }
+
+    // MARK: - OFF display name
+
+    @Test func offDisplayNameSkipsRedundantBrand() {
+        #expect(FoodService.offDisplayName(name: "AG1", brand: "AG1") == "AG1")
+        #expect(FoodService.offDisplayName(name: "AG1", brand: "Athletic Greens") == "AG1 - Athletic Greens")
+        #expect(FoodService.offDisplayName(name: "AG1 by Athletic Greens", brand: "Athletic Greens") == "AG1 by Athletic Greens")
+        #expect(FoodService.offDisplayName(name: nil, brand: "Athletic Greens") == "Athletic Greens")
+        #expect(FoodService.offDisplayName(name: "AG1", brand: nil) == "AG1")
+    }
+
+    // MARK: - Scoop 100 g guard
+
+    @Test func seededScoopAt100gFallsBackToGrams() {
+        // "1 scoop (100g)" is per-100g fallback data, not a real scoop (the
+        // 416-cal AG1 sheet). Must NOT produce a scoop unit.
+        #expect(FoodUnit.unitFromSeededServingUnit("scoop", servingSize: 100) == nil)
+        // Real scoop-scale seeds keep their scoop.
+        let whey = FoodUnit.unitFromSeededServingUnit("scoop", servingSize: 30)
+        #expect(whey?.label == "scoop")
+        #expect(whey?.gramsEquivalent == 30)
+        // Other units at 100 g are untouched (a 100 g cup is plausible).
+        #expect(FoodUnit.unitFromSeededServingUnit("cup", servingSize: 100)?.label == "cup")
+    }
+
+    // MARK: - v43 migration dedupe
+
+    private func insertFood(_ db: AppDatabase, name: String, category: String, calories: Double) throws -> Int64 {
+        try db.writer.write { conn in
+            try conn.execute(sql: """
+                INSERT INTO food (name, category, serving_size, serving_unit, calories, protein_g, carbs_g, fat_g, fiber_g)
+                VALUES (?, ?, 100, 'g', ?, 0, 0, 0, 0)
+                """, arguments: [name, category, calories])
+            return conn.lastInsertedRowID
+        }
+    }
+
+    @Test func dedupeDeletesOnlineDupesKeepsCanonical() throws {
+        let db = try AppDatabase.empty()
+        let curated = try insertFood(db, name: "Ag1", category: "Supplements & Shakes", calories: 50)
+        let dupe1 = try insertFood(db, name: "AG1", category: "Online", calories: 416)
+        let dupe2 = try insertFood(db, name: "AG1 - Athletic Greens", category: "Online", calories: 416)
+        let dupe3 = try insertFood(db, name: "Athletic Greens - AG1", category: "Online", calories: 416)
+        let unrelated = try insertFood(db, name: "AG1 Travel Packs", category: "Online", calories: 50)
+
+        try db.writer.write { try Migrations.dedupeOnlineFoods($0) }
+
+        let survivors: Set<Int64> = try db.reader.read {
+            Set(try Int64.fetchAll($0, sql: "SELECT id FROM food WHERE id IN (?,?,?,?,?)",
+                                    arguments: [curated, dupe1, dupe2, dupe3, unrelated]))
+        }
+        #expect(survivors.contains(curated))            // canonical survives
+        #expect(!survivors.contains(dupe1))             // exact dupe of curated → gone
+        #expect(survivors.contains(unrelated))          // different product → kept
+        // dupe2/dupe3 share a key with each other (not with curated) → oldest kept.
+        #expect(survivors.contains(dupe2))
+        #expect(!survivors.contains(dupe3))
+    }
+
+    @Test func dedupeNeverDeletesNonOnlineRows() throws {
+        let db = try AppDatabase.empty()
+        let a = try insertFood(db, name: "Paneer Tikka", category: "Indian", calories: 300)
+        let b = try insertFood(db, name: "paneer tikka", category: "Indian", calories: 280)
+        try db.writer.write { try Migrations.dedupeOnlineFoods($0) }
+        let count = try db.reader.read {
+            try Int.fetchOne($0, sql: "SELECT COUNT(*) FROM food WHERE id IN (?,?)", arguments: [a, b]) ?? 0
+        }
+        #expect(count == 2)   // curated near-dupes are a curation decision, not this migration's
+    }
+}

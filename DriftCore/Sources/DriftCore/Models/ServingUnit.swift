@@ -213,6 +213,13 @@ public struct FoodUnit: Hashable {
               u.rangeOfCharacter(from: .decimalDigits) == nil,           // "40g" / "4 oz" leftover
               u.rangeOfCharacter(from: .whitespacesAndNewlines) == nil   // multi-word junk
         else { return nil }
+        // A "scoop" of exactly 100 g is almost never a real scoop — it's
+        // per-100g fallback data (online imports and LLM-created foods default
+        // servingSize to 100) wearing a scoop label. AG1 field bug 2026-07-14:
+        // "1 scoop (100g) = 416 cal" for a 12 g / 50 cal product. Real scoops
+        // run ~5–60 g (mass gainers excepted, but those seed real scoop sizes,
+        // not the 100 default). Fall back to grams.
+        if u == "scoop" && ss == 100 { return nil }
         // The seed's serving IS one whole unit, so 1 <serving_unit> == servingSize grams.
         return FoodUnit(label: u, gramsEquivalent: ss)
     }
@@ -300,7 +307,10 @@ public struct FoodUnit: Hashable {
         let scoopFoods = ["protein", "whey", "casein", "isolate", "creatine", "collagen",
                           "powder", "supplement", "pre-workout", "bcaa"]
         if scoopFoods.contains(where: { lower.contains($0) }) && !units.contains(where: { $0.label == "scoop" }) {
-            let scoopWeight = food.scoopSizeG ?? (food.servingSize > 0 ? food.servingSize : 30)
+            // servingSize == 100 is the per-100g default, not a scoop weight
+            // (AG1 field bug 2026-07-14) — use the 30 g estimate instead.
+            let seedIsScoopScale = food.servingSize > 0 && food.servingSize != 100
+            let scoopWeight = food.scoopSizeG ?? (seedIsScoopScale ? food.servingSize : 30)
             let isOverride = food.scoopSizeG != nil
             units.append(FoodUnit(label: "scoop", gramsEquivalent: scoopWeight,
                                   isEstimate: !isOverride))
