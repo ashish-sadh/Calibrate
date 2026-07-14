@@ -137,28 +137,36 @@ public enum BodyCompositionAnalysis {
     /// agree and the user can trust both. A large mismatch is itself the signal
     /// ("the scale trend says deficit but fat isn't moving — likely water or a
     /// logging gap"). `estimatedDailyKcal` is negative for a deficit.
-    public static func reconcile(delta: ScanDelta, estimatedDailyKcal: Double) -> Reconciliation? {
+    /// `trendWindowDays` is the span the scale estimate covers (the trend
+    /// engine's `rateWindowDays`). When the inter-scan gap greatly exceeds it
+    /// (a 3-month DEXA gap vs a 3-week scale slope), the two numbers describe
+    /// different periods, so the language is softened — they can look like they
+    /// "agree" by coincidence.
+    public static func reconcile(delta: ScanDelta, estimatedDailyKcal: Double, trendWindowDays: Int = 0) -> Reconciliation? {
         guard delta.days > 0 else { return nil }
         let dexaDailyKcal = (delta.fatChangeKg * kcalPerKgFat) / Double(delta.days)
-        // Agreement: same sign AND within 250 kcal/day OR within 40% of the
-        // larger magnitude (deficits estimated from sparse scans are coarse).
         let sameSign = (dexaDailyKcal <= 0) == (estimatedDailyKcal <= 0)
         let diff = abs(dexaDailyKcal - estimatedDailyKcal)
         let tol = max(250, 0.40 * max(abs(dexaDailyKcal), abs(estimatedDailyKcal)))
         let agrees = sameSign && diff <= tol
+        // Windows are comparable only when the scan gap is within ~2× the scale
+        // window; beyond that the "agree" claim is not trustworthy.
+        let windowsComparable = trendWindowDays <= 0 || delta.days <= trendWindowDays * 2
 
         let dexaStr = String(format: "%+.0f", dexaDailyKcal)
         let estStr = String(format: "%+.0f", estimatedDailyKcal)
         let narrative: String
-        if agrees {
+        if agrees && windowsComparable {
             narrative = "Your scan and your scale trend agree: DEXA fat change implies \(dexaStr) kcal/day, your weight trend estimates \(estStr) kcal/day. You can trust the number."
+        } else if agrees {
+            narrative = "Both point the same way — DEXA fat change implies \(dexaStr) kcal/day (over \(delta.days) days), your recent scale trend \(estStr) kcal/day. They cover different spans, so treat this as directional, not exact."
         } else if !sameSign {
             narrative = "Mismatch: your scale trend suggests \(estStr) kcal/day, but your DEXA fat change points the other way (\(dexaStr) kcal/day). Recent scale moves are likely water — trust the scan for body-fat direction."
         } else {
             narrative = "Partial agreement: DEXA implies \(dexaStr) kcal/day vs \(estStr) kcal/day from your scale trend. Same direction, different magnitude — the truth is likely between them."
         }
         return Reconciliation(dexaImpliedDailyKcal: dexaDailyKcal, estimatedDailyKcal: estimatedDailyKcal,
-                              agrees: agrees, narrative: narrative)
+                              agrees: agrees && windowsComparable, narrative: narrative)
     }
 
     // MARK: - Helpers

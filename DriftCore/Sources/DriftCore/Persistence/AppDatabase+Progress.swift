@@ -7,12 +7,15 @@ extension AppDatabase {
 
     // MARK: Measurements
 
-    /// Upsert a measurement set by date (one per day).
+    /// Upsert a measurement set by date (one per day). On update the original
+    /// `createdAt` is preserved (editing an old entry must not reset its
+    /// creation timestamp to now).
     public func saveBodyMeasurement(_ measurement: inout BodyMeasurement) throws {
         try writer.write { [measurement] db in
             if let existing = try BodyMeasurement.filter(Column("date") == measurement.date).fetchOne(db) {
                 var updated = measurement
                 updated.id = existing.id
+                updated.createdAt = existing.createdAt
                 try updated.update(db)
             } else {
                 var mutable = measurement

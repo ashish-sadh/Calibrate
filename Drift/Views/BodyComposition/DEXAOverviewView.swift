@@ -102,7 +102,9 @@ struct DEXAOverviewView: View {
         case .leanLoss, .fatGain: tint = Theme.stepsOrange
         case .stable: tint = Theme.textSecondary
         }
-        let recon = weeklyRateEstimate.flatMap { BodyCompositionAnalysis.reconcile(delta: delta, estimatedDailyKcal: $0) }
+        let recon = weeklyRateEstimate.flatMap {
+            BodyCompositionAnalysis.reconcile(delta: delta, estimatedDailyKcal: $0.deficit, trendWindowDays: $0.windowDays)
+        }
         return VStack(alignment: .leading, spacing: 8) {
             Text("WHAT CHANGED").font(.caption.weight(.semibold)).foregroundStyle(Theme.textSecondary)
             Text(delta.narrative)
@@ -130,13 +132,13 @@ struct DEXAOverviewView: View {
     /// The weight-trend engine's current daily energy-balance estimate (negative
     /// = deficit), used to reconcile against the DEXA fat change. nil when the
     /// trend is inconclusive.
-    private var weeklyRateEstimate: Double? {
+    private var weeklyRateEstimate: (deficit: Double, windowDays: Int)? {
         let entries = (try? AppDatabase.shared.fetchWeightEntries()) ?? []
         guard entries.count >= 4 else { return nil }
         let tuples = entries.map { (date: $0.date, weightKg: $0.weightKg) }
         guard let trend = WeightTrendCalculator.calculateTrend(entries: tuples),
               !trend.hasInsufficientData, trend.trendIsSignificant else { return nil }
-        return trend.estimatedDailyDeficit
+        return (trend.estimatedDailyDeficit, trend.rateWindowDays)
     }
 
     // MARK: - Overview Cards
@@ -171,8 +173,11 @@ struct DEXAOverviewView: View {
                 if let ag = latest.agRatio {
                     miniStat("A/G Ratio", value: String(format: "%.2f", ag))
                 }
-                if let total = latest.totalMassLbs {
-                    miniStat("Total", value: String(format: "%.1f lbs", total))
+                if let bone = latest.boneMassKg {
+                    miniStat("Bone", value: String(format: "%.1f \(wu.displayName)", wu.convert(fromKg: bone)))
+                }
+                if let total = latest.totalMassKg {
+                    miniStat("Total", value: String(format: "%.1f \(wu.displayName)", wu.convert(fromKg: total)))
                 }
             }
         }
@@ -183,10 +188,13 @@ struct DEXAOverviewView: View {
             Text(title).font(.caption).foregroundStyle(Theme.textSecondary)
             Text(value).font(.title3.weight(.bold).monospacedDigit())
             if let d = delta {
-                let good = lowerBetter ? d < -0.01 : d > 0.01
-                let neutral = abs(d) < 0.01
-                let arrow = d < -0.01 ? "\u{2193}" : d > 0.01 ? "\u{2191}" : ""
-                Text("\(arrow) \(abs(d) < 0.05 ? "no change" : "\(String(format: "%.1f", abs(d))) \(deltaUnit)")")
+                // One threshold (0.05) drives arrow, color, and text together —
+                // previously arrow/color used 0.01 and text used 0.05, so a
+                // 0.03 delta rendered a colored "↓ no change".
+                let neutral = abs(d) < 0.05
+                let good = !neutral && (lowerBetter ? d < 0 : d > 0)
+                let arrow = neutral ? "" : (d < 0 ? "\u{2193}" : "\u{2191}")
+                Text("\(arrow) \(neutral ? "no change" : "\(String(format: "%.1f", abs(d))) \(deltaUnit)")")
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(neutral ? .secondary : good ? Theme.deficit : Theme.surplus)
             } else {
@@ -334,19 +342,22 @@ struct DEXAOverviewView: View {
 
             trendChart("Body Fat %", data: sorted.compactMap { s in
                 guard let d = df.date(from: s.scanDate), let v = s.bodyFatPct else { return nil }; return (d, v)
-            }, unit: "%", color: Theme.stepsOrange)
+            }, unit: "%", color: Theme.stepsOrange, lowerBetter: true)
 
             trendChart("Fat Mass", data: sorted.compactMap { s in
                 guard let d = df.date(from: s.scanDate), let v = s.fatMassKg else { return nil }; return (d, wu.convert(fromKg: v))
-            }, unit: wu.displayName, color: Theme.surplus)
+            }, unit: wu.displayName, color: Theme.surplus, lowerBetter: true)
 
             trendChart("Lean Mass", data: sorted.compactMap { s in
                 guard let d = df.date(from: s.scanDate), let v = s.leanMassKg else { return nil }; return (d, wu.convert(fromKg: v))
-            }, unit: wu.displayName, color: Theme.deficit)
+            }, unit: wu.displayName, color: Theme.deficit, lowerBetter: false)
         }
     }
 
-    private func trendChart(_ title: String, data: [(Date, Double)], unit: String, color: Color) -> some View {
+    /// `lowerBetter` — true for body-fat/fat-mass (a drop is good = green),
+    /// false for lean mass (a drop is against the goal = red). Previously
+    /// hardcoded down=green for all three, so a lean-mass loss showed green.
+    private func trendChart(_ title: String, data: [(Date, Double)], unit: String, color: Color, lowerBetter: Bool) -> some View {
         guard data.count >= 2 else { return AnyView(EmptyView()) }
         return AnyView(
             VStack(alignment: .leading, spacing: 6) {
@@ -355,9 +366,10 @@ struct DEXAOverviewView: View {
                     Spacer()
                     if let first = data.first?.1, let last = data.last?.1 {
                         let diff = last - first
+                        let good = abs(diff) < 0.05 ? false : (lowerBetter ? diff < 0 : diff > 0)
                         Text("\(diff >= 0 ? "+" : "")\(String(format: "%.1f", diff)) \(unit)")
                             .font(.caption.weight(.bold).monospacedDigit())
-                            .foregroundStyle(diff < 0 ? Theme.deficit : Theme.surplus)
+                            .foregroundStyle(abs(diff) < 0.05 ? Theme.textSecondary : (good ? Theme.deficit : Theme.surplus))
                     }
                 }
                 Chart {
@@ -503,13 +515,15 @@ struct DEXAOverviewView: View {
                         return
                     }
 
+                    // Drop date-only rows the parser can emit with no composition
+                    // — importing them created "--" ghost rows in history.
                     let scansWithData = parsedScans.filter { $0.bodyFatPct != nil || $0.fatMassLbs != nil }
-                    let count = try DEXAService.importBodySpecScans(parsedScans)
+                    let count = try DEXAService.importBodySpecScans(scansWithData)
 
-                    let details = parsedScans.map { "\(formatDateShort($0.scanDate)): \($0.bodyFatPct.map { String(format: "%.1f%%", $0) } ?? "no BF%")" }.joined(separator: ", ")
+                    let details = scansWithData.map { "\(formatDateShort($0.scanDate)): \($0.bodyFatPct.map { String(format: "%.1f%%", $0) } ?? "no BF%")" }.joined(separator: ", ")
 
                     importMessage = ImportMessage(
-                        text: "Imported \(count) scans (\(details)). \(parsedScans.first?.regions.count ?? 0) regions for latest scan.",
+                        text: "Imported \(count) scans (\(details)). \(scansWithData.first?.regions.count ?? 0) regions for latest scan.",
                         isError: false
                     )
 

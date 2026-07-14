@@ -4,7 +4,12 @@ import DriftCore
 
 /// Capture/edit one progress check-in: up to four pose photos (front / back /
 /// left / right) and a set of tape measurements. Photos and measurements are
-/// both optional — you can log just photos, just numbers, or both.
+/// both optional. Two conveniences (operator 2026-07-14):
+///  - Weight is pulled from the nearest weight log and shown read-only (weight
+///    has its own tracking; no need to re-enter it here).
+///  - Measurement fields ghost-fill from the most recent earlier check-in —
+///    since most sites don't change week to week, you only edit what moved;
+///    untouched ghosts carry forward on save.
 struct AddProgressEntryView: View {
     /// When set, edit that day's existing entry; otherwise a new one for today.
     let existingDate: String?
@@ -14,13 +19,26 @@ struct AddProgressEntryView: View {
     @State private var photos: [ProgressPose: UIImage] = [:]
     @State private var existingFilenames: [ProgressPose: String] = [:]
     @State private var measurements: [MeasurementSite: String] = [:]
+    /// Exact text shown at load per site — so an untouched field re-saves its
+    /// ORIGINAL cm value rather than a re-rounded conversion (no drift).
+    @State private var loadedText: [MeasurementSite: String] = [:]
+    @State private var loadedCm: [MeasurementSite: Double] = [:]
+    /// Carried-forward values from the previous check-in, shown as ghost
+    /// placeholders; adopted on save when a field is left blank.
+    @State private var ghostCm: [MeasurementSite: Double] = [:]
     @State private var notes = ""
+    @State private var nearestWeightKg: Double?
+    @State private var loadedForDate: String?
 
-    // Capture routing
+    // Capture routing. `libraryPose` is intentionally NOT tied to the picker's
+    // presentation binding — clearing it on dismiss raced the selection handler
+    // and dropped picks. `showingLibrary` drives presentation instead.
     @State private var capturePose: ProgressPose?
     @State private var showingCamera = false
-    @State private var libraryItem: PhotosPickerItem?
+    @State private var showingTimerCamera = false
+    @State private var showingLibrary = false
     @State private var libraryPose: ProgressPose?
+    @State private var libraryItem: PhotosPickerItem?
 
     private var inInches: Bool { Preferences.weightUnit == .lbs }
     private var unitLabel: String { inInches ? "in" : "cm" }
@@ -35,9 +53,10 @@ struct AddProgressEntryView: View {
             ScrollView {
                 VStack(spacing: 18) {
                     if existingDate == nil {
-                        DatePicker("Date", selection: $date, displayedComponents: .date)
+                        DatePicker("Date", selection: $date, in: ...Date(), displayedComponents: .date)
                             .padding(.horizontal, 4)
                     }
+                    weightRow
                     photosSection
                     measurementsSection
                     notesSection
@@ -64,18 +83,44 @@ struct AddProgressEntryView: View {
                     if let pose = capturePose { photos[pose] = image }
                 }
             }
-            .photosPicker(isPresented: Binding(get: { libraryPose != nil }, set: { if !$0 { libraryPose = nil } }),
-                          selection: $libraryItem, matching: .images)
+            .fullScreenCover(isPresented: $showingTimerCamera) {
+                TimerCameraView { image in
+                    if let pose = capturePose { photos[pose] = image }
+                }
+            }
+            .photosPicker(isPresented: $showingLibrary, selection: $libraryItem, matching: .images)
             .onChange(of: libraryItem) { _, item in
                 guard let item, let pose = libraryPose else { return }
                 Task { await loadLibrary(item, pose: pose) }
             }
-            .onAppear(perform: loadExisting)
+            .onChange(of: date) { _, _ in loadForCurrentDate() }
+            .onAppear(perform: loadForCurrentDate)
         }
     }
 
     private var hasAnything: Bool {
-        !photos.isEmpty || !existingFilenames.isEmpty || measurements.values.contains { !$0.isEmpty }
+        !photos.isEmpty || !existingFilenames.isEmpty
+            || measurements.values.contains { !$0.isEmpty }
+            || !ghostCm.isEmpty || !notes.isEmpty
+    }
+
+    // MARK: - Weight (read-only, auto-pulled)
+
+    @ViewBuilder
+    private var weightRow: some View {
+        if let kg = nearestWeightKg {
+            let shown = Preferences.weightUnit == .lbs ? kg * 2.20462 : kg
+            HStack(spacing: 8) {
+                Image(systemName: "scalemass").font(.subheadline).foregroundStyle(Theme.textSecondary)
+                Text("Weight").font(.subheadline).foregroundStyle(Theme.textSecondary)
+                Spacer()
+                Text(String(format: "%.1f %@", shown, Preferences.weightUnit.displayName))
+                    .font(.subheadline.weight(.semibold).monospacedDigit())
+            }
+            .padding(.horizontal, 12).padding(.vertical, 10)
+            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
+            .overlay(RoundedRectangle(cornerRadius: Theme.radiusControl).strokeBorder(Theme.separator, lineWidth: 0.5))
+        }
     }
 
     // MARK: - Photos
@@ -94,8 +139,9 @@ struct AddProgressEntryView: View {
     private func poseTile(_ pose: ProgressPose) -> some View {
         let img = photos[pose] ?? existingFilenames[pose].flatMap { ProgressPhotoStore.load($0) }
         return Menu {
-            Button { capturePose = pose; requestCamera() } label: { Label("Take Photo", systemImage: "camera") }
-            Button { libraryPose = pose } label: { Label("Choose from Library", systemImage: "photo.on.rectangle") }
+            Button { capturePose = pose; showingCamera = true } label: { Label("Take Photo", systemImage: "camera") }
+            Button { capturePose = pose; showingTimerCamera = true } label: { Label("Self-timer", systemImage: "timer") }
+            Button { libraryPose = pose; showingLibrary = true } label: { Label("Choose from Library", systemImage: "photo.on.rectangle") }
             if img != nil {
                 Button(role: .destructive) { removePhoto(pose) } label: { Label("Remove", systemImage: "trash") }
             }
@@ -126,8 +172,15 @@ struct AddProgressEntryView: View {
 
     private var measurementsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("MEASUREMENTS (\(unitLabel.uppercased()))")
-                .font(.caption.weight(.semibold)).foregroundStyle(Theme.textSecondary)
+            HStack {
+                Text("MEASUREMENTS (\(unitLabel.uppercased()))")
+                    .font(.caption.weight(.semibold)).foregroundStyle(Theme.textSecondary)
+                Spacer()
+                if !ghostCm.isEmpty {
+                    Text("carried from last check-in")
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
+                }
+            }
             ForEach(MeasurementSite.Group.allCases, id: \.self) { group in
                 let sites = MeasurementSite.displayOrder.filter { $0.group == group }
                 VStack(alignment: .leading, spacing: 6) {
@@ -141,10 +194,11 @@ struct AddProgressEntryView: View {
     }
 
     private func measurementRow(_ site: MeasurementSite) -> some View {
-        HStack {
+        let ghost = ghostCm[site].map { String(format: "%.1f", inInches ? $0 / 2.54 : $0) }
+        return HStack {
             Text(site.displayName).font(.subheadline)
             Spacer()
-            TextField("—", text: Binding(
+            TextField(ghost ?? "—", text: Binding(
                 get: { measurements[site] ?? "" },
                 set: { measurements[site] = $0 }))
                 .keyboardType(.decimalPad)
@@ -168,11 +222,6 @@ struct AddProgressEntryView: View {
 
     // MARK: - Capture helpers
 
-    private func requestCamera() {
-        guard UIImagePickerController.isSourceTypeAvailable(.camera) else { showingCamera = true; return }
-        showingCamera = true
-    }
-
     private func loadLibrary(_ item: PhotosPickerItem, pose: ProgressPose) async {
         if let data = try? await item.loadTransferable(type: Data.self), let image = UIImage(data: data) {
             await MainActor.run { photos[pose] = image }
@@ -185,51 +234,101 @@ struct AddProgressEntryView: View {
         existingFilenames[pose] = nil
     }
 
-    // MARK: - Load / save
+    // MARK: - Load
 
-    private func loadExisting() {
-        guard let existingDate else { return }
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.locale = Locale(identifier: "en_US_POSIX")
-        if let d = f.date(from: existingDate) { date = d }
-        for photo in (try? AppDatabase.shared.fetchProgressPhotos(forDate: existingDate)) ?? [] {
-            if let pose = photo.poseEnum { existingFilenames[pose] = photo.filename }
+    /// Load whatever exists for the currently-selected date, plus ghosts from
+    /// the nearest earlier check-in and the nearest weight. Re-runs when the
+    /// date picker changes so picking a date that already has data EDITS it
+    /// instead of silently overwriting it on save (data-loss bug fix).
+    private func loadForCurrentDate() {
+        let ds = existingDate ?? dateString
+        guard loadedForDate != ds else { return }
+        loadedForDate = ds
+
+        if let existingDate {
+            let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.locale = Locale(identifier: "en_US_POSIX")
+            if let d = f.date(from: existingDate) { date = d }
         }
-        if let m = try? AppDatabase.shared.fetchBodyMeasurement(forDate: existingDate) {
+
+        // Reset editable state for the new date.
+        photos = [:]; existingFilenames = [:]; measurements = [:]
+        loadedText = [:]; loadedCm = [:]; ghostCm = [:]; notes = ""
+
+        for photo in (try? AppDatabase.shared.fetchProgressPhotos(forDate: ds)) ?? [] {
+            if let pose = photo.poseEnum, ProgressPhotoStore.fileExists(photo.filename) {
+                existingFilenames[pose] = photo.filename
+            }
+        }
+        if let m = try? AppDatabase.shared.fetchBodyMeasurement(forDate: ds) {
             for site in MeasurementSite.allCases {
                 if let cm = m.value(for: site) {
-                    let shown = inInches ? cm / 2.54 : cm
-                    measurements[site] = String(format: "%.1f", shown)
+                    let text = String(format: "%.1f", inInches ? cm / 2.54 : cm)
+                    measurements[site] = text
+                    loadedText[site] = text
+                    loadedCm[site] = cm
                 }
             }
             notes = m.notes ?? ""
         }
+        // Ghost-fill from the most recent measurement STRICTLY BEFORE this date.
+        if let prev = ((try? AppDatabase.shared.fetchBodyMeasurements()) ?? [])
+            .first(where: { $0.date < ds }) {
+            for site in MeasurementSite.allCases where measurements[site] == nil {
+                if let cm = prev.value(for: site) { ghostCm[site] = cm }
+            }
+        }
+        nearestWeightKg = nearestWeight(to: ds)
     }
 
+    /// Nearest logged weight to `ds` within ±14 days (same-day wins).
+    private func nearestWeight(to ds: String) -> Double? {
+        let entries = (try? AppDatabase.shared.fetchWeightEntries()) ?? []
+        guard !entries.isEmpty else { return nil }
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.locale = Locale(identifier: "en_US_POSIX")
+        guard let target = f.date(from: ds) else { return nil }
+        var best: (WeightEntry, TimeInterval)?
+        for e in entries {
+            guard let d = f.date(from: String(e.date.prefix(10))) else { continue }
+            let gap = abs(d.timeIntervalSince(target))
+            if gap <= 14 * 86_400, best == nil || gap < best!.1 { best = (e, gap) }
+        }
+        return best?.0.weightKg
+    }
+
+    // MARK: - Save
+
     private func save() {
-        let ds = dateString
+        let ds = existingDate ?? dateString
         // Photos: write newly-captured ones to disk, keep existing untouched.
         for (pose, image) in photos {
             if let filename = ProgressPhotoStore.save(image, date: ds, pose: pose) {
                 var record = ProgressPhoto(date: ds, pose: pose, filename: filename)
-                if let replaced = try? AppDatabase.shared.saveProgressPhoto(&record),
-                   replaced != filename {
+                if let replaced = try? AppDatabase.shared.saveProgressPhoto(&record), replaced != filename {
                     ProgressPhotoStore.delete(replaced)
                 }
             }
         }
         // Removed existing photos (had a filename, now cleared).
-        if let existingDate {
-            for photo in (try? AppDatabase.shared.fetchProgressPhotos(forDate: existingDate)) ?? [] {
-                if let pose = photo.poseEnum, existingFilenames[pose] == nil, photos[pose] == nil {
-                    if let removed = try? AppDatabase.shared.deleteProgressPhoto(id: photo.id ?? -1) {
-                        ProgressPhotoStore.delete(removed)
-                    }
+        for photo in (try? AppDatabase.shared.fetchProgressPhotos(forDate: ds)) ?? [] {
+            if let pose = photo.poseEnum, existingFilenames[pose] == nil, photos[pose] == nil {
+                if let removed = try? AppDatabase.shared.deleteProgressPhoto(id: photo.id ?? -1) {
+                    ProgressPhotoStore.delete(removed)
                 }
             }
         }
-        // Measurements → cm.
+        // Measurements → cm. Untouched fields reuse their ORIGINAL cm (no
+        // conversion drift); blank fields adopt the carried-forward ghost.
         var cmMap: [String: Double] = [:]
-        for (site, text) in measurements {
+        for site in MeasurementSite.allCases {
+            let text = (measurements[site] ?? "").trimmingCharacters(in: .whitespaces)
+            if text.isEmpty {
+                if let ghost = ghostCm[site] { cmMap[site.rawValue] = ghost }
+                continue
+            }
+            if text == loadedText[site], let original = loadedCm[site] {
+                cmMap[site.rawValue] = original
+                continue
+            }
             let normalized = text.replacingOccurrences(of: ",", with: ".")
             guard let shown = Double(normalized), shown > 0 else { continue }
             cmMap[site.rawValue] = inInches ? shown * 2.54 : shown
@@ -237,17 +336,17 @@ struct AddProgressEntryView: View {
         if !cmMap.isEmpty || !notes.isEmpty {
             var m = BodyMeasurement(date: ds, measurementsCm: cmMap, notes: notes.isEmpty ? nil : notes)
             try? AppDatabase.shared.saveBodyMeasurement(&m)
-        } else if existingDate != nil {
+        } else {
             try? AppDatabase.shared.deleteBodyMeasurement(forDate: ds)
         }
         dismiss()
     }
 
     private func deleteEntry() {
-        guard let existingDate else { return }
-        let removed = (try? AppDatabase.shared.deleteProgressPhotos(forDate: existingDate)) ?? []
+        let ds = existingDate ?? dateString
+        let removed = (try? AppDatabase.shared.deleteProgressPhotos(forDate: ds)) ?? []
         ProgressPhotoStore.delete(removed)
-        try? AppDatabase.shared.deleteBodyMeasurement(forDate: existingDate)
+        try? AppDatabase.shared.deleteBodyMeasurement(forDate: ds)
         dismiss()
     }
 }

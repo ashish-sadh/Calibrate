@@ -91,6 +91,41 @@ struct ProgressTrackingTests {
         #expect(abs(BodyMeasurementAnalysis.inches(fromCm: 81.28) - 32) < 0.01)
     }
 
+    // MARK: - Intelligent comparisons
+
+    @Test func waistToHipRatioClassified() {
+        var m = BodyMeasurement(date: "2026-07-14")
+        m.measurementsCm = [MeasurementSite.waist.rawValue: 80, MeasurementSite.hips.rawValue: 100]
+        let ratios = BodyMeasurementAnalysis.ratios(in: m)
+        let whr = try! #require(ratios.first { $0.id == "whr" })
+        #expect(abs(whr.value - 0.8) < 0.001)
+        #expect(whr.interpretation.contains("lower-risk"))
+    }
+
+    @Test func waistToChestVTaper() {
+        var m = BodyMeasurement(date: "2026-07-14")
+        m.measurementsCm = [MeasurementSite.waist.rawValue: 74, MeasurementSite.chest.rawValue: 104]
+        let wcr = try! #require(BodyMeasurementAnalysis.ratios(in: m).first { $0.id == "wcr" })
+        #expect(wcr.interpretation.contains("V-taper"))
+    }
+
+    @Test func biggestMoversRankedByPercent() {
+        var prev = BodyMeasurement(date: "2026-06-01")
+        prev.measurementsCm = [MeasurementSite.waist.rawValue: 90, MeasurementSite.leftBicep.rawValue: 35]
+        var cur = BodyMeasurement(date: "2026-07-01")
+        // Waist −3 (−3.3%), bicep +2 (+5.7%) → bicep is the bigger % mover.
+        cur.measurementsCm = [MeasurementSite.waist.rawValue: 87, MeasurementSite.leftBicep.rawValue: 37]
+        let movers = BodyMeasurementAnalysis.biggestMovers(from: prev, to: cur)
+        #expect(movers.first?.site == .leftBicep)
+        #expect(movers.count == 2)
+    }
+
+    @Test func ratiosEmptyWithoutPairs() {
+        var m = BodyMeasurement(date: "2026-07-14")
+        m.measurementsCm = [MeasurementSite.neck.rawValue: 40]
+        #expect(BodyMeasurementAnalysis.ratios(in: m).isEmpty)
+    }
+
     // MARK: - Persistence
 
     @Test func measurementUpsertByDate() throws {

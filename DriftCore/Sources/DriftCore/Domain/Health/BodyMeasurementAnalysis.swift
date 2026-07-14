@@ -72,6 +72,54 @@ public enum BodyMeasurementAnalysis {
         v == v.rounded() ? String(Int(v)) : String(format: "%.1f", v)
     }
 
+    // MARK: - Intelligent comparisons / ratios
+
+    public struct Ratio: Sendable, Equatable {
+        public let id: String
+        public let title: String
+        public let value: Double
+        /// A short read on what the value means (goal-agnostic, factual).
+        public let interpretation: String
+    }
+
+    /// Body-shape ratios derivable from a single measurement set. Waist-to-hip
+    /// and waist-to-chest are the classic physique/health-risk indicators.
+    public static func ratios(in m: BodyMeasurement) -> [Ratio] {
+        var out: [Ratio] = []
+        if let waist = m.value(for: .waist), let hips = m.value(for: .hips), hips > 0 {
+            let whr = waist / hips
+            let note: String
+            if whr < 0.85 { note = "lower-risk range" }
+            else if whr < 0.95 { note = "moderate range" }
+            else { note = "higher cardio-metabolic risk range" }
+            out.append(Ratio(id: "whr", title: "Waist-to-Hip", value: whr, interpretation: note))
+        }
+        if let waist = m.value(for: .waist), let chest = m.value(for: .chest), chest > 0 {
+            let wcr = waist / chest
+            // Lower waist-to-chest reads as a more V-taper physique.
+            let note = wcr < 0.75 ? "strong V-taper" : (wcr < 0.85 ? "athletic taper" : "straighter torso")
+            out.append(Ratio(id: "wcr", title: "Waist-to-Chest", value: wcr, interpretation: note))
+        }
+        return out
+    }
+
+    public struct Mover: Sendable, Equatable {
+        public let site: MeasurementSite
+        public let changeCm: Double
+        public let percentChange: Double
+    }
+
+    /// The biggest relative movers between two sets — "what actually changed."
+    /// Ranked by absolute percent change, largest first.
+    public static func biggestMovers(from previous: BodyMeasurement, to current: BodyMeasurement, limit: Int = 3) -> [Mover] {
+        deltas(from: previous, to: current)
+            .filter { abs($0.changeCm) >= 0.5 && $0.previousCm > 0 }
+            .map { Mover(site: $0.site, changeCm: $0.changeCm, percentChange: ($0.changeCm / $0.previousCm) * 100) }
+            .sorted { abs($0.percentChange) > abs($1.percentChange) }
+            .prefix(limit)
+            .map { $0 }
+    }
+
     // MARK: - Unit helpers
 
     public static func cm(fromInches inches: Double) -> Double { inches * 2.54 }

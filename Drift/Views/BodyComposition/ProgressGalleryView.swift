@@ -1,17 +1,21 @@
 import SwiftUI
 import DriftCore
 
-/// Progress hub — a timeline of photo + measurement check-ins, an add button,
-/// and a compare entry point. Follows the shape of the best physique-tracking
-/// apps: dated entries with a 4-pose thumbnail strip and the headline
-/// measurement, tap into an entry, or compare any two dates side by side.
+/// Progress hub — a photo timeline you can scrub per pose, dated check-in
+/// cards, measurement trend charts, and a before/after compare. Follows what
+/// the best physique-tracking apps do: watch yourself change over time, not
+/// just store isolated snapshots.
 struct ProgressGalleryView: View {
     @State private var entries: [ProgressEntry] = []
+    @State private var weightByDate: [String: Double] = [:]
     @State private var showingAdd = false
     @State private var showingCompare = false
+    @State private var showingCharts = false
     @State private var editingDate: String?
+    @State private var timelinePose: ProgressPose = .front
 
     private var inInches: Bool { Preferences.weightUnit == .lbs }
+    private var photoEntries: [ProgressEntry] { entries.filter(\.hasPhotos) }
 
     var body: some View {
         ScrollView {
@@ -19,9 +23,8 @@ struct ProgressGalleryView: View {
                 if entries.isEmpty {
                     emptyState
                 } else {
-                    if entries.filter(\.hasPhotos).count >= 2 {
-                        compareButton
-                    }
+                    actionRow
+                    if photoEntries.count >= 2 { timelineSection }
                     ForEach(entries, id: \.date) { entry in
                         entryCard(entry)
                     }
@@ -45,7 +48,10 @@ struct ProgressGalleryView: View {
             AddProgressEntryView(existingDate: editingDate)
         }
         .sheet(isPresented: $showingCompare) {
-            ProgressCompareView(entries: entries.filter(\.hasPhotos))
+            ProgressCompareView(entries: photoEntries)
+        }
+        .sheet(isPresented: $showingCharts) {
+            ProgressChartsView(entries: entries, weightByDate: weightByDate)
         }
         .onAppear(perform: reload)
     }
@@ -75,23 +81,78 @@ struct ProgressGalleryView: View {
         .padding(.horizontal, 32).padding(.top, 60)
     }
 
-    // MARK: - Compare CTA
+    // MARK: - Action row (compare + trends)
 
-    private var compareButton: some View {
-        Button { showingCompare = true } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "rectangle.split.2x1")
-                Text("Compare check-ins").font(.subheadline.weight(.medium))
-                Spacer()
-                Image(systemName: "chevron.right").font(.caption).foregroundStyle(Theme.textTertiary)
+    private var actionRow: some View {
+        HStack(spacing: 8) {
+            if photoEntries.count >= 2 {
+                actionButton("Compare", icon: "rectangle.split.2x1") { showingCompare = true }
             }
-            .padding(12)
+            if entries.contains(where: { $0.measurement?.isEmpty == false }) || weightByDate.count >= 2 {
+                actionButton("Trends", icon: "chart.xyaxis.line") { showingCharts = true }
+            }
+        }
+    }
+
+    private func actionButton(_ title: String, icon: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                Text(title).font(.subheadline.weight(.medium))
+            }
             .frame(maxWidth: .infinity)
+            .padding(.vertical, 11)
             .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
             .overlay(RoundedRectangle(cornerRadius: Theme.radiusControl).strokeBorder(Theme.separator, lineWidth: 0.5))
             .foregroundStyle(Theme.textPrimary)
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Photo timeline scrubber
+
+    private var timelineSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("TIMELINE").font(.caption.weight(.semibold)).foregroundStyle(Theme.textSecondary)
+                Spacer()
+                Picker("Pose", selection: $timelinePose) {
+                    ForEach(ProgressPose.allCases, id: \.self) { Text($0.shortName).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 220)
+            }
+            let posed = photoEntries.compactMap { e -> (String, ProgressPhoto)? in
+                e.photo(for: timelinePose).map { (e.date, $0) }
+            }.reversed()   // oldest → newest, left to right
+            if posed.isEmpty {
+                Text("No \(timelinePose.shortName.lowercased()) photos yet.")
+                    .font(.caption).foregroundStyle(Theme.textTertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 20)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(Array(posed), id: \.0) { date, photo in
+                            Button { editingDate = date; showingAdd = true } label: {
+                                VStack(spacing: 4) {
+                                    if let img = ProgressPhotoStore.load(photo.filename) {
+                                        Image(uiImage: img).resizable().scaledToFill()
+                                            .frame(width: 110, height: 150)
+                                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                                    }
+                                    Text(shortDate(date)).font(.caption2).foregroundStyle(Theme.textTertiary)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+        }
+        .padding(12)
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radiusControl).strokeBorder(Theme.separator, lineWidth: 0.5))
     }
 
     // MARK: - Entry card
@@ -105,8 +166,9 @@ struct ProgressGalleryView: View {
                 HStack {
                     Text(formatDate(entry.date)).font(.subheadline.weight(.semibold))
                     Spacer()
-                    if let m = entry.measurement, let waist = m.value(for: .waist) {
-                        Text("Waist \(formatCm(waist))")
+                    if let kg = weightByDate[entry.date] {
+                        let shown = inInches ? kg * 2.20462 : kg
+                        Text(String(format: "%.1f %@", shown, Preferences.weightUnit.displayName))
                             .font(.caption).foregroundStyle(Theme.textSecondary)
                     }
                     Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.textTertiary)
@@ -160,10 +222,7 @@ struct ProgressGalleryView: View {
     }
 
     private func formatCm(_ cm: Double) -> String {
-        if inInches {
-            return String(format: "%.1f in", cm / 2.54)
-        }
-        return String(format: "%.1f cm", cm)
+        inInches ? String(format: "%.1f in", cm / 2.54) : String(format: "%.1f cm", cm)
     }
 
     private func formatDate(_ dateStr: String) -> String {
@@ -175,7 +234,40 @@ struct ProgressGalleryView: View {
         return "\(months[m]) \(d), \(parts[0])"
     }
 
+    private func shortDate(_ dateStr: String) -> String {
+        let parts = dateStr.split(separator: "-")
+        guard parts.count == 3 else { return dateStr }
+        let months = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        let m = Int(parts[1]) ?? 0, d = Int(parts[2]) ?? 0
+        guard m > 0, m <= 12 else { return dateStr }
+        return "\(months[m]) \(d)"
+    }
+
     private func reload() {
-        entries = (try? AppDatabase.shared.fetchProgressEntries()) ?? []
+        // Sanitize: drop photo rows whose file is missing (e.g. a partial
+        // restore) so the gallery never shows blank thumbnails or offers a
+        // compare with no image.
+        let raw = (try? AppDatabase.shared.fetchProgressEntries()) ?? []
+        entries = raw.map { e in
+            ProgressEntry(date: e.date,
+                          photos: e.photos.filter { ProgressPhotoStore.fileExists($0.filename) },
+                          measurement: e.measurement)
+        }.filter { $0.hasPhotos || $0.measurement?.isEmpty == false }
+
+        // Nearest logged weight per entry date (±14 days).
+        let weights = (try? AppDatabase.shared.fetchWeightEntries()) ?? []
+        weightByDate = [:]
+        guard !weights.isEmpty else { return }
+        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; f.locale = Locale(identifier: "en_US_POSIX")
+        for entry in entries {
+            guard let target = f.date(from: entry.date) else { continue }
+            var best: (Double, TimeInterval)?
+            for w in weights {
+                guard let d = f.date(from: String(w.date.prefix(10))) else { continue }
+                let gap = abs(d.timeIntervalSince(target))
+                if gap <= 14 * 86_400, best == nil || gap < best!.1 { best = (w.weightKg, gap) }
+            }
+            if let best { weightByDate[entry.date] = best.0 }
+        }
     }
 }
