@@ -11,11 +11,11 @@ struct TimerCameraView: View {
     @Environment(\.dismiss) private var dismiss
 
     @StateObject private var cam = TimerCameraController()
-    @State private var seconds = 5
+    @State private var seconds = 0          // 0 = Off (instant capture)
     @State private var countdown: Int?
     @State private var cancelled = false
 
-    private let options = [3, 5, 10]
+    private let options = [0, 3, 5, 10]      // 0 shown as "Off"
 
     var body: some View {
         ZStack {
@@ -59,28 +59,41 @@ struct TimerCameraView: View {
         VStack(spacing: 16) {
             if countdown == nil {
                 Picker("Timer", selection: $seconds) {
-                    ForEach(options, id: \.self) { Text("\($0)s").tag($0) }
+                    ForEach(options, id: \.self) { Text($0 == 0 ? "Off" : "\($0)s").tag($0) }
                 }
                 .pickerStyle(.segmented)
-                .frame(width: 200)
+                .frame(width: 220)
                 .background(.ultraThinMaterial, in: Capsule())
             }
-            Button { startCountdown() } label: {
+            Button { shutter() } label: {
                 ZStack {
                     Circle().strokeBorder(.white, lineWidth: 4).frame(width: 76, height: 76)
-                    Image(systemName: countdown == nil ? "timer" : "hourglass")
-                        .font(.title2).foregroundStyle(.white)
+                    // Solid inner disc for instant shutter; timer glyph when armed.
+                    if seconds == 0 {
+                        Circle().fill(.white).frame(width: 60, height: 60)
+                    } else {
+                        Image(systemName: countdown == nil ? "timer" : "hourglass")
+                            .font(.title2).foregroundStyle(.white)
+                    }
                 }
             }
             .disabled(countdown != nil)
-            .accessibilityLabel("Start \(seconds) second timer")
+            .accessibilityLabel(seconds == 0 ? "Take photo" : "Start \(seconds) second timer")
         }
         .padding(.bottom, 40)
     }
 
-    private func startCountdown() {
-        countdown = seconds
-        tick()
+    /// Instant capture when the timer is Off, otherwise start the countdown.
+    private func shutter() {
+        if seconds == 0 {
+            cam.capture { image in
+                if let image { onCapture(image) }
+                dismiss()
+            }
+        } else {
+            countdown = seconds
+            tick()
+        }
     }
 
     private func tick() {

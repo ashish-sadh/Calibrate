@@ -34,27 +34,18 @@ struct AddProgressEntryView: View {
     /// for sites that date never measured.
     @State private var dateHadMeasurement = false
 
-    // Capture routing. Camera + self-timer share ONE `.fullScreenCover(item:)`
-    // (an enum) so the view carries a single presentation modifier — stacking
-    // multiple .fullScreenCover/.photosPicker on one view breaks selection
-    // delivery. The photos picker lives on its own nested view (photosSection).
-    @State private var captureMode: CaptureMode?
+    // Capture routing. The camera lives in ONE `.fullScreenCover(item:)` keyed
+    // by the pose so the view carries a single presentation modifier — stacking
+    // multiple covers/pickers on one view breaks selection delivery. The photos
+    // picker lives on its own nested view (photosSection). The camera itself
+    // carries the timer control (Off / 3s / 5s / 10s), so there's one "Take
+    // Photo" entry, not a confusing camera-vs-timer split.
+    @State private var cameraPose: CameraTarget?
     @State private var showingLibrary = false
     @State private var libraryPose: ProgressPose?
     @State private var libraryItem: PhotosPickerItem?
 
-    enum CaptureMode: Identifiable {
-        case camera(ProgressPose), timer(ProgressPose)
-        var id: String {
-            switch self {
-            case .camera(let p): "camera-\(p.rawValue)"
-            case .timer(let p): "timer-\(p.rawValue)"
-            }
-        }
-        var pose: ProgressPose {
-            switch self { case .camera(let p), .timer(let p): p }
-        }
-    }
+    struct CameraTarget: Identifiable { let pose: ProgressPose; var id: String { pose.rawValue } }
 
     private var inInches: Bool { Preferences.weightUnit == .lbs }
     private var unitLabel: String { inInches ? "in" : "cm" }
@@ -94,13 +85,8 @@ struct AddProgressEntryView: View {
                     }
                 }
             }
-            .fullScreenCover(item: $captureMode) { mode in
-                switch mode {
-                case .camera(let pose):
-                    CameraView { image in photos[pose] = image }
-                case .timer(let pose):
-                    TimerCameraView { image in photos[pose] = image }
-                }
+            .fullScreenCover(item: $cameraPose) { target in
+                TimerCameraView { image in photos[target.pose] = image }
             }
             .onChange(of: date) { _, _ in loadForCurrentDate() }
             .onAppear(perform: loadForCurrentDate)
@@ -159,8 +145,7 @@ struct AddProgressEntryView: View {
     private func poseTile(_ pose: ProgressPose) -> some View {
         let img = photos[pose] ?? existingFilenames[pose].flatMap { ProgressPhotoStore.load($0) }
         return Menu {
-            Button { captureMode = .camera(pose) } label: { Label("Take Photo", systemImage: "camera") }
-            Button { captureMode = .timer(pose) } label: { Label("Self-timer", systemImage: "timer") }
+            Button { cameraPose = CameraTarget(pose: pose) } label: { Label("Take Photo", systemImage: "camera") }
             Button {
                 libraryPose = pose
                 // Defer to the next runloop so the Menu finishes dismissing
