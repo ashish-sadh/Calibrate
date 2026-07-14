@@ -26,6 +26,10 @@ struct DEXAOverviewView: View {
                     let previous = scans.count > 1 ? scans[1] : nil
                     overviewCards(latest: latest, previous: previous)
 
+                    if let previous, let delta = BodyCompositionAnalysis.scanDelta(previous: previous, current: latest) {
+                        compositionBreakdownCard(delta)
+                    }
+
                     if !selectedScanRegions.isEmpty {
                         regionalBreakdown
                         muscleBalance
@@ -80,6 +84,59 @@ struct DEXAOverviewView: View {
             DEXAEntryView { loadScans() }
         }
         .onAppear { AIScreenTracker.shared.currentScreen = .bodyComposition; loadScans() }
+    }
+
+    // MARK: - Composition Breakdown ("what's going right/wrong")
+
+    /// Decomposes the change between the two most recent scans into fat vs lean,
+    /// classifies it (recomposition / fat loss / lean loss / …), and reconciles
+    /// the DEXA fat change against the weight-trend engine's calorie-balance
+    /// estimate. This is the synthesis the tab never had — raw deltas alone
+    /// don't tell you whether a loss was muscle or fat, or whether your scale
+    /// trend can be trusted.
+    private func compositionBreakdownCard(_ delta: BodyCompositionAnalysis.ScanDelta) -> some View {
+        let tint: Color
+        switch delta.verdict {
+        case .recomposition, .muscleGain: tint = Theme.deficit
+        case .fatLoss: tint = Theme.deficit
+        case .leanLoss, .fatGain: tint = Theme.stepsOrange
+        case .stable: tint = Theme.textSecondary
+        }
+        let recon = weeklyRateEstimate.flatMap { BodyCompositionAnalysis.reconcile(delta: delta, estimatedDailyKcal: $0) }
+        return VStack(alignment: .leading, spacing: 8) {
+            Text("WHAT CHANGED").font(.caption.weight(.semibold)).foregroundStyle(Theme.textSecondary)
+            Text(delta.narrative)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+            if let recon {
+                Divider().overlay(Theme.separator)
+                HStack(alignment: .top, spacing: 6) {
+                    Image(systemName: recon.agrees ? "checkmark.seal.fill" : "arrow.triangle.2.circlepath")
+                        .font(.caption).foregroundStyle(recon.agrees ? Theme.deficit : Theme.stepsOrange)
+                    Text(recon.narrative)
+                        .font(.caption)
+                        .foregroundStyle(Theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(tint.opacity(0.08), in: RoundedRectangle(cornerRadius: Theme.radiusControl))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radiusControl).strokeBorder(tint.opacity(0.25), lineWidth: 0.5))
+    }
+
+    /// The weight-trend engine's current daily energy-balance estimate (negative
+    /// = deficit), used to reconcile against the DEXA fat change. nil when the
+    /// trend is inconclusive.
+    private var weeklyRateEstimate: Double? {
+        let entries = (try? AppDatabase.shared.fetchWeightEntries()) ?? []
+        guard entries.count >= 4 else { return nil }
+        let tuples = entries.map { (date: $0.date, weightKg: $0.weightKg) }
+        guard let trend = WeightTrendCalculator.calculateTrend(entries: tuples),
+              !trend.hasInsufficientData, trend.trendIsSignificant else { return nil }
+        return trend.estimatedDailyDeficit
     }
 
     // MARK: - Overview Cards

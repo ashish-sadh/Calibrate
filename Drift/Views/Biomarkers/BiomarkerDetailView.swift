@@ -21,6 +21,9 @@ struct BiomarkerDetailView: View {
                 if let result = latestResult {
                     statusCard(result: result)
                 }
+                if let trend = biomarkerTrend {
+                    trendNarrativeCard(trend)
+                }
                 if !results.isEmpty {
                     latestValueSection
                     trendChart
@@ -99,6 +102,57 @@ struct BiomarkerDetailView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .background(statusTintColor(status).opacity(0.12), in: RoundedRectangle(cornerRadius: Theme.radiusControl))
+    }
+
+    // MARK: - Trend Narrative (personalized)
+
+    /// Personalized trajectory across this marker's readings — direction,
+    /// magnitude, status crossings, and an early warning when an in-range value
+    /// is trending toward a limit. Replaces nothing static; this is net-new.
+    private var biomarkerTrend: BiomarkerInsights.Trend? {
+        let points: [(date: Date, value: Double)] = results.compactMap { r in
+            guard let dateStr = reportDates[r.reportId],
+                  let date = Self.isoDay.date(from: dateStr) else { return nil }
+            return (date, r.normalizedValue)
+        }
+        guard points.count >= 2 else { return nil }
+        return BiomarkerInsights.trend(biomarkerId: definition.id, results: points, definition: definition)
+    }
+
+    private static let isoDay: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "yyyy-MM-dd"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
+
+    private func trendNarrativeCard(_ trend: BiomarkerInsights.Trend) -> some View {
+        let icon: String
+        let tint: Color
+        switch trend.direction {
+        case .rising: icon = "arrow.up.right"; tint = trend.latestStatus == .optimal ? Theme.textSecondary : Theme.stepsOrange
+        case .falling: icon = "arrow.down.right"; tint = trend.latestStatus == .optimal ? Theme.deficit : Theme.textSecondary
+        case .stable: icon = "arrow.right"; tint = Theme.textSecondary
+        }
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: icon).font(.caption.weight(.bold)).foregroundStyle(tint)
+                Text("TREND").font(.caption.weight(.semibold)).foregroundStyle(Theme.textSecondary)
+                if trend.approachingEdge {
+                    Text("Watch")
+                        .font(.caption2.weight(.bold))
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(Theme.stepsOrange.opacity(0.15), in: Capsule())
+                        .foregroundStyle(Theme.stepsOrange)
+                }
+            }
+            Text(trend.narrative)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .card()
     }
 
     // MARK: - Latest Value

@@ -16,6 +16,7 @@ struct BiomarkersTabView: View {
                     emptyState
                 } else {
                     donutSummary
+                    patternsSection
                     reportsList
                     searchBar
                     filterChips
@@ -70,6 +71,62 @@ struct BiomarkersTabView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 32)
+    }
+
+    // MARK: - Patterns (multi-marker synthesis)
+
+    /// Latest normalized value per biomarker, keyed by id — feeds the pattern
+    /// engine that recognizes iron-deficiency, metabolic, thyroid, lipid, and
+    /// inflammation signatures across co-occurring markers.
+    private var latestValueMap: [String: Double] {
+        var out: [String: Double] = [:]
+        for r in latestResults where out[r.biomarkerId] == nil {
+            out[r.biomarkerId] = r.normalizedValue
+        }
+        return out
+    }
+
+    @ViewBuilder
+    private var patternsSection: some View {
+        let patterns = BiomarkerInsights.patterns(latest: latestValueMap)
+        if !patterns.isEmpty {
+            VStack(alignment: .leading, spacing: 8) {
+                Text("PATTERNS")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                ForEach(patterns, id: \.id) { pattern in
+                    patternCard(pattern)
+                }
+            }
+        }
+    }
+
+    private func patternCard(_ pattern: BiomarkerInsights.Pattern) -> some View {
+        let tint = pattern.severity == .concern ? Theme.stepsOrange : Theme.fatYellow
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
+                Image(systemName: pattern.severity == .concern ? "exclamationmark.triangle.fill" : "eye")
+                    .font(.caption).foregroundStyle(tint)
+                Text(pattern.title).font(.subheadline.weight(.semibold))
+                Spacer(minLength: 0)
+            }
+            Text(pattern.detail)
+                .font(.caption)
+                .foregroundStyle(Theme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            // Which markers drove it.
+            let names = pattern.markerIds.compactMap { BiomarkerKnowledgeBase.byId[$0]?.name }
+            if !names.isEmpty {
+                Text(names.joined(separator: " · "))
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(tint)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(tint.opacity(0.08), in: RoundedRectangle(cornerRadius: Theme.radiusControl))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radiusControl).strokeBorder(tint.opacity(0.25), lineWidth: 0.5))
     }
 
     // MARK: - Donut Summary
