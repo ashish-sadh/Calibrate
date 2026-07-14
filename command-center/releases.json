@@ -2951,5 +2951,16 @@
    "mid-workout coach: ask the strip \"what's next\", \"form tips for squat\", or anything open-ended (answered with your live session as context)",
    "coach toasts: short encouragement pops when you check off sets \u2014 beat-last-time, exercise done, board cleared; disappears on its own"
   ]
+ },
+ {
+  "build": 347,
+  "date": "2026-07-13T19:13:33-0700",
+  "description": "Weight-card consistency + estimation engine groundwork",
+  "fixes": [
+   "when the recent rate and the 30-day trend disagree (water swing vs monthly picture), the Weekly and Est. Balance cards show a soft gray read instead of confident goal-colored numbers \u2014 no more \"-170 deficit\" printed beside \"30-day +1.0 lbs\""
+  ],
+  "features": [
+   "under the hood: new Kalman-filter estimation engine (opt-in, default unchanged) \u2014 groundwork for smarter, less noisy weight trends"
+  ]
  }
 ]
