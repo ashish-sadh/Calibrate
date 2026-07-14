@@ -48,6 +48,12 @@ struct MoreTabView: View {
                             DEXAOverviewView()
                         }
                         rowDivider
+                        navRow(icon: "camera.on.rectangle", title: "Progress Photos",
+                               subtitle: "Photos & measurements",
+                               color: Theme.macroFat) {
+                            ProgressGalleryView()
+                        }
+                        rowDivider
                         navRow(icon: "waveform.path.ecg", title: "Glucose",
                                subtitle: "CGM tracking",
                                color: Theme.macroFiber) {

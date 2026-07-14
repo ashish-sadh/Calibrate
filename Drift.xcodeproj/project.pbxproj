@@ -59,6 +59,7 @@
 		3CFFACEC0432AE8EC5E7ECF4 /* CloudVisionKeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCE57CE0133752BC4B5C80F3 /* CloudVisionKeyTests.swift */; };
 		3D01268D3E9F35381A819628 /* foods.db in Resources */ = {isa = PBXBuildFile; fileRef = 58B1281AF3BA620161F30716 /* foods.db */; };
 		3DAE20FBF0F571D1C26DFD59 /* AIChatInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A4575ED692EF5D3BFDBC775 /* AIChatInsightsView.swift */; };
+		4017F5EF73AE11668B5CCD15 /* ProgressCompareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C37032F6F6D10B7507B8A10 /* ProgressCompareView.swift */; };
 		40EA07ABE50FDFF7F6F85899 /* PhotoLogResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 181A867B30E38E42C06B5A82 /* PhotoLogResponse.swift */; };
 		421D57520E9C09C88A6A0B6B /* AlgorithmSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE2D9672D96D6738FA36D4F2 /* AlgorithmSettingsView.swift */; };
 		4319EDE7F6B2147FAB72CBDD /* PhotoLogServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A835CA7572E629657044C111 /* PhotoLogServiceTests.swift */; };
@@ -96,6 +97,7 @@
 		6871D13EC81A65C9B88B16D6 /* PastDayLogBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB38650575385DB4CCB0BCA3 /* PastDayLogBadge.swift */; };
 		69761B4EBFEFDC857FE06E89 /* ChatLatencyBenchmark.swift in Sources */ = {isa = PBXBuildFile; fileRef = 734A43F9D7C58B37BC8B6C07 /* ChatLatencyBenchmark.swift */; };
 		6A4AC25199199579681FCAD4 /* WeightViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D0E8B598BCB7486A2C75848E /* WeightViewModel.swift */; };
+		6B08480CCE6107363F50026B /* ProgressPhotoStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83D65F323C790538F0ADDA6C /* ProgressPhotoStore.swift */; };
 		6B893E6DB5475A6D00BCFA88 /* PerStageEvalSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 121C8FBB3776A9AE57FDF244 /* PerStageEvalSupport.swift */; };
 		6D1F9557E1AE5BF964CC7D09 /* AIBackendCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F4CF97949C6569223B2997F /* AIBackendCoordinator.swift */; };
 		70385AB62DB3A7D09C4BB002 /* latency-baseline.json in Resources */ = {isa = PBXBuildFile; fileRef = D692B540EF483EFFC8EB0569 /* latency-baseline.json */; };
@@ -104,6 +106,7 @@
 		78192B1D7BAC70E4F0C5C077 /* LogMethodCardsRowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54876336F0C254359603DBC4 /* LogMethodCardsRowTests.swift */; };
 		7821B033A6CDE13D6ED6040C /* DashboardView+Cards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 733818AD9667283F81C5D1C5 /* DashboardView+Cards.swift */; };
 		7888BCE3E091DCE6F3CD5AA2 /* GoalProgressCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0362D19A4F7D1ABB43FB48F8 /* GoalProgressCard.swift */; };
+		78D172FAF0309086F01988F6 /* AddProgressEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5A8C0054F1898CB83178C1D /* AddProgressEntryView.swift */; };
 		7A1465FD81F0693EB2B9F112 /* llama.xcframework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4101CD9171B652C6B8D1BB4E /* llama.xcframework */; };
 		7AD6304B58DBD8DA0BE88BC3 /* MacroRingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A411F4544692EA6196F07C9C /* MacroRingsView.swift */; };
 		7B4B58117970B965B8173DF5 /* WeightSyncHealTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB2B555F5A4A1014221F8575 /* WeightSyncHealTests.swift */; };
@@ -141,6 +144,7 @@
 		A459C9B6E82F83B1CC545F63 /* IntentClassifierEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = DEAFAA2ECC4A71FF1264A19F /* IntentClassifierEval.swift */; };
 		A5E780FAC20471D35ED35EF7 /* BackupScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 443FF1C2FE4B778340AC3D95 /* BackupScheduler.swift */; };
 		A65705702E8AFE205A9DF738 /* BodySummaryCardsRowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68A2CFFF213F435739A92CA8 /* BodySummaryCardsRowTests.swift */; };
+		A6FA4B4B58814DBC16AFEA18 /* ProgressGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 074D685ACBB266EE28844F0F /* ProgressGalleryView.swift */; };
 		AA43792497E2FC36FF55F58C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 08E33CA6BE80D735A37ED745 /* Assets.xcassets */; };
 		AD32A3FE644C22A43CA474EF /* DebugSeedData.swift in Sources */ = {isa = PBXBuildFile; fileRef = FCBE3BA3D70586AC0F3ED34E /* DebugSeedData.swift */; };
 		ADA6493D219411505EF2DA36 /* Preferences+PhotoLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CFCC1379789784011A217E4 /* Preferences+PhotoLog.swift */; };
@@ -284,6 +288,7 @@
 		0362D19A4F7D1ABB43FB48F8 /* GoalProgressCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalProgressCard.swift; sourceTree = "<group>"; };
 		04037279FDE1F5FFE95EC83D /* MealTextLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealTextLogger.swift; sourceTree = "<group>"; };
 		0489BE1B8FFAFEAFD32F53F9 /* PoseCrossfadeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PoseCrossfadeView.swift; sourceTree = "<group>"; };
+		074D685ACBB266EE28844F0F /* ProgressGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressGalleryView.swift; sourceTree = "<group>"; };
 		08E33CA6BE80D735A37ED745 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0966429FFAED4C7FF2D68C11 /* WidgetDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDataProvider.swift; sourceTree = "<group>"; };
 		0BFC0D10ECB1BBDADD1D1CCB /* ConfirmationCardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmationCardTests.swift; sourceTree = "<group>"; };
@@ -385,6 +390,7 @@
 		7ED878D9FF93287B41B67503 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		7F4C6870115BE53081FA0CDE /* AISetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISetupView.swift; sourceTree = "<group>"; };
 		7F7F3BAFA978301368D148CF /* ServingInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServingInputView.swift; sourceTree = "<group>"; };
+		83D65F323C790538F0ADDA6C /* ProgressPhotoStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressPhotoStore.swift; sourceTree = "<group>"; };
 		85B104D3EEC732EC50782802 /* BackupOnboardingSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupOnboardingSheet.swift; sourceTree = "<group>"; };
 		893A2B9C27B65BD830B5A520 /* DriftAppLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriftAppLaunchTests.swift; sourceTree = "<group>"; };
 		8E78D132A90B0FDC35353646 /* WeightLogListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightLogListView.swift; sourceTree = "<group>"; };
@@ -398,6 +404,7 @@
 		9A4575ED692EF5D3BFDBC775 /* AIChatInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatInsightsView.swift; sourceTree = "<group>"; };
 		9ADFC025483E1D1D5A39857E /* ClarificationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClarificationCard.swift; sourceTree = "<group>"; };
 		9BA072B74254D7004020703A /* PhotoLogEntryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLogEntryTests.swift; sourceTree = "<group>"; };
+		9C37032F6F6D10B7507B8A10 /* ProgressCompareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressCompareView.swift; sourceTree = "<group>"; };
 		9DB04C0328B001B08B1C76DB /* ServingMultiplierStepperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServingMultiplierStepperTests.swift; sourceTree = "<group>"; };
 		9F9F051926CE39DF3E0A47DA /* BodySpecPDFParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodySpecPDFParser.swift; sourceTree = "<group>"; };
 		9FA2C56E731BE5610FDC5B12 /* AIChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatView.swift; sourceTree = "<group>"; };
@@ -409,6 +416,7 @@
 		A434AE755701CCB89A111516 /* PipelineE2EEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PipelineE2EEval.swift; sourceTree = "<group>"; };
 		A4BC95967D2043D701CA63AB /* BodyCompEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyCompEntryView.swift; sourceTree = "<group>"; };
 		A4C5119D7D0835BA845A8AAF /* ListeningCircle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListeningCircle.swift; sourceTree = "<group>"; };
+		A5A8C0054F1898CB83178C1D /* AddProgressEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddProgressEntryView.swift; sourceTree = "<group>"; };
 		A835CA7572E629657044C111 /* PhotoLogServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLogServiceTests.swift; sourceTree = "<group>"; };
 		A9693A1E065B9E2D3DA846EF /* CoachingBriefCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachingBriefCard.swift; sourceTree = "<group>"; };
 		A9DA1F02B1BF76DA862072A6 /* AIChooserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChooserView.swift; sourceTree = "<group>"; };
@@ -759,7 +767,10 @@
 		8935B2C63DFF003BB6300F49 /* BodyComposition */ = {
 			isa = PBXGroup;
 			children = (
+				A5A8C0054F1898CB83178C1D /* AddProgressEntryView.swift */,
 				5893DE4C163CA3CF50E74C1A /* DEXAOverviewView.swift */,
+				9C37032F6F6D10B7507B8A10 /* ProgressCompareView.swift */,
+				074D685ACBB266EE28844F0F /* ProgressGalleryView.swift */,
 			);
 			path = BodyComposition;
 			sourceTree = "<group>";
@@ -908,6 +919,7 @@
 				7ED878D9FF93287B41B67503 /* NotificationService.swift */,
 				418816F51F38F19F65BC3D77 /* NutritionLabelOCR.swift */,
 				AAC05282764E0169FEFB3D88 /* PhotoLogTool.swift */,
+				83D65F323C790538F0ADDA6C /* ProgressPhotoStore.swift */,
 				72ADCE850F5C06D2C23A57DC /* SpeechRecognitionService.swift */,
 				0966429FFAED4C7FF2D68C11 /* WidgetDataProvider.swift */,
 				2889549AA73E3A32EEEEB96B /* CloudVision */,
@@ -1155,6 +1167,7 @@
 				CD5F427E0A293D891A4283CD /* AIChooserView.swift in Sources */,
 				3375CEC1D52AFAE8D81F4012 /* AISetupView.swift in Sources */,
 				897722DC29F4AAF58BDA1CCF /* ActiveWorkoutView.swift in Sources */,
+				78D172FAF0309086F01988F6 /* AddProgressEntryView.swift in Sources */,
 				8D8FB3814300848676740EC6 /* AddSupplementView.swift in Sources */,
 				421D57520E9C09C88A6A0B6B /* AlgorithmSettingsView.swift in Sources */,
 				353B7C518B64225FD41FF203 /* AppConfig.swift in Sources */,
@@ -1240,6 +1253,9 @@
 				30C7E754FFFD0B3E4FD62CC6 /* PlantPointsCardView.swift in Sources */,
 				D92847B800D43A1FDEE6F98D /* PoseCrossfadeView.swift in Sources */,
 				ADA6493D219411505EF2DA36 /* Preferences+PhotoLog.swift in Sources */,
+				4017F5EF73AE11668B5CCD15 /* ProgressCompareView.swift in Sources */,
+				A6FA4B4B58814DBC16AFEA18 /* ProgressGalleryView.swift in Sources */,
+				6B08480CCE6107363F50026B /* ProgressPhotoStore.swift in Sources */,
 				3A45CB30EFB91DF5C4E468AD /* QuickAddView.swift in Sources */,
 				A30F63FA377687747C8CFC2F /* RestorePickerView.swift in Sources */,
 				D1F92D043D241D539585C068 /* ServingInputView.swift in Sources */,

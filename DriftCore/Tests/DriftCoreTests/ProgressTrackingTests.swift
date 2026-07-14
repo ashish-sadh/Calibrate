@@ -1,0 +1,157 @@
+import Testing
+import Foundation
+@testable import DriftCore
+
+/// Tier 0 — body-measurement + progress-photo models, analysis, and
+/// persistence. Uses the in-memory AppDatabase for the CRUD half.
+struct ProgressTrackingTests {
+
+    // MARK: - Measurement model
+
+    @Test func measurementJSONMapRoundTrips() {
+        var m = BodyMeasurement(date: "2026-07-14")
+        m.measurementsCm[MeasurementSite.waist.rawValue] = 82.5
+        m.measurementsCm[MeasurementSite.chest.rawValue] = 102.0
+        #expect(m.value(for: .waist) == 82.5)
+        #expect(m.value(for: .chest) == 102.0)
+        #expect(m.value(for: .neck) == nil)
+        #expect(!m.isEmpty)
+    }
+
+    @Test func measurementSiteMetadata() {
+        #expect(MeasurementSite.leftBicep.mirror == .rightBicep)
+        #expect(MeasurementSite.waist.mirror == nil)
+        #expect(MeasurementSite.chest.group == .upper)
+        #expect(MeasurementSite.waist.group == .core)
+        #expect(MeasurementSite.leftCalf.group == .lower)
+        #expect(MeasurementSite.displayOrder.count == MeasurementSite.allCases.count)
+    }
+
+    // MARK: - Analysis
+
+    @Test func deltasComputedForSharedSitesOnly() {
+        var prev = BodyMeasurement(date: "2026-06-01")
+        prev.measurementsCm = [
+            MeasurementSite.waist.rawValue: 85, MeasurementSite.chest.rawValue: 100,
+            MeasurementSite.neck.rawValue: 40]
+        var cur = BodyMeasurement(date: "2026-07-01")
+        cur.measurementsCm = [
+            MeasurementSite.waist.rawValue: 82, MeasurementSite.chest.rawValue: 101]  // neck dropped
+        let deltas = BodyMeasurementAnalysis.deltas(from: prev, to: cur)
+        #expect(deltas.count == 2)
+        let waist = deltas.first { $0.site == .waist }!
+        #expect(waist.changeCm == -3)
+        let chest = deltas.first { $0.site == .chest }!
+        #expect(chest.changeCm == 1)
+    }
+
+    @Test func symmetryFindsLargerSide() {
+        var m = BodyMeasurement(date: "2026-07-14")
+        m.measurementsCm = [
+            MeasurementSite.leftBicep.rawValue: 38.0,
+            MeasurementSite.rightBicep.rawValue: 39.5,
+            MeasurementSite.leftThigh.rawValue: 58.0,
+            MeasurementSite.rightThigh.rawValue: 58.2]  // within noise
+        let sym = BodyMeasurementAnalysis.symmetry(in: m)
+        // Bicep imbalance (1.5) sorts before thigh (0.2).
+        #expect(sym.first?.leftSite == .leftBicep)
+        #expect(sym.first?.largerSide == .rightBicep)
+        #expect(sym.first?.differenceCm == 1.5)
+        // Thigh within 0.5 cm → no larger side.
+        let thigh = sym.first { $0.leftSite == .leftThigh }!
+        #expect(thigh.largerSide == nil)
+    }
+
+    @Test func changeSummaryLeadsWithBiggestMoves() {
+        var prev = BodyMeasurement(date: "2026-06-01")
+        prev.measurementsCm = [
+            MeasurementSite.waist.rawValue: 85, MeasurementSite.chest.rawValue: 100,
+            MeasurementSite.neck.rawValue: 40]
+        var cur = BodyMeasurement(date: "2026-07-01")
+        cur.measurementsCm = [
+            MeasurementSite.waist.rawValue: 82, MeasurementSite.chest.rawValue: 101,
+            MeasurementSite.neck.rawValue: 40.2]  // 0.2 change → below 0.5 threshold, excluded
+        let summary = try! #require(BodyMeasurementAnalysis.changeSummary(from: prev, to: cur, inInches: false))
+        #expect(summary.contains("Waist −3"))
+        #expect(summary.contains("Chest +1"))
+        #expect(!summary.contains("Neck"))   // sub-threshold move dropped
+    }
+
+    @Test func changeSummaryNilWhenNoMeaningfulChange() {
+        var prev = BodyMeasurement(date: "2026-06-01")
+        prev.measurementsCm = [MeasurementSite.waist.rawValue: 85]
+        var cur = BodyMeasurement(date: "2026-07-01")
+        cur.measurementsCm = [MeasurementSite.waist.rawValue: 85.2]
+        #expect(BodyMeasurementAnalysis.changeSummary(from: prev, to: cur, inInches: false) == nil)
+    }
+
+    @Test func unitConversionRoundTrips() {
+        let cm = BodyMeasurementAnalysis.cm(fromInches: 32)
+        #expect(abs(cm - 81.28) < 0.01)
+        #expect(abs(BodyMeasurementAnalysis.inches(fromCm: 81.28) - 32) < 0.01)
+    }
+
+    // MARK: - Persistence
+
+    @Test func measurementUpsertByDate() throws {
+        let db = try AppDatabase.empty()
+        var m = BodyMeasurement(date: "2026-07-14", measurementsCm: [MeasurementSite.waist.rawValue: 82])
+        try db.saveBodyMeasurement(&m)
+        #expect(m.id != nil)
+        // Re-save same date → update, not duplicate.
+        var m2 = BodyMeasurement(date: "2026-07-14", measurementsCm: [MeasurementSite.waist.rawValue: 80, MeasurementSite.chest.rawValue: 101])
+        try db.saveBodyMeasurement(&m2)
+        let all = try db.fetchBodyMeasurements()
+        #expect(all.count == 1)
+        #expect(all.first?.value(for: .waist) == 80)
+        #expect(all.first?.value(for: .chest) == 101)
+    }
+
+    @Test func progressPhotoUpsertReturnsReplacedFilename() throws {
+        let db = try AppDatabase.empty()
+        var p = ProgressPhoto(date: "2026-07-14", pose: .front, filename: "a.jpg")
+        let firstReplaced = try db.saveProgressPhoto(&p)
+        #expect(firstReplaced == nil)
+        // Re-shoot the front pose same day → replaces, returns old filename for cleanup.
+        var p2 = ProgressPhoto(date: "2026-07-14", pose: .front, filename: "b.jpg")
+        let replaced = try db.saveProgressPhoto(&p2)
+        #expect(replaced == "a.jpg")
+        let photos = try db.fetchProgressPhotos(forDate: "2026-07-14")
+        #expect(photos.count == 1)
+        #expect(photos.first?.filename == "b.jpg")
+    }
+
+    @Test func progressEntriesGroupPhotosAndMeasurementByDate() throws {
+        let db = try AppDatabase.empty()
+        var front = ProgressPhoto(date: "2026-07-14", pose: .front, filename: "f.jpg")
+        var back = ProgressPhoto(date: "2026-07-14", pose: .back, filename: "b.jpg")
+        try db.saveProgressPhoto(&front)
+        try db.saveProgressPhoto(&back)
+        var m = BodyMeasurement(date: "2026-07-14", measurementsCm: [MeasurementSite.waist.rawValue: 82])
+        try db.saveBodyMeasurement(&m)
+        // A photos-only earlier day.
+        var older = ProgressPhoto(date: "2026-06-01", pose: .front, filename: "old.jpg")
+        try db.saveProgressPhoto(&older)
+
+        let entries = try db.fetchProgressEntries()
+        #expect(entries.count == 2)
+        #expect(entries.first?.date == "2026-07-14")   // newest first
+        #expect(entries.first?.photos.count == 2)
+        #expect(entries.first?.measurement?.value(for: .waist) == 82)
+        #expect(entries.first?.photo(for: .front)?.filename == "f.jpg")
+        // Older day: photos only, no measurement.
+        #expect(entries.last?.measurement == nil)
+        #expect(entries.last?.hasPhotos == true)
+    }
+
+    @Test func deletePhotosForDateReturnsFilenames() throws {
+        let db = try AppDatabase.empty()
+        var f = ProgressPhoto(date: "2026-07-14", pose: .front, filename: "f.jpg")
+        var b = ProgressPhoto(date: "2026-07-14", pose: .back, filename: "b.jpg")
+        try db.saveProgressPhoto(&f)
+        try db.saveProgressPhoto(&b)
+        let removed = try db.deleteProgressPhotos(forDate: "2026-07-14")
+        #expect(Set(removed) == ["f.jpg", "b.jpg"])
+        #expect(try db.fetchProgressPhotos(forDate: "2026-07-14").isEmpty)
+    }
+}

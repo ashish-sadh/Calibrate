@@ -663,6 +663,28 @@ public enum Migrations {
                 t.add(column: "logged_portion", .text)
             }
         }
+
+        migrator.registerMigration("v42_progress_photos_measurements") { db in
+            // Tape measurements — one row per date. `measurements_cm` is a JSON
+            // map (site → centimetres) so users track only the sites they want.
+            try db.create(table: "body_measurement") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("date", .text).notNull().unique()
+                t.column("measurements_cm", .text).notNull().defaults(to: "{}")
+                t.column("notes", .text)
+                t.column("created_at", .text).notNull()
+            }
+            // Progress photos — metadata only; image bytes live on disk in the
+            // app container. One photo per (date, pose).
+            try db.create(table: "progress_photo") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("date", .text).notNull()
+                t.column("pose", .text).notNull()
+                t.column("filename", .text).notNull()
+                t.column("created_at", .text).notNull()
+                t.uniqueKey(["date", "pose"])
+            }
+        }
     }
 
     /// Old→canonical exercise name map applied to logged history by the v40
