@@ -1,0 +1,43 @@
+Dr Lal PathLabs
+NABL Accredited
+Patient: SYNTHETIC-IN-0007    Age/Sex: 34/M
+Sample Collected On: 14/02/2026 08:20
+Reported On: 15/02/2026
+
+LIPID PROFILE, SERUM
+Cholesterol - Total          185     mg/dL     < 200
+HDL Cholesterol              48      mg/dL     > 40
+LDL Cholesterol              112     mg/dL     < 100
+Triglycerides                140     mg/dL     < 150
+VLDL Cholesterol             28      mg/dL     < 30
+
+LIVER FUNCTION TEST
+Bilirubin - Total            0.8     mg/dL     0.3 - 1.2
+Bilirubin - Direct           0.2     mg/dL     0.0 - 0.3
+SGPT (ALT)                   42      U/L       < 50
+SGOT (AST)                   38      U/L       < 40
+Alkaline Phosphatase         96      U/L       40 - 129
+Total Protein                7.2     g/dL      6.4 - 8.3
+Albumin                      4.5     g/dL      3.5 - 5.2
+
+KIDNEY FUNCTION TEST
+Blood Urea                   28      mg/dL     15 - 40
+Creatinine, Serum            0.95    mg/dL     0.70 - 1.30
+Uric Acid, Serum             5.8     mg/dL     3.5 - 7.2
+
+THYROID PROFILE
+TSH - Ultrasensitive         2.4     uIU/mL    0.35 - 5.50
+Total T3                     125     ng/dL     80 - 200
+Total T4                     8.6     ug/dL     5.1 - 14.1
+
+COMPLETE BLOOD COUNT
+Haemoglobin                  14.8    g/dL      13.0 - 17.0
+Total Leukocyte Count        7200    cells/uL  4000 - 10000
+Platelet Count               250     10^3/uL   150 - 410
+ESR                          8       mm/hr     0 - 15
+
+VITAMIN ASSAYS
+Vitamin B12                  410     pg/mL     211 - 911
+25-Hydroxyvitamin D          28      ng/mL     30 - 100
+
+End of Report

@@ -51,7 +51,6 @@
 		30F7D3160F146CA92713AD13 /* MoreTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F6D2AA89F46A33EAE39DEAC /* MoreTabView.swift */; };
 		3375CEC1D52AFAE8D81F4012 /* AISetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F4C6870115BE53081FA0CDE /* AISetupView.swift */; };
 		353B7C518B64225FD41FF203 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AEB8D23DD72A1974C8C09E5 /* AppConfig.swift */; };
-		364C90C5B4A795381274F748 /* LabReportOCR+Biomarkers.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6C5FCF45E66161B45683C82 /* LabReportOCR+Biomarkers.swift */; };
 		36A8BBAC1CDCF9BEE7FDAB6A /* MultiTurnRegressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EAD396A0ED458F8F26650FA /* MultiTurnRegressionTests.swift */; };
 		38883B6796A4390C33BBA04D /* PhotoLogEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14B31FF0A1CB79C0732FB849 /* PhotoLogEntry.swift */; };
 		3A1B5CCC6960BB3FE2AD5B2C /* WidgetDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0966429FFAED4C7FF2D68C11 /* WidgetDataProvider.swift */; };
@@ -436,7 +435,6 @@
 		C004CB5B32E81B2A39730FE7 /* WorkoutDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutDetailView.swift; sourceTree = "<group>"; };
 		C1D0EF86656667CEF40EB779 /* MultiTurnContextEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiTurnContextEval.swift; sourceTree = "<group>"; };
 		C3865EC2CDA17D1B5F9862F1 /* HealthNutritionSyncService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthNutritionSyncService.swift; sourceTree = "<group>"; };
-		C6C5FCF45E66161B45683C82 /* LabReportOCR+Biomarkers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LabReportOCR+Biomarkers.swift"; sourceTree = "<group>"; };
 		C8C8E55C6396731BC65D49AB /* FoundationModelsChatParityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelsChatParityTests.swift; sourceTree = "<group>"; };
 		C92BBFFC16E3948FD5DABA59 /* USDAFallbackEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = USDAFallbackEval.swift; sourceTree = "<group>"; };
 		CA809F63AA1ED36B1AB94C0C /* DashboardSkeletons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardSkeletons.swift; sourceTree = "<group>"; };
@@ -904,7 +902,6 @@
 				4902DF0863C6F54F0D1BC3BA /* HealthKitService+Sleep.swift */,
 				C3865EC2CDA17D1B5F9862F1 /* HealthNutritionSyncService.swift */,
 				E342C8090873CF9612C8A63E /* LabReportOCR.swift */,
-				C6C5FCF45E66161B45683C82 /* LabReportOCR+Biomarkers.swift */,
 				04037279FDE1F5FFE95EC83D /* MealTextLogger.swift */,
 				4B720866FF52986A39E29523 /* NebiusExerciseLogger.swift */,
 				992F9EA521699E76C12407E4 /* NebiusRoutineGenerator.swift */,
@@ -1213,7 +1210,6 @@
 				0140FC396CF2123BE0FB938A /* HealthNutritionSyncService.swift in Sources */,
 				9EA6ACD1BB8579E641944A41 /* ImmersiveVoiceView.swift in Sources */,
 				EDBADA2C372F712D791B9CB3 /* LabReportDetailView.swift in Sources */,
-				364C90C5B4A795381274F748 /* LabReportOCR+Biomarkers.swift in Sources */,
 				E0F86EB4273E7AC079F525CE /* LabReportOCR.swift in Sources */,
 				CF5BB4A5266F949DA9DEE006 /* LabReportUploadView.swift in Sources */,
 				D676610D58E5F117B1698F2A /* ListeningCircle.swift in Sources */,
@@ -1463,7 +1459,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = DriftWidget/DriftWidget.entitlements;
-				CURRENT_PROJECT_VERSION = 347;
+				CURRENT_PROJECT_VERSION = 348;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				INFOPLIST_FILE = DriftWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1483,7 +1479,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = DriftWidget/DriftWidget.entitlements;
-				CURRENT_PROJECT_VERSION = 347;
+				CURRENT_PROJECT_VERSION = 348;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				INFOPLIST_FILE = DriftWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1523,7 +1519,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Drift/Drift.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 347;
+				CURRENT_PROJECT_VERSION = 348;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1656,7 +1652,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Drift/Drift.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 347;
+				CURRENT_PROJECT_VERSION = 348;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",

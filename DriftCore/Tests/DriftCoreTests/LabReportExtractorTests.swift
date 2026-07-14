@@ -39,8 +39,11 @@ import Testing
 
 @Test func highPrioritySetMatchesDesign665Recommendation() {
     // Per #749 + design-665 — the 5 high-priority biomarkers the FM gap-filler
-    // exists to recover. Don't quietly drift the set without revisiting the design.
-    let expected: Set<String> = ["hba1c", "ldl", "ferritin", "vitamind", "tsh"]
+    // exists to recover. Canonical snake_case catalog IDs (2026-07-14 fix): the
+    // old camelCase set never matched the regex parser's snake_case IDs, so the
+    // subset check could never pass and FM ran on every report. Don't quietly
+    // drift the set without revisiting the design.
+    let expected: Set<String> = ["hba1c", "ldl_cholesterol", "ferritin", "vitamin_d", "thyroid_tsh"]
     #expect(LabExtractionPriority.highPriority == expected)
 }
 

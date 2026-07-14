@@ -40,12 +40,18 @@ public enum FMLabExtractorError: Error, Sendable {
 /// — calling FM when any of these is absent from the regex result is the
 /// "missing high-priority" leg of the trigger rule.
 public enum LabExtractionPriority {
-    public static let highPriority: Set<String> = ["hba1c", "ldl", "ferritin", "vitamind", "tsh"]
+    /// Canonical snake_case catalog IDs (2026-07-14 fix). Previously these were
+    /// lowerCamelCase (`ldl`, `vitamind`, `tsh`) and were compared against the
+    /// regex parser's snake_case IDs — so the subset check could NEVER be
+    /// satisfied and FM ran on essentially every report even when regex was
+    /// complete. Now they match the IDs the parser and catalog actually use.
+    public static let highPriority: Set<String> = ["hba1c", "ldl_cholesterol", "ferritin", "vitamin_d", "thyroid_tsh"]
     /// True when the regex result fails either gate from #749:
     /// regex returned <5 biomarkers OR is missing any of the 5 priority IDs.
+    /// IDs are canonicalized first so a caller passing camelCase still matches.
     public static func shouldFallBackToFM(regexBiomarkerIDs: [String]) -> Bool {
         if regexBiomarkerIDs.count < 5 { return true }
-        let normalized = Set(regexBiomarkerIDs.map { $0.lowercased() })
+        let normalized = Set(regexBiomarkerIDs.compactMap { BiomarkerCatalogMap.canonicalID($0) })
         return !highPriority.isSubset(of: normalized)
     }
 }

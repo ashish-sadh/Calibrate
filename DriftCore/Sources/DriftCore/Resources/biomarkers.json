@@ -1511,5 +1511,188 @@
       "Vitamins & Minerals"
     ],
     "health_metrics": "TIBC is a diagnostic tool that completes the iron panel picture critical for athletic performance. Elevated TIBC signals that the body is iron-hungry — transferrin production is maxed out trying to capture and deliver insufficient iron to muscles and bone marrow. This state impairs hemoglobin synthesis, myoglobin production, and mitochondrial enzyme function, all of which directly reduce exercise capacity. Athletes with elevated TIBC should aggressively address iron deficiency, as the body is already compensating maximally. Monitoring TIBC alongside ferritin tracks whether iron supplementation is effectively restoring iron balance."
+  },
+  {
+    "id": "vldl_cholesterol",
+    "name": "VLDL Cholesterol",
+    "category": "Heart Health",
+    "unit": "mg/dL",
+    "optimal_low": 2,
+    "optimal_high": 20,
+    "sufficient_low": 20,
+    "sufficient_high": 30,
+    "absolute_low": 0,
+    "absolute_high": 100,
+    "description": "Very-low-density lipoprotein (VLDL) carries triglycerides made by the liver out to tissues. On most lipid panels it is not measured directly but estimated as triglycerides divided by 5. VLDL is one of the atherogenic (plaque-forming) particles alongside LDL.",
+    "why_it_matters": "Elevated VLDL reflects high triglyceride production, usually driven by excess refined carbohydrate, alcohol, or insulin resistance. Because VLDL is triglyceride-rich, a high value almost always tracks high triglycerides and low HDL — the classic metabolic-syndrome lipid pattern that raises cardiovascular risk.",
+    "relationships": "VLDL is estimated as Triglycerides / 5, so it moves with Triglycerides. High VLDL alongside low HDL and high fasting glucose points to insulin resistance; check HbA1c and HOMA-IR. Non-HDL cholesterol (Total minus HDL) captures VLDL + LDL together and is a better risk marker than LDL alone.",
+    "how_to_improve": "Cut refined carbohydrate and added sugar, reduce alcohol, lose visceral fat, and increase omega-3 intake — all lower triglycerides and therefore VLDL. Aerobic exercise is particularly effective at clearing triglyceride-rich particles.",
+    "impact_categories": [
+      "Heart Health",
+      "Metabolic Health"
+    ],
+    "health_metrics": "Estimated from triglycerides; tracks metabolic and cardiovascular risk."
+  },
+  {
+    "id": "progesterone",
+    "name": "Progesterone",
+    "category": "Hormones",
+    "unit": "ng/mL",
+    "optimal_low": 0.1,
+    "optimal_high": 25,
+    "sufficient_low": 0.1,
+    "sufficient_high": 25,
+    "absolute_low": 0,
+    "absolute_high": 40,
+    "description": "Progesterone is a steroid hormone central to the menstrual cycle and pregnancy. It rises sharply in the luteal phase after ovulation, preparing the uterine lining, and is low in the follicular phase and in men. Values are only interpretable in the context of cycle timing.",
+    "why_it_matters": "A mid-luteal progesterone rise confirms that ovulation occurred, making it a key fertility marker. Low luteal progesterone can cause short cycles, spotting, and difficulty maintaining early pregnancy. Interpretation depends entirely on where you are in your cycle — a 'normal range' number is meaningless without the day.",
+    "relationships": "Progesterone opposes estradiol; the ratio between them shapes cycle symptoms. It is produced by the corpus luteum after ovulation (tracked by LH surge) and by the placenta in pregnancy. Cross-reference with estradiol, LH, and FSH for a full cycle picture.",
+    "how_to_improve": "Support ovulation with adequate calories, healthy body fat, stress reduction (chronic cortisol suppresses progesterone), and sufficient sleep. Persistent luteal deficiency warrants evaluation by a reproductive endocrinologist.",
+    "impact_categories": [
+      "Hormones"
+    ],
+    "health_metrics": "Cycle-phase dependent; confirms ovulation and luteal function."
+  },
+  {
+    "id": "prolactin",
+    "name": "Prolactin",
+    "category": "Hormones",
+    "unit": "ng/mL",
+    "optimal_low": 3,
+    "optimal_high": 20,
+    "sufficient_low": 3,
+    "sufficient_high": 25,
+    "absolute_low": 0,
+    "absolute_high": 200,
+    "description": "Prolactin is a pituitary hormone best known for driving milk production, but it also modulates reproductive hormones in both sexes. Levels rise with sleep, stress, exercise, and nipple stimulation, so a single high value is often benign and worth rechecking under resting conditions.",
+    "why_it_matters": "Persistently high prolactin suppresses GnRH, lowering testosterone in men and disrupting ovulation in women — causing low libido, infertility, and irregular cycles. Markedly elevated values can indicate a pituitary adenoma (prolactinoma). Low prolactin is rarely clinically significant.",
+    "relationships": "High prolactin suppresses FSH, LH, testosterone, and estradiol. If reproductive hormones are low, check prolactin as a driver. Thyroid dysfunction (high TSH) can also raise prolactin, so evaluate thyroid alongside it.",
+    "how_to_improve": "Recheck fasting and rested before acting on a mildly high value. Treat underlying hypothyroidism if present. Sustained elevation with symptoms needs endocrine evaluation and pituitary imaging.",
+    "impact_categories": [
+      "Hormones"
+    ],
+    "health_metrics": "Elevations suppress reproductive hormones; recheck under rest."
+  },
+  {
+    "id": "total_t4",
+    "name": "Total T4",
+    "category": "Thyroid",
+    "unit": "ug/dL",
+    "optimal_low": 5,
+    "optimal_high": 12,
+    "sufficient_low": 4.5,
+    "sufficient_high": 12.5,
+    "absolute_low": 1,
+    "absolute_high": 25,
+    "description": "Total thyroxine (T4) measures all T4 in the blood, both protein-bound and free. T4 is the main hormone the thyroid secretes; it is converted in tissues to the more active T3. Because most T4 is bound to carrier proteins, total T4 is influenced by protein levels and less specific than free T4.",
+    "why_it_matters": "Total T4 gives a broad read on thyroid output, but pregnancy, estrogen, and illness shift binding proteins and can move it without any true thyroid problem. Free T4 and TSH are more reliable for diagnosing thyroid dysfunction; total T4 is mainly useful as a confirmatory or historical marker.",
+    "relationships": "Interpret with TSH and free T4: high TSH with low T4 = hypothyroidism; low TSH with high T4 = hyperthyroidism. T4 is converted to free T3 peripherally, so low T3 with normal T4 can indicate a conversion problem.",
+    "how_to_improve": "Total T4 is a diagnostic marker, not a lifestyle target. Adequate iodine and selenium support thyroid hormone synthesis; abnormal values should be worked up with TSH and free hormones.",
+    "impact_categories": [
+      "Thyroid",
+      "Metabolic Health"
+    ],
+    "health_metrics": "Total thyroid output; interpret with TSH and free T4."
+  },
+  {
+    "id": "total_t3",
+    "name": "Total T3",
+    "category": "Thyroid",
+    "unit": "ng/dL",
+    "optimal_low": 80,
+    "optimal_high": 200,
+    "sufficient_low": 70,
+    "sufficient_high": 205,
+    "absolute_low": 20,
+    "absolute_high": 400,
+    "description": "Total triiodothyronine (T3) measures the active thyroid hormone, both bound and free. T3 does most of the metabolic work at the cellular level and is largely produced by conversion of T4 in peripheral tissues rather than secreted directly.",
+    "why_it_matters": "T3 reflects how much active thyroid signal reaches your cells. It falls in 'low T3 syndrome' during illness, fasting, or overtraining even when TSH is normal, and is elevated in hyperthyroidism. Because binding proteins affect it, free T3 is more specific for tissue-level thyroid status.",
+    "relationships": "T3 comes from T4 conversion; low T3 with normal T4 and TSH suggests impaired conversion (stress, low calorie intake, low selenium). Read alongside TSH, free T4, and free T3 for the full axis.",
+    "how_to_improve": "Adequate calories and carbohydrate, selenium and zinc sufficiency, and avoiding chronic overtraining support healthy T4→T3 conversion. Persistent abnormality needs endocrine evaluation.",
+    "impact_categories": [
+      "Thyroid",
+      "Metabolic Health"
+    ],
+    "health_metrics": "Active thyroid hormone; sensitive to illness and calorie restriction."
+  },
+  {
+    "id": "esr",
+    "name": "ESR",
+    "category": "Inflammation",
+    "unit": "mm/hr",
+    "optimal_low": 0,
+    "optimal_high": 15,
+    "sufficient_low": 15,
+    "sufficient_high": 25,
+    "absolute_low": 0,
+    "absolute_high": 150,
+    "description": "The erythrocyte sedimentation rate measures how fast red blood cells settle in a tube over one hour. Inflammatory proteins make cells clump and fall faster, so a high ESR is a non-specific signal of inflammation somewhere in the body. It rises and falls more slowly than CRP.",
+    "why_it_matters": "ESR is a sensitive but non-specific inflammation marker — useful for tracking chronic inflammatory conditions over time, but it can be raised by infection, anemia, pregnancy, age, and autoimmune disease. A persistently high ESR warrants looking for an underlying cause; a single mildly elevated value is often non-specific.",
+    "relationships": "ESR and hs-CRP both track inflammation; CRP responds faster while ESR reflects a longer window. Anemia (low hemoglobin) can falsely raise ESR. Interpret together with CRP and the clinical picture.",
+    "how_to_improve": "Address the underlying source of inflammation — infection, autoimmune disease, or lifestyle drivers (visceral fat, poor sleep, smoking). Anti-inflammatory diet, weight loss, and exercise lower chronic inflammation over time.",
+    "impact_categories": [
+      "Inflammation"
+    ],
+    "health_metrics": "Non-specific inflammation marker; slower-moving than CRP."
+  },
+  {
+    "id": "direct_bilirubin",
+    "name": "Direct Bilirubin",
+    "category": "Liver",
+    "unit": "mg/dL",
+    "optimal_low": 0,
+    "optimal_high": 0.3,
+    "sufficient_low": 0.3,
+    "sufficient_high": 0.4,
+    "absolute_low": 0,
+    "absolute_high": 10,
+    "description": "Direct (conjugated) bilirubin is the water-soluble form the liver has already processed and is ready to excrete into bile. It is measured as part of a bilirubin fractionation alongside total and indirect bilirubin to localize the cause of jaundice.",
+    "why_it_matters": "A high direct bilirubin points to a problem downstream of liver processing — bile-duct obstruction, gallstones, or hepatocellular damage — rather than excess red-cell breakdown. Separating direct from indirect bilirubin is how clinicians tell an obstructive/liver cause from a hemolytic one.",
+    "relationships": "Total bilirubin = direct + indirect. High direct with high ALP and GGT suggests biliary obstruction; high indirect with normal direct suggests hemolysis or Gilbert's syndrome. Read with ALT, AST, ALP, and GGT.",
+    "how_to_improve": "Direct bilirubin is a diagnostic marker; elevation needs medical evaluation of the liver and bile ducts rather than a lifestyle target. Avoid alcohol and hepatotoxic substances while the cause is investigated.",
+    "impact_categories": [
+      "Liver"
+    ],
+    "health_metrics": "Elevation localizes jaundice to liver/biliary causes."
+  },
+  {
+    "id": "urea",
+    "name": "Blood Urea",
+    "category": "Kidney",
+    "unit": "mg/dL",
+    "optimal_low": 15,
+    "optimal_high": 40,
+    "sufficient_low": 10,
+    "sufficient_high": 45,
+    "absolute_low": 2,
+    "absolute_high": 200,
+    "description": "Blood urea is the nitrogen waste product of protein metabolism, filtered by the kidneys. Indian and international labs commonly report 'urea' directly, whereas US labs report the nitrogen fraction as BUN — urea is roughly BUN times 2.14. It is a basic index of kidney filtration and protein turnover.",
+    "why_it_matters": "High urea can reflect reduced kidney filtration, dehydration, a high-protein diet, or gastrointestinal bleeding; low urea can reflect low protein intake or liver disease. It is less specific than creatinine for kidney function but useful alongside it, especially the urea-to-creatinine ratio.",
+    "relationships": "Urea ≈ BUN × 2.14. Interpret with creatinine and eGFR: both high suggests reduced filtration; high urea with normal creatinine suggests dehydration or high protein intake. The urea/creatinine ratio helps distinguish these.",
+    "how_to_improve": "Stay well hydrated and match protein intake to your needs and kidney status. Persistent elevation with a high creatinine needs kidney evaluation.",
+    "impact_categories": [
+      "Kidney"
+    ],
+    "health_metrics": "Protein-waste filtration index; read with creatinine."
+  },
+  {
+    "id": "psa",
+    "name": "PSA (Total)",
+    "category": "Kidney",
+    "unit": "ng/mL",
+    "optimal_low": 0,
+    "optimal_high": 2.5,
+    "sufficient_low": 2.5,
+    "sufficient_high": 4,
+    "absolute_low": 0,
+    "absolute_high": 100,
+    "description": "Prostate-specific antigen is a protein made by the prostate gland, measured in the blood as a screening marker for prostate conditions in men. Levels naturally rise with age and prostate size, and can spike temporarily after ejaculation, cycling, or a prostate exam.",
+    "why_it_matters": "An elevated or rising PSA can indicate benign prostate enlargement, prostatitis, or prostate cancer — it cannot distinguish them on its own, but the trend over time and the velocity of change guide whether further evaluation is needed. Age-adjusted thresholds and free/total PSA ratios refine interpretation.",
+    "relationships": "PSA is interpreted against age and prostate volume; a rising trend matters more than a single value. Recent ejaculation, cycling, or catheterization can transiently elevate it — recheck before acting.",
+    "how_to_improve": "PSA is a screening marker, not a lifestyle target. Avoid ejaculation and vigorous cycling for 48 hours before testing. Discuss age-appropriate screening intervals and any rising trend with a physician.",
+    "impact_categories": [
+      "Longevity"
+    ],
+    "health_metrics": "Prostate screening marker; trend and velocity matter most."
   }
 ]

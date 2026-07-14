@@ -1,0 +1,31 @@
+{
+  "format": "indian",
+  "labName": "Dr Lal PathLabs",
+  "reportDate": "2026-02-14",
+  "biomarkers": [
+    { "id": "total_cholesterol", "value": 185, "unit": "mg/dL", "refLow": null, "refHigh": 200 },
+    { "id": "hdl_cholesterol", "value": 48, "unit": "mg/dL", "refLow": 40, "refHigh": null },
+    { "id": "ldl_cholesterol", "value": 112, "unit": "mg/dL", "refLow": null, "refHigh": 100 },
+    { "id": "triglycerides", "value": 140, "unit": "mg/dL", "refLow": null, "refHigh": 150 },
+    { "id": "vldl_cholesterol", "value": 28, "unit": "mg/dL", "refLow": null, "refHigh": 30 },
+    { "id": "total_bilirubin", "value": 0.8, "unit": "mg/dL", "refLow": 0.3, "refHigh": 1.2 },
+    { "id": "direct_bilirubin", "value": 0.2, "unit": "mg/dL", "refLow": 0.0, "refHigh": 0.3 },
+    { "id": "alt", "value": 42, "unit": "U/L", "refLow": null, "refHigh": 50 },
+    { "id": "ast", "value": 38, "unit": "U/L", "refLow": null, "refHigh": 40 },
+    { "id": "alp", "value": 96, "unit": "U/L", "refLow": 40, "refHigh": 129 },
+    { "id": "total_protein", "value": 7.2, "unit": "g/dL", "refLow": 6.4, "refHigh": 8.3 },
+    { "id": "albumin", "value": 4.5, "unit": "g/dL", "refLow": 3.5, "refHigh": 5.2 },
+    { "id": "urea", "value": 28, "unit": "mg/dL", "refLow": 15, "refHigh": 40 },
+    { "id": "creatinine", "value": 0.95, "unit": "mg/dL", "refLow": 0.70, "refHigh": 1.30 },
+    { "id": "uric_acid", "value": 5.8, "unit": "mg/dL", "refLow": 3.5, "refHigh": 7.2 },
+    { "id": "thyroid_tsh", "value": 2.4, "unit": "uIU/mL", "refLow": 0.35, "refHigh": 5.50 },
+    { "id": "total_t3", "value": 125, "unit": "ng/dL", "refLow": 80, "refHigh": 200 },
+    { "id": "total_t4", "value": 8.6, "unit": "ug/dL", "refLow": 5.1, "refHigh": 14.1 },
+    { "id": "hemoglobin", "value": 14.8, "unit": "g/dL", "refLow": 13.0, "refHigh": 17.0 },
+    { "id": "wbc", "value": 7200, "unit": "cells/uL", "refLow": 4000, "refHigh": 10000 },
+    { "id": "platelets", "value": 250, "unit": "K/uL", "refLow": 150, "refHigh": 410 },
+    { "id": "esr", "value": 8, "unit": "mm/hr", "refLow": 0, "refHigh": 15 },
+    { "id": "vitamin_b12", "value": 410, "unit": "pg/mL", "refLow": 211, "refHigh": 911 },
+    { "id": "vitamin_d", "value": 28, "unit": "ng/mL", "refLow": 30, "refHigh": 100 }
+  ]
+}
