@@ -24,6 +24,13 @@ struct WeightInsightsView: View {
         }
     }
 
+    /// Soft-read display: "≈" (the app's established approx mark — the flat
+    /// state shows "≈0") + typographic minus U+2212, because "~-0.34" mashes
+    /// tilde into hyphen and reads as a typo (field report 2026-07-14).
+    private func softNumber(_ signed: String) -> String {
+        "≈" + signed.replacingOccurrences(of: "-", with: "−")
+    }
+
     private func directionIcon(_ value: Double) -> String {
         value < -0.01 ? "arrow.down.right" : value > 0.01 ? "arrow.up.right" : "arrow.right"
     }
@@ -77,7 +84,7 @@ struct WeightInsightsView: View {
                     metricCell(
                         id: "weekly",
                         label: "Weekly",
-                        value: String(format: "~%+.2f", unit.convert(fromKg: trend.weeklyRateKg)),
+                        value: softNumber(String(format: "%+.2f", unit.convert(fromKg: trend.weeklyRateKg))),
                         valueUnit: "\(unit.displayName)/wk",
                         color: Theme.textSecondary,
                         tooltip: "The last \(trend.rateWindowDays) days point \(trend.weeklyRateKg < 0 ? "down" : "up"), but your 30-day trend points the other way — recent days are likely water. Treat this as a soft read until they agree.",
@@ -122,7 +129,7 @@ struct WeightInsightsView: View {
                     metricCell(
                         id: "deficit",
                         label: "Est. Balance",
-                        value: showSoft ? String(format: "~%+.0f", softBalance) : "≈0",
+                        value: showSoft ? softNumber(String(format: "%+.0f", softBalance)) : "≈0",
                         valueUnit: "kcal/day",
                         color: Theme.textSecondary,
                         tooltip: showSoft
@@ -138,7 +145,7 @@ struct WeightInsightsView: View {
                     metricCell(
                         id: "deficit",
                         label: "Est. Balance",
-                        value: String(format: "~%+.0f", softBalance),
+                        value: softNumber(String(format: "%+.0f", softBalance)),
                         valueUnit: "kcal/day",
                         color: Theme.textSecondary,
                         tooltip: "The last \(trend.rateWindowDays) days suggest \(String(format: "%+.0f", softBalance)) kcal/day, but your 30-day trend disagrees — recent days are likely water. A soft read, not a target.",
