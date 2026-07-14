@@ -34,15 +34,27 @@ struct AddProgressEntryView: View {
     /// for sites that date never measured.
     @State private var dateHadMeasurement = false
 
-    // Capture routing. `libraryPose` is intentionally NOT tied to the picker's
-    // presentation binding — clearing it on dismiss raced the selection handler
-    // and dropped picks. `showingLibrary` drives presentation instead.
-    @State private var capturePose: ProgressPose?
-    @State private var showingCamera = false
-    @State private var showingTimerCamera = false
+    // Capture routing. Camera + self-timer share ONE `.fullScreenCover(item:)`
+    // (an enum) so the view carries a single presentation modifier — stacking
+    // multiple .fullScreenCover/.photosPicker on one view breaks selection
+    // delivery. The photos picker lives on its own nested view (photosSection).
+    @State private var captureMode: CaptureMode?
     @State private var showingLibrary = false
     @State private var libraryPose: ProgressPose?
     @State private var libraryItem: PhotosPickerItem?
+
+    enum CaptureMode: Identifiable {
+        case camera(ProgressPose), timer(ProgressPose)
+        var id: String {
+            switch self {
+            case .camera(let p): "camera-\(p.rawValue)"
+            case .timer(let p): "timer-\(p.rawValue)"
+            }
+        }
+        var pose: ProgressPose {
+            switch self { case .camera(let p), .timer(let p): p }
+        }
+    }
 
     private var inInches: Bool { Preferences.weightUnit == .lbs }
     private var unitLabel: String { inInches ? "in" : "cm" }
@@ -82,20 +94,13 @@ struct AddProgressEntryView: View {
                     }
                 }
             }
-            .fullScreenCover(isPresented: $showingCamera) {
-                CameraView { image in
-                    if let pose = capturePose { photos[pose] = image }
+            .fullScreenCover(item: $captureMode) { mode in
+                switch mode {
+                case .camera(let pose):
+                    CameraView { image in photos[pose] = image }
+                case .timer(let pose):
+                    TimerCameraView { image in photos[pose] = image }
                 }
-            }
-            .fullScreenCover(isPresented: $showingTimerCamera) {
-                TimerCameraView { image in
-                    if let pose = capturePose { photos[pose] = image }
-                }
-            }
-            .photosPicker(isPresented: $showingLibrary, selection: $libraryItem, matching: .images)
-            .onChange(of: libraryItem) { _, item in
-                guard let item, let pose = libraryPose else { return }
-                Task { await loadLibrary(item, pose: pose) }
             }
             .onChange(of: date) { _, _ in loadForCurrentDate() }
             .onAppear(perform: loadForCurrentDate)
@@ -141,14 +146,28 @@ struct AddProgressEntryView: View {
                 }
             }
         }
+        // Picker lives here (not on the root) so the view carrying the camera
+        // cover and the view carrying the picker are different — one
+        // presentation modifier each.
+        .photosPicker(isPresented: $showingLibrary, selection: $libraryItem, matching: .images)
+        .onChange(of: libraryItem) { _, item in
+            guard let item, let pose = libraryPose else { return }
+            Task { await loadLibrary(item, pose: pose) }
+        }
     }
 
     private func poseTile(_ pose: ProgressPose) -> some View {
         let img = photos[pose] ?? existingFilenames[pose].flatMap { ProgressPhotoStore.load($0) }
         return Menu {
-            Button { capturePose = pose; showingCamera = true } label: { Label("Take Photo", systemImage: "camera") }
-            Button { capturePose = pose; showingTimerCamera = true } label: { Label("Self-timer", systemImage: "timer") }
-            Button { libraryPose = pose; showingLibrary = true } label: { Label("Choose from Library", systemImage: "photo.on.rectangle") }
+            Button { captureMode = .camera(pose) } label: { Label("Take Photo", systemImage: "camera") }
+            Button { captureMode = .timer(pose) } label: { Label("Self-timer", systemImage: "timer") }
+            Button {
+                libraryPose = pose
+                // Defer to the next runloop so the Menu finishes dismissing
+                // before the picker presents (Menu-dismissal races sheet
+                // presentation otherwise).
+                DispatchQueue.main.async { showingLibrary = true }
+            } label: { Label("Choose from Library", systemImage: "photo.on.rectangle") }
             if img != nil {
                 Button(role: .destructive) { removePhoto(pose) } label: { Label("Remove", systemImage: "trash") }
             }
