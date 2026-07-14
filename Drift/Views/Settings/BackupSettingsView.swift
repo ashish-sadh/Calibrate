@@ -160,14 +160,14 @@ struct BackupSettingsView: View {
                 Text("Included")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Theme.textSecondary)
-                Text("Your food log, weight history, recipes, workouts, biomarkers, and app preferences.")
+                Text("Your food log, weight history, recipes, workouts, biomarkers, progress photos & measurements, and app preferences.")
                     .font(.caption).foregroundStyle(Theme.textSecondary)
 
                 Text("Not included")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(Theme.textSecondary)
                     .padding(.top, 4)
-                Text("Photos, HealthKit data (Apple syncs this separately), and security keys.")
+                Text("HealthKit data (Apple syncs this separately) and security keys.")
                     .font(.caption).foregroundStyle(Theme.textSecondary)
             }
             .padding(.top, 6)
