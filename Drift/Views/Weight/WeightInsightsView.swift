@@ -88,7 +88,7 @@ struct WeightInsightsView: View {
                         valueUnit: "\(unit.displayName)/wk",
                         color: Theme.textSecondary,
                         tooltip: "The last \(trend.rateWindowDays) days point \(trend.weeklyRateKg < 0 ? "down" : "up"), but your 30-day trend points the other way — recent days are likely water. Treat this as a soft read until they agree.",
-                        nudge: "Signals disagree — firming up"
+                        nudge: "Recent swing — firming up"
                     )
                 } else {
                     let rate = trend.weeklyRateKg
