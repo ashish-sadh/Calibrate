@@ -48,6 +48,11 @@ final class HardcodedWhiteTextTests: XCTestCase {
         // Swipe-to-delete trash glyph — white on solid Theme.surplus (red),
         // the standard iOS destructive-swipe contrast pairing.
         ("MealTimelineSection.swift", ".background(Theme.surplus)"),
+        // Progress pose-label overlay — white on a translucent black capsule
+        // sitting on the photo, standard photo-caption contrast.
+        ("AddProgressEntryView.swift", ".background(.black.opacity(0.45), in: Capsule())"),
+        // Progress empty-state CTA — white on solid Theme.accent (coral).
+        ("ProgressGalleryView.swift", ".background(Theme.accent, in: RoundedRectangle(cornerRadius: Theme.radiusChip))"),
         ("WorkoutView.swift", ".background(Theme.ink, in: RoundedRectangle(cornerRadius: 12))"),
         // Solid ink (V7 selected-chip pattern) — white reads on black
         ("FoodTabView.swift", "? Theme.ink : Color.clear, in: RoundedRectangle"),
