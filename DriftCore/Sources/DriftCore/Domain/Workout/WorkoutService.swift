@@ -450,6 +450,19 @@ public enum WorkoutService {
     // MARK: - Active Session Persistence
 
     private static let sessionKey = "drift_active_workout_session"
+    /// Wall-clock time of the most recent `clearSession()`. `saveSession`
+    /// refuses to write a session that STARTED before this stamp — once a
+    /// workout is finished or discarded, no late async persist may resurrect
+    /// it. Field bug 2026-07-13: the 30s auto-save tick raced the Finish
+    /// button, re-wrote the just-cleared session, and the zombie produced
+    /// both a phantom "Workout in progress" banner and a duplicate saved
+    /// workout ("P5 Day 1" saved at 1h39m and again at 2h22m).
+    private static let sessionClearedAtKey = "drift_active_workout_session_cleared_at"
+    /// Clock-skew grace on the tombstone comparison. A zombie session
+    /// started hours before the clear; a legitimate new session starts
+    /// after it. 2 minutes absorbs NTP adjustments without re-admitting
+    /// any realistic zombie.
+    private static let sessionClearGraceSeconds: TimeInterval = 120
 
     public struct SavedSession: Codable {
         public let workoutName: String
@@ -498,6 +511,11 @@ public enum WorkoutService {
     }
 
     public static func saveSession(_ session: SavedSession) {
+        let clearedAt = UserDefaults.standard.double(forKey: sessionClearedAtKey)
+        guard session.startTime.timeIntervalSince1970 >= clearedAt - sessionClearGraceSeconds else {
+            Log.app.info("Rejected stale session write for '\(session.workoutName)' — started before the last clearSession()")
+            return
+        }
         var stamped = session
         stamped.lastSavedAt = Date()
         if let data = try? JSONEncoder().encode(stamped) {
@@ -574,8 +592,11 @@ public enum WorkoutService {
         }
     }
 
-    public static func clearSession() {
+    /// `now` is injectable for tests that need to persist deliberately
+    /// backdated sessions after a clear (expiry tests).
+    public static func clearSession(now: Date = Date()) {
         UserDefaults.standard.removeObject(forKey: sessionKey)
+        UserDefaults.standard.set(now.timeIntervalSince1970, forKey: sessionClearedAtKey)
     }
 
     public static var hasActiveSession: Bool {

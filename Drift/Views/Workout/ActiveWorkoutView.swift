@@ -755,6 +755,13 @@ struct ActiveWorkoutView: View {
     // MARK: - Session Persistence
 
     private func persistSession() {
+        // A finished/discarded workout must never re-persist. The 30s
+        // auto-save tick hops through an async Task, so one enqueued just
+        // before Finish would otherwise run AFTER clearSession() and
+        // resurrect the session (2026-07-13 double-save field bug —
+        // WorkoutService.saveSession also tombstones this at the service
+        // level; this guard is the cheap first line).
+        guard !workoutEnded else { return }
         let sessionExercises = exercises.map { ex in
             WorkoutService.SavedSession.SessionExercise(
                 name: ex.name, isWarmup: ex.isWarmupExercise,

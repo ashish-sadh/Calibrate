@@ -959,7 +959,9 @@ import GRDB
     // lastSavedAt = now), not since startTime — an old start alone no longer
     // expires a session (2026-07-09 auto-save rework).
     let name = "ExpiredTest_\(UUID().uuidString.prefix(4))"
-    WorkoutService.clearSession()
+    // Backdate the clear tombstone so the deliberately old startTime below
+    // isn't rejected as a stale write.
+    WorkoutService.clearSession(now: Date().addingTimeInterval(-7 * 3600))
     let oldTime = Date().addingTimeInterval(-6 * 3600) // started 6 hours ago
     WorkoutService.saveSession(.init(workoutName: name, startTime: oldTime, exercises: []))
     // Just saved → still active despite the old start.
@@ -975,13 +977,40 @@ import GRDB
 
 @Test func sessionNotExpiredAt4Hours() async throws {
     let name = "Recent4h_\(UUID().uuidString.prefix(4))"
-    WorkoutService.clearSession()
+    // Backdated start needs a tombstone older than it (see stale-write guard).
+    WorkoutService.clearSession(now: Date().addingTimeInterval(-5 * 3600))
     let recent = Date().addingTimeInterval(-4 * 3600) // 4 hours ago
     WorkoutService.saveSession(.init(workoutName: name, startTime: recent, exercises: []))
     let loaded = WorkoutService.loadSession()
     // Concurrent tests may overwrite, so only assert if our session survived
     if let loaded, loaded.workoutName == name {
         #expect(true, "Session at 4 hours is still valid")
+    }
+    WorkoutService.clearSession()
+}
+
+@Test func staleSessionWriteAfterClearIsRejected() async throws {
+    // 2026-07-13 double-save field bug: the 30s auto-save tick raced the
+    // Finish button and re-wrote the just-cleared session. The zombie then
+    // showed a phantom "Workout in progress" banner and got saved as a
+    // duplicate workout. saveSession must refuse a session that STARTED
+    // before the last clearSession().
+    let name = "Zombie_\(UUID().uuidString.prefix(4))"
+    let startedAnHourAgo = Date().addingTimeInterval(-3600)
+    WorkoutService.clearSession() // finish happens now → tombstone
+    WorkoutService.saveSession(.init(workoutName: name, startTime: startedAnHourAgo, exercises: []))
+    #expect(WorkoutService.loadSession()?.workoutName != name,
+            "A session started before the last clear must not be resurrected")
+}
+
+@Test func freshSessionAfterClearPersists() async throws {
+    // The tombstone must not block the NEXT workout.
+    let name = "Fresh_\(UUID().uuidString.prefix(4))"
+    WorkoutService.clearSession()
+    WorkoutService.saveSession(.init(workoutName: name, startTime: Date(), exercises: []))
+    // Concurrent tests may overwrite — only assert if our session survived.
+    if let loaded = WorkoutService.loadSession(), loaded.workoutName.hasPrefix("Fresh_") {
+        #expect(loaded.workoutName == name)
     }
     WorkoutService.clearSession()
 }
@@ -1431,6 +1460,8 @@ import GRDB
 @Test func sessionPersistencePreservesStartTime() async throws {
     // Ensure session save/load round-trips the start time accurately
     let originalStart = Date().addingTimeInterval(-600) // 10 min ago
+    // Backdated start needs a tombstone older than it (stale-write guard).
+    WorkoutService.clearSession(now: originalStart.addingTimeInterval(-60))
     let session = WorkoutService.SavedSession(
         workoutName: "Timer Test",
         startTime: originalStart,
@@ -1447,6 +1478,8 @@ import GRDB
 }
 
 @Test func sessionPersistenceWithExercises() async throws {
+    // Backdated start needs a tombstone older than it (stale-write guard).
+    WorkoutService.clearSession(now: Date().addingTimeInterval(-300))
     let session = WorkoutService.SavedSession(
         workoutName: "PersistExercise_\(UUID().uuidString.prefix(4))",
         startTime: Date().addingTimeInterval(-120),
@@ -1754,6 +1787,9 @@ private func sessionExercise(name: String, sets: [(w: String, r: String, done: B
 @Test func loadSessionKeepsFreshSessionAndExpiryUsesLastActivity() throws {
     defer { WorkoutService.clearSession() }
     let start = Date().addingTimeInterval(-6 * 3600)     // started 6h ago…
+    // Tombstone must predate the backdated start or the save is rejected
+    // as a stale write (see saveSession stale-session guard).
+    WorkoutService.clearSession(now: start.addingTimeInterval(-60))
     WorkoutService.saveSession(.init(workoutName: "Long Gym Day", startTime: start,
                                      exercises: []))     // …but saved just now
     // Idle time (not total age) drives expiry — an active 6h session survives.
