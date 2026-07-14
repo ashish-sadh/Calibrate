@@ -13,6 +13,7 @@ struct TimerCameraView: View {
     @StateObject private var cam = TimerCameraController()
     @State private var seconds = 5
     @State private var countdown: Int?
+    @State private var cancelled = false
 
     private let options = [3, 5, 10]
 
@@ -51,7 +52,7 @@ struct TimerCameraView: View {
             }
         }
         .onAppear { cam.configure(); cam.start() }
-        .onDisappear { cam.stop() }
+        .onDisappear { cancelled = true; cam.stop() }
     }
 
     private var controls: some View {
@@ -83,7 +84,7 @@ struct TimerCameraView: View {
     }
 
     private func tick() {
-        guard let c = countdown else { return }
+        guard !cancelled, let c = countdown else { return }   // stop if dismissed mid-countdown
         if c <= 0 {
             cam.capture { image in
                 if let image { onCapture(image) }
@@ -154,6 +155,9 @@ private final class TimerCameraController: NSObject, ObservableObject, AVCapture
     }
 
     func capture(_ completion: @escaping (UIImage?) -> Void) {
+        // No live video connection (simulator, or no camera for the requested
+        // position) → capturePhoto would throw NSInvalidArgumentException.
+        guard output.connection(with: .video)?.isActive == true else { completion(nil); return }
         captureHandler = completion
         lastCaptureFront = position == .front
         output.capturePhoto(with: AVCapturePhotoSettings(), delegate: self)

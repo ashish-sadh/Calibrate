@@ -124,4 +124,45 @@ public enum BodyMeasurementAnalysis {
 
     public static func cm(fromInches inches: Double) -> Double { inches * 2.54 }
     public static func inches(fromCm cm: Double) -> Double { cm / 2.54 }
+
+    // MARK: - Save-time measurement resolution (pure — the data-integrity core)
+
+    /// Per-site input captured from the entry form.
+    public struct FieldInput: Sendable {
+        public let enteredText: String     // what's in the text field now
+        public let loadedText: String?     // exact text shown at load (for drift avoidance)
+        public let loadedCm: Double?       // original stored cm for this site
+        public let ghostCm: Double?        // carried-forward value from a prior check-in
+        public init(enteredText: String, loadedText: String?, loadedCm: Double?, ghostCm: Double?) {
+            self.enteredText = enteredText; self.loadedText = loadedText
+            self.loadedCm = loadedCm; self.ghostCm = ghostCm
+        }
+    }
+
+    /// Resolve the per-site fields into the cm map to persist. The three rules
+    /// that stop data corruption (2026-07-14 verifier findings):
+    ///  1. An untouched field re-saves its ORIGINAL cm (no conversion drift).
+    ///  2. A blank field adopts its ghost ONLY when the user logged at least one
+    ///     measurement — so a photo-only / empty check-in never fabricates a
+    ///     full measurement set copied from a previous date.
+    ///  3. Anything the user typed is parsed and converted from the display unit.
+    public static func resolveMeasurements(_ fields: [MeasurementSite: FieldInput], inInches: Bool) -> [String: Double] {
+        let userLogged = fields.values.contains { !$0.enteredText.trimmingCharacters(in: .whitespaces).isEmpty }
+        var out: [String: Double] = [:]
+        for (site, f) in fields {
+            let text = f.enteredText.trimmingCharacters(in: .whitespaces)
+            if text.isEmpty {
+                if userLogged, let ghost = f.ghostCm { out[site.rawValue] = ghost }
+                continue
+            }
+            if text == f.loadedText, let original = f.loadedCm {
+                out[site.rawValue] = original
+                continue
+            }
+            let normalized = text.replacingOccurrences(of: ",", with: ".")
+            guard let shown = Double(normalized), shown > 0 else { continue }
+            out[site.rawValue] = inInches ? shown * 2.54 : shown
+        }
+        return out
+    }
 }

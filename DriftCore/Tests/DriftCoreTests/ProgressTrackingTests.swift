@@ -126,6 +126,57 @@ struct ProgressTrackingTests {
         #expect(BodyMeasurementAnalysis.ratios(in: m).isEmpty)
     }
 
+    // MARK: - Save-time resolution (data-integrity core)
+
+    private func field(_ entered: String, loadedText: String? = nil, loadedCm: Double? = nil, ghost: Double? = nil) -> BodyMeasurementAnalysis.FieldInput {
+        .init(enteredText: entered, loadedText: loadedText, loadedCm: loadedCm, ghostCm: ghost)
+    }
+
+    @Test func resolveEmptyCheckInWritesNothing() {
+        // Photo-only / empty check-in: all fields blank but ghosts present →
+        // must NOT fabricate a duplicate measurement set (the regression).
+        let fields: [MeasurementSite: BodyMeasurementAnalysis.FieldInput] = [
+            .waist: field("", ghost: 82), .chest: field("", ghost: 100)]
+        #expect(BodyMeasurementAnalysis.resolveMeasurements(fields, inInches: false).isEmpty)
+    }
+
+    @Test func resolveGhostAdoptedOnlyWhenUserLoggedSomething() {
+        // User measured waist, left chest blank → chest carries forward.
+        let fields: [MeasurementSite: BodyMeasurementAnalysis.FieldInput] = [
+            .waist: field("80"), .chest: field("", ghost: 100)]
+        let out = BodyMeasurementAnalysis.resolveMeasurements(fields, inInches: false)
+        #expect(out[MeasurementSite.waist.rawValue] == 80)
+        #expect(out[MeasurementSite.chest.rawValue] == 100)   // ghost adopted
+    }
+
+    @Test func resolveUntouchedFieldReusesOriginalCmNoDrift() {
+        // Editing in inches: waist loaded as 82.5cm shows "32.5"; unchanged →
+        // must persist the ORIGINAL 82.5, not 32.5*2.54.
+        let fields: [MeasurementSite: BodyMeasurementAnalysis.FieldInput] = [
+            .waist: field("32.5", loadedText: "32.5", loadedCm: 82.5, ghost: nil),
+            .chest: field("40")]
+        let out = BodyMeasurementAnalysis.resolveMeasurements(fields, inInches: true)
+        #expect(out[MeasurementSite.waist.rawValue] == 82.5)   // no re-round drift
+        #expect(abs(out[MeasurementSite.chest.rawValue]! - 40 * 2.54) < 0.001)
+    }
+
+    @Test func resolveClearedFieldIsDropped() {
+        // A field that HAD a loaded value, blanked by the user, with no ghost →
+        // dropped (deletion works).
+        let fields: [MeasurementSite: BodyMeasurementAnalysis.FieldInput] = [
+            .waist: field("", loadedText: "80", loadedCm: 80, ghost: nil),
+            .chest: field("40")]
+        let out = BodyMeasurementAnalysis.resolveMeasurements(fields, inInches: false)
+        #expect(out[MeasurementSite.waist.rawValue] == nil)
+    }
+
+    @Test func resolveEditedFieldConverts() {
+        let fields: [MeasurementSite: BodyMeasurementAnalysis.FieldInput] = [
+            .waist: field("31", loadedText: "32.5", loadedCm: 82.5, ghost: nil)]
+        let out = BodyMeasurementAnalysis.resolveMeasurements(fields, inInches: true)
+        #expect(abs(out[MeasurementSite.waist.rawValue]! - 31 * 2.54) < 0.001)
+    }
+
     // MARK: - Persistence
 
     @Test func measurementUpsertByDate() throws {

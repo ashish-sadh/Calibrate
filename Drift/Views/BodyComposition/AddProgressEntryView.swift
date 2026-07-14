@@ -29,6 +29,10 @@ struct AddProgressEntryView: View {
     @State private var notes = ""
     @State private var nearestWeightKg: Double?
     @State private var loadedForDate: String?
+    /// True when the loaded date already had a measurement row — suppresses
+    /// ghost carry-forward so editing a partial entry never fabricates values
+    /// for sites that date never measured.
+    @State private var dateHadMeasurement = false
 
     // Capture routing. `libraryPose` is intentionally NOT tied to the picker's
     // presentation binding — clearing it on dismiss raced the selection handler
@@ -99,9 +103,12 @@ struct AddProgressEntryView: View {
     }
 
     private var hasAnything: Bool {
+        // NOTE: ghostCm is intentionally excluded — carried-forward placeholders
+        // are not "something the user added", so an untouched new check-in
+        // stays un-saveable (no phantom duplicate of the previous entry).
         !photos.isEmpty || !existingFilenames.isEmpty
-            || measurements.values.contains { !$0.isEmpty }
-            || !ghostCm.isEmpty || !notes.isEmpty
+            || measurements.values.contains { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+            || !notes.isEmpty
     }
 
     // MARK: - Weight (read-only, auto-pulled)
@@ -259,7 +266,9 @@ struct AddProgressEntryView: View {
                 existingFilenames[pose] = photo.filename
             }
         }
-        if let m = try? AppDatabase.shared.fetchBodyMeasurement(forDate: ds) {
+        dateHadMeasurement = false
+        if let m = try? AppDatabase.shared.fetchBodyMeasurement(forDate: ds), !m.isEmpty {
+            dateHadMeasurement = true
             for site in MeasurementSite.allCases {
                 if let cm = m.value(for: site) {
                     let text = String(format: "%.1f", inInches ? cm / 2.54 : cm)
@@ -270,10 +279,13 @@ struct AddProgressEntryView: View {
             }
             notes = m.notes ?? ""
         }
-        // Ghost-fill from the most recent measurement STRICTLY BEFORE this date.
-        if let prev = ((try? AppDatabase.shared.fetchBodyMeasurements()) ?? [])
+        // Ghost-fill from the most recent measurement STRICTLY BEFORE this date —
+        // ONLY for a net-new date. Editing an existing entry must never inherit
+        // values for sites that date never measured.
+        if !dateHadMeasurement,
+           let prev = ((try? AppDatabase.shared.fetchBodyMeasurements()) ?? [])
             .first(where: { $0.date < ds }) {
-            for site in MeasurementSite.allCases where measurements[site] == nil {
+            for site in MeasurementSite.allCases {
                 if let cm = prev.value(for: site) { ghostCm[site] = cm }
             }
         }
@@ -316,23 +328,16 @@ struct AddProgressEntryView: View {
                 }
             }
         }
-        // Measurements → cm. Untouched fields reuse their ORIGINAL cm (no
-        // conversion drift); blank fields adopt the carried-forward ghost.
-        var cmMap: [String: Double] = [:]
-        for site in MeasurementSite.allCases {
-            let text = (measurements[site] ?? "").trimmingCharacters(in: .whitespaces)
-            if text.isEmpty {
-                if let ghost = ghostCm[site] { cmMap[site.rawValue] = ghost }
-                continue
-            }
-            if text == loadedText[site], let original = loadedCm[site] {
-                cmMap[site.rawValue] = original
-                continue
-            }
-            let normalized = text.replacingOccurrences(of: ",", with: ".")
-            guard let shown = Double(normalized), shown > 0 else { continue }
-            cmMap[site.rawValue] = inInches ? shown * 2.54 : shown
-        }
+        // Measurements → cm via the pure, tested resolver (drift-avoidance +
+        // safe ghost adoption live in DriftCore's BodyMeasurementAnalysis).
+        let fields = Dictionary(uniqueKeysWithValues: MeasurementSite.allCases.map { site in
+            (site, BodyMeasurementAnalysis.FieldInput(
+                enteredText: measurements[site] ?? "",
+                loadedText: loadedText[site],
+                loadedCm: loadedCm[site],
+                ghostCm: ghostCm[site]))
+        })
+        let cmMap = BodyMeasurementAnalysis.resolveMeasurements(fields, inInches: inInches)
         if !cmMap.isEmpty || !notes.isEmpty {
             var m = BodyMeasurement(date: ds, measurementsCm: cmMap, notes: notes.isEmpty ? nil : notes)
             try? AppDatabase.shared.saveBodyMeasurement(&m)
