@@ -110,6 +110,40 @@ public enum RecoveryEstimator {
         return max(0, min(100, total))
     }
 
+    // MARK: - Recovery history (per-day scores from vitals series)
+
+    /// Score each day the data can support (needs sleep OR hrv+rhr for that
+    /// day), joining the three series by calendar day. Powers the Body Rhythm
+    /// history chart (2026-07-14: the screen was a one-day snapshot).
+    /// Sorted ascending by date.
+    public static func recoveryHistory(
+        hrvHistory: [(date: Date, ms: Double)],
+        rhrHistory: [(date: Date, bpm: Double)],
+        sleepHistory: [(date: Date, hours: Double)],
+        baselines: Baselines? = nil,
+        calendar: Calendar = .current
+    ) -> [(date: Date, score: Int)] {
+        func byDay<T>(_ series: [(date: Date, value: T)]) -> [Date: T] {
+            Dictionary(series.map { (calendar.startOfDay(for: $0.date), $0.value) },
+                       uniquingKeysWith: { _, b in b })
+        }
+        let hrv = byDay(hrvHistory.map { (date: $0.date, value: $0.ms) })
+        let rhr = byDay(rhrHistory.map { (date: $0.date, value: $0.bpm) })
+        let sleep = byDay(sleepHistory.map { (date: $0.date, value: $0.hours) })
+
+        let allDays = Set(hrv.keys).union(rhr.keys).union(sleep.keys)
+        return allDays.compactMap { day in
+            let h = hrv[day] ?? 0
+            let r = rhr[day] ?? 0
+            let s = sleep[day] ?? 0
+            // Enough signal to score? Sleep alone works (weights redistribute);
+            // vitals alone (hrv or rhr) works too. A day with nothing is skipped.
+            guard s > 0 || h > 0 || r > 0 else { return nil }
+            return (day, calculateRecovery(hrvMs: h, restingHR: r, sleepHours: s, baselines: baselines))
+        }
+        .sorted { $0.date < $1.date }
+    }
+
     // MARK: - Sleep Score (0-100)
 
     public static func calculateSleepScore(

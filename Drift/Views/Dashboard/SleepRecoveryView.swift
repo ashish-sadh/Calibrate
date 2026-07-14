@@ -8,8 +8,12 @@ struct SleepRecoveryView: View {
     @State private var hrvHistory: [(date: Date, ms: Double)] = []
     @State private var rhrHistory: [(date: Date, bpm: Double)] = []
     @State private var respHistory: [(date: Date, rpm: Double)] = []
+    @State private var recoveryScoreHistory: [(date: Date, score: Int)] = []
     @State private var isLoading = true
     @State private var expandedVital: String?
+    /// History window for the trend charts (7 / 14 / 30 days). Data is
+    /// fetched once at 30 and sliced.
+    @State private var historyDays = 7
 
     var body: some View {
         ScrollView {
@@ -24,7 +28,9 @@ struct SleepRecoveryView: View {
                     }
                     if r.sleepHours > 0 {
                         sleepScoreSection(r)
-                        if sleepHistory.count > 3 { sleepTrendChart(r) }
+                    }
+                    if recoveryScoreHistory.count > 3 || sleepHistory.count > 3 {
+                        historySection(r)
                     }
                     activityLoadCard(r)
                     insightsCard(r)
@@ -272,10 +278,74 @@ struct SleepRecoveryView: View {
         .background(color.opacity(0.15), in: RoundedRectangle(cornerRadius: 6))
     }
 
-    // MARK: - Sleep Trend (7-day)
+    // MARK: - History (recovery score + sleep, 7/14/30 days)
+
+    /// The screen was a one-day snapshot (2026-07-14 operator ask) — this
+    /// section is the story over time: per-day recovery scores and the sleep
+    /// trend, over a selectable window.
+    private func historySection(_ r: RecoveryEstimator.DailyRecovery) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("History").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
+                Spacer()
+                Picker("Range", selection: $historyDays) {
+                    Text("7d").tag(7)
+                    Text("14d").tag(14)
+                    Text("30d").tag(30)
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 160)
+            }
+            if recoveryScoreHistory.count > 3 {
+                recoveryHistoryChart
+            }
+            if sleepHistory.count > 3 {
+                sleepTrendChart(r)
+            }
+        }
+    }
+
+    private var recoveryHistoryChart: some View {
+        let cutoff = Calendar.current.date(byAdding: .day, value: -historyDays, to: Calendar.current.startOfDay(for: Date())) ?? Date()
+        let recent = recoveryScoreHistory.filter { $0.date > cutoff }
+        let avg = recent.isEmpty ? 0 : recent.map(\.score).reduce(0, +) / recent.count
+        func zoneColor(_ s: Int) -> Color {
+            s >= 80 ? Theme.deficit : (s >= 40 ? Theme.fatYellow : Theme.surplus)
+        }
+        return VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                Text("Recovery").font(.caption.weight(.semibold)).foregroundStyle(Theme.textSecondary)
+                Spacer()
+                Text("avg \(avg)").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
+            }
+            Chart {
+                ForEach(recent.indices, id: \.self) { i in
+                    BarMark(
+                        x: .value("Day", recent[i].date, unit: .day),
+                        y: .value("Score", recent[i].score)
+                    )
+                    .foregroundStyle(zoneColor(recent[i].score).opacity(Calendar.current.isDateInToday(recent[i].date) ? 1.0 : 0.65))
+                    .cornerRadius(2)
+                }
+            }
+            .chartYScale(domain: 0...100)
+            .chartXAxis {
+                AxisMarks(values: .automatic(desiredCount: historyDays == 7 ? 7 : 5)) {
+                    AxisValueLabel(format: historyDays == 7 ? .dateTime.weekday(.abbreviated) : .dateTime.month(.abbreviated).day())
+                        .foregroundStyle(Theme.textTertiary)
+                }
+            }
+            .frame(height: 110)
+        }
+        .padding(12)
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
+        .overlay(RoundedRectangle(cornerRadius: Theme.radiusControl).strokeBorder(Theme.separator, lineWidth: 0.5))
+    }
+
+    // MARK: - Sleep Trend
 
     private func sleepTrendChart(_ r: RecoveryEstimator.DailyRecovery) -> some View {
-        let recent = Array(sleepHistory.suffix(7))
+        let recent = Array(sleepHistory.suffix(historyDays))
         let avg = recent.map(\.hours).reduce(0, +) / Double(max(1, recent.count))
         let need = r.sleepNeeded
         let todayStr = DateFormatters.dateOnly.string(from: Date())
@@ -420,16 +490,25 @@ struct SleepRecoveryView: View {
 
         try? await hk.requestAuthorization()
 
-        // Fetch each source independently — one failure doesn't block others
-        hrvHistory = (try? await hk.fetchHRVHistory(days: 14)) ?? []
-        rhrHistory = (try? await hk.fetchRestingHeartRateHistory(days: 14)) ?? []
-        respHistory = (try? await hk.fetchRespiratoryRateHistory(days: 14)) ?? []
-        let sleepHist = (try? await hk.fetchSleepHistory(days: 14)) ?? []
+        // Fetch each source independently — one failure doesn't block others.
+        // 30 days so the History section has a real window; baselines keep
+        // their original 14-day span so today's score doesn't shift.
+        hrvHistory = (try? await hk.fetchHRVHistory(days: 30)) ?? []
+        rhrHistory = (try? await hk.fetchRestingHeartRateHistory(days: 30)) ?? []
+        respHistory = (try? await hk.fetchRespiratoryRateHistory(days: 30)) ?? []
+        let sleepHist = (try? await hk.fetchSleepHistory(days: 30)) ?? []
         sleepHistory = sleepHist
 
+        let cutoff14 = Calendar.current.date(byAdding: .day, value: -14, to: Date()) ?? Date()
         let baselines = RecoveryEstimator.calculateBaselines(
+            hrvHistory: hrvHistory.filter { $0.date > cutoff14 },
+            rhrHistory: rhrHistory.filter { $0.date > cutoff14 },
+            respHistory: respHistory.filter { $0.date > cutoff14 },
+            sleepHistory: sleepHist.filter { $0.date > cutoff14 })
+
+        recoveryScoreHistory = RecoveryEstimator.recoveryHistory(
             hrvHistory: hrvHistory, rhrHistory: rhrHistory,
-            respHistory: respHistory, sleepHistory: sleepHist)
+            sleepHistory: sleepHist, baselines: baselines)
 
         // Today's vitals (each independent)
         let sleepDetail = (try? await hk.fetchSleepDetail(for: today))

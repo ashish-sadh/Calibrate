@@ -254,3 +254,28 @@ import Testing
     #expect(arrow == "—")
     #expect(pct == 0)
 }
+
+// MARK: - Recovery history (2026-07-14: Body Rhythm was a one-day snapshot)
+
+@Test func recoveryHistoryJoinsSeriesByDayAndSorts() {
+    let cal = Calendar.current
+    let base = cal.startOfDay(for: Date(timeIntervalSince1970: 1_784_000_000))
+    func day(_ n: Int) -> Date { cal.date(byAdding: .day, value: n, to: base)! }
+
+    let history = RecoveryEstimator.recoveryHistory(
+        hrvHistory: [(day(0), 50), (day(2), 40)],
+        rhrHistory: [(day(0), 60), (day(1), 62)],
+        sleepHistory: [(day(0), 8.0), (day(1), 6.0), (day(3), 7.5)])
+
+    // Days 0-3 all have SOME signal → 4 scored days, ascending.
+    #expect(history.count == 4)
+    #expect(history.map(\.date) == [day(0), day(1), day(2), day(3)])
+    // Full-signal good day beats a short-sleep day.
+    let d0 = history[0].score, d1 = history[1].score
+    #expect(d0 > d1)
+    for entry in history { #expect((0...100).contains(entry.score)) }
+}
+
+@Test func recoveryHistoryEmptyWhenNoSignal() {
+    #expect(RecoveryEstimator.recoveryHistory(hrvHistory: [], rhrHistory: [], sleepHistory: []).isEmpty)
+}
