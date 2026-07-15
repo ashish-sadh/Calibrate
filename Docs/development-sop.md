@@ -235,6 +235,46 @@ export/upload (full commands in `CLAUDE.md` → TestFlight).
 
 ---
 
+## 9. Performance monitoring — catch hangs before field reports
+
+Three cadences, cheapest first. Origin: the 2026-07-15 Log-button hang (a
+full food-catalog scan inside the button press) was reported by a friend the
+day after it shipped — every layer below would have caught it earlier.
+
+**After every TestFlight build (2 min, zero setup) — real-user metrics:**
+Xcode → Window → Organizer → select Drift → **Metrics**. Check **Hang Rate**
+and **Launch Time** for the new build vs the previous ones. This is
+Apple-aggregated data from TestFlight users who opted into sharing — a hang
+regression shows up here as a spike without anyone messaging you. (Data lags
+a day or two behind installs; nothing appears until enough users run the build.)
+
+**After touching DB queries or logging/dashboard hot paths — Tier-4 bench:**
+```bash
+cd DriftCore && DRIFT_LATENCY_BENCH=1 swift test --filter HotPathLatencyBench
+```
+Seeds a year-scale dataset (6k-food catalog, ~4.4k food entries) and asserts
+order-of-magnitude ceilings on the Log press, Add Food sheet, dashboard
+insight load, and search-dedupe paths. A fail means a whole-table scan or
+N×-query loop is back on a hot path. Healthy runs are sub-millisecond per
+path; ceilings are ~100× that so machine variance never flakes.
+
+**When investigating a specific reported hang — local diagnostics:**
+- **Thread Performance Checker**: Edit Scheme → Run → Diagnostics → check
+  "Thread Performance Checker", then use the app in debug — it flags
+  main-thread I/O and priority inversions live at the offending stack.
+- **Instruments**: Product → Profile → **Hangs** template (or Time Profiler)
+  reproduces the report and points at the exact stack. Right tool for "why
+  does *this* button stutter", not for routine monitoring.
+
+**Every few weeks / after big features — pattern sweep:** the hang family
+that profilers only reveal after data has grown (unbounded `fetchAll` +
+per-row Swift work, per-day query loops, per-item reload/notify loops,
+formatter allocs in row views) is findable by code inspection. Sweep for
+those patterns (see `Docs/decisions.md` 2026-07-15 entry) and file findings
+on the perf epic.
+
+---
+
 ## See also
 - `CLAUDE.md` — the agent-facing mirror of this SOP (authoritative on identical rules)
 - `Docs/architecture.md` — AI-first dual-model + cloud-coach architecture

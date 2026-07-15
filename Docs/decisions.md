@@ -394,3 +394,32 @@ Decisions:
 Method note for future gate changes: calibrate on the pinned real datasets FIRST (scratch diagnostic,
 measure, place constants in the measured gap) — the t-ramp shipped on a reconstructed dataset and was
 falsified by the real one the next morning.
+
+## 2026-07-15: Hot-path perf discipline — precompute keys, batch per-day loops, bench at year scale
+
+A friend reported a ~1s hang on the food-logging Log button one day after build 352 shipped. Root
+cause: the AG1 dedupe fix (same build) fetched EVERY food name and normalized each in Swift, per
+logged item, synchronously inside the button press — plus logFood reloading the day + posting
+.foodEntryAdded per item (the #949 problem, never applied to logFood). A three-agent sweep then found
+the same disease elsewhere: BehaviorInsightService issuing ~100 serial per-day DB queries per dashboard
+load, an unbounded food_entry GROUP BY on every Add Food sheet open, a 1MB JSON decode + ~100
+UserDefaults blob decodes before first frame, a 5×-per-render CGM re-parse, and a per-day HealthKit
+sleep loop.
+
+Decisions:
+1. Derived lookup values (dedupe keys) are PERSISTED + INDEXED at write time (food.normalized_key,
+   v44), never recomputed over the table at read time. The Food record derives the key from name at
+   init/decode/didSet so no write path can forget it; a canary test fails on any NULL key.
+2. Per-day query loops are banned on hot paths — use ranged GROUP-BY batch queries
+   (fetchDailyNutritionRange pattern) + in-memory bucketing. Same rule as the #1008 HealthKit storms.
+3. Multi-item logging goes through batch APIs (logFoods) — one day-reload + one notification per user
+   action, never per item.
+4. Tier-4 HotPathLatencyBench (DRIFT_LATENCY_BENCH=1) seeds a year-scale DB and asserts
+   order-of-magnitude ceilings on the Log press / Add Food / dashboard-insight / dedupe paths. Run it
+   after touching those queries. Once-in-a-while checks (Xcode Organizer hang rate per TestFlight
+   build, Thread Performance Checker, Instruments Hangs) documented in development-sop.md §9.
+
+Method note: the LIKE-prefilter interim fix silently broke dedupe because `"str".split(separator: " ")`
+resolved to a Character-chunk overload whose interpolation produced garbage that matched nothing — the
+existing AG1 regression tests caught it. Perf rewrites of correctness-bearing queries need their
+correctness tests run BEFORE trusting the timing win.
