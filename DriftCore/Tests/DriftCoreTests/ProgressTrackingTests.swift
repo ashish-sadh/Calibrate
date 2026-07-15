@@ -255,4 +255,25 @@ struct ProgressTrackingTests {
         #expect(Set(removed) == ["f.jpg", "b.jpg"])
         #expect(try db.fetchProgressPhotos(forDate: "2026-07-14").isEmpty)
     }
+
+    /// The "i" guide on every check-in row: each site must carry a tape-
+    /// placement sentence, and its figure highlight must resolve to REAL
+    /// body-diagram slugs — an empty slug set renders a blank figure, which
+    /// is exactly the silent failure this pins (vocabulary drift between
+    /// MeasurementSite.highlightMuscles and BodyDiagram).
+    @Test func everyMeasurementSiteHasAGuide() {
+        #expect(!MeasurementSite.measuringTips.isEmpty)
+        for site in MeasurementSite.allCases {
+            #expect(site.tapePlacement.count > 30, "\(site) tape placement too thin")
+            let slugs = site.highlightMuscles.flatMap { BodyDiagram.librarySlugs(forDriftMuscle: $0) }
+            #expect(!slugs.isEmpty, "\(site) highlight resolves to no diagram region")
+        }
+        // Mirrored sites share one guide — left/right must not diverge.
+        for site in MeasurementSite.allCases {
+            if let mirror = site.mirror {
+                #expect(site.tapePlacement == mirror.tapePlacement)
+                #expect(site.highlightMuscles == mirror.highlightMuscles)
+            }
+        }
+    }
 }

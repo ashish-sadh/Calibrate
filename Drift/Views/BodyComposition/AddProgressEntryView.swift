@@ -52,6 +52,8 @@ struct AddProgressEntryView: View {
     /// lbs/in preference may know their waist in cm). The parser additionally
     /// honors explicit suffixes ("86cm") regardless of this toggle.
     @State private var entryInInches: Bool = Preferences.weightUnit == .lbs
+    /// Site whose how-to-measure guide sheet is showing ("i" on each row).
+    @State private var infoSite: MeasurementSite?
     private var inInches: Bool { entryInInches }
     private var unitLabel: String { inInches ? "in" : "cm" }
 
@@ -240,12 +242,25 @@ struct AddProgressEntryView: View {
                 }
             }
         }
+        // Own presentation host — the camera fullScreenCover and photosPicker
+        // live on OTHER views; stacking presentation modifiers on one view
+        // silently breaks delivery (the PhotosPicker field bug).
+        .sheet(item: $infoSite) { site in
+            MeasurementGuideSheet(site: site)
+        }
     }
 
     private func measurementRow(_ site: MeasurementSite) -> some View {
         let ghost = ghostCm[site].map { String(format: "%.1f", inInches ? $0 / 2.54 : $0) }
         return HStack {
             Text(site.displayName).font(.subheadline)
+            Button { infoSite = site } label: {
+                Image(systemName: "info.circle")
+                    .font(.caption)
+                    .foregroundStyle(Theme.textTertiary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("How to measure \(site.displayName)")
             Spacer()
             TextField(ghost ?? "—", text: Binding(
                 get: { measurements[site] ?? "" },
@@ -395,5 +410,69 @@ struct AddProgressEntryView: View {
         ProgressPhotoStore.delete(removed)
         try? AppDatabase.shared.deleteBodyMeasurement(forDate: ds)
         dismiss()
+    }
+}
+
+// MARK: - How-to-measure guide ("i" on each measurement row)
+
+/// Compact per-site measuring guide: the app's own body figure with the
+/// site's region highlighted (consistent visuals, fully offline — no licensed
+/// stock imagery exists for this) + the tape placement sentence + the
+/// universal consistency tips.
+private struct MeasurementGuideSheet: View {
+    let site: MeasurementSite
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text("How to measure · \(site.displayName)")
+                    .font(.headline)
+                Spacer()
+                Button { dismiss() } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(Theme.textTertiary)
+                }
+                .accessibilityLabel("Close")
+            }
+
+            HStack(alignment: .center, spacing: 16) {
+                MuscleBodyView(side: figureSide, primarySlugs: highlightSlugs)
+                    .frame(height: 170)
+                Text(site.tapePlacement)
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            Divider().overlay(Theme.separator)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("For readings you can trust week to week")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.textSecondary)
+                ForEach(MeasurementSite.measuringTips, id: \.self) { tip in
+                    HStack(alignment: .top, spacing: 6) {
+                        Text("•").font(.caption).foregroundStyle(Theme.textTertiary)
+                        Text(tip).font(.caption).foregroundStyle(Theme.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(20)
+        .background(Theme.background)
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+    }
+
+    private var highlightSlugs: Set<String> {
+        Set(site.highlightMuscles.flatMap { BodyDiagram.librarySlugs(forDriftMuscle: $0) })
+    }
+
+    private var figureSide: BodyDiagram.Side {
+        BodyDiagram.preferredSide(primaryMuscles: site.highlightMuscles)
     }
 }

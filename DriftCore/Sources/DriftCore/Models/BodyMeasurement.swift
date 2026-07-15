@@ -5,7 +5,9 @@ import GRDB
 /// converts for display based on the user's unit preference. The set is the
 /// "usual ones" the best physique-tracking apps expose — kept deliberately
 /// small so the entry form stays quick.
-public enum MeasurementSite: String, CaseIterable, Codable, Sendable {
+public enum MeasurementSite: String, CaseIterable, Codable, Sendable, Identifiable {
+    public var id: String { rawValue }
+
     case neck, shoulders, chest
     case leftBicep, rightBicep
     case leftForearm, rightForearm
@@ -67,6 +69,57 @@ public enum MeasurementSite: String, CaseIterable, Codable, Sendable {
         .waist, .hips,
         .leftThigh, .rightThigh, .leftCalf, .rightCalf,
     ]
+
+    // MARK: - How-to guidance (check-in "i" popovers)
+
+    /// Where exactly the tape goes for this site — the one sentence that
+    /// makes readings comparable week to week.
+    public var tapePlacement: String {
+        switch self {
+        case .neck:
+            "Around the narrowest point, just below the Adam's apple — tape level, head straight."
+        case .shoulders:
+            "Around the widest point over the peak of both shoulders, arms relaxed at your sides."
+        case .chest:
+            "Around the fullest part at nipple level, tape level all the way round, after a normal exhale."
+        case .leftBicep, .rightBicep:
+            "Around the peak of the flexed bicep, elbow at 90°. (Relaxed works too — just always measure the same way.)"
+        case .leftForearm, .rightForearm:
+            "Around the widest point below the elbow, fist gently clenched, arm straight."
+        case .waist:
+            "Around the navel, belly relaxed — don't pull in. Measure after a normal exhale."
+        case .hips:
+            "Around the widest point of the glutes, feet together, tape level."
+        case .leftThigh, .rightThigh:
+            "Around the widest point of the upper thigh, just below the glute fold, standing with weight even."
+        case .leftCalf, .rightCalf:
+            "Around the widest point of the calf, standing with weight even on both feet."
+        }
+    }
+
+    /// Universal consistency rules — shown once per guide, not per site.
+    public static let measuringTips: [String] = [
+        "Same time of day — first thing in the morning is most repeatable.",
+        "Tape snug against the skin but never compressing it.",
+        "Keep the tape parallel to the floor (a mirror helps).",
+        "Measure twice; if they differ, take the average.",
+    ]
+
+    /// Drift muscle names whose region the body figure highlights for this
+    /// site (vocabulary of `BodyDiagram.librarySlugs(forDriftMuscle:)`).
+    public var highlightMuscles: [String] {
+        switch self {
+        case .neck: ["neck"]
+        case .shoulders: ["shoulders"]
+        case .chest: ["chest"]
+        case .leftBicep, .rightBicep: ["biceps"]
+        case .leftForearm, .rightForearm: ["forearms"]
+        case .waist: ["abdominals"]
+        case .hips: ["glutes"]
+        case .leftThigh, .rightThigh: ["quadriceps"]
+        case .leftCalf, .rightCalf: ["calves"]
+        }
+    }
 }
 
 /// A dated set of body-circumference measurements. Values live in a JSON map
