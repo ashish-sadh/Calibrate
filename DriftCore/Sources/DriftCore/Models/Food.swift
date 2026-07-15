@@ -3,7 +3,12 @@ import GRDB
 
 public struct Food: Identifiable, Codable, Sendable {
     public var id: Int64?
-    public var name: String
+    public var name: String { didSet { normalizedKey = Food.normalizedKey(name) } }
+    /// Persisted, indexed dedupe key — always derived from `name` (at init and
+    /// on rename), never read back from the row or JSON, so it can't go stale.
+    /// Lets `saveScannedFood` dedupe with one indexed lookup instead of
+    /// scanning the catalog (the Log-button hang, field report 2026-07-15).
+    public private(set) var normalizedKey: String
     public var category: String
     public var servingSize: Double
     public var servingUnit: String
@@ -37,6 +42,7 @@ public struct Food: Identifiable, Codable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case id, name, category, calories, ingredients, source
+        case normalizedKey = "normalized_key"
         case isRecipe = "is_recipe"
         case sortOrder = "sort_order"
         case defaultServings = "default_servings"
@@ -85,6 +91,7 @@ public struct Food: Identifiable, Codable, Sendable {
     ) {
         self.id = id
         self.name = name
+        self.normalizedKey = Food.normalizedKey(name)
         self.category = category
         self.servingSize = servingSize
         self.servingUnit = servingUnit
@@ -113,6 +120,9 @@ public struct Food: Identifiable, Codable, Sendable {
         let c = try decoder.container(keyedBy: CodingKeys.self)
         id = try c.decodeIfPresent(Int64.self, forKey: .id)
         name = try c.decode(String.self, forKey: .name)
+        // Derived, never read from the row/JSON — a stale or absent stored
+        // value (pre-v44 rows, foods.json) must not survive a round-trip.
+        normalizedKey = Food.normalizedKey(name)
         category = try c.decode(String.self, forKey: .category)
         servingSize = try c.decode(Double.self, forKey: .servingSize)
         servingUnit = try c.decode(String.self, forKey: .servingUnit)

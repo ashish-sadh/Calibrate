@@ -9,7 +9,7 @@ public enum Migrations {
     /// fails with `Int.fetchOne(grdb_migrations) != currentVersion`.
     /// Stamped into the backup manifest so restore can detect a
     /// forward/backward migration scenario.
-    public static let currentVersion = 43
+    public static let currentVersion = 44
 
     public static func registerAll(_ migrator: inout DatabaseMigrator) {
         // v1: Weight tracking
@@ -688,6 +688,24 @@ public enum Migrations {
 
         migrator.registerMigration("v43_dedupe_online_foods") { db in
             try dedupeOnlineFoods(db)
+        }
+
+        // v44: persist + index the normalized dedupe key so saveScannedFood is
+        // one indexed lookup instead of fetching and normalizing the whole
+        // catalog inside the Log button press (field report 2026-07-15: ~1 s
+        // hang per multi-item log). New rows get the key from the Food record
+        // (derived from name at init/decode); this backfills everything older,
+        // including rows from pre-v44 raw-SQL migrations.
+        migrator.registerMigration("v44_food_normalized_key") { db in
+            try db.alter(table: "food") { t in
+                t.add(column: "normalized_key", .text)
+            }
+            let rows = try Row.fetchAll(db, sql: "SELECT id, name FROM food")
+            for row in rows {
+                try db.execute(sql: "UPDATE food SET normalized_key = ? WHERE id = ?",
+                               arguments: [Food.normalizedKey(row["name"]), row["id"] as Int64])
+            }
+            try db.create(index: "idx_food_normalized_key", on: "food", columns: ["normalized_key"])
         }
     }
 

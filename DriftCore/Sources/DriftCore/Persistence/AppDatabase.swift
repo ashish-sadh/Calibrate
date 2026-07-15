@@ -985,11 +985,12 @@ extension AppDatabase {
         }
     }
 
-    /// All food names — used to dedupe online-search imports against the whole
-    /// catalog (not just the current query's local hits).
-    public func fetchAllFoodNames() throws -> [String] {
+    /// All persisted normalized keys (v44) — used to dedupe online-search
+    /// imports against the whole catalog (not just the current query's local
+    /// hits) without re-normalizing every name in Swift.
+    public func fetchAllFoodKeys() throws -> Set<String> {
         try dbWriter.read { db in
-            try String.fetchAll(db, sql: "SELECT name FROM food")
+            Set(try String.fetchAll(db, sql: "SELECT normalized_key FROM food WHERE normalized_key IS NOT NULL"))
         }
     }
 
@@ -1024,25 +1025,13 @@ extension AppDatabase {
     /// fallback, barcode, OCR). Single choke point per audit 2026-07-14.
     public func saveScannedFood(_ food: inout Food) throws {
         food.source = food.source ?? "barcode"
-        let key = Food.normalizedKey(food.name)
-        // Any name sharing this normalized key must contain every one of its
-        // tokens as a substring, so a single LIKE on the longest (most
-        // selective) token narrows the Swift-side normalization to a handful
-        // of rows instead of decoding the whole catalog. Field report
-        // 2026-07-15: the full-catalog scan ran per item inside the Log
-        // button press — a visible ~1 s hang. LIKE is ASCII-case-insensitive
-        // only, so non-ASCII probes fall back to the full scan.
-        let probe = key.components(separatedBy: " ").max { $0.count < $1.count }
+        // One indexed lookup on the persisted key (v44) — this runs inside
+        // the Log button press, so it must not scan the catalog (field
+        // report 2026-07-15: ~1 s hang per multi-item log).
         try dbWriter.write { db in
-            let candidates: [String]
-            if let probe, probe.allSatisfy(\.isASCII) {
-                candidates = try String.fetchAll(
-                    db, sql: "SELECT name FROM food WHERE name LIKE ?",
-                    arguments: ["%\(probe)%"])
-            } else {
-                candidates = try String.fetchAll(db, sql: "SELECT name FROM food")
-            }
-            let exists = candidates.contains { Food.normalizedKey($0) == key }
+            let exists = try Bool.fetchOne(
+                db, sql: "SELECT EXISTS(SELECT 1 FROM food WHERE normalized_key = ?)",
+                arguments: [food.normalizedKey]) ?? false
             if !exists {
                 try food.insert(db)
             }

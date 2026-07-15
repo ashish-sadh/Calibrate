@@ -292,7 +292,7 @@ public enum FoodService {
         // are the same product but all passed the exact check and got saved as
         // permanent junk rows crowding search (AG1 field bug 2026-07-14).
         // Compare against ALL local foods, not just this query's results.
-        var seenKeys = Set(((try? AppDatabase.shared.fetchAllFoodNames()) ?? local.map(\.name)).map(normalizedFoodKey))
+        var seenKeys = (try? AppDatabase.shared.fetchAllFoodKeys()) ?? Set(local.map(\.normalizedKey))
 
         for item in usda {
             guard seenKeys.insert(normalizedFoodKey(item.name)).inserted else { continue }
