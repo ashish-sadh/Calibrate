@@ -1,6 +1,6 @@
 ---
 name: planning
-description: Deep planning for Drift autopilot. Reads + drains feedback, triages P0 bugs, processes design-doc backlog, researches the next arc (Explore sub-agent + optional WebSearch), and emits ONE primary epic per cycle. Standalone sprint-tasks no longer filed — bugs auto-route to routine-fix; permanents continue via their lifecycle. Invoked headlessly by the watchdog as `claude -p "/planning"`. Harness phase 3c per Docs/refactor/harness-phase-2-workflows.md.
+description: Deep planning for Drift autopilot. Reads + drains feedback, triages P0 bugs, processes design-doc backlog, researches the next arc (Explore sub-agent + optional WebSearch), and emits ONE primary epic per cycle. Standalone sprint-tasks no longer filed — bugs auto-route to routine-fix; permanents continue via their lifecycle. Invoked headlessly by the watchdog as `claude -p "/planning"`. Harness phase 3c per Docs/archive/harness-phase-2-workflows.md.
 ---
 
 <role>
@@ -142,7 +142,7 @@ The epic body schema:
     <!-- 3-7 sub-tasks typical -->
   </subtasks>
   <visual_criteria>
-    <!-- Only if the arc touches Drift/Views/. See harness-phase-2-workflows.md
+    <!-- Only if the arc touches Drift/Views/. See Docs/archive/harness-phase-2-workflows.md
          section 3 for schema. -->
   </visual_criteria>
   <done_when threshold="all subtasks closed OR explicitly deferred">
