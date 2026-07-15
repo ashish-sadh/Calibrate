@@ -423,3 +423,18 @@ Method note: the LIKE-prefilter interim fix silently broke dedupe because `"str"
 resolved to a Character-chunk overload whose interpolation produced garbage that matched nothing — the
 existing AG1 regression tests caught it. Perf rewrites of correctness-bearing queries need their
 correctness tests run BEFORE trusting the timing win.
+
+## 2026-07-15: Doc governance — point-in-time state lives in issues, knowledge lives in .md
+
+Operator-set policy after Docs/failing-queries.md drifted into a queue pretending to be knowledge.
+The split:
+- **GitHub issues (scoped, labeled, closeable)** = point-in-time state: failing queries
+  (`failing-query` label — one issue per query class, closed when it routes correctly), bugs,
+  sprint tasks, eval-red trackers. If it has a lifecycle, it's an issue.
+- **.md in git** = long-term knowledge that stays true: development SOP, principles, architecture,
+  design docs, roadmap, this decisions log. Committed AND local.
+- Resolved point-in-time history needs no ledger — git log and closed issues ARE the ledger.
+
+Applied: Docs/failing-queries.md retired; its 5 open classes filed as #1053-#1057 under
+`failing-query`; CLAUDE.md Doc Map + SOP §5 updated. The planning-service evidence-guard regex
+("failing-quer…") already matches the label name, so sprint-task justification cites keep working.

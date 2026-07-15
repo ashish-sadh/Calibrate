@@ -158,8 +158,9 @@ After any change to the AI pipeline (`DriftCore/Sources/DriftCore/AI/...`):
 - **Eval (lite) every time:** `cd DriftCore && swift test --filter AIEvalHarness`
   (deterministic intent/routing). Deep/real-model eval = Tier 3 (`DriftLLMEvalMacOS`)
   before TestFlight.
-- **Log real failures** to `Docs/failing-queries.md`, then fix systematically and
-  add a gold case.
+- **Log real failures** as GitHub issues with the `failing-query` label — one
+  scoped issue per query class, closed when it routes correctly, plus a gold
+  case pinning the fix. (`Docs/failing-queries.md` retired 2026-07-15.)
 
 ### DriftChatSim — reproduce & iterate on chat bugs without an iOS build
 
@@ -280,4 +281,4 @@ on the perf epic.
 - `Docs/architecture.md` — AI-first dual-model + cloud-coach architecture
 - `Docs/decisions.md` — non-obvious decisions & harness rules from real incidents
 - `Docs/testing.md` / `Docs/develop.md` — pointers into this SOP + a few unique setup notes
-- `Docs/failing-queries.md` — real chat queries that don't work yet
+- `gh issue list --label failing-query` — real chat queries that don't work yet

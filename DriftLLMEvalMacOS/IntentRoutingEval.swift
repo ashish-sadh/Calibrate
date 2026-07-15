@@ -934,7 +934,7 @@ final class IntentRoutingEval: XCTestCase {
     // MARK: - Cycle 9794 Prompt Refresh — failure-cluster regression cases
     //
     // Five clusters identified by sweeping the IntentRouting + per-stage eval
-    // for "2B limitation" notes and gaps in failing-queries.md. Each cluster
+    // for "2B limitation" notes and field failing-query issues. Each cluster
     // now has a matching few-shot anchor in IntentClassifier.intelligenceExtras
     // — these cases pin those anchors so a future prompt edit can't silently
     // re-break them.
