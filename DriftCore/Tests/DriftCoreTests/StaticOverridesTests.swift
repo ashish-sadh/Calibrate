@@ -75,6 +75,34 @@ final class StaticOverridesTests: XCTestCase {
         }
     }
 
+    /// Field telemetry 2026-07: these exact utterances hit the LLM daily at
+    /// 1.5-7.4s a turn ("How are you doing" once took 38s through the
+    /// presentation pipeline). They must resolve here at 0ms.
+    func testGreeting_fieldTelemetryVariants() {
+        let realGreetings = [
+            "Hello how are you", "How are you", "How are you doing",
+            "Hey how are you", "Hey how are you doing", "Hello how are you doing",
+            "How is it going", "How's it going", "How's it going?",
+            "Good morning", "Hello good morning", "Hey how are you?",
+        ]
+        for q in realGreetings {
+            if case .response = StaticOverrides.match(q) { } else {
+                XCTFail("Expected greeting .response for '\(q)' — it burns an LLM turn otherwise")
+            }
+        }
+    }
+
+    /// The guard that keeps the greeting set honest: first-person phrasings
+    /// are DATA queries, not smalltalk — they must fall through to routing.
+    func testGreeting_firstPersonDataQueriesFallThrough() {
+        for q in ["How am I doing", "How am I doing?", "how am i doing today",
+                  "hey how's my health going", "how is my sleep"] {
+            if case .response(let text)? = StaticOverrides.match(q), text.contains("Ask about") {
+                XCTFail("'\(q)' is a data query — greeting override must not swallow it")
+            }
+        }
+    }
+
     // MARK: - Thanks
 
     func testThanks_thanks() {

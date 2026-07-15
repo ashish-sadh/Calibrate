@@ -602,7 +602,7 @@ public enum AIToolAgent {
         "food_info", "weight_info", "exercise_info", "sleep_recovery",
         "supplements", "glucose", "biomarkers", "body_comp", "explain_calories",
         "cross_domain_insight", "cross_domain_pattern_detector",
-        "weight_trend_prediction", "supplement_insight", "food_timing_insight",
+        "goal_weight_eta", "supplement_insight", "food_timing_insight",
         "sleep_food_correlation"
     ]
 

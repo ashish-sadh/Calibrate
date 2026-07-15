@@ -48,11 +48,11 @@ final class MultiStageEval: XCTestCase {
 
     private static let weightPrompt = """
     Weight tracker. Reply JSON tool call. Fix typos, word numbers.
-    Tools: log_weight(value,unit?) weight_info(query?) set_goal(target,unit?) weight_trend_prediction()
+    Tools: log_weight(value,unit?) weight_info(query?) set_goal(target,unit?) goal_weight_eta()
     "I weigh 75 kg"→{"tool":"log_weight","value":"75","unit":"kg"}
     "weight trend"→{"tool":"weight_info","query":"trend"}
     "set my goal to one sixty"→{"tool":"set_goal","target":"160","unit":"lbs"}
-    "when will I reach my goal weight"→{"tool":"weight_trend_prediction"}
+    "when will I reach my goal weight"→{"tool":"goal_weight_eta"}
     "how close am I to my goal"→{"tool":"weight_info","query":"goal progress"}
     """
 
@@ -148,7 +148,7 @@ final class MultiStageEval: XCTestCase {
         Case("I weigh 75 kg", "log_weight"),
         Case("what's my weight trend", "weight_info"),
         Case("set my goal to 150 lbs", "set_goal"),
-        Case("when will I reach my goal weight", "weight_trend_prediction"),
+        Case("when will I reach my goal weight", "goal_weight_eta"),
         // Exercise
         Case("start push day", "start_workout"),
         Case("did yoga for 30 minutes", "log_activity"),

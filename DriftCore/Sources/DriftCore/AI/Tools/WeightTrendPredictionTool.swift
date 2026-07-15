@@ -4,7 +4,7 @@ import DriftCore
 @MainActor
 public enum WeightTrendPredictionTool {
 
-    nonisolated static let toolName = "weight_trend_prediction"
+    nonisolated static let toolName = "goal_weight_eta"
 
     private nonisolated static let minEntriesRequired = 7
     private nonisolated static let flatSlopeThresholdKgPerDay = 0.01 / 7.0
@@ -19,7 +19,7 @@ public enum WeightTrendPredictionTool {
 
     static var schema: ToolSchema {
         ToolSchema(
-            id: "insights.weight_trend_prediction",
+            id: "insights.goal_weight_eta",
             name: toolName,
             service: "insights",
             description: "User asks when they'll reach their goal weight or how long it will take. Returns projected date, weekly rate, and confidence based on current trend.",

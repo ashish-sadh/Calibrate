@@ -19,7 +19,7 @@ public enum IntentDomain: String, Sendable, CaseIterable {
     /// mark_supplement, supplements
     case supplements
     /// body_comp, glucose, biomarkers, cross_domain_insight, cross_domain_pattern_detector,
-    /// weight_trend_prediction — read-only data queries, never ambiguous
+    /// goal_weight_eta — read-only data queries, never ambiguous
     case data
     /// navigate_to — screen name is context-sensitive ("sleep tab" vs "sleep data")
     case meta
@@ -41,7 +41,7 @@ public enum IntentDomain: String, Sendable, CaseIterable {
         case "mark_supplement", "supplements":
             return .supplements
         case "body_comp", "glucose", "biomarkers", "cross_domain_insight",
-             "cross_domain_pattern_detector", "weight_trend_prediction",
+             "cross_domain_pattern_detector", "goal_weight_eta",
              "supplement_insight", "food_timing_insight", "sleep_food_correlation":
             return .data
         case "navigate_to":

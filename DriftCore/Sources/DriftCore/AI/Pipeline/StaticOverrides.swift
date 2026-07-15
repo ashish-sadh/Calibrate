@@ -73,9 +73,29 @@ public enum StaticOverrides {
             return .response("What can I help you with?")
         }
 
-        // Greetings
-        let greetings: Set<String> = ["hi", "hello", "hey", "yo", "sup"]
-        if greetings.contains(lower) {
+        // Greetings. Field telemetry 2026-07: multi-word variants ("hello how
+        // are you", "how is it going", "good morning") hit the LLM daily at
+        // 1.5-7.4s a turn — intercept them here at 0ms. Normalized to bare
+        // words so trailing "?"/"!" match too. Second-person only: "how are
+        // YOU" is smalltalk, "how am I doing" is a data query — never add
+        // first-person phrasings to this set.
+        let greetings: Set<String> = [
+            "hi", "hello", "hey", "yo", "sup",
+            "how are you", "how are you doing", "how are you doing today",
+            "hi how are you", "hello how are you", "hey how are you",
+            "hello how are you doing", "hey how are you doing",
+            "how is it going", "hows it going", "how it going",
+            "good morning", "good evening", "good afternoon",
+            "hello good morning", "hey good morning",
+        ]
+        // Apostrophes (straight AND the iOS curly ’) collapse so "how's it
+        // going" normalizes to "hows it going", not "how s it going".
+        let bareWords = lower
+            .replacingOccurrences(of: "'", with: "")
+            .replacingOccurrences(of: "\u{2019}", with: "")
+            .components(separatedBy: CharacterSet.alphanumerics.inverted)
+            .filter { !$0.isEmpty }.joined(separator: " ")
+        if greetings.contains(lower) || greetings.contains(bareWords) {
             return .response("Hey! Ask about your food, weight, workouts, or say \"log 2 eggs\" to quickly log meals.")
         }
 

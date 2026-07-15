@@ -32,9 +32,9 @@ public enum IntentClassifier {
     /// small tier. Every token must earn its place — see token-ceiling test.
     public static let routerPrompt: String = """
     Health app. Reply JSON tool call or short text. Fix typos, word numbers, slang.
-    Tools: log_food(name,servings?,calories?,protein?,carbs?,fat?) food_info(query) log_weight(value,unit?) weight_info(query?) start_workout(name?) log_activity(name,duration?) exercise_info(query?) sleep_recovery(period?) mark_supplement(name) supplements() set_goal(target,unit?,goal_type?) delete_food(entry_id?,name?) edit_meal(entry_id?,meal_period?,action,target_food?,new_value?) body_comp() glucose() biomarkers() navigate_to(screen) add_medication(name,brand?,dose,unit?,schedule?,reminder_time?,start_date?) log_medication(name,dose?,unit?) cross_domain_insight(metric_a,metric_b,window_days?) cross_domain_pattern_detector(window_days?) weight_trend_prediction() supplement_insight(supplement?,window_days?) food_timing_insight(window_days?) sleep_food_correlation(window_days?) exercise_volume_summary(window_days?) medication_info(medication?,window_days?) cycle_biomarker_correlation(biomarker?,window_days?) protein_consistency_vs_recovery(window_days?)
+    Tools: log_food(name,servings?,calories?,protein?,carbs?,fat?) food_info(query) log_weight(value,unit?) weight_info(query?) start_workout(name?) log_activity(name,duration?) exercise_info(query?) sleep_recovery(period?) mark_supplement(name) supplements() set_goal(target,unit?,goal_type?) delete_food(entry_id?,name?) edit_meal(entry_id?,meal_period?,action,target_food?,new_value?) body_comp() glucose() biomarkers() navigate_to(screen) add_medication(name,brand?,dose,unit?,schedule?,reminder_time?,start_date?) log_medication(name,dose?,unit?) cross_domain_insight(metric_a,metric_b,window_days?) cross_domain_pattern_detector(window_days?) goal_weight_eta() supplement_insight(supplement?,window_days?) food_timing_insight(window_days?) sleep_food_correlation(window_days?) exercise_volume_summary(window_days?) medication_info(medication?,window_days?) cycle_biomarker_correlation(biomarker?,window_days?) protein_consistency_vs_recovery(window_days?)
     <recent_entries>: match user's row reference (ordinal/calories/meal/"just logged") → entry_id. Default: name/target_food.
-    Rules: never invent health data — call a tool. "calories in X"→food_info (not log_food). log_food when user ate/had OR said log/add/track/record with a named food. Bare "log lunch/breakfast/dinner" (no food)→ask what they had. "search/find X in my logs"→food_info, not log_food. summary/intake/macros/micronutrients(fiber/sodium/sugar)→food_info. calorie/protein/carb/fat goal progress/hitting/on track→food_info. weight trend / "on track for my goal" / weight history / "how much have I lost"→weight_info. ONLY "when will I reach my goal weight" (ETA prediction)→weight_trend_prediction. body fat/lean mass/DEXA→body_comp. blood sugar/glucose spike→glucose. lab results/biomarkers/cholesterol→biomarkers. sleep/HRV→sleep_recovery. "go to X"/"open X"→navigate_to. supplements() for any supplement status question (never text). mark_supplement when user took/had one. "when did I last take X"/"last dose"/"how often do I take X"→medication_info. Medications: "took my X"/"injected X"/"log my X"→log_medication (a single dose). "I'm on X"/"started X"/"prescribed X"/"add X to my meds"→add_medication (new profile). Never use log_food for meds.
+    Rules: never invent health data — call a tool. "calories in X"→food_info (not log_food). log_food when user ate/had OR said log/add/track/record with a named food. Bare "log lunch/breakfast/dinner" (no food)→ask what they had. "search/find X in my logs"→food_info, not log_food. summary/intake/macros/micronutrients(fiber/sodium/sugar)→food_info. calorie/protein/carb/fat goal progress/hitting/on track→food_info. weight trend / "on track for my goal" / weight history / "how much have I lost"→weight_info. ONLY "when will I reach my goal weight" (ETA prediction)→goal_weight_eta. body fat/lean mass/DEXA→body_comp. blood sugar/glucose spike→glucose. lab results/biomarkers/cholesterol→biomarkers. sleep/HRV→sleep_recovery. "go to X"/"open X"→navigate_to. supplements() for any supplement status question (never text). mark_supplement when user took/had one. "when did I last take X"/"last dose"/"how often do I take X"→medication_info. Medications: "took my X"/"injected X"/"log my X"→log_medication (a single dose). "I'm on X"/"started X"/"prescribed X"/"add X to my meds"→add_medication (new profile). Never use log_food for meds.
     Act when user names food/supplement/exercise/weight/screen. Ask only when no object (bare "log"/"track"/"add") or two tools fit.
     "had biryani"→{"tool":"log_food","name":"biryani"}
     "I had 2 to 3 banans"→{"tool":"log_food","name":"banana","servings":"3"}
@@ -42,6 +42,7 @@ public enum IntentClassifier {
     "calories left"→{"tool":"food_info","query":"calories left"}
     "calories in samosa"→{"tool":"food_info","query":"calories in samosa"}
     "how am I doing"→{"tool":"food_info","query":"daily summary"}
+    "daily summary"→{"tool":"food_info","query":"daily summary"}
     "am I hitting my protein goal"→{"tool":"food_info","query":"protein goal"}
     "set protein target 150g"→{"tool":"set_goal","target":"150","goal_type":"protein"}
     "log 2 eggs"→{"tool":"log_food","name":"egg","servings":"2"}
@@ -65,7 +66,7 @@ public enum IntentClassifier {
     "update oatmeal in breakfast to 200g"→{"tool":"edit_meal","meal_period":"breakfast","action":"update_quantity","target_food":"oatmeal","new_value":"200g"}
     "swap chicken for tofu in dinner"→{"tool":"edit_meal","meal_period":"dinner","action":"replace","target_food":"chicken","new_value":"tofu"}
     <recent_entries> "42|lunch|rice|180cal|3m": "delete the rice"→{"tool":"delete_food","entry_id":"42"}. id 7: "2 servings"→{"tool":"edit_meal","entry_id":"7","action":"update_quantity","new_value":"2"}.
-    "when will I reach my goal weight"→{"tool":"weight_trend_prediction"}
+    "when will I reach my goal weight"→{"tool":"goal_weight_eta"}
     "did I lose weight on workout days"→{"tool":"cross_domain_insight","metric_a":"weight","metric_b":"workout_volume"}
     "glucose vs carbs last week"→{"tool":"cross_domain_insight","metric_a":"glucose_avg","metric_b":"carbs","window_days":"7"}
     "what patterns do you see"→{"tool":"cross_domain_pattern_detector"}
@@ -127,7 +128,7 @@ public enum IntentClassifier {
     Recovery patterns:
     - If two tools fit nearly equally, prefer the safer one: info > log (don't log without clear intent), supplements() > mark_supplement, food_info > delete_food.
     - No matching tool ("what's the weather") → reply as text, never invent a tool call.
-    "I plan to have idli tomorrow morning"→{"tool":"chat"}
+    "I plan to have idli tomorrow morning"→Sounds good — log it when you eat it.
 
     Common failure clusters (Stage 1 routing):
     - State/symptom + meal-word: a meal word alone is NOT a log signal when paired with skipping/fasting/feeling/haven't-eaten. "skipping lunch today"/"I'm fasting"/"feeling bloated after dinner" → reply as text, never log_food. Negated/absence verbs ("haven't eaten", "didn't eat", "missed breakfast", "no food today") also → text, never log_food. NEVER log_food with name="nothing"/"none"/"food"/an empty value — if there is no concrete food, ask or reply text.
@@ -141,9 +142,8 @@ public enum IntentClassifier {
     "had my fish oil today"→{"tool":"mark_supplement","name":"fish oil"}
     "just had my omega 3"→{"tool":"mark_supplement","name":"omega 3"}
     "took magnesium before bed"→{"tool":"mark_supplement","name":"magnesium"}
-    - Past/present weight Qs → weight_info (see Rules). Bare "my goal" = weight goal. weight_history is not a tool.
+    - Past/present weight Qs → weight_info. Bare "my goal" = weight goal. weight_history is not a tool.
     "what is my weight trend"→{"tool":"weight_info","query":"trend"}
-    "weight history this month"→{"tool":"weight_info","query":"history"}
     "how much have I lost this week"→{"tool":"weight_info","query":"lost this week"}
     "am I on track for my goal"→{"tool":"weight_info","query":"goal"}
 
@@ -279,6 +279,12 @@ public enum IntentClassifier {
     static let hallucinatedToolAliases: [String: String] = [
         "weight_history": "weight_info",
         "weight_trend": "weight_info",
+        // Retired name (renamed goal_weight_eta 2026-07-15 — the literal
+        // words "weight trend" made it capture trend-INFO questions). An
+        // emission of the old name can only be that same magnetism.
+        "weight_trend_prediction": "weight_info",
+        // Field telemetry 2026-04-28: "How is my sleep" → log_sleep.
+        "log_sleep": "sleep_recovery",
     ]
 
     /// Parse LLM response into intent. Returns nil for non-tool-call responses.

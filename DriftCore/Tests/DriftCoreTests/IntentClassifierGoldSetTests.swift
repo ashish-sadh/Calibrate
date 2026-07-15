@@ -53,6 +53,11 @@ final class IntentClassifierGoldSetTests: XCTestCase {
             (#"{"tool":"weight_history"}"#, "weight_info"),
             (#"{"tool":"weight_history","query":"this month"}"#, "weight_info"),
             (#"{"tool":"weight_trend"}"#, "weight_info"),
+            // Retired name (→ goal_weight_eta rename): an emission of the old
+            // name is the "weight trend" name-magnetism → trend INFO intent.
+            (#"{"tool":"weight_trend_prediction"}"#, "weight_info"),
+            // Field telemetry 2026-04-28: "How is my sleep" → log_sleep.
+            (#"{"tool":"log_sleep"}"#, "sleep_recovery"),
         ]
         for (json, expectedTool) in cases {
             let intent = try XCTUnwrap(IntentClassifier.parseResponse(json), "should parse: \(json)")

@@ -60,3 +60,12 @@ Real queries that don't work well. Fix systematically, then move to Fixed.
 - [x] "body fat is 3" — Validation fixed (>3 → >=3).
 - [x] "log exercise" → "Logging food..." — Added exercise trigger before Gemma pipeline.
 - [x] "Unknown tool: sleep_recovery()" — parseToolCallJSON strips `()` from tool names.
+- [x] "what('s) my weight trend" → weight_trend_prediction — tool RENAMED goal_weight_eta (2026-07-15); the literal name captured trend-info questions. Old name aliased → weight_info in parseResponse.
+- [x] "Hello how are you" / "How are you doing" / "Good morning" — burned a 1.5-38s LLM/presentation turn per greeting (field telemetry). StaticOverrides greeting set broadened + normalized.
+- [x] "How is my sleep" → log_sleep (hallucinated tool, field 2026-04-28) — aliased → sleep_recovery.
+- [x] "I plan to have idli tomorrow" → {"tool":"chat"} — OUR OWN prompt example taught a nonexistent tool (3 field failures). Example rewritten as plain text.
+- [ ] "how much did I bench" → start_workout (want exercise_info) — deterministic misroute, greedy decode.
+- [ ] "remove rice from lunch" → delete_food (want edit_meal) — despite verbatim few-shot example.
+- [ ] supplement status vs insight boundary ("show my supplement adherence" → supplements, want supplement_insight) — 4 cases, adjacent tools.
+- [ ] "open supplements"/"open biomarkers"/"go to glucose" → data tool (want navigate_to) — "open X" rule loses to tool-name match.
+- [ ] cycle_biomarker_correlation captured by cross_domain_* on 5 phrasings despite verbatim example ("does my iron drop during my period").
