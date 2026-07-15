@@ -41,13 +41,10 @@ enum PerStageEvalSupport {
 
     // MARK: - Shared helpers
 
+    /// Delegates to the production parser so the eval measures what users get —
+    /// including its hallucinated-tool-name aliasing (weight_history → weight_info).
     static func extractTool(_ response: String) -> String? {
-        guard let start = response.firstIndex(of: "{"),
-              let end = response.lastIndex(of: "}"),
-              let data = String(response[start...end]).data(using: .utf8),
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let tool = json["tool"] as? String else { return nil }
-        return tool
+        IntentClassifier.parseResponse(response)?.tool
     }
 
     static func classify(_ message: String, history: String = "") async -> String? {

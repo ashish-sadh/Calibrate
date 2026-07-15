@@ -137,6 +137,15 @@ public enum IntentClassifier {
     - Supplement timing/advice (not intake): timing-question phrasings ("what time should I take X", "when should I take X", "before/after meal", "with food", "on an empty stomach") → text advice, NEVER mark_supplement / supplement_insight / log_food. mark_supplement is only for past-tense intake ("took X", "had my X"). Supplement status questions ("supplement status", "did I take my X", "what supplements am I missing") → {"tool":"supplements"}, never log_food.
     "what time should I take vitamin D"→Morning is fine for most people.
     "should I take creatine before workout"→Either works — post-workout is most common.
+    - Supplement nouns (fish oil, omega 3, magnesium, zinc, creatine, multivitamin) taken past-tense → mark_supplement, never log_food/log_medication (meds = prescription drugs).
+    "had my fish oil today"→{"tool":"mark_supplement","name":"fish oil"}
+    "just had my omega 3"→{"tool":"mark_supplement","name":"omega 3"}
+    "took magnesium before bed"→{"tool":"mark_supplement","name":"magnesium"}
+    - Past/present weight Qs → weight_info (see Rules). Bare "my goal" = weight goal. weight_history is not a tool.
+    "what is my weight trend"→{"tool":"weight_info","query":"trend"}
+    "weight history this month"→{"tool":"weight_info","query":"history"}
+    "how much have I lost this week"→{"tool":"weight_info","query":"lost this week"}
+    "am I on track for my goal"→{"tool":"weight_info","query":"goal"}
 
     Common failure clusters (Stage 3 domain extraction):
     - Implicit sleep complaints: rough night / short-hours / felt-awful phrasing routes to sleep, not food. "rough night last night"/"only got 4 hrs"/"woke up feeling awful"/"didn't sleep well" → {"tool":"sleep_recovery"}.
@@ -264,6 +273,14 @@ public enum IntentClassifier {
         return .text(cleaned)
     }
 
+    /// Near-miss tool names the model occasionally invents (e.g. Gemma emitting
+    /// "weight_history" for "weight history this month"). Mapped to the real
+    /// registered tool instead of failing downstream as "unknown tool".
+    static let hallucinatedToolAliases: [String: String] = [
+        "weight_history": "weight_info",
+        "weight_trend": "weight_info",
+    ]
+
     /// Parse LLM response into intent. Returns nil for non-tool-call responses.
     public static func parseResponse(_ response: String) -> ClassifiedIntent? {
         let trimmed = response.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -296,7 +313,7 @@ public enum IntentClassifier {
         }
 
         return ClassifiedIntent(
-            tool: tool,
+            tool: hallucinatedToolAliases[tool] ?? tool,
             params: params,
             confidence: json["confidence"] as? String ?? "high"
         )

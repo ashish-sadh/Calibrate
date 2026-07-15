@@ -45,6 +45,32 @@ final class IntentClassifierGoldSetTests: XCTestCase {
         XCTAssertEqual(correct, cases.count, "All log_food JSON should parse correctly")
     }
 
+    /// Regression for #1051: Gemma occasionally invents near-miss tool names
+    /// ("weight_history" for "weight history this month"). The parser must
+    /// alias them to the real registered tool instead of failing downstream.
+    func testParseResponse_AliasesHallucinatedToolNames() throws {
+        let cases: [(json: String, expectedTool: String)] = [
+            (#"{"tool":"weight_history"}"#, "weight_info"),
+            (#"{"tool":"weight_history","query":"this month"}"#, "weight_info"),
+            (#"{"tool":"weight_trend"}"#, "weight_info"),
+        ]
+        for (json, expectedTool) in cases {
+            let intent = try XCTUnwrap(IntentClassifier.parseResponse(json), "should parse: \(json)")
+            XCTAssertEqual(intent.tool, expectedTool, "alias miss for \(json)")
+        }
+        // Params survive aliasing, and real tool names pass through untouched.
+        XCTAssertEqual(IntentClassifier.parseResponse(#"{"tool":"weight_history","query":"month"}"#)?.params["query"], "month")
+        XCTAssertEqual(IntentClassifier.parseResponse(#"{"tool":"weight_info","query":"trend"}"#)?.tool, "weight_info")
+        // Every alias target must be a registered tool — an alias to a dead
+        // name would just relocate the "unknown tool" failure.
+        MainActor.assumeIsolated {
+            let registered = Set(ToolRegistry.shared.allTools().map(\.name))
+            for target in IntentClassifier.hallucinatedToolAliases.values {
+                XCTAssertTrue(registered.contains(target), "alias target '\(target)' is not registered")
+            }
+        }
+    }
+
     /// Regression for #277 / root cause of #271: "log <food>" without a quantity
     /// must parse as log_food. The prompt must produce this JSON; here we pin
     /// that the parser maps it correctly when it does.
