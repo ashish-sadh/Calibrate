@@ -309,6 +309,39 @@ import Testing
             "past-day entry timestamp must be on that day, not today's clock time")
 }
 
+// MARK: - Batch logging (field report 2026-07-15: Log-press hang)
+
+/// `logFoods` must insert every item but reload the day + post
+/// `.foodEntryAdded` exactly ONCE — the per-item reload/notify is what made
+/// the Log button hang on multi-item meals (#949 pattern, applied to logFood).
+@Test @MainActor func logFoodsBatchInsertsAllButNotifiesOnce() throws {
+    let db = try AppDatabase.empty()
+    let vm = FoodLogViewModel(database: db)
+
+    var posts = 0
+    let observer = NotificationCenter.default.addObserver(
+        forName: .foodEntryAdded, object: nil, queue: nil) { _ in posts += 1 }
+    defer { NotificationCenter.default.removeObserver(observer) }
+
+    let items: [(food: Food, servings: Double)] = [
+        (Food(name: "Idli", category: "Indian", servingSize: 80, servingUnit: "piece", calories: 60), 3),
+        (Food(name: "Sambar", category: "Indian", servingSize: 200, servingUnit: "bowl", calories: 150), 1),
+        (Food(name: "Chutney", category: "Indian", servingSize: 30, servingUnit: "tbsp", calories: 45), 2),
+    ]
+    vm.logFoods(items, mealType: .breakfast)
+
+    let entries = try db.fetchFoodEntries(for: DateFormatters.todayString)
+    #expect(entries.count == 3)
+    #expect(Set(entries.map(\.foodName)) == ["Idli", "Sambar", "Chutney"])
+    #expect(entries.first { $0.foodName == "Idli" }?.servings == 3)
+    #expect(posts == 1, "one .foodEntryAdded per batch, got \(posts)")
+    #expect(vm.todayEntries.count == 3, "day reloaded after the batch")
+
+    // Empty batch is inert — no phantom reload/notification.
+    vm.logFoods([], mealType: .lunch)
+    #expect(posts == 1)
+}
+
 @Test @MainActor func quickAddToPastDayUsesCanonicalMealTime() throws {
     let db = try AppDatabase.empty()
     let vm = FoodLogViewModel(database: db)

@@ -110,6 +110,30 @@ struct OnlineFoodDedupeTests {
         #expect(names.count == 2, "got \(names)")
     }
 
+    @Test func saveScannedFoodDedupeSurvivesTokenPrefilter() throws {
+        // The dedupe scan prefilters candidates with a LIKE on the longest
+        // token (perf fix, field report 2026-07-15). Multi-token reorderings
+        // must still be caught through that path…
+        let db = try AppDatabase.empty()
+        _ = try insertFood(db, name: "Athletic Greens - AG1", category: "Online", calories: 416)
+        var reordered = Food(name: "AG1 - Athletic Greens", category: "Online",
+                             servingSize: 100, servingUnit: "g",
+                             calories: 416, proteinG: 16, carbsG: 50, fatG: 0, fiberG: 17)
+        try db.saveScannedFood(&reordered)
+        // …and non-ASCII probes (LIKE is only ASCII-case-insensitive) must
+        // fall back to the full scan rather than silently missing the dupe.
+        _ = try insertFood(db, name: "Crème Brûlée", category: "Online", calories: 300)
+        var accentDupe = Food(name: "crème brûlée!", category: "Online",
+                              servingSize: 100, servingUnit: "g",
+                              calories: 300, proteinG: 4, carbsG: 30, fatG: 18, fiberG: 0)
+        try db.saveScannedFood(&accentDupe)
+
+        let names = try db.reader.read { try String.fetchAll($0, sql: "SELECT name FROM food") }
+        #expect(names.count == 2, "both dupes rejected, got \(names)")
+        #expect(names.contains("Athletic Greens - AG1"))
+        #expect(names.contains("Crème Brûlée"))
+    }
+
     @Test func dedupeNeverDeletesNonOnlineRows() throws {
         let db = try AppDatabase.empty()
         let a = try insertFood(db, name: "Paneer Tikka", category: "Indian", calories: 300)

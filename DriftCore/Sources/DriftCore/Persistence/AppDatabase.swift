@@ -1025,9 +1025,24 @@ extension AppDatabase {
     public func saveScannedFood(_ food: inout Food) throws {
         food.source = food.source ?? "barcode"
         let key = Food.normalizedKey(food.name)
+        // Any name sharing this normalized key must contain every one of its
+        // tokens as a substring, so a single LIKE on the longest (most
+        // selective) token narrows the Swift-side normalization to a handful
+        // of rows instead of decoding the whole catalog. Field report
+        // 2026-07-15: the full-catalog scan ran per item inside the Log
+        // button press — a visible ~1 s hang. LIKE is ASCII-case-insensitive
+        // only, so non-ASCII probes fall back to the full scan.
+        let probe = key.components(separatedBy: " ").max { $0.count < $1.count }
         try dbWriter.write { db in
-            let names = try String.fetchAll(db, sql: "SELECT name FROM food")
-            let exists = names.contains { Food.normalizedKey($0) == key }
+            let candidates: [String]
+            if let probe, probe.allSatisfy(\.isASCII) {
+                candidates = try String.fetchAll(
+                    db, sql: "SELECT name FROM food WHERE name LIKE ?",
+                    arguments: ["%\(probe)%"])
+            } else {
+                candidates = try String.fetchAll(db, sql: "SELECT name FROM food")
+            }
+            let exists = candidates.contains { Food.normalizedKey($0) == key }
             if !exists {
                 try food.insert(db)
             }

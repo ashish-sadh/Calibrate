@@ -269,7 +269,7 @@ struct BarcodeLookupView: View {
             fiberG: Double(editFiber) ?? 0
         )
         // Save to food DB so it shows up in future searches
-        _ = FoodService.saveScannedFood(&food)
+        FoodService.persistScannedFood(&food)
         viewModel.logFood(food, servings: 1, mealType: viewModel.autoMealType)
         dismiss()
     }
@@ -421,7 +421,7 @@ struct BarcodeLookupView: View {
                         fiberG: p.fiberG * servingG / 100,
                         ingredients: ingredientsJson,
                         novaGroup: p.novaGroup)
-        _ = FoodService.saveScannedFood(&food)
+        FoodService.persistScannedFood(&food)
         // Calculate servings multiplier from amount + unit
         let units = FoodUnit.smartUnits(for: food)
         let safeIndex = min(selectedUnitIndex, max(units.count - 1, 0))

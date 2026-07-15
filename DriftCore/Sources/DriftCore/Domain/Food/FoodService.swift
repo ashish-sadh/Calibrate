@@ -129,10 +129,19 @@ public enum FoodService {
         try? AppDatabase.shared.deleteFavorite(id: id)
     }
 
-    /// Save a scanned food (from barcode or online search).
+    /// Save a scanned food (from barcode or online search) and return the
+    /// canonical catalog row for that name. Callers that don't need the
+    /// canonical row back should use `persistScannedFood` — the lookup is a
+    /// LIKE scan of the catalog.
     public static func saveScannedFood(_ food: inout Food) -> Food? {
         try? AppDatabase.shared.saveScannedFood(&food)
         return (try? AppDatabase.shared.searchFoods(query: food.name))?.first
+    }
+
+    /// Persist-only variant of `saveScannedFood` for hot paths (photo log,
+    /// barcode) that discard the canonical-row lookup.
+    public static func persistScannedFood(_ food: inout Food) {
+        try? AppDatabase.shared.saveScannedFood(&food)
     }
 
     /// Fetch a single food by name (best match).

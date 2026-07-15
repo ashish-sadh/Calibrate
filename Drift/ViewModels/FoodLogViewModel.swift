@@ -235,6 +235,28 @@ final class FoodLogViewModel {
     }
 
     func logFood(_ food: Food, servings: Double, mealType: MealType, loggedAt: Date? = nil, loggedPortion: String? = nil) {
+        logFoodCore(food, servings: servings, mealType: mealType, loggedAt: loggedAt, loggedPortion: loggedPortion)
+        loadTodayMeals()
+        NotificationCenter.default.post(name: .foodEntryAdded, object: nil)
+    }
+
+    /// Batch variant — N inserts, then ONE day reload + ONE `.foodEntryAdded`
+    /// post (the #949 pattern applied to `logFood`). A 4-item photo/text log
+    /// used to reload the day, refresh the widget, and re-render the diary
+    /// 4× inside the Log button press — the visible hang (field report
+    /// 2026-07-15).
+    func logFoods(_ items: [(food: Food, servings: Double)], mealType: MealType) {
+        guard !items.isEmpty else { return }
+        for item in items {
+            logFoodCore(item.food, servings: item.servings, mealType: mealType)
+        }
+        loadTodayMeals()
+        NotificationCenter.default.post(name: .foodEntryAdded, object: nil)
+    }
+
+    /// Insert ONE entry (creating the meal log if needed) WITHOUT reloading
+    /// the day or posting `.foodEntryAdded` — callers batch those.
+    private func logFoodCore(_ food: Food, servings: Double, mealType: MealType, loggedAt: Date? = nil, loggedPortion: String? = nil) {
         FeatureUsage.record("action.log_food")
         do {
             let date = dateString
@@ -264,7 +286,7 @@ final class FoodLogViewModel {
                 carbsG: food.carbsG,
                 fatG: food.fatG,
                 fiberG: food.fiberG,
-                loggedAt: ISO8601DateFormatter().string(from: effectiveLoggedAt),
+                loggedAt: DateFormatters.iso8601.string(from: effectiveLoggedAt),
                 date: date,
                 mealType: mealType.rawValue,
                 loggedPortion: loggedPortion
@@ -283,8 +305,6 @@ final class FoodLogViewModel {
                     loggedAt: effectiveLoggedAt
                 ))
             }
-            loadTodayMeals()
-            NotificationCenter.default.post(name: .foodEntryAdded, object: nil)
         } catch {
             Log.foodLog.error("Failed to log food: \(error.localizedDescription)")
         }

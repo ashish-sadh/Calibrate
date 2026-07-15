@@ -250,6 +250,7 @@ struct PhotoLogReviewView: View {
     }
 
     private func logSelected() {
+        var toLog: [(food: Food, servings: Double)] = []
         for item in items where item.selected && item.isLoggable {  // #1044: skip blank rows
             // #1029: for a count/portion unit with quantity > 1, persist PER-UNIT nutrition and
             // log servings = the quantity, so "2 pieces" logs as servings 2 × a 780-cal piece
@@ -257,8 +258,9 @@ struct PhotoLogReviewView: View {
             // mode already treats grams as the serving size.
             let perUnit = item.servingUnit != .grams && item.servingAmount > 1
             let servings = perUnit ? item.servingAmount : 1
-            foodLog.logFood(photoLogFood(for: item, perUnit: perUnit), servings: servings, mealType: mealType)
+            toLog.append((photoLogFood(for: item, perUnit: perUnit), servings))
         }
+        foodLog.logFoods(toLog, mealType: mealType)
         onLogged()
         dismiss()
     }
@@ -296,7 +298,7 @@ struct PhotoLogReviewView: View {
         // Food wins (its own ingredients feed plant-points via the name-
         // fallback join). Macros we pass to logFood are ALWAYS the LLM's;
         // food_entry.calories = food.calories, so curated macros never leak.
-        _ = FoodService.saveScannedFood(&food)
+        FoodService.persistScannedFood(&food)
         return food
     }
 
