@@ -438,3 +438,16 @@ The split:
 Applied: Docs/failing-queries.md retired; its 5 open classes filed as #1053-#1057 under
 `failing-query`; CLAUDE.md Doc Map + SOP §5 updated. The planning-service evidence-guard regex
 ("failing-quer…") already matches the label name, so sprint-task justification cites keep working.
+
+## 2026-07-15 (later): Docs/ restructure applying the issues-vs-knowledge policy
+
+Swept Docs/ with the same lens. Deleted dead point-in-time docs (sprint-plan.md — 3 months stale,
+queue lives on GitHub; llm-eval-results.md — April snapshot of a model we no longer use;
+synthetic-queries.md — superseded by eval gold sets in code). Shipped harness-phase-2/3 specs and
+the audits/ snapshots moved to Docs/archive/ (frozen history). usda-api-design.md moved to
+Docs/designs/. Docs/refactor/ is now ACTIVE plans only — each must have an owning OPEN issue
+(estimation-unification ↔ #1052); shipped specs graduate to archive/. state.md retirement is #1058
+(it has live harness deps — freshness hook, watchdog, daily-exec routine — so it's a scoped task,
+not a doc shuffle). Doc Map in CLAUDE.md now covers every living doc: previously unmapped
+tenets.md, drift-control-design.md, ai-chat-architecture.md (deep-dive; architecture.md is the
+overview), ai-autoresearch.md, licenses.md, designs/.

@@ -54,9 +54,14 @@ Each entry tagged with its maintenance status. **Auto-maintained** = a script or
 | `Docs/body-diagram.md` | Reference | Muscle-figure system: react-native-body-highlighter source, extraction pipeline, gender selection, data quirks. |
 | `Docs/exercise-pose-sourcing.md` | Reference | How to source + convert exercise demo pose photos (source ladder, HEIC pipeline, guard tests). |
 | `Docs/principles/` | Reference | Code quality cards (Clean Code, Design Patterns, DDD, SwiftUI). |
-| `Docs/refactor/` | Manual — durable refactor plans | Multi-day refactor proposals committed for later pickup. |
-| `Docs/audits/` | Manual — point-in-time audits | Historical audit snapshots. |
-| `Docs/archive/` | Frozen | Legacy docs (improvement-log, product-review-log) kept for history; not maintained. |
+| `Docs/refactor/` | Manual — ACTIVE plans only | Refactor specs whose lifecycle is owned by an OPEN issue (e.g. estimation-unification ↔ #1052). Shipped plans move to `Docs/archive/`; a plan with no owning issue is a policy violation — file one. |
+| `Docs/archive/` | Frozen | History: legacy docs, shipped refactor specs, point-in-time audits. Never maintained, never read for current state. |
+| `Docs/designs/` | Reference | Numbered feature/design docs (issue-linked); `TEMPLATE.md` for new ones. |
+| `Docs/tenets.md` | Reference (self-maintaining protocol) | Product ground truth for `/planning` step 6 + feature triage; sediment log at top. |
+| `Docs/drift-control-design.md` | Reference | Source of truth for the autonomous sprint system's behavior. |
+| `Docs/ai-chat-architecture.md` | Reference | Tiered-pipeline deep-dive (stages, tools, rules); `architecture.md` is the overview. |
+| `Docs/ai-autoresearch.md` | Reference | Tier-4 prompt-optimization loop (DRIFT_AUTORESEARCH=1). |
+| `Docs/licenses.md` | Reference | Third-party attributions (exercise DB, models). |
 
 ## Rules
 - Build and test after every change
