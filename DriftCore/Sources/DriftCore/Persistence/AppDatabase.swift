@@ -337,20 +337,26 @@ extension AppDatabase {
     }
 
     public func fetchMostRecentlyLoggedFoods(limit: Int) throws -> [Food] {
-        try dbWriter.read { db in
+        // Bounded to 90 days via idx_food_entry_date — this runs synchronously
+        // when the Add Food sheet opens, and an unbounded GROUP BY over
+        // food_entry gets slower every month of use. Anything not logged in
+        // 90 days isn't "recent" for the suggestion row anyway.
+        let cutoff = DateFormatters.dateOnly.string(
+            from: Calendar.current.date(byAdding: .day, value: -90, to: Date()) ?? Date())
+        return try dbWriter.read { db in
             try Food.fetchAll(db, sql: """
                 SELECT f.*
                 FROM food f
                 JOIN (
                     SELECT food_id, MAX(logged_at) AS last_logged
                     FROM food_entry
-                    WHERE food_id IS NOT NULL
+                    WHERE food_id IS NOT NULL AND date >= ?
                     GROUP BY food_id
                     ORDER BY last_logged DESC
                     LIMIT ?
                 ) AS recent ON f.id = recent.food_id
                 ORDER BY recent.last_logged DESC
-                """, arguments: [limit])
+                """, arguments: [cutoff, limit])
         }
     }
 
@@ -375,6 +381,40 @@ extension AppDatabase {
                 fatG: row?["total_fat"] ?? 0,
                 fiberG: row?["total_fiber"] ?? 0
             )
+        }
+    }
+
+    /// Batch variant of `fetchDailyNutrition`: one GROUP BY over the range
+    /// instead of one query per day (BehaviorInsightService ran ~100 per-day
+    /// queries per dashboard load). Days with no entries are absent from the
+    /// map — treat a missing key as an all-zero day.
+    public func fetchDailyNutritionRange(from startDate: String, to endDate: String) throws -> [String: DailyNutrition] {
+        try dbWriter.read { db in
+            let rows = try Row.fetchAll(db, sql: """
+                SELECT
+                    COALESCE(fe.date, ml.date) as day,
+                    SUM(fe.calories * fe.servings) as total_calories,
+                    SUM(fe.protein_g * fe.servings) as total_protein,
+                    SUM(fe.carbs_g * fe.servings) as total_carbs,
+                    SUM(fe.fat_g * fe.servings) as total_fat,
+                    SUM(fe.fiber_g * fe.servings) as total_fiber
+                FROM food_entry fe
+                LEFT JOIN meal_log ml ON fe.meal_log_id = ml.id
+                WHERE COALESCE(fe.date, ml.date) BETWEEN ? AND ?
+                GROUP BY day
+                """, arguments: [startDate, endDate])
+            var map: [String: DailyNutrition] = [:]
+            for row in rows {
+                guard let day: String = row["day"] else { continue }
+                map[day] = DailyNutrition(
+                    calories: row["total_calories"] ?? 0,
+                    proteinG: row["total_protein"] ?? 0,
+                    carbsG: row["total_carbs"] ?? 0,
+                    fatG: row["total_fat"] ?? 0,
+                    fiberG: row["total_fiber"] ?? 0
+                )
+            }
+            return map
         }
     }
 

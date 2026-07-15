@@ -150,30 +150,73 @@ public enum ExerciseDatabase {
                                          primaryMuscles: [String]? = nil,
                                          imageUrl: String? = nil,
                                          imageUrlAuthoritative: Bool = false) {
+        addCustomExercises([CustomExerciseSpec(name: name, bodyPart: bodyPart,
+                                               primaryMuscles: primaryMuscles,
+                                               imageUrl: imageUrl,
+                                               imageUrlAuthoritative: imageUrlAuthoritative)])
+    }
+
+    public struct CustomExerciseSpec {
+        public let name: String
+        public let bodyPart: String
+        public let primaryMuscles: [String]?
+        public let imageUrl: String?
+        public let imageUrlAuthoritative: Bool
+
+        public init(name: String, bodyPart: String, primaryMuscles: [String]? = nil,
+                    imageUrl: String? = nil, imageUrlAuthoritative: Bool = false) {
+            self.name = name
+            self.bodyPart = bodyPart
+            self.primaryMuscles = primaryMuscles
+            self.imageUrl = imageUrl
+            self.imageUrlAuthoritative = imageUrlAuthoritative
+        }
+    }
+
+    /// Batch registration: ONE lock / blob decode / encode+write for the whole
+    /// list. The per-item variant used to run its full read-modify-write per
+    /// call — the DefaultTemplates registry (~100 items) paid ~100 blob
+    /// decodes on the main thread every launch, O(N²) encodes on first install.
+    public static func addCustomExercises(_ specs: [CustomExerciseSpec]) {
+        guard !specs.isEmpty else { return }
         customLock.lock()
         defer { customLock.unlock() }
         var customs = customExercises
-        if let idx = customs.firstIndex(where: { $0.name.lowercased() == name.lowercased() }) {
+        var changed = false
+        for spec in specs {
+            changed = mergeCustomExercise(spec, into: &customs) || changed
+        }
+        guard changed else { return }
+        if let data = try? JSONEncoder().encode(customs) {
+            UserDefaults.standard.set(data, forKey: customKey)
+        }
+        _exercises = nil // clear cache so `all` reloads
+    }
+
+    /// Returns true when `customs` was modified. Callers hold `customLock`.
+    private static func mergeCustomExercise(_ spec: CustomExerciseSpec,
+                                            into customs: inout [ExerciseInfo]) -> Bool {
+        if let idx = customs.firstIndex(where: { $0.name.lowercased() == spec.name.lowercased() }) {
             // Upgrade-in-place: installs that registered this exercise before
             // the richer registry existed (#941) have it stored without
             // imageUrl/muscles — fill the missing visual fields, never
             // overwrite ones already set (user edits win).
             var existing = customs[idx]
             var changed = false
-            if existing.imageUrl == nil || (imageUrlAuthoritative && existing.imageUrl != imageUrl),
-               imageUrl != nil {
-                existing.imageUrl = imageUrl
+            if existing.imageUrl == nil || (spec.imageUrlAuthoritative && existing.imageUrl != spec.imageUrl),
+               spec.imageUrl != nil {
+                existing.imageUrl = spec.imageUrl
                 changed = true
             }
             // Backfill trackingType for customs persisted before the field
             // existed (a nil-tracking "Ladder Drill" would otherwise resolve
             // to reps under catalog-authority). Only sets when the name
             // classifies as time — reps is the default anyway.
-            if existing.trackingType == nil, classifyTrackingType(name) == .time {
+            if existing.trackingType == nil, classifyTrackingType(spec.name) == .time {
                 existing.trackingType = .time
                 changed = true
             }
-            if let primaryMuscles,
+            if let primaryMuscles = spec.primaryMuscles,
                existing.primaryMuscles == [existing.bodyPart.lowercased()] {
                 existing = ExerciseInfo(name: existing.name, bodyPart: existing.bodyPart,
                                         primaryMuscles: primaryMuscles,
@@ -185,19 +228,16 @@ public enum ExerciseDatabase {
                                         trackingType: existing.trackingType)
                 changed = true
             }
-            guard changed else { return }
+            guard changed else { return false }
             customs[idx] = existing
-        } else {
-            customs.append(ExerciseInfo(name: name, bodyPart: bodyPart,
-                                        primaryMuscles: primaryMuscles ?? [bodyPart.lowercased()],
-                                        secondaryMuscles: [], equipment: "other", category: "strength", level: "intermediate",
-                                        imageUrl: imageUrl,
-                                        trackingType: classifyTrackingType(name)))
+            return true
         }
-        if let data = try? JSONEncoder().encode(customs) {
-            UserDefaults.standard.set(data, forKey: customKey)
-        }
-        _exercises = nil // clear cache so `all` reloads
+        customs.append(ExerciseInfo(name: spec.name, bodyPart: spec.bodyPart,
+                                    primaryMuscles: spec.primaryMuscles ?? [spec.bodyPart.lowercased()],
+                                    secondaryMuscles: [], equipment: "other", category: "strength", level: "intermediate",
+                                    imageUrl: spec.imageUrl,
+                                    trackingType: classifyTrackingType(spec.name)))
+        return true
     }
 
     // Include custom exercises in all searches, deduplicating by name

@@ -376,15 +376,14 @@ final class HealthKitService {
         }
         #else
         guard isAvailable else { return [] }
-        var results: [SleepNight] = []
-        let cal = Calendar.current
-        for offset in 0..<days {
-            guard let date = cal.date(byAdding: .day, value: -offset, to: Date()) else { continue }
-            if let detail = try? await fetchSleepDetail(for: date), detail.totalHours > 0 {
-                results.append(SleepNight(date: date, hours: detail.totalHours))
-            }
-        }
-        return results
+        // One windowed query via fetchSleepHistory — this used to issue one
+        // HKSampleQuery per day (the unfixed sibling of the #1008 helpers),
+        // re-hit serially every time a coach tool asked for sleep context.
+        let history = (try? await fetchSleepHistory(days: days)) ?? []
+        return history
+            .filter { $0.hours > 0 }
+            .map { SleepNight(date: $0.date, hours: $0.hours) }
+            .sorted { $0.date > $1.date }
         #endif
     }
 

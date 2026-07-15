@@ -26,9 +26,6 @@ struct DriftApp: App {
         // every talk-mode toggle. Clear poisoned value so voice is off by
         // default for all existing users. (#968)
         Preferences.migrateCoachVoiceIfNeeded()
-        // Idempotent (#941): upgrades template custom exercises registered by
-        // older builds with their muscle slugs + pose assets.
-        DefaultTemplates.registerCustomExercises()
         // Register all AI tools in ToolRegistry. Was previously called from
         // LocalAIService.init(); moved out during DriftCore migration
         // (96e3173) and the caller wiring was lost — every tool call has
@@ -70,6 +67,14 @@ struct DriftApp: App {
                     BackupOnboardingSheet()
                 }
                 .task {
+                    // Idempotent (#941): upgrades template custom exercises
+                    // registered by older builds with their muscle slugs +
+                    // pose assets. Ran in DriftApp.init until 2026-07-15 —
+                    // that decoded the 1MB exercises.json catalog on the main
+                    // thread before the first frame; here it's behind the
+                    // splash and warms the same catalog cache the workout tab
+                    // needs anyway.
+                    DefaultTemplates.registerCustomExercises()
                     if !hasRequestedHealthKit {
                         hasRequestedHealthKit = true
                         // #872 FM NO-GO migration. The 2026-05-19 cutover made

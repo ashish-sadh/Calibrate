@@ -107,10 +107,14 @@ struct GlucoseTabView: View {
 
     // MARK: - Chart with zone coloring
 
-    private var parsedReadings: [(date: Date, value: Double)] {
-        let iso = ISO8601DateFormatter()
-        return readings.compactMap { r in
-            guard let d = iso.date(from: r.timestamp) else { return nil }
+    /// Parsed once per data load (`readings` didSet) — as a computed var this
+    /// re-parsed and re-sorted up to a year of CGM readings on EVERY body
+    /// evaluation, and the body references it five times.
+    @State private var parsedReadings: [(date: Date, value: Double)] = []
+
+    private static func parse(_ readings: [GlucoseReading]) -> [(date: Date, value: Double)] {
+        readings.compactMap { r in
+            guard let d = DateFormatters.iso8601.date(from: r.timestamp) else { return nil }
             return (d, r.glucoseMgdl)
         }.sorted { $0.date < $1.date }
     }
@@ -452,9 +456,19 @@ struct GlucoseTabView: View {
         .card()
     }
 
-    private func formatEventTime(_ date: Date) -> String {
+    private static let eventTimeShort: DateFormatter = {
         let f = DateFormatter()
-        f.dateFormat = selectedRange == .oneDay ? "h:mm a" : "M/d h:mm a"
+        f.dateFormat = "h:mm a"
+        return f
+    }()
+    private static let eventTimeWithDay: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "M/d h:mm a"
+        return f
+    }()
+
+    private func formatEventTime(_ date: Date) -> String {
+        let f = selectedRange == .oneDay ? Self.eventTimeShort : Self.eventTimeWithDay
         return f.string(from: date)
     }
 
@@ -475,10 +489,11 @@ struct GlucoseTabView: View {
             if dataSource == .appleHealth {
                 readings = (try? await HealthKitService.shared.fetchGlucoseReadings(from: start, to: end)) ?? []
             } else {
-                let startStr = ISO8601DateFormatter().string(from: start)
-                let endStr = ISO8601DateFormatter().string(from: end)
+                let startStr = DateFormatters.iso8601.string(from: start)
+                let endStr = DateFormatters.iso8601.string(from: end)
                 readings = GlucoseService.fetchReadings(from: startStr, to: endStr)
             }
+            parsedReadings = Self.parse(readings)
             Log.glucose.info("Loaded \(readings.count) glucose readings for \(selectedRange.rawValue)")
         }
     }

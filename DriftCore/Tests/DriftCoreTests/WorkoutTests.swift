@@ -489,6 +489,40 @@ import GRDB
     }
 }
 
+/// The batch range query must agree with the per-day query it replaced
+/// (BehaviorInsightService ran ~100 per-day fetches per dashboard load).
+/// Covers both date sources: entries with their own date AND legacy
+/// entries where the date lives only on the meal_log (COALESCE path).
+@Test func dailyNutritionRangeMatchesPerDayFetch() async throws {
+    let db = try AppDatabase.empty()
+    try await db.writer.write { dbConn in
+        // Entry with only meal_log date (fe.date nil — legacy shape)
+        var m1 = MealLog(date: "2026-03-27", mealType: "lunch")
+        try m1.insert(dbConn)
+        var e1 = FoodEntry(mealLogId: dbConn.lastInsertedRowID, foodName: "Rice",
+                           servingSizeG: 200, servings: 2, calories: 260, proteinG: 5,
+                           carbsG: 57, fatG: 0.5, fiberG: 0.6)
+        try e1.insert(dbConn)
+        // Entry carrying its own date
+        var m2 = MealLog(date: "2026-03-28", mealType: "dinner")
+        try m2.insert(dbConn)
+        var e2 = FoodEntry(mealLogId: dbConn.lastInsertedRowID, foodName: "Dal",
+                           servingSizeG: 150, servings: 1, calories: 180, proteinG: 12,
+                           carbsG: 20, fatG: 4, fiberG: 6, date: "2026-03-28")
+        try e2.insert(dbConn)
+    }
+    let range = try db.fetchDailyNutritionRange(from: "2026-03-26", to: "2026-03-29")
+    for day in ["2026-03-26", "2026-03-27", "2026-03-28", "2026-03-29"] {
+        let single = try db.fetchDailyNutrition(for: day)
+        let batched = range[day] ?? DailyNutrition(calories: 0, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0)
+        #expect(batched.calories == single.calories, "calories diverge on \(day)")
+        #expect(batched.proteinG == single.proteinG, "protein diverges on \(day)")
+        #expect(batched.fiberG == single.fiberG, "fiber diverges on \(day)")
+    }
+    #expect(range["2026-03-26"] == nil, "empty day absent from map")
+    #expect(range["2026-03-27"]?.calories == 520, "servings multiplier applied")
+}
+
 @Test func foodDeleteFromSpecificDate() async throws {
     let db = try AppDatabase.empty()
     try await db.writer.write { dbConn in

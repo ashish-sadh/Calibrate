@@ -23,12 +23,17 @@ public struct BehaviorInsight: Sendable, Identifiable {
 public enum BehaviorInsightService {
 
     /// Compute all available insights from existing data. Returns 0-4 insights.
+    /// Daily nutrition is prefetched ONCE for the whole window — the per-day
+    /// `fetchDailyNutrition` loops in the detectors used to issue ~100 serial
+    /// DB queries per dashboard load (same shape as the #1008 HealthKit storms).
     public static func computeInsights(sleepHistory: [(date: Date, hours: Double)] = [], recentAppleWorkouts: [Date] = []) -> [BehaviorInsight] {
+        let earliestSleep = sleepHistory.map(\.date).min()
+        let nutrition = prefetchNutrition(daysBack: 30, alsoCovering: earliestSleep)
         var insights: [BehaviorInsight] = []
         if let workout = workoutFrequencyInsight() { insights.append(workout) }
-        if let protein = proteinAdherenceInsight() { insights.append(protein) }
-        if let logging = loggingConsistencyInsight() { insights.append(logging) }
-        if let sleep = sleepVsCaloriesInsight(sleepHistory: sleepHistory) { insights.append(sleep) }
+        if let protein = proteinAdherenceInsight(nutrition: nutrition) { insights.append(protein) }
+        if let logging = loggingConsistencyInsight(nutrition: nutrition) { insights.append(logging) }
+        if let sleep = sleepVsCaloriesInsight(sleepHistory: sleepHistory, nutrition: nutrition) { insights.append(sleep) }
         return insights
     }
 
@@ -37,23 +42,34 @@ public enum BehaviorInsightService {
     /// Urgent, actionable alerts — things that need attention right now.
     /// Different from insights (which are correlations over time).
     public static func computeProactiveAlerts(recentAppleWorkouts: [Date] = []) -> [BehaviorInsight] {
+        let nutrition = prefetchNutrition(daysBack: 7)
         var alerts: [BehaviorInsight] = []
-        if let protein = proteinStreakAlert() { alerts.append(protein) }
+        if let protein = proteinStreakAlert(nutrition: nutrition) { alerts.append(protein) }
         if let glucose = glucoseSpikeAlert() { alerts.append(glucose) }
         if let supplement = supplementGapAlert() { alerts.append(supplement) }
         if let workout = workoutConsistencyAlert(recentAppleWorkouts: recentAppleWorkouts) { alerts.append(workout) }
-        if let logging = loggingGapAlert() { alerts.append(logging) }
+        if let logging = loggingGapAlert(nutrition: nutrition) { alerts.append(logging) }
         return alerts
     }
 
+    /// One ranged GROUP-BY query covering today back `daysBack` days (extended
+    /// to `alsoCovering` when an input series reaches further back). Missing
+    /// key = nothing logged that day.
+    private static func prefetchNutrition(daysBack: Int, alsoCovering: Date? = nil) -> [String: DailyNutrition] {
+        let calendar = Calendar.current
+        var start = calendar.date(byAdding: .day, value: -daysBack, to: Date()) ?? Date()
+        if let alsoCovering, alsoCovering < start { start = alsoCovering }
+        let startStr = DateFormatters.dateOnly.string(from: start)
+        return (try? AppDatabase.shared.fetchDailyNutritionRange(from: startStr, to: DateFormatters.todayString)) ?? [:]
+    }
+
     /// Alert when protein target has been missed 3+ consecutive days OR 4+ of last 7 days.
-    private static func proteinStreakAlert() -> BehaviorInsight? {
+    private static func proteinStreakAlert(nutrition: [String: DailyNutrition]) -> BehaviorInsight? {
         guard Preferences.alertDismissedUntil(key: "protein_streak") < Date().timeIntervalSince1970 else { return nil }
         guard let goal = WeightGoal.load(),
               let targets = goal.macroTargets(currentWeightKg: WeightTrendService.shared.trendWeight),
               targets.proteinG > 0 else { return nil }
 
-        let db = AppDatabase.shared
         let calendar = Calendar.current
         var missedStreak = 0
         var streakActive = true
@@ -64,7 +80,7 @@ public enum BehaviorInsightService {
         for dayOffset in 1...7 {
             guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: Date()) else { break }
             let dateStr = DateFormatters.dateOnly.string(from: date)
-            guard let nutrition = try? db.fetchDailyNutrition(for: dateStr),
+            guard let nutrition = nutrition[dateStr],
                   nutrition.calories > 200,
                   nutrition.proteinG > 0 else {
                 streakActive = false
@@ -119,21 +135,26 @@ public enum BehaviorInsightService {
     /// Alert when glucose readings show spikes (>140 mg/dL) on 3+ of the last 7 days.
     /// Only fires when glucose data is present — users without a CGM see nothing.
     private static func glucoseSpikeAlert() -> BehaviorInsight? {
-        let db = AppDatabase.shared
         let calendar = Calendar.current
-        var spikeDays = 0
-        var dataDays = 0
+        guard let weekAgo = calendar.date(byAdding: .day, value: -7, to: Date()) else { return nil }
+        // One ranged fetch + in-memory day bucketing (was 7 serial queries —
+        // which also never matched: the query compares full ISO timestamps
+        // against the bound, so `to: dateStr` excluded every reading ON that
+        // date and the alert could never fire). `to: today` keeps today's
+        // readings out (ISO "…T…" sorts above the bare date) but spans all
+        // of yesterday.
+        let readings = (try? AppDatabase.shared.fetchGlucoseReadings(
+            from: DateFormatters.dateOnly.string(from: weekAgo),
+            to: DateFormatters.todayString)) ?? []
 
-        for dayOffset in 1...7 {
-            guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: Date()) else { break }
-            let dateStr = DateFormatters.dateOnly.string(from: date)
-            guard let readings = try? db.fetchGlucoseReadings(from: dateStr, to: dateStr),
-                  !readings.isEmpty else { continue }
-            dataDays += 1
-            if readings.contains(where: { $0.glucoseMgdl > 140 }) { spikeDays += 1 }
+        var daysWithData = Set<Substring>()
+        var daysWithSpike = Set<Substring>()
+        for r in readings {
+            let day = r.timestamp.prefix(10)  // ISO timestamps: yyyy-MM-dd…
+            daysWithData.insert(day)
+            if r.glucoseMgdl > 140 { daysWithSpike.insert(day) }
         }
-
-        return glucoseSpikeAlertVariant(spikeDays: spikeDays, dataDays: dataDays)
+        return glucoseSpikeAlertVariant(spikeDays: daysWithSpike.count, dataDays: daysWithData.count)
     }
 
     /// Pure: given counted spike days and data days from the last 7, return the alert or nil.
@@ -153,22 +174,20 @@ public enum BehaviorInsightService {
               !supplements.isEmpty else { return nil }
 
         let calendar = Calendar.current
-        var missedNames: [String] = []
-
-        for supp in supplements {
-            // Check previous 3 days (skip today — new supplements shouldn't false-alert)
-            var takenRecently = false
-            for dayOffset in 1...3 {
-                guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: Date()) else { continue }
-                let dateStr = DateFormatters.dateOnly.string(from: date)
-                if let logs = try? AppDatabase.shared.fetchSupplementLogs(for: dateStr),
-                   logs.contains(where: { $0.supplementId == supp.id }) {
-                    takenRecently = true
-                    break
-                }
+        // Previous 3 days (skip today — new supplements shouldn't false-alert),
+        // fetched once per DAY and checked in memory — the per-supplement inner
+        // loop used to refetch the same 3 days for every supplement (N×3 queries).
+        var takenIds = Set<Int64>()
+        for dayOffset in 1...3 {
+            guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: Date()) else { continue }
+            let dateStr = DateFormatters.dateOnly.string(from: date)
+            for log in (try? AppDatabase.shared.fetchSupplementLogs(for: dateStr)) ?? [] {
+                takenIds.insert(log.supplementId)
             }
-            if !takenRecently { missedNames.append(supp.name) }
         }
+        let missedNames = supplements
+            .filter { supp in supp.id.map { !takenIds.contains($0) } ?? true }
+            .map(\.name)
 
         guard !missedNames.isEmpty else { return nil }
 
@@ -266,7 +285,7 @@ public enum BehaviorInsightService {
     }
 
     /// Alert when no food has been logged in 2+ days.
-    private static func loggingGapAlert() -> BehaviorInsight? {
+    private static func loggingGapAlert(nutrition: [String: DailyNutrition]) -> BehaviorInsight? {
         let calendar = Calendar.current
         let today = Date()
 
@@ -274,15 +293,13 @@ public enum BehaviorInsightService {
         for dayOffset in 1...2 {
             guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { return nil }
             let dateStr = DateFormatters.dateOnly.string(from: date)
-            if let nutrition = try? AppDatabase.shared.fetchDailyNutrition(for: dateStr),
-               nutrition.calories > 100 {
+            if let day = nutrition[dateStr], day.calories > 100 {
                 return nil // found food logged recently
             }
         }
 
         // Also check today — if they logged today, no alert needed
-        let todayStr = DateFormatters.todayString
-        if let todayNutrition = try? AppDatabase.shared.fetchDailyNutrition(for: todayStr),
+        if let todayNutrition = nutrition[DateFormatters.todayString],
            todayNutrition.calories > 100 {
             return nil
         }
@@ -363,11 +380,10 @@ public enum BehaviorInsightService {
 
     /// Checks if hitting protein target correlates with better weight outcomes.
     /// Requires: active goal with protein target + 2 weeks of food logs.
-    private static func proteinAdherenceInsight() -> BehaviorInsight? {
+    private static func proteinAdherenceInsight(nutrition: [String: DailyNutrition]) -> BehaviorInsight? {
         guard let goal = WeightGoal.load(),
               let targets = goal.macroTargets(currentWeightKg: WeightTrendService.shared.trendWeight) else { return nil }
 
-        let db = AppDatabase.shared
         let calendar = Calendar.current
         let today = Date()
 
@@ -378,7 +394,7 @@ public enum BehaviorInsightService {
         for dayOffset in 1...30 {
             guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) else { continue }
             let dateStr = DateFormatters.dateOnly.string(from: date)
-            guard let nutrition = try? db.fetchDailyNutrition(for: dateStr),
+            guard let nutrition = nutrition[dateStr],
                   nutrition.calories > 200 else { continue }  // skip days with minimal logging
 
             totalDays += 1
@@ -412,11 +428,11 @@ public enum BehaviorInsightService {
     // MARK: - Insight 3: Logging Consistency
 
     /// Shows how consistent food logging has been and its correlation with weight data quality.
-    private static func loggingConsistencyInsight() -> BehaviorInsight? {
+    private static func loggingConsistencyInsight(nutrition: [String: DailyNutrition]) -> BehaviorInsight? {
         let consistency = TDEEEstimator.shared.foodLoggingConsistency()
         guard consistency > 0 else { return nil }
 
-        let streak = consecutiveLoggingDays()
+        let streak = consecutiveLoggingDays(nutrition: nutrition)
 
         if consistency >= 0.8 {
             let detail = streak >= 7
@@ -441,18 +457,16 @@ public enum BehaviorInsightService {
 
     /// Compares calorie intake on days after good sleep (7+ hours) vs poor sleep (<6 hours).
     /// Requires: 7+ days of sleep data paired with food data.
-    private static func sleepVsCaloriesInsight(sleepHistory: [(date: Date, hours: Double)]) -> BehaviorInsight? {
+    private static func sleepVsCaloriesInsight(sleepHistory: [(date: Date, hours: Double)], nutrition: [String: DailyNutrition]) -> BehaviorInsight? {
         guard sleepHistory.count >= 7 else { return nil }
 
-        let db = AppDatabase.shared
-        let calendar = Calendar.current
         var goodSleepCals: [Double] = []
         var poorSleepCals: [Double] = []
 
         for entry in sleepHistory {
             // Sleep data is for the night ending on this date; look at food logged THIS day
             let dateStr = DateFormatters.dateOnly.string(from: entry.date)
-            guard let nutrition = try? db.fetchDailyNutrition(for: dateStr),
+            guard let nutrition = nutrition[dateStr],
                   nutrition.calories > 200 else { continue }  // skip days with minimal logging
 
             if entry.hours >= 7 {
@@ -487,14 +501,13 @@ public enum BehaviorInsightService {
     }
 
     /// Count consecutive days with food logged ending at yesterday.
-    private static func consecutiveLoggingDays() -> Int {
-        let db = AppDatabase.shared
+    private static func consecutiveLoggingDays(nutrition: [String: DailyNutrition]) -> Int {
         let calendar = Calendar.current
         var streak = 0
         for dayOffset in 1...30 {
             guard let date = calendar.date(byAdding: .day, value: -dayOffset, to: Date()) else { break }
             let dateStr = DateFormatters.dateOnly.string(from: date)
-            guard let nutrition = try? db.fetchDailyNutrition(for: dateStr),
+            guard let nutrition = nutrition[dateStr],
                   nutrition.calories > 100 else { break }
             streak += 1
         }

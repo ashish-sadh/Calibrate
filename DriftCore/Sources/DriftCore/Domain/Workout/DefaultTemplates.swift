@@ -83,17 +83,22 @@ public enum DefaultTemplates {
 
     /// Idempotent — safe to call at every launch: fills missing visual
     /// fields (muscles/poses) on customs registered by older builds (#941).
+    /// Registers as ONE batch (one blob decode + at most one write) — the
+    /// per-item loop paid ~100 full UserDefaults-blob decodes per launch.
     public static func registerCustomExercises() {
         let dbNames = Set(ExerciseDatabase.all.map { $0.name.lowercased() })
-        for c in customExercises where !dbNames.contains(c.name.lowercased()) {
-            ExerciseDatabase.addCustomExercise(
-                name: c.name, bodyPart: c.bodyPart,
-                primaryMuscles: c.muscles,
-                imageUrl: c.fedDir.map {
-                    "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/\($0)/0.jpg"
-                },
-                imageUrlAuthoritative: true)
-        }
+        let specs = customExercises
+            .filter { !dbNames.contains($0.name.lowercased()) }
+            .map { c in
+                ExerciseDatabase.CustomExerciseSpec(
+                    name: c.name, bodyPart: c.bodyPart,
+                    primaryMuscles: c.muscles,
+                    imageUrl: c.fedDir.map {
+                        "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/\($0)/0.jpg"
+                    },
+                    imageUrlAuthoritative: true)
+            }
+        ExerciseDatabase.addCustomExercises(specs)
     }
 
     /// All custom exercises needed across both packages.
