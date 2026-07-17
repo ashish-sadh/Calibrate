@@ -14,7 +14,9 @@ extension BarcodeCache {
             fiberGPer100g: product.fiberG,
             servingSizeG: product.servingSizeG,
             servingDescription: product.servingSize,
-            packageSizeG: product.packageSizeG,
+            // 0 = "looked up, OFF has no package data" — distinct from NULL
+            // (row cached before v45, package never checked → re-fetch once).
+            packageSizeG: product.packageSizeG ?? 0,
             createdAt: ISO8601DateFormatter().string(from: Date())
         )
     }

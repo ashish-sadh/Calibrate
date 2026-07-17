@@ -366,10 +366,14 @@ struct BarcodeLookupView: View {
         guard !isLooking else { return }
         isLooking = true; error = nil
         Task {
-            // Check local cache first
-            if let cached = FoodService.fetchCachedBarcode(barcode) {
-                Log.foodLog.info("Barcode cache hit: \(cached.name)")
-                let p = OpenFoodFactsService.Product(
+            func present(_ p: OpenFoodFactsService.Product) {
+                product = p
+                // #1048: seed a realistic serving (defaultAmount), not a hardcoded "1", so an
+                // ml-primary beverage doesn't preview/log ~0 cal (1 ml of a 330 ml can).
+                amount = FoodUnit.defaultAmount(for: productFood(p)); selectedUnitIndex = 0
+            }
+            func cachedProduct(_ cached: BarcodeCache) -> OpenFoodFactsService.Product {
+                OpenFoodFactsService.Product(
                     barcode: cached.barcode, name: cached.name, brand: cached.brand,
                     servingSize: cached.servingDescription, calories: cached.caloriesPer100g,
                     proteinG: cached.proteinGPer100g, carbsG: cached.carbsGPer100g,
@@ -378,12 +382,19 @@ struct BarcodeLookupView: View {
                     piecesPerServing: OpenFoodFactsService.parsePieceCount(cached.servingDescription),
                     ingredientsText: nil,
                     novaGroup: nil,
-                    packageSizeG: cached.packageSizeG
+                    // 0 = "checked, OFF has none" sentinel → no package unit
+                    packageSizeG: cached.packageSizeG.flatMap { $0 >= 10 ? $0 : nil }
                 )
-                product = p
-                // #1048: seed a realistic serving (defaultAmount), not a hardcoded "1", so an
-                // ml-primary beverage doesn't preview/log ~0 cal (1 ml of a 330 ml can).
-                amount = FoodUnit.defaultAmount(for: productFood(p)); selectedUnitIndex = 0
+            }
+
+            // Local cache first. A NULL packageSizeG means the row predates the
+            // v45 package-size column — the package was never looked up, so
+            // fall through to a fresh fetch (the stale row still serves as the
+            // offline fallback below). 0 means "checked, product has none".
+            let cached = FoodService.fetchCachedBarcode(barcode)
+            if let cached, cached.packageSizeG != nil {
+                Log.foodLog.info("Barcode cache hit: \(cached.name)")
+                present(cachedProduct(cached))
                 isLooking = false
                 return
             }
@@ -391,15 +402,17 @@ struct BarcodeLookupView: View {
             // Fetch from Open Food Facts
             do {
                 let p = try await OpenFoodFactsService.lookup(barcode: barcode)
-                product = p
-                // #1048: seed a realistic serving (defaultAmount), not a hardcoded "1", so an
-                // ml-primary beverage doesn't preview/log ~0 cal (1 ml of a 330 ml can).
-                amount = FoodUnit.defaultAmount(for: productFood(p)); selectedUnitIndex = 0
+                present(p)
                 // Cache locally for next time
                 FoodService.cacheBarcodeProduct(BarcodeCache(from: p))
                 Log.foodLog.info("Barcode cached: \(p.name)")
             } catch {
-                self.error = error.localizedDescription
+                if let cached {
+                    Log.foodLog.info("Barcode refresh failed, serving pre-v45 cache: \(cached.name)")
+                    present(cachedProduct(cached))
+                } else {
+                    self.error = error.localizedDescription
+                }
             }
             isLooking = false
         }
