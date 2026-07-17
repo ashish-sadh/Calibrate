@@ -99,10 +99,14 @@ struct WeightLogListView: View {
                     to: DateFormatters.dateOnly.date(from: entry.date) ?? Date()).day ?? 0)
                 if daysBetween <= 90 {
                     let change = unit.convert(fromKg: entry.weightKg - prev.weightKg)
+                    // "No Change" band (±0.05) must render fully neutral — the
+                    // arrow/color thresholds were tighter (±0.01), so a −0.04
+                    // row showed a red ↘ beside "No Change" (field 2026-07-17).
+                    let isFlat = abs(change) < 0.05
                     HStack(spacing: 4) {
-                        Image(systemName: change < -0.01 ? "arrow.down.right" : change > 0.01 ? "arrow.up.right" : "arrow.right")
+                        Image(systemName: isFlat ? "arrow.right" : change < 0 ? "arrow.down.right" : "arrow.up.right")
                             .font(.caption2)
-                        if abs(change) < 0.05 {
+                        if isFlat {
                             Text("No Change")
                                 .font(.caption)
                         } else {
@@ -110,7 +114,7 @@ struct WeightLogListView: View {
                                 .font(.caption.monospacedDigit())
                         }
                     }
-                    .foregroundStyle(changeColor(change))
+                    .foregroundStyle(isFlat ? Color.secondary : changeColor(change))
                 }
             }
 

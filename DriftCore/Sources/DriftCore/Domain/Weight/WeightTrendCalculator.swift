@@ -640,10 +640,20 @@ public enum WeightTrendCalculator {
         return abs(sAdj) / variance.squareRoot()
     }
 
-    /// Span-based sufficiency: ≥2 points spanning ≥ `minRateSpanDays`.
+    /// Span-based sufficiency: ≥2 points spanning ≥ `minRateSpanDays` — OR a
+    /// DENSE short run (≥6 points spanning ≥10 days). The span floor exists
+    /// for sparse loggers (#842: two weigh-ins 5 days apart are noise, not a
+    /// trend); a 9-point 12-day run is statistically rich. Without the dense
+    /// branch, a 10-day logging gap before a regime change left the 21-day
+    /// window 2 days short of span, and the fallback widened straight to 45
+    /// days — burying the operator's real 3-week cut under the prior bulk's
+    /// climb (field 2026-07-17: reference app −0.15 kg/wk / −165 kcal vs
+    /// Drift "+0.09 gaining" from the 45d window).
     static func isSufficient(_ points: [WeightDataPoint]) -> Bool {
         guard points.count >= 2, let f = points.first, let l = points.last else { return false }
-        return daysBetween(f.date, l.date) >= minRateSpanDays
+        let span = daysBetween(f.date, l.date)
+        if span >= minRateSpanDays { return true }
+        return points.count >= 6 && span >= 10
     }
 
     // MARK: - Linear Regression
