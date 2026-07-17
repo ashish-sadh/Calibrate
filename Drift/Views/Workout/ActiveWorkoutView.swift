@@ -214,7 +214,9 @@ struct ActiveWorkoutView: View {
                         Image(systemName: "xmark.circle").foregroundStyle(Theme.textSecondary)
                     }
                     .confirmationDialog("Workout in progress", isPresented: $showingCloseOptions, titleVisibility: .visible) {
-                        Button("Minimize — timer keeps running") { persistSession(); dismiss() }
+                        // Away time doesn't count once the sheet is closed —
+                        // the clock resumes from trained time (see restoreSession).
+                        Button("Minimize — resume anytime") { persistSession(); dismiss() }
                         Button("Discard workout", role: .destructive) {
                             workoutEnded = true
                             WorkoutService.clearSession(); stopTimers(); dismiss()
@@ -690,6 +692,9 @@ struct ActiveWorkoutView: View {
     // MARK: - Timers
 
     private func startWorkoutTimer() {
+        // Show the real elapsed value NOW — the first tick is a second away,
+        // and a restored session would flash 0:00 until it lands.
+        elapsedSeconds = Int(Date().timeIntervalSince(startTime))
         workoutTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [self] _ in
             Task { @MainActor in
                 elapsedSeconds = Int(Date().timeIntervalSince(startTime))
@@ -825,7 +830,14 @@ struct ActiveWorkoutView: View {
     private func restoreSession() -> Bool {
         guard let session = WorkoutService.loadSession() else { return false }
         workoutName = session.workoutName
-        startTime = session.startTime
+        // Resume the clock at the duration actually TRAINED, not wall-clock
+        // since the original start — resuming a session from hours ago used
+        // to start the timer at those hours (field report 2026-07-16).
+        // Rebasing startTime keeps every downstream `now − startTime`
+        // computation (tick, scenePhase recalc, finish-save duration)
+        // correct without touching them.
+        startTime = Date().addingTimeInterval(-session.trainedSeconds())
+        elapsedSeconds = Int(Date().timeIntervalSince(startTime))
         exercises = session.exercises.map { ex in
             ActiveExercise(
                 name: ex.name, restTime: ex.restTime, isWarmupExercise: ex.isWarmup,

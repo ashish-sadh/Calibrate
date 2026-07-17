@@ -961,6 +961,27 @@ import GRDB
 
 // MARK: - Session Persistence Tests (3 tests)
 
+/// Field report 2026-07-16: resuming a WIP session started the live timer at
+/// the full wall-clock gap (up to 5h of phantom "training"). The resume clock
+/// rebases on trainedSeconds — start → last persist, away time excluded.
+@Test func trainedSecondsExcludesAwayTime() {
+    let start = Date(timeIntervalSinceNow: -3 * 3600)          // started 3h ago
+    let saved = start.addingTimeInterval(22 * 60)              // trained 22 min
+    let session = WorkoutService.SavedSession(
+        workoutName: "Push", startTime: start, exercises: [], lastSavedAt: saved)
+    // Resumed now: 22 min trained, ~2h38m away — away time must not count.
+    #expect(Int(session.trainedSeconds()) == 22 * 60)
+    // Pre-lastSavedAt payloads (older builds) keep wall-clock behavior.
+    let legacy = WorkoutService.SavedSession(workoutName: "Pull", startTime: start, exercises: [])
+    let wallClock = legacy.trainedSeconds(asOf: start.addingTimeInterval(3600))
+    #expect(Int(wallClock) == 3600)
+    // Clock skew (lastSavedAt before startTime) clamps to zero, never negative.
+    let skewed = WorkoutService.SavedSession(
+        workoutName: "Legs", startTime: start, exercises: [],
+        lastSavedAt: start.addingTimeInterval(-60))
+    #expect(skewed.trainedSeconds() == 0)
+}
+
 @Test func sessionSaveAndLoad() async throws {
     WorkoutService.clearSession()
     let session = WorkoutService.SavedSession(

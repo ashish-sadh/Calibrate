@@ -479,6 +479,15 @@ public enum WorkoutService {
             self.lastSavedAt = lastSavedAt
         }
 
+        /// Seconds actually TRAINED: start → last persist. Resume rebases the
+        /// live timer on this so hours away don't count as workout time
+        /// (field report 2026-07-16: resumed session started at the full
+        /// wall-clock gap). Pre-lastSavedAt payloads fall back to wall clock.
+        public func trainedSeconds(asOf now: Date = Date()) -> TimeInterval {
+            guard let lastSavedAt else { return max(0, now.timeIntervalSince(startTime)) }
+            return max(0, lastSavedAt.timeIntervalSince(startTime))
+        }
+
         public struct SessionExercise: Codable {
             public let name: String
             public let isWarmup: Bool
