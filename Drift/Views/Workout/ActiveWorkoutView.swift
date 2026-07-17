@@ -25,8 +25,15 @@ struct ActiveWorkoutView: View {
     @State private var restTimerActive = false
     @State private var restTimer: Timer?
     @State private var restEndTime: Date?
-    @State private var activeRestExerciseIndex: Int? = nil
-    @State private var activeRestSetIndex: Int? = nil
+    // Rest-bar anchor by STABLE IDs, never array indices — deleting or
+    // adding an exercise/set above the resting row shifts every index, which
+    // made the running rest bar jump to whatever row inherited the index
+    // (field report 2026-07-16: "timer randomly starts on different
+    // exercises"). Five paths mutate these arrays mid-rest: delete set,
+    // remove exercise (card menu), chat-strip "drop X", chat-add undo, and
+    // the auto-added next set.
+    @State private var activeRestExerciseID: UUID? = nil
+    @State private var activeRestSetID: UUID? = nil
     @State private var workoutEnded = false  // prevents re-persisting after finish/cancel
     @State private var showingFinishOptions = false
     @State private var showingCloseOptions = false
@@ -409,10 +416,14 @@ struct ActiveWorkoutView: View {
             }
             .onChange(of: scenePhase) { _, newPhase in
                 if newPhase == .active && !workoutEnded {
-                    // Restart workout timer — elapsed recalculates from startTime
-                    workoutTimer?.invalidate()
-                    elapsedSeconds = Int(Date().timeIntervalSince(startTime))
-                    startWorkoutTimer()
+                    // Restart workout timer — elapsed recalculates from
+                    // startTime. Past-date logging has NO live timer, so
+                    // don't start one on foregrounding (it silently ticked
+                    // a phantom clock for backdated workouts).
+                    if pastDate == nil {
+                        workoutTimer?.invalidate()
+                        startWorkoutTimer()
+                    }
                     // Update rest timer from wall-clock end time
                     if restTimerActive, let endTime = restEndTime {
                         let remaining = Int(endTime.timeIntervalSince(Date()))
@@ -498,7 +509,10 @@ struct ActiveWorkoutView: View {
                               systemImage: exercises[ei].trackByTime ? "number" : "timer")
                     }
                     Divider()
-                    Button(role: .destructive) { exercises.remove(at: ei) } label: {
+                    Button(role: .destructive) {
+                        exercises.remove(at: ei)
+                        stopRestIfAnchorMissing()
+                    } label: {
                         Label("Remove Exercise", systemImage: "trash")
                     }
                 } label: {
@@ -578,7 +592,11 @@ struct ActiveWorkoutView: View {
                                 // Celebrate BEFORE the auto-add below — the bonus
                                 // set would otherwise hide "exercise complete".
                                 celebrateSetDone(exerciseIndex: ei, setIndex: si)
-                                startRest(exerciseIndex: ei, setIndex: si, duration: exercises[ei].restTime)
+                                // No rest countdown when backdating a past
+                                // workout — there's nothing to rest for.
+                                if pastDate == nil {
+                                    startRest(exerciseID: exercises[ei].id, setID: set.id, duration: exercises[ei].restTime)
+                                }
                                 // Auto-add next set prefilled with same weight/reps
                                 if si == exercises[ei].sets.count - 1 && (!set.weight.isEmpty || !set.reps.isEmpty) {
                                     exercises[ei].sets.append(ActiveSet(weight: set.weight, reps: set.reps))
@@ -594,6 +612,7 @@ struct ActiveWorkoutView: View {
                         Button {
                             exercises[ei].sets.removeAll(where: { $0.id == set.id })
                             if exercises[ei].sets.isEmpty { exercises.remove(at: ei) }
+                            stopRestIfAnchorMissing()
                         } label: {
                             Image(systemName: "xmark").font(.system(size: Theme.FontSize.micro)).foregroundStyle(Theme.textTertiary)
                         }.frame(width: 20).accessibilityLabel("Delete set")
@@ -603,13 +622,14 @@ struct ActiveWorkoutView: View {
                         Button(role: .destructive) {
                             exercises[ei].sets.removeAll(where: { $0.id == set.id })
                             if exercises[ei].sets.isEmpty { exercises.remove(at: ei) }
+                            stopRestIfAnchorMissing()
                         } label: {
                             Label("Delete Set", systemImage: "trash")
                         }
                     }
 
                     // Inline rest timer bar (shows after this set if active)
-                    if restTimerActive && activeRestExerciseIndex == ei && activeRestSetIndex == si {
+                    if restTimerActive && activeRestExerciseID == exercises[ei].id && activeRestSetID == set.id {
                         restTimerBar
                     }
                 }
@@ -706,12 +726,44 @@ struct ActiveWorkoutView: View {
         }
     }
 
-    private func startRest(exerciseIndex: Int, setIndex: Int, duration: Int) {
+    /// Cancel the rest countdown entirely — bar, tick, and the background
+    /// notification. A timer whose row was deleted would otherwise keep
+    /// running invisibly and vibrate/notify for a set that no longer exists.
+    private func stopRest() {
+        restTimer?.invalidate()
+        restTimerActive = false
+        restEndTime = nil
+        restSeconds = 0
+        activeRestExerciseID = nil
+        activeRestSetID = nil
+        cancelRestEndNotification()
+    }
+
+    /// Call after ANY removal from `exercises` — if the resting row is gone
+    /// (set deleted, exercise removed via card menu / chat "drop X" / chat
+    /// add-undo), the countdown dies with it.
+    private func stopRestIfAnchorMissing() {
+        guard restTimerActive else { return }
+        if !Self.restAnchorAlive(exercises: exercises,
+                                 exerciseID: activeRestExerciseID,
+                                 setID: activeRestSetID) {
+            stopRest()
+        }
+    }
+
+    /// Pure: does the (exercise, set) the rest bar is anchored to still
+    /// exist? Static so the regression tests can drive it directly.
+    nonisolated static func restAnchorAlive(exercises: [ActiveExercise], exerciseID: UUID?, setID: UUID?) -> Bool {
+        exercises.first { $0.id == exerciseID }?
+            .sets.contains { $0.id == setID } ?? false
+    }
+
+    private func startRest(exerciseID: UUID, setID: UUID, duration: Int) {
         restTotalSeconds = duration
         restSeconds = duration
         restEndTime = Date().addingTimeInterval(Double(duration))
-        activeRestExerciseIndex = exerciseIndex
-        activeRestSetIndex = setIndex
+        activeRestExerciseID = exerciseID
+        activeRestSetID = setID
         restTimerActive = true
         restTimer?.invalidate()
         startRestTimerTick()
@@ -1085,6 +1137,7 @@ struct ActiveWorkoutView: View {
             return
         }
         let removed = exercises.remove(at: idx)
+        stopRestIfAnchorMissing()
         commandFeedback = CommandFeedback(text: "Removed \(removed.name).") {
             exercises.insert(removed, at: min(idx, exercises.count))
         }
@@ -1123,7 +1176,10 @@ struct ActiveWorkoutView: View {
         let ghost = exercises.last?.previousSets.first.map { " — last: \($0)" } ?? ""
         let addedId = exercises.last?.id
         commandFeedback = CommandFeedback(text: "Added \(name)\(ghost).") {
-            if let addedId { exercises.removeAll { $0.id == addedId } }
+            if let addedId {
+                exercises.removeAll { $0.id == addedId }
+                stopRestIfAnchorMissing()
+            }
         }
     }
 

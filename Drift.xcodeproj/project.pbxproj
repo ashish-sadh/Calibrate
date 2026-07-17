@@ -15,6 +15,7 @@
 		08A036DA58D553363E9D412E /* MultiTurnContextEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D0EF86656667CEF40EB779 /* MultiTurnContextEval.swift */; };
 		0905877698D1E8F326D639E6 /* V6Rings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35655D26FCDB45A9D01AD273 /* V6Rings.swift */; };
 		0BECBF8EA607FB3FE10DC3FE /* DriftWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 145534F72860C9C345156102 /* DriftWidget.swift */; };
+		0C7E942AE9C893B375B7B325 /* ActiveWorkoutRestTimerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 68721E9251758E2359E5EF11 /* ActiveWorkoutRestTimerTests.swift */; };
 		0D37196E02C4035A6489F23A /* ExercisePoseAssetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E81A2331AA0D95044665F9F9 /* ExercisePoseAssetTests.swift */; };
 		0E9D1FE15EFC96D35A4D6CBC /* ConfirmationCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0BFC0D10ECB1BBDADD1D1CCB /* ConfirmationCardTests.swift */; };
 		0FBD78DE2C75146EE2AA13AB /* PhotoLogToolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBD371873F1D148C190AA7DB /* PhotoLogToolTests.swift */; };
@@ -379,6 +380,7 @@
 		664CF8C9378B65A23548F155 /* BiomarkersTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BiomarkersTabView.swift; sourceTree = "<group>"; };
 		668D8D5951EB119A1624DDB2 /* DriftTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = DriftTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		672E9AFE4E812160DDC960BF /* DriftCoachSheetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriftCoachSheetTests.swift; sourceTree = "<group>"; };
+		68721E9251758E2359E5EF11 /* ActiveWorkoutRestTimerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWorkoutRestTimerTests.swift; sourceTree = "<group>"; };
 		68A2CFFF213F435739A92CA8 /* BodySummaryCardsRowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodySummaryCardsRowTests.swift; sourceTree = "<group>"; };
 		6AEB8D23DD72A1974C8C09E5 /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
 		6B6C02FCD909BDE67D229EC1 /* CycleCalculationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleCalculationTests.swift; sourceTree = "<group>"; };
@@ -626,6 +628,7 @@
 		230C4300561292D969C89B4E /* DriftTests */ = {
 			isa = PBXGroup;
 			children = (
+				68721E9251758E2359E5EF11 /* ActiveWorkoutRestTimerTests.swift */,
 				4D3E8C8C02CFBE15B569BB71 /* AIBackendCoordinatorTests.swift */,
 				19E7517E5B4779CBBE1C7284 /* AITests.swift */,
 				BBC007029A7A52990CE4FBDE /* BackupMonitorTests.swift */,
@@ -1307,6 +1310,7 @@
 			files = (
 				E24CF2FFAD8ED6CA89CDD5F4 /* AIBackendCoordinatorTests.swift in Sources */,
 				2DDEA9907FA6338488A8E1CD /* AITests.swift in Sources */,
+				0C7E942AE9C893B375B7B325 /* ActiveWorkoutRestTimerTests.swift in Sources */,
 				E3A1AAD6DC61707246AECDA8 /* BackupMonitorTests.swift in Sources */,
 				133EE1957A7EEB3394C0A926 /* BackupSchedulerTests.swift in Sources */,
 				93BB4F4C9A49061E5433BDB0 /* BackupServiceProbeTests.swift in Sources */,
