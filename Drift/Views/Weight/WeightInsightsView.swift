@@ -87,7 +87,7 @@ struct WeightInsightsView: View {
                         value: softNumber(String(format: "%+.2f", unit.convert(fromKg: trend.weeklyRateKg))),
                         valueUnit: "\(unit.displayName)/wk",
                         color: Theme.textSecondary,
-                        tooltip: "The last \(trend.rateWindowDays) days point \(trend.weeklyRateKg < 0 ? "down" : "up"), but your 30-day trend points the other way — recent days are likely water. Treat this as a soft read until they agree.",
+                        tooltip: "The last \(trend.rateWindowDays) days point \(trend.weeklyRateKg < 0 ? "down" : "up"), but your longer trend points the other way — recent days are likely water. Treat this as a soft read until they agree.",
                         nudge: "Recent swing — firming up"
                     )
                 } else {
@@ -148,7 +148,7 @@ struct WeightInsightsView: View {
                         value: softNumber(String(format: "%+.0f", softBalance)),
                         valueUnit: "kcal/day",
                         color: Theme.textSecondary,
-                        tooltip: "The last \(trend.rateWindowDays) days suggest \(String(format: "%+.0f", softBalance)) kcal/day, but your 30-day trend disagrees — recent days are likely water. A soft read, not a target.",
+                        tooltip: "The last \(trend.rateWindowDays) days suggest \(String(format: "%+.0f", softBalance)) kcal/day, but your longer trend disagrees — recent days are likely water. A soft read, not a target.",
                         nudge: "Recent dip — firming up"
                     )
                 } else {

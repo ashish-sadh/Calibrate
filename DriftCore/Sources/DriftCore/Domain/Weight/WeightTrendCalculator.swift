@@ -231,20 +231,43 @@ public enum WeightTrendCalculator {
         /// transparency caveat as `rawWeeklyRateKg`.
         public var rawEstimatedDailyDeficit: Double { rawWeeklyRateKg * config.kcalPerKg / 7 }
 
+        /// Weekly rate (kg/wk) measured over the wide 35-day window
+        /// (`slowTrendWindowDays`) — the second opinion the conflict gate
+        /// checks the published short-window rate against. nil when the wide
+        /// window lacks sufficient span.
+        public let longWindowWeeklyRateKg: Double?
+
         /// True when the short-window energy estimate disagrees in SIGN with
-        /// the 30-day trend change — e.g. "Est. Deficit −170/day" printed next
-        /// to "30-day +1.0 lbs Increase" on the same screen (field report
-        /// 2026-07-13: a 5-day water plunge bent the 20-day slope negative on
-        /// a body that gained over the month). The UI renders the soft gray
-        /// treatment instead of goal-colored confidence while the signals
-        /// argue; a genuine regime change clears within ~a week as the 30-day
-        /// delta rolls over. The 0.15 kg dead-band keeps a young-but-real
-        /// trend (30-day near zero) publishing normally.
+        /// the longer-horizon picture. Two triggers:
+        ///
+        /// 1. The 30-day EMA trend change points the other way — e.g.
+        ///    "Est. Deficit −170/day" printed next to "30-day +1.0 lbs
+        ///    Increase" (field report 2026-07-13: a 5-day water plunge bent
+        ///    the 20-day slope negative on a body that gained over the month).
+        ///    The 0.15 kg dead-band keeps a young-but-real trend (30-day near
+        ///    zero) publishing normally.
+        /// 2. The 35-day window slope points the other way at above-band
+        ///    magnitude (field report 2026-07-17: a week-long water/refeed
+        ///    rise on a steadily-losing body read "Est. Surplus +204,
+        ///    confident" while the reference app showed a deficit — the
+        ///    30-day EMA delta sat inside the dead-band because the rise
+        ///    itself dragged the current EMA up, so trigger 1 missed it).
+        ///
+        /// The UI renders the soft gray treatment instead of goal-colored
+        /// confidence while the signals argue; a genuine regime change clears
+        /// as the wide window's slope rolls over (probe 2026-07-17: a real
+        /// bulk's 35-day slope flips sign by the time the short rate does).
         public var energySignalConflicts: Bool {
-            guard let thirtyDay = weightChanges.thirtyDay, weeklyRateKg != 0 else { return false }
-            let deadbandKg = 0.15
-            return (weeklyRateKg < 0 && thirtyDay > deadbandKg)
-                || (weeklyRateKg > 0 && thirtyDay < -deadbandKg)
+            guard weeklyRateKg != 0 else { return false }
+            if let thirtyDay = weightChanges.thirtyDay {
+                let deadbandKg = 0.15
+                if (weeklyRateKg < 0 && thirtyDay > deadbandKg)
+                    || (weeklyRateKg > 0 && thirtyDay < -deadbandKg) { return true }
+            }
+            if let long = longWindowWeeklyRateKg,
+               abs(long) >= config.maintainingThresholdKgPerWeek,
+               (long > 0) != (weeklyRateKg > 0) { return true }
+            return false
         }
 
         /// True when the raw weigh-ins' slope clears the statistical noise
@@ -253,7 +276,7 @@ public enum WeightTrendCalculator {
         /// the published rate.
         public let trendIsSignificant: Bool
 
-        init(currentEMA: Double, previousEMA: Double, weeklyRateKg: Double, estimatedDailyDeficit: Double, trendDirection: TrendDirection, projection30Day: Double?, dataPoints: [WeightDataPoint], weightChanges: WeightChanges, config: AlgorithmConfig, rateWindowDays: Int, hasInsufficientData: Bool = false, rawWeeklyRateKg: Double = 0, trendIsSignificant: Bool = false) {
+        init(currentEMA: Double, previousEMA: Double, weeklyRateKg: Double, estimatedDailyDeficit: Double, trendDirection: TrendDirection, projection30Day: Double?, dataPoints: [WeightDataPoint], weightChanges: WeightChanges, config: AlgorithmConfig, rateWindowDays: Int, hasInsufficientData: Bool = false, rawWeeklyRateKg: Double = 0, trendIsSignificant: Bool = false, longWindowWeeklyRateKg: Double? = nil) {
             self.currentEMA = currentEMA
             self.previousEMA = previousEMA
             self.weeklyRateKg = weeklyRateKg
@@ -267,6 +290,7 @@ public enum WeightTrendCalculator {
             self.hasInsufficientData = hasInsufficientData
             self.rawWeeklyRateKg = rawWeeklyRateKg
             self.trendIsSignificant = trendIsSignificant
+            self.longWindowWeeklyRateKg = longWindowWeeklyRateKg
         }
     }
 
@@ -418,9 +442,13 @@ public enum WeightTrendCalculator {
         // seed 99 reaches 1.7 by chance) and agrees in sign. Recent-flat
         // (sub-band) never escalates: recent flat is affirmative evidence of
         // maintaining (#842 / regimeChange_recentMaintenance).
+        // The wide-window second opinion, computed once: feeds slow-trend
+        // escalation below AND the conflict gate's trigger 2
+        // (`longWindowWeeklyRateKg`).
+        let wide = weeklyRateForWindow(points: dataPoints, windowDays: Self.slowTrendWindowDays)
         if let p = rate, p.zStat < engineRampFull,
            abs(p.kgPerWeek) >= config.maintainingThresholdKgPerWeek,
-           let wide = weeklyRateForWindow(points: dataPoints, windowDays: Self.slowTrendWindowDays),
+           let wide,
            wide.zStat >= Self.significanceZThreshold,
            (wide.kgPerWeek > 0) == (p.kgPerWeek > 0) {
             // The certified rate carries MK confidence (Z≥2.0 > both engines'
@@ -474,7 +502,8 @@ public enum WeightTrendCalculator {
             rateWindowDays: rateWindowDays,
             hasInsufficientData: hasInsufficientData,
             rawWeeklyRateKg: rawRate,
-            trendIsSignificant: zStat >= significanceZ
+            trendIsSignificant: zStat >= significanceZ,
+            longWindowWeeklyRateKg: wide.map { clampRate($0.kgPerWeek) }
         )
     }
 

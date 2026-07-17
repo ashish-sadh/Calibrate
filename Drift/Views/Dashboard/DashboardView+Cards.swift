@@ -23,6 +23,11 @@ extension DashboardView {
         let intake = viewModel.dailyDeficit != nil ? (useFoodLogs ? loggedIntake : trendIntake) : 0
         let ringFraction = intake > 0 ? min(1.0, max(0, intake / max(1, tdee))) : 0
         let deficitLabel = deficit < -5 ? "deficit" : deficit > 5 ? "surplus" : "balanced"
+        // Soft read: the short-window estimate disagrees with the longer
+        // horizon (recent water swing) — same treatment as the Weight tab's
+        // Est. Balance card: gray, ≈, rounded to 10s, never goal-colored.
+        let isSoft = viewModel.dailyDeficitIsSoft
+        let softDeficit = (deficit / 10).rounded() * 10
 
         return VStack(spacing: 12) {
             // Section header
@@ -68,13 +73,15 @@ extension DashboardView {
                             .stroke(Theme.cardBackgroundElevated, lineWidth: 8)
                         Circle()
                             .trim(from: 0, to: ringFraction)
-                            .stroke(isGoalAligned(deficit) ? Theme.deficit : Theme.surplus,
+                            .stroke(isSoft ? Theme.textTertiary
+                                    : isGoalAligned(deficit) ? Theme.deficit : Theme.surplus,
                                     style: StrokeStyle(lineWidth: 8, lineCap: .round))
                             .rotationEffect(.degrees(-90))
                         VStack(spacing: 1) {
-                            Text("\(Int(abs(deficit)))")
+                            Text(isSoft ? "≈\(String(format: "%+.0f", softDeficit).replacingOccurrences(of: "-", with: "−"))" : "\(Int(abs(deficit)))")
                                 .font(.title3.weight(.bold).monospacedDigit())
-                            Text(deficitLabel)
+                                .foregroundStyle(isSoft ? Theme.textSecondary : .primary)
+                            Text(isSoft ? "recent swing" : deficitLabel)
                                 .font(.caption2.weight(.medium)).foregroundStyle(Theme.textSecondary)
                             Text("/day")
                                 .font(.caption2).foregroundStyle(Theme.textTertiary)
@@ -122,7 +129,8 @@ extension DashboardView {
                                 Text("Current").font(.caption2).foregroundStyle(Theme.textTertiary)
                                 Text("\(deficit < 0 ? "" : "+")\(Int(deficit))")
                                     .font(.caption.weight(.bold).monospacedDigit())
-                                    .foregroundStyle(isGoalAligned(deficit) ? Theme.deficit : Theme.surplus)
+                                    .foregroundStyle(isSoft ? Theme.textSecondary
+                                                    : isGoalAligned(deficit) ? Theme.deficit : Theme.surplus)
                             }
                             Text("kcal/day").font(.caption2).foregroundStyle(Theme.textTertiary)
                         }
@@ -133,6 +141,10 @@ extension DashboardView {
                             .font(.caption2).foregroundStyle(Theme.textTertiary)
                         Text("Based on \(config.regressionWindowDays)-day weight trend.")
                             .font(.caption2).foregroundStyle(Theme.textTertiary)
+                        if isSoft {
+                            Text("The last few days disagree with your longer trend — likely water. Soft read until they agree.")
+                                .font(.caption2).foregroundStyle(Theme.textTertiary)
+                        }
                     }
                 }
                 .transition(.opacity)

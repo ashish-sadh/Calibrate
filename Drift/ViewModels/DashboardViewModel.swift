@@ -18,6 +18,7 @@ final class DashboardViewModel {
     var latestWeight: Double?  // kg (raw latest entry — what user sees everywhere)
     var weeklyRate: Double? // kg/week
     var dailyDeficit: Double? // kcal (from weight trend)
+    var dailyDeficitIsSoft: Bool = false // short-window estimate disagrees with the longer horizon — render soft, never goal-colored
     var avgDailyIntake: Double = 0 // 14-day avg calories eaten
     var foodLogConsistency: Double = 0 // 0.0-1.0 (fraction of last 14 days with food logged)
     var supplementsTaken: Int = 0
@@ -113,6 +114,7 @@ final class DashboardViewModel {
         latestWeight = trendService.latestWeightKg
         weeklyRate = trendService.weeklyRate
         dailyDeficit = trendService.dailyDeficit
+        dailyDeficitIsSoft = trendService.dailyDeficitIsSoft
 
         // Load 14-day avg daily intake + consistency (for energy balance bar)
         do {

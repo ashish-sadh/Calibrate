@@ -196,6 +196,81 @@ struct WeightTDEEScenarioTests {
         #expect(t.trendDirection != .losing, "Must not read as losing after a recent water dip on a gaining trend. Got \(t.trendDirection)")
     }
 
+    // MARK: - Field regression 2026-07-17: the mirror of recentWaterDrop
+
+    /// 28 days of genuine steady loss (~−0.3 kg/wk — a real ~−350 kcal/day
+    /// deficit, which the operator's reference app showed) with a recent
+    /// multi-day water/refeed RISE. Pre-fix, the 21-day window read the
+    /// V-shape as a CONFIDENT goal-red "Est. Surplus +204/day" and the
+    /// conflict gate missed it: the rise dragged the current EMA up, so the
+    /// 30-day EMA delta sat inside the ±0.15 dead-band. The fix adds the
+    /// 35-day window slope as a second conflict trigger — a surplus-side rate
+    /// may still be PUBLISHED (the chart's tail does climb), but it must
+    /// carry the soft/conflicted treatment, never confident goal colors.
+    static func losingWithRecentRise(riseKg: Double, riseDays: Int, seed: UInt64) -> [(date: String, weightKg: Double)] {
+        var es: [(date: String, weightKg: Double)] = []
+        let cal = Calendar.current; let today = Date()
+        var rng = LCG(state: seed)
+        for day in 0..<28 {
+            let ago = 27 - day
+            var w = 84.0 - 0.045 * Double(day) + rng.symmetric(0.6)
+            if ago < riseDays { w += riseKg }
+            es.append((DateFormatters.dateOnly.string(from: cal.date(byAdding: .day, value: -ago, to: today)!), w))
+        }
+        return es
+    }
+
+    @Test(arguments: [UInt64(42), 7, 99])
+    func regression_recentWaterRise_neverConfidentSurplusOnLosingTrend(seed: UInt64) async throws {
+        for (riseKg, riseDays) in [(1.1, 3), (1.5, 4), (1.2, 7), (1.8, 7), (1.0, 10)] {
+            let es = Self.losingWithRecentRise(riseKg: riseKg, riseDays: riseDays, seed: seed)
+            let t = try #require(WeightTrendCalculator.calculateTrend(entries: es))
+            let label = "loss+rise \(riseKg)kg x\(riseDays)d seed=\(seed)"
+            Self.assertSane(t, label)
+            if t.weeklyRateKg > 0 {
+                #expect(t.energySignalConflicts,
+                        "\(label): a water rise on a genuinely losing body published a CONFIDENT surplus (+\(Int(t.estimatedDailyDeficit)) kcal/day) — must carry the soft/conflicted treatment")
+            }
+        }
+    }
+
+    @Test(arguments: [UInt64(42), 7, 99])
+    func steadyTrends_areNotSoftenedByLongWindowCheck(seed: UInt64) async throws {
+        // The new conflict trigger must not soften genuine sustained trends:
+        // over 35 days the wide window's slope agrees in sign with the short
+        // rate for both steady gain and steady loss.
+        for rate in [0.05, -0.05] {
+            let es = Self.entries(days: 35, cadence: 1, startKg: 80, ratePerDayKg: rate, noiseKg: 0.5, seed: seed)
+            let t = try #require(WeightTrendCalculator.calculateTrend(entries: es))
+            #expect(!t.energySignalConflicts,
+                    "steady \(rate > 0 ? "gain" : "loss") seed=\(seed) must publish confidently, got conflicted (rate \(t.weeklyRateKg), long \(String(describing: t.longWindowWeeklyRateKg)))")
+        }
+    }
+
+    @Test func sustainedRegimeChange_publishesGainConfidently() async throws {
+        // 19 days of loss then a REAL 21-day bulk: by the time the short rate
+        // flips positive, the 35-day slope has flipped too — a sustained
+        // regime change must NOT be stuck in the soft/conflicted state.
+        var es: [(date: String, weightKg: Double)] = []
+        let cal = Calendar.current; let today = Date()
+        var rng = LCG(state: 42)
+        for day in 0..<40 {
+            let ago = 39 - day
+            var w: Double
+            if ago < 21 {
+                w = 80 - 0.045 * 19 + 0.8 + 0.05 * Double(21 - ago)
+            } else {
+                w = 80 - 0.045 * Double(day)
+            }
+            w += rng.symmetric(0.5)
+            es.append((DateFormatters.dateOnly.string(from: cal.date(byAdding: .day, value: -ago, to: today)!), w))
+        }
+        let t = try #require(WeightTrendCalculator.calculateTrend(entries: es))
+        Self.assertSane(t, "sustained regime change")
+        #expect(!t.energySignalConflicts,
+                "a 3-week sustained bulk must publish confidently, got conflicted (rate \(t.weeklyRateKg), long \(String(describing: t.longWindowWeeklyRateKg)))")
+    }
+
     @Test func regression_waterSpikeDoesNotFlipSign() async throws {
         // Flat-to-slightly-losing trajectory; one +3kg salty-meal day must not
         // flip the reported direction to gaining.

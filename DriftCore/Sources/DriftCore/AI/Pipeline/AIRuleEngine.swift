@@ -20,9 +20,14 @@ public enum AIRuleEngine {
         // Weight trend — from centralized service
         if let trend = WeightTrendService.shared.trend, !WeightTrendService.shared.isStale {
                 let rate = trend.weeklyRateKg
-                let deficit = trend.estimatedDailyDeficit
 
-                if rate < -0.1 {
+                if trend.energySignalConflicts {
+                    // Recent days disagree with the longer trend (water swing) —
+                    // don't assert a direction the longer horizon contradicts
+                    // (field report 2026-07-17: phantom "trending up" on a
+                    // losing body).
+                    return "Your weight is swinging a bit — too early to call a trend. You've eaten \(Int(nutrition.calories)) calories today with \(Int(nutrition.proteinG))g protein."
+                } else if rate < -0.1 {
                     let u = Preferences.weightUnit
                     let rateDisplay = abs(u.convert(fromKg: rate))
                     return String(format: "You're losing about %.1f %@/week. Today you've eaten %d calories so far.", rateDisplay, u.displayName, Int(nutrition.calories))

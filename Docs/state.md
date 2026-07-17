@@ -5,7 +5,7 @@ AI-first local health tracker. AI chat is the primary interface — every data e
 
 ## Numbers
 - **Version:** 0.1.0, Build 354
-- **Tests:** ~1267 iOS DriftTests + ~1954 macOS DriftCoreTests (cross-platform pure-logic suite); LLM eval ~160+ cases in DriftLLMEvalMacOS
+- **Tests:** ~1267 iOS DriftTests + ~1961 macOS DriftCoreTests (cross-platform pure-logic suite); LLM eval ~160+ cases in DriftLLMEvalMacOS
 - **AI Eval:** 400+ scenarios in eval harness + LLM eval (~130-case gold set in IntentRoutingEval)
 - **Per-tool Reliability (Gemma 4, 50-query gold set):** log_food 10/10 (100%), edit_meal 9/10 (90%, tuned +10% from 80%), log_weight 10/10 (100%), mark_supplement 10/10 (100%), food_info 9/10 (90%) — overall 48/50 (96%)
 - **Foods:** 5,424 (curated down from 11,162 at build 237 — dropped verbose USDA SR Legacy bulk variants; hand-curated Indian-first + international cuisine retained. #1015/#1017 removed 36 duplicate rows, stripped 57 USDA distribution-program name suffixes, and de-title-cased 169 apostrophe names. Ceiling enforced at 6,000, cleanliness by FoodDBSizeTests.)

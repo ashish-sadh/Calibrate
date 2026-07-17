@@ -25,6 +25,11 @@ public final class WeightTrendService {
     public var trendWeight: Double? { isStale ? latestWeightKg : trend?.currentEMA }
     public var weeklyRate: Double? { isStale ? nil : trend?.weeklyRateKg }
     public var dailyDeficit: Double? { isStale ? nil : trend?.estimatedDailyDeficit }
+    /// True when `dailyDeficit` should render as a soft/uncertain read — the
+    /// short-window estimate disagrees with the longer horizon (see
+    /// `WeightTrend.energySignalConflicts`). Consumers must not present the
+    /// number with goal-colored confidence while this is set.
+    public var dailyDeficitIsSoft: Bool { !isStale && (trend?.energySignalConflicts ?? false) }
     public var weightChanges: WeightTrendCalculator.WeightChanges? { isStale ? nil : trend?.weightChanges }
     public var projectedWeightKg: Double? {
         guard !isStale else { return nil }
