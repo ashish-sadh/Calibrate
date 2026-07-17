@@ -2982,5 +2982,19 @@
    "how-to-measure guide on every check-in row",
    "header logo is now the actual app icon"
   ]
+ },
+ {
+  "build": 355,
+  "date": "2026-07-17T12:15:33-0700",
+  "description": "Honest energy-balance reads + packaged foods log the whole package",
+  "fixes": [
+   "phantom 'Est. Surplus' on a losing body: a recent water/refeed swing can no longer show a confident goal-red surplus — Dashboard and Weight tab both soften to a gray ≈ read until the longer trend agrees",
+   "AI coach no longer asserts 'your weight is trending up' while recent days disagree with the longer trend",
+   "barcode scan defaulting to keyword-guessed portions (fairlife Core Power bottle read as '1 cup = 98 cal') — packaged products now carry their real package size",
+   "previously scanned products refresh their package data once instead of keeping stale units forever"
+  ],
+  "features": [
+   "single-serve packaged foods (scan or online search) default to the entire bottle/can/pack; multi-serve jars keep the label serving with '1 pack' one tap away"
+  ]
  }
 ]
