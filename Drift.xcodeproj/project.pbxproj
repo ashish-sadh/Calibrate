@@ -178,6 +178,7 @@
 		D24AF7DAC0BEB04FF94C04CB /* NebiusExerciseLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B720866FF52986A39E29523 /* NebiusExerciseLogger.swift */; };
 		D2E596AFDCE5C6C9C49B5410 /* USDAFallbackEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = C92BBFFC16E3948FD5DABA59 /* USDAFallbackEval.swift */; };
 		D3A7ACF42E8B98CCF0BBFBE9 /* FoodDatabase.db in Resources */ = {isa = PBXBuildFile; fileRef = 0F17D1E36C8FFDB99E74C9A4 /* FoodDatabase.db */; };
+		D43B655157EDDB995FEF3019 /* WeightChartTrendColorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6774194A44D69E2788A87C1 /* WeightChartTrendColorTests.swift */; };
 		D460DC58016E359FB62DFCC3 /* TodayDonutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF4E87433C72DCD46B0D423D /* TodayDonutView.swift */; };
 		D676610D58E5F117B1698F2A /* ListeningCircle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4C5119D7D0835BA845A8AAF /* ListeningCircle.swift */; };
 		D681045AF7657C38E75D4D86 /* FoodSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A6CAF4720F61DC0C9BD2E7 /* FoodSearchView.swift */; };
@@ -463,6 +464,7 @@
 		D4683CA86D3045B1534504B0 /* ManualFoodEntrySheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManualFoodEntrySheet.swift; sourceTree = "<group>"; };
 		D5286E0309471AF898D70E3C /* BodyMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyMapView.swift; sourceTree = "<group>"; };
 		D573CD42E3A315491B5DD60D /* CompositeFoodExtractorFMEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompositeFoodExtractorFMEval.swift; sourceTree = "<group>"; };
+		D6774194A44D69E2788A87C1 /* WeightChartTrendColorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightChartTrendColorTests.swift; sourceTree = "<group>"; };
 		D692B540EF483EFFC8EB0569 /* latency-baseline.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "latency-baseline.json"; sourceTree = "<group>"; };
 		D885CB53CD19C6746C973703 /* NebiusExerciseLoggerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NebiusExerciseLoggerTests.swift; sourceTree = "<group>"; };
 		DB2B555F5A4A1014221F8575 /* WeightSyncHealTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightSyncHealTests.swift; sourceTree = "<group>"; };
@@ -678,6 +680,7 @@
 				E1A5DA3E3543A99260250279 /* UIFlowTests.swift */,
 				722CE8B3925ADAFCD540ED0C /* UnitConversionEndToEndTests.swift */,
 				E88F42C0C954DCD310138696 /* V6CoachingNudgeTests.swift */,
+				D6774194A44D69E2788A87C1 /* WeightChartTrendColorTests.swift */,
 				DB2B555F5A4A1014221F8575 /* WeightSyncHealTests.swift */,
 				FA0DCFCDAFF06DBAD3CA13DB /* WidgetDataTests.swift */,
 				A42C87894C6E122BBE55A961 /* Fixtures */,
@@ -1358,6 +1361,7 @@
 				98FF97CFE71A6BBCFF976259 /* UIFlowTests.swift in Sources */,
 				2F25E1E95107ADEC87765F7B /* UnitConversionEndToEndTests.swift in Sources */,
 				4CEFAE0D5714919583BD7E3A /* V6CoachingNudgeTests.swift in Sources */,
+				D43B655157EDDB995FEF3019 /* WeightChartTrendColorTests.swift in Sources */,
 				7B4B58117970B965B8173DF5 /* WeightSyncHealTests.swift in Sources */,
 				B8CAE0734166CD113EE590E8 /* WidgetDataTests.swift in Sources */,
 			);

@@ -116,9 +116,14 @@ struct WeightChartView: View {
                     if let diff = totalDifference {
                         VStack(alignment: .trailing, spacing: 2) {
                             Text("Difference").font(.caption2).foregroundStyle(Theme.textTertiary)
+                            // Goal-aware, same mapping as the trend line and the
+                            // 3/7/30-day delta chips — a hardcoded down=green here
+                            // painted "+1.0 lbs" red beside a green "30-day +1.0
+                            // Increase" for a gaining goal (field 2026-07-17).
                             Text("\(diff >= 0 ? "+" : "")\(String(format: "%.1f", diff)) \(unit.displayName)")
                                 .font(.title3.weight(.bold).monospacedDigit())
-                                .foregroundStyle(diff < 0 ? Theme.deficit : diff > 0 ? Theme.surplus : .secondary)
+                                .foregroundStyle(abs(diff) <= 0.05 ? .secondary
+                                                 : Self.trendColor(emaDelta: diff, goalChangeKg: WeightGoal.load()?.totalChangeKg))
                         }
                     }
                 }
