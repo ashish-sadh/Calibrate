@@ -14,6 +14,7 @@ extension BarcodeCache {
             fiberGPer100g: product.fiberG,
             servingSizeG: product.servingSizeG,
             servingDescription: product.servingSize,
+            packageSizeG: product.packageSizeG,
             createdAt: ISO8601DateFormatter().string(from: Date())
         )
     }

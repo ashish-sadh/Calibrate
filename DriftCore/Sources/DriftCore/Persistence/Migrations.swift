@@ -9,7 +9,7 @@ public enum Migrations {
     /// fails with `Int.fetchOne(grdb_migrations) != currentVersion`.
     /// Stamped into the backup manifest so restore can detect a
     /// forward/backward migration scenario.
-    public static let currentVersion = 44
+    public static let currentVersion = 45
 
     public static func registerAll(_ migrator: inout DatabaseMigrator) {
         // v1: Weight tracking
@@ -706,6 +706,19 @@ public enum Migrations {
                                arguments: [Food.normalizedKey(row["name"]), row["id"] as Int64])
             }
             try db.create(index: "idx_food_normalized_key", on: "food", columns: ["normalized_key"])
+        }
+
+        // v45: whole-package size for packaged products (barcode scan / online
+        // search, from OpenFoodFacts product_quantity). A single-serve bottle
+        // must default to the entire package, not a name-keyword unit guess
+        // (field bug 2026-07-17: fairlife Core Power 414ml → "1 cup = 240g").
+        migrator.registerMigration("v45_package_size") { db in
+            try db.alter(table: "food") { t in
+                t.add(column: "package_size_g", .double)
+            }
+            try db.alter(table: "barcode_cache") { t in
+                t.add(column: "package_size_g", .double)
+            }
         }
     }
 

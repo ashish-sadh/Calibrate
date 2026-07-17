@@ -697,7 +697,8 @@ struct FoodSearchView: View {
                 carbsG: p.carbsG * servingG / 100,
                 fatG: p.fatG * servingG / 100,
                 fiberG: p.fiberG * servingG / 100,
-                pieceSizeG: piece
+                pieceSizeG: piece,
+                packageSizeG: p.packageSizeG
             )
             if let saved = FoodService.saveScannedFood(&food) {
                 newFoods.append(saved)

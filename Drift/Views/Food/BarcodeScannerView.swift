@@ -286,7 +286,8 @@ struct BarcodeLookupView: View {
                     proteinG: p.proteinG * servingG / 100,
                     carbsG: p.carbsG * servingG / 100,
                     fatG: p.fatG * servingG / 100,
-                    fiberG: p.fiberG * servingG / 100)
+                    fiberG: p.fiberG * servingG / 100,
+                    packageSizeG: p.packageSizeG)
     }
 
     private func productView(_ p: OpenFoodFactsService.Product) -> some View {
@@ -376,7 +377,8 @@ struct BarcodeLookupView: View {
                     servingSizeG: cached.servingSizeG,
                     piecesPerServing: OpenFoodFactsService.parsePieceCount(cached.servingDescription),
                     ingredientsText: nil,
-                    novaGroup: nil
+                    novaGroup: nil,
+                    packageSizeG: cached.packageSizeG
                 )
                 product = p
                 // #1048: seed a realistic serving (defaultAmount), not a hardcoded "1", so an
@@ -420,7 +422,8 @@ struct BarcodeLookupView: View {
                         fatG: p.fatG * servingG / 100,
                         fiberG: p.fiberG * servingG / 100,
                         ingredients: ingredientsJson,
-                        novaGroup: p.novaGroup)
+                        novaGroup: p.novaGroup,
+                        packageSizeG: p.packageSizeG)
         FoodService.persistScannedFood(&food)
         // Calculate servings multiplier from amount + unit
         let units = FoodUnit.smartUnits(for: food)

@@ -37,6 +37,13 @@ public struct Food: Identifiable, Codable, Sendable {
     public var tbspSizeG: Double?
     public var scoopSizeG: Double?
     public var bowlSizeG: Double?
+    /// Whole-package size in grams/ml for packaged products (barcode scan /
+    /// online search, from OpenFoodFacts `product_quantity`). Drives the
+    /// "1 bottle / 1 pack" unit so a single-serve product defaults to the
+    /// entire package instead of a name-keyword guess (field bug 2026-07-17:
+    /// fairlife Core Power 414ml defaulted to "1 cup = 240g"). nil for
+    /// non-packaged foods.
+    public var packageSizeG: Double?
     public var sodiumMg: Double?   // nullable — populated by v35 migration; absent = unknown
     public var sugarG: Double?     // nullable — populated by v35 migration; absent = unknown
 
@@ -59,6 +66,7 @@ public struct Food: Identifiable, Codable, Sendable {
         case tbspSizeG = "tbsp_size_g"
         case scoopSizeG = "scoop_size_g"
         case bowlSizeG = "bowl_size_g"
+        case packageSizeG = "package_size_g"
         case sodiumMg = "sodium_mg"
         case sugarG = "sugar_g"
     }
@@ -86,6 +94,7 @@ public struct Food: Identifiable, Codable, Sendable {
         tbspSizeG: Double? = nil,
         scoopSizeG: Double? = nil,
         bowlSizeG: Double? = nil,
+        packageSizeG: Double? = nil,
         sodiumMg: Double? = nil,
         sugarG: Double? = nil
     ) {
@@ -112,6 +121,7 @@ public struct Food: Identifiable, Codable, Sendable {
         self.tbspSizeG = tbspSizeG
         self.scoopSizeG = scoopSizeG
         self.bowlSizeG = bowlSizeG
+        self.packageSizeG = packageSizeG
         self.sodiumMg = sodiumMg
         self.sugarG = sugarG
     }
@@ -148,6 +158,7 @@ public struct Food: Identifiable, Codable, Sendable {
         tbspSizeG = try c.decodeIfPresent(Double.self, forKey: .tbspSizeG)
         scoopSizeG = try c.decodeIfPresent(Double.self, forKey: .scoopSizeG)
         bowlSizeG = try c.decodeIfPresent(Double.self, forKey: .bowlSizeG)
+        packageSizeG = try c.decodeIfPresent(Double.self, forKey: .packageSizeG)
         sodiumMg = try c.decodeIfPresent(Double.self, forKey: .sodiumMg)
         sugarG = try c.decodeIfPresent(Double.self, forKey: .sugarG)
     }

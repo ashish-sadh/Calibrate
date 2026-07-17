@@ -248,6 +248,19 @@ public struct FoodUnit: Hashable {
         return nil
     }
 
+    /// Container label for a whole-package unit: drinks read as a bottle or
+    /// (at can sizes, 300–380ml) a can; everything else is "pack".
+    static func packageUnitLabel(for name: String, words: Set<String>, sizeG: Double) -> String {
+        let liquidSubstrings = ["buttermilk", "coconut water", "smoothie", "lemonade", "kombucha",
+                                "drink", "beverage"]
+        let liquidWords: Set<String> = ["milk", "juice", "shake", "soda", "cola", "water", "lassi",
+                                        "chaas", "tea", "chai", "latte", "coffee", "espresso"]
+        let isLiquid = liquidSubstrings.contains(where: { name.contains($0) })
+            || !liquidWords.isDisjoint(with: words)
+        guard isLiquid else { return "pack" }
+        return (300...380).contains(sizeG) ? "can" : "bottle"
+    }
+
     public static func smartUnits(for food: Food) -> [FoodUnit] {
         let lower = food.name.lowercased()
         let words = Set(lower.split(whereSeparator: { !$0.isLetter }).map { String($0) })
@@ -258,15 +271,17 @@ public struct FoodUnit: Hashable {
         // "240 ml" — but ONLY when the keyword rules would otherwise give a GENERIC unit. A
         // specific rule (soup/stock → bowl) still wins, so we don't clobber a good default.
         var keyword = primaryUnit(for: lower, servingSize: food.servingSize, words: words, servingUnit: food.servingUnit)
-        // Scanned products: a tbsp/tsp keyword hit whose grams are well under
-        // the label's serving means the keyword matched an INGREDIENT word in
-        // the product name, not the product ("Honey" in "Rip Van Wafels …
-        // Honey & Oats" → 1 tbsp = 21g for a 33g wafel, field case
-        // 2026-07-10). Real condiment scans (olive oil, 15g serving ≈ 1 tbsp)
-        // pass the check untouched.
-        if food.category == "Scanned", food.servingSize > 0,
-           keyword.label == "tbsp" || keyword.label == "tsp",
-           food.servingSize > keyword.gramsEquivalent * 1.4 {
+        // Packaged products: a keyword hit whose grams disagree with the
+        // label's serving means the keyword matched an INGREDIENT word in the
+        // product name, not the product ("Honey" in "Rip Van Wafels … Honey &
+        // Oats" → 1 tbsp = 21g for a 33g wafel, field case 2026-07-10;
+        // "milk shake" in fairlife Core Power → 1 cup = 240g for a 414ml
+        // bottle, field case 2026-07-17). The label serving is ground truth
+        // for a packaged product; matching units (olive oil, 15g serving ≈
+        // 1 tbsp) pass the check untouched.
+        if food.category == "Scanned" || food.packageSizeG != nil, food.servingSize > 0,
+           !["g", "ml", "serving"].contains(keyword.label),
+           food.servingSize > keyword.gramsEquivalent * 1.4 || keyword.gramsEquivalent > food.servingSize * 1.4 {
             keyword = FoodUnit(label: "serving", gramsEquivalent: food.servingSize)
         }
         let primary: FoodUnit
@@ -277,9 +292,30 @@ public struct FoodUnit: Hashable {
         } else {
             primary = keyword
         }
-        units.append(primary)
+        // Whole-package unit (field 2026-07-17): a packaged product's honest
+        // default is the package itself when it's single-serve (a bottle, a
+        // can, a bar wrapper) — name-keyword portion guesses are for
+        // unpackaged foods. Multi-serve packages (a 500g jar) keep the label
+        // serving as default and offer "1 pack" as an extra pill.
+        if let pkg = food.packageSizeG, pkg > 0 {
+            let pkgUnit = FoodUnit(label: packageUnitLabel(for: lower, words: words, sizeG: pkg),
+                                   gramsEquivalent: pkg)
+            let singleServe = food.servingSize > 0 ? pkg <= food.servingSize * 1.5 + 1 : pkg <= 600
+            if singleServe {
+                units.append(pkgUnit)
+                // Keep the serving pill only when it's a genuinely different
+                // portion — a "serving" within 10% of the package is the same
+                // thing twice.
+                if abs(primary.gramsEquivalent - pkg) > pkg * 0.1 { units.append(primary) }
+            } else {
+                units.append(primary)
+                units.append(pkgUnit)
+            }
+        } else {
+            units.append(primary)
+        }
 
-        if primary.label != "g" {
+        if !units.contains(where: { $0.label == "g" }) {
             units.append(FoodUnit(label: "g", gramsEquivalent: 1))
         }
 
@@ -435,7 +471,9 @@ public struct FoodUnit: Hashable {
     private static let bulkAndVolumeLabels: Set<String> = [
         "g", "ml", "kg", "lb", "oz", "fl oz", "l",
         "cup", "tbsp", "tsp", "scoop", "bowl",
-        "spray", "serving"
+        "spray", "serving",
+        // whole-package units — their grams ARE the package, never a piece
+        "pack", "bottle", "can", "16 fl oz"
     ]
 
     private static func reconcile(_ unit: FoodUnit, with food: Food) -> FoodUnit {

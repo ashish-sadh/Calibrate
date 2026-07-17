@@ -560,6 +560,76 @@ extension SmartUnitsGoldSetTests {
     }
 }
 
+// MARK: - Whole-package units (field 2026-07-17: fairlife Core Power scan
+// defaulted to "1 cup = 240g" instead of the 414ml single-serve bottle).
+
+extension SmartUnitsGoldSetTests {
+
+    /// A single-serve packaged drink defaults to the ENTIRE package.
+    func testSingleServeBottleDefaultsToWholePackage() {
+        let fairlife = Food(name: "HIGH PROTEIN MILK SHAKE - fa!rlife CORE POWER",
+                            category: "Scanned", servingSize: 414, servingUnit: "g",
+                            calories: 170, packageSizeG: 414)
+        let units = FoodUnit.smartUnits(for: fairlife)
+        XCTAssertEqual(units.first?.label, "bottle", "got \(units.map(\.label))")
+        XCTAssertEqual(units.first?.gramsEquivalent ?? 0, 414, accuracy: 0.01)
+        XCTAssertEqual(FoodUnit.defaultAmount(for: fairlife), "1")
+    }
+
+    /// No package data, but the label serving (414) disagrees with the
+    /// "milk shake" keyword guess (cup = 240g) — the label serving wins for
+    /// scanned products; the keyword guess must not survive.
+    func testScannedKeywordMismatchFallsBackToLabelServing() {
+        let fairlife = Food(name: "HIGH PROTEIN MILK SHAKE - fa!rlife CORE POWER",
+                            category: "Scanned", servingSize: 414, servingUnit: "g", calories: 170)
+        let first = FoodUnit.smartUnits(for: fairlife).first
+        XCTAssertEqual(first?.label, "serving", "got \(first?.label ?? "nil")")
+        XCTAssertEqual(first?.gramsEquivalent ?? 0, 414, accuracy: 0.01)
+    }
+
+    /// Can-sized drinks read as "can", not "bottle".
+    func testCanSizedDrinkGetsCanLabel() {
+        let cola = Food(name: "Cola Zero Sugar", category: "Scanned",
+                        servingSize: 355, servingUnit: "g", calories: 0, packageSizeG: 355)
+        XCTAssertEqual(FoodUnit.smartUnits(for: cola).first?.label, "can")
+    }
+
+    /// A multi-serve package (a 510g jar ≈ 16 servings) must NOT default to
+    /// the whole jar — label serving stays the default, the package is one
+    /// tap away as "pack".
+    func testMultiServeJarKeepsServingDefaultAndOffersPack() {
+        let pb = Food(name: "Creamy Peanut Butter - Brand", category: "Scanned",
+                      servingSize: 32, servingUnit: "g", calories: 190, packageSizeG: 510)
+        let units = FoodUnit.smartUnits(for: pb)
+        XCTAssertNotEqual(units.first?.label, "pack",
+                          "a 16-serving jar must not default to 3000 cal: \(units.map(\.label))")
+        XCTAssertTrue(units.contains { $0.label == "pack" && abs($0.gramsEquivalent - 510) < 0.01 },
+                      "whole jar should be offered as a pill: \(units.map(\.label))")
+    }
+
+    /// A solid single-serve item (a bar in a wrapper) defaults to the pack.
+    func testSingleServeSolidDefaultsToPack() {
+        let bar = Food(name: "Chocolate Chip Energy Bar - Brand", category: "Scanned",
+                       servingSize: 45, servingUnit: "g", calories: 200, packageSizeG: 45)
+        let units = FoodUnit.smartUnits(for: bar)
+        XCTAssertEqual(units.first?.gramsEquivalent ?? 0, 45, accuracy: 0.01,
+                       "default must be the whole 45g bar: \(units.map(\.label))")
+    }
+
+    /// OFF package-quantity parsing: numeric, string-numeric, display-string
+    /// fallbacks, and junk rejection.
+    func testParsePackageSize() {
+        XCTAssertEqual(OpenFoodFactsService.parsePackageSize(productQuantity: 414.0, quantityString: nil) ?? 0, 414, accuracy: 0.01)
+        XCTAssertEqual(OpenFoodFactsService.parsePackageSize(productQuantity: "414", quantityString: nil) ?? 0, 414, accuracy: 0.01)
+        XCTAssertEqual(OpenFoodFactsService.parsePackageSize(productQuantity: nil, quantityString: "14 fl oz") ?? 0, 414.03, accuracy: 0.1)
+        XCTAssertEqual(OpenFoodFactsService.parsePackageSize(productQuantity: nil, quantityString: "1.5 L") ?? 0, 1500, accuracy: 0.01)
+        XCTAssertNil(OpenFoodFactsService.parsePackageSize(productQuantity: 4.0, quantityString: nil),
+                     "a pack COUNT masquerading as quantity is junk")
+        XCTAssertNil(OpenFoodFactsService.parsePackageSize(productQuantity: 9000.0, quantityString: nil))
+        XCTAssertNil(OpenFoodFactsService.parsePackageSize(productQuantity: nil, quantityString: nil))
+    }
+}
+
 extension SmartUnitsGoldSetTests {
     /// The stored logged portion beats the keyword guesser (#1013: a 150 g
     /// paneer log displayed "1.5 cups").

@@ -20,15 +20,20 @@ public enum OpenFoodFactsService {
         public let piecesPerServing: Int? // e.g. "3 pieces (85g)" → 3; nil if not a multi-piece serving
         public let ingredientsText: String?  // raw ingredients string from OpenFoodFacts
         public let novaGroup: Int?           // NOVA 1-4 processing level
+        /// Whole-package size in g/ml from `product_quantity` (fallback: the
+        /// `quantity` display string). nil when absent or implausible.
+        public let packageSizeG: Double?
 
         public init(barcode: String, name: String, brand: String?, servingSize: String?,
                     calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double,
-                    servingSizeG: Double?, piecesPerServing: Int?, ingredientsText: String?, novaGroup: Int?) {
+                    servingSizeG: Double?, piecesPerServing: Int?, ingredientsText: String?, novaGroup: Int?,
+                    packageSizeG: Double? = nil) {
             self.barcode = barcode; self.name = name; self.brand = brand
             self.servingSize = servingSize; self.calories = calories
             self.proteinG = proteinG; self.carbsG = carbsG; self.fatG = fatG; self.fiberG = fiberG
             self.servingSizeG = servingSizeG; self.piecesPerServing = piecesPerServing
             self.ingredientsText = ingredientsText; self.novaGroup = novaGroup
+            self.packageSizeG = packageSizeG
         }
     }
 
@@ -48,7 +53,7 @@ public enum OpenFoodFactsService {
 
     /// Look up a product by barcode (EAN/UPC).
     public static func lookup(barcode: String) async throws -> Product {
-        let urlString = "https://world.openfoodfacts.org/api/v2/product/\(barcode).json?fields=product_name,brands,serving_size,nutriments,ingredients_text,nova_group"
+        let urlString = "https://world.openfoodfacts.org/api/v2/product/\(barcode).json?fields=product_name,brands,serving_size,nutriments,ingredients_text,nova_group,quantity,product_quantity"
         guard let url = URL(string: urlString) else {
             throw LookupError.networkError("Invalid URL")
         }
@@ -96,6 +101,8 @@ public enum OpenFoodFactsService {
         let pieces = parsePieceCount(servingStr)
         let ingredientsText = product["ingredients_text"] as? String
         let novaGroup = product["nova_group"] as? Int
+        let packageG = parsePackageSize(productQuantity: product["product_quantity"],
+                                        quantityString: product["quantity"] as? String)
 
         Log.foodLog.info("Found: \(name) (\(brand ?? "")) - \(Int(calories))cal/100g, NOVA \(novaGroup ?? 0)")
 
@@ -112,14 +119,15 @@ public enum OpenFoodFactsService {
             servingSizeG: servingG,
             piecesPerServing: pieces,
             ingredientsText: ingredientsText,
-            novaGroup: novaGroup
+            novaGroup: novaGroup,
+            packageSizeG: packageG
         )
     }
 
     /// Text search for foods by name. Returns up to `limit` products with nutrition data.
     public static func search(query: String, limit: Int = 10) async throws -> [Product] {
         let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
-        let urlString = "https://search.openfoodfacts.org/search?q=\(encoded)&page_size=\(limit)&fields=product_name,brands,serving_size,nutriments,code"
+        let urlString = "https://search.openfoodfacts.org/search?q=\(encoded)&page_size=\(limit)&fields=product_name,brands,serving_size,nutriments,code,quantity,product_quantity"
         guard let url = URL(string: urlString) else { return [] }
 
         var request = URLRequest(url: url)
@@ -153,8 +161,35 @@ public enum OpenFoodFactsService {
                            fiberG: fiber, servingSizeG: parseServingSize(servingStr),
                            piecesPerServing: parsePieceCount(servingStr),
                            ingredientsText: product["ingredients_text"] as? String,
-                           novaGroup: product["nova_group"] as? Int)
+                           novaGroup: product["nova_group"] as? Int,
+                           packageSizeG: parsePackageSize(productQuantity: product["product_quantity"],
+                                                          quantityString: product["quantity"] as? String))
         }
+    }
+
+    /// Whole-package size in g/ml. `product_quantity` is OFF's normalized
+    /// numeric (arrives as a Number or a String depending on the product);
+    /// fall back to parsing the `quantity` display string ("14 fl oz",
+    /// "414 ml"). Sizes outside 10–5000 g/ml are database junk (a "4" pack
+    /// count, a 0, a barcode pasted in the field) — treat as absent.
+    public static func parsePackageSize(productQuantity: Any?, quantityString: String?) -> Double? {
+        let numeric: Double? = {
+            if let d = productQuantity as? Double, d > 0 { return d }
+            if let s = productQuantity as? String, let d = Double(s), d > 0 { return d }
+            return nil
+        }()
+        let fromString: Double? = parseServingSize(quantityString) ?? {
+            // Liters only appear at package scale ("1 L", "1.5l"), never as a
+            // serving — parsed here, not in parseServingSize.
+            guard let s = quantityString?.lowercased(),
+                  let regex = try? NSRegularExpression(pattern: #"(\d+\.?\d*)\s*l\b"#),
+                  let match = regex.firstMatch(in: s, range: NSRange(s.startIndex..., in: s)),
+                  let range = Range(match.range(at: 1), in: s),
+                  let liters = Double(String(s[range])) else { return nil }
+            return liters * 1000
+        }()
+        guard let size = numeric ?? fromString else { return nil }
+        return (10...5000).contains(size) ? size : nil
     }
 
     /// Parse piece/unit count from serving strings like "3 pieces (85g)" → 3, "2 bars (60g)" → 2.

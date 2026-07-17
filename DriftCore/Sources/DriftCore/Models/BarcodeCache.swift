@@ -12,6 +12,9 @@ public struct BarcodeCache: Codable, Sendable, FetchableRecord, PersistableRecor
     public var fiberGPer100g: Double
     public var servingSizeG: Double?
     public var servingDescription: String?
+    /// Whole-package size in g/ml (OpenFoodFacts product_quantity). nil when
+    /// the product data doesn't state it.
+    public var packageSizeG: Double?
     public var createdAt: String
 
     public static let databaseTableName = "barcode_cache"
@@ -25,6 +28,7 @@ public struct BarcodeCache: Codable, Sendable, FetchableRecord, PersistableRecor
         case fiberGPer100g = "fiber_g_per_100g"
         case servingSizeG = "serving_size_g"
         case servingDescription = "serving_description"
+        case packageSizeG = "package_size_g"
         case createdAt = "created_at"
     }
 
@@ -39,6 +43,7 @@ public struct BarcodeCache: Codable, Sendable, FetchableRecord, PersistableRecor
         fiberGPer100g: Double = 0,
         servingSizeG: Double? = nil,
         servingDescription: String? = nil,
+        packageSizeG: Double? = nil,
         createdAt: String
     ) {
         self.barcode = barcode
@@ -51,6 +56,7 @@ public struct BarcodeCache: Codable, Sendable, FetchableRecord, PersistableRecor
         self.fiberGPer100g = fiberGPer100g
         self.servingSizeG = servingSizeG
         self.servingDescription = servingDescription
+        self.packageSizeG = packageSizeG
         self.createdAt = createdAt
     }
 
