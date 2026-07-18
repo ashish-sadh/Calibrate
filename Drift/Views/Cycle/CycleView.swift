@@ -3,10 +3,10 @@ import DriftCore
 import Charts
 
 struct CycleView: View {
-    @State private var entries: [HealthKitService.CycleEntry] = []
-    @State private var ovulationEntries: [HealthKitService.OvulationEntry] = []
-    @State private var bbtEntries: [HealthKitService.BBTEntry] = []
-    @State private var spottingEntries: [HealthKitService.SpottingEntry] = []
+    @State private var entries: [CycleEntry] = []
+    @State private var ovulationEntries: [OvulationEntry] = []
+    @State private var bbtEntries: [BBTEntry] = []
+    @State private var spottingEntries: [SpottingEntry] = []
     @State private var hrvHistory: [(date: Date, ms: Double)] = []
     @State private var rhrHistory: [(date: Date, bpm: Double)] = []
     @State private var sleepHistory: [(date: Date, hours: Double)] = []
@@ -502,7 +502,10 @@ struct CycleView: View {
     // MARK: - Data Loading
 
     private func loadData() async {
-        let hk = HealthKitService.shared
+        guard let hk = DriftPlatform.health else {
+            isLoading = false
+            return
+        }
 
         // Fetch all data independently — one failure doesn't block others
         entries = (try? await hk.fetchCycleHistory(days: 180)) ?? []

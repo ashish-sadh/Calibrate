@@ -44,13 +44,30 @@ public struct CaloriesBurned: Sendable {
     }
 }
 
+/// Age / height / biological sex sourced from the platform health store.
+/// All fields optional — the store may have none of them.
+public struct HealthUserProfile: Sendable {
+    public let age: Int?
+    public let heightCm: Double?
+    public let sex: TDEEEstimator.Sex?
+
+    public init(age: Int?, heightCm: Double?, sex: TDEEEstimator.Sex?) {
+        self.age = age
+        self.heightCm = heightCm
+        self.sex = sex
+    }
+}
+
 // MARK: - HealthDataProvider Protocol
 
-/// Adapter for HealthKit-backed data. iOS Drift app provides the concrete impl;
-/// macOS tests inject a stub. Cross-platform services in DriftCore
-/// (e.g. ToolRegistration handlers) reach HealthKit only through this seam.
+/// Adapter for platform health-store data (HealthKit on iOS, Health Connect on
+/// Android). The app shell provides the concrete impl; macOS tests inject a
+/// stub. Cross-platform services in DriftCore (e.g. ToolRegistration handlers)
+/// and all Views reach the health store only through this seam.
 public protocol HealthDataProvider: Sendable {
     @MainActor var isAvailable: Bool { get }
+    @MainActor func requestAuthorization() async throws
+    @MainActor func fetchUserProfile() async -> HealthUserProfile
     @MainActor func fetchRecentWorkouts(days: Int) async throws -> [HealthWorkout]
     @MainActor func fetchRecentSleepData(days: Int) async throws -> [SleepNight]
     @MainActor func fetchCaloriesBurned(for date: Date) async throws -> CaloriesBurned
@@ -59,5 +76,18 @@ public protocol HealthDataProvider: Sendable {
     @MainActor func fetchSleepDetail(for date: Date) async throws -> SleepDetail
     @MainActor func fetchHRV(for date: Date) async throws -> Double
     @MainActor func fetchRestingHeartRate(for date: Date) async throws -> Double
+    @MainActor func fetchRespiratoryRate(for date: Date) async throws -> Double
+    @MainActor func fetchGlucoseReadings(from startDate: Date, to endDate: Date) async throws -> [GlucoseReading]
     @MainActor func fetchCycleHistory(days: Int) async throws -> [CycleEntry]
+    @MainActor func fetchOvulationHistory(days: Int) async throws -> [OvulationEntry]
+    @MainActor func fetchBBTHistory(days: Int) async throws -> [BBTEntry]
+    @MainActor func fetchSpottingHistory(days: Int) async throws -> [SpottingEntry]
+    @MainActor func hasCycleData() async -> Bool
+    @MainActor func fetchHRVHistory(days: Int) async throws -> [(date: Date, ms: Double)]
+    @MainActor func fetchRestingHeartRateHistory(days: Int) async throws -> [(date: Date, bpm: Double)]
+    @MainActor func fetchRespiratoryRateHistory(days: Int) async throws -> [(date: Date, rpm: Double)]
+    @MainActor func fetchSleepHistory(days: Int) async throws -> [(date: Date, hours: Double)]
+    @MainActor func syncWeight() async throws -> Int
+    @MainActor func fullResyncWeight() async throws -> Int
+    @MainActor func syncBodyComposition() async throws -> Int
 }

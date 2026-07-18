@@ -250,7 +250,7 @@ struct SleepRecoveryView: View {
         .card()
     }
 
-    private func stageBar(_ d: HealthKitService.SleepDetail) -> some View {
+    private func stageBar(_ d: SleepDetail) -> some View {
         let total = d.totalHours + d.awakeHours
         guard total > 0 else { return AnyView(EmptyView()) }
         return AnyView(
@@ -485,7 +485,7 @@ struct SleepRecoveryView: View {
     // MARK: - Data Loading
 
     private func loadData() async {
-        let hk = HealthKitService.shared
+        guard let hk = DriftPlatform.health else { return }
         let today = Date()
 
         try? await hk.requestAuthorization()
@@ -512,7 +512,7 @@ struct SleepRecoveryView: View {
 
         // Today's vitals (each independent)
         let sleepDetail = (try? await hk.fetchSleepDetail(for: today))
-            ?? HealthKitService.SleepDetail(totalHours: 0, remHours: 0, deepHours: 0, lightHours: 0, awakeHours: 0, bedStart: nil, bedEnd: nil)
+            ?? SleepDetail(totalHours: 0, remHours: 0, deepHours: 0, lightHours: 0, awakeHours: 0, bedStart: nil, bedEnd: nil)
         let hrv = (try? await hk.fetchHRV(for: today)) ?? 0
         let rhr = (try? await hk.fetchRestingHeartRate(for: today)) ?? 0
         let resp = (try? await hk.fetchRespiratoryRate(for: today)) ?? 0

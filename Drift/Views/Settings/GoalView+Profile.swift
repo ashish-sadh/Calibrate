@@ -313,7 +313,8 @@ struct ProfileView: View {
     private func tryAutoFillProfile() {
         guard !profileComplete else { return }
         Task {
-            let profile = await HealthKitService.shared.fetchUserProfile()
+            guard let health = DriftPlatform.health else { return }
+            let profile = await health.fetchUserProfile()
             var changed = false
             // Never auto-fill sex over an explicit "N/A".
             if tdeeConfig.sex == nil, tdeeConfig.sexUndisclosed != true,

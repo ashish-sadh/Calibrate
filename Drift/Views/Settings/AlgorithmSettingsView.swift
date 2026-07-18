@@ -425,7 +425,8 @@ struct AlgorithmSettingsView: View {
     private func prefillFromAppleHealth() {
         #if !targetEnvironment(simulator)
         Task {
-            let profile = await HealthKitService.shared.fetchUserProfile()
+            guard let health = DriftPlatform.health else { return }
+            let profile = await health.fetchUserProfile()
             var changed = false
             if tdeeConfig.age == nil, let age = profile.age, age > 0 { tdeeConfig.age = age; changed = true }
             if tdeeConfig.heightCm == nil, let h = profile.heightCm, h > 0 { tdeeConfig.heightCm = round(h * 10) / 10; changed = true }
@@ -437,7 +438,7 @@ struct AlgorithmSettingsView: View {
 
     private func loadAppleHealthData() async {
         #if !targetEnvironment(simulator)
-        let hk = HealthKitService.shared
+        guard let hk = DriftPlatform.health else { return }
         if let cal = try? await hk.fetchCaloriesBurned(for: Date()) {
             ahResting = cal.basal
             ahActive = cal.active

@@ -487,7 +487,11 @@ struct GlucoseTabView: View {
             }
 
             if dataSource == .appleHealth {
-                readings = (try? await HealthKitService.shared.fetchGlucoseReadings(from: start, to: end)) ?? []
+                if let health = DriftPlatform.health {
+                    readings = (try? await health.fetchGlucoseReadings(from: start, to: end)) ?? []
+                } else {
+                    readings = []
+                }
             } else {
                 let startStr = DateFormatters.iso8601.string(from: start)
                 let endStr = DateFormatters.iso8601.string(from: end)

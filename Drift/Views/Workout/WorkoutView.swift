@@ -504,7 +504,7 @@ struct WorkoutView: View {
     }
 
     private func refreshHealthData() async {
-        let hk = HealthKitService.shared
+        guard let hk = DriftPlatform.health else { return }
         activeCalories = (try? await hk.fetchCaloriesBurned(for: Date()).active) ?? 0
         steps = (try? await hk.fetchSteps(for: Date())) ?? 0
         healthWorkouts = (try? await hk.fetchRecentWorkouts(days: 7)) ?? []

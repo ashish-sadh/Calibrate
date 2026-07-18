@@ -57,11 +57,7 @@ final class HealthKitService {
 
     // MARK: - User Profile (age, height, sex)
 
-    struct UserProfile: Sendable {
-        let age: Int?
-        let heightCm: Double?
-        let sex: TDEEEstimator.Sex?
-    }
+    typealias UserProfile = HealthUserProfile
 
     func fetchUserProfile() async -> UserProfile {
         guard isAvailable else { return UserProfile(age: nil, heightCm: nil, sex: nil) }

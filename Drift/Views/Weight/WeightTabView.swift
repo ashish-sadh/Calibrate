@@ -187,7 +187,9 @@ struct WeightTabView: View {
             // HK weight sync only re-runs when stale — it was a fresh
             // anchored query + full reload on every tab re-selection.
             guard Date().timeIntervalSince(viewModel.lastLoadedAt) > 30 else { return }
-            let _ = try? await HealthKitService.shared.syncWeight()
+            if let health = DriftPlatform.health {
+                _ = try? await health.syncWeight()
+            }
             viewModel.loadEntries()
             #endif
         }
@@ -381,8 +383,9 @@ struct WeightTabView: View {
                         //    "broken".
                         syncFeedback = "Syncing…"
                         do {
-                            try await HealthKitService.shared.requestAuthorization()
-                            let count = try await HealthKitService.shared.fullResyncWeight()
+                            guard let health = DriftPlatform.health else { return }
+                            try await health.requestAuthorization()
+                            let count = try await health.fullResyncWeight()
                             viewModel.loadEntries()
                             syncFeedback = count > 0 ? nil :
                                 "No weight data found. If Apple Health has your weight, enable Weight under Settings → Privacy & Security → Health → Drift."

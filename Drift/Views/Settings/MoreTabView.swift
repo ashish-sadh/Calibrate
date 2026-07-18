@@ -125,7 +125,7 @@ struct MoreTabView: View {
             .toolbarColorScheme(.light, for: .navigationBar)
             // V7: per-tab ChatIconButton dropped — bottom-right
             // floating ChatIconButton in ContentView covers all tabs.
-            .task { hasCycleData = await HealthKitService.shared.hasCycleData() }
+            .task { hasCycleData = await DriftPlatform.health?.hasCycleData() ?? false }
         }
         .id(navId)
         .onChange(of: selectedTab) { oldTab, newTab in
@@ -255,9 +255,10 @@ struct SettingsView: View {
                     Button {
                         Task {
                             do {
-                                try await HealthKitService.shared.requestAuthorization()
-                                let weight = try await HealthKitService.shared.fullResyncWeight()
-                                let bodyComp = (try? await HealthKitService.shared.syncBodyComposition()) ?? 0
+                                guard let health = DriftPlatform.health else { return }
+                                try await health.requestAuthorization()
+                                let weight = try await health.fullResyncWeight()
+                                let bodyComp = (try? await health.syncBodyComposition()) ?? 0
                                 syncStatus = weight + bodyComp > 0
                                     ? "Imported \(weight) weight + \(bodyComp) body-composition entries"
                                     : "No data found. If Apple Health has your weight, enable Weight under Settings → Privacy & Security → Health → Drift, then sync again."
