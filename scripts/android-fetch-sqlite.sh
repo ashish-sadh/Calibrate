@@ -21,7 +21,7 @@ if [ ! -f sqlite3.c ]; then
   mv "$dir_name"/* . && rmdir "$dir_name"
 fi
 
-for abi in aarch64-linux-android28 x86_64-linux-android28; do
+for abi in aarch64-linux-android28 x86_64-linux-android28 armv7a-linux-androideabi28 i686-linux-android28; do
   # SQLITE_ENABLE_SNAPSHOT: GRDB's Android build references sqlite3_snapshot_*
   # (its DISABLE_SNAPSHOT define is Linux-only) — without this the app .so has
   # unresolved snapshot symbols and dlopen fails at launch.
@@ -40,4 +40,6 @@ SYSROOT="$NDK_HOME/toolchains/llvm/prebuilt/darwin-x86_64/sysroot"
 cp sqlite3.h sqlite3ext.h "$SYSROOT/usr/include/"
 cp libsqlite3-aarch64-linux-android28.a "$SYSROOT/usr/lib/aarch64-linux-android/libsqlite3.a"
 cp libsqlite3-x86_64-linux-android28.a "$SYSROOT/usr/lib/x86_64-linux-android/libsqlite3.a"
+cp libsqlite3-armv7a-linux-androideabi28.a "$SYSROOT/usr/lib/arm-linux-androideabi/libsqlite3.a"
+cp libsqlite3-i686-linux-android28.a "$SYSROOT/usr/lib/i686-linux-android/libsqlite3.a"
 echo "installed sqlite into NDK sysroot: $SYSROOT"
