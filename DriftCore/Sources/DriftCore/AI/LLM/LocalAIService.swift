@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import DriftCore
 
 /// Orchestrates AI inference — picks backend (MLX or llama.cpp) and model tier based on device.
@@ -132,6 +133,7 @@ public final class LocalAIService {
             return
         }
 
+        #if canImport(llama)
         // Load on background thread so UI can show "Preparing AI assistant..." spinner
         let llama = LlamaCppBackend(modelPath: modelPath)
         Task.detached(priority: .userInitiated) {
@@ -147,6 +149,9 @@ public final class LocalAIService {
                 }
             }
         }
+        #else
+        state = .error("Local llama.cpp backend not built for this platform.")
+        #endif
     }
 
     /// Adopt a local model that just finished loading on the detached task — but
@@ -327,12 +332,18 @@ public final class LocalAIService {
     /// path. The shipped app uses `loadModel()` (sandbox dir + async load); this
     /// is the injection seam those tools lack. Throws if the model fails to load.
     public func useLocalBackend(modelPath: URL) throws {
+        #if canImport(llama)
         backend?.unload()
         let llama = LlamaCppBackend(modelPath: modelPath)
         try llama.loadSync()
         backend = llama
         activeBackendType = .llamaCpp
         state = .ready
+        #else
+        throw NSError(domain: "LocalAIService", code: 1, userInfo: [
+            NSLocalizedDescriptionKey: "Local llama.cpp backend not built for this platform.",
+        ])
+        #endif
     }
 
     // MARK: - Foundation Models Backend (Apple Intelligence on-device)

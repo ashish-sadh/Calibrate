@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// Fetch a web page by URL and return its readable text — for when the coach
 /// needs to read a specific page (e.g. one surfaced by `web_search`). Read-only,

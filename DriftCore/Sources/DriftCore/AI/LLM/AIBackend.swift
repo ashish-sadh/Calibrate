@@ -109,18 +109,26 @@ public enum DeviceCapability {
     /// Ensures at least 2GB remains free after download.
     public static func hasEnoughDiskSpace(for tier: AIModelTier) -> Bool {
         let needed = Int64(tier.downloadSizeMB) * 1024 * 1024 + 2 * 1024 * 1024 * 1024 // model + 2GB buffer
-        let docsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        guard let values = try? docsURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]),
-              let available = values.volumeAvailableCapacityForImportantUsage else { return false }
+        guard let available = availableDiskBytes else { return false }
         return available > needed
+    }
+
+    /// Purgeable-aware free space on Darwin; filesystem free space elsewhere.
+    private static var availableDiskBytes: Int64? {
+        let docsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        #if canImport(Darwin)
+        guard let values = try? docsURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]),
+              let available = values.volumeAvailableCapacityForImportantUsage else { return nil }
+        return available
+        #else
+        let attrs = try? FileManager.default.attributesOfFileSystem(forPath: docsURL.path)
+        return (attrs?[.systemFreeSize] as? NSNumber)?.int64Value
+        #endif
     }
 
     /// Free disk space in GB.
     public static var freeDiskGB: Double {
-        let docsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-        guard let values = try? docsURL.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey]),
-              let available = values.volumeAvailableCapacityForImportantUsage else { return 0 }
-        return Double(available) / (1024 * 1024 * 1024)
+        Double(availableDiskBytes ?? 0) / (1024 * 1024 * 1024)
     }
 
     /// Device RAM in GB.

@@ -1,6 +1,11 @@
+#if canImport(ZIPFoundation)
 import Foundation
 import GRDB
+#if canImport(CryptoKit)
 import CryptoKit
+#else
+import Crypto
+#endif
 import ZIPFoundation
 
 public enum BackupPackagerError: Error, Equatable {
@@ -197,3 +202,4 @@ extension BackupPackager {
         }
     }
 }
+#endif // canImport(ZIPFoundation)

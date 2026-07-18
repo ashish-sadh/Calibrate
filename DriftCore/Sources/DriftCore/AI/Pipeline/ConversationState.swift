@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import DriftCore
 
 /// Persistent multi-turn conversation state. Singleton — survives navigation.

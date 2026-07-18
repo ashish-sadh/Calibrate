@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 
 /// Tracks which screen the user is currently viewing for context-aware AI responses.
 @MainActor @Observable

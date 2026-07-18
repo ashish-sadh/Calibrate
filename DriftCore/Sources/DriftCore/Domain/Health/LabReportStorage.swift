@@ -1,6 +1,10 @@
 import Foundation
 import DriftCore
+#if canImport(CryptoKit)
 import CryptoKit
+#else
+import Crypto
+#endif
 
 /// Handles encrypted local storage of lab report files using CryptoKit + iOS Data Protection.
 public enum LabReportStorage {
@@ -12,13 +16,15 @@ public enum LabReportStorage {
         return dir
     }()
 
-    /// Key stored in Keychain with iOS Data Protection (thisDeviceOnly).
+    /// Key stored in the Keychain with iOS Data Protection (thisDeviceOnly) on
+    /// Apple platforms; in a 0600 key file on Android until the Keystore-backed
+    /// secure-store adapter lands.
     private static var encryptionKey: SymmetricKey {
-        if let existing = loadKeyFromKeychain() {
+        if let existing = loadPersistedKey() {
             return existing
         }
         let key = SymmetricKey(size: .bits256)
-        saveKeyToKeychain(key)
+        persistKey(key)
         return key
     }
 
@@ -29,7 +35,11 @@ public enum LabReportStorage {
         let hash = SHA256.hash(data: data).compactMap { String(format: "%02x", $0) }.joined()
         let encrypted = try encrypt(data: data)
         let fileURL = reportsDir.appendingPathComponent(hash)
+        #if canImport(Darwin)
         try encrypted.write(to: fileURL, options: .completeFileProtection)
+        #else
+        try encrypted.write(to: fileURL, options: .atomic)
+        #endif
         Log.biomarkers.info("Saved encrypted report: \(fileName) (\(data.count) bytes)")
         return hash
     }
@@ -62,11 +72,12 @@ public enum LabReportStorage {
         return try AES.GCM.open(sealedBox, using: encryptionKey)
     }
 
-    // MARK: - Keychain
+    // MARK: - Key persistence
 
+    #if canImport(Security)
     private static let keychainAccount = "com.drift.health.labReportKey"
 
-    private static func saveKeyToKeychain(_ key: SymmetricKey) {
+    private static func persistKey(_ key: SymmetricKey) {
         let keyData = key.withUnsafeBytes { Data($0) }
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -78,7 +89,7 @@ public enum LabReportStorage {
         SecItemAdd(query as CFDictionary, nil)
     }
 
-    private static func loadKeyFromKeychain() -> SymmetricKey? {
+    private static func loadPersistedKey() -> SymmetricKey? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: keychainAccount,
@@ -89,6 +100,26 @@ public enum LabReportStorage {
         guard status == errSecSuccess, let data = result as? Data else { return nil }
         return SymmetricKey(data: data)
     }
+    #else
+    private static var keyFileURL: URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            .appendingPathComponent("labreport.key")
+    }
+
+    private static func persistKey(_ key: SymmetricKey) {
+        let keyData = key.withUnsafeBytes { Data($0) }
+        try? FileManager.default.createDirectory(
+            at: keyFileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try? keyData.write(to: keyFileURL, options: .atomic)
+        try? FileManager.default.setAttributes(
+            [.posixPermissions: 0o600], ofItemAtPath: keyFileURL.path)
+    }
+
+    private static func loadPersistedKey() -> SymmetricKey? {
+        guard let data = try? Data(contentsOf: keyFileURL), data.count == 32 else { return nil }
+        return SymmetricKey(data: data)
+    }
+    #endif
 
     enum StorageError: LocalizedError {
         case encryptionFailed

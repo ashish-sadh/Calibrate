@@ -99,7 +99,7 @@ public enum AIToolAgent {
         onStep: (String) -> Void,
         onToken: @escaping @Sendable (String) -> Void
     ) async -> AgentOutput {
-        let telemetryStart = CFAbsoluteTimeGetCurrent()
+        let telemetryStart = Date().timeIntervalSinceReferenceDate
         let output = await runInner(
             message: message, screen: screen, history: history,
             isLargeModel: isLargeModel, onStep: onStep, onToken: onToken
@@ -107,7 +107,7 @@ public enum AIToolAgent {
         // #261 — opt-in gate is inside the service; this call is a no-op by default.
         // When opt-in is on, `output.text` (the final user-facing response) is
         // captured alongside the query so transcripts drive multi-turn analysis.
-        let latencyMs = Int((CFAbsoluteTimeGetCurrent() - telemetryStart) * 1000)
+        let latencyMs = Int((Date().timeIntervalSinceReferenceDate - telemetryStart) * 1000)
         ChatTelemetryService.shared.record(
             query: message,
             response: output.text,
@@ -157,7 +157,7 @@ public enum AIToolAgent {
         onToken: @escaping @Sendable (String) -> Void
     ) async -> AgentOutput {
 
-        let pipelineStart = CFAbsoluteTimeGetCurrent()
+        let pipelineStart = Date().timeIntervalSinceReferenceDate
 
         // ── Step 0: Input normalization (instant, no LLM) ──
         // Strips filler words, voice artifacts, repeated words, collapses whitespace.
@@ -244,7 +244,7 @@ public enum AIToolAgent {
             // Try LLM intent classifier first. If the first extraction
             // returns no tool call or incomplete params for a top-5 tool,
             // retry ONCE with a "be literal" hint (#240).
-            let classifyStart = CFAbsoluteTimeGetCurrent()
+            let classifyStart = Date().timeIntervalSinceReferenceDate
             let firstResult = await IntentClassifier.classifyFull(message: normalized, history: history)
             let finalResult: IntentClassifier.ClassifyResult?
             if shouldRetryClassify(firstResult) {
@@ -909,8 +909,8 @@ public enum AIToolAgent {
 
     // MARK: - Pipeline Timing
 
-    private static func logTiming(_ label: String, start: CFAbsoluteTime) {
-        let ms = Int((CFAbsoluteTimeGetCurrent() - start) * 1000)
+    private static func logTiming(_ label: String, start: TimeInterval) {
+        let ms = Int((Date().timeIntervalSinceReferenceDate - start) * 1000)
         Log.app.info("⏱ AIToolAgent \(label): \(ms)ms")
     }
 

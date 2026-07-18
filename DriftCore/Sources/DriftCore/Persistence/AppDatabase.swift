@@ -1,6 +1,10 @@
 import Foundation
 import GRDB
+#if canImport(CryptoKit)
 import CryptoKit
+#else
+import Crypto
+#endif
 
 /// The main application database providing read-write access to all user data.
 public struct AppDatabase: @unchecked Sendable {

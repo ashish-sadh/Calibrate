@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// Web search via **DuckDuckGo's Instant Answer API** — no API key, no account,
 /// privacy-aligned. Lets the coach reach outside knowledge (nutrition facts,

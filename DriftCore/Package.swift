@@ -12,8 +12,10 @@ let package = Package(
         .executable(name: "DriftChatSim", targets: ["DriftChatSim"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/groue/GRDB.swift.git", from: "7.0.0"),
+        // 7.11.1+ bundles SQLite for non-Darwin platforms (Android/Linux).
+        .package(url: "https://github.com/groue/GRDB.swift.git", from: "7.11.1"),
         .package(url: "https://github.com/weichsel/ZIPFoundation.git", from: "0.9.19"),
+        .package(url: "https://github.com/apple/swift-crypto.git", from: "3.10.0"),
     ],
     targets: [
         .binaryTarget(
@@ -24,8 +26,17 @@ let package = Package(
             name: "DriftCore",
             dependencies: [
                 .product(name: "GRDB", package: "GRDB.swift"),
-                .product(name: "ZIPFoundation", package: "ZIPFoundation"),
-                "llama",
+                // Apple-only: no CZlib module for Android; backup packaging is
+                // guarded off there (#if canImport(ZIPFoundation)).
+                .product(name: "ZIPFoundation", package: "ZIPFoundation",
+                         condition: .when(platforms: [.iOS, .macOS])),
+                // CryptoKit replacement off-Apple; on Apple platforms the
+                // Crypto module re-exports CryptoKit so there is one code path.
+                .product(name: "Crypto", package: "swift-crypto",
+                         condition: .when(platforms: [.android, .linux])),
+                // Prebuilt xcframework — Apple-only until the Android libllama
+                // lands; LlamaCppBackend is guarded by #if canImport(llama).
+                .target(name: "llama", condition: .when(platforms: [.iOS, .macOS])),
             ],
             path: "Sources/DriftCore",
             resources: [

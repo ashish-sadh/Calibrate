@@ -1,3 +1,4 @@
+#if canImport(CoreGraphics)
 import Foundation
 import CoreGraphics
 
@@ -203,3 +204,4 @@ public struct MuscleInfo: Sendable {
         "triceps": .init(displayName: "Triceps", latinName: "triceps brachii", function: "Straighten your elbow — every press finishes here"),
     ]
 }
+#endif // canImport(CoreGraphics)

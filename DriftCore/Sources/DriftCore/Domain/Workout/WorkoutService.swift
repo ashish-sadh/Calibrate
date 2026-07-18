@@ -663,8 +663,10 @@ public enum WorkoutService {
 
     /// Import from Strong or Hevy CSV (auto-detected by column names).
     public static func importStrongCSV(url: URL) throws -> ImportResult {
+        #if canImport(Darwin)
         guard url.startAccessingSecurityScopedResource() else { throw ImportError.fileAccessDenied }
         defer { url.stopAccessingSecurityScopedResource() }
+        #endif
 
         let content = try String(contentsOf: url, encoding: .utf8)
         let isHevy = content.lowercased().contains("exercise_title") || content.lowercased().contains("set_type")

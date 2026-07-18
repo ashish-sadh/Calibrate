@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// Cloud text-to-speech via ElevenLabs — the coach's studio voice.
 ///

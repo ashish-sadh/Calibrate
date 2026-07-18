@@ -1,5 +1,7 @@
 import Foundation
+#if canImport(NaturalLanguage)
 import NaturalLanguage
+#endif
 
 /// On-device `CoachMemory` — durable user facts/goals with **local** semantic
 /// recall via Apple's `NLEmbedding` (no cloud, no key, no network). Falls back
@@ -17,7 +19,9 @@ public actor LocalCoachMemory: CoachMemory {
     /// considered irrelevant to the query (avoids injecting noise).
     private let relevanceFloor: Double
     private var items: [MemoryItem]
+    #if canImport(NaturalLanguage)
     private let embedder = NLEmbedding.sentenceEmbedding(for: .english)
+    #endif
 
     public init(storeURL: URL? = nil, maxItems: Int = 500, relevanceFloor: Double = 0.30) {
         self.storeURL = storeURL ?? Self.defaultStoreURL()
@@ -75,7 +79,11 @@ public actor LocalCoachMemory: CoachMemory {
     // MARK: - Embedding
 
     private func embed(_ text: String) -> [Double]? {
+        #if canImport(NaturalLanguage)
         embedder?.vector(for: text.lowercased())
+        #else
+        nil // No NLEmbedding off-Apple — recall() uses the lexical fallback.
+        #endif
     }
 
     static func cosine(_ a: [Double], _ b: [Double]) -> Double {

@@ -62,3 +62,7 @@ __pycache__/
 
 # Local scheduler lock (transient — re-created per wakeup)
 .claude/scheduled_tasks.lock
+
+# Android port — fetched/built by scripts/android-fetch-sqlite.sh + android-build-check.sh
+Frameworks/android/
+DriftCore/.build-android/

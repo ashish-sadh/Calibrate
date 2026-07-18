@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 
 /// Caches async health data so synchronous context builders can use it.
 /// Refreshed when the AI chat opens. 5-minute TTL.

@@ -1,4 +1,8 @@
 import Foundation
+import Observation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 import DriftCore
 
 /// Manages AI model download, storage, and deletion.
@@ -146,7 +150,9 @@ public final class AIModelManager {
         let config = URLSessionConfiguration.default
         config.httpMaximumConnectionsPerHost = 1
         config.timeoutIntervalForRequest = 120  // per-packet idle timeout; large downloads can have gaps
-        config.waitsForConnectivity = true
+        #if canImport(Darwin)
+        config.waitsForConnectivity = true // get-only (unsupported) on FoundationNetworking
+        #endif
         let session = URLSession(configuration: config, delegate: tracker, delegateQueue: nil)
         let (tempURL, _) = try await session.download(from: url)
 

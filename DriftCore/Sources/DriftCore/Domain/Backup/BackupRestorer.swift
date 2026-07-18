@@ -1,6 +1,11 @@
+#if canImport(ZIPFoundation)
 import Foundation
 import GRDB
+#if canImport(CryptoKit)
 import CryptoKit
+#else
+import Crypto
+#endif
 import ZIPFoundation
 
 /// Atomic restore from a `.driftbackup` file produced by `BackupPackager`.
@@ -237,3 +242,4 @@ public struct BackupRestorer {
         return nil
     }
 }
+#endif // canImport(ZIPFoundation)

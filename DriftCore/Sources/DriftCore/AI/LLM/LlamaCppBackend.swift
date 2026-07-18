@@ -1,3 +1,4 @@
+#if canImport(llama)
 import Foundation
 import DriftCore
 import llama
@@ -362,3 +363,4 @@ public final class LlamaCppBackend: AIBackend, @unchecked Sendable {
         unload()
     }
 }
+#endif // canImport(llama)

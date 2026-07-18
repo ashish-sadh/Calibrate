@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 // MARK: - HTTP Session Protocol (injectable for testing)
 
@@ -8,7 +11,27 @@ public protocol HTTPDataSession: Sendable {
     func data(for request: URLRequest) async throws -> (Data, URLResponse)
 }
 
+#if canImport(FoundationNetworking)
+// FoundationNetworking's URLSession has no async `data(for:)` — bridge the
+// completion-handler API so the conformance holds off-Darwin.
+extension URLSession: HTTPDataSession {
+    public func data(for request: URLRequest) async throws -> (Data, URLResponse) {
+        try await withCheckedThrowingContinuation { continuation in
+            dataTask(with: request) { data, response, error in
+                if let error {
+                    continuation.resume(throwing: error)
+                } else if let data, let response {
+                    continuation.resume(returning: (data, response))
+                } else {
+                    continuation.resume(throwing: URLError(.badServerResponse))
+                }
+            }.resume()
+        }
+    }
+}
+#else
 extension URLSession: HTTPDataSession {}
+#endif
 
 // MARK: - Remote Backend Error
 
@@ -219,17 +242,36 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
         do {
             return try await withThrowingTaskGroup(of: String.self) { group in
                 group.addTask { [provider] in
+                    #if canImport(Darwin)
                     let (asyncBytes, response) = try await urlSession.bytes(for: request)
                     if let http = response as? HTTPURLResponse, http.statusCode != 200 {
                         throw RemoteStatusError(status: http.statusCode)
                     }
+                    let lines = asyncBytes.lines
+                    #else
+                    // FoundationNetworking has no AsyncBytes — buffer the SSE
+                    // body and replay it line-by-line. Tokens arrive in one
+                    // burst at completion; true incremental streaming needs a
+                    // URLSessionDataDelegate and lands with the Android chat UI.
+                    let (data, response) = try await urlSession.data(for: request)
+                    if let http = response as? HTTPURLResponse, http.statusCode != 200 {
+                        throw RemoteStatusError(status: http.statusCode)
+                    }
+                    let bufferedLines = String(decoding: data, as: UTF8.self)
+                        .split(separator: "\n", omittingEmptySubsequences: true)
+                        .map(String.init)
+                    let lines = AsyncStream<String> { continuation in
+                        for line in bufferedLines { continuation.yield(line) }
+                        continuation.finish()
+                    }
+                    #endif
                     switch provider {
                     case .openai, .nebius:
-                        return try await OpenAISSEParser.parseStream(asyncBytes, onToken: onToken)
+                        return try await OpenAISSEParser.parseStream(lines, onToken: onToken)
                     case .anthropic:
-                        return try await AnthropicSSEParser.parseStream(asyncBytes, onToken: onToken)
+                        return try await AnthropicSSEParser.parseStream(lines, onToken: onToken)
                     case .gemini:
-                        return try await GeminiSSEParser.parseStream(asyncBytes, onToken: onToken)
+                        return try await GeminiSSEParser.parseStream(lines, onToken: onToken)
                     }
                 }
                 group.addTask {
@@ -527,9 +569,11 @@ enum AnthropicSSEParser {
             .joined()
     }
 
-    static func parseStream(_ bytes: URLSession.AsyncBytes, onToken: @escaping @Sendable (String) -> Void) async throws -> String {
+    static func parseStream<Lines: AsyncSequence>(
+        _ lines: Lines, onToken: @escaping @Sendable (String) -> Void
+    ) async throws -> String where Lines.Element == String {
         var blocks: [Int: Block] = [:]
-        for try await line in bytes.lines {
+        for try await line in lines {
             guard line.hasPrefix("data: ") else { continue }
             let jsonStr = line.dropFirst(6).trimmingCharacters(in: .whitespaces)
             guard jsonStr != "[DONE]",
@@ -613,10 +657,12 @@ enum OpenAISSEParser {
         return text
     }
 
-    static func parseStream(_ bytes: URLSession.AsyncBytes, onToken: @escaping @Sendable (String) -> Void) async throws -> String {
+    static func parseStream<Lines: AsyncSequence>(
+        _ lines: Lines, onToken: @escaping @Sendable (String) -> Void
+    ) async throws -> String where Lines.Element == String {
         var text = ""
         var tools: [Int: ToolBuf] = [:]
-        for try await line in bytes.lines {
+        for try await line in lines {
             guard line.hasPrefix("data: ") else { continue }
             let jsonStr = line.dropFirst(6).trimmingCharacters(in: .whitespaces)
             guard jsonStr != "[DONE]",
@@ -687,11 +733,13 @@ enum GeminiSSEParser {
         return text
     }
 
-    static func parseStream(_ bytes: URLSession.AsyncBytes, onToken: @escaping @Sendable (String) -> Void) async throws -> String {
+    static func parseStream<Lines: AsyncSequence>(
+        _ lines: Lines, onToken: @escaping @Sendable (String) -> Void
+    ) async throws -> String where Lines.Element == String {
         var text = ""
         var toolName = ""
         var toolArgs: [String: Any] = [:]
-        for try await line in bytes.lines {
+        for try await line in lines {
             guard line.hasPrefix("data: ") else { continue }
             let jsonStr = line.dropFirst(6).trimmingCharacters(in: .whitespaces)
             guard jsonStr != "[DONE]",

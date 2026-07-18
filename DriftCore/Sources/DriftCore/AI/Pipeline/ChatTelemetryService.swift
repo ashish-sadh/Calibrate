@@ -1,6 +1,10 @@
 import Foundation
 import DriftCore
+#if canImport(CryptoKit)
 import CryptoKit
+#else
+import Crypto
+#endif
 
 /// Opt-in, on-device only AI chat telemetry. Records turn metadata plus — when
 /// opt-in is enabled — the raw user query and assistant response text so we

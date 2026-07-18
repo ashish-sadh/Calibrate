@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 import DriftCore
 
 /// Fetches nutrition data from USDA FoodData Central.
