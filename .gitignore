@@ -66,3 +66,4 @@ __pycache__/
 # Android port — fetched/built by scripts/android-fetch-sqlite.sh + android-build-check.sh
 Frameworks/android/
 DriftCore/.build-android/
+drift-android/Sources/DriftAndroid/Resources/DriftCoreSeed/

@@ -22,9 +22,22 @@ if [ ! -f sqlite3.c ]; then
 fi
 
 for abi in aarch64-linux-android28 x86_64-linux-android28; do
-  "$NDK_BIN/clang" --target=$abi -O2 \
-    -DSQLITE_ENABLE_RTREE -DSQLITE_ENABLE_JSON1 -DSQLITE_DISABLE_SNAPSHOT \
+  # SQLITE_ENABLE_SNAPSHOT: GRDB's Android build references sqlite3_snapshot_*
+  # (its DISABLE_SNAPSHOT define is Linux-only) — without this the app .so has
+  # unresolved snapshot symbols and dlopen fails at launch.
+  "$NDK_BIN/clang" --target=$abi -O2 -fPIC \
+    -DSQLITE_ENABLE_RTREE -DSQLITE_ENABLE_JSON1 -DSQLITE_ENABLE_SNAPSHOT \
     -c sqlite3.c -o "sqlite3-$abi.o"
   "$NDK_BIN/llvm-ar" rcs "libsqlite3-$abi.a" "sqlite3-$abi.o"
   echo "built libsqlite3-$abi.a"
 done
+
+# Install into the NDK sysroot so every swift-android build on this machine
+# (android-build-check.sh, Skip's gradle-driven builds) resolves <sqlite3.h>
+# and links -lsqlite3 without needing injected flags — Skip's gradle → swift
+# build invocation offers no clean way to pass -Xcc include paths.
+SYSROOT="$NDK_HOME/toolchains/llvm/prebuilt/darwin-x86_64/sysroot"
+cp sqlite3.h sqlite3ext.h "$SYSROOT/usr/include/"
+cp libsqlite3-aarch64-linux-android28.a "$SYSROOT/usr/lib/aarch64-linux-android/libsqlite3.a"
+cp libsqlite3-x86_64-linux-android28.a "$SYSROOT/usr/lib/x86_64-linux-android/libsqlite3.a"
+echo "installed sqlite into NDK sysroot: $SYSROOT"

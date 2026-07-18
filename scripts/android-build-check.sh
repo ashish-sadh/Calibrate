@@ -20,8 +20,9 @@ if [ ! -x "$SWIFT" ]; then
   echo "android-build-check: swiftly-managed swift not found at $SWIFT" >&2
   exit 1
 fi
-if [ ! -f Frameworks/android/sqlite/sqlite3.h ]; then
-  echo "android-build-check: vendored sqlite missing — run scripts/android-fetch-sqlite.sh" >&2
+NDK_HOME="${ANDROID_NDK_HOME:-/opt/homebrew/share/android-commandlinetools/ndk/28.2.13676358}"
+if [ ! -f "$NDK_HOME/toolchains/llvm/prebuilt/darwin-x86_64/sysroot/usr/include/sqlite3.h" ]; then
+  echo "android-build-check: sqlite not in NDK sysroot — run scripts/android-fetch-sqlite.sh" >&2
   exit 1
 fi
 
@@ -31,5 +32,4 @@ exec "$SWIFT" build \
   --package-path DriftCore \
   --target DriftCore \
   --swift-sdk "$TRIPLE" \
-  --scratch-path DriftCore/.build-android \
-  -Xcc -I"$(pwd)/Frameworks/android/sqlite"
+  --scratch-path DriftCore/.build-android
