@@ -2996,5 +2996,16 @@
   "features": [
    "single-serve packaged foods (scan or online search) default to the entire bottle/can/pack; multi-serve jars keep the label serving with '1 pack' one tap away"
   ]
+ },
+ {
+  "build": 356,
+  "date": "2026-07-18T00:25:44-0700",
+  "description": "Weight trend reads your recent weeks correctly after a logging gap",
+  "fixes": [
+   "a logging gap before a diet change no longer buries your current trend under old data — the estimator now reads a dense recent stretch of weigh-ins directly instead of falling back to a 45-day window (the '+100 surplus while actually cutting' report)",
+   "chart header 'Difference' is goal-aware — no more red '+1.0 lbs' next to a green '30-day +1.0 Increase' on a gaining goal",
+   "History rows in the 'No Change' band render neutral gray — no more red down-arrow beside 'No Change'"
+  ],
+  "features": []
  }
 ]
