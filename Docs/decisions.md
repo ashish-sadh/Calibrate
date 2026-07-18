@@ -451,3 +451,20 @@ Docs/designs/. Docs/refactor/ is now ACTIVE plans only — each must have an own
 not a doc shuffle). Doc Map in CLAUDE.md now covers every living doc: previously unmapped
 tenets.md, drift-control-design.md, ai-chat-architecture.md (deep-dive; architecture.md is the
 overview), ai-autoresearch.md, licenses.md, designs/.
+
+## 2026-07-18: Android port — Swift stays the single language (Skip Fuse + official Swift Android SDK)
+
+Operator decided to port Drift to Android with full parity. Chosen architecture: DriftCore
+compiles natively for Android with the official Swift 6.3.3 SDK (no Kotlin rewrite), UI via
+Skip Fuse (SwiftUI → native Compose from the same source). AI ladder on Android mirrors iOS
+with Google intelligence in Foundation Models' slot: Nebius cloud → Gemini Nano (ML Kit
+GenAI) → llama.cpp CPU. Distribution: Play Internal Testing (TestFlight equivalent);
+workout vertical slice ships to a friend first. Non-obvious findings baked into scripts/:
+Xcode's Swift can't cross-compile for Android (module-format mismatch — swiftly toolchain
+required); NDK ships no sqlite (vendored + installed into NDK sysroot, MUST be built with
+SQLITE_ENABLE_SNAPSHOT for GRDB and -fPIC); SwiftPM binaryTargets are rejected when staged
+by skipstone even if platform-conditioned out (#filePath gate in DriftCore/Package.swift);
+dependency-package resource bundles never reach the APK (app-module mirror + boot-time
+extraction to the exact path Bundle.module probes; NSHomeDirectory() on Android IS files/).
+`scripts/android-build-check.sh` is the enforced portability invariant — keep it green like
+the macOS build.
