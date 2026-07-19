@@ -151,6 +151,29 @@ struct ActiveExercise: Identifiable {
         persistSession()
     }
 
+    /// Start from a template (Coach Me smart session or a saved template) —
+    /// prefills each exercise with its set count, mirroring the iOS
+    /// ActiveWorkoutView(template:) path.
+    func startWorkout(from template: WorkoutTemplate) {
+        workoutName = template.name
+        startTime = Date()
+        exercises = template.exercises.map { ex in
+            var active = ActiveExercise(name: ex.name)
+            active.sets = (0..<max(1, ex.sets)).map { _ in ActiveSet() }
+            return active
+        }
+        sessionActive = true
+        persistSession()
+        for (index, ex) in exercises.enumerated() {
+            let name = ex.name
+            Task {
+                if let last = await Self.lastWeightHint(for: name), index < exercises.count {
+                    exercises[index].lastWeightHint = last
+                }
+            }
+        }
+    }
+
     private func resumeIfAny() {
         guard let saved = WorkoutService.loadSession() else { return }
         workoutName = saved.workoutName

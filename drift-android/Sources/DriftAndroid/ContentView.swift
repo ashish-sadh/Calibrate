@@ -14,7 +14,7 @@ struct ContentView: View {
                 .tabItem { Label("Foods", systemImage: "cart") }
                 .tag("foods")
         }
-        .tint(DriftTheme.accent)
+        .tint(Theme.accent)
     }
 }
 
