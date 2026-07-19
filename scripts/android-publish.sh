@@ -14,6 +14,15 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# One publish at a time — two concurrent runs race the versionCode bump
+# (seen 2026-07-18: both bumped, one commit, mislabeled build number).
+LOCK=/tmp/drift-android-publish.lock
+if ! mkdir "$LOCK" 2>/dev/null; then
+  echo "android-publish: another publish is running ($LOCK exists)" >&2
+  exit 1
+fi
+trap "rmdir $LOCK" EXIT
+
 JSON_KEY="$HOME/drift-state/android-keys/play-service-account.json"
 export JAVA_HOME="${JAVA_HOME:-/opt/homebrew/opt/openjdk}"
 export ANDROID_HOME="${ANDROID_HOME:-/opt/homebrew/share/android-commandlinetools}"
