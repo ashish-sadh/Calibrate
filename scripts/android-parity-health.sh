@@ -47,7 +47,7 @@ if [ "$PUB_AGE" -gt 28800 ] && [ "$LAST_COMMIT_AGE" -lt 18000 ]; then
 fi
 
 # 5. Emulator up (sessions need it)?
-if adb devices 2>/dev/null | grep -q "emulator.*device"; then
+if timeout_out=$(perl -e 'alarm 5; exec @ARGV' adb devices 2>/dev/null || true); echo "$timeout_out" | grep -q "emulator.*device"; then
     echo "✅ emulator: online"
 else
     echo "⚠️  emulator: offline (sessions know how to boot it)"
