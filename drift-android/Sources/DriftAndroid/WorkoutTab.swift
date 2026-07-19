@@ -33,12 +33,18 @@ struct WorkoutHomeScreen: View {
                 Button {
                     store.startWorkout()
                 } label: {
-                    Text("Start Workout")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 6)
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus")
+                        Text("Start Workout")
+                    }
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(DriftTheme.accent)
+                    .clipShape(Capsule())
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.plain)
             }
 
             Section("Recent") {
@@ -60,17 +66,23 @@ struct WorkoutHomeScreen: View {
                                 .lineLimit(1)
                             HStack(spacing: 10) {
                                 Text("\(row.totalSets) set\(row.totalSets == 1 ? "" : "s")")
-                                if row.totalVolume > 0 { Text("\(row.totalVolume) lbs volume") }
-                                if row.prs > 0 { Text("🏆 \(row.prs) PR\(row.prs == 1 ? "" : "s")") }
+                                    .foregroundStyle(DriftTheme.textSecondary)
+                                if row.totalVolume > 0 {
+                                    Text("\(row.totalVolume) lbs volume")
+                                        .foregroundStyle(DriftTheme.textSecondary)
+                                }
+                                if row.prs > 0 {
+                                    Text("🏆 \(row.prs) PR\(row.prs == 1 ? "" : "s")")
+                                        .foregroundStyle(DriftTheme.deficit)
+                                }
                             }
                             .font(.caption2)
-                            .foregroundStyle(.secondary)
                         }
                     }
                 }
             }
         }
-        .navigationTitle("Workout")
+        .navigationTitle("Exercise")
         .navigationDestination(for: Int64.self) { workoutId in
             WorkoutDetailScreen(store: store, workoutId: workoutId)
         }
@@ -79,8 +91,8 @@ struct WorkoutHomeScreen: View {
 
     private func statTile(_ value: String, _ label: String) -> some View {
         VStack(spacing: 2) {
-            Text(value).font(.title2.weight(.bold))
-            Text(label).font(.caption2).foregroundStyle(.secondary)
+            Text(value).font(.title2.weight(.bold)).foregroundStyle(DriftTheme.accent)
+            Text(label).font(.caption2).foregroundStyle(DriftTheme.textSecondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 8)
