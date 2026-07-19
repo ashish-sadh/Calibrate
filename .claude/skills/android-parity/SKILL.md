@@ -15,6 +15,16 @@ same data is NOT done. It must LOOK like Drift iOS.
 
 ## Session algorithm
 
+### 0. Operator directives — read FIRST, they override everything below
+`cat ~/drift-android-parity-directives.txt` — the operator drops standing
+instructions there (priority overrides, method mandates, specific screens).
+Obey them over the epic's default order. If the file names a priority, that
+is this session's target.
+
+**Standing method mandate: PORT, DON'T REDESIGN.** Translate the iOS Swift
+file as close to line-for-line as SkipUI allows — same structure, tokens,
+copy, spacing. Simplified re-imaginings are rejected.
+
 ### 1. Orient (≤5 min)
 - `gh issue view 1059` — the parity ledger table is the authoritative status.
 - `gh issue list --label android-parity --state open` — the child issues.
