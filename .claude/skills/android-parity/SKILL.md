@@ -101,7 +101,21 @@ Read the iOS and Android screenshots side by side and grade honestly:
   the NEXT session must publish first thing (check
   `git log --oneline | head` vs the last `publish build N` commit).
 
-### 8. Record + end
+### 8. Gap-hunt sweep (mandatory, ~10 min, EVERY session)
+After your screen ships, pick ONE other screen pair (rotate — don't always
+pick the same) and compare live: iPhone screenshot vs Android screenshot of
+the same state. Log every difference you see — visual or functional — to the
+right child issue (or file a new `android-parity` issue if none fits). This
+is how the loop finds what the filed issues missed; the operator's standing
+order is to constantly hunt gaps, not just work the backlog.
+
+**Audit sessions**: if the directives file names no pending priority and the
+epic's ordered gaps are all in progress/done, this session IS an audit: walk
+the entire app on both devices, screenshot every tab + main sheet, produce a
+fresh gap list, file/refresh issues, update the ledger. An audit that finds
+nothing new must say so on the epic with the screenshot evidence.
+
+### 9. Record + end
 - Comment on the child issue: shipped elements, commit hash, build number,
   residual gaps (each named), aesthetic-gate verdict.
 - Update the epic #1059 ledger row for the screen (gh issue edit — patch only
