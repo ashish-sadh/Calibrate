@@ -28,6 +28,12 @@ copy, spacing. Simplified re-imaginings are rejected.
 ### 1. Orient (≤5 min)
 - `gh issue view 1059` — the parity ledger table is the authoritative status.
 - `gh issue list --label android-parity --state open` — the child issues.
+- **The issues are a map, NOT the territory.** Do your own gap-finding every
+  session: diff the actual iOS source (`Drift/Views/**`, `Drift/*.swift`) and
+  live iPhone screenshots against the Android app. The goal is the EXACT same
+  app — anything iOS has that Android lacks is a gap whether or not an issue
+  mentions it. Found gaps get fixed (if in scope) or filed on the right child
+  issue before the session ends.
 - Pick ONE target: the highest-priority open gap per the epic's "Suggested
   order", preferring unfinished elements of screens already started
   (Food #1062 depth → Body #1065 chart → Dashboard #1061 rest → Health
