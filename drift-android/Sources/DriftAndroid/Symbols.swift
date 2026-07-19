@@ -19,6 +19,7 @@ func sym(_ name: String) -> String {
     case "clock": return "calendar"
     case "mic.fill", "mic": return "paperplane.fill"
     case "star.slash": return "star"
+    case "camera.fill", "camera": return "camera.viewfinder"
     case "square.and.arrow.down": return "list.bullet"
     case "target": return "house"
     case "fork.knife": return "cart"
