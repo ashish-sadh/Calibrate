@@ -16,3 +16,13 @@ DEST=drift-android/Sources/DriftAndroid/Resources/DriftCoreSeed
 mkdir -p "$DEST"
 cp "$SRC"/foods.json "$SRC"/exercises.json "$SRC"/biomarkers.json "$SRC"/bodyDiagram.json "$DEST/"
 echo "synced $(ls "$DEST" | wc -l | tr -d ' ') seed files into $DEST"
+
+# Materialize SharedUI (the single-source cross-platform SwiftUI) into the
+# module. skipstone's bridge generation does not follow directory symlinks —
+# these copies are build artifacts (gitignored); SharedUI/ is the only
+# editable location.
+UIDEST=drift-android/Sources/DriftAndroid/SharedUICopy
+mkdir -p "$UIDEST"
+rm -f "$UIDEST"/*.swift
+cp SharedUI/*.swift "$UIDEST/"
+echo "synced $(ls "$UIDEST" | wc -l | tr -d ' ') SharedUI files into $UIDEST"

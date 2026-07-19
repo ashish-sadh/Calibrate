@@ -1,5 +1,6 @@
 import Foundation
 import SkipFuse
+import DriftCore
 
 /// Installs DriftCore's seed resources where its `Bundle.module` accessor
 /// looks on Android. Skip packages only the app module's resources into the
@@ -8,6 +9,19 @@ import SkipFuse
 /// launch to `<files>/DriftCore_DriftCore.resources/` — the first candidate
 /// path of the SwiftPM-generated resource accessor.
 enum CoreResourcesBootstrap {
+    /// Force the first AppDatabase open (migrate + food seed) OFF the main
+    /// thread — @MainActor services (FoodService/WeightServiceAPI) are then
+    /// cheap to call on main because the heavy one-time work is done.
+    static func warmUpDatabase() async {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                install()
+                _ = try? AppDatabase.shared.searchFoods(query: "warmup", limit: 1)
+                continuation.resume()
+            }
+        }
+    }
+
     static let seedFiles = ["foods.json", "exercises.json", "biomarkers.json", "bodyDiagram.json"]
 
     /// Idempotent; call before the first touch of `AppDatabase.shared`.
