@@ -1,23 +1,38 @@
 import SwiftUI
 import DriftCore
 
+/// Android shell — mirrors iOS ContentView's V7 IA: five tabs behind a
+/// floating pill bar + the Drift Coach button (see AppShell.swift).
 struct ContentView: View {
-    @AppStorage("tab") var tab = "workout"
+    @State var selectedTab: PrimaryTab = .today
+    @State var showingCoach = false
 
     var body: some View {
-        TabView(selection: $tab) {
-            FoodTab()
-                .tabItem { Label("Food", systemImage: "cart") }
-                .tag("food")
+        ZStack(alignment: .bottom) {
+            tabContent
 
-            WorkoutTab()
-                .tabItem { Label("Workout", systemImage: "heart.fill") }
-                .tag("workout")
-
-            WeightTab()
-                .tabItem { Label("Weight", systemImage: "chart.bar.xaxis") }
-                .tag("weight")
+            HStack(spacing: 8) {
+                PillTabBar(selected: $selectedTab)
+                    .frame(maxWidth: .infinity)
+                ChatIconButton(isPresented: $showingCoach)
+            }
+            .padding(.horizontal, 10)
+            .padding(.bottom, 6)
         }
-        .tint(Theme.accent)
+        .background(Theme.background.ignoresSafeArea())
+        .sheet(isPresented: $showingCoach) {
+            CoachComingSheet()
+        }
+    }
+
+    @ViewBuilder
+    private var tabContent: some View {
+        switch selectedTab {
+        case .today: TodayTab(selectedTab: $selectedTab)
+        case .food: FoodTab()
+        case .workout: WorkoutTab()
+        case .body: WeightTab()
+        case .more: MoreTab()
+        }
     }
 }

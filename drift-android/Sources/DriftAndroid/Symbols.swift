@@ -20,6 +20,10 @@ func sym(_ name: String) -> String {
     case "mic.fill", "mic": return "paperplane.fill"
     case "star.slash": return "star"
     case "square.and.arrow.down": return "list.bullet"
+    case "target": return "house"
+    case "fork.knife": return "cart"
+    case "figure": return "person"
+    case "message.fill", "bubble.left.fill": return "paperplane.fill"
     default: return name
     }
     #else

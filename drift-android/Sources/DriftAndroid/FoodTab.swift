@@ -210,7 +210,7 @@ struct FoodTab: View {
                     }
                     .card()
                 }
-                .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
+                .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 100)
             }
             .background(Theme.background.ignoresSafeArea())
             .navigationTitle("Food")
