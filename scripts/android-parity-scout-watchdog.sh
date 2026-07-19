@@ -40,10 +40,11 @@ while true; do
 
     SESSION_LOG="$LOG_DIR/session-$(date +%Y%m%d-%H%M%S).log"
     log "Spawning /android-parity-scout session → $SESSION_LOG"
+    # exec so $! is the claude process itself (see worker watchdog incident note)
     (
         cd "$WORK_DIR" || exit 1
-        DRIFT_AUTONOMOUS=1 \
-        "${CLAUDE_BIN:-$HOME/.local/bin/claude}" -p "/android-parity-scout" \
+        export DRIFT_AUTONOMOUS=1
+        exec "${CLAUDE_BIN:-$HOME/.local/bin/claude}" -p "/android-parity-scout" \
             --dangerously-skip-permissions \
             --fallback-model opus \
             --effort max \

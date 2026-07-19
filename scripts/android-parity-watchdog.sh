@@ -48,12 +48,14 @@ while true; do
 
     SESSION_LOG="$LOG_DIR/session-$(date +%Y%m%d-%H%M%S).log"
     log "Spawning /android-parity session → $SESSION_LOG"
+    # exec so $! is the claude process itself — kill/stall-kill previously hit
+    # only the wrapper subshell, orphaning the session (2026-07-19 incident).
     (
         cd "$WORK_DIR" || exit 1
-        DRIFT_AUTONOMOUS=1 \
-        JAVA_HOME=/opt/homebrew/opt/openjdk \
-        ANDROID_HOME=/opt/homebrew/share/android-commandlinetools \
-        "${CLAUDE_BIN:-$HOME/.local/bin/claude}" -p "/android-parity" \
+        export DRIFT_AUTONOMOUS=1
+        export JAVA_HOME=/opt/homebrew/opt/openjdk
+        export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
+        exec "${CLAUDE_BIN:-$HOME/.local/bin/claude}" -p "/android-parity" \
             --dangerously-skip-permissions \
             --fallback-model opus \
             --effort max \
