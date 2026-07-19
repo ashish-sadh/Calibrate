@@ -165,11 +165,16 @@ import GRDB
     """
     let url = FileManager.default.temporaryDirectory.appendingPathComponent("strong_dur.csv")
     try csv.write(to: url, atomically: true, encoding: .utf8)
+    // The shared on-disk DB persists across runs — clear leftover "Long" rows
+    // so this run's import is findable regardless of accumulated history.
+    for stale in try WorkoutService.fetchWorkouts(limit: 100_000).filter({ $0.name == "Long" }) {
+        if let id = stale.id { try WorkoutService.deleteWorkout(id: id) }
+    }
     _ = try WorkoutService.importStrongCSV(url: url)
-    // limit high enough that parallel tests' inserts can't crowd it out
-    let w = try WorkoutService.fetchWorkouts(limit: 500)
+    let w = try WorkoutService.fetchWorkouts(limit: 100_000)
     let longWorkout = w.first(where: { $0.name == "Long" })
     #expect(longWorkout?.durationSeconds == 5400, "1.5h = 5400s, got \(longWorkout?.durationSeconds ?? -1)")
+    if let id = longWorkout?.id { try WorkoutService.deleteWorkout(id: id) }
     try FileManager.default.removeItem(at: url)
 }
 
