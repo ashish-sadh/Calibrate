@@ -55,6 +55,7 @@ while true; do
         ANDROID_HOME=/opt/homebrew/share/android-commandlinetools \
         claude -p "/android-parity" \
             --dangerously-skip-permissions \
+            --fallback-model opus \
             --effort max \
             --output-format stream-json \
             --verbose
