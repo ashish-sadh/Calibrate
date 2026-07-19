@@ -93,8 +93,13 @@ Read the iOS and Android screenshots side by side and grade honestly:
   'platform=iOS Simulator,name=iPhone 17 Pro'`); DriftCore changes also need
   `cd DriftCore && swift test` + `./scripts/android-build-check.sh`.
 - Commit with explicit paths (concurrent sessions exist), push.
-- Publish when a user-visible screen changed: `./scripts/android-publish.sh`
-  (has a lock; if it reports another publish running, skip — next session gets it).
+- **Publish is MANDATORY, not optional**: if this session committed any
+  user-visible change to drift-android/ or SharedUI/, run
+  `./scripts/android-publish.sh` before ending — every significant chunk of
+  work reaches the operator's phone as a fresh Play build. The script has a
+  lock; if another publish is running, state that in the issue comment and
+  the NEXT session must publish first thing (check
+  `git log --oneline | head` vs the last `publish build N` commit).
 
 ### 8. Record + end
 - Comment on the child issue: shipped elements, commit hash, build number,
