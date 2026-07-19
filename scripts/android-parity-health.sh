@@ -43,9 +43,9 @@ fi
 LAST_PUB=$(git log --grep="publish build" -1 --format=%ct 2>/dev/null || echo 0)
 PUB_AGE=$(( $(date +%s) - LAST_PUB ))
 echo "ℹ️  last Play publish: $((PUB_AGE/3600))h ago ($(grep CURRENT_PROJECT drift-android/Skip.env))"
-UNPUB=$(git log --since="@$LAST_PUB" --format='%ct %h' -- drift-android SharedUI | grep -cv "^$" || true)
+UNPUB=$(git log --since="@$LAST_PUB" --invert-grep --grep="publish build" --format='%ct %h' -- drift-android SharedUI | grep -cv "^$" || true)
 if [ "${UNPUB:-0}" -gt 0 ]; then
-    OLDEST_UNPUB=$(git log --since="@$LAST_PUB" --format=%ct -- drift-android SharedUI | tail -1)
+    OLDEST_UNPUB=$(git log --since="@$LAST_PUB" --invert-grep --grep="publish build" --format=%ct -- drift-android SharedUI | tail -1)
     UNPUB_AGE=$(( $(date +%s) - OLDEST_UNPUB ))
     if [ "$UNPUB_AGE" -gt 3600 ]; then
         echo "❌ $UNPUB user-visible commit(s) unpublished for $((UNPUB_AGE/60))min — publish NOW (scripts/android-publish.sh)"
