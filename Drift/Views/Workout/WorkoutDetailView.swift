@@ -199,3 +199,14 @@ struct WorkoutDetailView: View {
         f.dateFormat = "EEEE, MMM d, yyyy"; return f.string(from: date)
     }
 }
+
+// MARK: - Share Sheet
+
+struct ShareSheet: UIViewControllerRepresentable {
+    var text: String = ""
+    var items: [Any]?
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: items ?? [text], applicationActivities: nil)
+    }
+    func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
+}

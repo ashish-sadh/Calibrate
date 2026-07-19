@@ -7,11 +7,30 @@ import DriftCore
 // MARK: - Exercise Browser (873 exercises)
 
 struct ExerciseBrowserView: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var query = ""
-    @State private var selectedPart: String? = nil
-    @State private var showingCustom = false
+    @Environment(\.dismiss) var dismiss
+    @State var query = ""
+    @State var selectedPart: String? = nil
+    @State var showingCustom = false
 
+    #if os(Android)
+    // Catalog + favorites reads are sync DB/JSON work — off the view body on
+    // Android (#1073), loaded once per query/filter change into @State.
+    @State var results: [ExerciseDatabase.ExerciseInfo] = []
+
+    private func reload() async {
+        let q = query
+        let part = selectedPart
+        results = await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                var list = q.isEmpty ? ExerciseDatabase.allWithCustom : ExerciseDatabase.search(query: q)
+                if let part { list = list.filter { $0.bodyPart == part } }
+                let favs = WorkoutService.exerciseFavorites
+                list.sort { favs.contains($0.name) && !favs.contains($1.name) }
+                continuation.resume(returning: list)
+            }
+        }
+    }
+    #else
     private var results: [ExerciseDatabase.ExerciseInfo] {
         var list = query.isEmpty ? ExerciseDatabase.allWithCustom : ExerciseDatabase.search(query: query)
         if let part = selectedPart { list = list.filter { $0.bodyPart == part } }
@@ -19,6 +38,7 @@ struct ExerciseBrowserView: View {
         list.sort { favs.contains($0.name) && !favs.contains($1.name) }
         return list
     }
+    #endif
 
     var body: some View {
         NavigationStack {
@@ -84,8 +104,19 @@ struct ExerciseBrowserView: View {
                 }
             }
             .sheet(isPresented: $showingCustom) {
-                CustomExerciseSheet { _ in }
+                CustomExerciseSheet { _ in
+                    #if os(Android)
+                    // iOS recomputes `results` on body invalidation; the
+                    // Android @State copy must refresh to show the new entry.
+                    Task { await reload() }
+                    #endif
+                }
             }
+            #if os(Android)
+            .task { await reload() }
+            .onChange(of: query) { _, _ in Task { await reload() } }
+            .onChange(of: selectedPart) { _, _ in Task { await reload() } }
+            #endif
         }
     }
 
@@ -100,13 +131,3 @@ struct ExerciseBrowserView: View {
 
 }
 
-// MARK: - Share Sheet
-
-struct ShareSheet: UIViewControllerRepresentable {
-    var text: String = ""
-    var items: [Any]?
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items ?? [text], applicationActivities: nil)
-    }
-    func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
-}

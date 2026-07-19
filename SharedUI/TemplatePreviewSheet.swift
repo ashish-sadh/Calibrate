@@ -8,6 +8,21 @@ struct TemplatePreviewSheet: View {
     let onDismiss: () -> Void
     let onReload: () -> Void
 
+    #if os(Android)
+    // Synchronous per-row DB reads in a view body cross JNI on every body
+    // evaluation (#1073) — batch the last weights once off-main instead.
+    @State var lastWeights: [String: Double] = [:]
+    #endif
+
+    private func lastWeight(for name: String) -> Double? {
+        #if os(Android)
+        return lastWeights[name]
+        #else
+        if let w = try? WorkoutService.lastWeight(for: name) { return w }
+        return nil
+        #endif
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -47,7 +62,7 @@ struct TemplatePreviewSheet: View {
                                         Text(ex.name).font(.subheadline)
                                         HStack(spacing: 4) {
                                             Text("\(ex.sets) sets").font(.caption2).foregroundStyle(Theme.textTertiary)
-                                            if let lastW = try? WorkoutService.lastWeight(for: ex.name) {
+                                            if let lastW = lastWeight(for: ex.name) {
                                                 Text("\u{00B7}").font(.caption2).foregroundStyle(Theme.textTertiary)
                                                 Text("\(Int(Preferences.weightUnit.convertFromLbs(lastW))) \(Preferences.weightUnit.displayName)").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
                                             }
@@ -80,6 +95,12 @@ struct TemplatePreviewSheet: View {
                             } label: {
                                 Label("Edit", systemImage: "pencil").frame(maxWidth: .infinity)
                             }.buttonStyle(.bordered)
+                            // iOS's tintless .bordered reads gray-fill/blue-text;
+                            // SkipUI's default tonal tint reads near-black — pin
+                            // it to blue so the hierarchy matches.
+                            #if os(Android)
+                            .tint(.blue)
+                            #endif
 
                             Button {
                                 if let tid = template.id {
@@ -89,7 +110,7 @@ struct TemplatePreviewSheet: View {
                                 }
                             } label: {
                                 Label(template.isFavorite ? "Unfavorite" : "Favorite",
-                                      systemImage: template.isFavorite ? "star.slash" : "star")
+                                      systemImage: sym(template.isFavorite ? "star.slash" : "star"))
                                     .frame(maxWidth: .infinity)
                             }.buttonStyle(.bordered).tint(Theme.fatYellow)
                         }
@@ -115,6 +136,20 @@ struct TemplatePreviewSheet: View {
                 ToolbarItem(placement: .cancellationAction) { Button("Close") { onDismiss() } }
             }
         }
+        #if os(Android)
+        .task {
+            let names = template.exercises.filter { !$0.isWarmup }.map(\.name)
+            lastWeights = await withCheckedContinuation { continuation in
+                DispatchQueue.global(qos: .userInitiated).async {
+                    var weights: [String: Double] = [:]
+                    for name in names {
+                        if let w = try? WorkoutService.lastWeight(for: name) { weights[name] = w }
+                    }
+                    continuation.resume(returning: weights)
+                }
+            }
+        }
+        #endif
         .presentationDetents([.medium, .large])
     }
 }

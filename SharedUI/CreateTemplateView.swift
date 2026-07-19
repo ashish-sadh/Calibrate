@@ -6,12 +6,12 @@ import DriftCore
 struct CreateTemplateView: View {
     var existingTemplate: WorkoutTemplate? = nil
     let onSave: () -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var name = ""
-    @State private var exercises: [WorkoutTemplate.TemplateExercise] = []
-    @State private var showingPicker = false
-    @State private var addingWarmup = false
-    @State private var editingIndex: Int?
+    @Environment(\.dismiss) var dismiss
+    @State var name = ""
+    @State var exercises: [WorkoutTemplate.TemplateExercise] = []
+    @State var showingPicker = false
+    @State var addingWarmup = false
+    @State var editingIndex: Int?
 
     var body: some View {
         NavigationStack {
@@ -33,7 +33,7 @@ struct CreateTemplateView: View {
                             exercises.remove(atOffsets: IndexSet(toRemove))
                         }
                         Button { addingWarmup = true; showingPicker = true } label: {
-                            Label("Add Warmup", systemImage: "plus.circle").foregroundStyle(Theme.fatYellow)
+                            Label("Add Warmup", systemImage: sym("plus.circle")).foregroundStyle(Theme.fatYellow)
                         }
                     }
                 }
@@ -47,11 +47,11 @@ struct CreateTemplateView: View {
                         exercises.remove(atOffsets: IndexSet(toRemove))
                     }
                     Button { addingWarmup = false; showingPicker = true } label: {
-                        Label("Add Exercise", systemImage: "plus.circle").foregroundStyle(Theme.accent)
+                        Label("Add Exercise", systemImage: sym("plus.circle")).foregroundStyle(Theme.accent)
                     }
                     if warmupIndices.isEmpty {
                         Button { addingWarmup = true; showingPicker = true } label: {
-                            Label("Add Warmup Exercise", systemImage: "plus.circle").foregroundStyle(Theme.fatYellow)
+                            Label("Add Warmup Exercise", systemImage: sym("plus.circle")).foregroundStyle(Theme.fatYellow)
                         }
                     }
                 }
@@ -90,11 +90,13 @@ struct CreateTemplateView: View {
                                            restSeconds: addingWarmup ? 30 : 90))
                 }
             }
-            .sheet(item: editingBinding) { idx in
-                if idx.value < exercises.count {
-                    TemplateExerciseEditor(exercise: exercises[idx.value]) { updated in
-                        if idx.value < exercises.count { exercises[idx.value] = updated }
-                    }
+        }
+        // On the NavigationStack, not chained under the picker sheet — SkipUI
+        // honors one presentation modifier per view.
+        .sheet(item: editingBinding) { idx in
+            if idx.value < exercises.count {
+                TemplateExerciseEditor(exercise: exercises[idx.value]) { updated in
+                    if idx.value < exercises.count { exercises[idx.value] = updated }
                 }
             }
         }
@@ -134,17 +136,22 @@ struct CreateTemplateView: View {
     }
 }
 
+struct IdentifiableInt: Identifiable {
+    var id: Int { value }
+    let value: Int
+}
+
 // MARK: - Template Exercise Editor
 
 struct TemplateExerciseEditor: View {
     let exercise: WorkoutTemplate.TemplateExercise
     let onSave: (WorkoutTemplate.TemplateExercise) -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var sets: Int
-    @State private var restSeconds: Int
-    @State private var notes: String
-    @State private var isWarmup: Bool
-    @State private var trackByTime: Bool
+    @Environment(\.dismiss) var dismiss
+    @State var sets: Int
+    @State var restSeconds: Int
+    @State var notes: String
+    @State var isWarmup: Bool
+    @State var trackByTime: Bool
 
     init(exercise: WorkoutTemplate.TemplateExercise, onSave: @escaping (WorkoutTemplate.TemplateExercise) -> Void) {
         self.exercise = exercise

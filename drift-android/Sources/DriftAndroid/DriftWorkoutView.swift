@@ -11,15 +11,19 @@ struct DriftWorkoutView: View {
     @State var templates: [WorkoutTemplate] = []
     @State var showingNewWorkout = false
     @State var showingPastWorkout = false
-    @State var showingTextLog = false
+    @State var showingVoiceLog = false
     @State var showingExerciseBrowser = false
+    @State var showingCreateTemplate = false
+    @State var editingTemplateForEdit: WorkoutTemplate? = nil
     @State var isLoading = true
     @State var selectedTemplate: WorkoutTemplate? = nil
     @State var previewTemplate: WorkoutTemplate? = nil
-    @State var startAfterPreview: WorkoutTemplate? = nil
+    @State var previewFollowUp: PreviewFollowUp? = nil
     @State var loadResult: String?
     @State var showingLoadAlert = false
     @State var showingDeleteAllTemplates = false
+
+    enum PreviewFollowUp { case start(WorkoutTemplate), edit(WorkoutTemplate) }
 
     @State var showHistory = false
     @State var showAllTemplates = false
@@ -75,9 +79,10 @@ struct DriftWorkoutView: View {
                     }.buttonStyle(.plain)
                 }
 
-                // Conversational entry — text exercise logging (voice arrives with
-                // Android speech support; the parse/save pipeline is the same).
-                Button { showingTextLog = true } label: {
+                // Conversational entry — the shared ExerciseVoiceLogSheet, typed
+                // until Android speech support lands (#1063); parse/save pipeline
+                // matches iOS.
+                Button { showingVoiceLog = true } label: {
                     HStack(spacing: 12) {
                         Image(systemName: sym("mic.fill"))
                             .font(.system(size: 18))
@@ -115,6 +120,13 @@ struct DriftWorkoutView: View {
                             Text("\(templates.count)").font(.caption.monospacedDigit()).foregroundStyle(Theme.textTertiary)
                         }
                         Menu {
+                            Button { showingCreateTemplate = true } label: {
+                                Label("New Template", systemImage: "plus")
+                            }
+                            // iOS also offers "Import from Strong / Hevy" here —
+                            // needs a document-picker seam on Android (#1064).
+                            // Package items drop iOS's numbered-circle icons:
+                            // skip-ui maps no numeric glyphs.
                             Button { loadPackage(DefaultTemplates.loadPackageI, name: "Drift Package I") } label: {
                                 Text("Load Drift Package I")
                             }
@@ -128,8 +140,9 @@ struct DriftWorkoutView: View {
                                 Text("Load Drift Package IV")
                             }
                             if !templates.isEmpty {
+                                Divider()
                                 Button(role: .destructive) { showingDeleteAllTemplates = true } label: {
-                                    Text("Remove All Templates")
+                                    Label("Remove All Templates", systemImage: "trash")
                                 }
                             }
                         } label: {
@@ -258,27 +271,46 @@ struct DriftWorkoutView: View {
         .sheet(isPresented: $showingPastWorkout, onDismiss: { loadData() }) {
             ActiveWorkoutView(pastDate: Date().addingTimeInterval(-86400)) { loadData() }
         }
-        .sheet(isPresented: $showingTextLog, onDismiss: { loadData() }) {
-            ExerciseTextLogSheet {
+        .sheet(isPresented: $showingVoiceLog) {
+            // Voice/text exercise logging — reload history and reveal it so the
+            // user sees the workout they just logged.
+            ExerciseVoiceLogSheet {
                 loadData()
                 showHistory = true
             }
         }
+        .sheet(isPresented: $showingCreateTemplate) {
+            CreateTemplateView { loadData() }
+        }
+        .sheet(item: $editingTemplateForEdit) { template in
+            CreateTemplateView(existingTemplate: template) { loadData() }
+        }
         .sheet(isPresented: $showingExerciseBrowser) {
-            AndroidExerciseBrowser()
+            ExerciseBrowserView()
         }
         .sheet(item: $previewTemplate, onDismiss: {
-            if let template = startAfterPreview {
-                startAfterPreview = nil
+            // Present the follow-up ONLY after the preview has finished
+            // dismissing — no timer, no race, no dead gap between sheets.
+            switch previewFollowUp {
+            case .start(let template):
                 WorkoutService.clearSession()
                 selectedTemplate = template
                 showingNewWorkout = true
+            case .edit(let template):
+                editingTemplateForEdit = template
+            case nil:
+                break
             }
+            previewFollowUp = nil
         }) { t in
-            AndroidTemplatePreviewSheet(
+            TemplatePreviewSheet(
                 template: t,
                 onStartWorkout: { template in
-                    startAfterPreview = template
+                    previewFollowUp = .start(template)
+                    previewTemplate = nil
+                },
+                onEditTemplate: { template in
+                    previewFollowUp = .edit(template)
                     previewTemplate = nil
                 },
                 onDismiss: { previewTemplate = nil },

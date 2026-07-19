@@ -268,6 +268,66 @@ final class AIActionParserTests: XCTestCase {
         XCTAssertTrue(exercises.isEmpty)
     }
 
+    // Numbers-first phrasing — what the voice/text sheets prompt with
+    // ("3x10 bench at 135") and what the Android local fallback receives.
+
+    func testParseWorkoutExercises_numbersFirstWithAtWeight() {
+        let exercises = AIActionParser.parseWorkoutExercises("3x10 bench at 135")
+        XCTAssertEqual(exercises.count, 1)
+        XCTAssertEqual(exercises[0].name, "bench")
+        XCTAssertEqual(exercises[0].sets, 3)
+        XCTAssertEqual(exercises[0].reps, 10)
+        XCTAssertEqual(exercises[0].weight ?? 0, 135, accuracy: 0.001)
+    }
+
+    func testParseWorkoutExercises_numbersFirstMultiple() {
+        let exercises = AIActionParser.parseWorkoutExercises("3x10 bench at 135, 3x12 squats at 185")
+        XCTAssertEqual(exercises.count, 2)
+        XCTAssertEqual(exercises[0].name, "bench")
+        XCTAssertEqual(exercises[0].sets, 3)
+        XCTAssertEqual(exercises[0].reps, 10)
+        XCTAssertEqual(exercises[0].weight ?? 0, 135, accuracy: 0.001)
+        XCTAssertEqual(exercises[1].name, "squats")
+        XCTAssertEqual(exercises[1].sets, 3)
+        XCTAssertEqual(exercises[1].reps, 12)
+        XCTAssertEqual(exercises[1].weight ?? 0, 185, accuracy: 0.001)
+    }
+
+    func testParseWorkoutExercises_numbersFirstNoWeight() {
+        let exercises = AIActionParser.parseWorkoutExercises("3x10 lat raises")
+        XCTAssertEqual(exercises.count, 1)
+        XCTAssertEqual(exercises[0].name, "lat raises")
+        XCTAssertEqual(exercises[0].sets, 3)
+        XCTAssertEqual(exercises[0].reps, 10)
+        XCTAssertNil(exercises[0].weight)
+    }
+
+    func testParseWorkoutExercises_unicodeTimesAndSpacedX() {
+        let exercises = AIActionParser.parseWorkoutExercises("3×12 curls at 40, squats 5 x 5 at 225")
+        XCTAssertEqual(exercises.count, 2)
+        XCTAssertEqual(exercises[0].name, "curls")
+        XCTAssertEqual(exercises[0].reps, 12)
+        XCTAssertEqual(exercises[0].weight ?? 0, 40, accuracy: 0.001)
+        XCTAssertEqual(exercises[1].name, "squats")
+        XCTAssertEqual(exercises[1].sets, 5)
+        XCTAssertEqual(exercises[1].reps, 5)
+        XCTAssertEqual(exercises[1].weight ?? 0, 225, accuracy: 0.001)
+    }
+
+    func testParseWorkoutExercises_nameFirstAtWeight() {
+        let exercises = AIActionParser.parseWorkoutExercises("bench press 3x10 at 135")
+        XCTAssertEqual(exercises.count, 1)
+        XCTAssertEqual(exercises[0].name, "bench press")
+        XCTAssertEqual(exercises[0].weight ?? 0, 135, accuracy: 0.001)
+    }
+
+    func testParseWorkoutExercises_numbersFirstNameContainingAtPhrase() {
+        let exercises = AIActionParser.parseWorkoutExercises("3x10 rows at home")
+        XCTAssertEqual(exercises.count, 1)
+        XCTAssertEqual(exercises[0].name, "rows at home")
+        XCTAssertNil(exercises[0].weight)
+    }
+
     func testParseWorkoutExercises_decimalWeight() {
         let exercises = AIActionParser.parseWorkoutExercises("Romanian Deadlift 3x12@67.5")
         XCTAssertEqual(exercises.count, 1)

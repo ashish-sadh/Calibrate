@@ -140,19 +140,35 @@ public enum AIActionParser {
 
     /// Synchronous regex parser for one segment — shared between the sync and
     /// async entry points so they always agree on the fallback behavior.
+    /// Accepts both orderings: name-first ("Bench Press 3x10@135") and
+    /// numbers-first ("3x10 bench at 135" — the phrasing the voice/text sheets
+    /// prompt with), with `x`/`×`, optional spaces, and `@N`/`at N` weights.
     private static func parseSingleExerciseRegex(_ part: Substring) -> WorkoutExercise? {
         let trimmed = part.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return nil }
-        let pattern = #"(.+?)\s+(\d+)x(\d+)(?:@(\d+\.?\d*))?"#
-        guard let regex = try? NSRegularExpression(pattern: pattern),
-              let match = regex.firstMatch(in: trimmed, range: NSRange(trimmed.startIndex..., in: trimmed)) else {
-            return WorkoutExercise(name: trimmed, sets: 3, reps: 10, weight: nil)
+        let weightSuffix = #"(?:\s*@\s*(\d+\.?\d*)|\s+at\s+(\d+\.?\d*))?"#
+        let nameFirst = #"(.+?)\s+(\d+)\s*[x×]\s*(\d+)"# + weightSuffix
+        let numbersFirst = #"^(\d+)\s*[x×]\s*(\d+)\s+(.+?)"# + weightSuffix + #"\s*$"#
+
+        func group(_ match: NSTextCheckingResult, _ index: Int) -> String? {
+            Range(match.range(at: index), in: trimmed).map { String(trimmed[$0]).trimmingCharacters(in: .whitespaces) }
         }
-        let name = Range(match.range(at: 1), in: trimmed).map { String(trimmed[$0]).trimmingCharacters(in: .whitespaces) } ?? trimmed
-        let sets = Range(match.range(at: 2), in: trimmed).flatMap { Int(trimmed[$0]) } ?? 3
-        let reps = Range(match.range(at: 3), in: trimmed).flatMap { Int(trimmed[$0]) } ?? 10
-        let weight = Range(match.range(at: 4), in: trimmed).flatMap { Double(trimmed[$0]) }
-        return WorkoutExercise(name: name, sets: sets, reps: reps, weight: weight)
+
+        if let regex = try? NSRegularExpression(pattern: nameFirst),
+           let match = regex.firstMatch(in: trimmed, range: NSRange(trimmed.startIndex..., in: trimmed)) {
+            return WorkoutExercise(name: group(match, 1) ?? trimmed,
+                                   sets: group(match, 2).flatMap(Int.init) ?? 3,
+                                   reps: group(match, 3).flatMap(Int.init) ?? 10,
+                                   weight: (group(match, 4) ?? group(match, 5)).flatMap(Double.init))
+        }
+        if let regex = try? NSRegularExpression(pattern: numbersFirst),
+           let match = regex.firstMatch(in: trimmed, range: NSRange(trimmed.startIndex..., in: trimmed)) {
+            return WorkoutExercise(name: group(match, 3) ?? trimmed,
+                                   sets: group(match, 1).flatMap(Int.init) ?? 3,
+                                   reps: group(match, 2).flatMap(Int.init) ?? 10,
+                                   weight: (group(match, 4) ?? group(match, 5)).flatMap(Double.init))
+        }
+        return WorkoutExercise(name: trimmed, sets: 3, reps: 10, weight: nil)
     }
 
     private static func actionFromToolCall(_ call: ToolCall) -> Action {

@@ -22,16 +22,16 @@ import DriftCore
 /// owns — no second `AVAudioSession` owner / speech actor. V7 visual: light
 /// theme, `Theme.ink` CTA, no pink (`Theme.accent`) default.
 struct ExerciseVoiceLogSheet: View {
-    @Environment(\.dismiss) private var dismiss
-    @State private var viewModel = ExerciseVoiceLogViewModel()
+    @Environment(\.dismiss) var dismiss
+    @State var viewModel = ExerciseVoiceLogViewModel()
     /// Buffer for the typed-entry field. Kept as view state so a parse error →
     /// "Try again" returns the user to the input screen with their text intact.
-    @State private var draft = ""
+    @State var draft = ""
     /// Row whose name the user is resolving via the library picker. Identifiable
     /// wrapper so `.sheet(item:)` carries the target row id.
-    @State private var resolveTarget: ResolveTarget?
+    @State var resolveTarget: ResolveTarget?
 
-    private struct ResolveTarget: Identifiable { let id: UUID }
+    struct ResolveTarget: Identifiable { let id: UUID }
 
     /// Called after a successful save so the Workout tab can reload its history.
     let onSaved: () -> Void
@@ -46,7 +46,13 @@ struct ExerciseVoiceLogSheet: View {
             case .input:
                 inputView
             case .listening:
+                #if DRIFT_IOS_APP
                 listeningView
+                #else
+                // Unreachable off-iOS: startListening is a no-op without the
+                // platform speech service, so the phase never becomes .listening.
+                EmptyView()
+                #endif
             case .parsing:
                 parsingView
             case .confirming:
@@ -71,8 +77,11 @@ struct ExerciseVoiceLogSheet: View {
         VStack(spacing: 22) {
             Spacer()
 
+            #if DRIFT_IOS_APP
             // Mic affordance — shared component, Theme.ink (no pink). Tapping
-            // starts recording and flips to the listening screen.
+            // starts recording and flips to the listening screen. Off-iOS the
+            // sheet is text-first until the Android SpeechRecognizer seam
+            // lands (#1063).
             Button {
                 viewModel.startListening()
             } label: {
@@ -86,6 +95,11 @@ struct ExerciseVoiceLogSheet: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Record workout by voice")
+            #else
+            Text("Type your sets")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Theme.textPrimary)
+            #endif
 
             Text("e.g. \u{201C}3×10 bench at 135, then a 5k run\u{201D}")
                 .font(.caption)
@@ -93,25 +107,17 @@ struct ExerciseVoiceLogSheet: View {
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
 
+            #if DRIFT_IOS_APP
             HStack(spacing: 10) {
                 Rectangle().fill(Theme.separator).frame(height: 0.5)
                 Text("or type").font(.caption2).foregroundStyle(Theme.textTertiary)
                 Rectangle().fill(Theme.separator).frame(height: 0.5)
             }
             .padding(.horizontal, 40)
+            #endif
 
-            TextField("3x10 bench at 135", text: $draft, axis: .vertical)
-                .font(.body)
-                .foregroundStyle(Theme.textPrimary)
-                .lineLimit(1...4)
-                .padding(14)
-                .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
-                .overlay(
-                    RoundedRectangle(cornerRadius: Theme.radiusControl)
-                        .strokeBorder(Theme.separator, lineWidth: 0.5)
-                )
+            InputDraftField(draft: $draft)
                 .padding(.horizontal, 24)
-                .accessibilityIdentifier("exercise-text-field")
 
             Spacer()
 
@@ -123,7 +129,7 @@ struct ExerciseVoiceLogSheet: View {
                 Button {
                     Task { await viewModel.submitTyped(draft) }
                 } label: {
-                    Label("Continue", systemImage: "arrow.forward.circle.fill")
+                    Label("Continue", systemImage: sym("arrow.forward.circle.fill"))
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -138,6 +144,7 @@ struct ExerciseVoiceLogSheet: View {
 
     // MARK: - Listening
 
+    #if DRIFT_IOS_APP
     private var listeningView: some View {
         VStack(spacing: 24) {
             Spacer()
@@ -184,6 +191,7 @@ struct ExerciseVoiceLogSheet: View {
             .padding(.bottom, 24)
         }
     }
+    #endif
 
     // MARK: - Parsing
 
@@ -219,7 +227,7 @@ struct ExerciseVoiceLogSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     if let msg = viewModel.transientMessage {
-                        Label(msg, systemImage: "exclamationmark.circle.fill")
+                        Label(msg, systemImage: sym("exclamationmark.circle.fill"))
                             .font(.caption)
                             .foregroundStyle(Theme.fatYellow)
                             .padding(.horizontal, 16)
@@ -231,9 +239,19 @@ struct ExerciseVoiceLogSheet: View {
                         .padding(.horizontal, 16)
 
                     VStack(spacing: 10) {
+                        #if os(Android)
+                        // skip-fuse-ui's binding-ForEach writes are dead — bind
+                        // rows through the root @State by index instead.
+                        ForEach(Array(viewModel.exercises.enumerated()), id: \.element.id) { pair in
+                            if pair.offset < viewModel.exercises.count {
+                                editableRow($viewModel.exercises[pair.offset])
+                            }
+                        }
+                        #else
                         ForEach($viewModel.exercises) { $exercise in
                             editableRow($exercise)
                         }
+                        #endif
                     }
                     .padding(.horizontal, 16)
 
@@ -242,14 +260,18 @@ struct ExerciseVoiceLogSheet: View {
                     Button {
                         viewModel.addMore()
                     } label: {
-                        Label("Add another exercise", systemImage: "mic.fill")
+                        Label("Add another exercise", systemImage: addMoreIcon)
                             .font(.subheadline.weight(.medium))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                             .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
                             .overlay(
                                 RoundedRectangle(cornerRadius: Theme.radiusControl)
-                                    .strokeBorder(Theme.separator, lineWidth: 0.5)
+                                #if os(Android)
+                                .stroke(Theme.separator, lineWidth: 0.5)
+                                #else
+                                .strokeBorder(Theme.separator, lineWidth: 0.5)
+                                #endif
                             )
                     }
                     .buttonStyle(.plain)
@@ -281,79 +303,22 @@ struct ExerciseVoiceLogSheet: View {
     /// duration shows minutes. Neutral colors only — strength data is not
     /// goal-aligned/against, so no green/red treatment.
     private func editableRow(_ exercise: Binding<ExerciseVoiceLogViewModel.ExerciseDraft>) -> some View {
-        let draft = exercise.wrappedValue
-        let isNew = viewModel.recentlyAddedIDs.contains(draft.id)
-        return VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                TextField("Exercise", text: exercise.name)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(Theme.textPrimary)
-                    .accessibilityIdentifier("exercise-row-name")
-                Spacer()
-                Button {
-                    viewModel.remove(id: draft.id)
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.body)
-                        .foregroundStyle(Theme.textTertiary)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Remove exercise")
-            }
-
-            // Unmatched names didn't resolve to the library — let the user pick
-            // the real exercise instead of logging a garbled/guessed name.
-            if !draft.matched && !draft.isDuration {
-                Button {
-                    resolveTarget = ResolveTarget(id: draft.id)
-                } label: {
-                    Label("Not in library — tap to pick", systemImage: "magnifyingglass")
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(Theme.fatYellow)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("exercise-row-resolve")
-            }
-
-            if draft.isDuration {
-                HStack(spacing: 10) {
-                    numberField("Min", text: exercise.durationMinutes)
-                    Spacer()
-                }
-            } else {
-                HStack(spacing: 8) {
-                    numberField("Sets", text: exercise.sets)
-                    Text("×").font(.caption).foregroundStyle(Theme.textTertiary)
-                    numberField("Reps", text: exercise.reps)
-                    Text("@").font(.caption).foregroundStyle(Theme.textTertiary)
-                    numberField("Lbs", text: exercise.weight)
-                    Spacer()
-                }
-            }
-        }
-        .padding(12)
-        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
-        .overlay(
-            RoundedRectangle(cornerRadius: Theme.radiusControl)
-                .strokeBorder(isNew ? Theme.ink : Theme.separator, lineWidth: isNew ? 1.5 : 0.5)
+        VoiceLogExerciseRow(
+            exercise: exercise,
+            isNew: viewModel.recentlyAddedIDs.contains(exercise.wrappedValue.id),
+            onRemove: { viewModel.remove(id: exercise.wrappedValue.id) },
+            onResolve: { resolveTarget = ResolveTarget(id: exercise.wrappedValue.id) }
         )
-        .animation(.easeOut(duration: 0.25), value: isNew)
     }
 
-    private func numberField(_ label: String, text: Binding<String>) -> some View {
-        VStack(spacing: 3) {
-            TextField("—", text: text)
-                .keyboardType(.numberPad)
-                .multilineTextAlignment(.center)
-                .font(.subheadline.monospacedDigit())
-                .foregroundStyle(Theme.textPrimary)
-                .frame(width: 54)
-                .padding(.vertical, 7)
-                .background(Theme.background, in: RoundedRectangle(cornerRadius: 8))
-            Text(label)
-                .font(.system(size: Theme.FontSize.nano, weight: .medium))
-                .foregroundStyle(Theme.textTertiary)
-        }
+    /// iOS keeps the mic glyph; off-iOS the affordance re-opens typed entry, so
+    /// it reads as "add", not "record".
+    private var addMoreIcon: String {
+        #if DRIFT_IOS_APP
+        return "mic.fill"
+        #else
+        return sym("plus.circle")
+        #endif
     }
 
     // MARK: - Error
@@ -380,12 +345,138 @@ struct ExerciseVoiceLogSheet: View {
                 Button {
                     viewModel.reset()
                 } label: {
-                    Label("Try again", systemImage: "arrow.clockwise")
+                    Label("Try again", systemImage: sym("arrow.clockwise"))
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(Theme.ink)
             }
             .padding(.bottom, 24)
+        }
+    }
+}
+
+// MARK: - Field structs (one TextField per View scope)
+//
+// Same constraint as ActiveWorkoutView's SetCellField: skip-fuse-ui binds only
+// the first TextField evaluated per ViewBuilder scope, so every field lives in
+// its own struct. Identical render on iOS.
+
+struct InputDraftField: View {
+    @Binding var draft: String
+
+    var body: some View {
+        #if os(Android)
+        // .stroke, not .strokeBorder: SkipSwiftUI declares two strokeBorder
+        // overload families and the call is ambiguous; the half-linewidth
+        // inset difference is sub-pixel at 0.5pt.
+        TextField("3x10 bench at 135", text: $draft)
+            .font(.body)
+            .foregroundStyle(Theme.textPrimary)
+            .padding(14)
+            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.radiusControl)
+                    .stroke(Theme.separator, lineWidth: 0.5)
+            )
+            .accessibilityIdentifier("exercise-text-field")
+        #else
+        TextField("3x10 bench at 135", text: $draft, axis: .vertical)
+            .font(.body)
+            .foregroundStyle(Theme.textPrimary)
+            .lineLimit(1...4)
+            .padding(14)
+            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
+            .overlay(
+                RoundedRectangle(cornerRadius: Theme.radiusControl)
+                    .strokeBorder(Theme.separator, lineWidth: 0.5)
+            )
+            .accessibilityIdentifier("exercise-text-field")
+        #endif
+    }
+}
+
+struct VoiceLogExerciseRow: View {
+    @Binding var exercise: ExerciseVoiceLogViewModel.ExerciseDraft
+    let isNew: Bool
+    let onRemove: () -> Void
+    let onResolve: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                TextField("Exercise", text: $exercise.name)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(Theme.textPrimary)
+                    .accessibilityIdentifier("exercise-row-name")
+                Spacer()
+                Button(action: onRemove) {
+                    Image(systemName: sym("xmark.circle.fill"))
+                        .font(.body)
+                        .foregroundStyle(Theme.textTertiary)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Remove exercise")
+            }
+
+            // Unmatched names didn't resolve to the library — let the user pick
+            // the real exercise instead of logging a garbled/guessed name.
+            if !exercise.matched && !exercise.isDuration {
+                Button(action: onResolve) {
+                    Label("Not in library — tap to pick", systemImage: "magnifyingglass")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Theme.fatYellow)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("exercise-row-resolve")
+            }
+
+            if exercise.isDuration {
+                HStack(spacing: 10) {
+                    VoiceLogNumberField(label: "Min", text: $exercise.durationMinutes)
+                    Spacer()
+                }
+            } else {
+                HStack(spacing: 8) {
+                    VoiceLogNumberField(label: "Sets", text: $exercise.sets)
+                    Text("×").font(.caption).foregroundStyle(Theme.textTertiary)
+                    VoiceLogNumberField(label: "Reps", text: $exercise.reps)
+                    Text("@").font(.caption).foregroundStyle(Theme.textTertiary)
+                    VoiceLogNumberField(label: "Lbs", text: $exercise.weight)
+                    Spacer()
+                }
+            }
+        }
+        .padding(12)
+        .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
+        .overlay(
+            RoundedRectangle(cornerRadius: Theme.radiusControl)
+            #if os(Android)
+            .stroke(isNew ? Theme.ink : Theme.separator, lineWidth: isNew ? 1.5 : 0.5)
+            #else
+            .strokeBorder(isNew ? Theme.ink : Theme.separator, lineWidth: isNew ? 1.5 : 0.5)
+            #endif
+        )
+        .animation(.easeOut(duration: 0.25), value: isNew)
+    }
+}
+
+struct VoiceLogNumberField: View {
+    let label: String
+    @Binding var text: String
+
+    var body: some View {
+        VStack(spacing: 3) {
+            TextField("—", text: $text)
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.center)
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(Theme.textPrimary)
+                .frame(width: 54)
+                .padding(.vertical, 7)
+                .background(Theme.background, in: RoundedRectangle(cornerRadius: 8))
+            Text(label)
+                .font(.system(size: Theme.FontSize.nano, weight: .medium))
+                .foregroundStyle(Theme.textTertiary)
         }
     }
 }
@@ -432,7 +523,9 @@ final class ExerciseVoiceLogViewModel {
     /// shown above the session list without wiping what's already there.
     var transientMessage: String?
 
+    #if DRIFT_IOS_APP
     private let speech = SpeechRecognitionService.shared
+    #endif
 
     /// Number of rows that would actually persist (blank-named rows are skipped
     /// by `buildVoiceLogSets`), used for the confirm button label + enablement.
@@ -441,6 +534,7 @@ final class ExerciseVoiceLogViewModel {
     }
 
     func startListening() {
+        #if DRIFT_IOS_APP
         transcript = ""
         phase = .listening
         speech.startRecording(
@@ -451,6 +545,7 @@ final class ExerciseVoiceLogViewModel {
                 Task { await self?.parse(final) }
             }
         )
+        #endif
     }
 
     /// Typed-text counterpart to the speech `onDone` callback: routes the field
@@ -464,21 +559,30 @@ final class ExerciseVoiceLogViewModel {
     }
 
     func stopAndParse() {
+        #if DRIFT_IOS_APP
         // `gracefulStop` flushes the final partial transcription before firing
         // the `onDone` callback, which then drives `parse(_:)`.
         speech.gracefulStop()
+        #endif
     }
 
     func cancel() {
+        #if DRIFT_IOS_APP
         // `forceStop` tears down the audio engine without invoking `onDone` —
         // safer than leaving a half-open mic if the sheet is dismissed mid-record.
         speech.forceStop()
+        #endif
     }
 
     /// Continue an existing session: re-open the mic to add more exercises
-    /// without discarding what's already been logged.
+    /// without discarding what's already been logged. Off-iOS (no speech
+    /// service) it returns to the typed-entry screen instead.
     func addMore() {
+        #if DRIFT_IOS_APP
         startListening()
+        #else
+        phase = .input
+        #endif
     }
 
     /// Reset to the input screen (used by error "Try again"). Clears the session.
@@ -516,10 +620,23 @@ final class ExerciseVoiceLogViewModel {
         // exercises the user never said. The bigger Nebius cloud model extracts
         // only what was stated. Falls through to on-device FM when the cloud is
         // unconfigured / unreachable / returns nothing.
+        #if DRIFT_IOS_APP
         if let entries = await NebiusExerciseLogger.parse(text), !entries.isEmpty {
             appendDrafts(entries.map { mapToDraft($0) })
             return
         }
+        #endif
+
+        #if os(Android)
+        // No cloud client on Android yet (#1066) and no Apple FM — the local
+        // DriftCore parser handles multi-exercise strength utterances
+        // ("3x10 bench at 135, 3x12 squats") before the single-entry fallback.
+        let localEntries = await AIActionParser.parseWorkoutExercisesAsync(text)
+        if !localEntries.isEmpty {
+            appendDrafts(localEntries.map { mapLocalParse($0) })
+            return
+        }
+        #endif
 
         // Route through FoundationModelsExerciseExtractor (iOS 26+). On
         // `.unavailable` (FM kill-switch off / iOS<26) or a parser hiccup we fall
@@ -599,6 +716,29 @@ final class ExerciseVoiceLogViewModel {
         )
     }
 
+    #if os(Android)
+    /// Local-parser counterpart of `mapToDraft`: strength-only entries with the
+    /// same catalog grounding.
+    private func mapLocalParse(_ entry: AIActionParser.WorkoutExercise) -> ExerciseDraft {
+        var name = entry.name
+        var matched = true
+        if let hit = ExerciseDatabase.match(name: entry.name) {
+            name = hit.name
+        } else {
+            matched = false
+        }
+        return ExerciseDraft(
+            name: name,
+            isDuration: false,
+            matched: matched,
+            sets: String(entry.sets),
+            reps: String(entry.reps),
+            weight: entry.weight.map(formatWeight) ?? "",
+            durationMinutes: ""
+        )
+    }
+    #endif
+
     private func fallbackDraft(_ text: String) -> ExerciseDraft {
         // Raw-text fallback: try to ground it; if it doesn't match, flag for the
         // user to resolve via the library picker.
@@ -637,6 +777,8 @@ final class ExerciseVoiceLogViewModel {
     }
 }
 
+#if DRIFT_IOS_APP
 #Preview {
     ExerciseVoiceLogSheet()
 }
+#endif

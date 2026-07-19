@@ -15,7 +15,12 @@ func sym(_ name: String) -> String {
     case "chart.line.uptrend.xyaxis": return "chart.bar.xaxis"
     case "scalemass": return "chart.bar.xaxis"
     case "clock": return "calendar"
-    case "mic.fill", "mic": return "paperplane.fill"
+    // Material's mapped set has no mic; Android entry is typed until the
+    // SpeechRecognizer seam (#1063), so the write glyph reads truthfully.
+    case "mic.fill", "mic": return "pencil"
+    case "arrow.forward.circle.fill": return "arrow.forward"
+    case "exclamationmark.circle.fill": return "exclamationmark.triangle.fill"
+    case "arrow.clockwise": return "arrow.clockwise.circle"
     // SkipUI's outline-star mapping is disabled upstream (skip-ui #148:
     // Material's "outlined" star isn't), so both fall back to the fill.
     case "star", "star.slash": return "star.fill"

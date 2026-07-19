@@ -286,11 +286,6 @@ struct QuickAddView: View {
     }
 }
 
-struct IdentifiableInt: Identifiable {
-    var id: Int { value }
-    let value: Int
-}
-
 // MARK: - Ingredient Picker (search + serving picker)
 
 private struct IngredientPickerView: View {
