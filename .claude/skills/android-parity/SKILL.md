@@ -42,6 +42,14 @@ copy, spacing. Simplified re-imaginings are rejected.
   → hygiene #1071).
 - Post a one-line claim comment on the child issue: what this session will do.
 
+### 1.5 Check for a scout port kit — skip the study phase if one exists
+`ls ~/drift-android-parity-prep/<target>/KIT.md` — the scout lane pre-produces
+iPhone screenshots + element inventory + SkipUI compat + perf audit for
+upcoming targets. If a kit exists and is newer than the last commit touching
+the screen's iOS source: Read KIT.md + every screenshot, treat them as steps
+2–3 done, and go straight to implementation. Spot-check one screenshot against
+the live iPhone if anything looks stale. No kit → do steps 2–3 yourself.
+
 ### 2. iPhone reference FIRST — never port from source alone
 - iOS simulator "iPhone 17 Pro" (`xcrun simctl list devices booted`; boot +
   `xcrun simctl launch booted com.drift.health` if needed).
