@@ -26,3 +26,11 @@ mkdir -p "$UIDEST"
 rm -f "$UIDEST"/*.swift
 cp SharedUI/*.swift "$UIDEST/"
 echo "synced $(ls "$UIDEST" | wc -l | tr -d ' ') SharedUI files into $UIDEST"
+
+# Mirror the exercise pose pack (1,790 HEICs, ~20MB) so exercise rows and the
+# detail hero render photos on Android (#1064). rsync only copies new/changed
+# files, so repeat builds are cheap; --delete keeps it an exact mirror.
+POSEDEST=drift-android/Sources/DriftAndroid/Resources/ExercisePoses
+mkdir -p "$POSEDEST"
+rsync -a --delete Drift/ExercisePoses/ "$POSEDEST/"
+echo "synced $(ls "$POSEDEST" | wc -l | tr -d ' ') pose photos into $POSEDEST"

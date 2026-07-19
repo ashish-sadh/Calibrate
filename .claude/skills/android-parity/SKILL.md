@@ -71,6 +71,16 @@ you can't port this session gets named in the issue comment.
   matchedGeometryEffect, Font.monospacedDigit, TextField(axis:), listRowInsets,
   UIKit haptics do NOT (shim or skip); skipstone does not follow symlinks
   (SharedUI is materialized by scripts/android-sync-core-resources.sh).
+- SharedUI compiles in THREE configs: iOS app, Skip Android pass, AND Skip's
+  Darwin (iOS!) bridging pass — the module pass has no app-target types. Gate
+  UIKit code with `#if canImport(UIKit)`; gate app-target-only types
+  (MuscleHighlightCard etc.) with `#if DRIFT_IOS_APP` (defined in project.yml).
+- Pose photos: HEICs in the app module's Resources/ load via
+  Bundle.module.url(subdirectory:) → jar: URL → SkipUI AsyncImage (Coil)
+  decodes them fine on API 28+; withAnimation(.repeatForever) opacity
+  crossfade WORKS (PoseCrossfadeView renders on Android).
+- Outline "star" is UNMAPPED in skip-ui (case commented out upstream, #148) →
+  warning triangle; sym() maps star/star.slash → star.fill.
 
 ### 5. Drive + screenshot the emulator
 `adb shell input tap/text` through the SAME states you captured on iOS;

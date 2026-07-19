@@ -143,7 +143,7 @@ struct ExercisePickerScreen: View {
                     dismiss()
                 } label: {
                     HStack(spacing: 10) {
-                        bodyPartBadge(row.bodyPart)
+                        ExerciseThumbnail(info: ExerciseDatabase.info(for: row.name), size: 44)
                         VStack(alignment: .leading, spacing: 2) {
                             Text(row.name).foregroundStyle(Theme.textPrimary)
                             Text("\(row.bodyPart) · \(row.equipment)")

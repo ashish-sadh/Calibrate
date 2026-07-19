@@ -51,7 +51,7 @@ struct AndroidTemplatePreviewSheet: View {
                             }
                         } label: {
                             Label(template.isFavorite ? "Unfavorite" : "Favorite",
-                                  systemImage: template.isFavorite ? sym("star.slash") : "star")
+                                  systemImage: sym(template.isFavorite ? "star.slash" : "star"))
                                 .font(.caption)
                                 .frame(maxWidth: .infinity)
                         }
@@ -80,39 +80,35 @@ struct AndroidTemplatePreviewSheet: View {
     }
 
     private func templateRow(_ ex: WorkoutTemplate.TemplateExercise) -> some View {
-        HStack(spacing: 8) {
-            bodyPartBadge(ExerciseDatabase.bodyPart(for: ex.name))
-            VStack(alignment: .leading, spacing: 1) {
-                Text(ex.name).font(.subheadline)
-                HStack(spacing: 4) {
-                    Text("\(ex.sets) sets").font(.caption2).foregroundStyle(Theme.textTertiary)
-                    if let lastW = try? WorkoutService.lastWeight(for: ex.name) {
-                        Text("\u{00B7}").font(.caption2).foregroundStyle(Theme.textTertiary)
-                        Text("\(Int(Preferences.weightUnit.convertFromLbs(lastW))) \(Preferences.weightUnit.displayName)")
-                            .font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
-                    }
-                    if let notes = ex.notes {
-                        Text("\u{00B7}").font(.caption2).foregroundStyle(Theme.textTertiary)
-                        Text(notes).font(.caption2).foregroundStyle(Theme.textSecondary).italic()
+        NavigationLink {
+            ExerciseDetailView(exerciseName: ex.name, info: ExerciseDatabase.info(for: ex.name))
+        } label: {
+            HStack(spacing: 8) {
+                ExerciseThumbnail(info: ExerciseDatabase.info(for: ex.name), size: 40)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(ex.name).font(.subheadline)
+                    HStack(spacing: 4) {
+                        Text("\(ex.sets) sets").font(.caption2).foregroundStyle(Theme.textTertiary)
+                        if let lastW = try? WorkoutService.lastWeight(for: ex.name) {
+                            Text("\u{00B7}").font(.caption2).foregroundStyle(Theme.textTertiary)
+                            Text("\(Int(Preferences.weightUnit.convertFromLbs(lastW))) \(Preferences.weightUnit.displayName)")
+                                .font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
+                        }
+                        if let notes = ex.notes {
+                            Text("\u{00B7}").font(.caption2).foregroundStyle(Theme.textTertiary)
+                            Text(notes).font(.caption2).foregroundStyle(Theme.textSecondary).italic()
+                        }
                     }
                 }
+                Spacer()
+                Text("\(ex.restSeconds/60):\(String(format: "%02d", ex.restSeconds%60))")
+                    .font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
             }
-            Spacer()
-            Text("\(ex.restSeconds/60):\(String(format: "%02d", ex.restSeconds%60))")
-                .font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
+            .padding(.vertical, 3)
         }
-        .padding(.vertical, 3)
+        .tint(.primary)
+        .buttonStyle(.plain)
     }
-}
-
-/// Initial-letter body-part badge — stands in for the iOS ExerciseThumbnail
-/// (pose photos are iOS asset-catalog content pending Android packaging).
-func bodyPartBadge(_ part: String) -> some View {
-    Text(String(part.prefix(1)))
-        .font(.caption.weight(.bold))
-        .foregroundStyle(Theme.accent)
-        .frame(width: 40, height: 40)
-        .background(Theme.accentSoft, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 }
 
 // MARK: - Exercise browser (port of iOS ExerciseBrowserView, list level)
@@ -121,54 +117,74 @@ struct AndroidExerciseBrowser: View {
     @Environment(\.dismiss) var dismiss
     @State var query = ""
     @State var selectedBodyPart: String? = nil
-    @State var results: [ExerciseRow] = []
+    @State var results: [ExerciseDatabase.ExerciseInfo] = []
 
+    // Residual vs iOS ExerciseBrowserView (#1064): custom-exercise CTA +
+    // toolbar plus button await the CustomExerciseSheet port.
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        filterChip(nil, label: "All")
-                        ForEach(Exercise.bodyParts, id: \.self) { part in
-                            filterChip(part, label: part)
-                        }
-                    }
-                    .padding(.horizontal, 16).padding(.vertical, 8)
+                HStack {
+                    Image(systemName: "magnifyingglass").foregroundStyle(Theme.textSecondary)
+                    TextField("Search exercises", text: $query).textFieldStyle(.plain).autocorrectionDisabled()
+                }
+                .padding()
+                .background(Theme.cardBackground)
+                .overlay(alignment: .bottom) {
+                    Rectangle().fill(Theme.separator).frame(height: 0.5)
                 }
 
-                List(results) { row in
-                    HStack(spacing: 10) {
-                        bodyPartBadge(row.bodyPart)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(row.name).font(.subheadline)
-                            Text("\(row.bodyPart) · \(row.equipment)")
-                                .font(.caption2)
-                                .foregroundStyle(Theme.textSecondary)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        chip("All", selected: selectedBodyPart == nil) { selectedBodyPart = nil }
+                        ForEach(["Chest", "Back", "Legs", "Shoulders", "Arms", "Core"], id: \.self) { p in
+                            chip(p, selected: selectedBodyPart == p) { selectedBodyPart = p }
                         }
-                    }
+                    }.padding(.horizontal, 12).padding(.vertical, 6)
                 }
+
+                List {
+                    ForEach(results.prefix(100)) { ex in
+                        NavigationLink {
+                            ExerciseDetailView(exerciseName: ex.name, info: ex)
+                        } label: {
+                            HStack(spacing: 10) {
+                                ExerciseThumbnail(info: ex, size: 52)
+                                VStack(alignment: .leading, spacing: 5) {
+                                    Text(ex.name).font(.subheadline)
+                                    HStack(spacing: 4) {
+                                        muscleChip(ex.bodyPart)
+                                        if !ex.equipment.isEmpty && ex.equipment.lowercased() != "other" {
+                                            equipmentChip(ex.equipment)
+                                        }
+                                        if !ex.primaryMuscles.isEmpty {
+                                            Text(ex.primaryMuscles.prefix(2).map(\.capitalized).joined(separator: ", "))
+                                                .font(.caption2).foregroundStyle(Theme.textSecondary).lineLimit(1)
+                                        }
+                                    }
+                                }
+                            }
+                        }.tint(.primary)
+                    }
+                }.listStyle(.plain)
             }
             .background(Theme.background)
-            .searchable(text: $query)
-            .navigationTitle("Exercises")
+            .navigationTitle("Exercise Database").navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } }
+                ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
             }
             .task { await reload() }
             .onChange(of: query) { _, _ in Task { await reload() } }
+            .onChange(of: selectedBodyPart) { _, _ in Task { await reload() } }
         }
     }
 
-    private func filterChip(_ part: String?, label: String) -> some View {
-        Button {
-            selectedBodyPart = part
-            Task { await reload() }
-        } label: {
-            Text(label)
-                .font(.caption.weight(.medium))
-                .padding(.horizontal, 12).padding(.vertical, 6)
-                .background(selectedBodyPart == part ? Theme.ink : Theme.pillBackground, in: Capsule())
-                .foregroundStyle(selectedBodyPart == part ? .white : Theme.textPrimary)
+    private func chip(_ label: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(label).font(.caption.weight(.medium))
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .background(selected ? Theme.ink : Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 6))
+                .foregroundStyle(selected ? .white : .secondary)
         }
         .buttonStyle(.plain)
     }
@@ -184,9 +200,9 @@ struct AndroidExerciseBrowser: View {
                 if let part {
                     hits = hits.filter { $0.bodyPart.caseInsensitiveCompare(part) == .orderedSame }
                 }
-                continuation.resume(returning: hits.prefix(200).map {
-                    ExerciseRow(name: $0.name, bodyPart: $0.bodyPart, equipment: $0.equipment)
-                })
+                let favs = WorkoutService.exerciseFavorites
+                hits.sort { favs.contains($0.name) && !favs.contains($1.name) }
+                continuation.resume(returning: hits)
             }
         }
     }
