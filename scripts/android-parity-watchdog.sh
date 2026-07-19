@@ -53,7 +53,7 @@ while true; do
         DRIFT_AUTONOMOUS=1 \
         JAVA_HOME=/opt/homebrew/opt/openjdk \
         ANDROID_HOME=/opt/homebrew/share/android-commandlinetools \
-        claude -p "/android-parity" \
+        "${CLAUDE_BIN:-$HOME/.local/bin/claude}" -p "/android-parity" \
             --dangerously-skip-permissions \
             --fallback-model opus \
             --effort max \
