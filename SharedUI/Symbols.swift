@@ -31,6 +31,16 @@ func sym(_ name: String) -> String {
          "figure.boxing", "figure.cooldown", "figure.core.training",
          "figure.mixed.cardio": return "person"
     case "trophy.fill": return "star.fill"
+    // Active-workout surfaces (#1064 1c). Material's outline "circle" isn't
+    // in skip-ui's map — the un-done set ring reads as an outlined check.
+    case "circle": return "checkmark.circle"
+    case "xmark.circle", "xmark.circle.fill": return "xmark"
+    case "sparkles": return "star.fill"
+    case "arrow.up.circle.fill": return "paperplane.fill"
+    case "plus.circle": return "plus.circle.fill"
+    case "timer": return "calendar"
+    case "number": return "list.bullet"
+    case "doc.on.doc": return "pencil"
     case "play.circle.fill": return "play.fill"
     case "chart.bar": return "chart.bar.xaxis"
     case "wrench.and.screwdriver": return "wrench"

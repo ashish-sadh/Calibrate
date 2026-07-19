@@ -10,6 +10,7 @@ struct DriftWorkoutView: View {
     @State var weeklyCounts: [(weekStart: Date, count: Int)] = []
     @State var templates: [WorkoutTemplate] = []
     @State var showingNewWorkout = false
+    @State var showingPastWorkout = false
     @State var showingTextLog = false
     @State var showingExerciseBrowser = false
     @State var isLoading = true
@@ -99,6 +100,11 @@ struct DriftWorkoutView: View {
                     .card()
                 }
                 .buttonStyle(.plain)
+
+                Button { showingPastWorkout = true } label: {
+                    Label("Log Past Workout", systemImage: sym("clock.arrow.circlepath"))
+                        .font(.caption)
+                }.buttonStyle(.bordered).tint(.secondary)
 
                 // Templates
                 VStack(alignment: .leading, spacing: 8) {
@@ -244,10 +250,13 @@ struct DriftWorkoutView: View {
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Exercise")
         .sheet(isPresented: $showingNewWorkout, onDismiss: { loadData() }) {
-            AndroidActiveWorkoutSheet(template: selectedTemplate) {
+            ActiveWorkoutView(template: selectedTemplate) {
                 selectedTemplate = nil
                 loadData()
             }
+        }
+        .sheet(isPresented: $showingPastWorkout, onDismiss: { loadData() }) {
+            ActiveWorkoutView(pastDate: Date().addingTimeInterval(-86400)) { loadData() }
         }
         .sheet(isPresented: $showingTextLog, onDismiss: { loadData() }) {
             ExerciseTextLogSheet {

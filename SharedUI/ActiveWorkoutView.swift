@@ -1,30 +1,50 @@
 import SwiftUI
 import DriftCore
+#if canImport(AudioToolbox)
 import AudioToolbox
+#endif
+#if canImport(UserNotifications)
 import UserNotifications
+#endif
 
 // MARK: - Active Workout (with live timer, rest timer, prefilled weights)
+//
+// SharedUI single-source — ONE file compiles into the iOS app and the Skip
+// Fuse Android app (#1064 directive 1c). Deviations from the pre-port iOS
+// file, each SkipUI/platform-forced:
+//   · property wrappers lose `private` (Skip constraint)
+//   · SF Symbol names route through sym()
+//   · Timer.scheduledTimer → SecondTicker (Timer on Darwin; Task loop on
+//     Android, where swift-corelibs Timer needs a RunLoop nobody pumps)
+//   · rest-end UNUserNotification + AudioToolbox vibrate are Darwin-gated —
+//     Android rest-end cue is visual-only until the notification seam lands
+//   · share: UIActivityViewController on iOS (tap-time read, #967);
+//     ShareLink on Android (text is frozen before the sheet opens)
+//   · Haptics + AIBackendCoordinator are app-target types → DRIFT_IOS_APP;
+//     Android's command strip answers coach questions with the iOS
+//     no-cloud copy until the Coach port (#1066)
+//   · notes TextField(axis:) is Darwin-only (SkipUI renders it single-line)
 
 struct ActiveWorkoutView: View {
-    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.scenePhase) var scenePhase
     var template: WorkoutTemplate? = nil
     var pastDate: Date? = nil  // Non-nil = logging a past workout (no timer)
     let onComplete: () -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var workoutName = defaultWorkoutName()
-    @State private var workoutDate = Date()
-    @State private var workoutNotes = ""
-    @State private var exercises: [ActiveExercise] = []
-    @State private var showingExercisePicker = false
-    @State private var startTime = Date()
-    @State private var elapsedSeconds = 0
-    @State private var workoutTimer: Timer?
+    @Environment(\.dismiss) var dismiss
+    @State var workoutName = defaultWorkoutName()
+    @State var workoutDate = Date()
+    @State var workoutNotes = ""
+    @State var exercises: [ActiveExercise] = []
+    @State var showingExercisePicker = false
+    @State var startTime = Date()
+    @State var elapsedSeconds = 0
+    @State var workoutTimer = SecondTicker()
     // Global rest timer state
-    @State private var restSeconds = 0
-    @State private var restTotalSeconds = 90
-    @State private var restTimerActive = false
-    @State private var restTimer: Timer?
-    @State private var restEndTime: Date?
+    @State var restSeconds = 0
+    @State var restTotalSeconds = 90
+    @State var restTimerActive = false
+    @State var restTimer = SecondTicker()
+    @State var restEndTime: Date?
     // Rest-bar anchor by STABLE IDs, never array indices — deleting or
     // adding an exercise/set above the resting row shifts every index, which
     // made the running rest bar jump to whatever row inherited the index
@@ -32,28 +52,28 @@ struct ActiveWorkoutView: View {
     // exercises"). Five paths mutate these arrays mid-rest: delete set,
     // remove exercise (card menu), chat-strip "drop X", chat-add undo, and
     // the auto-added next set.
-    @State private var activeRestExerciseID: UUID? = nil
-    @State private var activeRestSetID: UUID? = nil
-    @State private var workoutEnded = false  // prevents re-persisting after finish/cancel
-    @State private var showingFinishOptions = false
-    @State private var showingCloseOptions = false
-    @State private var templateName = ""
-    @State private var showingTemplateName = false
-    @State private var saveAsTemplateToggle = false
-    @State private var favoriteAllToggle = false
-    @State private var showingCompletionSheet = false
-    @State private var completionShareText = ""
-    @State private var completionMilestone: String? = nil
+    @State var activeRestExerciseID: UUID? = nil
+    @State var activeRestSetID: UUID? = nil
+    @State var workoutEnded = false  // prevents re-persisting after finish/cancel
+    @State var showingFinishOptions = false
+    @State var showingCloseOptions = false
+    @State var templateName = ""
+    @State var showingTemplateName = false
+    @State var saveAsTemplateToggle = false
+    @State var favoriteAllToggle = false
+    @State var showingCompletionSheet = false
+    @State var completionShareText = ""
+    @State var completionMilestone: String? = nil
     // Command strip — say it, don't hunt for it: "add face pulls",
     // "drop curls", "last bench?" (exercise-UX design 2026-07-10)
-    @State private var commandText = ""
-    @State private var commandFeedback: CommandFeedback? = nil
-    @FocusState private var commandFocused: Bool
+    @State var commandText = ""
+    @State var commandFeedback: CommandFeedback? = nil
+    @FocusState var commandFocused: Bool
     // Coach toast — transient encouragement on set/exercise milestones
     // (operator 2026-07-12: "feels like a real coach and it disappears")
-    @State private var coachToast: String? = nil
-    @State private var coachToastToken = 0
-    @State private var encouragementTick = 0
+    @State var coachToast: String? = nil
+    @State var coachToastToken = 0
+    @State var encouragementTick = 0
 
     struct CommandFeedback {
         let text: String
@@ -116,18 +136,21 @@ struct ActiveWorkoutView: View {
                     // Workout header
                     VStack(spacing: 6) {
                         TextField("Workout name", text: $workoutName)
+                            .textFieldStyle(.plain)
                             .font(.title3.weight(.bold))
                             .multilineTextAlignment(.center)
                         if pastDate != nil {
-                            // Past workout: date picker
-                            DatePicker("Date", selection: $workoutDate, in: ...Date(), displayedComponents: .date)
+                            // Past workout: date picker. Label-closure init +
+                            // ClosedRange — the title-string and PartialRange
+                            // forms are unavailable in SkipSwiftUI.
+                            DatePicker(selection: $workoutDate, in: Date.distantPast...Date(), displayedComponents: .date) { Text("Date") }
                                 .labelsHidden()
                                 .font(.caption)
                         } else {
                             // Live workout: date + timer
                             HStack(spacing: 12) {
-                                Label(DateFormatters.dayDisplay.string(from: Date()), systemImage: "calendar")
-                                Label(formatDuration(elapsedSeconds), systemImage: "clock")
+                                Label(DateFormatters.dayDisplay.string(from: Date()), systemImage: sym("calendar"))
+                                Label(formatDuration(elapsedSeconds), systemImage: sym("clock"))
                             }
                             .font(.caption).foregroundStyle(Theme.textSecondary)
                         }
@@ -135,16 +158,13 @@ struct ActiveWorkoutView: View {
 
                     // Notes (collapsed by default)
                     if !workoutNotes.isEmpty || exercises.count > 0 {
-                        TextField("Workout notes...", text: $workoutNotes, axis: .vertical)
-                            .font(.caption).foregroundStyle(Theme.textSecondary)
-                            .lineLimit(1...3)
-                            .padding(.horizontal, 16)
+                        WorkoutNotesField(text: $workoutNotes)
                     }
 
                     // Quick add exercise at top (useful when template already has many)
                     if exercises.count >= 3 {
                         Button { showingExercisePicker = true } label: {
-                            Label("Add Exercise", systemImage: "plus.circle").font(.caption)
+                            Label("Add Exercise", systemImage: sym("plus.circle")).font(.caption)
                         }.buttonStyle(.bordered).tint(Theme.accent).padding(.horizontal, 12)
                     }
 
@@ -218,7 +238,7 @@ struct ActiveWorkoutView: View {
                     // two-row menu read as unfinished chrome (field report
                     // 2026-07-09). Labels say what actually happens.
                     Button { showingCloseOptions = true } label: {
-                        Image(systemName: "xmark.circle").foregroundStyle(Theme.textSecondary)
+                        Image(systemName: sym("xmark.circle")).foregroundStyle(Theme.textSecondary)
                     }
                     .confirmationDialog("Workout in progress", isPresented: $showingCloseOptions, titleVisibility: .visible) {
                         // Away time doesn't count once the sheet is closed —
@@ -248,7 +268,7 @@ struct ActiveWorkoutView: View {
                 NavigationStack {
                     ScrollView {
                     VStack(spacing: 20) {
-                        Image(systemName: "checkmark.circle.fill")
+                        Image(systemName: sym("checkmark.circle.fill"))
                             .font(.system(size: Theme.FontSize.display4))
                             .foregroundStyle(Theme.deficit)
                             .padding(.top, 24)
@@ -277,7 +297,7 @@ struct ActiveWorkoutView: View {
 
                         // Save as template toggle
                         Toggle(isOn: $saveAsTemplateToggle) {
-                            Label("Save as template", systemImage: "doc.on.doc")
+                            Label("Save as template", systemImage: sym("doc.on.doc"))
                                 .font(.subheadline)
                         }
                         .tint(Theme.accent)
@@ -286,7 +306,7 @@ struct ActiveWorkoutView: View {
 
                         // Favorite all exercises toggle
                         Toggle(isOn: $favoriteAllToggle) {
-                            Label("Favorite all exercises", systemImage: "star")
+                            Label("Favorite all exercises", systemImage: sym("star"))
                                 .font(.subheadline)
                         }
                         .tint(Theme.fatYellow)
@@ -295,6 +315,7 @@ struct ActiveWorkoutView: View {
 
                         if saveAsTemplateToggle {
                             TextField("Template name", text: $templateName)
+                                .textFieldStyle(.plain)
                                 .font(.subheadline)
                                 .padding(12)
                                 .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
@@ -351,6 +372,7 @@ struct ActiveWorkoutView: View {
                         .font(.subheadline).foregroundStyle(Theme.textSecondary)
                         .multilineTextAlignment(.center)
 
+                    #if canImport(UIKit)
                     Button {
                         // ShareLink(item:) snapshots the @State at render time (#967) —
                         // UIActivityViewController reads the text at tap time so it's
@@ -368,9 +390,17 @@ struct ActiveWorkoutView: View {
                             top.present(vc, animated: true)
                         }
                     } label: {
-                        Label("Share", systemImage: "square.and.arrow.up").frame(maxWidth: .infinity)
+                        Label("Share", systemImage: sym("square.and.arrow.up")).frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered)
+                    #else
+                    // Android: the text is final before this sheet presents, so
+                    // ShareLink's render-time snapshot (#967) can't bite here.
+                    ShareLink(item: completionShareText) {
+                        Label("Share", systemImage: sym("square.and.arrow.up")).frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    #endif
 
                     Button("Done") { showingCompletionSheet = false }
                         .buttonStyle(.borderedProminent).tint(Theme.accent)
@@ -421,7 +451,7 @@ struct ActiveWorkoutView: View {
                     // don't start one on foregrounding (it silently ticked
                     // a phantom clock for backdated workouts).
                     if pastDate == nil {
-                        workoutTimer?.invalidate()
+                        workoutTimer.invalidate()
                         startWorkoutTimer()
                     }
                     // Update rest timer from wall-clock end time
@@ -429,7 +459,7 @@ struct ActiveWorkoutView: View {
                         let remaining = Int(endTime.timeIntervalSince(Date()))
                         if remaining > 0 {
                             restSeconds = remaining
-                            restTimer?.invalidate()
+                            restTimer.invalidate()
                             startRestTimerTick()
                         } else {
                             // Rest finished while in background —
@@ -437,7 +467,7 @@ struct ActiveWorkoutView: View {
                             // alert + sound; no extra vibration here or
                             // the user gets buzzed twice.
                             restSeconds = 0
-                            restTimer?.invalidate()
+                            restTimer.invalidate()
                             restTimerActive = false
                             cancelRestEndNotification()
                         }
@@ -497,7 +527,7 @@ struct ActiveWorkoutView: View {
                     Button {
                         WorkoutService.toggleExerciseFavorite(name)
                     } label: {
-                        Label(isFav ? "Unfavorite" : "Favorite", systemImage: isFav ? "star.slash" : "star")
+                        Label(isFav ? "Unfavorite" : "Favorite", systemImage: sym(isFav ? "star.slash" : "star"))
                     }
                     // Flip between rep counting and a seconds timer — planks,
                     // farmer carries, or any exercise the name classifier got
@@ -506,17 +536,17 @@ struct ActiveWorkoutView: View {
                         exercises[ei].trackByTime.toggle()
                     } label: {
                         Label(exercises[ei].trackByTime ? "Track by Reps" : "Track by Time",
-                              systemImage: exercises[ei].trackByTime ? "number" : "timer")
+                              systemImage: sym(exercises[ei].trackByTime ? "number" : "timer"))
                     }
                     Divider()
                     Button(role: .destructive) {
                         exercises.remove(at: ei)
                         stopRestIfAnchorMissing()
                     } label: {
-                        Label("Remove Exercise", systemImage: "trash")
+                        Label("Remove Exercise", systemImage: sym("trash"))
                     }
                 } label: {
-                    Image(systemName: "xmark.circle.fill").font(.subheadline).foregroundStyle(Theme.textTertiary)
+                    Image(systemName: sym("xmark.circle.fill")).font(.subheadline).foregroundStyle(Theme.textTertiary)
                 }
                 .accessibilityLabel("Exercise options")
             }
@@ -526,6 +556,7 @@ struct ActiveWorkoutView: View {
                 get: { exercises[ei].notes ?? "" },
                 set: { exercises[ei].notes = $0.isEmpty ? nil : $0 }
             ))
+            .textFieldStyle(.plain)
             .font(.caption2).foregroundStyle(Theme.textSecondary).italic()
 
             // Column headers
@@ -549,13 +580,16 @@ struct ActiveWorkoutView: View {
                 Text("✓").font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary).frame(width: 30)
             }
 
-            // Sets
-            ForEach($exercises[ei].sets) { $set in
-                let si = exercises[ei].sets.firstIndex(where: { $0.id == set.id }) ?? 0
+            // Sets — index-based bindings, not `ForEach($exercises[ei].sets)`:
+            // SkipUI renders TextFields bound through a binding-ForEach
+            // projection as dead Text (typed input never lands). `si` was
+            // already recomputed per render in the binding form, so the
+            // semantics are unchanged; row identity stays the set's UUID.
+            ForEach(Array(exercises[ei].sets.enumerated()), id: \.element.id) { si, set in
                 VStack(spacing: 0) {
                     HStack(spacing: 0) {
                         Button {
-                            $set.isWarmup.wrappedValue.toggle()
+                            exercises[ei].sets[si].isWarmup.toggle()
                         } label: {
                             Text(set.isWarmup || exercises[ei].isWarmupExercise ? "W" : "\(si + 1)")
                                 .font(.caption.weight(.bold))
@@ -567,27 +601,21 @@ struct ActiveWorkoutView: View {
                             .font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary).frame(width: 85, alignment: .leading)
 
                         // Weight
-                        TextField(si < exercises[ei].previousSets.count ? prevWeight(exercises[ei].previousSets[si]) : "0",
-                                  text: $set.weight)
-                            .keyboardType(.decimalPad).font(.subheadline.monospacedDigit())
-                            .multilineTextAlignment(.center).frame(width: 55)
-                            .padding(.vertical, 4)
-                            .background(set.done ? Theme.deficit.opacity(0.1) : Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 4))
+                        SetCellField(placeholder: si < exercises[ei].previousSets.count ? prevWeight(exercises[ei].previousSets[si]) : "0",
+                                     text: $exercises[ei].sets[si].weight,
+                                     decimal: true, width: 55, leadingPad: 0, done: set.done)
 
                         // Reps or Time
-                        TextField(isDuration ? "sec" : (si < exercises[ei].previousSets.count ? prevReps(exercises[ei].previousSets[si]) : "0"),
-                                  text: $set.reps)
-                            .keyboardType(.numberPad).font(.subheadline.monospacedDigit())
-                            .multilineTextAlignment(.center).frame(width: 50)
-                            .padding(.vertical, 4).padding(.leading, 4)
-                            .background(set.done ? Theme.deficit.opacity(0.1) : Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 4))
+                        SetCellField(placeholder: isDuration ? "sec" : (si < exercises[ei].previousSets.count ? prevReps(exercises[ei].previousSets[si]) : "0"),
+                                     text: $exercises[ei].sets[si].reps,
+                                     decimal: false, width: 50, leadingPad: 4, done: set.done)
 
                         Spacer()
 
                         // Done button
                         Button {
-                            let nowDone = !set.done
-                            $set.done.wrappedValue = nowDone
+                            let nowDone = !exercises[ei].sets[si].done
+                            exercises[ei].sets[si].done = nowDone
                             if nowDone {
                                 // Celebrate BEFORE the auto-add below — the bonus
                                 // set would otherwise hide "exercise complete".
@@ -598,12 +626,13 @@ struct ActiveWorkoutView: View {
                                     startRest(exerciseID: exercises[ei].id, setID: set.id, duration: exercises[ei].restTime)
                                 }
                                 // Auto-add next set prefilled with same weight/reps
-                                if si == exercises[ei].sets.count - 1 && (!set.weight.isEmpty || !set.reps.isEmpty) {
-                                    exercises[ei].sets.append(ActiveSet(weight: set.weight, reps: set.reps))
+                                let current = exercises[ei].sets[si]
+                                if si == exercises[ei].sets.count - 1 && (!current.weight.isEmpty || !current.reps.isEmpty) {
+                                    exercises[ei].sets.append(ActiveSet(weight: current.weight, reps: current.reps))
                                 }
                             }
                         } label: {
-                            Image(systemName: set.done ? "checkmark.circle.fill" : "circle")
+                            Image(systemName: set.done ? sym("checkmark.circle.fill") : sym("circle"))
                                 .font(.title3)
                                 .foregroundStyle(set.done ? Theme.deficit : .secondary)
                         }.frame(width: 30)
@@ -614,19 +643,26 @@ struct ActiveWorkoutView: View {
                             if exercises[ei].sets.isEmpty { exercises.remove(at: ei) }
                             stopRestIfAnchorMissing()
                         } label: {
-                            Image(systemName: "xmark").font(.system(size: Theme.FontSize.micro)).foregroundStyle(Theme.textTertiary)
+                            Image(systemName: sym("xmark")).font(.system(size: Theme.FontSize.micro)).foregroundStyle(Theme.textTertiary)
                         }.frame(width: 20).accessibilityLabel("Delete set")
                     }
                     .padding(.vertical, 2)
+                    #if !os(Android)
+                    // Long-press delete duplicates the inline ✕. Darwin-only:
+                    // SkipUI's contextMenu wrapper (pointer-input long-press
+                    // container) keeps child Buttons alive but starves the
+                    // row's TextFields of focus taps — with it attached the
+                    // weight/reps fields never become editable on Android.
                     .contextMenu {
                         Button(role: .destructive) {
                             exercises[ei].sets.removeAll(where: { $0.id == set.id })
                             if exercises[ei].sets.isEmpty { exercises.remove(at: ei) }
                             stopRestIfAnchorMissing()
                         } label: {
-                            Label("Delete Set", systemImage: "trash")
+                            Label("Delete Set", systemImage: sym("trash"))
                         }
                     }
+                    #endif
 
                     // Inline rest timer bar (shows after this set if active)
                     if restTimerActive && activeRestExerciseID == exercises[ei].id && activeRestSetID == set.id {
@@ -715,7 +751,7 @@ struct ActiveWorkoutView: View {
         // Show the real elapsed value NOW — the first tick is a second away,
         // and a restored session would flash 0:00 until it lands.
         elapsedSeconds = Int(Date().timeIntervalSince(startTime))
-        workoutTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [self] _ in
+        workoutTimer.schedule { [self] in
             Task { @MainActor in
                 elapsedSeconds = Int(Date().timeIntervalSince(startTime))
                 // Auto-save session every 30 seconds
@@ -730,7 +766,7 @@ struct ActiveWorkoutView: View {
     /// notification. A timer whose row was deleted would otherwise keep
     /// running invisibly and vibrate/notify for a set that no longer exists.
     private func stopRest() {
-        restTimer?.invalidate()
+        restTimer.invalidate()
         restTimerActive = false
         restEndTime = nil
         restSeconds = 0
@@ -765,21 +801,20 @@ struct ActiveWorkoutView: View {
         activeRestExerciseID = exerciseID
         activeRestSetID = setID
         restTimerActive = true
-        restTimer?.invalidate()
+        restTimer.invalidate()
         startRestTimerTick()
         // Field bug 2026-05-24 (saketh): "the timer in the exercise part
         // of Drift doesn't go off unless I'm sitting on the page."
         // `Timer.scheduledTimer` runs on the main RunLoop which iOS
-        // suspends in background — the haptic at line ~595 never
-        // fires when the user puts the phone down between sets.
-        // Schedule a local notification with the same delay so iOS
-        // fires it regardless of app state. The in-app display timer
-        // stays as-is for foreground UX.
+        // suspends in background — the haptic never fires when the user
+        // puts the phone down between sets. Schedule a local notification
+        // with the same delay so iOS fires it regardless of app state.
+        // The in-app display timer stays as-is for foreground UX.
         scheduleRestEndNotification(after: duration)
     }
 
     private func startRestTimerTick() {
-        restTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+        restTimer.schedule {
             Task { @MainActor in
                 guard let endTime = restEndTime else { return }
                 let remaining = Int(ceil(endTime.timeIntervalSince(Date())))
@@ -787,10 +822,12 @@ struct ActiveWorkoutView: View {
                     restSeconds = remaining
                 } else {
                     restSeconds = 0
-                    restTimer?.invalidate()
+                    restTimer.invalidate()
                     restTimerActive = false
                     restEndTime = nil
+                    #if canImport(AudioToolbox)
                     AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
+                    #endif
                     // Foreground completion — clear the backup
                     // notification so it doesn't fire a moment later.
                     cancelRestEndNotification()
@@ -800,13 +837,14 @@ struct ActiveWorkoutView: View {
     }
 
     private func stopTimers() {
-        workoutTimer?.invalidate()
-        restTimer?.invalidate()
+        workoutTimer.invalidate()
+        restTimer.invalidate()
         cancelRestEndNotification()
     }
 
     // MARK: - Rest-end notification (background fallback)
 
+    #if canImport(UserNotifications)
     /// Identifier used so we can replace / cancel the pending request
     /// without touching any other Drift notification.
     private static let restEndNotificationID = "drift.workout.rest.end"
@@ -854,6 +892,12 @@ struct ActiveWorkoutView: View {
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: [Self.restEndNotificationID])
     }
+    #else
+    // Android: no local-notification seam yet (#1064 residual → notification
+    // adapter). The in-app countdown + bar still run; rest-end is visual-only.
+    private func scheduleRestEndNotification(after seconds: Int) {}
+    private func cancelRestEndNotification() {}
+    #endif
 
     // MARK: - Session Persistence
 
@@ -996,7 +1040,7 @@ struct ActiveWorkoutView: View {
                     Button {
                         commandFeedback = nil
                     } label: {
-                        Image(systemName: "xmark.circle.fill")
+                        Image(systemName: sym("xmark.circle.fill"))
                             .font(.caption).foregroundStyle(Theme.textTertiary)
                     }
                     .buttonStyle(.plain)
@@ -1007,9 +1051,10 @@ struct ActiveWorkoutView: View {
                 .transition(.opacity)
             }
             HStack(spacing: 8) {
-                Image(systemName: "sparkles")
+                Image(systemName: sym("sparkles"))
                     .font(.caption).foregroundStyle(Theme.accent.opacity(0.6))
                 TextField("what's next · form tips for squat · ask anything", text: $commandText)
+                    .textFieldStyle(.plain)
                     .font(.subheadline)
                     .focused($commandFocused)
                     .submitLabel(.send)
@@ -1017,7 +1062,7 @@ struct ActiveWorkoutView: View {
                     .accessibilityIdentifier("workout-command-input")
                 if !commandText.isEmpty {
                     Button { runCommand() } label: {
-                        Image(systemName: "arrow.up.circle.fill")
+                        Image(systemName: sym("arrow.up.circle.fill"))
                             .font(.title3).foregroundStyle(Theme.ink)
                     }
                     .buttonStyle(.plain)
@@ -1092,6 +1137,7 @@ struct ActiveWorkoutView: View {
     /// deterministic intents above never touch the network; this is the one
     /// path that does, and it says so ("Thinking…") instead of freezing.
     private func askCoach(_ question: String) {
+        #if DRIFT_IOS_APP
         guard AIBackendCoordinator.hasCoachCloud else {
             commandFeedback = CommandFeedback(text: "Coach questions need the cloud connection — try from the chat.")
             return
@@ -1111,6 +1157,11 @@ struct ActiveWorkoutView: View {
             commandFeedback = CommandFeedback(
                 text: trimmed.isEmpty ? "Didn't catch an answer — try that again." : trimmed)
         }
+        #else
+        // Android coach-cloud wiring arrives with the Coach port (#1066);
+        // deterministic commands above already work. Same copy as iOS-no-cloud.
+        commandFeedback = CommandFeedback(text: "Coach questions need the cloud connection — try from the chat.")
+        #endif
     }
 
     private func coachSessionContext() -> String {
@@ -1243,8 +1294,10 @@ struct ActiveWorkoutView: View {
                         completionMilestone = count == 1 ? "First workout!" : "Workout #\(count)!"
                     }
                 }
+                #if DRIFT_IOS_APP
                 // #premium-polish: finishing a workout was a silent moment.
                 Haptics.celebrate()
+                #endif
                 showingCompletionSheet = true
             }
         } catch { Log.app.error("Save workout: \(error.localizedDescription)") }
@@ -1279,5 +1332,87 @@ struct ActiveWorkoutView: View {
     private func formatDuration(_ s: Int) -> String {
         let h = s / 3600; let m = (s % 3600) / 60; let sec = s % 60
         return h > 0 ? String(format: "%d:%02d:%02d", h, m, sec) : String(format: "%d:%02d", m, sec)
+    }
+}
+
+// MARK: - Field structs (one TextField per View scope)
+//
+// skip-fuse-ui binds only the FIRST TextField evaluated in a ViewBuilder
+// scope (HStack/VStack/ForEach content flattens into the caller's scope);
+// later fields render as read-only text on Android. A struct body is its own
+// scope, so every extracted field binds. Identical render on iOS.
+
+struct SetCellField: View {
+    let placeholder: String
+    @Binding var text: String
+    let decimal: Bool
+    let width: CGFloat
+    let leadingPad: CGFloat
+    let done: Bool
+
+    var body: some View {
+        TextField(placeholder, text: $text)
+            .textFieldStyle(.plain)
+            .keyboardType(decimal ? .decimalPad : .numberPad)
+            .font(.subheadline.monospacedDigit())
+            .multilineTextAlignment(.center).frame(width: width)
+            .padding(.vertical, 4).padding(.leading, leadingPad)
+            .background(done ? Theme.deficit.opacity(0.1) : Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 4))
+    }
+}
+
+struct WorkoutNotesField: View {
+    @Binding var text: String
+
+    var body: some View {
+        #if os(Android)
+        TextField("Workout notes...", text: $text)
+            .textFieldStyle(.plain)
+            .font(.caption).foregroundStyle(Theme.textSecondary)
+            .padding(.horizontal, 16)
+        #else
+        TextField("Workout notes...", text: $text, axis: .vertical)
+            .textFieldStyle(.plain)
+            .font(.caption).foregroundStyle(Theme.textSecondary)
+            .lineLimit(1...3)
+            .padding(.horizontal, 16)
+        #endif
+    }
+}
+
+// MARK: - SecondTicker (cross-platform 1s repeating tick)
+
+/// Timer.scheduledTimer on Darwin; a Task sleep-loop on Android, where
+/// swift-corelibs `Timer` needs a pumped RunLoop that Compose's main thread
+/// doesn't provide. Class (not struct) so the ported call sites keep the
+/// original `invalidate()`/re-`schedule` shape under `@State`.
+final class SecondTicker {
+    #if os(Android)
+    private var task: Task<Void, Never>?
+    #else
+    private var timer: Timer?
+    #endif
+
+    func schedule(_ tick: @escaping @Sendable () -> Void) {
+        invalidate()
+        #if os(Android)
+        task = Task {
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 1_000_000_000)
+                if Task.isCancelled { break }
+                tick()
+            }
+        }
+        #else
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in tick() }
+        #endif
+    }
+
+    func invalidate() {
+        #if os(Android)
+        task?.cancel(); task = nil
+        #else
+        timer?.invalidate(); timer = nil
+        #endif
     }
 }

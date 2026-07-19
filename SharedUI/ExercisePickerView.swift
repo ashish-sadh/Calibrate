@@ -2,20 +2,24 @@ import SwiftUI
 import DriftCore
 
 // MARK: - Exercise Picker (873 exercises + history + custom)
+//
+// SharedUI single-source (#1064 directive 1c) — verbatim iOS body. Deviations,
+// each platform-forced: property wrappers lose `private` (Skip constraint),
+// SF Symbols route through sym(), the selection haptic is UIKit-gated.
 
 struct ExercisePickerView: View {
     let onSelect: (String) -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var query = ""
-    @State private var showingCustom = false
-    @State private var selectedBodyPartFilter: String? = nil
-    @State private var favs: Set<String> = WorkoutService.exerciseFavorites
-    @FocusState private var searchFocused: Bool
+    @Environment(\.dismiss) var dismiss
+    @State var query = ""
+    @State var showingCustom = false
+    @State var selectedBodyPartFilter: String? = nil
+    @State var favs: Set<String> = WorkoutService.exerciseFavorites
+    @FocusState var searchFocused: Bool
     /// Batch selection (2026-07-07 field ask): tapping a row used to add +
     /// dismiss immediately, so building a 4-exercise workout meant reopening
     /// this sheet 4 times. Rows now TOGGLE into this ordered list; one
     /// "Add N" button hands them all to `onSelect` and dismisses once.
-    @State private var selected: [String] = []
+    @State var selected: [String] = []
 
     private var results: [ExerciseDatabase.ExerciseInfo] {
         var list = query.isEmpty ? ExerciseDatabase.allWithCustom : ExerciseDatabase.search(query: query)
@@ -54,15 +58,27 @@ struct ExercisePickerView: View {
         return filtered.filter { $0.localizedCaseInsensitiveContains(query) }
     }
 
+    /// Row identity is scoped per section: the same exercise legitimately
+    /// appears in Favorites AND All Exercises (or Recent AND Your Exercises),
+    /// and Compose's LazyColumn hard-crashes on duplicate keys across the
+    /// whole List where iOS merely tolerates them.
+    private struct SectionEntry: Identifiable {
+        let sectionKey: String
+        let name: String
+        let bodyPart: String
+        var equipment: String? = nil
+        var id: String { sectionKey + "|" + name }
+    }
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 HStack {
-                    Image(systemName: "magnifyingglass").foregroundStyle(Theme.textSecondary)
+                    Image(systemName: sym("magnifyingglass")).foregroundStyle(Theme.textSecondary)
                     TextField("Search exercises", text: $query).textFieldStyle(.plain).autocorrectionDisabled()
                         .focused($searchFocused)
                     if !query.isEmpty {
-                        Button { query = "" } label: { Image(systemName: "xmark.circle.fill").foregroundStyle(Theme.textSecondary) }
+                        Button { query = "" } label: { Image(systemName: sym("xmark.circle.fill")).foregroundStyle(Theme.textSecondary) }
                     }
                 }
                 .padding()
@@ -84,14 +100,14 @@ struct ExercisePickerView: View {
                 List {
                     // Custom exercise option
                     Button { showingCustom = true } label: {
-                        Label("Create Custom Exercise", systemImage: "plus.circle.fill").foregroundStyle(Theme.accent)
+                        Label("Create Custom Exercise", systemImage: sym("plus.circle.fill")).foregroundStyle(Theme.accent)
                     }
 
                     // Favorite exercises
                     if !favoriteExercises.isEmpty {
                         Section("Favorites") {
-                            ForEach(favoriteExercises) { ex in
-                                exerciseRow(name: ex.name, bodyPart: ex.bodyPart, equipment: ex.equipment)
+                            ForEach(favoriteExercises.map { SectionEntry(sectionKey: "fav", name: $0.name, bodyPart: $0.bodyPart, equipment: $0.equipment) }) { e in
+                                exerciseRow(name: e.name, bodyPart: e.bodyPart, equipment: e.equipment)
                             }
                         }
                     }
@@ -99,8 +115,8 @@ struct ExercisePickerView: View {
                     // Recently used
                     if !recentExercises.isEmpty {
                         Section("Recent") {
-                            ForEach(recentExercises, id: \.self) { name in
-                                exerciseRow(name: name, bodyPart: ExerciseDatabase.bodyPart(for: name))
+                            ForEach(recentExercises.map { SectionEntry(sectionKey: "recent", name: $0, bodyPart: ExerciseDatabase.bodyPart(for: $0)) }) { e in
+                                exerciseRow(name: e.name, bodyPart: e.bodyPart)
                             }
                         }
                     }
@@ -108,16 +124,16 @@ struct ExercisePickerView: View {
                     // History exercises (logged before but not in DB)
                     if !historyExtras.isEmpty {
                         Section("Your Exercises") {
-                            ForEach(historyExtras, id: \.self) { name in
-                                exerciseRow(name: name, bodyPart: ExerciseDatabase.bodyPart(for: name))
+                            ForEach(historyExtras.map { SectionEntry(sectionKey: "extra", name: $0, bodyPart: ExerciseDatabase.bodyPart(for: $0)) }) { e in
+                                exerciseRow(name: e.name, bodyPart: e.bodyPart)
                             }
                         }
                     }
 
                     // Database exercises
                     Section(query.isEmpty ? "All Exercises (\(results.count))" : "\(results.count) results") {
-                        ForEach(results) { ex in
-                            exerciseRow(name: ex.name, bodyPart: ex.bodyPart, equipment: ex.equipment)
+                        ForEach(results.map { SectionEntry(sectionKey: "all", name: $0.name, bodyPart: $0.bodyPart, equipment: $0.equipment) }) { e in
+                            exerciseRow(name: e.name, bodyPart: e.bodyPart, equipment: e.equipment)
                         }
                     }
                 }.listStyle(.plain)
@@ -163,7 +179,9 @@ struct ExercisePickerView: View {
             selected.remove(at: idx)
         } else {
             selected.append(name)
+            #if canImport(UIKit)
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            #endif
         }
     }
 
@@ -176,24 +194,24 @@ struct ExercisePickerView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         if favs.contains(name) {
-                            Image(systemName: "star.fill").font(.caption2).foregroundStyle(Theme.fatYellow)
+                            Image(systemName: sym("star.fill")).font(.caption2).foregroundStyle(Theme.fatYellow)
                         }
                         Text(name).font(.subheadline)
                         Spacer()
                         if let lastW = try? WorkoutService.lastWeight(for: name) {
                             Text("\(Int(Preferences.weightUnit.convertFromLbs(lastW))) \(Preferences.weightUnit.displayName)").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textSecondary)
                         }
-                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        Image(systemName: isSelected ? sym("checkmark.circle.fill") : sym("circle"))
                             .font(.title3)
                             .foregroundStyle(isSelected ? Theme.accent : Theme.textTertiary.opacity(0.5))
                             .accessibilityLabel(isSelected ? "Selected" : "Not selected")
                     }
                     HStack(spacing: 4) {
                         if !bodyPart.isEmpty {
-                            muscleChip(bodyPart)
+                            pickerMuscleChip(bodyPart)
                         }
                         if let equipment, !equipment.isEmpty && equipment.lowercased() != "other" {
-                            equipmentChip(equipment)
+                            pickerEquipmentChip(equipment)
                         }
                     }
                 }
@@ -205,14 +223,16 @@ struct ExercisePickerView: View {
                 WorkoutService.toggleExerciseFavorite(name)
                 favs = WorkoutService.exerciseFavorites
             } label: {
-                Label(favs.contains(name) ? "Unfavorite" : "Favorite", systemImage: favs.contains(name) ? "star.slash" : "star")
+                Label(favs.contains(name) ? "Unfavorite" : "Favorite", systemImage: sym(favs.contains(name) ? "star.slash" : "star"))
             }.tint(Theme.fatYellow)
         }
     }
 
-    private func muscleChip(_ bodyPart: String) -> some View {
+    // Picker chips keep the coral tint (the browser's shared muscleChip went
+    // quiet-gray in the 2026-07-10 design pass; this screen didn't).
+    private func pickerMuscleChip(_ bodyPart: String) -> some View {
         HStack(spacing: 2) {
-            Image(systemName: muscleIcon(bodyPart)).font(.system(size: 8))
+            Image(systemName: sym(muscleIcon(bodyPart))).font(.system(size: 8))
             Text(bodyPart).font(.system(size: Theme.FontSize.nano))
         }
         .padding(.horizontal, 6).padding(.vertical, 2)
@@ -220,40 +240,14 @@ struct ExercisePickerView: View {
         .foregroundStyle(Theme.accent)
     }
 
-    private func equipmentChip(_ equipment: String) -> some View {
+    private func pickerEquipmentChip(_ equipment: String) -> some View {
         HStack(spacing: 2) {
-            Image(systemName: equipmentIcon(equipment)).font(.system(size: 8))
+            Image(systemName: sym(equipmentIcon(equipment))).font(.system(size: 8))
             Text(equipment.capitalized).font(.system(size: Theme.FontSize.nano))
         }
         .padding(.horizontal, 6).padding(.vertical, 2)
         .background(Color.secondary.opacity(0.1), in: Capsule())
         .foregroundStyle(Theme.textSecondary)
-    }
-
-    private func muscleIcon(_ bodyPart: String) -> String {
-        switch bodyPart.lowercased() {
-        case "chest": return "figure.strengthtraining.traditional"
-        case "back": return "figure.rowing"
-        case "legs": return "figure.run"
-        case "shoulders": return "figure.boxing"
-        case "arms": return "figure.cooldown"
-        case "core": return "figure.core.training"
-        default: return "figure.mixed.cardio"
-        }
-    }
-
-    private func equipmentIcon(_ equipment: String) -> String {
-        switch equipment.lowercased() {
-        case "barbell", "e-z curl bar": return "dumbbell.fill"
-        case "dumbbell": return "dumbbell"
-        case "cable": return "link"
-        case "machine": return "gearshape"
-        case "body only": return "figure.stand"
-        case "kettlebells": return "circle.fill"
-        case "bands": return "arrow.left.and.right"
-        case "exercise ball", "medicine ball": return "circle.dotted"
-        default: return "wrench.and.screwdriver"
-        }
     }
 
     private func filterChip(_ label: String, selected: Bool, action: @escaping () -> Void) -> some View {
@@ -270,9 +264,9 @@ struct ExercisePickerView: View {
 
 struct CustomExerciseSheet: View {
     let onSave: (String) -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var name = ""
-    @State private var bodyPart = "Chest"
+    @Environment(\.dismiss) var dismiss
+    @State var name = ""
+    @State var bodyPart = "Chest"
 
     var body: some View {
         NavigationStack {
