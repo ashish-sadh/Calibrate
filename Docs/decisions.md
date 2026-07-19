@@ -468,3 +468,15 @@ dependency-package resource bundles never reach the APK (app-module mirror + boo
 extraction to the exact path Bundle.module probes; NSHomeDirectory() on Android IS files/).
 `scripts/android-build-check.sh` is the enforced portability invariant — keep it green like
 the macOS build.
+
+## 2026-07-18: SharedUI — one physical file, both platforms (no copies)
+
+Operator directive: the Android port must not copy view code — shared UI must be written
+once and break loudly on both platforms or neither. Mechanism: top-level `SharedUI/`
+directory compiled by BOTH targets — project.yml adds it to the iOS Drift app's sources,
+and drift-android symlinks it into its Skip module (skipstone's staging follows symlinks;
+verified). Platform deltas live behind `#if os(Android)` with shims in the Android
+module's SkipUICompat.swift (Font.monospacedDigit, pressable()). Theme.swift is the
+first resident; workout views migrate next as their SkipUI compatibility is proven.
+RULE: any change under SharedUI/ (or DriftCore) is done only when BOTH builds pass —
+xcodebuild + `skip app launch --android` (or android-build-check.sh for core-only).

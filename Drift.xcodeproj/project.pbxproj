@@ -50,6 +50,7 @@
 		30C7E754FFFD0B3E4FD62CC6 /* PlantPointsCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC7D489024FD036D6FA417EA /* PlantPointsCardView.swift */; };
 		30C8DE33B9AC32E9DF686745 /* DriftCoachSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B2484CC19C12F468384943F /* DriftCoachSheet.swift */; };
 		30F7D3160F146CA92713AD13 /* MoreTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5F6D2AA89F46A33EAE39DEAC /* MoreTabView.swift */; };
+		3252B8FAEB184A837807F5AE /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 97546048A1775DD46E8D31FE /* Theme.swift */; };
 		3375CEC1D52AFAE8D81F4012 /* AISetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F4C6870115BE53081FA0CDE /* AISetupView.swift */; };
 		353B7C518B64225FD41FF203 /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AEB8D23DD72A1974C8C09E5 /* AppConfig.swift */; };
 		36A8BBAC1CDCF9BEE7FDAB6A /* MultiTurnRegressionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EAD396A0ED458F8F26650FA /* MultiTurnRegressionTests.swift */; };
@@ -82,7 +83,6 @@
 		5A6FF40412DE467AB6BDAF6D /* CombosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD6164BEC39C20085C879296 /* CombosView.swift */; };
 		5D799CB56178B7DEF0087C56 /* NormalizerEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC5F3236EF7B5CE9409448BD /* NormalizerEval.swift */; };
 		5D88D4133DC583D407E81955 /* FoodLoggingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3D6A44D7C25BC4956132FE8 /* FoodLoggingTests.swift */; };
-		5F4476C2F1B7DC3E662A1DBC /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24385DF0FF7F89584AE40020 /* Theme.swift */; };
 		5FBFC1E9BE6863AAC3771C04 /* SpeechRecognitionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72ADCE850F5C06D2C23A57DC /* SpeechRecognitionService.swift */; };
 		6191E6C9B6E6F21E8BE507EF /* CreateTemplateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 58A17CA98BD8D443868D1794 /* CreateTemplateView.swift */; };
 		61B9B828711B795636E338FD /* TimerCameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1173E4390111E2DAAD85AC41 /* TimerCameraView.swift */; };
@@ -325,7 +325,6 @@
 		21311CD0AE82F339C988BDD2 /* ExerciseBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseBrowserView.swift; sourceTree = "<group>"; };
 		217B3F5DA6C6AA9BB267D9F3 /* WeightEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightEntryView.swift; sourceTree = "<group>"; };
 		22F8386EAF9FBD18F89C8C60 /* ActiveWorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWorkoutView.swift; sourceTree = "<group>"; };
-		24385DF0FF7F89584AE40020 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		24EBC73AF46E92F7FF6A10FF /* IntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IntegrationTests.swift; sourceTree = "<group>"; };
 		2662F38D09EED0C1C9415508 /* PhotoLogCaptureView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLogCaptureView.swift; sourceTree = "<group>"; };
 		2C1DD3DDDC0B2E17B8004FC1 /* AIChatView+Cards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AIChatView+Cards.swift"; sourceTree = "<group>"; };
@@ -408,6 +407,7 @@
 		9317E4AADEC72D6DC385E722 /* LabReportDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabReportDetailView.swift; sourceTree = "<group>"; };
 		93C66225F8E6B3FE36556318 /* LowContrastSystemColorsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LowContrastSystemColorsTests.swift; sourceTree = "<group>"; };
 		967917DDF4130B1A30B42ABA /* CloudVisionClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudVisionClient.swift; sourceTree = "<group>"; };
+		97546048A1775DD46E8D31FE /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		992F9EA521699E76C12407E4 /* NebiusRoutineGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NebiusRoutineGenerator.swift; sourceTree = "<group>"; };
 		9A4575ED692EF5D3BFDBC775 /* AIChatInsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatInsightsView.swift; sourceTree = "<group>"; };
 		9ADFC025483E1D1D5A39857E /* ClarificationCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClarificationCard.swift; sourceTree = "<group>"; };
@@ -568,6 +568,14 @@
 			path = Supplements;
 			sourceTree = "<group>";
 		};
+		0B959AB6D3B8317F68861190 /* SharedUI */ = {
+			isa = PBXGroup;
+			children = (
+				97546048A1775DD46E8D31FE /* Theme.swift */,
+			);
+			path = SharedUI;
+			sourceTree = "<group>";
+		};
 		0CF035F730E3D07AD50E71EE /* Biomarkers */ = {
 			isa = PBXGroup;
 			children = (
@@ -599,6 +607,7 @@
 				230C4300561292D969C89B4E /* DriftTests */,
 				F48F3B458C8C99C4F6107636 /* DriftWidget */,
 				E43DD523F801D0D6B44061E1 /* Packages */,
+				0B959AB6D3B8317F68861190 /* SharedUI */,
 				D7CBC30631A98D4A41A6373C /* Frameworks */,
 				0EA67573775347F2DA7F1A99 /* Products */,
 			);
@@ -997,7 +1006,6 @@
 			children = (
 				FCBE3BA3D70586AC0F3ED34E /* DebugSeedData.swift */,
 				0CFCC1379789784011A217E4 /* Preferences+PhotoLog.swift */,
-				24385DF0FF7F89584AE40020 /* Theme.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -1278,7 +1286,7 @@
 				24CF74D9CA0E8A4555F1EC68 /* SupplementViewModel.swift in Sources */,
 				2159F8ABA37706FCF57C3A63 /* SupplementsTabView.swift in Sources */,
 				EE6A23C25BA80D02C16DFC47 /* TemplatePreviewSheet.swift in Sources */,
-				5F4476C2F1B7DC3E662A1DBC /* Theme.swift in Sources */,
+				3252B8FAEB184A837807F5AE /* Theme.swift in Sources */,
 				61B9B828711B795636E338FD /* TimerCameraView.swift in Sources */,
 				D460DC58016E359FB62DFCC3 /* TodayDonutView.swift in Sources */,
 				07703998EC9E02AD418576E8 /* TypingDotsView.swift in Sources */,

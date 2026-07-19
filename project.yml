@@ -64,6 +64,9 @@ targets:
       - path: Drift/ExercisePoses
         type: folder
         buildPhase: resources
+      # Cross-platform UI shared with the Android app (drift-android symlinks
+      # this same directory into its module) — ONE file builds for both.
+      - path: SharedUI
     resources:
       - path: Drift/Resources
     settings:
