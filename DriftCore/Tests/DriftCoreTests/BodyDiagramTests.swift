@@ -1,11 +1,12 @@
 import Foundation
-import CoreGraphics
 import Testing
 @testable import DriftCore
 
 /// Tier-0 for the #929 body-diagram port: the bundled model must load, every
 /// catalog muscle must resolve to a drawable region (or a documented gap),
-/// and the M/L/C/Z parser must honor the extraction contract.
+/// and the M/L/C/Z parser must honor the extraction contract. Since #1064
+/// the model is platform-neutral (command lists, no CoreGraphics) so the
+/// same figures render on iOS and Android.
 struct BodyDiagramTests {
 
     // MARK: - Model loading
@@ -17,7 +18,7 @@ struct BodyDiagramTests {
                 #expect(model != nil, "\(gender.rawValue)/\(side.rawValue) missing")
                 #expect(model?.outline.isEmpty == false, "\(gender.rawValue)/\(side.rawValue) has no silhouette — muscles would float")
                 #expect((model?.muscles.count ?? 0) >= 14)
-                #expect(model?.viewBox.width ?? 0 > 0)
+                #expect(model?.viewBoxWidth ?? 0 > 0)
             }
         }
     }
@@ -27,10 +28,13 @@ struct BodyDiagramTests {
         // extraction normalizes the source's per-view offsets — a path
         // outside the box means the offset math regressed).
         for (key, model) in BodyDiagram.models {
-            let box = CGRect(origin: .zero, size: model.viewBox).insetBy(dx: -5, dy: -5)
             for (slug, paths) in model.muscles {
                 for p in paths {
-                    #expect(box.contains(p.boundingBox), "\(key)/\(slug) path escapes viewBox: \(p.boundingBox)")
+                    let b = p.bounds
+                    let contained = b.minX >= -5 && b.minY >= -5
+                        && b.maxX <= model.viewBoxWidth + 5
+                        && b.maxY <= model.viewBoxHeight + 5
+                    #expect(contained, "\(key)/\(slug) path escapes viewBox: \(b)")
                 }
             }
         }
@@ -88,8 +92,14 @@ struct BodyDiagramTests {
     @Test func parserHandlesMLCZ() {
         let path = SVGPathParser.parse("M10 10L20 10C25 10 30 15 30 20Z")
         #expect(path != nil)
-        #expect(path?.boundingBox.minX == 10)
-        #expect(path?.boundingBox.maxX == 30)
+        #expect(path?.bounds.minX == 10)
+        #expect(path?.bounds.maxX == 30)
+        #expect(path?.commands == [
+            .move(x: 10, y: 10),
+            .line(x: 20, y: 10),
+            .curve(c1x: 25, c1y: 10, c2x: 30, c2y: 15, x: 30, y: 20),
+            .close,
+        ])
     }
 
     @Test func parserRejectsUnexpectedCommands() {
@@ -97,12 +107,22 @@ struct BodyDiagramTests {
         #expect(SVGPathParser.parse("M0 0a5 5 0 0110 0") == nil)
         #expect(SVGPathParser.parse("q1 1 2 2") == nil)
         #expect(SVGPathParser.parse("") == nil)
+        #expect(SVGPathParser.parse("Z") == nil, "a path with no drawable points is not a path")
     }
 
     @Test func parserHandlesNegativeAndDecimalCoordinates() {
         let path = SVGPathParser.parse("M-5.25 3.75L4.5 -2.25Z")
         #expect(path != nil)
-        #expect(abs((path?.boundingBox.minX ?? 0) - -5.25) < 0.001)
+        #expect(abs((path?.bounds.minX ?? 0) - -5.25) < 0.001)
+    }
+
+    @Test func boundsIncludeCurveControlPoints() {
+        // Same semantics as CGPath.boundingBox, which the viewBox containment
+        // guard was originally written against: control points count.
+        let path = SVGPathParser.parse("M0 0C50 100 60 -10 10 10")
+        #expect(path?.bounds.maxX == 60)
+        #expect(path?.bounds.maxY == 100)
+        #expect(path?.bounds.minY == -10)
     }
 }
 
@@ -138,8 +158,8 @@ struct BodyDiagramTests {
         let driftMuscles = ["abdominals", "adductors", "biceps", "calves", "chest",
                             "forearms", "glutes", "hamstrings", "lats", "lower back",
                             "middle back", "neck", "quadriceps", "shoulders", "traps", "triceps"]
-        let femaleSlugs = Set((BodyDiagram.model(gender: .female, side: .front)?.muscles.keys ?? [String: [CGPath]]().keys).map { $0 })
-            .union((BodyDiagram.model(gender: .female, side: .back)?.muscles.keys ?? [String: [CGPath]]().keys).map { $0 })
+        let femaleSlugs = Set(BodyDiagram.model(gender: .female, side: .front)?.muscles.keys.map { $0 } ?? [])
+            .union(BodyDiagram.model(gender: .female, side: .back)?.muscles.keys.map { $0 } ?? [])
         for m in driftMuscles {
             for slug in BodyDiagram.librarySlugs(forDriftMuscle: m) {
                 #expect(femaleSlugs.contains(slug), "female models missing slug '\(slug)' for \(m)")

@@ -1,6 +1,4 @@
-#if canImport(CoreGraphics)
 import Foundation
-import CoreGraphics
 
 /// The anatomical body model powering Drift's muscle-highlight diagrams (#929).
 /// Ported from react-native-body-highlighter (MIT, © 2022 ELABBASSI Hicham,
@@ -8,19 +6,22 @@ import CoreGraphics
 /// `bodyDiagram.json` contains four models (male/female × front/back) whose
 /// paths are pre-normalized to absolute M/L/C/Z commands in a (0,0)-origin
 /// viewBox, so the parser here stays tiny and fully Tier-0 testable.
+///
+/// Platform-neutral since #1064: paths are parsed into `SVGPath` command
+/// lists (pure Doubles, no CoreGraphics), so the same model renders through
+/// SwiftUI `Path` on iOS and Android alike.
 public enum BodyDiagram {
 
     public enum Side: String, CaseIterable, Sendable { case front, back }
     public enum Gender: String, CaseIterable, Sendable { case male, female }
 
-    /// @unchecked: CGPath is not formally Sendable but these are immutable
-    /// copies built once at load and never mutated — safe to share.
-    public struct Model: @unchecked Sendable {
-        public let viewBox: CGSize
+    public struct Model: Sendable {
+        public let viewBoxWidth: Double
+        public let viewBoxHeight: Double
         /// Body silhouette contours (stroked, not filled).
-        public let outline: [CGPath]
+        public let outline: [SVGPath]
         /// Library muscle slug → filled region paths.
-        public let muscles: [String: [CGPath]]
+        public let muscles: [String: [SVGPath]]
     }
 
     // MARK: - Loading
@@ -29,7 +30,7 @@ public enum BodyDiagram {
         let models: [String: RawModel]
     }
     private struct RawModel: Decodable {
-        let viewBox: [CGFloat]
+        let viewBox: [Double]
         let outline: [String]
         let muscles: [String: [String]]
     }
@@ -44,7 +45,8 @@ public enum BodyDiagram {
         }
         return doc.models.mapValues { raw in
             Model(
-                viewBox: CGSize(width: raw.viewBox[0], height: raw.viewBox[1]),
+                viewBoxWidth: raw.viewBox[0],
+                viewBoxHeight: raw.viewBox[1],
                 outline: raw.outline.compactMap(SVGPathParser.parse),
                 muscles: raw.muscles.mapValues { $0.compactMap(SVGPathParser.parse) }
             )
@@ -122,15 +124,40 @@ public enum BodyDiagram {
     }
 }
 
+/// A parsed body-model path: absolute M/L/C/Z commands plus precomputed
+/// bounds. Pure value data — the SwiftUI layer turns commands into `Path`.
+public struct SVGPath: Sendable, Equatable {
+    public enum Command: Sendable, Equatable {
+        case move(x: Double, y: Double)
+        case line(x: Double, y: Double)
+        case curve(c1x: Double, c1y: Double, c2x: Double, c2y: Double, x: Double, y: Double)
+        case close
+    }
+
+    /// Control-point-inclusive bounds — the same semantics as
+    /// `CGPath.boundingBox`, which the extraction-contract tests pin.
+    public struct Bounds: Sendable, Equatable {
+        public let minX: Double
+        public let minY: Double
+        public let maxX: Double
+        public let maxY: Double
+    }
+
+    public let commands: [Command]
+    public let bounds: Bounds
+}
+
 /// Parses the pre-normalized path strings in bodyDiagram.json: absolute
 /// M/L/C/Z only (H,V,Q,S,T,A were resolved at extraction time).
 public enum SVGPathParser {
 
-    public static func parse(_ d: String) -> CGPath? {
-        let path = CGMutablePath()
+    public static func parse(_ d: String) -> SVGPath? {
+        var commands: [SVGPath.Command] = []
+        var minX = Double.infinity, minY = Double.infinity
+        var maxX = -Double.infinity, maxY = -Double.infinity
         var i = d.startIndex
 
-        func number() -> CGFloat? {
+        func number() -> Double? {
             while i < d.endIndex, d[i] == " " { i = d.index(after: i) }
             let start = i
             if i < d.endIndex, d[i] == "-" { i = d.index(after: i) }
@@ -140,12 +167,14 @@ public enum SVGPathParser {
                 i = d.index(after: i)
             }
             guard sawDigit, let v = Double(d[start..<i]) else { return nil }
-            return CGFloat(v)
+            return v
         }
 
-        func point() -> CGPoint? {
+        func point() -> (x: Double, y: Double)? {
             guard let x = number(), let y = number() else { return nil }
-            return CGPoint(x: x, y: y)
+            minX = min(minX, x); maxX = max(maxX, x)
+            minY = min(minY, y); maxY = max(maxY, y)
+            return (x, y)
         }
 
         while i < d.endIndex {
@@ -154,22 +183,26 @@ public enum SVGPathParser {
             switch c {
             case "M":
                 guard let p = point() else { return nil }
-                path.move(to: p)
+                commands.append(.move(x: p.x, y: p.y))
             case "L":
                 guard let p = point() else { return nil }
-                path.addLine(to: p)
+                commands.append(.line(x: p.x, y: p.y))
             case "C":
                 guard let c1 = point(), let c2 = point(), let p = point() else { return nil }
-                path.addCurve(to: p, control1: c1, control2: c2)
+                commands.append(.curve(c1x: c1.x, c1y: c1.y, c2x: c2.x, c2y: c2.y, x: p.x, y: p.y))
             case "Z":
-                path.closeSubpath()
+                commands.append(.close)
             case " ":
                 continue
             default:
                 return nil  // unexpected command — extraction contract violated
             }
         }
-        return path.isEmpty ? nil : path
+        // A path with no drawable points (empty string, or bare Z) parses to
+        // nothing — mirrors the old CGPath.isEmpty guard.
+        guard minX.isFinite else { return nil }
+        return SVGPath(commands: commands,
+                       bounds: .init(minX: minX, minY: minY, maxX: maxX, maxY: maxY))
     }
 }
 
@@ -204,4 +237,3 @@ public struct MuscleInfo: Sendable {
         "triceps": .init(displayName: "Triceps", latinName: "triceps brachii", function: "Straighten your elbow — every press finishes here"),
     ]
 }
-#endif // canImport(CoreGraphics)

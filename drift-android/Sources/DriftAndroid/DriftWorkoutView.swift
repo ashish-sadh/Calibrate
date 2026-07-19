@@ -3,8 +3,8 @@ import DriftCore
 
 /// Android port of the iOS `WorkoutView` (Drift/Views/Workout/WorkoutView.swift)
 /// — same layout, cards, and Theme, driving the same DriftCore services.
-/// Omitted pending parity work: BodyMapView (CGPath, iOS-only), Strong/Hevy
-/// CSV import, template rename alert, workout context menus.
+/// Omitted pending parity work: Strong/Hevy CSV import, template rename
+/// alert, workout context menus, progressive-overload alerts, Health card.
 struct DriftWorkoutView: View {
     @State var workouts: [WorkoutSummary] = []
     @State var weeklyCounts: [(weekStart: Date, count: Int)] = []
@@ -186,6 +186,13 @@ struct DriftWorkoutView: View {
                     .card()
                 }
                 .buttonStyle(.plain)
+
+                // Body recovery map (same slot as iOS: before streak/consistency)
+                BodyMapView { template in
+                    WorkoutService.clearSession()
+                    selectedTemplate = template
+                    showingNewWorkout = true
+                }
 
                 if weeklyCounts.reduce(0, { $0 + $1.count }) > 0 {
                     if let streak, streak.current > 0 {

@@ -25,18 +25,12 @@ struct ExerciseDetailView: View {
                             .frame(height: 190)
                             .background(Color.white, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
                     }
-                    #if DRIFT_IOS_APP
-                    // MuscleHighlightCard lives in the iOS app target (CGPath-
-                    // bound today; the Android port of BodyDiagram lands with
-                    // the #1064 recovery body map), so it is gated on the app
-                    // condition, not the platform.
                     if !info.primaryMuscles.isEmpty || !info.secondaryMuscles.isEmpty {
                         MuscleHighlightCard(
                             primaryMuscles: info.primaryMuscles,
                             secondaryMuscles: info.secondaryMuscles
                         )
                     }
-                    #endif
                 }
 
                 VStack(alignment: .leading, spacing: 8) {

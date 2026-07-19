@@ -2,18 +2,20 @@ import SwiftUI
 import DriftCore
 
 /// Shows muscle groups with recovery status colors and contextual coaching.
+/// Single-source for iOS and Android (#1064). Skip constraint: `@State` must
+/// not be `private`.
 struct BodyMapView: View {
     var onStartTemplate: ((WorkoutTemplate) -> Void)? = nil
-    @State private var muscleStatus: [String: MuscleStatus] = [:]
-    @State private var daysSince: [String: Int] = [:]
-    @State private var lastTrainedDate: [String: String] = [:] // group → "Mar 29"
-    @State private var recentExercises: [String: [String]] = [:] // group → exercise names
-    @State private var weeklySetCounts: [String: Int] = [:]
-    @State private var selectedGroup: String?
+    @State var muscleStatus: [String: MuscleStatus] = [:]
+    @State var daysSince: [String: Int] = [:]
+    @State var lastTrainedDate: [String: String] = [:] // group → "Mar 29"
+    @State var recentExercises: [String: [String]] = [:] // group → exercise names
+    @State var weeklySetCounts: [String: Int] = [:]
+    @State var selectedGroup: String?
     // Soreness check-in — one quiet question/day; answers tune the
     // per-group recovery estimate that drives the coloring above.
-    @State private var sorenessState = MuscleSoreness.loadState()
-    @State private var sorenessQuestion: String?
+    @State var sorenessState = MuscleSoreness.loadState()
+    @State var sorenessQuestion: String?
 
     enum MuscleStatus: Sendable {
         case recovered, moderate, recovering, untrained
@@ -32,7 +34,7 @@ struct BodyMapView: View {
 
     /// UI group → library body-model slugs (#929). Drives the recovery
     /// coloring on the anatomical figures.
-    private static let groupSlugs: [String: [String]] = [
+    static let groupSlugs: [String: [String]] = [
         "Chest": ["chest"],
         "Back": ["upper-back", "lower-back", "trapezius"],
         "Shoulders": ["deltoids"],
@@ -60,16 +62,21 @@ struct BodyMapView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Muscle Recovery").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
 
-            // Anatomical recovery figures (#929) — replace the old SF-symbol
-            // icons: green = recovered, orange = moderate, red = recovering,
-            // neutral = not trained recently.
+            // Anatomical recovery figures (#929) — green = recovered,
+            // orange = moderate, red = recovering, neutral = not trained
+            // recently.
+            // Explicit width ≈ the figure's natural fit at this row height —
+            // on Android, Compose treats the GeometryReader-backed figure as
+            // greedy and would otherwise spread the pair across the card.
             HStack(spacing: 24) {
                 VStack(spacing: 2) {
                     MuscleBodyView(side: .front, slugColors: recoverySlugColors)
+                        .frame(width: 84)
                     Text("Front").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
                 VStack(spacing: 2) {
                     MuscleBodyView(side: .back, slugColors: recoverySlugColors)
+                        .frame(width: 84)
                     Text("Back").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
             }
@@ -77,33 +84,15 @@ struct BodyMapView: View {
             .frame(maxWidth: .infinity)
             .accessibilityHidden(true)  // the group buttons below carry the text
 
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
-                ForEach(Self.muscleGroups, id: \.self) { group in
-                    let status = muscleStatus[group] ?? .untrained
-                    Button { selectedGroup = selectedGroup == group ? nil : group } label: {
-                        VStack(spacing: 3) {
-                            Text(group).font(.caption2.weight(.semibold))
-                                .foregroundStyle(status.color)
-                            if let days = daysSince[group] {
-                                Text(days == 0 ? "Today" : "\(days)d ago")
-                                    .font(.caption2.monospacedDigit()).foregroundStyle(Theme.textSecondary)
-                            } else {
-                                Text("\u{2014}").font(.caption2).foregroundStyle(Theme.textTertiary)
-                            }
-                            if let count = weeklySetCounts[group], count > 0 {
-                                Text("\(count) sets")
-                                    .font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
-                            }
-                        }
-                        .frame(maxWidth: .infinity).padding(.vertical, 8)
-                        .background(status.color.opacity(0.08 + volumeIntensity(for: group) * 0.22), in: RoundedRectangle(cornerRadius: 8))
-                        .overlay {
-                            if selectedGroup == group {
-                                RoundedRectangle(cornerRadius: 8).strokeBorder(status.color, lineWidth: 1.5)
-                            }
-                        }
-                    }.buttonStyle(.plain)
-                    .accessibilityLabel("\(group): \(status == .untrained ? "not trained recently" : status == .recovered ? "recovered" : status == .moderate ? "moderately recovered" : "still recovering")\(daysSince[group].map { $0 == 0 ? ", trained today" : ", \($0) days ago" } ?? "")")
+            // 3×2 group grid as plain rows, not LazyVGrid — SkipUI's lazy
+            // grid collapses inside this ScrollView (card clips mid-grid).
+            // The group list is static; rows render identically on iOS.
+            VStack(spacing: 8) {
+                HStack(spacing: 8) {
+                    ForEach(Array(Self.muscleGroups.prefix(3)), id: \.self) { groupChip($0) }
+                }
+                HStack(spacing: 8) {
+                    ForEach(Array(Self.muscleGroups.dropFirst(3)), id: \.self) { groupChip($0) }
                 }
             }
 
@@ -120,7 +109,7 @@ struct BodyMapView: View {
                     sorenessChip("Yes") { answerSoreness(group: group, stillSore: true) }
                     sorenessChip("No") { answerSoreness(group: group, stillSore: false) }
                     Button { dismissSoreness(group: group) } label: {
-                        Image(systemName: "xmark")
+                        Image(systemName: sym("xmark"))
                             .font(.system(size: 9, weight: .semibold))
                             .foregroundStyle(Theme.textTertiary)
                             .frame(width: 20, height: 20)
@@ -131,7 +120,10 @@ struct BodyMapView: View {
                 }
                 .padding(.top, 2)
                 .transition(.opacity)
+                #if !os(Android)
+                // SkipUI declares accessibilityElement(children:) unavailable.
                 .accessibilityElement(children: .contain)
+                #endif
                 .accessibilityIdentifier("soreness-checkin")
             }
 
@@ -142,6 +134,36 @@ struct BodyMapView: View {
         }
         .card()
         .onAppear { loadMuscleStatus() }
+    }
+
+    // MARK: - Group Chip
+
+    private func groupChip(_ group: String) -> some View {
+        let status = muscleStatus[group] ?? .untrained
+        return Button { selectedGroup = selectedGroup == group ? nil : group } label: {
+            VStack(spacing: 3) {
+                Text(group).font(.caption2.weight(.semibold))
+                    .foregroundStyle(status.color)
+                if let days = daysSince[group] {
+                    Text(days == 0 ? "Today" : "\(days)d ago")
+                        .font(.caption2.monospacedDigit()).foregroundStyle(Theme.textSecondary)
+                } else {
+                    Text("\u{2014}").font(.caption2).foregroundStyle(Theme.textTertiary)
+                }
+                if let count = weeklySetCounts[group], count > 0 {
+                    Text("\(count) sets")
+                        .font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
+                }
+            }
+            .frame(maxWidth: .infinity).padding(.vertical, 8)
+            .background(status.color.opacity(0.08 + volumeIntensity(for: group) * 0.22), in: RoundedRectangle(cornerRadius: 8))
+            .overlay {
+                if selectedGroup == group {
+                    RoundedRectangle(cornerRadius: 8).strokeBorder(status.color, lineWidth: 1.5)
+                }
+            }
+        }.buttonStyle(.plain)
+        .accessibilityLabel("\(group): \(status == .untrained ? "not trained recently" : status == .recovered ? "recovered" : status == .moderate ? "moderately recovered" : "still recovering")\(daysSince[group].map { $0 == 0 ? ", trained today" : ", \($0) days ago" } ?? "")")
     }
 
     // MARK: - Contextual Group Panel
@@ -159,7 +181,7 @@ struct BodyMapView: View {
             if status == .untrained {
                 // Not trained recently — encourage with suggestions
                 HStack(spacing: 6) {
-                    Image(systemName: "exclamationmark.triangle.fill").font(.caption).foregroundStyle(Theme.textSecondary)
+                    Image(systemName: sym("exclamationmark.triangle.fill")).font(.caption).foregroundStyle(Theme.textSecondary)
                     Text("You haven't trained \(group.lowercased()) in over a week.")
                         .font(.caption).foregroundStyle(Theme.textSecondary)
                 }
@@ -204,7 +226,7 @@ struct BodyMapView: View {
             onStartTemplate?(template)
         } label: {
             HStack(spacing: 4) {
-                Image(systemName: "play.circle.fill").font(.caption)
+                Image(systemName: sym("play.circle.fill")).font(.caption)
                 Text("Start \(template.name)").font(.caption2.weight(.medium))
             }
             .foregroundStyle(Theme.accent)
@@ -241,18 +263,51 @@ struct BodyMapView: View {
         return Double(count) / Double(maxSets)
     }
 
-    // MARK: - Icons
-
     // MARK: - Data Loading
 
+    struct StatusSnapshot: @unchecked Sendable {
+        var muscleStatus: [String: MuscleStatus] = [:]
+        var daysSince: [String: Int] = [:]
+        var lastTrainedDate: [String: String] = [:]
+        var recentExercises: [String: [String]] = [:]
+        var weeklySetCounts: [String: Int] = [:]
+        var sorenessQuestion: String?
+    }
+
     private func loadMuscleStatus() {
+        #if os(Android)
+        // AppDatabase work on the UI thread ANRs debug builds on Android —
+        // compute off-main, then apply. iOS keeps its inline load.
+        let state = sorenessState
+        Task {
+            let snap = await withCheckedContinuation { (cont: CheckedContinuation<StatusSnapshot, Never>) in
+                DispatchQueue.global(qos: .userInitiated).async {
+                    cont.resume(returning: Self.computeStatus(state: state))
+                }
+            }
+            apply(snap)
+        }
+        #else
+        apply(Self.computeStatus(state: sorenessState))
+        #endif
+    }
+
+    private func apply(_ snap: StatusSnapshot) {
+        muscleStatus = snap.muscleStatus
+        daysSince = snap.daysSince
+        lastTrainedDate = snap.lastTrainedDate
+        recentExercises = snap.recentExercises
+        weeklySetCounts = snap.weeklySetCounts
+        sorenessQuestion = snap.sorenessQuestion
+    }
+
+    static func computeStatus(state: MuscleSoreness.State) -> StatusSnapshot {
+        var snap = StatusSnapshot()
         let cal = Calendar.current
         let today = Date()
-        guard let workouts = try? WorkoutService.fetchWorkouts(limit: 500) else { return }
+        guard let workouts = try? WorkoutService.fetchWorkouts(limit: 500) else { return snap }
 
         var lastWorked: [String: Date] = [:]
-        var exercisesByGroup: [String: [String]] = [:]
-        var setCounts: [String: Int] = [:]
 
         for w in workouts {
             guard let wDate = DateFormatters.dateOnly.date(from: String(w.date.prefix(10))),
@@ -269,52 +324,50 @@ struct BodyMapView: View {
                     lastWorked[group] = wDate
                 }
                 // Track recent exercises per group
-                var groupExercises = exercisesByGroup[group, default: []]
+                var groupExercises = snap.recentExercises[group, default: []]
                 if !groupExercises.contains(s.exerciseName) {
                     groupExercises.append(s.exerciseName)
                 }
-                exercisesByGroup[group] = groupExercises
+                snap.recentExercises[group] = groupExercises
                 // Count sets in the past 7 days for weekly volume display
-                if daysDiff <= 7 { setCounts[group, default: 0] += 1 }
+                if daysDiff <= 7 { snap.weeklySetCounts[group, default: 0] += 1 }
             }
         }
-
-        weeklySetCounts = setCounts
-        recentExercises = exercisesByGroup
 
         let dateFmt = DateFormatter()
         dateFmt.dateFormat = "MMM d"
 
         var hoursSinceByGroup: [String: Double] = [:]
-        for group in Self.muscleGroups {
-            if let d = lastWorked[group] { lastTrainedDate[group] = dateFmt.string(from: d) }
+        for group in muscleGroups {
+            if let d = lastWorked[group] { snap.lastTrainedDate[group] = dateFmt.string(from: d) }
             if let lastDate = lastWorked[group] {
                 let days = cal.dateComponents([.day], from: lastDate, to: today).day ?? 999
-                daysSince[group] = days
+                snap.daysSince[group] = days
                 if days > 7 {
-                    muscleStatus[group] = .untrained
+                    snap.muscleStatus[group] = .untrained
                 } else {
                     // Learned per-group recovery estimate (default 72h
                     // reproduces the old hardcoded day thresholds). Workout
                     // dates are day-granular, hence days × 24.
                     let hours = Double(days) * 24
                     hoursSinceByGroup[group] = hours
-                    let estimate = MuscleSoreness.recoveryHours(for: group, state: sorenessState)
+                    let estimate = MuscleSoreness.recoveryHours(for: group, state: state)
                     switch MuscleSoreness.status(hoursSince: hours, recoveryHours: estimate) {
-                    case .recovering: muscleStatus[group] = .recovering
-                    case .moderate: muscleStatus[group] = .moderate
-                    case .recovered: muscleStatus[group] = .recovered
+                    case .recovering: snap.muscleStatus[group] = .recovering
+                    case .moderate: snap.muscleStatus[group] = .moderate
+                    case .recovered: snap.muscleStatus[group] = .recovered
                     }
                 }
             } else {
-                muscleStatus[group] = .untrained
+                snap.muscleStatus[group] = .untrained
             }
         }
 
-        sorenessQuestion = MuscleSoreness.questionCandidate(
+        snap.sorenessQuestion = MuscleSoreness.questionCandidate(
             hoursSinceByGroup: hoursSinceByGroup,
-            state: sorenessState,
+            state: state,
             today: DateFormatters.dateOnly.string(from: today))
+        return snap
     }
 
     // MARK: - Soreness Check-in
