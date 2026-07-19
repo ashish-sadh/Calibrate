@@ -86,7 +86,9 @@ Each entry tagged with its maintenance status. **Auto-maintained** = a script or
 
 The codebase is split into a multi-platform `DriftCore` Swift package + the iOS Drift app target.
 
-**`DriftCore/Sources/DriftCore/`** — cross-platform domain logic. Builds on iOS AND macOS. No `import UIKit/SwiftUI/HealthKit/WidgetKit/AVFoundation/Speech/Photos/AppIntents`.
+**`DriftCore/Sources/DriftCore/`** — cross-platform domain logic. Builds on iOS AND macOS AND Android (`scripts/android-build-check.sh` is the Android guard — keep it green). No `import UIKit/SwiftUI/HealthKit/WidgetKit/AVFoundation/Speech/Photos/AppIntents`.
+
+**`SharedUI/`** — SwiftUI shared verbatim between the iOS app and the Android app (`drift-android/` Skip Fuse app symlinks it into its module). ONE physical file compiles for both — never copy view code between the apps; platform deltas go behind `#if os(Android)` with shims in `drift-android/.../SkipUICompat.swift`. A change under SharedUI/ or DriftCore is done only when BOTH platforms build: `xcodebuild` (iOS) and `cd drift-android && skip app launch --android` (or android-build-check.sh for core-only changes).
 - `Models/` — data types (Food, FoodEntry, WeightEntry, RecipeItem, etc.)
 - `Persistence/` — AppDatabase + GRDB extensions
 - `Adapters/` — DriftPlatform registry + protocols (HealthDataProvider, WidgetRefresher) for iOS-only seams
