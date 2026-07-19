@@ -37,14 +37,21 @@ struct MuscleBodyView: View {
 
     var body: some View {
         #if os(Android)
+        // drawingGroup → Compose CompositingStrategy.Offscreen: the figure
+        // rasterizes ONCE into a cached layer texture. Without it, swiftshader
+        // (and the Pixel 2's GPU) re-rasterizes ~640 antialiased vector paths
+        // on every scroll frame — measured 45-115ms/frame of pure raster time
+        // on the workout tab (#1074).
         if let box = fitBox {
             figure(in: box)
                 .frame(width: box.width, height: box.height)
+                .drawingGroup()
                 .accessibilityHidden(true)
         } else {
             GeometryReader { geo in
                 figure(in: geo.size)
             }
+            .drawingGroup()
             .aspectRatio(aspectRatio, contentMode: .fit)
             .accessibilityHidden(true)
         }

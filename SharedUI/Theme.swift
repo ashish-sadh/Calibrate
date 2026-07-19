@@ -293,15 +293,36 @@ extension View {
     /// being dropped at the same time (`CardStyle`) — the lift needed
     /// to come from somewhere or cards would visually collapse into
     /// the page background.
-    func shadowSoft() -> some View {
+    /// `cornerRadius` shapes only the Android fake-shadow layers below —
+    /// pass the radius of the view's own background shape (capsules ≈ half
+    /// their height). Inert on iOS, where the blur shadow needs no shape.
+    func shadowSoft(cornerRadius: CGFloat = Theme.cardCornerRadius) -> some View {
         // Premium depth = a LAYERED shadow (Apple Fitness/Health signature): a
         // soft diffused ambient for the gentle "float", plus a tight contact
         // shadow that grounds the card. Both low-opacity so it reads refined,
         // not heavy. Replaces the single flat r6 shadow that made cards look
         // stuck-on. #premium-polish
-        self
+        #if os(Android)
+        // skip-ui's .shadow() re-composes the shadowed content once PER
+        // LAYER and pushes it through a gaussian-blur RenderEffect every
+        // frame — removing it took the workout tab from 85ms to 29ms p50
+        // frame time (#1074). Three stacked offset fills at descending
+        // opacity read as the same soft bottom lift with zero blur passes.
+        return self.background(
+            ZStack {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(Color.black.opacity(0.02)).offset(y: 6)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(Color.black.opacity(0.03)).offset(y: 3.5)
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(Color.black.opacity(0.04)).offset(y: 1.5)
+            }
+        )
+        #else
+        return self
             .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
             .shadow(color: Color.black.opacity(0.04), radius: 1.5, x: 0, y: 1)
+        #endif
     }
     /// V6 pop shadow. Sheets / popovers.
     func shadowPop() -> some View {

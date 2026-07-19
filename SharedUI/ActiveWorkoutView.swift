@@ -37,10 +37,10 @@ struct ActiveWorkoutView: View {
     @State var exercises: [ActiveExercise] = []
     @State var showingExercisePicker = false
     @State var startTime = Date()
-    @State var elapsedSeconds = 0
     @State var workoutTimer = SecondTicker()
-    // Global rest timer state
-    @State var restSeconds = 0
+    // Global rest timer state. The 1s countdown display lives in
+    // RestTimerBar's own @State (#1074) — this level only tracks which set
+    // is resting and when rest ends.
     @State var restTotalSeconds = 90
     @State var restTimerActive = false
     @State var restTimer = SecondTicker()
@@ -150,7 +150,7 @@ struct ActiveWorkoutView: View {
                             // Live workout: date + timer
                             HStack(spacing: 12) {
                                 Label(DateFormatters.dayDisplay.string(from: Date()), systemImage: sym("calendar"))
-                                Label(formatDuration(elapsedSeconds), systemImage: sym("clock"))
+                                WorkoutClockLabel(startTime: startTime, style: .headerLabel)
                             }
                             .font(.caption).foregroundStyle(Theme.textSecondary)
                         }
@@ -223,7 +223,7 @@ struct ActiveWorkoutView: View {
                         .foregroundStyle(.white)
                         .padding(.horizontal, 18).padding(.vertical, 10)
                         .background(Theme.ink, in: Capsule())
-                        .shadowSoft()
+                        .shadowSoft(cornerRadius: 20)
                         .padding(.top, 8)
                         .transition(.move(edge: .top).combined(with: .opacity))
                         .allowsHitTesting(false)
@@ -278,7 +278,7 @@ struct ActiveWorkoutView: View {
                         // Workout summary
                         HStack(spacing: 16) {
                             VStack(spacing: 2) {
-                                Text(formatDuration(elapsedSeconds)).font(.title3.weight(.bold).monospacedDigit())
+                                WorkoutClockLabel(startTime: startTime, style: .summaryStat)
                                 Text("Duration").font(.caption2).foregroundStyle(Theme.textTertiary)
                             }
                             Divider().frame(height: 28)
@@ -454,11 +454,12 @@ struct ActiveWorkoutView: View {
                         workoutTimer.invalidate()
                         startWorkoutTimer()
                     }
-                    // Update rest timer from wall-clock end time
+                    // Update rest timer from wall-clock end time — the bar's
+                    // display re-syncs itself on foreground (RestTimerBar
+                    // watches scenePhase too).
                     if restTimerActive, let endTime = restEndTime {
                         let remaining = Int(endTime.timeIntervalSince(Date()))
                         if remaining > 0 {
-                            restSeconds = remaining
                             restTimer.invalidate()
                             startRestTimerTick()
                         } else {
@@ -466,7 +467,6 @@ struct ActiveWorkoutView: View {
                             // background notification already fired the
                             // alert + sound; no extra vibration here or
                             // the user gets buzzed twice.
-                            restSeconds = 0
                             restTimer.invalidate()
                             restTimerActive = false
                             cancelRestEndNotification()
@@ -665,8 +665,9 @@ struct ActiveWorkoutView: View {
                     #endif
 
                     // Inline rest timer bar (shows after this set if active)
-                    if restTimerActive && activeRestExerciseID == exercises[ei].id && activeRestSetID == set.id {
-                        restTimerBar
+                    if restTimerActive, let restEnd = restEndTime,
+                       activeRestExerciseID == exercises[ei].id && activeRestSetID == set.id {
+                        RestTimerBar(endTime: restEnd, totalSeconds: restTotalSeconds)
                     }
                 }
             }
@@ -684,37 +685,6 @@ struct ActiveWorkoutView: View {
             }.buttonStyle(.plain)
         }
         .card().padding(.horizontal, 12)
-    }
-
-    // MARK: - Rest Timer Bar (inline, like Strong)
-
-    private var restTimerBar: some View {
-        let progress = restTotalSeconds > 0 ? Double(restSeconds) / Double(restTotalSeconds) : 0
-
-        return VStack(spacing: 2) {
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4).fill(Theme.cardBackgroundElevated)
-                    RoundedRectangle(cornerRadius: 4).fill(Theme.calorieBlue)
-                        .frame(width: geo.size.width * progress)
-                }
-            }
-            .frame(height: 28)
-            .overlay {
-                Text(formatRestTime(restSeconds))
-                    .font(.subheadline.weight(.bold).monospacedDigit())
-                    // Was .white — invisible over the light-grey unfilled
-                    // half of the progress bar (Theme.cardBackgroundElevated)
-                    // until rest had >50% elapsed. Theme.textPrimary reads
-                    // on both the unfilled and filled (calorieBlue) halves.
-                    .foregroundStyle(Theme.textPrimary)
-            }
-        }
-        .padding(.vertical, 4)
-    }
-
-    private func formatRestTime(_ s: Int) -> String {
-        "\(s / 60):\(String(format: "%02d", s % 60))"
     }
 
     private func prevWeight(_ prev: String) -> String {
@@ -748,14 +718,12 @@ struct ActiveWorkoutView: View {
     // MARK: - Timers
 
     private func startWorkoutTimer() {
-        // Show the real elapsed value NOW — the first tick is a second away,
-        // and a restored session would flash 0:00 until it lands.
-        elapsedSeconds = Int(Date().timeIntervalSince(startTime))
+        // The visible clock ticks inside WorkoutClockLabel's own @State
+        // (#1074) — this timer only drives the 30s session auto-save, so its
+        // per-second tick writes no view state and recomposes nothing.
         workoutTimer.schedule { [self] in
             Task { @MainActor in
-                elapsedSeconds = Int(Date().timeIntervalSince(startTime))
-                // Auto-save session every 30 seconds
-                if elapsedSeconds % 30 == 0 && !exercises.isEmpty {
+                if Int(Date().timeIntervalSince(startTime)) % 30 == 0 && !exercises.isEmpty {
                     persistSession()
                 }
             }
@@ -769,7 +737,6 @@ struct ActiveWorkoutView: View {
         restTimer.invalidate()
         restTimerActive = false
         restEndTime = nil
-        restSeconds = 0
         activeRestExerciseID = nil
         activeRestSetID = nil
         cancelRestEndNotification()
@@ -796,7 +763,6 @@ struct ActiveWorkoutView: View {
 
     private func startRest(exerciseID: UUID, setID: UUID, duration: Int) {
         restTotalSeconds = duration
-        restSeconds = duration
         restEndTime = Date().addingTimeInterval(Double(duration))
         activeRestExerciseID = exerciseID
         activeRestSetID = setID
@@ -814,24 +780,21 @@ struct ActiveWorkoutView: View {
     }
 
     private func startRestTimerTick() {
+        // The countdown display ticks inside RestTimerBar's own @State
+        // (#1074) — this watcher only fires the completion side effects.
         restTimer.schedule {
             Task { @MainActor in
                 guard let endTime = restEndTime else { return }
-                let remaining = Int(ceil(endTime.timeIntervalSince(Date())))
-                if remaining > 0 {
-                    restSeconds = remaining
-                } else {
-                    restSeconds = 0
-                    restTimer.invalidate()
-                    restTimerActive = false
-                    restEndTime = nil
-                    #if canImport(AudioToolbox)
-                    AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
-                    #endif
-                    // Foreground completion — clear the backup
-                    // notification so it doesn't fire a moment later.
-                    cancelRestEndNotification()
-                }
+                guard Int(ceil(endTime.timeIntervalSince(Date()))) <= 0 else { return }
+                restTimer.invalidate()
+                restTimerActive = false
+                restEndTime = nil
+                #if canImport(AudioToolbox)
+                AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
+                #endif
+                // Foreground completion — clear the backup
+                // notification so it doesn't fire a moment later.
+                cancelRestEndNotification()
             }
         }
     }
@@ -933,7 +896,6 @@ struct ActiveWorkoutView: View {
         // computation (tick, scenePhase recalc, finish-save duration)
         // correct without touching them.
         startTime = Date().addingTimeInterval(-session.trainedSeconds())
-        elapsedSeconds = Int(Date().timeIntervalSince(startTime))
         exercises = session.exercises.map { ex in
             ActiveExercise(
                 name: ex.name, restTime: ex.restTime, isWarmupExercise: ex.isWarmup,
@@ -1165,7 +1127,8 @@ struct ActiveWorkoutView: View {
     }
 
     private func coachSessionContext() -> String {
-        var parts = ["\(workoutName), \(formatDuration(elapsedSeconds)) in"]
+        let elapsed = pastDate != nil ? 0 : Int(Date().timeIntervalSince(startTime))
+        var parts = ["\(workoutName), \(formatWorkoutDuration(elapsed)) in"]
         for ex in exercises {
             let done = ex.sets.filter(\.done).count
             var line = "\(ex.name) \(done)/\(ex.sets.count) sets"
@@ -1241,7 +1204,7 @@ struct ActiveWorkoutView: View {
         WorkoutService.clearSession()
         let saveDate = pastDate != nil ? workoutDate : Date()
         var workout = Workout(name: workoutName, date: DateFormatters.dateOnly.string(from: saveDate),
-                              durationSeconds: pastDate != nil ? nil : elapsedSeconds,
+                              durationSeconds: pastDate != nil ? nil : Int(Date().timeIntervalSince(startTime)),
                               notes: workoutNotes.isEmpty ? nil : workoutNotes,
                               createdAt: ISO8601DateFormatter().string(from: Date()))
         do {
@@ -1329,9 +1292,119 @@ struct ActiveWorkoutView: View {
         }
     }
 
-    private func formatDuration(_ s: Int) -> String {
-        let h = s / 3600; let m = (s % 3600) / 60; let sec = s % 60
-        return h > 0 ? String(format: "%d:%02d:%02d", h, m, sec) : String(format: "%d:%02d", m, sec)
+}
+
+/// Shared by ActiveWorkoutView's coach context and the ticking clock views.
+private func formatWorkoutDuration(_ s: Int) -> String {
+    let h = s / 3600; let m = (s % 3600) / 60; let sec = s % 60
+    return h > 0 ? String(format: "%d:%02d:%02d", h, m, sec) : String(format: "%d:%02d", m, sec)
+}
+
+// MARK: - Ticking clocks (isolated @State — #1074)
+//
+// The 1s ticks write ONLY these views' @State, so recomposition stops at one
+// small Text/Label. Ticking the parent's @State re-evaluated the entire
+// ActiveWorkoutView body every second — a full JNI-bridged pass on Android
+// for the length of the workout, and wasted work on iOS too.
+
+/// Elapsed workout clock. Re-syncs from the wall clock on appear, on
+/// foregrounding, and when the parent rebases `startTime` (session restore).
+struct WorkoutClockLabel: View {
+    enum Style { case headerLabel, summaryStat }
+    @Environment(\.scenePhase) var scenePhase
+    let startTime: Date
+    let style: Style
+    @State var ticker = SecondTicker()
+    @State var elapsed = 0
+
+    var body: some View {
+        content
+            .onAppear { resync() }
+            .onChange(of: startTime) { _, _ in resync() }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { resync() }
+            }
+            .onDisappear { ticker.invalidate() }
+    }
+
+    @ViewBuilder private var content: some View {
+        switch style {
+        case .headerLabel:
+            Label(formatWorkoutDuration(elapsed), systemImage: sym("clock"))
+        case .summaryStat:
+            Text(formatWorkoutDuration(elapsed)).font(.title3.weight(.bold).monospacedDigit())
+        }
+    }
+
+    private func resync() {
+        let start = startTime
+        elapsed = Int(Date().timeIntervalSince(start))
+        ticker.schedule {
+            Task { @MainActor in
+                elapsed = Int(Date().timeIntervalSince(start))
+            }
+        }
+    }
+}
+
+/// Inline rest countdown bar (shows after the resting set — like Strong).
+/// Owns its own 1s tick; ActiveWorkoutView decides when the bar exists and
+/// fires the completion side effects (vibrate/notification) from its own
+/// watcher in `startRestTimerTick`.
+struct RestTimerBar: View {
+    @Environment(\.scenePhase) var scenePhase
+    let endTime: Date
+    let totalSeconds: Int
+    @State var ticker = SecondTicker()
+    @State var remaining = 0
+
+    var body: some View {
+        // Clamp at 1: the parent's completion watcher removes the bar within
+        // a tick, and the pre-split single-timer bar never displayed 0:00 —
+        // this keeps that true during the hand-off.
+        let shown = max(1, remaining)
+        let progress = totalSeconds > 0 ? Double(shown) / Double(totalSeconds) : 0
+
+        return VStack(spacing: 2) {
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 4).fill(Theme.cardBackgroundElevated)
+                    RoundedRectangle(cornerRadius: 4).fill(Theme.calorieBlue)
+                        .frame(width: geo.size.width * progress)
+                }
+            }
+            .frame(height: 28)
+            .overlay {
+                Text(formatRestTime(shown))
+                    .font(.subheadline.weight(.bold).monospacedDigit())
+                    // Was .white — invisible over the light-grey unfilled
+                    // half of the progress bar (Theme.cardBackgroundElevated)
+                    // until rest had >50% elapsed. Theme.textPrimary reads
+                    // on both the unfilled and filled (calorieBlue) halves.
+                    .foregroundStyle(Theme.textPrimary)
+            }
+        }
+        .padding(.vertical, 4)
+        .onAppear { resync() }
+        .onChange(of: endTime) { _, _ in resync() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { resync() }
+        }
+        .onDisappear { ticker.invalidate() }
+    }
+
+    private func formatRestTime(_ s: Int) -> String {
+        "\(s / 60):\(String(format: "%02d", s % 60))"
+    }
+
+    private func resync() {
+        let end = endTime
+        remaining = max(0, Int(ceil(end.timeIntervalSince(Date()))))
+        ticker.schedule {
+            Task { @MainActor in
+                remaining = max(0, Int(ceil(end.timeIntervalSince(Date()))))
+            }
+        }
     }
 }
 

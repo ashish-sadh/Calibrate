@@ -223,7 +223,7 @@ struct TodayTab: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)
             .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl, style: .continuous))
-            .shadowSoft()
+            .shadowSoft(cornerRadius: Theme.radiusControl)
         }
         .buttonStyle(.plain)
     }

@@ -74,7 +74,7 @@ struct PillTabBar: View {
         .padding(.horizontal, 6)
         .background(Theme.cardBackground, in: Capsule())
         .overlay(Capsule().strokeBorder(Theme.separator, lineWidth: 0.5))
-        .shadowSoft()
+        .shadowSoft(cornerRadius: 28)
     }
 }
 
@@ -89,7 +89,7 @@ struct ChatIconButton: View {
                 .foregroundStyle(.white)
                 .frame(width: 46, height: 46)
                 .background(Theme.ink, in: Circle())
-                .shadowSoft()
+                .shadowSoft(cornerRadius: 23)
         }
         .buttonStyle(.plain)
     }
