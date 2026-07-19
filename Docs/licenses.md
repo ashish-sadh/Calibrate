@@ -5,6 +5,11 @@
 - **License:** MIT — Copyright (c) 2022 ELABBASSI Hicham
 - **Usage:** SVG path data extracted by `scripts/extract-body-highlighter.py` into `DriftCore/Sources/DriftCore/Resources/bodyDiagram.json`, rendered natively by `BodyDiagram`/`MuscleBodyView` (#929).
 
+## Material Symbols glyphs (Android)
+- **Source:** [Google Material Symbols](https://fonts.google.com/icons) ("restaurant")
+- **License:** Apache License 2.0 — Copyright Google LLC
+- **Usage:** SVG path bundled as `drift-android/.../Module.xcassets/fork.knife.symbolset` so the Android food glyph reads as food (skip-ui's built-in Material map has no food icon).
+
 ## Exercise pose photos
 - **Source:** [free-exercise-db](https://github.com/yuhonas/free-exercise-db)
 - **License:** Unlicense (public domain) — no attribution required; noted for provenance.

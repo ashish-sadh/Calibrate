@@ -43,9 +43,18 @@ struct PillTabBar: View {
                     withAnimation(.easeOut(duration: 0.22)) { selected = tab }
                 } label: {
                     VStack(spacing: 2) {
-                        Image(systemName: sym(tab.icon))
-                            .font(.system(size: 16, weight: .semibold))
-                            .frame(height: 20)
+                        if tab == .food {
+                            // Drawn glyph — skip-ui's map has no food icon
+                            // (see FoodGlyph.swift).
+                            ForkKnifeShape()
+                                .fill(isSelected ? Theme.ink : Theme.textTertiary)
+                                .frame(width: 16, height: 16)
+                                .frame(height: 20)
+                        } else {
+                            Image(systemName: sym(tab.icon))
+                                .font(.system(size: 16, weight: .semibold))
+                                .frame(height: 20)
+                        }
                         Text(tab.label)
                             .font(.system(size: 10, weight: .semibold))
                             .lineLimit(1)

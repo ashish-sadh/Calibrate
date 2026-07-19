@@ -27,7 +27,11 @@ func sym(_ name: String) -> String {
     case "camera.fill", "camera": return "camera.viewfinder"
     case "square.and.arrow.down": return "list.bullet"
     case "target": return "house"
-    case "fork.knife": return "cart"
+    // fork.knife has NO mapping: Material's set has no food glyph and the
+    // cart stand-in read as SHOPPING (operator, 2026-07-19). App call sites
+    // render the drawn ForkKnifeShape (FoodGlyph.swift) instead — shared
+    // views that need Image(systemName: "fork.knife") on Android must wait
+    // on the symbolset investigation (Fuse builds drop xcassets symbolsets).
     case "message.fill", "bubble.left.fill": return "paperplane.fill"
     // Body-part / activity figures — Material has no exercise figures, so
     // they all read as a person (matches the figure.walk precedent).

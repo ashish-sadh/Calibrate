@@ -28,12 +28,15 @@ struct DriftWorkoutView: View {
     @State var showHistory = false
     @State var showAllTemplates = false
     @State var streak: (current: Int, longest: Int)?
+    // Cached: hasActiveSession JSON-decodes from UserDefaults — too heavy to
+    // run on every body evaluation over the JNI bridge (#1074).
+    @State var hasActiveSession = false
 
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
                 // Active session banner
-                if !showingNewWorkout && WorkoutService.hasActiveSession {
+                if !showingNewWorkout && hasActiveSession {
                     Button { showingNewWorkout = true } label: {
                         HStack {
                             Image(systemName: sym("figure.strengthtraining.traditional"))
@@ -438,6 +441,7 @@ struct DriftWorkoutView: View {
             weeklyCounts = snapshot.weeklyCounts
             templates = snapshot.templates
             streak = snapshot.streak
+            hasActiveSession = snapshot.hasActiveSession
             isLoading = false
         }
     }
@@ -447,6 +451,7 @@ struct DriftWorkoutView: View {
         var weeklyCounts: [(weekStart: Date, count: Int)] = []
         var templates: [WorkoutTemplate] = []
         var streak: (current: Int, longest: Int)?
+        var hasActiveSession = false
     }
 
     /// Off-main load — AppDatabase work on the UI thread ANRs debug builds
@@ -460,6 +465,7 @@ struct DriftWorkoutView: View {
                 s.weeklyCounts = (try? WorkoutService.weeklyWorkoutCounts(weeks: 12)) ?? []
                 s.templates = (try? WorkoutService.fetchTemplates()) ?? []
                 s.streak = try? WorkoutService.workoutStreak()
+                s.hasActiveSession = WorkoutService.hasActiveSession
                 continuation.resume(returning: s)
             }
         }

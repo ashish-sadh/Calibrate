@@ -22,15 +22,99 @@ struct MuscleBodyView: View {
     var secondarySlugs: Set<String> = []
     /// Explicit per-slug colors (recovery map) — wins over primary/secondary.
     var slugColors: [String: Color] = [:]
+    /// Stable signature for `slugColors` — `Color` has no cross-platform
+    /// introspection, so any caller passing explicit colors must also pass a
+    /// string that changes whenever those colors would. Inert on iOS; on
+    /// Android it keys the built-path cache below.
+    var colorSignature: String = ""
+    /// Android-only container box: SkipUI's GeometryReader invalidates on
+    /// global POSITION (onGloballyPositionedInRoot), so every scroll frame
+    /// recomposes its content across the JNI bridge (#1074). The figure only
+    /// needs a size — callers that know their box pass it here and Android
+    /// skips GeometryReader entirely (the fill math aspect-fits and centers
+    /// inside the box exactly like the GeometryReader path). Inert on iOS.
+    var fitBox: CGSize? = nil
 
     var body: some View {
+        #if os(Android)
+        if let box = fitBox {
+            figure(in: box)
+                .frame(width: box.width, height: box.height)
+                .accessibilityHidden(true)
+        } else {
+            GeometryReader { geo in
+                figure(in: geo.size)
+            }
+            .aspectRatio(aspectRatio, contentMode: .fit)
+            .accessibilityHidden(true)
+        }
+        #else
         GeometryReader { geo in
             figure(in: geo.size)
         }
         .aspectRatio(aspectRatio, contentMode: .fit)
         .accessibilityHidden(true)  // the host card provides the text
+        #endif
     }
 
+    #if os(Android)
+    // Built-path cache (#1074): constructing a figure's merged Paths crosses
+    // the JNI bridge ~20k times (one hop per path command). Rebuilding on
+    // every body evaluation froze the workout tab for 20+ seconds per scroll
+    // (Choreographer: 1275 skipped frames). Each distinct figure builds once
+    // per process and is reused; the app renders only a handful of them.
+    struct BuiltLayer: Identifiable {
+        let id: String
+        let color: Color
+        let path: Path
+    }
+    struct BuiltFigure {
+        let layers: [BuiltLayer]
+        let outline: Path
+    }
+    static var figureCache: [String: BuiltFigure] = [:]
+    static let figureCacheLock = NSLock()
+
+    @ViewBuilder
+    private func figure(in size: CGSize) -> some View {
+        if let built = builtFigure(in: size) {
+            ZStack {
+                ForEach(built.layers) { layer in
+                    layer.path.fill(layer.color)
+                }
+                built.outline.stroke(Theme.textTertiary.opacity(0.45), lineWidth: 2)
+            }
+        }
+    }
+
+    private func builtFigure(in size: CGSize) -> BuiltFigure? {
+        guard let model = BodyDiagram.model(gender: gender, side: side),
+              model.viewBoxWidth > 0, model.viewBoxHeight > 0,
+              size.width > 0, size.height > 0 else { return nil }
+        let key = "\(gender.rawValue)|\(side.rawValue)|\(Int(size.width))x\(Int(size.height))"
+            + "|p:\(primarySlugs.sorted().joined(separator: ","))"
+            + "|s:\(secondarySlugs.sorted().joined(separator: ","))"
+            + "|c:\(colorSignature)"
+        Self.figureCacheLock.lock()
+        defer { Self.figureCacheLock.unlock() }
+        if let cached = Self.figureCache[key] { return cached }
+        let vw = CGFloat(model.viewBoxWidth)
+        let vh = CGFloat(model.viewBoxHeight)
+        let scale = min(size.width / vw, size.height / vh)
+        let dx = (size.width - vw * scale) / 2
+        let dy = (size.height - vh * scale) / 2
+        let layers = fillLayers(model).map { layer in
+            BuiltLayer(id: layer.key, color: layer.color,
+                       path: Self.path(layer.paths, scale: scale, dx: dx, dy: dy))
+        }
+        let built = BuiltFigure(
+            layers: layers,
+            outline: Self.path(model.outline, scale: scale, dx: dx, dy: dy))
+        if Self.figureCache.count > 64 { Self.figureCache.removeAll() }
+        Self.figureCache[key] = built
+        return built
+    }
+    #else
     @ViewBuilder
     private func figure(in size: CGSize) -> some View {
         if let model = BodyDiagram.model(gender: gender, side: side),
@@ -51,6 +135,7 @@ struct MuscleBodyView: View {
             }
         }
     }
+    #endif
 
     private struct FillLayer {
         let key: String
@@ -165,7 +250,8 @@ struct MuscleHighlightCard: View {
             // note in BodyMapView (Compose treats the figure as greedy).
             MuscleBodyView(side: side,
                            primarySlugs: primarySlugs,
-                           secondarySlugs: secondarySlugs)
+                           secondarySlugs: secondarySlugs,
+                           fitBox: CGSize(width: 88, height: 168))
                 .frame(width: 88)
             Text(side == .front ? "Front" : "Back")
                 .font(.caption2).foregroundStyle(Theme.textTertiary)

@@ -16,6 +16,11 @@ struct BodyMapView: View {
     // per-group recovery estimate that drives the coloring above.
     @State var sorenessState = MuscleSoreness.loadState()
     @State var sorenessQuestion: String?
+    #if os(Android)
+    // Group-panel templates ride the status snapshot — a sync fetch in the
+    // panel builder would cross JNI on every body evaluation (#1074).
+    @State var cachedTemplates: [WorkoutTemplate] = []
+    #endif
 
     enum MuscleStatus: Sendable {
         case recovered, moderate, recovering, untrained
@@ -58,6 +63,19 @@ struct BodyMapView: View {
         return colors
     }
 
+    /// Cache signature matching `recoverySlugColors` — see
+    /// `MuscleBodyView.colorSignature`.
+    private var recoveryColorSignature: String {
+        #if os(Android)
+        Self.muscleGroups.map { group in
+            let status = muscleStatus[group] ?? .untrained
+            return "\(group):\(status):\(String(format: "%.3f", volumeIntensity(for: group)))"
+        }.joined(separator: "|")
+        #else
+        ""
+        #endif
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Muscle Recovery").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
@@ -70,12 +88,16 @@ struct BodyMapView: View {
             // greedy and would otherwise spread the pair across the card.
             HStack(spacing: 24) {
                 VStack(spacing: 2) {
-                    MuscleBodyView(side: .front, slugColors: recoverySlugColors)
+                    MuscleBodyView(side: .front, slugColors: recoverySlugColors,
+                                   colorSignature: recoveryColorSignature,
+                                   fitBox: CGSize(width: 84, height: 152))
                         .frame(width: 84)
                     Text("Front").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
                 VStack(spacing: 2) {
-                    MuscleBodyView(side: .back, slugColors: recoverySlugColors)
+                    MuscleBodyView(side: .back, slugColors: recoverySlugColors,
+                                   colorSignature: recoveryColorSignature,
+                                   fitBox: CGSize(width: 84, height: 152))
                         .frame(width: 84)
                     Text("Back").font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
@@ -171,7 +193,11 @@ struct BodyMapView: View {
     private func groupPanel(_ group: String) -> some View {
         let status = muscleStatus[group] ?? .untrained
         let recent = recentExercises[group] ?? []
+        #if os(Android)
+        let templates = cachedTemplates
+        #else
         let templates = (try? WorkoutService.fetchTemplates()) ?? []
+        #endif
         let matchingTemplates = templates.filter { t in
             t.name.lowercased().contains(group.lowercased()) ||
             t.exercises.filter { !$0.isWarmup }.contains { ExerciseDatabase.bodyPart(for: $0.name) == group }
@@ -272,6 +298,8 @@ struct BodyMapView: View {
         var recentExercises: [String: [String]] = [:]
         var weeklySetCounts: [String: Int] = [:]
         var sorenessQuestion: String?
+        /// Populated only by the Android off-main load (group-panel templates).
+        var templates: [WorkoutTemplate] = []
     }
 
     private func loadMuscleStatus() {
@@ -282,7 +310,9 @@ struct BodyMapView: View {
         Task {
             let snap = await withCheckedContinuation { (cont: CheckedContinuation<StatusSnapshot, Never>) in
                 DispatchQueue.global(qos: .userInitiated).async {
-                    cont.resume(returning: Self.computeStatus(state: state))
+                    var snap = Self.computeStatus(state: state)
+                    snap.templates = (try? WorkoutService.fetchTemplates()) ?? []
+                    cont.resume(returning: snap)
                 }
             }
             apply(snap)
@@ -299,6 +329,9 @@ struct BodyMapView: View {
         recentExercises = snap.recentExercises
         weeklySetCounts = snap.weeklySetCounts
         sorenessQuestion = snap.sorenessQuestion
+        #if os(Android)
+        cachedTemplates = snap.templates
+        #endif
     }
 
     static func computeStatus(state: MuscleSoreness.State) -> StatusSnapshot {

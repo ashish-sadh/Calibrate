@@ -21,6 +21,67 @@ struct ExercisePickerView: View {
     /// "Add N" button hands them all to `onSelect` and dismisses once.
     @State var selected: [String] = []
 
+    #if os(Android)
+    // Catalog + DB reads are sync JNI work — off the view body on Android
+    // (#1073/#1074): every list loads once per input change into @State, and
+    // per-row last weights batch into one dictionary (they were one SQLite
+    // query per row per body evaluation).
+    @State var results: [ExerciseDatabase.ExerciseInfo] = []
+    @State var favoriteExercises: [ExerciseDatabase.ExerciseInfo] = []
+    @State var recentExercises: [String] = []
+    @State var historyExtras: [String] = []
+    @State var lastWeights: [String: Double] = [:]
+
+    private struct PickerLists: @unchecked Sendable {
+        var results: [ExerciseDatabase.ExerciseInfo] = []
+        var favorites: [ExerciseDatabase.ExerciseInfo] = []
+        var recents: [String] = []
+        var extras: [String] = []
+        var weights: [String: Double] = [:]
+    }
+
+    private func reload() async {
+        let q = query
+        let filter = selectedBodyPartFilter
+        let f = favs
+        let lists: PickerLists = await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                var lists = PickerLists()
+                var list = q.isEmpty ? ExerciseDatabase.allWithCustom : ExerciseDatabase.search(query: q)
+                if let filter { list = list.filter { $0.bodyPart == filter } }
+                list.sort { f.contains($0.name) && !f.contains($1.name) }
+                lists.results = Array(list.prefix(50))
+                if !f.isEmpty && q.isEmpty {
+                    var matched = ExerciseDatabase.allWithCustom.filter { f.contains($0.name) }
+                    if let filter { matched = matched.filter { $0.bodyPart == filter } }
+                    lists.favorites = matched
+                }
+                let recents = (try? WorkoutService.recentExerciseNames(limit: 10)) ?? []
+                var filteredRecents = recents.filter { !f.contains($0) }
+                if !q.isEmpty { filteredRecents = filteredRecents.filter { $0.localizedCaseInsensitiveContains(q) } }
+                if let filter { filteredRecents = filteredRecents.filter { ExerciseDatabase.bodyPart(for: $0) == filter } }
+                lists.recents = filteredRecents
+                let allKnown = Set(ExerciseDatabase.allWithCustom.map { $0.name.lowercased() })
+                let history = (try? WorkoutService.allExerciseNames()) ?? []
+                var extras = history.filter { !allKnown.contains($0.lowercased()) }
+                if !q.isEmpty { extras = extras.filter { $0.localizedCaseInsensitiveContains(q) } }
+                lists.extras = extras
+                var names = Set(lists.results.map(\.name))
+                names.formUnion(lists.favorites.map(\.name))
+                names.formUnion(lists.recents)
+                for name in names {
+                    if let w = try? WorkoutService.lastWeight(for: name) { lists.weights[name] = w }
+                }
+                continuation.resume(returning: lists)
+            }
+        }
+        results = lists.results
+        favoriteExercises = lists.favorites
+        recentExercises = lists.recents
+        historyExtras = lists.extras
+        lastWeights = lists.weights
+    }
+    #else
     private var results: [ExerciseDatabase.ExerciseInfo] {
         var list = query.isEmpty ? ExerciseDatabase.allWithCustom : ExerciseDatabase.search(query: query)
         if let filter = selectedBodyPartFilter { list = list.filter { $0.bodyPart == filter } }
@@ -56,6 +117,17 @@ struct ExercisePickerView: View {
         let filtered = history.filter { !allKnown.contains($0.lowercased()) }
         if query.isEmpty { return filtered }
         return filtered.filter { $0.localizedCaseInsensitiveContains(query) }
+    }
+    #endif
+
+    /// Row trailing weight — Android reads the batched dictionary; iOS keeps
+    /// its inline query (unchanged behavior).
+    private func rowLastWeight(_ name: String) -> Double? {
+        #if os(Android)
+        return lastWeights[name]
+        #else
+        return try? WorkoutService.lastWeight(for: name)
+        #endif
     }
 
     /// Row identity is scoped per section: the same exercise legitimately
@@ -165,12 +237,23 @@ struct ExercisePickerView: View {
                 // list) instead of add-and-dismiss, same as any other row.
                 CustomExerciseSheet { name in
                     if !selected.contains(name) { selected.append(name) }
+                    #if os(Android)
+                    // iOS recomputes the lists on body invalidation; the
+                    // Android @State copies must refresh to show the entry.
+                    Task { await reload() }
+                    #endif
                 }
             }
             .onAppear {
                 favs = WorkoutService.exerciseFavorites
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { searchFocused = true }
             }
+            #if os(Android)
+            .task { await reload() }
+            .onChange(of: query) { _, _ in Task { await reload() } }
+            .onChange(of: selectedBodyPartFilter) { _, _ in Task { await reload() } }
+            .onChange(of: favs) { _, _ in Task { await reload() } }
+            #endif
         }
     }
 
@@ -198,7 +281,7 @@ struct ExercisePickerView: View {
                         }
                         Text(name).font(.subheadline)
                         Spacer()
-                        if let lastW = try? WorkoutService.lastWeight(for: name) {
+                        if let lastW = rowLastWeight(name) {
                             Text("\(Int(Preferences.weightUnit.convertFromLbs(lastW))) \(Preferences.weightUnit.displayName)").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textSecondary)
                         }
                         Image(systemName: isSelected ? sym("checkmark.circle.fill") : sym("circle"))

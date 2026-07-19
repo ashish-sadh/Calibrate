@@ -236,9 +236,9 @@ struct TodayTab: View {
             if store.meals.isEmpty {
                 Button { selectedTab = .food } label: {
                     HStack(spacing: 8) {
-                        Image(systemName: sym("fork.knife"))
-                            .font(.caption)
-                            .foregroundStyle(Theme.textSecondary)
+                        ForkKnifeShape()
+                            .fill(Theme.textSecondary)
+                            .frame(width: 12, height: 12)
                         Text("Log your first meal — try the Search chip above")
                             .font(.subheadline)
                             .foregroundStyle(Theme.textSecondary)
