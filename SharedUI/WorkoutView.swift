@@ -241,6 +241,14 @@ struct WorkoutView: View {
                                             Image(systemName: sym("chevron.right")).font(.caption2).foregroundStyle(Theme.textTertiary)
                                         }
                                         .padding(.vertical, 6)
+                                        // contentShape: with .buttonStyle(.plain) there is
+                                        // no background, so the hit region is the drawn
+                                        // content — and the middle of this row is the
+                                        // Spacer. Tapping a template anywhere but directly
+                                        // on its name or chevron did nothing, which read as
+                                        // "template preview is broken". Same fix, same
+                                        // reason as the history rows below (:403).
+                                        .contentShape(Rectangle())
                                     }
                                     .buttonStyle(.plain)
                             }
