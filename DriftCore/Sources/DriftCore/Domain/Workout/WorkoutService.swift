@@ -357,10 +357,10 @@ public enum WorkoutService {
     /// surfaces call this, so they can never diverge; #939's ordered
     /// `summary.exercises` drives the exercise sequence (warmups first,
     /// performed order).
-    public static func shareText(for summary: WorkoutSummary, sets: [WorkoutSet]) -> String {
+    public static func shareText(for summary: WorkoutSummary, sets: [WorkoutSet], unit: WeightUnit) -> String {
         var t = "\u{1F4AA} \(summary.workout.name)\n\u{1F4C5} \(summary.workout.date)\n"
         if !summary.workout.durationDisplay.isEmpty { t += "\u{23F1} \(summary.workout.durationDisplay)  " }
-        t += "\u{1F3CB} \(Int(summary.totalVolume)) lbs\n"
+        t += "\u{1F3CB} \(Int(unit.convertFromLbs(summary.totalVolume))) \(unit.displayName)\n"
         if let notes = summary.workout.notes, !notes.isEmpty { t += "\u{1F4DD} \(notes)\n" }
         t += "\n"
         let grouped = Dictionary(grouping: sets) { $0.exerciseName }
@@ -369,7 +369,7 @@ public enum WorkoutService {
             t += "\(ex)\n"
             for s in exSets {
                 let prefix = s.isWarmup ? "  W\(s.setOrder). " : "  \(s.setOrder). "
-                t += "\(prefix)\(s.display)\n"
+                t += "\(prefix)\(s.display(in: unit))\n"
             }
             t += "\n"
         }
@@ -380,13 +380,13 @@ public enum WorkoutService {
     /// Share text for a just-saved workout — reads the PERSISTED rows, so the
     /// completion sheet shares exactly what History will show (never a stale
     /// or empty in-memory snapshot, #938).
-    public static func shareText(forWorkoutId id: Int64) throws -> String {
+    public static func shareText(forWorkoutId id: Int64, unit: WeightUnit) throws -> String {
         guard let workout = try db.reader.read({ try Workout.fetchOne($0, id: id) }) else {
             throw DatabaseError(message: "workout \(id) not found")
         }
         let summary = try buildSummary(for: workout)
         let sets = try fetchSets(forWorkout: id)
-        return shareText(for: summary, sets: sets)
+        return shareText(for: summary, sets: sets, unit: unit)
     }
 
     /// Unique exercise names from all workouts.

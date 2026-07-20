@@ -1340,7 +1340,7 @@ struct ActiveWorkoutView: View {
                 // #938: share the PERSISTED workout via the same builder History
                 // uses — the old inline snapshot could render an empty summary
                 // (e.g. when no set rows qualified) while History looked fine.
-                completionShareText = (try? WorkoutService.shareText(forWorkoutId: wid))
+                completionShareText = (try? WorkoutService.shareText(forWorkoutId: wid, unit: Preferences.weightUnit))
                     ?? "\u{1F4AA} \(workout.name)"
 
                 // Check milestone

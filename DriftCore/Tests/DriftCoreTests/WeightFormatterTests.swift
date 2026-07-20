@@ -74,12 +74,12 @@ final class WeightFormatterTests: XCTestCase {
     func testSetDisplayShowsFractionalWeight() {
         let set = WorkoutSet(workoutId: 1, exerciseName: "Bench Press",
                              setOrder: 1, weightLbs: 137.5, reps: 8)
-        XCTAssertEqual(set.display, "137.5 lbs × 8")
+        XCTAssertEqual(set.display(in: .lbs), "137.5 lbs × 8")
     }
 
     func testSetDisplayKeepsWholeWeightsUnchanged() {
         let set = WorkoutSet(workoutId: 1, exerciseName: "Bench Press",
                              setOrder: 1, weightLbs: 135, reps: 8)
-        XCTAssertEqual(set.display, "135 lbs × 8")
+        XCTAssertEqual(set.display(in: .lbs), "135 lbs × 8")
     }
 }

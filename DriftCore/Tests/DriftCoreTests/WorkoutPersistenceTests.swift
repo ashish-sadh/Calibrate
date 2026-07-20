@@ -116,10 +116,11 @@ import GRDB
 
 @Test @MainActor func workoutSetDisplayFormatted() async throws {
     let s1 = WorkoutSet(workoutId: 1, exerciseName: "Bench", setOrder: 1, weightLbs: 225, reps: 5, isWarmup: false)
-    #expect(s1.display == "225 lbs × 5")
+    #expect(s1.display(in: .lbs) == "225 lbs × 5")
+    #expect(s1.display(in: .kg) == "102.1 kg × 5")
 
     let s2 = WorkoutSet(workoutId: 1, exerciseName: "Pull-up", setOrder: 1, weightLbs: nil, reps: 12, isWarmup: false)
-    #expect(s2.display == "BW × 12")
+    #expect(s2.display(in: .lbs) == "BW × 12")
 }
 
 @Test func workoutTemplateJsonRoundTrip() async throws {

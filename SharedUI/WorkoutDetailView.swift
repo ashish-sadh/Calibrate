@@ -21,17 +21,25 @@ struct WorkoutDetailView: View {
     @State var editSetWeight = ""
     @State var editSetReps = ""
 
+    // Storage is lbs; every number on this screen renders through `unit` so a
+    // kg user never has to convert in their head (#1085).
+    private var unit: WeightUnit { Preferences.weightUnit }
+
     // #938: one share builder for completion + History — lives in
     // WorkoutService so the two surfaces can never diverge.
     private var shareText: String {
-        WorkoutService.shareText(for: summary, sets: sets)
+        WorkoutService.shareText(for: summary, sets: sets, unit: unit)
     }
 
     /// Commit the Edit Set fields to the store and to local state. Shared by the
     /// iOS alert and the Android sheet so the two editors can't drift apart.
     private func saveEditedSet(_ s: WorkoutSet) {
         guard let sid = s.id else { return }
-        let w = Double(editSetWeight)
+        // `entryTextToLbs` is the inverse of the `entryText(fromLbs:)` prefill
+        // below — they MUST stay a pair. Reading this field as a raw Double
+        // while prefilling it in kg is precisely what inflated every kg user's
+        // log 2.2x per save in the active sheet (#1084).
+        let w = unit.entryTextToLbs(editSetWeight)
         let r = Int(editSetReps)
         let dur = WorkoutSet.isDurationExercise(s.exerciseName) ? r : nil
         try? WorkoutService.updateSet(id: sid, weightLbs: w, reps: dur != nil ? nil : r, durationSec: dur)
@@ -61,7 +69,7 @@ struct WorkoutDetailView: View {
                             Label(summary.workout.durationDisplay, systemImage: sym("clock"))
                             #endif
                         }
-                        Label("\(Int(summary.totalVolume)) lbs", systemImage: sym("scalemass"))
+                        Label("\(Int(unit.convertFromLbs(summary.totalVolume))) \(unit.displayName)", systemImage: sym("scalemass"))
                         Label("\(summary.totalSets) sets", systemImage: sym("number"))
                     }.font(.caption).foregroundStyle(Theme.textSecondary)
                     if let notes = summary.workout.notes, !notes.isEmpty {
@@ -79,7 +87,7 @@ struct WorkoutDetailView: View {
                                 Text(ex).font(.subheadline.weight(.semibold))
                                 Spacer()
                                 if exVolumeLbs > 0 {
-                                    Text("\(Int(exVolumeLbs)) lbs").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textSecondary)
+                                    Text("\(Int(unit.convertFromLbs(exVolumeLbs))) \(unit.displayName)").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textSecondary)
                                 }
                                 Text(muscleGroup(for: ex)).font(.caption2).foregroundStyle(Theme.textTertiary)
                             }
@@ -87,14 +95,14 @@ struct WorkoutDetailView: View {
                                 HStack {
                                     Text(s.isWarmup ? "W" : "\(s.setOrder)").font(.caption.weight(.bold).monospacedDigit())
                                         .foregroundStyle(s.isWarmup ? Theme.fatYellow : .primary).frame(width: 20)
-                                    Text(s.display).font(.subheadline.monospacedDigit())
+                                    Text(s.display(in: unit)).font(.subheadline.monospacedDigit())
                                     Spacer()
-                                    if let rm = s.estimated1RM { Text("1RM: \(Int(rm)) lbs").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary) }
+                                    if let rm = s.estimated1RM { Text("1RM: \(Int(unit.convertFromLbs(rm))) \(unit.displayName)").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary) }
                                 }
                                 .contentShape(Rectangle())
                                 .onTapGesture {
                                     editingSet = s
-                                    editSetWeight = s.weightLbs.map { WeightFormatter.plain($0) } ?? ""
+                                    editSetWeight = s.weightLbs.map { unit.entryText(fromLbs: $0) } ?? ""
                                     editSetReps = s.reps.map { "\($0)" } ?? (s.durationSec.map { "\($0)" } ?? "")
                                 }
                                 // No-op on both platforms (this is a ScrollView,
@@ -180,7 +188,7 @@ struct WorkoutDetailView: View {
         // keeps its own keypad. Title, message, field order, placeholders and
         // button roles mirror the iOS alert below exactly.
         .sheet(item: $editingSet) { s in
-            EditSetSheet(set: s, weight: $editSetWeight, reps: $editSetReps,
+            EditSetSheet(set: s, weight: $editSetWeight, reps: $editSetReps, unit: unit,
                          onSave: { saveEditedSet(s) },
                          onCancel: { editingSet = nil })
         }
@@ -189,7 +197,7 @@ struct WorkoutDetailView: View {
             get: { editingSet != nil },
             set: { if !$0 { editingSet = nil } }
         )) {
-            TextField("Weight (lbs)", text: $editSetWeight)
+            TextField("Weight (\(unit.displayName))", text: $editSetWeight)
                 .keyboardType(.decimalPad)
             TextField("Reps", text: $editSetReps)
                 .keyboardType(.numberPad)
@@ -282,6 +290,7 @@ struct EditSetSheet: View {
     let set: WorkoutSet
     @Binding var weight: String
     @Binding var reps: String
+    let unit: WeightUnit
     let onSave: () -> Void
     let onCancel: () -> Void
 
@@ -306,7 +315,7 @@ struct EditSetSheet: View {
                 // One TextField per view scope: Skip binds only the first field in a
                 // given ViewBuilder scope, so a second inline field would render but
                 // never commit (the SetCellField precedent, #1064).
-                EditSetWeightField(text: $weight)
+                EditSetWeightField(text: $weight, unit: unit)
                 EditSetRepsField(text: $reps)
                 HStack(spacing: 20) {
                     Spacer()
@@ -334,8 +343,9 @@ struct EditSetSheet: View {
 // field size to its own line height and still lands at ~44pt.
 struct EditSetWeightField: View {
     @Binding var text: String
+    let unit: WeightUnit
     var body: some View {
-        TextField("Weight (lbs)", text: $text)
+        TextField("Weight (\(unit.displayName))", text: $text)
             .textFieldStyle(.plain)
             .keyboardType(.decimalPad)
             .padding(.horizontal, 12)

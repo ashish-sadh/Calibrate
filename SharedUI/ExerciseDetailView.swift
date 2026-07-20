@@ -10,6 +10,10 @@ struct ExerciseDetailView: View {
     @State var pr: Double?
     @State var isFavorite = false
 
+    // Storage is lbs; PR, history rows and 1RM all render through `unit` so a
+    // kg user reads back what they logged (#1085).
+    private var unit: WeightUnit { Preferences.weightUnit }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
@@ -84,7 +88,7 @@ struct ExerciseDetailView: View {
                     if let pr {
                         HStack(spacing: 4) {
                             Image(systemName: sym("trophy.fill")).font(.caption).foregroundStyle(Theme.fatYellow)
-                            Text("PR: \(Int(pr)) lbs (est. 1RM)")
+                            Text("PR: \(Int(unit.convertFromLbs(pr))) \(unit.displayName) (est. 1RM)")
                                 .font(.caption.weight(.semibold)).foregroundStyle(Theme.fatYellow)
                         }
                     }
@@ -110,10 +114,13 @@ struct ExerciseDetailView: View {
                                     .font(.caption.weight(.bold).monospacedDigit())
                                     .foregroundStyle(s.isWarmup ? Theme.fatYellow : .secondary)
                                     .frame(width: 20)
-                                Text(s.display).font(.subheadline.monospacedDigit())
+                                Text(s.display(in: unit)).font(.subheadline.monospacedDigit())
                                 Spacer()
                                 if let rm = s.estimated1RM {
-                                    Text("1RM: \(Int(rm))").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
+                                    // Deliberately still unit-less here — the row is
+                                    // tight and the set text beside it already carries
+                                    // the unit. Only the NUMBER was wrong for kg users.
+                                    Text("1RM: \(Int(unit.convertFromLbs(rm)))").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
                                 }
                             }
                         }

@@ -27,9 +27,70 @@ import GRDB
 
 @Test func workoutSetDisplay() async throws {
     let s1 = WorkoutSet(workoutId: 1, exerciseName: "Bench", setOrder: 1, weightLbs: 135, reps: 10, isWarmup: false)
-    #expect(s1.display.contains("135"))
-    #expect(s1.display.contains("lbs"))
-    #expect(s1.display.contains("10"))
+    #expect(s1.display(in: .lbs).contains("135"))
+    #expect(s1.display(in: .lbs).contains("lbs"))
+    #expect(s1.display(in: .lbs).contains("10"))
+}
+
+// MARK: - #1085: history renders in the user's unit
+
+@Test func setDisplay_kgUser_readsBackWhatTheyLogged() {
+    // The bug: a kg user logs 60 kg (stored 132.3 lbs) and every history
+    // surface showed "132.3 lbs".
+    let s = WorkoutSet(workoutId: 1, exerciseName: "Squat", setOrder: 1,
+                       weightLbs: WeightUnit.kg.convertToLbs(60), reps: 5, isWarmup: false)
+    let kg = s.display(in: .kg)
+    #expect(kg.contains("60"), "expected 60 kg, got \(kg)")
+    #expect(kg.contains("kg"))
+    #expect(!kg.contains("lbs"))
+}
+
+@Test func setDisplay_lbsUser_isByteIdenticalToPre1085() {
+    // 0-IOS-GUARD: lbs users must see exactly what they saw before.
+    let weighted = WorkoutSet(workoutId: 1, exerciseName: "Bench", setOrder: 1, weightLbs: 137.5, reps: 8, isWarmup: false)
+    #expect(weighted.display(in: .lbs) == "137.5 lbs × 8")
+    let bodyweight = WorkoutSet(workoutId: 1, exerciseName: "Pull Up", setOrder: 1, weightLbs: nil, reps: 10, isWarmup: false)
+    #expect(bodyweight.display(in: .lbs) == "BW × 10")
+    let timed = WorkoutSet(workoutId: 1, exerciseName: "Plank", setOrder: 1, weightLbs: 45, durationSec: 90)
+    #expect(timed.display(in: .lbs) == "45 lbs · 1:30")
+}
+
+@Test func setDisplay_durationSet_carriesTheUnitToo() {
+    let timed = WorkoutSet(workoutId: 1, exerciseName: "Farmer Carry", setOrder: 1,
+                           weightLbs: WeightUnit.kg.convertToLbs(32), durationSec: 60)
+    #expect(timed.display(in: .kg) == "32 kg · 1:00")
+}
+
+@Test func editSetField_kgRoundTripsThroughStorage() {
+    // The property #1084 locked for the active sheet, now for the Edit Set
+    // field: prefill → retype the same number → same stored lbs. If the
+    // prefill and the reader ever stop being inverses, this drifts 2.2x.
+    let storedLbs = WeightUnit.kg.convertToLbs(60)
+    let prefill = WeightUnit.kg.entryText(fromLbs: storedLbs)
+    #expect(prefill == "60")
+    let saved = WeightUnit.kg.entryTextToLbs(prefill)
+    #expect(saved != nil)
+    #expect(abs(saved! - storedLbs) < 0.01, "round-trip drifted: \(storedLbs) → \(prefill) → \(saved!)")
+}
+
+@Test func shareText_rendersVolumeAndSetsInTheUsersUnit() async throws {
+    let suffix = Int.random(in: 100000...999999)
+    var w = Workout(name: "Leg Day \(suffix)", date: "2026-07-20", createdAt: "")
+    try WorkoutService.saveWorkout(&w)
+    guard let wid = w.id else { Issue.record("no workout id"); return }
+    defer { try? WorkoutService.deleteWorkout(id: wid) }
+
+    try WorkoutService.saveSets([
+        WorkoutSet(workoutId: wid, exerciseName: "Squat \(suffix)", setOrder: 0,
+                   weightLbs: WeightUnit.kg.convertToLbs(100), reps: 5, isWarmup: false, exerciseOrder: 0),
+    ])
+    let kgShare = try WorkoutService.shareText(forWorkoutId: wid, unit: .kg)
+    #expect(kgShare.contains("100 kg"), "per-set line not in kg: \(kgShare)")
+    #expect(!kgShare.contains("lbs"), "lbs leaked into a kg user's share text: \(kgShare)")
+
+    let lbsShare = try WorkoutService.shareText(forWorkoutId: wid, unit: .lbs)
+    #expect(lbsShare.contains("lbs"))
+    #expect(!lbsShare.contains("kg"))
 }
 
 @Test func workoutSet1RM() async throws {
@@ -57,7 +118,8 @@ import GRDB
 
 @Test func workoutSetBodyweight() async throws {
     let s = WorkoutSet(workoutId: 1, exerciseName: "Pull Up", setOrder: 1, weightLbs: nil, reps: 10, isWarmup: false)
-    #expect(s.display.contains("BW"))
+    #expect(s.display(in: .lbs).contains("BW"))
+    #expect(s.display(in: .kg).contains("BW"), "bodyweight has no unit to convert")
 }
 
 @Test func workoutDeleteCascadesSets() async throws {
@@ -765,13 +827,13 @@ import GRDB
     #expect(s.estimated1RM == nil, "Reps > 30 should return nil (formula unreliable)")
 }
 
+// The unit is an explicit argument since #1085, so this no longer needs to
+// stage `Preferences.weightUnit` to pin the rendering.
 @Test func workoutSetDisplayFormat() async throws {
-    let saved = Preferences.weightUnit; defer { Preferences.weightUnit = saved }
-    Preferences.weightUnit = .lbs
     let s1 = WorkoutSet(workoutId: 1, exerciseName: "Bench", setOrder: 1, weightLbs: 135, reps: 10, isWarmup: false)
-    #expect(s1.display.contains("135") && s1.display.contains("10"))
+    #expect(s1.display(in: .lbs).contains("135") && s1.display(in: .lbs).contains("10"))
     let s2 = WorkoutSet(workoutId: 1, exerciseName: "Pull-up", setOrder: 1, weightLbs: nil, reps: 12, isWarmup: false)
-    #expect(s2.display.contains("BW"))
+    #expect(s2.display(in: .lbs).contains("BW"))
 }
 
 @Test func templateSaveAndFetchRoundtrip() async throws {
@@ -886,11 +948,9 @@ import GRDB
 }
 
 @Test func setWithZeroWeight() async throws {
-    let saved = Preferences.weightUnit; defer { Preferences.weightUnit = saved }
-    Preferences.weightUnit = .lbs
     let s = WorkoutSet(workoutId: 1, exerciseName: "Push-up", setOrder: 1, weightLbs: 0, reps: 20, isWarmup: false)
     #expect(s.estimated1RM == nil, "Zero weight should not compute 1RM")
-    #expect(s.display.contains("0 lbs"))
+    #expect(s.display(in: .lbs).contains("0 lbs"))
 }
 
 @Test func setWithZeroReps() async throws {
@@ -1776,7 +1836,7 @@ import GRDB
 @Test func durationSet_rendersAsMinutesSeconds() {
     // Done-When (2): the set summary shows a time (e.g. "3:00"), not "× N reps".
     let set = WorkoutSet(workoutId: 1, exerciseName: "Ladder Drill", setOrder: 1, durationSec: 180)
-    #expect(set.display == "3:00")
+    #expect(set.display(in: .lbs) == "3:00")
 }
 
 @Test func strengthExercises_stayRepsBased_noRegression() {
@@ -1826,7 +1886,7 @@ import GRDB
 
     // #938: the unified share builder reads the SAME persisted data — non-empty,
     // contains every exercise, in the performed order.
-    let share = try WorkoutService.shareText(forWorkoutId: wid)
+    let share = try WorkoutService.shareText(forWorkoutId: wid, unit: .lbs)
     #expect(share.contains("Order Test \(suffix)"))
     for name in summary.exercises { #expect(share.contains(name), "share missing \(name)") }
     let zebraPos = share.range(of: "Zebra Curl \(suffix)")!.lowerBound
