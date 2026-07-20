@@ -1518,6 +1518,30 @@ let setWeightColumnWidth: CGFloat = 55
 let setRepsColumnWidth: CGFloat = 50
 #endif
 
+extension View {
+    /// SkipUI renders every `TextField` as Material's `OutlinedTextField`, which
+    /// carries a 56dp `defaultMinSize`. That floor made the set cells ~2x their
+    /// iPhone height, inflating the exercise card until Finish fell below the
+    /// fold (measured 2026-07-20: 7.9% of screen height per set row vs iOS's
+    /// 4.1%). Supplying a content padding switches SkipUI to its `BasicTextField`
+    /// path (skip-ui `Text/TextField.swift:172`), which applies no minimum, so
+    /// the cell hugs its text the way the iOS one already does.
+    /// Identity on Darwin — iOS spacing is unchanged.
+    ///
+    /// Pass `vertical: 0` where the caller already applies its own
+    /// `.padding(.vertical:)` outside the field (as `SetCellField` does, since
+    /// that outer padding is what its rounded background is drawn around) —
+    /// otherwise the two stack and the cell ends up double-padded.
+    func compactTextFieldPadding(vertical: Double = 4, horizontal: Double = 4) -> some View {
+        #if os(Android)
+        return textFieldContentPadding(top: vertical, leading: horizontal,
+                                       bottom: vertical, trailing: horizontal)
+        #else
+        return self
+        #endif
+    }
+}
+
 struct SetCellField: View {
     let placeholder: String
     @Binding var text: String
@@ -1529,6 +1553,7 @@ struct SetCellField: View {
     var body: some View {
         TextField(placeholder, text: $text)
             .textFieldStyle(.plain)
+            .compactTextFieldPadding(vertical: 0)
             .keyboardType(decimal ? .decimalPad : .numberPad)
             .font(.subheadline.monospacedDigit())
             .multilineTextAlignment(.center).frame(width: width)
@@ -1544,6 +1569,7 @@ struct WorkoutNotesField: View {
         #if os(Android)
         TextField("Workout notes...", text: $text)
             .textFieldStyle(.plain)
+            .compactTextFieldPadding()
             .font(.caption).foregroundStyle(Theme.textSecondary)
             .padding(.horizontal, 16)
         #else
