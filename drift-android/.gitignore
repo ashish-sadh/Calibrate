@@ -48,6 +48,13 @@ xcodebuild*.log
 ## Obj-C/Swift specific
 *.hmap
 
+# `skip app launch` drops these next to Package.swift on every build; leaving
+# them untracked dirties the tree and trips the clean-state checks.
+resource_bundle_accessor*.d
+resource_bundle_accessor*.dia
+resource_bundle_accessor*.swiftdeps
+resource_bundle_accessor*.swiftmodule
+
 ## App packaging
 *.ipa
 *.dSYM.zip
