@@ -17,10 +17,16 @@ struct ExerciseBrowserView: View {
     // Android (#1073), loaded once per query/filter change into @State.
     @State var results: [ExerciseDatabase.ExerciseInfo] = []
 
-    private func reload() async {
+    /// See `ExercisePickerView.reload(debounced:)` — same cancel-on-keystroke
+    /// contract, driven by `.task(id: query)` (#1074).
+    private func reload(debounced: Bool = false) async {
+        if debounced {
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            if Task.isCancelled { return }
+        }
         let q = query
         let part = selectedPart
-        results = await withCheckedContinuation { continuation in
+        let loaded: [ExerciseDatabase.ExerciseInfo] = await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
                 var list = q.isEmpty ? ExerciseDatabase.allWithCustom : ExerciseDatabase.search(query: q)
                 if let part { list = list.filter { $0.bodyPart == part } }
@@ -29,6 +35,9 @@ struct ExerciseBrowserView: View {
                 continuation.resume(returning: list)
             }
         }
+        // A cancelled reload must not publish its stale results over a newer one.
+        if Task.isCancelled { return }
+        results = loaded
     }
     #else
     private var results: [ExerciseDatabase.ExerciseInfo] {
@@ -113,8 +122,7 @@ struct ExerciseBrowserView: View {
                 }
             }
             #if os(Android)
-            .task { await reload() }
-            .onChange(of: query) { _, _ in Task { await reload() } }
+            .task(id: query) { await reload(debounced: !query.isEmpty) }
             .onChange(of: selectedPart) { _, _ in Task { await reload() } }
             #endif
         }

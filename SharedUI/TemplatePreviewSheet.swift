@@ -141,11 +141,9 @@ struct TemplatePreviewSheet: View {
             let names = template.exercises.filter { !$0.isWarmup }.map(\.name)
             lastWeights = await withCheckedContinuation { continuation in
                 DispatchQueue.global(qos: .userInitiated).async {
-                    var weights: [String: Double] = [:]
-                    for name in names {
-                        if let w = try? WorkoutService.lastWeight(for: name) { weights[name] = w }
-                    }
-                    continuation.resume(returning: weights)
+                    // ONE query for the whole template instead of one per
+                    // exercise, each crossing JNI (#1074).
+                    continuation.resume(returning: (try? WorkoutService.lastWeights(for: names)) ?? [:])
                 }
             }
         }

@@ -124,11 +124,35 @@ struct ExerciseDetailView: View {
         }
         .scrollContentBackground(.hidden).background(Theme.background.ignoresSafeArea())
         .navigationTitle("Exercise").navigationBarTitleDisplayMode(.inline)
+        #if os(Android)
+        // Same three reads, off the push animation (#1074). On iOS these are
+        // cheap main-thread queries; on Android each crosses JNI and they ran
+        // synchronously in `onAppear`, i.e. during the NavigationStack push —
+        // the transition stutter the operator reported. `fetchPR` also re-ran
+        // `fetchExerciseHistory` internally, so this folds two identical table
+        // scans into one and derives the PR from the sets already fetched
+        // (`fetchPR` is exactly `compactMap(\.estimated1RM).max()`).
+        .task {
+            let name = exerciseName
+            let loaded: (favorite: Bool, sets: [WorkoutSet], pr: Double?) = await withCheckedContinuation { continuation in
+                DispatchQueue.global(qos: .userInitiated).async {
+                    let favorite = WorkoutService.exerciseFavorites.contains(name)
+                    let sets = (try? WorkoutService.fetchExerciseHistory(name: name)) ?? []
+                    continuation.resume(returning: (favorite, sets, sets.compactMap(\.estimated1RM).max()))
+                }
+            }
+            if Task.isCancelled { return }
+            isFavorite = loaded.favorite
+            history = loaded.sets
+            pr = loaded.pr
+        }
+        #else
         .onAppear {
             isFavorite = WorkoutService.exerciseFavorites.contains(exerciseName)
             history = (try? WorkoutService.fetchExerciseHistory(name: exerciseName)) ?? []
             pr = try? WorkoutService.fetchPR(for: exerciseName)
         }
+        #endif
     }
 
     private func detailTag(_ text: String, icon: String, color: Color) -> some View {

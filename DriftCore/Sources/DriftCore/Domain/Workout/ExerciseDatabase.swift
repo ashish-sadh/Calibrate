@@ -1,6 +1,6 @@
 import Foundation
 
-/// 873 exercises from free-exercise-db with muscle groups and equipment.
+/// 952 exercises from free-exercise-db with muscle groups and equipment.
 public enum ExerciseDatabase {
     public struct ExerciseInfo: Codable, Sendable, Identifiable {
         public var id: String { name }
@@ -132,11 +132,38 @@ public enum ExerciseDatabase {
     /// (the cause of the flaky `searchFindsCustomExercises`). #905.
     private static let customLock = NSLock()
 
-    static var customExercises: [ExerciseInfo] {
-        guard let data = UserDefaults.standard.data(forKey: customKey),
-              let decoded = try? JSONDecoder().decode([ExerciseInfo].self, from: data) else { return [] }
-        return decoded
+    /// Guards the derived caches below. Deliberately NOT `customLock`:
+    /// `addCustomExercises` reads `customExercises` while holding that lock and
+    /// NSLock is not reentrant. Nothing takes `customLock` while holding this
+    /// one, so the two cannot deadlock.
+    private static let cacheLock = NSLock()
+
+    /// Blob-keyed caches of the decoded customs, the merged catalog, and the
+    /// name index. Custom exercises are written by `addCustomExercises` but ALSO
+    /// mutated from outside this type — factory reset removes the key
+    /// (MoreTabView), backup restore rewrites it (BackupRestorer.applyPreferences),
+    /// and tests snapshot/restore it directly. So rather than trust every writer
+    /// to invalidate, each cache validates against the raw blob on read: the
+    /// UserDefaults read stays, the JSON decode and the 952-element lowercasing
+    /// passes do not. Identical results, no staleness window.
+    nonisolated(unsafe) private static var _customCache: (blob: Data?, list: [ExerciseInfo])?
+    nonisolated(unsafe) private static var _allWithCustomCache: (blob: Data?, list: [ExerciseInfo])?
+    nonisolated(unsafe) private static var _infoIndexCache: (blob: Data?, index: [String: ExerciseInfo])?
+
+    /// One UserDefaults read shared by the derived caches, so a single
+    /// `info(for:)` doesn't re-read the blob three times over.
+    private static func customSnapshot() -> (blob: Data?, list: [ExerciseInfo]) {
+        let blob = UserDefaults.standard.data(forKey: customKey)
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
+        if let cached = _customCache, cached.blob == blob { return cached }
+        let list = blob.flatMap { try? JSONDecoder().decode([ExerciseInfo].self, from: $0) } ?? []
+        let snapshot = (blob: blob, list: list)
+        _customCache = snapshot
+        return snapshot
     }
+
+    static var customExercises: [ExerciseInfo] { customSnapshot().list }
 
     /// Register a custom exercise. `primaryMuscles` should be real catalog
     /// muscle slugs (they drive the anatomy diagram); `imageUrl` may point
@@ -242,10 +269,16 @@ public enum ExerciseDatabase {
 
     // Include custom exercises in all searches, deduplicating by name
     public static var allWithCustom: [ExerciseInfo] {
+        let snapshot = customSnapshot()
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
+        if let cached = _allWithCustomCache, cached.blob == snapshot.blob { return cached.list }
         let base = all
         let baseNames = Set(base.map { $0.name.lowercased() })
-        let unique = customExercises.filter { !baseNames.contains($0.name.lowercased()) }
-        return base + unique
+        let unique = snapshot.list.filter { !baseNames.contains($0.name.lowercased()) }
+        let merged = base + unique
+        _allWithCustomCache = (snapshot.blob, merged)
+        return merged
     }
 
     public static func byBodyPart(_ part: String) -> [ExerciseInfo] {
@@ -274,8 +307,31 @@ public enum ExerciseDatabase {
         allWithCustom.filter { isDoable($0, with: available) }
     }
 
+    /// O(1) by lowercased name. The picker calls this once per visible row per
+    /// body evaluation (#1074); the old `allWithCustom.first { ... }` linear
+    /// scan allocated a lowercased string per catalog entry on every call.
+    /// First-wins on collision, matching the `first` it replaces — the bundled
+    /// catalog has no case-insensitive duplicate names (asserted in
+    /// `ExerciseDatabaseCacheTests`) and `allWithCustom` already dedupes customs
+    /// against it, so the index and the scan cannot disagree.
     public static func info(for name: String) -> ExerciseInfo? {
-        allWithCustom.first { $0.name.lowercased() == name.lowercased() }
+        let snapshot = customSnapshot()
+        cacheLock.lock()
+        if let cached = _infoIndexCache, cached.blob == snapshot.blob {
+            defer { cacheLock.unlock() }
+            return cached.index[name.lowercased()]
+        }
+        cacheLock.unlock()
+        var index: [String: ExerciseInfo] = [:]
+        let list = allWithCustom
+        index.reserveCapacity(list.count)
+        for exercise in list where index[exercise.name.lowercased()] == nil {
+            index[exercise.name.lowercased()] = exercise
+        }
+        cacheLock.lock()
+        _infoIndexCache = (snapshot.blob, index)
+        cacheLock.unlock()
+        return index[name.lowercased()]
     }
 
     public static func bodyPart(for name: String) -> String {

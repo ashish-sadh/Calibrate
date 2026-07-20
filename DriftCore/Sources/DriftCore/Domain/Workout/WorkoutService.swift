@@ -266,6 +266,30 @@ public enum WorkoutService {
         }
     }
 
+    /// Batched last weights: ONE query for every visible exercise instead of one
+    /// per row. The exercise picker issued 50-60 serial round-trips per keystroke,
+    /// each crossing JNI on Android (#1074) — same shape as the `buildSummaries`
+    /// fix below. Per name the result is identical to `lastWeight(for:)`: the
+    /// newest non-warmup set, and a nil `weightLbs` on that set yields no entry
+    /// rather than falling through to an older one.
+    public static func lastWeights(for exerciseNames: [String]) throws -> [String: Double] {
+        guard !exerciseNames.isEmpty else { return [:] }
+        let rows = try db.reader.read { dbConn in
+            try WorkoutSet
+                .filter(exerciseNames.contains(Column("exercise_name")))
+                .filter(Column("is_warmup") == false)
+                .order(Column("id").desc)
+                .fetchAll(dbConn)
+        }
+        var weights: [String: Double] = [:]
+        var seen = Set<String>()
+        seen.reserveCapacity(exerciseNames.count)
+        for row in rows where seen.insert(row.exerciseName).inserted {
+            if let weight = row.weightLbs { weights[row.exerciseName] = weight }
+        }
+        return weights
+    }
+
     /// Build workout summary for display.
     public static func buildSummary(for workout: Workout) throws -> WorkoutSummary {
         guard let wid = workout.id else {

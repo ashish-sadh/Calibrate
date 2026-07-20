@@ -31,6 +31,11 @@ struct ExercisePickerView: View {
     @State var recentExercises: [String] = []
     @State var historyExtras: [String] = []
     @State var lastWeights: [String: Double] = [:]
+    /// Catalog entry per visible row, resolved during `reload()`. The row
+    /// builder used to call `ExerciseDatabase.info(for:)` itself, which reads
+    /// the custom-exercise blob out of UserDefaults — one JNI hop per row per
+    /// recomposition, ~50 per frame while typing (#1074).
+    @State var infoByName: [String: ExerciseDatabase.ExerciseInfo] = [:]
 
     private struct PickerLists: @unchecked Sendable {
         var results: [ExerciseDatabase.ExerciseInfo] = []
@@ -38,9 +43,19 @@ struct ExercisePickerView: View {
         var recents: [String] = []
         var extras: [String] = []
         var weights: [String: Double] = [:]
+        var info: [String: ExerciseDatabase.ExerciseInfo] = [:]
     }
 
-    private func reload() async {
+    /// `debounced` is set for keystroke-driven reloads only. Typing "bench"
+    /// used to fire five overlapping full reloads — catalog rebuild plus a
+    /// weight query each — with nothing cancelling the stale ones (#1074).
+    /// `.task(id:)` cancels the previous run, so the sleep collapses a burst of
+    /// keystrokes into one reload; filter/favourite changes stay immediate.
+    private func reload(debounced: Bool = false) async {
+        if debounced {
+            try? await Task.sleep(nanoseconds: 200_000_000)
+            if Task.isCancelled { return }
+        }
         let q = query
         let filter = selectedBodyPartFilter
         let f = favs
@@ -69,12 +84,23 @@ struct ExercisePickerView: View {
                 var names = Set(lists.results.map(\.name))
                 names.formUnion(lists.favorites.map(\.name))
                 names.formUnion(lists.recents)
-                for name in names {
-                    if let w = try? WorkoutService.lastWeight(for: name) { lists.weights[name] = w }
+                // ONE query for every visible row — this was 50-60 serial
+                // round-trips, each crossing JNI (#1074).
+                lists.weights = (try? WorkoutService.lastWeights(for: Array(names))) ?? [:]
+                // Catalog lookups for the rows happen here, once, off the main
+                // thread. results/favorites already carry their ExerciseInfo;
+                // only the name-only sections need resolving.
+                for exercise in lists.results { lists.info[exercise.name] = exercise }
+                for exercise in lists.favorites { lists.info[exercise.name] = exercise }
+                for name in lists.recents + lists.extras where lists.info[name] == nil {
+                    lists.info[name] = ExerciseDatabase.info(for: name)
                 }
                 continuation.resume(returning: lists)
             }
         }
+        // A cancelled reload must not publish its stale lists over a newer one.
+        if Task.isCancelled { return }
+        infoByName = lists.info
         results = lists.results
         favoriteExercises = lists.favorites
         recentExercises = lists.recents
@@ -127,6 +153,28 @@ struct ExercisePickerView: View {
         return lastWeights[name]
         #else
         return try? WorkoutService.lastWeight(for: name)
+        #endif
+    }
+
+    /// Row catalog entry — Android reads the dictionary built in `reload()`;
+    /// iOS keeps its inline lookup (unchanged behavior). Same shape as
+    /// `rowLastWeight` above.
+    private func rowInfo(_ name: String) -> ExerciseDatabase.ExerciseInfo? {
+        #if os(Android)
+        return infoByName[name]
+        #else
+        return ExerciseDatabase.info(for: name)
+        #endif
+    }
+
+    /// `ExerciseDatabase.bodyPart(for:)` is `info(for:)?.bodyPart ?? guess(...)`,
+    /// so the Android path resolves it from the prebuilt dictionary rather than
+    /// re-reading the catalog per row. `guessBodyPart` is pure string logic.
+    private func rowBodyPart(_ name: String) -> String {
+        #if os(Android)
+        return infoByName[name]?.bodyPart ?? ExerciseDatabase.guessBodyPart(name)
+        #else
+        return ExerciseDatabase.bodyPart(for: name)
         #endif
     }
 
@@ -187,7 +235,7 @@ struct ExercisePickerView: View {
                     // Recently used
                     if !recentExercises.isEmpty {
                         Section("Recent") {
-                            ForEach(recentExercises.map { SectionEntry(sectionKey: "recent", name: $0, bodyPart: ExerciseDatabase.bodyPart(for: $0)) }) { e in
+                            ForEach(recentExercises.map { SectionEntry(sectionKey: "recent", name: $0, bodyPart: rowBodyPart($0)) }) { e in
                                 exerciseRow(name: e.name, bodyPart: e.bodyPart)
                             }
                         }
@@ -196,7 +244,7 @@ struct ExercisePickerView: View {
                     // History exercises (logged before but not in DB)
                     if !historyExtras.isEmpty {
                         Section("Your Exercises") {
-                            ForEach(historyExtras.map { SectionEntry(sectionKey: "extra", name: $0, bodyPart: ExerciseDatabase.bodyPart(for: $0)) }) { e in
+                            ForEach(historyExtras.map { SectionEntry(sectionKey: "extra", name: $0, bodyPart: rowBodyPart($0)) }) { e in
                                 exerciseRow(name: e.name, bodyPart: e.bodyPart)
                             }
                         }
@@ -249,8 +297,10 @@ struct ExercisePickerView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { searchFocused = true }
             }
             #if os(Android)
-            .task { await reload() }
-            .onChange(of: query) { _, _ in Task { await reload() } }
+            // `.task(id:)` doubles as the initial load (query starts empty, so
+            // that first run skips the debounce) and as the cancel-on-keystroke
+            // driver for typing.
+            .task(id: query) { await reload(debounced: !query.isEmpty) }
             .onChange(of: selectedBodyPartFilter) { _, _ in Task { await reload() } }
             .onChange(of: favs) { _, _ in Task { await reload() } }
             #endif
@@ -269,7 +319,7 @@ struct ExercisePickerView: View {
     }
 
     private func exerciseRow(name: String, bodyPart: String, equipment: String? = nil) -> some View {
-        let info = ExerciseDatabase.info(for: name)
+        let info = rowInfo(name)
         let isSelected = selected.contains(name)
         return Button { toggleSelection(name) } label: {
             HStack(spacing: 10) {
@@ -284,10 +334,31 @@ struct ExercisePickerView: View {
                         if let lastW = rowLastWeight(name) {
                             Text("\(Int(Preferences.weightUnit.convertFromLbs(lastW))) \(Preferences.weightUnit.displayName)").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textSecondary)
                         }
+                        #if os(Android)
+                        // Material has no outline "circle", so sym() falls back
+                        // to `checkmark.circle` — which drew a faint CHECK on
+                        // every UNSELECTED row, the one glyph that must not
+                        // read as "already selected". Draw the ring instead;
+                        // the selected state keeps the real filled checkmark.
+                        if isSelected {
+                            Image(systemName: sym("checkmark.circle.fill"))
+                                .font(.title3)
+                                .foregroundStyle(Theme.accent)
+                                .accessibilityLabel("Selected")
+                        } else {
+                            // `.stroke` not `.strokeBorder` — SkipUI's
+                            // strokeBorder overload set is ambiguous here.
+                            Circle()
+                                .stroke(Theme.textTertiary.opacity(0.5), lineWidth: 1.5)
+                                .frame(width: 21, height: 21)
+                                .accessibilityLabel("Not selected")
+                        }
+                        #else
                         Image(systemName: isSelected ? sym("checkmark.circle.fill") : sym("circle"))
                             .font(.title3)
                             .foregroundStyle(isSelected ? Theme.accent : Theme.textTertiary.opacity(0.5))
                             .accessibilityLabel(isSelected ? "Selected" : "Not selected")
+                        #endif
                     }
                     HStack(spacing: 4) {
                         if !bodyPart.isEmpty {
