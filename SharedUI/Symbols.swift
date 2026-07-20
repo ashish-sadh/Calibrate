@@ -17,7 +17,11 @@ func sym(_ name: String) -> String {
     // never a different object). Call sites draw DumbbellShape
     // (DumbbellGlyph.swift) behind #if os(Android); a new sym("dumbbell")
     // caller renders the warning triangle so the gap is caught, not hidden.
-    case "flame.fill": return "star.fill"
+    // "flame.fill" has NO mapping: skip-ui's Material map contains no fire
+    // glyph at all, and the star fallback read as a rating next to "active
+    // cal" and "1 week streak" (directive 0a). Call sites draw FlameShape
+    // (FlameGlyph.swift) behind #if os(Android); a new sym("flame.fill")
+    // caller renders the warning triangle so the gap is caught, not hidden.
     case "chart.line.uptrend.xyaxis": return "chart.bar.xaxis"
     case "scalemass": return "chart.bar.xaxis"
     // "clock" has NO mapping: the calendar stand-in read as a DATE next to

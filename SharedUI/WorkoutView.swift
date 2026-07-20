@@ -269,7 +269,13 @@ struct WorkoutView: View {
                 // Today's burn metrics
                 HStack(spacing: 10) {
                     HStack(spacing: 4) {
-                        Image(systemName: sym("flame.fill")).font(.caption).foregroundStyle(Theme.stepsOrange)
+                        #if os(Android)
+                        // No fire glyph in skip-ui's map — the star fallback
+                        // read as a rating (FlameGlyph.swift).
+                        FlameShape().fill(Theme.stepsOrange).frame(width: 12, height: 12)
+                        #else
+                        Image(systemName: "flame.fill").font(.caption).foregroundStyle(Theme.stepsOrange)
+                        #endif
                         Text("\(Int(activeCalories))").font(.subheadline.weight(.bold).monospacedDigit())
                         Text("active cal").font(.caption2).foregroundStyle(Theme.textSecondary)
                     }
@@ -870,7 +876,11 @@ struct WorkoutView: View {
     private func streakRow(current: Int, longest: Int) -> some View {
         let label = current == 1 ? "week" : "weeks"
         return HStack {
-            Image(systemName: sym("flame.fill")).foregroundStyle(.orange)
+            #if os(Android)
+            FlameShape().fill(.orange).frame(width: 17, height: 17)
+            #else
+            Image(systemName: "flame.fill").foregroundStyle(.orange)
+            #endif
             Text("\(current) \(label) streak")
                 .font(.subheadline.weight(.semibold))
             Spacer()
