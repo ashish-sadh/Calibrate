@@ -583,10 +583,10 @@ struct ActiveWorkoutView: View {
                     Button("kg") { exercises[ei].weighInKg = true }
                 } label: {
                     Text("\(assisted ? "-" : "")\(exercises[ei].weighInKg ? "kg" : "lbs") ▾")
-                        .font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary).frame(width: 55)
+                        .font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary).frame(width: setWeightColumnWidth)
                 }
                 .accessibilityLabel("Weight unit, currently \(exercises[ei].weighInKg ? "kilograms" : "pounds")")
-                Text(isDuration ? "Time (s)" : "Reps").font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary).frame(width: 50)
+                Text(isDuration ? "Time (s)" : "Reps").font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary).frame(width: setRepsColumnWidth)
                 Spacer()
                 Text("✓").font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary).frame(width: 30)
             }
@@ -614,12 +614,12 @@ struct ActiveWorkoutView: View {
                         // Weight
                         SetCellField(placeholder: si < exercises[ei].previousSets.count ? prevWeight(exercises[ei].previousSets[si]) : "0",
                                      text: $exercises[ei].sets[si].weight,
-                                     decimal: true, width: 55, leadingPad: 0, done: set.done)
+                                     decimal: true, width: setWeightColumnWidth, leadingPad: 0, done: set.done)
 
                         // Reps or Time
                         SetCellField(placeholder: isDuration ? "sec" : (si < exercises[ei].previousSets.count ? prevReps(exercises[ei].previousSets[si]) : "0"),
                                      text: $exercises[ei].sets[si].reps,
-                                     decimal: false, width: 50, leadingPad: 4, done: set.done)
+                                     decimal: false, width: setRepsColumnWidth, leadingPad: 4, done: set.done)
 
                         Spacer()
 
@@ -1447,6 +1447,21 @@ struct RestTimerBar: View {
 // scope (HStack/VStack/ForEach content flattens into the caller's scope);
 // later fields render as read-only text on Android. A struct body is its own
 // scope, so every extracted field binds. Identical render on iOS.
+
+// Compose wraps every TextField in a Material decoration box that reserves
+// horizontal padding on EACH side. At iOS's 55pt that leaves roughly three
+// digits of usable text, so a four-character entry ("1234", "137.5") silently
+// scrolls out of view — the stored value stays correct but the row DISPLAYS
+// "234", and a prefilled 2255 lbs reads as "255" (#1076). iOS has no such
+// inset and lays 55pt out fine, so the extra width is Android-only; the column
+// HEADERS use the same constants so the columns stay aligned.
+#if os(Android)
+let setWeightColumnWidth: CGFloat = 80
+let setRepsColumnWidth: CGFloat = 68
+#else
+let setWeightColumnWidth: CGFloat = 55
+let setRepsColumnWidth: CGFloat = 50
+#endif
 
 struct SetCellField: View {
     let placeholder: String

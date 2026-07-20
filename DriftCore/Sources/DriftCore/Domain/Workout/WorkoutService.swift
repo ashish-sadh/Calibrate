@@ -396,23 +396,44 @@ public enum WorkoutService {
         }
     }
 
-    /// Workouts per week for last N weeks.
+    /// Start of the calendar week (respecting `firstWeekday`) containing `date`,
+    /// normalized to midnight.
+    ///
+    /// Deliberately avoids `Calendar.dateInterval(of: .weekOfYear, for:)`: on
+    /// Android (Skip's Foundation) that returns a different bucket than it does
+    /// for `Date()` on the same day, so workouts logged TODAY landed in an older
+    /// week and every "this week" counter read 0 while the 12-week total was
+    /// right (#1076, reproduced on build 21). Day arithmetic off `startOfDay`
+    /// behaves identically on both platforms.
+    static func startOfWeek(for date: Date, calendar cal: Calendar = .current) -> Date {
+        let day = cal.startOfDay(for: date)
+        let offset = (cal.component(.weekday, from: day) - cal.firstWeekday + 7) % 7
+        return cal.date(byAdding: .day, value: -offset, to: day) ?? day
+    }
+
+    /// Workouts per week for last N weeks, ordered **oldest → newest** (so the
+    /// current week is `.last`; see `WorkoutWeeklyCountsTests`).
     public static func weeklyWorkoutCounts(weeks: Int = 12) throws -> [(weekStart: Date, count: Int)] {
         let workouts = try fetchWorkouts(limit: 500)
         let cal = Calendar.current
-        let now = Date()
-        var counts: [Date: Int] = [:]
+        let currentWeekStart = startOfWeek(for: Date(), calendar: cal)
 
+        // Bucket by whole weeks BACK from the current week, keyed by that integer
+        // rather than by `Date`: dictionary lookup on Date needs exact instant
+        // equality, which is what made the old bucketing silently miss.
+        var counts: [Int: Int] = [:]
         for w in workouts {
             guard let date = DateFormatters.dateOnly.date(from: String(w.date.prefix(10))) else { continue }
-            let weekStart = cal.dateInterval(of: .weekOfYear, for: date)?.start ?? date
-            counts[weekStart, default: 0] += 1
+            let weekStart = startOfWeek(for: date, calendar: cal)
+            guard let days = cal.dateComponents([.day], from: weekStart, to: currentWeekStart).day else { continue }
+            let offset = days / 7
+            guard offset >= 0, offset < weeks else { continue }
+            counts[offset, default: 0] += 1
         }
 
-        guard let currentWeekStart = cal.dateInterval(of: .weekOfYear, for: now)?.start else { return [] }
         return (0..<weeks).compactMap { offset -> (weekStart: Date, count: Int)? in
-            guard let weekStart = cal.date(byAdding: .weekOfYear, value: -offset, to: currentWeekStart) else { return nil }
-            return (weekStart, counts[weekStart] ?? 0)
+            guard let weekStart = cal.date(byAdding: .day, value: -offset * 7, to: currentWeekStart) else { return nil }
+            return (weekStart, counts[offset] ?? 0)
         }.reversed()
     }
 

@@ -20,6 +20,12 @@ struct ContentView: View {
             .padding(.bottom, 6)
         }
         .background(Theme.background.ignoresSafeArea())
+        // Compose defaults every native control (Toggle, Stepper, TextField
+        // caret/focus ring, checkboxes) to MaterialTheme's blue primary, which
+        // read as a different app next to Drift's pink accent (#1078). `tint`
+        // is a real skip-fuse-ui bridge, so one root-level tint recolors them
+        // all rather than per-control patches.
+        .tint(Theme.accent)
         .sheet(isPresented: $showingCoach) {
             CoachComingSheet()
         }

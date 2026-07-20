@@ -63,7 +63,9 @@ import DriftCore
                 let value = unit == .kg ? latest.weightKg : latest.weightKg * 2.20462
                 currentWeight = String(format: "%.1f", value) + " \(unit.displayName)"
             }
-            weekWorkouts = (try? WorkoutService.weeklyWorkoutCounts(weeks: 1))?.first?.count ?? 0
+            // Oldest → newest, so the current week is `.last` (correct here only
+            // by accident of weeks:1 returning a single element — see #1076).
+            weekWorkouts = (try? WorkoutService.weeklyWorkoutCounts(weeks: 1))?.last?.count ?? 0
             streak = (try? WorkoutService.workoutStreak())?.current ?? 0
         }
     }

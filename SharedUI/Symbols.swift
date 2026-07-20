@@ -73,7 +73,12 @@ func sym(_ name: String) -> String {
     // marker is decoration, not a competing meaning.
     case "1.circle", "2.circle", "3.circle", "4.circle",
          "square.stack.3d.up": return "list.bullet"
-    case "doc.on.doc": return "pencil"
+    // "Save as Template" sits directly under "Edit Name & Notes" in the workout
+    // ⋯ menu, so mapping doc.on.doc to pencil drew the SAME glyph on both rows
+    // (#1076). Material's mapped set has no doc/copy icon at all; bookmark
+    // ("save this for reuse") is the closest surviving meaning and, unlike
+    // pencil, does not collide with Edit.
+    case "doc.on.doc": return "bookmark"
     case "play.circle.fill": return "play.fill"
     case "chart.bar": return "chart.bar.xaxis"
     case "wrench.and.screwdriver": return "wrench"

@@ -592,7 +592,10 @@ struct WorkoutView: View {
 
     private var consistencyChart: some View {
         let total = weeklyCounts.reduce(0) { $0 + $1.count }
-        let thisWeek = weeklyCounts.first?.count ?? 0
+        // weeklyWorkoutCounts runs oldest → newest, so the current week is `.last`.
+        // Reading `.first` rendered the bucket from 11 weeks ago and showed
+        // "0 this week" for a workout logged today (#1076).
+        let thisWeek = weeklyCounts.last?.count ?? 0
 
         return HStack(spacing: 12) {
             // This week
