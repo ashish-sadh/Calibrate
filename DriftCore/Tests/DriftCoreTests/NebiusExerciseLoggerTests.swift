@@ -1,11 +1,13 @@
 import XCTest
-import DriftCore
-@testable import Drift
+@testable import DriftCore
 
-/// Tier-1: the pure decode/validation path of the cloud workout extractor
+/// Tier-0: the pure decode/validation path of the cloud workout extractor
 /// (#969). The cloud CALL is not exercised here (that's Tier-3 eval); these
 /// lock the JSON→[FMExerciseEntry] mapping + bounds gating that stops a bad
 /// cloud reply from injecting junk exercises.
+///
+/// Moved down with the logger itself when Android was wired onto the same cloud
+/// path (#1064) — nothing here needs the simulator.
 final class NebiusExerciseLoggerTests: XCTestCase {
 
     func testSingleEntryDecodes() {

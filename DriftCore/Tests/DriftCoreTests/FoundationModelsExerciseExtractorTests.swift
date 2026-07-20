@@ -149,4 +149,40 @@ import Testing
         }
         #expect(!async.isEmpty)
     }
+
+    // The async path takes a RAW UTTERANCE, so a segment with no sets/reps/weight
+    // signal must be dropped rather than defaulted to 3×10. Before this, any
+    // non-blank prose became a strength row: the sheet's own example utterance
+    // logged a lift the user never did, and because the result was never empty
+    // the "that didn't sound like a workout" state was unreachable — and on
+    // Android it shadowed the cloud path entirely. #1064 / #969.
+
+    @Test func asyncFallback_dropsProseWithNoSetsRepsSignal() async {
+        defer { UserDefaults.standard.removeObject(forKey: key) }
+        Preferences.fmWorkoutExtractEnabled = false
+        let parsed = await AIActionParser.parseWorkoutExercisesAsync("3x10 bench at 135, then a 5k run")
+        #expect(parsed.count == 1, "the prose segment must not become a fabricated 3×10 row")
+        #expect(parsed.first?.name == "bench")
+        #expect(parsed.first?.weight == 135)
+    }
+
+    @Test func asyncFallback_nonWorkoutInputIsEmpty() async {
+        defer { UserDefaults.standard.removeObject(forKey: key) }
+        Preferences.fmWorkoutExtractEnabled = false
+        // Reaching empty is what makes the sheet's error state reachable at all.
+        #expect(await AIActionParser.parseWorkoutExercisesAsync("show my weight").isEmpty)
+    }
+
+    @Test func asyncFallback_keepsEveryParseableSegment() async {
+        defer { UserDefaults.standard.removeObject(forKey: key) }
+        Preferences.fmWorkoutExtractEnabled = false
+        let parsed = await AIActionParser.parseWorkoutExercisesAsync("3x10 bench at 135, 3x12 squats at 185")
+        #expect(parsed.count == 2, "strictness must not cost a real exercise")
+    }
+
+    // The sync entry point keeps the permissive default on purpose: it receives
+    // already-extracted tool-call arguments, where a bare name IS an exercise.
+    @Test func syncPath_keepsBareNameDefault() {
+        #expect(AIActionParser.parseWorkoutExercises("Yoga").first?.sets == 3)
+    }
 }

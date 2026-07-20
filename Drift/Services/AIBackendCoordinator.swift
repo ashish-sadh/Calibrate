@@ -15,8 +15,12 @@ enum AIBackendCoordinator {
     /// is provisioned. The chat/coach path no longer uses a user-entered BYOK
     /// key — that path is archived (see `Drift/Archive/`). Photo Log keeps its
     /// own Keychain BYOK, untouched.
+    ///
+    /// The cloud rung itself now lives in DriftCore (`CoachCloud`) so Android
+    /// reaches the same brain; this stays as the iOS-side name the rest of the
+    /// app already asks.
     static var hasCoachCloud: Bool {
-        AppConfig.coachCloudConfigured
+        CoachCloud.isConfigured
     }
 
     /// Whether the local Drift brain has been downloaded.
@@ -74,13 +78,7 @@ enum AIBackendCoordinator {
     /// from the build. Photo Log itself still uses BYOK via its own path.)
     @discardableResult
     static func installCoachBackend() -> Bool {
-        guard hasCoachCloud else { return false }
-        LocalAIService.shared.useRemoteBackend(
-            provider: .nebius,
-            modelID: AppConfig.coachModelID,
-            apiKey: AppConfig.coachAPIKey
-        )
-        return true
+        CoachCloud.install()
     }
 
     /// Install the local backend: clears any in-place remote, then triggers

@@ -1,5 +1,4 @@
 import Foundation
-import DriftCore
 
 /// Parses a free-text / spoken WORKOUT description into structured exercise
 /// entries using the SAME cloud model that powers Drift Coach (Nebius when
@@ -11,8 +10,12 @@ import DriftCore
 ///
 /// Mirrors `MealTextLogger` (the food-side equivalent). Returns nil on any
 /// failure / empty result so the caller falls back to `FoundationModelsExerciseExtractor`.
+///
+/// In DriftCore (not the iOS app) so Android logs exercises through the same
+/// cloud brain with the same prompt — the local regex parser is the offline
+/// fallback on both platforms, never Android's default (#1064).
 @MainActor
-enum NebiusExerciseLogger {
+public enum NebiusExerciseLogger {
 
     /// Instruct the model to return ONLY the entries JSON — same numeric shape as
     /// `FMExerciseTranscriptSchema` so downstream mapping + bounds are identical.
@@ -35,11 +38,11 @@ enum NebiusExerciseLogger {
     /// Parse `text` via the coach cloud model. nil when the cloud isn't
     /// configured, is unreachable, or returns nothing valid — the caller then
     /// falls back to the on-device FM extractor.
-    static func parse(_ text: String) async -> [FMExerciseEntry]? {
+    public static func parse(_ text: String) async -> [FMExerciseEntry]? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
-        guard AIBackendCoordinator.hasCoachCloud else { return nil }
-        AIBackendCoordinator.installCoachBackend()
+        guard CoachCloud.isConfigured else { return nil }
+        CoachCloud.install()
 
         let raw = await LocalAIService.shared.respondDirect(
             systemPrompt: systemPrompt, message: trimmed)

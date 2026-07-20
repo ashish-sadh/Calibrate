@@ -20,9 +20,8 @@ import UserNotifications
 //     Android rest-end cue is visual-only until the notification seam lands
 //   · share: UIActivityViewController on iOS (tap-time read, #967);
 //     ShareLink on Android (text is frozen before the sheet opens)
-//   · Haptics + AIBackendCoordinator are app-target types → DRIFT_IOS_APP;
-//     Android's command strip answers coach questions with the iOS
-//     no-cloud copy until the Coach port (#1066)
+//   · Haptics is an app-target type → DRIFT_IOS_APP. The command strip's coach
+//     questions now run on both platforms via DriftCore's CoachCloud (#1064)
 //   · notes TextField(axis:) is Darwin-only (SkipUI renders it single-line)
 
 struct ActiveWorkoutView: View {
@@ -1099,15 +1098,16 @@ struct ActiveWorkoutView: View {
     /// deterministic intents above never touch the network; this is the one
     /// path that does, and it says so ("Thinking…") instead of freezing.
     private func askCoach(_ question: String) {
-        #if DRIFT_IOS_APP
-        guard AIBackendCoordinator.hasCoachCloud else {
+        // Same cloud rung on both platforms (#1064) — Android used to answer
+        // "needs the cloud connection" here while the key was sitting right there.
+        guard CoachCloud.isConfigured else {
             commandFeedback = CommandFeedback(text: "Coach questions need the cloud connection — try from the chat.")
             return
         }
         commandFeedback = CommandFeedback(text: "Thinking…")
         let context = coachSessionContext()
         Task {
-            AIBackendCoordinator.installCoachBackend()
+            CoachCloud.install()
             let reply = await LocalAIService.shared.respondDirect(
                 systemPrompt: """
                 You are Drift Coach answering DURING a live workout. Be a concise \
@@ -1119,11 +1119,6 @@ struct ActiveWorkoutView: View {
             commandFeedback = CommandFeedback(
                 text: trimmed.isEmpty ? "Didn't catch an answer — try that again." : trimmed)
         }
-        #else
-        // Android coach-cloud wiring arrives with the Coach port (#1066);
-        // deterministic commands above already work. Same copy as iOS-no-cloud.
-        commandFeedback = CommandFeedback(text: "Coach questions need the cloud connection — try from the chat.")
-        #endif
     }
 
     private func coachSessionContext() -> String {

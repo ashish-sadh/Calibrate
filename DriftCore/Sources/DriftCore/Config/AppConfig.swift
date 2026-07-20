@@ -1,5 +1,9 @@
 import Foundation
+#if canImport(CryptoKit)
 import CryptoKit
+#else
+import Crypto
+#endif
 
 /// Build-time configuration for Drift Coach's cloud brain.
 ///
@@ -19,7 +23,13 @@ import CryptoKit
 /// To rotate / re-key: AES-GCM-seal the new key with the SAME derivation as
 /// `unlockKey` below (a one-off `swift` script using CryptoKit), base64 the
 /// `sealedBox.combined`, and replace `coachKeyCiphertextB64`.
-enum AppConfig {
+///
+/// Lives in DriftCore (not the iOS app) so Android reaches the same cloud brain
+/// with the same key — the operator's standing AI ladder is Nebius first, local
+/// only as the last resort, on BOTH platforms (#1064). Off-Apple the `Crypto`
+/// module above is swift-crypto, which is API-identical for the AES-GCM +
+/// SHA-256 used here, so there is one code path.
+public enum AppConfig {
 
     /// Nebius model powering the coach. Qwen3-235B-Instruct — fast (~1s),
     /// concise, grounded, good tool-calling. Deliberately an *instruct* model,
@@ -29,7 +39,7 @@ enum AppConfig {
 
     /// Vision model for image turns — the text coach model can't see images
     /// (400s). Verified to accept image_url on Nebius. #coach-agent-loop
-    static let coachVisionModelID = "Qwen/Qwen2.5-VL-72B-Instruct"
+    public static let coachVisionModelID = "Qwen/Qwen2.5-VL-72B-Instruct"
 
     /// The Nebius provider the coach installs. Base URL is encoded in
     /// `RemoteLLMBackend.Provider.nebius`.
@@ -51,6 +61,9 @@ enum AppConfig {
     /// Decrypt the team Nebius key from the embedded ciphertext. Returns "" if
     /// the ciphertext is absent/garbled — `coachCloudConfigured` then reads
     /// false and the coach degrades to on-device.
+    ///
+    /// Deliberately a computed `var`, not a stored `let`: it must NOT decrypt
+    /// during module init, which would put an AES open on every cold start.
     static var coachAPIKey: String {
         guard !coachKeyCiphertextB64.isEmpty,
               let data = Data(base64Encoded: coachKeyCiphertextB64),
@@ -61,17 +74,17 @@ enum AppConfig {
     }
 
     /// True when the embedded key decrypts — the cloud coach is selectable.
-    static var coachCloudConfigured: Bool { !coachAPIKey.isEmpty }
+    public static var coachCloudConfigured: Bool { !coachAPIKey.isEmpty }
 
     // MARK: - ElevenLabs cloud TTS (studio coach voice)
 
     /// ElevenLabs voice ID for the coach. "Rachel" — calm, warm, reliable.
     /// Swap for any voice ID from the ElevenLabs library.
-    static let coachVoiceID = "21m00Tcm4TlvDq8ikWAM"
+    public static let coachVoiceID = "21m00Tcm4TlvDq8ikWAM"
 
     /// ElevenLabs model. `eleven_turbo_v2_5` — low latency (~300ms) with quality
     /// close to multilingual_v2; right balance for a real-time spoken coach.
-    static let elevenLabsModelID = "eleven_turbo_v2_5"
+    public static let elevenLabsModelID = "eleven_turbo_v2_5"
 
     /// AES-GCM(combined) of the ElevenLabs API key, base64 — sealed with the
     /// SAME `unlockKey` derivation as the Nebius key. Only ciphertext ships.
@@ -82,7 +95,7 @@ enum AppConfig {
 
     /// Decrypt the ElevenLabs key. Returns "" when absent/garbled — the coach
     /// then falls back to the on-device voice.
-    static var elevenLabsAPIKey: String {
+    public static var elevenLabsAPIKey: String {
         guard !elevenLabsKeyCiphertextB64.isEmpty,
               let data = Data(base64Encoded: elevenLabsKeyCiphertextB64),
               let box = try? AES.GCM.SealedBox(combined: data),
@@ -92,5 +105,5 @@ enum AppConfig {
     }
 
     /// True when the ElevenLabs key decrypts — studio voice is available.
-    static var elevenLabsConfigured: Bool { !elevenLabsAPIKey.isEmpty }
+    public static var elevenLabsConfigured: Bool { !elevenLabsAPIKey.isEmpty }
 }

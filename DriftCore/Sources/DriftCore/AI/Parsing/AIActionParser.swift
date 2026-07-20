@@ -103,6 +103,21 @@ public enum AIActionParser {
         input.split(separator: ",").compactMap { Self.parseSingleExerciseRegex($0) }
     }
 
+    /// Free-text variant of the regex path: a segment carrying NO sets/reps/weight
+    /// signal is DROPPED rather than defaulted to a 3×10 row.
+    ///
+    /// The two entry points serve opposite contracts. `parseWorkoutExercises`
+    /// receives clean tool-call arguments — the model already decided each string
+    /// names an exercise, so defaulting bare "Yoga" to 3×10 is right. The async
+    /// path receives a raw utterance, where the same default fabricates lifts the
+    /// user never did ("3x10 bench, then a 5k run" → a "then a 5k run" 3×10
+    /// strength row) — the trust-breaking class of bug the cloud path exists to
+    /// fix (#969) — and, because it never returns empty, it also makes the
+    /// "that didn't sound like a workout" empty state unreachable.
+    private static func parseWorkoutExercisesStrict(_ input: String) -> [WorkoutExercise] {
+        input.split(separator: ",").compactMap { Self.parseSingleExerciseRegex($0, allowBareName: false) }
+    }
+
     /// FM-first variant: when `Preferences.fmWorkoutExtractEnabled` and the
     /// platform supports FoundationModels (iOS 26+), the entire transcript
     /// goes through `FoundationModelsExerciseExtractor` in ONE call so that
@@ -112,13 +127,13 @@ public enum AIActionParser {
     /// path. Returns the same `WorkoutExercise` shape so existing callers
     /// don't need to know which path ran.
     public static func parseWorkoutExercisesAsync(_ input: String) async -> [WorkoutExercise] {
-        guard Preferences.fmWorkoutExtractEnabled else { return parseWorkoutExercises(input) }
+        guard Preferences.fmWorkoutExtractEnabled else { return parseWorkoutExercisesStrict(input) }
         do {
             let entries = try await FoundationModelsExerciseExtractor.extract(text: input)
             let mapped = entries.compactMap { workoutExercise(from: $0) }
-            return mapped.isEmpty ? parseWorkoutExercises(input) : mapped
+            return mapped.isEmpty ? parseWorkoutExercisesStrict(input) : mapped
         } catch {
-            return parseWorkoutExercises(input)
+            return parseWorkoutExercisesStrict(input)
         }
     }
 
@@ -143,7 +158,11 @@ public enum AIActionParser {
     /// Accepts both orderings: name-first ("Bench Press 3x10@135") and
     /// numbers-first ("3x10 bench at 135" — the phrasing the voice/text sheets
     /// prompt with), with `x`/`×`, optional spaces, and `@N`/`at N` weights.
-    private static func parseSingleExerciseRegex(_ part: Substring) -> WorkoutExercise? {
+    /// `allowBareName` false drops a segment that matched neither ordering, so a
+    /// raw utterance can't fabricate sets/reps it never carried. See
+    /// `parseWorkoutExercisesStrict`.
+    private static func parseSingleExerciseRegex(_ part: Substring,
+                                                 allowBareName: Bool = true) -> WorkoutExercise? {
         let trimmed = part.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return nil }
         let weightSuffix = #"(?:\s*@\s*(\d+\.?\d*)|\s+at\s+(\d+\.?\d*))?"#
@@ -168,6 +187,7 @@ public enum AIActionParser {
                                    reps: group(match, 2).flatMap(Int.init) ?? 10,
                                    weight: (group(match, 4) ?? group(match, 5)).flatMap(Double.init))
         }
+        guard allowBareName else { return nil }
         return WorkoutExercise(name: trimmed, sets: 3, reps: 10, weight: nil)
     }
 

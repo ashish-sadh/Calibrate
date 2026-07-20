@@ -369,7 +369,10 @@ struct InputDraftField: View {
         // .stroke, not .strokeBorder: SkipSwiftUI declares two strokeBorder
         // overload families and the call is ambiguous; the half-linewidth
         // inset difference is sub-pixel at 0.5pt.
+        // .plain or Material's OutlinedTextField draws its own border + blue
+        // focus ring ON TOP of the overlay below — iOS has neither.
         TextField("3x10 bench at 135", text: $draft)
+            .textFieldStyle(.plain)
             .font(.body)
             .foregroundStyle(Theme.textPrimary)
             .padding(14)
@@ -405,14 +408,31 @@ struct VoiceLogExerciseRow: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 TextField("Exercise", text: $exercise.name)
+                    #if os(Android)
+                    // iOS renders this borderless; Material would box the name.
+                    .textFieldStyle(.plain)
+                    #endif
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.textPrimary)
                     .accessibilityIdentifier("exercise-row-name")
                 Spacer()
                 Button(action: onRemove) {
+                    #if os(Android)
+                    // skip-ui maps only bare "xmark" (Icons.Outlined.Clear) — no
+                    // circle-fill variant — so draw iOS's filled disc ourselves.
+                    ZStack {
+                        Circle()
+                            .fill(Theme.textTertiary)
+                            .frame(width: 20, height: 20)
+                        Image(systemName: sym("xmark"))
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(Theme.cardBackground)
+                    }
+                    #else
                     Image(systemName: sym("xmark.circle.fill"))
                         .font(.body)
                         .foregroundStyle(Theme.textTertiary)
+                    #endif
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Remove exercise")
@@ -467,6 +487,10 @@ struct VoiceLogNumberField: View {
     var body: some View {
         VStack(spacing: 3) {
             TextField("—", text: $text)
+                #if os(Android)
+                // The rounded fill below IS the field on iOS — no outline.
+                .textFieldStyle(.plain)
+                #endif
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.center)
                 .font(.subheadline.monospacedDigit())
@@ -620,17 +644,20 @@ final class ExerciseVoiceLogViewModel {
         // exercises the user never said. The bigger Nebius cloud model extracts
         // only what was stated. Falls through to on-device FM when the cloud is
         // unconfigured / unreachable / returns nothing.
-        #if DRIFT_IOS_APP
+        // Unconditional: the coach cloud is the top rung of the AI ladder on
+        // BOTH platforms (#1064). Android used to skip straight to the local
+        // regex, which meant the same utterance got a worse answer there —
+        // no kg→lbs conversion, no cardio/duration split, no Hinglish.
         if let entries = await NebiusExerciseLogger.parse(text), !entries.isEmpty {
             appendDrafts(entries.map { mapToDraft($0) })
             return
         }
-        #endif
 
         #if os(Android)
-        // No cloud client on Android yet (#1066) and no Apple FM — the local
-        // DriftCore parser handles multi-exercise strength utterances
-        // ("3x10 bench at 135, 3x12 squats") before the single-entry fallback.
+        // Offline fallback — no Apple FM here, so the local DriftCore parser is
+        // the last rung. It handles multi-exercise strength utterances
+        // ("3x10 bench at 135, 3x12 squats") and now drops segments carrying no
+        // sets/reps signal rather than inventing a 3×10 row for them.
         let localEntries = await AIActionParser.parseWorkoutExercisesAsync(text)
         if !localEntries.isEmpty {
             appendDrafts(localEntries.map { mapLocalParse($0) })
@@ -673,7 +700,13 @@ final class ExerciseVoiceLogViewModel {
         transientMessage = nil
         phase = .confirming
         Task { @MainActor in
+            #if os(Android)
+            // Task.sleep(for:) never resumes here, so the ink "just added"
+            // border stuck on every card forever; the nanoseconds overload does.
+            try? await Task.sleep(nanoseconds: 2_500_000_000)
+            #else
             try? await Task.sleep(for: .seconds(2.5))
+            #endif
             recentlyAddedIDs.subtract(ids)
         }
     }
