@@ -14,7 +14,10 @@ func sym(_ name: String) -> String {
     case "flame.fill": return "star.fill"
     case "chart.line.uptrend.xyaxis": return "chart.bar.xaxis"
     case "scalemass": return "chart.bar.xaxis"
-    case "clock": return "calendar"
+    // "clock" has NO mapping: the calendar stand-in read as a DATE next to
+    // the real calendar glyph (#1074). Call sites draw ClockFaceShape
+    // (ClockGlyph.swift) behind #if os(Android) instead — a new sym("clock")
+    // caller renders the warning triangle so the gap is caught, not hidden.
     // Material's mapped set has no mic; Android entry is typed until the
     // SpeechRecognizer seam (#1063), so the write glyph reads truthfully.
     case "mic.fill", "mic": return "pencil"

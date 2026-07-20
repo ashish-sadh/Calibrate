@@ -6,9 +6,14 @@
 - **Usage:** SVG path data extracted by `scripts/extract-body-highlighter.py` into `DriftCore/Sources/DriftCore/Resources/bodyDiagram.json`, rendered natively by `BodyDiagram`/`MuscleBodyView` (#929).
 
 ## Material Symbols glyphs (Android)
-- **Source:** [Google Material Symbols](https://fonts.google.com/icons) ("restaurant")
+- **Source:** [Google Material Symbols](https://fonts.google.com/icons) ("restaurant", "schedule")
 - **License:** Apache License 2.0 — Copyright Google LLC
-- **Usage:** SVG path bundled as `drift-android/.../Module.xcassets/fork.knife.symbolset` so the Android food glyph reads as food (skip-ui's built-in Material map has no food icon).
+- **Usage:** SVG paths hand-converted to SwiftUI `Path` shapes (`drift-android/.../FoodGlyph.swift`, `ClockGlyph.swift`) — Skip Fuse builds drop `.xcassets` symbolsets from the APK, and skip-ui's built-in Material map has no food or clock icon.
+
+## Nunito font (Android)
+- **Source:** [Nunito](https://fonts.google.com/specimen/Nunito) — Vernon Adams, Cyreal, Jacques Le Bailly
+- **License:** SIL Open Font License 1.1
+- **Usage:** `nunito_semibold.ttf` + `nunito_bold.ttf` bundled at `drift-android/Android/app/src/main/res/font/` as the Android stand-in for SF Rounded (`Theme.rounded` — skip-ui maps `design: .rounded` to plain Roboto, #1074).
 
 ## Exercise pose photos
 - **Source:** [free-exercise-db](https://github.com/yuhonas/free-exercise-db)

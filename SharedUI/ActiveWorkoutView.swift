@@ -1330,7 +1330,15 @@ struct WorkoutClockLabel: View {
     @ViewBuilder private var content: some View {
         switch style {
         case .headerLabel:
+            #if os(Android)
+            // Material's mapped set has no clock — the calendar stand-in sat
+            // next to the real calendar label above. Drawn face instead.
+            Label { Text(formatWorkoutDuration(elapsed)) } icon: {
+                ClockFaceShape().fill(Theme.textSecondary).frame(width: 12, height: 12)
+            }
+            #else
             Label(formatWorkoutDuration(elapsed), systemImage: sym("clock"))
+            #endif
         case .summaryStat:
             Text(formatWorkoutDuration(elapsed)).font(.title3.weight(.bold).monospacedDigit())
         }

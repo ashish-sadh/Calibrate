@@ -236,7 +236,7 @@ struct FoodTab: View {
             }
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 Text("\(store.totals.eaten)")
-                    .font(.system(size: Theme.FontSize.display1, weight: .bold, design: .rounded).monospacedDigit())
+                    .font(Theme.rounded(size: Theme.FontSize.display1).monospacedDigit())
                     .foregroundStyle(Theme.macroKcal)
                 Text("/ \(store.totals.target) kcal")
                     .font(.subheadline).foregroundStyle(Theme.textSecondary)
@@ -291,7 +291,7 @@ struct ServingConfirmSheet: View {
 
                     VStack(spacing: 2) {
                         Text(servings.formatted())
-                            .font(.system(size: Theme.FontSize.display1, weight: .bold, design: .rounded))
+                            .font(Theme.rounded(size: Theme.FontSize.display1))
                         Text(servings == 1 ? "serving" : "servings")
                             .font(.caption2).foregroundStyle(Theme.textSecondary)
                     }

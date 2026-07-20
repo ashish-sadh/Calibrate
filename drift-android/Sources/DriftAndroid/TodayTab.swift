@@ -70,12 +70,12 @@ struct TodayTab: View {
                     // Brand header — matches iOS Dashboard's centered mark.
                     HStack(spacing: 8) {
                         Text("D")
-                            .font(.system(size: 17, weight: .bold, design: .rounded))
+                            .font(Theme.rounded(size: 17))
                             .foregroundStyle(.white)
                             .frame(width: 30, height: 30)
                             .background(Theme.accent, in: Circle())
                         Text("Drift")
-                            .font(.system(size: 22, weight: .bold, design: .rounded))
+                            .font(Theme.rounded(size: 22))
                             .foregroundStyle(Theme.textPrimary)
                     }
                     .frame(maxWidth: .infinity)
@@ -119,7 +119,7 @@ struct TodayTab: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("TODAY'S INTAKE").sectionHeading()
                         Text("\(max(store.totals.remaining, 0)) kcal left")
-                            .font(.system(size: Theme.FontSize.title2, weight: .bold, design: .rounded))
+                            .font(Theme.rounded(size: Theme.FontSize.title2))
                             .foregroundStyle(Theme.textPrimary)
                     }
                     Spacer()
@@ -162,7 +162,7 @@ struct TodayTab: View {
             ring(progress: fiberProgress, color: Theme.macroFiber, track: Color(hex: "D6EEF7"), diameter: 110)
             VStack(spacing: 0) {
                 Text("\(store.totals.eaten)")
-                    .font(.system(size: Theme.FontSize.display2, weight: .bold, design: .rounded).monospacedDigit())
+                    .font(Theme.rounded(size: Theme.FontSize.display2).monospacedDigit())
                     .foregroundStyle(Theme.textPrimary)
                 Text("KCAL")
                     .font(.caption2.weight(.semibold))
@@ -293,7 +293,7 @@ struct TodayTab: View {
                         .tracking(0.6)
                 }
                 Text(value)
-                    .font(.system(size: Theme.FontSize.title3, weight: .bold, design: .rounded).monospacedDigit())
+                    .font(Theme.rounded(size: Theme.FontSize.title3).monospacedDigit())
                     .foregroundStyle(Theme.textPrimary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)

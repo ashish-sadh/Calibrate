@@ -374,7 +374,9 @@ struct DriftWorkoutView: View {
             }
             HStack(spacing: 12) {
                 if !s.workout.durationDisplay.isEmpty {
-                    Label(s.workout.durationDisplay, systemImage: sym("clock")).font(.caption).foregroundStyle(Theme.textSecondary)
+                    Label { Text(s.workout.durationDisplay) } icon: {
+                        ClockFaceShape().fill(Theme.textSecondary).frame(width: 12, height: 12)
+                    }.font(.caption).foregroundStyle(Theme.textSecondary)
                 }
                 Label("\(Int(wu.convertFromLbs(s.totalVolume))) \(wu.displayName)", systemImage: sym("scalemass")).font(.caption).foregroundStyle(Theme.textSecondary)
                 Label("\(s.exercises.count) exercises", systemImage: sym("dumbbell")).font(.caption).foregroundStyle(Theme.textSecondary)

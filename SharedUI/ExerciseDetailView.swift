@@ -93,7 +93,12 @@ struct ExerciseDetailView: View {
 
                 if history.isEmpty {
                     VStack(spacing: 8) {
+                        #if os(Android)
+                        // No clock in skip-ui's Material map (ClockGlyph.swift).
+                        ClockFaceShape().fill(Theme.textTertiary).frame(width: 22, height: 22)
+                        #else
                         Image(systemName: sym("clock")).font(.title2).foregroundStyle(Theme.textTertiary)
+                        #endif
                         Text("No history yet").font(.subheadline).foregroundStyle(Theme.textSecondary)
                     }.padding(.top, 20)
                 } else {

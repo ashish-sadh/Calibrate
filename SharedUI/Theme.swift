@@ -139,14 +139,30 @@ enum Theme {
 
     // MARK: - Typography
 
-    static let fontLargeTitle = Font.system(size: 28, weight: .bold, design: .rounded)
-    static let fontTitle = Font.system(size: 20, weight: .bold, design: .rounded)
-    static let fontHeadline = Font.system(size: 16, weight: .semibold, design: .rounded)
+    #if os(Android)
+    /// Android has no SF Rounded: skip-ui maps `design: .rounded` to plain
+    /// Roboto (Font.swift `.rounded → FontFamily.SansSerif`), which flattened
+    /// every rounded title/stat (#1074 residual 1). Nunito (OFL — see
+    /// Docs/licenses.md) is bundled as the rounded family; skip-ui resolves
+    /// `Font.custom("Nunito-Bold")` to `res/font/nunito_bold.ttf`.
+    static func rounded(size: CGFloat, weight: Font.Weight = .bold) -> Font {
+        Font.custom(weight == .semibold ? "Nunito-SemiBold" : "Nunito-Bold", size: size)
+    }
+    #else
+    /// The SF Rounded system face. Android branches to bundled Nunito above.
+    static func rounded(size: CGFloat, weight: Font.Weight = .bold) -> Font {
+        Font.system(size: size, weight: weight, design: .rounded)
+    }
+    #endif
+
+    static let fontLargeTitle = rounded(size: 28)
+    static let fontTitle = rounded(size: 20)
+    static let fontHeadline = rounded(size: 16, weight: .semibold)
     static let fontBody = Font.system(size: 15, weight: .regular, design: .default)
     static let fontCaption = Font.system(size: 13, weight: .medium, design: .default)
-    static let fontStat = Font.system(size: 22, weight: .bold, design: .rounded).monospacedDigit()
+    static let fontStat = rounded(size: 22).monospacedDigit()
     /// Large numeric display — V6 spec uses tabular for stat numbers.
-    static let fontDisplay = Font.system(size: 48, weight: .bold, design: .rounded).monospacedDigit()
+    static let fontDisplay = rounded(size: 48).monospacedDigit()
 
     // MARK: - Spacing
 

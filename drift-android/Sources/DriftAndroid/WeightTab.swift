@@ -99,7 +99,7 @@ struct WeightTab: View {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("CURRENT").sectionHeading()
                         Text(store.stats.current)
-                            .font(.system(size: Theme.FontSize.display1, weight: .bold, design: .rounded).monospacedDigit())
+                            .font(Theme.rounded(size: Theme.FontSize.display1).monospacedDigit())
                             .foregroundStyle(Theme.textPrimary)
                         if !store.stats.trend.isEmpty {
                             Text(store.stats.trend)
