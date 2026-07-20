@@ -643,9 +643,27 @@ struct ActiveWorkoutView: View {
                                 }
                             }
                         } label: {
+                            #if os(Android)
+                            // Same fallback trap as the picker row: Material has
+                            // no outline "circle", so sym() landed on
+                            // `checkmark.circle` and every UN-DONE set drew a
+                            // check — the one glyph that must not read as "done".
+                            if set.done {
+                                Image(systemName: sym("checkmark.circle.fill"))
+                                    .font(.title3)
+                                    .foregroundStyle(Theme.deficit)
+                            } else {
+                                // `.stroke` not `.strokeBorder` — SkipUI's
+                                // strokeBorder overload set is ambiguous here.
+                                Circle()
+                                    .stroke(Color.secondary, lineWidth: 1.5)
+                                    .frame(width: 21, height: 21)
+                            }
+                            #else
                             Image(systemName: set.done ? sym("checkmark.circle.fill") : sym("circle"))
                                 .font(.title3)
                                 .foregroundStyle(set.done ? Theme.deficit : .secondary)
+                            #endif
                         }.frame(width: 30)
 
                         // Inline delete button

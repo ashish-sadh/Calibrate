@@ -43,7 +43,15 @@ struct PillTabBar: View {
                     withAnimation(.easeOut(duration: 0.22)) { selected = tab }
                 } label: {
                     VStack(spacing: 2) {
-                        if tab == .food {
+                        if tab == .today {
+                            // Drawn glyph — skip-ui mapped target to house, so
+                            // the Today TAB read as a home icon instead of the
+                            // iPhone's rings (see TargetGlyph.swift).
+                            TargetShape()
+                                .fill(isSelected ? Theme.ink : Theme.textTertiary)
+                                .frame(width: 16, height: 16)
+                                .frame(height: 20)
+                        } else if tab == .food {
                             // Drawn glyph — skip-ui's map has no food icon
                             // (see FoodGlyph.swift).
                             ForkKnifeShape()

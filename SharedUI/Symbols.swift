@@ -39,7 +39,10 @@ func sym(_ name: String) -> String {
     case "star", "star.slash": return "star.fill"
     case "camera.fill", "camera": return "camera.viewfinder"
     case "square.and.arrow.down": return "list.bullet"
-    case "target": return "house"
+    // target has NO mapping: Material's set has no bullseye and the house
+    // stand-in read as HOME on the Today tab — a different object, the same
+    // failure as the shopping-cart food icon. The tab bar draws TargetShape
+    // (TargetGlyph.swift) instead.
     // fork.knife has NO mapping: Material's set has no food glyph and the
     // cart stand-in read as SHOPPING (operator, 2026-07-19). App call sites
     // render the drawn ForkKnifeShape (FoodGlyph.swift) instead — shared
@@ -53,9 +56,12 @@ func sym(_ name: String) -> String {
          "figure.boxing", "figure.cooldown", "figure.core.training",
          "figure.cross.training", "figure.mixed.cardio": return "person"
     case "trophy.fill": return "star.fill"
-    // Active-workout surfaces (#1064 1c). Material's outline "circle" isn't
-    // in skip-ui's map — the un-done set ring reads as an outlined check.
-    case "circle": return "checkmark.circle"
+    // "circle" is deliberately UNMAPPED. Material has no outline circle, and
+    // the old `checkmark.circle` fallback drew a check on every UN-DONE set and
+    // every UNSELECTED row — a fallback that reads as the OPPOSITE of the real
+    // state is worse than a visible gap. Both call sites now draw a real ring
+    // via Circle().stroke() behind #if os(Android): ActiveWorkoutView (set done
+    // toggle) and ExercisePickerView (row selection).
     case "xmark.circle", "xmark.circle.fill": return "xmark"
     case "sparkles": return "star.fill"
     case "arrow.up.circle.fill": return "paperplane.fill"
