@@ -370,56 +370,7 @@ struct ActiveWorkoutView: View {
                 // Dismiss everything when completion sheet closes
                 onComplete(); dismiss()
             } content: {
-                VStack(spacing: 20) {
-                    if let milestone = completionMilestone {
-                        Text("🎉").font(.system(size: Theme.FontSize.display4))
-                        Text(milestone).font(.title2.weight(.bold))
-                    } else {
-                        Text("💪").font(.system(size: Theme.FontSize.display4))
-                        Text("Workout Complete").font(.title2.weight(.bold))
-                    }
-
-                    Text(completionShareText)
-                        .font(.subheadline).foregroundStyle(Theme.textSecondary)
-                        .multilineTextAlignment(.center)
-
-                    #if canImport(UIKit)
-                    Button {
-                        // ShareLink(item:) snapshots the @State at render time (#967) —
-                        // UIActivityViewController reads the text at tap time so it's
-                        // always populated (mirrors WorkoutDetailView's ShareSheet pattern).
-                        let vc = UIActivityViewController(
-                            activityItems: [completionShareText], applicationActivities: nil)
-                        if let scene = UIApplication.shared.connectedScenes
-                               .compactMap({ $0 as? UIWindowScene }).first,
-                           let root = (scene.windows.first(where: { $0.isKeyWindow }) ?? scene.windows.first)?.rootViewController {
-                            // #1023: the completion sheet is already presented from `root`, so
-                            // presenting the share sheet from root silently no-ops. Walk to the
-                            // top-most presented controller and present from there.
-                            var top = root
-                            while let presented = top.presentedViewController { top = presented }
-                            top.present(vc, animated: true)
-                        }
-                    } label: {
-                        Label("Share", systemImage: sym("square.and.arrow.up")).frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    #else
-                    // Android: the text is final before this sheet presents, so
-                    // ShareLink's render-time snapshot (#967) can't bite here.
-                    ShareLink(item: completionShareText) {
-                        Label("Share", systemImage: sym("square.and.arrow.up")).frame(maxWidth: .infinity)
-                    }
-                    .buttonStyle(.bordered)
-                    #endif
-
-                    Button("Done") { showingCompletionSheet = false }
-                        .buttonStyle(.borderedProminent).tint(Theme.accent)
-                        .frame(maxWidth: .infinity)
-                }
-                .padding(24)
-                .presentationDetents([.medium])
-                .background(Theme.background)
+                completionSheet()
             }
             .onAppear {
                 if let pd = pastDate {
@@ -498,6 +449,73 @@ struct ActiveWorkoutView: View {
 
     // MARK: - Exercise Section
 
+    // Extracted so Android can wrap it in a ScrollView and give it a detent
+    // that actually fits. Compose's `.medium` is shorter than iOS's, and when
+    // the content overflows it compresses the trailing child rather than
+    // growing the sheet — which collapsed "Done" to an unreadable pink sliver
+    // (#1076). A long share text (many exercises) overflows any fixed detent,
+    // so Android scrolls as well. iOS keeps `.medium` and no scroll wrapper.
+    private func completionSheet() -> some View {
+        let card = VStack(spacing: 20) {
+            if let milestone = completionMilestone {
+                Text("🎉").font(.system(size: Theme.FontSize.display4))
+                Text(milestone).font(.title2.weight(.bold))
+            } else {
+                Text("💪").font(.system(size: Theme.FontSize.display4))
+                Text("Workout Complete").font(.title2.weight(.bold))
+            }
+
+            Text(completionShareText)
+                .font(.subheadline).foregroundStyle(Theme.textSecondary)
+                .multilineTextAlignment(.center)
+
+            #if canImport(UIKit)
+            Button {
+                // ShareLink(item:) snapshots the @State at render time (#967) —
+                // UIActivityViewController reads the text at tap time so it's
+                // always populated (mirrors WorkoutDetailView's ShareSheet pattern).
+                let vc = UIActivityViewController(
+                    activityItems: [completionShareText], applicationActivities: nil)
+                if let scene = UIApplication.shared.connectedScenes
+                       .compactMap({ $0 as? UIWindowScene }).first,
+                   let root = (scene.windows.first(where: { $0.isKeyWindow }) ?? scene.windows.first)?.rootViewController {
+                    // #1023: the completion sheet is already presented from `root`, so
+                    // presenting the share sheet from root silently no-ops. Walk to the
+                    // top-most presented controller and present from there.
+                    var top = root
+                    while let presented = top.presentedViewController { top = presented }
+                    top.present(vc, animated: true)
+                }
+            } label: {
+                Label("Share", systemImage: sym("square.and.arrow.up")).frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            #else
+            // Android: the text is final before this sheet presents, so
+            // ShareLink's render-time snapshot (#967) can't bite here.
+            ShareLink(item: completionShareText) {
+                Label("Share", systemImage: sym("square.and.arrow.up")).frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered)
+            #endif
+
+            Button("Done") { showingCompletionSheet = false }
+                .buttonStyle(.borderedProminent).tint(Theme.accent)
+                .frame(maxWidth: .infinity)
+        }
+        .padding(24)
+
+        #if os(Android)
+        return ScrollView { card }
+            .presentationDetents([.fraction(0.75), .large])
+            .background(Theme.background)
+        #else
+        return card
+            .presentationDetents([.medium])
+            .background(Theme.background)
+        #endif
+    }
+
     private func exerciseSection(_ ei: Int) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             // Exercise header
@@ -546,8 +564,22 @@ struct ActiveWorkoutView: View {
                     Button {
                         exercises[ei].trackByTime.toggle()
                     } label: {
+                        #if os(Android)
+                        // Material's mapped set has no timer — the calendar
+                        // stand-in read as a DATE, right under the header's
+                        // real calendar glyph. Drawn face instead (#1076).
+                        if exercises[ei].trackByTime {
+                            Label("Track by Reps", systemImage: sym("number"))
+                        } else {
+                            Label { Text("Track by Time") } icon: {
+                                ClockFaceShape().fill(Theme.textSecondary)
+                                    .frame(width: 16, height: 16)
+                            }
+                        }
+                        #else
                         Label(exercises[ei].trackByTime ? "Track by Reps" : "Track by Time",
                               systemImage: sym(exercises[ei].trackByTime ? "number" : "timer"))
+                        #endif
                     }
                     Divider()
                     Button(role: .destructive) {

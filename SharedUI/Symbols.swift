@@ -69,7 +69,12 @@ func sym(_ name: String) -> String {
     // a new caller gets the warning triangle so the gap stays visible.
     case "arrow.up.circle.fill": return "paperplane.fill"
     case "plus.circle": return "plus.circle.fill"
-    case "timer": return "calendar"
+    // "timer" has NO mapping: the calendar stand-in put a DATE glyph on the
+    // "Track by Time" row of the exercise-options menu — the same failure as
+    // sym("clock") (#1074), and doubly wrong there because the workout header
+    // right above it uses the real calendar. The call site draws ClockFaceShape
+    // behind #if os(Android); a new sym("timer") caller renders the warning
+    // triangle so the gap is caught, not hidden.
     case "number": return "list.bullet"
     // Template-package menu rows. Material has no numbered circles; the row
     // TEXT carries the numbering ("Load Drift Package II"), so a generic list
