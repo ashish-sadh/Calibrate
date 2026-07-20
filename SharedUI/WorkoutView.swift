@@ -706,7 +706,7 @@ struct WorkoutView: View {
                 HStack {
                     Text(abbreviate(best.exercise)).font(.caption).foregroundStyle(Theme.textSecondary).lineLimit(1)
                     Spacer()
-                    Text("\(Int(wu.convertFromLbs(best.weight))) \(wu.displayName) × \(best.reps)").font(.caption.monospacedDigit()).foregroundStyle(Theme.textTertiary)
+                    Text("\(WeightFormatter.plain(wu.convertFromLbs(best.weight))) \(wu.displayName) × \(best.reps)").font(.caption.monospacedDigit()).foregroundStyle(Theme.textTertiary)
                 }
             }
         }.card()

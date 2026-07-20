@@ -193,6 +193,21 @@ struct ExercisePickerView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                #if os(Android)
+                // SkipUI's inline nav bar does not reserve layout space inside a
+                // sheet: Cancel and the title paint ON TOP of the VStack's first
+                // child, so they landed across the search field. Draw the header
+                // as real content and leave the nav bar empty — same two bands
+                // as iPhone (nav row, then the search row).
+                ZStack {
+                    Text("Add Exercise").font(.headline)
+                    HStack {
+                        Button("Cancel") { dismiss() }.foregroundStyle(Theme.accent)
+                        Spacer()
+                    }
+                }
+                .padding(.horizontal, 16).padding(.vertical, 12)
+                #endif
                 HStack {
                     Image(systemName: sym("magnifyingglass")).foregroundStyle(Theme.textSecondary)
                     TextField("Search exercises", text: $query).textFieldStyle(.plain).autocorrectionDisabled()
@@ -258,8 +273,10 @@ struct ExercisePickerView: View {
                     }
                 }.listStyle(.plain)
             }
+            #if !os(Android)
             .navigationTitle("Add Exercise").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
+            #endif
             // One tap per exercise, one dismiss for the whole batch.
             .safeAreaInset(edge: .bottom) {
                 if !selected.isEmpty {
@@ -332,7 +349,7 @@ struct ExercisePickerView: View {
                         Text(name).font(.subheadline)
                         Spacer()
                         if let lastW = rowLastWeight(name) {
-                            Text("\(Int(Preferences.weightUnit.convertFromLbs(lastW))) \(Preferences.weightUnit.displayName)").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textSecondary)
+                            Text("\(WeightFormatter.plain(Preferences.weightUnit.convertFromLbs(lastW))) \(Preferences.weightUnit.displayName)").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textSecondary)
                         }
                         #if os(Android)
                         // Material has no outline "circle", so sym() falls back

@@ -94,7 +94,7 @@ struct WorkoutDetailView: View {
                                 .contentShape(Rectangle())
                                 .onTapGesture {
                                     editingSet = s
-                                    editSetWeight = s.weightLbs.map { "\(Int($0))" } ?? ""
+                                    editSetWeight = s.weightLbs.map { WeightFormatter.plain($0) } ?? ""
                                     editSetReps = s.reps.map { "\($0)" } ?? (s.durationSec.map { "\($0)" } ?? "")
                                 }
                                 // No-op on both platforms (this is a ScrollView,
@@ -312,10 +312,12 @@ struct EditSetSheet: View {
 // background on top of that squeezed the glyphs to an unreadable horizontal
 // sliver (the caret still moved, so the text was there — just clipped). This is
 // the same decoration-box trap that made set rows show three characters of a
-// weight (#1076), and the same shape `SetCellField` already uses. The explicit
-// height is load-bearing too: at the medium detent the keyboard compresses the
-// sheet, and without a fixed control height the fields shrink and clip the tops
-// of the digits.
+// weight (#1076), and the same shape `SetCellField` already uses.
+//
+// Height comes from vertical PADDING, never `.frame(height:)`. A fixed frame
+// constrains the Compose text composable itself, so the glyphs get clipped from
+// the top — visible even with the keyboard down (#1080 sweep). Padding lets the
+// field size to its own line height and still lands at ~44pt.
 struct EditSetWeightField: View {
     @Binding var text: String
     var body: some View {
@@ -323,7 +325,7 @@ struct EditSetWeightField: View {
             .textFieldStyle(.plain)
             .keyboardType(.decimalPad)
             .padding(.horizontal, 12)
-            .frame(height: 44)
+            .padding(.vertical, 12)
             .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 8))
     }
 }
@@ -335,7 +337,7 @@ struct EditSetRepsField: View {
             .textFieldStyle(.plain)
             .keyboardType(.numberPad)
             .padding(.horizontal, 12)
-            .frame(height: 44)
+            .padding(.vertical, 12)
             .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 8))
     }
 }

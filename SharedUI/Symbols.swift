@@ -63,7 +63,10 @@ func sym(_ name: String) -> String {
     // via Circle().stroke() behind #if os(Android): ActiveWorkoutView (set done
     // toggle) and ExercisePickerView (row selection).
     case "xmark.circle", "xmark.circle.fill": return "xmark"
-    case "sparkles": return "star.fill"
+    // "sparkles" is deliberately UNMAPPED. Material has no sparkle glyph, and
+    // the old `star.fill` fallback put a solid favourite-star in front of the
+    // AI command strip. The call site draws SparkleShape behind #if os(Android);
+    // a new caller gets the warning triangle so the gap stays visible.
     case "arrow.up.circle.fill": return "paperplane.fill"
     case "plus.circle": return "plus.circle.fill"
     case "timer": return "calendar"

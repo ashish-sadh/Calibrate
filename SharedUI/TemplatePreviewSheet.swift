@@ -64,7 +64,7 @@ struct TemplatePreviewSheet: View {
                                             Text("\(ex.sets) sets").font(.caption2).foregroundStyle(Theme.textTertiary)
                                             if let lastW = lastWeight(for: ex.name) {
                                                 Text("\u{00B7}").font(.caption2).foregroundStyle(Theme.textTertiary)
-                                                Text("\(Int(Preferences.weightUnit.convertFromLbs(lastW))) \(Preferences.weightUnit.displayName)").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
+                                                Text("\(WeightFormatter.plain(Preferences.weightUnit.convertFromLbs(lastW))) \(Preferences.weightUnit.displayName)").font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
                                             }
                                             if let notes = ex.notes {
                                                 Text("\u{00B7}").font(.caption2).foregroundStyle(Theme.textTertiary)

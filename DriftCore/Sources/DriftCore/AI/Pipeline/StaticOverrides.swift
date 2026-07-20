@@ -300,12 +300,12 @@ public enum StaticOverrides {
                     if let info = ExerciseService.getProgressiveOverload(exercise: resolved) {
                         lines.append(info.trend)
                         if info.sessions.count >= 2 {
-                            let weights = info.sessions.map { "\(Int(wu.convertFromLbs($0)))" }.joined(separator: " → ")
+                            let weights = info.sessions.map { WeightFormatter.plain(wu.convertFromLbs($0)) }.joined(separator: " → ")
                             lines.append("Recent 1RM trend (\(wu.displayName)): \(weights)")
                         }
                     }
                     if let w = (try? WorkoutService.lastWeight(for: resolved)) ?? nil {
-                        lines.append("Last weight: \(Int(wu.convertFromLbs(w))) \(wu.displayName)")
+                        lines.append("Last weight: \(WeightFormatter.plain(wu.convertFromLbs(w))) \(wu.displayName)")
                     }
                     return lines.isEmpty ? "No data for '\(resolved)' yet." : lines.joined(separator: "\n")
                 }

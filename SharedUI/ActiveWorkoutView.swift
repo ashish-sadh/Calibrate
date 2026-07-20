@@ -725,9 +725,6 @@ struct ActiveWorkoutView: View {
         return parts.count > 1 ? parts[1].trimmingCharacters(in: .whitespaces) : "0"
     }
 
-    /// #1022: display a weight trimming trailing zeros — 42.5 → "42.5", 40.0 → "40".
-    private func fmtWeight(_ v: Double) -> String { String(format: "%g", v) }
-
     private func isAssistedExercise(_ name: String) -> Bool {
         let e = name.lowercased()
         return e.contains("assisted") || e.contains("assist")
@@ -950,7 +947,7 @@ struct ActiveWorkoutView: View {
         } ?? []
 
         let previous = lastSession.prefix(5).map { s in
-            "\(fmtWeight(s.weightLbs ?? 0)) lbs \u{00D7} \(s.reps ?? 0)"
+            "\(WeightFormatter.plain(s.weightLbs ?? 0)) lbs \u{00D7} \(s.reps ?? 0)"
         }
 
         let count = setCount ?? (lastSession.isEmpty ? 3 : max(lastSession.count, 3))
@@ -958,7 +955,7 @@ struct ActiveWorkoutView: View {
         for i in 0..<count {
             if i < lastSession.count {
                 let s = lastSession[i]
-                sets.append(ActiveSet(weight: s.weightLbs.map { fmtWeight($0) } ?? "",
+                sets.append(ActiveSet(weight: s.weightLbs.map { WeightFormatter.plain($0) } ?? "",
                                       reps: s.reps.map { String($0) } ?? "", isWarmup: isWarmup))
             } else {
                 sets.append(ActiveSet(weight: "", reps: "", isWarmup: isWarmup))
@@ -1042,8 +1039,16 @@ struct ActiveWorkoutView: View {
                 .transition(.opacity)
             }
             HStack(spacing: 8) {
+                #if os(Android)
+                // No Material sparkle exists — see Symbols.swift. Sized to sit
+                // on the .caption cap-height the iOS glyph occupies.
+                SparkleShape()
+                    .fill(Theme.accent.opacity(0.6))
+                    .frame(width: 13, height: 13)
+                #else
                 Image(systemName: sym("sparkles"))
                     .font(.caption).foregroundStyle(Theme.accent.opacity(0.6))
+                #endif
                 TextField("what's next · form tips for squat · ask anything", text: $commandText)
                     .textFieldStyle(.plain)
                     .font(.subheadline)
@@ -1198,7 +1203,7 @@ struct ActiveWorkoutView: View {
         let last = history.filter { $0.workoutId == lastWorkoutId }.sorted { $0.setOrder < $1.setOrder }
         let unit = Preferences.weightUnit
         let sets = last.prefix(5).map { s -> String in
-            let weight = s.weightLbs.map { "\(Int(unit.convertFromLbs($0)))\(unit.displayName)" } ?? "bw"
+            let weight = s.weightLbs.map { "\(WeightFormatter.plain(unit.convertFromLbs($0)))\(unit.displayName)" } ?? "bw"
             return "\(weight)×\(s.reps ?? s.durationSec ?? 0)"
         }.joined(separator: ", ")
         commandFeedback = CommandFeedback(text: "\(name) last time: \(sets)")

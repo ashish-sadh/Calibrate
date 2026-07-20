@@ -744,7 +744,7 @@ final class ExerciseVoiceLogViewModel {
             matched: matched,
             sets: entry.sets.map(String.init) ?? "",
             reps: entry.reps.map(String.init) ?? "",
-            weight: entry.weight.map(formatWeight) ?? "",
+            weight: entry.weight.map(WeightFormatter.plain) ?? "",
             durationMinutes: entry.durationMinutes.map(String.init) ?? ""
         )
     }
@@ -766,7 +766,7 @@ final class ExerciseVoiceLogViewModel {
             matched: matched,
             sets: String(entry.sets),
             reps: String(entry.reps),
-            weight: entry.weight.map(formatWeight) ?? "",
+            weight: entry.weight.map(WeightFormatter.plain) ?? "",
             durationMinutes: ""
         )
     }
@@ -778,10 +778,6 @@ final class ExerciseVoiceLogViewModel {
         let hit = ExerciseDatabase.match(name: text)
         return ExerciseDraft(name: hit?.name ?? text, isDuration: false,
                              matched: hit != nil, sets: "", reps: "", weight: "", durationMinutes: "")
-    }
-
-    private func formatWeight(_ w: Double) -> String {
-        w.truncatingRemainder(dividingBy: 1) == 0 ? String(Int(w)) : String(format: "%.1f", w)
     }
 
     func save() {

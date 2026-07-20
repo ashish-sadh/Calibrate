@@ -221,7 +221,7 @@ public enum AIContextBuilder {
                     let grouped = Dictionary(grouping: sets.filter { !$0.isWarmup }, by: \.exerciseName)
                     let summary = grouped.prefix(5).map { (name, sets) in
                         let bestSet = sets.max(by: { ($0.weightLbs ?? 0) < ($1.weightLbs ?? 0) })
-                        let w = bestSet?.weightLbs.map { "\(Int($0))lb" } ?? ""
+                        let w = bestSet?.weightLbs.map { "\(WeightFormatter.plain($0))lb" } ?? ""
                         return "\(name) \(sets.count)x\(w)"
                     }.joined(separator: ", ")
                     if !summary.isEmpty { lines.append("Last exercises: \(summary)") }
