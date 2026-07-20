@@ -21,10 +21,14 @@ struct WeightStats: Sendable {
 // MARK: - Store
 
 @MainActor @Observable public class WeightStore {
+    /// Shared for the same reason as `TodayStore.shared` — see that comment.
+    static let shared = WeightStore()
+
     var stats = WeightStats()
     var entries: [WeightRow] = []
     var unit = Preferences.weightUnit
 
+    /// Loads once when `shared` is first touched — see FoodStore.init.
     init() { reload() }
 
     func reload() {
@@ -88,7 +92,7 @@ struct WeightStats: Sendable {
 // MARK: - Weight tab
 
 struct WeightTab: View {
-    @State var store = WeightStore()
+    @State var store = WeightStore.shared
     @State var showingAdd = false
 
     var body: some View {

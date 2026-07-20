@@ -33,11 +33,20 @@ struct FoodHit: Identifiable, Sendable {
 // MARK: - Store
 
 @MainActor @Observable public class FoodStore {
+    /// Shared for the same reason as `TodayStore.shared` — the tab `switch` in
+    /// ContentView rebuilds this view on every tab change, and a per-view store
+    /// came back empty each time. See TodayStore.shared.
+    static let shared = FoodStore()
+
     var totals = TotalsRow()
     var today: [FoodEntryRow] = []
     var query = ""
     var results: [FoodHit] = []
 
+    /// Loads once, when `shared` is first touched. Do not drop this in favour
+    /// of the `.onAppear` below: removing it left the tab showing 0 kcal /
+    /// "Nothing logged yet" after seconds on screen, with the DB fully
+    /// populated — i.e. `.onAppear` alone did not get the load done here.
     init() { reload() }
 
     func reload() {
@@ -158,7 +167,7 @@ private func onDB<T: Sendable>(_ work: @escaping @Sendable () -> T) async -> T {
 // MARK: - Food tab
 
 struct FoodTab: View {
-    @State var store = FoodStore()
+    @State var store = FoodStore.shared
     @State var confirmHit: FoodHit? = nil
 
     var body: some View {

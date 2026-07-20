@@ -9,6 +9,17 @@ import DriftCore
 /// (#1061 tracks the remaining Dashboard depth: coaching cards, sleep/
 /// recovery data via Health Connect, daily-average footer.)
 @MainActor @Observable class TodayStore {
+    /// One instance for the whole app. `ContentView.tabContent` is a `switch`
+    /// in a ViewBuilder, so each branch has its own view identity and Compose
+    /// tears the outgoing tab down and rebuilds the incoming one on every tab
+    /// change. With a per-view `@State` store that rebuild handed the screen a
+    /// freshly-initialized (empty) store, so the tab painted "0 kcal left" and
+    /// "Log your first meal" over real data until the async reload landed —
+    /// reads as data loss, and is the "buggy" half of #1075. Sharing the
+    /// instance keeps loaded data alive across the rebuild; observation is
+    /// unchanged (still `@State` + `@Observable`, as before).
+    static let shared = TodayStore()
+
     var totals = TotalsRow()
     var proteinTarget = 0
     var carbsTarget = 0
@@ -60,7 +71,7 @@ import DriftCore
 
 struct TodayTab: View {
     @Binding var selectedTab: PrimaryTab
-    @State var store = TodayStore()
+    @State var store = TodayStore.shared
     @State var showingCoachInfo = false
 
     var body: some View {
