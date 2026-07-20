@@ -115,12 +115,27 @@ struct WorkoutView: View {
                     HStack(spacing: 12) {
                         VoiceMicButton(tint: Theme.ink, diameter: 40, iconSize: 18)
                         VStack(alignment: .leading, spacing: 2) {
+                            // Android has no mic until the SpeechRecognizer seam
+                            // lands (#1063), so the sheet is text-only and
+                            // sym("mic.fill") already resolves to a pencil. The
+                            // copy was still promising voice — a row labelled
+                            // "Log by Voice" that cannot listen. Match the icon's
+                            // existing honesty; revert both when #1063 ships.
+                            #if os(Android)
+                            Text("Log by Text")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Theme.textPrimary)
+                            Text("Type your sets — \u{201C}3×10 bench at 135\u{201D}")
+                                .font(.caption2)
+                                .foregroundStyle(Theme.textSecondary)
+                            #else
                             Text("Log by Voice or Text")
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(Theme.textPrimary)
                             Text("Say or type your sets — \u{201C}3×10 bench at 135\u{201D}")
                                 .font(.caption2)
                                 .foregroundStyle(Theme.textSecondary)
+                            #endif
                         }
                         Spacer()
                         Image(systemName: sym("chevron.right"))

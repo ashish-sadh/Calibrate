@@ -1109,6 +1109,16 @@ struct ActiveWorkoutView: View {
         let raw = commandText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !raw.isEmpty else { return }
         commandText = ""
+        #if os(Android)
+        // SkipUI's KeyboardActions runs clearFocus() before *every* onSubmit
+        // trigger (skip-ui TextField.swift), so the send key drops the keyboard
+        // no matter what we do here. iOS never writes commandFocused, leaving it
+        // up for the next command — the strip is built for chaining ("add face
+        // pulls" → "add curls"), and re-tapping between each one is the gap.
+        // Re-assert on the next tick: a synchronous write lands in the same
+        // recomposition SkipUI just cleared and is swallowed.
+        Task { @MainActor in commandFocused = true }
+        #endif
         switch WorkoutCommandParser.parse(raw) {
         case .remove(let query):
             removeExercise(matching: query)

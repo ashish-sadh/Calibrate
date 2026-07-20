@@ -18,6 +18,13 @@ struct CreateTemplateView: View {
             Form {
                 Section("Template Name") {
                     TextField("e.g., Push Day", text: $name)
+                        #if os(Android)
+                        // Material's default TextField draws an outlined box
+                        // inside the Form row; iPhone's is borderless and lets
+                        // the row's own white fill be the field. Same remedy
+                        // VoiceLogNumberField uses.
+                        .textFieldStyle(.plain)
+                        #endif
                 }
 
                 let warmupIndices = exercises.indices.filter { exercises[$0].isWarmup }
