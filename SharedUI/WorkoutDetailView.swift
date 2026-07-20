@@ -285,25 +285,39 @@ struct EditSetSheet: View {
     let onSave: () -> Void
     let onCancel: () -> Void
 
+    // Detent height is load-bearing. The IME eats ~45% of the screen and a
+    // .medium detent is only ~50%, so with a keypad up the content box
+    // collapsed to a sliver — and SkipUI SQUASHES an overflowing sheet's
+    // children instead of clipping or scrolling them. The weight value
+    // rendered as a sliced band, and the reps field and Save/Cancel were
+    // pushed off-screen entirely: you typed reps blind into a field you
+    // couldn't see and had no way to reach Save without dismissing the
+    // keyboard first (#1076 sweep #9). iPhone's alert keeps BOTH fields and
+    // BOTH buttons above the keypad, so matching it needs the taller detent;
+    // the ScrollView is the belt-and-braces for small screens and large
+    // accessibility text. The trailing Spacer() is gone on purpose — an
+    // infinite spacer inside a ScrollView fights the scroll metrics.
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Text("Edit Set").font(.headline)
-            Text("\(set.exerciseName) — Set \(set.setOrder)")
-                .font(.callout).foregroundStyle(Theme.textSecondary)
-            // One TextField per view scope: Skip binds only the first field in a
-            // given ViewBuilder scope, so a second inline field would render but
-            // never commit (the SetCellField precedent, #1064).
-            EditSetWeightField(text: $weight)
-            EditSetRepsField(text: $reps)
-            HStack(spacing: 20) {
-                Spacer()
-                Button("Cancel", role: .cancel) { onCancel() }
-                Button("Save") { onSave() }.font(.body.weight(.semibold))
-            }.padding(.top, 4)
-            Spacer()
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Edit Set").font(.headline)
+                Text("\(set.exerciseName) — Set \(set.setOrder)")
+                    .font(.callout).foregroundStyle(Theme.textSecondary)
+                // One TextField per view scope: Skip binds only the first field in a
+                // given ViewBuilder scope, so a second inline field would render but
+                // never commit (the SetCellField precedent, #1064).
+                EditSetWeightField(text: $weight)
+                EditSetRepsField(text: $reps)
+                HStack(spacing: 20) {
+                    Spacer()
+                    Button("Cancel", role: .cancel) { onCancel() }
+                    Button("Save") { onSave() }.font(.body.weight(.semibold))
+                }.padding(.top, 4)
+            }
+            .padding(20)
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(20)
-        .presentationDetents([.medium])
+        .presentationDetents([.large])
     }
 }
 

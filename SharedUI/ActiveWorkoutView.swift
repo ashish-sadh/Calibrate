@@ -1112,11 +1112,19 @@ struct ActiveWorkoutView: View {
         #if os(Android)
         // SkipUI's KeyboardActions runs clearFocus() before *every* onSubmit
         // trigger (skip-ui TextField.swift), so the send key drops the keyboard
-        // no matter what we do here. iOS never writes commandFocused, leaving it
-        // up for the next command — the strip is built for chaining ("add face
-        // pulls" → "add curls"), and re-tapping between each one is the gap.
-        // Re-assert on the next tick: a synchronous write lands in the same
-        // recomposition SkipUI just cleared and is swallowed.
+        // no matter what we do here. Re-assert on the next tick: a synchronous
+        // write lands in the same recomposition SkipUI just cleared and is
+        // swallowed.
+        //
+        // Android-only enhancement, NOT parity: iPhone drops the keyboard on
+        // send too — SwiftUI resigns first responder on .onSubmit by default,
+        // driven on the iPhone 17 sim with both a mutating ("add bench press")
+        // and a non-mutating ("what's next") command. Not writing commandFocused
+        // is why iOS *loses* focus, not why it keeps it. We deliberately diverge
+        // because the strip is built for chaining ("add face pulls" → "add
+        // curls") and re-tapping between each one is the gap. If iPhone should
+        // chain too that is a separate iOS-gated change — do not read this as a
+        // description of iPhone behaviour.
         Task { @MainActor in commandFocused = true }
         #endif
         switch WorkoutCommandParser.parse(raw) {
