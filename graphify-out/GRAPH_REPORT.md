@@ -1,7 +1,7 @@
 # Graph Report - /Users/ashishsadh/workspace/Drift  (2026-07-20)
 
 ## Corpus Check
-- 761 files · ~4,744,366 words
+- 761 files · ~4,744,820 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -1177,11 +1177,9 @@ Nodes (1): Convert USDA all-caps descriptions to readable Title Case names.     
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `date` connect `Community 3` to `Community 2`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 9`, `Community 10`, `Community 11`, `Community 12`, `Community 15`, `Community 16`, `Community 24`?**
-  _High betweenness centrality (0.028) - this node is a cross-community bridge._
-- **Why does `date` connect `Community 3` to `Community 2`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 9`, `Community 10`, `Community 11`, `Community 12`, `Community 16`?**
-  _High betweenness centrality (0.022) - this node is a cross-community bridge._
-- **Why does `cachedOrSyncHasMifflinSourceWhenWeightAndProfileSet()` connect `Community 4` to `Community 2`, `Community 3`?**
-  _High betweenness centrality (0.014) - this node is a cross-community bridge._
+  _High betweenness centrality (0.025) - this node is a cross-community bridge._
+- **Why does `WeightGoal` connect `Community 20` to `Community 2`, `Community 3`, `Community 4`, `Community 5`?**
+  _High betweenness centrality (0.016) - this node is a cross-community bridge._
 - **Are the 559 inferred relationships involving `String` (e.g. with `.classify()` and `.extractTool()`) actually correct?**
   _`String` has 559 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 182 inferred relationships involving `sqlite3_free()` (e.g. with `sqlite3_fopen()` and `sqlite3_popen()`) actually correct?**
@@ -1190,3 +1188,5 @@ _Questions this graph is uniquely positioned to answer:_
   _`date` has 533 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 482 inferred relationships involving `date` (e.g. with `.measureTTFT()` and `.testSingleItemTTFTSmoke()`) actually correct?**
   _`date` has 482 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 300 inferred relationships involving `empty` (e.g. with `barcodeCacheSaveAndRetrieve()` and `barcodeCacheReturnsNilOnMiss()`) actually correct?**
+  _`empty` has 300 INFERRED edges - model-reasoned connections that need verification._
