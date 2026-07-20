@@ -90,8 +90,14 @@ func sym(_ name: String) -> String {
     case "play.circle.fill": return "play.fill"
     case "chart.bar": return "chart.bar.xaxis"
     case "wrench.and.screwdriver": return "wrench"
-    // Equipment glyphs with no Material cousin collapse to generic gear.
-    case "link", "circle.fill", "circle.dotted": return "wrench"
+    // `link`, `circle.fill` and `circle.dotted` are deliberately UNMAPPED.
+    // They used to return "wrench", which drew Cable, Kettlebells, Exercise
+    // ball, Medicine ball and Foam Roll as the SAME wrench — and the first
+    // four as a TOOL rather than the object iOS shows (directive 0a: a missing
+    // mapping means the closest same-meaning icon, never a different object).
+    // `equipmentGlyph()` draws all three itself now; leaving them unmapped
+    // means a new caller gets a visible warning triangle rather than a silent
+    // wrong glyph, the same way sym("timer") was removed in sweep #6.
     case "arrow.left.and.right": return "arrow.forward"
     default: return name
     }

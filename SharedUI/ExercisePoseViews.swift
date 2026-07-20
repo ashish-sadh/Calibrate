@@ -199,16 +199,30 @@ func muscleIcon(_ bodyPart: String) -> String {
     bodyPartIcon(bodyPart)
 }
 
-/// Equipment chip glyph. Barbell/dumbbell can't go through `sym()` on Android:
-/// skip-ui maps `dumbbell` to `list.bullet`, so a barbell exercise rendered a
-/// BULLET LIST — a different object, the failure directive 0a forbids. Those
-/// two draw `DumbbellShape` (DumbbellGlyph.swift) instead; everything else
-/// keeps its mapped Material glyph.
+/// Equipment chip glyph. Four of these can't go through `sym()` on Android,
+/// because skip-ui's Material map has no dumbbell, link or circle:
+/// `dumbbell` fell through to `list.bullet` (a BULLET LIST for a barbell), and
+/// `link`/`circle.fill`/`circle.dotted` were all routed to `wrench` — so Cable,
+/// Kettlebells, Exercise ball, Medicine ball and Foam Roll every one drew the
+/// SAME wrench, and the first four drew a TOOL instead of the object iOS shows.
+/// That is the failure directive 0a forbids (a missing mapping means the
+/// closest same-meaning icon, never a different object), so each is drawn here.
+/// Everything else keeps its correctly-mapped Material glyph — including
+/// `wrench.and.screwdriver`, where a wrench genuinely is the same object.
 @ViewBuilder func equipmentGlyph(_ equipment: String, tint: Color) -> some View {
     #if os(Android)
     let name = equipmentIcon(equipment)
     if name == "dumbbell" || name == "dumbbell.fill" {
         DumbbellShape().fill(tint).frame(width: 8, height: 8)
+    } else if name == "circle.fill" {                 // kettlebells
+        Circle().fill(tint).frame(width: 7, height: 7)
+    } else if name == "circle.dotted" {               // exercise / medicine ball
+        // Compose may not honour the dash; a solid ring still reads as a ball,
+        // which is the point — unlike the wrench it replaces.
+        Circle().stroke(tint, style: StrokeStyle(lineWidth: 1, dash: [1.4, 1.4]))
+            .frame(width: 7, height: 7)
+    } else if name == "link" {                        // cable
+        ChainLinkGlyph(tint: tint)
     } else {
         Image(systemName: sym(name)).font(.system(size: 8))
     }
