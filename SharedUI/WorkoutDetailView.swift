@@ -27,6 +27,22 @@ struct WorkoutDetailView: View {
         WorkoutService.shareText(for: summary, sets: sets)
     }
 
+    /// Commit the Edit Set fields to the store and to local state. Shared by the
+    /// iOS alert and the Android sheet so the two editors can't drift apart.
+    private func saveEditedSet(_ s: WorkoutSet) {
+        guard let sid = s.id else { return }
+        let w = Double(editSetWeight)
+        let r = Int(editSetReps)
+        let dur = WorkoutSet.isDurationExercise(s.exerciseName) ? r : nil
+        try? WorkoutService.updateSet(id: sid, weightLbs: w, reps: dur != nil ? nil : r, durationSec: dur)
+        // Update local state (store in lbs)
+        if let idx = sets.firstIndex(where: { $0.id == sid }) {
+            sets[idx].weightLbs = w
+            if dur != nil { sets[idx].durationSec = dur } else { sets[idx].reps = r }
+        }
+        editingSet = nil
+    }
+
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
@@ -152,6 +168,23 @@ struct WorkoutDetailView: View {
         } message: {
             Text("Enter a name for this template")
         }
+        #if os(Android)
+        // SkipUI extracts an alert's TextFields with `strip()` (skip-ui
+        // Presentation.swift:480), which unwraps the ModifierView carrying
+        // `.keyboardType` and composes the bare field — so both fields opened a
+        // full QWERTY keyboard and accepted letters into weight/reps (#1077).
+        // The type is read from `EnvironmentValues._keyboardOptions` at compose
+        // time (skip-ui TextField.swift:118), so no call-site shim can reach it,
+        // and one environment value can't give weight `.decimalPad` and reps
+        // `.numberPad` anyway. Sheet content composes normally, so each field
+        // keeps its own keypad. Title, message, field order, placeholders and
+        // button roles mirror the iOS alert below exactly.
+        .sheet(item: $editingSet) { s in
+            EditSetSheet(set: s, weight: $editSetWeight, reps: $editSetReps,
+                         onSave: { saveEditedSet(s) },
+                         onCancel: { editingSet = nil })
+        }
+        #else
         .alert("Edit Set", isPresented: Binding(
             get: { editingSet != nil },
             set: { if !$0 { editingSet = nil } }
@@ -161,18 +194,7 @@ struct WorkoutDetailView: View {
             TextField("Reps", text: $editSetReps)
                 .keyboardType(.numberPad)
             Button("Save") {
-                if let s = editingSet, let sid = s.id {
-                    let w = Double(editSetWeight)
-                    let r = Int(editSetReps)
-                    let dur = WorkoutSet.isDurationExercise(s.exerciseName) ? r : nil
-                    try? WorkoutService.updateSet(id: sid, weightLbs: w, reps: dur != nil ? nil : r, durationSec: dur)
-                    // Update local state (store in lbs)
-                    if let idx = sets.firstIndex(where: { $0.id == sid }) {
-                        sets[idx].weightLbs = w
-                        if dur != nil { sets[idx].durationSec = dur } else { sets[idx].reps = r }
-                    }
-                    editingSet = nil
-                }
+                if let s = editingSet { saveEditedSet(s) }
             }
             Button("Cancel", role: .cancel) { editingSet = nil }
         } message: {
@@ -180,6 +202,7 @@ struct WorkoutDetailView: View {
                 Text("\(s.exerciseName) — Set \(s.setOrder)")
             }
         }
+        #endif
         .alert("Edit Workout", isPresented: $showingEditName) {
             TextField("Workout name", text: $editName)
             TextField("Notes (optional)", text: $editNotes)
@@ -242,10 +265,81 @@ struct WorkoutDetailView: View {
     }
 
     private func formatDate(_ d: String) -> String {
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; guard let date = f.date(from: String(d.prefix(10))) else { return d }
-        f.dateFormat = "EEEE, MMM d, yyyy"; return f.string(from: date)
+        // Shared pinned formatters on both sides — an ad-hoc DateFormatter
+        // parses (and formats) as UTC on Android, shifting the header a day (#1076).
+        guard let date = DateFormatters.dateOnly.date(from: String(d.prefix(10))) else { return d }
+        return DateFormatters.longDayDisplay.string(from: date)
     }
 }
+
+// MARK: - Edit Set (Android)
+
+#if os(Android)
+/// Android stand-in for the iOS "Edit Set" alert — see the `.sheet(item:)` call
+/// site in `WorkoutDetailView` for why the alert can't carry a keyboard type.
+/// Copy and field order match the alert one-for-one.
+struct EditSetSheet: View {
+    let set: WorkoutSet
+    @Binding var weight: String
+    @Binding var reps: String
+    let onSave: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Text("Edit Set").font(.headline)
+            Text("\(set.exerciseName) — Set \(set.setOrder)")
+                .font(.callout).foregroundStyle(Theme.textSecondary)
+            // One TextField per view scope: Skip binds only the first field in a
+            // given ViewBuilder scope, so a second inline field would render but
+            // never commit (the SetCellField precedent, #1064).
+            EditSetWeightField(text: $weight)
+            EditSetRepsField(text: $reps)
+            HStack(spacing: 20) {
+                Spacer()
+                Button("Cancel", role: .cancel) { onCancel() }
+                Button("Save") { onSave() }.font(.body.weight(.semibold))
+            }.padding(.top, 4)
+            Spacer()
+        }
+        .padding(20)
+        .presentationDetents([.medium])
+    }
+}
+
+// `.textFieldStyle(.plain)` is load-bearing, not cosmetic: without it Compose
+// wraps the field in its Material decoration box, and stacking our own padding +
+// background on top of that squeezed the glyphs to an unreadable horizontal
+// sliver (the caret still moved, so the text was there — just clipped). This is
+// the same decoration-box trap that made set rows show three characters of a
+// weight (#1076), and the same shape `SetCellField` already uses. The explicit
+// height is load-bearing too: at the medium detent the keyboard compresses the
+// sheet, and without a fixed control height the fields shrink and clip the tops
+// of the digits.
+struct EditSetWeightField: View {
+    @Binding var text: String
+    var body: some View {
+        TextField("Weight (lbs)", text: $text)
+            .textFieldStyle(.plain)
+            .keyboardType(.decimalPad)
+            .padding(.horizontal, 12)
+            .frame(height: 44)
+            .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+struct EditSetRepsField: View {
+    @Binding var text: String
+    var body: some View {
+        TextField("Reps", text: $text)
+            .textFieldStyle(.plain)
+            .keyboardType(.numberPad)
+            .padding(.horizontal, 12)
+            .frame(height: 44)
+            .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 8))
+    }
+}
+#endif
 
 // MARK: - Share Sheet
 

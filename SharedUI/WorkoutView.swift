@@ -750,7 +750,10 @@ struct WorkoutView: View {
     }
     private func abbreviate(_ n: String) -> String { n.count <= 25 ? n : String(n.prefix(22)) + "..." }
     private func formatDate(_ d: String) -> String {
-        let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; guard let date = f.date(from: String(d.prefix(10))) else { return d }
+        // The shared pinned formatter, never an ad-hoc one: an unpinned
+        // DateFormatter parses as UTC on Android, so a workout dated today
+        // rendered as yesterday in the history card (#1076).
+        guard let date = DateFormatters.dateOnly.date(from: String(d.prefix(10))) else { return d }
         return DateFormatters.dayDisplay.string(from: date)
     }
     #if DRIFT_IOS_APP
