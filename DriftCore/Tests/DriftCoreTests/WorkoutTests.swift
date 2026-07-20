@@ -587,6 +587,54 @@ import GRDB
     #expect(WeightUnit.kg.convertToKg(70) == 70)
 }
 
+// MARK: - Set-weight field round-trip (#1084)
+
+@Test func setWeightFieldRoundTripsInBothUnits() async throws {
+    // entryText and entryTextToLbs are inverses. If one is ever changed
+    // without the other, a stored weight silently changes on every save.
+    for lbs in [45.0, 132.3, 137.5, 315.0] {
+        for unit in [WeightUnit.kg, .lbs] {
+            let text = unit.entryText(fromLbs: lbs)
+            let back = unit.entryTextToLbs(text) ?? 0
+            #expect(abs(back - lbs) < 0.15, "\(unit.displayName) round-trip lost \(lbs) → \(text) → \(back)")
+        }
+    }
+}
+
+@Test func setWeightPrefillDoesNotInflateKgLogAcrossSessions() async throws {
+    // The #1084 corruption: prefill wrote the raw *stored lbs* into a kg
+    // field, the reader converted that text as kg, and 60 kg climbed
+    // 60 → 132.3 → 291.7 → ... one hop per workout, with no user input.
+    // Re-opening an exercise and saving it untouched must be a no-op.
+    let unit = WeightUnit.kg
+    var stored = unit.convertToLbs(60)          // user logged 60 kg
+    for session in 1...3 {
+        let prefilled = unit.entryText(fromLbs: stored)   // what the field shows
+        #expect(prefilled == "60", "session \(session) prefilled \(prefilled), expected the user's own 60")
+        stored = unit.entryTextToLbs(prefilled) ?? 0      // what saving it writes back
+    }
+    #expect(abs(stored - 132.28) < 0.05, "60 kg drifted to \(stored) lbs over three untouched sessions")
+}
+
+@Test func setWeightPrefillLeavesLbsUsersUnchanged() async throws {
+    // The lbs path had no factor and must keep having none.
+    let unit = WeightUnit.lbs
+    #expect(unit.entryText(fromLbs: 135) == "135")
+    #expect(unit.entryTextToLbs("135") == 135)
+    #expect(unit.entryText(fromLbs: 137.5) == "137.5")   // fractional plates survive (#1080)
+}
+
+@Test func setWeightEntryTextRejectsEmptyAndAcceptsCommaDecimals() async throws {
+    // Callers coalesce nil to 0 and then store nil — blank/bodyweight sets
+    // must not become 0-weight rows.
+    #expect(WeightUnit.kg.entryTextToLbs("") == nil)
+    #expect(WeightUnit.kg.entryTextToLbs("0") == nil)
+    #expect(WeightUnit.kg.entryTextToLbs("abc") == nil)
+    #expect(WeightUnit.lbs.entryTextToLbs("-5") == nil)
+    // Comma decimal keyboards (#1022)
+    #expect(abs((WeightUnit.lbs.entryTextToLbs("137,5") ?? 0) - 137.5) < 0.01)
+}
+
 @Test func dateFormattersToday() async throws {
     let today = DateFormatters.todayString
     #expect(today.count == 10) // YYYY-MM-DD
@@ -1836,6 +1884,29 @@ private func sessionExercise(name: String, sets: [(w: String, r: String, done: B
     let bench = sets.first { $0.exerciseName == "Bench Press" }
     #expect(abs((squat?.weightLbs ?? 0) - 60 * 2.20462) < 0.01)
     #expect(bench?.weightLbs == 135)
+}
+
+@Test func abandonedKgSessionPrefilledFromHistoryStoresTheSameWeight() throws {
+    // End-to-end #1084: a kg user re-opens an exercise they logged at 60 kg,
+    // touches nothing, and the session is abandoned + auto-finalized. The
+    // weight written back must equal the weight it was prefilled from.
+    // Before the fix the field was prefilled with the stored *lbs* number,
+    // which this path then multiplied by 2.20462 again.
+    let db = try AppDatabase.empty()
+    let start = Date(timeIntervalSince1970: 1_780_200_000)
+    let unit = WeightUnit.kg
+    let storedLbs = unit.convertToLbs(60)                    // what history holds
+    let prefilled = unit.entryText(fromLbs: storedLbs)       // what addExercise writes
+
+    let session = WorkoutService.SavedSession(
+        workoutName: "Metric Day 2", startTime: start,
+        exercises: [sessionExercise(name: "Squat", sets: [(prefilled, "5", true)], weighInKg: true)],
+        lastSavedAt: start.addingTimeInterval(30 * 60))
+    WorkoutService.finalizeAbandonedSession(session, into: db)
+
+    let squat = try db.reader.read { try WorkoutSet.fetchAll($0) }.first { $0.exerciseName == "Squat" }
+    #expect(abs((squat?.weightLbs ?? 0) - storedLbs) < 0.05,
+            "abandoned round-trip moved 60 kg from \(storedLbs) to \(squat?.weightLbs ?? 0) lbs")
 }
 
 @Test func abandonedSessionWithDoneSetsIsSavedAsWorkout() throws {

@@ -612,9 +612,11 @@ public enum WorkoutService {
             var sets: [WorkoutSet] = []
             for (ei, ex) in session.exercises.enumerated() {
                 let isDuration = ex.trackByTime ?? WorkoutSet.isDurationExercise(ex.name)
-                let kgFactor = (ex.weighInKg ?? false) ? 2.20462 : 1.0
+                // Same converter the live sheet reads its fields with, so the
+                // two paths cannot drift apart again (#1084).
+                let unit: WeightUnit = (ex.weighInKg ?? false) ? .kg : .lbs
                 for (si, s) in ex.sets.enumerated() where s.done || !requireDone {
-                    let w = (Double(s.weight.replacingOccurrences(of: ",", with: ".")) ?? 0) * kgFactor
+                    let w = unit.entryTextToLbs(s.weight) ?? 0
                     let r = Int(s.reps) ?? 0
                     let dur = isDuration ? (Int(s.reps) ?? 0) : nil
                     guard r > 0 || (isDuration && (dur ?? 0) > 0) else { continue }

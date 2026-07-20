@@ -113,10 +113,14 @@ struct ActiveWorkoutView: View {
             self.weighInKg = weighInKg ?? (Preferences.weightUnit == .kg)
         }
 
+        /// This exercise's weight-entry unit. Storage stays lbs.
+        var weightUnit: WeightUnit { weighInKg ? .kg : .lbs }
+
         /// Interpret a typed weight in this exercise's unit → stored lbs.
+        /// Anything that *writes* a weight into a set field must use the
+        /// inverse (`weightUnit.entryText(fromLbs:)`) — see #1084.
         func enteredWeightLbs(_ text: String) -> Double? {
-            guard let v = Double(text.replacingOccurrences(of: ",", with: ".")), v > 0 else { return nil }
-            return weighInKg ? v * 2.20462 : v
+            weightUnit.entryTextToLbs(text)
         }
     }
 
@@ -978,8 +982,14 @@ struct ActiveWorkoutView: View {
             allHistory.filter { $0.workoutId == wid }.sorted { $0.setOrder < $1.setOrder }
         } ?? []
 
+        // The unit this exercise's fields will be typed in. Prefilled text and
+        // the `Previous` line must BOTH be rendered in it — history is stored
+        // in lbs, and writing those raw lbs into a kg field made every save
+        // re-multiply the weight by 2.20462 (#1084).
+        let unit = Preferences.weightUnit
+
         let previous = lastSession.prefix(5).map { s in
-            "\(WeightFormatter.plain(s.weightLbs ?? 0)) lbs \u{00D7} \(s.reps ?? 0)"
+            "\(unit.entryText(fromLbs: s.weightLbs ?? 0)) \(unit.displayName) \u{00D7} \(s.reps ?? 0)"
         }
 
         let count = setCount ?? (lastSession.isEmpty ? 3 : max(lastSession.count, 3))
@@ -987,7 +997,7 @@ struct ActiveWorkoutView: View {
         for i in 0..<count {
             if i < lastSession.count {
                 let s = lastSession[i]
-                sets.append(ActiveSet(weight: s.weightLbs.map { WeightFormatter.plain($0) } ?? "",
+                sets.append(ActiveSet(weight: s.weightLbs.map { unit.entryText(fromLbs: $0) } ?? "",
                                       reps: s.reps.map { String($0) } ?? "", isWarmup: isWarmup))
             } else {
                 sets.append(ActiveSet(weight: "", reps: "", isWarmup: isWarmup))
@@ -999,7 +1009,10 @@ struct ActiveWorkoutView: View {
         exercises.append(ActiveExercise(name: name, restTime: restTime, isWarmupExercise: isWarmup,
                                          notes: finalNotes, sets: sets, previousSets: Array(previous),
                                          lastMaxWeight: lastSession.compactMap(\.weightLbs).max(),
-                                         trackByTime: trackByTime))
+                                         trackByTime: trackByTime,
+                                         // Explicit, not defaulted: the sets above were rendered in
+                                         // `unit`, so the exercise must read them back in `unit`.
+                                         weighInKg: unit == .kg))
     }
 
     // MARK: - Coach toast (transient encouragement on milestones)
