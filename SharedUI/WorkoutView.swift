@@ -387,9 +387,12 @@ struct WorkoutView: View {
                                     // hard to click" (field report 2026-07-10).
                                     workoutCard(s).contentShape(Rectangle())
                                 }.tint(.primary)
-                                    // .contextMenu has no SkipUI equivalent for
-                                    // views; Android reaches delete through the
-                                    // detail view's ellipsis menu instead.
+                                    // .contextMenu DOES exist on Android, but SkipUI
+                                    // implements it via pointerInput on the initial
+                                    // pass, which starves sibling TextFields of focus
+                                    // taps (same class of bug as the set-row menu in
+                                    // ActiveWorkoutView). Keep it iOS-only; Android
+                                    // reaches delete via the detail view's ⋯ menu.
                                     #if !os(Android)
                                     .contextMenu {
                                         if let wid = s.workout.id {
@@ -664,7 +667,17 @@ struct WorkoutView: View {
                 Text(formatDate(s.workout.date)).font(.caption).foregroundStyle(Theme.textTertiary)
             }
             HStack(spacing: 12) {
-                if !s.workout.durationDisplay.isEmpty { Label(s.workout.durationDisplay, systemImage: sym("clock")).font(.caption).foregroundStyle(Theme.textSecondary) }
+                if !s.workout.durationDisplay.isEmpty {
+                    #if os(Android)
+                    // "clock" is deliberately unmapped (Symbols.swift) — draw the
+                    // face, matching the ActiveWorkoutView call site.
+                    Label { Text(s.workout.durationDisplay) } icon: {
+                        ClockFaceShape().fill(Theme.textSecondary).frame(width: 12, height: 12)
+                    }.font(.caption).foregroundStyle(Theme.textSecondary)
+                    #else
+                    Label(s.workout.durationDisplay, systemImage: sym("clock")).font(.caption).foregroundStyle(Theme.textSecondary)
+                    #endif
+                }
                 Label("\(Int(wu.convertFromLbs(s.totalVolume))) \(wu.displayName)", systemImage: sym("scalemass")).font(.caption).foregroundStyle(Theme.textSecondary)
                 exerciseCountLabel(s.exercises.count).font(.caption).foregroundStyle(Theme.textSecondary)
             }

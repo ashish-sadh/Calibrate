@@ -34,7 +34,17 @@ struct WorkoutDetailView: View {
                     Text(summary.workout.name).font(.headline)
                     Text(formatDate(summary.workout.date)).font(.caption).foregroundStyle(Theme.textSecondary)
                     HStack(spacing: 12) {
-                        if !summary.workout.durationDisplay.isEmpty { Label(summary.workout.durationDisplay, systemImage: sym("clock")) }
+                        if !summary.workout.durationDisplay.isEmpty {
+                            #if os(Android)
+                            // "clock" is deliberately unmapped (Symbols.swift) — draw
+                            // the face, matching the ActiveWorkoutView call site.
+                            Label { Text(summary.workout.durationDisplay) } icon: {
+                                ClockFaceShape().fill(Theme.textSecondary).frame(width: 12, height: 12)
+                            }
+                            #else
+                            Label(summary.workout.durationDisplay, systemImage: sym("clock"))
+                            #endif
+                        }
                         Label("\(Int(summary.totalVolume)) lbs", systemImage: sym("scalemass"))
                         Label("\(summary.totalSets) sets", systemImage: sym("number"))
                     }.font(.caption).foregroundStyle(Theme.textSecondary)

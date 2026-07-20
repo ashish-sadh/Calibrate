@@ -212,7 +212,15 @@ struct ActiveWorkoutView: View {
                     }
                 }.padding(.top, 8).padding(.bottom, 24)
             }
+            // SkipUI bridges scrollDismissesKeyboard to a Compose nested-scroll
+            // connection that consumes pointer input inside the scroller, so every
+            // SetCellField below it stops taking focus taps — weight/reps were
+            // completely uneditable on Android (verified 2026-07-20: mInputShown
+            // stayed false tapping set fields, while the command strip outside this
+            // ScrollView focused fine). Compose hides the IME on scroll by default.
+            #if !os(Android)
             .scrollDismissesKeyboard(.interactively)
+            #endif
             .background(Theme.background)
             .safeAreaInset(edge: .bottom, spacing: 0) { commandStrip }
             .overlay(alignment: .top) {
@@ -344,7 +352,11 @@ struct ActiveWorkoutView: View {
                     .padding(.bottom, 20)
                     }  // ScrollView
                     .background(Theme.background)
+                    // Same Android focus-starvation reason as the main ScrollView
+                    // above — this sheet holds the template-name TextField.
+                    #if !os(Android)
                     .scrollDismissesKeyboard(.interactively)
+                    #endif
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .cancellationAction) {
