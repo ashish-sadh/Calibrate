@@ -57,6 +57,26 @@ struct FoodHit: Identifiable, Sendable {
         }
     }
 
+    /// Live search as the user types. iOS searches on every change from two
+    /// characters up (PhotoLogReviewView); Android debounces first because
+    /// every query crosses the JNI bridge into SQLite. Driven by `.task(id:)`,
+    /// which cancels the previous run on each keystroke — Skip's cancellation
+    /// is cooperative, so the sleep still completes normally and the guards
+    /// below are what actually discard a stale run.
+    func liveSearch() async {
+        let q = query.trimmingCharacters(in: .whitespaces)
+        guard q.count >= 2 else {
+            results = []
+            return
+        }
+        try? await Task.sleep(nanoseconds: 200_000_000)
+        guard !Task.isCancelled else { return }
+        let hits = await Self.runSearch(q)
+        guard !Task.isCancelled else { return }
+        results = hits
+    }
+
+    /// Explicit submit — the IME action key and the search button. No debounce.
     func search() {
         let q = query
         Task {
@@ -66,6 +86,10 @@ struct FoodHit: Identifiable, Sendable {
 
     private static func runSearch(_ query: String) async -> [FoodHit] {
         guard !query.trimmingCharacters(in: .whitespaces).isEmpty else { return [] }
+        // Every other DB path warms up first. Without this, a search that beats
+        // the initial reload() finds the seed resources uninstalled, searchFoods
+        // throws, and `try?` turns the failure into a silent empty result.
+        await CoreResourcesBootstrap.warmUpDatabase()
         return await onDB {
             let foods = (try? AppDatabase.shared.searchFoods(query: query, limit: 25)) ?? []
             return foods.compactMap { f in
@@ -148,6 +172,7 @@ struct FoodTab: View {
                         HStack {
                             TextField("Search foods — dosa, dal, eggs…", text: $store.query)
                                 .textFieldStyle(.roundedBorder)
+                                .task(id: store.query) { await store.liveSearch() }
                                 .onSubmit { store.search() }
                             Button { store.search() } label: {
                                 Image(systemName: "magnifyingglass")
