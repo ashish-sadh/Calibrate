@@ -46,7 +46,7 @@ while true; do
         export DRIFT_AUTONOMOUS=1
         exec "${CLAUDE_BIN:-$HOME/.local/bin/claude}" -p "/android-parity-scout" \
             --dangerously-skip-permissions \
-            --fallback-model opus \
+            --model opus \
             --effort max \
             --output-format stream-json \
             --verbose
