@@ -1,65 +1,85 @@
 import SwiftUI
 import DriftCore
-import Charts
+#if DRIFT_IOS_APP
 import UniformTypeIdentifiers
-import AudioToolbox
+#endif
 
 struct WorkoutView: View {
     @Binding var selectedTab: Int
-    @State private var workouts: [WorkoutSummary] = []
-    @State private var overloadAlerts: [PlateauResult] = []
-    @State private var showAllOverload = false
-    @State private var weeklyCounts: [(weekStart: Date, count: Int)] = []
-    @State private var templates: [WorkoutTemplate] = []
-    @State private var showingNewWorkout = false
-    @State private var showingPastWorkout = false
-    @State private var showingVoiceLog = false
-    @State private var showingImport = false
-    @State private var showingCreateTemplate = false
-    @State private var showingExerciseBrowser = false
-    @State private var importResult: String?
-    @State private var showingImportAlert = false
-    @State private var isLoading = true
-    @State private var selectedTemplate: WorkoutTemplate? = nil
-    @State private var previewTemplate: WorkoutTemplate? = nil
-    @State private var editingTemplateForEdit: WorkoutTemplate? = nil
+    @State var workouts: [WorkoutSummary] = []
+    @State var overloadAlerts: [PlateauResult] = []
+    @State var showAllOverload = false
+    @State var weeklyCounts: [(weekStart: Date, count: Int)] = []
+    @State var templates: [WorkoutTemplate] = []
+    @State var showingNewWorkout = false
+    @State var showingPastWorkout = false
+    @State var showingVoiceLog = false
+    @State var showingImport = false
+    @State var showingCreateTemplate = false
+    @State var showingExerciseBrowser = false
+    @State var importResult: String?
+    @State var showingImportAlert = false
+    @State var isLoading = true
+    @State var selectedTemplate: WorkoutTemplate? = nil
+    @State var previewTemplate: WorkoutTemplate? = nil
+    @State var editingTemplateForEdit: WorkoutTemplate? = nil
     /// #premium-polish: what to present once the preview sheet finishes
     /// dismissing — set before clearing `previewTemplate`, run in the sheet's
     /// onDismiss. Replaces an asyncAfter(0.3) dead gap between the two sheets.
-    private enum PreviewFollowUp { case start(WorkoutTemplate), edit(WorkoutTemplate) }
-    @State private var previewFollowUp: PreviewFollowUp? = nil
-    @State private var renameTemplateId: Int64?
-    @State private var renameTemplateName = ""
-    @State private var showingRenameAlert = false
-    @State private var deleteTemplateId: Int64?
-    @State private var showingDeleteTemplate = false
-    @State private var deleteWorkoutId: Int64?
-    @State private var showingDeleteWorkout = false
-    @State private var showingDeleteAllTemplates = false
+    enum PreviewFollowUp { case start(WorkoutTemplate), edit(WorkoutTemplate) }
+    @State var previewFollowUp: PreviewFollowUp? = nil
+    @State var renameTemplateId: Int64?
+    @State var renameTemplateName = ""
+    @State var showingRenameAlert = false
+    @State var deleteTemplateId: Int64?
+    @State var showingDeleteTemplate = false
+    @State var deleteWorkoutId: Int64?
+    @State var showingDeleteWorkout = false
+    @State var showingDeleteAllTemplates = false
 
-    @State private var activeCalories: Double = 0
-    @State private var steps: Double = 0
-    @State private var showHistory = false
-    @State private var showAllTemplates = false
-    @State private var healthWorkouts: [HealthWorkout] = []
-    @State private var streak: (current: Int, longest: Int)?
+    @State var activeCalories: Double = 0
+    @State var steps: Double = 0
+    @State var showHistory = false
+    @State var showAllTemplates = false
+    @State var healthWorkouts: [HealthWorkout] = []
+    @State var streak: (current: Int, longest: Int)?
     /// Freshness stamp — tab re-selection within 30s skips the reload.
-    @State private var lastLoadedAt = Date.distantPast
+    @State var lastLoadedAt = Date.distantPast
+
+    #if os(Android)
+    /// Android-only caches. `WorkoutService.hasActiveSession` (UserDefaults
+    /// read + JSON decode) and `ExerciseDatabase.bodyPart(for:)` (catalog
+    /// lookup) are cheap on iOS but cross the JNI bridge on every Compose
+    /// recomposition here — directive 0e forbids that work in a view body,
+    /// so both are hoisted into the off-main Snapshot.
+    @State var hasActiveSession = false
+    @State var bodyPartsByWorkout: [Int64: [String]] = [:]
+    #endif
+
+    /// iOS evaluates the service directly in `body` exactly as before; Android
+    /// reads the Snapshot-cached flag.
+    var activeSessionExists: Bool {
+        #if os(Android)
+        return hasActiveSession
+        #else
+        return WorkoutService.hasActiveSession
+        #endif
+    }
 
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
                 // Active session banner
-                if !showingNewWorkout && WorkoutService.hasActiveSession {
+                if !showingNewWorkout && activeSessionExists {
                     Button { showingNewWorkout = true } label: {
                         HStack {
-                            Image(systemName: "figure.strengthtraining.traditional")
+                            Image(systemName: sym("figure.strengthtraining.traditional"))
                                 .foregroundStyle(.white)
                             Text("Workout in progress").font(.subheadline.weight(.semibold))
                                 .foregroundStyle(.white)
                             Spacer()
                             Text("Resume").font(.caption.weight(.bold)).foregroundStyle(.white.opacity(0.8))
-                            Image(systemName: "chevron.right").font(.caption2).foregroundStyle(.white.opacity(0.6))
+                            Image(systemName: sym("chevron.right")).font(.caption2).foregroundStyle(.white.opacity(0.6))
                         }
                         .padding(12)
                         .background(Theme.ink, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
@@ -73,7 +93,7 @@ struct WorkoutView: View {
                         selectedTemplate = nil
                         showingNewWorkout = true
                     } label: {
-                        Label("Start Workout", systemImage: "plus.circle.fill").frame(maxWidth: .infinity)
+                        Label("Start Workout", systemImage: sym("plus.circle.fill")).frame(maxWidth: .infinity)
                     }.buttonStyle(.borderedProminent).tint(Theme.accent)
 
                     Button {
@@ -82,7 +102,7 @@ struct WorkoutView: View {
                             showingNewWorkout = true
                         }
                     } label: {
-                        Label("Coach Me", systemImage: "brain.head.profile").frame(maxWidth: .infinity)
+                        Label("Coach Me", systemImage: sym("brain.head.profile")).frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered).tint(Theme.accent)
                 }
@@ -103,7 +123,7 @@ struct WorkoutView: View {
                                 .foregroundStyle(Theme.textSecondary)
                         }
                         Spacer()
-                        Image(systemName: "chevron.right")
+                        Image(systemName: sym("chevron.right"))
                             .font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -114,7 +134,7 @@ struct WorkoutView: View {
                 .accessibilityIdentifier("workout-voice-entry")
 
                 Button { showingPastWorkout = true } label: {
-                    Label("Log Past Workout", systemImage: "clock.arrow.circlepath")
+                    Label("Log Past Workout", systemImage: sym("clock.arrow.circlepath"))
                         .font(.caption)
                 }.buttonStyle(.bordered).tint(.secondary)
 
@@ -128,44 +148,46 @@ struct WorkoutView: View {
                         }
                         Menu {
                             Button { showingCreateTemplate = true } label: {
-                                Label("New Template", systemImage: "plus")
+                                Label("New Template", systemImage: sym("plus"))
                             }
+                            #if DRIFT_IOS_APP
                             Button { showingImport = true } label: {
-                                Label("Import from Strong / Hevy", systemImage: "square.and.arrow.down")
+                                Label("Import from Strong / Hevy", systemImage: sym("square.and.arrow.down"))
                             }
+                            #endif
                             // Numbered icons, not star/star.fill — the filled
                             // star read as "Package II is favorited" (field
                             // report 2026-07-09).
                             Button {
                                 loadPackage(DefaultTemplates.loadPackageI, name: "Drift Package I")
                             } label: {
-                                Label("Load Drift Package I", systemImage: "1.circle")
+                                Label("Load Drift Package I", systemImage: sym("1.circle"))
                             }
                             Button {
                                 loadPackage(DefaultTemplates.loadPackageII, name: "Drift Package II")
                             } label: {
-                                Label("Load Drift Package II", systemImage: "2.circle")
+                                Label("Load Drift Package II", systemImage: sym("2.circle"))
                             }
                             Button {
                                 loadPackage(DefaultTemplates.loadPackageIII, name: "Drift Package III")
                             } label: {
-                                Label("Load Drift Package III (Bands)", systemImage: "3.circle")
+                                Label("Load Drift Package III (Bands)", systemImage: sym("3.circle"))
                             }
                             Button {
                                 loadPackage(DefaultTemplates.loadPackageIV, name: "Drift Package IV")
                             } label: {
-                                Label("Load Drift Package IV", systemImage: "4.circle")
+                                Label("Load Drift Package IV", systemImage: sym("4.circle"))
                             }
                             if !templates.isEmpty {
                                 Divider()
                                 Button(role: .destructive) {
                                     showingDeleteAllTemplates = true
                                 } label: {
-                                    Label("Remove All Templates", systemImage: "trash")
+                                    Label("Remove All Templates", systemImage: sym("trash"))
                                 }
                             }
                         } label: {
-                            Image(systemName: "ellipsis.circle").font(.body).foregroundStyle(Theme.accent)
+                            Image(systemName: sym("ellipsis.circle")).font(.body).foregroundStyle(Theme.accent)
                         }
                         .accessibilityLabel("Template options")
                     }
@@ -185,7 +207,7 @@ struct WorkoutView: View {
                                     } label: {
                                         HStack(spacing: 8) {
                                             if t.isFavorite {
-                                                Image(systemName: "star.fill").font(.caption).foregroundStyle(Theme.fatYellow)
+                                                Image(systemName: sym("star.fill")).font(.caption).foregroundStyle(Theme.fatYellow)
                                             }
                                             VStack(alignment: .leading, spacing: 2) {
                                                 Text(t.name).font(.subheadline.weight(.medium)).foregroundStyle(.primary)
@@ -201,7 +223,7 @@ struct WorkoutView: View {
                                                     .font(.caption2).foregroundStyle(Theme.textTertiary)
                                             }
                                             Spacer()
-                                            Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.textTertiary)
+                                            Image(systemName: sym("chevron.right")).font(.caption2).foregroundStyle(Theme.textTertiary)
                                         }
                                         .padding(.vertical, 6)
                                     }
@@ -228,12 +250,12 @@ struct WorkoutView: View {
                 // very bottom it was dead weight (field report 2026-07-09).
                 Button { showingExerciseBrowser = true } label: {
                     HStack {
-                        Label("Browse Exercises", systemImage: "dumbbell")
+                        browseExercisesLabel
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(Theme.textPrimary)
                         Spacer()
                         Text("950+").font(.caption2).foregroundStyle(Theme.textTertiary)
-                        Image(systemName: "chevron.right")
+                        Image(systemName: sym("chevron.right"))
                             .font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
                     .card()
@@ -247,14 +269,14 @@ struct WorkoutView: View {
                 // Today's burn metrics
                 HStack(spacing: 10) {
                     HStack(spacing: 4) {
-                        Image(systemName: "flame.fill").font(.caption).foregroundStyle(Theme.stepsOrange)
+                        Image(systemName: sym("flame.fill")).font(.caption).foregroundStyle(Theme.stepsOrange)
                         Text("\(Int(activeCalories))").font(.subheadline.weight(.bold).monospacedDigit())
                         Text("active cal").font(.caption2).foregroundStyle(Theme.textSecondary)
                     }
                     .frame(maxWidth: .infinity).card()
 
                     HStack(spacing: 4) {
-                        Image(systemName: "figure.walk").font(.caption).foregroundStyle(Theme.deficit)
+                        Image(systemName: sym("figure.walk")).font(.caption).foregroundStyle(Theme.deficit)
                         Text(steps >= 1000 ? String(format: "%.1fk", steps/1000) : "\(Int(steps))")
                             .font(.subheadline.weight(.bold).monospacedDigit())
                         Text("steps").font(.caption2).foregroundStyle(Theme.textSecondary)
@@ -266,7 +288,7 @@ struct WorkoutView: View {
                 if !healthWorkouts.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Image(systemName: "heart.fill").font(.caption).foregroundStyle(Theme.heartRed)
+                            Image(systemName: sym("heart.fill")).font(.caption).foregroundStyle(Theme.heartRed)
                             Text("Apple Health").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                             Spacer()
                             Text("\(healthWorkouts.count) \(healthWorkouts.count == 1 ? "workout" : "workouts") this week").font(.caption.monospacedDigit()).foregroundStyle(Theme.textTertiary)
@@ -274,7 +296,7 @@ struct WorkoutView: View {
 
                         ForEach(healthWorkouts.prefix(5)) { w in
                             HStack(spacing: 10) {
-                                Image(systemName: "figure.strengthtraining.traditional")
+                                Image(systemName: sym("figure.strengthtraining.traditional"))
                                     .font(.caption).foregroundStyle(Theme.stepsOrange)
                                     .frame(width: 28, height: 28)
                                     .background(Theme.stepsOrange.opacity(0.12), in: RoundedRectangle(cornerRadius: 6))
@@ -318,13 +340,15 @@ struct WorkoutView: View {
                 // History — collapsible
                 if workouts.isEmpty && !isLoading {
                     VStack(spacing: 12) {
-                        Image(systemName: "dumbbell.fill").font(.system(size: Theme.FontSize.display2)).foregroundStyle(Theme.accent.opacity(0.5))
+                        emptyHistoryGlyph
                         Text("No Workouts Yet").font(.headline)
                         Text("Start a workout above, or import your history").font(.caption).foregroundStyle(Theme.textSecondary)
+                        #if DRIFT_IOS_APP
                         Button { showingImport = true } label: {
-                            Label("Import from Strong / Hevy", systemImage: "square.and.arrow.down")
+                            Label("Import from Strong / Hevy", systemImage: sym("square.and.arrow.down"))
                                 .font(.caption)
                         }.buttonStyle(.bordered)
+                        #endif
                     }.padding(.top, 30)
                 } else {
                     VStack(alignment: .leading, spacing: 10) {
@@ -332,7 +356,7 @@ struct WorkoutView: View {
                             withAnimation(.easeInOut(duration: 0.2)) { showHistory.toggle() }
                         } label: {
                             HStack(spacing: 8) {
-                                Image(systemName: "clock.arrow.circlepath")
+                                Image(systemName: sym("clock.arrow.circlepath"))
                                     .font(.caption)
                                     .foregroundStyle(Theme.accent)
                                 Text("History")
@@ -340,7 +364,7 @@ struct WorkoutView: View {
                                 Spacer()
                                 Text("\(workouts.count) workouts")
                                     .font(.caption).foregroundStyle(Theme.textTertiary)
-                                Image(systemName: "chevron.down")
+                                Image(systemName: sym("chevron.down"))
                                     .font(.caption2.weight(.bold))
                                     .foregroundStyle(Theme.accent)
                                     .rotationEffect(.degrees(showHistory ? 0 : -90))
@@ -357,25 +381,32 @@ struct WorkoutView: View {
                                     // hard to click" (field report 2026-07-10).
                                     workoutCard(s).contentShape(Rectangle())
                                 }.tint(.primary)
+                                    // .contextMenu has no SkipUI equivalent for
+                                    // views; Android reaches delete through the
+                                    // detail view's ellipsis menu instead.
+                                    #if !os(Android)
                                     .contextMenu {
                                         if let wid = s.workout.id {
                                             Button(role: .destructive) {
                                                 deleteWorkoutId = wid
                                                 showingDeleteWorkout = true
-                                            } label: { Label("Delete Workout", systemImage: "trash") }
+                                            } label: { Label("Delete Workout", systemImage: sym("trash")) }
                                         }
                                     }
+                                    #endif
                             }
                             .transition(.opacity)
                         }
                     }
                 }
             }
-            .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
+            .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, bottomInset)
         }
         .scrollContentBackground(.hidden).background(Theme.background.ignoresSafeArea())
         .navigationTitle("Exercise").navigationBarTitleDisplayMode(.inline)
+        #if !os(Android)
         .toolbarColorScheme(.light, for: .navigationBar)
+        #endif
         // Back chevron removed 2026-07-09: it jumped to the Today tab — an
         // affordance from when MoreTabView PUSHED this view. Workout is now
         // a first-class tab (own NavigationStack in ContentView); tabs don't
@@ -435,7 +466,12 @@ struct WorkoutView: View {
                 onReload: { loadData() }
             )
         }
+        // CSV import is UTType + fileImporter — no SkipUI equivalent. Android
+        // CSV import is a filed seam (#1067); the entry points above are gated
+        // to match so nothing dead-ends.
+        #if DRIFT_IOS_APP
         .fileImporter(isPresented: $showingImport, allowedContentTypes: [.commaSeparatedText]) { handleImport($0) }
+        #endif
         .alert("Rename Template", isPresented: $showingRenameAlert) {
             TextField("Name", text: $renameTemplateName)
             Button("Save") {
@@ -503,6 +539,41 @@ struct WorkoutView: View {
         }
     }
 
+    /// The pill tab bar floats over the scroll view on Android; iOS keeps its
+    /// original 24pt inset.
+    var bottomInset: CGFloat {
+        #if os(Android)
+        return 100
+        #else
+        return 24
+        #endif
+    }
+
+    /// skip-ui maps `dumbbell` to `list.bullet` — a bullet list, a different
+    /// object entirely (directive 0a). Android draws the real barbell instead
+    /// (DumbbellGlyph.swift), matching the ForkKnifeShape/ClockFaceShape
+    /// precedent.
+    @ViewBuilder var browseExercisesLabel: some View {
+        #if os(Android)
+        Label {
+            Text("Browse Exercises")
+        } icon: {
+            DumbbellShape().fill(Theme.textPrimary).frame(width: 16, height: 16)
+        }
+        #else
+        Label("Browse Exercises", systemImage: "dumbbell")
+        #endif
+    }
+
+    @ViewBuilder var emptyHistoryGlyph: some View {
+        #if os(Android)
+        DumbbellShape().fill(Theme.accent.opacity(0.5))
+            .frame(width: Theme.FontSize.display2, height: Theme.FontSize.display2)
+        #else
+        Image(systemName: "dumbbell.fill").font(.system(size: Theme.FontSize.display2)).foregroundStyle(Theme.accent.opacity(0.5))
+        #endif
+    }
+
     private func refreshHealthData() async {
         guard let hk = DriftPlatform.health else { return }
         activeCalories = (try? await hk.fetchCaloriesBurned(for: Date()).active) ?? 0
@@ -538,7 +609,7 @@ struct WorkoutView: View {
         let hasMore = overloadAlerts.count > maxVisible
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Image(systemName: "chart.line.uptrend.xyaxis").font(.caption).foregroundStyle(Theme.accent)
+                Image(systemName: sym("chart.line.uptrend.xyaxis")).font(.caption).foregroundStyle(Theme.accent)
                 Text("Plateau Alert").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                 Spacer()
                 if hasMore {
@@ -548,7 +619,7 @@ struct WorkoutView: View {
 
             ForEach(visible, id: \.exercise) { info in
                 HStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle.fill")
+                    Image(systemName: sym("exclamationmark.triangle.fill"))
                         .font(.caption)
                         .foregroundStyle(Theme.fatYellow)
                     VStack(alignment: .leading, spacing: 2) {
@@ -561,7 +632,7 @@ struct WorkoutView: View {
                         ProgressiveOverloadService.dismiss(exercise: info.exercise)
                         overloadAlerts = ProgressiveOverloadService.allPlateaus()
                     } label: {
-                        Image(systemName: "xmark").font(.caption2).foregroundStyle(Theme.textTertiary)
+                        Image(systemName: sym("xmark")).font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
                 }
             }
@@ -587,17 +658,17 @@ struct WorkoutView: View {
                 Text(formatDate(s.workout.date)).font(.caption).foregroundStyle(Theme.textTertiary)
             }
             HStack(spacing: 12) {
-                if !s.workout.durationDisplay.isEmpty { Label(s.workout.durationDisplay, systemImage: "clock").font(.caption).foregroundStyle(Theme.textSecondary) }
-                Label("\(Int(wu.convertFromLbs(s.totalVolume))) \(wu.displayName)", systemImage: "scalemass").font(.caption).foregroundStyle(Theme.textSecondary)
-                Label("\(s.exercises.count) exercises", systemImage: "dumbbell").font(.caption).foregroundStyle(Theme.textSecondary)
+                if !s.workout.durationDisplay.isEmpty { Label(s.workout.durationDisplay, systemImage: sym("clock")).font(.caption).foregroundStyle(Theme.textSecondary) }
+                Label("\(Int(wu.convertFromLbs(s.totalVolume))) \(wu.displayName)", systemImage: sym("scalemass")).font(.caption).foregroundStyle(Theme.textSecondary)
+                exerciseCountLabel(s.exercises.count).font(.caption).foregroundStyle(Theme.textSecondary)
             }
             // Muscle group chips
-            let bodyParts = Array(Set(s.exercises.map { ExerciseDatabase.bodyPart(for: $0) })).sorted()
+            let bodyParts = bodyPartChips(for: s)
             if !bodyParts.isEmpty {
                 HStack(spacing: 4) {
                     ForEach(bodyParts.prefix(4), id: \.self) { part in
                         HStack(spacing: 2) {
-                            Image(systemName: muscleIcon(part)).font(.system(size: 8))
+                            Image(systemName: sym(muscleIcon(part))).font(.system(size: 8))
                             Text(part).font(.system(size: Theme.FontSize.nano))
                         }
                         .padding(.horizontal, 6).padding(.vertical, 2)
@@ -619,6 +690,30 @@ struct WorkoutView: View {
         }.card()
     }
 
+    @ViewBuilder private func exerciseCountLabel(_ count: Int) -> some View {
+        #if os(Android)
+        Label {
+            Text("\(count) exercises")
+        } icon: {
+            DumbbellShape().fill(Theme.textSecondary).frame(width: 11, height: 11)
+        }
+        #else
+        Label("\(count) exercises", systemImage: "dumbbell")
+        #endif
+    }
+
+    /// iOS resolves body parts inline exactly as before. Android reads the
+    /// Snapshot-precomputed chips — `ExerciseDatabase.bodyPart(for:)` is a
+    /// catalog lookup and would run per exercise per card on every
+    /// recomposition (directive 0e).
+    private func bodyPartChips(for s: WorkoutSummary) -> [String] {
+        #if os(Android)
+        return bodyPartsByWorkout[s.workout.id ?? -1] ?? []
+        #else
+        return Array(Set(s.exercises.map { ExerciseDatabase.bodyPart(for: $0) })).sorted()
+        #endif
+    }
+
     private func muscleIcon(_ bodyPart: String) -> String {
         switch bodyPart.lowercased() {
         case "chest": return "figure.strengthtraining.traditional"
@@ -636,6 +731,7 @@ struct WorkoutView: View {
         let f = DateFormatter(); f.dateFormat = "yyyy-MM-dd"; guard let date = f.date(from: String(d.prefix(10))) else { return d }
         return DateFormatters.dayDisplay.string(from: date)
     }
+    #if DRIFT_IOS_APP
     private func handleImport(_ result: Result<URL, Error>) {
         switch result {
         case .success(let url):
@@ -653,31 +749,34 @@ struct WorkoutView: View {
             showingImportAlert = true
         }
     }
+    #endif
     /// Empty-state actions — extracted (#941): three buttons inline pushed the
     /// enclosing ViewBuilder past the type-checker's budget.
     private var emptyTemplatesActions: some View {
         VStack(spacing: 12) {
             Text("No templates yet").font(.caption).foregroundStyle(Theme.textTertiary)
             HStack(spacing: 12) {
+                #if DRIFT_IOS_APP
                 Button { showingImport = true } label: {
-                    Label("Import", systemImage: "square.and.arrow.down").font(.caption)
+                    Label("Import", systemImage: sym("square.and.arrow.down")).font(.caption)
                 }.buttonStyle(.bordered)
+                #endif
                 // Three packages don't fit as siblings — collapse into a menu.
                 Menu {
                     Button { loadPackage(DefaultTemplates.loadPackageI, name: "Drift Package I") } label: {
-                        Label("Drift Package I", systemImage: "1.circle")
+                        Label("Drift Package I", systemImage: sym("1.circle"))
                     }
                     Button { loadPackage(DefaultTemplates.loadPackageII, name: "Drift Package II") } label: {
-                        Label("Drift Package II", systemImage: "2.circle")
+                        Label("Drift Package II", systemImage: sym("2.circle"))
                     }
                     Button { loadPackage(DefaultTemplates.loadPackageIII, name: "Drift Package III") } label: {
-                        Label("Drift Package III (Bands)", systemImage: "3.circle")
+                        Label("Drift Package III (Bands)", systemImage: sym("3.circle"))
                     }
                     Button { loadPackage(DefaultTemplates.loadPackageIV, name: "Drift Package IV") } label: {
-                        Label("Drift Package IV", systemImage: "4.circle")
+                        Label("Drift Package IV", systemImage: sym("4.circle"))
                     }
                 } label: {
-                    Label("Drift Packages", systemImage: "square.stack.3d.up").font(.caption)
+                    Label("Drift Packages", systemImage: sym("square.stack.3d.up")).font(.caption)
                 }.buttonStyle(.bordered).tint(Theme.accent)
             }
         }
@@ -691,6 +790,24 @@ struct WorkoutView: View {
     }
 
     private func loadData() {
+        #if os(Android)
+        // AppDatabase work on the UI thread ANRs debug builds on Android
+        // (unlike iOS, where this whole load runs inline). Same queries, moved
+        // off-main and applied as one Snapshot.
+        isLoading = true
+        lastLoadedAt = Date()
+        Task {
+            let snapshot = await Self.fetchSnapshot()
+            workouts = snapshot.workouts
+            weeklyCounts = snapshot.weeklyCounts
+            templates = snapshot.templates
+            streak = snapshot.streak
+            overloadAlerts = snapshot.overloadAlerts
+            hasActiveSession = snapshot.hasActiveSession
+            bodyPartsByWorkout = snapshot.bodyPartsByWorkout
+            isLoading = false
+        }
+        #else
         isLoading = true
         lastLoadedAt = Date()
         // Load independently so one failure doesn't block the others
@@ -710,12 +827,50 @@ struct WorkoutView: View {
         streak = try? WorkoutService.workoutStreak()
         overloadAlerts = ProgressiveOverloadService.allPlateaus()
         isLoading = false
+        #endif
     }
+
+    #if os(Android)
+    struct Snapshot: @unchecked Sendable {
+        var workouts: [WorkoutSummary] = []
+        var weeklyCounts: [(weekStart: Date, count: Int)] = []
+        var templates: [WorkoutTemplate] = []
+        var streak: (current: Int, longest: Int)?
+        var overloadAlerts: [PlateauResult] = []
+        var hasActiveSession = false
+        var bodyPartsByWorkout: [Int64: [String]] = [:]
+    }
+
+    /// Off-main load — every query the iOS `loadData()` runs inline, plus the
+    /// two body-hoisted lookups (active-session flag, per-workout body-part
+    /// chips) so the Android view body does zero DB/catalog work.
+    static func fetchSnapshot() async -> Snapshot {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                var s = Snapshot()
+                let raw = (try? WorkoutService.fetchWorkouts(limit: 500)) ?? []
+                s.workouts = (try? WorkoutService.buildSummaries(for: raw)) ?? []
+                s.weeklyCounts = (try? WorkoutService.weeklyWorkoutCounts(weeks: 12)) ?? []
+                s.templates = (try? WorkoutService.fetchTemplates()) ?? []
+                s.streak = try? WorkoutService.workoutStreak()
+                s.overloadAlerts = ProgressiveOverloadService.allPlateaus()
+                s.hasActiveSession = WorkoutService.hasActiveSession
+                var chips: [Int64: [String]] = [:]
+                for summary in s.workouts {
+                    guard let wid = summary.workout.id else { continue }
+                    chips[wid] = Array(Set(summary.exercises.map { ExerciseDatabase.bodyPart(for: $0) })).sorted()
+                }
+                s.bodyPartsByWorkout = chips
+                continuation.resume(returning: s)
+            }
+        }
+    }
+    #endif
 
     private func streakRow(current: Int, longest: Int) -> some View {
         let label = current == 1 ? "week" : "weeks"
         return HStack {
-            Image(systemName: "flame.fill").foregroundStyle(.orange)
+            Image(systemName: sym("flame.fill")).foregroundStyle(.orange)
             Text("\(current) \(label) streak")
                 .font(.subheadline.weight(.semibold))
             Spacer()
@@ -726,4 +881,3 @@ struct WorkoutView: View {
         .background(Color.white.opacity(0.05), in: RoundedRectangle(cornerRadius: Theme.radiusChip))
     }
 }
-

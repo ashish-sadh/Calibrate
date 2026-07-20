@@ -22,13 +22,16 @@ struct VoiceMicButton: View {
             Circle()
                 .fill(tint.opacity(0.18))
                 .frame(width: diameter, height: diameter)
-            Image(systemName: "mic.fill")
+            Image(systemName: sym("mic.fill"))
                 .font(.system(size: iconSize, weight: .semibold))
                 .foregroundStyle(tint)
         }
     }
 }
 
+// The #Preview macro isn't available in the Android Swift build (same gate
+// ExerciseVoiceLogSheet uses).
+#if DRIFT_IOS_APP
 #Preview {
     VStack(spacing: 32) {
         VoiceMicButton(tint: Theme.accent)
@@ -36,3 +39,4 @@ struct VoiceMicButton: View {
     }
     .padding()
 }
+#endif

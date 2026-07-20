@@ -10,7 +10,13 @@ func sym(_ name: String) -> String {
     case "brain.head.profile": return "person.crop.circle"
     case "clock.arrow.circlepath": return "arrow.clockwise.circle"
     case "ellipsis.circle": return "ellipsis"
-    case "dumbbell", "dumbbell.fill": return "list.bullet"
+    // "dumbbell"/"dumbbell.fill" have NO mapping: Material's mapped set has no
+    // barbell, and the list.bullet stand-in read as a BULLET LIST on the
+    // Workout tab icon, every equipment chip and the history card (operator
+    // directive 0a — a missing mapping means the closest same-meaning icon,
+    // never a different object). Call sites draw DumbbellShape
+    // (DumbbellGlyph.swift) behind #if os(Android); a new sym("dumbbell")
+    // caller renders the warning triangle so the gap is caught, not hidden.
     case "flame.fill": return "star.fill"
     case "chart.line.uptrend.xyaxis": return "chart.bar.xaxis"
     case "scalemass": return "chart.bar.xaxis"
@@ -41,7 +47,7 @@ func sym(_ name: String) -> String {
     case "figure", "figure.walk", "figure.stand",
          "figure.strengthtraining.traditional", "figure.rowing", "figure.run",
          "figure.boxing", "figure.cooldown", "figure.core.training",
-         "figure.mixed.cardio": return "person"
+         "figure.cross.training", "figure.mixed.cardio": return "person"
     case "trophy.fill": return "star.fill"
     // Active-workout surfaces (#1064 1c). Material's outline "circle" isn't
     // in skip-ui's map — the un-done set ring reads as an outlined check.
@@ -52,6 +58,11 @@ func sym(_ name: String) -> String {
     case "plus.circle": return "plus.circle.fill"
     case "timer": return "calendar"
     case "number": return "list.bullet"
+    // Template-package menu rows. Material has no numbered circles; the row
+    // TEXT carries the numbering ("Load Drift Package II"), so a generic list
+    // marker is decoration, not a competing meaning.
+    case "1.circle", "2.circle", "3.circle", "4.circle",
+         "square.stack.3d.up": return "list.bullet"
     case "doc.on.doc": return "pencil"
     case "play.circle.fill": return "play.fill"
     case "chart.bar": return "chart.bar.xaxis"

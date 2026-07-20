@@ -396,7 +396,7 @@ struct ExercisePickerView: View {
 
     private func pickerEquipmentChip(_ equipment: String) -> some View {
         HStack(spacing: 2) {
-            Image(systemName: sym(equipmentIcon(equipment))).font(.system(size: 8))
+            equipmentGlyph(equipment, tint: Theme.textSecondary)
             Text(equipment.capitalized).font(.system(size: Theme.FontSize.nano))
         }
         .padding(.horizontal, 6).padding(.vertical, 2)

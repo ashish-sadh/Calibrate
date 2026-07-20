@@ -6,18 +6,20 @@ import DriftCore
 struct WorkoutDetailView: View {
     let summary: WorkoutSummary
     var onDelete: (() -> Void)? = nil
-    @Environment(\.dismiss) private var dismiss
-    @State private var sets: [WorkoutSet] = []
-    @State private var showingShare = false
-    @State private var showingSaveTemplate = false
-    @State private var showingDeleteConfirm = false
-    @State private var showingEditName = false
-    @State private var editName = ""
-    @State private var editNotes = ""
-    @State private var saveTemplateName = ""
-    @State private var editingSet: WorkoutSet?
-    @State private var editSetWeight = ""
-    @State private var editSetReps = ""
+    // Not `private`: skipstone can't bridge private property wrappers to
+    // Android (matches ActiveWorkoutView's @Environment declarations).
+    @Environment(\.dismiss) var dismiss
+    @State var sets: [WorkoutSet] = []
+    @State var showingShare = false
+    @State var showingSaveTemplate = false
+    @State var showingDeleteConfirm = false
+    @State var showingEditName = false
+    @State var editName = ""
+    @State var editNotes = ""
+    @State var saveTemplateName = ""
+    @State var editingSet: WorkoutSet?
+    @State var editSetWeight = ""
+    @State var editSetReps = ""
 
     // #938: one share builder for completion + History — lives in
     // WorkoutService so the two surfaces can never diverge.
@@ -32,9 +34,9 @@ struct WorkoutDetailView: View {
                     Text(summary.workout.name).font(.headline)
                     Text(formatDate(summary.workout.date)).font(.caption).foregroundStyle(Theme.textSecondary)
                     HStack(spacing: 12) {
-                        if !summary.workout.durationDisplay.isEmpty { Label(summary.workout.durationDisplay, systemImage: "clock") }
-                        Label("\(Int(summary.totalVolume)) lbs", systemImage: "scalemass")
-                        Label("\(summary.totalSets) sets", systemImage: "number")
+                        if !summary.workout.durationDisplay.isEmpty { Label(summary.workout.durationDisplay, systemImage: sym("clock")) }
+                        Label("\(Int(summary.totalVolume)) lbs", systemImage: sym("scalemass"))
+                        Label("\(summary.totalSets) sets", systemImage: sym("number"))
                     }.font(.caption).foregroundStyle(Theme.textSecondary)
                     if let notes = summary.workout.notes, !notes.isEmpty {
                         Text(notes).font(.caption).foregroundStyle(Theme.textTertiary).italic()
@@ -69,16 +71,21 @@ struct WorkoutDetailView: View {
                                     editSetWeight = s.weightLbs.map { "\(Int($0))" } ?? ""
                                     editSetReps = s.reps.map { "\($0)" } ?? (s.durationSec.map { "\($0)" } ?? "")
                                 }
+                                // No-op on both platforms (this is a ScrollView,
+                                // not a List) — kept verbatim; tap-to-edit is
+                                // the live path.
+                                #if !os(Android)
                                 .swipeActions(edge: .trailing) {
                                     if let sid = s.id {
                                         Button(role: .destructive) {
                                             try? WorkoutService.deleteSet(id: sid)
                                             sets.removeAll { $0.id == sid }
                                         } label: {
-                                            Label("Delete", systemImage: "trash")
+                                            Label("Delete", systemImage: sym("trash"))
                                         }
                                     }
                                 }
+                                #endif
                             }
                         }.card()
                     }
@@ -90,20 +97,28 @@ struct WorkoutDetailView: View {
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Menu {
-                    Button { showingShare = true } label: { Label("Share", systemImage: "square.and.arrow.up") }
+                    #if canImport(UIKit)
+                    Button { showingShare = true } label: { Label("Share", systemImage: sym("square.and.arrow.up")) }
+                    #else
+                    // Android: no UIActivityViewController. ShareLink is a real
+                    // skip-ui component (ACTION_SEND intent). #967 caveat —
+                    // it snapshots at render time, and `sets` loads before the
+                    // menu can be opened, so the text is populated.
+                    ShareLink(item: shareText) { Label("Share", systemImage: sym("square.and.arrow.up")) }
+                    #endif
                     Button {
                         editName = summary.workout.name
                         editNotes = summary.workout.notes ?? ""
                         showingEditName = true
-                    } label: { Label("Edit Name & Notes", systemImage: "pencil") }
-                    Button { saveTemplateName = summary.workout.name; showingSaveTemplate = true } label: { Label("Save as Template", systemImage: "doc.on.doc") }
+                    } label: { Label("Edit Name & Notes", systemImage: sym("pencil")) }
+                    Button { saveTemplateName = summary.workout.name; showingSaveTemplate = true } label: { Label("Save as Template", systemImage: sym("doc.on.doc")) }
                     if summary.workout.id != nil {
                         Divider()
                         Button(role: .destructive) {
                             showingDeleteConfirm = true
-                        } label: { Label("Delete Workout", systemImage: "trash") }
+                        } label: { Label("Delete Workout", systemImage: sym("trash")) }
                     }
-                } label: { Image(systemName: "ellipsis.circle").foregroundStyle(Theme.accent) }
+                } label: { Image(systemName: sym("ellipsis.circle")).foregroundStyle(Theme.accent) }
                 .accessibilityLabel("Workout options")
             }
         }
@@ -117,7 +132,9 @@ struct WorkoutDetailView: View {
             }
             Button("Cancel", role: .cancel) {}
         } message: { Text("This workout and all its sets will be permanently deleted.") }
+        #if canImport(UIKit)
         .sheet(isPresented: $showingShare) { ShareSheet(text: shareText) }
+        #endif
         .alert("Save as Template", isPresented: $showingSaveTemplate) {
             TextField("Template name", text: $saveTemplateName)
             Button("Save") { saveAsTemplate(name: saveTemplateName) }
@@ -164,8 +181,28 @@ struct WorkoutDetailView: View {
             }
             Button("Cancel", role: .cancel) {}
         }
+        #if os(Android)
+        // Off the push animation: a synchronous fetch in onAppear runs during
+        // the NavigationStack transition's first frames (directive 0e / the
+        // #1074 "transitions are slow" class). Same single query, off-main.
+        .task {
+            guard let wid = summary.workout.id else { return }
+            sets = await Self.fetchSetsOffMain(workoutId: wid)
+        }
+        #else
         .onAppear { if let wid = summary.workout.id { sets = (try? WorkoutService.fetchSets(forWorkout: wid)) ?? [] } }
+        #endif
     }
+
+    #if os(Android)
+    static func fetchSetsOffMain(workoutId: Int64) async -> [WorkoutSet] {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                continuation.resume(returning: (try? WorkoutService.fetchSets(forWorkout: workoutId)) ?? [])
+            }
+        }
+    }
+    #endif
 
     private func muscleGroup(for exercise: String) -> String {
         let e = exercise.lowercased()
@@ -202,6 +239,7 @@ struct WorkoutDetailView: View {
 
 // MARK: - Share Sheet
 
+#if canImport(UIKit)
 struct ShareSheet: UIViewControllerRepresentable {
     var text: String = ""
     var items: [Any]?
@@ -210,3 +248,4 @@ struct ShareSheet: UIViewControllerRepresentable {
     }
     func updateUIViewController(_ vc: UIActivityViewController, context: Context) {}
 }
+#endif

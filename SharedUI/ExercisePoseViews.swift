@@ -175,7 +175,7 @@ func muscleChip(_ bodyPart: String) -> some View {
 
 func equipmentChip(_ equipment: String) -> some View {
     HStack(spacing: 2) {
-        Image(systemName: sym(equipmentIcon(equipment))).font(.system(size: 8))
+        equipmentGlyph(equipment, tint: Theme.textSecondary)
         Text(equipment.capitalized).font(.system(size: Theme.FontSize.nano))
     }
     .padding(.horizontal, 6).padding(.vertical, 2)
@@ -197,6 +197,24 @@ func bodyPartIcon(_ bodyPart: String) -> String {
 
 func muscleIcon(_ bodyPart: String) -> String {
     bodyPartIcon(bodyPart)
+}
+
+/// Equipment chip glyph. Barbell/dumbbell can't go through `sym()` on Android:
+/// skip-ui maps `dumbbell` to `list.bullet`, so a barbell exercise rendered a
+/// BULLET LIST — a different object, the failure directive 0a forbids. Those
+/// two draw `DumbbellShape` (DumbbellGlyph.swift) instead; everything else
+/// keeps its mapped Material glyph.
+@ViewBuilder func equipmentGlyph(_ equipment: String, tint: Color) -> some View {
+    #if os(Android)
+    let name = equipmentIcon(equipment)
+    if name == "dumbbell" || name == "dumbbell.fill" {
+        DumbbellShape().fill(tint).frame(width: 8, height: 8)
+    } else {
+        Image(systemName: sym(name)).font(.system(size: 8))
+    }
+    #else
+    Image(systemName: sym(equipmentIcon(equipment))).font(.system(size: 8))
+    #endif
 }
 
 func equipmentIcon(_ equipment: String) -> String {

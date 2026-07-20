@@ -50,6 +50,14 @@ struct PillTabBar: View {
                                 .fill(isSelected ? Theme.ink : Theme.textTertiary)
                                 .frame(width: 16, height: 16)
                                 .frame(height: 20)
+                        } else if tab == .workout {
+                            // Drawn glyph — skip-ui mapped dumbbell to
+                            // list.bullet, so the Workout TAB read as a bullet
+                            // list (see DumbbellGlyph.swift).
+                            DumbbellShape()
+                                .fill(isSelected ? Theme.ink : Theme.textTertiary)
+                                .frame(width: 16, height: 16)
+                                .frame(height: 20)
                         } else {
                             Image(systemName: sym(tab.icon))
                                 .font(.system(size: 16, weight: .semibold))
