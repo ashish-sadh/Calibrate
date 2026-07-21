@@ -104,6 +104,8 @@ struct CreateTemplateView: View {
             if idx.value < exercises.count {
                 TemplateExerciseEditor(exercise: exercises[idx.value]) { updated in
                     if idx.value < exercises.count { exercises[idx.value] = updated }
+                } onDelete: {
+                    if idx.value < exercises.count { exercises.remove(at: idx.value) }
                 }
             }
         }
@@ -153,6 +155,9 @@ struct IdentifiableInt: Identifiable {
 struct TemplateExerciseEditor: View {
     let exercise: WorkoutTemplate.TemplateExercise
     let onSave: (WorkoutTemplate.TemplateExercise) -> Void
+    // Android-only: iPhone deletes via swipe on the parent list; this backs the
+    // explicit "Remove Exercise" action the Android editor shows instead.
+    let onDelete: (() -> Void)?
     @Environment(\.dismiss) var dismiss
     @State var sets: Int
     @State var restSeconds: Int
@@ -160,9 +165,10 @@ struct TemplateExerciseEditor: View {
     @State var isWarmup: Bool
     @State var trackByTime: Bool
 
-    init(exercise: WorkoutTemplate.TemplateExercise, onSave: @escaping (WorkoutTemplate.TemplateExercise) -> Void) {
+    init(exercise: WorkoutTemplate.TemplateExercise, onSave: @escaping (WorkoutTemplate.TemplateExercise) -> Void, onDelete: (() -> Void)? = nil) {
         self.exercise = exercise
         self.onSave = onSave
+        self.onDelete = onDelete
         _sets = State(initialValue: exercise.sets)
         _restSeconds = State(initialValue: exercise.restSeconds)
         _notes = State(initialValue: exercise.notes ?? "")
@@ -198,7 +204,31 @@ struct TemplateExerciseEditor: View {
 
                 Section("Notes") {
                     TextField("e.g., 8-12 reps, slow eccentric", text: $notes)
+                        #if os(Android)
+                        // Match the Template-Name field: Material otherwise draws an
+                        // outlined box inside the Form row; iPhone's is borderless.
+                        .textFieldStyle(.plain)
+                        #endif
                 }
+
+                #if os(Android)
+                // iPhone removes a template exercise by swiping its row; SkipUI's
+                // swipe-to-delete is a dead gesture on a Form Button row (it bubbles
+                // up to the sheet-dismiss instead), so give Android an explicit
+                // destructive action here (operator 0-INTERACTION-QA: no dead gestures).
+                if let onDelete {
+                    Section {
+                        Button {
+                            onDelete()
+                            dismiss()
+                        } label: {
+                            Label("Remove Exercise", systemImage: sym("trash"))
+                                .foregroundStyle(Theme.surplus)
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                }
+                #endif
             }
             .navigationTitle("Edit Exercise").navigationBarTitleDisplayMode(.inline)
             .toolbar {
