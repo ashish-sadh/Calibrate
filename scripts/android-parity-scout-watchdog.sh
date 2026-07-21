@@ -74,6 +74,18 @@ while true; do
             kill -9 "$CLAUDE_PID" 2>/dev/null || true
             break
         fi
+        # Memory-pressure yield DURING a run: a scout already running when a
+        # publish begins keeps spiking memory and OOM-kills the worker's
+        # release archive (build 39 recurrence — refraining from *spawning*
+        # wasn't enough). Kill the running scout the moment a publish starts;
+        # a lost kit is cheap, a stalled publish is not.
+        if [ -f /tmp/drift-android-publish.lock ]; then
+            log "Publish started mid-scout — killing scout $CLAUDE_PID to free memory"
+            kill "$CLAUDE_PID" 2>/dev/null; sleep 3
+            kill -9 "$CLAUDE_PID" 2>/dev/null || true
+            xcrun simctl shutdown "iPhone 17" 2>/dev/null || true
+            break
+        fi
         if [ -f "$SESSION_LOG" ]; then
             AGE=$(( $(date +%s) - $(stat -f %m "$SESSION_LOG") ))
             if [ "$AGE" -gt "$STALL_SECONDS" ]; then
