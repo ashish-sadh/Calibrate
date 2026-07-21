@@ -26,7 +26,6 @@ struct WeightStats: Sendable {
 
     var stats = WeightStats()
     var entries: [WeightRow] = []
-    var unit = Preferences.weightUnit
 
     /// Loads once when `shared` is first touched — see FoodStore.init.
     init() { reload() }
@@ -73,7 +72,9 @@ struct WeightStats: Sendable {
     func addWeight(_ text: String) {
         let cleaned = text.replacingOccurrences(of: ",", with: ".")
         guard let value = Double(cleaned) else { return }
-        let unitName = unit == .kg ? "kg" : "lbs"
+        // Read the unit at log time, never from a snapshot: a Settings change
+        // between process start and now must decide how this value is stored (#1088).
+        let unitName = Preferences.weightUnit.displayName
         Task {
             await CoreResourcesBootstrap.warmUpDatabase()
             _ = WeightServiceAPI.logWeight(value: value, unit: unitName)
@@ -163,7 +164,9 @@ struct WeightTab: View {
             .navigationTitle("Weight")
             .onAppear { store.reload() }
             .sheet(isPresented: $showingAdd) {
-                AddWeightSheet(unit: store.unit) { text in
+                // Current unit, evaluated when the sheet presents — not the
+                // store's init-time snapshot (#1088).
+                AddWeightSheet(unit: Preferences.weightUnit) { text in
                     store.addWeight(text)
                 }
             }

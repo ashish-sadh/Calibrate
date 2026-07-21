@@ -157,3 +157,26 @@ import Testing
     let history = WeightServiceAPI.getHistory(days: 3650)
     #expect(history.contains { $0.date == "2020-01-01" && abs($0.weightKg - 70.0) < 0.01 })
 }
+
+// MARK: - Current-unit round-trip (#1088)
+
+@Test @MainActor func logWeightWithUnitDisplayNameRoundTrips() async throws {
+    // #1088: the Android Add Weight sheet must tag each entry with the CURRENT
+    // weight unit — `Preferences.weightUnit.displayName` read at log time — not
+    // a snapshot captured at process start. A stale unit meant a user who
+    // switched lbs→kg and typed 70 (meaning kilos) got 70 *lbs* (~31.8 kg)
+    // written to history. Pin that both units round-trip through the exact
+    // string the fixed call site passes, so neither direction can silently
+    // reinterpret the number. (No global-pref mutation → parallel-safe, matching
+    // the #1084/#1085 precedent of passing the unit explicitly.)
+    for unit in WeightUnit.allCases {
+        let entry = WeightServiceAPI.logWeight(value: 70, unit: unit.displayName)
+        let expectedKg = unit == .kg ? 70.0 : 70.0 / 2.20462
+        #expect(entry != nil, "70 \(unit.displayName) is a valid weight")
+        if let e = entry {
+            #expect(abs(e.weightKg - expectedKg) < 0.01,
+                    "70 entered as \(unit.displayName) must store \(expectedKg) kg, not the other unit's value")
+            if let id = e.id { try? AppDatabase.shared.deleteWeightEntry(id: id) }
+        }
+    }
+}
