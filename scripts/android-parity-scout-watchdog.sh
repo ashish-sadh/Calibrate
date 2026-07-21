@@ -57,6 +57,7 @@ while true; do
         exec "${CLAUDE_BIN:-$HOME/.local/bin/claude}" -p "/android-parity-scout" \
             --dangerously-skip-permissions \
             --model opus \
+            --fallback-model sonnet \
             --effort max \
             --output-format stream-json \
             --verbose
