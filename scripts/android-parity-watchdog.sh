@@ -57,8 +57,8 @@ while true; do
         export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
         exec "${CLAUDE_BIN:-$HOME/.local/bin/claude}" -p "/android-parity" \
             --dangerously-skip-permissions \
-            --model claude-fable-5 \
-            --fallback-model claude-opus-4-8 \
+            --model claude-sonnet-5 \
+            --fallback-model claude-fable-5 \
             --effort max \
             --output-format stream-json \
             --verbose
