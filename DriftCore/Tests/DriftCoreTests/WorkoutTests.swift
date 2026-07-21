@@ -1740,6 +1740,24 @@ import GRDB
     #expect(rows.allSatisfy { $0.weightLbs == nil })
 }
 
+// #1076 gap-hunt: the confirm-card "Lbs" field is a decimal (62.5-lb dumbbells,
+// kg→lbs conversions). It now uses `.decimalPad` so the "." is typeable at all;
+// this guards the round-trip once it is — a fractional weight must survive
+// expansion EXACTLY, never rounded (the #1080/#1084 weight-corruption class).
+@Test func buildVoiceLogSets_fractionalWeightSurvivesExactly() {
+    // What the sheet does with the "62.5" the decimalPad now lets the user type.
+    #expect(Double("62.5") == 62.5)
+
+    let exercises = [
+        WorkoutService.VoiceLoggedExercise(name: "incline dumbbell press", isDuration: false, sets: 3, reps: 8, weightLbs: 62.5),
+        WorkoutService.VoiceLoggedExercise(name: "romanian deadlift", isDuration: false, sets: 1, reps: 5, weightLbs: 137.5),
+    ]
+    let rows = WorkoutService.buildVoiceLogSets(workoutId: 1, exercises: exercises)
+    #expect(rows.count == 4)
+    #expect(rows.prefix(3).allSatisfy { $0.weightLbs == 62.5 }, "every set of the fractional exercise keeps 62.5, not 62 or 63")
+    #expect(rows.last?.weightLbs == 137.5)
+}
+
 // #986: a weighted duration exercise (weighted carry / plank) keeps its weight.
 @Test func buildVoiceLogSets_weightedDurationKeepsWeight() {
     let exercises = [WorkoutService.VoiceLoggedExercise(name: "farmer carry", isDuration: true, weightLbs: 45, durationMinutes: 1)]

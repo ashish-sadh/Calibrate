@@ -461,7 +461,7 @@ struct VoiceLogExerciseRow: View {
                     Text("×").font(.caption).foregroundStyle(Theme.textTertiary)
                     VoiceLogNumberField(label: "Reps", text: $exercise.reps)
                     Text("@").font(.caption).foregroundStyle(Theme.textTertiary)
-                    VoiceLogNumberField(label: "Lbs", text: $exercise.weight)
+                    VoiceLogNumberField(label: "Lbs", text: $exercise.weight, decimal: true)
                     Spacer()
                 }
             }
@@ -483,6 +483,10 @@ struct VoiceLogExerciseRow: View {
 struct VoiceLogNumberField: View {
     let label: String
     @Binding var text: String
+    /// Weight is a `Double` ("62.5") so it needs the decimal pad — `.numberPad`
+    /// has no "." key, making fractional plates untypeable. Sets/reps/minutes
+    /// stay integer. Mirrors `SetCellField(decimal:)` in ActiveWorkoutView.
+    var decimal: Bool = false
 
     var body: some View {
         VStack(spacing: 3) {
@@ -491,7 +495,7 @@ struct VoiceLogNumberField: View {
                 // The rounded fill below IS the field on iOS — no outline.
                 .textFieldStyle(.plain)
                 #endif
-                .keyboardType(.numberPad)
+                .keyboardType(decimal ? .decimalPad : .numberPad)
                 .multilineTextAlignment(.center)
                 .font(.subheadline.monospacedDigit())
                 .foregroundStyle(Theme.textPrimary)
