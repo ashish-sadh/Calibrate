@@ -100,7 +100,7 @@ public enum AIActionParser {
     /// `parseWorkoutExercisesAsync` instead. Kept as a stable entry point for
     /// the synchronous callers in `actionFromToolCall`.
     public static func parseWorkoutExercises(_ input: String) -> [WorkoutExercise] {
-        input.split(separator: ",").compactMap { Self.parseSingleExerciseRegex($0) }
+        exerciseParts(in: input).compactMap { Self.parseSingleExerciseRegex($0) }
     }
 
     /// Free-text variant of the regex path: a segment carrying NO sets/reps/weight
@@ -115,7 +115,7 @@ public enum AIActionParser {
     /// fix (#969) — and, because it never returns empty, it also makes the
     /// "that didn't sound like a workout" empty state unreachable.
     private static func parseWorkoutExercisesStrict(_ input: String) -> [WorkoutExercise] {
-        input.split(separator: ",").compactMap { Self.parseSingleExerciseRegex($0, allowBareName: false) }
+        exerciseParts(in: input).compactMap { Self.parseSingleExerciseRegex($0, allowBareName: false) }
     }
 
     /// FM-first variant: when `Preferences.fmWorkoutExtractEnabled` and the
@@ -165,30 +165,56 @@ public enum AIActionParser {
                                                  allowBareName: Bool = true) -> WorkoutExercise? {
         let trimmed = part.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty else { return nil }
-        let weightSuffix = #"(?:\s*@\s*(\d+\.?\d*)|\s+at\s+(\d+\.?\d*))?"#
-        let nameFirst = #"(.+?)\s+(\d+)\s*[x×]\s*(\d+)"# + weightSuffix
-        let numbersFirst = #"^(\d+)\s*[x×]\s*(\d+)\s+(.+?)"# + weightSuffix + #"\s*$"#
+        let separator = #"(?:[x×]|by|sets?\s+of)"#
+        let weightSuffix = #"(?:\s*(?:@|at)\s*(\d+\.?\d*)\s*(?:lbs?|kg)?|\s+(\d+\.?\d*)\s*(?:lbs?|kg))?"#
+        let durationUnit = #"(?:\s*(?:secs?|seconds?))?"#
+        let nameFirst = #"^(.+?)\s+(\d+)\s*"# + separator + #"\s*(\d+)"# + durationUnit + weightSuffix + #"\s*$"#
+        let numbersFirst = #"^(\d+)\s*"# + separator + #"\s*(\d+)\s+(.+?)"# + weightSuffix + #"\s*$"#
+        let durationNameFirst = #"^(.+?)\s+(\d+)\s*(?:mins?|minutes?)\s*$"#
+        let durationNumberFirst = #"^(\d+)\s*(?:mins?|minutes?)\s+(.+?)\s*$"#
 
         func group(_ match: NSTextCheckingResult, _ index: Int) -> String? {
             Range(match.range(at: index), in: trimmed).map { String(trimmed[$0]).trimmingCharacters(in: .whitespaces) }
         }
 
-        if let regex = try? NSRegularExpression(pattern: nameFirst),
+        if let regex = try? NSRegularExpression(pattern: nameFirst, options: .caseInsensitive),
            let match = regex.firstMatch(in: trimmed, range: NSRange(trimmed.startIndex..., in: trimmed)) {
             return WorkoutExercise(name: group(match, 1) ?? trimmed,
                                    sets: group(match, 2).flatMap(Int.init) ?? 3,
                                    reps: group(match, 3).flatMap(Int.init) ?? 10,
                                    weight: (group(match, 4) ?? group(match, 5)).flatMap(Double.init))
         }
-        if let regex = try? NSRegularExpression(pattern: numbersFirst),
+        if let regex = try? NSRegularExpression(pattern: numbersFirst, options: .caseInsensitive),
            let match = regex.firstMatch(in: trimmed, range: NSRange(trimmed.startIndex..., in: trimmed)) {
             return WorkoutExercise(name: group(match, 3) ?? trimmed,
                                    sets: group(match, 1).flatMap(Int.init) ?? 3,
                                    reps: group(match, 2).flatMap(Int.init) ?? 10,
                                    weight: (group(match, 4) ?? group(match, 5)).flatMap(Double.init))
         }
+        if let regex = try? NSRegularExpression(pattern: durationNameFirst, options: .caseInsensitive),
+           let match = regex.firstMatch(in: trimmed, range: NSRange(trimmed.startIndex..., in: trimmed)) {
+            return WorkoutExercise(name: group(match, 1) ?? trimmed,
+                                   sets: 1,
+                                   reps: group(match, 2).flatMap(Int.init) ?? 10,
+                                   weight: nil)
+        }
+        if let regex = try? NSRegularExpression(pattern: durationNumberFirst, options: .caseInsensitive),
+           let match = regex.firstMatch(in: trimmed, range: NSRange(trimmed.startIndex..., in: trimmed)) {
+            return WorkoutExercise(name: group(match, 2) ?? trimmed,
+                                   sets: 1,
+                                   reps: group(match, 1).flatMap(Int.init) ?? 10,
+                                   weight: nil)
+        }
         guard allowBareName else { return nil }
         return WorkoutExercise(name: trimmed, sets: 3, reps: 10, weight: nil)
+    }
+
+    private static func exerciseParts(in input: String) -> [Substring] {
+        let pattern = #"\s+and\s+(?=\d+\s*(?:[x×]|by|sets?\s+of))"#
+        let range = NSRange(input.startIndex..., in: input)
+        let normalized = (try? NSRegularExpression(pattern: pattern, options: .caseInsensitive))?
+            .stringByReplacingMatches(in: input, range: range, withTemplate: ", ") ?? input
+        return normalized.split(separator: ",")
     }
 
     private static func actionFromToolCall(_ call: ToolCall) -> Action {

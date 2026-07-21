@@ -334,6 +334,53 @@ final class AIActionParserTests: XCTestCase {
         XCTAssertEqual(exercises[0].weight ?? 0, 67.5, accuracy: 0.001)
     }
 
+    // MARK: - parseWorkoutExercises — extended phrasings (kg/lbs, by, sets of, duration)
+
+    func testParseWorkoutExercises_lbsSuffixWeight() {
+        let exercises = AIActionParser.parseWorkoutExercises("Bench 3x10 135 lbs")
+        XCTAssertEqual(exercises.count, 1)
+        XCTAssertEqual(exercises[0].name, "Bench")
+        XCTAssertEqual(exercises[0].weight ?? 0, 135, accuracy: 0.001)
+    }
+
+    func testParseWorkoutExercises_kgSuffixWeight() {
+        let exercises = AIActionParser.parseWorkoutExercises("Deadlift 5x5 100 kg")
+        XCTAssertEqual(exercises.count, 1)
+        XCTAssertEqual(exercises[0].weight ?? 0, 100, accuracy: 0.001)
+    }
+
+    func testParseWorkoutExercises_bySeparator() {
+        let exercises = AIActionParser.parseWorkoutExercises("Bench 3 by 10")
+        XCTAssertEqual(exercises.count, 1)
+        XCTAssertEqual(exercises[0].sets, 3)
+        XCTAssertEqual(exercises[0].reps, 10)
+    }
+
+    func testParseWorkoutExercises_setsOfSeparator() {
+        let exercises = AIActionParser.parseWorkoutExercises("Squat 3 sets of 10 at 185")
+        XCTAssertEqual(exercises.count, 1)
+        XCTAssertEqual(exercises[0].sets, 3)
+        XCTAssertEqual(exercises[0].reps, 10)
+        XCTAssertEqual(exercises[0].weight ?? 0, 185, accuracy: 0.001)
+    }
+
+    func testParseWorkoutExercises_uppercaseXSeparator() {
+        let exercises = AIActionParser.parseWorkoutExercises("Bench 3X10 at 135")
+        XCTAssertEqual(exercises.count, 1)
+        XCTAssertEqual(exercises[0].sets, 3)
+        XCTAssertEqual(exercises[0].reps, 10)
+        XCTAssertEqual(exercises[0].weight ?? 0, 135, accuracy: 0.001)
+    }
+
+    func testParseWorkoutExercises_durationMinutes() {
+        let exercises = AIActionParser.parseWorkoutExercises("run 20 min")
+        XCTAssertEqual(exercises.count, 1)
+        XCTAssertEqual(exercises[0].name, "run")
+        XCTAssertEqual(exercises[0].sets, 1)
+        XCTAssertEqual(exercises[0].reps, 20)
+        XCTAssertNil(exercises[0].weight)
+    }
+
     // MARK: - WorkoutExercise Equatable
 
     func testWorkoutExercise_equatable() {
