@@ -38,6 +38,16 @@ while true; do
         PAUSE) sleep "$CHECK_INTERVAL"; continue ;;
     esac
 
+    # Memory-pressure yield: the worker's release archive uses whole-module
+    # optimization (very memory-hungry) and gets OOM-SIGKILLed under sustained
+    # pressure. A scout building/simulating concurrently is exactly that extra
+    # pressure (see harness_android_publish_release_archive_oom memory). Do NOT
+    # start a new scout while a publish holds the lock — wait it out.
+    if [ -f /tmp/drift-android-publish.lock ]; then
+        log "Publish in progress — holding scout to relieve memory pressure."
+        sleep "$CHECK_INTERVAL"; continue
+    fi
+
     SESSION_LOG="$LOG_DIR/session-$(date +%Y%m%d-%H%M%S).log"
     log "Spawning /android-parity-scout session → $SESSION_LOG"
     # exec so $! is the claude process itself (see worker watchdog incident note)
