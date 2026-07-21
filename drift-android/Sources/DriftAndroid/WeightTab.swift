@@ -48,7 +48,10 @@ struct WeightStats: Sendable {
             }
             // The trend line needs a few days of data — next to a real current
             // value, "No weight data yet." reads as a bug, so suppress it.
-            s.trend = history.count >= 2 ? WeightServiceAPI.describeTrend() : ""
+            // describeTrend() ALSO returns that copy itself when the entries
+            // span too few days, so filter the sentinel, not just the count.
+            let trend = history.count >= 2 ? WeightServiceAPI.describeTrend() : ""
+            s.trend = trend.hasPrefix("No weight data") ? "" : trend
             stats = s
         }
     }
@@ -79,6 +82,9 @@ struct WeightStats: Sendable {
             await CoreResourcesBootstrap.warmUpDatabase()
             _ = WeightServiceAPI.logWeight(value: value, unit: unitName)
             reload()
+            // The dashboard's WEIGHT card reads its own store — without this
+            // it kept showing the pre-log value until relaunch (#1090 sweep).
+            TodayStore.shared.reload()
         }
     }
 
@@ -86,6 +92,7 @@ struct WeightStats: Sendable {
         Task {
             try? AppDatabase.shared.deleteWeightEntry(id: id)
             reload()
+            TodayStore.shared.reload()
         }
     }
 }
@@ -200,6 +207,9 @@ struct AddWeightSheet: View {
                 HStack(spacing: 8) {
                     TextField(unit == .kg ? "72.5" : "160.0", text: $text)
                         .textFieldStyle(.roundedBorder)
+                        // Decimal pad, matching the iOS entry sheet (ios-16
+                        // ground truth) — was a full QWERTY (#1090 sweep).
+                        .keyboardType(.decimalPad)
                         .font(.title2)
                     Text(unit.displayName)
                         .font(.headline).foregroundStyle(Theme.textSecondary)

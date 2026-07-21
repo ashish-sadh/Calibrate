@@ -3,76 +3,121 @@ import Observation
 import SkipFuse
 import DriftCore
 
-// MARK: - Rows
+/// Android Food tab: warms the DB off-main, then hosts the shared
+/// `FoodTabView` port (SharedUI single-source, #1059/#1062). The old
+/// Android-only re-creation (FoodStore + inline search card) is gone —
+/// what remains here is the platform seam: the interim search sheet the
+/// ported tab presents until FoodSearchView/LogMealSheet port, and the
+/// serving-confirm stepper it logs through.
+struct FoodTab: View {
+    @State var warm = false
 
-struct FoodEntryRow: Identifiable, Sendable {
-    let id: Int64
-    let name: String
-    let detail: String    // "2 servings · 340 kcal"
-    let mealType: String
+    var body: some View {
+        if warm {
+            FoodTabView(selectedTab: .constant(1))
+        } else {
+            ProgressView()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Theme.background.ignoresSafeArea())
+                .task {
+                    await CoreResourcesBootstrap.warmUpDatabase()
+                    warm = true
+                }
+        }
+    }
 }
 
-struct TotalsRow: Sendable {
-    var eaten = 0
-    var target = 0
-    var remaining = 0
-    var proteinG = 0
-    var carbsG = 0
-    var fatG = 0
-    var fiberG = 0
-}
+// MARK: - Interim search sheet
 
-struct FoodHit: Identifiable, Sendable {
-    let id: Int64
-    let name: String
-    let calories: Int
-    let proteinG: Int
-    let servingDisplay: String
-}
+/// Search-and-log sheet presented by the ported FoodTabView's add-food entry
+/// points. Debounced live search (0-SEARCH-PERF house pattern), off-main
+/// SQLite, logs through the shared FoodLogViewModel so reload discipline and
+/// `.foodEntryAdded` behave exactly like iOS. Replaced by the FoodSearchView
+/// port later (#1062 residual).
+struct AndroidFoodSearchSheet: View {
+    let viewModel: FoodLogViewModel
+    let initialMealType: MealType?
+    @Environment(\.dismiss) var dismiss
+    @State var query = ""
+    @State var results: [Food] = []
+    @State var confirmFood: Food? = nil
 
-// MARK: - Store
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                // In-content header — SkipUI's nav bar in a sheet reserves an
+                // ~80dp dead band above the title (#1089 pattern).
+                ZStack {
+                    Text(initialMealType.map { "Add to \($0.displayName)" } ?? "Add Food")
+                        .font(.headline)
+                    HStack {
+                        Button("Done") { dismiss() }.foregroundStyle(Theme.accent)
+                        Spacer()
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
 
-@MainActor @Observable public class FoodStore {
-    /// Shared for the same reason as `TodayStore.shared` — the tab `switch` in
-    /// ContentView rebuilds this view on every tab change, and a per-view store
-    /// came back empty each time. See TodayStore.shared.
-    static let shared = FoodStore()
+                HStack(spacing: 8) {
+                    Image(systemName: sym("magnifyingglass"))
+                        .foregroundStyle(Theme.textTertiary)
+                    SearchQueryField(query: $query)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(Theme.cardBackground)
 
-    var totals = TotalsRow()
-    var today: [FoodEntryRow] = []
-    var query = ""
-    var results: [FoodHit] = []
-
-    /// Loads once, when `shared` is first touched. Do not drop this in favour
-    /// of the `.onAppear` below: removing it left the tab showing 0 kcal /
-    /// "Nothing logged yet" after seconds on screen, with the DB fully
-    /// populated — i.e. `.onAppear` alone did not get the load done here.
-    init() { reload() }
-
-    func reload() {
-        Task {
-            await CoreResourcesBootstrap.warmUpDatabase()
-            let t = FoodService.getDailyTotals()
-            totals = TotalsRow(eaten: t.eaten, target: t.target, remaining: t.remaining,
-                               proteinG: t.proteinG, carbsG: t.carbsG, fatG: t.fatG, fiberG: t.fiberG)
-            let entries = (try? AppDatabase.shared.fetchFoodEntries(for: DateFormatters.todayString)) ?? []
-            today = entries.compactMap { e in
-                guard let id = e.id else { return nil }
-                let servings = e.servings == 1 ? "" : "\(e.servings.formatted()) servings · "
-                return FoodEntryRow(id: id, name: e.foodName,
-                                    detail: "\(servings)\(Int(e.calories * e.servings)) kcal · P \(Int(e.proteinG * e.servings))g",
-                                    mealType: e.mealType ?? "")
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        if results.isEmpty && query.count >= 2 {
+                            Text("No foods found for \"\(query)\"")
+                                .font(.caption).foregroundStyle(Theme.textTertiary)
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .padding(.vertical, 24)
+                        } else if results.isEmpty {
+                            Text("Search the food database — dosa, dal, eggs…")
+                                .font(.caption).foregroundStyle(Theme.textTertiary)
+                                .frame(maxWidth: .infinity, alignment: .center)
+                                .padding(.vertical, 24)
+                        }
+                        ForEach(results) { food in
+                            Button { confirmFood = food } label: {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(food.name).font(.subheadline).foregroundStyle(Theme.textPrimary)
+                                        Text("\(Int(food.calories)) kcal · P \(Int(food.proteinG))g · \(food.servingSize.formatted())\(food.servingUnit)")
+                                            .font(.caption2).foregroundStyle(Theme.textSecondary)
+                                    }
+                                    Spacer()
+                                    Image(systemName: sym("plus.circle.fill"))
+                                        .foregroundStyle(Theme.accent)
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                            Divider().padding(.leading, 16)
+                        }
+                    }
+                }
+                .background(Theme.background)
+            }
+            .background(Theme.background.ignoresSafeArea())
+        }
+        .task(id: query) { await liveSearch() }
+        .sheet(item: $confirmFood) { food in
+            ServingConfirmSheet(food: food) { servings in
+                viewModel.logFood(food, servings: servings,
+                                  mealType: initialMealType ?? viewModel.autoMealType)
             }
         }
     }
 
-    /// Live search as the user types. iOS searches on every change from two
-    /// characters up (PhotoLogReviewView); Android debounces first because
-    /// every query crosses the JNI bridge into SQLite. Driven by `.task(id:)`,
-    /// which cancels the previous run on each keystroke — Skip's cancellation
-    /// is cooperative, so the sleep still completes normally and the guards
-    /// below are what actually discard a stale run.
-    func liveSearch() async {
+    /// Live search as the user types — 200ms debounce, cancelled per
+    /// keystroke by `.task(id:)`; Skip's cancellation is cooperative, so the
+    /// guards after each await are what discard a stale run.
+    private func liveSearch() async {
         let q = query.trimmingCharacters(in: .whitespaces)
         guard q.count >= 2 else {
             results = []
@@ -80,79 +125,29 @@ struct FoodHit: Identifiable, Sendable {
         }
         try? await Task.sleep(nanoseconds: 200_000_000)
         guard !Task.isCancelled else { return }
-        let hits = await Self.runSearch(q)
+        // The DB is warm before FoodTabView ever presents this sheet
+        // (FoodTab gates on warmUpDatabase), so this is belt-and-braces
+        // for the .openFoodSearch path (#1075 lesson: an early search that
+        // beats warm-up throws inside try? → silent empty results).
+        await CoreResourcesBootstrap.warmUpDatabase()
+        guard !Task.isCancelled else { return }
+        let hits = await onDB {
+            (try? AppDatabase.shared.searchFoods(query: q, limit: 25)) ?? []
+        }
         guard !Task.isCancelled else { return }
         results = hits
     }
+}
 
-    /// Explicit submit — the IME action key and the search button. No debounce.
-    func search() {
-        let q = query
-        Task {
-            results = await Self.runSearch(q)
-        }
-    }
+/// The one TextField gets its own scope (Fuse binds only the first TextField
+/// per ViewBuilder scope). Internal, not private — Skip cannot bridge
+/// private views.
+struct SearchQueryField: View {
+    @Binding var query: String
 
-    private static func runSearch(_ query: String) async -> [FoodHit] {
-        guard !query.trimmingCharacters(in: .whitespaces).isEmpty else { return [] }
-        // Every other DB path warms up first. Without this, a search that beats
-        // the initial reload() finds the seed resources uninstalled, searchFoods
-        // throws, and `try?` turns the failure into a silent empty result.
-        await CoreResourcesBootstrap.warmUpDatabase()
-        return await onDB {
-            let foods = (try? AppDatabase.shared.searchFoods(query: query, limit: 25)) ?? []
-            return foods.compactMap { f in
-                guard let id = f.id else { return nil }
-                return FoodHit(id: id, name: f.name, calories: Int(f.calories),
-                               proteinG: Int(f.proteinG),
-                               servingDisplay: "\(f.servingSize.formatted())\(f.servingUnit)")
-            }
-        }
-    }
-
-    func log(foodId: Int64, servings: Double) {
-        Task {
-            await CoreResourcesBootstrap.warmUpDatabase()
-            if let food = FoodService.fetchFoodById(foodId) {
-                let today = DateFormatters.todayString
-                let mealType = Self.currentMealType()
-                // food_entry.meal_log_id has a cascade FK — find or create the
-                // day's meal log first, like the iOS and chat log paths do.
-                let logs = FoodService.fetchMealLogs(for: today)
-                var mealLogId = logs.first(where: { $0.mealType == mealType })?.id
-                if mealLogId == nil {
-                    var newLog = MealLog(date: today, mealType: mealType)
-                    try? AppDatabase.shared.saveMealLog(&newLog)
-                    mealLogId = newLog.id
-                }
-                if let mealLogId {
-                    var entry = FoodEntry(food: food, servings: servings,
-                                          date: today, mealType: mealType)
-                    entry.mealLogId = mealLogId
-                    try? AppDatabase.shared.saveFoodEntry(&entry)
-                }
-            }
-            query = ""
-            results = []
-            reload()
-        }
-    }
-
-    func delete(id: Int64) {
-        Task {
-            _ = FoodService.deleteEntry(id: id)
-            reload()
-        }
-    }
-
-    /// Same hour buckets the iOS quick-log flow uses.
-    private static func currentMealType() -> String {
-        switch Calendar.current.component(.hour, from: Date()) {
-        case ..<11: return "breakfast"
-        case ..<15: return "lunch"
-        case ..<18: return "snack"
-        default: return "dinner"
-        }
+    var body: some View {
+        TextField("Search foods — dosa, dal, eggs…", text: $query)
+            .textFieldStyle(.plain)
     }
 }
 
@@ -164,144 +159,13 @@ private func onDB<T: Sendable>(_ work: @escaping @Sendable () -> T) async -> T {
     }
 }
 
-// MARK: - Food tab
-
-struct FoodTab: View {
-    @State var store = FoodStore.shared
-    @State var confirmHit: FoodHit? = nil
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 14) {
-                    totalsCard
-
-                    // Search + log
-                    VStack(alignment: .leading, spacing: 8) {
-                        HStack {
-                            TextField("Search foods — dosa, dal, eggs…", text: $store.query)
-                                .textFieldStyle(.roundedBorder)
-                                .task(id: store.query) { await store.liveSearch() }
-                                .onSubmit { store.search() }
-                            Button { store.search() } label: {
-                                Image(systemName: "magnifyingglass")
-                                    .foregroundStyle(.white)
-                                    .frame(width: 36, height: 36)
-                                    .background(Theme.ink, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
-                            }.buttonStyle(.plain)
-                        }
-                        ForEach(store.results) { hit in
-                            Button { confirmHit = hit } label: {
-                                HStack {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text(hit.name).font(.subheadline).foregroundStyle(Theme.textPrimary)
-                                        Text("\(hit.calories) kcal · P \(hit.proteinG)g · \(hit.servingDisplay)")
-                                            .font(.caption2).foregroundStyle(Theme.textSecondary)
-                                    }
-                                    Spacer()
-                                    Image(systemName: "plus.circle.fill")
-                                        .foregroundStyle(Theme.accent)
-                                }
-                                .padding(.vertical, 4)
-                            }.buttonStyle(.plain)
-                        }
-                    }
-                    .card()
-
-                    // Today's meals
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("TODAY'S MEALS").sectionHeading()
-                        if store.today.isEmpty {
-                            Text("Nothing logged yet — search above to log your first meal")
-                                .font(.caption).foregroundStyle(Theme.textTertiary)
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .padding(.vertical, 12)
-                        }
-                        ForEach(store.today) { row in
-                            HStack {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(row.name).font(.subheadline).foregroundStyle(Theme.textPrimary)
-                                    HStack(spacing: 6) {
-                                        if !row.mealType.isEmpty {
-                                            Text(row.mealType.capitalized)
-                                                .font(.system(size: Theme.FontSize.nano))
-                                                .padding(.horizontal, 6).padding(.vertical, 2)
-                                                .background(Theme.pillBackground, in: Capsule())
-                                                .foregroundStyle(Theme.textSecondary)
-                                        }
-                                        Text(row.detail).font(.caption2).foregroundStyle(Theme.textSecondary)
-                                    }
-                                }
-                                Spacer()
-                                Button { store.delete(id: row.id) } label: {
-                                    Image(systemName: "trash")
-                                        .font(.caption)
-                                        .foregroundStyle(Theme.textTertiary)
-                                }.buttonStyle(.plain)
-                            }
-                            .padding(.vertical, 4)
-                        }
-                    }
-                    .card()
-                }
-                .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 100)
-            }
-            .background(Theme.background.ignoresSafeArea())
-            .navigationTitle("Food")
-            .onAppear { store.reload() }
-            .sheet(item: $confirmHit) { hit in
-                ServingConfirmSheet(hit: hit) { servings in
-                    store.log(foodId: hit.id, servings: servings)
-                }
-            }
-        }
-    }
-
-    private var totalsCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                Text("TODAY'S INTAKE").sectionHeading()
-                Spacer()
-                if store.totals.target > 0 {
-                    Text("\(store.totals.remaining) kcal left")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(store.totals.remaining >= 0 ? Theme.deficit : Theme.surplus)
-                }
-            }
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text("\(store.totals.eaten)")
-                    .font(Theme.rounded(size: Theme.FontSize.display1).monospacedDigit())
-                    .foregroundStyle(Theme.macroKcal)
-                Text("/ \(store.totals.target) kcal")
-                    .font(.subheadline).foregroundStyle(Theme.textSecondary)
-            }
-            HStack(spacing: 8) {
-                macroChip("P", store.totals.proteinG, Theme.macroProtein)
-                macroChip("C", store.totals.carbsG, Theme.macroCarbs)
-                macroChip("F", store.totals.fatG, Theme.macroFat)
-                macroChip("Fiber", store.totals.fiberG, Theme.macroFiber)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .card()
-    }
-
-    private func macroChip(_ label: String, _ grams: Int, _ color: Color) -> some View {
-        HStack(spacing: 3) {
-            Circle().fill(color).frame(width: 6, height: 6)
-            Text("\(grams)g \(label)")
-                .font(.caption2.weight(.medium))
-                .foregroundStyle(Theme.textSecondary)
-        }
-        .padding(.horizontal, 8).padding(.vertical, 4)
-        .background(Theme.pillBackground, in: Capsule())
-    }
-}
-
 // MARK: - Serving confirm
 
+/// Half-serving stepper confirm. Interim: the shared ServingInputView
+/// (amount field + unit pills + fraction chips) replaces this when the full
+/// serving sheet ports (#1062 residual).
 struct ServingConfirmSheet: View {
-    let hit: FoodHit
+    let food: Food
     let onLog: (Double) -> Void
     @Environment(\.dismiss) var dismiss
     @State var servings = 1.0
@@ -309,8 +173,15 @@ struct ServingConfirmSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 16) {
-                Text(hit.name).font(Theme.fontTitle)
-                Text("\(hit.servingDisplay) per serving · \(hit.calories) kcal")
+                // In-content chrome (#1089 pattern) — sheet nav bar off.
+                HStack {
+                    Button("Cancel") { dismiss() }.foregroundStyle(Theme.accent)
+                    Spacer()
+                }
+                .padding(.top, 4)
+
+                Text(food.name).font(Theme.fontTitle)
+                Text("\(food.servingSize.formatted())\(food.servingUnit) per serving · \(Int(food.calories)) kcal")
                     .font(.caption).foregroundStyle(Theme.textSecondary)
 
                 HStack(spacing: 20) {
@@ -341,7 +212,7 @@ struct ServingConfirmSheet: View {
                     }.buttonStyle(.plain)
                 }
 
-                Text("\(Int(Double(hit.calories) * servings)) kcal · P \(Int(Double(hit.proteinG) * servings))g")
+                Text("\(Int(food.calories * servings)) kcal · P \(Int(food.proteinG * servings))g")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.textPrimary)
 
@@ -361,9 +232,6 @@ struct ServingConfirmSheet: View {
             }
             .padding(20)
             .background(Theme.background)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
-            }
         }
     }
 }

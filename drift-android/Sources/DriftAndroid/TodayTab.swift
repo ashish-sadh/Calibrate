@@ -3,6 +3,25 @@ import Observation
 import SkipFuse
 import DriftCore
 
+// These row types lived in FoodTab.swift until the Food tab became the shared
+// FoodTabView port (#1062) — the dashboard is their only consumer now.
+struct FoodEntryRow: Identifiable, Sendable {
+    let id: Int64
+    let name: String
+    let detail: String    // "2 servings · 340 kcal"
+    let mealType: String
+}
+
+struct TotalsRow: Sendable {
+    var eaten = 0
+    var target = 0
+    var remaining = 0
+    var proteinG = 0
+    var carbsG = 0
+    var fatG = 0
+    var fiberG = 0
+}
+
 /// Today tab v2 — ports the iOS DashboardView's visual structure: brand
 /// header, the concentric intake rings, macro legend, Snap/Describe/Search/
 /// Recent chips, TODAY'S MEALS, and the Weight/Sleep/Readiness stat trio.
@@ -19,6 +38,18 @@ import DriftCore
     /// instance keeps loaded data alive across the rebuild; observation is
     /// unchanged (still `@State` + `@Observable`, as before).
     static let shared = TodayStore()
+
+    init() {
+        reload()
+        // Fuse's onAppear doesn't reliably re-fire on tab re-selection, so
+        // data mutated elsewhere left this dashboard stale (#1090 sweep).
+        // Food writes announce themselves via `.foodEntryAdded` (posted by the
+        // shared FoodLogViewModel); weight writes call reload() directly from
+        // WeightStore. Observer lives as long as the process — no removal.
+        _ = NotificationCenter.default.addObserver(forName: .foodEntryAdded, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.reload() }
+        }
+    }
 
     var totals = TotalsRow()
     var proteinTarget = 0
