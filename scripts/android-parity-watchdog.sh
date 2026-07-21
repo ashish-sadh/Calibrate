@@ -96,12 +96,18 @@ while true; do
     if [ "$RAN" -lt "$CRASH_WINDOW" ]; then
         fast_crashes=$((fast_crashes + 1))
         if [ "$fast_crashes" -ge "$MAX_FAST_CRASHES" ]; then
-            log "$fast_crashes fast crashes in a row — cooling off ${COOL_OFF}s"
+            # Repeated fast crashes = Claude credit exhausted (Fable AND Opus).
+            # Raise the flag the Codex fallback lane watches, then cool off.
+            log "$fast_crashes fast crashes — Claude likely exhausted; raising codex-fallback flag; cooling off ${COOL_OFF}s"
+            touch "$LOG_DIR/claude-exhausted.flag"
             sleep "$COOL_OFF"
             fast_crashes=0
         fi
     else
+        # A real session ran — Claude is back. Clear the exhaustion flag so the
+        # Codex fallback lane stands down and parity resumes ownership.
         fast_crashes=0
+        rm -f "$LOG_DIR/claude-exhausted.flag"
     fi
     sleep 15
 done
