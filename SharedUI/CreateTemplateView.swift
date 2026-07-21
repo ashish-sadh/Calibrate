@@ -184,15 +184,33 @@ struct TemplateExerciseEditor: View {
                 }
 
                 Section("Configuration") {
+                    // iOS draws the ± glyphs in the label color; SkipUI's Stepper falls
+                    // back to Color.accentColor → Material blue on Android. Match iPhone by
+                    // tinting the ± to the primary text color (Android only, #1078).
                     Stepper("\(sets) sets", value: $sets, in: 1...10)
+                        #if os(Android)
+                        .tint(Theme.textPrimary)
+                        #endif
 
                     Picker("Rest", selection: $restSeconds) {
                         ForEach([15, 30, 45, 60, 90, 120, 150, 180], id: \.self) { sec in
                             Text("\(sec/60):\(String(format: "%02d", sec%60))").tag(sec)
                         }
                     }
+                    #if os(Android)
+                    // SkipUI paints the menu-Picker's value+chevron with the ambient tint
+                    // (accent red here); iOS renders it in secondary gray. Match iPhone by
+                    // pinning the value to secondary text (Android only, #1078).
+                    .tint(Theme.textSecondary)
+                    #endif
 
+                    // An un-tinted SwiftUI Toggle is system-green when ON; SkipUI's Switch
+                    // falls back to Material navy. Match iPhone's green (Android only; iOS
+                    // keeps its untouched system default, #1078).
                     Toggle("Warmup exercise", isOn: $isWarmup)
+                        #if os(Android)
+                        .tint(Theme.deficit)
+                        #endif
 
                     // Reps vs seconds timer — planks/carries or anything the
                     // name classifier got wrong (operator 2026-07-14).
@@ -200,6 +218,9 @@ struct TemplateExerciseEditor: View {
                         Text("Reps").tag(false)
                         Text("Time").tag(true)
                     }
+                    #if os(Android)
+                    .tint(Theme.textSecondary)   // gray value like iPhone, not accent (#1078)
+                    #endif
                 }
 
                 Section("Notes") {
