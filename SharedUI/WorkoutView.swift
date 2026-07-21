@@ -289,29 +289,16 @@ struct WorkoutView: View {
                 // gym users reach Start Workout / templates first; burn
                 // chips, Apple Health list, recovery map and consistency
                 // are review content, not mid-session actions.
-                // Today's burn metrics
-                HStack(spacing: 10) {
-                    HStack(spacing: 4) {
-                        #if os(Android)
-                        // No fire glyph in skip-ui's map — the star fallback
-                        // read as a rating (FlameGlyph.swift).
-                        FlameShape().fill(Theme.stepsOrange).frame(width: 12, height: 12)
-                        #else
-                        Image(systemName: "flame.fill").font(.caption).foregroundStyle(Theme.stepsOrange)
-                        #endif
-                        Text("\(Int(activeCalories))").font(.subheadline.weight(.bold).monospacedDigit())
-                        Text("active cal").font(.caption2).foregroundStyle(Theme.textSecondary)
-                    }
-                    .frame(maxWidth: .infinity).card()
-
-                    HStack(spacing: 4) {
-                        Image(systemName: sym("figure.walk")).font(.caption).foregroundStyle(Theme.deficit)
-                        Text(steps >= 1000 ? String(format: "%.1fk", steps/1000) : "\(Int(steps))")
-                            .font(.subheadline.weight(.bold).monospacedDigit())
-                        Text("steps").font(.caption2).foregroundStyle(Theme.textSecondary)
-                    }
-                    .frame(maxWidth: .infinity).card()
-                }
+                // Today's burn metrics — needs a health provider. Android has
+                // none until the Health Connect adapter (#1070), so the values
+                // stay 0 and the band read "0 active cal / 0 steps"; hide it
+                // there rather than show zeros. iOS always wires
+                // HealthKitService in DriftApp.init → band unchanged (#1064).
+                #if os(Android)
+                if DriftPlatform.health != nil { burnMetricsBand }
+                #else
+                burnMetricsBand
+                #endif
 
                 // Apple Health Workouts (last 7 days)
                 if !healthWorkouts.isEmpty {
@@ -757,6 +744,33 @@ struct WorkoutView: View {
         #else
         return Array(Set(s.exercises.map { ExerciseDatabase.bodyPart(for: $0) })).sorted()
         #endif
+    }
+
+    // Extracted so the health-gate at the call site (#1070/#1064) reads as one
+    // line and iOS renders it byte-for-byte as before.
+    @ViewBuilder private var burnMetricsBand: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 4) {
+                #if os(Android)
+                // No fire glyph in skip-ui's map — the star fallback
+                // read as a rating (FlameGlyph.swift).
+                FlameShape().fill(Theme.stepsOrange).frame(width: 12, height: 12)
+                #else
+                Image(systemName: "flame.fill").font(.caption).foregroundStyle(Theme.stepsOrange)
+                #endif
+                Text("\(Int(activeCalories))").font(.subheadline.weight(.bold).monospacedDigit())
+                Text("active cal").font(.caption2).foregroundStyle(Theme.textSecondary)
+            }
+            .frame(maxWidth: .infinity).card()
+
+            HStack(spacing: 4) {
+                Image(systemName: sym("figure.walk")).font(.caption).foregroundStyle(Theme.deficit)
+                Text(steps >= 1000 ? String(format: "%.1fk", steps/1000) : "\(Int(steps))")
+                    .font(.subheadline.weight(.bold).monospacedDigit())
+                Text("steps").font(.caption2).foregroundStyle(Theme.textSecondary)
+            }
+            .frame(maxWidth: .infinity).card()
+        }
     }
 
     private func muscleIcon(_ bodyPart: String) -> String {

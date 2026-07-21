@@ -113,7 +113,9 @@ struct ExerciseBrowserView: View {
                 }
             }
             .sheet(isPresented: $showingCustom) {
-                CustomExerciseSheet { _ in
+                // Prefill the typed query so the `Add "…" as custom exercise`
+                // CTA opens with the name already filled in (#1082).
+                CustomExerciseSheet(initialName: query) { _ in
                     #if os(Android)
                     // iOS recomputes `results` on body invalidation; the
                     // Android @State copy must refresh to show the new entry.

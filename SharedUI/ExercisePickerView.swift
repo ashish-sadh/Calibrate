@@ -436,8 +436,16 @@ struct ExercisePickerView: View {
 struct CustomExerciseSheet: View {
     let onSave: (String) -> Void
     @Environment(\.dismiss) var dismiss
-    @State var name = ""
+    @State var name: String
     @State var bodyPart = "Chest"
+
+    // `initialName` seeds the name field so the browser's `Add "squat" as
+    // custom exercise` CTA opens with "squat" already typed (#1082) instead
+    // of a blank field. Defaulted, so the picker's plain call is unchanged.
+    init(initialName: String = "", onSave: @escaping (String) -> Void) {
+        self.onSave = onSave
+        _name = State(initialValue: initialName)
+    }
 
     var body: some View {
         NavigationStack {

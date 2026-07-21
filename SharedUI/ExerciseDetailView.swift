@@ -45,9 +45,24 @@ struct ExerciseDetailView: View {
                             WorkoutService.toggleExerciseFavorite(exerciseName)
                             isFavorite.toggle()
                         } label: {
+                            #if os(Android)
+                            // skip-ui #148: the "outlined" Material star is
+                            // filled, so sym("star") makes the un-favorited
+                            // state read as favorited. Draw the real outline
+                            // (stroke) / filled star instead (StarGlyph.swift).
+                            Group {
+                                if isFavorite {
+                                    StarShape().fill(Theme.fatYellow)
+                                } else {
+                                    StarShape().stroke(Color.gray.opacity(0.4), lineWidth: 1.5)
+                                }
+                            }
+                            .frame(width: 22, height: 22)
+                            #else
                             Image(systemName: sym(isFavorite ? "star.fill" : "star"))
                                 .font(.title3)
                                 .foregroundStyle(isFavorite ? Theme.fatYellow : Color.gray.opacity(0.4))
+                            #endif
                         }
                     }
 

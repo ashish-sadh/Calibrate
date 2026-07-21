@@ -176,6 +176,15 @@ struct TemplateExerciseEditor: View {
         _trackByTime = State(initialValue: exercise.isDuration ?? WorkoutSet.isDurationExercise(exercise.name))
     }
 
+    // Standard rest presets, plus the exercise's own value when it isn't one of
+    // them (the P5 seeded templates use 75s/105s) — otherwise the menu Picker
+    // has no tag matching the selection and renders a BLANK value on both
+    // platforms. For a standard rest this equals the base list → no visual change.
+    private var restOptions: [Int] {
+        let base = [15, 30, 45, 60, 90, 120, 150, 180]
+        return base.contains(restSeconds) ? base : (base + [restSeconds]).sorted()
+    }
+
     var body: some View {
         NavigationStack {
             Form {
@@ -193,7 +202,7 @@ struct TemplateExerciseEditor: View {
                         #endif
 
                     Picker("Rest", selection: $restSeconds) {
-                        ForEach([15, 30, 45, 60, 90, 120, 150, 180], id: \.self) { sec in
+                        ForEach(restOptions, id: \.self) { sec in
                             Text("\(sec/60):\(String(format: "%02d", sec%60))").tag(sec)
                         }
                     }
