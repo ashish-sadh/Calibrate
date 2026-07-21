@@ -52,6 +52,24 @@ struct ExerciseBrowserView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                #if os(Android)
+                // Same fix as ExercisePickerView: SkipUI's nav bar inside a
+                // sheet reserves an ~80dp dead band above the title and paints
+                // toolbar items into it (#1089). Draw the header as content
+                // and leave the nav bar off on Android.
+                ZStack {
+                    Text("Exercise Database").font(.headline)
+                    HStack {
+                        Button("Done") { dismiss() }.foregroundStyle(Theme.accent)
+                        Spacer()
+                        Button { showingCustom = true } label: {
+                            Image(systemName: sym("plus.circle.fill")).foregroundStyle(Theme.accent)
+                        }
+                        .accessibilityLabel("Add custom exercise")
+                    }
+                }
+                .padding(.horizontal, 16).padding(.vertical, 12)
+                #endif
                 HStack {
                     Image(systemName: "magnifyingglass").foregroundStyle(Theme.textSecondary)
                     TextField("Search exercises", text: $query).textFieldStyle(.plain).autocorrectionDisabled()
@@ -70,6 +88,13 @@ struct ExerciseBrowserView: View {
                         }
                     }.padding(.horizontal, 12).padding(.vertical, 6)
                 }
+                #if os(Android)
+                // Fuse measures a horizontal ScrollView's height as the text
+                // line alone once the IME closes, silently dropping the chip
+                // and row padding — the chips render clipped or, on short
+                // screens, vanish (#1089). Pin the natural height.
+                .frame(height: 38)
+                #endif
 
                 List {
                     if !query.isEmpty && results.isEmpty {
@@ -102,6 +127,7 @@ struct ExerciseBrowserView: View {
                     }
                 }.listStyle(.plain)
             }
+            #if !os(Android)
             .navigationTitle("Exercise Database").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } }
@@ -112,6 +138,7 @@ struct ExerciseBrowserView: View {
                     .accessibilityLabel("Add custom exercise")
                 }
             }
+            #endif
             .sheet(isPresented: $showingCustom) {
                 // Prefill the typed query so the `Add "…" as custom exercise`
                 // CTA opens with the name already filled in (#1082).

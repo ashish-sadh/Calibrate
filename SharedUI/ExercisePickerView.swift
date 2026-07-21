@@ -231,6 +231,13 @@ struct ExercisePickerView: View {
                         }
                     }.padding(.horizontal, 12).padding(.vertical, 6)
                 }
+                #if os(Android)
+                // Fuse measures a horizontal ScrollView's height as the text
+                // line alone once the IME closes, silently dropping the chip
+                // and row padding — the chips render clipped or, on short
+                // screens, vanish (#1089). Pin the natural height.
+                .frame(height: 38)
+                #endif
 
                 List {
                     // Custom exercise option
