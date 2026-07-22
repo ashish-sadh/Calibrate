@@ -125,6 +125,20 @@ final class NebiusWorkoutPhotoParserTests: XCTestCase {
         XCTAssertTrue(result?.sessions.isEmpty ?? false)
     }
 
+    // MARK: retry decision
+
+    func testOnlyTransientErrorsRetry() {
+        XCTAssertTrue(NebiusWorkoutPhotoParser.isRetryable(.transient(0)))     // dropped/timeout
+        XCTAssertTrue(NebiusWorkoutPhotoParser.isRetryable(.transient(503)))   // provider 5xx
+        XCTAssertFalse(NebiusWorkoutPhotoParser.isRetryable(.auth))            // needs user action
+        XCTAssertFalse(NebiusWorkoutPhotoParser.isRetryable(.rateLimited))     // retry makes it worse
+        XCTAssertFalse(NebiusWorkoutPhotoParser.isRetryable(.quotaExceeded))
+        XCTAssertFalse(NebiusWorkoutPhotoParser.isRetryable(.malformed))
+        // nil = reply arrived but didn't decode; temp-0 re-run returns the same
+        // reply, so retrying only doubles the wait.
+        XCTAssertFalse(NebiusWorkoutPhotoParser.isRetryable(nil))
+    }
+
     // MARK: implausible-date guard
 
     func testMisreadAncientDateNullsOut() {

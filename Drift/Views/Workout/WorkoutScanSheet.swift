@@ -24,6 +24,10 @@ struct WorkoutScanSheet: View {
     }
 
     @State private var stage: Stage = .chooser
+    /// Live sub-status while `.processing` — driven by REAL pipeline milestones
+    /// (ScanStage callbacks), not a cosmetic timer.
+    @State private var processingStatus = "Preparing photo…"
+    @State private var processingStartedAt: Date?
     @State private var showingCamera = false
     @State private var showingLibrary = false
     @State private var showingPDFImporter = false
@@ -137,8 +141,18 @@ struct WorkoutScanSheet: View {
     private var processing: some View {
         VStack(spacing: 16) {
             ProgressView().controlSize(.large)
-            Text("Reading your workout…").font(.subheadline).foregroundStyle(Theme.textSecondary)
-            Text("Takes a minute or two — keep Drift open.")
+            Text(processingStatus).font(.subheadline).foregroundStyle(Theme.textSecondary)
+                .animation(.default, value: processingStatus)
+            if let started = processingStartedAt {
+                // Live elapsed counter — a minute-long spinner with no motion
+                // reads as "hung"; a ticking clock reads as "working".
+                TimelineView(.periodic(from: started, by: 1)) { context in
+                    let secs = max(0, Int(context.date.timeIntervalSince(started)))
+                    Text("\(secs)s · usually 1–2 minutes")
+                        .font(.caption.monospacedDigit()).foregroundStyle(Theme.textTertiary)
+                }
+            }
+            Text("Keep Drift open and on-screen.")
                 .font(.caption2).foregroundStyle(Theme.textTertiary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -159,18 +173,33 @@ struct WorkoutScanSheet: View {
     // MARK: - Input handling
 
     private func handle(image: UIImage) {
-        stage = .processing
+        beginProcessing()
         Task { await parse(imageData: Self.jpegForUpload(image)) }
     }
 
     private func handle(pdfURL: URL) {
-        stage = .processing
+        beginProcessing()
         Task {
             guard let image = Self.renderFirstPage(of: pdfURL) else {
                 stage = .failed("That PDF couldn't be opened. Try a screenshot of it instead.")
                 return
             }
             await parse(imageData: Self.jpegForUpload(image))
+        }
+    }
+
+    private func beginProcessing() {
+        processingStatus = "Preparing photo…"
+        processingStartedAt = Date()
+        stage = .processing
+    }
+
+    @MainActor
+    private func apply(_ scanStage: NebiusWorkoutPhotoParser.ScanStage) {
+        switch scanStage {
+        case .sending:  processingStatus = "Sending to Drift's AI…"
+        case .reading:  processingStatus = "Reading the page…"
+        case .retrying: processingStatus = "Connection hiccup — retrying…"
         }
     }
 
@@ -187,7 +216,8 @@ struct WorkoutScanSheet: View {
         let note = contextText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard let result = await NebiusWorkoutPhotoParser.parse(
             imageData: imageData, visionModelID: AppConfig.coachVisionModelID,
-            userNote: note.isEmpty ? nil : note) else {
+            userNote: note.isEmpty ? nil : note,
+            onStage: { s in Task { @MainActor in apply(s) } }) else {
             // Distinguish "the call never made it" from "the reply didn't parse"
             // — the field bug on build 358 was a truncated reply mislabelled as
             // a connection failure, which sends the user chasing their Wi-Fi.

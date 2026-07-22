@@ -157,29 +157,76 @@ public enum NebiusWorkoutPhotoParser {
     - Return {"templates":[],"sessions":[]} when the image is not a workout at all.
     """
 
+    /// Progress milestones surfaced to the scan UI. Each is a REAL signal, not
+    /// cosmetic: `.reading` fires on the first streamed token (proof the upload
+    /// + page-read succeeded and generation started); `.retrying` fires when a
+    /// transient failure triggers the automatic second attempt.
+    public enum ScanStage: Sendable, Equatable {
+        case sending
+        case reading
+        case retrying
+    }
+
     /// Parse workout `imageData` (JPEG) via the coach cloud vision model.
     /// `userNote` is an optional rider the user typed alongside the scan
     /// ("weights are in kg", "only the right column") — forwarded to the model
-    /// as authoritative context. Returns nil when the cloud isn't configured,
-    /// is unreachable, or returns nothing decodable — the caller surfaces
-    /// "couldn't read that" rather than inventing.
+    /// as authoritative context. `onStage` reports real progress milestones.
+    /// Transient failures (dropped connection / 5xx / timeout) get ONE
+    /// automatic retry — the wait is long and a mid-scan network blip
+    /// shouldn't cost the user their whole minute; auth/quota/rate errors
+    /// never retry (they need the user to act). Returns nil when the cloud
+    /// isn't configured, both attempts fail, or nothing decodes.
     public static func parse(imageData: Data, visionModelID: String,
-                             userNote: String? = nil) async -> ScannedWorkoutResult? {
+                             userNote: String? = nil,
+                             onStage: (@Sendable (ScanStage) -> Void)? = nil) async -> ScannedWorkoutResult? {
         guard !imageData.isEmpty else { return nil }
         guard CoachCloud.isConfigured else { return nil }
         CoachCloud.install()
 
-        let raw = await LocalAIService.shared.respondDirectWithPhoto(
-            systemPrompt: systemPrompt,
-            message: requestMessage(userNote: userNote),
-            imageData: imageData,
-            visionModelID: visionModelID,
-            maxTokens: scanMaxTokens,
-            timeout: scanTimeout,
-            temperature: scanTemperature,
-            onToken: { _ in }
-        )
-        return decode(raw, referenceDate: Date())
+        for attempt in 1...2 {
+            onStage?(.sending)
+            let firstToken = FirstTokenFlag()
+            let raw = await LocalAIService.shared.respondDirectWithPhoto(
+                systemPrompt: systemPrompt,
+                message: requestMessage(userNote: userNote),
+                imageData: imageData,
+                visionModelID: visionModelID,
+                maxTokens: scanMaxTokens,
+                timeout: scanTimeout,
+                temperature: scanTemperature,
+                onToken: { _ in
+                    if firstToken.markFired() { onStage?(.reading) }
+                }
+            )
+            if let result = decode(raw, referenceDate: Date()) { return result }
+            // Decide whether the miss is worth a second attempt.
+            guard attempt == 1, isRetryable(LocalAIService.shared.lastRemoteError) else { return nil }
+            onStage?(.retrying)
+        }
+        return nil
+    }
+
+    /// Only transient faults retry — a dropped connection or provider 5xx can
+    /// succeed a second later; auth/quota/rate-limit will fail identically and
+    /// retrying just doubles the wait before the user sees the real problem.
+    /// A nil error means the reply arrived but didn't decode — retrying the
+    /// same image at temperature 0 would return the same reply, so don't.
+    nonisolated static func isRetryable(_ err: RemoteBackendError?) -> Bool {
+        if case .transient = err { return true }
+        return false
+    }
+
+    /// Thread-safe once-flag so the streaming callback fires `.reading` exactly
+    /// once per attempt (onToken arrives on a background executor).
+    private final class FirstTokenFlag: @unchecked Sendable {
+        private let lock = NSLock()
+        private var fired = false
+        func markFired() -> Bool {
+            lock.lock(); defer { lock.unlock() }
+            if fired { return false }
+            fired = true
+            return true
+        }
     }
 
     /// A full page (template grid + several dated sessions with per-set data)
@@ -188,7 +235,9 @@ public enum NebiusWorkoutPhotoParser {
     public static let scanMaxTokens = 4096
     /// The 72B VL model reading a dense handwritten page overruns the 60s chat
     /// deadline; scans are a deliberate wait-for-it flow, so give it headroom.
-    public static let scanTimeout: TimeInterval = 180
+    /// 240s per attempt: longest observed live read was 115s on Mac Wi-Fi, and
+    /// a device on cellular pays extra upload time on top.
+    public static let scanTimeout: TimeInterval = 240
     /// Extraction is transcription, not conversation: at the provider-default
     /// sampling temperature the same notebook photo returned different weights
     /// on every run (live test, 2026-07-22). Pin to 0 for determinism.
