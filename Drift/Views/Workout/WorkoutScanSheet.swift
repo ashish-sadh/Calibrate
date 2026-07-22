@@ -67,6 +67,14 @@ struct WorkoutScanSheet: View {
             .fileImporter(isPresented: $showingPDFImporter, allowedContentTypes: [.pdf]) { result in
                 if case .success(let url) = result { handle(pdfURL: url) }
             }
+            // A scan runs 35-105s in the foreground; the default 30s auto-lock
+            // suspends the app mid-request and iOS tears the connection down,
+            // surfacing as a bogus "couldn't reach the cloud" (field bug,
+            // build 359). Keep the screen awake only while reading.
+            .onChange(of: stage) { _, newStage in
+                UIApplication.shared.isIdleTimerDisabled = (newStage == .processing)
+            }
+            .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
         }
     }
 
@@ -130,6 +138,8 @@ struct WorkoutScanSheet: View {
         VStack(spacing: 16) {
             ProgressView().controlSize(.large)
             Text("Reading your workout…").font(.subheadline).foregroundStyle(Theme.textSecondary)
+            Text("Takes a minute or two — keep Drift open.")
+                .font(.caption2).foregroundStyle(Theme.textTertiary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -181,14 +191,28 @@ struct WorkoutScanSheet: View {
             // Distinguish "the call never made it" from "the reply didn't parse"
             // — the field bug on build 358 was a truncated reply mislabelled as
             // a connection failure, which sends the user chasing their Wi-Fi.
-            if LocalAIService.shared.lastRemoteError != nil {
-                stage = .failed("Couldn't reach the AI cloud. Check your connection and try again.")
+            // The error detail is in the copy on purpose: two rounds of field
+            // debugging burned on an unlabelled failure (builds 358/359).
+            if let err = LocalAIService.shared.lastRemoteError {
+                stage = .failed("Couldn't reach the AI cloud (\(Self.describe(err))). Keep Drift open and on-screen while it reads, then try again.")
             } else {
                 stage = .failed("Drift got a reply but couldn't make sense of it. Try a straighter, closer photo — or add a note describing the page.")
             }
             return
         }
         stage = result.isEmpty ? .empty : .review(result)
+    }
+
+    /// Short diagnostic tag for the failure copy — "network" alone is not
+    /// actionable and cost two field-debug rounds.
+    private static func describe(_ err: RemoteBackendError) -> String {
+        switch err {
+        case .auth: return "key rejected"
+        case .rateLimited: return "rate limited"
+        case .quotaExceeded: return "quota exceeded"
+        case .transient(let status): return status == 0 ? "connection dropped or timed out" : "HTTP \(status)"
+        case .malformed: return "bad reply"
+        }
     }
 
     // MARK: - Image / PDF preprocessing
