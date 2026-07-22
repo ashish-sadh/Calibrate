@@ -5,6 +5,10 @@ import DriftCore
 
 struct CreateTemplateView: View {
     var existingTemplate: WorkoutTemplate? = nil
+    /// Seed a brand-new (unsaved) template — e.g. from a scanned workout page.
+    /// Distinct from `existingTemplate` (which edits a persisted row): a prefill
+    /// still saves as new. Ignored when `existingTemplate` is set.
+    var prefill: (name: String, exercises: [WorkoutTemplate.TemplateExercise])? = nil
     let onSave: () -> Void
     @Environment(\.dismiss) var dismiss
     @State var name = ""
@@ -88,6 +92,9 @@ struct CreateTemplateView: View {
                 if let t = existingTemplate {
                     name = t.name
                     exercises = t.exercises
+                } else if let prefill, exercises.isEmpty {
+                    name = prefill.name
+                    exercises = prefill.exercises
                 }
             }
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }

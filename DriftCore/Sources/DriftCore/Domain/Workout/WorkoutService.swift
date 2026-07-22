@@ -130,6 +130,59 @@ public enum WorkoutService {
         return workout
     }
 
+    // MARK: - Scanned workout (photo / PDF → session)
+
+    /// Expand a scanned session's exercises into `WorkoutSet` rows, preserving
+    /// PER-SET detail (a photographed "45×10 / 60×15 / 70×8" becomes three rows
+    /// at ascending weight, not three identical sets — that's the whole point of
+    /// reading the notebook faithfully). Duration exercises with no per-set data
+    /// produce one duration row. Pure — no DB access — so the mapping is Tier-0
+    /// testable; blank-named exercises are skipped but still consume their order.
+    public static func buildScannedSessionSets(workoutId: Int64, exercises: [ScannedSessionExercise]) -> [WorkoutSet] {
+        var rows: [WorkoutSet] = []
+        for (exIndex, ex) in exercises.enumerated() {
+            let name = ex.name.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !name.isEmpty else { continue }
+            if ex.isDuration && ex.sets.isEmpty {
+                let mins = ex.durationMinutes ?? 0
+                let secs: Int? = mins > 0 ? mins * 60 : nil
+                rows.append(WorkoutSet(workoutId: workoutId, exerciseName: name, setOrder: 1,
+                                       weightLbs: nil, reps: nil, isWarmup: false,
+                                       durationSec: secs, exerciseOrder: exIndex))
+            } else {
+                for (i, set) in ex.sets.enumerated() {
+                    let weight = (set.weightLbs ?? 0) > 0 ? set.weightLbs : nil
+                    rows.append(WorkoutSet(workoutId: workoutId, exerciseName: name, setOrder: i + 1,
+                                           weightLbs: weight, reps: set.reps, isWarmup: set.isWarmup,
+                                           durationSec: nil, exerciseOrder: exIndex))
+                }
+            }
+        }
+        return rows
+    }
+
+    /// Persist a scanned session: create the `Workout` row (past-dating honoured
+    /// — the notebook records days that already happened), expand to per-set
+    /// rows, save. Returns nil when nothing loggable. Mirrors
+    /// `saveVoiceLoggedWorkout` but keeps per-set weights.
+    @discardableResult
+    public static func saveScannedSession(name: String, date: Date = Date(),
+                                          exercises: [ScannedSessionExercise]) throws -> Workout? {
+        let hasLoggable = exercises.contains { !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        guard hasLoggable else { return nil }
+
+        var workout = Workout(name: name,
+                              date: DateFormatters.dateOnly.string(from: date),
+                              durationSeconds: nil, notes: nil,
+                              createdAt: ISO8601DateFormatter().string(from: date))
+        try saveWorkout(&workout)
+        guard let wid = workout.id else { return workout }
+        let sets = buildScannedSessionSets(workoutId: wid, exercises: exercises)
+        guard !sets.isEmpty else { return workout }
+        try saveSets(sets)
+        return workout
+    }
+
     // MARK: - Usual-workout replay ("log my usual push day")
 
     /// Most-recent workout whose name contains `query` (case-insensitive).

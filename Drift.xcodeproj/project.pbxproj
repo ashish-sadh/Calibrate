@@ -60,6 +60,7 @@
 		38883B6796A4390C33BBA04D /* PhotoLogEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14B31FF0A1CB79C0732FB849 /* PhotoLogEntry.swift */; };
 		3A1B5CCC6960BB3FE2AD5B2C /* WidgetDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0966429FFAED4C7FF2D68C11 /* WidgetDataProvider.swift */; };
 		3A45CB30EFB91DF5C4E468AD /* QuickAddView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20576FEB4A7F0371596D08E6 /* QuickAddView.swift */; };
+		3BCFEED81A3126B3C9A734A0 /* WorkoutScanSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38A596925C8682A6B75A673E /* WorkoutScanSheet.swift */; };
 		3CFFACEC0432AE8EC5E7ECF4 /* CloudVisionKeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCE57CE0133752BC4B5C80F3 /* CloudVisionKeyTests.swift */; };
 		3D01268D3E9F35381A819628 /* foods.db in Resources */ = {isa = PBXBuildFile; fileRef = 58B1281AF3BA620161F30716 /* foods.db */; };
 		3DAE20FBF0F571D1C26DFD59 /* AIChatInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A4575ED692EF5D3BFDBC775 /* AIChatInsightsView.swift */; };
@@ -186,6 +187,7 @@
 		D81FBCA09BF00517DBEF07AA /* VoiceLogSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375826994E169F864E5A69C1 /* VoiceLogSheet.swift */; };
 		D8DCF736FEE3123E530756CA /* CycleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 163C4017D9AEE2E0927DC907 /* CycleView.swift */; };
 		D8E7B7B5446C1B3CB3BBF5FC /* DomainExtractorEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4200A9F331B35DB8ACB881A3 /* DomainExtractorEval.swift */; };
+		D914BA268092705456B0195F /* WorkoutScanReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 10622AEAA5C9EC628A33893D /* WorkoutScanReviewView.swift */; };
 		DA416FC020E2523119C7E6A7 /* DriftCore in Frameworks */ = {isa = PBXBuildFile; productRef = 474D4520B459A2F8572DBAA1 /* DriftCore */; };
 		DA902B342D14AE8625D4E25D /* MealTextLoggerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C2C3D0BBB59A233D5483FA1 /* MealTextLoggerTests.swift */; };
 		DA9CA09CC6D7266C7E1A7269 /* EditFoodEntrySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B67D40BAF0BC47AA2BD1B0 /* EditFoodEntrySheet.swift */; };
@@ -301,6 +303,7 @@
 		0F17D1E36C8FFDB99E74C9A4 /* FoodDatabase.db */ = {isa = PBXFileReference; path = FoodDatabase.db; sourceTree = "<group>"; };
 		0F759FA8F6D800CE5BAD454A /* DriftWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = DriftWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		0FF1A03F6A7AD74047A466B9 /* ToolRouterEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolRouterEval.swift; sourceTree = "<group>"; };
+		10622AEAA5C9EC628A33893D /* WorkoutScanReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutScanReviewView.swift; sourceTree = "<group>"; };
 		109A411DBDF9C22C995BA9F4 /* CloudVisionKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudVisionKey.swift; sourceTree = "<group>"; };
 		1173E4390111E2DAAD85AC41 /* TimerCameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerCameraView.swift; sourceTree = "<group>"; };
 		121C8FBB3776A9AE57FDF244 /* PerStageEvalSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerStageEvalSupport.swift; sourceTree = "<group>"; };
@@ -337,6 +340,7 @@
 		36BB15B5D3A14E0D9940B118 /* HealthKitService+Cycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "HealthKitService+Cycle.swift"; sourceTree = "<group>"; };
 		371F20936CDC979979B7686D /* FoundationModelsExerciseTranscriptEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoundationModelsExerciseTranscriptEval.swift; sourceTree = "<group>"; };
 		375826994E169F864E5A69C1 /* VoiceLogSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceLogSheet.swift; sourceTree = "<group>"; };
+		38A596925C8682A6B75A673E /* WorkoutScanSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutScanSheet.swift; sourceTree = "<group>"; };
 		3B2154C4EF883E766BCE5E22 /* CoachVoiceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachVoiceService.swift; sourceTree = "<group>"; };
 		3F480CCAF91EFD799E6B5B8C /* DriftLLMEvalMacOS.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = DriftLLMEvalMacOS.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		401F5996EED6D524116517AA /* LogMealSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogMealSheet.swift; sourceTree = "<group>"; };
@@ -857,6 +861,8 @@
 		B6B13628C10FC8148ACA6AF2 /* Workout */ = {
 			isa = PBXGroup;
 			children = (
+				10622AEAA5C9EC628A33893D /* WorkoutScanReviewView.swift */,
+				38A596925C8682A6B75A673E /* WorkoutScanSheet.swift */,
 			);
 			path = Workout;
 			sourceTree = "<group>";
@@ -1295,6 +1301,8 @@
 				3A1B5CCC6960BB3FE2AD5B2C /* WidgetDataProvider.swift in Sources */,
 				E3CB0A9B3B0ECCDBD1210A36 /* WorkoutConsistencyCard.swift in Sources */,
 				D2EB03D215BCA0042D0112C5 /* WorkoutDetailView.swift in Sources */,
+				D914BA268092705456B0195F /* WorkoutScanReviewView.swift in Sources */,
+				3BCFEED81A3126B3C9A734A0 /* WorkoutScanSheet.swift in Sources */,
 				14A5FC3FED199FE6F2BF410E /* WorkoutView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1491,7 +1499,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = DriftWidget/DriftWidget.entitlements;
-				CURRENT_PROJECT_VERSION = 357;
+				CURRENT_PROJECT_VERSION = 358;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				INFOPLIST_FILE = DriftWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1511,7 +1519,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = DriftWidget/DriftWidget.entitlements;
-				CURRENT_PROJECT_VERSION = 357;
+				CURRENT_PROJECT_VERSION = 358;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				INFOPLIST_FILE = DriftWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1551,7 +1559,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Drift/Drift.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 357;
+				CURRENT_PROJECT_VERSION = 358;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
@@ -1685,7 +1693,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_ENTITLEMENTS = Drift/Drift.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 357;
+				CURRENT_PROJECT_VERSION = 358;
 				DEVELOPMENT_TEAM = ZJ5H5XH82A;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",

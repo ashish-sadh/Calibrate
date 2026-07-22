@@ -14,6 +14,7 @@ struct WorkoutView: View {
     @State var showingNewWorkout = false
     @State var showingPastWorkout = false
     @State var showingVoiceLog = false
+    @State var showingScan = false
     @State var showingImport = false
     @State var showingCreateTemplate = false
     @State var showingExerciseBrowser = false
@@ -107,35 +108,26 @@ struct WorkoutView: View {
                     .buttonStyle(.bordered).tint(Theme.accent)
                 }
 
-                // Conversational entry — voice/text exercise logging (epic #867,
-                // Workout-tab parity with food's VoiceLogSheet). Embeds the shared
-                // VoiceMicButton (V7 ink tint, no pink) so the mic affordance reads
-                // identically to the food path.
-                Button { showingVoiceLog = true } label: {
+                // Conversational entry point.
+                #if DRIFT_IOS_APP
+                // iOS: scan-primary. Photograph / screenshot / PDF-upload any
+                // workout page and the Nebius vision model decides template vs.
+                // logged session; an optional note rides along as context.
+                // Replaces the old voice/text sheet (bolt-on parallel flow).
+                Button { showingScan = true } label: {
                     HStack(spacing: 12) {
-                        VoiceMicButton(tint: Theme.ink, diameter: 40, iconSize: 18)
+                        Image(systemName: "doc.viewfinder")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(Theme.ink)
+                            .frame(width: 40, height: 40)
+                            .background(Circle().fill(Theme.ink.opacity(0.10)))
                         VStack(alignment: .leading, spacing: 2) {
-                            // Android has no mic until the SpeechRecognizer seam
-                            // lands (#1063), so the sheet is text-only and
-                            // sym("mic.fill") already resolves to a pencil. The
-                            // copy was still promising voice — a row labelled
-                            // "Log by Voice" that cannot listen. Match the icon's
-                            // existing honesty; revert both when #1063 ships.
-                            #if os(Android)
-                            Text("Log by Text")
+                            Text("Scan or Log a Workout")
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(Theme.textPrimary)
-                            Text("Type your sets — \u{201C}3×10 bench at 135\u{201D}")
+                            Text("Photo, screenshot or PDF → template or logged session")
                                 .font(.caption2)
                                 .foregroundStyle(Theme.textSecondary)
-                            #else
-                            Text("Log by Voice or Text")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(Theme.textPrimary)
-                            Text("Say or type your sets — \u{201C}3×10 bench at 135\u{201D}")
-                                .font(.caption2)
-                                .foregroundStyle(Theme.textSecondary)
-                            #endif
                         }
                         Spacer()
                         Image(systemName: sym("chevron.right"))
@@ -145,8 +137,33 @@ struct WorkoutView: View {
                     .card()
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Log workout by voice or text")
+                .accessibilityLabel("Scan or log a workout")
+                .accessibilityIdentifier("workout-scan-entry")
+                #else
+                // Android has no camera/PDF seam yet (#1063) — keep the text
+                // logging card until the scan pipeline is ported.
+                Button { showingVoiceLog = true } label: {
+                    HStack(spacing: 12) {
+                        VoiceMicButton(tint: Theme.ink, diameter: 40, iconSize: 18)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Log by Text")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(Theme.textPrimary)
+                            Text("Type your sets — \u{201C}3×10 bench at 135\u{201D}")
+                                .font(.caption2)
+                                .foregroundStyle(Theme.textSecondary)
+                        }
+                        Spacer()
+                        Image(systemName: sym("chevron.right"))
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .card()
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Log workout by text")
                 .accessibilityIdentifier("workout-voice-entry")
+                #endif
 
                 Button { showingPastWorkout = true } label: {
                     Label("Log Past Workout", systemImage: sym("clock.arrow.circlepath"))
@@ -441,12 +458,21 @@ struct WorkoutView: View {
         }
         .sheet(isPresented: $showingVoiceLog) {
             // Voice/text exercise logging — reload history and reveal it so the
-            // user sees the workout they just logged.
+            // user sees the workout they just logged. (Android entry point; iOS
+            // uses the scan sheet below.)
             ExerciseVoiceLogSheet {
                 loadData()
                 showHistory = true
             }
         }
+        #if DRIFT_IOS_APP
+        .sheet(isPresented: $showingScan) {
+            WorkoutScanSheet {
+                loadData()
+                showHistory = true
+            }
+        }
+        #endif
         .sheet(isPresented: $showingCreateTemplate) {
             CreateTemplateView { loadData() }
         }
