@@ -130,6 +130,45 @@ public enum WorkoutService {
         return workout
     }
 
+    // MARK: - Exercise library grounding (scan / import)
+
+    /// Ground a free-text exercise name against the catalog: the catalog's
+    /// spelling when it confidently matches ("pushups" → the library entry),
+    /// else the trimmed original. Keeps scanned rows exact-lookup-able for
+    /// tracking type / poses instead of minting near-duplicate customs.
+    public static func groundedExerciseName(_ raw: String) -> String {
+        let name = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        return ExerciseDatabase.match(name: name)?.name ?? name
+    }
+
+    /// Names absent from `known` (a lowercased name set) — trimmed, deduped
+    /// case-insensitively, input order preserved. Pure; `known` injected so the
+    /// filter is Tier-0 testable without touching the custom-exercise store.
+    public static func unknownExerciseNames(_ names: [String], known: Set<String>) -> [String] {
+        var seen = Set<String>()
+        return names.compactMap { raw in
+            let name = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            let key = name.lowercased()
+            guard !name.isEmpty, !known.contains(key), seen.insert(key).inserted else { return nil }
+            return name
+        }
+    }
+
+    /// Register every name the catalog doesn't know as a custom exercise with a
+    /// guessed body part, so scanned/imported movements land in the library
+    /// (browse, tracking type, anatomy) instead of existing only as history
+    /// rows. Mirrors what Strong/Hevy CSV import always did. Returns the newly
+    /// registered names (empty when everything was already known).
+    @discardableResult
+    public static func autoRegisterUnknownExercises(_ names: [String]) -> [String] {
+        let known = Set(ExerciseDatabase.allWithCustom.map { $0.name.lowercased() })
+        let unknown = unknownExerciseNames(names, known: known)
+        ExerciseDatabase.addCustomExercises(unknown.map {
+            ExerciseDatabase.CustomExerciseSpec(name: $0, bodyPart: ExerciseDatabase.guessBodyPart($0))
+        })
+        return unknown
+    }
+
     // MARK: - Scanned workout (photo / PDF → session)
 
     /// Expand a scanned session's exercises into `WorkoutSet` rows, preserving
@@ -161,14 +200,22 @@ public enum WorkoutService {
         return rows
     }
 
-    /// Persist a scanned session: create the `Workout` row (past-dating honoured
-    /// — the notebook records days that already happened), expand to per-set
-    /// rows, save. Returns nil when nothing loggable. Mirrors
-    /// `saveVoiceLoggedWorkout` but keeps per-set weights.
+    /// Persist a scanned session: ground each exercise name against the catalog
+    /// (so rows exact-resolve for tracking type / poses), create the `Workout`
+    /// row (past-dating honoured — the notebook records days that already
+    /// happened), expand to per-set rows, save, and auto-register any truly
+    /// novel names as custom exercises so they land in the library. Returns nil
+    /// when nothing loggable. Mirrors `saveVoiceLoggedWorkout` but keeps
+    /// per-set weights.
     @discardableResult
     public static func saveScannedSession(name: String, date: Date = Date(),
                                           exercises: [ScannedSessionExercise]) throws -> Workout? {
-        let hasLoggable = exercises.contains { !$0.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        let grounded = exercises.map { ex -> ScannedSessionExercise in
+            var e = ex
+            e.name = groundedExerciseName(ex.name)
+            return e
+        }
+        let hasLoggable = grounded.contains { !$0.name.isEmpty }
         guard hasLoggable else { return nil }
 
         var workout = Workout(name: name,
@@ -177,9 +224,10 @@ public enum WorkoutService {
                               createdAt: ISO8601DateFormatter().string(from: date))
         try saveWorkout(&workout)
         guard let wid = workout.id else { return workout }
-        let sets = buildScannedSessionSets(workoutId: wid, exercises: exercises)
+        let sets = buildScannedSessionSets(workoutId: wid, exercises: grounded)
         guard !sets.isEmpty else { return workout }
         try saveSets(sets)
+        autoRegisterUnknownExercises(grounded.map(\.name))
         return workout
     }
 
@@ -864,13 +912,8 @@ public enum WorkoutService {
         }
 
         // Auto-add missing exercises to custom DB with smart body part guessing
-        let dbNames = Set(ExerciseDatabase.allWithCustom.map { $0.name.lowercased() })
-        for name in exerciseNames {
-            if !dbNames.contains(name.lowercased()) {
-                let bodyPart = ExerciseDatabase.guessBodyPart(name)
-                ExerciseDatabase.addCustomExercise(name: name, bodyPart: bodyPart)
-            }
-        }
+        // (same helper the workout-scan save path uses).
+        autoRegisterUnknownExercises(Array(exerciseNames))
 
         // Smart template extraction: group by session, find frequently co-occurring exercises
         let nameKey = isHevy ? "title" : "Workout Name"

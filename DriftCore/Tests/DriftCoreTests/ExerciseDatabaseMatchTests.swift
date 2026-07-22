@@ -260,6 +260,22 @@ import Testing
     #expect(ExercisePoses.assetBaseName(fromImageUrl: info?.imageUrl) == "Goblet_Squat")
 }
 
+/// Scan/import auto-registration: a novel name lands in the library with a
+/// guessed body part; re-running is a no-op (nothing re-registered).
+@Test @MainActor func autoRegisterUnknownExercisesAddsOnceThenNoops() {
+    let name = "Test Scan Exercise \(UUID().uuidString.prefix(6))"
+    let key = "drift_custom_exercises"
+    let snapshot = UserDefaults.standard.data(forKey: key)
+    defer { UserDefaults.standard.set(snapshot, forKey: key) }
+
+    let first = WorkoutService.autoRegisterUnknownExercises([name, name.uppercased()])
+    #expect(first == [name], "novel name registered once despite case-dupe input")
+    #expect(ExerciseDatabase.allWithCustom.contains { $0.name == name })
+
+    let second = WorkoutService.autoRegisterUnknownExercises([name])
+    #expect(second.isEmpty, "already-registered name must not re-register")
+}
+
 // Registry pose fixes must reach installs that stored the old URL (the
 // B-Stance RDL fedDir moved from a minted asset to Band_Good_Morning,
 // 2026-07-09); fill-only would pin the first-ever URL forever. Without

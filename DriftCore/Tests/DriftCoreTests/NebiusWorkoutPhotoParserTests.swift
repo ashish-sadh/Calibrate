@@ -158,6 +158,33 @@ final class NebiusWorkoutPhotoParserTests: XCTestCase {
         XCTAssertEqual(decoded?.first?.name, "Bench Press")
     }
 
+    // MARK: exercise-library grounding
+
+    func testUnknownExerciseNamesFiltersDedupsAndTrims() {
+        let known: Set<String> = ["pushups", "incline dumbbell press"]
+        let result = WorkoutService.unknownExerciseNames(
+            ["  Pushups ", "Yoga Ball Pike", "yoga ball pike", "INCLINE DUMBBELL PRESS", "", "Woodchopper"],
+            known: known)
+        // Known names drop (case-insensitive), dupes collapse, order preserved.
+        XCTAssertEqual(result, ["Yoga Ball Pike", "Woodchopper"])
+    }
+
+    func testGroundedExerciseNamePassesUnknownThrough() {
+        XCTAssertEqual(WorkoutService.groundedExerciseName("  Zzz Nonexistent Movement  "),
+                       "Zzz Nonexistent Movement")
+    }
+
+    func testGroundedExerciseNameUsesCatalogSpelling() {
+        // Whatever match() resolves for a confident query is what rows must carry
+        // — grounding and matching may never disagree, or scanned rows would
+        // miss their library entry (tracking type, poses).
+        if let matched = ExerciseDatabase.match(name: "pushups") {
+            XCTAssertEqual(WorkoutService.groundedExerciseName("pushups"), matched.name)
+        } else {
+            XCTFail("catalog no longer matches 'pushups' — grounding baseline broken")
+        }
+    }
+
     // MARK: buildScannedSessionSets
 
     func testBuildSessionSetsExpandsPerSet() {

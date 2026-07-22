@@ -68,6 +68,10 @@ struct WorkoutScanReviewView: View {
         }
         .sheet(item: $editingTemplate) { item in
             CreateTemplateView(prefill: (name: item.value.name, exercises: item.value.templateExercises)) {
+                // Any scanned movement the catalog doesn't know becomes a custom
+                // exercise so the template's rows resolve in the library
+                // (browse, tracking type, anatomy) — same as CSV import.
+                WorkoutService.autoRegisterUnknownExercises(item.value.templateExercises.map(\.name))
                 pendingTemplates.removeAll { $0.id == item.id }
                 savedCount += 1
                 onSaved()

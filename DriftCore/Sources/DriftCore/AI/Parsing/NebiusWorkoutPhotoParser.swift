@@ -317,11 +317,14 @@ private extension String {
 
 public extension ScannedTemplate {
     /// Map to the `WorkoutTemplate.TemplateExercise` shape (reps + cues fold into
-    /// `notes`, since a template exercise has no numeric reps field). Pure.
+    /// `notes`, since a template exercise has no numeric reps field). Names are
+    /// grounded to the catalog spelling so the prefilled editor and saved
+    /// template exact-resolve for tracking type / poses.
     var templateExercises: [WorkoutTemplate.TemplateExercise] {
         exercises.map { e in
             WorkoutTemplate.TemplateExercise(
-                name: e.name, sets: e.sets, isWarmup: e.isWarmup,
+                name: WorkoutService.groundedExerciseName(e.name),
+                sets: e.sets, isWarmup: e.isWarmup,
                 restSeconds: e.restSeconds ?? 90, notes: e.foldedNotes)
         }
     }
