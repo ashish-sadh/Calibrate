@@ -222,11 +222,15 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
             request.timeoutInterval = effectiveTimeout
 
             // True token streaming via URLSession.bytes — tokens reach the UI as
-            // generated instead of waiting for the full response. Only on the
-            // text path; vision requests keep the buffered path since the image
-            // body is already assembled. Test mocks (non-URLSession) also fall
-            // back to buffered. (#944)
-            if imageData == nil, let urlSession = session as? URLSession {
+            // generated instead of waiting for the full response. Vision turns
+            // stream too (2026-07-22): the buffered path left the connection
+            // BYTE-SILENT for the whole 40-115s model read, and cellular
+            // NATs/middleboxes reap idle-looking connections — big workout
+            // scans died on-device while the same call succeeded on Wi-Fi.
+            // Streaming keeps packets flowing once generation starts, and makes
+            // first-token progress real. Test mocks (non-URLSession) fall back
+            // to buffered. (#944)
+            if let urlSession = session as? URLSession {
                 return await streamWithBytes(urlSession: urlSession, request: request, timeout: effectiveTimeout, onToken: onToken)
             }
 

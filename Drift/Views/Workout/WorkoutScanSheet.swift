@@ -45,7 +45,7 @@ struct WorkoutScanSheet: View {
                 case .processing: processing
                 case .empty:     message(icon: "doc.text.magnifyingglass",
                                           title: "No workout found",
-                                          detail: "Couldn't spot a workout on that page. Try a clearer, straighter photo of the sets and reps.")
+                                          detail: "Couldn't spot a workout in that image. If there is one, get closer so the sets and reps fill the frame — small or blurry text reads as blank.")
                 case .failed(let why): message(icon: "exclamationmark.triangle",
                                                title: "Couldn't read that", detail: why)
                 case .review(let result):
@@ -249,8 +249,10 @@ struct WorkoutScanSheet: View {
 
     /// Downscale (long edge 2048 px — small margin handwriting was unreadable
     /// to the VL model at 1536 in the 2026-07-22 live test) and JPEG-encode.
-    /// Bigger than PhotoLogService's 1024 food rule on purpose; still ~750KB.
-    static func jpegForUpload(_ image: UIImage, maxLongEdge: CGFloat = 2048, quality: CGFloat = 0.8) -> Data? {
+    /// Bigger than PhotoLogService's 1024 food rule on purpose. q0.7: the live
+    /// size matrix read q0.7 identically to q0.8 at −18% upload (~615KB) —
+    /// upload seconds matter on a cellular uplink.
+    static func jpegForUpload(_ image: UIImage, maxLongEdge: CGFloat = 2048, quality: CGFloat = 0.7) -> Data? {
         let size = image.size
         let longEdge = max(size.width, size.height)
         let scale = longEdge > maxLongEdge ? maxLongEdge / longEdge : 1
