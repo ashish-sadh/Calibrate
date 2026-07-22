@@ -231,17 +231,23 @@ public final class LocalAIService {
     /// backend is `RemoteLLMBackend` — local models have no vision capability.
     /// Returns "" (triggering the remote-error path in the VM) when no remote
     /// backend is installed.
+    /// `maxTokens`/`timeout` override the chat defaults for structured-extraction
+    /// turns (e.g. a full-page workout scan emits JSON far beyond the 512-token
+    /// chat ceiling and can outrun the 60s chat deadline).
     public func respondDirectWithPhoto(
         systemPrompt: String,
         message: String,
         imageData: Data,
         visionModelID: String? = nil,
+        maxTokens: Int = 512,
+        timeout: TimeInterval? = nil,
         onToken: @escaping @Sendable (String) -> Void
     ) async -> String {
         guard let remote = backend as? RemoteLLMBackend else { return "" }
         return await remote.respondStreamingWithPhoto(
             to: message, imageData: imageData,
-            systemPrompt: systemPrompt, visionModelID: visionModelID, onToken: onToken
+            systemPrompt: systemPrompt, visionModelID: visionModelID,
+            maxTokens: maxTokens, timeout: timeout, onToken: onToken
         )
     }
 

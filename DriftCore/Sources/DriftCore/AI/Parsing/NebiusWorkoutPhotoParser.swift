@@ -171,10 +171,20 @@ public enum NebiusWorkoutPhotoParser {
             message: requestMessage(userNote: userNote),
             imageData: imageData,
             visionModelID: visionModelID,
+            maxTokens: scanMaxTokens,
+            timeout: scanTimeout,
             onToken: { _ in }
         )
         return decode(raw, referenceDate: Date())
     }
+
+    /// A full page (template grid + several dated sessions with per-set data)
+    /// emits well over the 512-token chat ceiling — truncation snapped the JSON
+    /// mid-object and read as "couldn't reach the cloud" (field bug, build 358).
+    public static let scanMaxTokens = 4096
+    /// The 72B VL model reading a dense handwritten page overruns the 60s chat
+    /// deadline; scans are a deliberate wait-for-it flow, so give it headroom.
+    public static let scanTimeout: TimeInterval = 180
 
     /// The user-turn text sent with the image; a non-blank note is appended as
     /// authoritative context. Pure so the note plumbing is Tier-0 testable.

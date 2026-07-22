@@ -182,14 +182,21 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
 
     /// Photo-capable variant. Embeds `imageData` (JPEG bytes) in the user
     /// content block alongside the text prompt, per each provider's vision API.
+    /// `maxTokens`/`timeout` override the chat defaults (512 / requestTimeout)
+    /// for structured-extraction turns: a full-page workout scan emits JSON far
+    /// beyond 512 tokens, and a 72B vision model reading a dense handwritten
+    /// page overruns the 60s chat deadline — truncation or timeout both
+    /// surfaced as a bogus "couldn't reach the cloud" (field bug, build 358).
     public func respondStreamingWithPhoto(
         to prompt: String,
         imageData: Data,
         systemPrompt: String,
         visionModelID: String? = nil,
+        maxTokens: Int = 512,
+        timeout: TimeInterval? = nil,
         onToken: @escaping @Sendable (String) -> Void
     ) async -> String {
-        await respondStreamingCore(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, visionModelID: visionModelID, onToken: onToken)
+        await respondStreamingCore(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, visionModelID: visionModelID, maxTokens: maxTokens, timeout: timeout, onToken: onToken)
     }
 
     private func respondStreamingCore(
@@ -198,16 +205,19 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
         systemPrompt: String,
         toolsJSON: String? = nil,
         visionModelID: String? = nil,
+        maxTokens: Int = 512,
+        timeout: TimeInterval? = nil,
         onToken: @escaping @Sendable (String) -> Void
     ) async -> String {
         errorBox.value = nil
+        let effectiveTimeout = timeout ?? requestTimeout
         guard let key = apiKey else {
             errorBox.value = .auth
             return ""
         }
         do {
-            var request = try buildRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: key, toolsJSON: toolsJSON, visionModelID: visionModelID)
-            request.timeoutInterval = requestTimeout
+            var request = try buildRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: key, toolsJSON: toolsJSON, visionModelID: visionModelID, maxTokens: maxTokens)
+            request.timeoutInterval = effectiveTimeout
 
             // True token streaming via URLSession.bytes — tokens reach the UI as
             // generated instead of waiting for the full response. Only on the
@@ -215,10 +225,10 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
             // body is already assembled. Test mocks (non-URLSession) also fall
             // back to buffered. (#944)
             if imageData == nil, let urlSession = session as? URLSession {
-                return await streamWithBytes(urlSession: urlSession, request: request, onToken: onToken)
+                return await streamWithBytes(urlSession: urlSession, request: request, timeout: effectiveTimeout, onToken: onToken)
             }
 
-            let (data, response) = try await dataWithTimeout(for: request)
+            let (data, response) = try await dataWithTimeout(for: request, timeout: effectiveTimeout)
             if let http = response as? HTTPURLResponse, http.statusCode != 200 {
                 errorBox.value = categorize(status: http.statusCode)
                 Log.app.error("RemoteLLMBackend: HTTP \(http.statusCode) (\(self.provider.rawValue))")
@@ -237,6 +247,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
     private func streamWithBytes(
         urlSession: URLSession,
         request: URLRequest,
+        timeout: TimeInterval,
         onToken: @escaping @Sendable (String) -> Void
     ) async -> String {
         do {
@@ -275,7 +286,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
                     }
                 }
                 group.addTask {
-                    try await Task.sleep(nanoseconds: UInt64(self.requestTimeout * 1_000_000_000))
+                    try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
                     throw RemoteTimeoutError()
                 }
                 defer { group.cancelAll() }
@@ -307,11 +318,11 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
     /// when a custom/mock `HTTPDataSession` is injected (URLSession's own
     /// timeout never runs in that path). The in-flight chat spinner can never
     /// hang indefinitely. #890
-    private func dataWithTimeout(for request: URLRequest) async throws -> (Data, URLResponse) {
+    private func dataWithTimeout(for request: URLRequest, timeout: TimeInterval) async throws -> (Data, URLResponse) {
         try await withThrowingTaskGroup(of: (Data, URLResponse).self) { group in
             group.addTask { try await self.session.data(for: request) }
             group.addTask {
-                try await Task.sleep(nanoseconds: UInt64(self.requestTimeout * 1_000_000_000))
+                try await Task.sleep(nanoseconds: UInt64(timeout * 1_000_000_000))
                 throw RemoteTimeoutError()
             }
             defer { group.cancelAll() }
@@ -331,22 +342,22 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
 
     // MARK: - Request Building
 
-    private func buildRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, toolsJSON: String? = nil, visionModelID: String? = nil) throws -> URLRequest {
+    private func buildRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, toolsJSON: String? = nil, visionModelID: String? = nil, maxTokens: Int = 512) throws -> URLRequest {
         switch provider {
         case .anthropic:
-            return try buildAnthropicRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey)
+            return try buildAnthropicRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey, maxTokens: maxTokens)
         case .openai, .nebius:
             guard let baseURL = provider.openAICompatibleBaseURL else { throw BackendError.invalidURL }
             // Image turns need a vision model — the text coach model (Qwen3) 400s
             // on images. Swap to visionModelID only when an image is attached.
             let model = (imageData != nil) ? (visionModelID ?? modelID) : modelID
-            return try buildOpenAICompatibleRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey, baseURL: baseURL, model: model, toolsJSON: toolsJSON)
+            return try buildOpenAICompatibleRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey, baseURL: baseURL, model: model, toolsJSON: toolsJSON, maxTokens: maxTokens)
         case .gemini:
             return try buildGeminiRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey)
         }
     }
 
-    private func buildAnthropicRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String) throws -> URLRequest {
+    private func buildAnthropicRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, maxTokens: Int = 512) throws -> URLRequest {
         guard let url = URL(string: "https://api.anthropic.com/v1/messages") else {
             throw BackendError.invalidURL
         }
@@ -368,7 +379,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
 
         let body: [String: Any] = [
             "model": modelID,
-            "max_tokens": 512,
+            "max_tokens": maxTokens,
             "stream": true,
             "system": systemPrompt,
             "messages": [["role": "user", "content": userContent]]
@@ -380,7 +391,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
     /// Build an OpenAI-compatible `/chat/completions` request. Shared by `.openai`
     /// (api.openai.com) and `.nebius` (api.studio.nebius.ai) — identical request
     /// body + SSE shape, only the base URL differs.
-    private func buildOpenAICompatibleRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, baseURL: String, model: String, toolsJSON: String? = nil) throws -> URLRequest {
+    private func buildOpenAICompatibleRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, baseURL: String, model: String, toolsJSON: String? = nil, maxTokens: Int = 512) throws -> URLRequest {
         guard let url = URL(string: "\(baseURL)/chat/completions") else {
             throw BackendError.invalidURL
         }
@@ -402,7 +413,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
 
         var body: [String: Any] = [
             "model": model,
-            "max_tokens": 512,
+            "max_tokens": maxTokens,
             "stream": true,
             "messages": [
                 ["role": "system", "content": systemPrompt],

@@ -557,6 +557,41 @@ struct RemoteLLMBackendTests {
         #expect(body["model"] as? String == "Qwen/Qwen2.5-VL-72B-Instruct")
     }
 
+    /// Structured-extraction photo turns (workout scan) must be able to raise
+    /// the 512-token chat ceiling and the 60s chat deadline — a full-page scan
+    /// truncated mid-JSON and surfaced as a bogus "couldn't reach the cloud"
+    /// (field bug, build 358).
+    @Test func photoTurnHonorsMaxTokensAndTimeoutOverrides() async throws {
+        let box = RequestBox()
+        let backend = RemoteLLMBackend(
+            provider: .nebius, modelID: "m", apiKey: "k",
+            session: CapturingSession(box: box))
+        _ = await backend.respondStreamingWithPhoto(
+            to: "extract", imageData: Data([0xFF, 0xD8, 0xFF]),
+            systemPrompt: "sys", visionModelID: "vl",
+            maxTokens: 4096, timeout: 180, onToken: { _ in })
+        let req = try #require(box.request)
+        let body = try #require(try? JSONSerialization.jsonObject(with: req.httpBody!) as? [String: Any])
+        #expect(body["max_tokens"] as? Int == 4096)
+        #expect(req.timeoutInterval == 180)
+    }
+
+    /// Chat photo turns that don't pass overrides keep the historical 512/60s
+    /// behavior — the scan knobs must not silently change chat economics.
+    @Test func photoTurnDefaultsUnchanged() async throws {
+        let box = RequestBox()
+        let backend = RemoteLLMBackend(
+            provider: .nebius, modelID: "m", apiKey: "k",
+            session: CapturingSession(box: box))
+        _ = await backend.respondStreamingWithPhoto(
+            to: "what is this", imageData: Data([0xFF, 0xD8, 0xFF]),
+            systemPrompt: "sys", visionModelID: "vl", onToken: { _ in })
+        let req = try #require(box.request)
+        let body = try #require(try? JSONSerialization.jsonObject(with: req.httpBody!) as? [String: Any])
+        #expect(body["max_tokens"] as? Int == 512)
+        #expect(req.timeoutInterval == 60)
+    }
+
     @Test func nebiusTextTurnUsesBaseModel() async {
         let box = RequestBox()
         let backend = RemoteLLMBackend(

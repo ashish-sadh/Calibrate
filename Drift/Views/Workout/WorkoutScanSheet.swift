@@ -178,7 +178,14 @@ struct WorkoutScanSheet: View {
         guard let result = await NebiusWorkoutPhotoParser.parse(
             imageData: imageData, visionModelID: AppConfig.coachVisionModelID,
             userNote: note.isEmpty ? nil : note) else {
-            stage = .failed("Couldn't reach the AI cloud. Check your connection and try again.")
+            // Distinguish "the call never made it" from "the reply didn't parse"
+            // — the field bug on build 358 was a truncated reply mislabelled as
+            // a connection failure, which sends the user chasing their Wi-Fi.
+            if LocalAIService.shared.lastRemoteError != nil {
+                stage = .failed("Couldn't reach the AI cloud. Check your connection and try again.")
+            } else {
+                stage = .failed("Drift got a reply but couldn't make sense of it. Try a straighter, closer photo — or add a note describing the page.")
+            }
             return
         }
         stage = result.isEmpty ? .empty : .review(result)
