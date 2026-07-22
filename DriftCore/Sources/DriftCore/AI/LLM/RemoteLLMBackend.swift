@@ -194,9 +194,10 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
         visionModelID: String? = nil,
         maxTokens: Int = 512,
         timeout: TimeInterval? = nil,
+        temperature: Double? = nil,
         onToken: @escaping @Sendable (String) -> Void
     ) async -> String {
-        await respondStreamingCore(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, visionModelID: visionModelID, maxTokens: maxTokens, timeout: timeout, onToken: onToken)
+        await respondStreamingCore(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, visionModelID: visionModelID, maxTokens: maxTokens, timeout: timeout, temperature: temperature, onToken: onToken)
     }
 
     private func respondStreamingCore(
@@ -207,6 +208,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
         visionModelID: String? = nil,
         maxTokens: Int = 512,
         timeout: TimeInterval? = nil,
+        temperature: Double? = nil,
         onToken: @escaping @Sendable (String) -> Void
     ) async -> String {
         errorBox.value = nil
@@ -216,7 +218,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
             return ""
         }
         do {
-            var request = try buildRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: key, toolsJSON: toolsJSON, visionModelID: visionModelID, maxTokens: maxTokens)
+            var request = try buildRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: key, toolsJSON: toolsJSON, visionModelID: visionModelID, maxTokens: maxTokens, temperature: temperature)
             request.timeoutInterval = effectiveTimeout
 
             // True token streaming via URLSession.bytes — tokens reach the UI as
@@ -342,22 +344,22 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
 
     // MARK: - Request Building
 
-    private func buildRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, toolsJSON: String? = nil, visionModelID: String? = nil, maxTokens: Int = 512) throws -> URLRequest {
+    private func buildRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, toolsJSON: String? = nil, visionModelID: String? = nil, maxTokens: Int = 512, temperature: Double? = nil) throws -> URLRequest {
         switch provider {
         case .anthropic:
-            return try buildAnthropicRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey, maxTokens: maxTokens)
+            return try buildAnthropicRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey, maxTokens: maxTokens, temperature: temperature)
         case .openai, .nebius:
             guard let baseURL = provider.openAICompatibleBaseURL else { throw BackendError.invalidURL }
             // Image turns need a vision model — the text coach model (Qwen3) 400s
             // on images. Swap to visionModelID only when an image is attached.
             let model = (imageData != nil) ? (visionModelID ?? modelID) : modelID
-            return try buildOpenAICompatibleRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey, baseURL: baseURL, model: model, toolsJSON: toolsJSON, maxTokens: maxTokens)
+            return try buildOpenAICompatibleRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey, baseURL: baseURL, model: model, toolsJSON: toolsJSON, maxTokens: maxTokens, temperature: temperature)
         case .gemini:
             return try buildGeminiRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey)
         }
     }
 
-    private func buildAnthropicRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, maxTokens: Int = 512) throws -> URLRequest {
+    private func buildAnthropicRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, maxTokens: Int = 512, temperature: Double? = nil) throws -> URLRequest {
         guard let url = URL(string: "https://api.anthropic.com/v1/messages") else {
             throw BackendError.invalidURL
         }
@@ -377,13 +379,14 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
             userContent = prompt
         }
 
-        let body: [String: Any] = [
+        var body: [String: Any] = [
             "model": modelID,
             "max_tokens": maxTokens,
             "stream": true,
             "system": systemPrompt,
             "messages": [["role": "user", "content": userContent]]
         ]
+        if let temperature { body["temperature"] = temperature }
         req.httpBody = try JSONSerialization.data(withJSONObject: body)
         return req
     }
@@ -391,7 +394,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
     /// Build an OpenAI-compatible `/chat/completions` request. Shared by `.openai`
     /// (api.openai.com) and `.nebius` (api.studio.nebius.ai) — identical request
     /// body + SSE shape, only the base URL differs.
-    private func buildOpenAICompatibleRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, baseURL: String, model: String, toolsJSON: String? = nil, maxTokens: Int = 512) throws -> URLRequest {
+    private func buildOpenAICompatibleRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, baseURL: String, model: String, toolsJSON: String? = nil, maxTokens: Int = 512, temperature: Double? = nil) throws -> URLRequest {
         guard let url = URL(string: "\(baseURL)/chat/completions") else {
             throw BackendError.invalidURL
         }
@@ -420,6 +423,9 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
                 ["role": "user", "content": userContent]
             ]
         ]
+        // Structured-extraction turns (workout scan) pin temperature 0 for
+        // deterministic reads; chat turns leave it unset (provider default).
+        if let temperature { body["temperature"] = temperature }
         // Native function-calling: splice the tools schema array (passed as a
         // Sendable JSON string) so the model returns structured tool_calls.
         if let toolsJSON,

@@ -193,9 +193,10 @@ struct WorkoutScanSheet: View {
 
     // MARK: - Image / PDF preprocessing
 
-    /// Downscale (long edge 1536 px — handwriting needs more detail than food)
-    /// and JPEG-encode. Mirrors PhotoLogService's upload rules.
-    static func jpegForUpload(_ image: UIImage, maxLongEdge: CGFloat = 1536, quality: CGFloat = 0.75) -> Data? {
+    /// Downscale (long edge 2048 px — small margin handwriting was unreadable
+    /// to the VL model at 1536 in the 2026-07-22 live test) and JPEG-encode.
+    /// Bigger than PhotoLogService's 1024 food rule on purpose; still ~750KB.
+    static func jpegForUpload(_ image: UIImage, maxLongEdge: CGFloat = 2048, quality: CGFloat = 0.8) -> Data? {
         let size = image.size
         let longEdge = max(size.width, size.height)
         let scale = longEdge > maxLongEdge ? maxLongEdge / longEdge : 1

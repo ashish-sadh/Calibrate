@@ -569,11 +569,14 @@ struct RemoteLLMBackendTests {
         _ = await backend.respondStreamingWithPhoto(
             to: "extract", imageData: Data([0xFF, 0xD8, 0xFF]),
             systemPrompt: "sys", visionModelID: "vl",
-            maxTokens: 4096, timeout: 180, onToken: { _ in })
+            maxTokens: 4096, timeout: 180, temperature: 0, onToken: { _ in })
         let req = try #require(box.request)
         let body = try #require(try? JSONSerialization.jsonObject(with: req.httpBody!) as? [String: Any])
         #expect(body["max_tokens"] as? Int == 4096)
         #expect(req.timeoutInterval == 180)
+        // temp 0 pinned: at the provider default the same notebook photo
+        // returned different weights per run (live test 2026-07-22).
+        #expect(body["temperature"] as? Double == 0)
     }
 
     /// Chat photo turns that don't pass overrides keep the historical 512/60s
@@ -590,6 +593,8 @@ struct RemoteLLMBackendTests {
         let body = try #require(try? JSONSerialization.jsonObject(with: req.httpBody!) as? [String: Any])
         #expect(body["max_tokens"] as? Int == 512)
         #expect(req.timeoutInterval == 60)
+        // Chat turns must NOT silently pin a temperature — provider default.
+        #expect(body["temperature"] == nil)
     }
 
     @Test func nebiusTextTurnUsesBaseModel() async {

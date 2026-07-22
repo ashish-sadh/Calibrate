@@ -241,13 +241,14 @@ public final class LocalAIService {
         visionModelID: String? = nil,
         maxTokens: Int = 512,
         timeout: TimeInterval? = nil,
+        temperature: Double? = nil,
         onToken: @escaping @Sendable (String) -> Void
     ) async -> String {
         guard let remote = backend as? RemoteLLMBackend else { return "" }
         return await remote.respondStreamingWithPhoto(
             to: message, imageData: imageData,
             systemPrompt: systemPrompt, visionModelID: visionModelID,
-            maxTokens: maxTokens, timeout: timeout, onToken: onToken
+            maxTokens: maxTokens, timeout: timeout, temperature: temperature, onToken: onToken
         )
     }
 

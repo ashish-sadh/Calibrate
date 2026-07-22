@@ -148,7 +148,10 @@ public enum NebiusWorkoutPhotoParser {
     - Bodyweight movements (pushups, pull-ups) → weightLbs null unless added weight is written.
     - DURATION exercises (yoga, plank, running, cycling, stretching): isDuration=true, put minutes in durationMinutes, leave sets empty (or one set with reps null).
     - TEMPLATE exercises: "sets" is the set count; put the rep target in "repsText" verbatim ("8-12", "20", "AMRAP"). Convert a written rest like "2 mins"→restSeconds 120, "1-1.5min"→90. Mark warmup rows isWarmup=true. Keep coaching cues in "notes".
-    - DATES: read written dates ("3/12", "3/26/26"). Output YYYY-MM-DD. If the year is missing, assume the most recent past occurrence relative to today. If a log has no date, use null.
+    - DATES are written MONTH-FIRST: "3/12" = March 12, "3/26/26" = March 26 2026, "4/30/26" = April 30 2026. A trailing two-digit year is 20YY (26 → 2026) — never output a year before 2020 for a handwritten log. Output YYYY-MM-DD. If the year is missing, assume the most recent past occurrence relative to today. If a log has no date, use null.
+    - Extract EVERY dated log separately — a page often has several dated columns/blocks side by side. Count the distinct dates first, then emit one session per date. Never emit the same column twice; if two sessions look identical, re-read the page.
+    - COMPLETENESS IS MANDATORY: transcribe every line of every dated log to its end — handwritten logs often number their lines (1) 2) 3)…); if a log shows 6 numbered lines, its session must have 6 exercises. Do not stop early, do not summarize, do not skip hard-to-read lines (make your best reading instead).
+    - A warmup list printed OUTSIDE the main table (e.g. a bulleted "Warmup — do as a circuit" block) still belongs in the template: one exercise per line with isWarmup=true.
     - SESSION name: a short label if written (e.g. "Push Day"); otherwise use null and the app will name it.
     - The user may include a NOTE with the image ("weights are in kg", "only log the right column", "this is my Tuesday push day"). Treat the note as authoritative — it overrides your reading of ambiguous marks (units, which section to extract, names, dates).
     - Return {"templates":[],"sessions":[]} when the image is not a workout at all.
@@ -173,6 +176,7 @@ public enum NebiusWorkoutPhotoParser {
             visionModelID: visionModelID,
             maxTokens: scanMaxTokens,
             timeout: scanTimeout,
+            temperature: scanTemperature,
             onToken: { _ in }
         )
         return decode(raw, referenceDate: Date())
@@ -185,6 +189,10 @@ public enum NebiusWorkoutPhotoParser {
     /// The 72B VL model reading a dense handwritten page overruns the 60s chat
     /// deadline; scans are a deliberate wait-for-it flow, so give it headroom.
     public static let scanTimeout: TimeInterval = 180
+    /// Extraction is transcription, not conversation: at the provider-default
+    /// sampling temperature the same notebook photo returned different weights
+    /// on every run (live test, 2026-07-22). Pin to 0 for determinism.
+    public static let scanTemperature: Double = 0
 
     /// The user-turn text sent with the image; a non-blank note is appended as
     /// authoritative context. Pure so the note plumbing is Tier-0 testable.
@@ -243,7 +251,13 @@ public enum NebiusWorkoutPhotoParser {
                                               sets: sets, durationMinutes: mins)
             }
             guard !exercises.isEmpty else { return nil }
-            let date = s.date.flatMap { ExerciseNameNormalizer.parseDate($0, referenceDate: referenceDate) }
+            // Implausible dates are misreads, not history: the live test read a
+            // handwritten "3/12/26" as 2023-12-26 despite prompt rules. Null the
+            // date instead — the review screen's picker (defaulting to today)
+            // makes the user set it, rather than silently logging years back.
+            let date = s.date
+                .flatMap { ExerciseNameNormalizer.parseDate($0, referenceDate: referenceDate) }
+                .flatMap { plausibleLogDate($0, referenceDate: referenceDate) ? $0 : nil }
             let name = s.name?.trimmingCharacters(in: .whitespaces).nilIfEmpty ?? "Scanned Workout"
             return ScannedSession(date: date, name: name,
                                   exercises: Array(exercises.prefix(ExerciseTranscriptBounds.maxEntries)))
@@ -252,6 +266,14 @@ public enum NebiusWorkoutPhotoParser {
         return ScannedWorkoutResult(
             templates: Array(templates.prefix(8)),
             sessions: Array(sessions.prefix(20)))
+    }
+
+    /// A believable date for a personal training log photographed now: within
+    /// the last two years and not more than a day ahead (timezone slack). Pure.
+    nonisolated static func plausibleLogDate(_ date: Date, referenceDate: Date) -> Bool {
+        let twoYearsBack = referenceDate.addingTimeInterval(-2 * 365.25 * 86400)
+        let oneDayAhead = referenceDate.addingTimeInterval(86400)
+        return date >= twoYearsBack && date <= oneDayAhead
     }
 
     /// First brace-balanced `{...}` substring, mirroring `NebiusExerciseLogger`.

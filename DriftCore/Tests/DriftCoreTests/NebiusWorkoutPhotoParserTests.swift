@@ -125,6 +125,32 @@ final class NebiusWorkoutPhotoParserTests: XCTestCase {
         XCTAssertTrue(result?.sessions.isEmpty ?? false)
     }
 
+    // MARK: implausible-date guard
+
+    func testMisreadAncientDateNullsOut() {
+        // Live test 2026-07-22: handwritten "3/12/26" came back as 2023-12-26.
+        // Years-old dates on a just-photographed log are misreads → null, so the
+        // review picker (defaulting to today) forces an explicit choice.
+        let raw = #"""
+        {"templates":[],"sessions":[{"date":"2023-12-26","name":"W","exercises":[
+          {"name":"pushups","isDuration":false,"sets":[{"reps":10,"weightLbs":null,"isWarmup":false}]}
+        ]}]}
+        """#
+        let result = NebiusWorkoutPhotoParser.decode(raw, referenceDate: referenceDate)
+        XCTAssertEqual(result?.sessions.count, 1)
+        XCTAssertNil(result?.sessions[0].date)
+    }
+
+    func testRecentDateSurvivesGuard() {
+        let raw = #"""
+        {"templates":[],"sessions":[{"date":"2026-03-12","name":"W","exercises":[
+          {"name":"pushups","isDuration":false,"sets":[{"reps":10,"weightLbs":null,"isWarmup":false}]}
+        ]}]}
+        """#
+        let result = NebiusWorkoutPhotoParser.decode(raw, referenceDate: referenceDate)
+        XCTAssertEqual(ymd(result?.sessions[0].date), "2026-03-12")
+    }
+
     // MARK: request message (user note rider)
 
     func testRequestMessageWithoutNote() {
