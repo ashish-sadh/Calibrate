@@ -26,6 +26,7 @@
 		133EE1957A7EEB3394C0A926 /* BackupSchedulerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F82FD7245B0E99CA6CB7090F /* BackupSchedulerTests.swift */; };
 		14837F24BC4C9D932FF61765 /* CompositeFoodExtractorFMEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = D573CD42E3A315491B5DD60D /* CompositeFoodExtractorFMEval.swift */; };
 		14A5FC3FED199FE6F2BF410E /* WorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 842E86DB07844085C6BE92E5 /* WorkoutView.swift */; };
+		14D7319F1326E60166987B4C /* WebSearchSettingsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFEA7EC8DCE26EE3C7942983 /* WebSearchSettingsCard.swift */; };
 		15E39B1D0294AB6762CE9EE8 /* ClarificationFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F86480D874FB7BC3461695E4 /* ClarificationFlowTests.swift */; };
 		16B57C56AAF7844EC90BE404 /* MealTextLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04037279FDE1F5FFE95EC83D /* MealTextLogger.swift */; };
 		1706838F0C81E8CA30C39676 /* SleepRecoveryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0EA24C208A1C32DB52709A4 /* SleepRecoveryView.swift */; };
@@ -465,6 +466,7 @@
 		CBA094F99189B3E26DB18B04 /* TodayDonutViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayDonutViewTests.swift; sourceTree = "<group>"; };
 		CCE57CE0133752BC4B5C80F3 /* CloudVisionKeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudVisionKeyTests.swift; sourceTree = "<group>"; };
 		CE1C2C759DEB2E972ADAF6B6 /* FoodLogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodLogViewModel.swift; sourceTree = "<group>"; };
+		CFEA7EC8DCE26EE3C7942983 /* WebSearchSettingsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSearchSettingsCard.swift; sourceTree = "<group>"; };
 		D0E8B598BCB7486A2C75848E /* WeightViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightViewModel.swift; sourceTree = "<group>"; };
 		D35C88323E5910DAB5D5641F /* HardcodedWhiteTextTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardcodedWhiteTextTests.swift; sourceTree = "<group>"; };
 		D40A67C320513F5DD21FE3EB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -958,6 +960,7 @@
 				5F6D2AA89F46A33EAE39DEAC /* MoreTabView.swift */,
 				568B1F4CBD74EE2765996ADD /* PhotoLogSettingsView.swift */,
 				64A47C3CBB0D20D0B0F2DCE9 /* RestorePickerView.swift */,
+				CFEA7EC8DCE26EE3C7942983 /* WebSearchSettingsCard.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -1292,6 +1295,7 @@
 				0905877698D1E8F326D639E6 /* V6Rings.swift in Sources */,
 				D81FBCA09BF00517DBEF07AA /* VoiceLogSheet.swift in Sources */,
 				E511CC6FC43C76917A602C5B /* VoiceMicButton.swift in Sources */,
+				14D7319F1326E60166987B4C /* WebSearchSettingsCard.swift in Sources */,
 				DFFA7CC42D60E67CB40222E8 /* WeightChartView.swift in Sources */,
 				E10A3A33C9E718C1D077AC02 /* WeightEntryView.swift in Sources */,
 				1E11E5682458FC83023281D7 /* WeightInsightsView.swift in Sources */,

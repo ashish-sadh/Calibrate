@@ -467,6 +467,13 @@ struct SettingsView: View {
                 }
                 .card()
 
+                // Coach web search — real search results for restaurant/chain
+                // nutrition ("chipotle bowl calories"). Provider ladder:
+                // Google Custom Search → Brave → DuckDuckGo (keyless fallback).
+                // Explicit cloud touch-point: only the search query leaves the
+                // device, sent to the configured provider.
+                WebSearchSettingsCard()
+
                 // Usage Insights — on-device feature counters (operator
                 // decision 2026-07-09: metrics yes, cloud no). Sharing is an
                 // explicit user action, never automatic.

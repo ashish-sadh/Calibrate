@@ -358,6 +358,36 @@ public enum Preferences {
         set { UserDefaults.standard.set(newValue, forKey: usdaApiKeyKey) }
     }
 
+    // MARK: - Web Search API Keys (coach web_search provider ladder)
+
+    private static let braveSearchApiKeyKey = "drift_brave_search_api_key"
+    private static let googleSearchApiKeyKey = "drift_google_search_api_key"
+    private static let googleSearchEngineIdKey = "drift_google_search_engine_id"
+
+    /// Google Custom Search JSON API key (console.cloud.google.com → enable
+    /// "Custom Search API"). Needs `googleSearchEngineId` alongside. Free 100
+    /// queries/day. Preferred rung of the web_search ladder when both are set.
+    public static var googleSearchApiKey: String {
+        get { UserDefaults.standard.string(forKey: googleSearchApiKeyKey) ?? "" }
+        set { UserDefaults.standard.set(newValue, forKey: googleSearchApiKeyKey) }
+    }
+
+    /// Programmable Search Engine ID (`cx`) from programmablesearchengine.google.com
+    /// — create an engine with "Search the entire web" enabled.
+    public static var googleSearchEngineId: String {
+        get { UserDefaults.standard.string(forKey: googleSearchEngineIdKey) ?? "" }
+        set { UserDefaults.standard.set(newValue, forKey: googleSearchEngineIdKey) }
+    }
+
+    /// Brave Search API key — alternate ladder rung (https://brave.com/search/api/,
+    /// free ~2k queries/mo). When no provider is keyed, web_search degrades to
+    /// DuckDuckGo Instant Answers (keyless, weak for nutrition). Same
+    /// UserDefaults pattern as `usdaApiKey`.
+    public static var braveSearchApiKey: String {
+        get { UserDefaults.standard.string(forKey: braveSearchApiKeyKey) ?? "" }
+        set { UserDefaults.standard.set(newValue, forKey: braveSearchApiKeyKey) }
+    }
+
     // MARK: - Alert dismissed-until timestamps (Unix epoch seconds; 0 = never dismissed)
 
     public static func alertDismissedUntil(key: String) -> Double {

@@ -208,6 +208,26 @@ public enum ToolRegistration {
                             let desc = "\(best.name) (per \(Int(best.servingSize))\(best.servingUnit)): \(Int(best.calories)) cal, \(Int(best.proteinG))g protein, \(Int(best.carbsG))g carbs, \(Int(best.fatG))g fat"
                             return .text("\(desc) Say 'log \(best.name.lowercased())' to add it.")
                         }
+                        // Last rung: real web search (Brave when keyed). Catches
+                        // restaurant/chain menu items — "chipotle chicken bowl" —
+                        // that the local DB, USDA (non-branded), and OFF (packaged
+                        // goods) all miss. Same privacy umbrella as the online
+                        // fallback: only the food query leaves the device. The
+                        // presentation stage synthesizes these snippets into an
+                        // answer with the source; the user then logs via
+                        // "log <name> <cal> cal" (custom-macro path).
+                        if Preferences.onlineFoodSearchEnabled {
+                            let webFindings = await IntentClassifier.withTimeout(seconds: 10) {
+                                try? await WebSearchTool.search(query: "\(lookupQuery) calories nutrition facts")
+                            } ?? nil
+                            if let webFindings, !webFindings.hasPrefix("No web results") {
+                                return .text("""
+                                "\(lookupQuery)" isn't in the food database, but here's what the web says:
+                                \(webFindings)
+                                Summarize the most credible calorie/macro figures for the user, name the source, and remind them they can log it with e.g. "log \(lookupQuery) 850 cal".
+                                """)
+                            }
+                        }
                     }
                 }
 
