@@ -31,9 +31,17 @@ enum MealTextLogger {
         guard AIBackendCoordinator.hasCoachCloud, Preferences.coachCloudFoodParseEnabled else { return nil }
         AIBackendCoordinator.installCoachBackend()
 
-        let raw = await LocalAIService.shared.respondDirect(
-            systemPrompt: systemPrompt, message: trimmed)
-        return decode(raw)
+        // Extraction budgets + one transient retry (CloudExtractionPolicy):
+        // chat's 512 tokens truncates a many-item meal (a 12-item thali is the
+        // notebook-page bug in food form), default temperature estimates
+        // different macros for the same text run-to-run.
+        return await CloudExtractionPolicy.withRetry {
+            let raw = await LocalAIService.shared.respondDirect(
+                systemPrompt: systemPrompt, message: trimmed,
+                maxTokens: CloudExtractionPolicy.textMaxTokens,
+                temperature: CloudExtractionPolicy.temperature)
+            return decode(raw)
+        }
     }
 
     /// Extract + decode the first top-level JSON object from the model's reply.

@@ -212,12 +212,19 @@ public final class LocalAIService {
 
     /// Respond with a custom system prompt, bypassing the built-in systemPrompt.
     /// Used by AIToolAgent so planner/chain/presentation steps don't get double-wrapped with tools.
-    public func respondDirect(systemPrompt: String, message: String, toolsJSON: String? = nil) async -> String {
+    /// `maxTokens`/`temperature`/`timeout` override the chat defaults for
+    /// structured-extraction turns (see `CloudExtractionPolicy`); they only
+    /// apply on the remote backend — local llama.cpp / FM ignore them.
+    public func respondDirect(systemPrompt: String, message: String, toolsJSON: String? = nil,
+                              maxTokens: Int = 512, temperature: Double? = nil,
+                              timeout: TimeInterval? = nil) async -> String {
         guard let backend else { return "Model not loaded." }
         // Native function-calling only flows to the remote (Nebius/OpenAI-compatible)
         // backend; local llama.cpp / Foundation Models stay prose-routed.
-        if let toolsJSON, let remote = backend as? RemoteLLMBackend {
-            return await remote.respond(to: message, systemPrompt: systemPrompt, toolsJSON: toolsJSON)
+        if let remote = backend as? RemoteLLMBackend,
+           toolsJSON != nil || maxTokens != 512 || temperature != nil || timeout != nil {
+            return await remote.respond(to: message, systemPrompt: systemPrompt, toolsJSON: toolsJSON,
+                                        maxTokens: maxTokens, temperature: temperature, timeout: timeout)
         }
         return await backend.respond(to: message, systemPrompt: systemPrompt)
     }

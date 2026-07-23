@@ -128,15 +128,16 @@ final class NebiusWorkoutPhotoParserTests: XCTestCase {
     // MARK: retry decision
 
     func testOnlyTransientErrorsRetry() {
-        XCTAssertTrue(NebiusWorkoutPhotoParser.isRetryable(.transient(0)))     // dropped/timeout
-        XCTAssertTrue(NebiusWorkoutPhotoParser.isRetryable(.transient(503)))   // provider 5xx
-        XCTAssertFalse(NebiusWorkoutPhotoParser.isRetryable(.auth))            // needs user action
-        XCTAssertFalse(NebiusWorkoutPhotoParser.isRetryable(.rateLimited))     // retry makes it worse
-        XCTAssertFalse(NebiusWorkoutPhotoParser.isRetryable(.quotaExceeded))
-        XCTAssertFalse(NebiusWorkoutPhotoParser.isRetryable(.malformed))
+        // Policy shared by ALL extraction paths (scan, exercise text, meal text).
+        XCTAssertTrue(CloudExtractionPolicy.isRetryable(.transient(0)))     // dropped/timeout
+        XCTAssertTrue(CloudExtractionPolicy.isRetryable(.transient(503)))   // provider 5xx
+        XCTAssertFalse(CloudExtractionPolicy.isRetryable(.auth))            // needs user action
+        XCTAssertFalse(CloudExtractionPolicy.isRetryable(.rateLimited))     // retry makes it worse
+        XCTAssertFalse(CloudExtractionPolicy.isRetryable(.quotaExceeded))
+        XCTAssertFalse(CloudExtractionPolicy.isRetryable(.malformed))
         // nil = reply arrived but didn't decode; temp-0 re-run returns the same
         // reply, so retrying only doubles the wait.
-        XCTAssertFalse(NebiusWorkoutPhotoParser.isRetryable(nil))
+        XCTAssertFalse(CloudExtractionPolicy.isRetryable(nil))
     }
 
     // MARK: implausible-date guard

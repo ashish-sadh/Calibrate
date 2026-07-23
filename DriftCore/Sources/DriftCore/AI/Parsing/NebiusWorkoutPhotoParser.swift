@@ -183,7 +183,7 @@ public enum NebiusWorkoutPhotoParser {
         guard CoachCloud.isConfigured else { return nil }
         CoachCloud.install()
 
-        for attempt in 1...2 {
+        return await CloudExtractionPolicy.withRetry(onRetry: { onStage?(.retrying) }) {
             onStage?(.sending)
             let firstToken = FirstTokenFlag()
             let raw = await LocalAIService.shared.respondDirectWithPhoto(
@@ -193,27 +193,13 @@ public enum NebiusWorkoutPhotoParser {
                 visionModelID: visionModelID,
                 maxTokens: scanMaxTokens,
                 timeout: scanTimeout,
-                temperature: scanTemperature,
+                temperature: CloudExtractionPolicy.temperature,
                 onToken: { _ in
                     if firstToken.markFired() { onStage?(.reading) }
                 }
             )
-            if let result = decode(raw, referenceDate: Date()) { return result }
-            // Decide whether the miss is worth a second attempt.
-            guard attempt == 1, isRetryable(LocalAIService.shared.lastRemoteError) else { return nil }
-            onStage?(.retrying)
+            return decode(raw, referenceDate: Date())
         }
-        return nil
-    }
-
-    /// Only transient faults retry — a dropped connection or provider 5xx can
-    /// succeed a second later; auth/quota/rate-limit will fail identically and
-    /// retrying just doubles the wait before the user sees the real problem.
-    /// A nil error means the reply arrived but didn't decode — retrying the
-    /// same image at temperature 0 would return the same reply, so don't.
-    nonisolated static func isRetryable(_ err: RemoteBackendError?) -> Bool {
-        if case .transient = err { return true }
-        return false
     }
 
     /// Thread-safe once-flag so the streaming callback fires `.reading` exactly
@@ -238,10 +224,6 @@ public enum NebiusWorkoutPhotoParser {
     /// 240s per attempt: longest observed live read was 115s on Mac Wi-Fi, and
     /// a device on cellular pays extra upload time on top.
     public static let scanTimeout: TimeInterval = 240
-    /// Extraction is transcription, not conversation: at the provider-default
-    /// sampling temperature the same notebook photo returned different weights
-    /// on every run (live test, 2026-07-22). Pin to 0 for determinism.
-    public static let scanTemperature: Double = 0
 
     /// The user-turn text sent with the image; a non-blank note is appended as
     /// authoritative context. Pure so the note plumbing is Tier-0 testable.

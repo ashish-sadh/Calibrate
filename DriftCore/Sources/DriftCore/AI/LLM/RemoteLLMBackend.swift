@@ -172,6 +172,18 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
         await respondStreamingCore(prompt: prompt, imageData: nil, systemPrompt: systemPrompt, toolsJSON: toolsJSON, onToken: { _ in })
     }
 
+    /// Text variant with per-request extraction overrides (mirrors the photo
+    /// variant): structured-extraction turns pass `CloudExtractionPolicy`
+    /// budgets instead of inheriting chat's 512-token / default-temperature /
+    /// 60s economics. No parameter defaults — callers state their budgets, and
+    /// the compiler keeps this unambiguous with the protocol `respond`.
+    public func respond(to prompt: String, systemPrompt: String, toolsJSON: String?,
+                        maxTokens: Int, temperature: Double?, timeout: TimeInterval?) async -> String {
+        await respondStreamingCore(prompt: prompt, imageData: nil, systemPrompt: systemPrompt,
+                                   toolsJSON: toolsJSON, maxTokens: maxTokens,
+                                   timeout: timeout, temperature: temperature, onToken: { _ in })
+    }
+
     public func respondStreaming(
         to prompt: String,
         systemPrompt: String,

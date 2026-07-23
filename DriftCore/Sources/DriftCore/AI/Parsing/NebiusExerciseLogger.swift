@@ -44,9 +44,16 @@ public enum NebiusExerciseLogger {
         guard CoachCloud.isConfigured else { return nil }
         CoachCloud.install()
 
-        let raw = await LocalAIService.shared.respondDirect(
-            systemPrompt: systemPrompt, message: trimmed)
-        return decode(raw)
+        // Extraction budgets + one transient retry (CloudExtractionPolicy):
+        // chat's 512 tokens truncates a long workout, default temperature
+        // parses the same text into different numbers run-to-run.
+        return await CloudExtractionPolicy.withRetry {
+            let raw = await LocalAIService.shared.respondDirect(
+                systemPrompt: systemPrompt, message: trimmed,
+                maxTokens: CloudExtractionPolicy.textMaxTokens,
+                temperature: CloudExtractionPolicy.temperature)
+            return decode(raw)
+        }
     }
 
     /// Extract + decode the first top-level JSON object, validate each entry

@@ -597,6 +597,22 @@ struct RemoteLLMBackendTests {
         #expect(body["temperature"] == nil)
     }
 
+    /// Text extraction turns (meal/exercise JSON) carry CloudExtractionPolicy
+    /// budgets on the wire — and plain chat turns stay untouched.
+    @Test func textTurnHonorsExtractionOverrides() async throws {
+        let box = RequestBox()
+        let backend = RemoteLLMBackend(
+            provider: .nebius, modelID: "m", apiKey: "k",
+            session: CapturingSession(box: box))
+        _ = await backend.respond(to: "2 rotis and dal", systemPrompt: "sys", toolsJSON: nil,
+                                  maxTokens: CloudExtractionPolicy.textMaxTokens,
+                                  temperature: CloudExtractionPolicy.temperature, timeout: nil)
+        let req = try #require(box.request)
+        let body = try #require(try? JSONSerialization.jsonObject(with: req.httpBody!) as? [String: Any])
+        #expect(body["max_tokens"] as? Int == 1024)
+        #expect(body["temperature"] as? Double == 0)
+    }
+
     @Test func nebiusTextTurnUsesBaseModel() async {
         let box = RequestBox()
         let backend = RemoteLLMBackend(
