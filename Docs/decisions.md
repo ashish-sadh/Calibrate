@@ -480,3 +480,20 @@ module's SkipUICompat.swift (Font.monospacedDigit, pressable()). Theme.swift is 
 first resident; workout views migrate next as their SkipUI compatibility is proven.
 RULE: any change under SharedUI/ (or DriftCore) is done only when BOTH builds pass —
 xcodebuild + `skip app launch --android` (or android-build-check.sh for core-only).
+
+## 2026-07-23: Extraction turns get their own cloud policy (never chat defaults) + live-interaction gate
+
+The workout-scan launch (builds 358-360) shipped three consecutive field failures, and
+every one was a CLASS bug inherited from chat-turn economics, invisible to unit mocks:
+(1) chat's hardcoded 512-token budget truncated page-sized extraction JSON mid-object —
+surfacing as a bogus "couldn't reach the cloud"; (2) provider-default sampling temperature
+made the same input transcribe into different numbers run-to-run; (3) the buffered vision
+path left the connection byte-silent for the whole 40-115s model read, so cellular NATs
+reaped it on-device while Mac Wi-Fi went 11/11. RESULT: `CloudExtractionPolicy` (DriftCore)
+is the single source for extraction budgets — temp 0, sized token budgets, transient-only
+single retry — and every extraction call site (meal text, exercise text, photo scan)
+references it; a new extraction feature must not call respondDirect bare. All remote turns
+now stream (vision included) — any >30s buffered HTTP call is cellular-hostile.
+RULE: changes to RemoteLLMBackend, CloudExtractionPolicy, or an extraction prompt run
+`scripts/live-cloud-check.sh` (Tier-4, DRIFT_LIVE_CLOUD=1) before shipping — mocks cannot
+catch truncation, sampling drift, or transport behavior; only live calls can.
