@@ -68,7 +68,6 @@ let logger: Logger = Logger(subsystem: "com.drift.health", category: "DriftAndro
 
     /* SKIP @bridge */public func onStop() {
         logger.debug("onStop")
-        Self.flushDefaults()
     }
 
     /* SKIP @bridge */public func onDestroy() {
@@ -78,18 +77,4 @@ let logger: Logger = Logger(subsystem: "com.drift.health", category: "DriftAndro
     /* SKIP @bridge */public func onLowMemory() {
         logger.debug("onLowMemory")
     }
-
-    // #1108: SkipFoundation's UserDefaults writes via SharedPreferences.apply()
-    // (async), and its synchronize() is a no-op — on this build the async
-    // flush never durably lands before process reclaim. Force a synchronous
-    // commit() when the Activity is hidden. MUST stay synchronous on the
-    // onStop thread — dispatching off-main risks not completing before
-    // process death, which defeats the purpose.
-    #if os(Android)
-    private static func flushDefaults() {
-        _ = try? AnyDynamicObject(className: "drift.android.AndroidPrefsFacade", arguments: []).flush() as Bool?
-    }
-    #else
-    private static func flushDefaults() {}
-    #endif
 }
