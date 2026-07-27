@@ -345,9 +345,8 @@ struct EditSetWeightField: View {
     @Binding var text: String
     let unit: WeightUnit
     var body: some View {
-        TextField("Weight (\(unit.displayName))", text: $text)
+        NumericField("Weight (\(unit.displayName))", text: $text)
             .textFieldStyle(.plain)
-            .keyboardType(.decimalPad)
             .padding(.horizontal, 12)
             .padding(.vertical, 12)
             .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 8))
@@ -357,9 +356,8 @@ struct EditSetWeightField: View {
 struct EditSetRepsField: View {
     @Binding var text: String
     var body: some View {
-        TextField("Reps", text: $text)
+        NumericField("Reps", text: $text, decimal: false)
             .textFieldStyle(.plain)
-            .keyboardType(.numberPad)
             .padding(.horizontal, 12)
             .padding(.vertical, 12)
             .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 8))

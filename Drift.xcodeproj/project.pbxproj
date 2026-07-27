@@ -133,6 +133,7 @@
 		96B6BBB4C02D93E14F28C043 /* AIChatView+Suggestions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 188A69D621CC2DF63ADFB21F /* AIChatView+Suggestions.swift */; };
 		9828F6D5E316631E7B0A8420 /* FoodLogSheetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EACDB02677C363A05FD0592 /* FoodLogSheetTests.swift */; };
 		98FF97CFE71A6BBCFF976259 /* UIFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1A5DA3E3543A99260250279 /* UIFlowTests.swift */; };
+		9A29F8037875F1A3BD01852E /* NumericField.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBA03C80C4A4C8407D09C43 /* NumericField.swift */; };
 		9ACECC13D2365A3DF7F2C28C /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F78E3B6C1497F6A200DF8095 /* ContentView.swift */; };
 		9B11BE8782BE0D44DD4D4816 /* GoalSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7AB5CF548B4E61C45C1485 /* GoalSetupView.swift */; };
 		9E576FCB247BD6516612E63F /* ManualFoodEntrySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4683CA86D3045B1534504B0 /* ManualFoodEntrySheet.swift */; };
@@ -498,6 +499,7 @@
 		EBF19C358E700091486400DD /* PromptOptimizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptOptimizer.swift; sourceTree = "<group>"; };
 		EC7D489024FD036D6FA417EA /* PlantPointsCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlantPointsCardView.swift; sourceTree = "<group>"; };
 		EE2D9672D96D6738FA36D4F2 /* AlgorithmSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlgorithmSettingsView.swift; sourceTree = "<group>"; };
+		EEBA03C80C4A4C8407D09C43 /* NumericField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumericField.swift; sourceTree = "<group>"; };
 		EF4E87433C72DCD46B0D423D /* TodayDonutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayDonutView.swift; sourceTree = "<group>"; };
 		EFC99231FE5E164320DFDCA5 /* LogMethodCardsRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogMethodCardsRow.swift; sourceTree = "<group>"; };
 		F1C54188E36BDCD10D5F753A /* MultiStageEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiStageEval.swift; sourceTree = "<group>"; };
@@ -590,6 +592,7 @@
 				814B3D811D16B9738D33196C /* FoodTabView.swift */,
 				D454B059C6C3366F1E55C00D /* MealCalendarPicker.swift */,
 				830DCA5606BA7ED09ECCB6DE /* MuscleHighlightCard.swift */,
+				EEBA03C80C4A4C8407D09C43 /* NumericField.swift */,
 				D80761BF94B2EA4BD8936542 /* ServingInputView.swift */,
 				5D8C188459B7425B0B58E0CA /* Symbols.swift */,
 				7CCE53CD3289EAA4CBDC5F8D /* TemplatePreviewSheet.swift */,
@@ -1260,6 +1263,7 @@
 				E82339BFF4831142E1E971E1 /* MuscleHighlightCard.swift in Sources */,
 				E08DD30A2BEE01D44C7552C2 /* NebiusRoutineGenerator.swift in Sources */,
 				DFBD5746DC08F1AAB8218EC8 /* NotificationService.swift in Sources */,
+				9A29F8037875F1A3BD01852E /* NumericField.swift in Sources */,
 				C0CB2A3D23179305338C50E4 /* NumericFieldSelectAll.swift in Sources */,
 				B2654B50471C75496A1AA0D7 /* NutritionLabelOCR.swift in Sources */,
 				6871D13EC81A65C9B88B16D6 /* PastDayLogBadge.swift in Sources */,

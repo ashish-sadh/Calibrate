@@ -270,11 +270,8 @@ struct WeightInputField: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            TextField(unit == .kg ? "72.5" : "160.0", text: $text)
+            NumericField(unit == .kg ? "72.5" : "160.0", text: $text)
                 .textFieldStyle(.roundedBorder)
-                // Decimal pad, matching the iOS entry sheet (ios-16
-                // ground truth) — was a full QWERTY (#1090 sweep).
-                .keyboardType(.decimalPad)
                 .font(.title2)
             Text(unit.displayName)
                 .font(.headline).foregroundStyle(Theme.textSecondary)

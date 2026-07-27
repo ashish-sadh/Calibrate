@@ -23,8 +23,7 @@ struct ServingInputView: View {
     var body: some View {
         VStack(spacing: 10) {
             // Amount field
-            TextField("1", text: $amount)
-                .keyboardType(.decimalPad)
+            NumericField("1", text: $amount)
                 .font(.title2.weight(.medium).monospacedDigit())
                 .multilineTextAlignment(.center)
                 .padding(.vertical, 10)

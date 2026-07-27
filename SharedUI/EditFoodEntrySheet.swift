@@ -233,8 +233,7 @@ struct EditFoodEntrySheet: View {
                             HStack {
                                 Text("Servings").font(.caption).foregroundStyle(Theme.textSecondary)
                                 Spacer()
-                                TextField("1", text: $editAmount)
-                                    .keyboardType(.decimalPad)
+                                NumericField("1", text: $editAmount)
                                     .font(.subheadline.monospacedDigit())
                                     .multilineTextAlignment(.trailing)
                                     .frame(width: 50)
@@ -479,8 +478,7 @@ struct EditableMacroField: View {
     var body: some View {
         VStack(spacing: 2) {
             Text(label).font(.caption2.weight(.semibold)).foregroundStyle(color)
-            TextField("0", text: $text)
-                .keyboardType(.numberPad)
+            NumericField("0", text: $text, decimal: false)
                 .font(.caption.weight(.medium).monospacedDigit())
                 .multilineTextAlignment(.center)
                 .frame(width: 45)
@@ -497,7 +495,7 @@ struct CalorieField: View {
     var body: some View {
         HStack {
             Text("Cal").font(.caption.weight(.medium)).foregroundStyle(Theme.textSecondary).frame(width: 30)
-            TextField("0", text: $text).keyboardType(.numberPad).font(.title2.weight(.bold).monospacedDigit()).multilineTextAlignment(.center)
+            NumericField("0", text: $text, decimal: false).font(.title2.weight(.bold).monospacedDigit()).multilineTextAlignment(.center)
         }
     }
 }

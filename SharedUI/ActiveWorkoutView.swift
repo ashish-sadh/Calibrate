@@ -1652,10 +1652,9 @@ struct SetCellField: View {
     let done: Bool
 
     var body: some View {
-        TextField(placeholder, text: $text)
+        NumericField(placeholder, text: $text, decimal: decimal)
             .textFieldStyle(.plain)
             .compactTextFieldPadding(vertical: 0)
-            .keyboardType(decimal ? .decimalPad : .numberPad)
             .font(.subheadline.monospacedDigit())
             .multilineTextAlignment(.center).frame(width: width)
             .padding(.vertical, 4).padding(.leading, leadingPad)
