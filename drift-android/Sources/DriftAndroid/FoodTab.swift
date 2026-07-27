@@ -10,12 +10,14 @@ import DriftCore
 /// ported tab presents until FoodSearchView/LogMealSheet port, and the
 /// serving-confirm stepper it logs through.
 struct FoodTab: View {
-    @State var warm = false
+    @State var warm = CoreResourcesBootstrap.isWarm
 
     var body: some View {
         if warm {
             FoodTabView(selectedTab: .constant(1))
         } else {
+            // Only ever visible on the very first entry before the one-time
+            // warm-up finishes; every later visit skips straight to content.
             ProgressView()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .background(Theme.background.ignoresSafeArea())

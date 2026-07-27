@@ -9,17 +9,26 @@ import DriftCore
 /// launch to `<files>/DriftCore_DriftCore.resources/` — the first candidate
 /// path of the SwiftPM-generated resource accessor.
 enum CoreResourcesBootstrap {
+    /// True once the one-time warm-up has finished — views use this to skip
+    /// their loading gate entirely instead of re-awaiting.
+    @MainActor static private(set) var isWarm = false
+
+    /// The warm-up runs EXACTLY ONCE per process (static-let task). Before
+    /// this, every warmUpDatabase() call re-ran install() — re-reading the
+    /// multi-MB seed files to compare sizes on every tab visit, which is why
+    /// the Food tab spinner lingered on each entry.
+    private static let warmTask: Task<Void, Never> = Task.detached(priority: .userInitiated) {
+        install()
+        _ = try? AppDatabase.shared.searchFoods(query: "warmup", limit: 1)
+        await MainActor.run { isWarm = true }
+    }
+
     /// Force the first AppDatabase open (migrate + food seed) OFF the main
     /// thread — @MainActor services (FoodService/WeightServiceAPI) are then
     /// cheap to call on main because the heavy one-time work is done.
+    /// Awaiting after the first completion returns immediately.
     static func warmUpDatabase() async {
-        await withCheckedContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                install()
-                _ = try? AppDatabase.shared.searchFoods(query: "warmup", limit: 1)
-                continuation.resume()
-            }
-        }
+        await warmTask.value
     }
 
     static let seedFiles = ["foods.json", "exercises.json", "biomarkers.json", "bodyDiagram.json"]
