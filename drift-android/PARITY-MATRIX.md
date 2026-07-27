@@ -63,6 +63,30 @@ not ported at all.
   needs real investigation into Skip's notification-permission bridge),
   #1097/#1098/#1099.
 
+- **2026-07-27 (executor #2, Sonnet):** Claimed the Opus plan on #1096 and
+  shipped it verbatim: Skip Fuse *shims* `UserNotifications`, so
+  `canImport(UserNotifications)` was true on Android and the real rest-end
+  notification branch (lazy `requestAuthorization`) compiled into the app —
+  that lazy permission ask is what relaunched `drift.android.MainActivity`
+  (harness-skip-permission-relaunches-mainactivity). Fix: two guards in
+  `SharedUI/ActiveWorkoutView.swift` tightened to
+  `#if canImport(UserNotifications) && !os(Android)`, routing Android to the
+  pre-existing `#else` no-op stubs — a pure narrowing, iOS byte-identical.
+  Verified on-device from a `pm revoke POST_NOTIFICATIONS` (notDetermined)
+  state: mark set 1 done → single MainActivity (`dumpsys activity
+  activities`), zero `requestAuthorization`/`UNUserNotification` in logcat,
+  rest bar counts down in-sheet; Finish ~2s later opens the completion sheet
+  ("Nice work!"), matching scout capture `23-finish-retry.png` — capture
+  `19-finish-options.png` (misnamed; its actual content is the dumped-to-
+  Today bug) never reproduced. iOS suite 1274/1274 green before commit.
+  Commit f5ceecc9. Also root-caused (did not fix, out of scope for this
+  plan) why the row-1 "done" toggle and "delete set" controls sit at
+  adjacent-but-distinct x-ranges in the same cell (~851-917 vs ~917-1043) —
+  a blind coordinate tap on the delete sub-range removed a *different* row
+  than the one tapped, worth a look if #1076's set-row interaction sweep
+  revisits this view (not reproduced carefully enough this session to file
+  with confidence — noting as a breadcrumb, not a bug report).
+
 ## Workout (epic #1064 · single-source: SharedUI/WorkoutView.swift hosted by WorkoutTab)
 
 | screen | sub-interaction | status | issue |
@@ -87,7 +111,7 @@ not ported at all.
 | Workout tab root | Delete Template / Remove All Templates alerts | unknown | |
 | Workout tab root | Delete Workout alert | unknown | |
 | Workout tab root | Import alert | unknown | |
-| ActiveWorkoutView | FIRST set-done → notif-permission moment relaunches MainActivity, dumps to Today | broken | #1096 |
+| ActiveWorkoutView | FIRST set-done → notif-permission moment relaunches MainActivity, dumps to Today | ok (fixed f5ceecc9) | #1096 |
 | ActiveWorkoutView | close → confirmationDialog (resume/discard/finish) | unknown | #1076 |
 | ActiveWorkoutView | add exercises → ExercisePickerView sheet | ok | |
 | ActiveWorkoutView | set row: decimal-pad keyboard appears, value commits | ok | |
