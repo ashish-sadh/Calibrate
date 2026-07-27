@@ -3,7 +3,7 @@ import DriftCore
 #if canImport(AudioToolbox)
 import AudioToolbox
 #endif
-#if canImport(UserNotifications)
+#if canImport(UserNotifications) && !os(Android)
 import UserNotifications
 #endif
 
@@ -916,7 +916,7 @@ struct ActiveWorkoutView: View {
 
     // MARK: - Rest-end notification (background fallback)
 
-    #if canImport(UserNotifications)
+    #if canImport(UserNotifications) && !os(Android)
     /// Identifier used so we can replace / cancel the pending request
     /// without touching any other Drift notification.
     private static let restEndNotificationID = "drift.workout.rest.end"
