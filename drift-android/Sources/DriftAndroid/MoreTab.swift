@@ -38,9 +38,29 @@ struct MoreTab: View {
                     .card()
 
                     VStack(alignment: .leading, spacing: 8) {
+                        Text("HEALTH CONNECT").sectionHeading()
+                        HStack(spacing: 6) {
+                            Image(systemName: "heart.fill").font(.caption).foregroundStyle(Theme.accent)
+                            Text("Weights from scale apps, steps, calories and sleep sync automatically when permissions are granted.")
+                                .font(.caption).foregroundStyle(Theme.textSecondary)
+                        }
+                        Button {
+                            Task { @MainActor in
+                                try? await DriftPlatform.health?.requestAuthorization()
+                                _ = try? await DriftPlatform.health?.syncWeight()
+                            }
+                        } label: {
+                            Text("Connect / Sync now")
+                                .font(.caption.weight(.semibold)).foregroundStyle(Theme.accent)
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .card()
+
+                    VStack(alignment: .leading, spacing: 8) {
                         Text("COMING TO ANDROID").sectionHeading()
                         ForEach(["Drift Coach chat + voice", "Photo & barcode logging",
-                                 "Health Connect sync", "Sleep, cycle & biomarkers",
+                                 "Sleep, cycle & biomarkers detail screens",
                                  "Backup & restore"], id: \.self) { item in
                             HStack(spacing: 6) {
                                 Circle().fill(Theme.textQuaternary).frame(width: 5, height: 5)
@@ -50,6 +70,13 @@ struct MoreTab: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .card()
+
+                    // Build stamp — diagnosing "which build are you on" from a
+                    // screenshot instead of guessing (2026-07-27 incident).
+                    Text("Drift for Android · build \(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?")")
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.top, 4)
                 }
                 .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 100)
             }
