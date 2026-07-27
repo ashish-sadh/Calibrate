@@ -12,6 +12,34 @@ not ported at all.
 
 ## Session notes (append-only)
 
+- **2026-07-27 (scout #3, Fable):** Workout unknown-row burn-down, part 2, on build 48
+  (verified f5ceecc9 in-binary first). Drove: past-workout sheet (pastDate badge Jul 26 +
+  close-confirm), voice/text sheet end-to-end (typed → LOCAL parse → review; #1079 holds —
+  canonical names, no junk-create; unmatched → "Not in library" resolve → picker → Add
+  applies), Import alert (Load Package I → "Added 0", name-dedup DB-safe), picker
+  leading-swipe Favorite full round-trip (Favorites section materializes; star.slash
+  collapses to star.fill → noted on #1099), custom-exercise sheet (name + 7-part Targets
+  menu; canceled unsaved — no custom-delete API exists), rest-chip menu (6 options
+  0:30–3:00; post-select chip state unverified, see below). 10 rows resolved. Filed
+  **#1106 P1** (Fuse keeps the sheet's @State viewModel alive across presentations —
+  Cancel → reopen resumes the stale parsed session and exercises ACCUMULATE across
+  canceled sessions; double-log risk; iOS resets by construction) and **#1107 P2** (two
+  pre-#1079 raw-utterance customs — "3x10 bench press at 135" ×2 — permanently pollute
+  "Your Exercises"; no delete path). **Session cut at ~60%: the executor lane
+  (claude -p /android-parity, live since 05:53) reinstalled the APK mid-drive — logcat
+  "Package REPLACED" 06:10:42 + 2× "app died, no saved state" (06:08:34, 06:10:01)
+  killed my active-workout sheet; evidence + proposed emulator mutex commented on #1100.
+  Aborted device work rather than bank phantom evidence — next scout: ps-check for a
+  live executor BEFORE driving.** Still unknown: per-set warmup flag, active-row→detail
+  nav, WorkoutDetailView edit-set/swipe-delete/menu drive-throughs, browser custom CTA,
+  BodyMap tap→template. New harness datum: cold-launch FIRST composition can exceed 5s
+  on SwiftShader — full-screen mangled intermediate (1-char-wide vertical text columns)
+  at 5s post-launch, settled at ~8s; the 2.5s popup rule extends to whole-screen first
+  composition — never file a render bug off a first screenshot (checked: #1093 is about
+  dead TAPS, unaffected). DB left clean: voice sessions canceled (and died with the
+  process — nothing persists, per #1102's own mechanics), custom sheet canceled,
+  favorite round-tripped, package load added 0, in-flight workouts never saved.
+
 - **2026-07-27 (scout #2, Fable):** Workout unknown-row burn-down (0-FOCUS): drove
   the full create-template flow (name → picker multi-select → edit-exercise sheet:
   stepper bounds, rest dropdown, warmup toggle → sectioned save), template preview
@@ -151,8 +179,8 @@ not ported at all.
 | Workout tab root | Start Empty Workout → ActiveWorkoutView sheet | ok | |
 | Workout tab root | Muscle Recovery body map + per-group chips (soreness data) | ok | |
 | Workout tab root | resume banner ("Workout in progress — Resume") — renders same-process only; on-disk persistence broken | ok | #1102 |
-| Workout tab root | past-workout log sheet (`showingPastWorkout`) | unknown | |
-| Workout tab root | voice/text log sheet (`showingVoiceLog` → ExerciseVoiceLogSheet) | unknown | |
+| Workout tab root | past-workout log sheet → ActiveWorkoutView(pastDate:) w/ Jul-26 date badge; close-confirm fires | ok | save path not driven |
+| Workout tab root | voice/text log sheet: typed entry → parse → review card → Log CTA (see ExerciseVoiceLogSheet rows) | ok | parse=LOCAL tier; Nebius residual 0-AI-LADDER |
 | Workout tab root | scan workout sheet (`showingScan` → WorkoutScanSheet, iOS-only file) | missing | #1095 |
 | Workout tab root | create template sheet (`showingCreateTemplate` → CreateTemplateView) | ok | |
 | Workout tab root | edit template sheet (`editingTemplateForEdit`; via preview Edit, prefilled + Update CTA) | ok | |
@@ -161,7 +189,7 @@ not ported at all.
 | Workout tab root | Rename Template alert — `showingRenameAlert` set nowhere: dead code on BOTH platforms | ok | |
 | Workout tab root | Delete Template alert — dead code both platforms (preview deletes immediately, same as iOS); Remove All alert reachable via ⋮ (menu verified, alert itself not driven) | ok | |
 | Workout tab root | Delete Workout alert — trigger lives in the iOS-only history contextMenu; Android deletes via detail ⋮ | ios-only-by-design | |
-| Workout tab root | Import alert (package-load result) | unknown | |
+| Workout tab root | Import alert: ⋮ Load Package I → "Added 0 Drift Package I templates" + OK (name-dedup, DB-safe) | ok | |
 | ActiveWorkoutView | FIRST set-done → notif-permission moment relaunches MainActivity, dumps to Today | ok (fixed f5ceecc9) | #1096 |
 | ActiveWorkoutView | close → confirmationDialog (Minimize / Discard workout / Keep going + message) | ok | |
 | ActiveWorkoutView | set done ALSO pops keyboard + cursor into notes/Tip TextField (iOS is silent) | deviation | #1103 |
@@ -171,7 +199,7 @@ not ported at all.
 | ActiveWorkoutView | implausible-weight confirmation dialog ("really heavy") | ok | |
 | ActiveWorkoutView | set row: prev-weight ghost values + prefill | ok | |
 | ActiveWorkoutView | set row: done toggle ✓, per-exercise kg/lbs header menu ✓ (flip re-labels, doesn't rewrite field text — identical shared code); per-set warmup flag not driven | ok | |
-| ActiveWorkoutView | rest-time chip Menu (30s–3:00 per exercise) | unknown | |
+| ActiveWorkoutView | rest-time chip Menu: opens w/ 6 options 0:30–3:00 | ok | chip-update after select unverified — lane collision (#1100) killed app; cheap re-check |
 | ActiveWorkoutView | set done → green tint + inline rest timer countdown + coach toast | ok | |
 | ActiveWorkoutView | exercise ⋮ (xmark.circle) menu: Favorite / Track by Time (drawn clock) / Remove — the Android contextMenu replacement | ok | |
 | ActiveWorkoutView | command strip: tap → focus + IME with send action (parse path = Nebius residual, 0-AI-LADDER) | ok | |
@@ -181,9 +209,10 @@ not ported at all.
 | ActiveWorkoutView | resume drops Previous-column ghosts (shows "—") — re-verify after #1102 lands (process-death resume currently unreachable) | deviation | #1098 |
 | ExercisePickerView | search field: autofocus, live results, tap result w/ keyboard up | ok | |
 | ExercisePickerView | recent/your/all sections + last-weight decoration | ok | |
-| ExercisePickerView | row .swipeActions(leading) + Android fallback | unknown | #1076 |
+| ExercisePickerView | row .swipeActions(leading): swipe reveals Favorite, tap → Favorites section appears; Unfavorite restores | ok | star.slash→star.fill collapse noted on #1099 |
 | ExercisePickerView | multi-select circles + "Add N Exercises" batch CTA | ok | |
-| ExercisePickerView | custom exercise sheet (`showingCustom`) | unknown | |
+| ExercisePickerView | custom exercise sheet: name field + Targets menu (7 parts) + Add/Cancel | ok | save-path not driven (no custom-delete API; junk-averse) |
+| ExercisePickerView | "Your Exercises" carries pre-#1079 raw-utterance customs ×2; no delete path exists | deviation | #1107 |
 | ExerciseBrowserView | body-part filter chips row visible + filtering (bugsweep-A FIXED) | ok | |
 | ExerciseBrowserView | search field live filter (char-by-char, combined w/ chip) | ok | |
 | ExerciseBrowserView | rows: pose photo thumbnails + distinct equipment glyphs | ok | |
@@ -204,11 +233,12 @@ not ported at all.
 | WorkoutDetailView | set row .swipeActions(trailing) delete | unknown | |
 | WorkoutDetailView | Edit Set (iOS alert / Android sheet stand-in) | unknown | |
 | WorkoutDetailView | menu actions drive-through (rename/delete/save/share sheets) | unknown | |
-| ExerciseVoiceLogSheet | voice/text parse via Nebius ladder (#1079 fixed raw-name save; re-verify) | unknown | 0-AI-LADDER |
-| ExerciseVoiceLogSheet | resolve-target sheet (`resolveTarget`) | unknown | |
+| ExerciseVoiceLogSheet | typed parse → review: "3x10 bench press at 135" → canonical Bench Press card (#1079 re-verified live) | ok | parse=LOCAL tier; Nebius wiring residual (0-AI-LADDER) |
+| ExerciseVoiceLogSheet | resolve-target: unmatched name → "Not in library — tap to pick" → full picker → select+Add applies name to row | ok | |
+| ExerciseVoiceLogSheet | Cancel keeps parsed session — reopen resumes stale review, exercises accumulate (iOS resets) | deviation | #1106 |
 | BodyMapView (recovery) | muscle figure colored by soreness (front+back render) | ok | |
 | BodyMapView (recovery) | tap muscle → suggested recovery template | unknown | |
-| MuscleHighlightCard | per-workout muscle highlight rendering | unknown | |
+| MuscleHighlightCard | only render site is ExerciseDetailView muscle diagrams (device-verified ok above); "per-workout" premise stale | ok | source-resolved |
 
 ## Food (epic #1062 · single-source: SharedUI/FoodTabView.swift hosted by FoodTab)
 
