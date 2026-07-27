@@ -497,3 +497,22 @@ now stream (vision included) — any >30s buffered HTTP call is cellular-hostile
 RULE: changes to RemoteLLMBackend, CloudExtractionPolicy, or an extraction prompt run
 `scripts/live-cloud-check.sh` (Tier-4, DRIFT_LIVE_CLOUD=1) before shipping — mocks cannot
 catch truncation, sampling drift, or transport behavior; only live calls can.
+
+## 2026-07-27: food.serving_size is GRAMS, always — count-portions ride the name + piece_size_g
+
+Field report ("chia calories are off", both platforms): "Chia Seeds" was seeded
+serving_size=2 serving_unit="tbsp" — a COUNT in the field every serving conversion
+divides as GRAMS. The tbsp keyword unit (10g) computed 10÷2 = 5 servings → 690 cal
+shown for one tablespoon (~10×). 31 seed rows shared the pattern (seeds, tbsp
+condiments, cup salads, piece snacks). The trap had been found ONCE before — the
+AI-chat lookup grew a guard on 2026-07-14 — but the fix stayed in that one path and
+the data was never corrected, so every other surface kept multiplying. RESULT: all
+rows gram-normalized (human portion stays in the name, per-piece weight in
+piece_size_g); ServingUnit.smartUnits returns a single opaque "serving" unit for any
+count-style row so scanned/user rows can't gram-multiply; Tier-0 lint
+(foodsJSONServingSizesAreGramSemantics) bans count-semantics rows and >9.2 cal/g
+densities from shipping.
+RULE: serving_size always means grams (ml for liquids). A "2 tbsp" or "3 pieces"
+portion belongs in the display name and piece_size_g, never in serving_size. And when
+a data-shape bug gets a guard in one consumer, fix the DATA and grep the other
+consumers — a semantics bug patched at one call site is still live at every other.
