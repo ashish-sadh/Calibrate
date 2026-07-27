@@ -12,6 +12,30 @@ not ported at all.
 
 ## Session notes (append-only)
 
+- **2026-07-27 (executor, Sonnet):** Executed #1102's plan exactly: `WorkoutService.
+  saveSession`/`loadSession` switched from `UserDefaults` `Data` to `String` (JSON),
+  with a legacy-Data read fallback. 2 new Tier-0 tests, full DriftCore + iOS suites
+  green (516f85cd, pushed). **On-device verification found the fix insufficient** —
+  filed **#1108 P0**: UserDefaults writes made during app *runtime* never reach
+  `shared_prefs/defaults.xml` on this build, for ANY value type, not just Data.
+  Proven 5 ways: scenePhase-background persist (HOME press, confirmed real
+  onPause/onStop via dumpsys — no write), 30s auto-save tick (90s undisturbed
+  foreground wait — no write), the explicit synchronous "Minimize" button call
+  (write demonstrably executes in-process — Resume banner shows — but still never
+  hits disk after 90s), the mandated `am force-stop` + relaunch repro (session
+  genuinely lost, no banner), and an unrelated control test — the More tab weight-
+  unit lbs/kg toggle (plain String/enum preference, zero relation to WorkoutService)
+  — which visibly recomposes in the UI but never touches `defaults.xml` either.
+  `shared_prefs/` mtime stayed frozen at the last fresh-install timestamp through
+  the entire ~30min session. Root cause unknown (Skip Fuse bridge's disk-flush
+  mechanism, not the Swift-side code) — `needs-plan`, not a mechanical fix. Flagged
+  **#1104** (same String pattern, was `planned`) directly and relabeled it
+  `needs-plan` — it would very likely hit the identical wall since its own
+  Done-When requires the same `am force-stop` survival test. #1102 relabeled
+  `planned` → `blocked` (dependency #1108); do not close until #1108 lands and the
+  Variant A/B repro is re-verified. No publish this session (DriftCore-only change,
+  no user-visible improvement yet given #1108).
+
 - **2026-07-27 (scout #3, Fable):** Workout unknown-row burn-down, part 2, on build 48
   (verified f5ceecc9 in-binary first). Drove: past-workout sheet (pastDate badge Jul 26 +
   close-confirm), voice/text sheet end-to-end (typed → LOCAL parse → review; #1079 holds —
@@ -178,7 +202,7 @@ not ported at all.
 | Workout tab root | Templates ⋮ menu (New Template / Load Packages I–IV / Remove All; Import iOS-only) | ok | |
 | Workout tab root | Start Empty Workout → ActiveWorkoutView sheet | ok | |
 | Workout tab root | Muscle Recovery body map + per-group chips (soreness data) | ok | |
-| Workout tab root | resume banner ("Workout in progress — Resume") — renders same-process only; on-disk persistence broken | ok | #1102 |
+| Workout tab root | resume banner ("Workout in progress — Resume") — renders same-process only; on-disk persistence broken | broken | #1108 |
 | Workout tab root | past-workout log sheet → ActiveWorkoutView(pastDate:) w/ Jul-26 date badge; close-confirm fires | ok | save path not driven |
 | Workout tab root | voice/text log sheet: typed entry → parse → review card → Log CTA (see ExerciseVoiceLogSheet rows) | ok | parse=LOCAL tier; Nebius residual 0-AI-LADDER |
 | Workout tab root | scan workout sheet (`showingScan` → WorkoutScanSheet, iOS-only file) | missing | #1095 |
@@ -205,8 +229,8 @@ not ported at all.
 | ActiveWorkoutView | command strip: tap → focus + IME with send action (parse path = Nebius residual, 0-AI-LADDER) | ok | |
 | ActiveWorkoutView | exercise row → NavigationLink ExerciseDetailView | unknown | |
 | ActiveWorkoutView | finish → options sheet (save-as-template/favorite) → completion card + share text | ok | |
-| ActiveWorkoutView | mid-workout kill + resume — SavedSession NEVER persists on Android (UserDefaults Data write dropped by Skip bridge); whole workout lost on process death, both kill variants | broken | #1102 |
-| ActiveWorkoutView | resume drops Previous-column ghosts (shows "—") — re-verify after #1102 lands (process-death resume currently unreachable) | deviation | #1098 |
+| ActiveWorkoutView | mid-workout kill + resume — SavedSession NEVER persists on Android; whole workout lost on process death, both kill variants. #1102's Data→String fix landed (516f85cd) but did NOT resolve it — deeper bug, see #1108 | broken | #1108 |
+| ActiveWorkoutView | resume drops Previous-column ghosts (shows "—") — re-verify after #1108 lands (process-death resume currently unreachable) | deviation | #1098 |
 | ExercisePickerView | search field: autofocus, live results, tap result w/ keyboard up | ok | |
 | ExercisePickerView | recent/your/all sections + last-weight decoration | ok | |
 | ExercisePickerView | row .swipeActions(leading): swipe reveals Favorite, tap → Favorites section appears; Unfavorite restores | ok | star.slash→star.fill collapse noted on #1099 |
