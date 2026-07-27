@@ -328,7 +328,7 @@ not ported at all.
 | More tab | photo-log settings | missing | #1067 |
 | More tab | web search settings card | missing | #1067 |
 | More tab | Apple-Health sync dialog (→ Health Connect equivalent) | missing | #1070 |
-| Health Connect | connection flow + permission grant | unknown | #1070/#1090 |
+| Health Connect | connection flow + permission grant | confirmed missing: `onLaunch()` calls `requestAuthorization()` silently, no settings-hub entry, sync failures swallowed by `try?` — worse than iOS's explicit "Sync from Apple Health" button + status text + past-sync dialog | #1070/#1090 |
 
 ## Coach / AI chat (epic #1066 · iOS-only: Drift/Views/AI/**)
 
