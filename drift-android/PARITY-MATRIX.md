@@ -12,6 +12,32 @@ not ported at all.
 
 ## Session notes (append-only)
 
+- **2026-07-27 (scout #4, Fable):** SOURCE-ONLY sweep — ps-check found the executor
+  lane live (16+ min in, #1108 WIP on the tree) so the emulator was never touched
+  (scout #3's collision lesson applied). (1) Post-manual-window enumeration refresh:
+  operator checkpoint e8821123 (07-26) added the SetEntrySanity set-done dialog to
+  shared ActiveWorkoutView — reconciled: scout #1's "implausible-weight" ok row IS
+  this dialog's ceiling variant (build 44 postdates the 22:56 checkpoint; builds 46+
+  published 01:55+); annotated the un-driven variants (3× jump-from-last, reps>100,
+  duration>90m, "Let me fix it" path) + the bare-"form tips"→current-exercise
+  refinement. (2) WorkoutScan tracking hole closed: #1095 closed descoping scan to
+  #1063, but #1063 never enumerated workout scan and carries no needs-plan label —
+  the operator-flagged gap (0-RESUME.b) sat in no lane's queue. Filed **#1110 P2
+  needs-plan** (scoped port: picker/streaming seams, hardening-commit inventory,
+  DriftCore-extraction question, done-when); both scan rows repointed #1095→#1110.
+  (3) Food area sharpened from source (next in rotation, most unknowns): FoodTabView
+  gating is DISCIPLINED — every iOS-only sheet's entry affordance is gated with it
+  (no #1093-class dead taps found in source). 8 unknown rows → missing (recipe
+  builder, combos+combo-log, goal setup, plant points detail, confirm-log,
+  CombosView, ManualFoodEntrySheet, LogMealSheet — all under #1062/#1067),
+  suggestion chips → deviation (Android quick-logs directly w/ toast undo,
+  documented interim), 2 rows added (Snap shortcut missing #1063; entry-row
+  contextMenu with Log Again + Move Up/Down as real residuals). Compiled-shared
+  rows (calendar sheet, edit sheet, timeline, donut, serving stepper) stay unknown
+  pending an uncontended-emulator drive — that's the next scout's food work, plus
+  the 5 leftover workout drive-throughs from scout #3. 1 issue filed, no code
+  touched, worker WIP (DriftAndroidApp.swift, AndroidPrefsFacade.kt) left alone.
+
 - **2026-07-27 (executor, Sonnet):** Executed #1102's plan exactly: `WorkoutService.
   saveSession`/`loadSession` switched from `UserDefaults` `Data` to `String` (JSON),
   with a legacy-Data read fallback. 2 new Tier-0 tests, full DriftCore + iOS suites
@@ -205,7 +231,7 @@ not ported at all.
 | Workout tab root | resume banner ("Workout in progress — Resume") — renders same-process only; on-disk persistence broken | broken | #1108 |
 | Workout tab root | past-workout log sheet → ActiveWorkoutView(pastDate:) w/ Jul-26 date badge; close-confirm fires | ok | save path not driven |
 | Workout tab root | voice/text log sheet: typed entry → parse → review card → Log CTA (see ExerciseVoiceLogSheet rows) | ok | parse=LOCAL tier; Nebius residual 0-AI-LADDER |
-| Workout tab root | scan workout sheet (`showingScan` → WorkoutScanSheet, iOS-only file) | missing | #1095 |
+| Workout tab root | scan workout sheet (`showingScan` → WorkoutScanSheet, iOS-only file; scan-primary entry REPLACED voice/text on iOS — Android still shows the legacy voice/text sheet) | missing | #1110 (#1095 closed-descoped) |
 | Workout tab root | create template sheet (`showingCreateTemplate` → CreateTemplateView) | ok | |
 | Workout tab root | edit template sheet (`editingTemplateForEdit`; via preview Edit, prefilled + Update CTA) | ok | |
 | Workout tab root | exercise browser sheet (`showingExerciseBrowser`) | ok | |
@@ -220,13 +246,13 @@ not ported at all.
 | ActiveWorkoutView | add exercises → ExercisePickerView sheet | ok | |
 | ActiveWorkoutView | set row: decimal-pad keyboard appears, value commits | ok | |
 | ActiveWorkoutView | set row: focus does NOT select-all — typing inserts (185+200 → 120085) | deviation | #1097 |
-| ActiveWorkoutView | implausible-weight confirmation dialog ("really heavy") | ok | |
+| ActiveWorkoutView | SetEntrySanity set-done dialog (operator e8821123 07-26; the driven "really heavy" = its absolute-ceiling variant). Un-driven variants share the mechanism: 3× jump-from-last (+100 lb floor), reps>100, duration>90m, "Let me fix it" cancel path; markSetDone now stable-ID (survives index shifts across the confirm round-trip) | ok | ceiling variant driven post-checkpoint (build 44) |
 | ActiveWorkoutView | set row: prev-weight ghost values + prefill | ok | |
 | ActiveWorkoutView | set row: done toggle ✓, per-exercise kg/lbs header menu ✓ (flip re-labels, doesn't rewrite field text — identical shared code); per-set warmup flag not driven | ok | |
 | ActiveWorkoutView | rest-time chip Menu: opens w/ 6 options 0:30–3:00 | ok | chip-update after select unverified — lane collision (#1100) killed app; cheap re-check |
 | ActiveWorkoutView | set done → green tint + inline rest timer countdown + coach toast | ok | |
 | ActiveWorkoutView | exercise ⋮ (xmark.circle) menu: Favorite / Track by Time (drawn clock) / Remove — the Android contextMenu replacement | ok | |
-| ActiveWorkoutView | command strip: tap → focus + IME with send action (parse path = Nebius residual, 0-AI-LADDER) | ok | |
+| ActiveWorkoutView | command strip: tap → focus + IME with send action (parse path = Nebius residual, 0-AI-LADDER; e8821123 refinement: bare "form tips" resolves to the current exercise — Tier-0-tested, no new UI surface) | ok | |
 | ActiveWorkoutView | exercise row → NavigationLink ExerciseDetailView | unknown | |
 | ActiveWorkoutView | finish → options sheet (save-as-template/favorite) → completion card + share text | ok | |
 | ActiveWorkoutView | mid-workout kill + resume — SavedSession NEVER persists on Android; whole workout lost on process death, both kill variants. #1102's Data→String fix landed (516f85cd) but did NOT resolve it — deeper bug, see #1108 | broken | #1108 |
@@ -268,26 +294,28 @@ not ported at all.
 
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
-| Food tab root | date strip + Select Date calendar sheet (`showingDatePicker`, logged-dots) | unknown | |
+| Food tab root | date strip + Select Date calendar sheet (`showingDatePicker`, logged-dots) — compiled-in (shared, os(Android) branches :410) | unknown | needs drive |
 | Food tab root | macro rings / donut summary | unknown | |
 | Food tab root | meal timeline sections + entry rows | unknown | |
-| Food tab root | entry row edit sheet (`editingEntry` → EditFoodEntrySheet) | unknown | |
+| Food tab root | entry row edit sheet (`editingEntry` → EditFoodEntrySheet — SharedUI, compiled both; beware stale SharedUICopy dupe, #1071) | unknown | needs drive |
 | Food tab root | serving stepper in edit sheet | unknown | |
 | Food tab root | add-food search sheet — **Android stand-in `AndroidFoodSearchSheet`, iOS FoodSearchView NOT ported** | deviation | #1062 |
 | Food tab root | barcode scanner fullScreenCover (`showingScanner`) | missing | #1063 |
-| Food tab root | recipe builder sheet | unknown | |
-| Food tab root | combos sheet + combo log sheet (`comboToLog`) | unknown | |
-| Food tab root | goal setup sheet (`showingGoalSetup`) | unknown | |
-| Food tab root | plant points detail sheet | unknown | |
-| Food tab root | confirm-log sheet (`showingConfirmLog`) | unknown | |
-| Food tab root | suggestion chips → `suggestionFoodToLog` sheet | unknown | |
+| Food tab root | recipe builder sheet — DRIFT_IOS_APP-gated :204, no Android trigger exists in source | missing | #1062 |
+| Food tab root | combos sheet ("···" entry iOS-gated :787) + combo log sheet (`comboToLog` iOS-gated :210; Android combo chips log DIRECTLY w/ toast undo — documented interim :753) | missing | #1062 |
+| Food tab root | goal setup sheet (`showingGoalSetup`) — sheet + BOTH macro-card tap affordances iOS-gated (:600/:612); source comment routes goal setup to the MoreTab port | missing | #1067 |
+| Food tab root | plant points detail sheet — static row renders on Android (LeafShape stand-in), tap + chevron iOS-gated :634-641 | missing | #1062 |
+| Food tab root | confirm-log sheet (`showingConfirmLog`) — only trigger is the iOS-only contextMenu "Log Again" :1115 | missing | #1062 |
+| Food tab root | suggestion chips: iOS → FoodLogSheet/ComboLogSheet review; Android quick-logs DIRECTLY + toast undo (deliberate interim :753-781) — quick-log write needs drive | deviation | #1062 |
+| Food tab root | entry-row contextMenu (Edit/Favorite/Log Again/Copy-to-Today/Move) — Darwin-only by house rule, equivalents mapped (Edit=row tap, Delete=✕, Favorite/Copy=edit sheet); Log Again + Move Up/Down have NO Android path | deviation | #1062 |
+| Food tab root | Snap shortcut (safeAreaInset camera.viewfinder → PhotoLog) — DRIFT_IOS_APP :128-156 | missing | #1063 |
 | FoodSearchView (iOS) | search-first UX, sections, manual entry, recipe edit/rebuild sheets | missing | #1062 |
 | QuickAddView | ingredient picker + manual ingredient sheets | missing | #1062 |
-| CombosView | combo CRUD + log sheets + alerts | unknown | |
+| CombosView | combo CRUD + log sheets + alerts — iOS-target file (Drift/Views/Food/), no Android entry | missing | #1062 |
 | MealReviewSheet / PhotoLogReviewView | editable review (all logging funnels through it on iOS) | missing | #1063 |
 | VoiceLogSheet (food) | voice food logging | missing | #1063 |
-| ManualFoodEntrySheet | manual macro entry | unknown | |
-| LogMealSheet | meal logging sheet | unknown | |
+| ManualFoodEntrySheet | manual macro entry — iOS-target file (Drift/Views/Food/) | missing | #1062 |
+| LogMealSheet | meal logging sheet — iOS-target file (Drift/Views/Food/) | missing | #1062 |
 
 ## Today (epic #1061 · Android-only re-creation: TodayTab.swift — NOT the iOS DashboardView)
 
@@ -347,7 +375,7 @@ not ported at all.
 | Photo log | capture view (camera, settings, barcode sheets) | missing | #1063 |
 | Photo log | flow + review (PhotoLogFlowView/PhotoLogReviewView) | missing | #1063 |
 | Barcode scanner | scan → food match → log | missing | #1063 |
-| Workout scan | photo/PDF → template or session (WorkoutScanSheet + ReviewView) | missing | #1095 |
+| Workout scan | photo/PDF → template or session (WorkoutScanSheet + ReviewView) | missing | #1110 (#1095 closed-descoped; #1063 shares the camera seam) |
 
 ## Health sub-screens (epic #1068 · iOS-only)
 
