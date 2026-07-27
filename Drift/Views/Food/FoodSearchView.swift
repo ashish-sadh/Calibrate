@@ -790,33 +790,10 @@ struct FoodSearchView: View {
                         .padding(.top, 4)
                 }
 
-                // Time picker
-                DatePicker("Time", selection: $logTime, displayedComponents: .hourAndMinute)
-                    .font(.subheadline).foregroundStyle(Theme.textSecondary)
+                MealTimePicker(time: $logTime,
+                               mealType: Binding(get: { logMealType },
+                                                 set: { selectedMealType = $0 }))
                     .padding(.horizontal, 16).padding(.vertical, 8)
-
-                // Meal type picker
-                HStack {
-                    Text("Meal").font(.subheadline).foregroundStyle(Theme.textSecondary)
-                    Spacer()
-                    Menu {
-                        ForEach(MealType.allCases, id: \.self) { type in
-                            Button {
-                                selectedMealType = type
-                            } label: {
-                                Label(type.displayName, systemImage: type.icon)
-                            }
-                        }
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: logMealType.icon)
-                            Text(logMealType.displayName)
-                        }
-                        .font(.subheadline)
-                        .foregroundStyle(Theme.accent)
-                    }
-                }
-                .padding(.horizontal, 16).padding(.vertical, 8)
             }
             .scrollDismissesKeyboard(.interactively)
             .background(Theme.background)

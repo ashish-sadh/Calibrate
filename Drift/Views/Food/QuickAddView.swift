@@ -19,6 +19,8 @@ struct QuickAddView: View {
     @State private var showingIngredientPicker = false
     @State private var editingIndex: Int?
     @State private var recipeLogTime = Date()
+    @State private var recipeMealType: MealType = .snack
+    @State private var recipeMealResolved = false
     @State private var recipeServings = "1"
     @State private var expandOnLog = false
     @State private var showingDeleteConfirm = false
@@ -146,9 +148,7 @@ struct QuickAddView: View {
                             .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
                         }
 
-                        // Time picker
-                        DatePicker("Time", selection: $recipeLogTime, displayedComponents: .hourAndMinute)
-                            .font(.subheadline).foregroundStyle(Theme.textSecondary)
+                        MealTimePicker(time: $recipeLogTime, mealType: $recipeMealType)
 
                         Button {
                             saveAndLogRecipe()
@@ -187,6 +187,12 @@ struct QuickAddView: View {
                 if items.isEmpty && !initialItems.isEmpty {
                     items = initialItems
                     recipeName = initialName
+                }
+                // Same one-shot default as FoodLogSheet — don't clobber a
+                // user-picked meal on body refreshes.
+                if !recipeMealResolved {
+                    recipeMealType = MealType.resolve(now: Date(), recentEntries: viewModel.todayEntries)
+                    recipeMealResolved = true
                 }
                 // For NEW multi-item logs (from AI chat), default to expanding
                 // each ingredient into its own diary entry — matches
@@ -275,12 +281,12 @@ struct QuickAddView: View {
         if effectiveExpand {
             viewModel.logRecipeItems(items,
                                      recipeServings: servings,
-                                     mealType: viewModel.autoMealType,
+                                     mealType: recipeMealType,
                                      loggedAt: loggedAtStr)
         } else {
             viewModel.quickAdd(name: name, calories: perServingCal, proteinG: perServingP,
                                carbsG: perServingC, fatG: perServingF, fiberG: perServingFb,
-                               mealType: viewModel.autoMealType, loggedAt: loggedAtStr,
+                               mealType: recipeMealType, loggedAt: loggedAtStr,
                                servingSizeG: totalServing / servings, servings: servings)
         }
     }

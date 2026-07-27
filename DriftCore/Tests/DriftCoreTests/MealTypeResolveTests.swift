@@ -77,4 +77,25 @@ struct MealTypeResolveTests {
 
         #expect(MealType.resolve(now: now, recentEntries: [dinner]) == .dinner)
     }
+
+    // MARK: - defaultForHour (time-slider coupling + resolve fallback)
+
+    @Test func defaultForHourMatchesMealPeriods() {
+        #expect(MealType.defaultForHour(5) == .breakfast)
+        #expect(MealType.defaultForHour(10) == .breakfast)  // 2026-07-27 field ask: slide to 10am → breakfast
+        #expect(MealType.defaultForHour(11) == .lunch)
+        #expect(MealType.defaultForHour(14) == .lunch)
+        #expect(MealType.defaultForHour(15) == .dinner)
+        #expect(MealType.defaultForHour(20) == .dinner)
+        #expect(MealType.defaultForHour(21) == .snack)
+        #expect(MealType.defaultForHour(0) == .snack)
+        #expect(MealType.defaultForHour(4) == .snack)
+    }
+
+    @Test func resolveFallbackAgreesWithDefaultForHour() throws {
+        for hour in 0..<24 {
+            let now = try localDate(hour: hour)
+            #expect(MealType.resolve(now: now, recentEntries: []) == MealType.defaultForHour(hour))
+        }
+    }
 }

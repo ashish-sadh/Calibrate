@@ -184,42 +184,8 @@ struct EditFoodEntrySheet: View {
                     }
                     .padding(.top, 8)
 
-                    // Compact time picker
-                    HStack {
-                        #if os(Android)
-                        ClockFaceShape().fill(Theme.textTertiary).frame(width: 13, height: 13)
-                        #else
-                        Image(systemName: "clock").font(.caption).foregroundStyle(Theme.textTertiary)
-                        #endif
-                        DatePicker("", selection: $editEntryTime, displayedComponents: .hourAndMinute)
-                            .labelsHidden()
-                    }
-
-                    // Meal-type picker
-                    HStack(spacing: 6) {
-                        ForEach(MealType.allCases, id: \.self) { meal in
-                            Button {
-                                editMealType = meal
-                            } label: {
-                                HStack(spacing: 4) {
-                                    #if os(Android)
-                                    MealGlyph(meal: meal,
-                                              color: editMealType == meal ? .white : Theme.textSecondary,
-                                              size: 12)
-                                    #else
-                                    Image(systemName: meal.icon).font(.caption2)
-                                    #endif
-                                    Text(meal.displayName).font(.caption.weight(.medium))
-                                }
-                                .foregroundStyle(editMealType == meal ? .white : .secondary)
-                                .padding(.horizontal, 10).padding(.vertical, 6)
-                                .background(editMealType == meal ? Theme.ink : Theme.cardBackgroundElevated,
-                                            in: Capsule())
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityLabel("Set meal to \(meal.displayName)")
-                        }
-                    }
+                    // Time slider + meal chips, coupled (2026-07-27 field ask)
+                    MealTimePicker(time: $editEntryTime, mealType: $editMealType)
 
                     // Serving input for DB foods
                     if entry.foodId != nil && !units.isEmpty {

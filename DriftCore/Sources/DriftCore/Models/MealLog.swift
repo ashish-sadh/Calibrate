@@ -76,7 +76,14 @@ public enum MealType: String, CaseIterable, Codable, Sendable {
             }
         }
 
-        let hour = Calendar.current.component(.hour, from: now)
+        return defaultForHour(Calendar.current.component(.hour, from: now))
+    }
+
+    /// Meal period for an hour of day — the log sheets' default and the
+    /// time-slider coupling (slide to 10am → breakfast). `fromHour` is the
+    /// AI parser's variant with an afternoon-snack window; this one matches
+    /// `resolve`'s fallback ranges.
+    public static func defaultForHour(_ hour: Int) -> MealType {
         switch hour {
         case 5..<11: return .breakfast
         case 11..<15: return .lunch

@@ -94,6 +94,8 @@ struct BarcodeLookupView: View {
     @State private var error: String?
     @State private var amount: String = "1"
     @State private var barcodeLogTime = Date()
+    @State private var barcodeMealType: MealType = .snack
+    @State private var barcodeMealResolved = false
     @State private var selectedUnitIndex: Int = 0
     // OCR states
     @State private var showingCamera = false
@@ -337,8 +339,15 @@ struct BarcodeLookupView: View {
                         .frame(maxWidth: .infinity)
                 }
 
-                DatePicker("Time", selection: $barcodeLogTime, displayedComponents: .hourAndMinute)
-                    .font(.subheadline).foregroundStyle(Theme.textSecondary)
+                MealTimePicker(time: $barcodeLogTime, mealType: $barcodeMealType)
+                    .onAppear {
+                        // Same one-shot default as FoodLogSheet — don't clobber
+                        // a user-picked meal on body refreshes.
+                        if !barcodeMealResolved {
+                            barcodeMealType = MealType.resolve(now: Date(), recentEntries: viewModel.todayEntries)
+                            barcodeMealResolved = true
+                        }
+                    }
 
                 Button { logProduct(p) } label: {
                     Label("Log Food", systemImage: "plus.circle.fill").frame(maxWidth: .infinity)
@@ -447,7 +456,7 @@ struct BarcodeLookupView: View {
         let multiplier = servingG > 0 ? totalGrams / servingG : amountNum
         // Anchor the picker's time-of-day onto the viewed day (no-op for
         // today) — past-day logs must not carry a today timestamp.
-        viewModel.logFood(food, servings: multiplier, mealType: viewModel.autoMealType,
+        viewModel.logFood(food, servings: multiplier, mealType: barcodeMealType,
                           loggedAt: viewModel.anchoredToSelectedDay(barcodeLogTime))
         dismiss()
     }

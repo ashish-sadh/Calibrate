@@ -177,31 +177,7 @@ struct FoodLogSheet: View {
                 PastDayLogBadge(date: foodLog.selectedDate)
                     .frame(maxWidth: .infinity)
             }
-            HStack {
-                Text("Time").font(.subheadline).foregroundStyle(Theme.textSecondary)
-                Spacer()
-                DatePicker("", selection: $logTime, displayedComponents: .hourAndMinute)
-                    .labelsHidden()
-            }
-            HStack {
-                Text("Meal").font(.subheadline).foregroundStyle(Theme.textSecondary)
-                Spacer()
-                Menu {
-                    ForEach(MealType.allCases, id: \.self) { type in
-                        Button {
-                            mealType = type
-                        } label: {
-                            Label(type.displayName, systemImage: type.icon)
-                        }
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: mealType.icon)
-                        Text(mealType.displayName)
-                    }
-                    .font(.subheadline).foregroundStyle(Theme.accent)
-                }
-            }
+            MealTimePicker(time: $logTime, mealType: $mealType)
         }
         .padding(.horizontal, 4)
     }

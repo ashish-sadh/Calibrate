@@ -65,6 +65,7 @@
 		3CFFACEC0432AE8EC5E7ECF4 /* CloudVisionKeyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCE57CE0133752BC4B5C80F3 /* CloudVisionKeyTests.swift */; };
 		3D01268D3E9F35381A819628 /* foods.db in Resources */ = {isa = PBXBuildFile; fileRef = 58B1281AF3BA620161F30716 /* foods.db */; };
 		3DAE20FBF0F571D1C26DFD59 /* AIChatInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A4575ED692EF5D3BFDBC775 /* AIChatInsightsView.swift */; };
+		4050FB974E7F0CB1B3B21ACF /* MealTimePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56B5C611ABC5A11C8044CD7A /* MealTimePicker.swift */; };
 		40EA07ABE50FDFF7F6F85899 /* PhotoLogResponse.swift in Sources */ = {isa = PBXBuildFile; fileRef = 181A867B30E38E42C06B5A82 /* PhotoLogResponse.swift */; };
 		421D57520E9C09C88A6A0B6B /* AlgorithmSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE2D9672D96D6738FA36D4F2 /* AlgorithmSettingsView.swift */; };
 		4319EDE7F6B2147FAB72CBDD /* PhotoLogServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A835CA7572E629657044C111 /* PhotoLogServiceTests.swift */; };
@@ -368,6 +369,7 @@
 		552F5AE6789DA294DDB91E8B /* Drift.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Drift.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		55F24D93872F919F1A8CB319 /* BarcodeScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeScannerView.swift; sourceTree = "<group>"; };
 		568B1F4CBD74EE2765996ADD /* PhotoLogSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLogSettingsView.swift; sourceTree = "<group>"; };
+		56B5C611ABC5A11C8044CD7A /* MealTimePicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealTimePicker.swift; sourceTree = "<group>"; };
 		57BE014AD72F4F5691483658 /* CloudVisionClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudVisionClientTests.swift; sourceTree = "<group>"; };
 		5893DE4C163CA3CF50E74C1A /* DEXAOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DEXAOverviewView.swift; sourceTree = "<group>"; };
 		58B1281AF3BA620161F30716 /* foods.db */ = {isa = PBXFileReference; path = foods.db; sourceTree = "<group>"; };
@@ -591,6 +593,7 @@
 				CE1C2C759DEB2E972ADAF6B6 /* FoodLogViewModel.swift */,
 				814B3D811D16B9738D33196C /* FoodTabView.swift */,
 				D454B059C6C3366F1E55C00D /* MealCalendarPicker.swift */,
+				56B5C611ABC5A11C8044CD7A /* MealTimePicker.swift */,
 				830DCA5606BA7ED09ECCB6DE /* MuscleHighlightCard.swift */,
 				EEBA03C80C4A4C8407D09C43 /* NumericField.swift */,
 				D80761BF94B2EA4BD8936542 /* ServingInputView.swift */,
@@ -1258,6 +1261,7 @@
 				A7D87D6AA3767E6F1093E088 /* MealCalendarPicker.swift in Sources */,
 				A23F5BA813FE884BD69FCE1A /* MealReviewSheet.swift in Sources */,
 				16B57C56AAF7844EC90BE404 /* MealTextLogger.swift in Sources */,
+				4050FB974E7F0CB1B3B21ACF /* MealTimePicker.swift in Sources */,
 				DC947891799CF8AC7D747102 /* MealTimelineSection.swift in Sources */,
 				30F7D3160F146CA92713AD13 /* MoreTabView.swift in Sources */,
 				E82339BFF4831142E1E971E1 /* MuscleHighlightCard.swift in Sources */,

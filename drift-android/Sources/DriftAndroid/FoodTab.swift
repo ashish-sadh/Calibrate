@@ -109,9 +109,10 @@ struct AndroidFoodSearchSheet: View {
         }
         .task(id: query) { await liveSearch() }
         .sheet(item: $confirmFood) { food in
-            ServingConfirmSheet(food: food) { servings in
-                viewModel.logFood(food, servings: servings,
-                                  mealType: initialMealType ?? viewModel.autoMealType)
+            ServingConfirmSheet(food: food,
+                                initialMealType: initialMealType ?? viewModel.autoMealType) { servings, meal, time in
+                viewModel.logFood(food, servings: servings, mealType: meal,
+                                  loggedAt: viewModel.anchoredToSelectedDay(time))
             }
         }
     }
@@ -278,9 +279,17 @@ private func onDB<T: Sendable>(_ work: @escaping @Sendable () -> T) async -> T {
 /// serving sheet ports (#1062 residual).
 struct ServingConfirmSheet: View {
     let food: Food
-    let onLog: (Double) -> Void
+    let onLog: (Double, MealType, Date) -> Void
     @Environment(\.dismiss) var dismiss
     @State var servings = 1.0
+    @State var logTime = Date()
+    @State var mealType: MealType
+
+    init(food: Food, initialMealType: MealType, onLog: @escaping (Double, MealType, Date) -> Void) {
+        self.food = food
+        self.onLog = onLog
+        _mealType = State(initialValue: initialMealType)
+    }
 
     var body: some View {
         NavigationStack {
@@ -328,8 +337,13 @@ struct ServingConfirmSheet: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.textPrimary)
 
+                // Time slider + meal chips, coupled (2026-07-27 field ask) —
+                // Android previously logged with autoMealType and no way to
+                // adjust either.
+                MealTimePicker(time: $logTime, mealType: $mealType)
+
                 Button {
-                    onLog(servings)
+                    onLog(servings, mealType, logTime)
                     dismiss()
                 } label: {
                     Text("Log Food")
