@@ -59,6 +59,15 @@ open class MainActivity: AppCompatActivity {
         UIApplication.launch(this)
         enableEdgeToEdge()
 
+        // Health Connect permission sheet — the contract MUST be registered
+        // before the activity reaches STARTED, so it lives here rather than in
+        // the facade. HealthConnectFacade.requestPermissions() launches it.
+        HealthConnectFacade.permissionLauncher = registerForActivityResult(
+            androidx.health.connect.client.PermissionController.createRequestPermissionResultContract()
+        ) { granted ->
+            logger.info("Health Connect permissions granted: ${granted.size}")
+        }
+
         setContent {
             val saveableStateHolder = rememberSaveableStateHolder()
             saveableStateHolder.SaveableStateProvider(true) {

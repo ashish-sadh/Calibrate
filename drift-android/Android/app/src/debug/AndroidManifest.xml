@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- DEBUG-ONLY manifest overlay: lets the e2e test seed a weight record into
+     Health Connect so the read pipeline can be verified on the emulator.
+     Release builds stay strictly read-only. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.health.WRITE_WEIGHT" />
+</manifest>

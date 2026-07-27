@@ -88,3 +88,10 @@ android {
         }
     }
 }
+
+dependencies {
+    // Health Connect — read weight/steps/calories/sleep written by other apps
+    // (scale apps, fitness trackers). Suspend-only API → accessed exclusively
+    // through the blocking HealthConnectFacade.
+    implementation("androidx.health.connect:connect-client:1.1.0-rc03")
+}
