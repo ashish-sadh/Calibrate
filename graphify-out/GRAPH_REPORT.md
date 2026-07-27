@@ -1,7 +1,7 @@
 # Graph Report - /Users/ashishsadh/workspace/Drift  (2026-07-27)
 
 ## Corpus Check
-- 862 files · ~4,796,365 words
+- 862 files · ~4,796,367 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -1246,12 +1246,12 @@ Nodes (1): Convert USDA all-caps descriptions to readable Title Case names.     
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
+- **Why does `Verdict` connect `Community 4` to `Community 2`?**
+  _High betweenness centrality (0.030) - this node is a cross-community bridge._
 - **Why does `date` connect `Community 2` to `Community 33`, `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 12`, `Community 15`, `Community 16`, `Community 17`, `Community 20`, `Community 24`, `Community 27`, `Community 28`?**
-  _High betweenness centrality (0.053) - this node is a cross-community bridge._
-- **Why does `date` connect `Community 2` to `Community 33`, `Community 3`, `Community 5`, `Community 6`, `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 12`, `Community 14`, `Community 16`, `Community 20`, `Community 24`, `Community 28`?**
-  _High betweenness centrality (0.025) - this node is a cross-community bridge._
-- **Why does `ServingUnit` connect `Community 4` to `Community 2`, `Community 7`?**
-  _High betweenness centrality (0.011) - this node is a cross-community bridge._
+  _High betweenness centrality (0.023) - this node is a cross-community bridge._
+- **Why does `AppDatabase` connect `Community 2` to `Community 3`, `Community 4`, `Community 5`, `Community 7`, `Community 9`?**
+  _High betweenness centrality (0.013) - this node is a cross-community bridge._
 - **Are the 586 inferred relationships involving `String` (e.g. with `.classify()` and `.extractTool()`) actually correct?**
   _`String` has 586 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 182 inferred relationships involving `sqlite3_free()` (e.g. with `sqlite3_fopen()` and `sqlite3_popen()`) actually correct?**
