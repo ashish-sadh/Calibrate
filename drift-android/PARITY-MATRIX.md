@@ -12,6 +12,32 @@ not ported at all.
 
 ## Session notes (append-only)
 
+- **2026-07-27 (scout #5, Fable):** SOURCE-ONLY sweep #2 — ps-check found BOTH sibling
+  lanes live (executor with #1097 WIP on the tree, planner mid-session), so the emulator
+  was untouched; picked the operator's 0-EVERY-SCREEN mandate (More tab) over the food
+  rotation — More had zero sub-screen rows. Enumerated the ENTIRE iOS More tree from
+  source (MoreTabView.swift 1098 lines + 8 Settings/ files, ~3.5k lines): hub (11 nav
+  rows), SettingsView (7 sections), NotificationsSettingsView, UsageInsightsView,
+  ProfileView, GoalView + GoalSetupView, AlgorithmSettingsView, backup stack, BYOK.
+  More section rewritten 8 coarse → 40 granular rows. Filed 6 scoped needs-plan ports:
+  **#1114** hub / **#1115** Settings screen / **#1116** Profile / **#1117** Goal+Setup
+  (also flips FoodTabView's iOS-gated goal affordances — food rows repointed) /
+  **#1118** Algorithm / **#1119** Notifications page + scheduling seam (the one real
+  architecture decision). **#1067 demoted to INDEX (needs-plan removed)** so the planner
+  never chews the 3.5k-line monolith in one pass. Policy calls baked into rows: BYOK
+  screen + WebSearchSettingsCard = ios-only-by-design (0-AI-FOCUS bans ALL key-entry UI
+  on Android); hub HEALTH rows stay hidden until #1068/#1069 destinations land (no dead
+  taps, #1093 lesson); every "persists across relaunch" acceptance inherits #1108.
+  Portability verified from source: TDEEEstimator / WeightGoal / WeightTrendCalculator /
+  ChatTelemetryService / FeatureUsage are all DriftCore; goal flow is Chart-free
+  (GoalView's `import Charts` is vestigial); iOS-only deps = NotificationService
+  (→ #1119 seam), BackupService (→ #1094/#1109), AIChatInsightsView (hide link),
+  HealthNutritionSyncService (hide behind HC-write capability). Queued for a future
+  Fable session, NOT absorbed here (one sweep per session): needs-fable escalations
+  #1105 (Skip collection-persistence audit) + #1109 (SAF bridge design). Emulator drive
+  debt unchanged: food compiled-shared rows + scout #3's 5 workout leftovers still need
+  an uncontended window. No code touched; worker WIP left alone.
+
 - **2026-07-27 (scout #4, Fable):** SOURCE-ONLY sweep — ps-check found the executor
   lane live (16+ min in, #1108 WIP on the tree) so the emulator was never touched
   (scout #3's collision lesson applied). (1) Post-manual-window enumeration refresh:
@@ -303,7 +329,7 @@ not ported at all.
 | Food tab root | barcode scanner fullScreenCover (`showingScanner`) | missing | #1063 |
 | Food tab root | recipe builder sheet — DRIFT_IOS_APP-gated :204, no Android trigger exists in source | missing | #1062 |
 | Food tab root | combos sheet ("···" entry iOS-gated :787) + combo log sheet (`comboToLog` iOS-gated :210; Android combo chips log DIRECTLY w/ toast undo — documented interim :753) | missing | #1062 |
-| Food tab root | goal setup sheet (`showingGoalSetup`) — sheet + BOTH macro-card tap affordances iOS-gated (:600/:612); source comment routes goal setup to the MoreTab port | missing | #1067 |
+| Food tab root | goal setup sheet (`showingGoalSetup`) — sheet + BOTH macro-card tap affordances iOS-gated (:600/:612); gates flip in the GoalSetupView port | missing | #1117 (was #1067) |
 | Food tab root | plant points detail sheet — static row renders on Android (LeafShape stand-in), tap + chevron iOS-gated :634-641 | missing | #1062 |
 | Food tab root | confirm-log sheet (`showingConfirmLog`) — only trigger is the iOS-only contextMenu "Log Again" :1115 | missing | #1062 |
 | Food tab root | suggestion chips: iOS → FoodLogSheet/ComboLogSheet review; Android quick-logs DIRECTLY + toast undo (deliberate interim :753-781) — quick-log write needs drive | deviation | #1062 |
@@ -345,17 +371,64 @@ not ported at all.
 | DEXA overview | DEXAOverviewView + detail | missing | #1069 |
 | Progress photos | gallery / viewer overlays / timer camera / add entry | missing | #1069 |
 
-## More / Settings (epic #1067 · Android-only re-creation: MoreTab.swift, 63 lines vs iOS hub)
+## More / Settings (epic #1067 = INDEX · Android stub: MoreTab.swift 90 lines vs iOS ~3.5k-line tree · scoped ports #1114–#1119)
+
+Source-enumerated 2026-07-27 (scout #5); `missing` rows are source-verified (no Android
+route exists), not emulator-driven. Persistence acceptance on every ported control
+inherits #1108. KEY POLICY (0-AI-FOCUS): no key-entry UI of any kind ships on Android.
 
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
-| More tab | settings hub rows (iOS MoreTabView) | deviation | #1067 |
-| More tab | goal setup / GoalView + profile | missing | #1067 |
-| More tab | algorithm settings | missing | #1067 |
-| More tab | backup/restore (BackupSettingsView, RestorePickerView, onboarding sheet) | missing | #1094 |
-| More tab | photo-log settings | missing | #1067 |
-| More tab | web search settings card | missing | #1067 |
-| More tab | Apple-Health sync dialog (→ Health Connect equivalent) | missing | #1070 |
+| More hub (MoreTabView :4-193) | hub layout: HEALTH/APP sections, navRow chrome (36pt icon tile, subtitle, chevron, contentShape), inline title | missing | #1114 |
+| More hub | HEALTH rows ×7: Body Rhythm→SleepRecoveryView, Cycle→CycleView (conditional `hasCycleData` via health seam), Supplements, Body Composition→DEXAOverviewView, Progress Photos→ProgressGalleryView, Glucose, Biomarkers — destinations are #1068/#1069; hub rows HIDDEN on Android until each destination lands (no dead taps) | missing | #1114 (dest #1068/#1069) |
+| More hub | APP row Profile → ProfileView | missing | #1114/#1116 |
+| More hub | APP row Weight Goal → GoalView | missing | #1114/#1117 |
+| More hub | APP row "Bring Your Own Key" → PhotoLogSettingsView — `#if !os(Android)`, no replacement row | ios-only-by-design | KEY POLICY |
+| More hub | APP row Settings → SettingsView | missing | #1114/#1115 |
+| More hub | footer: "Report a bug" external Link + version line (Android keeps build stamp, gated) | missing | #1114 |
+| More hub | pop-to-root on tab reselect (`navId` reset via selectedTab onChange) | missing | #1114 |
+| More hub (stub today) | PREFERENCES weight-unit picker — live on Android; iOS home is Settings→UNITS (stub order lbs,kg vs iOS kg,lbs) | deviation | #1115 |
+| More hub (stub today) | HEALTH CONNECT connect/sync card — live; iOS equivalent is Settings→HEALTH SOURCES with status text | deviation | #1115/#1070 |
+| More hub (stub today) | privacy blurb + "coming to Android" list — Android-only interim, retires with hub port | deviation | #1114 |
+| SettingsView (:195-898) | UNITS: Body Weight Unit segmented kg/lbs + "exercise weights stay in lbs" caption | missing | #1115 |
+| SettingsView | HEALTH SOURCES: "Sync from Apple Health" one-action full resync + body-comp import + 3s status line (HC wording on Android, #1095 header precedent) | missing | #1115/#1070 |
+| SettingsView | HEALTH SOURCES: Write Nutrition toggle (#934; foreign-app-detect / auth-denied / unavailable states, auto-disable reason line) — needs HC WRITE; hidden until seam grows writes | missing | #1115/#1070 |
+| SettingsView | HEALTH SOURCES: "Sync Past Data…" confirmationDialog (30/90/all, skip-foreign-days) — write-gated, same hiding | missing | #1115/#1070 |
+| SettingsView | iCloud Backup NavigationLink row — Android backup screen is #1094/#1109's deliverable; row hidden until it exists | missing | #1094/#1109 |
+| SettingsView | DATA: Export Workouts CSV + Export Food Logs CSV (DriftCore-built CSV; UIActivityViewController → Android share seam, coordinate w/ #1109 SAF bridge) | missing | #1115 |
+| SettingsView | PRIVACY: Online Food Search toggle + conditional "only search terms sent" caption | missing | #1115 |
+| SettingsView | PRIVACY: WebSearchSettingsCard — Google key+cx / Brave key fields, expand/collapse, active-provider line: pure key-entry UI; Android web_search runs keyless/provisioned tier with NO settings surface | ios-only-by-design | KEY POLICY |
+| SettingsView | PRIVACY: Usage Insights row → UsageInsightsView (counter rows, ShareLink export, Reset counts, empty state; FeatureUsage = DriftCore) | missing | #1115 |
+| SettingsView | NOTIFICATIONS row → NotificationsSettingsView; hidden until #1119 lands | missing | #1115/#1119 |
+| SettingsView | ADVANCED: AI Chat Telemetry card — staged-intent toggle (enable-confirm alert, revert-on-cancel binding :548-562), delete-confirm alert, turns count, Export JSON, Delete all (ChatTelemetryService = DriftCore) | missing | #1115 |
+| SettingsView | ADVANCED: telemetry "View insights" → AIChatInsightsView (iOS-target file) — link hidden on Android until an AI-insights port exists | missing | #1115 (hide) |
+| SettingsView | ADVANCED: Algorithm row → AlgorithmSettingsView | missing | #1115/#1118 |
+| SettingsView | ADVANCED: Refresh food database button (idle / refreshing / refreshed-N / failed states, 0-count = real error) | missing | #1115 |
+| SettingsView | Danger Zone: Factory Reset + destructive confirm alert + Reset Complete alert (AppDatabase.factoryReset + UserDefaults key sweep — #1108 interaction) | missing | #1115 |
+| NotificationsSettingsView (:910-1025) | 4 toggle cards: Health Nudges / Smart Meal (+ conditional "Use my eating patterns" sub-toggle) / Medication Dose / GLP-1 Weekly — setters write DriftCore Preferences then NotificationService.refreshScheduledAlerts() (iOS-only service) | missing | #1119 |
+| Android notification seam | DriftPlatform.notifications-shaped seam: channels model, explicit POST_NOTIFICATIONS flow (#1096: Skip's UserNotifications shim must NEVER compile in; no lazy permission asks) | missing | #1119 |
+| ProfileView (GoalView+Profile :43-327) | sex segmented Male/Female/N-A — N/A sets `sexUndisclosed`, counts complete, auto-fill never overwrites it | missing | #1116 |
+| ProfileView | age range menu picker (Not set + 6 ranges → midpoint) | missing | #1116 |
+| ProfileView | height cm↔ft/in segmented mode switch; 1 vs 2 numberPad fields, 50–300cm clamp, silent save | missing | #1116 |
+| ProfileView | weight decimal field: unit flip mid-edit reconverts via TEXT as source of truth; commit on FOCUS LOSS → real WeightEntry + trend refresh (Android IME commit trigger must be defined; #1097 select-all remedy applies) | missing | #1116 |
+| ProfileView | "Changes save automatically" / Saved flash; health auto-fill on appear when incomplete | missing | #1116 |
+| GoalView (GoalView.swift, Chart-free) | profile card row w/ completeness badge (check vs "Improve accuracy") | missing | #1117 |
+| GoalView | GoalProgressCard + Update Goal → GoalSetupView sheet | missing | #1117 |
+| GoalView | macro-target pills (kcal/P/C/F) + derivation explanation line + fat-minimum note | missing | #1117 |
+| GoalView | Pace (required vs actual, on-track status color) / Daily Target deficit pair (goal-aware sign-based color) / Projection (early / behind / on-schedule / wrong-direction states) | missing | #1117 |
+| GoalView | Clear Goal + empty state ("No Goal Set" + Set Weight Goal prominent CTA); custom back chevron | missing | #1117 |
+| GoalSetupView (sheet, iOS Form) | target weight decimal + kg/lbs segmented; Diet Style radio list (DietPreference cases + subtitles) | missing | #1117 |
+| GoalSetupView | custom-macros section (3 numberPad gram fields; footer auto-computes blanks within calorie target; fat-clamp warning) | missing | #1117 |
+| GoalSetupView | Calorie Target field w/ 1200 floor (red footer + Save disabled) OR implied-kcal readout when all 3 macros set | missing | #1117 |
+| GoalSetupView | Timeline stepper 1–24 months + live "This means:" projection (auto + macro-vs-TDEE variants, exceeds/below warnings, >1000 kcal "Aggressive" note) | missing | #1117 |
+| GoalSetupView | Save validation (no parseable target = disabled) + "Log your current weight first" alert; edit mode prefills all fields | missing | #1117 |
+| AlgorithmSettingsView (478) | TDEE hero (live cachedOrSync) + target/goal context + Required-vs-Current pair; "Set goal" NavigationLink fallback | missing | #1118 |
+| AlgorithmSettingsView | accordion (one-open): Activity slider 22–36 + Reset-to-29; Profile sex/age/height fields (auto-expand while editing); Fine-tune slider ±500 step 25 + Reset — Slider-on-Fuse fidelity is a named plan question | missing | #1118 |
+| AlgorithmSettingsView | Advanced disclosure: active-source chips + AH resting/active/steps line (hide when seam nil — no fake zeros); Estimation Style presets ×3 (config-equality detection); How-it-works rows; conditional Reset All | missing | #1118 |
+| BackupSettingsView (228) | auto-backup toggle + last-backed-up line, Back Up Now w/ live phase text, Restore picker entry, "What's in my backup?" disclosure, iCloud-unavailable alert — iCloud substrate is Apple-only; Android substrate = #1094/#1109 (SAF) | missing | #1094/#1109 |
+| RestorePickerView (163) | backup list, destructive restore confirm, atomic restore + relaunch prompt, empty/loading states | missing | #1094/#1109 |
+| BackupOnboardingSheet (115) | app-level onboarding prompt (trigger: DriftApp.swift:67 → Android trigger would live in DriftAndroidApp) | missing | #1094 |
+| PhotoLogSettingsView (323) | ENTIRE screen — provider picker, model picker, SecureField key entry + Paste/Save/Replace/Clear, Keychain storage, Test Connection ping: all key management. Android photo AI = provisioned Nebius (#1111) + local Google tier | ios-only-by-design | KEY POLICY |
 | Health Connect | connection flow + permission grant | confirmed missing: `onLaunch()` calls `requestAuthorization()` silently, no settings-hub entry, sync failures swallowed by `try?` — worse than iOS's explicit "Sync from Apple Health" button + status text + past-sync dialog | #1070/#1090 |
 
 ## Coach / AI chat (epic #1066 · iOS-only: Drift/Views/AI/**)
