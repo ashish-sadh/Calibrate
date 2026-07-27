@@ -106,6 +106,9 @@ struct TodayTab: View {
     @Binding var selectedTab: PrimaryTab
     @State var store = TodayStore.shared
     @State var showingCoachInfo = false
+    @State var showingSearch = false
+    @State var showingRecent = false
+    @State var foodLogVM = FoodLogViewModel()
 
     var body: some View {
         NavigationStack {
@@ -148,6 +151,12 @@ struct TodayTab: View {
             .background(Theme.background.ignoresSafeArea())
             .onAppear { store.reload() }
             .sheet(isPresented: $showingCoachInfo) { CoachComingSheet() }
+            .sheet(isPresented: $showingSearch, onDismiss: { store.reload() }) {
+                AndroidFoodSearchSheet(viewModel: foodLogVM, initialMealType: nil)
+            }
+            .sheet(isPresented: $showingRecent, onDismiss: { store.reload() }) {
+                AndroidRecentMealsSheet(viewModel: foodLogVM)
+            }
         }
     }
 
@@ -249,8 +258,14 @@ struct TodayTab: View {
         HStack(spacing: 10) {
             chip("Snap", icon: "camera.fill") { showingCoachInfo = true }
             chip("Describe", icon: "bubble.left.fill") { showingCoachInfo = true }
-            chip("Search", icon: "magnifyingglass") { selectedTab = .food }
-            chip("Recent", icon: "clock.arrow.circlepath") { selectedTab = .food }
+            // Present over Today, don't switch tabs first: ContentView.tabContent
+            // is a `switch` on selectedTab (ContentView.swift:36) — changing it
+            // unmounts TodayTab (and this sheet) before it can appear. Matches
+            // iOS anyway (LogMealSheet is a dashboard-presented modal; the tab
+            // selection doesn't change), and TodayStore's .foodEntryAdded
+            // observer already updates the dashboard in place after a log.
+            chip("Search", icon: "magnifyingglass") { showingSearch = true }
+            chip("Recent", icon: "clock.arrow.circlepath") { showingRecent = true }
         }
     }
 

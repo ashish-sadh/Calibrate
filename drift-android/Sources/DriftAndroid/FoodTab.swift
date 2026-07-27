@@ -141,6 +141,116 @@ struct AndroidFoodSearchSheet: View {
     }
 }
 
+// MARK: - Interim recent-meals sheet
+
+/// Recent-meals sheet presented by the dashboard's Recent chip. Line-for-line
+/// port of iOS `LogMealSheet.recentContent/recentRow/logEntry`
+/// (LogMealSheet.swift:201–283) minus the segmented Recent/Search/Describe/Snap
+/// chrome — that's the full `LogMealSheet` port, #1062 residual. Internal, not
+/// private — Skip cannot bridge private views.
+struct AndroidRecentMealsSheet: View {
+    let viewModel: FoodLogViewModel
+    @Environment(\.dismiss) var dismiss
+    @State var recents: [RecentEntry] = []
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                // In-content header — SkipUI's nav bar in a sheet reserves an
+                // ~80dp dead band above the title (#1089 pattern).
+                ZStack {
+                    Text("Recent")
+                        .font(.headline)
+                    HStack {
+                        Button("Done") { dismiss() }.foregroundStyle(Theme.accent)
+                        Spacer()
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+
+                if recents.isEmpty {
+                    Text("No recent foods yet — log a meal once and it'll appear here.")
+                        .font(.caption).foregroundStyle(Theme.textTertiary)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .padding(.vertical, 24)
+                    Spacer()
+                } else {
+                    ScrollView {
+                        LazyVStack(spacing: 8) {
+                            ForEach(recents) { entry in
+                                recentRow(entry)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                    }
+                }
+            }
+            .background(Theme.background.ignoresSafeArea())
+        }
+        .task {
+            await CoreResourcesBootstrap.warmUpDatabase()
+            recents = (try? AppDatabase.shared.fetchRecentEntryNames(limit: 30)) ?? []
+        }
+    }
+
+    private func recentRow(_ entry: RecentEntry) -> some View {
+        Button {
+            logRecent(entry)
+        } label: {
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(entry.name)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(Theme.textPrimary)
+                    Text(entry.macroSummary)
+                        .font(.caption2)
+                        .foregroundStyle(Theme.textSecondary)
+                }
+                Spacer()
+                Text("\(Int(entry.calories))")
+                    .font(.headline.weight(.bold).monospacedDigit())
+                    .foregroundStyle(Theme.textPrimary)
+                Image(systemName: sym("plus.circle.fill"))
+                    .foregroundStyle(Theme.ink)
+            }
+            .padding(12)
+            .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
+            .overlay(
+                // strokeBorder(_:lineWidth:antialiased:) is an ambiguous overload
+                // on SkipUI (not on Darwin) — plain stroke() is proven to compile
+                // here (see TodayTab's ring()) and is visually identical at 0.5pt.
+                RoundedRectangle(cornerRadius: Theme.radiusSmall)
+                    .stroke(Theme.separator, lineWidth: 0.5)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    /// Mirrors iOS `logEntry` (LogMealSheet.swift:256): re-log exactly what was
+    /// logged before — a DB food via its catalog row, a recipe/manual/photo
+    /// entry via its stored macros.
+    private func logRecent(_ entry: RecentEntry) {
+        if entry.isDBFood, let food = FoodService.findByName(entry.name) {
+            viewModel.quickLogFood(food)
+        } else {
+            viewModel.quickAdd(
+                name: entry.name,
+                calories: entry.calories,
+                proteinG: entry.proteinG,
+                carbsG: entry.carbsG,
+                fatG: entry.fatG,
+                fiberG: entry.fiberG,
+                mealType: viewModel.autoMealType,
+                servingSizeG: entry.servingSize,
+                servings: 1
+            )
+        }
+        dismiss()
+    }
+}
+
 /// The one TextField gets its own scope (Fuse binds only the first TextField
 /// per ViewBuilder scope). Internal, not private — Skip cannot bridge
 /// private views.
