@@ -16,6 +16,11 @@ struct FoodSearchView: View {
     /// (LogMealSheet's NavigationStack + Done), drop our own NavigationStack +
     /// toolbar so the user doesn't see two "Done" buttons (field bug 2026-05-29).
     var embedded: Bool = false
+    /// Hand the current query to the host's Describe (AI) flow. When set, an
+    /// inline "log with AI" row appears whenever the search has no exact
+    /// local match — dish names like "sooji cheela" that aren't in the DB
+    /// shouldn't dead-end in raw-ingredient noise (field ask 2026-07-27).
+    var onDescribe: ((String) -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @State private var selectedFood: Food?
     @State private var amount = "1"
@@ -506,12 +511,54 @@ struct FoodSearchView: View {
         VStack(spacing: 12) {
             Image(systemName: "magnifyingglass").font(.title2).foregroundStyle(Theme.textTertiary)
             Text("No results for \"\(query)\"").font(.subheadline).foregroundStyle(Theme.textSecondary)
+            if onDescribe != nil {
+                Button { onDescribe?(trimmedQuery) } label: {
+                    Label("Log with AI", systemImage: "sparkles").font(.subheadline)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.accent)
+                .accessibilityIdentifier("search-describe-ai")
+            }
             Button { showingManual = true } label: {
                 Label("Enter manually", systemImage: "pencil").font(.subheadline)
             }.buttonStyle(.bordered)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.background)
+    }
+
+    // MARK: - Describe-with-AI handoff
+
+    private var trimmedQuery: String {
+        query.trimmingCharacters(in: .whitespaces)
+    }
+
+    /// Exact (case-insensitive) name hit in local foods or recipes — when the
+    /// user already found the thing, don't push AI at them.
+    private var hasExactMatch: Bool {
+        let q = trimmedQuery.lowercased()
+        return results.contains { $0.name.lowercased() == q }
+            || matchingRecipes.contains { $0.name.lowercased() == q }
+    }
+
+    private var describeWithAIRow: some View {
+        Button { onDescribe?(trimmedQuery) } label: {
+            HStack(spacing: 10) {
+                Image(systemName: "sparkles")
+                    .foregroundStyle(Theme.accent)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Log \"\(trimmedQuery)\" with AI")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Theme.textPrimary)
+                    Text("Describe it — AI estimates the macros")
+                        .font(.caption).foregroundStyle(Theme.textSecondary)
+                }
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption).foregroundStyle(Theme.textTertiary)
+            }
+        }
+        .accessibilityIdentifier("search-describe-ai-row")
     }
 
     // MARK: - Search Results
@@ -558,6 +605,14 @@ struct FoodSearchView: View {
                         }
                     }
                 }
+            }
+
+            // No exact hit → offer the Describe (AI) path inline, above the
+            // online-results noise (field ask 2026-07-27: "sooji cheela"
+            // surfaced only raw sooji brands with the AI path hidden behind
+            // the mode switch).
+            if onDescribe != nil, !hasExactMatch, trimmedQuery.count >= 2 {
+                Section { describeWithAIRow }
             }
 
             // Matching recipes

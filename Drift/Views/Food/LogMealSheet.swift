@@ -51,6 +51,10 @@ struct LogMealSheet: View {
     @State private var foodLogVM = FoodLogViewModel()
     @State private var recentEntries: [RecentEntry] = []
     @State private var showingPhotoLog = false
+    /// Query handed from the Search tab's "log with AI" row to the Describe
+    /// tab (field ask 2026-07-27). Cleared when the user leaves Describe so a
+    /// later manual visit starts on an empty field.
+    @State private var describeSeed: String?
 
     // Default mode changed 2026-05-24 — user feedback: "make Search
     // default not Recent". Most "Add Food" taps come from intent to
@@ -134,6 +138,7 @@ struct LogMealSheet: View {
             }
             .onChange(of: mode) { _, new in
                 if new == .snap { showingPhotoLog = true }
+                if new != .describe { describeSeed = nil }
             }
             .onChange(of: showingPhotoLog) { _, isShowing in
                 if !isShowing && mode == .snap {
@@ -184,7 +189,7 @@ struct LogMealSheet: View {
         // Seeded with the sheet's target day so a past-day Describe log
         // lands on the viewed day (2026-07-09 — this tab was the leak the
         // 2026-07-08 fix missed: it built its own today-VM).
-        case .describe: VoiceLogSheet(date: foodLogVM.selectedDate)
+        case .describe: VoiceLogSheet(date: foodLogVM.selectedDate, initialQuery: describeSeed)
         case .snap:
             // Brief placeholder while PhotoLogFlowView covers — the
             // .onAppear / .onChange handlers above flip showingPhotoLog
@@ -266,7 +271,7 @@ struct LogMealSheet: View {
                 carbsG: entry.carbsG,
                 fatG: entry.fatG,
                 fiberG: entry.fiberG,
-                mealType: defaultMealType(),
+                mealType: foodLogVM.autoMealType,
                 servingSizeG: entry.servingSize,
                 servings: 1
             )
@@ -282,22 +287,15 @@ struct LogMealSheet: View {
         dismiss()
     }
 
-    private func defaultMealType() -> MealType {
-        let hour = Calendar.current.component(.hour, from: Date())
-        switch hour {
-        case 4..<11: return .breakfast
-        case 11..<16: return .lunch
-        case 16..<22: return .dinner
-        default: return .snack
-        }
-    }
-
     // MARK: - Search
 
     private var searchContent: some View {
         // embedded: this sheet already provides the NavigationStack + Done; let
         // FoodSearchView drop its own so there's only one "Done".
-        FoodSearchView(viewModel: foodLogVM, embedded: true)
+        FoodSearchView(viewModel: foodLogVM, embedded: true, onDescribe: { q in
+            describeSeed = q
+            mode = .describe
+        })
     }
 
     // MARK: - Empty state

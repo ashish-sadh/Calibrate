@@ -34,14 +34,20 @@ struct VoiceLogSheet: View {
     @State private var draft = ""
     @FocusState private var fieldFocused: Bool
 
+    /// Query handed off from the search tab's "log with AI" row — parsed
+    /// immediately on appear so the tap lands straight in the AI review, not
+    /// on an empty Describe field (field ask 2026-07-27).
+    let initialQuery: String?
+
     /// `date` seeds the internal FoodLogViewModel so a Describe log lands on
     /// the day the user is viewing, not always today — this was the last
     /// LogMealSheet tab still logging past-day entries onto today (past-day
     /// logging fix, 2026-07-09). Defaults to today for standalone use.
-    init(date: Date = Date()) {
+    init(date: Date = Date(), initialQuery: String? = nil) {
         let vm = VoiceLogViewModel()
         vm.foodLog.selectedDate = date
         _viewModel = State(initialValue: vm)
+        self.initialQuery = initialQuery
     }
 
     var body: some View {
@@ -92,7 +98,15 @@ struct VoiceLogSheet: View {
         // inset row rides above the keyboard. ignoresSafeArea() = .all would
         // absorb the keyboard bottom inset and defeat it. (#933/#966)
         .background(Theme.background.ignoresSafeArea(.container))
-        .task { viewModel.start() }
+        .task {
+            viewModel.start()
+            if let q = initialQuery?.trimmingCharacters(in: .whitespacesAndNewlines), !q.isEmpty {
+                // Seed the draft too, so a parse error → "Try again" returns
+                // to the field with the query intact.
+                draft = q
+                await viewModel.submitTyped(q)
+            }
+        }
         .onChange(of: viewModel.dictatedDraft) { _, dictated in
             // Dictation fills the SAME draft the keyboard edits (#935).
             if !dictated.isEmpty { draft = dictated }
