@@ -266,6 +266,17 @@ public struct FoodUnit: Hashable {
         let words = Set(lower.split(whereSeparator: { !$0.isLetter }).map { String($0) })
         var units: [FoodUnit] = []
 
+        // Count-semantics guard (chia audit 2026-07-27): a row whose
+        // servingSize stores a COUNT ("2 tbsp", "3 pieces") can't do gram
+        // math — chia rendered 690 cal per tbsp (10g ÷ 2 "grams" = 5 servings
+        // × 138 cal). Seeded rows are gram-normalized now (lint-tested); this
+        // protects scanned/user rows and any future regression: one opaque
+        // serving, no gram pill, so calories can never multiply.
+        if food.servingUnit.lowercased() != "g", food.servingUnit.lowercased() != "ml",
+           food.servingSize > 0, food.servingSize < 15 {
+            return [FoodUnit(label: "serving", gramsEquivalent: food.servingSize)]
+        }
+
 
         // #1049: liquids seeded in ml default to a human measure ("1 cup = 240ml") rather than
         // "240 ml" — but ONLY when the keyword rules would otherwise give a GENERIC unit. A

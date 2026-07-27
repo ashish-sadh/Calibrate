@@ -7350,7 +7350,7 @@
     "name": "Parmesan",
     "category": "Grocery",
     "serving_size": 5,
-    "serving_unit": "tbsp",
+    "serving_unit": "g",
     "calories": 21,
     "protein_g": 1,
     "carbs_g": 1,
@@ -11218,8 +11218,8 @@
   {
     "name": "Pulled Pork (plain)",
     "category": "US Staples",
-    "serving_size": 0.5,
-    "serving_unit": "cup",
+    "serving_size": 125,
+    "serving_unit": "g",
     "calories": 220,
     "protein_g": 26,
     "carbs_g": 0,
@@ -11233,8 +11233,8 @@
   {
     "name": "Waffles (frozen, 2)",
     "category": "Grains & Cereals",
-    "serving_size": 2,
-    "serving_unit": "waffles",
+    "serving_size": 70,
+    "serving_unit": "g",
     "calories": 190,
     "protein_g": 4,
     "carbs_g": 30,
@@ -11243,7 +11243,8 @@
     "ingredients": [
       "Waffles (frozen, 2)"
     ],
-    "nova_group": 3
+    "nova_group": 3,
+    "piece_size_g": 35
   },
   {
     "name": "French Toast (2 slices)",
@@ -11278,8 +11279,8 @@
   {
     "name": "Chia Seeds",
     "category": "Nuts & Seeds",
-    "serving_size": 2,
-    "serving_unit": "tbsp",
+    "serving_size": 28,
+    "serving_unit": "g",
     "calories": 138,
     "protein_g": 5,
     "carbs_g": 12,
@@ -11293,8 +11294,8 @@
   {
     "name": "Flaxseed (ground)",
     "category": "Nuts & Seeds",
-    "serving_size": 2,
-    "serving_unit": "tbsp",
+    "serving_size": 14,
+    "serving_unit": "g",
     "calories": 74,
     "protein_g": 3,
     "carbs_g": 4,
@@ -11308,8 +11309,8 @@
   {
     "name": "Hemp Seeds",
     "category": "Nuts & Seeds",
-    "serving_size": 3,
-    "serving_unit": "tbsp",
+    "serving_size": 30,
+    "serving_unit": "g",
     "calories": 166,
     "protein_g": 10,
     "carbs_g": 3,
@@ -11323,8 +11324,8 @@
   {
     "name": "Popcorn (air-popped)",
     "category": "Snacks",
-    "serving_size": 3,
-    "serving_unit": "cups",
+    "serving_size": 24,
+    "serving_unit": "g",
     "calories": 93,
     "protein_g": 3,
     "carbs_g": 19,
@@ -11338,8 +11339,8 @@
   {
     "name": "Rice Cakes (plain)",
     "category": "Snacks",
-    "serving_size": 2,
-    "serving_unit": "cakes",
+    "serving_size": 18,
+    "serving_unit": "g",
     "calories": 70,
     "protein_g": 2,
     "carbs_g": 15,
@@ -11348,7 +11349,8 @@
     "ingredients": [
       "Rice Cakes (plain)"
     ],
-    "nova_group": 4
+    "nova_group": 4,
+    "piece_size_g": 9
   },
   {
     "name": "Spring Roll (fresh)",
@@ -11398,8 +11400,8 @@
   {
     "name": "Asparagus (6 spears)",
     "category": "Vegetables",
-    "serving_size": 6,
-    "serving_unit": "spears",
+    "serving_size": 90,
+    "serving_unit": "g",
     "calories": 20,
     "protein_g": 2,
     "carbs_g": 4,
@@ -11408,7 +11410,8 @@
     "ingredients": [
       "Asparagus (6 spears)"
     ],
-    "nova_group": 1
+    "nova_group": 1,
+    "piece_size_g": 15
   },
   {
     "name": "Brussels Sprouts (roasted)",
@@ -11443,8 +11446,8 @@
   {
     "name": "Pakora / Bhajia (5 pieces)",
     "category": "Indian Staples",
-    "serving_size": 5,
-    "serving_unit": "pieces",
+    "serving_size": 100,
+    "serving_unit": "g",
     "calories": 300,
     "protein_g": 6,
     "carbs_g": 28,
@@ -11454,7 +11457,7 @@
       "Pakora / Bhajia (5 pieces)"
     ],
     "nova_group": 3,
-    "piece_size_g": 16
+    "piece_size_g": 20
   },
   {
     "name": "Bhel Puri",
@@ -11479,8 +11482,8 @@
   {
     "name": "Pani Puri (6 pieces)",
     "category": "Indian Staples",
-    "serving_size": 6,
-    "serving_unit": "pieces",
+    "serving_size": 90,
+    "serving_unit": "g",
     "calories": 180,
     "protein_g": 4,
     "carbs_g": 30,
@@ -11490,7 +11493,7 @@
       "Pani Puri (6 pieces)"
     ],
     "nova_group": 3,
-    "piece_size_g": 20
+    "piece_size_g": 15
   },
   {
     "name": "Butter Naan",
@@ -11600,8 +11603,8 @@
   {
     "name": "Sauerkraut",
     "category": "Vegetables",
-    "serving_size": 0.5,
-    "serving_unit": "cup",
+    "serving_size": 71,
+    "serving_unit": "g",
     "calories": 14,
     "protein_g": 1,
     "carbs_g": 3,
@@ -11615,8 +11618,8 @@
   {
     "name": "Kimchi",
     "category": "Vegetables",
-    "serving_size": 0.5,
-    "serving_unit": "cup",
+    "serving_size": 75,
+    "serving_unit": "g",
     "calories": 23,
     "protein_g": 2,
     "carbs_g": 4,
@@ -11630,8 +11633,8 @@
   {
     "name": "Falafel (3 pieces)",
     "category": "Fast Food",
-    "serving_size": 3,
-    "serving_unit": "pieces",
+    "serving_size": 51,
+    "serving_unit": "g",
     "calories": 170,
     "protein_g": 7,
     "carbs_g": 18,
@@ -11640,7 +11643,8 @@
     "ingredients": [
       "Falafel (3 pieces)"
     ],
-    "nova_group": 4
+    "nova_group": 4,
+    "piece_size_g": 17
   },
   {
     "name": "Brie Cheese",
@@ -11660,8 +11664,8 @@
   {
     "name": "Pepperoni (10 slices)",
     "category": "Proteins",
-    "serving_size": 10,
-    "serving_unit": "slices",
+    "serving_size": 28,
+    "serving_unit": "g",
     "calories": 140,
     "protein_g": 6,
     "carbs_g": 1,
@@ -11670,13 +11674,14 @@
     "ingredients": [
       "Pepperoni (10 slices)"
     ],
-    "nova_group": 1
+    "nova_group": 1,
+    "piece_size_g": 2.8
   },
   {
     "name": "Prosciutto (2 slices)",
     "category": "Proteins",
-    "serving_size": 2,
-    "serving_unit": "slices",
+    "serving_size": 28,
+    "serving_unit": "g",
     "calories": 60,
     "protein_g": 9,
     "carbs_g": 0,
@@ -11685,7 +11690,8 @@
     "ingredients": [
       "Prosciutto (2 slices)"
     ],
-    "nova_group": 1
+    "nova_group": 1,
+    "piece_size_g": 14
   },
   {
     "name": "Smoothie Bowl (mixed berry)",
@@ -11705,8 +11711,8 @@
   {
     "name": "Fish Tacos (2)",
     "category": "Fast Food",
-    "serving_size": 2,
-    "serving_unit": "tacos",
+    "serving_size": 250,
+    "serving_unit": "g",
     "calories": 420,
     "protein_g": 26,
     "carbs_g": 38,
@@ -11715,7 +11721,8 @@
     "ingredients": [
       "Fish Tacos (2)"
     ],
-    "nova_group": 4
+    "nova_group": 4,
+    "piece_size_g": 125
   },
   {
     "name": "Quesadilla (cheese)",
@@ -11765,8 +11772,8 @@
   {
     "name": "Chicken Tenders (4 pieces)",
     "category": "Fast Food",
-    "serving_size": 4,
-    "serving_unit": "pieces",
+    "serving_size": 120,
+    "serving_unit": "g",
     "calories": 360,
     "protein_g": 24,
     "carbs_g": 20,
@@ -11775,7 +11782,8 @@
     "ingredients": [
       "Chicken Tenders (4 pieces)"
     ],
-    "nova_group": 4
+    "nova_group": 4,
+    "piece_size_g": 30
   },
   {
     "name": "Baked Potato (medium)",
@@ -11810,8 +11818,8 @@
   {
     "name": "Egg White Omelet (3 whites)",
     "category": "Proteins",
-    "serving_size": 3,
-    "serving_unit": "whites",
+    "serving_size": 99,
+    "serving_unit": "g",
     "calories": 51,
     "protein_g": 11,
     "carbs_g": 0,
@@ -11820,13 +11828,14 @@
     "ingredients": [
       "Egg White Omelet (3 whites)"
     ],
-    "nova_group": 1
+    "nova_group": 1,
+    "piece_size_g": 33
   },
   {
     "name": "Protein Pancakes (2)",
     "category": "Grains & Cereals",
-    "serving_size": 2,
-    "serving_unit": "pancakes",
+    "serving_size": 140,
+    "serving_unit": "g",
     "calories": 260,
     "protein_g": 25,
     "carbs_g": 28,
@@ -11835,13 +11844,14 @@
     "ingredients": [
       "Protein Pancakes (2)"
     ],
-    "nova_group": 3
+    "nova_group": 3,
+    "piece_size_g": 70
   },
   {
     "name": "BBQ Sauce",
     "category": "Condiments",
-    "serving_size": 2,
-    "serving_unit": "tbsp",
+    "serving_size": 34,
+    "serving_unit": "g",
     "calories": 60,
     "protein_g": 0,
     "carbs_g": 14,
@@ -11855,8 +11865,8 @@
   {
     "name": "Honey Mustard Dressing",
     "category": "Condiments",
-    "serving_size": 2,
-    "serving_unit": "tbsp",
+    "serving_size": 30,
+    "serving_unit": "g",
     "calories": 110,
     "protein_g": 0,
     "carbs_g": 10,
@@ -12140,8 +12150,8 @@
   {
     "name": "Tuna Salad",
     "category": "US Staples",
-    "serving_size": 0.5,
-    "serving_unit": "cup",
+    "serving_size": 100,
+    "serving_unit": "g",
     "calories": 190,
     "protein_g": 16,
     "carbs_g": 10,
@@ -12155,8 +12165,8 @@
   {
     "name": "Egg Salad",
     "category": "US Staples",
-    "serving_size": 0.5,
-    "serving_unit": "cup",
+    "serving_size": 110,
+    "serving_unit": "g",
     "calories": 210,
     "protein_g": 11,
     "carbs_g": 3,
@@ -12170,8 +12180,8 @@
   {
     "name": "Alfredo Sauce",
     "category": "Condiments",
-    "serving_size": 0.25,
-    "serving_unit": "cup",
+    "serving_size": 60,
+    "serving_unit": "g",
     "calories": 110,
     "protein_g": 3,
     "carbs_g": 3,
@@ -12245,8 +12255,8 @@
   {
     "name": "Aloo Tikki (2 pieces)",
     "category": "Indian Staples",
-    "serving_size": 2,
-    "serving_unit": "pieces",
+    "serving_size": 120,
+    "serving_unit": "g",
     "calories": 250,
     "protein_g": 5,
     "carbs_g": 32,
@@ -12256,13 +12266,13 @@
       "Aloo Tikki (2 pieces)"
     ],
     "nova_group": 3,
-    "piece_size_g": 75
+    "piece_size_g": 60
   },
   {
     "name": "Dahi Vada (2 pieces)",
     "category": "Indian Staples",
-    "serving_size": 2,
-    "serving_unit": "pieces",
+    "serving_size": 150,
+    "serving_unit": "g",
     "calories": 220,
     "protein_g": 8,
     "carbs_g": 28,
@@ -12271,7 +12281,7 @@
     "ingredients": [
       "Dahi Vada (2 pieces)"
     ],
-    "piece_size_g": 80,
+    "piece_size_g": 75,
     "nova_group": 3
   },
   {
@@ -23411,7 +23421,7 @@
     "name": "PB2 Powdered Peanut Butter",
     "category": "Spreads & Butters",
     "serving_size": 12,
-    "serving_unit": "2 tbsp",
+    "serving_unit": "g",
     "calories": 50,
     "protein_g": 5,
     "carbs_g": 5,
@@ -23728,7 +23738,7 @@
     "name": "Collagen Peptides",
     "category": "Supplements",
     "serving_size": 11,
-    "serving_unit": "1 scoop",
+    "serving_unit": "g",
     "calories": 40,
     "protein_g": 9,
     "carbs_g": 0,
@@ -35331,7 +35341,7 @@
     "name": "L-Glutamine Powder (1 scoop)",
     "category": "Supplements",
     "serving_size": 5,
-    "serving_unit": "1 scoop",
+    "serving_unit": "g",
     "calories": 20,
     "protein_g": 5,
     "carbs_g": 0,
@@ -35343,7 +35353,7 @@
     "name": "Collagen Peptides (1 scoop)",
     "category": "Supplements",
     "serving_size": 10,
-    "serving_unit": "1 scoop",
+    "serving_unit": "g",
     "calories": 35,
     "protein_g": 9,
     "carbs_g": 0,
