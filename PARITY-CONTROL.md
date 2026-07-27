@@ -1,8 +1,10 @@
 # Android Parity Autopilot — Control Switch
 
-**Current state: PAUSED** (handed off for manual parity work on 2026-07-21).
-Both apps are clean and build: iOS (build + full suite green), Android (compiles).
-All work is committed and pushed to `main`.
+**Current state: RUNNING — tiered autopilot** (since 2026-07-27).
+Three complexity-routed lanes: **Fable** tester (scans iOS code + walks both apps
+→ `drift-android/PARITY-MATRIX.md` + `needs-plan` issues) → **Opus** planner
+(plans each issue → `planned`) → **Sonnet** executor (implements per plan,
+verifies, publishes). Codex fallback underneath. Same single control file.
 
 ## The one control file
 
@@ -26,8 +28,9 @@ The watchdogs poll this file every ~60s, so a change takes effect within a minut
 ## What's running (idle) right now
 
 Three launchd-managed watchdogs stay alive across reboots and idle while PAUSED:
-- `com.drift.android-parity` — worker loop (`scripts/android-parity-watchdog.sh`)
-- `com.drift.android-parity-scout` — study-phase scout (`scripts/android-parity-scout-watchdog.sh`)
+- `com.drift.android-parity` — Sonnet executor loop (`scripts/android-parity-watchdog.sh`)
+- `com.drift.android-parity-scout` — Fable tester (`scripts/android-parity-scout-watchdog.sh`)
+- `com.drift.android-parity-planner` — Opus planner (`scripts/android-parity-planner-watchdog.sh`)
 - `com.drift.codex-fallback` — Codex lane, only fires if Claude is fully exhausted
 
 If `STOP` was used and you want them back:
