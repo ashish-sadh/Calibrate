@@ -50,6 +50,17 @@ import Testing
     #expect(WorkoutCommandParser.parse("technique for hanging leg raise") == .formTip(query: "hanging leg raise"))
 }
 
+@Test func parse_bareFormQuestionResolvesToCurrentExercise() {
+    // No exercise named mid-workout → empty query so ActiveWorkoutView can
+    // infer the current lift, not bounce to "which exercise?".
+    #expect(WorkoutCommandParser.parse("form tips") == .formTip(query: ""))
+    #expect(WorkoutCommandParser.parse("form check") == .formTip(query: ""))
+    #expect(WorkoutCommandParser.parse("how's my form?") == .formTip(query: ""))
+    #expect(WorkoutCommandParser.parse("check my form") == .formTip(query: ""))
+    #expect(WorkoutCommandParser.parse("form check on this") == .formTip(query: ""))
+    #expect(WorkoutCommandParser.parse("any tips?") == .formTip(query: ""))
+}
+
 @Test func parse_openQuestionsGoToTheCoach() {
     #expect(WorkoutCommandParser.parse("should i go heavier on bench?")
             == .ask(question: "should i go heavier on bench?"))

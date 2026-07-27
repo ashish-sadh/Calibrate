@@ -73,10 +73,21 @@ struct ActiveWorkoutView: View {
     @State var coachToast: String? = nil
     @State var coachToastToken = 0
     @State var encouragementTick = 0
+    // Soft typo guard — set while a fat-finger entry awaits confirmation.
+    @State var sanityPrompt: SanityPrompt? = nil
 
     struct CommandFeedback {
         let text: String
         var undo: (() -> Void)? = nil
+    }
+
+    /// A set whose entered number looked like a typo, held until the user
+    /// confirms or goes back to fix it. Anchored by stable IDs, not indices.
+    struct SanityPrompt: Identifiable {
+        let id = UUID()
+        let exerciseID: UUID
+        let setID: UUID
+        let message: String
     }
 
     struct ActiveExercise: Identifiable {
@@ -274,6 +285,19 @@ struct ActiveWorkoutView: View {
                 ExercisePickerView { name in
                     addExercise(name: name)
                 }
+            }
+            // Soft typo guard — a fat-finger number asks "sure?" before logging.
+            .confirmationDialog(
+                sanityPrompt?.message ?? "",
+                isPresented: Binding(get: { sanityPrompt != nil },
+                                     set: { if !$0 { sanityPrompt = nil } }),
+                titleVisibility: .visible
+            ) {
+                Button("Yes, log it") {
+                    if let p = sanityPrompt { markSetDone(exerciseID: p.exerciseID, setID: p.setID) }
+                    sanityPrompt = nil
+                }
+                Button("Let me fix it", role: .cancel) { sanityPrompt = nil }
             }
             .sheet(isPresented: $showingFinishOptions) {
                 NavigationStack {
@@ -661,22 +685,23 @@ struct ActiveWorkoutView: View {
 
                         // Done button
                         Button {
-                            let nowDone = !exercises[ei].sets[si].done
-                            exercises[ei].sets[si].done = nowDone
-                            if nowDone {
-                                // Celebrate BEFORE the auto-add below — the bonus
-                                // set would otherwise hide "exercise complete".
-                                celebrateSetDone(exerciseIndex: ei, setIndex: si)
-                                // No rest countdown when backdating a past
-                                // workout — there's nothing to rest for.
-                                if pastDate == nil {
-                                    startRest(exerciseID: exercises[ei].id, setID: set.id, duration: exercises[ei].restTime)
-                                }
-                                // Auto-add next set prefilled with same weight/reps
-                                let current = exercises[ei].sets[si]
-                                if si == exercises[ei].sets.count - 1 && (!current.weight.isEmpty || !current.reps.isEmpty) {
-                                    exercises[ei].sets.append(ActiveSet(weight: current.weight, reps: current.reps))
-                                }
+                            // Un-checking never needs a guard; only committing does.
+                            guard !exercises[ei].sets[si].done else {
+                                exercises[ei].sets[si].done = false
+                                return
+                            }
+                            // Soft typo guard: a fat-finger weight/reps entry
+                            // (98 → 980) asks "sure?" before it's logged.
+                            let s = exercises[ei].sets[si]
+                            if let message = SetEntrySanity.warning(
+                                weightLbs: exercises[ei].enteredWeightLbs(s.weight),
+                                reps: Int(s.reps),
+                                isDuration: exercises[ei].trackByTime,
+                                previousTopWeightLbs: exercises[ei].lastMaxWeight,
+                                unit: exercises[ei].weightUnit) {
+                                sanityPrompt = SanityPrompt(exerciseID: exercises[ei].id, setID: set.id, message: message)
+                            } else {
+                                markSetDone(exerciseID: exercises[ei].id, setID: set.id)
                             }
                         } label: {
                             #if os(Android)
@@ -1156,6 +1181,39 @@ struct ActiveWorkoutView: View {
         }
     }
 
+    /// The exercise the user is on right now: the one the rest bar is anchored
+    /// to (just finished a set), else the first with unfinished sets, else the
+    /// last in the list. Nil only for an empty workout.
+    private func currentExerciseName() -> String? {
+        if let restID = activeRestExerciseID,
+           let ex = exercises.first(where: { $0.id == restID }) {
+            return ex.name
+        }
+        return exercises.first(where: { $0.sets.contains { !$0.done } })?.name
+            ?? exercises.last?.name
+    }
+
+    /// Commit a set as done: celebrate, start the rest countdown, and auto-add
+    /// the next set. Resolved by stable IDs so it survives the sanity-prompt
+    /// round-trip (indices can shift between tap and confirm).
+    private func markSetDone(exerciseID: UUID, setID: UUID) {
+        guard let ei = exercises.firstIndex(where: { $0.id == exerciseID }),
+              let si = exercises[ei].sets.firstIndex(where: { $0.id == setID }) else { return }
+        exercises[ei].sets[si].done = true
+        // Celebrate BEFORE the auto-add below — the bonus set would otherwise
+        // hide "exercise complete".
+        celebrateSetDone(exerciseIndex: ei, setIndex: si)
+        // No rest countdown when backdating a past workout — nothing to rest for.
+        if pastDate == nil {
+            startRest(exerciseID: exerciseID, setID: setID, duration: exercises[ei].restTime)
+        }
+        // Auto-add next set prefilled with same weight/reps.
+        let current = exercises[ei].sets[si]
+        if si == exercises[ei].sets.count - 1 && (!current.weight.isEmpty || !current.reps.isEmpty) {
+            exercises[ei].sets.append(ActiveSet(weight: current.weight, reps: current.reps))
+        }
+    }
+
     private func showNextExercise() {
         guard let next = exercises.first(where: { $0.sets.contains { !$0.done } }) else {
             commandFeedback = CommandFeedback(text: "Everything's done — hit Finish when you're ready 💪")
@@ -1168,10 +1226,18 @@ struct ActiveWorkoutView: View {
     }
 
     private func showFormTip(for query: String) {
-        let name = exercises.first { $0.name.lowercased().contains(query) }?.name
-            ?? ExerciseDatabase.match(name: query)?.name
-            ?? ExerciseService.resolveExerciseName(query)
-        guard !query.isEmpty, let name else {
+        // "form tips" with no exercise named → the one they're on right now
+        // (rest-anchored, else first unfinished). Asking mid-workout means the
+        // current lift; don't bounce them to "which exercise?".
+        let name: String?
+        if query.isEmpty {
+            name = currentExerciseName()
+        } else {
+            name = exercises.first { $0.name.lowercased().contains(query) }?.name
+                ?? ExerciseDatabase.match(name: query)?.name
+                ?? ExerciseService.resolveExerciseName(query)
+        }
+        guard let name else {
             commandFeedback = CommandFeedback(text: "Which exercise? Try \"form tips for deadlift\".")
             return
         }

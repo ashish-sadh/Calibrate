@@ -77,10 +77,13 @@ public enum WorkoutCommandParser {
     /// "how to correct my bench form" → "bench".
     static func stripFormWords(_ text: String) -> String {
         let stop: Set<String> = ["form", "tip", "tips", "technique", "cue", "cues", "for",
-                                 "how", "do", "does", "i", "to", "on", "the", "my", "a", "an",
+                                 "how", "hows", "do", "does", "i", "to", "on", "the", "my", "a", "an",
                                  "correct", "fix", "improve", "proper", "good", "some", "any",
                                  "what", "whats", "are", "is", "me", "give", "show", "of",
-                                 "with", "check", "about", "doing", "perform"]
+                                 "with", "check", "about", "doing", "perform",
+                                 // leftover fragments after possessives/deixis so a bare
+                                 // "how's my form" / "form check on this" → "" → current lift
+                                 "s", "this", "it", "current", "here", "now", "please"]
         return text
             .split(whereSeparator: { !$0.isLetter && !$0.isNumber })
             .map(String.init)
