@@ -335,6 +335,21 @@ struct FoodTabView: View {
         let f = DateFormatter(); f.dateFormat = "EEE"; return f
     }()
 
+    /// Stable string id for a day pill — Date ids don't survive the JNI
+    /// bridge (scrollTo lookups miss), strings do. Also the scroll target.
+    private static func dayKey(_ day: Date) -> String {
+        DateFormatters.dateOnly.string(from: day)
+    }
+
+    /// Weekday label via Calendar symbols, not DateFormatter("EEE") — Skip's
+    /// formatter mislabels weekdays on Android (Jul 26 rendered "Fri"), while
+    /// Calendar.component(.weekday) is correct on both platforms.
+    private static func weekdayLabel(_ day: Date, cal: Calendar) -> String {
+        let idx = cal.component(.weekday, from: day) - 1
+        let symbols = cal.shortWeekdaySymbols
+        return symbols.indices.contains(idx) ? symbols[idx] : weekdayFormatter.string(from: day)
+    }
+
     private func reload() {
         lastReloadAt = Date()
         foodSortMode = .time
@@ -368,13 +383,19 @@ struct FoodTabView: View {
         // day via ScrollViewReader. weekOffset state retired — the
         // ScrollView owns the position; the DatePicker callback
         // pushes the picked date and `.onChange` re-anchors.
+        #if os(Android)
+        // ScrollViewReader.scrollTo never takes effect on Fuse (tried Date
+        // ids, String ids, delayed re-anchor) — a 30-day-back strip opens at
+        // June with today off-screen. Window the strip so today sits in the
+        // initial viewport; deeper history is a tap away in the month sheet.
+        let scrollBackDays = 3
+        #else
         let scrollBackDays = 30
+        #endif
         let scrollForwardDays = 7
         let days: [Date] = (-scrollBackDays...scrollForwardDays).compactMap {
             cal.date(byAdding: .day, value: $0, to: today)
         }
-        let dayFormatter = Self.weekdayFormatter
-
         return VStack(spacing: 8) {
             // Month label — tap to open calendar
             Button { showingDatePicker = true } label: {
@@ -431,9 +452,12 @@ struct FoodTabView: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 4) {
                         ForEach(days, id: \.self) { day in
-                            let isSelected = cal.isDate(day, inSameDayAs: selected)
-                            let isToday = cal.isDate(day, inSameDayAs: today)
+                            // Plain Date equality on startOfDay — Skip's
+                            // Calendar.isDate(inSameDayAs:) misses on Android,
+                            // which killed the selected pill + today dot.
                             let dayStart = cal.startOfDay(for: day)
+                            let isSelected = dayStart == selected
+                            let isToday = dayStart == today
                             let hasFood = (loggedDays[dayStart] ?? 0) > 0
 
                             Button {
@@ -442,7 +466,7 @@ struct FoodTabView: View {
                                 withAnimation { proxy.scrollTo(day, anchor: .center) }
                             } label: {
                                 VStack(spacing: 2) {
-                                    Text(dayFormatter.string(from: day))
+                                    Text(Self.weekdayLabel(day, cal: cal))
                                         .font(.caption2)
                                         .foregroundStyle(isSelected ? .white : .secondary)
                                     Text("\(cal.component(.day, from: day))")
@@ -457,8 +481,8 @@ struct FoodTabView: View {
                                 .background(isSelected ? Theme.ink : Color.clear, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
                             }
                             .buttonStyle(.plain)
-                            .id(day)
-                            .accessibilityLabel("\(dayFormatter.string(from: day)) \(cal.component(.day, from: day))\(isToday ? ", today" : "")\(hasFood ? ", food logged" : "")\(isSelected ? ", selected" : "")")
+                            .id(Self.dayKey(day))
+                            .accessibilityLabel("\(Self.weekdayLabel(day, cal: cal)) \(cal.component(.day, from: day))\(isToday ? ", today" : "")\(hasFood ? ", food logged" : "")\(isSelected ? ", selected" : "")")
                         }
                     }
                     .padding(.horizontal, 8)
@@ -470,11 +494,11 @@ struct FoodTabView: View {
                 #endif
                 .onAppear {
                     DispatchQueue.main.async {
-                        proxy.scrollTo(selected, anchor: .center)
+                        proxy.scrollTo(Self.dayKey(selected), anchor: .center)
                     }
                 }
                 .onChange(of: viewModel.selectedDate) { _, new in
-                    withAnimation { proxy.scrollTo(cal.startOfDay(for: new), anchor: .center) }
+                    withAnimation { proxy.scrollTo(Self.dayKey(cal.startOfDay(for: new)), anchor: .center) }
                 }
             }
 
