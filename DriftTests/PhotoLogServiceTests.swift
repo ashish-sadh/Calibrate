@@ -3,6 +3,7 @@ import Foundation
 import Testing
 import UIKit
 import ImageIO
+import DriftCore
 @testable import Drift
 
 // MARK: - Fakes

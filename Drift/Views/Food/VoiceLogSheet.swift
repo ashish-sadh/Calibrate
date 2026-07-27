@@ -406,7 +406,7 @@ final class VoiceLogViewModel {
         // 1. Drift Coach cloud model (same model as chat) — best macros, handles
         //    Indian portions + multi-item utterances. Returns nil when no key /
         //    unreachable / nothing parsed.
-        if let resp = await MealTextLogger.parse(text), !resp.items.isEmpty {
+        if let resp = await NebiusMealLogger.parse(text), !resp.items.isEmpty {
             reviewItems = resp.items
             phase = .confirming
             return

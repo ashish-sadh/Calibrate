@@ -96,7 +96,7 @@ public enum RoutinePlanGenerator {
     /// Decode the model's JSON. Pure; nil when nothing decodable or the shape
     /// is out of bounds (0 or >7 days).
     public nonisolated static func decode(_ raw: String) -> [PlannedDay]? {
-        guard let json = extractJSONObject(raw),
+        guard let json = CloudExtractionPolicy.extractJSONObject(raw),
               let data = json.data(using: .utf8),
               let resp = try? JSONDecoder().decode(Response.self, from: data),
               (1...7).contains(resp.days.count) else { return nil }
@@ -160,22 +160,4 @@ public enum RoutinePlanGenerator {
         return out
     }
 
-    /// First brace-balanced `{...}` substring (same approach as
-    /// `NebiusExerciseLogger` / `MealTextLogger`).
-    nonisolated static func extractJSONObject(_ s: String) -> String? {
-        guard let start = s.firstIndex(of: "{") else { return nil }
-        var depth = 0
-        var idx = start
-        while idx < s.endIndex {
-            switch s[idx] {
-            case "{": depth += 1
-            case "}":
-                depth -= 1
-                if depth == 0 { return String(s[start...idx]) }
-            default: break
-            }
-            idx = s.index(after: idx)
-        }
-        return nil
-    }
 }

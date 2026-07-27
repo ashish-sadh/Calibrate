@@ -2,6 +2,7 @@ import Foundation
 @testable import DriftCore
 import Testing
 import UIKit
+import DriftCore
 @testable import Drift
 
 // MARK: - Fakes

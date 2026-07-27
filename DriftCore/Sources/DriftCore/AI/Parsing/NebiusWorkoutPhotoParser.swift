@@ -240,7 +240,7 @@ public enum NebiusWorkoutPhotoParser {
     /// `referenceDate` injected) so it's Tier-0 unit-testable. nil when nothing
     /// decodable, or a non-nil-but-empty result when the model saw no workout.
     nonisolated static func decode(_ raw: String, referenceDate: Date) -> ScannedWorkoutResult? {
-        guard let json = extractJSONObject(raw),
+        guard let json = CloudExtractionPolicy.extractJSONObject(raw),
               let data = json.data(using: .utf8),
               let resp = try? JSONDecoder().decode(Response.self, from: data) else { return nil }
 
@@ -305,24 +305,6 @@ public enum NebiusWorkoutPhotoParser {
         let twoYearsBack = referenceDate.addingTimeInterval(-2 * 365.25 * 86400)
         let oneDayAhead = referenceDate.addingTimeInterval(86400)
         return date >= twoYearsBack && date <= oneDayAhead
-    }
-
-    /// First brace-balanced `{...}` substring, mirroring `NebiusExerciseLogger`.
-    nonisolated static func extractJSONObject(_ s: String) -> String? {
-        guard let start = s.firstIndex(of: "{") else { return nil }
-        var depth = 0
-        var idx = start
-        while idx < s.endIndex {
-            switch s[idx] {
-            case "{": depth += 1
-            case "}":
-                depth -= 1
-                if depth == 0 { return String(s[start...idx]) }
-            default: break
-            }
-            idx = s.index(after: idx)
-        }
-        return nil
     }
 
     // MARK: - Wire model

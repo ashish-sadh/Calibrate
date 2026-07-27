@@ -61,7 +61,7 @@ public enum NebiusExerciseLogger {
     /// entries. Pure (no I/O) so it's unit-testable. nil when nothing decodable
     /// or nothing survives validation.
     nonisolated static func decode(_ raw: String) -> [FMExerciseEntry]? {
-        guard let json = extractJSONObject(raw),
+        guard let json = CloudExtractionPolicy.extractJSONObject(raw),
               let data = json.data(using: .utf8),
               let resp = try? JSONDecoder().decode(Response.self, from: data) else { return nil }
 
@@ -79,25 +79,6 @@ public enum NebiusExerciseLogger {
         guard !mapped.isEmpty else { return nil }
         // Cap at the same ceiling as the FM path (guards a runaway response).
         return Array(mapped.prefix(ExerciseTranscriptBounds.maxEntries))
-    }
-
-    /// First brace-balanced `{...}` substring (JSON has no braces inside string
-    /// values here), mirroring `MealTextLogger.extractJSONObject`.
-    nonisolated static func extractJSONObject(_ s: String) -> String? {
-        guard let start = s.firstIndex(of: "{") else { return nil }
-        var depth = 0
-        var idx = start
-        while idx < s.endIndex {
-            switch s[idx] {
-            case "{": depth += 1
-            case "}":
-                depth -= 1
-                if depth == 0 { return String(s[start...idx]) }
-            default: break
-            }
-            idx = s.index(after: idx)
-        }
-        return nil
     }
 
     private struct Response: Codable {

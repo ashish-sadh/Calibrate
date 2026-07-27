@@ -43,6 +43,20 @@ struct AndroidFoodSearchSheet: View {
     @State var query = ""
     @State var results: [Food] = []
     @State var confirmFood: Food? = nil
+    @State var describeQuery: DescribeQuery? = nil
+
+    /// Identifiable wrapper so `.sheet(item:)` carries the handed-off query.
+    struct DescribeQuery: Identifiable {
+        let text: String
+        var id: String { text }
+    }
+
+    /// Exact (case-insensitive) name hit — when the user already found the
+    /// thing, don't push AI at them (mirrors iOS FoodSearchView, #1101).
+    private var hasExactMatch: Bool {
+        let q = query.trimmingCharacters(in: .whitespaces).lowercased()
+        return results.contains { $0.name.lowercased() == q }
+    }
 
     var body: some View {
         NavigationStack {
@@ -101,9 +115,36 @@ struct AndroidFoodSearchSheet: View {
                             .buttonStyle(.plain)
                             Divider().padding(.leading, 16)
                         }
+                        // No exact hit → offer the Describe (AI) path inline
+                        // (mirrors iOS FoodSearchView's sparkles row, #1101).
+                        if query.trimmingCharacters(in: .whitespaces).count >= 2, !hasExactMatch {
+                            Button {
+                                describeQuery = DescribeQuery(text: query.trimmingCharacters(in: .whitespaces))
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: sym("sparkles"))
+                                        .foregroundStyle(Theme.accent)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Log \"\(query.trimmingCharacters(in: .whitespaces))\" with AI")
+                                            .font(.subheadline.weight(.medium))
+                                            .foregroundStyle(Theme.textPrimary)
+                                        Text("Describe it — AI estimates the macros")
+                                            .font(.caption).foregroundStyle(Theme.textSecondary)
+                                    }
+                                    Spacer()
+                                }
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 10)
+                                .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                 }
                 .background(Theme.background)
+                .sheet(item: $describeQuery) { q in
+                    DescribeMealSheet(initialQuery: q.text)
+                }
             }
             .background(Theme.background.ignoresSafeArea())
         }

@@ -108,6 +108,7 @@ struct TodayTab: View {
     @State var showingCoachInfo = false
     @State var showingSearch = false
     @State var showingRecent = false
+    @State var showingDescribe = false
     @State var foodLogVM = FoodLogViewModel()
 
     var body: some View {
@@ -151,6 +152,11 @@ struct TodayTab: View {
             .background(Theme.background.ignoresSafeArea())
             .onAppear { store.reload() }
             .sheet(isPresented: $showingCoachInfo) { CoachComingSheet() }
+            // TodayStore's .foodEntryAdded observer refreshes the dashboard,
+            // but onDismiss also covers the cancel path's ring re-check.
+            .sheet(isPresented: $showingDescribe, onDismiss: { store.reload() }) {
+                DescribeMealSheet()
+            }
             .sheet(isPresented: $showingSearch, onDismiss: { store.reload() }) {
                 AndroidFoodSearchSheet(viewModel: foodLogVM, initialMealType: nil)
             }
@@ -257,7 +263,7 @@ struct TodayTab: View {
     private var logChips: some View {
         HStack(spacing: 10) {
             chip("Snap", icon: "camera.fill") { showingCoachInfo = true }
-            chip("Describe", icon: "bubble.left.fill") { showingCoachInfo = true }
+            chip("Describe", icon: "bubble.left.fill") { showingDescribe = true }
             // Present over Today, don't switch tabs first: ContentView.tabContent
             // is a `switch` on selectedTab (ContentView.swift:36) — changing it
             // unmounts TodayTab (and this sheet) before it can appear. Matches

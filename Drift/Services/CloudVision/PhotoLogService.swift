@@ -3,6 +3,7 @@ import UIKit
 import ImageIO
 import UniformTypeIdentifiers
 import CryptoKit
+import DriftCore
 import Network
 
 /// Orchestrates the photo-to-food pipeline: preprocess the image, hash it,

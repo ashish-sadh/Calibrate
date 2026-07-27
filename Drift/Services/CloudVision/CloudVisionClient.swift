@@ -1,4 +1,5 @@
 import Foundation
+import DriftCore
 
 /// Provider-agnostic interface for cloud vision. The UI and service layers
 /// talk to this protocol so we can swap Anthropic / OpenAI implementations

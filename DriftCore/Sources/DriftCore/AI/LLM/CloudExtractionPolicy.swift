@@ -48,4 +48,26 @@ public enum CloudExtractionPolicy {
         onRetry?()
         return await attempt()
     }
+
+    /// First brace-balanced `{...}` substring — the model sometimes wraps the
+    /// JSON in prose or markdown fences. Good enough for our schemas (no
+    /// braces inside string values). Was copy-pasted into every extraction
+    /// decoder (meal, exercise, workout photo, routine plan); consolidated
+    /// here with the rest of the extraction-call policy (#1101).
+    public static func extractJSONObject(_ s: String) -> String? {
+        guard let start = s.firstIndex(of: "{") else { return nil }
+        var depth = 0
+        var idx = start
+        while idx < s.endIndex {
+            switch s[idx] {
+            case "{": depth += 1
+            case "}":
+                depth -= 1
+                if depth == 0 { return String(s[start...idx]) }
+            default: break
+            }
+            idx = s.index(after: idx)
+        }
+        return nil
+    }
 }
