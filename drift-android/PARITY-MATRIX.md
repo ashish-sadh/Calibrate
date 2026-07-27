@@ -141,10 +141,10 @@ not ported at all.
 
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
-| Workout tab root | template grid (cards; "Show all 10" affordance) | deviation | #1095 |
+| Workout tab root | template grid (cards; "Show all N" affordance, caps at 5) | ok | #1095 verified non-gap: loaded 11 templates on emulator, "Show all 11" appears + expands, shared code unmodified |
 | Workout tab root | streak card (conditional: current > 0) | ok | |
 | Workout tab root | burn chips (active cal / steps; gated on DriftPlatform.health) | ok | |
-| Workout tab root | Apple-Health workouts band (fetchRecentWorkouts hardcoded []) | missing | #1070/#1095 |
+| Workout tab root | Health Connect workouts band (fetchRecentWorkouts real data via readWorkoutsJson facade) | ok | #1095 shipped: header Android-gated to person glyph + "Health Connect" label (iOS unchanged, heart.fill + "Apple Health"); device-verified w/ seeded session (type/duration/calories correct, DESC sort) |
 | Workout tab root | history collapsible + rows → WorkoutDetailView (auto-expand on save) | ok | |
 | Workout tab root | history row .contextMenu (delete) — gated off in source :423; Android path = detail ⋮ menu (verified) | ios-only-by-design | |
 | Workout tab root | Templates ⋮ menu (New Template / Load Packages I–IV / Remove All; Import iOS-only) | ok | |

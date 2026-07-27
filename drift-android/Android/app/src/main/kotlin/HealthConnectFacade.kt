@@ -7,6 +7,7 @@ import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
+import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.HeightRecord
 import androidx.health.connect.client.records.SleepSessionRecord
 import androidx.health.connect.client.records.StepsRecord
@@ -44,6 +45,7 @@ class HealthConnectFacade {
         HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class),
         HealthPermission.getReadPermission(SleepSessionRecord::class),
         HealthPermission.getReadPermission(HeightRecord::class),
+        HealthPermission.getReadPermission(ExerciseSessionRecord::class),
     )
 
     private val context: Context
@@ -232,6 +234,70 @@ class HealthConnectFacade {
         out.toString()
     }
 
+    /// Human label for a session with no title, from the symbolic
+    /// EXERCISE_TYPE_* constant — never a raw int code. A generic "Workout"
+    /// fallback beats a wrong label for the ~60 types we don't special-case.
+    private fun exerciseTypeLabel(type: Int): String = when (type) {
+        ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING -> "Strength Training"
+        ExerciseSessionRecord.EXERCISE_TYPE_RUNNING -> "Running"
+        ExerciseSessionRecord.EXERCISE_TYPE_WALKING -> "Walking"
+        ExerciseSessionRecord.EXERCISE_TYPE_BIKING -> "Biking"
+        ExerciseSessionRecord.EXERCISE_TYPE_HIGH_INTENSITY_INTERVAL_TRAINING -> "HIIT"
+        ExerciseSessionRecord.EXERCISE_TYPE_YOGA -> "Yoga"
+        ExerciseSessionRecord.EXERCISE_TYPE_SWIMMING_POOL -> "Swimming"
+        ExerciseSessionRecord.EXERCISE_TYPE_ELLIPTICAL -> "Elliptical"
+        else -> "Workout"
+    }
+
+    /// Exercise sessions in [startMillis, endMillis), each paired with its
+    /// active calories over the same interval:
+    /// [{"id":"...","type":"Strength Training","durationSec":2700.0,"calories":312.0,"startMillis":...}]
+    fun readWorkoutsJson(startMillis: Long, endMillis: Long): String = runBlocking {
+        val out = JSONArray()
+        try {
+            val sessions = mutableListOf<ExerciseSessionRecord>()
+            var pageToken: String? = null
+            do {
+                val response = client().readRecords(
+                    ReadRecordsRequest(
+                        recordType = ExerciseSessionRecord::class,
+                        timeRangeFilter = TimeRangeFilter.between(
+                            Instant.ofEpochMilli(startMillis), Instant.ofEpochMilli(endMillis)
+                        ),
+                        pageToken = pageToken,
+                    )
+                )
+                sessions.addAll(response.records)
+                pageToken = response.pageToken
+            } while (pageToken != null)
+
+            for (session in sessions) {
+                val caloriesFilter = TimeRangeFilter.between(session.startTime, session.endTime)
+                var calories = 0.0
+                var caloriesPageToken: String? = null
+                do {
+                    val caloriesResponse = client().readRecords(
+                        ReadRecordsRequest(recordType = ActiveCaloriesBurnedRecord::class, timeRangeFilter = caloriesFilter, pageToken = caloriesPageToken)
+                    )
+                    for (record in caloriesResponse.records) calories += record.energy.inKilocalories
+                    caloriesPageToken = caloriesResponse.pageToken
+                } while (caloriesPageToken != null)
+
+                val label = session.title?.takeIf { it.isNotBlank() } ?: exerciseTypeLabel(session.exerciseType)
+                out.put(JSONObject().apply {
+                    put("id", session.metadata.id)
+                    put("type", label)
+                    put("durationSec", (session.endTime.toEpochMilli() - session.startTime.toEpochMilli()) / 1000.0)
+                    put("calories", calories)
+                    put("startMillis", session.startTime.toEpochMilli())
+                })
+            }
+        } catch (e: Exception) {
+            // permission denied / provider missing → empty result, never throw
+        }
+        out.toString()
+    }
+
     /// DEBUG/e2e only: seed a weight record so the read pipeline can be
     /// verified on an emulator. Needs WRITE_WEIGHT, which only the debug
     /// manifest overlay declares — in release this throws SecurityException
@@ -245,6 +311,38 @@ class HealthConnectFacade {
                 metadata = androidx.health.connect.client.records.metadata.Metadata.manualEntry(),
             )
             client().insertRecords(listOf(record))
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    /// DEBUG/e2e only: seed one 45-minute strength-training session ending
+    /// now, plus ~300kcal of active calories over the same interval, so the
+    /// Workout tab's Health Connect band can be verified on an emulator.
+    /// Needs WRITE_EXERCISE, debug-manifest-only — release throws
+    /// SecurityException and returns false.
+    fun debugSeedExerciseSession(): Boolean = runBlocking {
+        try {
+            val end = Instant.now()
+            val start = end.minusSeconds(45 * 60)
+            val session = ExerciseSessionRecord(
+                startTime = start,
+                startZoneOffset = null,
+                endTime = end,
+                endZoneOffset = null,
+                exerciseType = ExerciseSessionRecord.EXERCISE_TYPE_STRENGTH_TRAINING,
+                metadata = androidx.health.connect.client.records.metadata.Metadata.manualEntry(),
+            )
+            val calories = ActiveCaloriesBurnedRecord(
+                startTime = start,
+                startZoneOffset = null,
+                endTime = end,
+                endZoneOffset = null,
+                energy = androidx.health.connect.client.units.Energy.kilocalories(300.0),
+                metadata = androidx.health.connect.client.records.metadata.Metadata.manualEntry(),
+            )
+            client().insertRecords(listOf(session, calories))
             true
         } catch (e: Exception) {
             false

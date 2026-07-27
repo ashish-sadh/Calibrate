@@ -61,6 +61,9 @@ public final class HealthConnectService: HealthDataProvider {
     private static func facadeReadLatestHeightCm() throws -> Double {
         try AnyDynamicObject(className: facadeClass, arguments: []).readLatestHeightCm() as Double? ?? -1
     }
+    private static func facadeReadWorkoutsJson(_ start: Int64, _ end: Int64) throws -> String {
+        try AnyDynamicObject(className: facadeClass, arguments: []).readWorkoutsJson(start, end) as String? ?? "[]"
+    }
     #else
     private static func facadePing() throws -> String? { nil }
     private static func facadeAvailability() -> Int { 0 }
@@ -71,6 +74,7 @@ public final class HealthConnectService: HealthDataProvider {
     private static func facadeReadCaloriesJson(_ start: Int64, _ end: Int64) throws -> String { "{}" }
     private static func facadeReadSleepJson(_ start: Int64, _ end: Int64) throws -> String { "[]" }
     private static func facadeReadLatestHeightCm() throws -> Double { -1 }
+    private static func facadeReadWorkoutsJson(_ start: Int64, _ end: Int64) throws -> String { "[]" }
     #endif
 
     private static func jsonArray(_ raw: String) -> [[String: Any]] {
@@ -243,10 +247,21 @@ public final class HealthConnectService: HealthDataProvider {
         try await fetchRecentSleepData(days: days).map { (date: $0.date, hours: $0.hours) }
     }
 
+    @MainActor public func fetchRecentWorkouts(days: Int) async throws -> [HealthWorkout] {
+        let end = Date()
+        let start = end.addingTimeInterval(-Double(days) * 86400)
+        let raw = try await Self.onFacadeQueue {
+            try Self.facadeReadWorkoutsJson(
+                Int64(start.timeIntervalSince1970 * 1000),
+                Int64(end.timeIntervalSince1970 * 1000)
+            )
+        }
+        return HealthWorkout.decode(fromFacadeJSON: raw)
+    }
+
     // MARK: Not yet backed by Health Connect — honest empties.
     // (Views for these gate on data presence, not on the seam being non-nil.)
 
-    @MainActor public func fetchRecentWorkouts(days: Int) async throws -> [HealthWorkout] { [] }
     @MainActor public func fetchSleepDetail(for date: Date) async throws -> SleepDetail {
         // Stage breakdown isn't wired yet — report total hours only.
         let hours = (try? await fetchSleepHours(for: date)) ?? 0

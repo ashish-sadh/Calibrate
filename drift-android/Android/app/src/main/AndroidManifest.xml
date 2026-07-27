@@ -17,6 +17,7 @@
     <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED" />
     <uses-permission android:name="android.permission.health.READ_SLEEP" />
     <uses-permission android:name="android.permission.health.READ_HEIGHT" />
+    <uses-permission android:name="android.permission.health.READ_EXERCISE" />
 
     <!-- Pre-Android-14 devices host Health Connect as this Play-store app -->
     <queries>

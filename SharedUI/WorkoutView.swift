@@ -317,12 +317,18 @@ struct WorkoutView: View {
                 burnMetricsBand
                 #endif
 
-                // Apple Health Workouts (last 7 days)
+                // Platform-health-provider Workouts (last 7 days): Apple
+                // Health on iOS, Health Connect on Android.
                 if !healthWorkouts.isEmpty {
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
+                            #if os(Android)
+                            Image(systemName: sym("figure.strengthtraining.traditional")).font(.caption).foregroundStyle(Theme.heartRed)
+                            Text("Health Connect").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
+                            #else
                             Image(systemName: sym("heart.fill")).font(.caption).foregroundStyle(Theme.heartRed)
                             Text("Apple Health").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
+                            #endif
                             Spacer()
                             Text("\(healthWorkouts.count) \(healthWorkouts.count == 1 ? "workout" : "workouts") this week").font(.caption.monospacedDigit()).foregroundStyle(Theme.textTertiary)
                         }

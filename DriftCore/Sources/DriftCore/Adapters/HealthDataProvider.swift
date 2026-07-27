@@ -22,6 +22,31 @@ public struct HealthWorkout: Sendable, Identifiable {
         let h = m / 60
         return h > 0 ? "\(h)h \(m % 60)m" : "\(m)m"
     }
+
+    /// Decodes the Android Health Connect facade's JSON array
+    /// (`[{"id","type","durationSec","calories","startMillis"}, ...]`) into
+    /// the same shape HealthKit produces: sorted start-date DESC, capped 100.
+    /// `startMillis` is epoch millis, never a DateFormatter round-trip — an
+    /// unpinned formatter is UTC on Android but local on Apple platforms.
+    public static func decode(fromFacadeJSON json: String) -> [HealthWorkout] {
+        guard let data = json.data(using: .utf8),
+              let records = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else { return [] }
+        let workouts = records.compactMap { record -> HealthWorkout? in
+            guard let type = record["type"] as? String,
+                  let durationSec = record["durationSec"] as? Double,
+                  let startMillis = record["startMillis"] as? Double else { return nil }
+            let calories = record["calories"] as? Double ?? 0
+            let id = (record["id"] as? String).flatMap(UUID.init(uuidString:)) ?? UUID()
+            return HealthWorkout(
+                id: id,
+                type: type,
+                duration: durationSec,
+                calories: calories,
+                date: Date(timeIntervalSince1970: startMillis / 1000)
+            )
+        }
+        return Array(workouts.sorted { $0.date > $1.date }.prefix(100))
+    }
 }
 
 public struct SleepNight: Sendable {
