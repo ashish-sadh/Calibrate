@@ -18,6 +18,23 @@ struct WeightStats: Sendable {
     var change30d: String?
 }
 
+/// Mirrors `WeightViewModel.TimeRange` (iOS) — the Android chart re-windows
+/// in-memory over this instead of iOS's chartScrollableAxes pan (#1092 plan).
+enum WeightChartRange: String, CaseIterable {
+    case oneWeek = "1W", oneMonth = "1M", threeMonths = "3M", sixMonths = "6M", oneYear = "1Y", all = "All"
+
+    var days: Int? {
+        switch self {
+        case .oneWeek: 7
+        case .oneMonth: 30
+        case .threeMonths: 90
+        case .sixMonths: 180
+        case .oneYear: 365
+        case .all: nil
+        }
+    }
+}
+
 // MARK: - Store
 
 @MainActor @Observable public class WeightStore {
@@ -26,6 +43,11 @@ struct WeightStats: Sendable {
 
     var stats = WeightStats()
     var entries: [WeightRow] = []
+    /// Full-history daily series for `WeightChartAndroid` — the range chips
+    /// filter this in-memory rather than refetching (#1092).
+    var allDailyPoints: [WeightChartSeries.Point] = []
+    var goalChangeKg: Double?
+    var unit: WeightUnit = .kg
 
     /// Loads once when `shared` is first touched — see FoodStore.init.
     init() { reload() }
@@ -34,7 +56,12 @@ struct WeightStats: Sendable {
         Task {
             await CoreResourcesBootstrap.warmUpDatabase()
             let unit = Preferences.weightUnit
-            let history = WeightServiceAPI.getHistory(days: 90).sorted { $0.date > $1.date }
+            self.unit = unit
+            // 365 → AppDatabase.fetchWeightEntries' full history (see the
+            // days >= 365 branch in WeightServiceAPI.getHistory) so the "All"
+            // range and a continuous EMA work — the chart needs the whole
+            // trajectory even when the stats header/log list only show recent.
+            let history = WeightServiceAPI.getHistory(days: 365).sorted { $0.date > $1.date }
             entries = history.compactMap { e in
                 guard let id = e.id else { return nil }
                 return WeightRow(id: id, date: e.date,
@@ -53,6 +80,13 @@ struct WeightStats: Sendable {
             let trend = history.count >= 2 ? WeightServiceAPI.describeTrend() : ""
             s.trend = trend.hasPrefix("No weight data") ? "" : trend
             stats = s
+
+            // Chart series — calculateTrend sorts its input itself, so
+            // history's (descending) order here doesn't matter.
+            let fullTrend = WeightTrendCalculator.calculateTrend(
+                entries: history.map { (date: $0.date, weightKg: $0.weightKg) })
+            allDailyPoints = fullTrend.map { WeightChartSeries.daily($0.dataPoints, unit: unit) } ?? []
+            goalChangeKg = WeightGoal.load()?.totalChangeKg
         }
     }
 
@@ -102,6 +136,16 @@ struct WeightStats: Sendable {
 struct WeightTab: View {
     @State var store = WeightStore.shared
     @State var showingAdd = false
+    @State var range: WeightChartRange = .threeMonths
+
+    /// In-memory re-window — no DB refetch on chip tap (#1092 plan).
+    private var displayPoints: [WeightChartSeries.Point] {
+        guard let days = range.days,
+              let cutoff = Calendar.current.date(byAdding: .day, value: -days, to: Date()) else {
+            return store.allDailyPoints
+        }
+        return store.allDailyPoints.filter { $0.date >= cutoff }
+    }
 
     var body: some View {
         NavigationStack {
@@ -137,6 +181,13 @@ struct WeightTab: View {
                             .padding(.vertical, 10)
                             .background(Theme.accent, in: RoundedRectangle(cornerRadius: Theme.radiusControl, style: .continuous))
                     }.buttonStyle(.plain)
+
+                    if store.allDailyPoints.count >= 2 {
+                        rangePicker
+                        if displayPoints.count >= 2 {
+                            WeightChartAndroid(points: displayPoints, unit: store.unit, goalChangeKg: store.goalChangeKg)
+                        }
+                    }
 
                     // History
                     VStack(alignment: .leading, spacing: 8) {
@@ -177,6 +228,25 @@ struct WeightTab: View {
                     store.addWeight(text)
                 }
             }
+        }
+    }
+
+    private var rangePicker: some View {
+        HStack(spacing: 0) {
+            ForEach(WeightChartRange.allCases, id: \.self) { r in
+                Button {
+                    range = r
+                } label: {
+                    Text(r.rawValue)
+                        .font(.caption.weight(.medium))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        // iOS timeRangeBar: selected = solid ink + white text.
+                        .background(range == r ? Theme.ink : Color.clear, in: RoundedRectangle(cornerRadius: 6))
+                        .foregroundStyle(range == r ? .white : Theme.textSecondary)
+                }.buttonStyle(.plain)
+            }
+            Spacer()
         }
     }
 

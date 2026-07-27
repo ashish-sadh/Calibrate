@@ -352,13 +352,14 @@ public enum WeightTrendCalculator {
     ) -> WeightTrend? {
         guard !entries.isEmpty else { return nil }
 
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd"
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-
         let sorted = entries
             .compactMap { entry -> (date: Date, dateString: String, weight: Double)? in
-                guard let date = formatter.date(from: entry.date), entry.weightKg > 0 else { return nil }
+                // DateFormatters.dateOnly pins the local time zone — an ad-hoc
+                // DateFormatter() here defaults to UTC on Android (Foundation
+                // difference from Apple platforms), so every date-only round
+                // trip lost a day west of UTC (#1092: chart date labels read
+                // one day early).
+                guard let date = DateFormatters.dateOnly.date(from: entry.date), entry.weightKg > 0 else { return nil }
                 return (date, entry.date, entry.weightKg)
             }
             .sorted { $0.date < $1.date }
