@@ -94,20 +94,47 @@ struct PillTabBar: View {
     }
 }
 
-/// Floating Drift Coach entry — mirrors iOS ChatIconButton placement.
+/// Floating Drift Coach entry — chrome matches iOS ChatIconButton exactly:
+/// light card circle, ink glyph, hairline border, soft shadow (operator:
+/// "the coach button doesn't look like iPhone"). The iOS double-bubble
+/// glyph is unmapped in skip-ui (the sym() fallback rendered a paper
+/// plane), so the bubbles are drawn Paths per the MealGlyphs pattern.
 struct ChatIconButton: View {
     @Binding var isPresented: Bool
 
     var body: some View {
         Button { isPresented = true } label: {
-            Image(systemName: sym("bubble.left.fill"))
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(.white)
-                .frame(width: 46, height: 46)
-                .background(Theme.ink, in: Circle())
-                .shadowSoft(cornerRadius: 23)
+            ChatBubblesGlyph()
+                .frame(width: 44, height: 44)
+                .background(Theme.cardBackground, in: Circle())
+                .overlay(Circle().strokeBorder(Theme.separator, lineWidth: 0.5))
+                .shadowSoft(cornerRadius: 22)
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// Two chat bubbles (left solid outline + right offset), ~the silhouette of
+/// SF "bubble.left.and.text.bubble.right", drawn at 20x16 inside the 44pt hit.
+struct ChatBubblesGlyph: View {
+    var body: some View {
+        ZStack {
+            // left bubble w/ tail
+            Path { p in
+                p.addRoundedRect(in: CGRect(x: 0, y: 2, width: 13, height: 9.5), cornerSize: CGSize(width: 3.2, height: 3.2))
+                p.move(to: CGPoint(x: 2.6, y: 11))
+                p.addLine(to: CGPoint(x: 2.2, y: 14.4))
+                p.addLine(to: CGPoint(x: 6, y: 11.2))
+                p.closeSubpath()
+            }
+            .stroke(Theme.ink, style: StrokeStyle(lineWidth: 1.5, lineJoin: .round))
+            // right bubble, slightly lower + overlapping
+            Path { p in
+                p.addRoundedRect(in: CGRect(x: 8.4, y: 6.2, width: 11.6, height: 8.4), cornerSize: CGSize(width: 3, height: 3))
+            }
+            .fill(Theme.ink)
+        }
+        .frame(width: 20, height: 16)
     }
 }
 
