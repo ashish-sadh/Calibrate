@@ -12,6 +12,32 @@ not ported at all.
 
 ## Session notes (append-only)
 
+- **2026-07-27 (scout #2, Fable):** Workout unknown-row burn-down (0-FOCUS): drove
+  the full create-template flow (name → picker multi-select → edit-exercise sheet:
+  stepper bounds, rest dropdown, warmup toggle → sectioned save), template preview
+  actions (row→detail, Start, Edit, Favorite↔Unfavorite, Delete), templates ⋮ menu,
+  active-workout close dialog, exercise ⋮ menu, kg/lbs unit menu, command-strip
+  focus. 19 rows updated (13 unknown→ok, 3 resolved from source as dead-code/
+  ios-only-by-design: Rename + Delete-Template alerts unreachable on BOTH platforms,
+  Delete-Workout alert iOS-only). **Filed #1102 P0: SavedSession never persists on
+  Android — `UserDefaults.set(Data)` is dropped by Skip's SharedPreferences bridge
+  (prefs dump has no session key; `__unrepresentable__` marker precedent), so any
+  process death loses the whole workout; proven with two controlled kills (with and
+  WITHOUT a prior background transition). Flipped the kill+resume row ok→broken —
+  scout #1's pass evidently exercised the same-process path only.** Filed #1103 P1:
+  set-done toggle pops the IME with a cursor dropped into the notes/Tip TextField
+  (screenshot-evidenced; ties to executor #2's set-row x-range breadcrumb). Infra:
+  the emulator's qemu process crashed twice mid-session (host-side, snapshot
+  auto-saved; ~20-30min uptime each) — earlier "spontaneous sheet dismissal"
+  anomalies attributed to that, not to app menus (deliberate slow re-drive survived
+  all menu interactions). SwiftShader first-composition of any popup takes >1s —
+  screenshot 2.5s+ after popup-triggering taps or you record a false negative.
+  Not driven (left unknown): Import alert, rest-chip menu options, picker/browser
+  custom-exercise sheets, per-set warmup flag, active-row→detail nav, voice-log
+  sheet (Nebius residual per 0-AI-LADDER). DB left as found (ScoutQA template
+  created, driven, deleted; test workouts discarded; the two crash-lost sessions
+  left no rows by the very bug filed).
+
 - **2026-07-27 (scout #1, Fable):** Matrix created from full iOS source scan
   (Drift/Views/** + SharedUI/**: every .sheet/.fullScreenCover/.contextMenu/
   .swipeActions/.alert/NavigationLink). Area swept on-device: WORKOUT (0-FOCUS)
@@ -120,36 +146,39 @@ not ported at all.
 | Workout tab root | burn chips (active cal / steps; gated on DriftPlatform.health) | ok | |
 | Workout tab root | Apple-Health workouts band (fetchRecentWorkouts hardcoded []) | missing | #1070/#1095 |
 | Workout tab root | history collapsible + rows → WorkoutDetailView (auto-expand on save) | ok | |
-| Workout tab root | history row .contextMenu (delete) + Android fallback | unknown | #1076 |
+| Workout tab root | history row .contextMenu (delete) — gated off in source :423; Android path = detail ⋮ menu (verified) | ios-only-by-design | |
+| Workout tab root | Templates ⋮ menu (New Template / Load Packages I–IV / Remove All; Import iOS-only) | ok | |
 | Workout tab root | Start Empty Workout → ActiveWorkoutView sheet | ok | |
 | Workout tab root | Muscle Recovery body map + per-group chips (soreness data) | ok | |
-| Workout tab root | resume banner ("Workout in progress — Resume") | ok | |
+| Workout tab root | resume banner ("Workout in progress — Resume") — renders same-process only; on-disk persistence broken | ok | #1102 |
 | Workout tab root | past-workout log sheet (`showingPastWorkout`) | unknown | |
 | Workout tab root | voice/text log sheet (`showingVoiceLog` → ExerciseVoiceLogSheet) | unknown | |
 | Workout tab root | scan workout sheet (`showingScan` → WorkoutScanSheet, iOS-only file) | missing | #1095 |
-| Workout tab root | create template sheet (`showingCreateTemplate` → CreateTemplateView) | unknown | |
-| Workout tab root | edit template sheet (`editingTemplateForEdit`) | unknown | |
+| Workout tab root | create template sheet (`showingCreateTemplate` → CreateTemplateView) | ok | |
+| Workout tab root | edit template sheet (`editingTemplateForEdit`; via preview Edit, prefilled + Update CTA) | ok | |
 | Workout tab root | exercise browser sheet (`showingExerciseBrowser`) | ok | |
 | Workout tab root | template preview sheet (warmups, pose thumbs, rest times, start/edit/favorite/delete) | ok | |
-| Workout tab root | Rename Template alert | unknown | |
-| Workout tab root | Delete Template / Remove All Templates alerts | unknown | |
-| Workout tab root | Delete Workout alert | unknown | |
-| Workout tab root | Import alert | unknown | |
+| Workout tab root | Rename Template alert — `showingRenameAlert` set nowhere: dead code on BOTH platforms | ok | |
+| Workout tab root | Delete Template alert — dead code both platforms (preview deletes immediately, same as iOS); Remove All alert reachable via ⋮ (menu verified, alert itself not driven) | ok | |
+| Workout tab root | Delete Workout alert — trigger lives in the iOS-only history contextMenu; Android deletes via detail ⋮ | ios-only-by-design | |
+| Workout tab root | Import alert (package-load result) | unknown | |
 | ActiveWorkoutView | FIRST set-done → notif-permission moment relaunches MainActivity, dumps to Today | ok (fixed f5ceecc9) | #1096 |
-| ActiveWorkoutView | close → confirmationDialog (resume/discard/finish) | unknown | #1076 |
+| ActiveWorkoutView | close → confirmationDialog (Minimize / Discard workout / Keep going + message) | ok | |
+| ActiveWorkoutView | set done ALSO pops keyboard + cursor into notes/Tip TextField (iOS is silent) | deviation | #1103 |
 | ActiveWorkoutView | add exercises → ExercisePickerView sheet | ok | |
 | ActiveWorkoutView | set row: decimal-pad keyboard appears, value commits | ok | |
 | ActiveWorkoutView | set row: focus does NOT select-all — typing inserts (185+200 → 120085) | deviation | #1097 |
 | ActiveWorkoutView | implausible-weight confirmation dialog ("really heavy") | ok | |
 | ActiveWorkoutView | set row: prev-weight ghost values + prefill | ok | |
-| ActiveWorkoutView | set row: warmup flag, done toggle, kg/lbs per exercise | unknown | |
+| ActiveWorkoutView | set row: done toggle ✓, per-exercise kg/lbs header menu ✓ (flip re-labels, doesn't rewrite field text — identical shared code); per-set warmup flag not driven | ok | |
+| ActiveWorkoutView | rest-time chip Menu (30s–3:00 per exercise) | unknown | |
 | ActiveWorkoutView | set done → green tint + inline rest timer countdown + coach toast | ok | |
-| ActiveWorkoutView | exercise .contextMenu (Android fallback affordance) | unknown | #1076 |
-| ActiveWorkoutView | command strip / commandFocused text entry | unknown | #1076 |
+| ActiveWorkoutView | exercise ⋮ (xmark.circle) menu: Favorite / Track by Time (drawn clock) / Remove — the Android contextMenu replacement | ok | |
+| ActiveWorkoutView | command strip: tap → focus + IME with send action (parse path = Nebius residual, 0-AI-LADDER) | ok | |
 | ActiveWorkoutView | exercise row → NavigationLink ExerciseDetailView | unknown | |
 | ActiveWorkoutView | finish → options sheet (save-as-template/favorite) → completion card + share text | ok | |
-| ActiveWorkoutView | mid-workout kill + resume (SavedSession restores sets/state/timer) | ok | |
-| ActiveWorkoutView | resume drops Previous-column ghosts (shows "—") | deviation | #1098 |
+| ActiveWorkoutView | mid-workout kill + resume — SavedSession NEVER persists on Android (UserDefaults Data write dropped by Skip bridge); whole workout lost on process death, both kill variants | broken | #1102 |
+| ActiveWorkoutView | resume drops Previous-column ghosts (shows "—") — re-verify after #1102 lands (process-death resume currently unreachable) | deviation | #1098 |
 | ExercisePickerView | search field: autofocus, live results, tap result w/ keyboard up | ok | |
 | ExercisePickerView | recent/your/all sections + last-weight decoration | ok | |
 | ExercisePickerView | row .swipeActions(leading) + Android fallback | unknown | #1076 |
@@ -165,11 +194,11 @@ not ported at all.
 | ExerciseDetailView | equipment chip glyph = wrench for barbell (rows are correct) | deviation | #1099 |
 | ExerciseDetailView | per-exercise history / PR (est. 1RM per row) | ok | |
 | TemplatePreviewSheet | warmup + exercise sections, pose thumbs, per-exercise rest, notes | ok | |
-| TemplatePreviewSheet | exercise rows → NavigationLink detail | unknown | |
-| TemplatePreviewSheet | Start Workout / Edit / Favorite / Delete Template actions | unknown | |
-| CreateTemplateView | add exercises via picker sheet | unknown | |
-| CreateTemplateView | per-exercise set/rep Stepper bounds | unknown | #1076 |
-| CreateTemplateView | edit-exercise sheet (`editingBinding`) | unknown | |
+| TemplatePreviewSheet | exercise rows → NavigationLink detail (crossfade, muscles, PR) | ok | |
+| TemplatePreviewSheet | Start Workout / Edit / Favorite↔Unfavorite / Delete Template (immediate, no confirm — same as iOS) | ok | |
+| CreateTemplateView | add exercises via picker sheet (nested sheet, multi-select, batch CTA; catalog fills async ~2-3s on emulator) | ok | |
+| CreateTemplateView | per-exercise sets Stepper bounds (+/- work, floor clamps at 1) | ok | |
+| CreateTemplateView | edit-exercise sheet: sets stepper, Rest dropdown 0:15–3:00, warmup toggle → WARMUP section round-trip, Track-by, notes, Remove | ok | |
 | WorkoutDetailView | header stats + set rows w/ per-set 1RM | ok | |
 | WorkoutDetailView | ⋮ menu: Share / Edit Name & Notes / Save as Template / Delete | ok | |
 | WorkoutDetailView | set row .swipeActions(trailing) delete | unknown | |
