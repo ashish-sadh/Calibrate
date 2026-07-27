@@ -15,7 +15,7 @@ STALL_SECONDS=1500       # scouts are read-only; 25 min silent = hung
 CRASH_WINDOW=90
 MAX_FAST_CRASHES=5
 COOL_OFF=1800
-IDLE_BETWEEN=600         # kits outpace workers ~3:1; breathe between sessions
+IDLE_BETWEEN=5400        # Fable tester: one sweep, then a long breather (save Fable)
 
 mkdir -p "$LOG_DIR" "$HOME/drift-android-parity-prep"
 [ -f "$CONTROL_FILE" ] || echo "RUN" > "$CONTROL_FILE"

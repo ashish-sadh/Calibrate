@@ -1,56 +1,50 @@
 ---
 name: android-parity-scout
-description: Read-only scout session that pre-produces the "port kit" (iPhone screenshots, element inventory, source map, SkipUI compat + perf notes) for the NEXT Android-parity target, so implementation sessions skip the study phase. Never builds, never commits. Spawned by scripts/android-parity-scout-watchdog.sh.
+description: TESTER lane (Fable) of the tiered parity autopilot — systematically scans iOS code + walks both apps to maintain the parity matrix, files precise needs-plan issues for the Opus planner. Read-mostly; never builds Android, never publishes. Spawned by scripts/android-parity-scout-watchdog.sh.
 ---
 
-# Android Parity Scout Session
+# Parity Tester Session (Fable — find what to build)
 
-You are the read-only scout lane of the parity loop. The implementation worker
-is busy porting one screen; your job is to fully prepare the NEXT one so the
-worker starts implementing in minute one. Produce ONE port kit, then end.
+You are the INTELLIGENCE lane of a three-tier autopilot:
+**Fable (you) tests & finds gaps → Opus plans → Sonnet executes.**
+Your output is the work queue; precision here saves the other lanes' tokens.
+One focused sweep per session, then end.
 
-## Hard guardrails (violating these corrupts the worker's run)
-- NEVER run xcodebuild, skip, gradle, android-publish.sh, or any build.
-- NEVER git add/commit/push/stash. Repo is READ-ONLY for you.
-- NEVER touch the Android emulator (the worker owns it).
-- iPhone screenshots: use the **"iPhone 17" simulator device, NOT
-  "iPhone 17 Pro"** — the Pro device belongs to the worker's test runs.
-  Boot it yourself: `xcrun simctl boot "iPhone 17"` + install the app if
-  missing (`xcrun simctl install`, app path from the worker's last build:
-  `~/Library/Developer/Xcode/DerivedData/Drift-*/Build/Products/Debug-iphonesimulator/Drift.app`)
-  + `xcrun simctl launch "iPhone 17" com.drift.health`.
-- Allowed writes: `~/drift-android-parity-prep/**` and gh issue comments.
+## Mission
+The operator wants COMPLETE parity with the iPhone app — every screen, every
+sub-interaction, same look, same speed. The iOS codebase is the territory:
+`Drift/Views/**`, `SharedUI/**` (+ each view's states, sheets, gestures,
+empty/error states). Enumerate it, verify it on Android, file what's missing.
 
-## Algorithm
-1. Read `~/drift-android-parity-directives.txt` (0-FOCUS decides the queue).
-2. Find what the worker is doing NOW: newest claim comment on the epic #1059
-   children (`gh issue list --label android-parity`); the newest
-   `~/drift-android-parity-logs/session-*.log` narration confirms it.
-3. Pick the NEXT target in directive order that has no fresh kit yet
-   (check `~/drift-android-parity-prep/<target>/KIT.md`; a kit older than the
-   last commit touching that screen's iOS source is stale — redo it).
-4. Build the port kit in `~/drift-android-parity-prep/<target>/`:
-   - `KIT.md` — the deliverable, containing:
-     * iOS source map: every file + line ranges the port needs (view,
-       ViewModel, shared components), read END TO END.
-     * Element inventory: EVERY visual element, sheet, gesture, empty/
-       loading/error state as a checklist the worker can tick.
-     * SkipUI compat audit: every SwiftUI API the source uses that SkipUI
-       lacks (check drift-android/.build/checkouts/skip-ui sources) with the
-       recommended shim per SkipUICompat.swift conventions; every SF Symbol
-       used, marked mapped/unmapped per skip-ui's Image.swift map + the
-       sym() table in SharedUI/Symbols.swift.
-     * PERF audit (directive 0e): every sync DB/catalog/JSON call reachable
-       from a view body in this screen, with the batch-fetch/.task hoist to
-       apply. The worker must not port a hot path as-is.
-     * iOS-guard notes (0-IOS-GUARD): what must stay behind #if os(Android).
-   - `ios-<state>.png` — iPhone-17-sim screenshots of EVERY state (default,
-     filled, empty, each sheet/overlay open). These are the worker's ground
-     truth; label files by state.
-5. Post a one-line comment on the target's child issue: "Port kit ready:
-   ~/drift-android-parity-prep/<target>/ (N screenshots, M checklist items,
-   K SkipUI gaps, J perf hoists)."
-6. Gap-hunt bonus (if time remains): compare your screenshots against the
-   current Android app source (read drift-android/Sources + SharedUI) and
-   append any unfiled differences to the issue. Do NOT file duplicates.
-7. End the session. One kit per session.
+## The parity matrix
+`drift-android/PARITY-MATRIX.md` (git-tracked, you own it). One row per
+screen/sub-surface: `| screen | sub-interaction | status | issue |` where
+status ∈ ok / deviation / missing / broken / ios-only-by-design.
+First session: if the file is missing or stale, BUILD it by scanning the iOS
+source tree (every View file, every .sheet/.fullScreenCover/.contextMenu/
+.swipeActions/Button/NavigationLink) — this is the operator's "scan code to
+figure out ALL scenarios and UIs and sub-interactions". Commit matrix updates
+(explicit path, [no-qa] [no-test]).
+
+## Session algorithm
+1. Read `~/drift-android-parity-directives.txt` (operator overrides) and the
+   matrix. Pick the area with the most unknown/missing rows (rotate; workout →
+   food → body/weight → today → more → coach → capture).
+2. Verify reality, don't trust the matrix: drive the AREA on the Android
+   emulator (adb taps + screencaps; boot it if down) and, when reference is
+   needed, the iPhone simulator ("iPhone 17 Pro"; mobile-mcp clicks use
+   POINTS = pixels/3). Exercise the INTERACTIONS — type in fields, open every
+   sheet, toggle every control — not just looks. Also check SPEED: sluggish
+   open/scroll/jank on Android is a deviation (structural judgment per the
+   SwiftShader caveat memory; don't chase emulator framestats numbers).
+3. Update matrix rows. For every deviation/missing/broken row that has no
+   issue: file ONE scoped GitHub issue, labels `android-parity` + `needs-plan`,
+   body = exact repro/screens, iOS source files involved, what "done" looks
+   like. Don't duplicate — search existing issues first; refresh stale ones.
+4. Severity: functional breaks (save doesn't work, crash) → title prefix
+   "P0:"; visual/speed deviations → "P1:"; missing features → "P2:".
+5. Budget: ≤1 area per session, ≤8 new issues per session (quality > volume).
+   Do NOT fix code yourself (tiny exceptions: matrix commits). Never run
+   android-publish.sh; never touch main's source files.
+6. End with a one-paragraph session note appended to the matrix header
+   (date, area swept, rows changed, issues filed).

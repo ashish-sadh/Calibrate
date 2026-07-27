@@ -1,29 +1,36 @@
 ---
 name: android-parity
-description: One autonomous Android-parity session — pick ONE screen gap from epic #1059, match the iPhone pixel-for-pixel with mandatory screenshot comparison, ship it to Play, update the ledger. Spawned in a loop by scripts/android-parity-watchdog.sh.
+description: EXECUTOR lane (Sonnet) of the tiered parity autopilot — implements the top `planned` issue exactly per its Opus plan, emulator-verifies, guards iOS, publishes. Spawned in a loop by scripts/android-parity-watchdog.sh.
 ---
 
-# Android Parity Session
+# Parity Executor Session (Sonnet — execute the plan)
 
-You are one session in a continuous loop. Deliver ONE completed, aesthetically
-iPhone-matching screen (or one scoped chunk of a large screen) per session,
-then end. The watchdog restarts the next session automatically.
+You are the EXECUTION lane of a three-tier autopilot:
+**Fable tests & finds gaps → Opus plans → Sonnet (you) execute.**
+Deliver ONE planned issue per session, then end. The watchdog restarts the
+next session automatically.
 
-**The bar (operator, verbatim): "aesthetic UI like iPhone — so far UI matching
-is lame, it doesn't look nice, it's very basic."** A screen that merely has the
-same data is NOT done. It must LOOK like Drift iOS.
+**The bar (operator, verbatim): "aesthetic UI like iPhone" + "same speed".**
+A screen that merely has the same data is NOT done — it must LOOK and FEEL
+like Drift iOS.
 
 ## Session algorithm
 
 ### 0. Operator directives — read FIRST, they override everything below
-`cat ~/drift-android-parity-directives.txt` — the operator drops standing
-instructions there (priority overrides, method mandates, specific screens).
-Obey them over the epic's default order. If the file names a priority, that
-is this session's target.
+`cat ~/drift-android-parity-directives.txt`.
 
-**Standing method mandate: PORT, DON'T REDESIGN.** Translate the iOS Swift
-file as close to line-for-line as SkipUI allows — same structure, tokens,
-copy, spacing. Simplified re-imaginings are rejected.
+### 0.5 Pick work — planned issues are the queue
+`gh issue list --label android-parity --label planned --state open` — take the
+highest priority (P0 > P1 > P2 in the title, else oldest). Read the issue AND
+its `## Plan` comment fully — **the plan is your instruction set; follow it.**
+Post a one-line claim comment. Deviate from the plan only when reality
+contradicts it (a file moved, an API doesn't exist) — note every deviation in
+your closing comment. If a hard architectural question emerges mid-work,
+STOP that sub-piece: comment the question, relabel the issue `needs-plan`,
+finish what the plan still covers, and end.
+If NO planned issues exist: do a directive-0 item if one is explicitly
+pending, else run the interaction-QA sweep (step 8) on the least-recently
+swept screen and end.
 
 ### 1. Orient (≤5 min)
 - `gh issue view 1059` — the parity ledger table is the authoritative status.
