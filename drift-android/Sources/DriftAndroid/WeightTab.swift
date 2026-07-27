@@ -194,6 +194,24 @@ struct WeightTab: View {
     }
 }
 
+struct WeightInputField: View {
+    @Binding var text: String
+    let unit: WeightUnit
+
+    var body: some View {
+        HStack(spacing: 8) {
+            TextField(unit == .kg ? "72.5" : "160.0", text: $text)
+                .textFieldStyle(.roundedBorder)
+                // Decimal pad, matching the iOS entry sheet (ios-16
+                // ground truth) — was a full QWERTY (#1090 sweep).
+                .keyboardType(.decimalPad)
+                .font(.title2)
+            Text(unit.displayName)
+                .font(.headline).foregroundStyle(Theme.textSecondary)
+        }
+    }
+}
+
 struct AddWeightSheet: View {
     let unit: WeightUnit
     let onSave: (String) -> Void
@@ -204,17 +222,14 @@ struct AddWeightSheet: View {
         NavigationStack {
             VStack(spacing: 16) {
                 Text("Log Weight").font(Theme.fontTitle)
-                HStack(spacing: 8) {
-                    TextField(unit == .kg ? "72.5" : "160.0", text: $text)
-                        .textFieldStyle(.roundedBorder)
-                        // Decimal pad, matching the iOS entry sheet (ios-16
-                        // ground truth) — was a full QWERTY (#1090 sweep).
-                        .keyboardType(.decimalPad)
-                        .font(.title2)
-                    Text(unit.displayName)
-                        .font(.headline).foregroundStyle(Theme.textSecondary)
-                }
+                WeightInputField(text: $text, unit: unit)
                 Button {
+                    // Validate in the action, not via .disabled — Fuse's
+                    // .disabled reactivity on this button was unreliable
+                    // (#1091). Save is always tappable; empty/invalid input
+                    // is a silent no-op that leaves the sheet open.
+                    let cleaned = text.replacingOccurrences(of: ",", with: ".")
+                    guard Double(cleaned) != nil else { return }
                     onSave(text)
                     dismiss()
                 } label: {
@@ -226,7 +241,6 @@ struct AddWeightSheet: View {
                         .background(Theme.accent, in: Capsule())
                 }
                 .buttonStyle(.plain)
-                .disabled(Double(text.replacingOccurrences(of: ",", with: ".")) == nil)
                 Spacer()
             }
             .padding(20)
