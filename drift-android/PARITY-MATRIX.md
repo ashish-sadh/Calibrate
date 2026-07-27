@@ -87,6 +87,30 @@ not ported at all.
   revisits this view (not reproduced carefully enough this session to file
   with confidence — noting as a breadcrumb, not a bug report).
 
+  **Gap-hunt sweep (Today tab, rotated off Workout per directive 7):**
+  confirmed rings/donut is `ok` — the small colored dot at each ring's 12
+  o'clock position at 0% progress is CORRECT, not an Android artifact: it's
+  `Circle().trim(from:0,to:0).stroke(...lineCap:.round)` drawing its round
+  cap even at zero length (both iOS sim and Android emulator show the same
+  dot at 0%, matching skipui-fuse-perf-facts' "Circle().trim().stroke()
+  rings WORK"). Found a real, well-evidenced gap: iOS's Dashboard 3-tile
+  row under the meals list is `BodySummaryCardsRow` (Drift/Views/
+  BodySummaryCardsRow.swift) — ALWAYS three fixed cards, WEIGHT / SLEEP /
+  READINESS, each with spec-pinned empty-state copy ("Log your weight to
+  track progress" / "Connect Apple Health for sleep data" / "Connect Whoop
+  or log a manual score", pinned by #821 Done-When #2). Android's row in
+  the same position (confirmed via this session's own element dump: text
+  "WEIGHT"/"157.9 lbs", "WORKOUTS"/"1"/"this week", "STREAK"/"3w") shows
+  WEIGHT / WORKOUTS / STREAK instead — not a re-skin, a different
+  component entirely; Android has no SLEEP or READINESS tile anywhere in
+  this row, so a user with Health Connect sleep/HRV data would never see
+  it surfaced here the way an iPhone user with HealthKit data does. Logged
+  as a new `deviation` row rather than fixed (out of scope for this
+  session's plan); needs #1070 (Health Connect adapter) for real data
+  before a port is meaningful, but the row could ship its empty states
+  today. Not filing a new issue — #1061 already scopes "unknown" Today-tab
+  sub-components and is the natural owner.
+
 ## Workout (epic #1064 · single-source: SharedUI/WorkoutView.swift hosted by WorkoutTab)
 
 | screen | sub-interaction | status | issue |
@@ -188,10 +212,11 @@ not ported at all.
 |---|---|---|---|
 | Dashboard | whole screen is a re-creation, not iOS DashboardView port | deviation | #1061 |
 | Dashboard | quick actions: Describe / Search / Recent / Snap | broken | #1093 |
-| Dashboard | rings/donut (TodayDonutView, V6Rings) | unknown | #1061 |
+| Dashboard | rings/donut (TodayDonutView, V6Rings) | ok | #1061 |
 | Dashboard | coaching cards (CoachingBriefCard, V6CoachingNudge) | unknown | #1061 |
-| Dashboard | sleep/recovery card (SleepRecoveryView) | unknown | #1061 |
-| Dashboard | workout consistency card | unknown | #1061 |
+| Dashboard | sleep/recovery card (SleepRecoveryView, full NavigationLink row) | unknown | #1061 |
+| Dashboard | workout consistency card (WorkoutConsistencyCard) | unknown | #1061 |
+| Dashboard | 3-tile summary row (BodySummaryCardsRow: WEIGHT/SLEEP/READINESS, spec-pinned empty states #821) | deviation | #1061 |
 | Dashboard | backup settings sheet | missing | #1094 |
 | Dashboard | brand mark header still a drawn "D" circle (BrandMark asset not mirrored) | deviation | directive 8 |
 
