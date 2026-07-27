@@ -143,10 +143,51 @@ struct ActiveWorkoutView: View {
         var isWarmup: Bool = false  // individual set warmup toggle
     }
 
+    /// Shared between the iOS toolbar and the Android in-content header
+    /// (SkipUI's nav bar inside a sheet wastes an ~80dp band, #1089 pattern).
+    private var closeButton: some View {
+        // Native confirmation dialog, not a bare Menu popover — discarding a
+        // workout is consequential and the naked two-row menu read as
+        // unfinished chrome (field report 2026-07-09). Labels say what
+        // actually happens.
+        Button { showingCloseOptions = true } label: {
+            Image(systemName: sym("xmark.circle")).foregroundStyle(Theme.textSecondary)
+        }
+        .confirmationDialog("Workout in progress", isPresented: $showingCloseOptions, titleVisibility: .visible) {
+            // Away time doesn't count once the sheet is closed — the clock
+            // resumes from trained time (see restoreSession).
+            Button("Minimize — resume anytime") { persistSession(); dismiss() }
+            Button("Discard workout", role: .destructive) {
+                workoutEnded = true
+                WorkoutService.clearSession(); stopTimers(); dismiss()
+            }
+            Button("Keep going", role: .cancel) {}
+        } message: {
+            Text("Minimized workouts stay in the Workout tab. Discarding deletes the logged sets.")
+        }
+    }
+
+    @ViewBuilder private var finishButton: some View {
+        if !exercises.isEmpty {
+            Button("Finish") { showingFinishOptions = true }.foregroundStyle(Theme.deficit)
+        }
+    }
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 12) {
+                    #if os(Android)
+                    // SkipUI's nav bar inside a sheet reserves an ~80dp dead
+                    // band above the toolbar row (#1089 pattern) — render the
+                    // X/Finish controls as content on Android instead.
+                    HStack {
+                        closeButton
+                        Spacer()
+                        finishButton
+                    }
+                    .padding(.horizontal, 4)
+                    #endif
                     // Workout header
                     VStack(spacing: 6) {
                         TextField("Workout name", text: $workoutName)
@@ -253,34 +294,12 @@ struct ActiveWorkoutView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            #if !os(Android)
             .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    // Native confirmation dialog, not a bare Menu popover —
-                    // discarding a workout is consequential and the naked
-                    // two-row menu read as unfinished chrome (field report
-                    // 2026-07-09). Labels say what actually happens.
-                    Button { showingCloseOptions = true } label: {
-                        Image(systemName: sym("xmark.circle")).foregroundStyle(Theme.textSecondary)
-                    }
-                    .confirmationDialog("Workout in progress", isPresented: $showingCloseOptions, titleVisibility: .visible) {
-                        // Away time doesn't count once the sheet is closed —
-                        // the clock resumes from trained time (see restoreSession).
-                        Button("Minimize — resume anytime") { persistSession(); dismiss() }
-                        Button("Discard workout", role: .destructive) {
-                            workoutEnded = true
-                            WorkoutService.clearSession(); stopTimers(); dismiss()
-                        }
-                        Button("Keep going", role: .cancel) {}
-                    } message: {
-                        Text("Minimized workouts stay in the Workout tab. Discarding deletes the logged sets.")
-                    }
-                }
-                ToolbarItem(placement: .confirmationAction) {
-                    if !exercises.isEmpty {
-                        Button("Finish") { showingFinishOptions = true }.foregroundStyle(Theme.deficit)
-                    }
-                }
+                ToolbarItem(placement: .cancellationAction) { closeButton }
+                ToolbarItem(placement: .confirmationAction) { finishButton }
             }
+            #endif
             .sheet(isPresented: $showingExercisePicker) {
                 ExercisePickerView { name in
                     addExercise(name: name)

@@ -27,6 +27,19 @@ struct TemplatePreviewSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
+                    #if os(Android)
+                    // SkipUI's nav bar inside a sheet reserves an ~80dp dead
+                    // band above the title (#1089 pattern) — draw the header
+                    // as content on Android; iOS keeps the real nav bar.
+                    ZStack {
+                        Text(template.name).font(.headline)
+                        HStack {
+                            Button("Close") { onDismiss() }.foregroundStyle(Theme.accent)
+                            Spacer()
+                        }
+                    }
+                    .padding(.top, 4)
+                    #endif
                     let warmups = template.exercises.filter(\.isWarmup)
                     let working = template.exercises.filter { !$0.isWarmup }
 
@@ -131,10 +144,12 @@ struct TemplatePreviewSheet: View {
                 .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
             }
             .background(Theme.background)
+            #if !os(Android)
             .navigationTitle(template.name).navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Close") { onDismiss() } }
             }
+            #endif
         }
         #if os(Android)
         .task {
@@ -148,6 +163,12 @@ struct TemplatePreviewSheet: View {
             }
         }
         #endif
+        #if os(Android)
+        // SkipUI's medium detent compresses/mislays the content during the
+        // entry animation (the operator's "shaky + cut off") — open large.
+        .presentationDetents([.large])
+        #else
         .presentationDetents([.medium, .large])
+        #endif
     }
 }
