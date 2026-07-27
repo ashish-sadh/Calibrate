@@ -31,5 +31,34 @@ extension View {
             content()
         }
     }
+
+    /// iOS 26 draws a system glass PILL behind toolbar text buttons — Drift's
+    /// source is a bare `Button("Close")` (scout "workout-chrome" finding #1,
+    /// #1064 ledger); the chrome is painted by the OS, not by our code. Ported
+    /// in-content headers (#1089 pattern: SkipUI wastes an ~80dp band on a
+    /// real nav bar inside a sheet) need to draw that chrome explicitly or
+    /// every such sheet reads as chrome-less next to iOS.
+    func toolbarPillChrome() -> some View {
+        foregroundStyle(.primary)
+            .padding(.horizontal, 14).padding(.vertical, 7)
+            .background(Theme.pillBackground, in: Capsule())
+    }
+
+    /// Same system chrome, icon-button variant — iOS draws a soft-shadowed
+    /// near-white circle behind toolbar icon-only buttons (e.g. the in-workout
+    /// X), distinctly brighter than the gray text pill above. Icons already
+    /// set their own foregroundStyle, so this only adds the background. Real
+    /// `.shadow()` is Android-banned here (#1074: skip-ui re-composes +
+    /// gaussian-blurs the shadow every frame) — a single offset fill at low
+    /// opacity reads as the same soft lift at icon-button size.
+    func toolbarCircleChrome() -> some View {
+        padding(8)
+            .background(
+                ZStack {
+                    Circle().fill(Color.black.opacity(0.06)).offset(y: 1.5)
+                    Circle().fill(Theme.cardBackgroundElevated)
+                }
+            )
+    }
 }
 #endif

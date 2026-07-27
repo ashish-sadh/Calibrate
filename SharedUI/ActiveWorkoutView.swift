@@ -180,11 +180,14 @@ struct ActiveWorkoutView: View {
                     #if os(Android)
                     // SkipUI's nav bar inside a sheet reserves an ~80dp dead
                     // band above the toolbar row (#1089 pattern) — render the
-                    // X/Finish controls as content on Android instead.
+                    // X/Finish controls as content on Android instead. iOS 26
+                    // draws its own glass chrome behind these in the real
+                    // toolbar (scout "workout-chrome" finding #1) — replicate
+                    // it here since Android gets no free system chrome.
                     HStack {
-                        closeButton
+                        closeButton.toolbarCircleChrome()
                         Spacer()
-                        finishButton
+                        finishButton.toolbarPillChrome()
                     }
                     .padding(.horizontal, 4)
                     #endif

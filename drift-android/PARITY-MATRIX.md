@@ -29,6 +29,40 @@ not ported at all.
   closed-fixed; the "3x10 bench press at 135" row visible in picker is
   leftover pre-fix data, not a live bug.
 
+- **2026-07-27 (executor #1, Sonnet):** No `planned` issue existed yet (planner
+  lane hadn't caught up); per 0-RESUME-2026-07-26(a) re-audited Workout root +
+  the two surfaces the operator hand-edited this week (TemplatePreviewSheet,
+  ActiveWorkoutView close/finish). Fresh iPhone-vs-emulator side-by-side
+  confirmed root/template-preview/active-workout structure already matches
+  (corroborates scout's pass above). **Found + FIXED a real gap the scout's
+  content-level pass wouldn't catch: iOS 26 draws system glass chrome (gray
+  capsule behind toolbar TEXT buttons, near-white shadowed circle behind
+  ICON buttons) that Drift's source never draws explicitly (bare
+  `Button("Close")` / `Image(systemName: "xmark.circle")`) — Android's
+  in-content header ports (#1089 pattern) rendered these as flat
+  text/icon with zero chrome, looking chrome-less next to iOS.** Added
+  `toolbarPillChrome()` / `toolbarCircleChrome()` to SkipUICompat.swift
+  (Android-gated; circle variant avoids real `.shadow()` per #1074 — a single
+  offset-fill layer, not a blur pass) and applied at the two Android-gated
+  call sites (TemplatePreviewSheet's Close, ActiveWorkoutView's X/Finish) —
+  the shared `closeButton`/`finishButton` properties themselves are untouched
+  so iOS's real toolbar is byte-identical. Verified via rebuild + fresh
+  screenshot both call sites; matches iPhone closely. iOS suite 1274 green,
+  Core 2331 green, android-build-check green, `skip app launch` green both
+  before/after. Independently re-derived the Apple-Health-band root cause
+  (`HealthConnectService.fetchRecentWorkouts` hardcoded `{ [] }`) — matches
+  the row already in this table, good corroboration. Also chased "3 of 7
+  exercises show a silhouette instead of a photo in the Full Body template"
+  (TRX Rows/Wrist Extension/Wrist Flexion) to ground: assets ARE bundled
+  (1790/1790 synced), `registerCustomExercises()` is add-only-if-missing-by-
+  name (never backfills an existing record's imageUrl), so this is the SAME
+  class of stale pre-fix local dev-DB row as the scout's "3x10 bench press"
+  note above, not a live code bug — leaving as-is rather than "fixing" test
+  data. Residual scout-filed chrome-adjacent work still open: #1096 P0
+  (MainActivity relaunch on first-set-done, needs-plan — did not attempt,
+  needs real investigation into Skip's notification-permission bridge),
+  #1097/#1098/#1099.
+
 ## Workout (epic #1064 · single-source: SharedUI/WorkoutView.swift hosted by WorkoutTab)
 
 | screen | sub-interaction | status | issue |

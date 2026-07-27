@@ -34,7 +34,7 @@ struct TemplatePreviewSheet: View {
                     ZStack {
                         Text(template.name).font(.headline)
                         HStack {
-                            Button("Close") { onDismiss() }.foregroundStyle(Theme.accent)
+                            Button("Close") { onDismiss() }.toolbarPillChrome()
                             Spacer()
                         }
                     }
