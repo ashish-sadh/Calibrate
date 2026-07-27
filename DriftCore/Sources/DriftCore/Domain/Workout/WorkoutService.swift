@@ -681,8 +681,9 @@ public enum WorkoutService {
         }
         var stamped = session
         stamped.lastSavedAt = Date()
-        if let data = try? JSONEncoder().encode(stamped) {
-            UserDefaults.standard.set(data, forKey: sessionKey)
+        if let data = try? JSONEncoder().encode(stamped),
+           let json = String(data: data, encoding: .utf8) {
+            UserDefaults.standard.set(json, forKey: sessionKey)   // String → SharedPreferences putString; Data is dropped by the Skip bridge (#1102)
         }
     }
 
@@ -692,8 +693,9 @@ public enum WorkoutService {
     /// entered sets are auto-saved as a completed workout dated to the day
     /// it actually happened; only a session with nothing logged is dropped.
     public static func loadSession(now: Date = Date()) -> SavedSession? {
-        guard let data = UserDefaults.standard.data(forKey: sessionKey),
-              let session = try? JSONDecoder().decode(SavedSession.self, from: data) else { return nil }
+        let raw = UserDefaults.standard.string(forKey: sessionKey)?.data(using: .utf8)
+                ?? UserDefaults.standard.data(forKey: sessionKey)   // migrate pre-#1102 Data payloads
+        guard let raw, let session = try? JSONDecoder().decode(SavedSession.self, from: raw) else { return nil }
         let lastActivity = session.lastSavedAt ?? session.startTime
         if now.timeIntervalSince(lastActivity) > 5 * 3600 {
             finalizeAbandonedSession(session, into: db)

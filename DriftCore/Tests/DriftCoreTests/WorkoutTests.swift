@@ -1111,6 +1111,28 @@ import GRDB
     WorkoutService.clearSession()
 }
 
+@Test func saveSessionPersistsAsStringNotData() async throws {
+    // Regression guard for #1102: Skip's UserDefaults→SharedPreferences bridge
+    // silently drops Data values on Android, so the persisted type must be String.
+    let name = "StringFormat_\(UUID().uuidString.prefix(4))"
+    WorkoutService.clearSession()
+    WorkoutService.saveSession(.init(workoutName: name, startTime: Date(), exercises: []))
+    #expect(UserDefaults.standard.string(forKey: "drift_active_workout_session") != nil)
+    #expect(UserDefaults.standard.data(forKey: "drift_active_workout_session") == nil)
+    WorkoutService.clearSession()
+}
+
+@Test func loadSessionMigratesLegacyDataPayload() async throws {
+    // Pre-#1102 builds wrote the session as raw Data; loadSession must keep
+    // reading those payloads back after the switch to String persistence.
+    WorkoutService.clearSession()
+    let name = "LegacyData_\(UUID().uuidString.prefix(4))"
+    let legacy = WorkoutService.SavedSession(workoutName: name, startTime: Date(), exercises: [], lastSavedAt: Date())
+    UserDefaults.standard.set(try JSONEncoder().encode(legacy), forKey: "drift_active_workout_session")
+    #expect(WorkoutService.loadSession()?.workoutName == name)
+    WorkoutService.clearSession()
+}
+
 @Test func sessionClear() async throws {
     let name = "ClearTest_\(UUID().uuidString.prefix(4))"
     WorkoutService.saveSession(.init(workoutName: name, startTime: Date(), exercises: []))
