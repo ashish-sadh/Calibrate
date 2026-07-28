@@ -952,49 +952,72 @@ extension AppDatabase {
             // with 0 cal blocks the seed UPDATE (WHERE source='database' skips
             // it) AND blocks the INSERT (name-exists check), leaving the user
             // permanently stuck on the 0-cal row.
-            let jsonNames = foods.map { $0.name.lowercased() }
-            if !jsonNames.isEmpty {
-                let placeholders = Array(repeating: "?", count: jsonNames.count).joined(separator: ",")
-                try db.execute(sql: """
-                    DELETE FROM food
-                    WHERE source = 'photo_log'
-                      AND LOWER(name) IN (\(placeholders))
-                    """, arguments: StatementArguments(jsonNames))
+            // ONE scan of the food table up front — id + source keyed by
+            // lowercased name. Everything below then addresses rows by rowid.
+            //
+            // #1112: this loop used to run `UPDATE … WHERE LOWER(name) = ?`
+            // once per JSON row. `LOWER(name)` is not indexable (and there is
+            // no name index anyway), so an UPGRADE launch — where every row
+            // already exists — did 5,751 full table scans over a 5,751-row
+            // table: ~33M row visits inside one transaction, on the main
+            // thread, blocking first composition past Android's 5s ANR
+            // deadline. A fresh install took the cheap INSERT branch, which
+            // is why it only reproduced on updates.
+            struct SeedRow { let id: Int64; let source: String? }
+            var existing: [String: SeedRow] = [:]
+            let rows = try Row.fetchAll(db, sql: "SELECT id, LOWER(name) AS lname, source FROM food")
+            for row in rows {
+                existing[row["lname"] ?? ""] = SeedRow(id: row["id"], source: row["source"])
             }
 
-            let existingNames = try Set(String.fetchAll(db, sql: "SELECT LOWER(name) FROM food"))
+            // Stale photo_log rows shadowing a canonical JSON name: an
+            // ephemeral AI scan must lose to the curated entry, or a past
+            // 0-cal scan blocks both the UPDATE (source guard) and the INSERT
+            // (name-exists check) and the user is stuck on it forever.
+            // Collected by rowid — the old 5,751-parameter `IN (…)` bind was
+            // over the legacy SQLITE_MAX_VARIABLE_NUMBER.
+            let shadowIDs = foods.compactMap { food -> Int64? in
+                guard let hit = existing[food.name.lowercased()], hit.source == "photo_log" else { return nil }
+                return hit.id
+            }
+            for id in shadowIDs {
+                try db.execute(sql: "DELETE FROM food WHERE id = ?", arguments: [id])
+                existing = existing.filter { $0.value.id != id }
+            }
 
             for var food in foods {
-                if !existingNames.contains(food.name.lowercased()) {
+                guard let hit = existing[food.name.lowercased()] else {
                     try food.insert(db)
-                } else {
-                    try db.execute(sql: """
-                        UPDATE food SET
-                            calories = ?,
-                            protein_g = ?,
-                            carbs_g = ?,
-                            fat_g = ?,
-                            fiber_g = ?,
-                            serving_size = ?,
-                            serving_unit = ?,
-                            ingredients = COALESCE(?, ingredients),
-                            nova_group = COALESCE(?, nova_group),
-                            piece_size_g = ?,
-                            cup_size_g = ?,
-                            tbsp_size_g = ?,
-                            scoop_size_g = ?,
-                            bowl_size_g = ?
-                        WHERE LOWER(name) = ?
-                          AND (source IS NULL OR source = 'database')
-                        """, arguments: [
-                            food.calories, food.proteinG, food.carbsG, food.fatG, food.fiberG,
-                            food.servingSize, food.servingUnit,
-                            food.ingredients, food.novaGroup,
-                            food.pieceSizeG, food.cupSizeG, food.tbspSizeG,
-                            food.scoopSizeG, food.bowlSizeG,
-                            food.name.lowercased()
-                        ])
+                    continue
                 }
+                // Curated JSON only overwrites curated rows — a user's scanned
+                // or photo-logged entry keeps its own macros.
+                guard hit.source == nil || hit.source == "database" else { continue }
+                try db.execute(sql: """
+                    UPDATE food SET
+                        calories = ?,
+                        protein_g = ?,
+                        carbs_g = ?,
+                        fat_g = ?,
+                        fiber_g = ?,
+                        serving_size = ?,
+                        serving_unit = ?,
+                        ingredients = COALESCE(?, ingredients),
+                        nova_group = COALESCE(?, nova_group),
+                        piece_size_g = ?,
+                        cup_size_g = ?,
+                        tbsp_size_g = ?,
+                        scoop_size_g = ?,
+                        bowl_size_g = ?
+                    WHERE id = ?
+                    """, arguments: [
+                        food.calories, food.proteinG, food.carbsG, food.fatG, food.fiberG,
+                        food.servingSize, food.servingUnit,
+                        food.ingredients, food.novaGroup,
+                        food.pieceSizeG, food.cupSizeG, food.tbspSizeG,
+                        food.scoopSizeG, food.bowlSizeG,
+                        hit.id
+                    ])
             }
         }
 

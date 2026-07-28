@@ -5,6 +5,7 @@ import DriftCore
 /// preference is live; the rest lists what's coming so nothing looks broken.
 struct MoreTab: View {
     @State var unit = Preferences.weightUnit
+    @State var showingSupplements = false
 
     var body: some View {
         NavigationStack {
@@ -57,6 +58,24 @@ struct MoreTab: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .card()
 
+                    // Supplements — the iOS screen, ported to SharedUI (#1121).
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("TRACKING").sectionHeading()
+                        Button { showingSupplements = true } label: {
+                            HStack(spacing: 10) {
+                                Text("Supplements")
+                                    .font(.subheadline).foregroundStyle(Theme.textPrimary)
+                                Spacer()
+                                Image(systemName: sym("chevron.right"))
+                                    .font(.caption).foregroundStyle(Theme.textTertiary)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .card()
+
                     VStack(alignment: .leading, spacing: 8) {
                         Text("COMING TO ANDROID").sectionHeading()
                         ForEach(["Drift Coach chat + voice", "Photo & barcode logging",
@@ -85,6 +104,7 @@ struct MoreTab: View {
             .onChange(of: unit) { _, newValue in
                 Preferences.weightUnit = newValue
             }
+            .sheet(isPresented: $showingSupplements) { SupplementsTabView() }
         }
     }
 }

@@ -1,12 +1,16 @@
 import SwiftUI
 import DriftCore
+#if !os(Android)
+// Swift Charts is absent on SkipUI — the adherence plot falls back to
+// SupplementAdherenceBars below (skip_fuse_is_the_availability_tree).
 import Charts
+#endif
 
 struct SupplementsTabView: View {
-    @State private var viewModel = SupplementViewModel()
-    @State private var showingAdd = false
-    @State private var showingEditSupp = false
-    @State private var editSupp: Supplement?
+    @State var viewModel = SupplementViewModel()
+    @State var showingAdd = false
+    @State var showingEditSupp = false
+    @State var editSupp: Supplement?
 
     var body: some View {
         NavigationStack {
@@ -85,7 +89,7 @@ struct SupplementsTabView: View {
                                             Image(systemName: "xmark.circle.fill").font(.caption2).foregroundStyle(Theme.textTertiary)
                                         }
                                         .buttonStyle(.plain)
-                                        .accessibilityLabel("Delete \(supplement.name)")
+                                        .accessibilityLabel(Text("Delete \(supplement.name)"))
                                     }
 
                                     if viewModel.isTaken(supplement.id ?? 0),
@@ -98,8 +102,14 @@ struct SupplementsTabView: View {
                                 .padding(.vertical, 12)
                             }
                             .buttonStyle(.plain)
-                            .accessibilityLabel("\(supplement.name)\(supplement.dosageDisplay.isEmpty ? "" : ", \(supplement.dosageDisplay)"), \(viewModel.isTaken(supplement.id ?? 0) ? "taken" : "not taken")")
-                            .accessibilityHint("Double tap to toggle")
+                            .accessibilityLabel(Text("\(supplement.name)\(supplement.dosageDisplay.isEmpty ? "" : ", \(supplement.dosageDisplay)"), \(viewModel.isTaken(supplement.id ?? 0) ? "taken" : "not taken")"))
+                            .accessibilityHint(Text("Double tap to toggle"))
+                            // contextMenu is gated off on Android — it steals
+                            // focus and its builder is EAGER on Fuse
+                            // (skipui_interaction_api_traps). The row's own
+                            // ⊗ button is the delete path there; edit arrives
+                            // with the Android edit sheet.
+                            #if !os(Android)
                             .contextMenu {
                                 if let id = supplement.id {
                                     Button {
@@ -112,6 +122,7 @@ struct SupplementsTabView: View {
                                     } label: { Label("Delete", systemImage: "trash") }
                                 }
                             }
+                            #endif
 
                             if index < viewModel.supplements.count - 1 {
                                 Divider().overlay(Theme.separator)
@@ -148,7 +159,7 @@ struct SupplementsTabView: View {
                     Button { showingAdd = true } label: {
                         Image(systemName: "plus.circle.fill").foregroundStyle(Theme.accent)
                     }
-                    .accessibilityLabel("Add supplement")
+                    .accessibilityLabel(Text("Add supplement"))
                 }
             }
             .sheet(isPresented: $showingAdd) {
@@ -220,6 +231,13 @@ struct SupplementsTabView: View {
 
             // Bar chart: daily completion rate over last 30 days
             let last30 = viewModel.consistencyData.suffix(30)
+            #if os(Android)
+            // Swift Charts does not exist on SkipUI
+            // (skip_fuse_is_the_availability_tree) — same constraint that made
+            // WeightChartAndroid a Path chart. Bars are plain capsules in an
+            // HStack, which needs no Canvas and no GeometryReader-per-frame.
+            SupplementAdherenceBars(days: Array(last30))
+            #else
             Chart {
                 ForEach(Array(last30)) { day in
                     BarMark(
@@ -247,6 +265,7 @@ struct SupplementsTabView: View {
                 }
             }
             .frame(height: 80)
+            #endif
         }
         .card()
     }
@@ -269,14 +288,15 @@ struct SupplementsTabView: View {
 
 // MARK: - Edit Supplement Sheet
 
-private struct EditSupplementSheet: View {
+/// Internal, not private — Skip cannot bridge private views to Android.
+struct EditSupplementSheet: View {
     let supplement: Supplement
     let onSave: () -> Void
-    @Environment(\.dismiss) private var dismiss
-    @State private var name: String
-    @State private var dosage: String
-    @State private var unit: String
-    @State private var dailyDoses: Int
+    @Environment(\.dismiss) var dismiss
+    @State var name: String
+    @State var dosage: String
+    @State var unit: String
+    @State var dailyDoses: Int
 
     init(supplement: Supplement, onSave: @escaping () -> Void) {
         self.supplement = supplement; self.onSave = onSave
@@ -314,6 +334,72 @@ private struct EditSupplementSheet: View {
                     }.disabled(name.isEmpty)
                 }
             }
+        }
+    }
+}
+
+/// Android's stand-in for the Swift Charts adherence plot: Charts is absent on
+/// SkipUI (skip_fuse_is_the_availability_tree), so daily completion is drawn as
+/// plain capsules in an HStack — no Canvas, no per-frame GeometryReader. Keeps
+/// the iOS gridline reading (0 / 50 / 100%) as a labelled backdrop.
+struct SupplementAdherenceBars: View {
+    let days: [SupplementViewModel.DayConsistency]
+
+    private static let plotHeight: CGFloat = 80
+
+    var body: some View {
+        HStack(alignment: .bottom, spacing: 6) {
+            ZStack(alignment: .bottom) {
+                // Gridlines at 0 / 50 / 100% so a half-height bar is readable
+                // without an axis renderer.
+                VStack(spacing: 0) {
+                    gridline
+                    Spacer()
+                    gridline
+                    Spacer()
+                    gridline
+                }
+                .frame(height: Self.plotHeight)
+
+                HStack(alignment: .bottom, spacing: 2) {
+                    ForEach(days) { day in
+                        Capsule()
+                            .fill(barColor(day.ratio))
+                            // Zero-adherence days keep a 2pt stub so the day
+                            // still reads as "logged nothing", not "no data".
+                            .frame(height: max(2, Self.plotHeight * day.ratio))
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+                .frame(height: Self.plotHeight)
+            }
+            VStack(alignment: .trailing) {
+                Text("100%")
+                Spacer()
+                Text("50%")
+                Spacer()
+                Text("0%")
+            }
+            .font(.caption2)
+            .foregroundStyle(Theme.textTertiary)
+            .frame(height: Self.plotHeight)
+        }
+    }
+
+    private var gridline: some View {
+        Rectangle().fill(Theme.separator.opacity(0.6)).frame(height: 0.5)
+    }
+
+    /// Mirrors `SupplementsTabView.colorForRatio` — kept local rather than
+    /// hoisted because the two live in one file and the tenet is three
+    /// similar lines before extracting.
+    private func barColor(_ ratio: Double) -> Color {
+        switch ratio {
+        case 0: return Theme.cardBackgroundElevated
+        case ..<0.34: return Theme.surplus.opacity(0.5)
+        case ..<0.67: return Theme.fatYellow.opacity(0.6)
+        case ..<1.0: return Theme.deficit.opacity(0.6)
+        default: return Theme.deficit
         }
     }
 }

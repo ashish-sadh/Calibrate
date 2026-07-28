@@ -10,6 +10,10 @@ struct FoodEntryRow: Identifiable, Sendable {
     let name: String
     let detail: String    // "2 servings · 340 kcal"
     let mealType: String
+    /// Logged time-of-day ("6:53 PM"), leading the row like iOS's Today card
+    /// (field report 2026-07-28: Android showed the name only, so two logs of
+    /// the same food were indistinguishable). Empty when unparseable.
+    let time: String
 }
 
 struct TotalsRow: Sendable {
@@ -85,9 +89,12 @@ struct TotalsRow: Sendable {
             meals = entries.compactMap { e in
                 guard let id = e.id else { return nil }
                 let servings = e.servings == 1 ? "" : "\(e.servings.formatted()) servings · "
+                let logged = DateFormatters.iso8601.date(from: e.loggedAt)
+                    ?? DateFormatters.sqliteDatetime.date(from: e.loggedAt)
                 return FoodEntryRow(id: id, name: e.foodName,
                                     detail: "\(servings)\(Int(e.calories * e.servings)) kcal",
-                                    mealType: e.mealType ?? "")
+                                    mealType: e.mealType ?? "",
+                                    time: logged.map { DateFormatters.shortTime.string(from: $0) } ?? "")
             }
             let unit = Preferences.weightUnit
             if let latest = WeightServiceAPI.getHistory(days: 365).sorted(by: { $0.date > $1.date }).first {
@@ -262,8 +269,19 @@ struct TodayTab: View {
 
     private var logChips: some View {
         HStack(spacing: 10) {
-            chip("Snap", icon: "camera.fill") { showingCoachInfo = true }
-            chip("Describe", icon: "bubble.left.fill") { showingDescribe = true }
+            // Snap/Describe draw real Shapes: skip-ui's Material map has no
+            // camera and no chat bubble, so sym() fell through to a QR-SCAN
+            // square and a SEND ARROW respectively — different objects, the
+            // directive-0a failure (field report 2026-07-28). Same remedy as
+            // DumbbellGlyph / ClockGlyph / SparkleGlyph.
+            chipGlyph("Snap", action: { showingCoachInfo = true }) {
+                CameraShape().stroke(Theme.textPrimary, lineWidth: 1.7)
+                    .frame(width: 22, height: 22)
+            }
+            chipGlyph("Describe", action: { showingDescribe = true }) {
+                ChatBubbleShape().stroke(Theme.textPrimary, lineWidth: 1.7)
+                    .frame(width: 22, height: 22)
+            }
             // Present over Today, don't switch tabs first: ContentView.tabContent
             // is a `switch` on selectedTab (ContentView.swift:36) — changing it
             // unmounts TodayTab (and this sheet) before it can appear. Matches
@@ -276,11 +294,23 @@ struct TodayTab: View {
     }
 
     private func chip(_ label: String, icon: String, action: @escaping () -> Void) -> some View {
+        chipGlyph(label, action: action) {
+            Image(systemName: sym(icon))
+                .font(.system(size: 20))
+                .foregroundStyle(Theme.textPrimary)
+        }
+    }
+
+    /// Chip whose icon is arbitrary content — the Shape-drawn glyphs that have
+    /// no Material equivalent go through here; `chip(_:icon:)` wraps it for the
+    /// plain SF-symbol cases.
+    private func chipGlyph<Icon: View>(_ label: String,
+                                       action: @escaping () -> Void,
+                                       @ViewBuilder icon: () -> Icon) -> some View {
         Button(action: action) {
             VStack(spacing: 8) {
-                Image(systemName: sym(icon))
-                    .font(.system(size: 20))
-                    .foregroundStyle(Theme.textPrimary)
+                icon()
+                    .frame(height: 22)
                 Text(label)
                     .font(.caption.weight(.medium))
                     .foregroundStyle(Theme.textPrimary)
@@ -316,6 +346,12 @@ struct TodayTab: View {
                 VStack(spacing: 0) {
                     ForEach(store.meals) { row in
                         HStack {
+                            // Time leads the row like iOS ("6:53 PM  Coffee").
+                            if !row.time.isEmpty {
+                                Text(row.time)
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(Theme.textSecondary)
+                            }
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(row.name).font(.subheadline).foregroundStyle(Theme.textPrimary)
                                 Text(row.detail).font(.caption2).foregroundStyle(Theme.textSecondary)

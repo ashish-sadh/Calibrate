@@ -3,13 +3,13 @@ import DriftCore
 
 struct AddSupplementView: View {
     @Bindable var viewModel: SupplementViewModel
-    @Environment(\.dismiss) private var dismiss
+    @Environment(\.dismiss) var dismiss
 
-    @State private var mode: AddMode = .popular
-    @State private var name = ""
-    @State private var dosage = ""
-    @State private var unit = "mg"
-    @State private var dailyDoses = 1
+    @State var mode: AddMode = .popular
+    @State var name = ""
+    @State var dosage = ""
+    @State var unit = "mg"
+    @State var dailyDoses = 1
 
     enum AddMode: String, CaseIterable { case popular = "Popular"; case custom = "Custom" }
 

@@ -533,3 +533,27 @@ XCTest: Tier-3/4 evals fire hundreds of legitimate calls per run.
 RULE: new cloud call sites MUST route through LocalAIService/RemoteLLMBackend
 (never a bare URLSession to the provider) — the meter, the extraction policy,
 and the error taxonomy all live on that path.
+
+## 2026-07-28: the food reseed was O(n²) — and the main thread was never actually off it
+
+Operator hit Android's "isn't responding" ANR repeatedly at launch (#1112). Two
+independent defects composed. (a) `seedFoodsFromJSON` updated existing rows with
+`UPDATE food SET … WHERE LOWER(name) = ?`, once per JSON row. `LOWER(name)` is
+not indexable and there is no name index, so an UPGRADE launch — where all rows
+already exist — ran 5,751 full scans of a 5,751-row table: ~33M row visits in
+one transaction. A FRESH install took the cheap INSERT branch, which is exactly
+why it never reproduced on a clean emulator. (b) The hash gate keys on
+CFBundleVersion, which skip-foundation maps to the Android versionCode, so every
+Play build bump forces that full reseed. And `CoreResourcesBootstrap`'s detached
+warm-up does not protect anything: `AppDatabase.shared` is a `swift_once` global,
+so whichever caller touches it second blocks for the whole duration — and
+`FoodLogViewModel(database: .shared)`'s DEFAULT ARGUMENT is evaluated on the main
+thread during `TodayTab`'s struct init. RESULT: the seed now fetches
+`id, LOWER(name), source` in one scan and updates `WHERE id = ?` (rowid seeks);
+the shadow-row DELETE collects rowids instead of binding a 5,751-parameter `IN`
+(over the legacy SQLITE_MAX_VARIABLE_NUMBER).
+RULE: a per-row `WHERE LOWER(col) = ?` inside a loop over a seeded table is a
+quadratic scan — key by rowid from ONE up-front fetch. And a detached warm-up
+task does not make a lazy global safe: audit DEFAULT ARGUMENTS
+(`= .shared`) in view/VM initializers, because those run during body evaluation
+on the main thread.
