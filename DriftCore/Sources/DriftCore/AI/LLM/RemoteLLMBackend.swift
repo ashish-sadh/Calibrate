@@ -223,6 +223,40 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
         temperature: Double? = nil,
         onToken: @escaping @Sendable (String) -> Void
     ) async -> String {
+        // Per-device daily budget (#1113) — every remote call funnels through
+        // here, so this one gate covers chat, describe, exercise text, and
+        // photo scans on both platforms. Denial = .rateLimited: chat surfaces
+        // its limit message; extraction ladders fall back offline. Bypassed
+        // under XCTest — the Tier-3/4 evals fire hundreds of legitimate real
+        // calls per run and must never trip a per-device cap.
+        if NSClassFromString("XCTestCase") == nil {
+            let estimated = systemPrompt.count + prompt.count
+                + (imageData != nil ? CloudUsageThrottle.photoCharEquivalent : 0)
+            guard CloudUsageThrottle.permit(estimatedChars: estimated) else {
+                errorBox.value = .rateLimited
+                Log.app.error("RemoteLLMBackend: daily cloud budget reached — call denied (#1113)")
+                return ""
+            }
+        }
+        let reply = await respondStreamingCoreUnmetered(
+            prompt: prompt, imageData: imageData, systemPrompt: systemPrompt,
+            toolsJSON: toolsJSON, visionModelID: visionModelID, maxTokens: maxTokens,
+            timeout: timeout, temperature: temperature, onToken: onToken)
+        CloudUsageThrottle.record(chars: reply.count)
+        return reply
+    }
+
+    private func respondStreamingCoreUnmetered(
+        prompt: String,
+        imageData: Data?,
+        systemPrompt: String,
+        toolsJSON: String?,
+        visionModelID: String?,
+        maxTokens: Int,
+        timeout: TimeInterval?,
+        temperature: Double?,
+        onToken: @escaping @Sendable (String) -> Void
+    ) async -> String {
         errorBox.value = nil
         let effectiveTimeout = timeout ?? requestTimeout
         guard let key = apiKey else {

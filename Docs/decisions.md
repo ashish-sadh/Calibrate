@@ -516,3 +516,20 @@ RULE: serving_size always means grams (ml for liquids). A "2 tbsp" or "3 pieces"
 portion belongs in the display name and piece_size_g, never in serving_size. And when
 a data-shape bug gets a guard in one consumer, fix the DATA and grep the other
 consumers — a semantics bug patched at one call site is still live at every other.
+
+## 2026-07-27: every remote AI call is metered — per-device daily budget in SQLite
+
+Operator ask (#1113): the shared Nebius team key ships in every build, so one
+device (a retry loop, a stolen key, a bored teenager) could drain the whole
+pool. RESULT: `CloudUsageThrottle` (DriftCore) — 300 requests AND ~600k chars
+per device per local day, enforced in `RemoteLLMBackend.respondStreamingCore`,
+the single funnel every remote turn (chat, describe, exercise text, photo
+scan) already flows through. Denial = `.rateLimited`: chat surfaces its limit
+message, every extraction ladder falls back offline on its own. Counters live
+in SQLite (v46), NOT UserDefaults — Android drops UserDefaults writes (#1108),
+and a throttle that resets on restart is no throttle. Fails OPEN on DB errors
+(a broken throttle must never take the showstopper down). Bypassed under
+XCTest: Tier-3/4 evals fire hundreds of legitimate calls per run.
+RULE: new cloud call sites MUST route through LocalAIService/RemoteLLMBackend
+(never a bare URLSession to the provider) — the meter, the extraction policy,
+and the error taxonomy all live on that path.

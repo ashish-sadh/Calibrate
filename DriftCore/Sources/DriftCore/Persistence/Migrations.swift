@@ -720,6 +720,17 @@ public enum Migrations {
                 t.add(column: "package_size_g", .double)
             }
         }
+
+        // v46 (#1113): per-device daily cloud-AI usage counters. In SQLite,
+        // not UserDefaults — Android drops UserDefaults writes (#1108), and a
+        // throttle that resets on app restart is no throttle.
+        migrator.registerMigration("v46_cloud_usage") { db in
+            try db.create(table: "cloud_usage") { t in
+                t.column("day", .text).primaryKey()   // local-calendar "yyyy-MM-dd"
+                t.column("requests", .integer).notNull().defaults(to: 0)
+                t.column("chars", .integer).notNull().defaults(to: 0)
+            }
+        }
     }
 
     /// v43: online-search imports saved every result permanently and deduped
