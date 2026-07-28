@@ -1,7 +1,7 @@
 # Graph Report - /Users/ashishsadh/workspace/Drift  (2026-07-28)
 
 ## Corpus Check
-- 912 files · ~4,859,608 words
+- 912 files · ~4,859,590 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -1239,10 +1239,10 @@ Nodes (1): Convert USDA all-caps descriptions to readable Title Case names.     
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `FoodEntry` connect `Community 9` to `Community 1`, `Community 2`, `Community 3`, `Community 6`, `Community 10`, `Community 12`, `Community 15`, `Community 16`, `Community 17`, `Community 24`, `Community 27`?**
-  _High betweenness centrality (0.026) - this node is a cross-community bridge._
 - **Why does `date` connect `Community 2` to `Community 32`, `Community 1`, `Community 3`, `Community 4`, `Community 6`, `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 15`, `Community 16`, `Community 19`, `Community 20`, `Community 24`, `Community 27`?**
-  _High betweenness centrality (0.021) - this node is a cross-community bridge._
+  _High betweenness centrality (0.039) - this node is a cross-community bridge._
+- **Why does `date` connect `Community 2` to `Community 32`, `Community 1`, `Community 4`, `Community 6`, `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 15`, `Community 16`, `Community 20`, `Community 24`, `Community 27`?**
+  _High betweenness centrality (0.022) - this node is a cross-community bridge._
 - **Are the 607 inferred relationships involving `String` (e.g. with `.format()` and `.change()`) actually correct?**
   _`String` has 607 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 182 inferred relationships involving `sqlite3_free()` (e.g. with `sqlite3_fopen()` and `sqlite3_popen()`) actually correct?**
