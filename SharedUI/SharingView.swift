@@ -123,9 +123,10 @@ struct SharingView: View {
                         }
                         VStack(alignment: .leading, spacing: 2) {
                             // "@bob finished Leg Day" — a friend-activity line.
-                            (Text(usernameFor(session.clientId) ?? "A friend").font(.subheadline.weight(.semibold))
-                             + Text(session.status == .live ? " is doing " : " finished ").font(.subheadline).foregroundColor(Theme.textSecondary)
-                             + Text(session.templateName ?? "a workout").font(.subheadline.weight(.semibold)))
+                            // One interpolated Text (not Text+Text — Skip Fuse
+                            // has no Text concatenation operator).
+                            Text(activityLine(session))
+                                .font(.subheadline.weight(.medium))
                                 .foregroundStyle(Theme.textPrimary)
                             Text(activityTimeline(session)).font(.caption2).foregroundStyle(Theme.textSecondary)
                         }
@@ -148,6 +149,12 @@ struct SharingView: View {
 
     private func usernameFor(_ id: String) -> String? {
         friends.first { $0.id == id }.map { "@\($0.username)" }
+    }
+
+    private func activityLine(_ s: LiveWorkoutDTO) -> String {
+        let who = usernameFor(s.clientId) ?? "A friend"
+        let verb = s.status == .live ? "is doing" : "finished"
+        return "\(who) \(verb) \(s.templateName ?? "a workout")"
     }
 
     private func activityTimeline(_ s: LiveWorkoutDTO) -> String {
