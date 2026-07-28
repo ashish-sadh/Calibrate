@@ -69,8 +69,12 @@ struct ExerciseDetailView: View {
                     if let info {
                         HStack(spacing: 6) {
                             detailTag(info.bodyPart, icon: sym("figure.strengthtraining.traditional"), color: .secondary)
-                            detailTag(info.equipment, icon: sym("wrench.and.screwdriver"), color: .secondary)
+                            equipmentTag(info.equipment, color: .secondary)
+                            #if os(Android)
+                            levelTag(info.level.capitalized, color: .secondary)
+                            #else
                             detailTag(info.level.capitalized, icon: sym("chart.bar"), color: .secondary)
+                            #endif
                         }
 
                         if let youtubeUrl = info.youtubeUrl, let url = URL(string: youtubeUrl) {
@@ -183,4 +187,40 @@ struct ExerciseDetailView: View {
             .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 5))
             .foregroundStyle(color)
     }
+
+    // Equipment can't route through `detailTag`'s `Label(_:systemImage:)` like
+    // its bodyPart/level siblings: iOS hardcodes a generic wrench+screwdriver
+    // here regardless of equipment type, while the browser/picker rows show
+    // the SPECIFIC equipment glyph via `equipmentGlyph()` (dumbbell, kettlebell,
+    // cable, ...). Routing through the same shared helper makes this the third
+    // equipment surface and keeps the detail screen consistent with the rows
+    // that lead to it, on both platforms (#1099).
+    private func equipmentTag(_ equipment: String, color: Color) -> some View {
+        HStack(spacing: 4) {
+            equipmentGlyph(equipment, tint: color)
+            Text(equipment.capitalized)
+        }
+        .font(.caption2)
+        .padding(.horizontal, 6).padding(.vertical, 3)
+        .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 5))
+        .foregroundStyle(color)
+    }
+
+    #if os(Android)
+    // Pinned skip-ui 1.58.0 (#1134) has no chart glyph at all — sym("chart.bar")
+    // targets chart.bar.xaxis, which only exists in skip-ui ≥1.59, so this call
+    // site rendered the warning triangle. Same drawn-shape precedent already
+    // used at WorkoutView.overloadCard and ClientDetailView (ChartGlyph.swift);
+    // iOS is untouched and keeps rendering the real SF Symbol via detailTag.
+    private func levelTag(_ text: String, color: Color) -> some View {
+        HStack(spacing: 4) {
+            BarChartShape().fill(color).frame(width: 11, height: 11)
+            Text(text)
+        }
+        .font(.caption2)
+        .padding(.horizontal, 6).padding(.vertical, 3)
+        .background(color.opacity(0.1), in: RoundedRectangle(cornerRadius: 5))
+        .foregroundStyle(color)
+    }
+    #endif
 }
