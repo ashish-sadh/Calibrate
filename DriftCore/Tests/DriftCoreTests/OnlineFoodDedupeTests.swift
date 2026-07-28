@@ -170,4 +170,55 @@ struct OnlineFoodDedupeTests {
         }
         #expect(count == 2)   // curated near-dupes are a curation decision, not this migration's
     }
+
+    // MARK: - Barcode re-scan refresh (2026-07-27 field report)
+
+    @Test func barcodeRescanRefreshesStaleBarcodeRow() throws {
+        // TJ meatballs: the label's 3-meatball 85g serving got stored as ONE
+        // 85g meatball, and insert-only dedupe made re-scanning a silent
+        // no-op — the natural user fix ("scan it again") healed nothing.
+        // Barcode-over-barcode now refreshes serving + macros in place.
+        let db = try AppDatabase.empty()
+        var stale = Food(name: "Chicken Meatballs - Trader Joe's", category: "Scanned",
+                         servingSize: 85, servingUnit: "g",
+                         calories: 149, proteinG: 15, carbsG: 2, fatG: 8, fiberG: 0)
+        try db.saveScannedFood(&stale)   // source defaults to "barcode"
+        var rescan = Food(name: "CHICKEN MEATBALLS - TRADER JOE'S", category: "Scanned",
+                          servingSize: 28, servingUnit: "g",
+                          calories: 50, proteinG: 5, carbsG: 1, fatG: 3, fiberG: 0)
+        try db.saveScannedFood(&rescan)
+
+        let count = try db.reader.read { try Int.fetchOne($0, sql: "SELECT COUNT(*) FROM food") ?? 0 }
+        let serving = try db.reader.read { try Double.fetchOne($0, sql: "SELECT serving_size FROM food") }
+        let cal = try db.reader.read { try Double.fetchOne($0, sql: "SELECT calories FROM food") }
+        #expect(count == 1)          // still deduped — refreshed, not duplicated
+        #expect(serving == 28)
+        #expect(cal == 50)
+    }
+
+    @Test func rescanNeverOverwritesPhotoLogOrCuratedRows() throws {
+        // Label data refreshes label data ONLY: a photo_log ESTIMATE and a
+        // curated seed row must survive a colliding barcode save untouched.
+        let db = try AppDatabase.empty()
+        var estimate = Food(name: "Paneer Bhurji", category: "Photo Log",
+                            servingSize: 180, servingUnit: "g",
+                            calories: 320, proteinG: 18, carbsG: 8, fatG: 24, fiberG: 1,
+                            source: "photo_log")
+        try db.saveScannedFood(&estimate)
+        _ = try insertFood(db, name: "Dal Tadka", category: "Indian Staples", calories: 180)  // source NULL = curated
+
+        var overEstimate = Food(name: "PANEER BHURJI", category: "Scanned",
+                                servingSize: 100, servingUnit: "g",
+                                calories: 999, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0)
+        try db.saveScannedFood(&overEstimate)
+        var overCurated = Food(name: "DAL TADKA", category: "Scanned",
+                               servingSize: 100, servingUnit: "g",
+                               calories: 999, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0)
+        try db.saveScannedFood(&overCurated)
+
+        let cals = try db.reader.read {
+            try Double.fetchAll($0, sql: "SELECT calories FROM food ORDER BY calories")
+        }
+        #expect(cals == [180, 320], "photo_log/curated rows must be untouched — got \(cals)")
+    }
 }

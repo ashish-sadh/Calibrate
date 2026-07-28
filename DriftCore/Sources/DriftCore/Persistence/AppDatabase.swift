@@ -1059,25 +1059,48 @@ extension AppDatabase {
         }
     }
 
-    /// Save a scanned/OCR food to the food table so it appears in future searches.
-    /// Skips if a food with the same name already exists.
-    /// Insert a scanned/online food unless the catalog already has this
-    /// product. Dedupe is on the NORMALIZED key (lowercase alnum tokens,
+    /// Save a scanned/OCR food to the food table so it appears in future
+    /// searches. Dedupe is on the NORMALIZED key (lowercase alnum tokens,
     /// sorted), not the exact name — the exact check let "AG1", "Ag1",
     /// "AG1 - Athletic Greens" and "Athletic Greens - AG1" accumulate as
     /// separate permanent rows across every caller (FoodSearchView, chat
     /// fallback, barcode, OCR). Single choke point per audit 2026-07-14.
+    /// A barcode save over an existing BARCODE row refreshes it (label data
+    /// over label data); every other collision stays a no-op.
     public func saveScannedFood(_ food: inout Food) throws {
         food.source = food.source ?? "barcode"
         // One indexed lookup on the persisted key (v44) — this runs inside
         // the Log button press, so it must not scan the catalog (field
         // report 2026-07-15: ~1 s hang per multi-item log).
         try dbWriter.write { db in
-            let exists = try Bool.fetchOne(
-                db, sql: "SELECT EXISTS(SELECT 1 FROM food WHERE normalized_key = ?)",
-                arguments: [food.normalizedKey]) ?? false
-            if !exists {
+            let existingSource = try Row.fetchOne(
+                db, sql: "SELECT source FROM food WHERE normalized_key = ? LIMIT 1",
+                arguments: [food.normalizedKey])
+                .map { ($0["source"] as String?) ?? "" }
+            guard let existingSource else {
                 try food.insert(db)
+                return
+            }
+            // Re-scan heals a stale barcode row (field report 2026-07-27:
+            // TJ meatballs stored 1 meatball = the 85g 3-meatball serving;
+            // insert-only made re-scanning a silent no-op, so the bad row was
+            // immortal). Label data over label data only — a photo_log
+            // ESTIMATE or a curated 'database' row is never overwritten.
+            if food.source == "barcode", existingSource == "barcode" {
+                try db.execute(sql: """
+                    UPDATE food SET
+                        serving_size = ?, serving_unit = ?,
+                        calories = ?, protein_g = ?, carbs_g = ?, fat_g = ?, fiber_g = ?,
+                        ingredients = COALESCE(?, ingredients),
+                        nova_group = COALESCE(?, nova_group),
+                        package_size_g = COALESCE(?, package_size_g)
+                    WHERE normalized_key = ? AND source = 'barcode'
+                    """, arguments: [
+                        food.servingSize, food.servingUnit,
+                        food.calories, food.proteinG, food.carbsG, food.fatG, food.fiberG,
+                        food.ingredients, food.novaGroup, food.packageSizeG,
+                        food.normalizedKey
+                    ])
             }
         }
     }

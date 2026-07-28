@@ -1739,10 +1739,14 @@ private func seededDB() -> AppDatabase { _sharedSeededDB }
     var food1 = Food(name: "Test Scanned", category: "Scanned", servingSize: 100, servingUnit: "g", calories: 200)
     var food2 = Food(name: "Test Scanned", category: "Scanned", servingSize: 100, servingUnit: "g", calories: 300)
     try db.saveScannedFood(&food1)
-    try db.saveScannedFood(&food2) // Same name - should skip
+    // Same name, both barcode-sourced → ONE row, REFRESHED with the newer
+    // label data (2026-07-27: insert-only made re-scanning a stale row a
+    // silent no-op — see barcodeRescanRefreshesStaleBarcodeRow for the full
+    // matrix incl. photo_log/curated rows staying untouched).
+    try db.saveScannedFood(&food2)
     let results = try db.searchFoods(query: "Test Scanned")
     #expect(results.count == 1, "Should not duplicate scanned food")
-    #expect(results[0].calories == 200, "Should keep first entry")
+    #expect(results[0].calories == 300, "Barcode re-scan refreshes the row")
 }
 
 @Test func foodUsageTrackingConcurrent() async throws {
