@@ -12,6 +12,31 @@ not ported at all.
 
 ## Session notes (append-only)
 
+- **2026-07-28 (scout #6):** SOURCE-ONLY sweep — ps-check found BOTH sibling lanes live
+  (executor `/android-parity` PID 74920 + planner PID 74936, all started 1:49AM), so the
+  emulator was untouched per the scout-#3 collision lesson (executor reinstalls the APK
+  mid-drive → phantom app-died). Area: **Health sub-screens (#1068)**, the operator's
+  0-EVERY-SCREEN mandate and the last big coarse area after scout #5 did More. Enumerated
+  the full iOS tree from source (Biomarkers Tab/Detail/LabReportUpload/Detail 1595 ln,
+  GlucoseTabView 517, CycleView 647): **4 coarse rows → 24 granular rows**. Filed 3 scoped
+  needs-plan ports: **#1122** Biomarkers (donut/patterns/reports/search/grouped-list/trend +
+  lab-OCR seam) / **#1123** Glucose (zone chart + SAF CSV import + HC glucose read) / **#1124**
+  Cycle (phase timeline + 2 charts — **HARD-blocked on #1070**: 100% Health-driven,
+  empty-state-only until Health Connect grows cycle reads; flagged for planner plan-vs-block).
+  **#1068 demoted to INDEX** (comment recorded) so the planner never chews the 4-screen
+  ~2,800-line monolith (same as #1067→#1114–1119). **Two staleness corrections (verify,
+  don't trust the matrix): Supplements is DONE** — ported to SharedUI + wired `MoreTab:146`,
+  was #1068's 4th sub-screen, dropped from the queue (row → ok); **Progress Photos** → deviation
+  (`ProgressGalleryAndroid.swift` exists + wired `MoreTab:147` — Android re-creation, not the
+  SharedUI port). More-hub HEALTH-rows note refreshed (2 of 7 dests now landed). Portability
+  baked into every row: all data/logic services are DriftCore; recurring seams = `Charts`/`Canvas`
+  Skip-absent (Path port, precedent `WeightChartAndroid`), `fileImporter`→SAF (#1109), HealthKit
+  →Health Connect (#1070); `LabReportOCR` (Vision/PDFKit)→Nebius per 0-AI-LADDER, no key UI. No
+  code touched (matrix only); worker WIP tree was clean. Harness: the per-turn iOS `PAUSE` +
+  `#1043 P0` hook injections are the parked iOS lane leaking in (parity control=RUN) — false
+  stops. Emulator-drive debt unchanged (food compiled-shared rows + scout #3's 5 workout
+  leftovers + now Supplements device-verify) — still needs an uncontended window.
+
 - **2026-07-27 (scout #5, Fable):** SOURCE-ONLY sweep #2 — ps-check found BOTH sibling
   lanes live (executor with #1097 WIP on the tree, planner mid-session), so the emulator
   was untouched; picked the operator's 0-EVERY-SCREEN mandate (More tab) over the food
@@ -369,7 +394,7 @@ not ported at all.
 | Body tab | entry edit sheet + log list (WeightLogListView) | unknown | #1065 |
 | Body summary cards row | summary cards | unknown | #1065 |
 | DEXA overview | DEXAOverviewView + detail | missing | #1069 |
-| Progress photos | gallery / viewer overlays / timer camera / add entry | missing | #1069 |
+| Progress photos | gallery / viewer overlays / timer camera / add entry — Android-only re-creation `ProgressGalleryAndroid.swift` EXISTS + wired (`MoreTab.swift:147`), NOT the SharedUI ProgressGalleryView port; viewer/timer-camera/add-entry parity unverified (source-only session) | deviation | #1069 |
 
 ## More / Settings (epic #1067 = INDEX · Android stub: MoreTab.swift 90 lines vs iOS ~3.5k-line tree · scoped ports #1114–#1119)
 
@@ -380,7 +405,7 @@ inherits #1108. KEY POLICY (0-AI-FOCUS): no key-entry UI of any kind ships on An
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
 | More hub (MoreTabView :4-193) | hub layout: HEALTH/APP sections, navRow chrome (36pt icon tile, subtitle, chevron, contentShape), inline title | missing | #1114 |
-| More hub | HEALTH rows ×7: Body Rhythm→SleepRecoveryView, Cycle→CycleView (conditional `hasCycleData` via health seam), Supplements, Body Composition→DEXAOverviewView, Progress Photos→ProgressGalleryView, Glucose, Biomarkers — destinations are #1068/#1069; hub rows HIDDEN on Android until each destination lands (no dead taps) | missing | #1114 (dest #1068/#1069) |
+| More hub | HEALTH rows ×7: Body Rhythm→SleepRecoveryView, Cycle→CycleView (conditional `hasCycleData` via health seam), Supplements, Body Composition→DEXAOverviewView, Progress Photos→ProgressGalleryView, Glucose, Biomarkers — destinations: Supplements + Progress Photos now LANDED (wired in Android More stub TRACKING section, `MoreTab.swift:146-147`); remaining dests #1122 (Biomarkers) / #1123 (Glucose) / #1124 (Cycle) / #1069 (Body Comp) / #1061 (Body Rhythm). Full-hub port keeps rows HIDDEN until each dest lands (no dead taps, #1093) | missing | #1114 |
 | More hub | APP row Profile → ProfileView | missing | #1114/#1116 |
 | More hub | APP row Weight Goal → GoalView | missing | #1114/#1117 |
 | More hub | APP row "Bring Your Own Key" → PhotoLogSettingsView — `#if !os(Android)`, no replacement row | ios-only-by-design | KEY POLICY |
@@ -450,14 +475,44 @@ inherits #1108. KEY POLICY (0-AI-FOCUS): no key-entry UI of any kind ships on An
 | Barcode scanner | scan → food match → log | missing | #1063 |
 | Workout scan | photo/PDF → template or session (WorkoutScanSheet + ReviewView) | missing | #1110 (#1095 closed-descoped; #1063 shares the camera seam) |
 
-## Health sub-screens (epic #1068 · iOS-only)
+## Health sub-screens (epic #1068 = INDEX · iOS-only: Drift/Views/{Biomarkers,Glucose,Cycle}/** · scoped ports #1122–#1124)
+
+Source-enumerated 2026-07-28 (scout #6). All data/logic services are DriftCore (portable, views
+only render): `BiomarkerService`, `GlucoseService`, `CycleCalculations`, `BiomarkerKnowledgeBase`,
+`BiomarkerInsights`, `AIScreenTracker`, `SupplementService`. Three recurring seams: (1) `import Charts`
++ `Canvas` are **Skip-absent** → Path port, precedent `WeightChartAndroid.swift` / `TodayDonutView`
+trim-rings; (2) `fileImporter`/`UniformTypeIdentifiers` → Android SAF (#1109); (3) HealthKit reads →
+Health Connect (#1070). **No Android UI route exists** for Biomarkers/Glucose/Cycle (verified: only
+`HealthConnectService` stubs + seed `biomarkers.json`); honest interim placeholder present (`MoreTab`
+"COMING TO ANDROID": "Sleep, cycle & biomarkers detail screens") so no dead taps (#1093). **Supplements
+is DONE** — ported to SharedUI, wired `MoreTab.swift:146`; removed from the port queue.
 
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
-| Biomarkers | tab, detail, lab report upload/detail | missing | #1068 |
-| Glucose | GlucoseTabView | missing | #1068 |
-| Cycle | CycleView | missing | #1068 |
-| Supplements | tab + add/edit sheets | missing | #1068 |
+| Biomarkers tab (BiomarkersTabView 513) | empty state (cross.case.fill + Upload CTA) | missing | #1122 |
+| Biomarkers tab | status **donut** (`DonutRing`=`Canvas` arc → trim/stroke Path port) + optimal/sufficient/out-of-range legend + last-updated | missing | #1122 |
+| Biomarkers tab | PATTERNS cards (`BiomarkerInsights.patterns` — DriftCore; iron/metabolic/thyroid/lipid/inflammation) | missing | #1122 |
+| Biomarkers tab | LAB REPORTS list → NavigationLink LabReportDetailView | missing | #1122 |
+| Biomarkers tab | search field (live filter name/category) + filter chips (All / Out of Range / Sufficient / Optimal) | missing | #1122 |
+| Biomarkers tab | grouped biomarker list (status sections) → NavigationLink BiomarkerDetailView; row = value + status badge + AI-parsed badge + `RangeBar` (GeometryReader — per-scroll recompose, keep cheap) | missing | #1122 |
+| Biomarkers tab | toolbar Upload → .sheet LabReportUploadView | missing | #1122 |
+| LabReportUploadView (325) | `.fileImporter([.pdf])` → `LabReportOCR.extract(fromPDF:)` (iOS Vision/PDFKit) → preview → Save (`BiomarkerService.save*`, DriftCore). Android = SAF PDF pick (#1109) + Nebius parse (0-AI-LADDER) + local Google tier; NO key UI | missing | #1122 (seam #1109/#1070-adj) |
+| BiomarkerDetailView (567) | trend `Chart` (LineMark history — Skip-absent, Path port) + all-recordings list + impact categories/knowledge | missing | #1122 |
+| LabReportDetailView (190) | results list + **Delete Report** destructive `.alert` → `BiomarkerService.deleteLabReport` + `LabReportStorage.delete` | missing | #1122 |
+| Glucose tab (GlucoseTabView 517) | source Picker (Apple Health / Imported; AH→"Health Connect" on Android per #1095) | missing | #1123 |
+| Glucose tab | range chips 1D / 3D / 1W / 2W / 1M / All | missing | #1123 |
+| Glucose tab | empty state (waveform.path.ecg; source-specific copy) | missing | #1123 |
+| Glucose tab | **glucose Chart**: zone RectangleMarks (70-100 / 100-140 / 140-200) + zone-colored LineMark + spike/dip PointMarks + horizontal ScrollView (Skip-absent → Path port; `UIScreen.main` width iOS-gate) | missing | #1123 |
+| Glucose tab | stats card (Average / Range / In Zone) + Fasting/Fat-Burning analysis + Glucose Events (spikes/dips) — all DriftCore logic | missing | #1123 |
+| Glucose tab | toolbar Import → `.fileImporter([.csv,.txt])` → `GlucoseService.importLingoCSV` (DriftCore); Android = SAF CSV pick (#1109) | missing | #1123 |
+| Glucose tab | Apple Health source → `DriftPlatform.health.fetchGlucoseReadings` — `HealthConnectService` returns [] today | missing | #1123 (dep #1070) |
+| Cycle (CycleView 647) | hero/summary (Day N, phase, last/avg/next period) | missing | #1124 |
+| Cycle | phase timeline bar (GeometryReader segments + fertile overlay + position dot) + phase labels | missing | #1124 |
+| Cycle | Body Signals `Chart` (HRV/RHR multi-series LineMark, catmullRom — Skip-absent, Path port) | missing | #1124 |
+| Cycle | Cycle Length trend `Chart` (BarMark + 28-day RuleMark + annotations — Skip-absent, bar port) | missing | #1124 |
+| Cycle | Recent Periods history + Advanced Insights `Toggle` (→ `Preferences.cycleFertileWindow`) + fertile-window card + privacy note | missing | #1124 |
+| Cycle | ALL data via `DriftPlatform.health` (cycle/ovulation/BBT/spotting/HRV/RHR/sleep) — `HealthConnectService` implements NONE; **empty-state-only until #1070 grows cycle reads** | missing | #1124 (HARD dep #1070) |
+| Supplements (SharedUI/SupplementsTabView) | tab + add/edit/delete + adherence bars — **PORTED** (SharedUICopy + `MoreTab.swift:146` sheet) | ok | #1121 (source-confirmed; device-verify pending uncontended window) |
 
 ## App shell
 
