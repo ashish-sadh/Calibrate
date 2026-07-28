@@ -584,7 +584,7 @@ device-verify pending an uncontended emulator window (both sibling lanes live th
 | Input bar | Android = plain TextField + send only; iOS adds photo (PhotosPicker) + mic | deviation | #1125 (photo) / #1126 (mic) |
 | Suggestions row | horizontal smart-suggestion pills → send | ok | |
 | Deterministic turns | meal-planning reply, multi-turn pills, ClarificationCard, RemoteProviderBadge, Retry — render/route on Android | ok | #1133 (confirms) |
-| Open-ended cloud-LLM turn | Nebius reply via streaming buffered branch — HANGS on "Looking that up…" (>55s, never lands) | broken | #1133 |
+| Open-ended cloud-LLM turn | HANGS on "Looking that up…" indefinitely — NOT a transport issue (2026-07-28: OkHttp facade #1136 proves the real Nebius round-trip completes in 2-8s; reply still never reaches the UI, so the break is a deeper Swift-concurrency/task-race issue further up the call chain) | broken | #1133 |
 | Tool-result cards | ALL 13 (food/nutrition/weight/workout/nav/supplement/medication/sleep/glucose/biomarker/help/proposedMeal) are `#if DRIFT_IOS_APP` — none render on Android, text summary only | missing | #1125 |
 | Weight logging tool | saves via DriftCore ("Logged X"), works — weightCard visual absent | deviation | #1125 (card) |
 | Activity/workout logging tool | yes/no confirm → saves, works — workoutCard visual absent | deviation | #1125 (card) |

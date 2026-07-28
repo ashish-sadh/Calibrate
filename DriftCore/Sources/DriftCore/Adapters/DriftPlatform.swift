@@ -27,4 +27,11 @@ public enum DriftPlatform {
     /// is a `Sendable` store written exactly once at launch, before any read —
     /// so the "unsafe" opt-out of actor isolation is sound.
     nonisolated(unsafe) public static var keyValueStore: KeyValueStore = UserDefaultsKVStore()
+
+    /// HTTP transport seam for RemoteLLMBackend (#1136). iOS/macOS leave this nil
+    /// → URLSession.shared. Android installs AndroidHTTPSession (OkHttp facade)
+    /// because swift-corelibs-foundation URLSession parks non-cancellably on Skip.
+    /// `nonisolated(unsafe)` — same rationale as `keyValueStore`: read off-main at
+    /// the construction site, written once at launch.
+    nonisolated(unsafe) public static var httpSession: (any HTTPDataSession)? = nil
 }

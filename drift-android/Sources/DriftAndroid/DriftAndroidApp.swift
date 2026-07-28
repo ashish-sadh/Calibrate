@@ -43,6 +43,10 @@ let logger: Logger = Logger(subsystem: "com.drift.health", category: "DriftAndro
             // off-main during warm-up (CoreResourcesBootstrap) so it never
             // touches AppDatabase.shared on this main thread.
             DriftPlatform.keyValueStore = DbKeyValueStore()
+            // HTTP transport seam (#1136): swift-corelibs-foundation's
+            // URLSession parks non-cancellably on Skip, so RemoteLLMBackend
+            // (Coach/meal/photo/scan) routes through the OkHttp facade instead.
+            DriftPlatform.httpSession = AndroidHTTPSession()
         }
     }
 

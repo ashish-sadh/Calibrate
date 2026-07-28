@@ -94,4 +94,9 @@ dependencies {
     // (scale apps, fitness trackers). Suspend-only API → accessed exclusively
     // through the blocking HealthConnectFacade.
     implementation("androidx.health.connect:connect-client:1.1.0-rc03")
+    // Blocking HTTP transport for RemoteLLMBackend (#1136) — swift-corelibs-
+    // foundation's URLSession parks non-cancellably on Skip, so cloud AI
+    // (Coach/meal/photo/scan) routes through OkHttp's blocking execute() via
+    // HttpFacade instead.
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 }

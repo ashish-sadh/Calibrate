@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 import Observation
 import DriftCore
 
@@ -322,7 +325,8 @@ public final class LocalAIService {
         apiKey: String
     ) {
         backend?.unload()
-        backend = RemoteLLMBackend(provider: provider, modelID: modelID, apiKey: apiKey)
+        backend = RemoteLLMBackend(provider: provider, modelID: modelID, apiKey: apiKey,
+                                   session: DriftPlatform.httpSession ?? URLSession.shared)
         activeBackendType = .remote
         state = .ready
     }
