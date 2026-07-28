@@ -458,7 +458,7 @@ not ported at all.
 | ExerciseVoiceLogSheet | resolve-target: unmatched name → "Not in library — tap to pick" → full picker → select+Add applies name to row | ok | |
 | ExerciseVoiceLogSheet | Cancel keeps parsed session — reopen resumes stale review, exercises accumulate (iOS resets) | deviation | #1106 |
 | BodyMapView (recovery) | muscle figure colored by soreness (front+back render) | ok | |
-| BodyMapView (recovery) | tap muscle → suggested recovery template | unknown | |
+| BodyMapView (recovery) | tap muscle → suggested recovery template | ok | device-verified (executor session 2026-07-28): tapping an under-trained chip (e.g. "Chest, 8d ago") expands an inline "haven't trained X in over a week" note + tappable template quick-starts (Start Push Day/Full Body/P5 Day 2/4); tapping a suggestion opens the real template pre-loaded with its warmup+working-set structure |
 | MuscleHighlightCard | only render site is ExerciseDetailView muscle diagrams (device-verified ok above); "per-workout" premise stale | ok | source-resolved |
 
 ## Food (epic #1062 = INDEX · single-source: SharedUI/FoodTabView.swift hosted by FoodTab + Android stand-ins AndroidFoodSearchSheet/AndroidRecentMealsSheet · scoped ports #1138 search-hub / #1139 quick-add+manual / #1140 combos+recipes / #1141 residual affordances; capture #1063, goal #1117, edit-bug #1120)
