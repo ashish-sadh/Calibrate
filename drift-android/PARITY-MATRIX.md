@@ -399,7 +399,7 @@ not ported at all.
 | Workout tab root | Templates ⋮ menu (New Template / Load Packages I–IV / Remove All; Import iOS-only) | ok | |
 | Workout tab root | Start Empty Workout → ActiveWorkoutView sheet | ok | |
 | Workout tab root | Muscle Recovery body map + per-group chips (soreness data) | ok | |
-| Workout tab root | resume banner ("Workout in progress — Resume") — on-disk persistence FIXED via durable SQLite KV store | ok | #1108 closed f39655f3; device-reverify pending (emulator contended scout #11) |
+| Workout tab root | resume banner ("Workout in progress — Resume") — on-disk persistence FIXED via durable SQLite KV store | ok | #1108 closed f39655f3; device-verified both variants (#1102 closed, executor session 2026-07-28) |
 | Workout tab root | past-workout log sheet → ActiveWorkoutView(pastDate:) w/ Jul-26 date badge; close-confirm fires | ok | save path not driven |
 | Workout tab root | voice/text log sheet: typed entry → parse → review card → Log CTA (see ExerciseVoiceLogSheet rows) | ok | parse=LOCAL tier; Nebius residual 0-AI-LADDER |
 | Workout tab root | scan workout sheet (`showingScan` → WorkoutScanSheet, iOS-only file; scan-primary entry REPLACED voice/text on iOS — Android still shows the legacy voice/text sheet) | missing | #1110 (#1095 closed-descoped) |
@@ -426,8 +426,8 @@ not ported at all.
 | ActiveWorkoutView | command strip: tap → focus + IME with send action (parse path = Nebius residual, 0-AI-LADDER; e8821123 refinement: bare "form tips" resolves to the current exercise — Tier-0-tested, no new UI surface) | ok | |
 | ActiveWorkoutView | exercise row → NavigationLink ExerciseDetailView | unknown | |
 | ActiveWorkoutView | finish → options sheet (save-as-template/favorite) → completion card + share text | ok | |
-| ActiveWorkoutView | mid-workout kill + resume — FIXED: SavedSession persists via durable SQLite KV store, survives process death (both kill variants) | ok | #1108 closed f39655f3 (the P0); device-reverify pending (runtime persistence; scout #11) |
-| ActiveWorkoutView | resume drops Previous-column ghosts (shows "—") — #1108 LANDED (f39655f3): resume path fully replaced + now reachable; premise may be stale → needs device re-verify | deviation | #1098 (stale `blocked` cleared scout #11) |
+| ActiveWorkoutView | mid-workout kill + resume — FIXED: SavedSession persists via durable SQLite KV store, survives process death (both kill variants) | ok | #1102 CLOSED — device-verified Variant A (30s tick, no backgrounding) + Variant B (HOME then force-stop): both show Resume banner, restore exercise/set/done-state/timer, and clearSession works on Finish + Cancel (executor session 2026-07-28) |
+| ActiveWorkoutView | resume drops Previous-column ghosts (shows "—") — CONFIRMED still reproduces on the new keyValueStore resume path (not stale): pre-interrupt Previous showed "185 lbs × 12", post-resume reads "—" | deviation | #1098 device re-verify done (executor session 2026-07-28), ready for planning |
 | ExercisePickerView | search field: autofocus, live results, tap result w/ keyboard up | ok | |
 | ExercisePickerView | recent/your/all sections + last-weight decoration | ok | |
 | ExercisePickerView | row .swipeActions(leading): swipe reveals Favorite, tap → Favorites section appears; Unfavorite restores | ok | star.slash→star.fill collapse noted on #1099 |
