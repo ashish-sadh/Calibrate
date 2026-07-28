@@ -12,6 +12,34 @@ not ported at all.
 
 ## Session notes (append-only)
 
+- **2026-07-28 (executor, Sonnet):** Executed the `planned` #1106 issue exactly per
+  its Opus plan: `SharedUI/ExerciseVoiceLogSheet.swift` `.onDisappear` (line 66) now
+  also calls `viewModel.reset()` + clears `draft`/`resolveTarget`, ungated (no-op on
+  iOS since its content view + `@State` die on dismiss regardless). New Tier-1
+  `DriftTests/ExerciseVoiceLogViewModelTests.swift` pins `reset()` completeness.
+  Both builds green (iOS `xcodebuild build` + Android `skip app launch`), full
+  iOS suite 1470/1470 passed (verified via `xcresulttool`, not just exit code —
+  the tail-piped log truncated the XCTest-style section). Emulator-drove all 7
+  plan verification steps + 3 regression guards: fresh reopen after Cancel, no
+  accumulation across a second parse, resolve-picker does NOT wipe the
+  in-progress session (highest-risk regression, confirmed safe), swipe-to-dismiss
+  reopen is fresh, unsubmitted draft clears. Row 459 flipped `deviation`→`ok`.
+  Zero crashes/ANRs across the drive + 5 rapid background/foreground cycles.
+  Issue closed. **Publish blocked**: `android-publish.sh` failed twice at "Archive
+  iOS ipa" with exit 9 (SIGKILL, 2.5s then 45.8s in, zero `.swift error:` lines in
+  either export log — matches the known release-archive-OOM signature, not a code
+  issue). Killed a stale leftover `xcodebuild test` process and retried once with
+  ~2x the free memory (590MB→1.1GB) — still died; stopped retrying per that
+  playbook rather than thrash. `Skip.env` reverted both times, no stray
+  versionCode bump landed. **Next session should publish first thing** — this fix
+  is on `main` (e979e2c5), just not yet on a Play build. Gap-hunt sweep (Today
+  tab, rotated off Workout): posted fresh iPhone-vs-Android evidence to #1061 —
+  confirms #1129 (Daily Average/Activity/Recovery block, entirely missing on
+  Android) and #1130 (proactive "Food logging paused → Ask AI" nudge card,
+  missing) with concrete screenshots, plus the still-outstanding directive-8
+  brand-mark gap (Android's header still draws the "D" circle stand-in, not the
+  real `BrandMark` asset). No new issue filed — existing ones cover it precisely.
+
 - **2026-07-28 (scout #11):** SOURCE-ONLY staleness reconciliation of **Workout** (epic #1064) — operator directive
   0-SCREEN-BY-SCREEN-WORKOUT area. ps-check found BOTH sibling lanes LIVE (executor `/android-parity` PID 19839 Sonnet,
   `.build/skip-export` touched 13:43 = actively building→installing the APK; planner PID 87150 Opus) so the emulator was
@@ -456,7 +484,7 @@ not ported at all.
 | WorkoutDetailView | menu actions drive-through (rename/delete/save/share sheets) | unknown | |
 | ExerciseVoiceLogSheet | typed parse → review: "3x10 bench press at 135" → canonical Bench Press card (#1079 re-verified live) | ok | parse=LOCAL tier; Nebius wiring residual (0-AI-LADDER) |
 | ExerciseVoiceLogSheet | resolve-target: unmatched name → "Not in library — tap to pick" → full picker → select+Add applies name to row | ok | |
-| ExerciseVoiceLogSheet | Cancel keeps parsed session — reopen resumes stale review, exercises accumulate (iOS resets) | deviation | #1106 |
+| ExerciseVoiceLogSheet | Cancel keeps parsed session — reopen resumes stale review, exercises accumulate (iOS resets) | ok | FIXED e979e2c5 (build 65, #1106 closed): `.onDisappear` now also calls `viewModel.reset()` + clears `draft`/`resolveTarget`, ungated (no-op on iOS). Device-verified: fresh reopen after Cancel, no accumulation across a second utterance, resolve-picker does NOT wipe the in-progress session, swipe-to-dismiss reopen is fresh, unsubmitted draft clears. New Tier-1 `ExerciseVoiceLogViewModelTests`; iOS suite 1470/1470 green |
 | BodyMapView (recovery) | muscle figure colored by soreness (front+back render) | ok | |
 | BodyMapView (recovery) | tap muscle → suggested recovery template | ok | device-verified (executor session 2026-07-28): tapping an under-trained chip (e.g. "Chest, 8d ago") expands an inline "haven't trained X in over a week" note + tappable template quick-starts (Start Push Day/Full Body/P5 Day 2/4); tapping a suggestion opens the real template pre-loaded with its warmup+working-set structure |
 | MuscleHighlightCard | only render site is ExerciseDetailView muscle diagrams (device-verified ok above); "per-workout" premise stale | ok | source-resolved |
