@@ -491,7 +491,7 @@ not ported at all.
 | ExercisePickerView | row .swipeActions(leading): swipe reveals Favorite, tap → Favorites section appears; Unfavorite restores | ok | star.slash→star.fill collapse noted on #1099 |
 | ExercisePickerView | multi-select circles + "Add N Exercises" batch CTA | ok | |
 | ExercisePickerView | custom exercise sheet: name field + Targets menu (7 parts) + Add/Cancel | ok | save-path not driven (no custom-delete API; junk-averse) |
-| ExercisePickerView | "Your Exercises" carries pre-#1079 raw-utterance customs ×2; no delete path exists | deviation | #1107 |
+| ExercisePickerView | "Your Exercises" carries pre-#1079 raw-utterance customs ×2; no delete path exists | ok | FIXED a8a62339 (#1107 CLOSED): run-once launch prune (`ExerciseDatabase.pruneLegacyUtteranceCustoms`, history-guarded so referenced names survive) wired on both platforms via the durable KV seam (#1108); device-verified the run-once flag persists across real Android process death, not just the Tier-0 simulation. User-facing delete UI still carved to #1127 |
 | ExerciseBrowserView | body-part filter chips row visible + filtering (bugsweep-A FIXED) | ok | |
 | ExerciseBrowserView | search field live filter (char-by-char, combined w/ chip) | ok | |
 | ExerciseBrowserView | rows: pose photo thumbnails + distinct equipment glyphs | ok | |
