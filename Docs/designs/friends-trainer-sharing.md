@@ -53,10 +53,24 @@ both leave the device — the rule enforced is that any cloud touchpoint is
 Decision: sharing is compatible with the tenet **because** it is opt-in,
 minimal, and explicit. Logged in `Docs/decisions.md`.
 
+## Identity: username-only (anonymous account)
+
+There is **no email and no password.** Claiming a @username silently creates a
+Supabase **anonymous** account (`POST /auth/v1/signup`) — a real `auth.users`
+row + JWT, so RLS's `auth.uid()` still enforces per-friend access, but the user
+never sees an auth step. The account is device-bound (session persists in SQLite
++ Keychain). Trade-off: no cross-device recovery yet (a "link email later" is a
+clean phase-2 add). Requires **"Allow anonymous sign-ins"** enabled on the
+project (Authentication → Sign In / Providers).
+
+The earlier email-code flow was removed: Supabase's confirmation email builds its
+link from the project **Site URL** (default `localhost:3000`), so the link was a
+dead end on a phone — email was the wrong mechanism for this feature.
+
 ## UX Flow
 
-1. **More → Friends.** Signed out → "Sign in" card: enter email → 6-digit code.
-2. **Claim @username** (`^[a-z0-9_]{3,20}$`). Now findable.
+1. **More → Friends.** "Pick a username" card → type a @username → Claim
+   (`^[a-z0-9_]{3,20}$`). The anonymous account is created on claim. Now findable.
 3. **Add friends:** search a username → "Add" → request sent. The other person
    sees it under "Friend requests" → accept/decline.
 4. **Share a template:** any template's preview → "Send to a friend" → pick a
