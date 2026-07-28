@@ -166,14 +166,18 @@ public final class SharingService {
         return msg
     }
 
-    /// The full conversation with another user, oldest first.
+    /// The conversation with another user, oldest first (most recent 200).
+    /// Fetches newest-first then reverses — `asc&limit=200` returned the FIRST
+    /// 200 messages ever, so once a conversation passed 200 the poll re-read
+    /// the same stale page forever and new messages never appeared.
     public func fetchMessages(with otherID: String) async throws -> [MessageDTO] {
         let uid = try requireUserID()
         let filter = "or=(and(sender_id.eq.\(uid),recipient_id.eq.\(otherID)),"
             + "and(sender_id.eq.\(otherID),recipient_id.eq.\(uid)))"
-        return try await client.restGet(
-            "messages?\(filter)&select=*&order=created_at.asc&limit=200",
+        let newestFirst: [MessageDTO] = try await client.restGet(
+            "messages?\(filter)&select=*&order=created_at.desc&limit=200",
             token: try await validToken())
+        return newestFirst.reversed()
     }
 
     /// Accepted edges involving the caller (both directions).

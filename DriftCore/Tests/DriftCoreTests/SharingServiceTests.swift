@@ -161,6 +161,30 @@ struct SharingServiceTests {
         #expect(mock.lastBody?["status"] as? String == "accepted")
     }
 
+    // MARK: Chat
+
+    @Test func fetchMessagesRequestsNewestPageButReturnsOldestFirst() async throws {
+        let mock = MockHTTP()
+        // Server answers newest-first (created_at.desc) — the client must
+        // reverse so the UI renders oldest-first.
+        mock.queue = [(200, [
+            ["id": "m2", "sender_id": "me", "recipient_id": "friend", "body": "second",
+             "created_at": "2026-07-28T10:01:00Z"],
+            ["id": "m1", "sender_id": "friend", "recipient_id": "me", "body": "first",
+             "created_at": "2026-07-28T10:00:00Z"],
+        ] as [[String: Any]])]
+        let (svc, db) = try makeService(mock)
+        signIn(svc, db: db)
+
+        let messages = try await svc.fetchMessages(with: "friend")
+        #expect(messages.map(\.id) == ["m1", "m2"])
+        // The page must be the NEWEST 200 — asc&limit re-read the first 200
+        // messages ever, freezing long conversations.
+        let url = try #require(mock.requests.last?.url?.absoluteString)
+        #expect(url.contains("order=created_at.desc"))
+        #expect(url.contains("limit=200"))
+    }
+
     // MARK: Live session
 
     @Test func startLiveSessionReturnsServerID() async throws {
