@@ -656,13 +656,14 @@ struct ActiveWorkoutView: View {
                 .accessibilityLabel("Exercise options")
             }
 
-            // Notes (editable - pre-filled from template)
-            TextField("Notes...", text: Binding(
+            // Notes (editable - pre-filled from template). Android renders this
+            // as a tap-to-edit surface (ExerciseNotesField) so no always-live
+            // TextField exists for a sibling set-DONE tap to steal focus (#1103);
+            // iOS keeps the live inline field — byte-identical converting binding.
+            ExerciseNotesField(text: Binding(
                 get: { exercises[ei].notes ?? "" },
                 set: { exercises[ei].notes = $0.isEmpty ? nil : $0 }
             ))
-            .textFieldStyle(.plain)
-            .font(.caption2).foregroundStyle(Theme.textSecondary).italic()
 
             // Column headers
             let assisted = isAssistedExercise(exercises[ei].name)
@@ -1802,6 +1803,51 @@ struct WorkoutNotesField: View {
             .font(.caption).foregroundStyle(Theme.textSecondary)
             .lineLimit(1...3)
             .padding(.horizontal, 16)
+        #endif
+    }
+}
+
+/// Exercise "Tip:/Notes" line inside an exercise card. On Android it is a
+/// tap-to-edit surface, NOT a live TextField: an always-present TextField here
+/// is the card's only inline field, so a sibling Button tap (the set DONE
+/// circle ~180px below) steals its focus and pops the IME with a caret sitting
+/// in the tip text (#1103). Rendering the note as plain Text until the user
+/// taps it means there is no focusable field for the done-tap to grab. iOS
+/// keeps the live inline TextField — byte-identical to the pre-#1103 call site.
+/// (@State/@FocusState are non-private: SharedUI structs must be for the Skip
+/// Fuse bridge; every other @State in this file is non-private too.)
+struct ExerciseNotesField: View {
+    @Binding var text: String            // "" == no note
+    #if os(Android)
+    @State var editing = false
+    @FocusState var focused: Bool
+    #endif
+
+    var body: some View {
+        #if os(Android)
+        Group {
+            if editing {
+                TextField("Notes...", text: $text)
+                    .textFieldStyle(.plain)
+                    .compactTextFieldPadding()          // dodge Material's 56dp min-height
+                    .font(.caption2).foregroundStyle(Theme.textSecondary).italic()
+                    .focused($focused)
+                    .onAppear { Task { @MainActor in focused = true } }   // deferred focus (cmd-strip precedent, L1200)
+                    .onChange(of: focused) { _, f in if !f { editing = false } } // blur/onSubmit collapses back to Text
+            } else {
+                Text(text.isEmpty ? "Notes..." : text)
+                    .font(.caption2)
+                    .foregroundStyle(text.isEmpty ? Theme.textTertiary : Theme.textSecondary)
+                    .italic()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())          // full-width tap target (SkipUICompat paints an α0.0001 surface)
+                    .onTapGesture { editing = true }
+            }
+        }
+        #else
+        TextField("Notes...", text: $text)
+            .textFieldStyle(.plain)
+            .font(.caption2).foregroundStyle(Theme.textSecondary).italic()
         #endif
     }
 }
