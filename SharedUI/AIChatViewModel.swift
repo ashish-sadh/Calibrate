@@ -1,5 +1,6 @@
 import Foundation
 import DriftCore
+import Observation  // @Observable — not re-exported by Foundation on the Android Swift SDK
 
 /// ViewModel for AIChatView — owns all chat state, message handling, and AI pipeline interaction.
 @Observable
@@ -36,7 +37,9 @@ final class AIChatViewModel {
     /// confirmations). Overrides smartSuggestions until the setter clears it.
     var quickReplies: [String] = []
     var showingRecipeBuilder = false
-    var pendingRecipeItems: [QuickAddView.RecipeItem] = []
+    // Bare DriftCore.RecipeItem — `QuickAddView.RecipeItem` is an iOS-only
+    // typealias, so the qualified name doesn't resolve on Android (#1066).
+    var pendingRecipeItems: [RecipeItem] = []
     var pendingRecipeName = ""
     var showingBarcodeScanner = false
     var showingManualFoodEntry = false
@@ -62,7 +65,16 @@ final class AIChatViewModel {
 
     /// True when both local and remote BYOK backends are configured. Drives
     /// the selector visibility; with only one backend the selector is hidden.
-    var canToggleBackend: Bool { AIBackendCoordinator.bothBackendsAvailable }
+    var canToggleBackend: Bool {
+        #if DRIFT_IOS_APP
+        AIBackendCoordinator.bothBackendsAvailable
+        #else
+        // Android is Nebius-only — no backend toggle UI (operator 0-AI-FOCUS).
+        // AIBackendCoordinator is iOS-app-only, so gate on DRIFT_IOS_APP (not
+        // os(Android)) to also satisfy the Darwin bridging pass. #1066
+        false
+        #endif
+    }
 
     /// Stored so @Observable tracks it and re-renders the selector on change.
     /// Initialized from persisted preference; updated synchronously in toggleBackend()
@@ -76,7 +88,9 @@ final class AIChatViewModel {
         let next: AIBackendType = backend ?? (activeBackend == .remote ? .llamaCpp : .remote)
         activeBackend = next
         Preferences.preferredAIBackend = next
+        #if DRIFT_IOS_APP
         Task { await AIBackendCoordinator.applyPreferredBackend() }
+        #endif
     }
 
     /// Whether the coach speaks replies aloud. Stored (not computed) so
@@ -161,7 +175,9 @@ final class AIChatViewModel {
 
     // nonisolated(unsafe): written once in init, read in deinit (which is
     // nonisolated on a @MainActor class) — no concurrent access.
-    nonisolated(unsafe) private var saveObserver: NSObjectProtocol?
+    // Not `private` — Skip Fuse can't bridge private stored state on an
+    // @Observable class ([Fuse Can't Bridge Private Views/State]). #1066
+    nonisolated(unsafe) var saveObserver: NSObjectProtocol?
 
     init(persistence: ConversationStatePersistence = .shared) {
         self.persistence = persistence

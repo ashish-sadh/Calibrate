@@ -158,7 +158,7 @@ struct TodayTab: View {
             }
             .background(Theme.background.ignoresSafeArea())
             .onAppear { store.reload() }
-            .sheet(isPresented: $showingCoachInfo) { CoachComingSheet() }
+            .sheet(isPresented: $showingCoachInfo) { AIChatView() }
             // TodayStore's .foodEntryAdded observer refreshes the dashboard,
             // but onDismiss also covers the cancel path's ring re-check.
             .sheet(isPresented: $showingDescribe, onDismiss: { store.reload() }) {

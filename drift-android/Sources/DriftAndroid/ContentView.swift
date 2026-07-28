@@ -27,7 +27,8 @@ struct ContentView: View {
         // all rather than per-control patches.
         .tint(Theme.accent)
         .sheet(isPresented: $showingCoach) {
-            CoachComingSheet()
+            // Real Drift Coach chat — Nebius-backed, SharedUI single-source. #1066
+            AIChatView()
         }
     }
 

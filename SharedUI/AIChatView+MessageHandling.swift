@@ -101,12 +101,12 @@ extension AIChatViewModel {
     }
 
     /// Try to resolve a single food item string into a RecipeItem.
-    func resolveRecipeItem(_ text: String) -> QuickAddView.RecipeItem? {
+    func resolveRecipeItem(_ text: String) -> RecipeItem? {
         let (servings, foodName, gramAmount) = AIActionExecutor.extractAmount(from: text)
         guard let match = AIActionExecutor.findFood(query: foodName, servings: servings, gramAmount: gramAmount) else { return nil }
         let f = match.food
         let portionText = Self.smartServingText(food: f, servings: match.servings, gramAmount: gramAmount)
-        return QuickAddView.RecipeItem(
+        return RecipeItem(
             name: f.name, portionText: portionText,
             calories: f.calories * match.servings, proteinG: f.proteinG * match.servings,
             carbsG: f.carbsG * match.servings, fatG: f.fatG * match.servings,
@@ -124,7 +124,7 @@ extension AIChatViewModel {
         let statusIdx = messages.count - 1
 
         Task {
-            var recipeItems: [QuickAddView.RecipeItem] = []
+            var recipeItems: [RecipeItem] = []
             var notFound: [String] = []
 
             for item in items {
@@ -164,11 +164,20 @@ extension AIChatViewModel {
                 showingFoodSearch = true
             } else if recipeItems.count == 1 && notFound.isEmpty {
                 let item = recipeItems[0]
+                #if DRIFT_IOS_APP
                 let vm = FoodLogViewModel()
                 let mealType = MealType(rawValue: mealName.lowercased()) ?? vm.autoMealType
                 vm.logRecipeItems(recipeItems, mealType: mealType)
                 messages[statusIdx] = ChatMessage(role: .assistant,
                     text: "Logged \(item.name) (\(Int(item.calories)) cal) for \(mealName.capitalized)!")
+                #else
+                // FoodLogViewModel + FoodService+Logging are iOS-app-only; Coach
+                // food logging on Android lands with the food sheets in #1062.
+                // Narrate the match instead of a dead tap. (DRIFT_IOS_APP, not
+                // os(Android), so the Darwin bridging pass takes this branch too.)
+                messages[statusIdx] = ChatMessage(role: .assistant,
+                    text: "Found \(item.name) (\(Int(item.calories)) cal) — add it from the Food tab for now.")
+                #endif
             } else {
                 var msg = "Building \(mealName): \(recipeItems.map { "\($0.name) (\(Int($0.calories)) cal)" }.joined(separator: ", "))."
                 if !notFound.isEmpty {
@@ -354,7 +363,12 @@ extension AIChatViewModel {
         // Phase 5: Multi-turn conversation state
         if resolved("multi_turn", handleMultiTurnState(lower, originalText: normalized)) { return }
         // Phase 6: Planning triggers (interview, split builder, meal planning)
+        #if DRIFT_IOS_APP
+        // The "set me up" interview flow lands with the tool cards in #1125
+        // (handleInterviewTrigger lives in the iOS-only +Interview extension —
+        // DRIFT_IOS_APP so the Darwin bridging pass excludes it too).
         if resolved("interview", handleInterviewTrigger(lower)) { return }
+        #endif
         if resolved("workout_split", handleWorkoutSplitTrigger(lower)) { return }
         if resolved("meal_planning", handleMealPlanningTrigger(lower)) { return }
         // Phase 6b: "log my usual lunch" — recall + narrate + open editable sheet.
@@ -513,7 +527,9 @@ extension AIChatViewModel {
 
     /// Phase 5: Multi-turn conversation handlers — resume pending interview, workout, split, meal plan, or meal.
     private func handleMultiTurnState(_ lower: String, originalText: String) -> Bool {
+        #if DRIFT_IOS_APP
         if handlePendingInterview(lower, originalText: originalText) { return true }
+        #endif
         if handlePendingWorkout(lower) { return true }
         if handlePendingWorkoutSplit(lower) { return true }
         if handlePendingMealPlan(lower) { return true }
@@ -746,7 +762,7 @@ extension AIChatViewModel {
         let remainder = String(lower.dropFirst(contPrefix.count)).trimmingCharacters(in: .whitespaces)
         guard !remainder.isEmpty else { return false }
         let items = splitFoodItems(remainder)
-        var newItems: [QuickAddView.RecipeItem] = []
+        var newItems: [RecipeItem] = []
         var notFound: [String] = []
         for item in items {
             let trimmed = item.trimmingCharacters(in: .whitespaces)
@@ -1784,17 +1800,17 @@ extension AIChatViewModel {
                     foodSearchServings = servings
                     showingFoodSearch = true
                 case .openRecipeBuilder(let items, let mealName):
-                    var resolved: [QuickAddView.RecipeItem] = []
+                    var resolved: [RecipeItem] = []
                     for itemName in items {
                         if let recipe = resolveRecipeItem(itemName) {
                             resolved.append(recipe)
                         } else if itemName.lowercased().contains(" with ") {
                             for sub in itemName.components(separatedBy: " with ").map({ $0.trimmingCharacters(in: .whitespaces) }).filter({ !$0.isEmpty }) {
                                 if let recipe = resolveRecipeItem(sub) { resolved.append(recipe) }
-                                else { resolved.append(QuickAddView.RecipeItem(name: sub, portionText: "1 serving", calories: 0, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0)) }
+                                else { resolved.append(RecipeItem(name: sub, portionText: "1 serving", calories: 0, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0)) }
                             }
                         } else {
-                            resolved.append(QuickAddView.RecipeItem(name: itemName, portionText: "1 serving", calories: 0, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0))
+                            resolved.append(RecipeItem(name: itemName, portionText: "1 serving", calories: 0, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0))
                         }
                     }
                     pendingRecipeItems = resolved

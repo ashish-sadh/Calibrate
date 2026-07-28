@@ -1,22 +1,33 @@
 import SwiftUI
 import DriftCore
+#if canImport(PhotosUI)
 import PhotosUI
+#endif
 
 // MARK: - Input bar
 //
 // Photo thumbnail (when attached) + text field + camera/mic/send buttons. Mic
 // button switches between toggleRecording and stop/send while recording. Camera
 // only appears when remote backend is active (local backend has no vision).
+//
+// Android v1 (#1066): photo attach + mic are gated off (they land with the
+// media/voice work in #1125/#1126) — the bar is a plain text field + send.
 
 extension AIChatView {
 
     var inputBar: some View {
         HStack(spacing: 8) {
+            #if os(Android)
+            // Material has no sparkle glyph — draw it (see Symbols.swift). #1066
+            SparkleShape().fill(Theme.accent.opacity(0.6)).frame(width: 13, height: 13)
+            #else
             Image(systemName: "sparkles")
                 .font(.system(size: Theme.FontSize.caption))
                 .foregroundStyle(Theme.accent.opacity(0.6))
+            #endif
 
             VStack(alignment: .leading, spacing: 6) {
+                #if DRIFT_IOS_APP
                 if let jpeg = vm.pendingPhotoData, let uiImage = UIImage(data: jpeg) {
                     HStack(spacing: 8) {
                         Image(uiImage: uiImage)
@@ -37,7 +48,18 @@ extension AIChatView {
                     }
                     .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .leading)))
                 }
+                #endif
 
+                #if os(Android)
+                // SkipUI has no TextField(axis:) initializer and no ClosedRange
+                // lineLimit — a plain single-line field (the shipped ChatView
+                // input bar uses the same shape). #1066
+                TextField("Ask anything...", text: $vm.inputText)
+                    .textFieldStyle(.plain).font(.subheadline)
+                    .focused($inputFocused)
+                    .onSubmit { vm.sendMessage() }
+                    .accessibilityIdentifier("ai-chat-input")
+                #else
                 TextField(
                     vm.speechService.isRecording ? "Listening..." :
                         (vm.pendingPhotoData != nil ? "Describe the photo (optional)..." : "Ask anything..."),
@@ -46,6 +68,7 @@ extension AIChatView {
                     .lineLimit(1...(vm.speechService.isRecording ? 6 : 3)).focused($inputFocused)
                     .onSubmit { vm.sendMessage() }
                     .accessibilityIdentifier("ai-chat-input")
+                #endif
             }
             .animation(.easeInOut(duration: 0.2), value: vm.pendingPhotoData != nil)
 
@@ -71,8 +94,11 @@ extension AIChatView {
         .padding(.horizontal, 8).padding(.bottom, 4)
     }
 
+    // Not `private` — Skip Fuse can't bridge private members of a shared view.
+    // Never rendered on Android (isRecording is always false via the voice
+    // shim), but it must still compile there.
     @ViewBuilder
-    private var recordingControls: some View {
+    var recordingControls: some View {
         Button {
             vm.speechService.forceStop()
         } label: {
@@ -93,9 +119,11 @@ extension AIChatView {
     }
 
     @ViewBuilder
-    private var idleControls: some View {
-        // Image — always available. Image turns route to the vision model
-        // (Qwen2.5-VL); an explicit cloud touch-point when sent.
+    var idleControls: some View {
+        // UIKit/PhotosUI + the speech shim are iOS-app-only; DRIFT_IOS_APP keeps
+        // them out of the Skip Android AND Darwin bridging passes. Photo attach +
+        // mic land with #1125 / #1126; Android v1 is a text-only Coach.
+        #if DRIFT_IOS_APP
         PhotosPicker(selection: $photoPickerItem, matching: .images) {
             Image(systemName: vm.pendingPhotoData != nil ? "camera.fill" : "camera")
                 .font(.system(size: Theme.FontSize.large))
@@ -126,10 +154,11 @@ extension AIChatView {
         }
         .accessibilityLabel("Voice input")
         .disabled(vm.isGenerating)
+        #endif
 
         let canSend = !vm.inputText.isEmpty || vm.pendingPhotoData != nil
         Button { vm.sendMessage() } label: {
-            Image(systemName: "arrow.up.circle.fill").font(.title2)
+            Image(systemName: sym("arrow.up.circle.fill")).font(.title2)
                 .foregroundStyle(canSend ? Theme.ink : Color.secondary.opacity(0.5))
         }
         .accessibilityLabel("Send message")

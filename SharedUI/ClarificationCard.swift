@@ -32,13 +32,13 @@ struct ClarificationCard: View {
 
     // MARK: - Option chip
 
-    private func chipButton(for option: ClarificationOption) -> some View {
+    func chipButton(for option: ClarificationOption) -> some View {
         Button {
             onPick(option)
         } label: {
             HStack(spacing: 8) {
                 if let icon = option.displayIcon {
-                    Image(systemName: icon)
+                    Image(systemName: sym(icon))
                         .font(.system(size: Theme.FontSize.footnote))
                         .foregroundStyle(Theme.accent)
                         .frame(width: 20)
@@ -79,7 +79,7 @@ struct ClarificationCard: View {
 
     // MARK: - Other chip (overflow fallback)
 
-    private var otherChipButton: some View {
+    var otherChipButton: some View {
         Button {
             onOther()
         } label: {

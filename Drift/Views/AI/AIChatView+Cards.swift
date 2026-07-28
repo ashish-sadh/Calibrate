@@ -88,43 +88,6 @@ extension AIChatView {
         )
     }
 
-    // MARK: Remote Provider Badge (#533)
-
-    struct RemoteProviderBadge: View {
-        let provider: String
-        @State private var showingPopover = false
-
-        var body: some View {
-            Button {
-                showingPopover = true
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "cloud.fill")
-                        .font(.system(size: Theme.FontSize.nano))
-                    Text("via \(provider)")
-                        .font(.system(size: Theme.FontSize.micro))
-                }
-                .foregroundStyle(Theme.textTertiary)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 3)
-                .background(Color.white.opacity(0.05), in: Capsule())
-            }
-            .buttonStyle(.plain)
-            .popover(isPresented: $showingPopover) {
-                VStack(alignment: .leading, spacing: 6) {
-                    Label("Processed by \(provider)", systemImage: "cloud.fill")
-                        .font(.subheadline.weight(.semibold))
-                    Text("Your API key, no Drift servers. Messages go directly to \(provider)'s API and are subject to their privacy policy.")
-                        .font(.caption)
-                        .foregroundStyle(Theme.textSecondary)
-                }
-                .padding(16)
-                .presentationCompactAdaptation(.popover)
-            }
-            .accessibilityLabel("Handled by \(provider). Tap for privacy details.")
-        }
-    }
-
     // MARK: Nutrition Lookup Card
 
     func nutritionLookupCard(_ card: AIChatViewModel.NutritionLookupCardData) -> some View {

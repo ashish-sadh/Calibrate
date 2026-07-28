@@ -137,30 +137,3 @@ struct ChatBubblesGlyph: View {
         .frame(width: 20, height: 16)
     }
 }
-
-/// Placeholder until #1066 lands the full chat UI — the Nebius brain is
-/// already cross-platform; this is honest about what's wired.
-struct CoachComingSheet: View {
-    @Environment(\.dismiss) var dismiss
-
-    var body: some View {
-        NavigationStack {
-            VStack(spacing: 14) {
-                Image(systemName: sym("bubble.left.fill"))
-                    .font(.system(size: 40))
-                    .foregroundStyle(Theme.accent)
-                Text("Drift Coach").font(Theme.fontTitle)
-                Text("The Coach is coming to Android in the next update — same brain as the iPhone, chat + voice logging for meals, workouts, and weight.")
-                    .font(.subheadline)
-                    .foregroundStyle(Theme.textSecondary)
-                    .multilineTextAlignment(.center)
-                Spacer()
-            }
-            .padding(24)
-            .background(Theme.background)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("Close") { dismiss() } }
-            }
-        }
-    }
-}

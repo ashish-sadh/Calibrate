@@ -1,6 +1,8 @@
 import SwiftUI
 import DriftCore
+#if canImport(PhotosUI)
 import PhotosUI
+#endif
 
 /// Chat-style AI assistant — chain-of-thought reasoning with smart suggestion pills.
 ///
@@ -9,8 +11,11 @@ import PhotosUI
 struct AIChatView: View {
     @State var vm = AIChatViewModel()
     @FocusState var inputFocused: Bool
+    #if DRIFT_IOS_APP
     @State var photoPickerItem: PhotosPickerItem? = nil
-    @Environment(\.dismiss) private var dismiss
+    #endif
+    // Not `private` — Skip Fuse can't bridge private @Environment state. #1066
+    @Environment(\.dismiss) var dismiss
 
     /// Optional pre-filled input — used by VoiceLogSheet's "Edit in chat"
     /// hand-off so the user can refine a transcript before sending.
@@ -28,7 +33,11 @@ struct AIChatView: View {
         // (the old "Local Brain | Cloud AI" tiles). Removed to avoid two
         // stacked pickers.
         Group {
+            // Talk mode (ImmersiveVoiceView) is iOS-only for v1 — its toggle is
+            // hidden on Android and `talkModeEnabled` defaults off there, so this
+            // branch is never taken on Android; gate the body so it compiles. #1066
             if vm.talkModeEnabled {
+                #if DRIFT_IOS_APP
                 ImmersiveVoiceView(
                     state: circleState,
                     caption: immersiveCaption,
@@ -37,6 +46,7 @@ struct AIChatView: View {
                     onConfirm: confirmFromImmersive,
                     onCancel: cancelFromImmersive,
                     onExit: { vm.toggleTalkMode() })
+                #endif
             } else {
             VStack(spacing: 0) {
             coachHeader
@@ -44,7 +54,22 @@ struct AIChatView: View {
                 // Voice-first hero: a big tap-to-talk circle. The user can also
                 // type or attach an image via the input bar below.
                 Spacer(minLength: 0)
+                #if DRIFT_IOS_APP
                 ListeningCircle(state: circleState, onTap: startOrStopVoice)
+                #else
+                // Voice hero (ListeningCircle) is iOS-only for v1 — a static
+                // sparkle prompt; tapping it focuses the input. SparkleShape lives
+                // in the DriftAndroid module (present in both Skip passes). #1066
+                Button { inputFocused = true } label: {
+                    VStack(spacing: 12) {
+                        SparkleShape().fill(Theme.accent).frame(width: 46, height: 46)
+                        Text("Ask me anything")
+                            .font(.system(size: 17, weight: .semibold, design: .rounded))
+                            .foregroundStyle(Theme.textSecondary)
+                    }
+                }
+                .buttonStyle(.plain)
+                #endif
                 if !vm.pageInsight.isEmpty {
                     Text(vm.pageInsight)
                         .font(.footnote)
@@ -63,9 +88,19 @@ struct AIChatView: View {
                             if vm.isGenerating {
                                 thinkingIndicator
                             }
+                            // Scroll sentinel — Fuse's `scrollTo(id)` on a message
+                            // id is unreliable, so Android scrolls to this fixed
+                            // id instead ([SharedUI/ChatView] pattern). #1066
+                            Color.clear.frame(height: 1).id("bottom")
                         }
                         .padding(.top, 6)
                     }
+                    #if os(Android)
+                    .onChange(of: vm.messages.count) { _, _ in proxy.scrollTo("bottom") }
+                    .onChange(of: vm.messages.last?.text) { _, _ in
+                        if vm.streamingMessageId != nil { proxy.scrollTo("bottom") }
+                    }
+                    #else
                     .onChange(of: vm.messages.count) { _, _ in
                         if let last = vm.messages.last {
                             withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
@@ -76,6 +111,7 @@ struct AIChatView: View {
                             proxy.scrollTo(last.id, anchor: .bottom)
                         }
                     }
+                    #endif
                 }
             }
 
@@ -119,11 +155,13 @@ struct AIChatView: View {
             .animation(Theme.Motion.passive, value: vm.pendingUndoEntryIds.isEmpty)
             }
         }
+        #if DRIFT_IOS_APP
         .sheet(isPresented: $vm.showingFoodSearch, onDismiss: { vm.mealLogRevision += 1 }) {
             // FoodSearchView owns its own NavigationStack + toolbar Done — no
             // outer wrapper, or the sheet shows two "Done" buttons.
             FoodSearchView(viewModel: FoodLogViewModel(), initialQuery: vm.foodSearchQuery, initialServings: vm.foodSearchServings, initialMealType: vm.foodSearchMealType, initialSelection: vm.foodSearchResolvedName, initialSelectionId: vm.foodSearchResolvedId)
         }
+        #endif
         .sheet(isPresented: $vm.showingWorkout) {
             if let template = vm.workoutTemplate {
                 NavigationStack {
@@ -134,6 +172,10 @@ struct AIChatView: View {
                 }
             }
         }
+        #if DRIFT_IOS_APP
+        // The food-logging sheets aren't ported to Android yet (#1062); on Android
+        // the triggers degrade to an assistant message (see the onChange handlers
+        // below). Workout stays live above — ActiveWorkoutView is already SharedUI.
         .fullScreenCover(isPresented: $vm.showingBarcodeScanner) {
             BarcodeLookupView(viewModel: FoodLogViewModel())
         }
@@ -162,6 +204,15 @@ struct AIChatView: View {
                     vm.mealLogRevision += 1
                 })
         }
+        #elseif os(Android)
+        // Android: a chat turn that wants an un-ported food sheet degrades to an
+        // assistant message instead of a dead flag flip. #1066 / #1062
+        .onChange(of: vm.showingFoodSearch) { _, s in if s { vm.showingFoodSearch = false; degradeUnportedSheet() } }
+        .onChange(of: vm.showingRecipeBuilder) { _, s in if s { vm.showingRecipeBuilder = false; degradeUnportedSheet() } }
+        .onChange(of: vm.showingManualFoodEntry) { _, s in if s { vm.showingManualFoodEntry = false; degradeUnportedSheet() } }
+        .onChange(of: vm.showingMealReview) { _, s in if s { vm.showingMealReview = false; degradeUnportedSheet() } }
+        .onChange(of: vm.showingBarcodeScanner) { _, s in if s { vm.showingBarcodeScanner = false; degradeUnportedSheet() } }
+        #endif
         .onAppear {
             vm.aiService.cancelUnload()
             if vm.messages.isEmpty {
@@ -178,11 +229,18 @@ struct AIChatView: View {
             // ~2.9GB of Gemma is pure waste on the cloud path and slow on A19 Pro
             // (Metal falls back to CPU). Only warm on-device when there's no cloud
             // brain to serve the turn. #coach-speed
+            #if DRIFT_IOS_APP
             if AIBackendCoordinator.hasCoachCloud {
                 AIBackendCoordinator.installCoachBackend()
             } else if !vm.aiService.isModelLoaded && vm.aiService.state == .ready {
                 vm.aiService.loadModel()
             }
+            #else
+            // Android (+ the Darwin bridging pass) is Nebius-only — no local model,
+            // no backend picker. Install the cloud brain synchronously so the first
+            // turn routes remote (mirrors ActiveWorkoutView's askCoach path). #1066
+            if CoachCloud.isConfigured { CoachCloud.install() }
+            #endif
             // #936: Ask-AI questions fire as a real turn immediately — never
             // left stuck in the input. AFTER the backend install above, or
             // the very first turn races the cloud brain and falls to Gemma.
@@ -214,7 +272,9 @@ struct AIChatView: View {
                 .font(.system(size: 17, weight: .semibold, design: .rounded))
                 .foregroundStyle(Theme.textPrimary)
             HStack {
+                #if DRIFT_IOS_APP
                 voiceCluster
+                #endif
                 Spacer()
                 closeButton
             }
@@ -224,7 +284,10 @@ struct AIChatView: View {
         .padding(.bottom, 6)
     }
 
+    #if DRIFT_IOS_APP
     /// Speaker (mute switch) + waveform (talk mode) in one floating capsule.
+    /// iOS-app-only: Haptics + `symbolEffect` are unavailable off-Apple and the
+    /// whole voice cluster is hidden on Android for v1 (#1066).
     var voiceCluster: some View {
         HStack(spacing: 2) {
             Button {
@@ -263,6 +326,7 @@ struct AIChatView: View {
         .background(Capsule().fill(Theme.cardBackground).shadow(color: .black.opacity(0.06), radius: 6, y: 2))
         .animation(Theme.Motion.passive, value: vm.voiceOutputEnabled)
     }
+    #endif
 
     /// Circular close — replaces the sheet's plain "Done" text button.
     var closeButton: some View {
@@ -343,8 +407,11 @@ struct AIChatView: View {
             && vm.messages[0].text == vm.pageInsight
     }
 
+    #if DRIFT_IOS_APP
     /// Drive the hero circle's animation/caption from the live voice + generation
     /// state. Precedence: speaking > processing > listening > idle.
+    /// iOS-app-only: `ListeningCircle.CircleState` is the voice hero, gated off on
+    /// Android for v1 (#1066).
     var circleState: ListeningCircle.CircleState {
         if case .unavailable = vm.speechService.recordingState { return .unavailable }
         if vm.voiceService.isSpeaking { return .speaking }
@@ -352,6 +419,7 @@ struct AIChatView: View {
         if vm.speechService.isRecording { return .listening }
         return .idle
     }
+    #endif
 
     /// One voice flow shared by the hero circle and the small mic button — start
     /// recording (auto-sends on silence/stop), or stop speaking if the coach is
@@ -401,7 +469,9 @@ struct AIChatView: View {
                             .foregroundColor(Theme.textPrimary)
                             .padding(.horizontal, 12).padding(.vertical, 6)
                             .background(Theme.pillBackground, in: Capsule())
-                            .overlay(Capsule().strokeBorder(Theme.separator, lineWidth: 0.5))
+                            // `.stroke` not `.strokeBorder` — SkipUI's strokeBorder
+                            // overload set is ambiguous here (ActiveWorkoutView:754). #1066
+                            .overlay(Capsule().stroke(Theme.separator, lineWidth: 0.5))
                     }.buttonStyle(.plain)
                 }
             }
@@ -411,7 +481,7 @@ struct AIChatView: View {
 
     // MARK: - 10-second Undo Chip (after photo meal card confirm)
 
-    private var undoChip: some View {
+    var undoChip: some View {
         HStack {
             Spacer()
             Button { vm.undoProposedMeal() } label: {
@@ -431,4 +501,15 @@ struct AIChatView: View {
         .padding(.vertical, 4)
         .transition(.move(edge: .bottom).combined(with: .opacity))
     }
+
+    #if os(Android)
+    /// Append a graceful "add it from the Food tab" message when a chat turn
+    /// tries to open a food sheet that isn't ported to Android yet (see the sheet
+    /// onChange handlers on `body`). #1066 / #1062
+    func degradeUnportedSheet() {
+        vm.messages.append(AIChatViewModel.ChatMessage(
+            role: .assistant,
+            text: "You can add that from the Food tab — Coach food logging is coming to Android soon."))
+    }
+    #endif
 }

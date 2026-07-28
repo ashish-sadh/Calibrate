@@ -13,7 +13,9 @@ extension AIChatView {
     /// Shape for chat-message bubble background + overlay border. Asymmetric
     /// corners give iMessage-style "tail" toward the speaker: user bubbles
     /// have a clipped bottom-right corner, assistant bubbles clip bottom-left.
-    fileprivate func bubbleShape(for role: AIChatViewModel.ChatMessage.Role) -> UnevenRoundedRectangle {
+    // Not `fileprivate` — Skip Fuse can't bridge private/fileprivate members of
+    // a shared view ([Fuse Can't Bridge Private Views/State]). #1066
+    func bubbleShape(for role: AIChatViewModel.ChatMessage.Role) -> UnevenRoundedRectangle {
         UnevenRoundedRectangle(
             topLeadingRadius: 16,
             bottomLeadingRadius: role == .user ? 16 : 4,
@@ -26,8 +28,15 @@ extension AIChatView {
 
     var thinkingIndicator: some View {
         HStack(alignment: .bottom, spacing: 6) {
-            Image(systemName: "sparkles").font(.system(size: Theme.FontSize.micro))
-                .foregroundStyle(Theme.accent)
+            Group {
+                #if os(Android)
+                // Material has no sparkle glyph — draw it (see Symbols.swift). #1066
+                SparkleShape().fill(Theme.accent).frame(width: 11, height: 11)
+                #else
+                Image(systemName: "sparkles").font(.system(size: Theme.FontSize.micro))
+                    .foregroundStyle(Theme.accent)
+                #endif
+            }
                 .frame(width: 20, height: 20)
                 .background(Theme.accent.opacity(0.12), in: Circle())
                 .padding(.bottom, 2)
@@ -40,6 +49,10 @@ extension AIChatView {
                 case .idle: ""
                 }
                 if !baseLabel.isEmpty {
+                    #if !os(Android)
+                    // TimelineView (the live elapsed-seconds counter) is absent in
+                    // SkipUI; available on iOS + the Darwin bridging pass. Android
+                    // shows the static stage label below. #1066
                     TimelineView(.periodic(from: .now, by: 0.5)) { context in
                         let elapsed = vm.stageStarted.map { context.date.timeIntervalSince($0) } ?? 0
                         let display = elapsed > 0.5
@@ -53,6 +66,10 @@ extension AIChatView {
                         insertion: .opacity.combined(with: .move(edge: .bottom)),
                         removal: .opacity
                     ))
+                    #else
+                    Text(baseLabel)
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
+                    #endif
                 }
             }
             .animation(.easeInOut(duration: 0.2), value: vm.generatingState)
@@ -72,8 +89,9 @@ extension AIChatView {
 
     struct TypewriterText: View {
         let text: String
-        @State private var revealed: Int = 0
-        @State private var done = false
+        // Not `private` — Skip Fuse can't bridge private @State. #1066
+        @State var revealed: Int = 0
+        @State var done = false
 
         var body: some View {
             Text(done ? text : String(text.prefix(revealed)))
@@ -83,7 +101,11 @@ extension AIChatView {
                     let charsPerTick = max(1, total / 40)
                     Task {
                         while revealed < total {
-                            try? await Task.sleep(for: .milliseconds(18))
+                            // `Task.sleep(for:)` never resumes off-Darwin, so the
+                            // reveal froze at 0 and every fresh assistant reply
+                            // rendered as a permanently empty bubble on Android.
+                            // `nanoseconds:` works on both ([SharedUI/ChatView]). #1066
+                            try? await Task.sleep(nanoseconds: 18_000_000)
                             revealed = min(revealed + charsPerTick, total)
                         }
                         done = true
@@ -101,14 +123,24 @@ extension AIChatView {
             }
 
             if msg.role == .assistant {
-                Image(systemName: "sparkles").font(.system(size: Theme.FontSize.micro))
-                    .foregroundStyle(Theme.accent)
+                Group {
+                    #if os(Android)
+                    // Material has no sparkle glyph — draw it (see Symbols.swift). #1066
+                    SparkleShape().fill(Theme.accent).frame(width: 11, height: 11)
+                    #else
+                    Image(systemName: "sparkles").font(.system(size: Theme.FontSize.micro))
+                        .foregroundStyle(Theme.accent)
+                    #endif
+                }
                     .frame(width: 20, height: 20)
                     .background(Theme.accent.opacity(0.12), in: Circle())
                     .padding(.bottom, 2)
             }
 
             VStack(alignment: msg.role == .user ? .trailing : .leading, spacing: 6) {
+                #if DRIFT_IOS_APP
+                // Photo attach in chat lands with the media sweep (#1125). UIImage
+                // is UIKit-only; DRIFT_IOS_APP keeps it out of the Darwin bridging pass.
                 if msg.role == .user, let jpeg = msg.photoAttachment,
                    let uiImage = UIImage(data: jpeg) {
                     Image(uiImage: uiImage)
@@ -117,6 +149,7 @@ extension AIChatView {
                         .frame(width: 200, height: 150)
                         .clipShape(RoundedRectangle(cornerRadius: Theme.radiusSmall))
                 }
+                #endif
 
                 if !msg.text.isEmpty {
                     let isNewInstant = msg.role == .assistant
@@ -154,6 +187,11 @@ extension AIChatView {
                         )
                 }
 
+                // Tool-result cards (foodConfirmationCard … helpCardView) live in
+                // the iOS-only +Cards extension (DRIFT_IOS_APP, not synced to
+                // Android); they land on Android in #1125. Every card-emitting turn
+                // also carries a text summary, so a card-less bubble still informs.
+                #if DRIFT_IOS_APP
                 if let card = msg.foodCard {
                     foodConfirmationCard(card)
                 }
@@ -187,6 +225,7 @@ extension AIChatView {
                 if let card = msg.helpCard {
                     helpCardView(card)
                 }
+                #endif
                 if let options = msg.clarificationOptions, !options.isEmpty {
                     ClarificationCard(options: options, isDisabled: vm.isGenerating) { picked in
                         vm.inputText = "\(picked.id)"
@@ -198,16 +237,18 @@ extension AIChatView {
                 if let provider = msg.remoteProvider {
                     RemoteProviderBadge(provider: provider)
                 }
+                #if DRIFT_IOS_APP
                 if let card = msg.proposedMealCard {
                     proposedMealCardView(card, messageId: msg.id)
                 }
+                #endif
                 if let retryText = msg.retryTurn {
                     Button {
                         vm.inputText = retryText
                         vm.sendMessage()
                     } label: {
                         HStack(spacing: 4) {
-                            Image(systemName: "arrow.clockwise")
+                            Image(systemName: sym("arrow.clockwise"))
                                 .font(.system(size: Theme.FontSize.micro, weight: .medium))
                             Text("Retry")
                                 .font(.caption.weight(.medium))
@@ -229,4 +270,60 @@ extension AIChatView {
         }
         .padding(.horizontal, 10)
     }
+}
+
+/// The mandatory "via <provider>" cloud disclosure shown under any bubble a
+/// cloud backend handled (privacy tenet — Drift Coach IS cloud). Extracted from
+/// the iOS-only +Cards extension so it survives the card gate on Android (#1066).
+///
+/// Android renders it text-only: `cloud.fill` is unmapped (→ warning triangle)
+/// and `.popover` doesn't bridge, so the drawn cloud glyph + the tap-for-details
+/// popover land with the cards in #1125. The "via Nebius" text alone still
+/// discloses the cloud touch-point, which is the privacy requirement.
+struct RemoteProviderBadge: View {
+    let provider: String
+
+    #if os(Android)
+    var body: some View {
+        Text("via \(provider)")
+            .font(.system(size: Theme.FontSize.micro))
+            .foregroundStyle(Theme.textTertiary)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(Color.white.opacity(0.05), in: Capsule())
+            .accessibilityLabel("Handled by \(provider).")
+    }
+    #else
+    @State var showingPopover = false
+
+    var body: some View {
+        Button {
+            showingPopover = true
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: "cloud.fill")
+                    .font(.system(size: Theme.FontSize.nano))
+                Text("via \(provider)")
+                    .font(.system(size: Theme.FontSize.micro))
+            }
+            .foregroundStyle(Theme.textTertiary)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(Color.white.opacity(0.05), in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .popover(isPresented: $showingPopover) {
+            VStack(alignment: .leading, spacing: 6) {
+                Label("Processed by \(provider)", systemImage: "cloud.fill")
+                    .font(.subheadline.weight(.semibold))
+                Text("Your API key, no Drift servers. Messages go directly to \(provider)'s API and are subject to their privacy policy.")
+                    .font(.caption)
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            .padding(16)
+            .presentationCompactAdaptation(.popover)
+        }
+        .accessibilityLabel("Handled by \(provider). Tap for privacy details.")
+    }
+    #endif
 }
