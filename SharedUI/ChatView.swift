@@ -129,7 +129,10 @@ struct ChatView: View {
         while !Task.isCancelled {
             try? await Task.sleep(nanoseconds: 3_000_000_000)
             if Task.isCancelled { break }
-            if let fresh = try? await svc.fetchMessages(with: peer.id), fresh.count != messages.count {
+            // Compare contents, not counts — at the 200-message page cap the
+            // count never changes, and a same-size send/receive crossing also
+            // kept the stale page on screen.
+            if let fresh = try? await svc.fetchMessages(with: peer.id), fresh != messages {
                 messages = fresh
             }
         }
