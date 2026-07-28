@@ -100,3 +100,35 @@ struct ServingInputView: View {
         }
     }
 }
+
+/// "This looks like a multi-piece serving" hint — fires when a piece-unit's
+/// grams are >2× the typical range for that food (SuspiciousPieceCheck).
+/// Born from the TJ Chicken Meatballs field report (2026-05-24: a 3-meatball
+/// 85g label serving stored as ONE 85g meatball → 3× overlogging); extracted
+/// to SharedUI when the same row surfaced banner-less in FoodSearchView's log
+/// sheet (2026-07-27) — every serving surface should warn, not just one.
+struct SuspiciousPieceBanner: View {
+    let unitLabel: String
+    let gramsEquivalent: Double
+    let typical: ClosedRange<Double>
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: sym("exclamationmark.triangle.fill"))
+                .font(.caption)
+                .foregroundStyle(Theme.surplus)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("This looks like a multi-piece serving")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.textPrimary)
+                Text("1 \(unitLabel) is showing as \(Int(gramsEquivalent))g, but a typical \(unitLabel) is ~\(Int(typical.lowerBound))–\(Int(typical.upperBound))g. Edit the food entry to fix the per-piece weight.")
+                    .font(.caption2)
+                    .foregroundStyle(Theme.textSecondary)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(10)
+        .background(Theme.surplus.opacity(0.08), in: RoundedRectangle(cornerRadius: Theme.radiusChip))
+        .accessibilityIdentifier("food-log-multipiece-warning")
+    }
+}

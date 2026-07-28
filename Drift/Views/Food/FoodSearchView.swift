@@ -814,6 +814,20 @@ struct FoodSearchView: View {
                     ServingInputView(amount: $amount, selectedUnitIndex: $selectedUnitIndex,
                                      units: units, servingSize: food.servingSize)
 
+                    // Multi-piece sanity banner — the TJ-meatballs class of
+                    // scanned row (an 85g 3-meatball label serving stored as
+                    // ONE meatball) surfaced banner-less on THIS sheet while
+                    // FoodLogSheet warned (field report 2026-07-27).
+                    if let typical = SuspiciousPieceCheck.suspicious(
+                        label: unit.label,
+                        gramsEquivalent: unit.gramsEquivalent
+                    ) {
+                        SuspiciousPieceBanner(unitLabel: unit.label,
+                                              gramsEquivalent: unit.gramsEquivalent,
+                                              typical: typical)
+                            .padding(.horizontal, 16)
+                    }
+
                     // Total nutrition
                     VStack(spacing: 8) {
                         HStack(alignment: .firstTextBaseline, spacing: 4) {
