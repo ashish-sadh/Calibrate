@@ -285,6 +285,60 @@ public enum ExerciseDatabase {
         allWithCustom.filter { $0.bodyPart == part }
     }
 
+    /// True when `name` is raw set×rep notation saved as an exercise name —
+    /// the pre-#1079 Android voice/text parser bug (#1107), e.g.
+    /// "3x10 bench press at 135". A hand-rolled character scan rather than
+    /// `.regularExpression` so it is guaranteed to bridge identically on
+    /// the Fuse/Android build.
+    public static func isRawUtteranceExerciseName(_ name: String) -> Bool {
+        let chars = Array(name)
+        var i = 0
+        while i < chars.count {
+            if chars[i].isNumber {
+                var j = i
+                while j < chars.count, chars[j].isNumber { j += 1 }
+                var k = j
+                while k < chars.count, chars[k] == " " { k += 1 }
+                if k < chars.count, chars[k] == "x" || chars[k] == "X" || chars[k] == "×" {
+                    var m = k + 1
+                    while m < chars.count, chars[m] == " " { m += 1 }
+                    if m < chars.count, chars[m].isNumber {
+                        return true
+                    }
+                }
+                i = j
+            } else {
+                i += 1
+            }
+        }
+        return false
+    }
+
+    /// Removes every custom exercise matching `predicate`, returning the
+    /// removed names. Mirrors `addCustomExercises`' locking exactly.
+    public static func removeCustomExercises(where predicate: (ExerciseInfo) -> Bool) -> [String] {
+        customLock.lock()
+        defer { customLock.unlock() }
+        let customs = customExercises
+        let removed = customs.filter(predicate)
+        guard !removed.isEmpty else { return [] }
+        let kept = customs.filter { !predicate($0) }
+        if let data = try? JSONEncoder().encode(kept) {
+            DriftPlatform.keyValueStore.set(data, forKey: customKey)
+        }
+        _exercises = nil
+        return removed.map { $0.name }
+    }
+
+    /// Deletes legacy raw-utterance custom exercises (#1107), skipping any
+    /// name present in `loggedExerciseNames` (lowercased) so no workout set
+    /// is ever orphaned.
+    public static func pruneLegacyUtteranceCustoms(loggedExerciseNames: Set<String>) -> [String] {
+        removeCustomExercises {
+            isRawUtteranceExerciseName($0.name) && !loggedExerciseNames.contains($0.name.lowercased())
+        }
+    }
+
     // MARK: - Equipment
 
     /// Catalog equipment slugs as they appear in exercises.json.

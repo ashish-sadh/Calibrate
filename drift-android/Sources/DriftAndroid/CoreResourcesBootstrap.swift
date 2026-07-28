@@ -24,6 +24,9 @@ enum CoreResourcesBootstrap {
         // (#1108) here, before isWarm flips, so views that gate on warmth read
         // persisted settings/goal directly instead of transient defaults.
         (DriftPlatform.keyValueStore as? DbKeyValueStore)?.prime()
+        // #1107: one-time cleanup of legacy raw-utterance custom exercises
+        // (pre-#1079 parser bug) — needs the KV cache primed above.
+        WorkoutService.pruneLegacyUtteranceCustomExercisesOnce()
         await MainActor.run { isWarm = true }
     }
 

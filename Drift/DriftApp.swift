@@ -76,6 +76,7 @@ struct DriftApp: App {
                     // splash and warms the same catalog cache the workout tab
                     // needs anyway.
                     DefaultTemplates.registerCustomExercises()
+                    WorkoutService.pruneLegacyUtteranceCustomExercisesOnce()
                     if !hasRequestedHealthKit {
                         hasRequestedHealthKit = true
                         // #872 FM NO-GO migration. The 2026-05-19 cutover made

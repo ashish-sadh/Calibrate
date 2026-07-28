@@ -391,6 +391,32 @@ public enum WorkoutService {
         return weights
     }
 
+    // MARK: - Legacy custom-exercise cleanup (#1107)
+
+    /// Every exercise name with at least one logged set, lowercased — the
+    /// safety guard `pruneLegacyUtteranceCustomExercisesOnce` uses so a
+    /// custom exercise referenced by history is never orphaned.
+    public static func loggedExerciseNames() throws -> Set<String> {
+        try db.reader.read { dbConn in
+            let names = try String.fetchSet(dbConn, sql: "SELECT DISTINCT exercise_name FROM workout_set")
+            return Set(names.map { $0.lowercased() })
+        }
+    }
+
+    /// Run-once launch cleanup: deletes legacy raw-utterance custom
+    /// exercises (the pre-#1079 Android parser bug that saved names like
+    /// "3x10 bench press at 135" into "Your Exercises"). Gated so it runs
+    /// exactly once per device/install.
+    public static func pruneLegacyUtteranceCustomExercisesOnce() {
+        guard !DriftPlatform.keyValueStore.bool(forKey: "drift_pruned_utterance_customs_v1") else { return }
+        let logged = (try? loggedExerciseNames()) ?? []
+        let removed = ExerciseDatabase.pruneLegacyUtteranceCustoms(loggedExerciseNames: logged)
+        DriftPlatform.keyValueStore.set(true, forKey: "drift_pruned_utterance_customs_v1")
+        if !removed.isEmpty {
+            Log.app.info("Pruned \(removed.count) legacy utterance custom exercises")
+        }
+    }
+
     /// Build workout summary for display.
     public static func buildSummary(for workout: Workout) throws -> WorkoutSummary {
         guard let wid = workout.id else {
