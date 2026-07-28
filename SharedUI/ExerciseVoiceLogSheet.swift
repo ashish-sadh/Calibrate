@@ -63,7 +63,16 @@ struct ExerciseVoiceLogSheet: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Theme.background.ignoresSafeArea())
-        .onDisappear { viewModel.cancel() }
+        .onDisappear {
+            // Skip Fuse keeps this sheet's @State alive across presentations (eager
+            // sheet builder), so a canceled parse would resume on reopen and could be
+            // double-logged. iOS destroys this state on dismiss, making these no-ops
+            // there — hence ungated. (#1106)
+            viewModel.cancel()   // stop the mic (iOS)
+            viewModel.reset()    // clear parsed session + phase → .input
+            draft = ""
+            resolveTarget = nil
+        }
         .sheet(item: $resolveTarget) { target in
             ExercisePickerView { name in
                 viewModel.resolve(id: target.id, name: name)
