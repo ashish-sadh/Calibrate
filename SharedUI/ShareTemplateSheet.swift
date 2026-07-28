@@ -9,12 +9,12 @@ struct ShareTemplateSheet: View {
     let template: WorkoutTemplate
     var onSent: () -> Void = {}
 
-    @State private var friends: [SharedProfile] = []
-    @State private var loading = true
-    @State private var sendingTo: String?
-    @State private var sentTo: Set<String> = []
-    @State private var note = ""
-    @State private var error: String?
+    @State var friends: [SharedProfile] = []
+    @State var loading = true
+    @State var sendingTo: String?
+    @State var sentTo: Set<String> = []
+    @State var note = ""
+    @State var error: String?
 
     private var svc: SharingService { .shared }
 

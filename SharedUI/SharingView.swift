@@ -9,25 +9,25 @@ import DriftCore
 /// both platforms (buffered HTTPS — no streaming/websocket dependency).
 struct SharingView: View {
 
-    private enum Stage: Equatable {
+    enum Stage: Equatable {
         case loading, signedOut, awaitingCode, needsUsername, ready
     }
 
-    @State private var stage: Stage = .loading
-    @State private var busy = false
-    @State private var error: String?
+    @State var stage: Stage = .loading
+    @State var busy = false
+    @State var error: String?
 
     // Auth
-    @State private var email = ""
-    @State private var code = ""
-    @State private var username = ""
+    @State var email = ""
+    @State var code = ""
+    @State var username = ""
 
     // Hub data
-    @State private var searchText = ""
-    @State private var searchResults: [SharedProfile] = []
-    @State private var requests: [FriendshipDTO] = []
-    @State private var friends: [SharedProfile] = []
-    @State private var incomingTemplates: [SharedTemplateDTO] = []
+    @State var searchText = ""
+    @State var searchResults: [SharedProfile] = []
+    @State var requests: [FriendshipDTO] = []
+    @State var friends: [SharedProfile] = []
+    @State var incomingTemplates: [SharedTemplateDTO] = []
 
     private var svc: SharingService { .shared }
 

@@ -557,3 +557,25 @@ quadratic scan — key by rowid from ONE up-front fetch. And a detached warm-up
 task does not make a lazy global safe: audit DEFAULT ARGUMENTS
 (`= .shared`) in view/VM initializers, because those run during body evaluation
 on the main thread.
+
+## 2026-07-28: sharing is a cloud account — and it does NOT violate the privacy tenet
+
+Drift shipped its first server-backed feature (friends & trainer workout
+sharing, Supabase). The tenet (`Docs/tenets.md`) says "Everything on-device, no
+cloud, no accounts." Read literally that forbids this feature; read as intended
+it does not. The tenet stands for **local-first with no SILENT cloud**, not
+"cloud is banned" — the same contract BYOK photo logging and the Nebius Coach
+already operate under: a cloud touchpoint is allowed when it is explicit and
+user-initiated. Sharing satisfies that: OFF by default (zero network until the
+user opens More → Friends and signs in), minimum disclosure (only @username +
+display name + the specific workouts you choose leave the device; email lives in
+`auth.users` and is never in a shared table; no weight/food/health data crosses
+in phase 1), enforced server-side by Row-Level Security (a row is visible only to
+the parties involved), and surfaced in-line on the Friends screen.
+RULE: a new cloud touchpoint is tenet-compatible ONLY if it is opt-in +
+off-by-default + minimal + RLS/So-enforced + surfaced. If you can't check all
+five, it's a tenet violation, not a feature. The full adjudication +
+architecture is in `Docs/designs/friends-trainer-sharing.md`. Durable sharing
+state (session token, local↔server id map) lives in SQLite (migration v47), NOT
+UserDefaults — Android drops those (#1108); iOS additionally shadows the token
+into Keychain via the `SecureTokenStore`/`DriftPlatform.secureStore` seam.
