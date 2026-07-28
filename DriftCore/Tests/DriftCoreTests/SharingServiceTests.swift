@@ -49,29 +49,36 @@ struct SharingServiceTests {
 
     // MARK: Auth
 
-    @Test func verifyEmailCodePersistsSession() async throws {
+    @Test func anonymousSignInPersistsSession() async throws {
         let mock = MockHTTP()
         mock.queue = [(200, [
             "access_token": "AT-1", "refresh_token": "RT-1", "expires_in": 3600,
-            "user": ["id": "uid-42"],
+            "user": ["id": "uid-42", "is_anonymous": true],
         ] as [String: Any])]
         let (svc, db) = try makeService(mock)
 
-        let session = try await svc.verifyEmailCode(email: "a@b.com", code: "123456")
+        let session = try await svc.signInAnonymously()
         #expect(session.userID == "uid-42")
         #expect(session.accessToken == "AT-1")
         #expect(SharingSessionStore.load(db: db)?.userID == "uid-42")
-        // Hit the verify endpoint with the code in the body.
-        #expect(mock.requests.last?.url?.absoluteString.contains("/auth/v1/verify") == true)
-        #expect(mock.lastBody?["token"] as? String == "123456")
+        // Anonymous sign-in hits the signup endpoint with the anon apikey.
+        #expect(mock.requests.last?.url?.absoluteString.contains("/auth/v1/signup") == true)
+        #expect(mock.requests.last?.value(forHTTPHeaderField: "apikey") == "anon-key")
     }
 
-    @Test func authRequestsCarryAnonApiKey() async throws {
+    @Test func startSharingSignsInThenClaims() async throws {
         let mock = MockHTTP()
-        mock.queue = [(200, [String: Any]())]
-        let (svc, _) = try makeService(mock)
-        try await svc.sendEmailCode("a@b.com")
-        #expect(mock.requests.last?.value(forHTTPHeaderField: "apikey") == "anon-key")
+        mock.queue = [
+            (200, ["access_token": "AT", "refresh_token": "RT", "expires_in": 3600,
+                   "user": ["id": "uid-9"]] as [String: Any]),          // signup
+            (201, [["id": "uid-9", "username": "ashish"]] as [[String: Any]]),  // claim
+        ]
+        let (svc, db) = try makeService(mock)
+
+        try await svc.startSharing(username: "ashish")
+        #expect(mock.requests.first?.url?.absoluteString.contains("/auth/v1/signup") == true)
+        #expect(mock.requests.last?.url?.absoluteString.contains("/rest/v1/profiles") == true)
+        #expect(SharingSessionStore.load(db: db)?.username == "ashish")
     }
 
     @Test func authedCallWithoutSessionThrows() async throws {

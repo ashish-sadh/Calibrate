@@ -4,22 +4,20 @@ import DriftCore
 /// Friends & Trainer sharing — single-source hub for iOS + Android.
 ///
 /// Opt-in and off by default: nothing here touches the network until the user
-/// signs in with an email code and claims a @username. The transport lives in
-/// DriftCore (`SharingService`), so this file is pure presentation and works on
-/// both platforms (buffered HTTPS — no streaming/websocket dependency).
+/// claims a @username (which silently creates an anonymous account — no email,
+/// no password). The transport lives in DriftCore (`SharingService`), so this
+/// file is pure presentation and works on both platforms (buffered HTTPS).
 struct SharingView: View {
 
     enum Stage: Equatable {
-        case loading, signedOut, awaitingCode, needsUsername, ready
+        case loading, needsUsername, ready
     }
 
     @State var stage: Stage = .loading
     @State var busy = false
     @State var error: String?
 
-    // Auth
-    @State var email = ""
-    @State var code = ""
+    // Auth — username only (anonymous account under the hood)
     @State var username = ""
 
     // Hub data
@@ -38,10 +36,6 @@ struct SharingView: View {
                 switch stage {
                 case .loading:
                     ProgressView().padding(.top, 60)
-                case .signedOut:
-                    signInCard
-                case .awaitingCode:
-                    codeCard
                 case .needsUsername:
                     usernameCard
                 case .ready:
@@ -64,62 +58,12 @@ struct SharingView: View {
         .task { await bootstrap() }
     }
 
-    // MARK: - Auth stages
-
-    private var signInCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("SIGN IN").sectionHeading()
-            Text("Sharing uses a lightweight account so friends can find you by @username. Your email is only for sign-in — it's never shown to anyone.")
-                .font(.caption).foregroundStyle(Theme.textSecondary)
-            TextField("you@example.com", text: $email)
-                .textFieldStyle(.roundedBorder)
-                .textContentType(.emailAddress)
-                #if !os(Android)
-                .keyboardType(.emailAddress)
-                .textInputAutocapitalization(.never)
-                #endif
-                .autocorrectionDisabled()
-            primaryButton("Send login code", busy: busy) {
-                await run {
-                    try await svc.sendEmailCode(email.trimmingCharacters(in: .whitespaces))
-                    stage = .awaitingCode
-                }
-            }
-            .disabled(email.isEmpty)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .card()
-    }
-
-    private var codeCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("ENTER CODE").sectionHeading()
-            Text("We emailed a 6-digit code to \(email). Enter it to finish signing in.")
-                .font(.caption).foregroundStyle(Theme.textSecondary)
-            TextField("123456", text: $code)
-                .textFieldStyle(.roundedBorder)
-                #if !os(Android)
-                .keyboardType(.numberPad)
-                #endif
-            primaryButton("Verify", busy: busy) {
-                await run {
-                    try await svc.verifyEmailCode(email: email.trimmingCharacters(in: .whitespaces),
-                                                  code: code.trimmingCharacters(in: .whitespaces))
-                    await afterSignIn()
-                }
-            }
-            .disabled(code.count < 6)
-            Button("Use a different email") { stage = .signedOut; code = "" }
-                .font(.caption).foregroundStyle(Theme.textSecondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .card()
-    }
+    // MARK: - Onboarding (username only)
 
     private var usernameCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("PICK A USERNAME").sectionHeading()
-            Text("This is how friends find you. Lowercase letters, numbers and underscores, 3–20 characters.")
+            Text("Choose a @username so friends can find you. No email, no password — just pick a name and you're in. Lowercase letters, numbers and underscores, 3–20 characters.")
                 .font(.caption).foregroundStyle(Theme.textSecondary)
             HStack(spacing: 4) {
                 Text("@").font(.headline).foregroundStyle(Theme.textSecondary)
@@ -132,7 +76,7 @@ struct SharingView: View {
             }
             primaryButton("Claim @\(normalizedUsername.isEmpty ? "username" : normalizedUsername)", busy: busy) {
                 await run {
-                    try await svc.claimUsername(normalizedUsername)
+                    try await svc.startSharing(username: normalizedUsername)
                     await afterSignIn()
                 }
             }
@@ -210,7 +154,7 @@ struct SharingView: View {
             Button("Sign out") {
                 svc.signOut()
                 reset()
-                stage = .signedOut
+                stage = .needsUsername
             }
             .font(.caption).foregroundStyle(Theme.surplus)
         }
@@ -381,17 +325,17 @@ struct SharingView: View {
     // MARK: - Actions
 
     private func bootstrap() async {
-        guard svc.isConfigured else { stage = .signedOut; return }
-        if svc.isSignedIn {
-            if svc.currentUsername == nil { stage = .needsUsername }
-            else { await afterSignIn() }
+        // Signed in with a username → straight to the hub; otherwise show the
+        // username picker (the anonymous account is created on claim).
+        if svc.isSignedIn, svc.currentUsername != nil {
+            await afterSignIn()
         } else {
-            stage = .signedOut
+            stage = .needsUsername
         }
     }
 
     private func afterSignIn() async {
-        if svc.currentUsername == nil { stage = .needsUsername; return }
+        guard svc.currentUsername != nil else { stage = .needsUsername; return }
         stage = .ready
         await refreshHub()
     }
@@ -447,7 +391,7 @@ struct SharingView: View {
     }
 
     private func reset() {
-        email = ""; code = ""; username = ""; searchText = ""
+        username = ""; searchText = ""
         searchResults = []; requests = []; friends = []; incomingTemplates = []
     }
 

@@ -25,23 +25,27 @@ public final class SharingService {
     public var currentSession: SharingSession? { SharingSessionStore.load(db: db) }
     public var currentUsername: String? { currentSession?.username }
 
-    // MARK: - Auth (passwordless email code)
+    // MARK: - Auth (username-only, anonymous account)
 
-    /// Send a 6-digit login code to `email` (creates the account on first use).
-    /// The email is used only for auth/recovery and never enters a shared table.
-    public func sendEmailCode(_ email: String) async throws {
-        _ = try await client.authPost("otp", body: ["email": email, "create_user": true])
-    }
-
-    /// Verify the emailed code, persist the session, and return it. After this
-    /// the user still needs to `claimUsername` before others can find them.
+    /// Create an anonymous account — no email, no password. The server mints a
+    /// real user + session (so Row-Level Security's `auth.uid()` works); the
+    /// user's public identity is the @username they pick next. Device-bound:
+    /// the session persists locally (SQLite + Keychain), so there's nothing to
+    /// remember and nothing personal shared.
     @discardableResult
-    public func verifyEmailCode(email: String, code: String) async throws -> SharingSession {
-        let obj = try await client.authPost("verify",
-                                            body: ["type": "email", "email": email, "token": code])
+    public func signInAnonymously() async throws -> SharingSession {
+        let obj = try await client.authPost("signup", body: [:])
         let session = try Self.parseSession(obj, previousUsername: currentUsername)
         SharingSessionStore.save(session, db: db)
         return session
+    }
+
+    /// The whole onboarding in one call: silently create the anonymous account
+    /// if needed, then claim the chosen @username. This is all the user does —
+    /// type a username and they're in.
+    public func startSharing(username: String, displayName: String? = nil) async throws {
+        if !isSignedIn { try await signInAnonymously() }
+        try await claimUsername(username, displayName: displayName)
     }
 
     public func signOut() {
