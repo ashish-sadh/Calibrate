@@ -128,6 +128,17 @@ struct TemplatePreviewSheet: View {
                             }.buttonStyle(.bordered).tint(Theme.fatYellow)
                         }
 
+                        // Friends sharing (#sharing): assign/send this template
+                        // to a friend. Pushed (not sheet) so it never stacks a
+                        // presentation modifier on this sheet.
+                        NavigationLink {
+                            ShareTemplateSheet(template: template)
+                        } label: {
+                            Label("Send to a friend", systemImage: sym("paperplane.fill"))
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered).tint(Theme.chartTrend)
+
                         Button(role: .destructive) {
                             if let tid = template.id {
                                 WorkoutService.deleteTemplate(id: tid)

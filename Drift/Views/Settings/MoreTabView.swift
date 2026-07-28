@@ -83,6 +83,12 @@ struct MoreTabView: View {
                             GoalView()
                         }
                         rowDivider
+                        navRow(icon: "person.2.fill", title: "Friends",
+                               subtitle: "Share workouts · connect with a trainer",
+                               color: Theme.deficit) {
+                            SharingView()
+                        }
+                        rowDivider
                         navRow(icon: "key.fill", title: "Bring Your Own Key",
                                subtitle: "Snap a meal · cloud AI",
                                color: Theme.macroFiber) {

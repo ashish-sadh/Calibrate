@@ -89,6 +89,32 @@ struct MoreTab: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .card()
 
+                    // Friends & Trainer sharing (#sharing) — single-source
+                    // SharingView from SharedUI. NavigationLink push (not a
+                    // sheet) keeps this view at its existing two presentation
+                    // modifiers; Skip Fuse breaks on stacked presentations.
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("SOCIAL").sectionHeading()
+                        NavigationLink { SharingView() } label: {
+                            HStack(spacing: 10) {
+                                Image(systemName: sym("person.2.fill"))
+                                    .font(.subheadline).foregroundStyle(Theme.deficit)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text("Friends").font(.subheadline).foregroundStyle(Theme.textPrimary)
+                                    Text("Share workouts · connect with a trainer")
+                                        .font(.caption2).foregroundStyle(Theme.textSecondary)
+                                }
+                                Spacer()
+                                Image(systemName: sym("chevron.right"))
+                                    .font(.caption).foregroundStyle(Theme.textTertiary)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .card()
+
                     VStack(alignment: .leading, spacing: 8) {
                         Text("COMING TO ANDROID").sectionHeading()
                         ForEach(["Drift Coach chat + voice", "Photo & barcode logging",
