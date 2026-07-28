@@ -265,11 +265,20 @@ public final class SharingService {
     public func shareCompletedWorkout(to friendID: String, workoutName: String,
                                       sets: [SharedSet]) async throws {
         let sid = try await startLiveSession(trainerID: friendID, templateName: workoutName)
-        for s in sets {
-            try await pushSet(sessionID: sid, exerciseName: s.exerciseName,
-                              exerciseOrder: s.exerciseOrder, setOrder: s.setOrder,
-                              weightLbs: s.weightLbs, reps: s.reps,
-                              isWarmup: s.isWarmup, done: true)
+        do {
+            for s in sets {
+                try await pushSet(sessionID: sid, exerciseName: s.exerciseName,
+                                  exerciseOrder: s.exerciseOrder, setOrder: s.setOrder,
+                                  weightLbs: s.weightLbs, reps: s.reps,
+                                  isWarmup: s.isWarmup, done: true)
+            }
+        } catch {
+            // A half-pushed session must not sit status=live forever in the
+            // friend's feed ("is doing Leg Day 🔴" for days) — best-effort
+            // close it as abandoned, then surface the original failure so the
+            // caller's retry creates a fresh session.
+            try? await endSession(sid, status: .abandoned)
+            throw error
         }
         try await endSession(sid, status: .completed)
     }

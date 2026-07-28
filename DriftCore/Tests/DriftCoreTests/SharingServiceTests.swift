@@ -224,6 +224,29 @@ struct SharingServiceTests {
         #expect(mock.lastBody?["status"] as? String == "completed")
     }
 
+    @Test func shareCompletedWorkoutAbandonsSessionWhenAPushFails() async throws {
+        let mock = MockHTTP()
+        mock.queue = [
+            (201, [["id": "sess-9", "client_id": "me", "trainer_id": "coach", "status": "live"]] as [[String: Any]]),
+            (500, ["message": "boom"] as [String: Any]),        // pushSet fails
+            (200, [["id": "sess-9", "client_id": "me", "trainer_id": "coach", "status": "abandoned"]] as [[String: Any]]),
+        ]
+        let (svc, db) = try makeService(mock)
+        signIn(svc, db: db)
+
+        await #expect(throws: SharingError.self) {
+            try await svc.shareCompletedWorkout(to: "coach", workoutName: "Push Day", sets: [
+                .init(exerciseName: "Bench Press", exerciseOrder: 0, setOrder: 1,
+                      weightLbs: 135, reps: 10, isWarmup: false),
+            ])
+        }
+        // start + failed push + best-effort abandon PATCH — the session must
+        // not be left status=live forever in the friend's feed.
+        #expect(mock.requests.count == 3)
+        #expect(mock.requests.last?.httpMethod == "PATCH")
+        #expect(mock.lastBody?["status"] as? String == "abandoned")
+    }
+
     // MARK: Token refresh
 
     @Test func deadRefreshTokenClearsSessionForRecovery() async throws {
