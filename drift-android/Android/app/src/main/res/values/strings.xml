@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Launcher label. NOT ${PRODUCT_NAME}: Skip requires that to equal the
+         Swift module name (DriftAndroid), which the launcher was showing
+         verbatim — the home screen read "DriftAndr…" (field report
+         2026-07-28). The iOS app is "Drift"; so is this one. -->
+    <string name="app_name">Drift</string>
+</resources>

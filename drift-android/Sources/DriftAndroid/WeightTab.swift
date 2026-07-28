@@ -182,9 +182,14 @@ struct WeightTab: View {
                             .background(Theme.accent, in: RoundedRectangle(cornerRadius: Theme.radiusControl, style: .continuous))
                     }.buttonStyle(.plain)
 
-                    if store.allDailyPoints.count >= 2 {
+                    // Chart shows from the FIRST weigh-in, matching iOS
+                    // (WeightTabView gates on entries.isEmpty only). The old
+                    // >= 2 gate left a new user with no graph at all — and
+                    // with the outlier filter having eaten one of two honest
+                    // entries, it hid the chart even at two (2026-07-28).
+                    if !store.allDailyPoints.isEmpty {
                         rangePicker
-                        if displayPoints.count >= 2 {
+                        if !displayPoints.isEmpty {
                             WeightChartAndroid(points: displayPoints, unit: store.unit, goalChangeKg: store.goalChangeKg)
                         }
                     }

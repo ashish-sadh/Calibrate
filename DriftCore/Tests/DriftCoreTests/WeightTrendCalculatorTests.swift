@@ -1217,3 +1217,31 @@ private func dateStr(_ d: Date) -> String {
     )
 }
 
+
+// MARK: - Small-sample outlier trust (2026-07-28 field report)
+
+@Test func twoHonestEntriesBothSurviveOutlierFilter() async throws {
+    // Field case: 123.5 lbs then 160.0 lbs nine days later. The median of two
+    // points IS one of them, so the relative test scored 56.0 kg against
+    // 72.6 kg (22.8% > the 17.7% gap-adjusted threshold) and DELETED it —
+    // leaving one data point, which collapsed the whole weight chart.
+    let entries: [(date: String, weightKg: Double)] = [
+        (date: "2026-07-19", weightKg: 123.5 / 2.20462),
+        (date: "2026-07-28", weightKg: 160.0 / 2.20462),
+    ]
+    let t = try #require(WeightTrendCalculator.calculateTrend(entries: entries))
+    #expect(t.dataPoints.count == 2, "both honest weigh-ins must survive — got \(t.dataPoints.count)")
+}
+
+@Test func twoEntriesStillDropAnAbsurdTypo() async throws {
+    // The small-sample path keeps the absolute plausibility cap: 30 kg next to
+    // 80 kg is a typo/unit slip at any sample size (mirrors
+    // outlierFilterCapsAt50Percent, which this must not regress).
+    let entries: [(date: String, weightKg: Double)] = [
+        (date: "2026-01-01", weightKg: 80.0),
+        (date: "2026-04-01", weightKg: 30.0),
+    ]
+    let t = try #require(WeightTrendCalculator.calculateTrend(entries: entries))
+    #expect(t.dataPoints.count == 1)
+    #expect(t.currentEMA >= 75.0, "the 30 kg reading must still be filtered")
+}

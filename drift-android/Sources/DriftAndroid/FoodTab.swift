@@ -122,8 +122,13 @@ struct AndroidFoodSearchSheet: View {
                                 describeQuery = DescribeQuery(text: query.trimmingCharacters(in: .whitespaces))
                             } label: {
                                 HStack(spacing: 10) {
-                                    Image(systemName: sym("sparkles"))
-                                        .foregroundStyle(Theme.accent)
+                                    // Material has no sparkle — sym("sparkles")
+                                    // is deliberately unmapped and renders the
+                                    // warning triangle (it did, in the field:
+                                    // 2026-07-28). Draw the real glyph.
+                                    SparkleShape()
+                                        .fill(Theme.accent)
+                                        .frame(width: 17, height: 17)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("Log \"\(query.trimmingCharacters(in: .whitespaces))\" with AI")
                                             .font(.subheadline.weight(.medium))

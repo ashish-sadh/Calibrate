@@ -224,8 +224,12 @@ struct WeightChartPlot: View {
         // right edge (WeightChartView.trailingPadSeconds precedent).
         let effectiveWidth = size.width / 1.04
 
+        // A lone weigh-in has no span to spread across — centre it instead of
+        // pinning the dot to x=0 against the left edge.
+        let singlePoint = points.count == 1
         func x(for date: Date) -> CGFloat {
-            CGFloat(date.timeIntervalSince(firstDate) / span) * effectiveWidth
+            guard !singlePoint else { return effectiveWidth / 2 }
+            return CGFloat(date.timeIntervalSince(firstDate) / span) * effectiveWidth
         }
         func y(for value: Double) -> CGFloat {
             size.height - CGFloat((value - yLo) / yRange) * size.height

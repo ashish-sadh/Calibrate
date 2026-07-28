@@ -136,6 +136,18 @@ public enum WeightTrendCalculator {
     /// (their 14-day cadence is not > 14) while resetting genuine absences.
     static let emaResetGapDays = 14
 
+    /// Minimum entries before the median-relative outlier test is trusted. At
+    /// two points the median IS one of them, so the other is scored against
+    /// its partner and any honest pair differing by >~18% loses a point
+    /// (2026-07-28 field report). Four is the smallest set where the median
+    /// survives one bad reading.
+    static let minEntriesForRelativeOutlier = 4
+
+    /// Deviation from the median that is implausible for a HUMAN body weight
+    /// regardless of gap or sample size (a 6.5 kg or 30 kg reading next to
+    /// 80 kg is a typo or a unit slip, never a real weigh-in).
+    static let absurdDeviationCap = 0.50
+
     /// Half-life (days) of the smoothing applied before the rate's OLS slope.
     /// 2026-07-07 recalibration: 5 → 8. At 5d a single bulk-start week read
     /// +0.57 kg/wk (+622 kcal/day) — a real gain, but overshot vs the ~0.38
@@ -369,14 +381,23 @@ public enum WeightTrendCalculator {
         // Outlier removal: gap-aware threshold (allows more deviation after long gaps).
         let weights = sorted.map(\.weight)
         let med = weights.sorted()[weights.count / 2]
+        // Below `minEntriesForRelativeOutlier` the median is degenerate — with
+        // two entries it IS one of them, so the other is scored against its
+        // partner and any honest pair differing by >15-18% loses a point. Field
+        // report 2026-07-28: weights 9 days apart (56.0 → 72.6 kg) collapsed to
+        // ONE data point, so the chart (which needs 2) vanished entirely. For
+        // small sets only the absurd-value cap applies — a 6.5 kg or 30 kg typo
+        // is still implausible on its face, without a trustworthy median.
+        let relativeFilterTrustworthy = sorted.count >= Self.minEntriesForRelativeOutlier
         let filtered = sorted.filter { entry in
             let deviation = abs(entry.weight - med) / med
+            guard relativeFilterTrustworthy else { return deviation <= Self.absurdDeviationCap }
             let gapDays = sorted.compactMap { other -> Int? in
                 guard other.date != entry.date else { return nil }
                 return abs(Calendar.current.dateComponents([.day], from: entry.date, to: other.date).day ?? 0)
             }.min() ?? 0
             let gapAllowance = (Double(gapDays) / 7.0) * (1.5 / med)
-            let threshold = min(0.15 + gapAllowance, 0.50)
+            let threshold = min(0.15 + gapAllowance, Self.absurdDeviationCap)
             return deviation <= threshold
         }
         guard !filtered.isEmpty else { return nil }

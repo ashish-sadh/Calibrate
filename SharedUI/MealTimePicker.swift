@@ -15,15 +15,42 @@ struct MealTimePicker: View {
             HStack {
                 Text("Time").font(.subheadline).foregroundStyle(Theme.textSecondary)
                 Spacer()
+                #if os(Android)
+                // Material's Slider can't be themed from Fuse (no
+                // material3ColorScheme hook there), so its INACTIVE track
+                // rendered in the device's dynamic-colour primary — a purple
+                // half-bar next to the coral half (field report 2026-07-28).
+                // The native time field is the platform-correct control and
+                // was already proven here pre-#1097; the coupling below keeps
+                // the operator's "pick 10am → Breakfast" behaviour identical.
+                DatePicker("", selection: timeBinding, displayedComponents: .hourAndMinute)
+                    .labelsHidden()
+                #else
                 Text(DateFormatters.shortTime.string(from: time))
                     .font(.subheadline.weight(.medium).monospacedDigit())
                     .foregroundStyle(Theme.textPrimary)
+                #endif
             }
+            #if !os(Android)
             Slider(value: minutesBinding, in: 0...1435, step: 5)
                 .tint(Theme.accent)
                 .accessibilityLabel("Time of day")
+            #endif
             MealChips(selection: $mealType)
         }
+    }
+
+    /// Android's time-field lens — same coupling as the slider: changing the
+    /// time re-derives the meal chip from the new hour.
+    private var timeBinding: Binding<Date> {
+        Binding(
+            get: { time },
+            set: { newValue in
+                time = newValue
+                mealType = MealType.defaultForHour(
+                    Calendar.current.component(.hour, from: newValue))
+            }
+        )
     }
 
     /// Minutes-since-midnight lens over `time`. Setting snaps the bound
