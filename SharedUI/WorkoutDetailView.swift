@@ -69,7 +69,16 @@ struct WorkoutDetailView: View {
                             Label(summary.workout.durationDisplay, systemImage: sym("clock"))
                             #endif
                         }
+                        #if os(Android)
+                        // sym("scalemass") targets chart.bar.xaxis, unmapped under the
+                        // pinned skip-ui 1.58.0 (#1134) — same drawn-shape fix as the
+                        // duration Label above and ExerciseDetailView's level tag (#1099).
+                        Label { Text("\(Int(unit.convertFromLbs(summary.totalVolume))) \(unit.displayName)") } icon: {
+                            BarChartShape().fill(Theme.textSecondary).frame(width: 11, height: 11)
+                        }
+                        #else
                         Label("\(Int(unit.convertFromLbs(summary.totalVolume))) \(unit.displayName)", systemImage: sym("scalemass"))
+                        #endif
                         Label("\(summary.totalSets) sets", systemImage: sym("number"))
                     }.font(.caption).foregroundStyle(Theme.textSecondary)
                     if let notes = summary.workout.notes, !notes.isEmpty {
