@@ -12,6 +12,28 @@ not ported at all.
 
 ## Session notes (append-only)
 
+- **2026-07-28 (scout #7):** SOURCE-ONLY structural diff of **Today** (epic #1061) — ps-check
+  found BOTH sibling lanes live (executor PID 67317 3:37AM + planner PID 72510 3:45AM), emulator
+  untouched per the scout-#3 collision lesson. Full `DashboardView.swift` + `DashboardView+Cards.swift`
+  → `TodayTab.swift` (410 ln) diff: **9 coarse rows → 25 granular rows**, ordered to match iOS `body`.
+  Every gap classified DriftCore-portable-NOW vs health-seam-gated (#1070). Filed **4 scoped
+  portable-now ports**: **#1129** Daily Average energy-balance card (`tdeeCard`: eating/deficit/burning
+  ring + target line + explainer, all DriftCore) / **#1130** proactive coaching nudge + behavior insights
+  (`BehaviorInsightService` = DriftCore; the on-brand coach surface — Ask-AI wires to the already-ported
+  floating chat) / **#1131** meal list swipe-to-delete + dot-rail (`MealTimelineSection` — Android
+  `mealsCard` has **NO delete**, a real functional gap) / **#1132** weekly Workout Consistency card
+  (DriftCore, NOT health-gated). #1061 demoted to INDEX. **Staleness corrections (verify, don't trust
+  the matrix):** row `broken #1093` was STALE — **#1093 CLOSED**, Describe/Search/Recent chips work; the
+  residual is **Snap** (camera glyph opens Coach chat, not capture → #1063/#1128). Health-seam rows
+  (Activity: Active/Steps + AH `workoutCard`; Recovery: sleep/HRV/RHR) stay `missing`→#1070 because Android
+  correctly **HIDES** them (no fake zeros, [[android_hide_unwired_integration_ui]]) rather than render empty —
+  NOT new ports until the seam lands. Nav-gated deviations point at existing ports (profile nudge→#1116,
+  goal card→#1117, tdee nav→#1118, feedback banner→#1114, backup banner→#1094, Voice method→#1126). Confirmed
+  the floating Coach button **IS** ported (`ChatIconButton`→AIChatView, AppShell + ContentView) — Coach-entry
+  row flipped to `ok`. No code touched (matrix only); worker WIP left alone. Emulator-drive debt unchanged
+  (food compiled-shared rows + scout #3's 5 workout leftovers + Supplements device-verify) — still needs an
+  uncontended window; the 4 new Today ports are source-verified, not device-verified.
+
 - **2026-07-28 (scout #6):** SOURCE-ONLY sweep — ps-check found BOTH sibling lanes live
   (executor `/android-parity` PID 74920 + planner PID 74936, all started 1:49AM), so the
   emulator was untouched per the scout-#3 collision lesson (executor reinstalls the APK
@@ -368,19 +390,43 @@ not ported at all.
 | ManualFoodEntrySheet | manual macro entry — iOS-target file (Drift/Views/Food/) | missing | #1062 |
 | LogMealSheet | meal logging sheet — iOS-target file (Drift/Views/Food/) | missing | #1062 |
 
-## Today (epic #1061 · Android-only re-creation: TodayTab.swift — NOT the iOS DashboardView)
+## Today (epic #1061 = INDEX · Android-only re-creation: TodayTab.swift 410 ln vs iOS DashboardView.swift + DashboardView+Cards.swift · scoped ports #1129–#1132)
+
+Source-enumerated 2026-07-28 (scout #7): full iOS→Android structural diff, no emulator
+(both sibling lanes live). Rows ordered top→bottom matching iOS `DashboardView.body`.
+Data classified DriftCore-portable-NOW vs health-seam-gated (#1070). Android correctly
+HIDES health sections (no fake zeros, [[android_hide_unwired_integration_ui]]) rather than
+render them empty — those stay `missing`→#1070, not new ports. Shared components all live
+in iOS-only `Drift/Views/` (LogMethodCardsRow, BodySummaryCardsRow, MealTimelineSection,
+V6CoachingNudge, WorkoutConsistencyCard, GoalProgressCard, TodayDonutView, V6Rings).
 
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
-| Dashboard | whole screen is a re-creation, not iOS DashboardView port | deviation | #1061 |
-| Dashboard | quick actions: Describe / Search / Recent / Snap | broken | #1093 |
-| Dashboard | rings/donut (TodayDonutView, V6Rings) | ok | #1061 |
-| Dashboard | coaching cards (CoachingBriefCard, V6CoachingNudge) | unknown | #1061 |
-| Dashboard | sleep/recovery card (SleepRecoveryView, full NavigationLink row) | unknown | #1061 |
-| Dashboard | workout consistency card (WorkoutConsistencyCard) | unknown | #1061 |
-| Dashboard | 3-tile summary row (BodySummaryCardsRow: WEIGHT/SLEEP/READINESS, spec-pinned empty states #821) | deviation | #1061 |
-| Dashboard | backup settings sheet | missing | #1094 |
-| Dashboard | brand mark header still a drawn "D" circle (BrandMark asset not mirrored) | deviation | directive 8 |
+| Chrome | brand header: iOS = `BrandMark` **asset** in the **nav toolbar** (principal); Android draws a "D" **circle IN scroll content** — wrong element AND wrong placement | deviation | #1121/dir-8 |
+| Chrome | privacy banner — Android `lock.fill` vs iOS `lock.shield.fill`; Android adds a trailing Spacer (iOS is leading-aligned) | deviation | #1061 |
+| Chrome | pull-to-refresh (`.refreshable`) — Android TodayTab has none | deviation | #1061 |
+| Chrome | 180s auto-refresh poll — Android reloads on `.foodEntryAdded` + onAppear instead (acceptable interim) | ok | #1061 |
+| Banners | profile-incomplete nudge → ProfileView ("Add age, sex & height…") — Android none | missing | #1116 |
+| Banners | 7-day feedback banner (#759, days 7–14 → More/Report-a-bug; xmark dismiss) — Android none | missing | #1114 |
+| Banners | stale-backup banner (#561, >3d → Backup settings sheet) — Android none | missing | #1094 |
+| Nutrition hero | iOS `calorieBalanceCard` = `TodayDonutView` (goal path) + no-goal fallback (eaten + P/C/F/Fiber chips); Android `intakeCard` re-creates 3 concentric rings + legend but is ALWAYS ring-mode (no no-goal fallback) | deviation | #1061 |
+| Nutrition hero | skeleton while loading (`SkeletonCalorieBalanceCard`) — Android has no skeleton (shared TodayStore mitigates the cold "0 kcal" flash, #1075) | deviation | #1075 |
+| Log methods | iOS `LogMethodCardsRow` = Snap · **Voice** · Search · Recent; Android = Snap · **Describe** · Search · Recent (Voice→text substitute) | deviation | #1126 |
+| Log methods | **Snap chip**: iOS opens photo capture; Android's camera-glyph chip opens **Coach chat** (`showingCoachInfo`→AIChatView) — no capture, misleading glyph | deviation | #1063/#1128 |
+| Log methods | Describe / Search / Recent chips wired (was `broken` #1093, now CLOSED) → DescribeMealSheet / AndroidFoodSearchSheet / AndroidRecentMealsSheet | ok | #1093 (closed) |
+| Meal timeline | iOS `MealTimelineSection` = dot-rail + **swipe-to-delete** (`onDelete`) + `onAdd` nudge; Android `mealsCard` = flat list, **NO delete** (can't remove a mis-log from Today), empty→Food tab | deviation | #1131 |
+| Meal timeline | skeleton while loading (`SkeletonMealTimelineSection`) — Android none | deviation | #1075 |
+| Body summary row | iOS `BodySummaryCardsRow` = WEIGHT / **SLEEP / READINESS** (goal-aware WEIGHT, spec empty states #821); Android `statTrio` = WEIGHT / **WORKOUTS / STREAK** (SLEEP+READINESS dropped — health-gated; workout cols are a DriftCore substitute) | deviation | #1070 |
+| Coaching nudge | iOS `V6CoachingNudge` (topmost proactiveAlert, Ask-AI pill, 24h dismiss; `BehaviorInsightService` = DriftCore) — Android none | missing | #1130 |
+| Behavior insights | iOS `insightsCard` (BehaviorInsight list under "Insights") — Android none | missing | #1130 |
+| Goal progress | iOS `goalCard` (`GoalProgressCard` → GoalView) / empty "No weight goal set" — Android none (statTrio has WEIGHT value only, no progress card) | missing | #1117 |
+| Daily Average (TDEE) | iOS `tdeeCard` (eating/deficit/burning ring, target line, source pills, explainer → AlgorithmSettings) — Android none; all DriftCore, portable NOW | missing | #1129 |
+| Activity section | iOS "Activity" header + `healthRow` (Active cal / Steps → Exercise tab) — Android hides (HealthKit seam) | missing | #1070 |
+| Activity | iOS Apple-Health `workoutCard` (burned N cal, ≤3 workouts) when today workouts exist — Android none (HealthKit seam) | missing | #1070 |
+| Activity | iOS `WorkoutConsistencyCard` (weekly, 24h dismiss; `BehaviorInsightService.workoutConsistencyVariant` + WorkoutService = DriftCore, NOT health-gated) — Android none | missing | #1132 |
+| Recovery section | iOS "Recovery" header + `sleepRecoveryCard` (Recovery/Sleep scores, HRV/RHR, → SleepRecoveryView) / empty "Body Rhythm" — Android none (sleep/HRV/RHR = HealthKit seam) | missing | #1070/#1061 |
+| Recovery | iOS `supplementCard` (N/M taken → SupplementsTabView) when supplements configured — Android none (Supplements TAB is ported #1068; dashboard entry not) | missing | #1061 |
+| Coach entry | floating `ChatIconButton` → AIChatView — PORTED (AppShell.swift + ContentView.swift), matches iOS single AI access point | ok | #1066 |
 
 ## Body / Weight (epic #1065 · Android-only re-creation: WeightTab.swift)
 
