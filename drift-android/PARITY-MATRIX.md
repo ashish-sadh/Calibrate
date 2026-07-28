@@ -12,6 +12,29 @@ not ported at all.
 
 ## Session notes (append-only)
 
+- **2026-07-28 (scout #8):** SOURCE-ONLY reconciliation of **Coach / AI chat** (epic #1066) — ps-check found
+  BOTH sibling lanes live (executor PID 97569 + planner PID 94850, Opus) and `adb devices` empty, so the
+  emulator was untouched per the scout-#3 collision lesson. Area chosen because the matrix said "iOS-only"
+  but commit **b8c244a6 shipped the Coach TEXT chat to SharedUI** (#1066) — a stale section on the operator's
+  0-AI-FOCUS priority queue. Full diff of `SharedUI/AIChatView*.swift` (+ViewModel +MessageHandling 2024 ln)
+  vs the 8 iOS-only `Drift/Views/AI/**` files: **5 coarse rows → 21 granular rows**, ordered to match `body`.
+  Reality: the DriftCore message harness runs on Android so DETERMINISTIC tools WORK (weight/activity logs,
+  workout start+templates, delete-food, **navigation** — `.navigateToTab` posts immediately, tab-switch works,
+  queries) — flipped those rows `ok`/`deviation`. Four gap-classes, all already tracked except one: **(a)** all
+  13 tool-result cards are `#if DRIFT_IOS_APP`, text-summary-only on Android → **#1125**; **(b)** every food-logging
+  tool DEGRADES to "add it from the Food tab for now" (single-food `handleSingleFoodIntent`→showingFoodSearch,
+  usual-meal→showingMealReview, meal-plan, manual, barcode) → filed **#1135** (the one uncovered operator-priority
+  gap — food-via-text is the marquee AI interaction; #1063 is capture not chat; precedent `DescribeMealSheet`
+  already ported de-risks it); **(c)** voice/mic/talk-mode shimmed off (`CoachVoiceShims`) → **#1126**; **(d)**
+  open-ended cloud-LLM turns HANG on "Looking that up…" (streaming buffered `#else` branch) → **#1133** (already
+  filed+diagnosed). Interview ("set me up") `#if DRIFT_IOS_APP` → #1125. BackendSelector/AISetup/AIChooser =
+  key-UI (#540), marked **ios-only-by-design** (Nebius-only, no key UI per 0-AI-FOCUS); AIChatInsightsView (#261
+  local telemetry) + DriftCoachSheet picker-wrapper likewise ios-only-by-design. **#1066 demoted to INDEX**
+  (children #1125/#1126/#1133/#1135). Rows changed: 5→21 (Coach section). Issues filed: **1** (#1135). No code
+  touched (matrix only); worker WIP left alone. Device-verify debt grows by the Coach rows (source-verified,
+  not driven) — still awaiting an uncontended emulator window alongside the food compiled-shared rows + scout
+  #3's 5 workout leftovers + Supplements.
+
 - **2026-07-28 (scout #7):** SOURCE-ONLY structural diff of **Today** (epic #1061) — ps-check
   found BOTH sibling lanes live (executor PID 67317 3:37AM + planner PID 72510 3:45AM), emulator
   untouched per the scout-#3 collision lesson. Full `DashboardView.swift` + `DashboardView+Cards.swift`
@@ -502,15 +525,43 @@ inherits #1108. KEY POLICY (0-AI-FOCUS): no key-entry UI of any kind ships on An
 | PhotoLogSettingsView (323) | ENTIRE screen — provider picker, model picker, SecureField key entry + Paste/Save/Replace/Clear, Keychain storage, Test Connection ping: all key management. Android photo AI = provisioned Nebius (#1111) + local Google tier | ios-only-by-design | KEY POLICY |
 | Health Connect | connection flow + permission grant | confirmed missing: `onLaunch()` calls `requestAuthorization()` silently, no settings-hub entry, sync failures swallowed by `try?` — worse than iOS's explicit "Sync from Apple Health" button + status text + past-sync dialog | #1070/#1090 |
 
-## Coach / AI chat (epic #1066 · iOS-only: Drift/Views/AI/**)
+## Coach / AI chat (epic #1066 = INDEX · single-source: SharedUI/AIChatView*.swift + AIChatViewModel + MessageHandling(2024 ln) · hosted by ContentView floating ChatIconButton + TodayTab coach sheet · scoped children #1125 cards+interview / #1126 voice / #1133 streaming-hang / #1135 food-logging)
+
+Source-reconciled 2026-07-28 (scout #8). The Coach TEXT chat **SHIPPED** to SharedUI (#1066, commit
+b8c244a6): `AIChatView` (+ChatBubble/+InputBar/+Suggestions/+MessageHandling), `AIChatViewModel`, Nebius
+brain (`CoachCloud.install` synchronous in onAppear). iOS wraps it in `DriftCoachSheet` (owns the backend
+picker); **Android presents `AIChatView()` directly** (ContentView:31 + TodayTab:161) — no picker, Nebius-only,
+correct per 0-AI-FOCUS no-key-UI. The message harness (`AIChatView+MessageHandling`) is DriftCore-shared and
+runs on Android, so DETERMINISTIC tools route; four gap-classes remain: **(a)** all 13 tool-result CARDS are
+`#if DRIFT_IOS_APP` — text summary only on Android (→#1125); **(b)** every FOOD-logging tool routes through an
+iOS-only sheet and DEGRADES to "add it from the Food tab" (→#1135, dep #1062); **(c)** VOICE (mic / talk-mode
+/ TTS) shimmed off (`CoachVoiceShims` no-ops → #1126); **(d)** open-ended cloud-LLM turns HANG on "Looking that
+up…" (streaming buffered `#else` branch never yields → #1133). Interview ("set me up") is `#if DRIFT_IOS_APP`
+(→#1125). BackendSelector / AISetup / AIChooser are key-UI, iOS-only-by-design. Rows below are SOURCE-verified;
+device-verify pending an uncontended emulator window (both sibling lanes live this session).
 
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
-| Coach chat | full chat UI (bubbles, input bar, streaming) | unknown | #1066 |
-| Coach chat | tool cards, clarification card, insights | missing | #1066 |
-| Coach chat | food search / workout / barcode / recipe / manual / review sheets from chat | missing | #1066 |
-| Coach chat | voice talk-mode (ImmersiveVoiceView, ListeningCircle) | missing | #1066 |
-| Coach entry points | dashboard + tab entries open real chat (not teaser) | unknown | #1066 |
+| Coach entry | floating ChatIconButton (ContentView) + TodayTab coach sheet → AIChatView | ok | |
+| Chat shell | header ("Drift Coach" + close), scroll, thinking dots, TypewriterText, Android scroll-sentinel | ok | |
+| Empty-state hero | iOS = ListeningCircle (tap-to-talk); Android = static SparkleShape "Ask me anything" (tap focuses input) | deviation | #1126 |
+| Input bar | Android = plain TextField + send only; iOS adds photo (PhotosPicker) + mic | deviation | #1125 (photo) / #1126 (mic) |
+| Suggestions row | horizontal smart-suggestion pills → send | ok | |
+| Deterministic turns | meal-planning reply, multi-turn pills, ClarificationCard, RemoteProviderBadge, Retry — render/route on Android | ok | #1133 (confirms) |
+| Open-ended cloud-LLM turn | Nebius reply via streaming buffered branch — HANGS on "Looking that up…" (>55s, never lands) | broken | #1133 |
+| Tool-result cards | ALL 13 (food/nutrition/weight/workout/nav/supplement/medication/sleep/glucose/biomarker/help/proposedMeal) are `#if DRIFT_IOS_APP` — none render on Android, text summary only | missing | #1125 |
+| Weight logging tool | saves via DriftCore ("Logged X"), works — weightCard visual absent | deviation | #1125 (card) |
+| Activity/workout logging tool | yes/no confirm → saves, works — workoutCard visual absent | deviation | #1125 (card) |
+| Workout start / templates / smart-workout | showingWorkout → ActiveWorkoutView (SharedUI) — opens + runs on Android | ok | |
+| Delete-food tool | `FoodService.deleteEntry` — works | ok | |
+| Query / nutrition-lookup tools | `ToolRegistry` text result renders; nutritionCard visual absent | deviation | #1125 (card) |
+| Navigation tool | navigate(tab) posts `.navigateToTab` immediately — tab switch WORKS on Android; navigationCard visual absent | deviation | #1125 (card) |
+| Food-logging tools | single-food / usual-meal / meal-continuation / meal-plan / manual / barcode ALL route to `#if DRIFT_IOS_APP` sheets → DEGRADE to "add it from the Food tab for now" (no logging) | missing | #1135 (dep #1062/#1128) |
+| Voice talk-mode | ImmersiveVoiceView + ListeningCircle + header voiceCluster (speaker/waveform) + mic + TTS — all iOS-only, `CoachVoiceShims` no-ops on Android | missing | #1126 |
+| Interview ("set me up") | multi-turn TrainingProfile Q&A → Nebius routine — `handleMultiTurnState` is `#if DRIFT_IOS_APP` | missing | #1125 |
+| AI Chat Insights | AIChatInsightsView (#261 opt-in local telemetry) — dev/debug surface | ios-only-by-design | |
+| Backend selector / AISetup / AIChooser | Local Brain/Cloud picker + BYOK key-UI (#540) — Android is Nebius-only, no key UI (0-AI-FOCUS) | ios-only-by-design | |
+| DriftCoachSheet wrapper | backend-picker sheet wrapper — iOS presents AIChatView inside it; Android presents AIChatView directly | ios-only-by-design | |
 
 ## Capture (epic #1063 · iOS-only: Drift/Views/PhotoLog/**, BarcodeScannerView)
 
