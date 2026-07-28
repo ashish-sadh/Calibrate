@@ -49,7 +49,7 @@ while true; do
         exec "${CLAUDE_BIN:-$HOME/.local/bin/claude}" -p "/android-parity-planner" \
             --dangerously-skip-permissions \
             --model claude-opus-4-8 \
-            --fallback-model claude-sonnet-5 \
+            --fallback-model claude-opus-4-8 \
             --effort max \
             --output-format stream-json \
             --verbose
