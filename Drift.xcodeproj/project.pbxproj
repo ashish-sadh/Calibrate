@@ -155,6 +155,7 @@
 		ADDD7CCA7EA9B8017F76F366 /* FloatingTabBarClearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7920DF1B15D67121A0B8212 /* FloatingTabBarClearance.swift */; };
 		AE471C946CA1823B1985EDA9 /* PipelineE2EEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = A434AE755701CCB89A111516 /* PipelineE2EEval.swift */; };
 		AF1191CADEE2ADD739D5C9A5 /* TemplatePreviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CCE53CD3289EAA4CBDC5F8D /* TemplatePreviewSheet.swift */; };
+		AF45546E02B5118EB9156119 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA6A530140B729B060F76E94 /* ChatView.swift */; };
 		B2654B50471C75496A1AA0D7 /* NutritionLabelOCR.swift in Sources */ = {isa = PBXBuildFile; fileRef = 418816F51F38F19F65BC3D77 /* NutritionLabelOCR.swift */; };
 		B810C01C1E4B8A881B166875 /* Symbols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D8C188459B7425B0B58E0CA /* Symbols.swift */; };
 		B8CAE0734166CD113EE590E8 /* WidgetDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0DCFCDAFF06DBAD3CA13DB /* WidgetDataTests.swift */; };
@@ -500,6 +501,7 @@
 		E8F6A3D68A0950A9BAC2E2F3 /* BodySummaryCardsRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodySummaryCardsRow.swift; sourceTree = "<group>"; };
 		E96402659F73046846B409D5 /* WeightTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTabView.swift; sourceTree = "<group>"; };
 		E9FA0E48A2845CFA85AB7395 /* ChatSuggestionPillsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatSuggestionPillsTests.swift; sourceTree = "<group>"; };
+		EA6A530140B729B060F76E94 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatView.swift; sourceTree = "<group>"; };
 		EBF19C358E700091486400DD /* PromptOptimizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptOptimizer.swift; sourceTree = "<group>"; };
 		EC7D489024FD036D6FA417EA /* PlantPointsCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlantPointsCardView.swift; sourceTree = "<group>"; };
 		EE2D9672D96D6738FA36D4F2 /* AlgorithmSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlgorithmSettingsView.swift; sourceTree = "<group>"; };
@@ -579,6 +581,7 @@
 				C425B64E0780EA79EB9816AF /* ActiveWorkoutView.swift */,
 				FCBCFBEF8F78BC664ED919F1 /* AddSupplementView.swift */,
 				9CFFE8FDEE3FE443759F397D /* BodyMapView.swift */,
+				EA6A530140B729B060F76E94 /* ChatView.swift */,
 				C3F34495B2B51D8B1B73906B /* CreateTemplateView.swift */,
 				BFB4059C65AD94747FA41A1C /* DescribeMealSheet.swift */,
 				27B67D40BAF0BC47AA2BD1B0 /* EditFoodEntrySheet.swift */,
@@ -1208,6 +1211,7 @@
 				BFA019F024F4E73B203B8975 /* BodySpecPDFParser.swift in Sources */,
 				8271D577C63294790DF81CC4 /* BodySummaryCardsRow.swift in Sources */,
 				B9A962AD8F60D070E5BBA14D /* ChatIconButton.swift in Sources */,
+				AF45546E02B5118EB9156119 /* ChatView.swift in Sources */,
 				D745EB74546A99C36FE2895D /* ClarificationCard.swift in Sources */,
 				64CD23436486963A92900597 /* CloudVisionClient.swift in Sources */,
 				8B963605CA92499EDDB6C984 /* CloudVisionKey.swift in Sources */,

@@ -26,8 +26,9 @@ struct SharingView: View {
     @State var searchGen = 0
     @State var searching = false
     @State var searchedOnce = false
+    @State var requestedIDs: Set<String> = []
     @State var requests: [FriendshipDTO] = []
-    @State var friends: [SharedProfile] = []
+    @State var conns: [Connection] = []
     @State var incomingTemplates: [SharedTemplateDTO] = []
     @State var clientSessions: [LiveWorkoutDTO] = []
 
@@ -104,8 +105,48 @@ struct SharingView: View {
             if !requests.isEmpty { requestsCard }
             if !incomingTemplates.isEmpty { incomingTemplatesCard }
             if !clientSessions.isEmpty { workoutsFromFriendsCard }
-            friendsCard
+            if !coaches.isEmpty { connectionSection("YOUR COACHES", coaches, subtitle: "coaches you") }
+            if !clients.isEmpty { connectionSection("YOUR CLIENTS", clients, subtitle: "you coach") }
+            connectionSection("FRIENDS", friendConns, subtitle: nil,
+                              emptyText: "No friends yet. Search a @username above to add a friend or a coach.")
         }
+    }
+
+    /// A tappable list of connections — each row opens the chat (coach/client
+    /// rows also carry the relationship subtitle).
+    private func connectionSection(_ title: String, _ list: [Connection],
+                                   subtitle: String?, emptyText: String? = nil) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title).sectionHeading()
+            if list.isEmpty, let emptyText {
+                Text(emptyText).font(.caption).foregroundStyle(Theme.textSecondary)
+            }
+            ForEach(list) { c in
+                NavigationLink {
+                    ChatView(peer: c.profile, relationship: c.kind.rawValue)
+                } label: {
+                    HStack(spacing: 10) {
+                        avatar(c.profile.username)
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("@\(c.profile.username)").font(.subheadline.weight(.medium))
+                                .foregroundStyle(Theme.textPrimary)
+                            Text(subtitle ?? (c.profile.displayName ?? "tap to chat"))
+                                .font(.caption2).foregroundStyle(Theme.textSecondary)
+                        }
+                        Spacer()
+                        Image(systemName: sym("bubble.left.fill"))
+                            .font(.caption).foregroundStyle(Theme.chartTrend)
+                        Image(systemName: sym("chevron.right"))
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
+                    }
+                    .contentShape(Rectangle()).padding(.vertical, 4)
+                }
+                .buttonStyle(.plain)
+                if c.id != list.last?.id { Divider().overlay(Theme.separatorFaint) }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .card()
     }
 
     private var workoutsFromFriendsCard: some View {
@@ -147,11 +188,11 @@ struct SharingView: View {
     }
 
     private func rawUsername(_ id: String) -> String {
-        friends.first { $0.id == id }?.username ?? "?"
+        conns.first { $0.id == id }?.profile.username ?? "?"
     }
 
     private func usernameFor(_ id: String) -> String? {
-        friends.first { $0.id == id }.map { "@\($0.username)" }
+        conns.first { $0.id == id }.map { "@\($0.profile.username)" }
     }
 
     private func activityLine(_ s: LiveWorkoutDTO) -> String {
@@ -176,7 +217,7 @@ struct SharingView: View {
             }
             Spacer()
             Button("Sign out") {
-                Task {
+                Task { @MainActor in
                     await svc.signOut()
                     reset()
                     stage = .needsUsername
@@ -204,7 +245,7 @@ struct SharingView: View {
                     .onChange(of: searchText) { _, _ in
                         searchGen &+= 1
                         let gen = searchGen
-                        Task {
+                        Task { @MainActor in
                             try? await Task.sleep(nanoseconds: 350_000_000)
                             if gen == searchGen { await search() }
                         }
@@ -236,15 +277,21 @@ struct SharingView: View {
                         }
                     }
                     Spacer()
-                    Button {
-                        Task { await sendRequest(to: profile) }
-                    } label: {
-                        Text("Add").font(.caption.weight(.semibold))
-                            .padding(.horizontal, 14).padding(.vertical, 6)
-                            .background(Theme.ink, in: Capsule())
-                            .foregroundStyle(.white)
+                    if requestedIDs.contains(profile.id) {
+                        Label("Sent", systemImage: sym("checkmark"))
+                            .font(.caption.weight(.semibold)).foregroundStyle(Theme.deficit)
+                    } else {
+                        Button { Task { await sendRequest(to: profile, role: .friend) } } label: {
+                            Text("Add friend").font(.caption2.weight(.semibold))
+                                .padding(.horizontal, 10).padding(.vertical, 6)
+                                .background(Theme.ink, in: Capsule()).foregroundStyle(.white)
+                        }.buttonStyle(.plain)
+                        Button { Task { await sendRequest(to: profile, role: .trainer) } } label: {
+                            Text("Coach").font(.caption2.weight(.semibold))
+                                .padding(.horizontal, 10).padding(.vertical, 6)
+                                .background(Theme.chartTrend, in: Capsule()).foregroundStyle(.white)
+                        }.buttonStyle(.plain)
                     }
-                    .buttonStyle(.plain)
                 }
                 .padding(.vertical, 4)
             }
@@ -306,32 +353,6 @@ struct SharingView: View {
         .card()
     }
 
-    private var friendsCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("FRIENDS").sectionHeading()
-            if friends.isEmpty {
-                Text("No friends yet. Search a @username above to send a request.")
-                    .font(.caption).foregroundStyle(Theme.textSecondary)
-            } else {
-                ForEach(friends) { f in
-                    HStack(spacing: 10) {
-                        avatar(f.username)
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text("@\(f.username)").font(.subheadline.weight(.medium))
-                            if let name = f.displayName, !name.isEmpty {
-                                Text(name).font(.caption2).foregroundStyle(Theme.textSecondary)
-                            }
-                        }
-                        Spacer()
-                    }
-                    .padding(.vertical, 4)
-                }
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .card()
-    }
-
     private var privacyFootnote: some View {
         HStack(spacing: 6) {
             Image(systemName: sym("lock.fill")).font(.caption2).foregroundStyle(Theme.deficit)
@@ -387,17 +408,17 @@ struct SharingView: View {
     private func refreshHub() async {
         async let reqs = try? await svc.incomingRequests()
         async let tmpls = try? await svc.incomingSharedTemplates()
-        async let edges = try? await svc.acceptedFriendships()
+        async let connections = try? await svc.connections()
         async let sessions = try? await svc.clientSessions()
         requests = await reqs ?? []
         incomingTemplates = await tmpls ?? []
         clientSessions = await sessions ?? []
-        if let edges = await edges {
-            let me = svc.currentSession?.userID
-            let otherIDs = edges.map { $0.requesterId == me ? $0.addresseeId : $0.requesterId }
-            friends = (try? await svc.profiles(ids: otherIDs)) ?? []
-        }
+        conns = await connections ?? []
     }
+
+    private var coaches: [Connection] { conns.filter { $0.kind == .coach } }
+    private var clients: [Connection] { conns.filter { $0.kind == .client } }
+    private var friendConns: [Connection] { conns.filter { $0.kind == .friend } }
 
     private func search() async {
         let q = searchText.trimmingCharacters(in: .whitespaces)
@@ -410,10 +431,11 @@ struct SharingView: View {
         searchedOnce = true
     }
 
-    private func sendRequest(to profile: SharedProfile) async {
+    private func sendRequest(to profile: SharedProfile, role: FriendRole) async {
         await run(showBusy: false) {
-            try await svc.sendRequest(to: profile.id)
-            searchResults.removeAll { $0.id == profile.id }
+            if role == .trainer { try await svc.addCoach(profile.id) }
+            else { try await svc.sendRequest(to: profile.id, role: .friend) }
+            requestedIDs.insert(profile.id)
         }
     }
 
@@ -441,7 +463,8 @@ struct SharingView: View {
 
     private func reset() {
         username = ""; searchText = ""
-        searchResults = []; requests = []; friends = []; incomingTemplates = []
+        searchResults = []; requests = []; conns = []; incomingTemplates = []
+        clientSessions = []; requestedIDs = []; searchedOnce = false
     }
 
     /// Run an async action with unified busy/error handling.

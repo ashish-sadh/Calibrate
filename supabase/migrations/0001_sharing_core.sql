@@ -209,9 +209,32 @@ create policy live_sets_update_client
         exists (select 1 from public.live_workouts w
                 where w.id = live_workout_id and w.client_id = auth.uid()));
 
+-- ---------------------------------------------------------------------------
+-- messages — direct chat between two connected users (friend, or coach⇄client).
+-- ---------------------------------------------------------------------------
+create table if not exists public.messages (
+    id           uuid primary key default gen_random_uuid(),
+    sender_id    uuid not null references public.profiles(id) on delete cascade,
+    recipient_id uuid not null references public.profiles(id) on delete cascade,
+    body         text not null check (char_length(body) between 1 and 2000),
+    created_at   timestamptz not null default now()
+);
+create index if not exists messages_pair on public.messages(sender_id, recipient_id, created_at);
+create index if not exists messages_recipient on public.messages(recipient_id, created_at);
+
+alter table public.messages enable row level security;
+
+create policy messages_read_parties on public.messages for select
+    to authenticated using (auth.uid() in (sender_id, recipient_id));
+-- Send only as yourself, only to someone you have an accepted edge with.
+create policy messages_insert_sender on public.messages for insert
+    to authenticated
+    with check (sender_id = auth.uid() and public.are_connected(recipient_id));
+
 -- Realtime: publish the trainer-visible tables so a trainer's live view gets
 -- Postgres-change events (RLS still applies to the subscription).
 alter publication supabase_realtime add table public.live_workouts;
 alter publication supabase_realtime add table public.live_workout_sets;
 alter publication supabase_realtime add table public.shared_templates;
 alter publication supabase_realtime add table public.friendships;
+alter publication supabase_realtime add table public.messages;

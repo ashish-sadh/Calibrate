@@ -138,6 +138,37 @@ public struct LiveWorkoutSetDTO: Codable, Sendable, Identifiable, Hashable {
     }
 }
 
+/// A direct chat message between two connected users.
+public struct MessageDTO: Codable, Sendable, Identifiable, Hashable {
+    public let id: String
+    public let senderId: String
+    public let recipientId: String
+    public var body: String
+    public var createdAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, body
+        case senderId = "sender_id"
+        case recipientId = "recipient_id"
+        case createdAt = "created_at"
+    }
+
+    public var date: Date? {
+        guard let createdAt else { return nil }
+        let iso = ISO8601DateFormatter(); iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return iso.date(from: createdAt) ?? ISO8601DateFormatter().date(from: createdAt)
+    }
+}
+
+/// A resolved connection with its relationship kind, for the Friends hub.
+public struct Connection: Sendable, Identifiable, Hashable {
+    public enum Kind: String, Sendable { case friend, coach, client }
+    public let profile: SharedProfile
+    public let kind: Kind
+    public var id: String { profile.id }
+    public init(profile: SharedProfile, kind: Kind) { self.profile = profile; self.kind = kind }
+}
+
 /// Shared coders for the sharing wire format. PostgREST returns/accepts plain
 /// snake_case JSON; the DTO CodingKeys already map it, so these are stock.
 public enum SharingJSON {

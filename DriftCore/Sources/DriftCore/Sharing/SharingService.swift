@@ -124,6 +124,58 @@ public final class SharingService {
             token: try await validToken())
     }
 
+    /// Add someone as YOUR coach (they monitor your workouts + can assign +
+    /// chat). Modeled as a trainer edge with you as the requester/client.
+    public func addCoach(_ profileID: String) async throws {
+        try await sendRequest(to: profileID, role: .trainer)
+    }
+
+    /// All accepted connections, resolved to profiles + relationship kind:
+    /// `.friend` (mutual), `.coach` (they coach you), `.client` (you coach them).
+    public func connections() async throws -> [Connection] {
+        let uid = try requireUserID()
+        let edges = try await acceptedFriendships()
+        let otherIDs = edges.map { $0.requesterId == uid ? $0.addresseeId : $0.requesterId }
+        let profs = try await profiles(ids: otherIDs)
+        let byID = Dictionary(profs.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        return edges.compactMap { e -> Connection? in
+            let otherID = e.requesterId == uid ? e.addresseeId : e.requesterId
+            guard let p = byID[otherID] else { return nil }
+            let kind: Connection.Kind
+            if e.role == .trainer {
+                // trainer edge: requester = client, addressee = coach.
+                kind = (e.requesterId == uid) ? .coach : .client
+            } else {
+                kind = .friend
+            }
+            return Connection(profile: p, kind: kind)
+        }
+    }
+
+    // MARK: - Chat (direct messages)
+
+    /// Send a chat message to a connected user.
+    @discardableResult
+    public func sendMessage(to recipientID: String, body: String) async throws -> MessageDTO {
+        let uid = try requireUserID()
+        let trimmed = String(body.prefix(2000))
+        let row: [String: Any] = ["sender_id": uid, "recipient_id": recipientID, "body": trimmed]
+        let inserted: [MessageDTO] = try await client.restInsert("messages", body: [row],
+                                                                 token: try await validToken())
+        guard let msg = inserted.first else { throw SharingError.decoding("no message returned") }
+        return msg
+    }
+
+    /// The full conversation with another user, oldest first.
+    public func fetchMessages(with otherID: String) async throws -> [MessageDTO] {
+        let uid = try requireUserID()
+        let filter = "or=(and(sender_id.eq.\(uid),recipient_id.eq.\(otherID)),"
+            + "and(sender_id.eq.\(otherID),recipient_id.eq.\(uid)))"
+        return try await client.restGet(
+            "messages?\(filter)&select=*&order=created_at.asc&limit=200",
+            token: try await validToken())
+    }
+
     /// Accepted edges involving the caller (both directions).
     public func acceptedFriendships() async throws -> [FriendshipDTO] {
         let uid = try requireUserID()
