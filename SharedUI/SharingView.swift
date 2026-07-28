@@ -28,6 +28,9 @@ struct SharingView: View {
     @State var searchedOnce = false
     @State var requestedIDs: Set<String> = []
     @State var requests: [FriendshipDTO] = []
+    /// Requester profiles by user ID, so a request row can say WHO is asking —
+    /// an identity-blind "Friend request" made accepting strangers the default.
+    @State var requestSenders: [String: SharedProfile] = [:]
     @State var conns: [Connection] = []
     @State var incomingTemplates: [SharedTemplateDTO] = []
     @State var clientSessions: [LiveWorkoutDTO] = []
@@ -310,10 +313,15 @@ struct SharingView: View {
         VStack(alignment: .leading, spacing: 10) {
             Text("FRIEND REQUESTS").sectionHeading()
             ForEach(requests) { req in
+                let sender = requestSenders[req.requesterId]
                 HStack(spacing: 10) {
-                    avatar("?")
-                    Text(req.role == .trainer ? "Trainer request" : "Friend request")
-                        .font(.subheadline)
+                    avatar(sender?.username ?? "?")
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("@\(sender?.username ?? "someone")")
+                            .font(.subheadline.weight(.medium))
+                        Text(req.role == .trainer ? "wants you as their coach" : "sent a friend request")
+                            .font(.caption2).foregroundStyle(Theme.textSecondary)
+                    }
                     Spacer()
                     Button { Task { await respond(req, accept: true) } } label: {
                         Image(systemName: sym("checkmark")).foregroundStyle(.white)
@@ -428,6 +436,12 @@ struct SharingView: View {
         incomingTemplates = await tmpls ?? []
         clientSessions = await sessions ?? []
         conns = await connections ?? []
+        if requests.isEmpty {
+            requestSenders = [:]
+        } else {
+            let profs = (try? await svc.profiles(ids: requests.map(\.requesterId))) ?? []
+            requestSenders = Dictionary(profs.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        }
     }
 
     private var coaches: [Connection] { conns.filter { $0.kind == .coach } }
@@ -477,7 +491,8 @@ struct SharingView: View {
 
     private func reset() {
         username = ""; searchText = ""
-        searchResults = []; requests = []; conns = []; incomingTemplates = []
+        searchResults = []; requests = []; requestSenders = [:]; conns = []
+        incomingTemplates = []
         clientSessions = []; requestedIDs = []; searchedOnce = false
     }
 
