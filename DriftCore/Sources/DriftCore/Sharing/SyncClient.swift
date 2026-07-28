@@ -48,7 +48,7 @@ public struct SyncClient: Sendable {
     /// GET `<base>/rest/v1/<path>` and decode `[T]`. `path` includes the table
     /// and any PostgREST query (`profiles?username=ilike.*ash*&select=...`).
     public func restGet<T: Decodable>(_ path: String, token: String?) async throws -> [T] {
-        let data = try await send(method: "GET", url: restURL(path), token: token, body: nil,
+        let data = try await send(method: "GET", url: try restURL(path), token: token, body: nil,
                                   prefer: nil)
         return try decode([T].self, from: data)
     }
@@ -60,7 +60,7 @@ public struct SyncClient: Sendable {
                                          upsert: Bool = false) async throws -> [T] {
         var prefer = "return=representation"
         if upsert { prefer += ",resolution=merge-duplicates" }
-        let data = try await send(method: "POST", url: restURL(table), token: token,
+        let data = try await send(method: "POST", url: try restURL(table), token: token,
                                   body: body, prefer: prefer)
         return try decode([T].self, from: data)
     }
@@ -69,9 +69,15 @@ public struct SyncClient: Sendable {
     /// updated representation.
     @discardableResult
     public func restUpdate<T: Decodable>(_ query: String, body: Any, token: String?) async throws -> [T] {
-        let data = try await send(method: "PATCH", url: restURL(query), token: token,
+        let data = try await send(method: "PATCH", url: try restURL(query), token: token,
                                   body: body, prefer: "return=representation")
         return try decode([T].self, from: data)
+    }
+
+    /// DELETE rows matched by `query` (`profiles?id=eq.<uuid>`). No body/return.
+    public func restDelete(_ query: String, token: String?) async throws {
+        _ = try await send(method: "DELETE", url: try restURL(query), token: token,
+                           body: nil, prefer: nil)
     }
 
     // MARK: - Auth (GoTrue)
@@ -80,7 +86,7 @@ public struct SyncClient: Sendable {
     /// `/auth/v1/` (`otp`, `verify`, `token?grant_type=refresh_token`). Auth
     /// endpoints authenticate with the anon key only — no bearer.
     public func authPost(_ path: String, body: [String: Any]) async throws -> [String: Any] {
-        let data = try await send(method: "POST", url: authURL(path), token: nil,
+        let data = try await send(method: "POST", url: try authURL(path), token: nil,
                                   body: body, prefer: nil)
         guard let obj = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
             throw SharingError.decoding("auth response not a JSON object")
@@ -90,8 +96,23 @@ public struct SyncClient: Sendable {
 
     // MARK: - Core request
 
-    private func restURL(_ path: String) -> URL { URL(string: "\(baseURL)/rest/v1/\(path)")! }
-    private func authURL(_ path: String) -> URL { URL(string: "\(baseURL)/auth/v1/\(path)")! }
+    private func restURL(_ path: String) throws -> URL { try makeURL("rest/v1/\(path)") }
+    private func authURL(_ path: String) throws -> URL { try makeURL("auth/v1/\(path)") }
+
+    /// Build a URL, percent-encoding the query if the raw string won't parse
+    /// (PostgREST queries carry `(` `)` `*` `,` which some URL parsers reject).
+    /// Never force-unwraps — a bad URL surfaces as a `.network` error, not a crash.
+    private func makeURL(_ suffix: String) throws -> URL {
+        let raw = "\(baseURL)/\(suffix)"
+        if let u = URL(string: raw) { return u }
+        if let q = suffix.firstIndex(of: "?") {
+            let base = String(suffix[..<q])
+            let query = String(suffix[suffix.index(after: q)...])
+            let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
+            if let u = URL(string: "\(baseURL)/\(base)?\(encoded)") { return u }
+        }
+        throw SharingError.network("could not form request URL")
+    }
 
     private func send(method: String, url: URL, token: String?, body: Any?,
                       prefer: String?) async throws -> Data {

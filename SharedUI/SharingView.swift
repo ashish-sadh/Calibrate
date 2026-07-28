@@ -23,6 +23,9 @@ struct SharingView: View {
     // Hub data
     @State var searchText = ""
     @State var searchResults: [SharedProfile] = []
+    @State var searchGen = 0
+    @State var searching = false
+    @State var searchedOnce = false
     @State var requests: [FriendshipDTO] = []
     @State var friends: [SharedProfile] = []
     @State var incomingTemplates: [SharedTemplateDTO] = []
@@ -173,9 +176,11 @@ struct SharingView: View {
             }
             Spacer()
             Button("Sign out") {
-                svc.signOut()
-                reset()
-                stage = .needsUsername
+                Task {
+                    await svc.signOut()
+                    reset()
+                    stage = .needsUsername
+                }
             }
             .font(.caption).foregroundStyle(Theme.surplus)
         }
@@ -194,14 +199,32 @@ struct SharingView: View {
                     #endif
                     .autocorrectionDisabled()
                     .onSubmit { Task { await search() } }
+                    // Live search as you type (debounced) — don't make the user
+                    // hunt for a return key.
+                    .onChange(of: searchText) { _, _ in
+                        searchGen &+= 1
+                        let gen = searchGen
+                        Task {
+                            try? await Task.sleep(nanoseconds: 350_000_000)
+                            if gen == searchGen { await search() }
+                        }
+                    }
+                if searching { ProgressView().scaleEffect(0.8) }
                 if !searchText.isEmpty {
-                    Button { searchText = ""; searchResults = [] } label: {
+                    Button { searchText = ""; searchResults = []; searchedOnce = false } label: {
                         Image(systemName: sym("xmark")).foregroundStyle(Theme.textTertiary)
                     }
                 }
             }
             .padding(10)
             .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl, style: .continuous))
+
+            if searchedOnce, searchResults.isEmpty, !searching,
+               searchText.trimmingCharacters(in: .whitespaces).count >= 1 {
+                Text("No one found for “\(searchText)”. Make sure your friend has opened Friends and picked the same @username on their phone.")
+                    .font(.caption2).foregroundStyle(Theme.textSecondary)
+                    .padding(.vertical, 2)
+            }
 
             ForEach(searchResults) { profile in
                 HStack(spacing: 10) {
@@ -377,9 +400,14 @@ struct SharingView: View {
     }
 
     private func search() async {
+        let q = searchText.trimmingCharacters(in: .whitespaces)
+        guard !q.isEmpty else { searchResults = []; searchedOnce = false; return }
+        searching = true
         await run(showBusy: false) {
-            searchResults = try await svc.searchUsers(searchText)
+            searchResults = try await svc.searchUsers(q)
         }
+        searching = false
+        searchedOnce = true
     }
 
     private func sendRequest(to profile: SharedProfile) async {

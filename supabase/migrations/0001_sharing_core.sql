@@ -43,6 +43,12 @@ create policy profiles_update_self
     on public.profiles for update
     to authenticated using (id = auth.uid()) with check (id = auth.uid());
 
+-- You may delete your own profile (sign out / switch username frees the handle;
+-- cascades remove your friendships + shared rows).
+create policy profiles_delete_self
+    on public.profiles for delete
+    to authenticated using (id = auth.uid());
+
 -- ---------------------------------------------------------------------------
 -- friendships — one row per directed edge. requester initiates; addressee
 -- accepts/declines. role = how requester relates to addressee:

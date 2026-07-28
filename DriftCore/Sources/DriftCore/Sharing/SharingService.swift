@@ -48,7 +48,15 @@ public final class SharingService {
         try await claimUsername(username, displayName: displayName)
     }
 
-    public func signOut() {
+    /// Sign out / switch identity. Because an anonymous account can't be signed
+    /// back into, this frees the @username by deleting the profile server-side
+    /// (best-effort) before clearing the local session — so the SAME username
+    /// can be re-claimed on this device. Cascades remove friendships/shares.
+    public func signOut() async {
+        if let session = currentSession, let token = try? await validToken() {
+            // Best-effort — the local session is cleared regardless.
+            try? await client.restDelete("profiles?id=eq.\(session.userID)", token: token)
+        }
         SharingSessionStore.clear(db: db)
     }
 
