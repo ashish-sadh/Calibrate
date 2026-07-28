@@ -22,6 +22,12 @@ func sym(_ name: String) -> String {
     // cal" and "1 week streak" (directive 0a). Call sites draw FlameShape
     // (FlameGlyph.swift) behind #if os(Android); a new sym("flame.fill")
     // caller renders the warning triangle so the gap is caught, not hidden.
+    // NOTE: "chart.bar.xaxis" only exists in skip-ui ≥1.59 — under the pinned
+    // 1.58.0 (#1134) it is UNMAPPED and renders the warning triangle. Workout
+    // tab + ClientDetailView call sites draw BarChartShape (ChartGlyph.swift)
+    // behind #if os(Android) instead; the mappings stay so the remaining
+    // callers (ExerciseDetailView level tag, WorkoutDetailView volume label)
+    // light up again the moment the pin is lifted.
     case "chart.line.uptrend.xyaxis": return "chart.bar.xaxis"
     case "scalemass": return "chart.bar.xaxis"
     // "clock" has NO mapping: the calendar stand-in read as a DATE next to
@@ -65,6 +71,10 @@ func sym(_ name: String) -> String {
     // doc.on.doc (copy/duplicate) is unmapped in skip-ui → shipped the ⚠️
     // triangle on Food's "Copy yesterday". Map to the mapped repeat glyph
     // (semantically "copy from a previous day"). Operator directive 0a.
+    // This case also wins for the workout "Save as Template" rows — a later
+    // duplicate `case "doc.on.doc": return "bookmark"` (#1076) was
+    // unreachable AND "bookmark" is 1.59-only, so it was removed; revisit the
+    // save-vs-copy split when the skip-ui pin (#1134) is lifted.
     case "doc.on.doc", "doc.on.doc.fill": return "arrow.clockwise.circle"
     // Body-part / activity figures — Material has no exercise figures, so
     // they all read as a person (matches the figure.walk precedent).
@@ -85,7 +95,6 @@ func sym(_ name: String) -> String {
     // AI command strip. The call site draws SparkleShape behind #if os(Android);
     // a new caller gets the warning triangle so the gap stays visible.
     case "arrow.up.circle.fill": return "paperplane.fill"
-    case "plus.circle": return "plus.circle.fill"
     // "timer" has NO mapping: the calendar stand-in put a DATE glyph on the
     // "Track by Time" row of the exercise-options menu — the same failure as
     // sym("clock") (#1074), and doubly wrong there because the workout header
@@ -98,12 +107,6 @@ func sym(_ name: String) -> String {
     // marker is decoration, not a competing meaning.
     case "1.circle", "2.circle", "3.circle", "4.circle",
          "square.stack.3d.up": return "list.bullet"
-    // "Save as Template" sits directly under "Edit Name & Notes" in the workout
-    // ⋯ menu, so mapping doc.on.doc to pencil drew the SAME glyph on both rows
-    // (#1076). Material's mapped set has no doc/copy icon at all; bookmark
-    // ("save this for reuse") is the closest surviving meaning and, unlike
-    // pencil, does not collide with Edit.
-    case "doc.on.doc": return "bookmark"
     case "play.circle.fill": return "play.fill"
     case "chart.bar": return "chart.bar.xaxis"
     case "wrench.and.screwdriver": return "wrench"

@@ -663,7 +663,13 @@ struct WorkoutView: View {
         let hasMore = overloadAlerts.count > maxVisible
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
+                #if os(Android)
+                // Pinned skip-ui 1.58 has no chart glyph (sym's chart.bar.xaxis
+                // target is 1.59+) — drawn bars instead (ChartGlyph.swift).
+                BarChartShape().fill(Theme.accent).frame(width: 12, height: 12)
+                #else
                 Image(systemName: sym("chart.line.uptrend.xyaxis")).font(.caption).foregroundStyle(Theme.accent)
+                #endif
                 Text("Plateau Alert").font(.subheadline.weight(.semibold)).foregroundStyle(Theme.textSecondary)
                 Spacer()
                 if hasMore {
@@ -723,7 +729,16 @@ struct WorkoutView: View {
                     Label(s.workout.durationDisplay, systemImage: sym("clock")).font(.caption).foregroundStyle(Theme.textSecondary)
                     #endif
                 }
+                #if os(Android)
+                // sym("scalemass") targets chart.bar.xaxis — 1.59-only under
+                // the skip-ui pin (#1134); drawn bars keep the volume stat
+                // distinct from the dumbbell exercise-count glyph beside it.
+                Label { Text("\(Int(wu.convertFromLbs(s.totalVolume))) \(wu.displayName)") } icon: {
+                    BarChartShape().fill(Theme.textSecondary).frame(width: 11, height: 11)
+                }.font(.caption).foregroundStyle(Theme.textSecondary)
+                #else
                 Label("\(Int(wu.convertFromLbs(s.totalVolume))) \(wu.displayName)", systemImage: sym("scalemass")).font(.caption).foregroundStyle(Theme.textSecondary)
+                #endif
                 exerciseCountLabel(s.exercises.count).font(.caption).foregroundStyle(Theme.textSecondary)
             }
             // Muscle group chips

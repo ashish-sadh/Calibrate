@@ -85,8 +85,15 @@ struct ClientDetailView: View {
                         ClientSessionDetailView(session: s, fromUsername: "@\(client.username)")
                     } label: {
                         HStack(spacing: 10) {
+                            #if os(Android)
+                            // Pinned skip-ui 1.58 has no chart glyph (sym's
+                            // chart.bar.xaxis target is 1.59+) — drawn bars
+                            // instead (ChartGlyph.swift).
+                            BarChartShape().fill(Theme.accent).frame(width: 15, height: 15)
+                            #else
                             Image(systemName: sym("chart.line.uptrend.xyaxis"))
                                 .font(.subheadline).foregroundStyle(Theme.accent)
+                            #endif
                             VStack(alignment: .leading, spacing: 1) {
                                 Text(s.templateName ?? "Workout").font(.subheadline.weight(.medium))
                                     .foregroundStyle(Theme.textPrimary)
