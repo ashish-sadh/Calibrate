@@ -87820,5 +87820,215 @@
       "spices"
     ],
     "nova_group": 3
+  },
+  {
+    "name": "Sooji Cheela",
+    "category": "Indian Staples",
+    "serving_size": 150,
+    "serving_unit": "g",
+    "calories": 270,
+    "protein_g": 8,
+    "carbs_g": 42,
+    "fat_g": 8,
+    "fiber_g": 2,
+    "piece_size_g": 75,
+    "ingredients": [
+      "sooji",
+      "curd",
+      "onion",
+      "tomato"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Muskmelon (Kharbuja)",
+    "category": "Fruits",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 68,
+    "protein_g": 1.5,
+    "carbs_g": 17,
+    "fat_g": 0.4,
+    "fiber_g": 1.8,
+    "ingredients": [
+      "muskmelon"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Hami Melon",
+    "category": "Fruits",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 72,
+    "protein_g": 1.2,
+    "carbs_g": 18,
+    "fat_g": 0.2,
+    "fiber_g": 1.4,
+    "ingredients": [
+      "hami melon"
+    ],
+    "nova_group": 1
+  },
+  {
+    "name": "Chicken Kathi Roll",
+    "category": "Indian Street Food",
+    "serving_size": 220,
+    "serving_unit": "g",
+    "calories": 450,
+    "protein_g": 24,
+    "carbs_g": 42,
+    "fat_g": 20,
+    "fiber_g": 3,
+    "ingredients": [
+      "chicken",
+      "maida",
+      "onion",
+      "capsicum",
+      "egg"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Paneer Kathi Roll",
+    "category": "Indian Street Food",
+    "serving_size": 220,
+    "serving_unit": "g",
+    "calories": 480,
+    "protein_g": 16,
+    "carbs_g": 46,
+    "fat_g": 26,
+    "fiber_g": 4,
+    "ingredients": [
+      "paneer",
+      "maida",
+      "onion",
+      "capsicum"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Egg Kathi Roll",
+    "category": "Indian Street Food",
+    "serving_size": 200,
+    "serving_unit": "g",
+    "calories": 400,
+    "protein_g": 16,
+    "carbs_g": 40,
+    "fat_g": 19,
+    "fiber_g": 3,
+    "ingredients": [
+      "egg",
+      "maida",
+      "onion"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Ghee Roast Dosa",
+    "category": "South Indian",
+    "serving_size": 120,
+    "serving_unit": "g",
+    "calories": 290,
+    "protein_g": 5,
+    "carbs_g": 42,
+    "fat_g": 11,
+    "fiber_g": 2,
+    "piece_size_g": 120,
+    "ingredients": [
+      "rice",
+      "urad dal",
+      "ghee"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Podi Dosa",
+    "category": "South Indian",
+    "serving_size": 130,
+    "serving_unit": "g",
+    "calories": 280,
+    "protein_g": 6,
+    "carbs_g": 42,
+    "fat_g": 9,
+    "fiber_g": 2.5,
+    "piece_size_g": 130,
+    "ingredients": [
+      "rice",
+      "urad dal",
+      "podi",
+      "sesame"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Ragi Malt (Ragi Java)",
+    "category": "Beverages",
+    "serving_size": 250,
+    "serving_unit": "ml",
+    "calories": 140,
+    "protein_g": 4,
+    "carbs_g": 26,
+    "fat_g": 2,
+    "fiber_g": 3,
+    "ingredients": [
+      "ragi",
+      "milk"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Kosambari (Moong Dal Salad)",
+    "category": "South Indian",
+    "serving_size": 100,
+    "serving_unit": "g",
+    "calories": 120,
+    "protein_g": 6,
+    "carbs_g": 14,
+    "fat_g": 4,
+    "fiber_g": 3,
+    "ingredients": [
+      "moong dal",
+      "cucumber",
+      "carrot",
+      "coconut"
+    ],
+    "nova_group": 2
+  },
+  {
+    "name": "Panjiri",
+    "category": "Indian Sweets",
+    "serving_size": 50,
+    "serving_unit": "g",
+    "calories": 250,
+    "protein_g": 5,
+    "carbs_g": 24,
+    "fat_g": 15,
+    "fiber_g": 2,
+    "ingredients": [
+      "wheat flour",
+      "ghee",
+      "sugar",
+      "nuts"
+    ],
+    "nova_group": 3
+  },
+  {
+    "name": "Dry Fruit Mix",
+    "category": "Nuts & Seeds",
+    "serving_size": 30,
+    "serving_unit": "g",
+    "calories": 160,
+    "protein_g": 4,
+    "carbs_g": 12,
+    "fat_g": 11,
+    "fiber_g": 2,
+    "ingredients": [
+      "almond",
+      "cashew",
+      "raisin",
+      "walnut"
+    ],
+    "nova_group": 1
   }
 ]
