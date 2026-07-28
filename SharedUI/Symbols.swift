@@ -62,6 +62,10 @@ func sym(_ name: String) -> String {
     // single-person symbols. Fall to the closest mapped one so the Friends row
     // shows a person, never the warning triangle (operator directive 0a).
     case "person.2.fill", "person.2", "person.3.fill", "person.3": return "person.crop.circle.fill"
+    // doc.on.doc (copy/duplicate) is unmapped in skip-ui → shipped the ⚠️
+    // triangle on Food's "Copy yesterday". Map to the mapped repeat glyph
+    // (semantically "copy from a previous day"). Operator directive 0a.
+    case "doc.on.doc", "doc.on.doc.fill": return "arrow.clockwise.circle"
     // Body-part / activity figures — Material has no exercise figures, so
     // they all read as a person (matches the figure.walk precedent).
     case "figure", "figure.walk", "figure.stand",
