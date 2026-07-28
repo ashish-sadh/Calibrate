@@ -91,12 +91,28 @@ public struct LiveWorkoutDTO: Codable, Sendable, Identifiable, Hashable {
     public let trainerId: String
     public var templateName: String?
     public var status: SessionStatus
+    public var startedAt: String?
+    public var endedAt: String?
 
     enum CodingKeys: String, CodingKey {
         case id, status
         case clientId = "client_id"
         case trainerId = "trainer_id"
         case templateName = "template_name"
+        case startedAt = "started_at"
+        case endedAt = "ended_at"
+    }
+
+    /// Best timestamp for the activity feed: when it ended, else when it started.
+    public var activityDate: Date? {
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        for s in [endedAt, startedAt].compactMap({ $0 }) {
+            if let d = iso.date(from: s) { return d }
+            let plain = ISO8601DateFormatter()
+            if let d = plain.date(from: s) { return d }
+        }
+        return nil
     }
 }
 

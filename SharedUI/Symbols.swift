@@ -58,6 +58,10 @@ func sym(_ name: String) -> String {
     // views that need Image(systemName: "fork.knife") on Android must wait
     // on the symbolset investigation (Fuse builds drop xcassets symbolsets).
     case "message.fill", "bubble.left.fill": return "paperplane.fill"
+    // skip-ui maps NO two-person glyph (person.2/group/people all absent) — only
+    // single-person symbols. Fall to the closest mapped one so the Friends row
+    // shows a person, never the warning triangle (operator directive 0a).
+    case "person.2.fill", "person.2", "person.3.fill", "person.3": return "person.crop.circle.fill"
     // Body-part / activity figures — Material has no exercise figures, so
     // they all read as a person (matches the figure.walk precedent).
     case "figure", "figure.walk", "figure.stand",

@@ -106,40 +106,54 @@ struct SharingView: View {
     }
 
     private var workoutsFromFriendsCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("WORKOUTS FROM FRIENDS").sectionHeading()
+        VStack(alignment: .leading, spacing: 12) {
+            Text("FRIEND ACTIVITY").sectionHeading()
             ForEach(clientSessions) { session in
                 NavigationLink {
                     ClientSessionDetailView(session: session,
                                             fromUsername: usernameFor(session.clientId))
                 } label: {
-                    HStack(spacing: 10) {
-                        avatar(usernameFor(session.clientId) ?? "?")
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text(session.templateName ?? "Workout")
-                                .font(.subheadline.weight(.medium)).foregroundStyle(Theme.textPrimary)
-                            Text(sessionSubtitle(session)).font(.caption2).foregroundStyle(Theme.textSecondary)
+                    HStack(spacing: 12) {
+                        ZStack(alignment: .bottomTrailing) {
+                            avatar(rawUsername(session.clientId))
+                            if session.status == .live {
+                                Circle().fill(Theme.surplus).frame(width: 11, height: 11)
+                                    .overlay(Circle().stroke(Theme.cardBackground, lineWidth: 2))
+                            }
+                        }
+                        VStack(alignment: .leading, spacing: 2) {
+                            // "@bob finished Leg Day" — a friend-activity line.
+                            (Text(usernameFor(session.clientId) ?? "A friend").font(.subheadline.weight(.semibold))
+                             + Text(session.status == .live ? " is doing " : " finished ").font(.subheadline).foregroundColor(Theme.textSecondary)
+                             + Text(session.templateName ?? "a workout").font(.subheadline.weight(.semibold)))
+                                .foregroundStyle(Theme.textPrimary)
+                            Text(activityTimeline(session)).font(.caption2).foregroundStyle(Theme.textSecondary)
                         }
                         Spacer()
                         Image(systemName: sym("chevron.right")).font(.caption2).foregroundStyle(Theme.textTertiary)
                     }
-                    .contentShape(Rectangle()).padding(.vertical, 4)
+                    .contentShape(Rectangle()).padding(.vertical, 2)
                 }
                 .buttonStyle(.plain)
-                if session.id != clientSessions.last?.id { Divider().overlay(Theme.separator) }
+                if session.id != clientSessions.last?.id { Divider().overlay(Theme.separatorFaint) }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .card()
     }
 
+    private func rawUsername(_ id: String) -> String {
+        friends.first { $0.id == id }?.username ?? "?"
+    }
+
     private func usernameFor(_ id: String) -> String? {
         friends.first { $0.id == id }.map { "@\($0.username)" }
     }
 
-    private func sessionSubtitle(_ s: LiveWorkoutDTO) -> String {
-        let who = usernameFor(s.clientId) ?? "a friend"
-        return s.status == .live ? "\(who) · training now 🔴" : "\(who) · completed"
+    private func activityTimeline(_ s: LiveWorkoutDTO) -> String {
+        if s.status == .live { return "training now · live 🔴" }
+        guard let d = s.activityDate else { return "completed" }
+        return RelativeTime.string(from: d)
     }
 
     private var identityCard: some View {
@@ -494,6 +508,20 @@ struct ClientSessionDetailView: View {
         loading = true
         sets = (try? await svc.sessionSets(session.id)) ?? []
         loading = false
+    }
+}
+
+/// Compact "time ago" for the friend-activity feed ("just now", "2h ago", "3d ago").
+enum RelativeTime {
+    static func string(from date: Date, now: Date = Date()) -> String {
+        let s = max(0, now.timeIntervalSince(date))
+        switch s {
+        case ..<60: return "just now"
+        case ..<3600: return "\(Int(s / 60))m ago"
+        case ..<86_400: return "\(Int(s / 3600))h ago"
+        case ..<604_800: return "\(Int(s / 86_400))d ago"
+        default: return "\(Int(s / 604_800))w ago"
+        }
     }
 }
 

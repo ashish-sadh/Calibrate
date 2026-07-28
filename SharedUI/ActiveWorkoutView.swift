@@ -1415,6 +1415,20 @@ struct ActiveWorkoutView: View {
                             .font(.caption).foregroundStyle(Theme.textSecondary)
                             .multilineTextAlignment(.center)
                     } else {
+                        if shareFriends.count > 1 {
+                            Button { Task { await sendWorkoutToAll() } } label: {
+                                HStack {
+                                    Spacer()
+                                    if shareSendingTo == "*" { ProgressView().tint(.white) }
+                                    else { Text("Share with all \(shareFriends.count) friends").font(.caption.weight(.semibold)) }
+                                    Spacer()
+                                }
+                                .padding(.vertical, 8)
+                                .background(Theme.chartTrend, in: Capsule()).foregroundStyle(.white)
+                            }
+                            .buttonStyle(.plain)
+                            Divider().overlay(Theme.separatorFaint)
+                        }
                         ForEach(shareFriends) { f in
                             HStack(spacing: 10) {
                                 Text("@\(f.username)").font(.subheadline)
@@ -1459,6 +1473,22 @@ struct ActiveWorkoutView: View {
             shareSentTo.insert(friend.id)
         } catch {
             shareError = (error as? SharingError).map(String.init(describing:)) ?? error.localizedDescription
+        }
+        shareSendingTo = nil
+    }
+
+    /// One-tap broadcast: send the finished workout to every friend not already sent.
+    private func sendWorkoutToAll() async {
+        shareSendingTo = "*"
+        shareError = nil
+        for f in shareFriends where !shareSentTo.contains(f.id) {
+            do {
+                try await SharingService.shared.shareCompletedWorkout(
+                    to: f.id, workoutName: workoutName, sets: completedSets)
+                shareSentTo.insert(f.id)
+            } catch {
+                shareError = (error as? SharingError).map(String.init(describing:)) ?? error.localizedDescription
+            }
         }
         shareSendingTo = nil
     }
