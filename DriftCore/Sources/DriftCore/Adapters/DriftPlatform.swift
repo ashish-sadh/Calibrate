@@ -10,4 +10,8 @@ public enum DriftPlatform {
     public static var widget: WidgetRefresher?
     /// Apple Health nutrition write-back (#934). nil on macOS/tests = no-op.
     public static var nutritionWriter: HealthNutritionWriter?
+    /// Platform-secure store for the sharing auth session (iOS Keychain /
+    /// Android EncryptedSharedPreferences). nil = fall back to the SQLite
+    /// `sync_session` table (durable on both platforms, less protected).
+    public static var secureStore: SecureTokenStore?
 }

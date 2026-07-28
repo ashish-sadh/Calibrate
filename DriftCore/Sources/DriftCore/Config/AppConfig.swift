@@ -106,4 +106,24 @@ public enum AppConfig {
 
     /// True when the ElevenLabs key decrypts — studio voice is available.
     public static var elevenLabsConfigured: Bool { !elevenLabsAPIKey.isEmpty }
+
+    // MARK: - Friends & Trainer sharing (Supabase)
+
+    /// Base URL of the Drift sharing backend (Supabase project). REST lives at
+    /// `<base>/rest/v1`, auth at `<base>/auth/v1`, realtime at `<base>/realtime/v1`.
+    /// Hardcoded like `RemoteLLMBackend.Provider.nebius` — one project serves
+    /// iOS + Android. Sharing is strictly opt-in; nothing here is touched until
+    /// the user claims a username.
+    public static let syncBaseURL = "https://ldyapxvnhlyqqfefqijj.supabase.co"
+
+    /// Supabase **publishable** (anon) key. Public-safe by design: it grants
+    /// only what Row-Level Security allows for the authenticated caller, so it
+    /// ships in plaintext (unlike the Nebius team key). Sent as the `apikey`
+    /// header on every sharing request.
+    public static let syncAnonKey = "sb_publishable_650DZylHW7JZx3bsW4toPg_Cz7bY8Iq"
+
+    /// True when a sharing backend is configured — gates the whole feature.
+    public static var syncConfigured: Bool {
+        !syncBaseURL.isEmpty && !syncAnonKey.isEmpty
+    }
 }

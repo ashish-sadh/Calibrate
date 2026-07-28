@@ -1,0 +1,134 @@
+import Foundation
+
+/// Wire DTOs for the friends/trainer sharing backend (Supabase Postgres via
+/// PostgREST). Field names are snake_case to match the server rows verbatim;
+/// `SharingJSON` (below) configures the coder so we never hand-map keys.
+///
+/// These mirror `supabase/migrations/0001_sharing_core.sql`. Only sharable,
+/// non-PII fields exist here — email/phone never cross this boundary.
+
+public enum FriendStatus: String, Codable, Sendable {
+    case pending, accepted, blocked
+}
+
+public enum FriendRole: String, Codable, Sendable {
+    case friend, trainer
+}
+
+public enum ShareStatus: String, Codable, Sendable {
+    case sent, accepted, declined
+}
+
+public enum SessionStatus: String, Codable, Sendable {
+    case live, completed, abandoned
+}
+
+/// Public directory entry — the only thing other users ever see about you.
+public struct SharedProfile: Codable, Sendable, Identifiable, Hashable {
+    public let id: String                 // server auth uid (uuid)
+    public var username: String
+    public var displayName: String?
+    public var avatarUrl: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, username
+        case displayName = "display_name"
+        case avatarUrl = "avatar_url"
+    }
+
+    public init(id: String, username: String, displayName: String? = nil, avatarUrl: String? = nil) {
+        self.id = id; self.username = username
+        self.displayName = displayName; self.avatarUrl = avatarUrl
+    }
+}
+
+/// A directed friend/trainer edge.
+public struct FriendshipDTO: Codable, Sendable, Identifiable, Hashable {
+    public let id: String
+    public let requesterId: String
+    public let addresseeId: String
+    public var status: FriendStatus
+    public var role: FriendRole
+
+    enum CodingKeys: String, CodingKey {
+        case id, status, role
+        case requesterId = "requester_id"
+        case addresseeId = "addressee_id"
+    }
+}
+
+/// A template shared/assigned to a recipient. `exercisesJson` is Drift's
+/// `[TemplateExercise]` shape, so accepting it is a direct decode → save.
+public struct SharedTemplateDTO: Codable, Sendable, Identifiable, Hashable {
+    public let id: String
+    public let ownerId: String
+    public let recipientId: String
+    public var name: String
+    public var exercisesJson: String
+    public var note: String?
+    public var status: ShareStatus
+
+    enum CodingKeys: String, CodingKey {
+        case id, name, note, status
+        case ownerId = "owner_id"
+        case recipientId = "recipient_id"
+        case exercisesJson = "exercises_json"
+    }
+
+    /// Decode the embedded exercises for local `WorkoutTemplate` creation.
+    public var exercises: [WorkoutTemplate.TemplateExercise] {
+        guard let data = exercisesJson.data(using: .utf8),
+              let list = try? JSONDecoder().decode([WorkoutTemplate.TemplateExercise].self, from: data)
+        else { return [] }
+        return list
+    }
+}
+
+/// A client's session made visible to one trainer (live + completed).
+public struct LiveWorkoutDTO: Codable, Sendable, Identifiable, Hashable {
+    public let id: String
+    public let clientId: String
+    public let trainerId: String
+    public var templateName: String?
+    public var status: SessionStatus
+
+    enum CodingKeys: String, CodingKey {
+        case id, status
+        case clientId = "client_id"
+        case trainerId = "trainer_id"
+        case templateName = "template_name"
+    }
+}
+
+public struct LiveWorkoutSetDTO: Codable, Sendable, Identifiable, Hashable {
+    public let id: String
+    public let liveWorkoutId: String
+    public var exerciseName: String
+    public var exerciseOrder: Int
+    public var setOrder: Int
+    public var weightLbs: Double?
+    public var reps: Int?
+    public var isWarmup: Bool
+    public var done: Bool
+
+    enum CodingKeys: String, CodingKey {
+        case id, reps, done
+        case liveWorkoutId = "live_workout_id"
+        case exerciseName = "exercise_name"
+        case exerciseOrder = "exercise_order"
+        case setOrder = "set_order"
+        case weightLbs = "weight_lbs"
+        case isWarmup = "is_warmup"
+    }
+}
+
+/// Shared coders for the sharing wire format. PostgREST returns/accepts plain
+/// snake_case JSON; the DTO CodingKeys already map it, so these are stock.
+public enum SharingJSON {
+    public static let decoder = JSONDecoder()
+    public static let encoder: JSONEncoder = {
+        let e = JSONEncoder()
+        e.outputFormatting = [.sortedKeys]
+        return e
+    }()
+}

@@ -9,7 +9,7 @@ public enum Migrations {
     /// fails with `Int.fetchOne(grdb_migrations) != currentVersion`.
     /// Stamped into the backup manifest so restore can detect a
     /// forward/backward migration scenario.
-    public static let currentVersion = 46
+    public static let currentVersion = 47
 
     public static func registerAll(_ migrator: inout DatabaseMigrator) {
         // v1: Weight tracking
@@ -730,6 +730,34 @@ public enum Migrations {
                 t.column("requests", .integer).notNull().defaults(to: 0)
                 t.column("chars", .integer).notNull().defaults(to: 0)
             }
+        }
+
+        // v47 (friends/trainer sharing): durable auth session + local↔server
+        // id map. In SQLite for the same reason as cloud_usage — Android
+        // drops UserDefaults writes (#1108), and a session that resets on
+        // restart logs the user out constantly. The token is a durable floor;
+        // DriftPlatform.secureStore (Keychain/EncryptedSharedPrefs) can hold
+        // it more securely per platform, but this table is what survives.
+        migrator.registerMigration("v47_sharing_session") { db in
+            // Single-row session (id fixed at 1). Empty = signed out.
+            try db.create(table: "sync_session") { t in
+                t.column("id", .integer).primaryKey()
+                t.column("user_id", .text).notNull()       // server auth uid (uuid)
+                t.column("username", .text)
+                t.column("access_token", .text).notNull()
+                t.column("refresh_token", .text)
+                t.column("expires_at", .double)            // unix seconds
+                t.column("updated_at", .double).notNull()
+            }
+            // local rowid ↔ server uuid, so a locally-int-keyed template/
+            // workout can be referenced across devices.
+            try db.create(table: "sync_map") { t in
+                t.column("entity_type", .text).notNull()   // "template" | "workout" | ...
+                t.column("local_id", .integer).notNull()
+                t.column("server_uuid", .text).notNull()
+                t.primaryKey(["entity_type", "local_id"])
+            }
+            try db.create(indexOn: "sync_map", columns: ["server_uuid"])
         }
     }
 
