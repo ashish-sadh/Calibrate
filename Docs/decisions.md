@@ -579,3 +579,32 @@ architecture is in `Docs/designs/friends-trainer-sharing.md`. Durable sharing
 state (session token, local↔server id map) lives in SQLite (migration v47), NOT
 UserDefaults — Android drops those (#1108); iOS additionally shadows the token
 into Keychain via the `SecureTokenStore`/`DriftPlatform.secureStore` seam.
+
+## 2026-07-28: pin the Skip stack `exact:` — a gitignored Package.resolved let skip-ui float into a release-codegen crash (#1134)
+
+Android Play publish went DOWN with **zero app change**: build 61 published fine
+at 03:35, build 62's release export failed hours later, because in between a
+routine `.build` nuke (the "Skip Build Plan Needs Full .build Nuke" trap)
+re-resolved dependencies and floated **skip-ui good → 1.59.0**, whose release
+Kotlin codegen crashes on the library-internal `BridgedCustomShape.scaledToFill`
+`[fake_override]` bridge (`:skipstone:SkipUI:compileReleaseKotlin FAILED`, ~720s
+in). Debug builds were unaffected (the crash is release-IR only), which is why
+`skip app launch` stayed green and hid the regression. The root cause is that
+`drift-android/Package.resolved` is **gitignored**, so there is no committed
+version lock, and `drift-android/Package.swift` used floating `from:` constraints
+— and *every* skip-fuse-ui version declares a floating skip-ui floor
+(`from "1.59.0"` / `from "1.50.0"`), so skip-ui always floats to the newest
+release. There is **no app-side fix**: `BridgedCustomShape` is skip-ui's own
+class; the app's `.scaledToFill()` calls are unrelated `Image` modifiers.
+FIX: convert the committed `Package.swift` to `exact:` pins (skip 1.9.4,
+skip-fuse-ui 1.18.0) and add **skip-ui as a direct `exact: "1.59.1"` pin** (the
+patch released right after 1.59.0's breakage; it's already transitively linked,
+the direct dep exists only to lock it). Because Package.resolved is gitignored,
+the committed Package.swift is the ONLY durable pin surface. Fallback if 1.59.1
+also crashed: skip-fuse-ui 1.17.3 + skip-ui 1.58.0 **together** (reverting
+skip-fuse-ui alone doesn't help — its `from` floor still floats skip-ui).
+RULE: with Package.resolved gitignored, a `from:` dependency is an unpinned
+time-bomb — the next `.build` nuke silently upgrades it. Pin the whole external
+toolchain `exact:` in the committed manifest, and when a transitive dep is the
+one that breaks, add it as a direct pin-only dependency. A release-only codegen
+crash won't show in `skip app launch`; the release gate is `skip export`.
