@@ -103,7 +103,11 @@ struct SupplementsTabView: View {
                             }
                             .buttonStyle(.plain)
                             .accessibilityLabel(Text("\(supplement.name)\(supplement.dosageDisplay.isEmpty ? "" : ", \(supplement.dosageDisplay)"), \(viewModel.isTaken(supplement.id ?? 0) ? "taken" : "not taken")"))
+                            // accessibilityHint is unavailable on SkipUI — the
+                            // label above already says taken/not taken.
+                            #if !os(Android)
                             .accessibilityHint(Text("Double tap to toggle"))
+                            #endif
                             // contextMenu is gated off on Android — it steals
                             // focus and its builder is EAGER on Fuse
                             // (skipui_interaction_api_traps). The row's own
@@ -134,9 +138,21 @@ struct SupplementsTabView: View {
 
                     if viewModel.supplements.isEmpty {
                         VStack(spacing: 12) {
+                            #if os(Android)
+                            // "pill" is unmapped in skip-ui's Material set and
+                            // rendered the warning triangle here (verified on
+                            // the emulator). A capsule on the diagonal IS the
+                            // glyph — no Path needed.
+                            Capsule()
+                                .fill(Theme.accent.opacity(0.5))
+                                .frame(width: 46, height: 22)
+                                .rotationEffect(.degrees(-45))
+                                .frame(height: 46)
+                            #else
                             Image(systemName: "pill")
                                 .font(.system(size: Theme.FontSize.display2))
                                 .foregroundStyle(Theme.accent.opacity(0.5))
+                            #endif
                             Text("No supplements yet")
                                 .font(.subheadline).foregroundStyle(Theme.textSecondary)
                             Button { showingAdd = true } label: {

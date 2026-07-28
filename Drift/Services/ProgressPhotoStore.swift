@@ -19,29 +19,14 @@ enum ProgressPhotoStore {
         return c
     }()
 
-    /// `<AppSupport>/ProgressPhotos/`. Created on first use. Photos are INCLUDED
-    /// in iCloud device backup (operator 2026-07-14: "make progress photos part
-    /// of iCloud backup") so a device migration restores them alongside the
-    /// `progress_photo` DB rows that reference them.
-    static var directory: URL {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        let dir = base.appendingPathComponent("ProgressPhotos", isDirectory: true)
-        if !FileManager.default.fileExists(atPath: dir.path) {
-            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        }
-        return dir
-    }
+    /// Path resolution lives in DriftCore (`ProgressPhotoPaths`) so the shared
+    /// gallery can build a file URL on Android too; this type keeps the
+    /// UIImage encode/decode + cache that only iOS needs.
+    static var directory: URL { ProgressPhotoPaths.directory }
 
-    static func url(for filename: String) -> URL {
-        directory.appendingPathComponent(filename)
-    }
+    static func url(for filename: String) -> URL { ProgressPhotoPaths.url(for: filename) }
 
-    /// True when the backing file exists on disk. Used to filter DB rows whose
-    /// file didn't survive (defensive; with backup inclusion this should be
-    /// rare, but a partial restore must not show blank thumbnails).
-    static func fileExists(_ filename: String) -> Bool {
-        FileManager.default.fileExists(atPath: url(for: filename).path)
-    }
+    static func fileExists(_ filename: String) -> Bool { ProgressPhotoPaths.fileExists(filename) }
 
     /// Persist an image for a (date, pose) as a downscaled JPEG. Returns the
     /// filename to store in the DB, or nil on failure. Filenames are stable per

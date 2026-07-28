@@ -6,6 +6,7 @@ import DriftCore
 struct MoreTab: View {
     @State var unit = Preferences.weightUnit
     @State var showingSupplements = false
+    @State var showingProgress = false
 
     var body: some View {
         NavigationStack {
@@ -72,6 +73,18 @@ struct MoreTab: View {
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        Divider().overlay(Theme.separator)
+                        Button { showingProgress = true } label: {
+                            HStack(spacing: 10) {
+                                Text("Progress Photos")
+                                    .font(.subheadline).foregroundStyle(Theme.textPrimary)
+                                Spacer()
+                                Image(systemName: sym("chevron.right"))
+                                    .font(.caption).foregroundStyle(Theme.textTertiary)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .card()
@@ -105,6 +118,7 @@ struct MoreTab: View {
                 Preferences.weightUnit = newValue
             }
             .sheet(isPresented: $showingSupplements) { SupplementsTabView() }
+            .sheet(isPresented: $showingProgress) { ProgressGalleryAndroid() }
         }
     }
 }
