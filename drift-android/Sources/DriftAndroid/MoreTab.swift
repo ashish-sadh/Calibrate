@@ -118,7 +118,7 @@ struct MoreTab: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text("COMING TO ANDROID").sectionHeading()
                         ForEach(["Drift Coach chat + voice", "Photo & barcode logging",
-                                 "Sleep, cycle & biomarkers detail screens",
+                                 "Sleep & biomarkers detail screens",
                                  "Backup & restore"], id: \.self) { item in
                             HStack(spacing: 6) {
                                 Circle().fill(Theme.textQuaternary).frame(width: 5, height: 5)

@@ -4,7 +4,6 @@ import DriftCore
 struct MoreTabView: View {
     @Binding var selectedTab: Int
     @State private var navId = UUID()
-    @State private var hasCycleData = false
 
     var body: some View {
         NavigationStack {
@@ -27,14 +26,10 @@ struct MoreTabView: View {
                                color: Theme.rhythmTeal) {
                             SleepRecoveryView()
                         }
-                        if hasCycleData {
-                            rowDivider
-                            navRow(icon: "circle.circle", title: "Cycle",
-                                   subtitle: "From Apple Health",
-                                   color: Theme.cyclePink) {
-                                CycleView()
-                            }
-                        }
+                        // Cycle row hidden 2026-07-28 (operator): keep the first
+                        // impression light for new users — no cycle info before
+                        // they trust the app. CycleView still exists; re-enable
+                        // by restoring this row when there's a considered place for it.
                         rowDivider
                         navRow(icon: "pill.fill", title: "Supplements",
                                subtitle: "Daily checklist",
@@ -131,7 +126,6 @@ struct MoreTabView: View {
             .toolbarColorScheme(.light, for: .navigationBar)
             // V7: per-tab ChatIconButton dropped — bottom-right
             // floating ChatIconButton in ContentView covers all tabs.
-            .task { hasCycleData = await DriftPlatform.health?.hasCycleData() ?? false }
         }
         .id(navId)
         .onChange(of: selectedTab) { oldTab, newTab in
