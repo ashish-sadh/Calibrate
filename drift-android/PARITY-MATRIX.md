@@ -12,6 +12,33 @@ not ported at all.
 
 ## Session notes (append-only)
 
+- **2026-07-28 (scout #11):** SOURCE-ONLY staleness reconciliation of **Workout** (epic #1064) — operator directive
+  0-SCREEN-BY-SCREEN-WORKOUT area. ps-check found BOTH sibling lanes LIVE (executor `/android-parity` PID 19839 Sonnet,
+  `.build/skip-export` touched 13:43 = actively building→installing the APK; planner PID 87150 Opus) so the emulator was
+  left UNTOUCHED per the scout-#3 collision lesson. iOS control file = PAUSE (the misfiring P0-#1043 + "PAUSE ACTIVE"
+  hooks read the iOS control only) but `~/drift-android-parity.txt` = **RUN** → proceeded. **Verify-don't-trust
+  staleness sweep:** cross-checked all 68 issue refs in the matrix against live `gh` state — 13 CLOSED. Workout rows
+  citing now-closed issues (confirmed closing commits present) FLIPPED: **row 375** resume-banner persistence
+  `broken`→`ok` (#1108 f39655f3 durable SQLite KV store), **row 389** set-done IME-focus-theft `deviation`→`ok`
+  (#1103 aab2e238), **row 392** numeric select-all `deviation`→`ok` (#1097 066c91bc), **row 402** mid-workout
+  process-death session-loss `broken`→`ok` (#1108 f39655f3 — the P0), **row 417** equipment glyph `deviation`→`ok`
+  (#1099 f899db8e). The four runtime-behavioral flips (focus/persistence are RUNTIME facts per [Port Kit Stale On
+  Wiring Not UI]) are tagged **device-reverify-pending** (emulator contended, not confirmed on-device this session).
+  **row 403** (resume drops Previous ghosts, #1098) — blocker #1108 LANDED so the resume path is fully REPLACED +
+  now reachable; premise may be stale → left `deviation`, and refreshed #1098: removed its stale `blocked` label
+  ([Stale Blocked Label]) + commented it needs a DEVICE re-verify (not planning — the code path it was filed against
+  no longer exists). **Source-audit (directive 0 "no ⚠️ triangles"):** read all 114 platform gates + every raw
+  `Image(systemName:)` across the 8 workout SharedUI files — glyph parity is CLEAN: every delta is `sym()`-mapped,
+  drawn as a custom Shape behind `#if os(Android)` (Dumbbell/Flame/Clock/BarChart), or a deliberate closest-icon;
+  ZERO un-handled triangle candidates (the raw literals at WorkoutView 615/624/780/806/985 are the iOS `#else` side
+  of handled pairs; `bottomInset` 100-vs-24 is the intentional floating-pill-tab-bar inset). Rows changed: **6**
+  (5 flips + 1 note). Issues filed: **0** (no new gaps — quality>volume). Issues refreshed: **1** (#1098 blocked
+  cleared). No code touched (matrix only); publish lane's uncommitted `Skip.env` left alone. **Device-verify debt
+  handed to the next uncontended scout window:** the 6 `unknown` workout rows — row 400 (ActiveWorkout
+  exercise-row→ExerciseDetail nav), 414 (ExerciseBrowser custom-CTA sheet), 427 (WorkoutDetail swipe-delete), 428
+  (WorkoutDetail Edit-Set sheet), 429 (WorkoutDetail menu drive-through), 434 (BodyMap tap→recovery-template) — PLUS
+  on-device re-confirm of the 5 flips above + #1098's ghost-drop premise on the new keyValueStore resume path.
+
 - **2026-07-28 (scout #10):** SOURCE-ONLY decomposition of **Body / Weight** (epic #1065) — the last coarse
   un-decomposed domain (Today/Food/More/Coach/Health already split by scouts #5-#9). ps-check found BOTH sibling
   lanes live (executor `/android-parity` PID 23525 + planner PID 23540, Opus) and emulator-5554 up but UNTOUCHED
@@ -372,7 +399,7 @@ not ported at all.
 | Workout tab root | Templates ⋮ menu (New Template / Load Packages I–IV / Remove All; Import iOS-only) | ok | |
 | Workout tab root | Start Empty Workout → ActiveWorkoutView sheet | ok | |
 | Workout tab root | Muscle Recovery body map + per-group chips (soreness data) | ok | |
-| Workout tab root | resume banner ("Workout in progress — Resume") — renders same-process only; on-disk persistence broken | broken | #1108 |
+| Workout tab root | resume banner ("Workout in progress — Resume") — on-disk persistence FIXED via durable SQLite KV store | ok | #1108 closed f39655f3; device-reverify pending (emulator contended scout #11) |
 | Workout tab root | past-workout log sheet → ActiveWorkoutView(pastDate:) w/ Jul-26 date badge; close-confirm fires | ok | save path not driven |
 | Workout tab root | voice/text log sheet: typed entry → parse → review card → Log CTA (see ExerciseVoiceLogSheet rows) | ok | parse=LOCAL tier; Nebius residual 0-AI-LADDER |
 | Workout tab root | scan workout sheet (`showingScan` → WorkoutScanSheet, iOS-only file; scan-primary entry REPLACED voice/text on iOS — Android still shows the legacy voice/text sheet) | missing | #1110 (#1095 closed-descoped) |
@@ -386,10 +413,10 @@ not ported at all.
 | Workout tab root | Import alert: ⋮ Load Package I → "Added 0 Drift Package I templates" + OK (name-dedup, DB-safe) | ok | |
 | ActiveWorkoutView | FIRST set-done → notif-permission moment relaunches MainActivity, dumps to Today | ok (fixed f5ceecc9) | #1096 |
 | ActiveWorkoutView | close → confirmationDialog (Minimize / Discard workout / Keep going + message) | ok | |
-| ActiveWorkoutView | set done ALSO pops keyboard + cursor into notes/Tip TextField (iOS is silent) | deviation | #1103 |
+| ActiveWorkoutView | set done pops keyboard into notes/Tip TextField — FIXED: tap-to-edit, set-DONE no longer steals IME focus | ok | #1103 closed aab2e238; device-reverify pending (runtime focus; scout #11) |
 | ActiveWorkoutView | add exercises → ExercisePickerView sheet | ok | |
 | ActiveWorkoutView | set row: decimal-pad keyboard appears, value commits | ok | |
-| ActiveWorkoutView | set row: focus does NOT select-all — typing inserts (185+200 → 120085) | deviation | #1097 |
+| ActiveWorkoutView | set row: focus select-all — FIXED, typing replaces not inserts | ok | #1097 closed 066c91bc; device-reverify pending (runtime; scout #11) |
 | ActiveWorkoutView | SetEntrySanity set-done dialog (operator e8821123 07-26; the driven "really heavy" = its absolute-ceiling variant). Un-driven variants share the mechanism: 3× jump-from-last (+100 lb floor), reps>100, duration>90m, "Let me fix it" cancel path; markSetDone now stable-ID (survives index shifts across the confirm round-trip) | ok | ceiling variant driven post-checkpoint (build 44) |
 | ActiveWorkoutView | set row: prev-weight ghost values + prefill | ok | |
 | ActiveWorkoutView | set row: done toggle ✓, per-exercise kg/lbs header menu ✓ (flip re-labels, doesn't rewrite field text — identical shared code); per-set warmup flag not driven | ok | |
@@ -399,8 +426,8 @@ not ported at all.
 | ActiveWorkoutView | command strip: tap → focus + IME with send action (parse path = Nebius residual, 0-AI-LADDER; e8821123 refinement: bare "form tips" resolves to the current exercise — Tier-0-tested, no new UI surface) | ok | |
 | ActiveWorkoutView | exercise row → NavigationLink ExerciseDetailView | unknown | |
 | ActiveWorkoutView | finish → options sheet (save-as-template/favorite) → completion card + share text | ok | |
-| ActiveWorkoutView | mid-workout kill + resume — SavedSession NEVER persists on Android; whole workout lost on process death, both kill variants. #1102's Data→String fix landed (516f85cd) but did NOT resolve it — deeper bug, see #1108 | broken | #1108 |
-| ActiveWorkoutView | resume drops Previous-column ghosts (shows "—") — re-verify after #1108 lands (process-death resume currently unreachable) | deviation | #1098 |
+| ActiveWorkoutView | mid-workout kill + resume — FIXED: SavedSession persists via durable SQLite KV store, survives process death (both kill variants) | ok | #1108 closed f39655f3 (the P0); device-reverify pending (runtime persistence; scout #11) |
+| ActiveWorkoutView | resume drops Previous-column ghosts (shows "—") — #1108 LANDED (f39655f3): resume path fully replaced + now reachable; premise may be stale → needs device re-verify | deviation | #1098 (stale `blocked` cleared scout #11) |
 | ExercisePickerView | search field: autofocus, live results, tap result w/ keyboard up | ok | |
 | ExercisePickerView | recent/your/all sections + last-weight decoration | ok | |
 | ExercisePickerView | row .swipeActions(leading): swipe reveals Favorite, tap → Favorites section appears; Unfavorite restores | ok | star.slash→star.fill collapse noted on #1099 |
@@ -414,7 +441,7 @@ not ported at all.
 | ExerciseBrowserView | custom-exercise CTA (+ top-right) sheet | unknown | |
 | ExerciseDetailView | pose crossfade photos (-0/-1 HEIC animate) | ok | |
 | ExerciseDetailView | muscle diagrams primary/secondary + name/level chips | ok | |
-| ExerciseDetailView | equipment chip glyph = wrench for barbell (rows are correct) | deviation | #1099 |
+| ExerciseDetailView | equipment chip glyph — FIXED to match browser rows | ok | #1099 closed f899db8e; source-verified (sym map + shape) |
 | ExerciseDetailView | per-exercise history / PR (est. 1RM per row) | ok | |
 | TemplatePreviewSheet | warmup + exercise sections, pose thumbs, per-exercise rest, notes | ok | |
 | TemplatePreviewSheet | exercise rows → NavigationLink detail (crossfade, muscles, PR) | ok | |
