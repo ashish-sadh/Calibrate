@@ -12,6 +12,29 @@ not ported at all.
 
 ## Session notes (append-only)
 
+- **2026-07-28 (scout #9):** SOURCE-ONLY decomposition of **Food** (epic #1062) — ps-check found BOTH
+  sibling lanes live (executor `/android-parity` PID 23525 Sonnet + planner PID 23540 Opus); `adb` showed
+  emulator-5554 up but it was left UNTOUCHED per the scout-#3 collision lesson (executor reinstalls the APK
+  mid-drive → phantom app-died). Area: Food was the last coarse un-decomposed mega-epic (Today/More/Health/
+  Coach already split by scouts #5-#8), is #2 on the operator's 0-AI-FOCUS queue, and its split also unblocks
+  Coach **#1135**. Grep-verified all 10 iOS-only `Drift/Views/Food/**` files (FoodSearchView 49KB, QuickAddView
+  36KB, CombosView, ComboLogSheet, ManualFoodEntrySheet, FoodLogSheet, LogMealSheet, PlantPointsCardView,
+  ServingMultiplierStepper, VoiceLogSheet) have **ZERO** Android presence; Android ships thin stand-ins
+  (`FoodTab.swift` AndroidFoodSearchSheet:39 / AndroidRecentMealsSheet:198) + the shared FoodTabView with every
+  create/build/combo/goal/confirm path `#if DRIFT_IOS_APP`-gated. **#1062 demoted to INDEX**; split into 4
+  scoped children (mirroring #1067→#1114-1119): **#1138** Food Search hub port (FoodSearchView → replace the
+  AndroidFoodSearchSheet stand-in; 6 sections + per-result log; #1075 tracks the stand-in returns-nothing
+  break) / **#1139** Quick Add + manual entry + recipe builder (no Android manual-add path today) / **#1140**
+  Combos & Recipes hub (CombosView + ComboLogSheet CRUD; Android chips log directly, no editor) / **#1141**
+  residual iOS-gated affordances (Plant Points expandable detail + "Log Again"). **Staleness corrections
+  (verify, don't trust the matrix):** shared FoodTabView surfaces (date strip/rings/timeline/edit/serving)
+  are DEVICE-VERIFY DEBT — they compile via the ported ServingInputView/EditFoodEntrySheet/MealCalendarPicker,
+  NOT `missing`; the edit-entry row flipped `unknown`→`broken` **#1120** (cal/macro override fields dead to
+  tap). Capture rows stay #1063, Snap→#1111, goal→#1117. Rows changed: Food 22-coarse → 25-granular. Issues
+  filed: **4** (#1138-#1141). No code touched (matrix only); worker WIP left alone. Device-verify debt grows
+  (Food shared surfaces + scout #8's Coach source-rows + scout #3's 5 workout leftovers + Supplements) — all
+  awaiting an uncontended emulator window.
+
 - **2026-07-28 (scout #8):** SOURCE-ONLY reconciliation of **Coach / AI chat** (epic #1066) — ps-check found
   BOTH sibling lanes live (executor PID 97569 + planner PID 94850, Opus) and `adb devices` empty, so the
   emulator was untouched per the scout-#3 collision lesson. Area chosen because the matrix said "iOS-only"
@@ -386,32 +409,45 @@ not ported at all.
 | BodyMapView (recovery) | tap muscle → suggested recovery template | unknown | |
 | MuscleHighlightCard | only render site is ExerciseDetailView muscle diagrams (device-verified ok above); "per-workout" premise stale | ok | source-resolved |
 
-## Food (epic #1062 · single-source: SharedUI/FoodTabView.swift hosted by FoodTab)
+## Food (epic #1062 = INDEX · single-source: SharedUI/FoodTabView.swift hosted by FoodTab + Android stand-ins AndroidFoodSearchSheet/AndroidRecentMealsSheet · scoped ports #1138 search-hub / #1139 quick-add+manual / #1140 combos+recipes / #1141 residual affordances; capture #1063, goal #1117, edit-bug #1120)
+
+Source-decomposed 2026-07-28 (scout #9): #1062 was a coarse mega-epic; split into 4 scoped children
+mirroring #1067→#1114-1119. All 10 iOS-only food files (`Drift/Views/Food/**`: FoodSearchView 49KB,
+QuickAddView 36KB, CombosView, ComboLogSheet, ManualFoodEntrySheet, FoodLogSheet, LogMealSheet,
+PlantPointsCardView, ServingMultiplierStepper, VoiceLogSheet) have ZERO Android presence (grep-verified);
+Android ships thin stand-ins (`FoodTab.swift` AndroidFoodSearchSheet:39 / AndroidRecentMealsSheet:198) +
+the shared FoodTabView with every create/build/combo/goal/confirm path `#if DRIFT_IOS_APP`-gated. SHARED
+FoodTabView surfaces (date strip, rings, timeline, edit sheet, serving input) compile on Android via the
+ported ServingInputView/EditFoodEntrySheet/MealCalendarPicker/MealTimePicker/FoodLogViewModel/DescribeMealSheet
+— those rows stay `unknown` = DEVICE-VERIFY DEBT (both sibling lanes live this session, emulator untouched
+per the scout-#3 collision lesson).
 
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
-| Food tab root | date strip + Select Date calendar sheet (`showingDatePicker`, logged-dots) — compiled-in (shared, os(Android) branches :410) | unknown | needs drive |
-| Food tab root | macro rings / donut summary | unknown | |
-| Food tab root | meal timeline sections + entry rows | unknown | |
-| Food tab root | entry row edit sheet (`editingEntry` → EditFoodEntrySheet — SharedUI, compiled both; beware stale SharedUICopy dupe, #1071) | unknown | needs drive |
-| Food tab root | serving stepper in edit sheet | unknown | |
-| Food tab root | add-food search sheet — **Android stand-in `AndroidFoodSearchSheet`, iOS FoodSearchView NOT ported** | deviation | #1062 |
-| Food tab root | barcode scanner fullScreenCover (`showingScanner`) | missing | #1063 |
-| Food tab root | recipe builder sheet — DRIFT_IOS_APP-gated :204, no Android trigger exists in source | missing | #1062 |
-| Food tab root | combos sheet ("···" entry iOS-gated :787) + combo log sheet (`comboToLog` iOS-gated :210; Android combo chips log DIRECTLY w/ toast undo — documented interim :753) | missing | #1062 |
-| Food tab root | goal setup sheet (`showingGoalSetup`) — sheet + BOTH macro-card tap affordances iOS-gated (:600/:612); gates flip in the GoalSetupView port | missing | #1117 (was #1067) |
-| Food tab root | plant points detail sheet — static row renders on Android (LeafShape stand-in), tap + chevron iOS-gated :634-641 | missing | #1062 |
-| Food tab root | confirm-log sheet (`showingConfirmLog`) — only trigger is the iOS-only contextMenu "Log Again" :1115 | missing | #1062 |
-| Food tab root | suggestion chips: iOS → FoodLogSheet/ComboLogSheet review; Android quick-logs DIRECTLY + toast undo (deliberate interim :753-781) — quick-log write needs drive | deviation | #1062 |
-| Food tab root | entry-row contextMenu (Edit/Favorite/Log Again/Copy-to-Today/Move) — Darwin-only by house rule, equivalents mapped (Edit=row tap, Delete=✕, Favorite/Copy=edit sheet); Log Again + Move Up/Down have NO Android path | deviation | #1062 |
-| Food tab root | Snap shortcut (safeAreaInset camera.viewfinder → PhotoLog) — DRIFT_IOS_APP :128-156 | missing | #1063 |
-| FoodSearchView (iOS) | search-first UX, sections, manual entry, recipe edit/rebuild sheets | missing | #1062 |
-| QuickAddView | ingredient picker + manual ingredient sheets | missing | #1062 |
-| CombosView | combo CRUD + log sheets + alerts — iOS-target file (Drift/Views/Food/), no Android entry | missing | #1062 |
-| MealReviewSheet / PhotoLogReviewView | editable review (all logging funnels through it on iOS) | missing | #1063 |
-| VoiceLogSheet (food) | voice food logging | missing | #1063 |
-| ManualFoodEntrySheet | manual macro entry — iOS-target file (Drift/Views/Food/) | missing | #1062 |
-| LogMealSheet | meal logging sheet — iOS-target file (Drift/Views/Food/) | missing | #1062 |
+| Food tab root | date strip + Select Date calendar sheet (`showingDatePicker`, logged-dots) — SHARED (MealCalendarPicker ported, os(Android) branches :410) | unknown | device-verify debt |
+| Food tab root | macro rings / donut summary — SHARED FoodTabView | unknown | device-verify debt |
+| Food tab root | meal timeline sections + entry rows — SHARED FoodTabView | unknown | device-verify debt |
+| Food tab root | entry row edit sheet (`editingEntry` → EditFoodEntrySheet, SharedUI ported; beware stale SharedUICopy dupe #1071) — cal/macro OVERRIDE fields reported dead to tap | broken | #1120 |
+| Food tab root | serving input in edit sheet (ServingInputView ported) | unknown | device-verify debt |
+| Food tab root | add-food search sheet — Android stand-in `AndroidFoodSearchSheet` (FoodTab.swift:39); iOS FoodSearchView (49KB, 6 sections + 7 sub-sheets) NOT ported; #1075 = stand-in returns-nothing break | deviation | #1138 |
+| Food tab root | recipe builder sheet (`showingRecipeBuilder` DRIFT_IOS_APP :203) → QuickAddView — no Android trigger | missing | #1139 |
+| Food tab root | manual food entry (`showingManual` → ManualFoodEntrySheet) — no Android manual-add path at all | missing | #1139 |
+| Food tab root | combos sheet (`showingCombos` iOS-gated :207/:787) + combo log sheet (`comboToLog` :210) → CombosView/ComboLogSheet; Android combo chips log DIRECTLY w/ toast undo (interim :753) | missing | #1140 |
+| Food tab root | goal setup sheet (`showingGoalSetup`) — sheet + BOTH macro-card tap affordances iOS-gated (:600/:612); gates flip in the GoalSetupView port | missing | #1117 |
+| Food tab root | plant points detail — static LeafShape row renders on Android; tap + expandable list iOS-gated :634-641 | missing | #1141 |
+| Food tab root | confirm-log sheet (`showingConfirmLog` :237) — only trigger is the iOS-only contextMenu "Log Again" :1115 | missing | #1141 |
+| Food tab root | barcode scanner fullScreenCover (`showingScanner` :165) | missing | #1063 |
+| Food tab root | Snap shortcut (safeAreaInset camera.viewfinder → PhotoLog) — DRIFT_IOS_APP :128-156 | missing | #1111 (#1063 seam) |
+| Food tab root | suggestion chips: iOS → FoodLogSheet/ComboLogSheet review; Android quick-logs DIRECTLY + toast undo (deliberate interim :753-781) — quick-log write needs drive | deviation | #1140/#1138 |
+| Food tab root | entry-row contextMenu (Edit/Favorite/Log Again/Copy/Move) — Darwin-only by house rule; Edit=row tap, Delete=✕, Favorite/Copy=edit sheet mapped; Log Again + Move Up/Down have NO Android path | deviation | #1141 |
+| FoodSearchView (iOS 49KB) | search-first UX: query + RECENT/COMBOS/FAVORITES/FREQUENT/YOUR FOODS/POPULAR sections, per-result FoodLogSheet, favorite swipe, recent 1-tap re-log | missing | #1138 |
+| FoodLogSheet / LogMealSheet | single-food + meal log sheets (serving + meal-type + Log; FAB "Log a meal" #1038) — funnel of the search hub | missing | #1138 |
+| QuickAddView (iOS 36KB) | ingredient picker + IngredientPickerView manual fields + servings + expandOnLog aggregate-vs-individual + save-as-recipe | missing | #1139 |
+| ManualFoodEntrySheet | manual macro entry (name/cal/P/C/F/fiber/serving) — iOS-target file | missing | #1139 |
+| CombosView + ComboLogSheet | combo/recipe CRUD (list, delete-swipe, Build→QuickAdd, per-item log sheet w/ servings) — iOS-target files, no Android entry | missing | #1140 |
+| PlantPointsCardView | plant-diversity card + expandable plant list — iOS-target file | missing | #1141 |
+| MealReviewSheet / PhotoLogReviewView | editable review (all photo/capture logging funnels through it on iOS) | missing | #1063 |
+| VoiceLogSheet (food) | voice food logging (speech→parse→review) — blocked on Android speech seam | missing | #1063 (#1126 seam) |
 
 ## Today (epic #1061 = INDEX · Android-only re-creation: TodayTab.swift 410 ln vs iOS DashboardView.swift + DashboardView+Cards.swift · scoped ports #1129–#1132)
 
