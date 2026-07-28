@@ -153,7 +153,7 @@ public enum ExerciseDatabase {
     /// One UserDefaults read shared by the derived caches, so a single
     /// `info(for:)` doesn't re-read the blob three times over.
     private static func customSnapshot() -> (blob: Data?, list: [ExerciseInfo]) {
-        let blob = UserDefaults.standard.data(forKey: customKey)
+        let blob = DriftPlatform.keyValueStore.data(forKey: customKey)
         cacheLock.lock()
         defer { cacheLock.unlock() }
         if let cached = _customCache, cached.blob == blob { return cached }
@@ -215,7 +215,7 @@ public enum ExerciseDatabase {
         }
         guard changed else { return }
         if let data = try? JSONEncoder().encode(customs) {
-            UserDefaults.standard.set(data, forKey: customKey)
+            DriftPlatform.keyValueStore.set(data, forKey: customKey)
         }
         _exercises = nil // clear cache so `all` reloads
     }

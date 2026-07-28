@@ -571,13 +571,13 @@ public enum WorkoutService {
     private static let exerciseFavoritesKey = "drift_exercise_favorites"
 
     public static var exerciseFavorites: Set<String> {
-        Set(UserDefaults.standard.stringArray(forKey: exerciseFavoritesKey) ?? [])
+        Set(DriftPlatform.keyValueStore.stringArray(forKey: exerciseFavoritesKey) ?? [])
     }
 
     public static func toggleExerciseFavorite(_ name: String) {
         var favs = exerciseFavorites
         if favs.contains(name) { favs.remove(name) } else { favs.insert(name) }
-        UserDefaults.standard.set(Array(favs), forKey: exerciseFavoritesKey)
+        DriftPlatform.keyValueStore.set(Array(favs), forKey: exerciseFavoritesKey)
     }
 
     /// Most recently used exercises (by last workout date), limited to N.
@@ -674,7 +674,7 @@ public enum WorkoutService {
     }
 
     public static func saveSession(_ session: SavedSession) {
-        let clearedAt = UserDefaults.standard.double(forKey: sessionClearedAtKey)
+        let clearedAt = DriftPlatform.keyValueStore.double(forKey: sessionClearedAtKey)
         guard session.startTime.timeIntervalSince1970 >= clearedAt - sessionClearGraceSeconds else {
             Log.app.info("Rejected stale session write for '\(session.workoutName)' — started before the last clearSession()")
             return
@@ -683,7 +683,7 @@ public enum WorkoutService {
         stamped.lastSavedAt = Date()
         if let data = try? JSONEncoder().encode(stamped),
            let json = String(data: data, encoding: .utf8) {
-            UserDefaults.standard.set(json, forKey: sessionKey)   // String → SharedPreferences putString; Data is dropped by the Skip bridge (#1102)
+            DriftPlatform.keyValueStore.set(json, forKey: sessionKey)   // String → SharedPreferences putString; Data is dropped by the Skip bridge (#1102)
         }
     }
 
@@ -693,8 +693,8 @@ public enum WorkoutService {
     /// entered sets are auto-saved as a completed workout dated to the day
     /// it actually happened; only a session with nothing logged is dropped.
     public static func loadSession(now: Date = Date()) -> SavedSession? {
-        let raw = UserDefaults.standard.string(forKey: sessionKey)?.data(using: .utf8)
-                ?? UserDefaults.standard.data(forKey: sessionKey)   // migrate pre-#1102 Data payloads
+        let raw = DriftPlatform.keyValueStore.string(forKey: sessionKey)?.data(using: .utf8)
+                ?? DriftPlatform.keyValueStore.data(forKey: sessionKey)   // migrate pre-#1102 Data payloads
         guard let raw, let session = try? JSONDecoder().decode(SavedSession.self, from: raw) else { return nil }
         let lastActivity = session.lastSavedAt ?? session.startTime
         if now.timeIntervalSince(lastActivity) > 5 * 3600 {
@@ -763,8 +763,8 @@ public enum WorkoutService {
     /// `now` is injectable for tests that need to persist deliberately
     /// backdated sessions after a clear (expiry tests).
     public static func clearSession(now: Date = Date()) {
-        UserDefaults.standard.removeObject(forKey: sessionKey)
-        UserDefaults.standard.set(now.timeIntervalSince1970, forKey: sessionClearedAtKey)
+        DriftPlatform.keyValueStore.removeObject(forKey: sessionKey)
+        DriftPlatform.keyValueStore.set(now.timeIntervalSince1970, forKey: sessionClearedAtKey)
     }
 
     public static var hasActiveSession: Bool {

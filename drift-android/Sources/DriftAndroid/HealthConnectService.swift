@@ -125,7 +125,7 @@ public final class HealthConnectService: HealthDataProvider {
     // MARK: Weight (the headline feature)
 
     @MainActor public func syncWeight() async throws -> Int {
-        let anchor = UserDefaults.standard.double(forKey: Self.anchorKey)
+        let anchor = DriftPlatform.keyValueStore.double(forKey: Self.anchorKey)
         // First sync: pull a year of history. After: overlap the anchor by 48h
         // so edits/late arrivals near the boundary are never missed (upsert
         // makes re-ingestion harmless).
@@ -139,7 +139,7 @@ public final class HealthConnectService: HealthDataProvider {
     }
 
     @MainActor public func fullResyncWeight() async throws -> Int {
-        UserDefaults.standard.removeObject(forKey: Self.anchorKey)
+        DriftPlatform.keyValueStore.removeObject(forKey: Self.anchorKey)
         let fiveYearsAgo = Date().addingTimeInterval(-5 * 365 * 24 * 3600).timeIntervalSince1970 * 1000
         return try await Self.ingestWeights(startMillis: Int64(fiveYearsAgo))
     }
@@ -167,7 +167,7 @@ public final class HealthConnectService: HealthDataProvider {
                 newestMillis = max(newestMillis, Int64(t))
             }
         }
-        UserDefaults.standard.set(Double(newestMillis), forKey: anchorKey)
+        DriftPlatform.keyValueStore.set(Double(newestMillis), forKey: anchorKey)
         logger.info("HealthConnect weight sync: \(records.count) day-records, \(count) saved")
         return count
     }

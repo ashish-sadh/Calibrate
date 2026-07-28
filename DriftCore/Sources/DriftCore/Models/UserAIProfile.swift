@@ -17,7 +17,7 @@ public struct UserAIProfile: Codable, Sendable {
     }
 
     public static func load() -> UserAIProfile {
-        guard let data = UserDefaults.standard.data(forKey: key),
+        guard let data = DriftPlatform.keyValueStore.data(forKey: key),
               let profile = try? JSONDecoder().decode(UserAIProfile.self, from: data)
         else { return UserAIProfile() }
         return profile
@@ -25,10 +25,10 @@ public struct UserAIProfile: Codable, Sendable {
 
     public static func save(_ profile: UserAIProfile) {
         guard let data = try? JSONEncoder().encode(profile) else { return }
-        UserDefaults.standard.set(data, forKey: key)
+        DriftPlatform.keyValueStore.set(data, forKey: key)
     }
 
     public static func clear() {
-        UserDefaults.standard.removeObject(forKey: key)
+        DriftPlatform.keyValueStore.removeObject(forKey: key)
     }
 }

@@ -37,6 +37,12 @@ let logger: Logger = Logger(subsystem: "com.drift.health", category: "DriftAndro
         // seam must be set synchronously — before the first view reads it.
         MainActor.assumeIsolated {
             DriftPlatform.health = HealthConnectService.shared
+            // Durable key-value seam (#1108): Skip's UserDefaults never flushes
+            // to disk, so route settings + the active workout + sync anchors
+            // through SQLite. Installed here (before views); its cache is primed
+            // off-main during warm-up (CoreResourcesBootstrap) so it never
+            // touches AppDatabase.shared on this main thread.
+            DriftPlatform.keyValueStore = DbKeyValueStore()
         }
     }
 

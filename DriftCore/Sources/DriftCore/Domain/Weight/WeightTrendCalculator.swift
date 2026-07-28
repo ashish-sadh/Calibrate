@@ -757,7 +757,7 @@ public enum WeightTrendCalculator {
     private static let configKey = "drift_algorithm_config"
 
     public static func loadConfig() -> AlgorithmConfig {
-        guard let data = UserDefaults.standard.data(forKey: configKey),
+        guard let data = DriftPlatform.keyValueStore.data(forKey: configKey),
               let config = try? JSONDecoder().decode(AlgorithmConfig.self, from: data) else {
             return .default
         }
@@ -766,7 +766,7 @@ public enum WeightTrendCalculator {
 
     public static func saveConfig(_ config: AlgorithmConfig) {
         if let data = try? JSONEncoder().encode(config) {
-            UserDefaults.standard.set(data, forKey: configKey)
+            DriftPlatform.keyValueStore.set(data, forKey: configKey)
         }
     }
 }

@@ -20,6 +20,10 @@ enum CoreResourcesBootstrap {
     private static let warmTask: Task<Void, Never> = Task.detached(priority: .userInitiated) {
         install()
         _ = try? AppDatabase.shared.searchFoods(query: "warmup", limit: 1)
+        // The shared DB is now open off-main — prime the durable key-value cache
+        // (#1108) here, before isWarm flips, so views that gate on warmth read
+        // persisted settings/goal directly instead of transient defaults.
+        (DriftPlatform.keyValueStore as? DbKeyValueStore)?.prime()
         await MainActor.run { isWarm = true }
     }
 

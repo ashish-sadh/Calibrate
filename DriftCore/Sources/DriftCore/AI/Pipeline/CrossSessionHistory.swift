@@ -27,13 +27,13 @@ public enum CrossSessionHistory {
         }
         guard !kept.isEmpty,
               let data = try? JSONEncoder().encode(Persisted(turns: kept, savedAt: Date())) else { return }
-        UserDefaults.standard.set(data, forKey: key)
+        DriftPlatform.keyValueStore.set(data, forKey: key)
     }
 
     /// Load persisted turns if saved within the 24 h TTL, else return nil.
     public static func loadIfFresh(now: Date = Date()) -> [HistoryTurn]? {
         guard Preferences.conversationHistoryEnabled,
-              let data = UserDefaults.standard.data(forKey: key),
+              let data = DriftPlatform.keyValueStore.data(forKey: key),
               let stored = try? JSONDecoder().decode(Persisted.self, from: data),
               now.timeIntervalSince(stored.savedAt) < ttl,
               !stored.turns.isEmpty else { return nil }
@@ -43,6 +43,6 @@ public enum CrossSessionHistory {
     }
 
     public static func clear() {
-        UserDefaults.standard.removeObject(forKey: key)
+        DriftPlatform.keyValueStore.removeObject(forKey: key)
     }
 }

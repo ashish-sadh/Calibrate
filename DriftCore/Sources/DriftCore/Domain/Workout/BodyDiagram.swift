@@ -69,7 +69,7 @@ public enum BodyDiagram {
         // Decodes only the sex field of the TDEE config — TDEEEstimator is
         // MainActor-isolated and this must stay callable from any context.
         struct SexProbe: Decodable { let sex: TDEEEstimator.Sex? }
-        guard let data = UserDefaults.standard.data(forKey: "drift_tdee_config"),
+        guard let data = DriftPlatform.keyValueStore.data(forKey: "drift_tdee_config"),
               let probe = try? JSONDecoder().decode(SexProbe.self, from: data) else { return .male }
         return probe.sex == .female ? .female : .male
     }

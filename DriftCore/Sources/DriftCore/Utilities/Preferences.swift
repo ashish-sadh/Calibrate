@@ -5,19 +5,25 @@ import Foundation
 /// `CloudVisionProvider` enum) live in a Drift-side extension.
 public enum Preferences {
 
+    /// All reads/writes route through the platform key–value seam: on iOS/macOS
+    /// the default store forwards to `UserDefaults.standard` (behaviour
+    /// unchanged), on Android a SQLite-backed store, because Skip Fuse's
+    /// SharedPreferences never durably persists (#1108).
+    private static var kv: KeyValueStore { DriftPlatform.keyValueStore }
+
     // MARK: - Weight Unit
 
     private static let weightUnitKey = "weight_unit"
 
     public static var weightUnit: WeightUnit {
         get {
-            guard let raw = UserDefaults.standard.string(forKey: weightUnitKey),
+            guard let raw = kv.string(forKey: weightUnitKey),
                   let unit = WeightUnit(rawValue: raw) else {
                 return .lbs
             }
             return unit
         }
-        set { UserDefaults.standard.set(newValue.rawValue, forKey: weightUnitKey) }
+        set { kv.set(newValue.rawValue, forKey: weightUnitKey) }
     }
 
     // MARK: - Cycle
@@ -25,8 +31,8 @@ public enum Preferences {
     private static let cycleFertileWindowKey = "drift_cycle_fertile_window"
 
     public static var cycleFertileWindow: Bool {
-        get { UserDefaults.standard.bool(forKey: cycleFertileWindowKey) }
-        set { UserDefaults.standard.set(newValue, forKey: cycleFertileWindowKey) }
+        get { kv.bool(forKey: cycleFertileWindowKey) }
+        set { kv.set(newValue, forKey: cycleFertileWindowKey) }
     }
 
     // MARK: - AI
@@ -40,8 +46,8 @@ public enum Preferences {
     // available; there is nothing to opt into. Mirrors the @AppStorage
     // flip in ContentView.swift + DashboardView.swift.
     public static var aiEnabled: Bool {
-        get { (UserDefaults.standard.object(forKey: aiEnabledKey) as? Bool) ?? true }
-        set { UserDefaults.standard.set(newValue, forKey: aiEnabledKey) }
+        get { kv.boolOrNil(forKey: aiEnabledKey) ?? true }
+        set { kv.set(newValue, forKey: aiEnabledKey) }
     }
 
     // MARK: - Online Food Search
@@ -52,10 +58,10 @@ public enum Preferences {
     /// when local results are insufficient. Default: ON.
     public static var onlineFoodSearchEnabled: Bool {
         get {
-            if UserDefaults.standard.object(forKey: onlineFoodSearchKey) == nil { return true }
-            return UserDefaults.standard.bool(forKey: onlineFoodSearchKey)
+            if !kv.hasValue(forKey: onlineFoodSearchKey) { return true }
+            return kv.bool(forKey: onlineFoodSearchKey)
         }
-        set { UserDefaults.standard.set(newValue, forKey: onlineFoodSearchKey) }
+        set { kv.set(newValue, forKey: onlineFoodSearchKey) }
     }
 
     // MARK: - Apple Foundation Models extraction (design-665)
@@ -71,10 +77,10 @@ public enum Preferences {
     /// for users who hit a regression.
     public static var fmNutritionExtractEnabled: Bool {
         get {
-            if UserDefaults.standard.object(forKey: fmNutritionExtractKey) == nil { return true }
-            return UserDefaults.standard.bool(forKey: fmNutritionExtractKey)
+            if !kv.hasValue(forKey: fmNutritionExtractKey) { return true }
+            return kv.bool(forKey: fmNutritionExtractKey)
         }
-        set { UserDefaults.standard.set(newValue, forKey: fmNutritionExtractKey) }
+        set { kv.set(newValue, forKey: fmNutritionExtractKey) }
     }
 
     private static let fmWorkoutExtractKey = "drift_fm_workout_extract"
@@ -87,10 +93,10 @@ public enum Preferences {
     /// to regex everywhere.
     public static var fmWorkoutExtractEnabled: Bool {
         get {
-            if UserDefaults.standard.object(forKey: fmWorkoutExtractKey) == nil { return true }
-            return UserDefaults.standard.bool(forKey: fmWorkoutExtractKey)
+            if !kv.hasValue(forKey: fmWorkoutExtractKey) { return true }
+            return kv.bool(forKey: fmWorkoutExtractKey)
         }
-        set { UserDefaults.standard.set(newValue, forKey: fmWorkoutExtractKey) }
+        set { kv.set(newValue, forKey: fmWorkoutExtractKey) }
     }
 
     private static let fmCompositeFoodExtractKey = "drift_fm_composite_food_extract"
@@ -105,10 +111,10 @@ public enum Preferences {
     /// to regex everywhere.
     public static var fmCompositeFoodExtractEnabled: Bool {
         get {
-            if UserDefaults.standard.object(forKey: fmCompositeFoodExtractKey) == nil { return true }
-            return UserDefaults.standard.bool(forKey: fmCompositeFoodExtractKey)
+            if !kv.hasValue(forKey: fmCompositeFoodExtractKey) { return true }
+            return kv.bool(forKey: fmCompositeFoodExtractKey)
         }
-        set { UserDefaults.standard.set(newValue, forKey: fmCompositeFoodExtractKey) }
+        set { kv.set(newValue, forKey: fmCompositeFoodExtractKey) }
     }
 
     private static let fmFoodIntentExtractKey = "drift_fm_food_intent_extract"
@@ -123,10 +129,10 @@ public enum Preferences {
     /// to revert to regex everywhere.
     public static var fmFoodIntentExtractEnabled: Bool {
         get {
-            if UserDefaults.standard.object(forKey: fmFoodIntentExtractKey) == nil { return true }
-            return UserDefaults.standard.bool(forKey: fmFoodIntentExtractKey)
+            if !kv.hasValue(forKey: fmFoodIntentExtractKey) { return true }
+            return kv.bool(forKey: fmFoodIntentExtractKey)
         }
-        set { UserDefaults.standard.set(newValue, forKey: fmFoodIntentExtractKey) }
+        set { kv.set(newValue, forKey: fmFoodIntentExtractKey) }
     }
 
     // MARK: - Health Nudges
@@ -134,8 +140,8 @@ public enum Preferences {
     private static let healthNudgesKey = "drift_health_nudges"
 
     public static var healthNudgesEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: healthNudgesKey) }
-        set { UserDefaults.standard.set(newValue, forKey: healthNudgesKey) }
+        get { kv.bool(forKey: healthNudgesKey) }
+        set { kv.set(newValue, forKey: healthNudgesKey) }
     }
 
     // MARK: - Hydration
@@ -145,10 +151,10 @@ public enum Preferences {
     /// Daily water intake goal in millilitres. Default: 2000ml.
     public static var waterGoalMl: Double {
         get {
-            let v = UserDefaults.standard.double(forKey: waterGoalMlKey)
+            let v = kv.double(forKey: waterGoalMlKey)
             return v > 0 ? v : 2000
         }
-        set { UserDefaults.standard.set(newValue, forKey: waterGoalMlKey) }
+        set { kv.set(newValue, forKey: waterGoalMlKey) }
     }
 
     // MARK: - Coach Voice / Talk Mode
@@ -165,10 +171,10 @@ public enum Preferences {
     /// as broken (field report 2026-07-10).
     public static var coachVoiceEnabled: Bool {
         get {
-            guard UserDefaults.standard.object(forKey: coachVoiceKey) != nil else { return true }
-            return UserDefaults.standard.bool(forKey: coachVoiceKey)
+            guard kv.hasValue(forKey: coachVoiceKey) else { return true }
+            return kv.bool(forKey: coachVoiceKey)
         }
-        set { UserDefaults.standard.set(newValue, forKey: coachVoiceKey) }
+        set { kv.set(newValue, forKey: coachVoiceKey) }
     }
 
     /// One-time migrations for the coach voice flag.
@@ -180,13 +186,13 @@ public enum Preferences {
     /// from here the speaker toggle records real user choice and persists
     /// normally.
     public static func migrateCoachVoiceIfNeeded() {
-        if !UserDefaults.standard.bool(forKey: coachVoiceV2MigratedKey) {
-            UserDefaults.standard.set(false, forKey: coachVoiceKey)
-            UserDefaults.standard.set(true, forKey: coachVoiceV2MigratedKey)
+        if !kv.bool(forKey: coachVoiceV2MigratedKey) {
+            kv.set(false, forKey: coachVoiceKey)
+            kv.set(true, forKey: coachVoiceV2MigratedKey)
         }
-        if !UserDefaults.standard.bool(forKey: coachVoiceV3MigratedKey) {
-            UserDefaults.standard.removeObject(forKey: coachVoiceKey)
-            UserDefaults.standard.set(true, forKey: coachVoiceV3MigratedKey)
+        if !kv.bool(forKey: coachVoiceV3MigratedKey) {
+            kv.removeObject(forKey: coachVoiceKey)
+            kv.set(true, forKey: coachVoiceV3MigratedKey)
         }
     }
 
@@ -198,8 +204,8 @@ public enum Preferences {
     /// (turning it on implies voice replies). Toggled by the speaker button at the
     /// top of the coach. Default OFF. #coach-talk-mode.
     public static var coachTalkModeEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: coachTalkModeKey) }
-        set { UserDefaults.standard.set(newValue, forKey: coachTalkModeKey) }
+        get { kv.bool(forKey: coachTalkModeKey) }
+        set { kv.set(newValue, forKey: coachTalkModeKey) }
     }
 
     private static let coachCloudFoodParseKey = "drift_coach_cloud_food_parse_enabled"
@@ -209,8 +215,8 @@ public enum Preferences {
     /// back to the on-device extractor / ad-hoc entry (also lets unit tests force
     /// the offline path). #food-logging-reuse
     public static var coachCloudFoodParseEnabled: Bool {
-        get { UserDefaults.standard.object(forKey: coachCloudFoodParseKey) as? Bool ?? true }
-        set { UserDefaults.standard.set(newValue, forKey: coachCloudFoodParseKey) }
+        get { kv.boolOrNil(forKey: coachCloudFoodParseKey) ?? true }
+        set { kv.set(newValue, forKey: coachCloudFoodParseKey) }
     }
 
     private static let mealRemindersKey = "drift_meal_reminders"
@@ -220,8 +226,8 @@ public enum Preferences {
     /// haven't logged that meal yet today. Default OFF — opt-in like
     /// Photo Log Beta. #385 / #690.
     public static var mealRemindersEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: mealRemindersKey) }
-        set { UserDefaults.standard.set(newValue, forKey: mealRemindersKey) }
+        get { kv.bool(forKey: mealRemindersKey) }
+        set { kv.set(newValue, forKey: mealRemindersKey) }
     }
 
     private static let useEatingPatternsForRemindersKey = "drift_meal_reminders_use_patterns"
@@ -233,10 +239,10 @@ public enum Preferences {
     public static var useEatingPatternsForReminders: Bool {
         get {
             // Absent → default to true. New install gets the smart path.
-            if UserDefaults.standard.object(forKey: useEatingPatternsForRemindersKey) == nil { return true }
-            return UserDefaults.standard.bool(forKey: useEatingPatternsForRemindersKey)
+            if !kv.hasValue(forKey: useEatingPatternsForRemindersKey) { return true }
+            return kv.bool(forKey: useEatingPatternsForRemindersKey)
         }
-        set { UserDefaults.standard.set(newValue, forKey: useEatingPatternsForRemindersKey) }
+        set { kv.set(newValue, forKey: useEatingPatternsForRemindersKey) }
     }
 
     // MARK: - Medication Reminders
@@ -247,8 +253,8 @@ public enum Preferences {
     /// user's typical log time, only when they've logged a medication 3+ times
     /// (consistent pattern) and haven't logged it yet today. Default OFF. #592.
     public static var medicationRemindersEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: medicationRemindersKey) }
-        set { UserDefaults.standard.set(newValue, forKey: medicationRemindersKey) }
+        get { kv.bool(forKey: medicationRemindersKey) }
+        set { kv.set(newValue, forKey: medicationRemindersKey) }
     }
 
     // MARK: - GLP-1 Reminders
@@ -258,8 +264,8 @@ public enum Preferences {
     /// Weekly notification on the user's injection day, only when no dose logged in the last 7 days.
     /// Default OFF. #620.
     public static var glp1RemindersEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: glp1RemindersKey) }
-        set { UserDefaults.standard.set(newValue, forKey: glp1RemindersKey) }
+        get { kv.bool(forKey: glp1RemindersKey) }
+        set { kv.set(newValue, forKey: glp1RemindersKey) }
     }
 
     // MARK: - Conversation History
@@ -268,10 +274,10 @@ public enum Preferences {
 
     public static var conversationHistoryEnabled: Bool {
         get {
-            if UserDefaults.standard.object(forKey: conversationHistoryEnabledKey) == nil { return true }
-            return UserDefaults.standard.bool(forKey: conversationHistoryEnabledKey)
+            if !kv.hasValue(forKey: conversationHistoryEnabledKey) { return true }
+            return kv.bool(forKey: conversationHistoryEnabledKey)
         }
-        set { UserDefaults.standard.set(newValue, forKey: conversationHistoryEnabledKey) }
+        set { kv.set(newValue, forKey: conversationHistoryEnabledKey) }
     }
 
     // MARK: - Chat Telemetry
@@ -279,8 +285,8 @@ public enum Preferences {
     private static let chatTelemetryEnabledKey = "drift_chat_telemetry_enabled"
 
     public static var chatTelemetryEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: chatTelemetryEnabledKey) }
-        set { UserDefaults.standard.set(newValue, forKey: chatTelemetryEnabledKey) }
+        get { kv.bool(forKey: chatTelemetryEnabledKey) }
+        set { kv.set(newValue, forKey: chatTelemetryEnabledKey) }
     }
 
     // MARK: - Remote Model
@@ -290,8 +296,8 @@ public enum Preferences {
     /// When enabled, AI chat routes through a remote model (Anthropic/OpenAI) on Wi-Fi.
     /// Default: OFF. Not exposed in production UI — architectural prep only.
     public static var useRemoteModelOnWiFi: Bool {
-        get { UserDefaults.standard.bool(forKey: useRemoteModelOnWiFiKey) }
-        set { UserDefaults.standard.set(newValue, forKey: useRemoteModelOnWiFiKey) }
+        get { kv.bool(forKey: useRemoteModelOnWiFiKey) }
+        set { kv.set(newValue, forKey: useRemoteModelOnWiFiKey) }
     }
 
     // MARK: - Preferred AI Backend (chat routing)
@@ -308,10 +314,10 @@ public enum Preferences {
     /// `LocalAIService` swaps the underlying backend in place.
     public static var preferredAIBackend: AIBackendType {
         get {
-            let raw = UserDefaults.standard.string(forKey: preferredAIBackendKey) ?? ""
+            let raw = kv.string(forKey: preferredAIBackendKey) ?? ""
             return AIBackendType(rawValue: raw) ?? .llamaCpp
         }
-        set { UserDefaults.standard.set(newValue.rawValue, forKey: preferredAIBackendKey) }
+        set { kv.set(newValue.rawValue, forKey: preferredAIBackendKey) }
     }
 
     // MARK: - FM NO-GO one-time migration (#872)
@@ -327,8 +333,8 @@ public enum Preferences {
     /// preference so the user lands on the on-device download chooser instead
     /// of a dead / silently sub-bar FM chat. Runs once; default false.
     public static var didRunFMNoGoMigration: Bool {
-        get { UserDefaults.standard.bool(forKey: didRunFMNoGoMigrationKey) }
-        set { UserDefaults.standard.set(newValue, forKey: didRunFMNoGoMigrationKey) }
+        get { kv.bool(forKey: didRunFMNoGoMigrationKey) }
+        set { kv.set(newValue, forKey: didRunFMNoGoMigrationKey) }
     }
 
     // MARK: - Coach cloud-first one-time default (#coach-speed)
@@ -342,8 +348,8 @@ public enum Preferences {
     /// Pro where Metal degrades to CPU). One-time so a later explicit on-device
     /// pick is never clobbered. Default false.
     public static var didDefaultCoachToCloud: Bool {
-        get { UserDefaults.standard.bool(forKey: didDefaultCoachToCloudKey) }
-        set { UserDefaults.standard.set(newValue, forKey: didDefaultCoachToCloudKey) }
+        get { kv.bool(forKey: didDefaultCoachToCloudKey) }
+        set { kv.set(newValue, forKey: didDefaultCoachToCloudKey) }
     }
 
     // MARK: - USDA API Key
@@ -354,8 +360,8 @@ public enum Preferences {
     /// to raise the rate limit from 1,000 req/day (DEMO_KEY) to 3,600 req/hour.
     /// When empty, USDAFoodService falls back to DEMO_KEY.
     public static var usdaApiKey: String {
-        get { UserDefaults.standard.string(forKey: usdaApiKeyKey) ?? "" }
-        set { UserDefaults.standard.set(newValue, forKey: usdaApiKeyKey) }
+        get { kv.string(forKey: usdaApiKeyKey) ?? "" }
+        set { kv.set(newValue, forKey: usdaApiKeyKey) }
     }
 
     // MARK: - Web Search API Keys (coach web_search provider ladder)
@@ -368,15 +374,15 @@ public enum Preferences {
     /// "Custom Search API"). Needs `googleSearchEngineId` alongside. Free 100
     /// queries/day. Preferred rung of the web_search ladder when both are set.
     public static var googleSearchApiKey: String {
-        get { UserDefaults.standard.string(forKey: googleSearchApiKeyKey) ?? "" }
-        set { UserDefaults.standard.set(newValue, forKey: googleSearchApiKeyKey) }
+        get { kv.string(forKey: googleSearchApiKeyKey) ?? "" }
+        set { kv.set(newValue, forKey: googleSearchApiKeyKey) }
     }
 
     /// Programmable Search Engine ID (`cx`) from programmablesearchengine.google.com
     /// — create an engine with "Search the entire web" enabled.
     public static var googleSearchEngineId: String {
-        get { UserDefaults.standard.string(forKey: googleSearchEngineIdKey) ?? "" }
-        set { UserDefaults.standard.set(newValue, forKey: googleSearchEngineIdKey) }
+        get { kv.string(forKey: googleSearchEngineIdKey) ?? "" }
+        set { kv.set(newValue, forKey: googleSearchEngineIdKey) }
     }
 
     /// Brave Search API key — alternate ladder rung (https://brave.com/search/api/,
@@ -384,18 +390,18 @@ public enum Preferences {
     /// DuckDuckGo Instant Answers (keyless, weak for nutrition). Same
     /// UserDefaults pattern as `usdaApiKey`.
     public static var braveSearchApiKey: String {
-        get { UserDefaults.standard.string(forKey: braveSearchApiKeyKey) ?? "" }
-        set { UserDefaults.standard.set(newValue, forKey: braveSearchApiKeyKey) }
+        get { kv.string(forKey: braveSearchApiKeyKey) ?? "" }
+        set { kv.set(newValue, forKey: braveSearchApiKeyKey) }
     }
 
     // MARK: - Alert dismissed-until timestamps (Unix epoch seconds; 0 = never dismissed)
 
     public static func alertDismissedUntil(key: String) -> Double {
-        UserDefaults.standard.double(forKey: "drift_alert_dismissed_\(key)")
+        kv.double(forKey: "drift_alert_dismissed_\(key)")
     }
 
     public static func setAlertDismissedUntil(key: String, until: Double) {
-        UserDefaults.standard.set(until, forKey: "drift_alert_dismissed_\(key)")
+        kv.set(until, forKey: "drift_alert_dismissed_\(key)")
     }
 
     // MARK: - Apple Health nutrition write-back (#934)
@@ -408,9 +414,9 @@ public enum Preferences {
     /// from Settings; the writer also auto-disables this (recording a reason)
     /// when another app is detected writing nutrition, to avoid double counts.
     public static var healthNutritionWriteEnabled: Bool {
-        get { UserDefaults.standard.bool(forKey: healthNutritionWriteKey) }
+        get { kv.bool(forKey: healthNutritionWriteKey) }
         set {
-            UserDefaults.standard.set(newValue, forKey: healthNutritionWriteKey)
+            kv.set(newValue, forKey: healthNutritionWriteKey)
             if newValue { healthNutritionAutoDisableReason = nil }
         }
     }
@@ -419,8 +425,8 @@ public enum Preferences {
     /// writing nutrition to Health") — surfaced in Settings. nil when the
     /// toggle hasn't been auto-disabled.
     public static var healthNutritionAutoDisableReason: String? {
-        get { UserDefaults.standard.string(forKey: healthNutritionAutoDisableKey) }
-        set { UserDefaults.standard.set(newValue, forKey: healthNutritionAutoDisableKey) }
+        get { kv.string(forKey: healthNutritionAutoDisableKey) }
+        set { kv.set(newValue, forKey: healthNutritionAutoDisableKey) }
     }
 
     // MARK: - Install Date + Feedback Prompt (#759)
@@ -433,14 +439,14 @@ public enum Preferences {
     /// the 7-day Feedback activation banner on the dashboard.
     public static var installDate: Date? {
         get {
-            let v = UserDefaults.standard.double(forKey: installDateKey)
+            let v = kv.double(forKey: installDateKey)
             return v > 0 ? Date(timeIntervalSince1970: v) : nil
         }
         set {
             if let v = newValue {
-                UserDefaults.standard.set(v.timeIntervalSince1970, forKey: installDateKey)
+                kv.set(v.timeIntervalSince1970, forKey: installDateKey)
             } else {
-                UserDefaults.standard.removeObject(forKey: installDateKey)
+                kv.removeObject(forKey: installDateKey)
             }
         }
     }
@@ -449,16 +455,16 @@ public enum Preferences {
     /// Called once from DriftApp launch so the install timestamp survives
     /// across app updates.
     public static func seedInstallDateIfNeeded(now: Date = Date()) {
-        if UserDefaults.standard.double(forKey: installDateKey) <= 0 {
-            UserDefaults.standard.set(now.timeIntervalSince1970, forKey: installDateKey)
+        if kv.double(forKey: installDateKey) <= 0 {
+            kv.set(now.timeIntervalSince1970, forKey: installDateKey)
         }
     }
 
     /// True once the user has tapped (or dismissed) the dashboard Feedback
     /// banner. Banner predicate uses this to suppress redisplay forever.
     public static var hasSeenFeedbackPrompt: Bool {
-        get { UserDefaults.standard.bool(forKey: feedbackPromptSeenKey) }
-        set { UserDefaults.standard.set(newValue, forKey: feedbackPromptSeenKey) }
+        get { kv.bool(forKey: feedbackPromptSeenKey) }
+        set { kv.set(newValue, forKey: feedbackPromptSeenKey) }
     }
 
     /// Pure predicate: show the dashboard Feedback banner when the user is in

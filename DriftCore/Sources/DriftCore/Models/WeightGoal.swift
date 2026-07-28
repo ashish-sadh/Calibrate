@@ -115,7 +115,7 @@ public struct WeightGoal: Codable, Sendable {
     /// Minimum fat intake — sex-aware, protects hormones, vitamin absorption, and satiety.
     public static func minimumFatG(bodyweightKg: Double, calorieTarget: Double?, isFemale: Bool? = nil) -> Double {
         let female: Bool? = isFemale ?? {
-            guard let data = UserDefaults.standard.data(forKey: "drift_tdee_config"),
+            guard let data = DriftPlatform.keyValueStore.data(forKey: "drift_tdee_config"),
                   let config = try? JSONDecoder().decode(TDEEEstimator.TDEEConfig.self, from: data) else { return nil }
             return config.sex == .female
         }()
@@ -320,7 +320,7 @@ public struct WeightGoal: Codable, Sendable {
     nonisolated(unsafe) private static var cachedGoal: WeightGoal?
 
     public static func load() -> WeightGoal? {
-        let data = UserDefaults.standard.data(forKey: storageKey)
+        let data = DriftPlatform.keyValueStore.data(forKey: storageKey)
         cacheLock.lock()
         if data == cachedData {
             let cached = cachedGoal
@@ -339,7 +339,7 @@ public struct WeightGoal: Codable, Sendable {
 
     public func save() {
         if let data = try? JSONEncoder().encode(self) {
-            UserDefaults.standard.set(data, forKey: Self.storageKey)
+            DriftPlatform.keyValueStore.set(data, forKey: Self.storageKey)
             Log.app.info("Weight goal saved: target=\(targetWeightKg)kg in \(monthsToAchieve) months")
         } else {
             Log.app.error("Failed to encode weight goal")
@@ -347,7 +347,6 @@ public struct WeightGoal: Codable, Sendable {
     }
 
     public static func clear() {
-        UserDefaults.standard.removeObject(forKey: storageKey)
-        UserDefaults.standard.synchronize()
+        DriftPlatform.keyValueStore.removeObject(forKey: storageKey)
     }
 }

@@ -83,7 +83,7 @@ public final class TDEEEstimator {
     private static let configKey = "drift_tdee_config"
 
     public static func loadConfig() -> TDEEConfig {
-        guard let data = UserDefaults.standard.data(forKey: configKey),
+        guard let data = DriftPlatform.keyValueStore.data(forKey: configKey),
               let config = try? JSONDecoder().decode(TDEEConfig.self, from: data) else {
             return .default
         }
@@ -92,10 +92,10 @@ public final class TDEEEstimator {
 
     public static func saveConfig(_ config: TDEEConfig) {
         if let data = try? JSONEncoder().encode(config) {
-            UserDefaults.standard.set(data, forKey: configKey)
+            DriftPlatform.keyValueStore.set(data, forKey: configKey)
         }
         shared.current = nil
-        UserDefaults.standard.removeObject(forKey: shared.cacheKey)
+        DriftPlatform.keyValueStore.removeObject(forKey: shared.cacheKey)
     }
 
     // MARK: - Estimate
@@ -471,12 +471,12 @@ public final class TDEEEstimator {
 
     private func cache(_ estimate: Estimate) {
         if let data = try? JSONEncoder().encode(estimate) {
-            UserDefaults.standard.set(data, forKey: cacheKey)
+            DriftPlatform.keyValueStore.set(data, forKey: cacheKey)
         }
     }
 
     private func loadCache() -> Estimate? {
-        guard let data = UserDefaults.standard.data(forKey: cacheKey),
+        guard let data = DriftPlatform.keyValueStore.data(forKey: cacheKey),
               let est = try? JSONDecoder().decode(Estimate.self, from: data) else { return nil }
         if Date().timeIntervalSince(est.timestamp) > 6 * 3600 { return nil }
         return est

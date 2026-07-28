@@ -64,17 +64,17 @@ public struct TrainingProfile: Codable, Equatable, Sendable {
     // MARK: - Persistence
 
     public static func load() -> TrainingProfile? {
-        guard let data = UserDefaults.standard.data(forKey: storageKey) else { return nil }
+        guard let data = DriftPlatform.keyValueStore.data(forKey: storageKey) else { return nil }
         return try? JSONDecoder().decode(TrainingProfile.self, from: data)
     }
 
     public func save() {
         guard let data = try? JSONEncoder().encode(self) else { return }
-        UserDefaults.standard.set(data, forKey: Self.storageKey)
+        DriftPlatform.keyValueStore.set(data, forKey: Self.storageKey)
     }
 
     public static func clear() {
-        UserDefaults.standard.removeObject(forKey: storageKey)
+        DriftPlatform.keyValueStore.removeObject(forKey: storageKey)
     }
 
     // MARK: - Derived

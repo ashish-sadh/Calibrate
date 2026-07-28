@@ -124,14 +124,14 @@ public enum MuscleSoreness {
     private static let stateKey = "drift_muscle_soreness_state"
 
     public static func loadState() -> State {
-        guard let data = UserDefaults.standard.data(forKey: stateKey),
+        guard let data = DriftPlatform.keyValueStore.data(forKey: stateKey),
               let state = try? JSONDecoder().decode(State.self, from: data) else { return State() }
         return state
     }
 
     public static func saveState(_ state: State) {
         if let data = try? JSONEncoder().encode(state) {
-            UserDefaults.standard.set(data, forKey: stateKey)
+            DriftPlatform.keyValueStore.set(data, forKey: stateKey)
         }
     }
 }

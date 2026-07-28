@@ -9,7 +9,7 @@ public enum Migrations {
     /// fails with `Int.fetchOne(grdb_migrations) != currentVersion`.
     /// Stamped into the backup manifest so restore can detect a
     /// forward/backward migration scenario.
-    public static let currentVersion = 47
+    public static let currentVersion = 48
 
     public static func registerAll(_ migrator: inout DatabaseMigrator) {
         // v1: Weight tracking
@@ -758,6 +758,20 @@ public enum Migrations {
                 t.primaryKey(["entity_type", "local_id"])
             }
             try db.create(indexOn: "sync_map", columns: ["server_uuid"])
+        }
+
+        // v48 (#1108): durable backing for the Android key-value store. Skip
+        // Fuse's SharedPreferences-backed UserDefaults never flushes to disk,
+        // so every setting, the active-workout session (#1102), and sync
+        // anchors were lost on process death. SQLite is proven durable on that
+        // build; DbKeyValueStore reads/writes this table via DriftPlatform's
+        // keyValueStore seam. iOS keeps using UserDefaults through the same
+        // seam and never touches this table.
+        migrator.registerMigration("v48_app_pref") { db in
+            try db.create(table: "app_pref") { t in
+                t.column("key", .text).primaryKey()
+                t.column("value", .text).notNull()
+            }
         }
     }
 
