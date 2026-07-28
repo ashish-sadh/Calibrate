@@ -9,7 +9,13 @@ struct ContentView: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
+            // .id(selectedTab) forces the outgoing tab (and any NavigationStack
+            // it pushed) to be torn down on a tab switch. Without it, a pushed
+            // destination's Compose NavHost stays composed on top, so tapping
+            // the pill bar while on a sub-screen (e.g. More → Friends) did
+            // nothing — only the system back button worked. #android-tab-switch
             tabContent
+                .id(selectedTab)
 
             HStack(spacing: 8) {
                 PillTabBar(selected: $selectedTab)

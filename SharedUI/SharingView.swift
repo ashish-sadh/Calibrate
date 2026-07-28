@@ -390,8 +390,13 @@ struct SharingView: View {
     // MARK: - Actions
 
     private func bootstrap() async {
-        // Signed in with a username → straight to the hub; otherwise show the
-        // username picker (the anonymous account is created on claim).
+        // A stored session might be stale (account deleted / token dead after a
+        // reset) — validate it first so we recover to the picker instead of a
+        // credential-refresh error. Skips the network when signed out.
+        if svc.isSignedIn {
+            let ok = await svc.validateSession()
+            if !ok { reset(); stage = .needsUsername; return }
+        }
         if svc.isSignedIn, svc.currentUsername != nil {
             await afterSignIn()
         } else {
@@ -403,6 +408,9 @@ struct SharingView: View {
         guard svc.currentUsername != nil else { stage = .needsUsername; return }
         stage = .ready
         await refreshHub()
+        // If a call during refresh invalidated the session (orphaned account),
+        // drop back to the picker rather than showing a broken hub.
+        if !svc.isSignedIn { reset(); stage = .needsUsername }
     }
 
     private func refreshHub() async {

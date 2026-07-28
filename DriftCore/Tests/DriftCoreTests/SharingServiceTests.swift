@@ -202,6 +202,39 @@ struct SharingServiceTests {
 
     // MARK: Token refresh
 
+    @Test func deadRefreshTokenClearsSessionForRecovery() async throws {
+        let mock = MockHTTP()
+        mock.queue = [(403, ["msg": "invalid refresh token"] as [String: Any])]  // refresh rejected
+        let (svc, db) = try makeService(mock)
+        SharingSessionStore.save(
+            .init(userID: "gone", username: "ghost", accessToken: "OLD",
+                  refreshToken: "DEAD", expiresAt: Date().addingTimeInterval(-10)), db: db)
+
+        await #expect(throws: SharingError.notSignedIn) { _ = try await svc.searchUsers("x") }
+        // The stale session is wiped so the UI can recover to the picker.
+        #expect(!SharingSessionStore.isSignedIn(db: db))
+    }
+
+    @Test func validateSessionFalseWhenProfileWiped() async throws {
+        let mock = MockHTTP()
+        mock.queue = [(200, [[String: Any]]())]   // profiles?id=eq.me -> [] (account wiped)
+        let (svc, db) = try makeService(mock)
+        signIn(svc, db: db, username: "ashish")   // valid, non-expired token
+
+        let ok = await svc.validateSession()
+        #expect(!ok)
+        #expect(!SharingSessionStore.isSignedIn(db: db))
+    }
+
+    @Test func validateSessionTrueWhenProfileExists() async throws {
+        let mock = MockHTTP()
+        mock.queue = [(200, [["id": "me", "username": "ashish"]] as [[String: Any]])]
+        let (svc, db) = try makeService(mock)
+        signIn(svc, db: db, username: "ashish")
+        #expect(await svc.validateSession())
+        #expect(SharingSessionStore.isSignedIn(db: db))
+    }
+
     @Test func expiredTokenTriggersRefresh() async throws {
         let mock = MockHTTP()
         // 1) refresh response, 2) the actual search response.

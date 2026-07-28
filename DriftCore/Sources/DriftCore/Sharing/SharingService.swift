@@ -330,15 +330,57 @@ public final class SharingService {
     }
 
     /// A non-expired access token, refreshing via the refresh token when due.
+    /// If the refresh FAILS (deleted account / dead refresh token) the stale
+    /// session is CLEARED so the UI recovers to the username picker instead of
+    /// looping on a credential-refresh error. #credential-refresh-recovery
     private func validToken() async throws -> String {
         guard let session = currentSession else { throw SharingError.notSignedIn }
         guard session.isExpired() else { return session.accessToken }
-        guard let refresh = session.refreshToken else { throw SharingError.notSignedIn }
-        let obj = try await client.authPost("token?grant_type=refresh_token",
-                                            body: ["refresh_token": refresh])
-        let refreshed = try Self.parseSession(obj, previousUsername: session.username)
-        SharingSessionStore.save(refreshed, db: db)
-        return refreshed.accessToken
+        guard let refresh = session.refreshToken else {
+            SharingSessionStore.clear(db: db); throw SharingError.notSignedIn
+        }
+        do {
+            let obj = try await client.authPost("token?grant_type=refresh_token",
+                                                body: ["refresh_token": refresh])
+            let refreshed = try Self.parseSession(obj, previousUsername: session.username)
+            SharingSessionStore.save(refreshed, db: db)
+            return refreshed.accessToken
+        } catch let e as SharingError {
+            // A network blip should NOT nuke the session; only an auth rejection
+            // (dead/rotated refresh token, deleted user) means the session is gone.
+            switch e {
+            case .network:
+                throw e
+            default:
+                SharingSessionStore.clear(db: db)
+                throw SharingError.notSignedIn
+            }
+        }
+    }
+
+    /// True if the stored session is still usable. Refreshes if expiring, and —
+    /// when a username was claimed — confirms the profile still exists (catches
+    /// an account deleted/wiped server-side). Clears a dead session as a side
+    /// effect, so callers can fall back to the username picker. Never throws.
+    public func validateSession() async -> Bool {
+        guard let session = currentSession else { return false }
+        do {
+            let token = try await validToken()
+            if session.username != nil {
+                // Select id,username so the row decodes as SharedProfile
+                // (username is required) — selecting only id fails to decode.
+                let mine: [SharedProfile] = try await client.restGet(
+                    "profiles?id=eq.\(session.userID)&select=id,username", token: token)
+                if mine.isEmpty { SharingSessionStore.clear(db: db); return false }
+            }
+            return true
+        } catch let e as SharingError {
+            if case .network = e { return true }   // offline — keep the session
+            SharingSessionStore.clear(db: db)
+            return false
+        } catch {
+            return false
+        }
     }
 
     /// Parse a GoTrue token bundle into a `SharingSession`. `username` isn't in
