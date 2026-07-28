@@ -189,6 +189,7 @@
 		D460DC58016E359FB62DFCC3 /* TodayDonutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF4E87433C72DCD46B0D423D /* TodayDonutView.swift */; };
 		D676610D58E5F117B1698F2A /* ListeningCircle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4C5119D7D0835BA845A8AAF /* ListeningCircle.swift */; };
 		D681045AF7657C38E75D4D86 /* FoodSearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 42A6CAF4720F61DC0C9BD2E7 /* FoodSearchView.swift */; };
+		D72DB4E403D3E29928223EEC /* ClientDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D835079FDEEB81D39D23D748 /* ClientDetailView.swift */; };
 		D81FBCA09BF00517DBEF07AA /* VoiceLogSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 375826994E169F864E5A69C1 /* VoiceLogSheet.swift */; };
 		D8DCF736FEE3123E530756CA /* CycleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 163C4017D9AEE2E0927DC907 /* CycleView.swift */; };
 		D8E7B7B5446C1B3CB3BBF5FC /* DomainExtractorEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4200A9F331B35DB8ACB881A3 /* DomainExtractorEval.swift */; };
@@ -488,6 +489,7 @@
 		D6774194A44D69E2788A87C1 /* WeightChartTrendColorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightChartTrendColorTests.swift; sourceTree = "<group>"; };
 		D692B540EF483EFFC8EB0569 /* latency-baseline.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "latency-baseline.json"; sourceTree = "<group>"; };
 		D80761BF94B2EA4BD8936542 /* ServingInputView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServingInputView.swift; sourceTree = "<group>"; };
+		D835079FDEEB81D39D23D748 /* ClientDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClientDetailView.swift; sourceTree = "<group>"; };
 		DB2B555F5A4A1014221F8575 /* WeightSyncHealTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightSyncHealTests.swift; sourceTree = "<group>"; };
 		DC6712FB46945A6FE1AAB0E0 /* DriftApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriftApp.swift; sourceTree = "<group>"; };
 		DD2565511DFA43570D0CE9EA /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
@@ -591,6 +593,7 @@
 				9CFFE8FDEE3FE443759F397D /* BodyMapView.swift */,
 				EA6A530140B729B060F76E94 /* ChatView.swift */,
 				3E99AB7A740D59D0E9092AF2 /* ClarificationCard.swift */,
+				D835079FDEEB81D39D23D748 /* ClientDetailView.swift */,
 				6B190FDA50ACC7784A35A9A5 /* CoachVoiceShims.swift */,
 				C3F34495B2B51D8B1B73906B /* CreateTemplateView.swift */,
 				BFB4059C65AD94747FA41A1C /* DescribeMealSheet.swift */,
@@ -1216,6 +1219,7 @@
 				B9A962AD8F60D070E5BBA14D /* ChatIconButton.swift in Sources */,
 				AF45546E02B5118EB9156119 /* ChatView.swift in Sources */,
 				C4802C0088D82BCF0AF2C413 /* ClarificationCard.swift in Sources */,
+				D72DB4E403D3E29928223EEC /* ClientDetailView.swift in Sources */,
 				64CD23436486963A92900597 /* CloudVisionClient.swift in Sources */,
 				8B963605CA92499EDDB6C984 /* CloudVisionKey.swift in Sources */,
 				DEDC514C9D4DF6717DA62459 /* CoachVoiceService.swift in Sources */,

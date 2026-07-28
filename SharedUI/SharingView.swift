@@ -123,7 +123,13 @@ struct SharingView: View {
             }
             ForEach(list) { c in
                 NavigationLink {
-                    ChatView(peer: c.profile, relationship: c.kind.rawValue)
+                    // A client opens the coach's client detail (their workouts +
+                    // assign + message); coaches/friends open chat directly.
+                    if c.kind == .client {
+                        ClientDetailView(client: c.profile)
+                    } else {
+                        ChatView(peer: c.profile, relationship: c.kind.rawValue)
+                    }
                 } label: {
                     HStack(spacing: 10) {
                         avatar(c.profile.username)

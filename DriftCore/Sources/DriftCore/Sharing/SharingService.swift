@@ -329,6 +329,11 @@ public final class SharingService {
         return uid
     }
 
+    /// In-flight refresh, so concurrent callers (e.g. the 3s chat poll + a send)
+    /// don't each spend the SAME rotating refresh token — the second spend would
+    /// fail and wrongly nuke the session ("DB/connection error after long chat").
+    private var refreshInFlight: Task<String, Error>?
+
     /// A non-expired access token, refreshing via the refresh token when due.
     /// If the refresh FAILS (deleted account / dead refresh token) the stale
     /// session is CLEARED so the UI recovers to the username picker instead of
@@ -336,26 +341,29 @@ public final class SharingService {
     private func validToken() async throws -> String {
         guard let session = currentSession else { throw SharingError.notSignedIn }
         guard session.isExpired() else { return session.accessToken }
+        // Coalesce: if a refresh is already running, await its result.
+        if let inflight = refreshInFlight { return try await inflight.value }
         guard let refresh = session.refreshToken else {
             SharingSessionStore.clear(db: db); throw SharingError.notSignedIn
         }
-        do {
-            let obj = try await client.authPost("token?grant_type=refresh_token",
-                                                body: ["refresh_token": refresh])
-            let refreshed = try Self.parseSession(obj, previousUsername: session.username)
-            SharingSessionStore.save(refreshed, db: db)
-            return refreshed.accessToken
-        } catch let e as SharingError {
-            // A network blip should NOT nuke the session; only an auth rejection
-            // (dead/rotated refresh token, deleted user) means the session is gone.
-            switch e {
-            case .network:
-                throw e
-            default:
+        let task = Task<String, Error> { @MainActor [client, db] in
+            do {
+                let obj = try await client.authPost("token?grant_type=refresh_token",
+                                                    body: ["refresh_token": refresh])
+                let refreshed = try Self.parseSession(obj, previousUsername: session.username)
+                SharingSessionStore.save(refreshed, db: db)
+                return refreshed.accessToken
+            } catch let e as SharingError {
+                // A network blip must NOT nuke the session; only an auth
+                // rejection (dead/rotated refresh token, deleted user) does.
+                if case .network = e { throw e }
                 SharingSessionStore.clear(db: db)
                 throw SharingError.notSignedIn
             }
         }
+        refreshInFlight = task
+        defer { refreshInFlight = nil }
+        return try await task.value
     }
 
     /// True if the stored session is still usable. Refreshes if expiring, and —

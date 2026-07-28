@@ -1403,7 +1403,7 @@ struct ActiveWorkoutView: View {
                     friendSendMode = true
                     Task { await loadShareFriends() }
                 } label: {
-                    Label("Send to a friend", systemImage: sym("paperplane.fill"))
+                    Label("Send to a friend or coach", systemImage: sym("paperplane.fill"))
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered).tint(Theme.chartTrend)
@@ -1412,7 +1412,7 @@ struct ActiveWorkoutView: View {
                     if !shareFriendsLoaded {
                         ProgressView()
                     } else if shareFriends.isEmpty {
-                        Text("No friends yet — add friends in More → Friends.")
+                        Text("No connections yet — add a friend or coach in More → Friends.")
                             .font(.caption).foregroundStyle(Theme.textSecondary)
                             .multilineTextAlignment(.center)
                     } else {
@@ -1421,7 +1421,7 @@ struct ActiveWorkoutView: View {
                                 HStack {
                                     Spacer()
                                     if shareSendingTo == "*" { ProgressView().tint(.white) }
-                                    else { Text("Share with all \(shareFriends.count) friends").font(.caption.weight(.semibold)) }
+                                    else { Text("Share with all \(shareFriends.count)").font(.caption.weight(.semibold)) }
                                     Spacer()
                                 }
                                 .padding(.vertical, 8)
