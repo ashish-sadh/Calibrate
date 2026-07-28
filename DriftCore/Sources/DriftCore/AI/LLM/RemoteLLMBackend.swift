@@ -276,9 +276,21 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
             // Streaming keeps packets flowing once generation starts, and makes
             // first-token progress real. Test mocks (non-URLSession) fall back
             // to buffered. (#944)
+            //
+            // #1133: gated to Darwin. `.bytes(for:)` is a Darwin-Foundation API;
+            // the non-Darwin (Android) runtime's swift-corelibs-foundation
+            // `URLSession.data(for:)` parks NON-cancellably, and routing it
+            // through streamWithBytes' task-group traps every deadline — the 60s
+            // timeout child can't return until the parked network child drains —
+            // so Coach spun on "Looking that up…" forever. Android falls through
+            // to the buffered dataWithTimeout + synchronous parseResponse below:
+            // the exact path every non-URLSession mock-session test exercises, so
+            // parse/delivery is already proven.
+            #if canImport(Darwin)
             if let urlSession = session as? URLSession {
                 return await streamWithBytes(urlSession: urlSession, request: request, timeout: effectiveTimeout, onToken: onToken)
             }
+            #endif
 
             let (data, response) = try await dataWithTimeout(for: request, timeout: effectiveTimeout)
             if let http = response as? HTTPURLResponse, http.statusCode != 200 {
@@ -294,8 +306,12 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
         }
     }
 
+    #if canImport(Darwin)
     /// Streams the SSE response line-by-line via URLSession.bytes so onToken
     /// fires as each token arrives rather than after the entire generation.
+    /// Darwin-only: `.bytes(for:)` is a Darwin-Foundation API, and #1133 routes
+    /// the non-Darwin (Android) runtime through the buffered path in
+    /// `respondStreamingCoreUnmetered` — so this is unreachable off-Darwin.
     private func streamWithBytes(
         urlSession: URLSession,
         request: URLRequest,
@@ -305,29 +321,11 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
         do {
             return try await withThrowingTaskGroup(of: String.self) { group in
                 group.addTask { [provider] in
-                    #if canImport(Darwin)
                     let (asyncBytes, response) = try await urlSession.bytes(for: request)
                     if let http = response as? HTTPURLResponse, http.statusCode != 200 {
                         throw RemoteStatusError(status: http.statusCode)
                     }
                     let lines = asyncBytes.lines
-                    #else
-                    // FoundationNetworking has no AsyncBytes — buffer the SSE
-                    // body and replay it line-by-line. Tokens arrive in one
-                    // burst at completion; true incremental streaming needs a
-                    // URLSessionDataDelegate and lands with the Android chat UI.
-                    let (data, response) = try await urlSession.data(for: request)
-                    if let http = response as? HTTPURLResponse, http.statusCode != 200 {
-                        throw RemoteStatusError(status: http.statusCode)
-                    }
-                    let bufferedLines = String(decoding: data, as: UTF8.self)
-                        .split(separator: "\n", omittingEmptySubsequences: true)
-                        .map(String.init)
-                    let lines = AsyncStream<String> { continuation in
-                        for line in bufferedLines { continuation.yield(line) }
-                        continuation.finish()
-                    }
-                    #endif
                     switch provider {
                     case .openai, .nebius:
                         return try await OpenAISSEParser.parseStream(lines, onToken: onToken)
@@ -353,6 +351,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
         }
         return ""
     }
+    #endif
 
     /// Error thrown when the in-flight provider call exceeds `requestTimeout`.
     /// Flows through `respondStreamingCore`'s catch → `.transient(0)`, so the
