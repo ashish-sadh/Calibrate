@@ -1,7 +1,7 @@
 # Graph Report - /Users/ashishsadh/workspace/Drift  (2026-07-28)
 
 ## Corpus Check
-- 914 files · ~4,863,478 words
+- 914 files · ~4,863,575 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -1270,11 +1270,11 @@ Nodes (1): Convert USDA all-caps descriptions to readable Title Case names.     
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `date` connect `Community 1` to `Community 3`, `Community 4`, `Community 6`, `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 14`, `Community 16`, `Community 17`, `Community 19`, `Community 20`, `Community 21`, `Community 30`, `Community 32`, `Community 34`, `Community 35`, `Community 37`, `Community 38`?**
-  _High betweenness centrality (0.033) - this node is a cross-community bridge._
+  _High betweenness centrality (0.026) - this node is a cross-community bridge._
 - **Why does `FoodEntry` connect `Community 8` to `Community 1`, `Community 34`, `Community 3`, `Community 4`, `Community 37`, `Community 6`, `Community 10`, `Community 11`, `Community 13`, `Community 19`, `Community 23`, `Community 30`?**
-  _High betweenness centrality (0.027) - this node is a cross-community bridge._
-- **Why does `date` connect `Community 1` to `Community 32`, `Community 34`, `Community 3`, `Community 35`, `Community 37`, `Community 6`, `Community 7`, `Community 38`, `Community 9`, `Community 10`, `Community 8`, `Community 11`, `Community 13`, `Community 14`, `Community 19`, `Community 30`?**
-  _High betweenness centrality (0.016) - this node is a cross-community bridge._
+  _High betweenness centrality (0.017) - this node is a cross-community bridge._
+- **Why does `empty` connect `Community 1` to `Community 32`, `Community 8`, `Community 10`, `Community 14`, `Community 21`, `Community 27`?**
+  _High betweenness centrality (0.013) - this node is a cross-community bridge._
 - **Are the 607 inferred relationships involving `String` (e.g. with `.format()` and `.change()`) actually correct?**
   _`String` has 607 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 182 inferred relationships involving `sqlite3_free()` (e.g. with `sqlite3_fopen()` and `sqlite3_popen()`) actually correct?**
