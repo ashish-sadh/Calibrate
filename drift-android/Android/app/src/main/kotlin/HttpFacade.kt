@@ -43,8 +43,16 @@ class HttpFacade {
                 requestBuilder.header(key, headers.getString(key))
             }
 
+            // callTimeout alone leaves OkHttp's 10s default readTimeout in
+            // place — an inactivity gap timeout, shorter than and independent
+            // of callTimeout. Long, quiet-then-answers calls (workout scan's
+            // vision reads run 40-240s with byte-silent gaps, matching the
+            // exact field failure RemoteLLMBackend.swift documents for the
+            // Darwin streaming path) would fail at ~10s otherwise (#1136 QA).
             val call = client.newBuilder()
                 .callTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
+                .readTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
+                .writeTimeout(timeoutMillis, TimeUnit.MILLISECONDS)
                 .build()
                 .newCall(requestBuilder.build())
 
