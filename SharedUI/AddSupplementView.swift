@@ -56,7 +56,7 @@ struct AddSupplementView: View {
                                         Text("\(supp.dosage) \(supp.unit)").font(.caption).foregroundStyle(Theme.textSecondary)
                                     }
                                     Spacer()
-                                    Image(systemName: "plus.circle").foregroundStyle(Theme.accent)
+                                    Image(systemName: sym("plus.circle")).foregroundStyle(Theme.accent)
                                 }
                             }
                             .tint(.primary)

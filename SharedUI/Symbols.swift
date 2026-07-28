@@ -33,6 +33,15 @@ func sym(_ name: String) -> String {
     case "mic.fill", "mic": return "pencil"
     case "arrow.forward.circle.fill": return "arrow.forward"
     case "exclamationmark.circle.fill": return "exclamationmark.triangle.fill"
+    // Error states: Material has no speech-bubble variant, and the triangle IS
+    // the right meaning here (operator 2026-07-28: "closest icons are fine" —
+    // never let a name fall through to the triangle by ACCIDENT, but choosing
+    // it deliberately for an error is correct).
+    case "exclamationmark.bubble": return "exclamationmark.triangle"
+    // Scanning a page/label — Material's QrCodeScanner is genuinely the closest
+    // meaning here (unlike for "Snap", where a camera was the real object).
+    case "doc.viewfinder": return "camera.viewfinder"
+    case "plus.circle": return "plus.circle.fill"
     case "arrow.clockwise": return "arrow.clockwise.circle"
     // SkipUI's outline-star mapping is disabled upstream (skip-ui #148:
     // Material's "outlined" star isn't), so both fall back to the fill.

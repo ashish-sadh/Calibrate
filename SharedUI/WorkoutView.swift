@@ -116,7 +116,7 @@ struct WorkoutView: View {
                 // Replaces the old voice/text sheet (bolt-on parallel flow).
                 Button { showingScan = true } label: {
                     HStack(spacing: 12) {
-                        Image(systemName: "doc.viewfinder")
+                        Image(systemName: sym("doc.viewfinder"))
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundStyle(Theme.ink)
                             .frame(width: 40, height: 40)
