@@ -168,6 +168,31 @@ struct SharingServiceTests {
         #expect(mock.lastBody?["status"] as? String == "live")
     }
 
+    @Test func shareCompletedWorkoutStartsPushesEnds() async throws {
+        let mock = MockHTTP()
+        mock.queue = [
+            (201, [["id": "sess-1", "client_id": "me", "trainer_id": "coach", "status": "live"]] as [[String: Any]]),
+            (201, [["id": "set-1", "live_workout_id": "sess-1", "exercise_name": "Bench Press",
+                    "exercise_order": 0, "set_order": 1, "is_warmup": false, "done": true]] as [[String: Any]]),
+            (201, [["id": "set-2", "live_workout_id": "sess-1", "exercise_name": "Bench Press",
+                    "exercise_order": 0, "set_order": 2, "is_warmup": false, "done": true]] as [[String: Any]]),
+            (200, [["id": "sess-1", "client_id": "me", "trainer_id": "coach", "status": "completed"]] as [[String: Any]]),
+        ]
+        let (svc, db) = try makeService(mock)
+        signIn(svc, db: db)
+
+        try await svc.shareCompletedWorkout(to: "coach", workoutName: "Push Day", sets: [
+            .init(exerciseName: "Bench Press", exerciseOrder: 0, setOrder: 1, weightLbs: 135, reps: 10, isWarmup: false),
+            .init(exerciseName: "Bench Press", exerciseOrder: 0, setOrder: 2, weightLbs: 155, reps: 8, isWarmup: false),
+        ])
+        // start(live_workouts) + 2×pushSet(live_workout_sets) + end(PATCH).
+        #expect(mock.requests.count == 4)
+        #expect(mock.requests[0].url?.absoluteString.contains("live_workouts") == true)
+        #expect(mock.requests[1].url?.absoluteString.contains("live_workout_sets") == true)
+        #expect(mock.requests[3].httpMethod == "PATCH")
+        #expect(mock.lastBody?["status"] as? String == "completed")
+    }
+
     // MARK: Token refresh
 
     @Test func expiredTokenTriggersRefresh() async throws {

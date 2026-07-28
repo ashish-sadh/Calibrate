@@ -63,6 +63,16 @@ struct ActiveWorkoutView: View {
     @State var showingCompletionSheet = false
     @State var completionShareText = ""
     @State var completionMilestone: String? = nil
+    // Send-to-friend (sharing): the finished workout's sets + inline picker
+    // state. Inline (a mode flip inside the completion sheet), not a nested
+    // sheet — Skip Fuse breaks on stacked presentations.
+    @State var completedSets: [SharingService.SharedSet] = []
+    @State var friendSendMode = false
+    @State var shareFriends: [SharedProfile] = []
+    @State var shareFriendsLoaded = false
+    @State var shareSendingTo: String? = nil
+    @State var shareSentTo: Set<String> = []
+    @State var shareError: String? = nil
     // Command strip — say it, don't hunt for it: "add face pulls",
     // "drop curls", "last bench?" (exercise-UX design 2026-07-10)
     @State var commandText = ""
@@ -548,6 +558,8 @@ struct ActiveWorkoutView: View {
             }
             .buttonStyle(.bordered)
             #endif
+
+            friendShareSection
 
             Button("Done") { showingCompletionSheet = false }
                 .buttonStyle(.borderedProminent).tint(Theme.accent)
@@ -1378,6 +1390,79 @@ struct ActiveWorkoutView: View {
         }
     }
 
+    /// Optional "send this finished workout to a friend" block inside the
+    /// completion sheet. A mode flip (not a nested sheet) reveals an inline
+    /// friend list; picking one pushes the workout so it appears in their app.
+    @ViewBuilder
+    private var friendShareSection: some View {
+        if SharingService.shared.isSignedIn {
+            Divider().overlay(Theme.separatorFaint)
+            if !friendSendMode {
+                Button {
+                    friendSendMode = true
+                    Task { await loadShareFriends() }
+                } label: {
+                    Label("Send to a friend", systemImage: sym("paperplane.fill"))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered).tint(Theme.chartTrend)
+            } else {
+                VStack(spacing: 8) {
+                    if !shareFriendsLoaded {
+                        ProgressView()
+                    } else if shareFriends.isEmpty {
+                        Text("No friends yet — add friends in More → Friends.")
+                            .font(.caption).foregroundStyle(Theme.textSecondary)
+                            .multilineTextAlignment(.center)
+                    } else {
+                        ForEach(shareFriends) { f in
+                            HStack(spacing: 10) {
+                                Text("@\(f.username)").font(.subheadline)
+                                Spacer()
+                                if shareSentTo.contains(f.id) {
+                                    Label("Sent", systemImage: sym("checkmark"))
+                                        .font(.caption.weight(.semibold)).foregroundStyle(Theme.deficit)
+                                } else if shareSendingTo == f.id {
+                                    ProgressView()
+                                } else {
+                                    Button("Send") { Task { await sendWorkout(to: f) } }
+                                        .font(.caption.weight(.semibold)).tint(Theme.chartTrend)
+                                }
+                            }
+                        }
+                    }
+                    if let shareError {
+                        Text(shareError).font(.caption2).foregroundStyle(Theme.surplus)
+                    }
+                }
+            }
+        }
+    }
+
+    private func loadShareFriends() async {
+        shareFriendsLoaded = false
+        let svc = SharingService.shared
+        if let edges = try? await svc.acceptedFriendships() {
+            let me = svc.currentSession?.userID
+            let ids = edges.map { $0.requesterId == me ? $0.addresseeId : $0.requesterId }
+            shareFriends = (try? await svc.profiles(ids: ids)) ?? []
+        }
+        shareFriendsLoaded = true
+    }
+
+    private func sendWorkout(to friend: SharedProfile) async {
+        shareSendingTo = friend.id
+        shareError = nil
+        do {
+            try await SharingService.shared.shareCompletedWorkout(
+                to: friend.id, workoutName: workoutName, sets: completedSets)
+            shareSentTo.insert(friend.id)
+        } catch {
+            shareError = (error as? SharingError).map(String.init(describing:)) ?? error.localizedDescription
+        }
+        shareSendingTo = nil
+    }
+
     private func saveWorkout(andDismiss: Bool = true) {
         FeatureUsage.record("action.finish_workout")
         workoutEnded = true
@@ -1424,6 +1509,15 @@ struct ActiveWorkoutView: View {
                 }
             }
             try WorkoutService.saveSets(allSets)
+            // Snapshot the finished sets for the optional "send to a friend"
+            // action in the completion sheet (workouts you do show up to friends).
+            completedSets = allSets.map {
+                SharingService.SharedSet(exerciseName: $0.exerciseName,
+                                         exerciseOrder: $0.exerciseOrder,
+                                         setOrder: $0.setOrder,
+                                         weightLbs: $0.weightLbs, reps: $0.reps,
+                                         isWarmup: $0.isWarmup)
+            }
             if andDismiss {
                 // #938: share the PERSISTED workout via the same builder History
                 // uses — the old inline snapshot could render an empty summary

@@ -174,6 +174,38 @@ public final class SharingService {
 
     // MARK: - Trainer-visible sessions (live-watch + completed report)
 
+    /// One completed set to hand to a friend (a flattened workout row).
+    public struct SharedSet: Sendable {
+        public let exerciseName: String
+        public let exerciseOrder: Int
+        public let setOrder: Int
+        public let weightLbs: Double?
+        public let reps: Int?
+        public let isWarmup: Bool
+        public init(exerciseName: String, exerciseOrder: Int, setOrder: Int,
+                    weightLbs: Double?, reps: Int?, isWarmup: Bool) {
+            self.exerciseName = exerciseName; self.exerciseOrder = exerciseOrder
+            self.setOrder = setOrder; self.weightLbs = weightLbs
+            self.reps = reps; self.isWarmup = isWarmup
+        }
+    }
+
+    /// Send a FINISHED workout to a friend in one call — it appears in their app
+    /// as a completed session from you. Opens the session, pushes every set, and
+    /// marks it completed. This is the "workouts you do show up to friends" path;
+    /// plain HTTPS, so it works on both platforms.
+    public func shareCompletedWorkout(to friendID: String, workoutName: String,
+                                      sets: [SharedSet]) async throws {
+        let sid = try await startLiveSession(trainerID: friendID, templateName: workoutName)
+        for s in sets {
+            try await pushSet(sessionID: sid, exerciseName: s.exerciseName,
+                              exerciseOrder: s.exerciseOrder, setOrder: s.setOrder,
+                              weightLbs: s.weightLbs, reps: s.reps,
+                              isWarmup: s.isWarmup, done: true)
+        }
+        try await endSession(sid, status: .completed)
+    }
+
     /// Open a session the given trainer may watch/receive. Returns the server
     /// session id to push sets into.
     public func startLiveSession(trainerID: String, templateName: String?) async throws -> String {

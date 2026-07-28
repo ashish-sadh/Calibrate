@@ -28,6 +28,7 @@ struct SharingView: View {
     @State var requests: [FriendshipDTO] = []
     @State var friends: [SharedProfile] = []
     @State var incomingTemplates: [SharedTemplateDTO] = []
+    @State var clientSessions: [LiveWorkoutDTO] = []
 
     private var svc: SharingService { .shared }
 
@@ -155,8 +156,46 @@ struct SharingView: View {
             searchCard
             if !requests.isEmpty { requestsCard }
             if !incomingTemplates.isEmpty { incomingTemplatesCard }
+            if !clientSessions.isEmpty { workoutsFromFriendsCard }
             friendsCard
         }
+    }
+
+    private var workoutsFromFriendsCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("WORKOUTS FROM FRIENDS").sectionHeading()
+            ForEach(clientSessions) { session in
+                NavigationLink {
+                    ClientSessionDetailView(session: session,
+                                            fromUsername: usernameFor(session.clientId))
+                } label: {
+                    HStack(spacing: 10) {
+                        avatar(usernameFor(session.clientId) ?? "?")
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(session.templateName ?? "Workout")
+                                .font(.subheadline.weight(.medium)).foregroundStyle(Theme.textPrimary)
+                            Text(sessionSubtitle(session)).font(.caption2).foregroundStyle(Theme.textSecondary)
+                        }
+                        Spacer()
+                        Image(systemName: sym("chevron.right")).font(.caption2).foregroundStyle(Theme.textTertiary)
+                    }
+                    .contentShape(Rectangle()).padding(.vertical, 4)
+                }
+                .buttonStyle(.plain)
+                if session.id != clientSessions.last?.id { Divider().overlay(Theme.separator) }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .card()
+    }
+
+    private func usernameFor(_ id: String) -> String? {
+        friends.first { $0.id == id }.map { "@\($0.username)" }
+    }
+
+    private func sessionSubtitle(_ s: LiveWorkoutDTO) -> String {
+        let who = usernameFor(s.clientId) ?? "a friend"
+        return s.status == .live ? "\(who) · training now 🔴" : "\(who) · completed"
     }
 
     private var identityCard: some View {
@@ -361,8 +400,10 @@ struct SharingView: View {
         async let reqs = try? await svc.incomingRequests()
         async let tmpls = try? await svc.incomingSharedTemplates()
         async let edges = try? await svc.acceptedFriendships()
+        async let sessions = try? await svc.clientSessions()
         requests = await reqs ?? []
         incomingTemplates = await tmpls ?? []
+        clientSessions = await sessions ?? []
         if let edges = await edges {
             let me = svc.currentSession?.userID
             let otherIDs = edges.map { $0.requesterId == me ? $0.addresseeId : $0.requesterId }
@@ -431,5 +472,93 @@ struct SharingView: View {
         case .forbidden: return "Your session expired — sign in again."
         case .decoding(let m): return "Unexpected response: \(m)"
         }
+    }
+}
+
+/// A friend's workout as it appears in your app — live (refreshes) or completed.
+/// Groups the flat set rows back under their exercises.
+struct ClientSessionDetailView: View {
+    let session: LiveWorkoutDTO
+    let fromUsername: String?
+
+    @State var sets: [LiveWorkoutSetDTO] = []
+    @State var loading = true
+
+    private var svc: SharingService { .shared }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(session.templateName ?? "Workout").font(.title3.weight(.bold))
+                    Text("\(fromUsername ?? "A friend") · \(session.status == .live ? "training now 🔴" : "completed")")
+                        .font(.caption).foregroundStyle(Theme.textSecondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading).card()
+
+                if loading {
+                    ProgressView().frame(maxWidth: .infinity).padding(.top, 30)
+                } else if sets.isEmpty {
+                    Text("No sets logged yet.").font(.caption).foregroundStyle(Theme.textSecondary)
+                        .frame(maxWidth: .infinity).padding(.vertical, 24).card()
+                } else {
+                    ForEach(groupedExercises, id: \.name) { group in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(group.name).font(.subheadline.weight(.semibold))
+                            ForEach(group.sets, id: \.id) { s in
+                                HStack {
+                                    Text("Set \(s.setOrder)\(s.isWarmup ? " · warmup" : "")")
+                                        .font(.caption).foregroundStyle(Theme.textSecondary)
+                                    Spacer()
+                                    Text(setSummary(s)).font(.caption.weight(.medium).monospacedDigit())
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading).card()
+                    }
+                }
+            }
+            .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 100)
+        }
+        .background(Theme.background.ignoresSafeArea())
+        .navigationTitle(fromUsername ?? "Workout")
+        #if !os(Android)
+        .navigationBarTitleDisplayMode(.inline)
+        #endif
+        .task { await load() }
+    }
+
+    private struct ExerciseGroup { let name: String; let sets: [LiveWorkoutSetDTO] }
+
+    private var groupedExercises: [ExerciseGroup] {
+        var order: [String] = []
+        var byName: [String: [LiveWorkoutSetDTO]] = [:]
+        for s in sets.sorted(by: { ($0.exerciseOrder, $0.setOrder) < ($1.exerciseOrder, $1.setOrder) }) {
+            if byName[s.exerciseName] == nil { order.append(s.exerciseName) }
+            byName[s.exerciseName, default: []].append(s)
+        }
+        return order.map { ExerciseGroup(name: $0, sets: byName[$0] ?? []) }
+    }
+
+    private func setSummary(_ s: LiveWorkoutSetDTO) -> String {
+        let weight = s.weightLbs.map { WeightFormat.display($0) } ?? "—"
+        let reps = s.reps.map { "\($0)" } ?? "—"
+        return "\(weight) × \(reps)"
+    }
+
+    private func load() async {
+        loading = true
+        sets = (try? await svc.sessionSets(session.id)) ?? []
+        loading = false
+    }
+}
+
+/// Small weight formatter honoring the user's unit preference.
+enum WeightFormat {
+    static func display(_ lbs: Double) -> String {
+        if Preferences.weightUnit == .kg {
+            return String(format: "%.0f kg", lbs / 2.2046226218)
+        }
+        return String(format: "%.0f lb", lbs)
     }
 }
