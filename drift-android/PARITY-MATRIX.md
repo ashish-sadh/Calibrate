@@ -12,6 +12,31 @@ not ported at all.
 
 ## Session notes (append-only)
 
+- **2026-07-28 (scout #10):** SOURCE-ONLY decomposition of **Body / Weight** (epic #1065) — the last coarse
+  un-decomposed domain (Today/Food/More/Coach/Health already split by scouts #5-#9). ps-check found BOTH sibling
+  lanes live (executor `/android-parity` PID 23525 + planner PID 23540, Opus) and emulator-5554 up but UNTOUCHED
+  per the scout-#3 collision lesson (executor reinstalls the APK mid-drive → phantom app-died). Full diff of iOS
+  `WeightTabView.swift` (422 ln) + its 6 sub-views (WeightInsightsView 619 / WeightEntryView 127 / WeightLogListView
+  154 / BodyCompEntryView 106 / WeightChartView 379 / BodySummaryCardsRow 307) vs Android `WeightTab.swift` (325 ln)
+  + `WeightChartAndroid.swift` (269). **Staleness corrections (verify, don't trust the matrix):** `broken #1091`
+  (Log Weight save) and `missing #1092` (weight chart) are BOTH **STALE** — #1091 + #1092 are CLOSED; save now
+  validates in-action (not `.disabled`, a Fuse-reactivity fix) and `WeightChartAndroid` (Path-based, Charts absent
+  on Skip) is wired → flipped both to `ok`. The "Body summary cards row" was **MISFILED** under #1065 —
+  `BodySummaryCardsRow` is mounted in `DashboardView` (Today), NOT the Weight tab → reclassified to #1061. **#1065
+  demoted to INDEX**, split into 4 scoped `needs-plan` children: **#1142** WeightInsightsView analytics port
+  (body-comp cards → metric trend sheets, weekday pattern, weight-changes sparklines — Android has only a thin
+  stats header) / **#1143** body-comp entry (Android AddWeightSheet is weight-only; NO body-comp path exists at
+  all) / **#1144** edit-a-weigh-in + >10% outlier banner (Android history rows are delete-only, no correction path;
+  planner note: iOS exposes Edit via `.contextMenu` which is ABSENT on SkipUI + steals TextField focus → use
+  tap-to-edit) / **#1145** residual affordances (Daily/Weekly granularity, collapsible history, milestone
+  celebration + haptic, empty state — AH-sync stays hidden till the health seam). All four are DriftCore-portable —
+  no health seam, no camera/cloud (unlike #1069 DEXA + progress photos, left un-decomposed this session: capture is
+  seam-blocked per the image-in blocker; ProgressGalleryAndroid re-creation already wired). Rows changed:
+  Body/Weight 9-coarse → 17-granular. Issues filed: **4** (#1142-#1145). No code touched (matrix only); worker WIP
+  + the publish lane's uncommitted `Skip.env` build-63 bump left alone. Device-verify debt grows by the WHOLE Weight
+  tab (source-verified only, emulator contended) — still awaiting an uncontended window alongside Food shared
+  surfaces + Coach source-rows + scout #3's 5 workout leftovers + Supplements.
+
 - **2026-07-28 (scout #9):** SOURCE-ONLY decomposition of **Food** (epic #1062) — ps-check found BOTH
   sibling lanes live (executor `/android-parity` PID 23525 Sonnet + planner PID 23540 Opus); `adb` showed
   emulator-5554 up but it was left UNTOUCHED per the scout-#3 collision lesson (executor reinstalls the APK
@@ -487,17 +512,25 @@ V6CoachingNudge, WorkoutConsistencyCard, GoalProgressCard, TodayDonutView, V6Rin
 | Recovery | iOS `supplementCard` (N/M taken → SupplementsTabView) when supplements configured — Android none (Supplements TAB is ported #1068; dashboard entry not) | missing | #1061 |
 | Coach entry | floating `ChatIconButton` → AIChatView — PORTED (AppShell.swift + ContentView.swift), matches iOS single AI access point | ok | #1066 |
 
-## Body / Weight (epic #1065 · Android-only re-creation: WeightTab.swift)
+## Body / Weight (epic #1065 = INDEX · Android-only re-creation: WeightTab.swift 325 ln vs iOS WeightTabView.swift 422 ln + 6 sub-views · scoped ports #1142 insights / #1143 body-comp-entry / #1144 edit+outlier / #1145 residual · DEXA+photos → #1069 · source-verified 2026-07-28, device-verify debt)
 
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
-| Body tab | whole screen is a re-creation, not iOS WeightTabView port | deviation | #1065 |
-| Body tab | Log Weight save button | broken | #1091 |
-| Body tab | weight chart (WeightChartView parity) | missing | #1092 |
-| Body tab | insights: body fat / BMI / water chart sheets | missing | #1065 |
-| Body tab | add body-comp sheet (BodyCompEntryView) | missing | #1065 |
-| Body tab | entry edit sheet + log list (WeightLogListView) | unknown | #1065 |
-| Body summary cards row | summary cards | unknown | #1065 |
+| Weight tab | overall structure — Android WeightTab re-creation, not the iOS WeightTabView single-source port | deviation | #1065 |
+| Weight tab | weight chart (WeightChartAndroid, Path-based — Charts absent on Skip) | ok | #1092 |
+| Weight tab | Log Weight save (validates in-action, not `.disabled`) | ok | #1091 |
+| Weight tab | time-range chips (1W…All, in-memory re-window) | ok | — |
+| Weight tab | stats header: current + trend + 7d/30d change chips (goal-aware) | ok | — |
+| Weight tab | delete a weigh-in (trash button) | ok | — |
+| Weight tab | Daily/Weekly granularity menu | missing | #1145 |
+| Weight tab | WeightInsightsView: trend-EMA + explainer + body-comp cards → metric sheets + weekday pattern + weight-changes sparklines | missing | #1142 |
+| Weight tab | body-comp entry (fat%/BMI/water + muscle/bone/visceral in log sheet) | missing | #1143 |
+| Weight tab | edit a weigh-in (tap-to-edit — iOS `.contextMenu` absent on Skip) | missing | #1144 |
+| Weight tab | big-change outlier banner (>10% → correct/edit/remove) | missing | #1144 |
+| Weight tab | collapsible history disclosure (chevron + N entries) — Android list is always-expanded | deviation | #1145 |
+| Weight tab | milestone celebration overlay + haptic | missing | #1145 |
+| Weight tab | empty state (manual-log CTA; AH-sync stays hidden till health seam) — Android shows inline "No weights yet" | deviation | #1145 |
+| Today dashboard | body summary cards row (`BodySummaryCardsRow` — mounted in `DashboardView`, NOT the Weight tab; misfiled here) | unknown | #1061 |
 | DEXA overview | DEXAOverviewView + detail | missing | #1069 |
 | Progress photos | gallery / viewer overlays / timer camera / add entry — Android-only re-creation `ProgressGalleryAndroid.swift` EXISTS + wired (`MoreTab.swift:147`), NOT the SharedUI ProgressGalleryView port; viewer/timer-camera/add-entry parity unverified (source-only session) | deviation | #1069 |
 
