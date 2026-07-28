@@ -12,6 +12,36 @@ not ported at all.
 
 ## Session notes (append-only)
 
+- **2026-07-28 (scout #12):** DEVICE-REFERENCE sweep of **Workout** (operator directive 0-SCREEN-BY-SCREEN-WORKOUT).
+  ps-check: executor `/android-parity` (PID 62401, Sonnet) LIVE and parked on the ExerciseVoiceLogSheet on
+  emulator-5554 device-verifying its own fresh #1106 fix (e979e2c5 / row-487 flip 58a33c43) → the Android emulator
+  was left UNTOUCHED per the scout-#3 collision lesson. (adb quirk resolved for the record: the working adb is the
+  homebrew one at `/opt/homebrew/bin/adb`; `~/Library/Android/sdk/platform-tools/adb` does NOT exist here — my first
+  probes silently no-op'd on the wrong path and looked like a mid-reinstall stall, it wasn't.) iOS control = PAUSE
+  (misfiring hook, reads the iOS file only) but `~/drift-android-parity.txt` = RUN → proceeded. **Method:** drove the
+  iPhone 17 Pro sim (516EAAC8, uncontended by the Android executor) to capture FRESH references (operator's
+  stale-reference concern per 0-RESUME) for 5 workout surfaces — ExerciseDetailView (pose photo + front/back muscle
+  diagrams + Chest/barbell/Intermediate chips + primary/secondary), ExerciseBrowserView ("Exercise Database":
+  Done + red "+" custom-CTA + search + All/Chest/Back/Legs/Shoulders/Arms/Core chips + pose-thumb rows with red
+  muscle-figure + distinct equipment glyphs Barbell/Bands↔/Machine⚙/Dumbbell), Workout root (Start Workout / Coach Me,
+  "Scan or Log a Workout" scan-primary card, Log Past Workout, Templates ⋮, Browse Exercises 950+, burn chips, Apple
+  Health band, Muscle Recovery), ActiveWorkoutView empty (close-X, title+date+timer, Add Exercise, command strip),
+  and the close-confirm dialog (Minimize — resume anytime / Discard workout). **Cross-checked every visible iPhone
+  element against the matrix: workout is SATURATED — all tracked as `ok` or an already-filed gap; ZERO new gaps**
+  (consistent with scout #11's exhausted source audit). **Verify-don't-trust reconciliation** of all 12 workout-cited
+  issues vs live `gh`: fully consistent — #1095/#1096/#1097/#1099/#1102/#1103/#1106/#1108 CLOSED, #1098/#1100/#1107/#1110
+  OPEN, every row matches. Noted #1127 (user-facing custom-exercise delete, `needs-fable`, carved from #1107) now
+  tracks the delete affordance referenced by the "custom exercise sheet" / "Your Exercises" rows (#1107). Rows changed:
+  **0** (executor already flipped #1106 → row 487). Issues filed: **0** (quality>volume — no un-tracked gap exists).
+  No code touched (matrix note only); publish-lane `Skip.env` + graphify dirty files left alone. **Device-verify debt**
+  (emulator contended for the 3rd+ consecutive scout): the `unknown` rows — ActiveWorkout exercise-row→ExerciseDetail
+  nav, ExerciseBrowser custom-CTA sheet, WorkoutDetail swipe-delete / Edit-Set / menu-drive-through — PLUS the
+  device-reverify-pending flips (#1103 IME-focus, #1097 numeric select-all). MITIGATION: the EXECUTOR lane is actively
+  discharging device-verification (device-verified #1106 + #1102 + #1098 + BodyMap in recent commits), so this debt is
+  being worked, not stuck. Next scout: do NOT re-sweep workout source (saturated) — either grab an UNCONTENDED emulator
+  window for the `unknown` device-verifies, or rotate to a less-covered area (capture #1063 / DEXA+photos #1069 /
+  Supplements remain the coarsest).
+
 - **2026-07-28 (executor, Sonnet):** Executed the `planned` #1106 issue exactly per
   its Opus plan: `SharedUI/ExerciseVoiceLogSheet.swift` `.onDisappear` (line 66) now
   also calls `viewModel.reset()` + clears `draft`/`resolveTarget`, ungated (no-op on
