@@ -92,7 +92,10 @@ struct ChatView: View {
             .buttonStyle(.plain)
             .disabled(!canSend || sending)
         }
-        .padding(.horizontal, 12).padding(.vertical, 10)
+        .padding(.horizontal, 12).padding(.top, 10)
+        // Clear the app's floating tab bar (a global overlay that stays on
+        // pushed screens) so the input isn't hidden behind it.
+        .padding(.bottom, 96)
         .background(Theme.cardBackground.ignoresSafeArea(edges: .bottom))
     }
 
