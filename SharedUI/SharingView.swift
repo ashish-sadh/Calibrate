@@ -115,6 +115,7 @@ struct SharingView: View {
     private var hub: some View {
         VStack(spacing: 16) {
             identityCard
+            peopleStrip
             searchCard
             if !requests.isEmpty { requestsCard }
             if !incomingTemplates.isEmpty { incomingTemplatesCard }
@@ -194,15 +195,16 @@ struct SharingView: View {
         .card()
     }
 
-    /// Inline actions for one connection. Promotion is instant — the trainer
-    /// role grants the coach nothing a friend can't already do; it unlocks the
-    /// CLIENT's opt-in briefing surface (see SharingService.promoteToCoach).
-    /// Removal arms on the first tap and fires on the second.
+    /// Inline actions for one connection. Promotion is a REQUEST (operator
+    /// decision 2026-07-29): coaching is accepted, never imposed — the friend
+    /// gets "wants you as their coach" in their requests card and the
+    /// friendship stays intact while they decide. Removal arms on the first
+    /// tap and fires on the second.
     private func managementStrip(_ c: Connection) -> some View {
         HStack(spacing: 8) {
             if c.kind == .friend {
-                stripButton("Make my coach", tint: Theme.chartTrend) {
-                    await runManage { try await svc.promoteToCoach(c.profile.id) }
+                stripButton("Ask to coach me", tint: Theme.chartTrend) {
+                    await runManage { try await svc.requestCoachPromotion(c.profile.id) }
                 }
             }
             if c.kind == .coach {
@@ -300,13 +302,30 @@ struct SharingView: View {
         return RelativeTime.string(from: d)
     }
 
+    /// Identity header (#1156 slice 1) — the hub anchors on WHO YOU ARE, the
+    /// way Threads' profile row does, instead of a "Signed in" caption. The
+    /// second line is the thing most worth noticing: pending requests first,
+    /// else your connection count.
     private var identityCard: some View {
         HStack(spacing: 12) {
-            avatar(svc.currentUsername ?? "?")
-            VStack(alignment: .leading, spacing: 2) {
+            Text(String((svc.currentUsername ?? "?").prefix(1)).uppercased())
+                .font(.title2.weight(.semibold)).foregroundStyle(.white)
+                .frame(width: 56, height: 56)
+                .background(Theme.accentGradient, in: Circle())
+            VStack(alignment: .leading, spacing: 3) {
                 Text("@\(svc.currentUsername ?? "")")
-                    .font(.headline).foregroundStyle(Theme.textPrimary)
-                Text("Signed in").font(.caption2).foregroundStyle(Theme.textSecondary)
+                    .font(.title3.weight(.semibold)).foregroundStyle(Theme.textPrimary)
+                if !requests.isEmpty {
+                    Text("\(requests.count) request\(requests.count == 1 ? "" : "s") waiting")
+                        .font(.caption2.weight(.bold)).foregroundStyle(.white)
+                        .padding(.horizontal, 8).padding(.vertical, 2)
+                        .background(Theme.accent, in: Capsule())
+                } else {
+                    Text(conns.isEmpty
+                         ? "Find friends & coaches below"
+                         : "\(conns.count) connection\(conns.count == 1 ? "" : "s")")
+                        .font(.caption).foregroundStyle(Theme.textSecondary)
+                }
             }
             Spacer()
             Button("Sign out") {
@@ -320,6 +339,65 @@ struct SharingView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .card()
+    }
+
+    /// Threads-style quick-access row (#1156 slice 1): everyone you're
+    /// connected to as tappable avatar circles, coaches first with an accent
+    /// ring. One tap into chat (or the client page) without scanning the
+    /// grouped sections — which stay below for management + coach sharing.
+    @ViewBuilder
+    private var peopleStrip: some View {
+        if conns.count >= 2 {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 14) {
+                    ForEach(stripOrder) { c in
+                        NavigationLink {
+                            if c.kind == .client {
+                                ClientDetailView(client: c.profile)
+                            } else {
+                                ChatView(peer: c.profile, relationship: c.kind.rawValue)
+                            }
+                        } label: {
+                            VStack(spacing: 4) {
+                                Text(String(c.profile.username.prefix(1)).uppercased())
+                                    .font(.headline).foregroundStyle(.white)
+                                    .frame(width: 52, height: 52)
+                                    .background(Theme.accentGradient, in: Circle())
+                                    .overlay {
+                                        if c.kind == .coach {
+                                            Circle().strokeBorder(Theme.chartTrend, lineWidth: 2)
+                                        }
+                                    }
+                                Text("@\(c.profile.username)")
+                                    .font(.caption2).foregroundStyle(Theme.textSecondary)
+                                    .lineLimit(1)
+                            }
+                            .frame(width: 64)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 2)
+            }
+            #if os(Android)
+            // hScroll IME-collapse guard — a MINIMUM, so content still grows
+            // with font scale (the fixed-height variant clipped, b75cbb34).
+            .frame(minHeight: 84)
+            #endif
+        }
+    }
+
+    /// Coaches first — they're who you open this tab for — then friends,
+    /// then clients; alphabetical inside each band so the order is stable.
+    private var stripOrder: [Connection] {
+        func band(_ kind: Connection.Kind) -> Int {
+            kind == .coach ? 0 : (kind == .friend ? 1 : 2)
+        }
+        return conns.sorted { a, b in
+            band(a.kind) != band(b.kind)
+                ? band(a.kind) < band(b.kind)
+                : a.profile.username.lowercased() < b.profile.username.lowercased()
+        }
     }
 
     private var searchCard: some View {

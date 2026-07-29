@@ -88,11 +88,13 @@ plateaus. Three additions:
 - **Real graphs** — weight trend, sleep, calories/protein as charts (the
   Apple-Health-style single line + dots house style; hand-rolled path
   rendering per the Android chart precedent since SkipUI has no Charts).
-  Requires the briefing payload to carry the day-SERIES, not just
-  aggregates: additive JSON keys (`weight_series`, `sleep_series`,
-  `nutrition_series`) inside `metrics`, each populated ONLY under its
-  existing consent toggle (weight/sleep/nutrition levels already exist —
-  consent semantics unchanged, additive migration only).
+  Data: **WEEKLY-AVERAGE series** (e.g., 8 points for 8 weeks) as additive
+  JSON keys (`weight_series`, `sleep_series`, `nutrition_series`) inside
+  `metrics`, each populated only under its existing consent toggle.
+  Operator decision 2026-07-29: day-level series were rejected — the
+  existing toggles PROMISE "averages over a window", and shipping per-day
+  data under them would widen consent without asking. Weekly averages honor
+  the promise and still chart a real trend.
 - **Mirror-view principle (load-bearing)** — ONE shared component,
   `ClientBriefingView(briefing:)`, renders the briefing everywhere: the
   client's CoachSharingCard shows it built from LOCAL data ("this is exactly

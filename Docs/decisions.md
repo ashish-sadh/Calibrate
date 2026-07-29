@@ -682,3 +682,31 @@ zero, and a single weigh-in yields no trend at all.
 
 RULE: any further widening of what crosses to a coach gets its own entry here
 and its own opt-in bit. A category that can't justify a bit doesn't ship.
+
+## 2026-07-29 — Coach charts get weekly averages; promotion requires acceptance (two consent rulings)
+
+Both from an operator design review in-session, both about the same
+principle: what someone agreed to is a CONTRACT, not a starting point.
+
+WEEKLY AVERAGES, NOT DAY SERIES. The coach-dashboard design (#1156) wanted
+real trend charts, which need series data crossing the wire. The existing
+briefing toggles promise "averages over a window — the meal-by-meal diary
+is nobody else's business." Shipping per-day series under those toggles
+would widen consent without asking. Ruling: the briefing carries
+WEEKLY-AVERAGE series (≈8 points), which honors the promise verbatim and
+still charts a trend. Day-level data, if ever wanted, needs its own opt-in
+bit per the standing rule above.
+
+PROMOTION IS A REQUEST. Making an existing friend your coach shipped
+(briefly) as an instant role change, argued from permissions: a coach
+gains nothing a friend can't already do. The operator overruled on the
+relationship axis: their app would display "you coach @x" for a role never
+accepted — coaching is accepted, never imposed. Reworked to a pending
+trainer edge through the standard accept flow; the friendship stays intact
+while pending (and even a decline touches only the trainer edge). This
+required widening `friendships` uniqueness to (requester, addressee, role)
+— migration 0003, additive, so both edges can coexist in one direction.
+
+COROLLARY SHIPPED WITH IT: the History toggle's label now names the
+AI-chat-notes pipeline it grants ("Training history, injuries & AI-chat
+notes") — consent people can't read is not consent.

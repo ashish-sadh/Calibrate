@@ -312,36 +312,42 @@ struct SharingServiceTests {
          "status": "accepted", "role": role]
     }
 
-    /// I initiated the friendship → my edge already points client→coach, so
-    /// promotion is a role flip on that edge, not a new row.
-    @Test func promoteFlipsMyEdgeRoleInPlace() async throws {
+    /// Promotion is a REQUEST (operator decision 2026-07-29): one pending
+    /// trainer edge, the friend edge untouched — never a PATCH, never an
+    /// already-accepted insert, whoever initiated the friendship.
+    @Test func promotionSendsAPendingTrainerRequestAndTouchesNothingElse() async throws {
         let mock = MockHTTP()
         let (svc, db) = try makeService(mock)
         signIn(svc, db: db)
-        mock.queue = [(200, [edge("e1", "me", "hud")]), (200, [Any]())]
+        mock.queue = [(201, [Any]())]
 
-        try await svc.promoteToCoach("hud")
-        let last = mock.requests.last
-        #expect(last?.httpMethod == "PATCH")
-        #expect(last?.url?.absoluteString.contains("friendships?id=eq.e1") == true)
-        #expect(mock.lastBody?["role"] as? String == "trainer")
-    }
-
-    /// They initiated the friendship → the client→coach direction needs its
-    /// own edge (the unique key is directed), created already-accepted.
-    @Test func promoteInsertsReverseTrainerEdgeWhenTheyRequested() async throws {
-        let mock = MockHTTP()
-        let (svc, db) = try makeService(mock)
-        signIn(svc, db: db)
-        mock.queue = [(200, [edge("e1", "hud", "me")]), (201, [Any]())]
-
-        try await svc.promoteToCoach("hud")
+        try await svc.requestCoachPromotion("hud")
+        #expect(mock.requests.count == 1, "exactly one call — the friend edge is not read or written")
         let last = mock.requests.last
         #expect(last?.httpMethod == "POST")
         #expect(last?.url?.absoluteString.hasSuffix("friendships") == true)
         #expect(mock.lastBody?["role"] as? String == "trainer")
-        #expect(mock.lastBody?["status"] as? String == "accepted")
         #expect(mock.lastBody?["requester_id"] as? String == "me")
+        // No status in the body — the row is born 'pending' server-side and
+        // goes through the same accept flow as every other request.
+        #expect(mock.lastBody?["status"] == nil)
+    }
+
+    /// Demoting a coach with a friendship underneath deletes the trainer edge
+    /// (and only it) — the friendship survives.
+    @Test func demoteDeletesTrainerEdgeWhenFriendshipRemains() async throws {
+        let mock = MockHTTP()
+        let (svc, db) = try makeService(mock)
+        signIn(svc, db: db)
+        mock.queue = [(200, [edge("e1", "hud", "me"),
+                             edge("e2", "me", "hud", role: "trainer")]),
+                      (204, [Any]()), (204, [Any]())]
+
+        try await svc.demoteCoach("hud")
+        let urls = mock.requests.compactMap { $0.url?.absoluteString }
+        #expect(urls.contains { $0.contains("friendships?id=eq.e2") })
+        #expect(!urls.contains { $0.contains("friendships?id=eq.e1") },
+                "the friend edge must survive a demotion")
     }
 
     /// Unfriending deletes EVERY edge with the person, and a coach edge takes

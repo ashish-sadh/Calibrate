@@ -133,49 +133,36 @@ public final class SharingService {
     // MARK: - Managing existing connections (operator 2026-07-29: "no flow to
     // unfriend, remove a coach, or make an existing friend a coach")
 
-    /// Make an existing friend your coach. Instant, not a request: the trainer
-    /// role grants the coach nothing a friend can't already do (friends can
-    /// send templates and see explicitly shared workouts) — it only unlocks
-    /// YOUR opt-in briefing surface, and you are the one asking. Direction
-    /// matters on the wire: a trainer edge means requester = client,
-    /// addressee = coach.
-    public func promoteToCoach(_ profileID: String) async throws {
+    /// Every edge between the caller and one person, whatever the status —
+    /// management needs pending and blocked edges too, not just accepted.
+    func edges(with profileID: String) async throws -> [FriendshipDTO] {
         let uid = try requireUserID()
-        let edges = try await acceptedFriendships()
-        if let mine = edges.first(where: {
-            $0.requesterId == uid && $0.addresseeId == profileID && $0.role == .friend
-        }) {
-            // My edge already points client→coach: flip the role in place.
-            let _: [FriendshipDTO] = try await client.restUpdate(
-                "friendships?id=eq.\(mine.id)",
-                body: ["role": FriendRole.trainer.rawValue],
-                token: try await validToken())
-        } else if edges.contains(where: { $0.requesterId == profileID && $0.addresseeId == uid }) {
-            // They initiated the friendship, and the unique key is directed —
-            // the client→coach direction needs its own edge. Accepted
-            // immediately for the consent reasons above; the friend edge stays
-            // underneath and `connections()` dedupes preferring the coach kind.
-            let row: [String: Any] = [
-                "requester_id": uid, "addressee_id": profileID,
-                "role": FriendRole.trainer.rawValue,
-                "status": FriendStatus.accepted.rawValue,
-            ]
-            let _: [FriendshipDTO] = try await client.restInsert(
-                "friendships", body: [row], token: try await validToken())
-        }
+        return try await client.restGet(
+            "friendships?or=(and(requester_id.eq.\(uid),addressee_id.eq.\(profileID)),and(requester_id.eq.\(profileID),addressee_id.eq.\(uid)))&select=*",
+            token: try await validToken())
+    }
+
+    /// Ask an existing friend to BECOME your coach. A request, not an action
+    /// (operator decision 2026-07-29: coaching is a relationship the other
+    /// person accepts, never an imposed role). Creates a pending trainer edge
+    /// — the friendship stays untouched and intact while they decide, and
+    /// their requests card reads "wants you as their coach". Requires the
+    /// 0003 migration (edge uniqueness includes role) so the pending edge can
+    /// coexist with the friend edge.
+    public func requestCoachPromotion(_ profileID: String) async throws {
+        try await sendRequest(to: profileID, role: .trainer)
     }
 
     /// Turn your coach back into a plain friend, and revoke the briefing so no
     /// stale picture of you survives the demotion.
     public func demoteCoach(_ profileID: String) async throws {
         let uid = try requireUserID()
-        let edges = try await acceptedFriendships()
-        for edge in edges where edge.role == .trainer
+        let all = try await edges(with: profileID)
+        let hasFriendEdge = all.contains { $0.role == .friend && $0.status == .accepted }
+        for edge in all where edge.role == .trainer
             && edge.requesterId == uid && edge.addresseeId == profileID {
-            if edges.contains(where: {
-                $0.requesterId == profileID && $0.addresseeId == uid && $0.role == .friend
-            }) {
-                // A friend edge already exists underneath — drop the trainer one.
+            if hasFriendEdge {
+                // A friendship exists underneath — drop the trainer edge.
                 try await client.restDelete("friendships?id=eq.\(edge.id)",
                                             token: try await validToken())
             } else {
@@ -189,15 +176,17 @@ public final class SharingService {
     }
 
     /// Remove every edge with this person — unfriend, drop a client, or fully
-    /// disconnect from a coach. Either party may delete an edge (RLS). When a
-    /// coach relationship existed, the briefing is revoked with it.
+    /// disconnect from a coach. Pending and blocked edges go too, so nothing
+    /// resurrects later. Either party may delete an edge (RLS). When a coach
+    /// relationship existed, the briefing is revoked with it.
     public func removeConnection(with profileID: String) async throws {
         let uid = try requireUserID()
-        let edges = try await acceptedFriendships()
-        let hadCoach = edges.contains {
-            $0.role == .trainer && $0.requesterId == uid && $0.addresseeId == profileID
+        let all = try await edges(with: profileID)
+        let hadCoach = all.contains {
+            $0.role == .trainer && $0.status == .accepted
+                && $0.requesterId == uid && $0.addresseeId == profileID
         }
-        for edge in edges where edge.requesterId == profileID || edge.addresseeId == profileID {
+        for edge in all {
             try await client.restDelete("friendships?id=eq.\(edge.id)",
                                         token: try await validToken())
         }

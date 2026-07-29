@@ -29,7 +29,10 @@ struct CoachSharingCard: View {
                 }
             }
 
-            row("Training history & injuries", .history)
+            // The label names EVERYTHING this level shares — since 2026-07-29
+            // that includes coach-relevant notes distilled from AI-coach
+            // chats. Consent people can't read is not consent.
+            row("Training history, injuries & AI-chat notes", .history)
             row("Average sleep", .sleep)
             row("Average calories & protein", .nutrition)
             row("Weight trend", .weight)
