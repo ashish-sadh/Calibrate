@@ -93,6 +93,37 @@ public struct SyncClient: Sendable {
         }
     }
 
+    /// Upload bytes to a Supabase Storage bucket. Used for support-report
+    /// screenshots, which are usually what makes a bug reproducible. The bucket
+    /// is private — clients upload, only the service role reads back — so this
+    /// returns nothing but the path the caller already knows.
+    public func storageUpload(bucket: String, path: String, data: Data,
+                              contentType: String, token: String? = nil) async throws {
+        guard isConfigured else { throw SharingError.notConfigured }
+        guard let url = URL(string: "\(baseURL)/storage/v1/object/\(bucket)/\(path)") else {
+            throw SharingError.network("could not form storage URL")
+        }
+        var req = URLRequest(url: url, timeoutInterval: timeout)
+        req.httpMethod = "POST"
+        req.setValue(anonKey, forHTTPHeaderField: "apikey")
+        req.setValue("Bearer \(token ?? anonKey)", forHTTPHeaderField: "Authorization")
+        req.setValue(contentType, forHTTPHeaderField: "Content-Type")
+        req.httpBody = data
+
+        let respData: Data, response: URLResponse
+        do {
+            (respData, response) = try await session.data(for: req)
+        } catch {
+            throw SharingError.network(error.localizedDescription)
+        }
+        guard let http = response as? HTTPURLResponse else {
+            throw SharingError.network("no HTTP response")
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            throw SharingError.http(http.statusCode, String(decoding: respData, as: UTF8.self))
+        }
+    }
+
     /// PATCH rows matched by `query` (`friendships?id=eq.<uuid>`), returning the
     /// updated representation.
     @discardableResult

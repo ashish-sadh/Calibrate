@@ -116,6 +116,7 @@ struct TodayTab: View {
     @State var showingSearch = false
     @State var showingRecent = false
     @State var showingDescribe = false
+    @State var showingFriends = false
     @State var foodLogVM = FoodLogViewModel()
 
     var body: some View {
@@ -152,6 +153,14 @@ struct TodayTab: View {
 
                     mealsCard
 
+                    // Friends & coaches — was More-only until 2026-07-28.
+                    // A plain Button (not NavigationLink) so the sheet-vs-push
+                    // choice matches the rest of this tab.
+                    Button { showingFriends = true } label: {
+                        FriendsDashboardCard()
+                    }
+                    .buttonStyle(.plain)
+
                     statTrio
                 }
                 .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 100)
@@ -170,6 +179,7 @@ struct TodayTab: View {
             .sheet(isPresented: $showingRecent, onDismiss: { store.reload() }) {
                 AndroidRecentMealsSheet(viewModel: foodLogVM)
             }
+            .sheet(isPresented: $showingFriends) { SharingView() }
         }
     }
 

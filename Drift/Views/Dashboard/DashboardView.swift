@@ -277,6 +277,15 @@ struct DashboardView: View {
                         NavigationLink { SupplementsTabView() } label: { supplementCard }
                     }
 
+                    // Friends & coaches. Lived only under More until
+                    // 2026-07-28, where nobody found it. Signed-out shows a
+                    // quiet invitation rather than nothing, which is the whole
+                    // point of putting it here.
+                    NavigationLink { SharingView() } label: {
+                        FriendsDashboardCard()
+                    }
+                    .tint(.primary)
+
                     // Behavior Insights
                     if !viewModel.behaviorInsights.isEmpty {
                         sectionHeader("Insights")

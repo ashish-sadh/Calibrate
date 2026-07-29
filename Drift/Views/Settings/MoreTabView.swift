@@ -477,6 +477,25 @@ struct SettingsView: View {
                 // Telemetry & Privacy — where the anonymous usage pipeline is
                 // disclosed and switched off (operator decision 2026-07-28,
                 // superseding the on-device-only counters of 2026-07-09).
+                // Support & feedback — file a bug or suggestion and get a reply
+                // (operator ask 2026-07-28). No sign-in required.
+                NavigationLink { SupportView() } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "questionmark.circle")
+                            .foregroundStyle(Theme.textSecondary).frame(width: 24)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Support & feedback").font(.subheadline.weight(.medium))
+                                .foregroundStyle(Theme.textPrimary)
+                            Text("Report a bug or suggest something — we reply")
+                                .font(.caption2).foregroundStyle(Theme.textTertiary)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.right").font(.caption2).foregroundStyle(Theme.textTertiary)
+                    }
+                    .card()
+                }
+                .buttonStyle(.plain)
+
                 NavigationLink { TelemetrySettingsView() } label: {
                     HStack(spacing: 12) {
                         Image(systemName: "chart.bar")

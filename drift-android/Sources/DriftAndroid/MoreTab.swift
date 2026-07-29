@@ -7,6 +7,7 @@ struct MoreTab: View {
     @State var unit = Preferences.weightUnit
     @State var showingSupplements = false
     @State var showingProgress = false
+    @State var showingSupport = false
     @State var usageTelemetry = Preferences.usageTelemetryEnabled
     @State var aiCapture = Preferences.aiCaptureEnabled
 
@@ -104,6 +105,18 @@ struct MoreTab: View {
                         }
                         .buttonStyle(.plain)
                         Divider().overlay(Theme.separator)
+                        Button { showingSupport = true } label: {
+                            HStack(spacing: 10) {
+                                Text("Support & feedback")
+                                    .font(.subheadline).foregroundStyle(Theme.textPrimary)
+                                Spacer()
+                                Image(systemName: sym("chevron.right"))
+                                    .font(.caption).foregroundStyle(Theme.textTertiary)
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        Divider().overlay(Theme.separator)
                         Button { showingProgress = true } label: {
                             HStack(spacing: 10) {
                                 Text("Progress Photos")
@@ -175,6 +188,7 @@ struct MoreTab: View {
             }
             .sheet(isPresented: $showingSupplements) { SupplementsTabView() }
             .sheet(isPresented: $showingProgress) { ProgressGalleryAndroid() }
+            .sheet(isPresented: $showingSupport) { NavigationStack { SupportView() } }
         }
     }
 }
