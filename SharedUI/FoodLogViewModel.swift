@@ -263,7 +263,7 @@ final class FoodLogViewModel {
     /// Insert ONE entry (creating the meal log if needed) WITHOUT reloading
     /// the day or posting `.foodEntryAdded` — callers batch those.
     private func logFoodCore(_ food: Food, servings: Double, mealType: MealType, loggedAt: Date? = nil, loggedPortion: String? = nil) {
-        FeatureUsage.record("action.log_food")
+        FeatureUsage.record(TelemetryEvent.foodLogged)
         do {
             let date = dateString
             // nil ⇒ derive: now for today, meal-canonical time for a past day.
@@ -404,7 +404,7 @@ final class FoodLogViewModel {
     /// reloads + refreshes the widget + notifies ONCE, not N times. (#949)
     @discardableResult
     private func quickAddCore(name: String, calories: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double, mealType: MealType, loggedAt: String? = nil, servingSizeG: Double = 0, servings: Double = 1, date: String? = nil) -> Bool {
-        FeatureUsage.record("action.quick_add")
+        FeatureUsage.record(TelemetryEvent.quickAdd)
         do {
             let date = date ?? dateString
             let mealLogs = try database.fetchMealLogs(for: date)

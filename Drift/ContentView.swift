@@ -98,6 +98,7 @@ struct ContentView: View {
                 // midnight logged to the PREVIOUS day (past-day logging fix,
                 // 2026-07-09).
                 photoLogVM.selectedDate = notification.userInfo?["date"] as? Date ?? Date()
+                FeatureUsage.record(TelemetryEvent.snapUsed)
                 showingPhotoLog = true
             }
             .fullScreenCover(isPresented: $showingPhotoLog, onDismiss: {

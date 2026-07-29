@@ -93,6 +93,7 @@ struct WorkoutView: View {
                     Button {
                         WorkoutService.clearSession()
                         selectedTemplate = nil
+                        FeatureUsage.record(TelemetryEvent.workoutStarted)
                         showingNewWorkout = true
                     } label: {
                         Label("Start Workout", systemImage: sym("plus.circle.fill")).frame(maxWidth: .infinity)
@@ -361,6 +362,7 @@ struct WorkoutView: View {
                 BodyMapView { template in
                     WorkoutService.clearSession()
                     selectedTemplate = template
+                    FeatureUsage.record(TelemetryEvent.workoutStarted)
                     showingNewWorkout = true
                 }
 
@@ -500,6 +502,7 @@ struct WorkoutView: View {
             case .start(let template):
                 WorkoutService.clearSession()
                 selectedTemplate = template
+                FeatureUsage.record(TelemetryEvent.workoutStarted)
                 showingNewWorkout = true
             case .edit(let template):
                 editingTemplateForEdit = template

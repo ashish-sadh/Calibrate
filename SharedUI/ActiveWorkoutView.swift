@@ -68,11 +68,6 @@ struct ActiveWorkoutView: View {
     // sheet — Skip Fuse breaks on stacked presentations.
     @State var completedSets: [SharingService.SharedSet] = []
     @State var friendSendMode = false
-    @State var shareFriends: [SharedProfile] = []
-    @State var shareFriendsLoaded = false
-    @State var shareSendingTo: String? = nil
-    @State var shareSentTo: Set<String> = []
-    @State var shareError: String? = nil
     // Command strip — say it, don't hunt for it: "add face pulls",
     // "drop curls", "last bench?" (exercise-UX design 2026-07-10)
     @State var commandText = ""
@@ -509,12 +504,11 @@ struct ActiveWorkoutView: View {
 
     // MARK: - Exercise Section
 
-    // Extracted so Android can wrap it in a ScrollView and give it a detent
-    // that actually fits. Compose's `.medium` is shorter than iOS's, and when
-    // the content overflows it compresses the trailing child rather than
-    // growing the sheet — which collapsed "Done" to an unreadable pink sliver
-    // (#1076). A long share text (many exercises) overflows any fixed detent,
-    // so Android scrolls as well. iOS keeps `.medium` and no scroll wrapper.
+    // Both platforms scroll, with different detents. Compose's `.medium` is
+    // shorter than iOS's, and when the content overflows it compresses the
+    // trailing child rather than growing the sheet — which collapsed "Done"
+    // to an unreadable pink sliver (#1076). A long share text (many
+    // exercises) or a long recipient list overflows any fixed detent.
     private func completionSheet() -> some View {
         let card = VStack(spacing: 20) {
             if let milestone = completionMilestone {
@@ -572,8 +566,11 @@ struct ActiveWorkoutView: View {
             .presentationDetents([.fraction(0.75), .large])
             .background(Theme.background)
         #else
-        return card
-            .presentationDetents([.medium])
+        // iOS scrolls too since the friend picker joined the sheet — a long
+        // recipient list overflows any fixed detent. `.medium` stays the
+        // resting height; `.large` gives the list room.
+        return ScrollView { card }
+            .presentationDetents([.medium, .large])
             .background(Theme.background)
         #endif
     }
@@ -1392,8 +1389,9 @@ struct ActiveWorkoutView: View {
     }
 
     /// Optional "send this finished workout to a friend" block inside the
-    /// completion sheet. A mode flip (not a nested sheet) reveals an inline
-    /// friend list; picking one pushes the workout so it appears in their app.
+    /// completion sheet. A mode flip (not a nested sheet) reveals the shared
+    /// recipient picker; picking one pushes the workout so it appears in
+    /// their app.
     @ViewBuilder
     private var friendShareSection: some View {
         if SharingService.shared.isSignedIn {
@@ -1401,101 +1399,24 @@ struct ActiveWorkoutView: View {
             if !friendSendMode {
                 Button {
                     friendSendMode = true
-                    Task { await loadShareFriends() }
                 } label: {
                     Label("Send to a friend or coach", systemImage: sym("paperplane.fill"))
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered).tint(Theme.chartTrend)
             } else {
-                VStack(spacing: 8) {
-                    if !shareFriendsLoaded {
-                        ProgressView()
-                    } else if shareFriends.isEmpty {
-                        Text("No connections yet — add a friend or coach in More → Friends.")
-                            .font(.caption).foregroundStyle(Theme.textSecondary)
-                            .multilineTextAlignment(.center)
-                    } else {
-                        if shareFriends.count > 1 {
-                            Button { Task { await sendWorkoutToAll() } } label: {
-                                HStack {
-                                    Spacer()
-                                    if shareSendingTo == "*" { ProgressView().tint(.white) }
-                                    else { Text("Share with all \(shareFriends.count)").font(.caption.weight(.semibold)) }
-                                    Spacer()
-                                }
-                                .padding(.vertical, 8)
-                                .background(Theme.chartTrend, in: Capsule()).foregroundStyle(.white)
-                            }
-                            .buttonStyle(.plain)
-                            Divider().overlay(Theme.separatorFaint)
-                        }
-                        ForEach(shareFriends) { f in
-                            HStack(spacing: 10) {
-                                Text("@\(f.username)").font(.subheadline)
-                                Spacer()
-                                if shareSentTo.contains(f.id) {
-                                    Label("Sent", systemImage: sym("checkmark"))
-                                        .font(.caption.weight(.semibold)).foregroundStyle(Theme.deficit)
-                                } else if shareSendingTo == f.id {
-                                    ProgressView()
-                                } else {
-                                    Button("Send") { Task { await sendWorkout(to: f) } }
-                                        .font(.caption.weight(.semibold)).tint(Theme.chartTrend)
-                                }
-                            }
-                        }
-                    }
-                    if let shareError {
-                        Text(shareError).font(.caption2).foregroundStyle(Theme.surplus)
-                    }
+                FriendSharePicker { c in
+                    try await SharingService.shared.shareCompletedWorkout(
+                        to: c.profile.id, workoutName: workoutName, sets: completedSets)
+                } onSent: { _ in
+                    FeatureUsage.record(TelemetryEvent.workoutShared)
                 }
             }
         }
     }
 
-    private func loadShareFriends() async {
-        shareFriendsLoaded = false
-        let svc = SharingService.shared
-        if let edges = try? await svc.acceptedFriendships() {
-            let me = svc.currentSession?.userID
-            let ids = edges.map { $0.requesterId == me ? $0.addresseeId : $0.requesterId }
-            shareFriends = (try? await svc.profiles(ids: ids)) ?? []
-        }
-        shareFriendsLoaded = true
-    }
-
-    private func sendWorkout(to friend: SharedProfile) async {
-        shareSendingTo = friend.id
-        shareError = nil
-        do {
-            try await SharingService.shared.shareCompletedWorkout(
-                to: friend.id, workoutName: workoutName, sets: completedSets)
-            shareSentTo.insert(friend.id)
-        } catch {
-            shareError = (error as? SharingError).map(String.init(describing:)) ?? error.localizedDescription
-        }
-        shareSendingTo = nil
-    }
-
-    /// One-tap broadcast: send the finished workout to every friend not already sent.
-    private func sendWorkoutToAll() async {
-        shareSendingTo = "*"
-        shareError = nil
-        for f in shareFriends where !shareSentTo.contains(f.id) {
-            do {
-                try await SharingService.shared.shareCompletedWorkout(
-                    to: f.id, workoutName: workoutName, sets: completedSets)
-                shareSentTo.insert(f.id)
-            } catch {
-                shareError = (error as? SharingError).map(String.init(describing:)) ?? error.localizedDescription
-            }
-        }
-        shareSendingTo = nil
-    }
-
     private func saveWorkout(andDismiss: Bool = true) {
-        FeatureUsage.record("action.finish_workout")
+        FeatureUsage.record(TelemetryEvent.workoutFinished)
         workoutEnded = true
         stopTimers()
         WorkoutService.clearSession()

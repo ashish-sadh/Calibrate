@@ -257,6 +257,9 @@ public enum TelemetryEvent {
     public static let coachChatTurn = "coach_chat_turn"
     public static let supplementTaken = "supplement_taken"
     public static let screenView = "screen_view"
+    public static let quickAdd = "quick_add"
+    public static let workoutShared = "workout_shared"
+    public static let templateShared = "template_shared"
 }
 
 /// Where an AI turn came from. Mirrors the surfaces the operator named:

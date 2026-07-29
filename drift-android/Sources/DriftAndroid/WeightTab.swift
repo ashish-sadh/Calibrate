@@ -112,6 +112,7 @@ enum WeightChartRange: String, CaseIterable {
         // Read the unit at log time, never from a snapshot: a Settings change
         // between process start and now must decide how this value is stored (#1088).
         let unitName = Preferences.weightUnit.displayName
+        FeatureUsage.record(TelemetryEvent.weightLogged)
         Task {
             await CoreResourcesBootstrap.warmUpDatabase()
             _ = WeightServiceAPI.logWeight(value: value, unit: unitName)

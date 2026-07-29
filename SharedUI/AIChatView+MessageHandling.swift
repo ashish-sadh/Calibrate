@@ -256,7 +256,7 @@ extension AIChatViewModel {
     // MARK: - Send Message
 
     func sendMessage() {
-        FeatureUsage.record("action.coach_message")
+        FeatureUsage.record(TelemetryEvent.coachChatTurn)
         var text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         if text.count > 300 { text = String(text.prefix(300)) }
         guard !text.isEmpty || pendingPhotoData != nil, !isGenerating else { return }

@@ -204,6 +204,7 @@ struct DescribeMealSheet: View {
     private func parse(_ text: String) async {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
+        FeatureUsage.record(TelemetryEvent.describeUsed)
         phase = .parsing
         let started = Date()
 

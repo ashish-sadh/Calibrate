@@ -110,6 +110,7 @@ final class WeightViewModel {
     var milestoneMessage: String?
 
     func addWeight(value: Double, date: Date = Date()) {
+        FeatureUsage.record(TelemetryEvent.weightLogged)
         let kg = weightUnit.convertToKg(value)
         var entry = WeightEntry(date: DateFormatters.dateOnly.string(from: date), weightKg: kg, source: "manual")
         do {

@@ -266,6 +266,17 @@ struct DashboardView: View {
                         }
                     }
 
+                    // Coach, clients & friends. Lived only under More until
+                    // 2026-07-28, where nobody found it; was then buried at
+                    // the bottom of Recovery (operator 2026-07-29: "Friends
+                    // is a bit hidden"). Activity is its home — training
+                    // partners belong next to the workouts. Signed-out shows
+                    // a quiet invitation rather than nothing.
+                    NavigationLink { SharingView() } label: {
+                        FriendsDashboardCard()
+                    }
+                    .tint(.primary)
+
                     // ── Recovery ──
                     sectionHeader("Recovery")
 
@@ -276,15 +287,6 @@ struct DashboardView: View {
                     if viewModel.supplementsTotal > 0 {
                         NavigationLink { SupplementsTabView() } label: { supplementCard }
                     }
-
-                    // Friends & coaches. Lived only under More until
-                    // 2026-07-28, where nobody found it. Signed-out shows a
-                    // quiet invitation rather than nothing, which is the whole
-                    // point of putting it here.
-                    NavigationLink { SharingView() } label: {
-                        FriendsDashboardCard()
-                    }
-                    .tint(.primary)
 
                     // Behavior Insights
                     if !viewModel.behaviorInsights.isEmpty {

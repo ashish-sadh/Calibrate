@@ -100,6 +100,7 @@ final class SupplementViewModel {
     }
 
     func toggleTaken(supplementId: Int64) {
+        if !isTaken(supplementId) { FeatureUsage.record(TelemetryEvent.supplementTaken) }
         do {
             try database.toggleSupplementTaken(supplementId: supplementId, date: dateString)
             loadSupplements()

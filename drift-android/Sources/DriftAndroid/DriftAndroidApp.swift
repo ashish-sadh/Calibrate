@@ -78,10 +78,14 @@ let logger: Logger = Logger(subsystem: "com.drift.health", category: "DriftAndro
 
     /* SKIP @bridge */public func onPause() {
         logger.debug("onPause")
+        // Drain the telemetry outbox on the way out (mirror of the iOS
+        // scenePhase flush in DriftApp) — a session's events ship together.
+        TelemetryService.shared.flush()
     }
 
     /* SKIP @bridge */public func onStop() {
         logger.debug("onStop")
+        TelemetryService.shared.flush()
     }
 
     /* SKIP @bridge */public func onDestroy() {

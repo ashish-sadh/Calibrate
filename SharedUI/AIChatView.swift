@@ -170,6 +170,7 @@ struct AIChatView: View {
                         vm.workoutTemplate = nil
                     }
                 }
+                .onAppear { FeatureUsage.record(TelemetryEvent.workoutStarted) }
             }
         }
         #if DRIFT_IOS_APP

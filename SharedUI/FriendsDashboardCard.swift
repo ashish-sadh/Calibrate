@@ -7,11 +7,13 @@ import DriftCore
 /// show the same thing.
 ///
 /// Two states, deliberately:
-/// - **Signed out** — a one-line invitation. This is the discovery path, so it
-///   has to be visible; it is NOT a nag (no badge, no count, muted styling) and
-///   it never touches the network.
-/// - **Signed in** — pending requests and new-from-friends activity, which is
-///   the reason to come back. Counts come from the same polling the hub uses.
+/// - **No connections yet** (signed out, or signed in with nobody) — a
+///   one-line "Connect with a coach" invitation. This is the discovery path,
+///   so it has to be visible; it is NOT a nag (no badge, no count, muted
+///   styling) and when signed out it never touches the network.
+/// - **Connected** — a role-aware title ("Your clients" for a coach, "Coach &
+///   friends" for a client, "Friends" otherwise) plus pending requests and
+///   new-from-friends activity, which is the reason to come back.
 ///
 /// Deliberately shows nothing while loading: a card that pops in with a wrong
 /// zero and then corrects itself reads as a bug.
@@ -22,13 +24,18 @@ struct FriendsDashboardCard: View {
     @State var signedIn = SharingService.shared.isSignedIn
     @State var pendingRequests = 0
     @State var friendActivity = 0
+    @State var hasCoach = false
+    @State var hasClients = false
+    @State var hasConnections = false
     @State var loaded = false
 
     var body: some View {
         Group {
-            if signedIn {
+            if signedIn && hasConnections {
                 connectedCard
             } else {
+                // Signed out, or signed in with nobody yet — either way the
+                // job is discovery, so both get the invitation copy.
                 inviteCard
             }
         }
@@ -36,6 +43,16 @@ struct FriendsDashboardCard: View {
     }
 
     // MARK: - Signed in
+
+    /// Role-aware title (operator 2026-07-29: "rename — like connect with
+    /// trainer, or if you're a coach, connect with client"). A coach opens
+    /// this card to check on clients; a client opens it for their coach.
+    var connectedTitle: String {
+        if hasClients && hasCoach { return "Coach & clients" }
+        if hasClients { return "Your clients" }
+        if hasCoach { return "Coach & friends" }
+        return "Friends"
+    }
 
     var connectedCard: some View {
         HStack(spacing: 10) {
@@ -47,7 +64,7 @@ struct FriendsDashboardCard: View {
             Image(systemName: "person.2.fill")
                 .foregroundStyle(Theme.accent)
             #endif
-            Text("Friends").font(.subheadline.weight(.semibold))
+            Text(connectedTitle).font(.subheadline.weight(.semibold))
             Spacer()
             if pendingRequests > 0 {
                 badge("\(pendingRequests) new", tint: Theme.accent)
@@ -86,9 +103,9 @@ struct FriendsDashboardCard: View {
                 .foregroundStyle(Theme.textSecondary)
             #endif
             VStack(alignment: .leading, spacing: 2) {
-                Text("Friends & coaches").font(.subheadline.weight(.medium))
+                Text("Connect with a coach").font(.subheadline.weight(.medium))
                     .foregroundStyle(Theme.textPrimary)
-                Text("Share workouts, get a coach — just pick a username")
+                Text("Or train with friends — share workouts, chat. Just pick a @username")
                     .font(.caption2).foregroundStyle(Theme.textSecondary)
             }
             Spacer()
@@ -106,10 +123,16 @@ struct FriendsDashboardCard: View {
         signedIn = SharingService.shared.isSignedIn
         guard signedIn else { return }
         // Best-effort: the dashboard must render instantly whether or not the
-        // backend answers, so failures leave the counts at zero.
+        // backend answers, so failures leave the counts at zero (and the card
+        // in its invitation form).
         async let requests = try? SharingService.shared.incomingRequests()
         async let sessions = try? SharingService.shared.clientSessions()
+        async let conns = try? SharingService.shared.connections()
         pendingRequests = (await requests)?.count ?? 0
         friendActivity = (await sessions)?.count ?? 0
+        let connections = (await conns) ?? []
+        hasConnections = !connections.isEmpty
+        hasCoach = connections.contains { $0.kind == .coach }
+        hasClients = connections.contains { $0.kind == .client }
     }
 }

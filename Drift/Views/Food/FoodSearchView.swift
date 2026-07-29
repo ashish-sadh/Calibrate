@@ -130,6 +130,7 @@ struct FoodSearchView: View {
                             searchDebounceTask = Task {
                                 try? await Task.sleep(for: .milliseconds(200))
                                 guard !Task.isCancelled else { return }
+                                FeatureUsage.record(TelemetryEvent.searchUsed)
                                 let localResults = await Task.detached { () -> [Food] in
                                     var r = FoodService.searchFood(query: q)
                                     // Fuzzy fallback: if no results, try dropping last char
@@ -512,7 +513,7 @@ struct FoodSearchView: View {
             Image(systemName: "magnifyingglass").font(.title2).foregroundStyle(Theme.textTertiary)
             Text("No results for \"\(query)\"").font(.subheadline).foregroundStyle(Theme.textSecondary)
             if onDescribe != nil {
-                Button { onDescribe?(trimmedQuery) } label: {
+                Button { FeatureUsage.record(TelemetryEvent.aiRowTapped); onDescribe?(trimmedQuery) } label: {
                     Label("Log with AI", systemImage: "sparkles").font(.subheadline)
                 }
                 .buttonStyle(.borderedProminent)
@@ -542,7 +543,7 @@ struct FoodSearchView: View {
     }
 
     private var describeWithAIRow: some View {
-        Button { onDescribe?(trimmedQuery) } label: {
+        Button { FeatureUsage.record(TelemetryEvent.aiRowTapped); onDescribe?(trimmedQuery) } label: {
             HStack(spacing: 10) {
                 Image(systemName: "sparkles")
                     .foregroundStyle(Theme.accent)

@@ -7,8 +7,9 @@ public final class AIScreenTracker {
     public static let shared = AIScreenTracker()
     public var currentScreen: AIScreen = .dashboard {
         didSet {
-            // On-device usage counter (never leaves the device) — every
-            // screen the user lands on. See FeatureUsage.
+            // Usage counter for every screen the user lands on — routes to
+            // the anonymous, opt-out telemetry pipeline (ships to the backend
+            // in batches since 2026-07-28). See FeatureUsage.
             if oldValue != currentScreen { FeatureUsage.record("screen.\(currentScreen.rawValue)") }
         }
     }

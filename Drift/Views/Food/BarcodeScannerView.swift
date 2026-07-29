@@ -110,6 +110,7 @@ struct BarcodeLookupView: View {
                         scannedBarcode = barcode
                         lookupBarcode(barcode)
                     }
+                    .onAppear { FeatureUsage.record(TelemetryEvent.barcodeUsed) }
                     .ignoresSafeArea()
                 } else if isLooking {
                     VStack(spacing: 16) {
