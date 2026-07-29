@@ -73,9 +73,32 @@ users with `.client` connections:
   `ClientSessionDetailView` data), briefing metrics/notes, and two actions:
   **Assign template** (existing `shareTemplate` flow, template picker) and
   **Chat**. "Build and coach" = assign + review + talk, all one screen.
-- Nothing new crosses the wire: the coach sees exactly what the client's
-  briefing level + shared workouts already grant. The redesign is
-  presentation, not new access.
+
+Operator expansion (2026-07-29): the client detail must be a real
+decision-support dashboard, not number lines. Today the coach gets flat text
+("Weight change: −2.3 lbs") and raw set lists — no graphs, no PRs, no
+plateaus. Three additions:
+
+- **Training intelligence, computed coach-side** — PRs (best e1RM / best
+  weight×reps per main lift) and **plateau flags** (no improvement on a lift
+  over N sessions) derived from the workout sessions the coach ALREADY
+  receives. No new consent needed; pure DriftCore math (Tier-0 testable).
+  Rendered as a "Records & plateaus" card: PR list with dates, plateaued
+  lifts flagged with "8 sessions flat — change stimulus?".
+- **Real graphs** — weight trend, sleep, calories/protein as charts (the
+  Apple-Health-style single line + dots house style; hand-rolled path
+  rendering per the Android chart precedent since SkipUI has no Charts).
+  Requires the briefing payload to carry the day-SERIES, not just
+  aggregates: additive JSON keys (`weight_series`, `sleep_series`,
+  `nutrition_series`) inside `metrics`, each populated ONLY under its
+  existing consent toggle (weight/sleep/nutrition levels already exist —
+  consent semantics unchanged, additive migration only).
+- **Mirror-view principle (load-bearing)** — ONE shared component,
+  `ClientBriefingView(briefing:)`, renders the briefing everywhere: the
+  client's CoachSharingCard shows it built from LOCAL data ("this is exactly
+  what your coach sees"), the coach's client detail shows it from the
+  FETCHED briefing. Same component, zero drift between what-you-think-you-
+  share and what-they-see. Consent you can see, not a checkbox you trust.
 
 ## Technical Approach
 
