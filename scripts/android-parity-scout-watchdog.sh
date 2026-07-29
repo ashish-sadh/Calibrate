@@ -54,6 +54,7 @@ while true; do
     (
         cd "$WORK_DIR" || exit 1
         export DRIFT_AUTONOMOUS=1
+        export DRIFT_PARITY_LANE=scout
         exec "${CLAUDE_BIN:-$HOME/.local/bin/claude}" -p "/android-parity-scout" \
             --dangerously-skip-permissions \
             --model claude-opus-4-8 \

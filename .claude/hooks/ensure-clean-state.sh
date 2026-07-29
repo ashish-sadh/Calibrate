@@ -59,6 +59,26 @@ UNTRACKED=$(git status --porcelain 2>/dev/null | grep '^??' | grep -v '.claude/'
 # Check for unpushed commits
 UNPUSHED=$(git log --oneline @{upstream}..HEAD 2>/dev/null | head -5)
 
+# #1100: the tiered parity autopilot runs scout + planner + executor lanes in
+# ONE shared checkout. The read-only lanes (scout, planner) never edit code
+# files of their own — any dirty/untracked code they see at Stop is the
+# EXECUTOR sibling's live WIP, and blocking them on it deadlocks the pipeline.
+# When THIS session is a read-only parity lane AND an executor lane is live,
+# drop the dirty/untracked contribution (the executor owns and will commit it);
+# the UNPUSHED-commit gate below still applies, so this lane's own committed
+# matrix/memory work is never allowed to escape unpushed. The executor lane
+# (DRIFT_PARITY_LANE=executor) and the single-session iOS autopilot (var unset)
+# keep the full commit-or-abandon gate. DRIFT_AUTONOMOUS is deliberately NOT
+# touched (it gates ~6 other branches in this hook + other hooks).
+if { [ "${DRIFT_PARITY_LANE:-}" = "scout" ] || [ "${DRIFT_PARITY_LANE:-}" = "planner" ]; } \
+   && pgrep -f 'android-parity --dangerously' > /dev/null 2>&1; then
+  if [ -n "$DIRTY" ] || [ -n "$UNTRACKED" ]; then
+    echo "[ensure-clean-state] parity ${DRIFT_PARITY_LANE} lane, executor sibling live — foreign WIP left to it (dirty-file gate skipped; unpushed gate still enforced)"
+  fi
+  DIRTY=""
+  UNTRACKED=""
+fi
+
 ISSUES=""
 
 if [ -n "$DIRTY" ]; then

@@ -53,6 +53,7 @@ while true; do
     (
         cd "$WORK_DIR" || exit 1
         export DRIFT_AUTONOMOUS=1
+        export DRIFT_PARITY_LANE=executor
         export JAVA_HOME=/opt/homebrew/opt/openjdk
         export ANDROID_HOME=/opt/homebrew/share/android-commandlinetools
         exec "${CLAUDE_BIN:-$HOME/.local/bin/claude}" -p "/android-parity" \

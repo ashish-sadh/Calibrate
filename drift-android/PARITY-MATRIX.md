@@ -12,6 +12,26 @@ not ported at all.
 
 ## Session notes (append-only)
 
+- **2026-07-28 (executor, Sonnet), #1100:** Executed #1100's plan exactly: `.claude/hooks/ensure-clean-state.sh`
+  now skips the dirty/untracked-file gate for `DRIFT_PARITY_LANE` ∈ {scout, planner} Stop-hook runs when
+  `pgrep -f 'android-parity --dangerously'` finds a live executor sibling (the UNPUSHED gate is byte-identical,
+  untouched); all three parity watchdogs (`android-parity-watchdog.sh`/`-planner-watchdog.sh`/`-scout-watchdog.sh`)
+  now export their own `DRIFT_PARITY_LANE` right after `DRIFT_AUTONOMOUS=1`. Verified all 5 branches with a
+  spawned decoy process standing in for "executor sibling live" (see caveat below — NOT this session's own
+  PID): `DRIFT_PARITY_LANE=planner`/`scout` + decoy alive → rc=0 (skip fires); `=executor` and no-lane-var
+  (iOS autopilot) + decoy alive → rc=2 (full gate kept, unchanged); `planner` with NO decoy alive → rc=2
+  (skip does NOT fire when no executor is genuinely live — not a blanket bypass). Discriminator regex
+  confirmed via two backgrounded decoys to match an `/android-parity` process and reject an
+  `/android-parity-scout` one. **CAVEAT discovered while testing** (also recorded on the scout-deadlock
+  memory): macOS `pgrep -f` silently excludes ANY ancestor of the *calling* process from its match set — this
+  session's own executor PID (my direct parent, confirmed via `ps -p $PPID`) was invisible to a `pgrep` run
+  from a child shell, which would have produced a false-negative on the discriminator test had I not swapped
+  to a genuine backgrounded decoy. Irrelevant to production (scout/planner/executor are independent sibling
+  process trees spawned by separate watchdogs — never ancestors of each other) but a real trap for future
+  self-testing. No Swift/SharedUI/DriftCore touched (infra-only: 2 hook/watchdog dirs + this note), so no
+  Android/iOS build or test run required per the plan; `bash -n` clean on all four scripts. Operator must
+  restart the three parity watchdogs for the new `export`s to take effect — not done by this session.
+
 - **2026-07-28 (scout #12):** DEVICE-REFERENCE sweep of **Workout** (operator directive 0-SCREEN-BY-SCREEN-WORKOUT).
   ps-check: executor `/android-parity` (PID 62401, Sonnet) LIVE and parked on the ExerciseVoiceLogSheet on
   emulator-5554 device-verifying its own fresh #1106 fix (e979e2c5 / row-487 flip 58a33c43) → the Android emulator
