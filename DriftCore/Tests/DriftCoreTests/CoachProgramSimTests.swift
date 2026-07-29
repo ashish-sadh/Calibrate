@@ -220,6 +220,70 @@ import Testing
         }
     }
 
+    /// #1157: "just dumbbells at home" must never draft a movement that needs
+    /// a gym — no cable, no machine, no barbell, on ANY day.
+    @Test func dumbbellsOnlyDraftNeverNeedsAGym() {
+        var intake = CoachIntake()
+        intake.daysPerWeek = 3
+        intake.sessionMinutes = 45
+        intake.equipment = "just dumbbells at home"
+        intake.askedInjuries = true
+
+        let program = Self.dump("3 days · dumbbells at home", intake)
+        #expect(!program.isEmpty)
+        for template in program {
+            let working = template.exercises.filter { !$0.isWarmup }
+            #expect(!working.isEmpty, "\(template.name) drafted empty after the equipment filter")
+            for exercise in working {
+                let equip = ExerciseDatabase.match(name: exercise.name)?.equipment.lowercased() ?? "unknown"
+                #expect(["body only", "dumbbell"].contains(equip),
+                        "\(template.name): \(exercise.name) needs '\(equip)'")
+            }
+        }
+    }
+
+    /// The filter must not over-restrict: a full gym keeps the classic
+    /// barbell/cable staples.
+    @Test func fullGymKeepsTheBarbellStaples() {
+        var intake = CoachIntake()
+        intake.daysPerWeek = 3
+        intake.sessionMinutes = 60
+        intake.equipment = "Fully stocked gym"
+        intake.askedInjuries = true
+
+        let names = CoachProgramBuilder.draft(from: intake)
+            .flatMap { $0.exercises.filter { !$0.isWarmup } }
+            .map { $0.name.lowercased() }
+        #expect(names.contains { name in
+            ExerciseDatabase.match(name: name)?.equipment.lowercased() == "barbell"
+        }, "a full gym lost its barbell work: \(names)")
+    }
+
+    /// Free text we don't recognize must not silently delete the pool —
+    /// no restriction beats a wrong one.
+    @Test func unrecognizedEquipmentTextDoesNotRestrict() {
+        #expect(CoachProgramBuilder.allowedEquipment(for: {
+            var intake = CoachIntake()
+            intake.equipment = "my society's resistance setup"
+            return intake
+        }()) == nil)
+        #expect(CoachProgramBuilder.allowedEquipment(for: CoachIntake()) == nil)
+    }
+
+    /// The chip vocabulary the coach itself suggests maps to sane pools.
+    @Test func equipmentChipsMapToExpectedPools() {
+        func pool(_ text: String) -> Set<String>? {
+            var intake = CoachIntake()
+            intake.equipment = text
+            return CoachProgramBuilder.allowedEquipment(for: intake)
+        }
+        #expect(pool("Gym (full)") == nil)
+        #expect(pool("Home (minimal)") == Set(["body only", "dumbbell", "bands"]))
+        #expect(pool("Dumbbells only") == Set(["body only", "dumbbell"]))
+        #expect(pool("Barbell setup")?.contains("barbell") == true)
+        #expect(pool("bodyweight") == Set(["body only"]))
+    }
+
     /// A Push day's coverage should read like a push day.
     @Test func pushDayCoverageMentionsChest() {
         var intake = CoachIntake()

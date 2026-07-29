@@ -1257,22 +1257,36 @@ struct FoodTabView: View {
                 Text("\(daysLogged)/30 days").font(.caption.monospacedDigit()).foregroundStyle(Theme.textSecondary)
             }
 
-            let columns = Array(repeating: GridItem(.flexible(), spacing: 3), count: 10)
-            LazyVGrid(columns: columns, spacing: 3) {
-                ForEach(sorted, id: \.key) { date, cal in
-                    RoundedRectangle(cornerRadius: 3)
-                        // Pink-fatigue pass — was 0.0-1.0 opacity ramp;
-                        // capped to 0.65 so a day at 2000 cal reads as
-                        // a confident-but-muted coral instead of full-
-                        // saturation shouting. Empty cells remain
-                        // cardBackgroundElevated (visible-but-quiet).
-                        .fill(heatColor(cal, cap: 0.65))
-                        .frame(height: 14)
-                        .overlay {
-                            if Calendar.current.isDateInToday(date) {
-                                RoundedRectangle(cornerRadius: 3).strokeBorder(Theme.accent, lineWidth: 1)
+            // #1159: this was a LazyVGrid(GridItem(.flexible())×10), which at
+            // Android font_scale > 1 rendered NOTHING — and took the card's
+            // sibling Texts down with it, leaving an empty card with only the
+            // legend squares. 30 fixed cells need no laziness; three explicit
+            // rows measure correctly at every scale on both platforms.
+            VStack(spacing: 3) {
+                ForEach(0..<3, id: \.self) { row in
+                    HStack(spacing: 3) {
+                        ForEach(0..<10, id: \.self) { col in
+                            let idx = row * 10 + col
+                            if idx < sorted.count {
+                                RoundedRectangle(cornerRadius: 3)
+                                    // Pink-fatigue pass — was 0.0-1.0 opacity
+                                    // ramp; capped to 0.65 so a day at 2000 cal
+                                    // reads as a confident-but-muted coral.
+                                    // Empty cells remain cardBackgroundElevated
+                                    // (visible-but-quiet).
+                                    .fill(heatColor(sorted[idx].value, cap: 0.65))
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 14)
+                                    .overlay {
+                                        if Calendar.current.isDateInToday(sorted[idx].key) {
+                                            RoundedRectangle(cornerRadius: 3).strokeBorder(Theme.accent, lineWidth: 1)
+                                        }
+                                    }
+                            } else {
+                                Color.clear.frame(maxWidth: .infinity).frame(height: 14)
                             }
                         }
+                    }
                 }
             }
 

@@ -173,9 +173,49 @@ public enum CoachProgramBuilder {
         return ExerciseDatabase.match(name: name)
     }
 
-    /// Honour "machines only" and steer away from a painful area — a program
-    /// that loads a sore back is worse than no program.
+    /// The DB equipment classes the user's stated setup can actually load.
+    /// #1157: "just dumbbells at home" drafted Triceps Pushdown (cable) and
+    /// bare Bench Press (barbell) — equipment was captured in intake but
+    /// never filtered on. nil = no restriction (a full gym, or free text we
+    /// don't recognize — guessing a restriction silently deletes the pool,
+    /// which is worse than an occasional gym movement).
+    static func allowedEquipment(for intake: CoachIntake) -> Set<String>? {
+        guard let text = intake.equipment?.lowercased(), !text.isEmpty else { return nil }
+        if text.contains("gym") || text.contains("everything") || text.contains("full") {
+            return nil
+        }
+
+        var allowed: Set<String> = ["body only"]
+        var recognized = false
+        if text.contains("dumbbell") { allowed.insert("dumbbell"); recognized = true }
+        if text.contains("barbell") || text.contains("rack") || text.contains("bench") {
+            allowed.formUnion(["barbell", "e-z curl bar", "dumbbell"]); recognized = true
+        }
+        if text.contains("kettlebell") { allowed.insert("kettlebells"); recognized = true }
+        if text.contains("band") { allowed.insert("bands"); recognized = true }
+        if text.contains("machine") || text.contains("cable") {
+            allowed.formUnion(["machine", "cable"]); recognized = true
+        }
+        // "Home (minimal)" and friends: the coach's assumption is dumbbells +
+        // bands + bodyweight, the setup nearly every home lifter has.
+        if text.contains("home") || text.contains("minimal") {
+            allowed.formUnion(["dumbbell", "bands"]); recognized = true
+        }
+        if text.contains("bodyweight") || text.contains("body weight")
+            || text.contains("nothing") || text.contains("no equipment") {
+            recognized = true
+        }
+        return recognized ? allowed : nil
+    }
+
+    /// Honour the stated equipment and "machines only", and steer away from a
+    /// painful area — a program that loads a sore back is worse than no
+    /// program.
     static func allows(_ info: ExerciseDatabase.ExerciseInfo, intake: CoachIntake) -> Bool {
+        if let allowed = allowedEquipment(for: intake),
+           !allowed.contains(info.equipment.lowercased()) {
+            return false
+        }
         if intake.usesBarbell == false, barbellMovements.contains(info.name.lowercased()) {
             return false
         }
