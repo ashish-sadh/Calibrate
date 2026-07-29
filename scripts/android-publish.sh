@@ -45,7 +45,16 @@ echo "versionCode: $CUR → $NEXT"
 # "Duplicate resources" merger failures (seen 2026-07-18).
 rm -rf drift-android/.build/Android drift-android/.build/skip-export
 
-(cd drift-android && skip export --plain) || true  # iOS-side sub-steps may fail; the AAB is what matters
+# --release: a plain `skip export` runs `gradle assemble`, which builds the
+# debug AND release variants in one invocation. Both variants' Swift builds
+# write into the same jni-libs dir (debug: arm64 only; release: all ABIs), and
+# the release jni-lib merge then fails with "Duplicate resources" where each
+# file conflicts with ITSELF (seen 2026-07-28/29, 8 failed publish attempts).
+# Building only the release variant removes the double-write entirely.
+# --no-ios: this pipeline only needs the AAB; skip the iOS .ipa export.
+# --no-export-project: the project-source zip chokes on GRDB's recursive
+# Tests/CustomSQLite symlink loop and wastes ~150 MB; publish never needs it.
+(cd drift-android && skip export --release --no-ios --no-export-project --plain) || true  # non-AAB sub-steps may fail; the AAB is what matters
 
 AAB=drift-android/.build/skip-export/DriftAndroid-release.aab
 if [ ! -f "$AAB" ]; then
