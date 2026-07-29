@@ -357,6 +357,51 @@ public enum WorkoutService {
         return sets.compactMap(\.estimated1RM).max()
     }
 
+    /// One best set per exercise, ranked by how CENTRAL the lift is to this
+    /// person's training (total working sets logged) rather than by absolute
+    /// load — a coach wants the lifts you actually train, not whichever
+    /// movement happens to move the most weight.
+    ///
+    /// The date comes from the set's workout, since sets carry only a
+    /// `workoutId`. Warmups are excluded; so is anything without weight+reps.
+    public static func personalRecords(limit: Int = 5) throws -> [PersonalRecord] {
+        let (sets, dateByWorkout) = try db.reader.read { dbConn in
+            let sets = try WorkoutSet.filter(Column("is_warmup") == false).fetchAll(dbConn)
+            let workouts = try Workout.fetchAll(dbConn)
+            var dates: [Int64: String] = [:]
+            for workout in workouts { if let id = workout.id { dates[id] = workout.date } }
+            return (sets, dates)
+        }
+        return personalRecords(from: sets, dateByWorkout: dateByWorkout, limit: limit)
+    }
+
+    /// The ranking itself, separated from the read so it is Tier-0 testable
+    /// without a database.
+    static func personalRecords(from sets: [WorkoutSet],
+                                dateByWorkout: [Int64: String],
+                                limit: Int) -> [PersonalRecord] {
+        var best: [String: PersonalRecord] = [:]
+        var volume: [String: Int] = [:]
+        for set in sets {
+            volume[set.exerciseName, default: 0] += 1
+            guard let oneRM = set.estimated1RM,
+                  let weight = set.weightLbs, let reps = set.reps else { continue }
+            if let existing = best[set.exerciseName], existing.estimated1RM >= oneRM { continue }
+            best[set.exerciseName] = PersonalRecord(
+                exercise: set.exerciseName, weightLbs: weight, reps: reps,
+                estimated1RM: oneRM, date: dateByWorkout[set.workoutId] ?? "")
+        }
+
+        return best.values
+            .sorted { a, b in
+                let (va, vb) = (volume[a.exercise] ?? 0, volume[b.exercise] ?? 0)
+                // Alphabetical tiebreak so the list is stable across runs.
+                return va == vb ? a.exercise < b.exercise : va > vb
+            }
+            .prefix(limit)
+            .map { $0 }
+    }
+
     /// Last weight used for an exercise.
     public static func lastWeight(for exerciseName: String) throws -> Double? {
         try db.reader.read { dbConn in

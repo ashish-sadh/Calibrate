@@ -27,6 +27,10 @@ public struct BriefingSharingLevel: OptionSet, Codable, Sendable, Hashable {
     /// never the scan document. Own bit per the decisions.md rule: every
     /// widening of what crosses to a coach gets its own opt-in.
     public static let bodyComp = BriefingSharingLevel(rawValue: 1 << 4)
+    /// Strength records — the best set per main lift with its date, drawn
+    /// from the FULL local workout history (not just the sessions explicitly
+    /// shared), which is why it earns its own bit.
+    public static let strength = BriefingSharingLevel(rawValue: 1 << 5)
 
     public static let none: BriefingSharingLevel = []
 
@@ -51,7 +55,38 @@ public struct BriefingSharingLevel: OptionSet, Codable, Sendable, Hashable {
         if contains(.sleep) { out.append("Average sleep") }
         if contains(.nutrition) { out.append("Average calories & protein") }
         if contains(.weight) { out.append("Weight trend") }
+        if contains(.bodyComp) { out.append("Body composition") }
+        if contains(.strength) { out.append("Strength records") }
         return out
+    }
+}
+
+/// One point in a weekly-average trend: the week's start date and its value.
+///
+/// WEEKLY, not daily, and that is a consent decision rather than a display
+/// one (operator ruling 2026-07-29): the sharing toggles promise "averages
+/// over a window", so a per-day series would widen what the client agreed to.
+/// A weekly average honours the promise and still draws a real trend.
+public struct WeeklyPoint: Codable, Sendable, Equatable {
+    /// yyyy-MM-dd of the week's first day.
+    public var weekStart: String
+    public var value: Double
+
+    public init(weekStart: String, value: Double) {
+        self.weekStart = weekStart
+        self.value = value
+    }
+
+    var payload: [String: Any] { ["week": weekStart, "value": value] }
+
+    static func decode(_ any: Any?) -> [WeeklyPoint]? {
+        guard let rows = any as? [[String: Any]] else { return nil }
+        let points = rows.compactMap { row -> WeeklyPoint? in
+            guard let week = row["week"] as? String,
+                  let value = BriefingMetrics.double(row["value"]) else { return nil }
+            return WeeklyPoint(weekStart: week, value: value)
+        }
+        return points.isEmpty ? nil : points
     }
 }
 
@@ -78,6 +113,20 @@ public struct BriefingMetrics: Codable, Sendable, Equatable {
     /// yyyy-MM-dd of the scan the numbers come from, so a coach knows how
     /// fresh the picture is.
     public var scanDate: String?
+    // Weekly-average TRENDS (operator ask: "I wish they can see weight trend
+    // and average sleep trend etc too"). Each rides its existing category
+    // bit — weight series under .weight, sleep under .sleep, calories under
+    // .nutrition — because a weekly average is exactly what those toggles
+    // already promise.
+    public var weightSeries: [WeeklyPoint]?
+    public var sleepSeries: [WeeklyPoint]?
+    public var caloriesSeries: [WeeklyPoint]?
+    /// Days food was logged in the window, so "didn't log Tuesday" is
+    /// distinguishable from "ate nothing Tuesday" — the averages alone hide
+    /// which one happened (operator: "calories, whether logged or not").
+    public var daysLogged: Int?
+    /// Best set per main lift (the `.strength` opt-in).
+    public var records: [PersonalRecord]?
 
     public init() {}
 
@@ -96,6 +145,11 @@ public struct BriefingMetrics: Codable, Sendable, Equatable {
         }
         if let calories = avgCalories {
             out.append(("Avg calories", String(format: "%.0f", calories)))
+        }
+        // Adherence, not content: how many days were logged at all. Without
+        // it a coach can't tell a light week from an unlogged one.
+        if let logged = daysLogged {
+            out.append(("Days logged", "\(logged)/\(windowDays)"))
         }
         if let change = weightChangeLbs {
             let sign = change > 0 ? "+" : ""
@@ -119,6 +173,50 @@ public struct BriefingMetrics: Codable, Sendable, Equatable {
         return out
     }
 
+    /// One trend per shared category, ready to plot. A series of fewer than
+    /// two points is dropped — a one-point "trend" is a number pretending to
+    /// be a direction.
+    public var trends: [Trend] {
+        var out: [Trend] = []
+        if let series = weightSeries, series.count >= 2 {
+            out.append(Trend(label: "Weight", unit: "lb", points: series, decimals: 1))
+        }
+        if let series = sleepSeries, series.count >= 2 {
+            out.append(Trend(label: "Sleep", unit: "h", points: series, decimals: 1))
+        }
+        if let series = caloriesSeries, series.count >= 2 {
+            out.append(Trend(label: "Calories", unit: "", points: series, decimals: 0))
+        }
+        return out
+    }
+
+    /// A plottable weekly trend plus the labels a compact chart needs.
+    public struct Trend: Sendable, Equatable, Identifiable {
+        public var label: String
+        public var unit: String
+        public var points: [WeeklyPoint]
+        public var decimals: Int
+
+        public var id: String { label }
+        public var values: [Double] { points.map(\.value) }
+
+        /// Net change first-to-last — the number a coach reads before the shape.
+        public var change: Double { (values.last ?? 0) - (values.first ?? 0) }
+
+        public func format(_ value: Double) -> String {
+            let text = String(format: "%.\(decimals)f", value)
+            return unit.isEmpty ? text : "\(text) \(unit)"
+        }
+
+        public var changeText: String {
+            let sign = change > 0 ? "+" : ""
+            return sign + format(change)
+        }
+
+        /// Weeks covered, for "over 8 weeks" copy.
+        public var weeks: Int { points.count }
+    }
+
     /// JSON for the `metrics` column. Only shared fields are emitted, so the
     /// wire payload itself carries no trace of a category the user withheld —
     /// the filtering happens before the network, not on read.
@@ -135,6 +233,16 @@ public struct BriefingMetrics: Codable, Sendable, Equatable {
         if let value = leanMassLbs { dict["lean_mass_lbs"] = value }
         if let value = leanMassDeltaLbs { dict["lean_mass_delta_lbs"] = value }
         if let value = scanDate { dict["scan_date"] = value }
+        if let series = weightSeries { dict["weight_series"] = series.map(\.payload) }
+        if let series = sleepSeries { dict["sleep_series"] = series.map(\.payload) }
+        if let series = caloriesSeries { dict["calories_series"] = series.map(\.payload) }
+        if let value = daysLogged { dict["days_logged"] = value }
+        if let records, !records.isEmpty {
+            dict["records"] = records.map { record in
+                ["exercise": record.exercise, "weight_lbs": record.weightLbs,
+                 "reps": record.reps, "one_rm": record.estimated1RM, "date": record.date]
+            }
+        }
         return dict
     }
 
@@ -153,6 +261,22 @@ public struct BriefingMetrics: Codable, Sendable, Equatable {
         metrics.leanMassLbs = double(dict["lean_mass_lbs"])
         metrics.leanMassDeltaLbs = double(dict["lean_mass_delta_lbs"])
         metrics.scanDate = dict["scan_date"] as? String
+        metrics.weightSeries = WeeklyPoint.decode(dict["weight_series"])
+        metrics.sleepSeries = WeeklyPoint.decode(dict["sleep_series"])
+        metrics.caloriesSeries = WeeklyPoint.decode(dict["calories_series"])
+        metrics.daysLogged = (dict["days_logged"] as? Int)
+            ?? double(dict["days_logged"]).map(Int.init)
+        if let rows = dict["records"] as? [[String: Any]] {
+            let records = rows.compactMap { row -> PersonalRecord? in
+                guard let exercise = row["exercise"] as? String,
+                      let weight = double(row["weight_lbs"]),
+                      let oneRM = double(row["one_rm"]) else { return nil }
+                let reps = (row["reps"] as? Int) ?? double(row["reps"]).map(Int.init) ?? 0
+                return PersonalRecord(exercise: exercise, weightLbs: weight, reps: reps,
+                                      estimated1RM: oneRM, date: (row["date"] as? String) ?? "")
+            }
+            metrics.records = records.isEmpty ? nil : records
+        }
         return metrics
     }
 
@@ -187,5 +311,6 @@ public struct ClientBriefing: Sendable, Equatable, Identifiable {
     /// the coach card and a "nothing shared yet" hint.
     public var isEmpty: Bool {
         summary.isEmpty && notes.isEmpty && metrics.lines.isEmpty
+            && metrics.trends.isEmpty && (metrics.records?.isEmpty ?? true)
     }
 }

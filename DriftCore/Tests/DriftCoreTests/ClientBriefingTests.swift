@@ -187,6 +187,170 @@ struct ClientBriefingTests {
         #expect(decoded.leanMassDeltaLbs == nil)
     }
 
+    // MARK: - Weekly trends, adherence, records
+
+    private func day(_ offset: Int) -> Date {
+        Date(timeIntervalSince1970: 1_750_000_000 + Double(offset) * 86_400)
+    }
+
+    /// Trends are WEEKLY AVERAGES — the consent boundary, not a display
+    /// choice. Two weeks of daily weights collapse to two points, each the
+    /// week's mean.
+    @Test func trendsBucketDailyValuesIntoWeeklyAverages() {
+        // Two clean weeks: 7 days at 180, then 7 days at 178.
+        var samples: [(date: Date, value: Double)] = []
+        for i in 0..<7 { samples.append((day(i), 180)) }
+        for i in 7..<14 { samples.append((day(i), 178)) }
+
+        let points = BriefingAggregator.weeklyAverages(samples)
+        #expect(points?.count == 2)
+        #expect(points?.first?.value == 180)
+        #expect(points?.last?.value == 178)
+        // Oldest first, so a chart reads left-to-right in time.
+        #expect((points?.first?.weekStart ?? "") < (points?.last?.weekStart ?? ""))
+    }
+
+    /// A single week is a number, not a direction — `trends` drops it.
+    @Test func oneWeekIsNotATrend() {
+        var metrics = BriefingMetrics()
+        metrics.weightSeries = [WeeklyPoint(weekStart: "2026-07-20", value: 180)]
+        #expect(metrics.trends.isEmpty)
+
+        metrics.weightSeries?.append(WeeklyPoint(weekStart: "2026-07-27", value: 177.6))
+        let trend = metrics.trends.first
+        #expect(trend?.label == "Weight")
+        #expect(trend?.weeks == 2)
+        #expect(trend?.changeText == "-2.4 lb")
+    }
+
+    /// Series ride their category's existing bit, and stay off the wire when
+    /// that category is withheld.
+    @Test func seriesFollowTheirCategoryConsent() {
+        let sleep = [(date: day(0), hours: 7.0), (date: day(8), hours: 6.0)]
+        let weights = [(date: day(0), lbs: 180.0), (date: day(8), lbs: 178.0)]
+
+        let sleepOnly = BriefingAggregator.metrics(
+            level: [.sleep], trendSleep: sleep, trendWeights: weights)
+        #expect(sleepOnly.sleepSeries?.count == 2)
+        #expect(sleepOnly.weightSeries == nil, "weight wasn't shared")
+        #expect(sleepOnly.payload["weight_series"] == nil)
+
+        let both = BriefingAggregator.metrics(
+            level: [.sleep, .weight], trendSleep: sleep, trendWeights: weights)
+        #expect(both.weightSeries?.count == 2)
+        #expect(both.payload["weight_series"] != nil)
+    }
+
+    /// "Didn't log" must be distinguishable from "ate nothing" — the averages
+    /// alone can't say which happened.
+    @Test func daysLoggedRidesWithNutritionAndShowsAdherence() {
+        let metrics = BriefingAggregator.metrics(
+            level: [.nutrition], windowDays: 7,
+            nutrition: [.init(date: day(0), calories: 2000, proteinG: 120)],
+            daysLogged: 5)
+        #expect(metrics.daysLogged == 5)
+        #expect(metrics.lines.contains { $0.label == "Days logged" && $0.value == "5/7" })
+
+        let withheld = BriefingAggregator.metrics(level: [.weight], daysLogged: 5)
+        #expect(withheld.daysLogged == nil)
+        #expect(withheld.payload["days_logged"] == nil)
+    }
+
+    /// PRs come from the full history and need the .strength bit — they are a
+    /// widening beyond the sessions a client explicitly shared.
+    @Test func recordsNeedTheStrengthBit() {
+        let prs = [PersonalRecord(exercise: "Bench Press", weightLbs: 185, reps: 5,
+                                  estimated1RM: 208.1, date: "2026-07-20")]
+
+        let withheld = BriefingAggregator.metrics(level: [.weight], records: prs)
+        #expect(withheld.records == nil)
+        #expect(withheld.payload["records"] == nil)
+
+        let shared = BriefingAggregator.metrics(level: [.strength], records: prs)
+        #expect(shared.records?.count == 1)
+        #expect(shared.records?.first?.setDescription == "185 lb × 5")
+        #expect(shared.payload["records"] != nil)
+    }
+
+    /// The whole trend/record payload must survive the jsonb round trip, or a
+    /// coach reads a briefing that silently lost its charts.
+    @Test func trendsAndRecordsSurviveEncodeAndDecode() {
+        var original = BriefingMetrics()
+        original.weightSeries = [WeeklyPoint(weekStart: "2026-07-13", value: 180.2),
+                                 WeeklyPoint(weekStart: "2026-07-20", value: 178.4)]
+        original.daysLogged = 6
+        original.records = [PersonalRecord(exercise: "Squat", weightLbs: 245, reps: 3,
+                                           estimated1RM: 269.6, date: "2026-07-18")]
+
+        let decoded = BriefingMetrics.decode(original.payload)
+        #expect(decoded.weightSeries?.count == 2)
+        #expect(decoded.weightSeries?.last?.value == 178.4)
+        #expect(decoded.weightSeries?.first?.weekStart == "2026-07-13")
+        #expect(decoded.daysLogged == 6)
+        #expect(decoded.records?.first?.exercise == "Squat")
+        #expect(decoded.records?.first?.reps == 3)
+        #expect(decoded.sleepSeries == nil)
+    }
+
+    /// A briefing carrying only trends/records is NOT empty — otherwise the
+    /// coach card would hide a client who shares exactly those.
+    @Test func aBriefingWithOnlyTrendsIsNotEmpty() {
+        var metrics = BriefingMetrics()
+        metrics.weightSeries = [WeeklyPoint(weekStart: "2026-07-13", value: 180),
+                                WeeklyPoint(weekStart: "2026-07-20", value: 178)]
+        let briefing = ClientBriefing(clientID: "c", summary: "", notes: [], metrics: metrics)
+        #expect(!briefing.isEmpty)
+    }
+
+    // MARK: - PR ranking
+
+    /// The best set per exercise, ranked by how central the lift is to this
+    /// person's training — not by which movement happens to move the most
+    /// weight. A deadlift they tried once shouldn't outrank the bench they
+    /// train every week.
+    @Test func recordsKeepTheBestSetAndRankByTrainingVolume() {
+        func set(_ workout: Int64, _ exercise: String, _ weight: Double?, _ reps: Int?,
+                 warmup: Bool = false) -> WorkoutSet {
+            WorkoutSet(workoutId: workout, exerciseName: exercise, setOrder: 1,
+                       weightLbs: weight, reps: reps, isWarmup: warmup)
+        }
+        let sets = [
+            // Bench: trained 3× — the heaviest set is 185×5.
+            set(1, "Bench Press", 155, 8),
+            set(1, "Bench Press", 185, 5),
+            set(2, "Bench Press", 175, 5),
+            // Deadlift: heavier absolute load, but logged once.
+            set(2, "Deadlift", 315, 3),
+            // Junk that must never become a record.
+            set(1, "Bench Press", nil, 5),
+            set(2, "Plank", nil, nil),
+        ]
+        let dates: [Int64: String] = [1: "2026-07-10", 2: "2026-07-17"]
+
+        let records = WorkoutService.personalRecords(from: sets, dateByWorkout: dates, limit: 5)
+        #expect(records.count == 2, "Plank has no weight/reps, so it has no record")
+        #expect(records.first?.exercise == "Bench Press", "3 sets beats 1, whatever the load")
+        #expect(records.first?.weightLbs == 185)
+        #expect(records.first?.reps == 5)
+        #expect(records.first?.date == "2026-07-10", "the date of the PR set's workout")
+        #expect(records.last?.exercise == "Deadlift")
+    }
+
+    @Test func recordsRespectTheLimitAndSkipWarmups() {
+        let sets = (1...8).map { i in
+            WorkoutSet(workoutId: 1, exerciseName: "Lift \(i)", setOrder: 1,
+                       weightLbs: 100, reps: 5)
+        } + [WorkoutSet(workoutId: 1, exerciseName: "Warmup Only", setOrder: 1,
+                        weightLbs: 45, reps: 10, isWarmup: true)]
+
+        // The DB query filters warmups; the ranking is handed only working
+        // sets, so a warmup-only exercise simply never appears.
+        let working = sets.filter { !$0.isWarmup }
+        let records = WorkoutService.personalRecords(from: working, dateByWorkout: [:], limit: 3)
+        #expect(records.count == 3)
+        #expect(!records.contains { $0.exercise == "Warmup Only" })
+    }
+
     // MARK: - Coach memory
 
     /// The returning-user path: the coach should ask how the last program went,

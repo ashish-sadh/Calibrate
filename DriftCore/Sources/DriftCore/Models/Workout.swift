@@ -78,6 +78,34 @@ public struct Workout: Identifiable, Codable, Sendable, FetchableRecord, Persist
 
 // MARK: - WorkoutSet
 
+/// A best-ever set for one exercise: what was lifted, and when. Ranked and
+/// produced by `WorkoutService.personalRecords`; also the wire shape a coach
+/// briefing carries under the `.strength` opt-in.
+public struct PersonalRecord: Codable, Sendable, Equatable, Identifiable {
+    public var exercise: String
+    public var weightLbs: Double
+    public var reps: Int
+    public var estimated1RM: Double
+    /// yyyy-MM-dd of the workout the set belongs to; empty when unknown.
+    public var date: String
+
+    public var id: String { exercise }
+
+    public init(exercise: String, weightLbs: Double, reps: Int,
+                estimated1RM: Double, date: String) {
+        self.exercise = exercise
+        self.weightLbs = weightLbs
+        self.reps = reps
+        self.estimated1RM = estimated1RM
+        self.date = date
+    }
+
+    /// "185 lb × 5" — the set as a lifter would say it.
+    public var setDescription: String {
+        String(format: "%.0f lb × %d", weightLbs, reps)
+    }
+}
+
 public struct WorkoutSet: Identifiable, Codable, Sendable, FetchableRecord, PersistableRecord {
     public var id: Int64?
     public var workoutId: Int64

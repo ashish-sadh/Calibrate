@@ -34,7 +34,12 @@ public enum BriefingAggregator {
                                weights: [(date: Date, lbs: Double)] = [],
                                proteinTargetG: Double? = nil,
                                workoutsCompleted: Int? = nil,
-                               scans: [DEXAScan] = []) -> BriefingMetrics {
+                               scans: [DEXAScan] = [],
+                               daysLogged: Int? = nil,
+                               trendSleep: [(date: Date, hours: Double)] = [],
+                               trendNutrition: [NutritionDay] = [],
+                               trendWeights: [(date: Date, lbs: Double)] = [],
+                               records: [PersonalRecord] = []) -> BriefingMetrics {
         var metrics = BriefingMetrics()
         metrics.windowDays = windowDays
 
@@ -50,14 +55,47 @@ public enum BriefingAggregator {
             metrics.avgCalories = average(nutrition.map(\.calories))
             metrics.avgProteinG = average(nutrition.map(\.proteinG))
             metrics.proteinTargetG = proteinTargetG
+            metrics.daysLogged = daysLogged
+            metrics.caloriesSeries = weeklyAverages(
+                trendNutrition.map { (date: $0.date, value: $0.calories) })
         }
         if level.contains(.weight) {
             metrics.weightChangeLbs = change(weights)
+            metrics.weightSeries = weeklyAverages(
+                trendWeights.map { (date: $0.date, value: $0.lbs) })
+        }
+        if level.contains(.sleep) {
+            metrics.sleepSeries = weeklyAverages(
+                trendSleep.map { (date: $0.date, value: $0.hours) })
         }
         if level.contains(.bodyComp) {
             applyBodyComp(&metrics, scans: scans)
         }
+        if level.contains(.strength) {
+            metrics.records = records.isEmpty ? nil : records
+        }
         return metrics
+    }
+
+    /// Bucket daily values into WEEKLY AVERAGES, oldest first. Weekly is the
+    /// consent boundary, not a display choice — see `WeeklyPoint`. Weeks with
+    /// no data are skipped rather than zeroed, and a lone week is dropped by
+    /// `BriefingMetrics.trends` because one point is not a trend.
+    static func weeklyAverages(_ samples: [(date: Date, value: Double)],
+                               calendar: Calendar = .current) -> [WeeklyPoint]? {
+        guard !samples.isEmpty else { return nil }
+        var buckets: [Date: [Double]] = [:]
+        for sample in samples {
+            guard let week = calendar.dateInterval(of: .weekOfYear, for: sample.date)?.start
+            else { continue }
+            buckets[week, default: []].append(sample.value)
+        }
+        let points = buckets.keys.sorted().compactMap { week -> WeeklyPoint? in
+            guard let mean = average(buckets[week] ?? []) else { return nil }
+            return WeeklyPoint(weekStart: DateFormatters.dateOnly.string(from: week),
+                               value: (mean * 10).rounded() / 10)
+        }
+        return points.isEmpty ? nil : points
     }
 
     /// Latest scan's headline numbers + change since the previous scan.

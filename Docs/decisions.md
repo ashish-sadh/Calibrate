@@ -730,3 +730,35 @@ fed local data at the current toggle level and rebuilt on every toggle
 flip. One view on both sides means what-you-think-you-share cannot drift
 from what-they-see. A preview implemented as a separate summary would rot
 into a lie the first time the coach view changed without it.
+
+## 2026-07-29 — Coach briefing gains trends, logging adherence and PRs (third widening)
+
+Operator: "I wish they can see weight trend and my PRs etc too and average
+sleep trend etc too. Calories (whether logged or not and average)."
+
+TRENDS RIDE THEIR EXISTING BIT. Weight/sleep/calories weekly-average series
+go under .weight/.sleep/.nutrition — no new toggles — because a weekly
+average is precisely what those switches already promise (see the
+weekly-vs-daily ruling above). 8-week horizon; the 7-day headline averages
+stay as they were. A series of one week is dropped by
+`BriefingMetrics.trends`: one point is a number pretending to be a
+direction. Weeks with no data are skipped, never zeroed.
+
+ADHERENCE IS ITS OWN SIGNAL. `days_logged` (under .nutrition) exists
+because the averages CANNOT distinguish "ate light" from "didn't log" —
+days with nothing logged are deliberately skipped from the averages, so
+without this number a coach silently misreads an unlogged week as a light
+one. It is metadata about logging, not food content.
+
+PRs EARN A BIT (.strength). Best set per main lift comes from the FULL
+local workout history, not just the sessions the client explicitly shared
+with that coach — that is a real widening, so it gets its own opt-in.
+Ranked by how CENTRAL the lift is to the client's training (working-set
+count) rather than absolute load: a deadlift tried once must not outrank
+the bench they train weekly. Capped at 5.
+
+BARS, NOT PATHS, IN THE SUMMARY CARD. The trend sparkline is an HStack of
+Rectangles: pure layout, so it measures correctly under Fuse at any font
+scale (cf. #1159's LazyVGrid) and needs no GeometryReader, which
+recomposes per scroll frame on Fuse. Apple-Health-style line charts belong
+on the coach's dedicated client page (#1156 slice 2), not here.

@@ -54,6 +54,11 @@ enum CoachChatNoteTaker {
 enum BriefingSnapshot {
 
     static let windowDays = 7
+    /// Trend horizon. The headline numbers stay a 7-day picture (that's what
+    /// "average sleep" means to a coach); the trends need enough weeks to show
+    /// a direction.
+    static let trendWeeks = 8
+    static var trendDays: Int { trendWeeks * 7 }
 
     @MainActor
     static func metrics(level: BriefingSharingLevel, days: Int = windowDays) async -> BriefingMetrics {
@@ -62,38 +67,68 @@ enum BriefingSnapshot {
         let dates = (0..<days).compactMap { calendar.date(byAdding: .day, value: -$0, to: today) }
 
         var sleep: [(date: Date, hours: Double)] = []
+        var trendSleep: [(date: Date, hours: Double)] = []
         if level.contains(.sleep), let health = DriftPlatform.health {
             // Android has no health adapter yet, so this stays empty there and
             // the field is simply absent rather than reported as zero.
-            let nights = (try? await health.fetchRecentSleepData(days: days)) ?? []
-            sleep = nights.map { (date: $0.date, hours: $0.hours) }
+            // One fetch over the trend horizon, then the 7-day slice is taken
+            // from it — asking HealthKit twice for overlapping ranges is a
+            // per-day-loop tax we don't need (see the #1008 perf work).
+            let nights = (try? await health.fetchRecentSleepData(days: trendDays)) ?? []
+            trendSleep = nights.map { (date: $0.date, hours: $0.hours) }
+            let cutoff = calendar.date(byAdding: .day, value: -days, to: today) ?? today
+            sleep = trendSleep.filter { $0.date >= cutoff }
         }
 
         var nutrition: [BriefingAggregator.NutritionDay] = []
+        var trendNutrition: [BriefingAggregator.NutritionDay] = []
         var proteinTarget: Double?
+        var daysLogged: Int?
         if level.contains(.nutrition) {
-            for date in dates {
+            let trendDates = (0..<trendDays).compactMap {
+                calendar.date(byAdding: .day, value: -$0, to: today)
+            }
+            let cutoff = calendar.date(byAdding: .day, value: -days, to: today) ?? today
+            var loggedInWindow = 0
+            for date in trendDates {
                 let key = DateFormatters.dateOnly.string(from: date)
                 let totals = FoodService.getDailyTotals(date: key)
                 // A day with nothing logged is skipped, not averaged as zero —
                 // otherwise a coach reads "ate nothing Tuesday" when the truth
-                // is "didn't log Tuesday".
+                // is "didn't log Tuesday". `daysLogged` carries that
+                // distinction explicitly instead of hiding it.
                 guard totals.eaten > 0 else { continue }
-                nutrition.append(.init(date: date,
-                                       calories: Double(totals.eaten),
-                                       proteinG: Double(totals.proteinG)))
+                let day = BriefingAggregator.NutritionDay(
+                    date: date,
+                    calories: Double(totals.eaten),
+                    proteinG: Double(totals.proteinG))
+                trendNutrition.append(day)
+                if date >= cutoff {
+                    nutrition.append(day)
+                    loggedInWindow += 1
+                }
             }
+            daysLogged = loggedInWindow
             proteinTarget = WeightGoal.load()?.proteinTargetG
         }
 
         var weights: [(date: Date, lbs: Double)] = []
+        var trendWeights: [(date: Date, lbs: Double)] = []
         if level.contains(.weight) {
-            weights = WeightServiceAPI.getHistory(days: days).compactMap {
+            trendWeights = WeightServiceAPI.getHistory(days: trendDays).compactMap {
                 entry -> (date: Date, lbs: Double)? in
                 guard let date = DateFormatters.dateOnly.date(from: entry.date) else { return nil }
                 return (date: date, lbs: entry.weightLbs)
             }
+            let cutoff = calendar.date(byAdding: .day, value: -days, to: today) ?? today
+            weights = trendWeights.filter { $0.date >= cutoff }
         }
+
+        // Strength records read the FULL history — a PR is by definition
+        // all-time, not something that happened this week.
+        let records = level.contains(.strength)
+            ? ((try? WorkoutService.personalRecords(limit: 5)) ?? [])
+            : []
 
         // Body comp reads the whole scan history (scans are sparse, not
         // windowed) — the aggregator keeps only the latest + the diff.
@@ -104,7 +139,12 @@ enum BriefingSnapshot {
             sleepHours: sleep, nutrition: nutrition, weights: weights,
             proteinTargetG: proteinTarget,
             workoutsCompleted: completedWorkouts(since: days),
-            scans: scans)
+            scans: scans,
+            daysLogged: daysLogged,
+            trendSleep: trendSleep,
+            trendNutrition: trendNutrition,
+            trendWeights: trendWeights,
+            records: records)
     }
 
     /// Adherence — the number a coach checks first. Derived from sessions the
