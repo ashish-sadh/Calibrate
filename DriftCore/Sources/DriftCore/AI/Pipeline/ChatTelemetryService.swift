@@ -67,6 +67,19 @@ public final class ChatTelemetryService: @unchecked Sendable {
         latencyMs: Int,
         turnIndex: Int
     ) {
+        // Cloud mirror first, and on its OWN gate: the local ring buffer is a
+        // debugging aid the user opts into separately, so a user who agreed to
+        // share AI conversations shouldn't also have to enable local capture to
+        // make that work (2026-07-28). Fire-and-forget — no latency here.
+        TelemetryService.shared.aiTurn(
+            surface: TelemetrySurface.coachChat,
+            query: query,
+            response: response,
+            intent: intent?.rawValue,
+            tool: tool,
+            outcome: outcome.rawValue,
+            latencyMS: max(0, latencyMs))
+
         guard Preferences.chatTelemetryEnabled else { return }
         let row = ChatTurnRow(
             timestamp: Self.iso8601.string(from: Date()),

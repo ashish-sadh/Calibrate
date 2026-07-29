@@ -608,3 +608,38 @@ time-bomb — the next `.build` nuke silently upgrades it. Pin the whole externa
 toolchain `exact:` in the committed manifest, and when a transitive dep is the
 one that breaks, add it as a direct pin-only dependency. A release-only codegen
 crash won't show in `skip app launch`; the release gate is `skip export`.
+
+## 2026-07-28: telemetry is ON by default — the one cloud touchpoint that is not opt-in
+
+Operator asked for Supabase-backed product telemetry ("figure out what's being
+used"), removal of the local-only counters, and an option to capture AI queries
+and responses. This collides head-on with tenet 2 ("no analytics"), tenet 5
+("do not instrument behavior"), and an explicit 2026-07-09 decision that made
+`FeatureUsage` on-device-only. Operator overruled all three, deliberately, with
+the reasoning that on-device counts answered "what did I do on my phone" and
+never once told us what real users reach for.
+
+The five-part cloud test (2026-07-28, sharing) is therefore NOT fully satisfied:
+usage telemetry is opt-OUT, not opt-in. The other four legs hold and are what
+make it defensible — minimal (a closed event vocabulary, no free text, no health
+data, no per-user funnel), server-enforced (RLS grants the publishable key
+INSERT and nothing else, so a leaked key cannot read anyone's rows), surfaced
+(More → Telemetry & Privacy on both platforms, and the Android privacy card's
+"no analytics" claim was corrected in the same commit), and anonymous (an
+install UUID that is deliberately NOT auth.uid() and NOT the sharing @username,
+so telemetry cannot be joined to an identity).
+
+AI CONTENT is held to the stricter bar: `aiCaptureEnabled` is opt-IN, off by
+default, on its own switch, because queries and responses carry meals, weight
+and symptoms. With it off we still record the SHAPE of a turn (surface, intent,
+tool, outcome, latency) under the usage gate — enough to see Describe falling
+back to the offline parser without shipping what anyone ate.
+
+Latency: recording is one local INSERT into `telemetry_outbox` (v49) on a
+utility queue, never on the caller. A background flusher batches to PostgREST,
+drops a row after 5 failed attempts, and caps the queue at 2000 rows so a
+long-offline device cannot grow the DB. A telemetry failure is swallowed — the
+app must behave identically with the backend unreachable.
+RULE: telemetry may never carry health data or free text under the default-on
+gate. Anything user-authored requires the separate AI-capture opt-in. If a new
+event needs a payload that isn't a small enum, it is the wrong event.

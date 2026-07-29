@@ -56,9 +56,15 @@ struct DriftApp: App {
                         // Flush any debounced widget refresh before suspension
                         // so a just-logged meal always reaches the widget.
                         WidgetDataProvider.refreshWidgetDataNow()
+                        // Drain the telemetry outbox on the way out — a
+                        // session's events ship together rather than one
+                        // request per tap.
+                        TelemetryService.shared.flush()
                     }
                     if newPhase == .active {
                         BackupMonitor.shared.checkOnForeground()
+                        TelemetryService.shared.event(TelemetryEvent.appOpen)
+                        TelemetryService.shared.flush()
                     }
                 }
                 .sheet(isPresented: $showingFirstLaunchRestore) {

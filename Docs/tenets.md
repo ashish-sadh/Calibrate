@@ -7,10 +7,10 @@ If you're editing this file: add a single line at the top of "Recently sedimente
 ## Core tenets
 
 1. **AI chat is the showstopper.** Every data entry must be doable through conversation; UI exists for visual analytics and as a fallback.
-2. **Privacy-first.** Everything on-device, no cloud, no accounts, no analytics. Any cloud touchpoint surfaces explicitly to the user.
+2. **Privacy-first.** Health data lives on-device; no account is required to use the app. A cloud touchpoint is allowed only when it is opt-in, minimal, server-enforced and surfaced (the five-part test in `Docs/decisions.md`). Amended 2026-07-28: this used to read "no cloud, no accounts, no analytics" — BYOK photo logging, the Nebius Coach, friends/sharing and anonymous usage telemetry all now exist under that test. What survives is the intent: nothing SILENT leaves the device.
 3. **Goal-aware color, never "good/bad".** Green = aligned with the user's goal direction; red = against it. Default goal: losing weight.
 4. **Indian food is the bar.** Every food list, search, parser, and eval works for Indian cuisine first; everything else is downstream.
-5. **Friend feedback over telemetry.** When unsure if a feature is right, ask a user; do not instrument behavior.
+5. **Friend feedback first, telemetry second.** When unsure if a feature is RIGHT, ask a user — counts tell you what happened, never why. Amended 2026-07-28: anonymous usage telemetry now exists (ON by default, opt-out) to answer "what do people actually reach for", and opt-in AI-conversation capture to answer "where does the Coach get it wrong". Neither replaces asking someone.
 6. **DriftCore by default.** If a file doesn't import UIKit/SwiftUI/HealthKit/WidgetKit/AVFoundation/Speech/Photos/AppIntents, it belongs in DriftCore.
 7. **One tier per test file.** Mixing Tier-0 logic with Tier-3 LLM-backed asserts is the failure mode that turned the old suite into a liability.
 8. **No backwards-compat shims.** Change the code, delete the old, no `_oldXxx` aliases or "removed" comment markers.
@@ -60,7 +60,7 @@ After 3 cycles deferred AND no new evidence: label `declined`, close with ration
 ## What we do NOT do
 
 - No multi-agent fork ships without an experimental flag and rollback.
-- No telemetry-dependent sprint task (Drift's telemetry is on-device only; central pipeline does not exist).
+- Telemetry-dependent sprint tasks are allowed as of 2026-07-28 (anonymous usage + opt-in AI capture ship to Supabase). Still avoid tasks that need data the pipeline does not collect — there is no per-user funnel, no retention cohort, no session replay.
 - No `_oldXxx` rename pattern; no "removed" comment markers; no backwards-compat shims.
 - No `/compact` in autopilot sessions (planning re-splits over-budget tasks instead).
 - No commits to main without PASS verdict (post-rewrite).

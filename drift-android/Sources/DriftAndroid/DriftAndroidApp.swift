@@ -55,6 +55,10 @@ let logger: Logger = Logger(subsystem: "com.drift.health", category: "DriftAndro
         HealthConnectService.bridgeSmokeTest()
         Task { @MainActor in
             await CoreResourcesBootstrap.warmUpDatabase()
+            // Ship whatever the last session queued. After warm-up so the
+            // flusher never races the DB open (#1112 lesson).
+            TelemetryService.shared.event(TelemetryEvent.appOpen)
+            TelemetryService.shared.flush()
             guard let health = DriftPlatform.health, health.isAvailable else { return }
             try? await health.requestAuthorization()
             let synced = (try? await health.syncWeight()) ?? 0

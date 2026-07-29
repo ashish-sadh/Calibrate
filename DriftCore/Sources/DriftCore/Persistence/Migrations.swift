@@ -9,7 +9,7 @@ public enum Migrations {
     /// fails with `Int.fetchOne(grdb_migrations) != currentVersion`.
     /// Stamped into the backup manifest so restore can detect a
     /// forward/backward migration scenario.
-    public static let currentVersion = 48
+    public static let currentVersion = 49
 
     public static func registerAll(_ migrator: inout DatabaseMigrator) {
         // v1: Weight tracking
@@ -772,6 +772,24 @@ public enum Migrations {
                 t.column("key", .text).primaryKey()
                 t.column("value", .text).notNull()
             }
+        }
+
+        // v49: telemetry OUTBOX. Events are queued here synchronously (a single
+        // cheap INSERT) and flushed to Supabase in batches off the main actor,
+        // so recording can never add latency to a user action and an offline
+        // device loses nothing. Rows are deleted once the server accepts them;
+        // `attempts` lets the flusher drop a row that keeps failing rather than
+        // retrying forever. This is a QUEUE, not an analytics store — nothing
+        // reads it for display.
+        migrator.registerMigration("v49_telemetry_outbox") { db in
+            try db.create(table: "telemetry_outbox") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("kind", .text).notNull()      // "event" | "ai_turn"
+                t.column("payload", .text).notNull()   // JSON row for the table
+                t.column("created_at", .text).notNull()
+                t.column("attempts", .integer).notNull().defaults(to: 0)
+            }
+            try db.create(index: "idx_telemetry_outbox_id", on: "telemetry_outbox", columns: ["id"])
         }
     }
 

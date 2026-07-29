@@ -65,6 +65,34 @@ public struct SyncClient: Sendable {
         return try decode([T].self, from: data)
     }
 
+    /// POST rows and DISCARD the response. Used by telemetry, whose tables grant
+    /// the client INSERT and nothing else — asking PostgREST for
+    /// `return=representation` there would be a read and come back 403.
+    /// Takes pre-encoded JSON so a batch doesn't get re-serialized.
+    public func restInsertRaw(path: String, body: Data, token: String? = nil) async throws {
+        guard isConfigured else { throw SharingError.notConfigured }
+        var req = URLRequest(url: try restURL(path), timeoutInterval: timeout)
+        req.httpMethod = "POST"
+        req.setValue(anonKey, forHTTPHeaderField: "apikey")
+        req.setValue("Bearer \(token ?? anonKey)", forHTTPHeaderField: "Authorization")
+        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        req.setValue("return=minimal", forHTTPHeaderField: "Prefer")
+        req.httpBody = body
+
+        let data: Data, response: URLResponse
+        do {
+            (data, response) = try await session.data(for: req)
+        } catch {
+            throw SharingError.network(error.localizedDescription)
+        }
+        guard let http = response as? HTTPURLResponse else {
+            throw SharingError.network("no HTTP response")
+        }
+        guard (200..<300).contains(http.statusCode) else {
+            throw SharingError.http(http.statusCode, String(decoding: data, as: UTF8.self))
+        }
+    }
+
     /// PATCH rows matched by `query` (`friendships?id=eq.<uuid>`), returning the
     /// updated representation.
     @discardableResult

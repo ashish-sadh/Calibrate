@@ -205,9 +205,11 @@ struct DescribeMealSheet: View {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
         phase = .parsing
+        let started = Date()
 
         // Top rung: the coach cloud model — full macros, Indian-portion aware.
         if let resp = await NebiusMealLogger.parse(trimmed), !resp.items.isEmpty {
+            recordTurn(query: trimmed, items: resp.items, outcome: "success", started: started)
             enterReview(resp.items)
             return
         }
@@ -218,11 +220,30 @@ struct DescribeMealSheet: View {
             ?? [FoodIntent(query: trimmed, servings: nil)]
         let resolved: [PhotoLogItem] = await resolveOffline(intents)
         if !resolved.isEmpty {
+            recordTurn(query: trimmed, items: resolved, outcome: "fallback", started: started)
             enterReview(resolved)
             return
         }
 
+        recordTurn(query: trimmed, items: [], outcome: "error", started: started)
         phase = .error("Couldn't work that out. Try simpler names (\u{201C}2 rotis and dal\u{201D}) — or find it in Search.")
+    }
+
+    /// Telemetry for the Describe surface. `outcome` distinguishes the cloud
+    /// hit from the offline fallback, which is the whole point: a rising
+    /// `fallback` rate means the cloud brain is missing dishes people eat.
+    /// The "response" is the parsed item list, not prose — that IS the answer
+    /// this surface produces.
+    private func recordTurn(query: String, items: [PhotoLogItem], outcome: String, started: Date) {
+        let summary = items
+            .map { "\($0.name) · \(Int($0.calories))cal · \(Int($0.grams))g" }
+            .joined(separator: "\n")
+        TelemetryService.shared.aiTurn(
+            surface: TelemetrySurface.describeMeal,
+            query: query,
+            response: summary.isEmpty ? nil : summary,
+            outcome: outcome,
+            latencyMS: Int(Date().timeIntervalSince(started) * 1000))
     }
 
     private func enterReview(_ parsed: [PhotoLogItem]) {

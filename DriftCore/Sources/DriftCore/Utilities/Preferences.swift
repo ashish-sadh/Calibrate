@@ -289,6 +289,41 @@ public enum Preferences {
         set { kv.set(newValue, forKey: chatTelemetryEnabledKey) }
     }
 
+    // MARK: - Product telemetry (Supabase)
+
+    private static let usageTelemetryEnabledKey = "drift_usage_telemetry_enabled"
+    private static let aiCaptureEnabledKey = "drift_ai_capture_enabled"
+    private static let telemetryInstallIDKey = "drift_telemetry_install_id"
+
+    /// Anonymous usage counts (which screens/actions get used). **ON by
+    /// default with an opt-out** — operator decision 2026-07-28, adjudicated in
+    /// Docs/decisions.md against tenets 2 and 5. No free text, no health data,
+    /// no account: rows are keyed by an anonymous install id.
+    public static var usageTelemetryEnabled: Bool {
+        get { kv.boolOrNil(forKey: usageTelemetryEnabledKey) ?? true }
+        set { kv.set(newValue, forKey: usageTelemetryEnabledKey) }
+    }
+
+    /// Upload the raw text of AI turns (query + response). **OFF by default,
+    /// separate switch** — these carry health content (meals, weight,
+    /// symptoms), so they never ride the usage opt-out.
+    public static var aiCaptureEnabled: Bool {
+        get { kv.bool(forKey: aiCaptureEnabledKey) }
+        set { kv.set(newValue, forKey: aiCaptureEnabledKey) }
+    }
+
+    /// Anonymous per-install UUID. Deliberately NOT the sharing profile id —
+    /// telemetry must work signed-out and must not be joinable to a @username.
+    /// Minted once, then stable for the life of the install.
+    public static var telemetryInstallID: String {
+        if let existing = kv.string(forKey: telemetryInstallIDKey), !existing.isEmpty {
+            return existing
+        }
+        let fresh = UUID().uuidString.lowercased()
+        kv.set(fresh, forKey: telemetryInstallIDKey)
+        return fresh
+    }
+
     // MARK: - Remote Model
 
     private static let useRemoteModelOnWiFiKey = "drift_use_remote_model_on_wifi"
