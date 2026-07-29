@@ -32,6 +32,10 @@ struct SharingView: View {
     /// an identity-blind "Friend request" made accepting strangers the default.
     @State var requestSenders: [String: SharedProfile] = [:]
     @State var conns: [Connection] = []
+    /// The last connections fetch failed. Distinct from `conns.isEmpty`, which
+    /// is a legitimate state for a new account — telling someone with friends
+    /// that they have none is the worse error by far.
+    @State var connectionsFailed = false
     @State var incomingTemplates: [SharedTemplateDTO] = []
     @State var clientSessions: [LiveWorkoutDTO] = []
 
@@ -115,8 +119,12 @@ struct SharingView: View {
                 }
             }
             if !clients.isEmpty { connectionSection("YOUR CLIENTS", clients, subtitle: "you coach") }
-            connectionSection("FRIENDS", friendConns, subtitle: nil,
-                              emptyText: "No friends yet. Search a @username above to add a friend or a coach.")
+            if connectionsFailed {
+                couldNotLoadCard
+            } else {
+                connectionSection("FRIENDS", friendConns, subtitle: nil,
+                                  emptyText: "No friends yet. Search a @username above to add a friend or a coach.")
+            }
         }
     }
 
@@ -435,18 +443,49 @@ struct SharingView: View {
     private func refreshHub() async {
         async let reqs = try? await svc.incomingRequests()
         async let tmpls = try? await svc.incomingSharedTemplates()
-        async let connections = try? await svc.connections()
+        // Connections are NOT `try?`. Every other call here degrades gracefully
+        // when it fails — a missing request badge is invisible. This one does
+        // not: collapsing a failed fetch to [] renders "No friends yet", which
+        // tells someone with 8 friends that they have none. A failed load and
+        // an empty list must never look the same.
+        async let connections = svc.connections()
         async let sessions = try? await svc.clientSessions()
         requests = await reqs ?? []
         incomingTemplates = await tmpls ?? []
         clientSessions = await sessions ?? []
-        conns = await connections ?? []
+
+        do {
+            conns = try await connections
+            connectionsFailed = false
+        } catch {
+            // Keep whatever we already had on screen rather than blanking it.
+            connectionsFailed = true
+        }
         if requests.isEmpty {
             requestSenders = [:]
         } else {
             let profs = (try? await svc.profiles(ids: requests.map(\.requesterId))) ?? []
             requestSenders = Dictionary(profs.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
         }
+    }
+
+    /// Shown instead of the empty state when the fetch itself failed. Your
+    /// friends are on the server; we just couldn't reach them.
+    private var couldNotLoadCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("FRIENDS").sectionHeading()
+            Text("Couldn't load your friends just now — they're safe, this device just couldn't reach the server.")
+                .font(.caption).foregroundStyle(Theme.textSecondary)
+            Button { Task { await refreshHub() } } label: {
+                Text("Try again")
+                    .font(.subheadline.weight(.semibold)).foregroundStyle(.white)
+                    .padding(.horizontal, 20).padding(.vertical, 8)
+                    .background(Theme.accent, in: Capsule())
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .card()
     }
 
     private var coaches: [Connection] { conns.filter { $0.kind == .coach } }
