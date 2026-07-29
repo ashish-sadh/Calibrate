@@ -3024,5 +3024,23 @@
    "iOS: Friends promoted to its own SOCIAL section in More",
    "usage telemetry fully instrumented on both platforms (20 events, anonymous, opt-out)"
   ]
+ },
+ {
+  "build": 369,
+  "date": "2026-07-29T15:58:00-0700",
+  "description": "Coach dashboard: plateau alerts, trend charts, recovery map, body comp, PRs, unread marks",
+  "fixes": [
+   "coach programs respect stated equipment \u2014 no cable/barbell work for a dumbbells-only client (#1157)",
+   "Coach Me chips now match the question actually asked, and injuries are asked before any program (#1158)",
+   "Logging Consistency card renders at large font sizes (#1159)",
+   "the briefing shows how fresh it is, and refreshes when you open Friends"
+  ],
+  "features": [
+   "coach view is a dashboard: plateau alerts first, then adherence stats, weight/sleep/calorie trend charts, muscle recovery strip, body composition, best sets, history",
+   "body composition (DEXA) sharing with deltas since your previous scan",
+   "'See what your coach sees' \u2014 the client previews the coach's exact view",
+   "unread marks: a coach sees how many new workouts since they last looked",
+   "manage connections: ask a friend to coach you, step back to friends, unfriend"
+  ]
  }
 ]
