@@ -62,6 +62,18 @@ struct MoreTabView: View {
                         }
                     }
 
+                    // Social is its own section rather than an APP row. Friends
+                    // and coaching are a whole surface of the product, not a
+                    // setting, and burying them between Weight Goal and an API
+                    // key is why nobody found the coach-sharing controls.
+                    section("SOCIAL") {
+                        navRow(icon: "person.2.fill", title: "Friends & Coaches",
+                               subtitle: "Share workouts · connect with a trainer",
+                               color: Theme.deficit) {
+                            SharingView()
+                        }
+                    }
+
                     section("APP") {
                         // Profile is identity, not goal config — its own row
                         // (operator call 2026-07-09); Weight Goal keeps a
@@ -76,12 +88,6 @@ struct MoreTabView: View {
                                subtitle: "Target weight, timeline, plan",
                                color: Theme.macroFat) {
                             GoalView()
-                        }
-                        rowDivider
-                        navRow(icon: "person.2.fill", title: "Friends",
-                               subtitle: "Share workouts · connect with a trainer",
-                               color: Theme.deficit) {
-                            SharingView()
                         }
                         rowDivider
                         navRow(icon: "key.fill", title: "Bring Your Own Key",

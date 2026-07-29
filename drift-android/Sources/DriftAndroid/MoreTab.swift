@@ -143,7 +143,7 @@ struct MoreTab: View {
                                 Image(systemName: sym("person.2.fill"))
                                     .font(.subheadline).foregroundStyle(Theme.deficit)
                                 VStack(alignment: .leading, spacing: 1) {
-                                    Text("Friends").font(.subheadline).foregroundStyle(Theme.textPrimary)
+                                    Text("Friends & Coaches").font(.subheadline).foregroundStyle(Theme.textPrimary)
                                     Text("Share workouts · connect with a trainer")
                                         .font(.caption2).foregroundStyle(Theme.textSecondary)
                                 }
