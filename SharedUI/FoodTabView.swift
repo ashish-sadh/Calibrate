@@ -793,8 +793,12 @@ struct FoodTabView: View {
                 .padding(.bottom, 2)
             }
             #if os(Android)
-            // Horizontal ScrollView IME-collapse fix (#1089) — natural height.
-            .frame(height: 40)
+            // Horizontal ScrollView IME-collapse fix (#1089): a MINIMUM keeps
+            // the strip from collapsing to text-height when the keyboard
+            // closes, while still letting the chips grow with the system font
+            // scale — the fixed height:40 clipped them mid-text at 1.3×
+            // (operator device repro 2026-07-29).
+            .frame(minHeight: 44)
             #endif
         }
         .padding(.top, 6)
