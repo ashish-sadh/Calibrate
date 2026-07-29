@@ -17,6 +17,7 @@ Drift is an AI-first local health tracker. AI chat is the showstopper — the pr
 - No backwards-compat shims. Change the code, delete the old, no `_oldXxx` aliases or "removed" comment markers.
 - Three similar lines beats premature abstraction. Don't extract on the second occurrence; consider it on the third.
 - Build and test after every change. The harness will block the commit if you skip; trust the discipline, not your gut.
+- **User data is sacred — it is the one thing we cannot rebuild.** Code can be rewritten and a bad release can be re-published; a user's friends, chat history, weight log and food diary cannot. Before any schema change, local or server: additive first (new table/column, backfill, then read from it), never destructive-in-place. No `DROP`, no `TRUNCATE`, no unscoped `DELETE`, no renaming a column out from under existing rows, no re-keying a table that already has data. A migration that cannot be run twice safely is not finished. When a change genuinely must move data, write the migration that carries it across and prove the row counts before and after — "the schema is right now" is not the bar; "every row that existed still exists" is. And losing ACCESS to data is losing it: an account users cannot get back into is indistinguishable, to them, from a deleted account.
 
 ## Three Operating Modes
 
