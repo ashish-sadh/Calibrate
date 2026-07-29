@@ -38,6 +38,13 @@ struct SharingView: View {
     @State var connectionsFailed = false
     @State var incomingTemplates: [SharedTemplateDTO] = []
     @State var clientSessions: [LiveWorkoutDTO] = []
+    // Per-row connection management (operator 2026-07-29: no way to unfriend,
+    // remove a coach, or make an existing friend a coach). `managingID` flips
+    // a row's inline action strip open; destructive actions arm on first tap
+    // (`confirmingRemoveID`) and fire on the second — a two-tap confirm, not a
+    // dialog, because Fuse dialogs carry keyboard/focus traps (#1077).
+    @State var managingID: String? = nil
+    @State var confirmingRemoveID: String? = nil
 
     private var svc: SharingService { .shared }
 
@@ -138,37 +145,101 @@ struct SharingView: View {
                 Text(emptyText).font(.caption).foregroundStyle(Theme.textSecondary)
             }
             ForEach(list) { c in
-                NavigationLink {
-                    // A client opens the coach's client detail (their workouts +
-                    // assign + message); coaches/friends open chat directly.
-                    if c.kind == .client {
-                        ClientDetailView(client: c.profile)
-                    } else {
-                        ChatView(peer: c.profile, relationship: c.kind.rawValue)
-                    }
-                } label: {
-                    HStack(spacing: 10) {
-                        avatar(c.profile.username)
-                        VStack(alignment: .leading, spacing: 1) {
-                            Text("@\(c.profile.username)").font(.subheadline.weight(.medium))
-                                .foregroundStyle(Theme.textPrimary)
-                            Text(subtitle ?? (c.profile.displayName ?? "tap to chat"))
-                                .font(.caption2).foregroundStyle(Theme.textSecondary)
+                // The manage button lives BESIDE the NavigationLink, never
+                // inside its label — nested tap targets are dead on Fuse.
+                HStack(spacing: 6) {
+                    NavigationLink {
+                        // A client opens the coach's client detail (their workouts +
+                        // assign + message); coaches/friends open chat directly.
+                        if c.kind == .client {
+                            ClientDetailView(client: c.profile)
+                        } else {
+                            ChatView(peer: c.profile, relationship: c.kind.rawValue)
                         }
-                        Spacer()
-                        Image(systemName: sym("bubble.left.fill"))
-                            .font(.caption).foregroundStyle(Theme.chartTrend)
-                        Image(systemName: sym("chevron.right"))
-                            .font(.caption2).foregroundStyle(Theme.textTertiary)
+                    } label: {
+                        HStack(spacing: 10) {
+                            avatar(c.profile.username)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text("@\(c.profile.username)").font(.subheadline.weight(.medium))
+                                    .foregroundStyle(Theme.textPrimary)
+                                Text(subtitle ?? (c.profile.displayName ?? "tap to chat"))
+                                    .font(.caption2).foregroundStyle(Theme.textSecondary)
+                            }
+                            Spacer()
+                            Image(systemName: sym("bubble.left.fill"))
+                                .font(.caption).foregroundStyle(Theme.chartTrend)
+                            Image(systemName: sym("chevron.right"))
+                                .font(.caption2).foregroundStyle(Theme.textTertiary)
+                        }
+                        .contentShape(Rectangle()).padding(.vertical, 4)
                     }
-                    .contentShape(Rectangle()).padding(.vertical, 4)
+                    .buttonStyle(.plain)
+
+                    Button {
+                        managingID = managingID == c.id ? nil : c.id
+                        confirmingRemoveID = nil
+                    } label: {
+                        Image(systemName: sym("ellipsis"))
+                            .font(.caption).foregroundStyle(Theme.textTertiary)
+                            .padding(.horizontal, 6).padding(.vertical, 10)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
+                if managingID == c.id { managementStrip(c) }
                 if c.id != list.last?.id { Divider().overlay(Theme.separatorFaint) }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .card()
+    }
+
+    /// Inline actions for one connection. Promotion is instant — the trainer
+    /// role grants the coach nothing a friend can't already do; it unlocks the
+    /// CLIENT's opt-in briefing surface (see SharingService.promoteToCoach).
+    /// Removal arms on the first tap and fires on the second.
+    private func managementStrip(_ c: Connection) -> some View {
+        HStack(spacing: 8) {
+            if c.kind == .friend {
+                stripButton("Make my coach", tint: Theme.chartTrend) {
+                    await runManage { try await svc.promoteToCoach(c.profile.id) }
+                }
+            }
+            if c.kind == .coach {
+                stripButton("Back to friend", tint: Theme.chartTrend) {
+                    await runManage { try await svc.demoteCoach(c.profile.id) }
+                }
+            }
+            let removeLabel = c.kind == .client ? "Remove client" : (c.kind == .coach ? "Remove coach" : "Unfriend")
+            stripButton(confirmingRemoveID == c.id ? "Tap again to confirm" : removeLabel,
+                        tint: Theme.surplus) {
+                if confirmingRemoveID == c.id {
+                    await runManage { try await svc.removeConnection(with: c.profile.id) }
+                } else {
+                    confirmingRemoveID = c.id
+                }
+            }
+            Spacer()
+        }
+        .padding(.bottom, 4)
+    }
+
+    private func stripButton(_ title: String, tint: Color,
+                             action: @escaping () async -> Void) -> some View {
+        Button { Task { await action() } } label: {
+            Text(title).font(.caption.weight(.semibold))
+                .padding(.horizontal, 10).padding(.vertical, 5)
+                .background(tint.opacity(0.12), in: Capsule())
+                .foregroundStyle(tint)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func runManage(_ action: @escaping () async throws -> Void) async {
+        await run { try await action() }
+        managingID = nil
+        confirmingRemoveID = nil
+        await refreshHub()
     }
 
     private var workoutsFromFriendsCard: some View {

@@ -303,4 +303,77 @@ struct SharingServiceTests {
         #expect(mock.requests.last?.value(forHTTPHeaderField: "Authorization") == "Bearer AT-2")
         #expect(SharingSessionStore.load(db: db)?.accessToken == "AT-2")
     }
+
+    // MARK: Managing existing connections
+
+    private func edge(_ id: String, _ from: String, _ to: String,
+                      role: String = "friend") -> [String: Any] {
+        ["id": id, "requester_id": from, "addressee_id": to,
+         "status": "accepted", "role": role]
+    }
+
+    /// I initiated the friendship → my edge already points client→coach, so
+    /// promotion is a role flip on that edge, not a new row.
+    @Test func promoteFlipsMyEdgeRoleInPlace() async throws {
+        let mock = MockHTTP()
+        let (svc, db) = try makeService(mock)
+        signIn(svc, db: db)
+        mock.queue = [(200, [edge("e1", "me", "hud")]), (200, [Any]())]
+
+        try await svc.promoteToCoach("hud")
+        let last = mock.requests.last
+        #expect(last?.httpMethod == "PATCH")
+        #expect(last?.url?.absoluteString.contains("friendships?id=eq.e1") == true)
+        #expect(mock.lastBody?["role"] as? String == "trainer")
+    }
+
+    /// They initiated the friendship → the client→coach direction needs its
+    /// own edge (the unique key is directed), created already-accepted.
+    @Test func promoteInsertsReverseTrainerEdgeWhenTheyRequested() async throws {
+        let mock = MockHTTP()
+        let (svc, db) = try makeService(mock)
+        signIn(svc, db: db)
+        mock.queue = [(200, [edge("e1", "hud", "me")]), (201, [Any]())]
+
+        try await svc.promoteToCoach("hud")
+        let last = mock.requests.last
+        #expect(last?.httpMethod == "POST")
+        #expect(last?.url?.absoluteString.hasSuffix("friendships") == true)
+        #expect(mock.lastBody?["role"] as? String == "trainer")
+        #expect(mock.lastBody?["status"] as? String == "accepted")
+        #expect(mock.lastBody?["requester_id"] as? String == "me")
+    }
+
+    /// Unfriending deletes EVERY edge with the person, and a coach edge takes
+    /// the briefing down with it.
+    @Test func removeConnectionDeletesAllEdgesAndRevokesBriefing() async throws {
+        let mock = MockHTTP()
+        let (svc, db) = try makeService(mock)
+        signIn(svc, db: db)
+        mock.queue = [(200, [edge("e1", "hud", "me"),
+                             edge("e2", "me", "hud", role: "trainer")]),
+                      (204, [Any]()), (204, [Any]()), (204, [Any]())]
+
+        try await svc.removeConnection(with: "hud")
+        let urls = mock.requests.compactMap { $0.url?.absoluteString }
+        #expect(urls.contains { $0.contains("friendships?id=eq.e1") })
+        #expect(urls.contains { $0.contains("friendships?id=eq.e2") })
+        #expect(urls.contains { $0.contains("client_briefings?client_id=eq.me&coach_id=eq.hud") })
+    }
+
+    /// After a promotion the person carries two edges — the hub must show ONE
+    /// row, and it must be the coach one.
+    @Test func connectionsDedupePrefersCoachOverFriend() async throws {
+        let mock = MockHTTP()
+        let (svc, db) = try makeService(mock)
+        signIn(svc, db: db)
+        mock.queue = [(200, [edge("e1", "hud", "me"),
+                             edge("e2", "me", "hud", role: "trainer")]),
+                      (200, [["id": "hud", "username": "hudson"]])]
+
+        let conns = try await svc.connections()
+        #expect(conns.count == 1)
+        #expect(conns.first?.kind == .coach)
+        #expect(conns.first?.profile.username == "hudson")
+    }
 }
