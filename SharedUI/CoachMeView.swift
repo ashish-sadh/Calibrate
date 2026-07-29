@@ -21,6 +21,13 @@ struct CoachMeView: View {
     @State var thinking = false
     @State var program: [WorkoutTemplate] = []
     @State var saving = false
+    /// Chips for the question the LLM actually asked (#1158). While the cloud
+    /// coach drives, the scripted intake's nextStep chips are WRONG whenever
+    /// the model picks its own question order — so once a live turn lands,
+    /// only the model's suggestions render (empty = free-text answer, no
+    /// chips). The scripted chips remain the offline fallback.
+    @State var llmSuggestions: [String] = []
+    @State var llmDriving = false
 
     struct Message: Identifiable, Equatable {
         let id = UUID()
@@ -42,19 +49,33 @@ struct CoachMeView: View {
             }
             .padding(.horizontal, 16).padding(.vertical, 12)
 
-            ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
-                    ForEach(messages) { message in
-                        bubble(message)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 10) {
+                        ForEach(messages) { message in
+                            bubble(message)
+                        }
+                        if thinking {
+                            Text("…").font(.title3).foregroundStyle(Theme.textTertiary)
+                        }
+                        if !program.isEmpty {
+                            draftCard
+                        }
+                        Color.clear.frame(height: 1).id("coachBottom")
                     }
-                    if thinking {
-                        Text("…").font(.title3).foregroundStyle(Theme.textTertiary)
-                    }
-                    if !program.isEmpty {
-                        draftCard
-                    }
+                    .padding(.horizontal, 16).padding(.vertical, 8)
                 }
-                .padding(.horizontal, 16).padding(.vertical, 8)
+                // Keep the newest turn in view — tapping a chip used to leave
+                // the conversation parked above the fold (operator 2026-07-29).
+                .onChange(of: messages.count) { _, _ in
+                    proxy.scrollTo("coachBottom", anchor: .bottom)
+                }
+                .onChange(of: thinking) { _, _ in
+                    proxy.scrollTo("coachBottom", anchor: .bottom)
+                }
+                .onChange(of: program.count) { _, _ in
+                    proxy.scrollTo("coachBottom", anchor: .bottom)
+                }
             }
 
             if program.isEmpty {
@@ -81,12 +102,18 @@ struct CoachMeView: View {
         }
     }
 
-    /// Tappable answers for the step we're on. Never the only path — "fit and
-    /// mobile" is a better answer than any chip, so the text field stays live.
+    /// Tappable answers for the question just asked. Never the only path —
+    /// "fit and mobile" is a better answer than any chip, so the text field
+    /// stays live. LLM-provided while the cloud coach drives (#1158); the
+    /// scripted step's chips only when offline.
+    var currentSuggestions: [String] {
+        llmDriving ? llmSuggestions : (notes.intake.nextStep?.suggestions ?? [])
+    }
+
     var suggestionRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
-                ForEach(notes.intake.nextStep?.suggestions ?? [], id: \.self) { suggestion in
+                ForEach(currentSuggestions, id: \.self) { suggestion in
                     Button { Task { await send(suggestion) } } label: {
                         Text(suggestion)
                             .font(.caption.weight(.medium))
@@ -195,12 +222,19 @@ struct CoachMeView: View {
                                              known: notes.intake,
                                              briefing: notes.briefing()) {
             notes.intake.merge(turn.learned)
+            notes.intake.noteInjuryTalk(inCoachReply: turn.reply)
             if let note = turn.note { notes.record(note, kind: .moment) }
             notes.save()
             messages.append(Message(text: turn.reply, fromCoach: true))
-            if turn.readyToDraft || notes.intake.canDraft { redraft() }
+            llmDriving = true
+            llmSuggestions = turn.suggestions
+            // #1158: a reply that asks a question must not answer itself with
+            // a plan in the same breath — the draft waits for the next turn.
+            let stillAsking = turn.reply.trimmingCharacters(in: .whitespacesAndNewlines).hasSuffix("?")
+            if (turn.readyToDraft || notes.intake.canDraft) && !stillAsking { redraft() }
         } else {
             // Offline: the scripted intake still advances the conversation.
+            llmDriving = false
             applyOffline(trimmed)
             if let step = notes.intake.nextStep {
                 messages.append(Message(text: step.question, fromCoach: true))

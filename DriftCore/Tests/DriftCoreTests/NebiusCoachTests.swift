@@ -105,6 +105,19 @@ struct NebiusCoachTests {
         #expect(known.askedInjuries, "we heard an answer, so stop asking")
     }
 
+    /// #1158: the model owns the chips. Suggestions decode from the turn, and
+    /// asked_injuries reports the ASKING (not an answer slot).
+    @Test func suggestionsAndAskedInjuriesDecode() {
+        let raw = #"{"reply":"Anything hurting?","slots":{"asked_injuries":true},"ready_to_draft":false,"suggestions":["Nothing hurts","My back","Knees"]}"#
+        let turn = NebiusCoach.decode(raw)
+        #expect(turn?.suggestions == ["Nothing hurts", "My back", "Knees"])
+        #expect(turn?.learned.askedInjuries == true)
+        // Absent fields stay safe defaults.
+        let bare = NebiusCoach.decode(#"{"reply":"ok","slots":{}}"#)
+        #expect(bare?.suggestions == [])
+        #expect(bare?.learned.askedInjuries == false)
+    }
+
     // MARK: - Chat → human-coach note decode (the cloud CALL is Tier-3)
 
     @Test func chatNoteDecodesAPlainLine() {

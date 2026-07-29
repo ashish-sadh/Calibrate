@@ -34,13 +34,20 @@ public enum NebiusCoach {
         public var ask: CoachProgramBuilder.Ask?
         /// A focus they named for today's session ("legs", "push", "upper").
         public var focus: String?
+        /// 2–4 tappable answers to the question THIS reply asks. The chip row
+        /// used to render the scripted intake's next step, which desynced the
+        /// moment the model chose its own question order (#1158) — the model
+        /// owns the question, so it owns the chips.
+        public var suggestions: [String] = []
     }
 
     static let systemPrompt = """
     You are a strength coach texting a client. You sound like a person who has coached for fifteen years, not a form and not a chatbot.
 
     Return ONLY a JSON object — no prose, no markdown fences — in exactly this shape:
-    {"reply":"string","ask":"today"|"program"|null,"focus":"string|null","slots":{"days_per_week":number|null,"training_days":["string"],"goal":"string|null","session_minutes":number|null,"equipment":"string|null","uses_barbell":boolean|null,"familiar_exercises":["string"],"problem_areas":["string"],"pain_level":number|null,"requests":["string"]},"note":"string|null","ready_to_draft":boolean}
+    {"reply":"string","ask":"today"|"program"|null,"focus":"string|null","slots":{"days_per_week":number|null,"training_days":["string"],"goal":"string|null","session_minutes":number|null,"equipment":"string|null","uses_barbell":boolean|null,"familiar_exercises":["string"],"problem_areas":["string"],"pain_level":number|null,"asked_injuries":boolean,"requests":["string"]},"note":"string|null","ready_to_draft":boolean,"suggestions":["string"]}
+
+    "suggestions" are 2-4 SHORT tappable answers to the question YOUR reply asks — e.g. asking about schedule → ["Mon/Wed/Fri","Tue/Thu/Sat"], minutes → ["30 min","45 min","60 min"], injuries → ["Nothing hurts","My back","Knees"]. Empty array when free text is the only sensible answer. NEVER suggest answers to a question you did not just ask.
 
     WHAT THEY WANT — read this before anything else:
     - "what should I do today", "I'm at the gym", "give me a workout", "I have 40 minutes" → ask="today". They want ONE session right now. Do NOT interview them about their weekly schedule; you need only session length, equipment and anything that hurts. Set focus if they named one ("legs", "push", "upper").
@@ -64,8 +71,9 @@ public enum NebiusCoach {
     SLOTS:
     - Only fill a slot they actually answered. Never infer or invent. Omit or null anything unstated. "2-3" for pain takes the HIGHER number.
     - "familiar_exercises" are lifts they say they already do. Keep their wording.
+    - "asked_injuries": true once you have asked about injuries or pain at ANY point in this conversation, whatever they answered ("all good" counts).
     - "note" is for what's worth remembering but isn't a slot: travel, sleep, stress, a sore day, what motivates them. Null when there's nothing.
-    - ready_to_draft: for ask="today", true as soon as you know roughly how long they have. For ask="program", true once you know days/week, session length and equipment. Do not keep interviewing for its own sake — you can refine after they see something.
+    - ready_to_draft: for ask="today", true as soon as you know roughly how long they have. For ask="program", true once you know days/week, session length, equipment AND you have asked about injuries once — no real coach writes a program without asking what hurts. Do not keep interviewing beyond that — you can refine after they see something.
     """
 
     // MARK: - Chat → human-coach note
@@ -151,6 +159,7 @@ public enum NebiusCoach {
             learned.problemAreas = stringArray(slots["problem_areas"])
             // Clamp: a model returning 12/10 shouldn't drive exercise selection.
             learned.painLevel = intValue(slots["pain_level"]).map { min(max($0, 0), 10) }
+            learned.askedInjuries = (slots["asked_injuries"] as? Bool) ?? false
             learned.requests = stringArray(slots["requests"])
         }
 
@@ -166,7 +175,8 @@ public enum NebiusCoach {
                     note: nonEmpty(root["note"]),
                     readyToDraft: (root["ready_to_draft"] as? Bool) ?? false,
                     ask: ask,
-                    focus: nonEmpty(root["focus"]))
+                    focus: nonEmpty(root["focus"]),
+                    suggestions: stringArray(root["suggestions"]))
     }
 
     // MARK: - Lenient readers
@@ -218,6 +228,21 @@ public extension CoachIntake {
         requests = union(requests, learned.requests)
         if !learned.problemAreas.isEmpty {
             problemAreas = union(problemAreas, learned.problemAreas)
+            askedInjuries = true
+        }
+        // "Nothing hurts" fills no slot — the model reports the ASKING itself.
+        if learned.askedInjuries { askedInjuries = true }
+    }
+
+    /// Belt-and-braces for the injury gate: models drop newly added schema
+    /// fields on busy turns, and a dropped `asked_injuries` stalls the
+    /// interview one step from the draft. The coach's own words are the
+    /// fallback signal — an injury question or its acknowledgment always
+    /// names the topic.
+    mutating func noteInjuryTalk(inCoachReply reply: String) {
+        guard !askedInjuries else { return }
+        if reply.range(of: "hurt|pain|injur|bother|sore",
+                       options: [.regularExpression, .caseInsensitive]) != nil {
             askedInjuries = true
         }
     }

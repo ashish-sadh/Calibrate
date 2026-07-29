@@ -73,10 +73,14 @@ public struct CoachIntake: Codable, Sendable, Equatable {
     public var askedRequests = false
 
     /// Enough to write something useful. Deliberately lower than "every slot
-    /// filled": a coach who has days, goal, duration and equipment can draft,
-    /// then refine. Waiting for perfect information is how intake becomes a form.
+    /// filled": a coach who has days, duration and equipment can draft, then
+    /// refine. Waiting for perfect information is how intake becomes a form.
+    /// The one non-negotiable: injuries must have been ASKED about (operator
+    /// 2026-07-29: "the coach should have asked about injury") — no real coach
+    /// programs without asking what hurts; "nothing hurts" satisfies it.
     public var canDraft: Bool {
         daysPerWeek != nil && sessionMinutes != nil && equipment?.isEmpty == false
+            && isFilled(.injuries)
     }
 
     // MARK: - Steps

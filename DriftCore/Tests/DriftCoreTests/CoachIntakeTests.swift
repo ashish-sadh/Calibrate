@@ -51,7 +51,37 @@ struct CoachIntakeTests {
         intake.daysPerWeek = 2
         intake.sessionMinutes = 45
         intake.equipment = "Full gym"
-        #expect(intake.canDraft, "days + duration + equipment is enough to draft and then refine")
+        // 2026-07-29 (operator: "the coach should have asked about injury"):
+        // logistics alone no longer draft — injuries must have been ASKED.
+        #expect(!intake.canDraft, "no program before the injury question")
+        intake.askedInjuries = true
+        #expect(intake.canDraft, "logistics + the injury ask is enough to draft and then refine")
+    }
+
+    /// "Nothing hurts" fills no slot — the model reports the asking itself,
+    /// and merge must carry that flag across turns.
+    @Test func mergeCarriesAskedInjuriesFlag() {
+        var known = CoachIntake()
+        var learned = CoachIntake()
+        learned.askedInjuries = true
+        known.merge(learned)
+        #expect(known.isFilled(.injuries))
+    }
+
+    /// Models drop new schema fields — the coach's own words are the fallback
+    /// signal that injuries were asked about (question OR acknowledgment).
+    @Test func coachTalkingAboutInjuriesCountsAsAsking() {
+        var intake = CoachIntake()
+        intake.noteInjuryTalk(inCoachReply: "Any areas that bother you or have a history of pain?")
+        #expect(intake.isFilled(.injuries))
+
+        var intake2 = CoachIntake()
+        intake2.noteInjuryTalk(inCoachReply: "Good to hear nothing's bothering you.")
+        #expect(intake2.isFilled(.injuries))
+
+        var intake3 = CoachIntake()
+        intake3.noteInjuryTalk(inCoachReply: "What equipment do you have access to?")
+        #expect(!intake3.isFilled(.injuries), "equipment talk is not injury talk")
     }
 
     // MARK: - The real conversation
