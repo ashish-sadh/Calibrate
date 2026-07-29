@@ -88,16 +88,22 @@ public struct PersonalRecord: Codable, Sendable, Equatable, Identifiable {
     public var estimated1RM: Double
     /// yyyy-MM-dd of the workout the set belongs to; empty when unknown.
     public var date: String
+    /// Sessions that trained this lift AFTER the record was set. This is what
+    /// separates a plateau from an untrained lift: four sessions of trying
+    /// without a new best is a stalled stimulus, while one session since is
+    /// just recency.
+    public var sessionsSincePR: Int
 
     public var id: String { exercise }
 
     public init(exercise: String, weightLbs: Double, reps: Int,
-                estimated1RM: Double, date: String) {
+                estimated1RM: Double, date: String, sessionsSincePR: Int = 0) {
         self.exercise = exercise
         self.weightLbs = weightLbs
         self.reps = reps
         self.estimated1RM = estimated1RM
         self.date = date
+        self.sessionsSincePR = sessionsSincePR
     }
 
     /// "185 lb × 5" — the set as a lifter would say it.

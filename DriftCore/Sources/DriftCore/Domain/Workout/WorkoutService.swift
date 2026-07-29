@@ -382,14 +382,27 @@ public enum WorkoutService {
                                 limit: Int) -> [PersonalRecord] {
         var best: [String: PersonalRecord] = [:]
         var volume: [String: Int] = [:]
+        // Distinct sessions per lift, keyed by the workout's date so "sessions
+        // since the PR" is a date comparison rather than an id ordering.
+        var sessionDates: [String: Set<String>] = [:]
         for set in sets {
             volume[set.exerciseName, default: 0] += 1
+            if let date = dateByWorkout[set.workoutId], !date.isEmpty {
+                sessionDates[set.exerciseName, default: []].insert(date)
+            }
             guard let oneRM = set.estimated1RM,
                   let weight = set.weightLbs, let reps = set.reps else { continue }
             if let existing = best[set.exerciseName], existing.estimated1RM >= oneRM { continue }
             best[set.exerciseName] = PersonalRecord(
                 exercise: set.exerciseName, weightLbs: weight, reps: reps,
                 estimated1RM: oneRM, date: dateByWorkout[set.workoutId] ?? "")
+        }
+
+        // ISO yyyy-MM-dd sorts lexicographically, so a string compare is a
+        // date compare here.
+        for (exercise, record) in best where !record.date.isEmpty {
+            let later = (sessionDates[exercise] ?? []).filter { $0 > record.date }
+            best[exercise]?.sessionsSincePR = later.count
         }
 
         return best.values

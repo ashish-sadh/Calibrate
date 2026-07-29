@@ -39,7 +39,9 @@ public enum BriefingAggregator {
                                trendSleep: [(date: Date, hours: Double)] = [],
                                trendNutrition: [NutritionDay] = [],
                                trendWeights: [(date: Date, lbs: Double)] = [],
-                               records: [PersonalRecord] = []) -> BriefingMetrics {
+                               records: [PersonalRecord] = [],
+                               weightGoalDirection: WeightGoalDirection = .none,
+                               recovery: [MuscleRecoveryPoint] = []) -> BriefingMetrics {
         var metrics = BriefingMetrics()
         metrics.windowDays = windowDays
 
@@ -73,8 +75,59 @@ public enum BriefingAggregator {
         }
         if level.contains(.strength) {
             metrics.records = records.isEmpty ? nil : records
+            metrics.recovery = recovery.isEmpty ? nil : recovery
         }
+
+        // Plateaus last: each is derived from a category already folded in
+        // above, so a stall can never reveal something the client withheld.
+        var alerts: [PlateauAlert] = []
+        if level.contains(.strength) {
+            alerts += strengthPlateaus(records)
+        }
+        if level.contains(.weight), let series = metrics.weightSeries,
+           let stall = weightPlateau(series, direction: weightGoalDirection) {
+            alerts.append(stall)
+        }
+        metrics.plateaus = alerts.isEmpty ? nil : alerts
         return metrics
+    }
+
+    /// Which way the client is trying to move. Passed in as a DERIVED value so
+    /// the goal itself (target weight, deadline) never crosses the wire — only
+    /// the fact that a flat trend is or isn't a problem.
+    public enum WeightGoalDirection: String, Sendable {
+        case losing, gaining
+        /// Maintaining, or no goal set — a flat trend is then success, not a
+        /// stall, and no alert is raised.
+        case none
+    }
+
+    /// Sessions of training a lift with no new best before it counts as
+    /// stalled. Four is a coach's threshold: one or two sessions is noise, and
+    /// waiting longer wastes a training block.
+    static let strengthStallSessions = 4
+
+    static func strengthPlateaus(_ records: [PersonalRecord]) -> [PlateauAlert] {
+        records
+            .filter { $0.sessionsSincePR >= strengthStallSessions }
+            // Longest stall first — that's the one to change.
+            .sorted { $0.sessionsSincePR > $1.sessionsSincePR }
+            .map { PlateauAlert(kind: .strength, subject: $0.exercise, span: $0.sessionsSincePR) }
+    }
+
+    /// Weeks of flat weight before it counts as a stall, and the band within
+    /// which "flat" is flat. A pound of weekly noise is water, not progress.
+    static let weightStallWeeks = 3
+    static let weightFlatBandLbs = 1.0
+
+    static func weightPlateau(_ series: [WeeklyPoint],
+                              direction: WeightGoalDirection) -> PlateauAlert? {
+        // No goal, or maintaining: holding steady is the win, not a stall.
+        guard direction != .none, series.count >= weightStallWeeks else { return nil }
+        let recent = series.suffix(weightStallWeeks).map(\.value)
+        guard let low = recent.min(), let high = recent.max() else { return nil }
+        guard high - low <= weightFlatBandLbs else { return nil }
+        return PlateauAlert(kind: .weight, subject: "", span: recent.count)
     }
 
     /// Bucket daily values into WEEKLY AVERAGES, oldest first. Weekly is the

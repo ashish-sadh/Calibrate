@@ -56,8 +56,118 @@ public struct BriefingSharingLevel: OptionSet, Codable, Sendable, Hashable {
         if contains(.nutrition) { out.append("Average calories & protein") }
         if contains(.weight) { out.append("Weight trend") }
         if contains(.bodyComp) { out.append("Body composition") }
-        if contains(.strength) { out.append("Strength records") }
+        if contains(.strength) { out.append("Training detail (best sets & recovery)") }
         return out
+    }
+}
+
+/// One muscle group's recovery state, as the CLIENT's app computed it.
+///
+/// The status is resolved on the client and shipped as a value, not
+/// recomputed coach-side, because the thresholds are LEARNED per person:
+/// `MuscleSoreness` tunes each group's recovery estimate from the client's
+/// own "still sore?" answers. A coach recomputing from days-since would show
+/// a different colour than the client sees for the same body — and the mirror
+/// principle says both sides read one truth.
+public struct MuscleRecoveryPoint: Codable, Sendable, Equatable, Identifiable {
+    public enum Status: String, Codable, Sendable {
+        case recovering, moderate, recovered, untrained
+    }
+
+    public var group: String
+    public var status: Status
+    /// Days since the group was last trained; nil when never (or beyond the
+    /// history window), which is what `.untrained` means.
+    public var daysSince: Int?
+
+    public var id: String { group }
+
+    public init(group: String, status: Status, daysSince: Int? = nil) {
+        self.group = group
+        self.status = status
+        self.daysSince = daysSince
+    }
+
+    /// "2d" / "today" / "—" — a coach scans six of these at once, so it has
+    /// to read in one glance.
+    public var shortAge: String {
+        guard let daysSince else { return "—" }
+        return daysSince == 0 ? "today" : "\(daysSince)d"
+    }
+
+    var payload: [String: Any] {
+        var dict: [String: Any] = ["group": group, "status": status.rawValue]
+        if let daysSince { dict["days_since"] = daysSince }
+        return dict
+    }
+
+    static func decode(_ any: Any?) -> [MuscleRecoveryPoint]? {
+        guard let rows = any as? [[String: Any]] else { return nil }
+        let points = rows.compactMap { row -> MuscleRecoveryPoint? in
+            guard let group = row["group"] as? String,
+                  let raw = row["status"] as? String,
+                  let status = Status(rawValue: raw) else { return nil }
+            let days = (row["days_since"] as? Int)
+                ?? BriefingMetrics.double(row["days_since"]).map(Int.init)
+            return MuscleRecoveryPoint(group: group, status: status, daysSince: days)
+        }
+        return points.isEmpty ? nil : points
+    }
+}
+
+/// A stall worth a coach's attention. Derived entirely from data the client
+/// already shares — each alert is emitted only when ITS source category is
+/// opted into, so a plateau never reveals a category the client withheld.
+///
+/// Deliberately a small closed set rather than free text: a coach scanning
+/// five clients needs a shape they recognise, and free strings can't be
+/// tested or translated.
+public struct PlateauAlert: Codable, Sendable, Equatable, Identifiable {
+    public enum Kind: String, Codable, Sendable {
+        /// A lift trained repeatedly with no new best.
+        case strength
+        /// Weight flat while the client is trying to move it.
+        case weight
+    }
+
+    public var kind: Kind
+    /// The lift's name for `.strength`; empty for `.weight`.
+    public var subject: String
+    /// Sessions (strength) or weeks (weight) the stall has run for.
+    public var span: Int
+
+    public var id: String { "\(kind.rawValue)-\(subject)" }
+
+    public init(kind: Kind, subject: String, span: Int) {
+        self.kind = kind
+        self.subject = subject
+        self.span = span
+    }
+
+    /// One line, phrased as the observation — never as an instruction. The
+    /// coach decides what to change; the app's job is to surface the stall.
+    public var text: String {
+        switch kind {
+        case .strength:
+            return "\(subject): \(span) sessions without a new best"
+        case .weight:
+            return "Weight flat \(span) weeks while working toward a target"
+        }
+    }
+
+    var payload: [String: Any] {
+        ["kind": kind.rawValue, "subject": subject, "span": span]
+    }
+
+    static func decode(_ any: Any?) -> [PlateauAlert]? {
+        guard let rows = any as? [[String: Any]] else { return nil }
+        let alerts = rows.compactMap { row -> PlateauAlert? in
+            guard let raw = row["kind"] as? String, let kind = Kind(rawValue: raw) else { return nil }
+            let span = (row["span"] as? Int)
+                ?? BriefingMetrics.double(row["span"]).map(Int.init) ?? 0
+            return PlateauAlert(kind: kind, subject: (row["subject"] as? String) ?? "", span: span)
+        }
+        return alerts.isEmpty ? nil : alerts
     }
 }
 
@@ -127,6 +237,12 @@ public struct BriefingMetrics: Codable, Sendable, Equatable {
     public var daysLogged: Int?
     /// Best set per main lift (the `.strength` opt-in).
     public var records: [PersonalRecord]?
+    /// Stalls worth attention. Each element is gated by the category it came
+    /// from, so this never leaks a withheld one.
+    public var plateaus: [PlateauAlert]?
+    /// Per-muscle recovery, as the client's own app coloured it (the
+    /// `.strength` opt-in — same source and sensitivity as the records).
+    public var recovery: [MuscleRecoveryPoint]?
 
     public init() {}
 
@@ -240,9 +356,12 @@ public struct BriefingMetrics: Codable, Sendable, Equatable {
         if let records, !records.isEmpty {
             dict["records"] = records.map { record in
                 ["exercise": record.exercise, "weight_lbs": record.weightLbs,
-                 "reps": record.reps, "one_rm": record.estimated1RM, "date": record.date]
+                 "reps": record.reps, "one_rm": record.estimated1RM, "date": record.date,
+                 "sessions_since_pr": record.sessionsSincePR]
             }
         }
+        if let plateaus, !plateaus.isEmpty { dict["plateaus"] = plateaus.map(\.payload) }
+        if let recovery, !recovery.isEmpty { dict["recovery"] = recovery.map(\.payload) }
         return dict
     }
 
@@ -272,11 +391,16 @@ public struct BriefingMetrics: Codable, Sendable, Equatable {
                       let weight = double(row["weight_lbs"]),
                       let oneRM = double(row["one_rm"]) else { return nil }
                 let reps = (row["reps"] as? Int) ?? double(row["reps"]).map(Int.init) ?? 0
+                let since = (row["sessions_since_pr"] as? Int)
+                    ?? double(row["sessions_since_pr"]).map(Int.init) ?? 0
                 return PersonalRecord(exercise: exercise, weightLbs: weight, reps: reps,
-                                      estimated1RM: oneRM, date: (row["date"] as? String) ?? "")
+                                      estimated1RM: oneRM, date: (row["date"] as? String) ?? "",
+                                      sessionsSincePR: since)
             }
             metrics.records = records.isEmpty ? nil : records
         }
+        metrics.plateaus = PlateauAlert.decode(dict["plateaus"])
+        metrics.recovery = MuscleRecoveryPoint.decode(dict["recovery"])
         return metrics
     }
 
@@ -312,5 +436,6 @@ public struct ClientBriefing: Sendable, Equatable, Identifiable {
     public var isEmpty: Bool {
         summary.isEmpty && notes.isEmpty && metrics.lines.isEmpty
             && metrics.trends.isEmpty && (metrics.records?.isEmpty ?? true)
+            && (metrics.plateaus?.isEmpty ?? true)
     }
 }

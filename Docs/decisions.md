@@ -762,3 +762,76 @@ Rectangles: pure layout, so it measures correctly under Fuse at any font
 scale (cf. #1159's LazyVGrid) and needs no GeometryReader, which
 recomposes per scroll frame on Fuse. Apple-Health-style line charts belong
 on the coach's dedicated client page (#1156 slice 2), not here.
+
+## 2026-07-29 — Plateau alerts: the coach sees what needs CHANGING, first
+
+Operator: "it will be so good if they also see plateau alerts."
+
+TWO KINDS, BOTH DERIVED — no new consent bit. A `PlateauAlert` is computed
+from data the client already shares, and each alert is gated by ITS source
+category, so a stall can never reveal a withheld one: strength stalls need
+`.strength`, weight stalls need `.weight`. Nothing new crosses the wire
+except the conclusion.
+
+STRENGTH: a lift with >= 4 sessions since its best set. `sessionsSincePR`
+is what distinguishes a plateau from an untrained lift — 8 weeks without a
+PR on a lift trained twice is neglect, not a stall. Ranked longest-first,
+because that is the lift to change.
+
+WEIGHT: >= 3 weekly points within a 1 lb band. A pound of weekly swing is
+water, not progress. Critically, this fires ONLY when the client is trying
+to move their weight — and the goal itself never crosses: `BriefingSnapshot`
+derives a `WeightGoalDirection` (losing / gaining / none) locally and
+passes only that. Target weight and deadline stay on the device. When
+maintaining or goal-less, flat weight is the plan working and no alert is
+raised — an app that calls success a failure will not be trusted twice.
+
+PLACEMENT: the alert band renders at the TOP of the briefing, above the
+averages. A coach opens a client to find what needs changing; a stall
+buried under the numbers is a stall nobody acts on. Amber, not red: worth
+attention, not an emergency.
+
+## 2026-07-29 — The coach view becomes a dashboard: charts, recovery map, unread marks
+
+Operator, prepping a live demo to a real coach: "graphs looks pretty,
+insights about client looks pretty… can we render recovery muscle map for
+coaches too… what notifications are enabled for coach."
+
+READING ORDER IS THE DESIGN. The briefing now renders: what needs CHANGING
+(plateaus) → where they ARE (hero stats) → where they're GOING (trend
+charts) → recovery → body comp → the evidence (best sets, notes). A coach
+opens a client to decide what to do next, so the decision inputs come
+first and the archive comes last.
+
+CHARTS: the summary card graduates from bar sparklines to the house style —
+one connected line with a dot on the LATEST point only (a dot per point is
+a scatter, per the 2026-07 chart feedback). Path inside a GeometryReader
+inside a FIXED-height frame: the proven Fuse pattern from
+WeightChartAndroid, where the fixed height is what keeps it safe at large
+font scales (cf. #1159).
+
+RECOVERY MAP, SHARED CALCULATOR: `MuscleRecoveryMap` moves to DriftCore so
+the client's body figure and the coach's strip grade the same body
+identically. Status is computed ON THE CLIENT and shipped as a value,
+never recomputed coach-side, because the thresholds are LEARNED per person
+(`MuscleSoreness`) — a coach recomputing from days-since would show a
+different colour for the same body and break the mirror principle. The
+coach gets a compact 6-group strip, NOT `BodyMapView`: that view owns
+local soreness check-ins, template starts and its own DB reads, none of
+which belong on someone else's client page. Colours are shared, so the two
+still read as one system. Rides `.strength`, whose label now names both
+things it grants ("Training detail (best sets & recovery)").
+
+NOTIFICATIONS — WHAT WE DID NOT BUILD. There is no APNs/FCM credential,
+no device token, and no server-side trigger on `live_workouts`, because
+privacy-first means no always-on server watching a client train. So rather
+than fake it, `CoachSeenStore` gives the coach an UNREAD MARK: completed
+sessions since they last opened that client, badged on the row, cleared on
+open, durable through the SQLite seam (UserDefaults does not survive
+Android process death, #1108). Honest and accurate whenever the coach is
+actually looking. Real push stays unbuilt and unpromised.
+
+FRESHNESS, TWICE OVER. `updated_at` is now displayed ("Updated 2h ago") —
+it was parsed and dropped, so a coach could read a three-week-old trend as
+today's. And opening your own Friends hub re-pushes your briefings, since
+a local-first snapshot otherwise only moved when a toggle was flipped.

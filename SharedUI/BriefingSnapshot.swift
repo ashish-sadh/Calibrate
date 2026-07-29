@@ -130,6 +130,23 @@ enum BriefingSnapshot {
             ? ((try? WorkoutService.personalRecords(limit: 5)) ?? [])
             : []
 
+        // Recovery is graded on the CLIENT, with the client's own learned
+        // thresholds, so the coach sees the same colours the client does.
+        let recovery = level.contains(.strength)
+            ? MuscleRecoveryMap.points(lastTrained: MuscleRecoveryMap.lastTrainedByGroup(),
+                                       soreness: MuscleSoreness.loadState())
+            : []
+
+        // Only the DIRECTION crosses, never the goal: a coach needs to know
+        // whether flat weight is a stall or the plan working, and that is the
+        // whole of it — target weight and deadline stay on the device.
+        var direction = BriefingAggregator.WeightGoalDirection.none
+        if level.contains(.weight), let goal = WeightGoal.load() {
+            let delta = goal.targetWeightKg - goal.startWeightKg
+            if delta < -0.5 { direction = .losing }
+            else if delta > 0.5 { direction = .gaining }
+        }
+
         // Body comp reads the whole scan history (scans are sparse, not
         // windowed) — the aggregator keeps only the latest + the diff.
         let scans = level.contains(.bodyComp) ? DEXAService.fetchScans() : []
@@ -144,7 +161,9 @@ enum BriefingSnapshot {
             trendSleep: trendSleep,
             trendNutrition: trendNutrition,
             trendWeights: trendWeights,
-            records: records)
+            records: records,
+            weightGoalDirection: direction,
+            recovery: recovery)
     }
 
     /// Adherence — the number a coach checks first. Derived from sessions the

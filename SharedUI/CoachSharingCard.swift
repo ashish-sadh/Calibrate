@@ -39,7 +39,7 @@ struct CoachSharingCard: View {
             row("Average calories & protein", .nutrition)
             row("Weight trend", .weight)
             row("Body composition (DEXA)", .bodyComp)
-            row("Strength records (best sets)", .strength)
+            row("Training detail (best sets & recovery)", .strength)
 
             Text(level == .none
                  ? "Your coach sees only the workouts you share."

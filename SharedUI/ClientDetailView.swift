@@ -198,6 +198,9 @@ struct ClientDetailView: View {
         sessions = all.filter { $0.clientId == client.id }
         briefing = try? await svc.fetchBriefing(for: client.id)
         loading = false
+        // Opening the page IS seeing it — clear this client's "N new" badge
+        // once the sessions are actually on screen, not before.
+        CoachSeenStore.markSeen(client: client.id)
 
         // After the card is already on screen — the coach shouldn't wait on a
         // cloud round-trip to see the workouts they came for.

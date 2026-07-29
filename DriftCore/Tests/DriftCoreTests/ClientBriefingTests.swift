@@ -302,6 +302,196 @@ struct ClientBriefingTests {
         #expect(!briefing.isEmpty)
     }
 
+    // MARK: - Recovery map
+
+    /// The client grades its own recovery with its LEARNED thresholds, so the
+    /// coach sees the same colour the client sees. Default 72h reproduces the
+    /// original day thresholds: 0-1d recovering, 2d moderate, 3d+ recovered.
+    @Test func recoveryUsesTheClientsLearnedThresholds() {
+        let today = Date()
+        func daysAgo(_ n: Int) -> Date { today.addingTimeInterval(-Double(n) * 86_400) }
+
+        let points = MuscleRecoveryMap.points(
+            lastTrained: ["Legs": daysAgo(1), "Chest": daysAgo(2),
+                          "Back": daysAgo(4), "Arms": daysAgo(30)],
+            soreness: MuscleSoreness.State(),
+            today: today)
+
+        func status(_ group: String) -> MuscleRecoveryPoint.Status? {
+            points.first { $0.group == group }?.status
+        }
+        #expect(status("Legs") == .recovering)
+        #expect(status("Chest") == .moderate)
+        #expect(status("Back") == .recovered)
+        #expect(status("Arms") == .untrained, "30 days off is not 'ready'")
+        #expect(status("Core") == .untrained, "never trained")
+        #expect(points.count == MuscleRecoveryMap.groups.count, "every group is reported")
+
+        // A learned SHORTER recovery for legs promotes the same 1-day-ago
+        // session from recovering to recovered — proving the estimate drives it.
+        let fastLegs = MuscleSoreness.State(learnedHours: ["Legs": 24])
+        let relearned = MuscleRecoveryMap.points(
+            lastTrained: ["Legs": daysAgo(1)], soreness: fastLegs, today: today)
+        #expect(relearned.first { $0.group == "Legs" }?.status == .recovered)
+    }
+
+    @Test func recoveryNeedsTheTrainingDetailBitAndRoundTrips() {
+        let points = [MuscleRecoveryPoint(group: "Legs", status: .recovering, daysSince: 1),
+                      MuscleRecoveryPoint(group: "Core", status: .untrained)]
+
+        let withheld = BriefingAggregator.metrics(level: [.weight], recovery: points)
+        #expect(withheld.recovery == nil)
+        #expect(withheld.payload["recovery"] == nil)
+
+        let shared = BriefingAggregator.metrics(level: [.strength], recovery: points)
+        #expect(shared.recovery?.count == 2)
+
+        let decoded = BriefingMetrics.decode(shared.payload)
+        #expect(decoded.recovery?.first?.group == "Legs")
+        #expect(decoded.recovery?.first?.status == .recovering)
+        #expect(decoded.recovery?.first?.daysSince == 1)
+        #expect(decoded.recovery?.last?.status == .untrained)
+        #expect(decoded.recovery?.last?.daysSince == nil, "never-trained carries no age")
+        #expect(decoded.recovery?.first?.shortAge == "1d")
+    }
+
+    // MARK: - The coach's unread mark
+
+    private func session(_ id: String, client: String, started: Date,
+                         status: SessionStatus = .completed) -> LiveWorkoutDTO {
+        LiveWorkoutDTO(id: id, clientId: client, trainerId: "coach",
+                       templateName: "Push", status: status,
+                       startedAt: DateFormatters.iso8601.string(from: started),
+                       endedAt: nil)
+    }
+
+    /// Never looked ⇒ everything shared counts as new; after opening, nothing
+    /// does. Only COMPLETED sessions badge: an abandoned one isn't an
+    /// achievement and a live one is already shown with a live dot.
+    @Test func unseenCountsCompletedSessionsSinceTheCoachLastLooked() {
+        let clientID = "client-unread-\(UUID().uuidString)"
+        let now = Date()
+        let sessions = [
+            session("s1", client: clientID, started: now.addingTimeInterval(-3600)),
+            session("s2", client: clientID, started: now.addingTimeInterval(-7200)),
+            session("s3", client: clientID, started: now, status: .abandoned),
+            session("s4", client: "someone-else", started: now),
+        ]
+
+        #expect(CoachSeenStore.unseenCount(for: clientID, sessions: sessions) == 2,
+                "never looked: both completed sessions are new")
+
+        CoachSeenStore.markSeen(client: clientID, at: now)
+        #expect(CoachSeenStore.unseenCount(for: clientID, sessions: sessions) == 0)
+
+        // A session finished after the visit badges again.
+        let later = sessions + [session("s5", client: clientID,
+                                        started: now.addingTimeInterval(60))]
+        #expect(CoachSeenStore.unseenCount(for: clientID, sessions: later) == 1)
+    }
+
+    // MARK: - Plateau alerts
+
+    private func pr(_ exercise: String, sessionsSince: Int) -> PersonalRecord {
+        PersonalRecord(exercise: exercise, weightLbs: 185, reps: 5,
+                       estimated1RM: 208.1, date: "2026-06-01",
+                       sessionsSincePR: sessionsSince)
+    }
+
+    /// Four sessions of trying without a new best is a stall; one or two is
+    /// noise. Longest stall first — that's the lift to change.
+    @Test func strengthPlateauNeedsFourStaleSessionsAndRanksByLength() {
+        let alerts = BriefingAggregator.strengthPlateaus([
+            pr("Bench Press", sessionsSince: 4),
+            pr("Overhead Press", sessionsSince: 9),
+            pr("Squat", sessionsSince: 3),          // noise, not a stall
+            pr("Row", sessionsSince: 0),            // just set it
+        ])
+        #expect(alerts.count == 2)
+        #expect(alerts.first?.subject == "Overhead Press")
+        #expect(alerts.first?.span == 9)
+        #expect(alerts.first?.text == "Overhead Press: 9 sessions without a new best")
+        #expect(!alerts.contains { $0.subject == "Squat" })
+    }
+
+    /// Flat weight is only a stall when the client is TRYING to move it.
+    /// Maintaining (or no goal) means flat is the plan working.
+    @Test func weightPlateauDependsOnTheGoalDirection() {
+        let flat = [WeeklyPoint(weekStart: "2026-07-06", value: 180.0),
+                    WeeklyPoint(weekStart: "2026-07-13", value: 180.4),
+                    WeeklyPoint(weekStart: "2026-07-20", value: 180.2)]
+
+        #expect(BriefingAggregator.weightPlateau(flat, direction: .losing)?.span == 3)
+        #expect(BriefingAggregator.weightPlateau(flat, direction: .gaining) != nil)
+        #expect(BriefingAggregator.weightPlateau(flat, direction: .none) == nil,
+                "holding steady on purpose is not a plateau")
+    }
+
+    /// Real movement isn't a stall, and two weeks isn't enough to call one.
+    @Test func weightPlateauIgnoresMovementAndShortHistory() {
+        let falling = [WeeklyPoint(weekStart: "2026-07-06", value: 182.0),
+                       WeeklyPoint(weekStart: "2026-07-13", value: 180.5),
+                       WeeklyPoint(weekStart: "2026-07-20", value: 179.0)]
+        #expect(BriefingAggregator.weightPlateau(falling, direction: .losing) == nil)
+
+        let tooShort = Array(falling.prefix(2))
+        #expect(BriefingAggregator.weightPlateau(tooShort, direction: .losing) == nil)
+    }
+
+    /// The consent rule for alerts: each is gated by the category it came
+    /// from, so a plateau can never reveal a withheld category.
+    @Test func plateausFollowTheirCategoryConsent() {
+        let flat = [(date: day(0), lbs: 180.0), (date: day(7), lbs: 180.2),
+                    (date: day(14), lbs: 180.1)]
+        let records = [pr("Bench Press", sessionsSince: 6)]
+
+        // Strength shared, weight withheld: only the lift stall crosses.
+        let strengthOnly = BriefingAggregator.metrics(
+            level: [.strength], trendWeights: flat, records: records,
+            weightGoalDirection: .losing)
+        #expect(strengthOnly.plateaus?.count == 1)
+        #expect(strengthOnly.plateaus?.first?.kind == .strength)
+
+        // Weight shared, strength withheld: only the weight stall crosses.
+        let weightOnly = BriefingAggregator.metrics(
+            level: [.weight], trendWeights: flat, records: records,
+            weightGoalDirection: .losing)
+        #expect(weightOnly.plateaus?.count == 1)
+        #expect(weightOnly.plateaus?.first?.kind == .weight)
+
+        // Neither shared: no alerts at all, and nothing on the wire.
+        let neither = BriefingAggregator.metrics(
+            level: [.sleep], trendWeights: flat, records: records,
+            weightGoalDirection: .losing)
+        #expect(neither.plateaus == nil)
+        #expect(neither.payload["plateaus"] == nil)
+    }
+
+    @Test func plateausSurviveEncodeAndDecode() {
+        var original = BriefingMetrics()
+        original.plateaus = [PlateauAlert(kind: .strength, subject: "Squat", span: 7),
+                             PlateauAlert(kind: .weight, subject: "", span: 3)]
+        original.records = [pr("Squat", sessionsSince: 7)]
+
+        let decoded = BriefingMetrics.decode(original.payload)
+        #expect(decoded.plateaus?.count == 2)
+        #expect(decoded.plateaus?.first?.kind == .strength)
+        #expect(decoded.plateaus?.first?.subject == "Squat")
+        #expect(decoded.plateaus?.first?.span == 7)
+        #expect(decoded.plateaus?.last?.kind == .weight)
+        // sessionsSincePR must round trip too, or the coach's client page
+        // can't recompute why the alert fired.
+        #expect(decoded.records?.first?.sessionsSincePR == 7)
+    }
+
+    /// A briefing whose only content is an alert must still render.
+    @Test func aBriefingWithOnlyAPlateauIsNotEmpty() {
+        var metrics = BriefingMetrics()
+        metrics.plateaus = [PlateauAlert(kind: .weight, subject: "", span: 3)]
+        let briefing = ClientBriefing(clientID: "c", summary: "", notes: [], metrics: metrics)
+        #expect(!briefing.isEmpty)
+    }
+
     // MARK: - PR ranking
 
     /// The best set per exercise, ranked by how central the lift is to this

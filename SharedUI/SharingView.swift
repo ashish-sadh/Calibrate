@@ -167,6 +167,18 @@ struct SharingView: View {
                                     .font(.caption2).foregroundStyle(Theme.textSecondary)
                             }
                             Spacer()
+                            // The coach's unread mark — Drift's honest stand-in
+                            // for a push notification (see CoachSeenStore).
+                            if c.kind == .client {
+                                let unseen = CoachSeenStore.unseenCount(
+                                    for: c.profile.id, sessions: clientSessions)
+                                if unseen > 0 {
+                                    Text("\(unseen) new")
+                                        .font(.caption2.weight(.bold)).foregroundStyle(.white)
+                                        .padding(.horizontal, 7).padding(.vertical, 2)
+                                        .background(Theme.accent, in: Capsule())
+                                }
+                            }
                             Image(systemName: sym("bubble.left.fill"))
                                 .font(.caption).foregroundStyle(Theme.chartTrend)
                             Image(systemName: sym("chevron.right"))
@@ -610,6 +622,13 @@ struct SharingView: View {
             // Keep whatever we already had on screen rather than blanking it.
             connectionsFailed = true
         }
+
+        // Opening your own Friends hub refreshes what your coaches see. The
+        // briefing is a local-first snapshot, so without this it only moved
+        // when a toggle was flipped — meaning a coach could be reading
+        // week-old numbers while the client's app had fresh ones all along.
+        // Fire-and-forget: a failed push must never block the hub rendering.
+        Task { await BriefingRepush.afterNotesChanged() }
         if requests.isEmpty {
             requestSenders = [:]
         } else {
