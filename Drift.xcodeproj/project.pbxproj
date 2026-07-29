@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0140FC396CF2123BE0FB938A /* HealthNutritionSyncService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3865EC2CDA17D1B5F9862F1 /* HealthNutritionSyncService.swift */; };
+		023BDCA31F87068EDAD12F1F /* BriefingSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AAD9F0AB51FB643DDAA57D2 /* BriefingSnapshot.swift */; };
 		03B2DCD4AB0BBFB2F177E4DE /* ExercisePoseViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 438B9A646EE10372C4CE4BBE /* ExercisePoseViews.swift */; };
 		045B162C8175451BD63FF9C6 /* ClarificationCardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D2E86F78FA3B9DFA023EF4B /* ClarificationCardTests.swift */; };
 		070C1D9202FAC381DEEE7696 /* CoachMeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9D3CFE24DF3D6C5B0C4775C /* CoachMeView.swift */; };
@@ -225,6 +226,7 @@
 		E511CC6FC43C76917A602C5B /* VoiceMicButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5FA2CD3013AC37A9FA85D34 /* VoiceMicButton.swift */; };
 		E53B2B166E38DEC251474280 /* BackupOnboardingSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B104D3EEC732EC50782802 /* BackupOnboardingSheet.swift */; };
 		E5C9ACF7CCAED656F70B23F9 /* PhotoLogReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A19A30BB3C9CCE28A9A758EF /* PhotoLogReviewView.swift */; };
+		E638E94040A2E0EEB826161B /* CoachSharingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 07B9E61570C433737394F35E /* CoachSharingCard.swift */; };
 		E63F9BB35572B3EF11BF9DE5 /* HardEvalSet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DEC3049742676C1201A6847 /* HardEvalSet.swift */; };
 		E66DE06D850651D735389F76 /* CoachVoiceGateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F48489CA1FCF03AEB3E0EB4 /* CoachVoiceGateTests.swift */; };
 		E68C25C1E22EAE7338CEE59D /* AIChatView+InputBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F3D0C18C8783AF8F1F473B3 /* AIChatView+InputBar.swift */; };
@@ -306,6 +308,7 @@
 		0362D19A4F7D1ABB43FB48F8 /* GoalProgressCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalProgressCard.swift; sourceTree = "<group>"; };
 		0519B532467F62C389C83066 /* ProgressPhotoViewerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressPhotoViewerView.swift; sourceTree = "<group>"; };
 		074D685ACBB266EE28844F0F /* ProgressGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressGalleryView.swift; sourceTree = "<group>"; };
+		07B9E61570C433737394F35E /* CoachSharingCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachSharingCard.swift; sourceTree = "<group>"; };
 		08E33CA6BE80D735A37ED745 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		0966429FFAED4C7FF2D68C11 /* WidgetDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetDataProvider.swift; sourceTree = "<group>"; };
 		0BFC0D10ECB1BBDADD1D1CCB /* ConfirmationCardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmationCardTests.swift; sourceTree = "<group>"; };
@@ -382,6 +385,7 @@
 		57BE014AD72F4F5691483658 /* CloudVisionClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudVisionClientTests.swift; sourceTree = "<group>"; };
 		5893DE4C163CA3CF50E74C1A /* DEXAOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DEXAOverviewView.swift; sourceTree = "<group>"; };
 		58B1281AF3BA620161F30716 /* foods.db */ = {isa = PBXFileReference; path = foods.db; sourceTree = "<group>"; };
+		5AAD9F0AB51FB643DDAA57D2 /* BriefingSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BriefingSnapshot.swift; sourceTree = "<group>"; };
 		5B2484CC19C12F468384943F /* DriftCoachSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriftCoachSheet.swift; sourceTree = "<group>"; };
 		5B3C6E9E3E3CA35B6E5D9D02 /* AIChatView+MessageHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AIChatView+MessageHandling.swift"; sourceTree = "<group>"; };
 		5D1E187818C8B9D2196B4B9D /* LabReportOCRTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LabReportOCRTests.swift; sourceTree = "<group>"; };
@@ -599,10 +603,12 @@
 				98ADC92978075E7C92121D54 /* AIChatView+Suggestions.swift */,
 				74D1E8917416095000ED7D48 /* AIChatViewModel.swift */,
 				9CFFE8FDEE3FE443759F397D /* BodyMapView.swift */,
+				5AAD9F0AB51FB643DDAA57D2 /* BriefingSnapshot.swift */,
 				EA6A530140B729B060F76E94 /* ChatView.swift */,
 				3E99AB7A740D59D0E9092AF2 /* ClarificationCard.swift */,
 				D835079FDEEB81D39D23D748 /* ClientDetailView.swift */,
 				F9D3CFE24DF3D6C5B0C4775C /* CoachMeView.swift */,
+				07B9E61570C433737394F35E /* CoachSharingCard.swift */,
 				6B190FDA50ACC7784A35A9A5 /* CoachVoiceShims.swift */,
 				C3F34495B2B51D8B1B73906B /* CreateTemplateView.swift */,
 				BFB4059C65AD94747FA41A1C /* DescribeMealSheet.swift */,
@@ -1228,6 +1234,7 @@
 				DF3748C3066A9A13D9F28B9C /* BodyMapView.swift in Sources */,
 				BFA019F024F4E73B203B8975 /* BodySpecPDFParser.swift in Sources */,
 				8271D577C63294790DF81CC4 /* BodySummaryCardsRow.swift in Sources */,
+				023BDCA31F87068EDAD12F1F /* BriefingSnapshot.swift in Sources */,
 				B9A962AD8F60D070E5BBA14D /* ChatIconButton.swift in Sources */,
 				AF45546E02B5118EB9156119 /* ChatView.swift in Sources */,
 				C4802C0088D82BCF0AF2C413 /* ClarificationCard.swift in Sources */,
@@ -1235,6 +1242,7 @@
 				64CD23436486963A92900597 /* CloudVisionClient.swift in Sources */,
 				8B963605CA92499EDDB6C984 /* CloudVisionKey.swift in Sources */,
 				070C1D9202FAC381DEEE7696 /* CoachMeView.swift in Sources */,
+				E638E94040A2E0EEB826161B /* CoachSharingCard.swift in Sources */,
 				DEDC514C9D4DF6717DA62459 /* CoachVoiceService.swift in Sources */,
 				C5B964821CF17AF199E6DCFD /* CoachVoiceShims.swift in Sources */,
 				4BC91D0B7BC47D50583B7B4E /* CoachingBriefCard.swift in Sources */,

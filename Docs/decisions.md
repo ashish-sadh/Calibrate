@@ -643,3 +643,42 @@ app must behave identically with the backend unreachable.
 RULE: telemetry may never carry health data or free text under the default-on
 gate. Anything user-authored requires the separate AI-capture opt-in. If a new
 event needs a payload that isn't a small enum, it is the wrong event.
+
+## 2026-07-28 — Sharing sleep and nutrition with a coach (the first widening)
+
+Phase 1 sharing deliberately moved ONLY workouts. "Minimal disclosure" was one
+of the five legs that made a cloud touchpoint defensible at all, so letting a
+coach see sleep and nutrition is a re-adjudication, not a schema addition.
+
+It ships because a coach who can't see whether you slept or hit protein is
+guessing — and the operator asked for it. The five legs are kept as follows.
+
+OPT-IN, PER COACH, PER CATEGORY. `BriefingSharingLevel` is an OptionSet with
+four independent bits (history, sleep, nutrition, weight), stored per coach ID
+and defaulting to `.none`. There is deliberately no "share everything" switch:
+"my coach sees my protein" and "my coach sees my injuries" are different
+decisions and a person may want exactly one.
+
+AGGREGATES, NEVER THE DIARY. A coach receives *avg protein 118g / 7d*, not meal
+rows; *avg sleep 6.4h*, not nights; *weight change −2.5lb*, not weigh-ins. A
+coach needs the trend to coach; the diary is nobody else's business.
+
+FILTERED BEFORE THE NETWORK. `BriefingSnapshot` doesn't even QUERY a category
+that wasn't opted into, and `BriefingMetrics.payload` omits nil fields — so a
+withheld number never exists in memory next to the request that could send it.
+Server-side filtering would have been a courtesy; this is a guarantee. The
+Tier-0 test `withheldCategoriesNeverReachThePayload` is the one that matters.
+
+RLS BOTH WAYS. `client_briefings` (0004) is keyed (client_id, coach_id). The
+client may INSERT only their own row and only to a coach `are_connected()`
+confirms; the coach may only SELECT. DELETE is client-only — a coach cannot
+erase what they were told, and revocation removes the row rather than blanking
+it, because an empty row still tells a coach a relationship once had data.
+
+ABSENT ≠ ZERO. Every metric is optional and a nil field is omitted entirely.
+"0g protein" reads to a coach as a client who ate nothing; absent reads as
+nothing shared. Days with no food logged are skipped rather than averaged as
+zero, and a single weigh-in yields no trend at all.
+
+RULE: any further widening of what crosses to a coach gets its own entry here
+and its own opt-in bit. A category that can't justify a bit doesn't ship.

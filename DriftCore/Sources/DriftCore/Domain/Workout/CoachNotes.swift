@@ -48,7 +48,33 @@ public struct CoachNotes: Codable, Sendable, Equatable {
     public var intake = CoachIntake()
     public var notes: [Note] = []
 
+    /// What was last recommended, and when. Without this the coach greets a
+    /// returning user with their intake but no idea it already wrote them a
+    /// program — so it offers to build the same thing again instead of asking
+    /// how the last one went, which is the difference between a coach and a
+    /// form that remembers your answers.
+    public var lastProgramNames: [String] = []
+    public var lastProgramDate: String?
+
     public init() {}
+
+    /// Record that a program was handed over. Kept distinct from a plain note
+    /// so the greeting can reference it directly.
+    public mutating func recordProgram(_ names: [String], on date: Date = Date()) {
+        lastProgramNames = names
+        lastProgramDate = DateFormatters.dateOnly.string(from: date)
+        record("Recommended program: \(names.joined(separator: ", "))",
+               kind: .observation, on: date)
+    }
+
+    /// How the coach opens with someone it has met before. Nil when there is
+    /// no history to reference.
+    public var returningGreeting: String? {
+        guard !lastProgramNames.isEmpty else { return nil }
+        let names = lastProgramNames.joined(separator: " and ")
+        let when = lastProgramDate.map { " on \($0)" } ?? ""
+        return "Last time I put you on \(names)\(when). How's it been going — want to keep it, change something, or start fresh?"
+    }
 
     // MARK: - Persistence
 

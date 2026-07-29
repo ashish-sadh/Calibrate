@@ -13,13 +13,77 @@ struct ClientDetailView: View {
     @State var assignedIDs: Set<Int64> = []
     @State var assigningID: Int64?
     @State var error: String?
+    @State var briefing: ClientBriefing?
+    @State var brief: CoachClientBrief.Brief?
 
     private var svc: SharingService { .shared }
+
+    /// What the client chose to share, if anything. The coach sees only what
+    /// was granted — and sees plainly when nothing was, rather than an empty
+    /// card that reads like a client with no data.
+    private var briefingCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("What \(client.username) shares").font(.subheadline.weight(.semibold))
+
+            // The AI read sits above the raw numbers: a coach opening a client
+            // wants the story first and the evidence underneath it.
+            if let brief {
+                Text(brief.headline)
+                    .font(.subheadline).foregroundStyle(Theme.textPrimary)
+                ForEach(brief.watch, id: \.self) { item in
+                    Text("• \(item)").font(.caption).foregroundStyle(Theme.textSecondary)
+                }
+                if !brief.ask.isEmpty {
+                    Text("Worth asking").font(.caption.weight(.semibold))
+                        .foregroundStyle(Theme.textTertiary).padding(.top, 2)
+                    ForEach(brief.ask, id: \.self) { question in
+                        Text("• \(question)").font(.caption).foregroundStyle(Theme.textSecondary)
+                    }
+                }
+                Divider().overlay(Theme.separatorFaint).padding(.vertical, 2)
+            }
+
+            if let briefing, !briefing.isEmpty {
+                if !briefing.metrics.lines.isEmpty {
+                    VStack(spacing: 6) {
+                        ForEach(briefing.metrics.lines, id: \.label) { line in
+                            HStack {
+                                Text(line.label).font(.caption).foregroundStyle(Theme.textSecondary)
+                                Spacer()
+                                Text(line.value).font(.caption.weight(.semibold))
+                            }
+                        }
+                    }
+                }
+
+                if !briefing.summary.isEmpty {
+                    Text(briefing.summary)
+                        .font(.caption).foregroundStyle(Theme.textSecondary)
+                        .padding(.top, 2)
+                }
+
+                // Newest first — a six-month-old sore shoulder is history, last
+                // week's is a training constraint.
+                ForEach(briefing.notes.suffix(6).reversed(), id: \.id) { note in
+                    HStack(alignment: .top, spacing: 6) {
+                        Text(note.date).font(.caption2).foregroundStyle(Theme.textTertiary)
+                        Text(note.text).font(.caption2).foregroundStyle(Theme.textSecondary)
+                    }
+                }
+            } else {
+                Text("Nothing shared beyond workouts. \(client.username) can share average sleep, nutrition or their training history from their Friends screen.")
+                    .font(.caption).foregroundStyle(Theme.textTertiary)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .card()
+    }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 header
+                briefingCard
                 messageCard
                 recentWorkoutsCard
                 assignCard
@@ -156,7 +220,15 @@ struct ClientDetailView: View {
         templates = (try? WorkoutService.fetchTemplates()) ?? []
         let all = (try? await svc.clientSessions()) ?? []
         sessions = all.filter { $0.clientId == client.id }
+        briefing = try? await svc.fetchBriefing(for: client.id)
         loading = false
+
+        // After the card is already on screen — the coach shouldn't wait on a
+        // cloud round-trip to see the workouts they came for.
+        if let briefing, !briefing.isEmpty {
+            brief = await CoachClientBrief.generate(for: briefing, username: client.username)
+                ?? CoachClientBrief.offline(for: briefing)
+        }
     }
 
     private func assign(_ template: WorkoutTemplate) async {

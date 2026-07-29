@@ -159,7 +159,9 @@ struct CoachMeView: View {
     func start() async {
         guard messages.isEmpty else { return }
         // A returning user gets picked up mid-thought, not re-interviewed.
-        if notes.intake.canDraft {
+        if let returning = notes.returningGreeting {
+            messages.append(Message(text: returning, fromCoach: true))
+        } else if notes.intake.canDraft {
             messages.append(Message(
                 text: "Welcome back. I've still got: \(notes.intake.summary). Want the same again, or shall we change something?",
                 fromCoach: true))
@@ -242,8 +244,7 @@ struct CoachMeView: View {
             var copy = template
             try? WorkoutService.saveTemplate(&copy)
         }
-        notes.record("Saved program: \(program.map(\.name).joined(separator: ", "))",
-                     kind: .observation)
+        notes.recordProgram(program.map(\.name))
         onSaved()
         dismiss()
     }

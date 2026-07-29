@@ -152,6 +152,76 @@ public final class SharingService {
         }
     }
 
+    // MARK: - Client briefing (what a coach sees beyond the workouts)
+
+    /// Push the client's briefing to one coach. `level` decides what is
+    /// included; anything not opted into is never serialized, so a withheld
+    /// category leaves no trace in the request body — the filtering is not a
+    /// server-side courtesy.
+    ///
+    /// Upserts on (client_id, coach_id): the coach reads the current picture,
+    /// not an append-only history they'd have to page through.
+    public func shareBriefing(with coachID: String,
+                              level: BriefingSharingLevel,
+                              notes: CoachNotes,
+                              metrics: BriefingMetrics) async throws {
+        let uid = try requireUserID()
+        let sharesHistory = level.contains(.history)
+        let row: [String: Any] = [
+            "client_id": uid,
+            "coach_id": coachID,
+            "summary": sharesHistory ? notes.intake.summary : "",
+            "notes": sharesHistory ? notes.notes.map(Self.noteRow) : [],
+            "metrics": metrics.payload,
+            "updated_at": ISO8601DateFormatter().string(from: Date()),
+        ]
+        try await client.restUpsertDiscard("client_briefings", body: [row],
+                                           token: try await validToken())
+    }
+
+    /// Withdraw everything shared with one coach. Deletes rather than blanks
+    /// the row: "I revoked this" should leave nothing behind, and an empty row
+    /// still tells the coach a relationship once had data in it.
+    public func revokeBriefing(from coachID: String) async throws {
+        let uid = try requireUserID()
+        BriefingSharingLevel.none.store(for: coachID)
+        try await client.restDelete(
+            "client_briefings?client_id=eq.\(uid)&coach_id=eq.\(coachID)",
+            token: try await validToken())
+    }
+
+    /// The coach's read of one client. Nil when that client has shared nothing —
+    /// the caller shows "nothing shared yet" rather than an empty card that
+    /// looks like a client with no data.
+    public func fetchBriefing(for clientID: String) async throws -> ClientBriefing? {
+        let uid = try requireUserID()
+        let rows: [[String: Any]] = try await client.restGetRaw(
+            "client_briefings?coach_id=eq.\(uid)&client_id=eq.\(clientID)&select=*",
+            token: try await validToken())
+        guard let row = rows.first else { return nil }
+        return Self.parseBriefing(row, clientID: clientID)
+    }
+
+    nonisolated static func noteRow(_ note: CoachNotes.Note) -> [String: Any] {
+        ["id": note.id, "date": note.date, "text": note.text, "kind": note.kind.rawValue]
+    }
+
+    nonisolated static func parseBriefing(_ row: [String: Any], clientID: String) -> ClientBriefing {
+        let noteRows = (row["notes"] as? [[String: Any]]) ?? []
+        let notes: [CoachNotes.Note] = noteRows.compactMap { item in
+            guard let text = item["text"] as? String, let date = item["date"] as? String else { return nil }
+            let kind = (item["kind"] as? String).flatMap(CoachNotes.Note.Kind.init) ?? .moment
+            return CoachNotes.Note(id: (item["id"] as? String) ?? UUID().uuidString,
+                                   date: date, text: text, kind: kind)
+        }
+        return ClientBriefing(
+            clientID: clientID,
+            summary: (row["summary"] as? String) ?? "",
+            notes: notes,
+            metrics: BriefingMetrics.decode((row["metrics"] as? [String: Any]) ?? [:]),
+            updatedAt: row["updated_at"] as? String)
+    }
+
     // MARK: - Chat (direct messages)
 
     /// Send a chat message to a connected user.

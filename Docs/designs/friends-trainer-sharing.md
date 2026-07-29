@@ -132,7 +132,13 @@ the client currently POLLS (see §4); Realtime is the planned upgrade.
 
 - Realtime consumer (live-watch a client's sets landing; instant chat).
 - Auto-recovery polish, unread badges on chat, push notifications.
-- Per-friend detail levels (weight/sleep sharing with RLS per level).
+- ~~Per-friend detail levels (weight/sleep sharing with RLS per level).~~
+  **Shipped 2026-07-28** for coaches as `client_briefings` (migration 0004) +
+  `BriefingSharingLevel`: four independent per-coach opt-ins (training history,
+  average sleep, average calories/protein, weight trend), all off by default,
+  aggregates only. The coach's read is AI-summarised by `CoachClientBrief`.
+  See `Docs/decisions.md` 2026-07-28 for the privacy adjudication. Not yet
+  extended to plain friends — that would be a separate decision.
 - Coach dashboard (client roster, per-client history + assign flow).
 - Leaderboards / group classes / formal coach role (later).
 - Optional account portability (link email/passkey).

@@ -133,6 +133,24 @@ public struct SyncClient: Sendable {
         return try decode([T].self, from: data)
     }
 
+    /// GET rows as untyped dictionaries. For tables whose columns are `jsonb`
+    /// of a shape Codable can't express cleanly (the client briefing's `notes`
+    /// and `metrics`) — decoding those through a struct would mean a second
+    /// nested-JSON hop for no benefit.
+    public func restGetRaw(_ path: String, token: String?) async throws -> [[String: Any]] {
+        let data = try await send(method: "GET", url: try restURL(path), token: token,
+                                  body: nil, prefer: nil)
+        return (try? JSONSerialization.jsonObject(with: data)) as? [[String: Any]] ?? []
+    }
+
+    /// POST rows, discarding the response. Same shape as `restInsert` but for
+    /// callers that don't need the row back — asking for a representation costs
+    /// a read the caller then throws away.
+    public func restUpsertDiscard(_ table: String, body: Any, token: String?) async throws {
+        _ = try await send(method: "POST", url: try restURL(table), token: token,
+                           body: body, prefer: "return=minimal,resolution=merge-duplicates")
+    }
+
     /// DELETE rows matched by `query` (`profiles?id=eq.<uuid>`). No body/return.
     public func restDelete(_ query: String, token: String?) async throws {
         _ = try await send(method: "DELETE", url: try restURL(query), token: token,

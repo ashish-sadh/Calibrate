@@ -108,7 +108,12 @@ struct SharingView: View {
             if !requests.isEmpty { requestsCard }
             if !incomingTemplates.isEmpty { incomingTemplatesCard }
             if !clientSessions.isEmpty { workoutsFromFriendsCard }
-            if !coaches.isEmpty { connectionSection("YOUR COACHES", coaches, subtitle: "coaches you") }
+            if !coaches.isEmpty {
+                connectionSection("YOUR COACHES", coaches, subtitle: "coaches you")
+                ForEach(coaches) { coach in
+                    CoachSharingCard(coach: coach.profile)
+                }
+            }
             if !clients.isEmpty { connectionSection("YOUR CLIENTS", clients, subtitle: "you coach") }
             connectionSection("FRIENDS", friendConns, subtitle: nil,
                               emptyText: "No friends yet. Search a @username above to add a friend or a coach.")
