@@ -68,6 +68,44 @@ public enum NebiusCoach {
     - ready_to_draft: for ask="today", true as soon as you know roughly how long they have. For ask="program", true once you know days/week, session length and equipment. Do not keep interviewing for its own sake — you can refine after they see something.
     """
 
+    // MARK: - Chat → human-coach note
+
+    static let notePrompt = """
+    You read a conversation between a client and their AI fitness coach, and decide whether anything in it is worth passing on to the client's HUMAN coach.
+
+    Worth noting: injuries or pain, schedule or life constraints (travel, exams, new job, bad sleep), strong preferences ("hates squats"), milestones or PRs, motivation shifts, anything a coach would adjust training for.
+    Not worth noting: small talk, one-off food logs, questions the AI already answered, anything the client would consider private beyond training.
+
+    Reply with ONE plain line of at most 25 words, written like a note a coach jots down ("Traveling for work next 2 weeks — hotel gym only"). If nothing qualifies, reply exactly: NONE
+    """
+
+    /// Distill a Drift Coach chat session into one note for the human coach's
+    /// briefing — or nothing. The note lands in `CoachNotes` on-device; it only
+    /// ever leaves through the briefing's existing History consent.
+    public static func chatNote(history: [String]) async -> String? {
+        guard CoachCloud.isConfigured, !history.isEmpty else { return nil }
+        CoachCloud.install()
+        let context = "Conversation:\n\(history.suffix(30).joined(separator: "\n"))"
+        return await CloudExtractionPolicy.withRetry {
+            let raw = await LocalAIService.shared.respondDirect(
+                systemPrompt: notePrompt, message: context,
+                maxTokens: 80,
+                temperature: CloudExtractionPolicy.temperature)
+            return decodeChatNote(raw)
+        }
+    }
+
+    /// Pure decode — the cloud CALL is Tier-3, this mapping is Tier-0.
+    nonisolated public static func decodeChatNote(_ raw: String) -> String? {
+        var note = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Models love wrapping short answers in quotes or fences; strip both.
+        note = note.trimmingCharacters(in: CharacterSet(charactersIn: "\"'`"))
+        guard !note.isEmpty, note.uppercased() != "NONE" else { return nil }
+        // A "note" spanning paragraphs is the model ignoring the brief.
+        guard !note.contains("\n"), note.count <= 200 else { return nil }
+        return note
+    }
+
     /// Run a turn. `history` is prior messages oldest-first as "user: …" /
     /// "coach: …" lines; `known` and `briefing` let the coach skip what it has
     /// already been told, which is the whole point of the memory.

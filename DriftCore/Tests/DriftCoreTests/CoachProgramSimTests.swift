@@ -178,4 +178,61 @@ import Testing
             }
         }
     }
+
+    /// The draft explains itself (operator 2026-07-29: "does the plan explain
+    /// why it was picked?"). The rationale must carry the facts the plan was
+    /// built from — days, minutes, equipment, goal — and name the split.
+    @Test func rationaleCarriesTheIntakeFactsAndSplit() {
+        var intake = CoachIntake()
+        intake.daysPerWeek = 3
+        intake.sessionMinutes = 45
+        intake.equipment = "Dumbbells at home"
+        intake.goal = "Build muscle"
+
+        let rationale = CoachProgramBuilder.rationale(for: intake)
+        #expect(rationale.contains("3 days"))
+        #expect(rationale.contains("45 min"))
+        #expect(rationale.contains("dumbbells at home"))
+        #expect(rationale.contains("build muscle"))
+        #expect(rationale.contains("Push / Pull / Legs"))
+    }
+
+    /// An empty intake still explains itself from the defaults — the card must
+    /// never render a rationale with holes in it.
+    @Test func rationaleSurvivesAnEmptyIntake() {
+        let rationale = CoachProgramBuilder.rationale(for: CoachIntake())
+        #expect(rationale.contains("3 days"))
+        #expect(!rationale.contains("  "), "double space = a hole where a fact should be")
+    }
+
+    /// Muscle coverage on the card comes from the actual exercises, and every
+    /// drafted day must have some — a day the card can't explain is a day the
+    /// builder didn't understand.
+    @Test func everyDraftedDayHasMuscleCoverage() {
+        var intake = CoachIntake()
+        intake.daysPerWeek = 3
+        intake.sessionMinutes = 45
+
+        for template in CoachProgramBuilder.draft(from: intake) {
+            let coverage = CoachProgramBuilder.muscleCoverage(of: template)
+            #expect(!coverage.isEmpty, "\(template.name) has no coverage line")
+            #expect(coverage.count == Set(coverage).count, "\(template.name) coverage has duplicates")
+        }
+    }
+
+    /// A Push day's coverage should read like a push day.
+    @Test func pushDayCoverageMentionsChest() {
+        var intake = CoachIntake()
+        intake.daysPerWeek = 3
+        intake.sessionMinutes = 45
+
+        let program = CoachProgramBuilder.draft(from: intake)
+        let push = program.first { $0.name == "Push" }
+        #expect(push != nil)
+        if let push {
+            let coverage = CoachProgramBuilder.muscleCoverage(of: push).map { $0.lowercased() }
+            #expect(coverage.contains { $0.contains("chest") || $0.contains("pectoral") },
+                    "Push coverage was \(coverage)")
+        }
+    }
 }

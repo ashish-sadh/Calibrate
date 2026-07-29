@@ -345,6 +345,50 @@ public enum CoachProgramBuilder {
         return parts.count >= 5 ? "Full Body" : parts.map { $0.capitalized }.joined(separator: " + ")
     }
 
+    // MARK: - Explaining the draft
+
+    /// One-line "why this plan". The old one-shot generator explained itself
+    /// ("Targeting Chest — not trained recently"); the conversational draft
+    /// lost that (operator 2026-07-29: "does the plan explain why it was
+    /// picked?"). Deterministic from the intake — no LLM call, Tier-0 tested.
+    public static func rationale(for intake: CoachIntake) -> String {
+        let days = intake.daysPerWeek ?? 3
+        let minutes = intake.sessionMinutes ?? 45
+        let plan = split(days: days)
+
+        var built = "Built for \(days) day\(days == 1 ? "" : "s") a week, ~\(minutes) min each"
+        if let equipment = intake.equipment, !equipment.isEmpty {
+            built += ", with \(equipment.lowercased())"
+        }
+        if let goal = intake.goal, !goal.isEmpty {
+            built += " — aimed at \(goal.lowercased())"
+        }
+
+        // Truthful frequency claim, computed from the split itself.
+        let counts = Dictionary(grouping: plan.flatMap(\.parts), by: { $0 }).mapValues(\.count)
+        let frequency = (counts.values.max() ?? 1) > 1
+            ? "the big groups come back more than once a week"
+            : "each group gets a focused day"
+        let names = plan.map(\.name).joined(separator: " / ")
+        return "\(built). \(names): \(frequency)."
+    }
+
+    /// Ordered, deduped muscle coverage of a drafted day — computed from the
+    /// exercises themselves rather than the split it came from, so a refined
+    /// draft ("swap the deadlift") stays truthful.
+    public static func muscleCoverage(of template: WorkoutTemplate) -> [String] {
+        var seen: [String] = []
+        for exercise in template.exercises where !exercise.isWarmup {
+            guard let info = ExerciseDatabase.info(for: exercise.name) else { continue }
+            let primary = info.primaryMuscles.isEmpty ? [info.bodyPart] : info.primaryMuscles
+            for muscle in primary {
+                let name = muscle.capitalized
+                if !seen.contains(name) { seen.append(name) }
+            }
+        }
+        return seen
+    }
+
     /// Draft the whole program. Returned unsaved so the conversation can refine
     /// it first — "here's a draft, want it harder / swap that lift" — which is
     /// what makes this coaching rather than generation.

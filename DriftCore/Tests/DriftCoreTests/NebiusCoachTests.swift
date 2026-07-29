@@ -104,4 +104,29 @@ struct NebiusCoachTests {
         known.merge(learned)
         #expect(known.askedInjuries, "we heard an answer, so stop asking")
     }
+
+    // MARK: - Chat → human-coach note decode (the cloud CALL is Tier-3)
+
+    @Test func chatNoteDecodesAPlainLine() {
+        #expect(NebiusCoach.decodeChatNote("Traveling for work next 2 weeks — hotel gym only")
+                == "Traveling for work next 2 weeks — hotel gym only")
+    }
+
+    @Test func chatNoteStripsQuotesAndWhitespace() {
+        #expect(NebiusCoach.decodeChatNote("  \"Knee pain flared after Monday's run\"\n")
+                == "Knee pain flared after Monday's run")
+    }
+
+    @Test func chatNoteNoneAndEmptyAreNil() {
+        #expect(NebiusCoach.decodeChatNote("NONE") == nil)
+        #expect(NebiusCoach.decodeChatNote("none") == nil)
+        #expect(NebiusCoach.decodeChatNote("  ") == nil)
+    }
+
+    /// A multi-paragraph essay is the model ignoring the one-line brief; better
+    /// no note than a wall of text in the coach's briefing.
+    @Test func chatNoteRejectsEssays() {
+        #expect(NebiusCoach.decodeChatNote("Line one\nLine two") == nil)
+        #expect(NebiusCoach.decodeChatNote(String(repeating: "long ", count: 60)) == nil)
+    }
 }

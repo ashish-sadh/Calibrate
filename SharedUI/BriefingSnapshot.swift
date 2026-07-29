@@ -1,6 +1,48 @@
 import Foundation
 import DriftCore
 
+/// Re-push the briefing to every coach the client already shares with. The
+/// briefing upserts "the current picture" — but until 2026-07-29 it was only
+/// pushed when the client touched the sharing toggle, so notes recorded AFTER
+/// that (every Coach Me session, every chat note) sat on the device until the
+/// client happened to revisit the card. The human coach read a stale client.
+///
+/// Consent unchanged: each coach gets exactly their stored level, `.none`
+/// coaches are never contacted, and a failure is silent — the next change
+/// retries.
+enum BriefingRepush {
+    @MainActor
+    static func afterNotesChanged() async {
+        let svc = SharingService.shared
+        guard svc.isSignedIn else { return }
+        guard let connections = try? await svc.connections() else { return }
+        let notes = CoachNotes.load()
+        for coach in connections where coach.kind == .coach {
+            let level = BriefingSharingLevel.stored(for: coach.id)
+            guard level != .none else { continue }
+            let metrics = await BriefingSnapshot.metrics(level: level)
+            try? await svc.shareBriefing(with: coach.id, level: level, notes: notes, metrics: metrics)
+        }
+    }
+}
+
+/// Distills a Drift Coach chat session into a `CoachNotes` moment so the human
+/// coach's briefing knows what the client has been telling the AI (operator
+/// 2026-07-29: "the summary note shown to the human coach as well, whatever
+/// client talks to AI coach"). The note is stored on-device; it reaches a
+/// coach only through the briefing's existing History consent.
+enum CoachChatNoteTaker {
+    /// `history` is "user: …" / "coach: …" lines, oldest first.
+    @MainActor
+    static func capture(history: [String]) async {
+        guard let note = await NebiusCoach.chatNote(history: history) else { return }
+        var notes = CoachNotes.load()
+        notes.record(note, kind: .moment)
+        notes.save()
+        await BriefingRepush.afterNotesChanged()
+    }
+}
+
 /// Gathers the local data a briefing needs and hands it to
 /// `BriefingAggregator`. Lives in SharedUI rather than DriftCore because sleep
 /// comes through the HealthKit seam, which is a platform adapter — the maths

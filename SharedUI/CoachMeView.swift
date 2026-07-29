@@ -125,9 +125,17 @@ struct CoachMeView: View {
     var draftCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Here's the plan").font(.subheadline.weight(.semibold))
+            // The coach explains itself — why this shape, from the intake.
+            Text(CoachProgramBuilder.rationale(for: notes.intake))
+                .font(.caption).foregroundStyle(Theme.textSecondary)
             ForEach(program, id: \.name) { template in
                 VStack(alignment: .leading, spacing: 3) {
                     Text(template.name).font(.caption.weight(.bold)).foregroundStyle(Theme.accent)
+                    let coverage = CoachProgramBuilder.muscleCoverage(of: template)
+                    if !coverage.isEmpty {
+                        Text(coverage.joined(separator: " · "))
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
+                    }
                     ForEach(template.exercises.indices, id: \.self) { i in
                         let exercise = template.exercises[i]
                         Text("\(exercise.isWarmup ? "Warmup · " : "")\(exercise.name) — \(exercise.sets)×\(exercise.notes ?? "")")
@@ -245,6 +253,10 @@ struct CoachMeView: View {
             try? WorkoutService.saveTemplate(&copy)
         }
         notes.recordProgram(program.map(\.name))
+        // The human coach reads the CURRENT picture — a new program is exactly
+        // what they'd want to know about, so re-push the briefing now rather
+        // than waiting for the client to revisit the sharing toggle.
+        Task { await BriefingRepush.afterNotesChanged() }
         onSaved()
         dismiss()
     }

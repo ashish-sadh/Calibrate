@@ -173,6 +173,17 @@ struct AIChatView: View {
                 .onAppear { FeatureUsage.record(TelemetryEvent.workoutStarted) }
             }
         }
+        .onDisappear {
+            // Chat → human-coach note: distill what the client told the AI
+            // into CoachNotes and re-push the briefing. Count-guarded so a
+            // tab flip with no new user messages does nothing, and each
+            // message is only summarized once per chat session.
+            let userCount = vm.messages.filter { $0.role == .user }.count
+            guard userCount > vm.notedUserMessageCount else { return }
+            vm.notedUserMessageCount = userCount
+            let history = vm.messages.map { "\($0.role == .user ? "user" : "coach"): \($0.text)" }
+            Task { await CoachChatNoteTaker.capture(history: history) }
+        }
         #if DRIFT_IOS_APP
         // The food-logging sheets aren't ported to Android yet (#1062); on Android
         // the triggers degrade to an assistant message (see the onChange handlers

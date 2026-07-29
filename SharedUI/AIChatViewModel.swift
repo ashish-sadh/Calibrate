@@ -9,6 +9,9 @@ final class AIChatViewModel {
     var aiService = LocalAIService.shared
     var screenTracker = AIScreenTracker.shared
     var messages: [ChatMessage] = []
+    /// User messages already distilled into a human-coach note — the chat
+    /// view's onDisappear only summarizes what arrived after this mark.
+    var notedUserMessageCount = 0
     var inputText = ""
     var generatingState: GeneratingState = .idle
     var stageStarted: Date? = nil
