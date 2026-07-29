@@ -117,6 +117,76 @@ struct ClientBriefingTests {
         #expect(briefing.isEmpty, "so the coach sees 'nothing shared yet', not a blank card")
     }
 
+    // MARK: - Body composition (.bodyComp opt-in)
+
+    /// The consent guarantee extends to the new category: scans stay off the
+    /// wire unless the bodyComp bit is set, and the bit only sends summary
+    /// numbers — never the scan itself.
+    @Test func bodyCompStaysOffTheWireUntilChosen() {
+        let scans = [DEXAScan(scanDate: "2026-07-01", leanMassKg: 63.0, bodyFatPct: 25.0),
+                     DEXAScan(scanDate: "2026-07-25", leanMassKg: 63.5, bodyFatPct: 24.1)]
+
+        let withheld = BriefingAggregator.metrics(level: [.weight], scans: scans)
+        #expect(withheld.bodyFatPct == nil)
+        #expect(withheld.payload["body_fat_pct"] == nil)
+
+        let shared = BriefingAggregator.metrics(level: [.bodyComp], scans: scans)
+        #expect(shared.bodyFatPct == 24.1)
+        #expect(shared.scanDate == "2026-07-25")
+        #expect(shared.payload["body_fat_pct"] != nil)
+    }
+
+    /// Diffs are latest-vs-previous by scan DATE (not array order), and lean
+    /// mass converts kg→lb to match the app's display convention.
+    @Test func bodyCompDiffsAreLatestVsPreviousByDate() {
+        // Deliberately unordered.
+        let scans = [DEXAScan(scanDate: "2026-07-25", leanMassKg: 63.5, bodyFatPct: 24.1),
+                     DEXAScan(scanDate: "2026-03-10", leanMassKg: 61.0, bodyFatPct: 27.0),
+                     DEXAScan(scanDate: "2026-07-01", leanMassKg: 63.0, bodyFatPct: 25.0)]
+
+        let metrics = BriefingAggregator.metrics(level: [.bodyComp], scans: scans)
+        #expect(metrics.bodyFatDeltaPct != nil)
+        #expect(abs((metrics.bodyFatDeltaPct ?? 0) - -0.9) < 0.0001, "24.1 vs the 07-01 scan's 25.0")
+        #expect(abs((metrics.leanMassLbs ?? 0) - 63.5 * 2.20462) < 0.001)
+        #expect(abs((metrics.leanMassDeltaLbs ?? 0) - 0.5 * 2.20462) < 0.001)
+    }
+
+    /// One scan = numbers with no delta; a scan missing a value produces no
+    /// delta for that value ("progress vs nothing" must not render).
+    @Test func bodyCompDeltasNeedBothScans() {
+        let single = BriefingAggregator.metrics(
+            level: [.bodyComp], scans: [DEXAScan(scanDate: "2026-07-25", bodyFatPct: 24.1)])
+        #expect(single.bodyFatPct == 24.1)
+        #expect(single.bodyFatDeltaPct == nil)
+        #expect(single.leanMassLbs == nil)
+
+        let sparse = BriefingAggregator.metrics(
+            level: [.bodyComp],
+            scans: [DEXAScan(scanDate: "2026-07-25", leanMassKg: 63.5, bodyFatPct: 24.1),
+                    DEXAScan(scanDate: "2026-07-01", leanMassKg: nil, bodyFatPct: nil)])
+        #expect(sparse.bodyFatDeltaPct == nil)
+        #expect(sparse.leanMassDeltaLbs == nil)
+
+        let none = BriefingAggregator.metrics(level: [.bodyComp], scans: [])
+        #expect(none.bodyFatPct == nil)
+        #expect(none.scanDate == nil)
+    }
+
+    @Test func bodyCompSurvivesEncodeAndDecode() {
+        var original = BriefingMetrics()
+        original.bodyFatPct = 24.1
+        original.bodyFatDeltaPct = -0.9
+        original.leanMassLbs = 140.0
+        original.scanDate = "2026-07-25"
+
+        let decoded = BriefingMetrics.decode(original.payload)
+        #expect(decoded.bodyFatPct == 24.1)
+        #expect(decoded.bodyFatDeltaPct == -0.9)
+        #expect(decoded.leanMassLbs == 140.0)
+        #expect(decoded.scanDate == "2026-07-25")
+        #expect(decoded.leanMassDeltaLbs == nil)
+    }
+
     // MARK: - Coach memory
 
     /// The returning-user path: the coach should ask how the last program went,

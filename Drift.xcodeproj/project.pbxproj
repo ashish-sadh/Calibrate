@@ -32,6 +32,7 @@
 		150A0E2569360CA8173F8FF0 /* FriendsDashboardCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B3587851FC186C213DD0277E /* FriendsDashboardCard.swift */; };
 		15E39B1D0294AB6762CE9EE8 /* ClarificationFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F86480D874FB7BC3461695E4 /* ClarificationFlowTests.swift */; };
 		1706838F0C81E8CA30C39676 /* SleepRecoveryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0EA24C208A1C32DB52709A4 /* SleepRecoveryView.swift */; };
+		19E2C860D392B8DF81DE183E /* CoachBriefingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEB569EE5A0A07F7611CFA49 /* CoachBriefingView.swift */; };
 		1C57C00A9DAD04EB9EC21313 /* DashboardSkeletons.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA809F63AA1ED36B1AB94C0C /* DashboardSkeletons.swift */; };
 		1D4B4658B68B40350E20F753 /* ComposedFoodEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6EEDE4BB88D55A2579A27D /* ComposedFoodEval.swift */; };
 		1E11E5682458FC83023281D7 /* WeightInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A039993077E4BE9F83149249 /* WeightInsightsView.swift */; };
@@ -521,6 +522,7 @@
 		EBF19C358E700091486400DD /* PromptOptimizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptOptimizer.swift; sourceTree = "<group>"; };
 		EC7D489024FD036D6FA417EA /* PlantPointsCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlantPointsCardView.swift; sourceTree = "<group>"; };
 		EE2D9672D96D6738FA36D4F2 /* AlgorithmSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlgorithmSettingsView.swift; sourceTree = "<group>"; };
+		EEB569EE5A0A07F7611CFA49 /* CoachBriefingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachBriefingView.swift; sourceTree = "<group>"; };
 		EEBA03C80C4A4C8407D09C43 /* NumericField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumericField.swift; sourceTree = "<group>"; };
 		EF4E87433C72DCD46B0D423D /* TodayDonutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayDonutView.swift; sourceTree = "<group>"; };
 		EFC99231FE5E164320DFDCA5 /* LogMethodCardsRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogMethodCardsRow.swift; sourceTree = "<group>"; };
@@ -609,6 +611,7 @@
 				EA6A530140B729B060F76E94 /* ChatView.swift */,
 				3E99AB7A740D59D0E9092AF2 /* ClarificationCard.swift */,
 				D835079FDEEB81D39D23D748 /* ClientDetailView.swift */,
+				EEB569EE5A0A07F7611CFA49 /* CoachBriefingView.swift */,
 				F9D3CFE24DF3D6C5B0C4775C /* CoachMeView.swift */,
 				07B9E61570C433737394F35E /* CoachSharingCard.swift */,
 				6B190FDA50ACC7784A35A9A5 /* CoachVoiceShims.swift */,
@@ -1244,6 +1247,7 @@
 				D72DB4E403D3E29928223EEC /* ClientDetailView.swift in Sources */,
 				64CD23436486963A92900597 /* CloudVisionClient.swift in Sources */,
 				8B963605CA92499EDDB6C984 /* CloudVisionKey.swift in Sources */,
+				19E2C860D392B8DF81DE183E /* CoachBriefingView.swift in Sources */,
 				070C1D9202FAC381DEEE7696 /* CoachMeView.swift in Sources */,
 				E638E94040A2E0EEB826161B /* CoachSharingCard.swift in Sources */,
 				DEDC514C9D4DF6717DA62459 /* CoachVoiceService.swift in Sources */,

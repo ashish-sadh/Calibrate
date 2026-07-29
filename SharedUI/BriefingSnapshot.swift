@@ -95,11 +95,16 @@ enum BriefingSnapshot {
             }
         }
 
+        // Body comp reads the whole scan history (scans are sparse, not
+        // windowed) — the aggregator keeps only the latest + the diff.
+        let scans = level.contains(.bodyComp) ? DEXAService.fetchScans() : []
+
         return BriefingAggregator.metrics(
             level: level, windowDays: days,
             sleepHours: sleep, nutrition: nutrition, weights: weights,
             proteinTargetG: proteinTarget,
-            workoutsCompleted: completedWorkouts(since: days))
+            workoutsCompleted: completedWorkouts(since: days),
+            scans: scans)
     }
 
     /// Adherence — the number a coach checks first. Derived from sessions the

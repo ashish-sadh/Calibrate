@@ -710,3 +710,23 @@ required widening `friendships` uniqueness to (requester, addressee, role)
 COROLLARY SHIPPED WITH IT: the History toggle's label now names the
 AI-chat-notes pipeline it grants ("Training history, injuries & AI-chat
 notes") — consent people can't read is not consent.
+
+## 2026-07-29 — Body composition joins the briefing (second widening) + the mirror preview
+
+WHAT CROSSES: the .bodyComp opt-in (its own bit, per the standing rule)
+sends the LATEST DEXA scan's body fat %, lean mass, the change since the
+previous scan, and the scan date. Summary numbers only — the scan document,
+regional breakdowns, bone density and visceral fat never leave the device.
+Deltas require BOTH scans to carry the value: a delta against nothing reads
+like progress that never happened. Storage is additive jsonb keys in
+client_briefings.metrics — no schema migration, and the payload-level
+filtering guarantee (withheld category ⇒ key absent from the wire) extends
+unchanged.
+
+THE MIRROR (operator: "how do I see the view Cindy is seeing?"): the
+sharing card now has "See what @coach sees" — the preview is
+CoachBriefingView, the EXACT component the coach's client page renders,
+fed local data at the current toggle level and rebuilt on every toggle
+flip. One view on both sides means what-you-think-you-share cannot drift
+from what-they-see. A preview implemented as a separate summary would rot
+into a lie the first time the coach view changed without it.

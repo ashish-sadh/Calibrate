@@ -22,6 +22,11 @@ public struct BriefingSharingLevel: OptionSet, Codable, Sendable, Hashable {
     public static let nutrition = BriefingSharingLevel(rawValue: 1 << 2)
     /// Weight trend (direction and change over the window, not every weigh-in).
     public static let weight   = BriefingSharingLevel(rawValue: 1 << 3)
+    /// Body composition from DEXA scans — latest body fat % and lean mass,
+    /// with the change since the previous scan. Scan-summary numbers only,
+    /// never the scan document. Own bit per the decisions.md rule: every
+    /// widening of what crosses to a coach gets its own opt-in.
+    public static let bodyComp = BriefingSharingLevel(rawValue: 1 << 4)
 
     public static let none: BriefingSharingLevel = []
 
@@ -63,6 +68,16 @@ public struct BriefingMetrics: Codable, Sendable, Equatable {
     /// Sessions completed in the window — the adherence number a coach checks
     /// first, and the one that makes the rest worth reading.
     public var workoutsCompleted: Int?
+    // Body composition (the .bodyComp opt-in): latest DEXA scan's headline
+    // numbers + change since the previous scan. Summary values only — the
+    // scan itself never crosses.
+    public var bodyFatPct: Double?
+    public var bodyFatDeltaPct: Double?
+    public var leanMassLbs: Double?
+    public var leanMassDeltaLbs: Double?
+    /// yyyy-MM-dd of the scan the numbers come from, so a coach knows how
+    /// fresh the picture is.
+    public var scanDate: String?
 
     public init() {}
 
@@ -86,6 +101,21 @@ public struct BriefingMetrics: Codable, Sendable, Equatable {
             let sign = change > 0 ? "+" : ""
             out.append(("Weight", String(format: "\(sign)%.1f lb / \(windowDays)d", change)))
         }
+        if let fat = bodyFatPct {
+            let delta = bodyFatDeltaPct.map {
+                String(format: " (\($0 > 0 ? "+" : "")%.1f)", $0)
+            } ?? ""
+            out.append(("Body fat", String(format: "%.1f%%", fat) + delta))
+        }
+        if let lean = leanMassLbs {
+            let delta = leanMassDeltaLbs.map {
+                String(format: " (\($0 > 0 ? "+" : "")%.1f)", $0)
+            } ?? ""
+            out.append(("Lean mass", String(format: "%.1f lb", lean) + delta))
+        }
+        if let scan = scanDate {
+            out.append(("DEXA scan", scan))
+        }
         return out
     }
 
@@ -100,6 +130,11 @@ public struct BriefingMetrics: Codable, Sendable, Equatable {
         if let value = proteinTargetG { dict["protein_target_g"] = value }
         if let value = weightChangeLbs { dict["weight_change_lbs"] = value }
         if let value = workoutsCompleted { dict["workouts_completed"] = value }
+        if let value = bodyFatPct { dict["body_fat_pct"] = value }
+        if let value = bodyFatDeltaPct { dict["body_fat_delta_pct"] = value }
+        if let value = leanMassLbs { dict["lean_mass_lbs"] = value }
+        if let value = leanMassDeltaLbs { dict["lean_mass_delta_lbs"] = value }
+        if let value = scanDate { dict["scan_date"] = value }
         return dict
     }
 
@@ -113,6 +148,11 @@ public struct BriefingMetrics: Codable, Sendable, Equatable {
         metrics.weightChangeLbs = double(dict["weight_change_lbs"])
         metrics.workoutsCompleted = (dict["workouts_completed"] as? Int)
             ?? double(dict["workouts_completed"]).map(Int.init)
+        metrics.bodyFatPct = double(dict["body_fat_pct"])
+        metrics.bodyFatDeltaPct = double(dict["body_fat_delta_pct"])
+        metrics.leanMassLbs = double(dict["lean_mass_lbs"])
+        metrics.leanMassDeltaLbs = double(dict["lean_mass_delta_lbs"])
+        metrics.scanDate = dict["scan_date"] as? String
         return metrics
     }
 

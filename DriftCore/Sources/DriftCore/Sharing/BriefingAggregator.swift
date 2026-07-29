@@ -33,7 +33,8 @@ public enum BriefingAggregator {
                                nutrition: [NutritionDay] = [],
                                weights: [(date: Date, lbs: Double)] = [],
                                proteinTargetG: Double? = nil,
-                               workoutsCompleted: Int? = nil) -> BriefingMetrics {
+                               workoutsCompleted: Int? = nil,
+                               scans: [DEXAScan] = []) -> BriefingMetrics {
         var metrics = BriefingMetrics()
         metrics.windowDays = windowDays
 
@@ -53,7 +54,30 @@ public enum BriefingAggregator {
         if level.contains(.weight) {
             metrics.weightChangeLbs = change(weights)
         }
+        if level.contains(.bodyComp) {
+            applyBodyComp(&metrics, scans: scans)
+        }
         return metrics
+    }
+
+    /// Latest scan's headline numbers + change since the previous scan.
+    /// Deltas only exist when BOTH scans carry the value — a delta against
+    /// nothing reads like progress that never happened.
+    static func applyBodyComp(_ metrics: inout BriefingMetrics, scans: [DEXAScan]) {
+        let ordered = scans.sorted { $0.scanDate > $1.scanDate }
+        guard let latest = ordered.first else { return }
+        let previous = ordered.dropFirst().first
+
+        metrics.scanDate = latest.scanDate
+        metrics.bodyFatPct = latest.bodyFatPct
+        if let now = latest.bodyFatPct, let then = previous?.bodyFatPct {
+            metrics.bodyFatDeltaPct = now - then
+        }
+        let kgToLbs = 2.20462
+        metrics.leanMassLbs = latest.leanMassKg.map { $0 * kgToLbs }
+        if let now = latest.leanMassKg, let then = previous?.leanMassKg {
+            metrics.leanMassDeltaLbs = (now - then) * kgToLbs
+        }
     }
 
     /// Nil for an empty set, so "no data" stays distinguishable from zero.

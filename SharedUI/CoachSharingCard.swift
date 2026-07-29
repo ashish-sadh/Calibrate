@@ -18,6 +18,8 @@ struct CoachSharingCard: View {
     @State var level = BriefingSharingLevel.none
     @State var syncing = false
     @State var error: String?
+    @State var showingPreview = false
+    @State var preview: ClientBriefing?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -36,11 +38,40 @@ struct CoachSharingCard: View {
             row("Average sleep", .sleep)
             row("Average calories & protein", .nutrition)
             row("Weight trend", .weight)
+            row("Body composition (DEXA)", .bodyComp)
 
             Text(level == .none
                  ? "Your coach sees only the workouts you share."
-                 : "Averages only — your coach never sees individual meals, weigh-ins or nights.")
+                 : "Averages and scan summaries only — your coach never sees individual meals, weigh-ins, nights or scan documents.")
                 .font(.caption2).foregroundStyle(Theme.textTertiary)
+
+            // The mirror (#1156): the client can read EXACTLY what the coach
+            // reads — the preview is the coach's own view fed local data, so
+            // the two can never drift apart.
+            if level != .none {
+                Button {
+                    showingPreview.toggle()
+                    if showingPreview { Task { await loadPreview() } }
+                } label: {
+                    Label(showingPreview ? "Hide preview" : "See what @\(coach.username) sees",
+                          systemImage: sym("eye"))
+                        .font(.caption.weight(.semibold)).foregroundStyle(Theme.chartTrend)
+                }
+                .buttonStyle(.plain)
+
+                if showingPreview {
+                    if let preview {
+                        CoachBriefingView(
+                            briefing: preview,
+                            emptyText: "Nothing to show yet — the shared categories have no data.")
+                            .padding(10)
+                            .background(Theme.cardBackgroundElevated,
+                                        in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
+                    } else {
+                        ProgressView()
+                    }
+                }
+            }
 
             if let error {
                 Text(error).font(.caption2).foregroundStyle(Theme.surplus)
@@ -51,12 +82,29 @@ struct CoachSharingCard: View {
         .task { level = BriefingSharingLevel.stored(for: coach.id) }
     }
 
+    /// Build the preview from LOCAL data at the current level — the same
+    /// snapshot + notes the push sends, rendered by the same view the coach
+    /// renders. Rebuilt on every open so toggle flips reflect immediately.
+    func loadPreview() async {
+        preview = nil
+        let metrics = await BriefingSnapshot.metrics(level: level)
+        let notes = CoachNotes.load()
+        let sharesHistory = level.contains(.history)
+        preview = ClientBriefing(
+            clientID: "preview",
+            summary: sharesHistory ? notes.intake.summary : "",
+            notes: sharesHistory ? notes.notes : [],
+            metrics: metrics)
+    }
+
     func row(_ label: String, _ option: BriefingSharingLevel) -> some View {
         Toggle(isOn: Binding(
             get: { level.contains(option) },
             set: { on in
                 if on { level.insert(option) } else { level.remove(option) }
                 Task { await push() }
+                // A preview that lags the switches is a preview that lies.
+                if showingPreview { Task { await loadPreview() } }
             }
         )) {
             Text(label).font(.subheadline).foregroundStyle(Theme.textPrimary)

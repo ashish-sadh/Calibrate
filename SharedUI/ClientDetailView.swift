@@ -43,37 +43,13 @@ struct ClientDetailView: View {
                 Divider().overlay(Theme.separatorFaint).padding(.vertical, 2)
             }
 
-            if let briefing, !briefing.isEmpty {
-                if !briefing.metrics.lines.isEmpty {
-                    VStack(spacing: 6) {
-                        ForEach(briefing.metrics.lines, id: \.label) { line in
-                            HStack {
-                                Text(line.label).font(.caption).foregroundStyle(Theme.textSecondary)
-                                Spacer()
-                                Text(line.value).font(.caption.weight(.semibold))
-                            }
-                        }
-                    }
-                }
-
-                if !briefing.summary.isEmpty {
-                    Text(briefing.summary)
-                        .font(.caption).foregroundStyle(Theme.textSecondary)
-                        .padding(.top, 2)
-                }
-
-                // Newest first — a six-month-old sore shoulder is history, last
-                // week's is a training constraint.
-                ForEach(briefing.notes.suffix(6).reversed(), id: \.id) { note in
-                    HStack(alignment: .top, spacing: 6) {
-                        Text(note.date).font(.caption2).foregroundStyle(Theme.textTertiary)
-                        Text(note.text).font(.caption2).foregroundStyle(Theme.textSecondary)
-                    }
-                }
-            } else {
-                Text("Nothing shared beyond workouts. \(client.username) can share average sleep, nutrition or their training history from their Friends screen.")
-                    .font(.caption).foregroundStyle(Theme.textTertiary)
-            }
+            // The SAME component the client sees as their preview (#1156
+            // mirror view) — what-you-think-you-share can't drift from
+            // what-they-see when it's one view.
+            CoachBriefingView(
+                briefing: briefing ?? ClientBriefing(
+                    clientID: client.id, summary: "", notes: [], metrics: .init()),
+                emptyText: "Nothing shared beyond workouts. \(client.username) can share average sleep, nutrition, body composition or their training history from their Friends screen.")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .card()
