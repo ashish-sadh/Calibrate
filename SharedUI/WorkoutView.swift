@@ -12,6 +12,7 @@ struct WorkoutView: View {
     @State var weeklyCounts: [(weekStart: Date, count: Int)] = []
     @State var templates: [WorkoutTemplate] = []
     @State var showingNewWorkout = false
+    @State var showingCoach = false
     @State var showingPastWorkout = false
     @State var showingVoiceLog = false
     @State var showingScan = false
@@ -97,11 +98,12 @@ struct WorkoutView: View {
                         Label("Start Workout", systemImage: sym("plus.circle.fill")).frame(maxWidth: .infinity)
                     }.buttonStyle(.borderedProminent).tint(Theme.accent)
 
+                    // Coach Me opens a CONVERSATION now. It used to call
+                    // buildSmartSession() and drop a generated session on you
+                    // with no questions asked, which is why it felt like a dice
+                    // roll — the coach asks, remembers, drafts, then saves.
                     Button {
-                        if let smart = ExerciseService.buildSmartSession() {
-                            selectedTemplate = smart
-                            showingNewWorkout = true
-                        }
+                        showingCoach = true
                     } label: {
                         Label("Coach Me", systemImage: sym("brain.head.profile")).frame(maxWidth: .infinity)
                     }
@@ -479,6 +481,9 @@ struct WorkoutView: View {
             }
         }
         #endif
+        .sheet(isPresented: $showingCoach) {
+            CoachMeView { loadData() }
+        }
         .sheet(isPresented: $showingCreateTemplate) {
             CreateTemplateView { loadData() }
         }
