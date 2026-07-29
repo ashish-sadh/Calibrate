@@ -141,7 +141,10 @@ struct TodayTab: View {
                         Image(systemName: "lock.fill")
                             .font(.caption2)
                             .foregroundStyle(Theme.deficit)
-                        Text("All data stays on your device.")
+                        // "All data" stopped being literally true when opt-out
+                        // usage telemetry shipped (2026-07-28); health data IS
+                        // still local, and every cloud touchpoint is user-chosen.
+                        Text("Your health data stays on your device — you choose what to share.")
                             .font(.caption)
                             .foregroundStyle(Theme.textSecondary)
                         Spacer()
