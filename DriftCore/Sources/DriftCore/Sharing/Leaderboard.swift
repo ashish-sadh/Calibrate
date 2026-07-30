@@ -7,21 +7,36 @@ public struct LeaderboardEntryDTO: Codable, Sendable, Hashable {
     public let periodStart: String
     public let value: Double
     public let unit: String
+    /// "friends" or "global" (migration 0012). Decodes as "friends" when a row
+    /// predates the column, matching the server default — an unknown row must
+    /// never be treated as public.
+    public var visibility: String
 
     enum CodingKeys: String, CodingKey {
         case userId = "user_id"
         case boardKey = "board_key"
         case periodStart = "period_start"
-        case value, unit
+        case value, unit, visibility
     }
 
     public init(userId: String, boardKey: String, periodStart: String,
-                value: Double, unit: String) {
+                value: Double, unit: String, visibility: String = "friends") {
         self.userId = userId
         self.boardKey = boardKey
         self.periodStart = periodStart
         self.value = value
         self.unit = unit
+        self.visibility = visibility
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        userId = try c.decode(String.self, forKey: .userId)
+        boardKey = try c.decode(String.self, forKey: .boardKey)
+        periodStart = try c.decode(String.self, forKey: .periodStart)
+        value = try c.decode(Double.self, forKey: .value)
+        unit = (try? c.decode(String.self, forKey: .unit)) ?? ""
+        visibility = (try? c.decode(String.self, forKey: .visibility)) ?? "friends"
     }
 }
 

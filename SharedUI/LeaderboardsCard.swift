@@ -27,6 +27,13 @@ struct LeaderboardsCard: View {
     @State var expanded: Set<String> = []
     @State var loading = false
     @State var busy = false
+    /// Global boards, keyed by board. Fetched only for boards the user chose to
+    /// publish globally — you can't browse a global board you haven't joined,
+    /// which is what keeps it symmetric rather than a place to watch strangers.
+    @State var globalBoards: [String: GlobalBoard] = [:]
+    @State var strangers: [String: SharedProfile] = [:]
+    @State var viewing: SharedProfile?
+    @State var viewingContext: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -48,6 +55,11 @@ struct LeaderboardsCard: View {
         }
         .card()
         .task { await refresh() }
+        // One presentation modifier per view (progress-photos lesson): the
+        // profile sheet is the only thing this card presents.
+        .sheet(item: $viewing) { person in
+            PublicProfileSheet(profile: person, context: viewingContext)
+        }
     }
 
     // MARK: - Header + consent
@@ -122,8 +134,90 @@ struct LeaderboardsCard: View {
                 Text(standing)
                     .font(.caption2).foregroundStyle(Theme.textSecondary)
             }
+
+            globalStrip(section.board)
         }
         .padding(.bottom, 2)
+    }
+
+    /// The global half of a board: a podium to aspire to, then the people
+    /// nearest you. Only rendered when this board is set to global — and the
+    /// switch to do that lives right here, next to the board it affects, rather
+    /// than in a settings screen away from the consequence.
+    @ViewBuilder
+    func globalStrip(_ board: LeaderboardBoard) -> some View {
+        let isGlobal = Preferences.globalBoardKeys.contains(board.key)
+        Button {
+            var keys = Preferences.globalBoardKeys
+            if isGlobal { keys.remove(board.key) } else { keys.insert(board.key) }
+            Preferences.globalBoardKeys = keys
+            Task { await consentChanged(true) }
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: sym(isGlobal ? "globe" : "person.2.fill"))
+                    .font(.caption2)
+                Text(isGlobal ? "Global" : "Friends only")
+                    .font(.caption2)
+                Spacer()
+                Text(isGlobal ? "Make private" : "Go global")
+                    .font(.caption2).foregroundStyle(Theme.accent)
+            }
+            .foregroundStyle(Theme.textTertiary)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+
+        if isGlobal, let global = globalBoards[board.key] {
+            if !global.podium.isEmpty {
+                Text("TOP 3 WORLDWIDE").font(.caption2.weight(.bold))
+                    .foregroundStyle(Theme.textTertiary)
+                ForEach(Array(global.podium.enumerated()), id: \.element.userId) { index, entry in
+                    strangerRow(rank: index + 1, entry: entry, board: board)
+                }
+            }
+            if !global.bracket.isEmpty {
+                Text("AROUND YOU").font(.caption2.weight(.bold))
+                    .foregroundStyle(Theme.textTertiary)
+                ForEach(global.bracket, id: \.userId) { entry in
+                    strangerRow(rank: nil, entry: entry, board: board)
+                }
+            }
+        }
+    }
+
+    /// A row for someone you don't know. Tapping opens their profile — the
+    /// discovery path. Handles resolve lazily; an unresolved one still renders
+    /// (as a truncated id) rather than vanishing, because a missing row looks
+    /// like a bug while an ugly one looks like loading.
+    func strangerRow(rank: Int?, entry: LeaderboardEntryDTO,
+                    board: LeaderboardBoard) -> some View {
+        let profile = strangers[entry.userId]
+        let isMe = entry.userId == SharingService.shared.currentSession?.userID
+        return Button {
+            guard let profile, !isMe else { return }
+            viewingContext = "\(Leaderboard.formatted(entry.value, board: board)) · \(board.title)"
+            viewing = profile
+        } label: {
+            HStack(spacing: 8) {
+                Text(rank.map(String.init) ?? "·")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(rank == 1 ? Theme.accent : Theme.textTertiary)
+                    .frame(width: 16, alignment: .trailing)
+                Text(isMe ? "You" : "@\(profile?.username ?? String(entry.userId.prefix(6)))")
+                    .font(.caption.weight(isMe ? .semibold : .regular))
+                    .foregroundStyle(Theme.textPrimary).lineLimit(1)
+                Spacer()
+                Text(Leaderboard.formatted(entry.value, board: board))
+                    .font(.caption.weight(.semibold)).foregroundStyle(Theme.textPrimary)
+                if !isMe, profile != nil {
+                    Image(systemName: sym("chevron.right"))
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
+                }
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .disabled(isMe || profile == nil)
     }
 
     // MARK: - Data
@@ -131,10 +225,29 @@ struct LeaderboardsCard: View {
     var myID: String? { SharingService.shared.currentSession?.userID }
 
     func refresh() async {
-        guard sharing else { sections = []; return }
+        guard sharing else { sections = []; globalBoards = [:]; return }
         loading = true
         sections = await LeaderboardService.sections(connections: connections)
         loading = false
+        await loadGlobal()
+    }
+
+    /// Global boards, one fetch per board the user opted into — bounded by how
+    /// many they chose, not by how many exist. Strangers' handles resolve in ONE
+    /// batched profile call across every board rather than per row.
+    func loadGlobal() async {
+        let keys = Preferences.globalBoardKeys.intersection(Set(sections.map(\.board.key)))
+        guard !keys.isEmpty else { globalBoards = [:]; return }
+        var boards: [String: GlobalBoard] = [:]
+        for key in keys {
+            if let board = await LeaderboardService.globalBoard(key) { boards[key] = board }
+        }
+        globalBoards = boards
+
+        let unknown = Set(boards.values.flatMap(\.userIDs)).subtracting(strangers.keys)
+        guard !unknown.isEmpty else { return }
+        let fetched = (try? await SharingService.shared.profiles(ids: Array(unknown))) ?? []
+        for profile in fetched { strangers[profile.id] = profile }
     }
 
     /// Flipping the switch acts immediately in both directions: on publishes so

@@ -1,6 +1,20 @@
 import Foundation
 
 /// Reading and publishing boards.
+/// A global board as the UI needs it: an aspirational few at the top, then the
+/// caller's own neighbourhood. Profiles arrive separately — a global board is
+/// full of strangers, so names are fetched only for the rows actually rendered.
+public struct GlobalBoard: Sendable {
+    public let board: LeaderboardBoard
+    public let podium: [LeaderboardEntryDTO]
+    public let bracket: [LeaderboardEntryDTO]
+    public let myValue: Double?
+    public let me: String
+
+    /// Every stranger id on screen, for one batched profile fetch.
+    public var userIDs: [String] { (podium + bracket).map(\.userId) }
+}
+
 @MainActor
 public enum LeaderboardService {
 
@@ -53,6 +67,54 @@ public enum LeaderboardService {
         let entries = (try? await svc.leaderboardEntries(userIDs: Array(profiles.keys),
                                                         periods: periods)) ?? []
         return Leaderboard.sections(from: entries, profiles: profiles, me: me)
+    }
+
+    /// A global board: the podium, then the caller's own bracket.
+    ///
+    /// Two halves because they answer different questions. The podium is
+    /// aspirational and — since steps are trivially fakeable — not to be trusted
+    /// as a ranking; the bracket is where someone finds people at their own
+    /// level, and nobody games their way into the middle. The operator asked for
+    /// both: "have a way to show top 3 or something too, else how they inspire."
+    ///
+    /// De-duplicated: if you're in the top 3 you appear once, on the podium.
+    /// Returns nil when the caller doesn't publish this board globally — you
+    /// cannot browse a global board you haven't joined, which is what keeps it
+    /// symmetric rather than a place to watch strangers from.
+    public static func globalBoard(_ key: String,
+                                  now: Date = Date()) async -> GlobalBoard? {
+        let svc = SharingService.shared
+        guard svc.isSignedIn, Preferences.shareStatsWithFriends,
+              Preferences.globalBoardKeys.contains(key),
+              let me = svc.currentSession?.userID else { return nil }
+
+        let board = LeaderboardBoard.from(key: key)
+        let period = periodStart(board.period, for: now)
+        guard let podium = try? await svc.globalPodium(boardKey: key, period: period),
+              !podium.isEmpty else { return nil }
+
+        // My own value anchors the bracket. Absent it there is nothing to be
+        // "near", so the podium alone is the honest answer.
+        var myValue = podium.first { $0.userId == me }?.value
+        if myValue == nil {
+            let mine = (try? await svc.leaderboardEntries(userIDs: [me], periods: [period])) ?? []
+            myValue = mine.first { $0.boardKey == key }?.value
+        }
+
+        var bracket: [LeaderboardEntryDTO] = []
+        if let myValue {
+            bracket = (try? await svc.globalBracket(boardKey: key, period: period,
+                                                    around: myValue)) ?? []
+        }
+
+        let podiumIDs = Set(podium.map(\.userId))
+        return GlobalBoard(
+            board: board,
+            podium: podium,
+            bracket: bracket.filter { !podiumIDs.contains($0.userId) }
+                .sorted { $0.value > $1.value },
+            myValue: myValue,
+            me: me)
     }
 
     /// Turning sharing off REMOVES what was published — a switch that only stops

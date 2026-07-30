@@ -239,3 +239,48 @@ struct LeaderboardPeriodTests {
         #expect(LeaderboardPublisher.maxLiftBoards >= 3, "too few and no board finds a pair")
     }
 }
+
+/// Tier-0 for the two audience decisions that can leak data if wrong.
+struct AudienceTests {
+
+    /// The switch combination that per-recipient sharing could express and a
+    /// purely derived audience could not — the reason 0014 stores it.
+    @Test func coachOnlyIsRepresentable() {
+        #expect(WorkoutAudience.from(friends: false, coaches: true) == .coaches)
+    }
+
+    /// Friends implies coaches: a coach monitoring your training is the
+    /// relationship, so "friends can see it but my coach can't" isn't a state
+    /// anyone means.
+    @Test func friendsImpliesCoaches() {
+        #expect(WorkoutAudience.from(friends: true, coaches: true) == .all)
+        #expect(WorkoutAudience.from(friends: true, coaches: false) == .all)
+    }
+
+    /// Both switches off must publish NOTHING — this is the "I'm just testing"
+    /// case, and a row written here is a real privacy failure.
+    @Test func bothOffIsPrivate() {
+        #expect(WorkoutAudience.from(friends: false, coaches: false) == .private)
+    }
+
+    /// A row that predates the visibility column, or comes from a client that
+    /// doesn't set it, must decode as FRIENDS. Defaulting to global would widen
+    /// exposure through silence.
+    @Test func entriesWithoutVisibilityDecodeAsFriends() throws {
+        let json = """
+        {"user_id":"u1","board_key":"steps","period_start":"2026-07-27","value":40000}
+        """
+        let entry = try JSONDecoder().decode(LeaderboardEntryDTO.self, from: Data(json.utf8))
+        #expect(entry.visibility == "friends")
+        #expect(entry.unit == "")
+    }
+
+    @Test func explicitGlobalSurvivesDecoding() throws {
+        let json = """
+        {"user_id":"u1","board_key":"steps","period_start":"2026-07-27","value":40000,
+         "unit":"","visibility":"global"}
+        """
+        let entry = try JSONDecoder().decode(LeaderboardEntryDTO.self, from: Data(json.utf8))
+        #expect(entry.visibility == "global")
+    }
+}

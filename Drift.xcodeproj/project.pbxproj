@@ -112,6 +112,7 @@
 		6D1F9557E1AE5BF964CC7D09 /* AIBackendCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F4CF97949C6569223B2997F /* AIBackendCoordinator.swift */; };
 		70385AB62DB3A7D09C4BB002 /* latency-baseline.json in Resources */ = {isa = PBXBuildFile; fileRef = D692B540EF483EFFC8EB0569 /* latency-baseline.json */; };
 		71248B6DE58F57FE294B28A3 /* DriftCore in Frameworks */ = {isa = PBXBuildFile; productRef = A21AA79CBEBA5F15DFB3CC7A /* DriftCore */; };
+		72FEE7559FEF7AA3B9C919C9 /* PublicProfileSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E9D318164AF76AEF3209D2B /* PublicProfileSheet.swift */; };
 		743683D061EE62198FF1B2C2 /* ExerciseVoiceLogSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19C12565F5386458D6B1B9A2 /* ExerciseVoiceLogSheet.swift */; };
 		78192B1D7BAC70E4F0C5C077 /* LogMethodCardsRowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54876336F0C254359603DBC4 /* LogMethodCardsRowTests.swift */; };
 		7821B033A6CDE13D6ED6040C /* DashboardView+Cards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 733818AD9667283F81C5D1C5 /* DashboardView+Cards.swift */; };
@@ -437,6 +438,7 @@
 		85B104D3EEC732EC50782802 /* BackupOnboardingSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupOnboardingSheet.swift; sourceTree = "<group>"; };
 		893A2B9C27B65BD830B5A520 /* DriftAppLaunchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriftAppLaunchTests.swift; sourceTree = "<group>"; };
 		8E78D132A90B0FDC35353646 /* WeightLogListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightLogListView.swift; sourceTree = "<group>"; };
+		8E9D318164AF76AEF3209D2B /* PublicProfileSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicProfileSheet.swift; sourceTree = "<group>"; };
 		8EAD396A0ED458F8F26650FA /* MultiTurnRegressionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MultiTurnRegressionTests.swift; sourceTree = "<group>"; };
 		8F37E7533E884ADD13133BA4 /* SharingDeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharingDeepLink.swift; sourceTree = "<group>"; };
 		8F4CF97949C6569223B2997F /* AIBackendCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIBackendCoordinator.swift; sourceTree = "<group>"; };
@@ -641,6 +643,7 @@
 				830DCA5606BA7ED09ECCB6DE /* MuscleHighlightCard.swift */,
 				EEBA03C80C4A4C8407D09C43 /* NumericField.swift */,
 				FC45137F80CC5036EC4C6BAB /* ProgressPhotoImage.swift */,
+				8E9D318164AF76AEF3209D2B /* PublicProfileSheet.swift */,
 				D80761BF94B2EA4BD8936542 /* ServingInputView.swift */,
 				24845D2FEAFCB3123CAD7E9E /* ShareTemplateSheet.swift */,
 				8F37E7533E884ADD13133BA4 /* SharingDeepLink.swift */,
@@ -1339,6 +1342,7 @@
 				8A3CB3497058D8A5EFE697D8 /* ProgressPhotoImage.swift in Sources */,
 				6B08480CCE6107363F50026B /* ProgressPhotoStore.swift in Sources */,
 				565346E2FB2AED86C46157B1 /* ProgressPhotoViewerView.swift in Sources */,
+				72FEE7559FEF7AA3B9C919C9 /* PublicProfileSheet.swift in Sources */,
 				3A45CB30EFB91DF5C4E468AD /* QuickAddView.swift in Sources */,
 				A30F63FA377687747C8CFC2F /* RestorePickerView.swift in Sources */,
 				135AE3A6CB54EE35321B5995 /* SecureTokenStoreKeychain.swift in Sources */,

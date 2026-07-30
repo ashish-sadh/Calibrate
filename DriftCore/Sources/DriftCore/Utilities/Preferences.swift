@@ -91,6 +91,23 @@ public enum Preferences {
         set { kv.set(newValue, forKey: shareStatsWithFriendsKey) }
     }
 
+    private static let globalBoardKeysKey = "drift_global_board_keys"
+
+    /// Which boards this person publishes GLOBALLY rather than to friends only.
+    ///
+    /// A set, not a single switch, because the operator's ask was "choose what
+    /// things you want to participate — multiple, from a dropdown": steps can go
+    /// on a global board while a deadlift stays among friends.
+    ///
+    /// Empty by default. Global is strictly wider than friends — it exposes a
+    /// number to strangers and makes you reachable from a discovery surface — so
+    /// it is never inferred from `shareStatsWithFriends` being on. Two decisions,
+    /// two switches.
+    public static var globalBoardKeys: Set<String> {
+        get { Set(kv.stringArray(forKey: globalBoardKeysKey) ?? []) }
+        set { kv.set(newValue.isEmpty ? nil : Array(newValue).sorted(), forKey: globalBoardKeysKey) }
+    }
+
     // MARK: - Online Food Search
 
     private static let onlineFoodSearchKey = "drift_online_food_search"

@@ -49,8 +49,15 @@ public enum LeaderboardPublisher {
     public static func publishNow() async {
         guard Preferences.shareStatsWithFriends,
               let uid = SharingService.shared.currentSession?.userID else { return }
-        let entries = await collect(userID: uid)
+        var entries = await collect(userID: uid)
         guard !entries.isEmpty else { return }
+        // Stamp each row with the audience the user chose for THAT board. Done
+        // here, at the last moment, so flipping a board to friends-only takes
+        // effect on the next publish without a separate migration of rows.
+        let global = Preferences.globalBoardKeys
+        for i in entries.indices {
+            entries[i].visibility = global.contains(entries[i].boardKey) ? "global" : "friends"
+        }
         // Best-effort: a leaderboard that can't publish must never surface as an
         // error over someone's workout.
         try? await SharingService.shared.upsertLeaderboardEntries(entries)

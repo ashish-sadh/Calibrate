@@ -566,7 +566,7 @@ public final class SharingService {
         let body: [[String: Any]] = entries.map { entry in
             ["user_id": entry.userId, "board_key": entry.boardKey,
              "period_start": entry.periodStart, "value": entry.value,
-             "unit": entry.unit, "updated_at": now]
+             "unit": entry.unit, "visibility": entry.visibility, "updated_at": now]
         }
         let _: [LeaderboardEntryDTO] = try await client.restInsert(
             "leaderboard_entries", body: body, token: try await validToken(), upsert: true)
@@ -597,6 +597,66 @@ public final class SharingService {
             out += try await client.restGet(path, token: token) as [LeaderboardEntryDTO]
         }
         return out
+    }
+
+    // MARK: - Global boards + discovery (migration 0012)
+
+    /// The podium: the top `limit` values on a board, globally.
+    ///
+    /// Cheap because of `leaderboard_global_rank`, a PARTIAL index over exactly
+    /// the rows people chose to publish globally — 6 ms at 2.2M rows versus
+    /// 4,173 ms without it. Deliberately SMALL (3, not 100): steps are trivially
+    /// fakeable, so the top of an absolute board is noise, and the operator's ask
+    /// was a podium for inspiration rather than a ranking to climb.
+    public func globalPodium(boardKey: String, period: String,
+                            limit: Int = 3) async throws -> [LeaderboardEntryDTO] {
+        try await client.restGet(
+            "leaderboard_entries?board_key=eq.\(boardKey)&period_start=eq.\(period)"
+                + "&visibility=eq.global&select=*&order=value.desc&limit=\(limit)",
+            token: try await validToken())
+    }
+
+    /// The people immediately around a value — where someone actually finds
+    /// people like themselves.
+    ///
+    /// Two bounded index reads (2.5 ms at 2.2M rows), not a window function:
+    /// `span` rows at or below, `span` rows above. Nobody games their way into
+    /// the middle of a board, which is what makes this half trustworthy in a way
+    /// the podium isn't.
+    public func globalBracket(boardKey: String, period: String, around value: Double,
+                             span: Int = 10) async throws -> [LeaderboardEntryDTO] {
+        let token = try await validToken()
+        let base = "leaderboard_entries?board_key=eq.\(boardKey)&period_start=eq.\(period)"
+            + "&visibility=eq.global&select=*"
+        async let below: [LeaderboardEntryDTO] = client.restGet(
+            base + "&value=lte.\(value)&order=value.desc&limit=\(span)", token: token)
+        async let above: [LeaderboardEntryDTO] = client.restGet(
+            base + "&value=gt.\(value)&order=value.asc&limit=\(span)", token: token)
+        return (try await below) + (try await above)
+    }
+
+    /// How many friends the caller shares with `profileID`.
+    ///
+    /// A COUNT from a `security definer` function, never a list: the caller
+    /// cannot read someone else's friendship rows and must not be able to, so
+    /// naming mutuals would turn a leaderboard into a graph-enumeration tool.
+    public func mutualFriendCount(with profileID: String) async throws -> Int {
+        let rows: [Int] = try await client.restInsert(
+            "rpc/mutual_friend_count", body: ["other": profileID],
+            token: try await validToken())
+        return rows.first ?? 0
+    }
+
+    /// A stranger's recent activity: workout name and date only.
+    ///
+    /// Gated server-side on that person having opted into a global board, and
+    /// windowed to 30 days. Someone who never chose to be discoverable has no
+    /// public activity, whatever the caller knows about their id.
+    public func publicActivity(of profileID: String,
+                              limit: Int = 10) async throws -> [PublicActivityDTO] {
+        try await client.restInsert(
+            "rpc/public_activity", body: ["other": profileID, "max_rows": limit],
+            token: try await validToken())
     }
 
     /// Remove everything I published — what "stop sharing" has to mean.
@@ -703,6 +763,47 @@ public final class SharingService {
             // friend's feed ("is doing Leg Day 🔴" for days) — best-effort
             // close it as abandoned, then surface the original failure so the
             // caller's retry creates a fresh session.
+            try? await endSession(sid, status: .abandoned)
+            throw error
+        }
+        try await endSession(sid, status: .completed)
+    }
+
+    /// Publish a finished workout ONCE, client-owned, with the audience the user
+    /// chose (migrations 0012 + 0014).
+    ///
+    /// Replaces per-recipient copies as the way a broadcast works. One row
+    /// instead of N, and — the reason it matters — the audience is evaluated
+    /// against the relationships that exist WHEN IT'S READ. So a coach who
+    /// arrives next month can see this session, and a coach who leaves stops
+    /// seeing it. Per-recipient rows had that exactly backwards.
+    ///
+    /// The explicit "send to one person" picker still uses
+    /// `shareCompletedWorkout`, which names a recipient — that's a different
+    /// intent and a legacy-shaped row is the honest way to express it.
+    public func publishCompletedWorkout(workoutName: String, sets: [SharedSet],
+                                       audience: WorkoutAudience) async throws {
+        guard audience != .private else { return }
+        let uid = try requireUserID()
+        let row: [String: Any] = [
+            "client_id": uid, "template_name": workoutName,
+            "audience": audience.rawValue, "status": SessionStatus.live.rawValue,
+        ]
+        let inserted: [LiveWorkoutDTO] = try await client.restInsert(
+            "live_workouts", body: [row], token: try await validToken())
+        guard let sid = inserted.first?.id else {
+            throw SharingError.decoding("no session id returned")
+        }
+        do {
+            for s in sets {
+                try await pushSet(sessionID: sid, exerciseName: s.exerciseName,
+                                  exerciseOrder: s.exerciseOrder, setOrder: s.setOrder,
+                                  weightLbs: s.weightLbs, reps: s.reps,
+                                  isWarmup: s.isWarmup, done: true)
+            }
+        } catch {
+            // A half-pushed session must not sit status=live forever in
+            // someone's feed ("is doing Leg Day 🔴" for days).
             try? await endSession(sid, status: .abandoned)
             throw error
         }

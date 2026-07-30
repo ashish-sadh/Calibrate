@@ -270,3 +270,44 @@ public struct UnreadMarkDTO: Codable, Sendable, Hashable {
         case readThrough = "read_through"
     }
 }
+
+/// A row from `public_activity` (migration 0012) — the only thing a stranger
+/// reached from a global board can see. Name and date, nothing else: enough to
+/// tell whether someone trains the way you do, which is the whole job.
+public struct PublicActivityDTO: Codable, Sendable, Hashable, Identifiable {
+    public let name: String
+    public let workoutDate: String
+
+    public var id: String { "\(workoutDate)-\(name)" }
+
+    enum CodingKeys: String, CodingKey {
+        case name
+        case workoutDate = "workout_date"
+    }
+
+    public init(name: String, workoutDate: String) {
+        self.name = name
+        self.workoutDate = workoutDate
+    }
+}
+
+/// Who a client-owned workout is for (migration 0014).
+///
+/// STORED rather than derived, because the completion sheet's two switches can
+/// express "coaches but not friends" and a purely relationship-derived audience
+/// cannot. The server intersects this with the relationships that exist at read
+/// time, so a coach who arrives later still sees it and one who leaves stops.
+public enum WorkoutAudience: String, Sendable, Equatable {
+    /// Friends (rolling 30 days) and any current coach (full history).
+    case all
+    /// Coaches only — what "share with friends" off, "share with coach" on means.
+    case coaches
+    /// Nobody. Saved locally, never published.
+    case `private`
+
+    /// The audience implied by the two completion-sheet switches.
+    public static func from(friends: Bool, coaches: Bool) -> WorkoutAudience {
+        if friends { return .all }        // friends implies coaches see it too
+        return coaches ? .coaches : .private
+    }
+}

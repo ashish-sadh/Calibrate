@@ -831,7 +831,7 @@ struct SharingView: View {
         busy = false
     }
 
-    private static func message(for e: SharingError) -> String {
+    static func message(for e: SharingError) -> String {
         switch e {
         case .notConfigured: return "Sharing isn't available in this build."
         case .notSignedIn: return "Please sign in again."

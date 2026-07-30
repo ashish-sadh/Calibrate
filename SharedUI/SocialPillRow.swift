@@ -47,7 +47,18 @@ struct SocialPillRow: View {
     var body: some View {
         Group {
             if !loaded {
-                EmptyView()
+                // NOT EmptyView(). `.task` never fires on a view that resolves
+                // to EmptyView — it has no layout node — so `!loaded → EmptyView`
+                // was a self-sustaining deadlock: nothing ran, so `loaded` never
+                // flipped, so the whole social surface was permanently absent
+                // from Today. Found by driving the iOS simulator, invisible in
+                // every build and test (2026-07-30). A zero-height Color is a
+                // real node, so the modifier attaches and the load runs.
+                Color.clear.frame(height: 0)
+            } else if !SharingService.shared.isConfigured {
+                // No backend in this build: an invitation that dead-ends is
+                // worse than no invitation.
+                Color.clear.frame(height: 0)
             } else if !signedIn || (coach == nil && clientCount == 0 && friendCount == 0) {
                 invitePill
             } else {
@@ -169,8 +180,14 @@ struct SocialPillRow: View {
 
     func load() async {
         guard !loaded else { return }
+        // `defer`, not a line at the bottom: `loaded` used to be set only after
+        // all five fetches returned, so a hung request or a stale session left
+        // this row as EmptyView FOREVER — the whole social surface silently
+        // absent from Today, which is how it was found (iOS sim, 2026-07-30).
+        // Whatever happens below, the row must decide what to draw.
+        defer { loaded = true }
         signedIn = SharingService.shared.isSignedIn
-        guard signedIn else { loaded = true; return }
+        guard signedIn else { return }
         let svc = SharingService.shared
 
         // Best-effort and concurrent: Today must render whether or not the
@@ -219,7 +236,5 @@ struct SocialPillRow: View {
         friendActivity = friends.filter { connection in
             SeenMarks.unseenSessionCount(for: connection.id, sessions: clientSessions) > 0
         }.count
-
-        loaded = true
     }
 }

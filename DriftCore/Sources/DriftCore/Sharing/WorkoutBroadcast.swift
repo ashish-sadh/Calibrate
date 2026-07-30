@@ -52,8 +52,17 @@ public enum WorkoutBroadcast {
         }
     }
 
-    /// Share to everyone the switches allow. Never throws: a workout is saved
+    /// Publish to everyone the switches allow. Never throws: a workout is saved
     /// locally first, and a failed share must not look like a failed save.
+    ///
+    /// ONE client-owned row (migrations 0012 + 0014), not a copy per recipient.
+    /// Besides being N-times less work, it's what makes a coach who arrives NEXT
+    /// month able to see this session and a coach who leaves stop seeing it —
+    /// per-recipient rows froze the audience at save time, which had it exactly
+    /// backwards.
+    ///
+    /// The counts reported are therefore "who this reaches", derived from current
+    /// connections, rather than a tally of successful writes.
     @MainActor
     public static func send(workoutName: String,
                            sets: [SharingService.SharedSet],
@@ -61,18 +70,18 @@ public enum WorkoutBroadcast {
                            toCoaches: Bool = Preferences.shareWorkoutsWithCoaches) async -> Result {
         var result = Result(friends: 0, coaches: 0, failed: 0)
         let svc = SharingService.shared
-        guard svc.isSignedIn, toFriends || toCoaches else { return result }
+        let audience = WorkoutAudience.from(friends: toFriends, coaches: toCoaches)
+        guard svc.isSignedIn, audience != .private else { return result }
         guard let connections = try? await svc.connections() else { return result }
 
-        for connection in recipients(from: connections, toFriends: toFriends, toCoaches: toCoaches) {
-            do {
-                try await svc.shareCompletedWorkout(
-                    to: connection.profile.id, workoutName: workoutName, sets: sets)
-                if connection.kind == .coach { result.coaches += 1 } else { result.friends += 1 }
-            } catch {
-                // One unreachable recipient must not stop the rest.
-                result.failed += 1
-            }
+        let reached = recipients(from: connections, toFriends: toFriends, toCoaches: toCoaches)
+        do {
+            try await svc.publishCompletedWorkout(workoutName: workoutName, sets: sets,
+                                                 audience: audience)
+            result.friends = reached.filter { $0.kind == .friend }.count
+            result.coaches = reached.filter { $0.kind == .coach }.count
+        } catch {
+            result.failed = max(reached.count, 1)
         }
         return result
     }
