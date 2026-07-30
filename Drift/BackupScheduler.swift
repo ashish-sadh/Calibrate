@@ -131,7 +131,20 @@ public final class BackupScheduler: @unchecked Sendable {
     /// Protocol-typed entry point so tests can inject a stub task. Production
     /// callers should use `handleBackgroundTask(_:)`.
     func handle(_ task: BackgroundTaskHandle) async {
-        let runner = Task { await runBackup() }
+        let runner = Task {
+            let ok = await runBackup()
+            // Piggyback the social sync on the SAME nightly wake rather than
+            // registering a second BGTask identifier: iOS budgets background
+            // execution per app, so two tasks compete for one allowance instead
+            // of doubling it. This is what lets steps and lift bests reach a
+            // friend's board without the owner opening the app that day.
+            //
+            // Best-effort by nature — iOS decides whether 3am happens at all, so
+            // this narrows the gap rather than closing it. The foreground
+            // trigger stays the reliable one.
+            await SocialSync.onBackgroundRefresh()
+            return ok
+        }
         task.expirationHandler = { runner.cancel() }
         let success = await runner.value
         task.setTaskCompleted(success: success)
