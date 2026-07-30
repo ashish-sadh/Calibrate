@@ -54,9 +54,9 @@ public enum LeaderboardPublisher {
         // Stamp each row with the audience the user chose for THAT board. Done
         // here, at the last moment, so flipping a board to friends-only takes
         // effect on the next publish without a separate migration of rows.
-        let global = Preferences.globalBoardKeys
         for i in entries.indices {
-            entries[i].visibility = global.contains(entries[i].boardKey) ? "global" : "friends"
+            entries[i].visibility =
+                Preferences.boardIsGlobal(entries[i].boardKey) ? "global" : "friends"
         }
         // Best-effort: a leaderboard that can't publish must never surface as an
         // error over someone's workout.

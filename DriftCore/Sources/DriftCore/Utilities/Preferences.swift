@@ -135,21 +135,32 @@ public enum Preferences {
         set { kv.set(newValue, forKey: publicProfileWorkoutsKey) }
     }
 
-    private static let globalBoardKeysKey = "drift_global_board_keys"
+    private static let friendsOnlyBoardKeysKey = "drift_friends_only_board_keys"
 
-    /// Which boards this person publishes GLOBALLY rather than to friends only.
+    /// Boards this person has pulled BACK to friends-only.
     ///
-    /// A set, not a single switch, because the operator's ask was "choose what
-    /// things you want to participate — multiple, from a dropdown": steps can go
-    /// on a global board while a deadlift stays among friends.
+    /// **Inverted 2026-07-30 on the operator's call: boards are global by
+    /// DEFAULT, and this is the opt-out set.** It used to be `globalBoardKeys`,
+    /// an opt-in — which meant a board full of strangers essentially never
+    /// happened, and global discovery (the whole point of the feature) never got
+    /// off the ground.
     ///
-    /// Empty by default. Global is strictly wider than friends — it exposes a
-    /// number to strangers and makes you reachable from a discovery surface — so
-    /// it is never inferred from `shareStatsWithFriends` being on. Two decisions,
-    /// two switches.
-    public static var globalBoardKeys: Set<String> {
-        get { Set(kv.stringArray(forKey: globalBoardKeysKey) ?? []) }
-        set { kv.set(newValue.isEmpty ? nil : Array(newValue).sorted(), forKey: globalBoardKeysKey) }
+    /// The safeguard that makes this defensible is that the MASTER switch is
+    /// still opt-in: nothing is published at all until `shareStatsWithFriends`
+    /// is turned on. So the default only decides *how wide* an already-deliberate
+    /// act goes. The card's copy states that plainly — a default this wide has to
+    /// be read, not discovered.
+    ///
+    /// Per board, so steps can be public while a lift stays among friends.
+    public static var friendsOnlyBoardKeys: Set<String> {
+        get { Set(kv.stringArray(forKey: friendsOnlyBoardKeysKey) ?? []) }
+        set { kv.set(newValue.isEmpty ? nil : Array(newValue).sorted(),
+                     forKey: friendsOnlyBoardKeysKey) }
+    }
+
+    /// Is this board published to everyone? Global unless pulled back.
+    public static func boardIsGlobal(_ key: String) -> Bool {
+        !friendsOnlyBoardKeys.contains(key)
     }
 
     // MARK: - Online Food Search

@@ -566,3 +566,37 @@ struct BoardNoiseTests {
         #expect(keys.filter { $0.hasPrefix("lift:") }.count == Leaderboard.maxLiftBoards)
     }
 }
+
+/// Tier-0 for the visibility default, inverted 2026-07-30.
+///
+/// Boards are global by DEFAULT now. The safeguard is that the master switch is
+/// still opt-in, so this only decides how wide an already-deliberate act goes —
+/// these assertions are what keep that true.
+@MainActor
+struct BoardVisibilityDefaultTests {
+
+    @Test func boardsAreGlobalUnlessPulledBack() {
+        Preferences.friendsOnlyBoardKeys = []
+        #expect(Preferences.boardIsGlobal("steps"))
+        #expect(Preferences.boardIsGlobal("lift:deadlift"))
+        // A board this build has never heard of is still global — the default
+        // must not depend on knowing the key.
+        #expect(Preferences.boardIsGlobal("lift:zercher_squat"))
+    }
+
+    @Test func pullingOneBackDoesNotAffectOthers() {
+        Preferences.friendsOnlyBoardKeys = ["lift:deadlift"]
+        defer { Preferences.friendsOnlyBoardKeys = [] }
+        #expect(!Preferences.boardIsGlobal("lift:deadlift"))
+        #expect(Preferences.boardIsGlobal("steps"), "per board, not all-or-nothing")
+    }
+
+    /// THE SAFEGUARD. A global default is only defensible because nothing is
+    /// published until the master switch is on. If this ever inverts too, the
+    /// default becomes silent public exposure.
+    @Test func nothingPublishesUntilTheMasterSwitchIsOn() {
+        DriftPlatform.keyValueStore.removeObject(forKey: "drift_share_stats_friends")
+        #expect(!Preferences.shareStatsWithFriends,
+                "leaderboards must stay opt-in even though boards default global")
+    }
+}

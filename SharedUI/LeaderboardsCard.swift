@@ -97,7 +97,7 @@ struct LeaderboardsCard: View {
     }
 
     var invitation: some View {
-        Text("Turn this on to compare steps, calories, workouts and your lifts with friends. Boards appear only where you and a friend train the same thing — and you'll appear on theirs too.")
+        Text("Compare steps, calories, workouts and your lifts. Boards are visible to EVERYONE on Drift by default, so people can find you — switch any board to friends-only underneath it. Nothing is published until you turn this on.")
             .font(.caption).foregroundStyle(Theme.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
     }
@@ -200,15 +200,16 @@ struct LeaderboardsCard: View {
     /// operator couldn't tell what state he was in. Two capsules, one selected,
     /// says both things at once.
     func visibilityControl(_ board: LeaderboardBoard) -> some View {
-        let isGlobal = Preferences.globalBoardKeys.contains(board.key)
+        let isGlobal = Preferences.boardIsGlobal(board.key)
         return HStack(spacing: 6) {
             Text("VISIBLE TO").font(.system(size: 9, weight: .bold))
                 .foregroundStyle(Theme.textTertiary)
             ForEach([false, true], id: \.self) { wantGlobal in
                 Button {
-                    var keys = Preferences.globalBoardKeys
-                    if wantGlobal { keys.insert(board.key) } else { keys.remove(board.key) }
-                    Preferences.globalBoardKeys = keys
+                    // Opt-OUT set now: boards are global unless pulled back.
+                    var keys = Preferences.friendsOnlyBoardKeys
+                    if wantGlobal { keys.remove(board.key) } else { keys.insert(board.key) }
+                    Preferences.friendsOnlyBoardKeys = keys
                     Task {
                         // Going private must reach EVERY period, not just this
                         // one, or last month's row stays publicly readable.
@@ -246,7 +247,7 @@ struct LeaderboardsCard: View {
     /// The global podium + bracket, when this board is public.
     @ViewBuilder
     func globalRows(_ board: LeaderboardBoard) -> some View {
-        if Preferences.globalBoardKeys.contains(board.key), let global = globalBoards[board.key] {
+        if Preferences.boardIsGlobal(board.key), let global = globalBoards[board.key] {
             if !global.podium.isEmpty {
                 Text("TOP 3 WORLDWIDE").font(.system(size: 9, weight: .bold))
                     .foregroundStyle(Theme.textTertiary)
@@ -316,7 +317,7 @@ struct LeaderboardsCard: View {
     /// many they chose, not by how many exist. Strangers' handles resolve in ONE
     /// batched profile call across every board rather than per row.
     func loadGlobal() async {
-        let keys = Preferences.globalBoardKeys.intersection(Set(sections.map(\.board.key)))
+        let keys = Set(sections.map(\.board.key)).filter { Preferences.boardIsGlobal($0) }
         guard !keys.isEmpty else { globalBoards = [:]; return }
         var boards: [String: GlobalBoard] = [:]
         for key in keys {

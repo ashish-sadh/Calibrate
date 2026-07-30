@@ -123,7 +123,7 @@ public enum LeaderboardService {
                                   now: Date = Date()) async -> GlobalBoard? {
         let svc = SharingService.shared
         guard svc.isSignedIn, Preferences.shareStatsWithFriends,
-              Preferences.globalBoardKeys.contains(key),
+              Preferences.boardIsGlobal(key),
               let me = svc.currentSession?.userID else { return nil }
 
         let board = LeaderboardBoard.from(key: key)

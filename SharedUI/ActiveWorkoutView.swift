@@ -1432,7 +1432,7 @@ struct ActiveWorkoutView: View {
                 // advertise strangers as an audience they never opted into
                 // (operator 2026-07-30: "give people option to keep their rehab
                 // session private... it's fine to share with coach").
-                if !Preferences.globalBoardKeys.isEmpty {
+                if Preferences.shareStatsWithFriends {
                     Toggle(isOn: Binding(
                         get: { showOnPublicProfile },
                         set: { showOnPublicProfile = $0
