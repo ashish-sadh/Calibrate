@@ -121,6 +121,49 @@ redesign.
 **Also independent of transport:** the Today-screen signals (unread messages,
 pending requests) are instant whenever the app is open, and need none of this.
 
+## Platform parity — the seams this needs (both iOS AND Android, always)
+
+Standing rule (`feedback_android_full_parity`, CLAUDE.md): iOS is the source of
+truth and nothing ships one-sided. Most of this design is free on Android
+because it lives in SharedUI/DriftCore — the policy matrix, the Today-screen
+signals, the unread counting, the broadcast model and the coach's
+workout-history view are all shared code.
+
+Three pieces are NOT, and each needs a seam rather than an `#if os(Android)`
+hole. Audited 2026-07-29:
+
+1. **Local notifications — no Android path exists.**
+   `Drift/Services/NotificationService.swift` lives in the iOS app target and
+   imports `UserNotifications`. `DriftPlatform` has seams for health, widget,
+   nutrition, secure store, key-value and HTTP — but none for notifying.
+   → Add `DriftPlatform.notifier: LocalNotifier?` (schedule / cancel /
+   authorization), iOS wrapping `UNUserNotificationCenter`, Android wrapping
+   `NotificationManager` + a channel, with the API 33+ `POST_NOTIFICATIONS`
+   runtime permission. Mind #1096: a lazy permission ask relaunches
+   MainActivity and looks like a crash.
+
+2. **Background poll trigger differs per platform.**
+   iOS already has `BGTaskScheduler` registered (`BackupScheduler`, nightly
+   backup) — the pattern is proven, add a second task identifier. Android needs
+   a periodic **WorkManager** job (15-minute floor). Both call the SAME shared
+   poll routine in DriftCore; only the scheduling is platform code.
+
+3. **QR generation — nothing exists on either platform, and SkipUI has no
+   CoreImage.** Rather than `CIQRCodeGenerator` on iOS plus a ZXing Kotlin
+   facade on Android (two implementations, two failure modes), write the QR
+   encoder in **pure Swift in DriftCore** and render the modules as a grid of
+   rects. One implementation, both platforms, no dependency, works offline, and
+   the encoder is Tier-0 testable against known-good fixtures — which a
+   platform QR library never is.
+
+4. **Deep links** (`drift://add/<username>`) are configuration on both sides:
+   iOS URL types + `onOpenURL`; Android an `intent-filter` in the manifest.
+   Small, but genuinely two places.
+
+Sequencing note: seam 1 is the gate for the whole notification matrix, so it
+comes first and gets its own verification on a real Android device (the
+emulator's notification behaviour is not evidence).
+
 ## Decided
 
 1. **Friends auto-share default: ASK ONCE, then remember** (operator
