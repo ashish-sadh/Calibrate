@@ -47,6 +47,7 @@ let logger: Logger = Logger(subsystem: "com.drift.health", category: "DriftAndro
             // URLSession parks non-cancellably on Skip, so RemoteLLMBackend
             // (Coach/meal/photo/scan) routes through the OkHttp facade instead.
             DriftPlatform.httpSession = AndroidHTTPSession()
+            DriftPlatform.notifier = AndroidLocalNotifier()
         }
     }
 
@@ -74,6 +75,9 @@ let logger: Logger = Logger(subsystem: "com.drift.health", category: "DriftAndro
             guard let health = DriftPlatform.health, health.isAvailable else { return }
             _ = try? await health.syncWeight()
         }
+        // Social alerts (#1162) — same shared poll the iOS foreground runs, so
+        // the policy can't diverge between platforms.
+        Task { @MainActor in await SocialAlertPoll.run() }
     }
 
     /* SKIP @bridge */public func onPause() {

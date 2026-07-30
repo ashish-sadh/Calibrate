@@ -163,6 +163,7 @@
 		AF1191CADEE2ADD739D5C9A5 /* TemplatePreviewSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CCE53CD3289EAA4CBDC5F8D /* TemplatePreviewSheet.swift */; };
 		AF45546E02B5118EB9156119 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA6A530140B729B060F76E94 /* ChatView.swift */; };
 		B2654B50471C75496A1AA0D7 /* NutritionLabelOCR.swift in Sources */ = {isa = PBXBuildFile; fileRef = 418816F51F38F19F65BC3D77 /* NutritionLabelOCR.swift */; };
+		B33C37174B9FDDDD32535EEF /* AppleLocalNotifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DC992270D6EE1F2674F7F2C /* AppleLocalNotifier.swift */; };
 		B810C01C1E4B8A881B166875 /* Symbols.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D8C188459B7425B0B58E0CA /* Symbols.swift */; };
 		B8CAE0734166CD113EE590E8 /* WidgetDataTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA0DCFCDAFF06DBAD3CA13DB /* WidgetDataTests.swift */; };
 		B9A962AD8F60D070E5BBA14D /* ChatIconButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE223F71A43F6E379F03A9BE /* ChatIconButton.swift */; };
@@ -419,6 +420,7 @@
 		7C1DB27256E400287AFC0488 /* NumericFieldSelectAll.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NumericFieldSelectAll.swift; sourceTree = "<group>"; };
 		7CCE53CD3289EAA4CBDC5F8D /* TemplatePreviewSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TemplatePreviewSheet.swift; sourceTree = "<group>"; };
 		7DA98672D7F186556C86D15C /* MealTimelineSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealTimelineSection.swift; sourceTree = "<group>"; };
+		7DC992270D6EE1F2674F7F2C /* AppleLocalNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppleLocalNotifier.swift; sourceTree = "<group>"; };
 		7E7A1FEC035003AE448E5C65 /* PhotoLogFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLogFlowView.swift; sourceTree = "<group>"; };
 		7ED878D9FF93287B41B67503 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		7F3D0C18C8783AF8F1F473B3 /* AIChatView+InputBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AIChatView+InputBar.swift"; sourceTree = "<group>"; };
@@ -964,6 +966,7 @@
 			isa = PBXGroup;
 			children = (
 				8F4CF97949C6569223B2997F /* AIBackendCoordinator.swift */,
+				7DC992270D6EE1F2674F7F2C /* AppleLocalNotifier.swift */,
 				9F9F051926CE39DF3E0A47DA /* BodySpecPDFParser.swift */,
 				3B2154C4EF883E766BCE5E22 /* CoachVoiceService.swift */,
 				B45542A3C86D7B44E55451F5 /* FoodService+Logging.swift */,
@@ -1228,6 +1231,7 @@
 				78D172FAF0309086F01988F6 /* AddProgressEntryView.swift in Sources */,
 				39A9254D1AE8BD042B1C133B /* AddSupplementView.swift in Sources */,
 				421D57520E9C09C88A6A0B6B /* AlgorithmSettingsView.swift in Sources */,
+				B33C37174B9FDDDD32535EEF /* AppleLocalNotifier.swift in Sources */,
 				EE5FAB515DD08A8837C600BB /* BackupMonitor.swift in Sources */,
 				E53B2B166E38DEC251474280 /* BackupOnboardingSheet.swift in Sources */,
 				A5E780FAC20471D35ED35EF7 /* BackupScheduler.swift in Sources */,

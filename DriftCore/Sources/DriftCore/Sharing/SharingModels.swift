@@ -93,15 +93,29 @@ public struct LiveWorkoutDTO: Codable, Sendable, Identifiable, Hashable {
     public var status: SessionStatus
     public var startedAt: String?
     public var endedAt: String?
+    /// Where the session came from: `"drift"` for one logged in the app (sets,
+    /// reps — what a coach programmed) or `"health"` for one imported from
+    /// Apple Health / Health Connect (a walk the watch recorded).
+    ///
+    /// Optional and ABSENT-MEANS-DRIFT: every row written before the column
+    /// existed was a manually logged Drift session, and treating those as
+    /// imported would silence alerts a coach expects. The column arrives with
+    /// the broadcast migration; decoding tolerates its absence so this ships
+    /// safely ahead of it.
+    public var source: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, status
+        case id, status, source
         case clientId = "client_id"
         case trainerId = "trainer_id"
         case templateName = "template_name"
         case startedAt = "started_at"
         case endedAt = "ended_at"
     }
+
+    /// True when this was imported rather than logged in Drift — the
+    /// distinction that decides whether a coach is interrupted (#1162).
+    public var isImported: Bool { source == "health" }
 
     /// Best timestamp for the activity feed: when it ended, else when it started.
     public var activityDate: Date? {

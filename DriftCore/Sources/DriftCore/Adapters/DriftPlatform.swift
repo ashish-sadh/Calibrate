@@ -34,4 +34,14 @@ public enum DriftPlatform {
     /// `nonisolated(unsafe)` — same rationale as `keyValueStore`: read off-main at
     /// the construction site, written once at launch.
     nonisolated(unsafe) public static var httpSession: (any HTTPDataSession)? = nil
+
+    /// Local-notification seam (#1162). iOS installs a wrapper around
+    /// `UNUserNotificationCenter`; Android installs one around
+    /// `NotificationManager`. nil = alerts are silently skipped, which is the
+    /// right fail-soft: the Today-screen signals still work, and a missing
+    /// notifier must never break a poll.
+    ///
+    /// `nonisolated(unsafe)` — same rationale as `keyValueStore`: written once
+    /// at launch, read from the background poll off the main actor.
+    nonisolated(unsafe) public static var notifier: (any LocalNotifier)? = nil
 }

@@ -18,6 +18,7 @@ struct DriftApp: App {
         DriftPlatform.widget = WidgetCenterRefresher()
         DriftPlatform.nutritionWriter = HealthNutritionSyncService.shared
         DriftPlatform.secureStore = SecureTokenStoreKeychain()
+        DriftPlatform.notifier = AppleLocalNotifier()
         // Stamp the install date once so the 7-day Feedback activation banner
         // has a stable anchor (#759). Idempotent — only writes when unset.
         Preferences.seedInstallDateIfNeeded()
@@ -65,6 +66,10 @@ struct DriftApp: App {
                         BackupMonitor.shared.checkOnForeground()
                         TelemetryService.shared.event(TelemetryEvent.appOpen)
                         TelemetryService.shared.flush()
+                        // Social alerts (#1162): the common case is simply
+                        // opening the app, which needs no background execution
+                        // at all. Local notifications only — see LocalNotifier.
+                        Task { await SocialAlertPoll.run() }
                     }
                 }
                 .sheet(isPresented: $showingFirstLaunchRestore) {

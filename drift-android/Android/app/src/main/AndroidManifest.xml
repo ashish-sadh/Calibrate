@@ -7,6 +7,11 @@
 
     <!-- permissions needed for using the internet or an embedded WebKit browser -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Social alerts (#1162): coaching messages, client workouts, connection
+         requests. Local notifications only — there is no push service. On
+         API 33+ this also needs the runtime grant, asked from a deliberate
+         user action because the prompt relaunches the activity (#1096). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" /> -->
 
     <!-- Health Connect: read-only — weights from scale apps, steps/calories/sleep
