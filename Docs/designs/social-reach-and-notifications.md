@@ -79,46 +79,58 @@ The principle: **a friend's training is not an interruption; a client's is a
 coach's job.** Friends get exactly one push — the one that needs an answer
 (a connection request). Everything else for friends lives on the Today screen.
 
-### What this needs, honestly
+### How it's delivered — LOCAL notifications, no new infrastructure
 
-Drift has **no push infrastructure whatsoever**: no APNs key, no FCM project,
-no device tokens, no server-side trigger. Nothing pushes today, because
-privacy-first has meant no server watching a user's activity. Delivering the
-matrix above requires, in order:
+Operator correction 2026-07-29, and it was the right one: *"these are just app
+alerts like timer etc, why need more infra?"* An earlier draft of this doc
+claimed APNs/FCM were required. They are not, and the app already owns both
+halves of the cheaper path:
 
-1. **APNs** auth key (the App Store Connect key is not an APNs key) and an
-   **FCM** project + `google-services.json`; on Android the FCM SDK is
-   coroutine-based, so it likely needs a blocking Kotlin facade like
-   `HttpFacade` (#1136).
-2. **`device_tokens`** table (user_id, token, platform, updated_at) with RLS —
-   own-row write only.
-3. Permission prompts + token registration on both platforms. On Android,
-   remember the permission-ask relaunch trap (#1096).
-4. **A server-side trigger**: Supabase Edge Function invoked on insert into
-   `messages` / `live_workouts` / `friendships`, which applies the policy
-   matrix — the relationship kind decides whether to push, so the policy has to
-   live server-side where the `friendships.role` is.
-5. A decisions.md entry, because this is the first time Drift's backend reaches
-   out to a device unprompted. That is a real change in posture and should be
-   argued, not slipped in.
+- `Drift/Services/NotificationService.swift` — local notifications, already
+  shipping (rest timers, reminders).
+- `Drift/BackupScheduler.swift` — `BGTaskScheduler` already registered and used
+  for the nightly iCloud backup.
 
-**Deliverable without any of that (ship first):**
-- Today-screen signals for friends AND coaches: unread message count and
-  pending requests surfaced under the Friends card (the card already shows
-  pending requests; unread chat count is the addition).
-- The silent-broadcast model and the coach's workout-history framing.
-- Discovery: invite link, QR, `discoverable` flag.
+The one real distinction: a rest timer's trigger is LOCAL and known in advance,
+while "your client finished a workout" happens on someone else's phone. So the
+device has to find out somehow. Two transports:
 
-Slicing that way means the visible behaviour lands now and push arrives as one
-focused infrastructure piece rather than being half-wired into three features.
+1. **Poll + local notification (chosen).** When the app gets to run —
+   foreground, or a background refresh — it asks Supabase what's new since the
+   last check and raises a LOCAL notification for anything matching the policy
+   matrix. Zero credentials, zero server code, reuses what exists. iOS uses the
+   same `BGTaskScheduler` pattern as the backup; Android uses a periodic
+   WorkManager job (15-minute minimum, and more reliable than iOS here).
+2. **Real push (APNs/FCM)** — instant and reliable, but needs an APNs key (the
+   App Store Connect key is not one), an FCM project, a `device_tokens` table
+   and a server-side trigger. Deferred.
 
-## Open decisions
+**The honest trade-off is TIMELINESS, not capability:**
 
-1. **Default for auto-sharing completed workouts to FRIENDS** — on, off, or
-   ask once at the first completed workout after upgrade.
-2. **Build push now** (multi-day: credentials, tokens, edge function, both
-   platforms) **or ship the in-app signals first** and treat push as its own
-   tracked piece.
+| | Poll + local | Real push |
+|---|---|---|
+| Android | ~15 min granularity, reliable | instant |
+| iOS | discretionary — minutes to hours, and never if the user force-quit (`BackupScheduler` already documents iOS skipping its slot) | instant |
+
+For a coach checking in on clients, "within 15 minutes" is fine. For chat it
+will feel slower than WhatsApp, and that is the thing to watch in real use.
+Crucially, the POLICY and the UI are identical either way — if latency turns
+out to matter, APNs/FCM drops in later as a pure transport upgrade with no
+redesign.
+
+**Also independent of transport:** the Today-screen signals (unread messages,
+pending requests) are instant whenever the app is open, and need none of this.
+
+## Decided
+
+1. **Friends auto-share default: ASK ONCE, then remember** (operator
+   2026-07-29). The first completed workout after upgrade asks "share your
+   workouts with friends automatically?" — one decision, then silent forever.
+   It honours the privacy-first requirement that a cloud touchpoint surfaces
+   explicitly, without becoming a per-workout chore. Coaches stay automatic:
+   that is what the relationship already means.
+2. **Notifications ship as poll + local**, per the correction above. Real push
+   stays available as a later transport upgrade.
 
 ## Risks
 
