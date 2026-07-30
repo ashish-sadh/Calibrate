@@ -62,6 +62,8 @@ struct SharingView: View {
     @State var taglineDraft = ""
     /// My own directory row, so the card can show my tagline back to me.
     @State var myProfile: SharedProfile?
+    /// Unread count per correspondent, for the badges on the people strip.
+    @State var unreadByPeer: [String: Int] = [:]
     /// Section titles the user has expanded past the collapsed cap.
     @State var expandedSections: Set<String> = []
 
@@ -498,6 +500,26 @@ struct SharingView: View {
                                             Circle().strokeBorder(Theme.chartTrend, lineWidth: 2)
                                         }
                                     }
+                                    // Unread count, on the circle. The strip was
+                                    // the one place showing every person at once
+                                    // and saying nothing about who was waiting on
+                                    // a reply (operator 2026-07-30) — so the row
+                                    // people scan first carried the least
+                                    // information.
+                                    .overlay(alignment: .topTrailing) {
+                                        let unread = unreadByPeer[c.profile.id] ?? 0
+                                        if unread > 0 {
+                                            Text(unread > 9 ? "9+" : "\(unread)")
+                                                .font(.system(size: 10, weight: .bold))
+                                                .foregroundStyle(.white)
+                                                .padding(.horizontal, 5).padding(.vertical, 1)
+                                                .background(Theme.accent, in: Capsule())
+                                                .overlay {
+                                                    Capsule().strokeBorder(Theme.background, lineWidth: 1.5)
+                                                }
+                                                .offset(x: 4, y: -2)
+                                        }
+                                    }
                                 Text("@\(c.profile.username)")
                                     .font(.caption2).foregroundStyle(Theme.textSecondary)
                                     .lineLimit(1)
@@ -767,6 +789,12 @@ struct SharingView: View {
         // Absent reads as listed, matching the column default.
         discoverable = (await listed) ?? true
         if let me { myProfile = (try? await svc.profiles(ids: [me]))?.first }
+        // Who is waiting on a reply, keyed by person.
+        let inbox = (try? await svc.recentInbox()) ?? []
+        let rollup = Inbox.rollup(from: inbox, me: me ?? "",
+                                 windowLimit: SharingService.inboxWindow)
+        unreadByPeer = Dictionary(rollup.entries.map { ($0.peerID, $0.unread) },
+                                  uniquingKeysWith: { a, _ in a })
 
         do {
             conns = try await connections
