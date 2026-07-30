@@ -600,3 +600,30 @@ struct BoardVisibilityDefaultTests {
                 "leaderboards must stay opt-in even though boards default global")
     }
 }
+
+/// Regression for the streak that stopped at 27 days.
+///
+/// A real user had logged since April; the board showed 27. `mine()` parsed
+/// `loggedAt` through two formatters and `compactMap`ped away anything that
+/// matched neither — so history older than the current timestamp format silently
+/// disappeared, and the streak ended exactly where parsing did.
+struct StreakHistoryDepthTests {
+
+    private let today = DateFormatters.dateOnly.date(from: "2026-07-30")!
+
+    private func days(back: Int) -> Set<String> {
+        let cal = Calendar.current
+        return Set((0..<back).compactMap { cal.date(byAdding: .day, value: -$0, to: today) }
+                             .map { DateFormatters.dateOnly.string(from: $0) })
+    }
+
+    /// April → July is ~120 days. The count must not stop early.
+    @Test func aStreakSinceAprilCountsEveryDay() {
+        #expect(FoodLoggingStreak.current(loggedDays: days(back: 120), today: today) == 120)
+    }
+
+    /// And well past it — the only cap is the 10-year runaway guard.
+    @Test func aVeryLongStreakIsNotTruncated() {
+        #expect(FoodLoggingStreak.current(loggedDays: days(back: 400), today: today) == 400)
+    }
+}

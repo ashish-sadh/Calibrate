@@ -45,18 +45,30 @@ public enum FoodLoggingStreak {
 
     /// The caller's own streak, from the local food log.
     ///
-    /// Reads a year of entries — enough for any streak worth showing, and
-    /// bounded so this stays cheap on the publish path.
+    /// Uses `entry.date` — the DIARY day the food belongs to — not `loggedAt`.
+    ///
+    /// The first version parsed `loggedAt`, a timestamp, through two formatters
+    /// and DROPPED any entry that matched neither. Older rows (imports, earlier
+    /// schema versions, anything with an empty or differently-shaped timestamp)
+    /// silently vanished, so a real streak running since April reported 27 days
+    /// — it stopped exactly where the parseable timestamps stopped. A `compactMap`
+    /// that discards unparseable input is invisible until someone's history is
+    /// older than the format.
+    ///
+    /// `date` is already `yyyy-MM-dd`, needs no parsing, cannot fail, and is what
+    /// the query filters on anyway. It's also the honest definition: a
+    /// food-logging streak is about which days have food logged, not which days
+    /// you happened to open the app — someone back-filling last night's dinner
+    /// this morning should not break their own streak.
+    ///
+    /// Parsing nothing also removes the timezone hazard: an unpinned formatter
+    /// is UTC on Android, so a date-only round trip could shift a day.
     public static func mine(today: Date = Date()) -> Int {
-        let since = Calendar.current.date(byAdding: .day, value: -365, to: today)
+        let since = Calendar.current.date(byAdding: .day, value: -400, to: today)
         let from = since.map { DateFormatters.dateOnly.string(from: $0) }
         guard let entries = try? AppDatabase.shared.fetchFoodEntries(fromDate: from) else { return 0 }
-        // `loggedAt` is a timestamp; the streak is about DAYS.
-        let days = Set(entries.compactMap { entry -> String? in
-            guard let when = DateFormatters.iso8601.date(from: entry.loggedAt)
-                ?? DateFormatters.sqliteDatetime.date(from: entry.loggedAt) else { return nil }
-            return DateFormatters.dateOnly.string(from: when)
-        })
-        return current(loggedDays: days, today: today)
+        // `date` is optional on the model; an entry without one has no day to
+        // count, but it must not stop the scan the way a parse failure did.
+        return current(loggedDays: Set(entries.compactMap(\.date)), today: today)
     }
 }
