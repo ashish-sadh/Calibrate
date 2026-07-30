@@ -9,6 +9,14 @@ struct CreateTemplateView: View {
     /// Distinct from `existingTemplate` (which edits a persisted row): a prefill
     /// still saves as new. Ignored when `existingTemplate` is set.
     var prefill: (name: String, exercises: [WorkoutTemplate.TemplateExercise])? = nil
+    /// When set, the built template is handed BACK instead of being written to
+    /// the local library — the seam a coach needs to build a workout for one
+    /// client without cluttering their own template list. The caller decides
+    /// whether to persist it, share it, or both.
+    var onBuild: ((WorkoutTemplate) -> Void)? = nil
+    /// Names the primary action, so the button never claims to "Save Template"
+    /// when the caller isn't going to save one.
+    var saveButtonTitle: String? = nil
     let onSave: () -> Void
     @Environment(\.dismiss) var dismiss
     @State var name = ""
@@ -70,18 +78,27 @@ struct CreateTemplateView: View {
                 Section {
                     Button {
                         if let json = try? JSONEncoder().encode(exercises), let jsonStr = String(data: json, encoding: .utf8) {
-                            if let existing = existingTemplate, let id = existing.id {
+                            let built = WorkoutTemplate(name: name.isEmpty ? "Template" : name,
+                                                        exercisesJson: jsonStr,
+                                                        createdAt: ISO8601DateFormatter().string(from: Date()))
+                            if let onBuild {
+                                // The caller owns persistence — nothing is
+                                // written here.
+                                onBuild(built)
+                            } else if let existing = existingTemplate, let id = existing.id {
                                 // Update existing template
                                 WorkoutService.updateTemplate(id: id, name: name.isEmpty ? "Template" : name, exercisesJson: jsonStr)
                             } else {
                                 // Create new
-                                var t = WorkoutTemplate(name: name.isEmpty ? "Template" : name, exercisesJson: jsonStr, createdAt: ISO8601DateFormatter().string(from: Date()))
+                                var t = built
                                 try? WorkoutService.saveTemplate(&t)
                             }
                         }
                         onSave(); dismiss()
                     } label: {
-                        Label(existingTemplate != nil ? "Update Template" : "Save Template", systemImage: "checkmark.circle.fill").frame(maxWidth: .infinity)
+                        Label(saveButtonTitle
+                              ?? (existingTemplate != nil ? "Update Template" : "Save Template"),
+                              systemImage: "checkmark.circle.fill").frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent).tint(Theme.accent)
                     .disabled(exercises.isEmpty)

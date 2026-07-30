@@ -20,6 +20,12 @@ struct ClientDetailView: View {
     @State var myNotes: [CoachAuthoredNote] = []
     @State var noteDraft = ""
     @State var savingNote = false
+    // Inline template building for this client.
+    @State var showingBuilder = false
+    /// Built but not yet routed — the coach still has to say whether it also
+    /// belongs in their own library.
+    @State var pendingBuild: WorkoutTemplate?
+    @State var assigningBuild = false
 
     private var svc: SharingService { .shared }
 
@@ -80,6 +86,14 @@ struct ClientDetailView: View {
         #if !os(Android)
         .navigationBarTitleDisplayMode(.inline)
         #endif
+        .sheet(isPresented: $showingBuilder) {
+            // onBuild (not the default save path): nothing is persisted until
+            // the coach picks where it goes.
+            CreateTemplateView(
+                onBuild: { built in pendingBuild = built },
+                saveButtonTitle: "Done — choose where to send it",
+                onSave: {})
+        }
         .task { await load() }
     }
 
@@ -159,6 +173,87 @@ struct ClientDetailView: View {
         do {
             try await svc.deleteCoachNote(note.id)
             myNotes.removeAll { $0.id == note.id }
+        } catch {
+            self.error = (error as? SharingError).map(String.init(describing:))
+                ?? error.localizedDescription
+        }
+    }
+
+    /// Where does the workout you just built belong? A one-off for this client,
+    /// or a template you'll reuse with others. Asked inline rather than in a
+    /// dialog (Fuse dialogs carry keyboard/focus traps, #1077), and asked at
+    /// all because silently filling a coach's library with per-client one-offs
+    /// is how a template list becomes unusable.
+    private func pendingBuildCard(_ built: WorkoutTemplate) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("\"\(built.name)\" · \(built.exercises.count) exercises")
+                .font(.caption.weight(.semibold)).foregroundStyle(Theme.textPrimary)
+
+            if assigningBuild {
+                ProgressView()
+            } else {
+                Button { Task { await sendBuild(built, keepInLibrary: false) } } label: {
+                    buildChoice("Send to @\(client.username) only",
+                                "Not added to your templates",
+                                tint: Theme.accent, filled: true)
+                }
+                .buttonStyle(.plain)
+
+                Button { Task { await sendBuild(built, keepInLibrary: true) } } label: {
+                    buildChoice("Send and save to my library",
+                                "Reuse it with other clients",
+                                tint: Theme.ink, filled: false)
+                }
+                .buttonStyle(.plain)
+
+                Button { pendingBuild = nil } label: {
+                    Text("Discard").font(.caption2).foregroundStyle(Theme.textTertiary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Theme.accent.opacity(0.08),
+                    in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
+    }
+
+    private func buildChoice(_ title: String, _ subtitle: String,
+                             tint: Color, filled: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(filled ? .white : tint)
+            Text(subtitle)
+                .font(.caption2)
+                .foregroundStyle(filled ? Color.white.opacity(0.85) : Theme.textTertiary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .background(filled ? tint : Color.clear,
+                    in: RoundedRectangle(cornerRadius: Theme.radiusControl))
+        .overlay {
+            if !filled {
+                RoundedRectangle(cornerRadius: Theme.radiusControl)
+                    .strokeBorder(tint.opacity(0.35), lineWidth: 1)
+            }
+        }
+        .contentShape(Rectangle())
+    }
+
+    /// Share the built template, optionally keeping a copy. Sharing only needs
+    /// the name + exercise JSON, so a one-off never touches the local library.
+    private func sendBuild(_ built: WorkoutTemplate, keepInLibrary: Bool) async {
+        assigningBuild = true
+        defer { assigningBuild = false }
+        do {
+            if keepInLibrary {
+                var copy = built
+                try WorkoutService.saveTemplate(&copy)
+                templates = (try? WorkoutService.fetchTemplates()) ?? templates
+            }
+            try await svc.shareTemplate(built, to: client.id, role: .trainer)
+            pendingBuild = nil
         } catch {
             self.error = (error as? SharingError).map(String.init(describing:))
                 ?? error.localizedDescription
@@ -245,10 +340,32 @@ struct ClientDetailView: View {
     private var assignCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("ASSIGN A WORKOUT").sectionHeading()
-            Text("Pick one of your templates to send @\(client.username). They accept it into their library and can run it.")
+            Text("Send @\(client.username) one of your templates, or build them something new. They accept it into their library and can run it.")
                 .font(.caption2).foregroundStyle(Theme.textSecondary)
+
+            // Building for a client used to mean leaving this page for the
+            // Workout tab and coming back (operator 2026-07-29: "it's not
+            // super obvious the coach needs to go to the workout tab"). The
+            // builder is inline now, and the coach chooses whether it also
+            // lands in their own library.
+            Button { showingBuilder = true } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: sym("plus.circle.fill"))
+                        .font(.subheadline).foregroundStyle(Theme.accent)
+                    Text("Build a new workout for @\(client.username)")
+                        .font(.caption.weight(.semibold)).foregroundStyle(Theme.accent)
+                    Spacer()
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if let built = pendingBuild {
+                pendingBuildCard(built)
+            }
+
             if templates.isEmpty {
-                Text("You have no templates yet. Build one on the Workout tab, then assign it here.")
+                Text("You have no saved templates yet — build one above, or create them on the Workout tab.")
                     .font(.caption).foregroundStyle(Theme.textSecondary).padding(.top, 4)
             } else {
                 ForEach(templates) { t in
