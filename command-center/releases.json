@@ -3042,5 +3042,20 @@
    "unread marks: a coach sees how many new workouts since they last looked",
    "manage connections: ask a friend to coach you, step back to friends, unfriend"
   ]
+ },
+ {
+  "build": 370,
+  "date": "2026-07-29T18:59:00-0700",
+  "description": "Coach view: anatomical recovery + DEXA figures, collapsible sections, AI provenance, coach-written notes",
+  "fixes": [
+   "search no longer offers 'Add friend / Coach' to people you're already connected to \u2014 it states the relationship, and 'Requested' now survives app restarts",
+   "AI-written notes are labelled as AI ('FROM DRIFT'S AI COACH', per-note source) instead of reading as if your trainer wrote them"
+  ],
+  "features": [
+   "your coach sees the real muscle-recovery figure (front + back), coloured by your own learned recovery thresholds",
+   "DEXA regional fat drawn on the same body figure \u2014 trunk / arms / legs",
+   "coach sections collapse for easy reading; alerts, stats and trends stay open",
+   "coaches can write dated notes about you \u2014 and you always get to read them, ungated by any sharing toggle"
+  ]
  }
 ]
