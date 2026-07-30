@@ -659,6 +659,46 @@ public final class SharingService {
             token: try await validToken())
     }
 
+    // MARK: - History transfer (migration 0015)
+
+    /// How far back `coachID` may read my history: nil means FOREVER.
+    ///
+    /// Returns `(hasGrant, from)` so a caller can tell "no grant, so from when we
+    /// started" apart from "granted forever" — both of which read as nil `from`
+    /// and mean opposite things.
+    public func historyGrant(coachID: String) async throws -> (hasGrant: Bool, from: String?) {
+        let uid = try requireUserID()
+        let rows: [HistoryGrantDTO] = try await client.restGet(
+            "coach_history_grants?client_id=eq.\(uid)&coach_id=eq.\(coachID)&select=*",
+            token: try await validToken())
+        guard let row = rows.first else { return (false, nil) }
+        return (true, row.historyFrom)
+    }
+
+    /// Hand a coach my whole training past — the transfer.
+    ///
+    /// `from: nil` is forever. A date narrows it, so someone can hand over "this
+    /// year" without handing over everything. Client-only: RLS refuses a coach
+    /// writing this, verified.
+    public func setHistoryGrant(coachID: String, from: String?) async throws {
+        let uid = try requireUserID()
+        var row: [String: Any] = [
+            "client_id": uid, "coach_id": coachID,
+            "updated_at": DateFormatters.iso8601.string(from: Date()),
+        ]
+        row["history_from"] = from as Any?  // nil encodes as JSON null = forever
+        let _: [HistoryGrantDTO] = try await client.restInsert(
+            "coach_history_grants", body: [row], token: try await validToken(), upsert: true)
+    }
+
+    /// Revoke back to the default: only what happened since they became my coach.
+    public func clearHistoryGrant(coachID: String) async throws {
+        let uid = try requireUserID()
+        try await client.restDelete(
+            "coach_history_grants?client_id=eq.\(uid)&coach_id=eq.\(coachID)",
+            token: try await validToken())
+    }
+
     /// Remove everything I published — what "stop sharing" has to mean.
     public func deleteMyLeaderboardEntries() async throws {
         let uid = try requireUserID()

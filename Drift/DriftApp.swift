@@ -72,10 +72,12 @@ struct DriftApp: App {
                         BackupMonitor.shared.checkOnForeground()
                         TelemetryService.shared.event(TelemetryEvent.appOpen)
                         TelemetryService.shared.flush()
-                        // Social alerts (#1162): the common case is simply
-                        // opening the app, which needs no background execution
-                        // at all. Local notifications only — see LocalNotifier.
-                        Task { await SocialAlertPoll.run() }
+                        // Social alerts AND the leaderboard publish, through one
+                        // shared entry point so the policy can't diverge from
+                        // Android (SocialSync). Foreground is the trigger that
+                        // matters: everyone opens the app, almost nobody opens
+                        // the Friends hub.
+                        Task { await SocialSync.onForeground() }
                     }
                 }
                 .sheet(isPresented: $showingFirstLaunchRestore) {

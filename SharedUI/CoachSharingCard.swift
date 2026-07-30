@@ -23,6 +23,10 @@ struct CoachSharingCard: View {
     /// What this coach has written about you. Not gated by any toggle — your
     /// coach's notes about you are yours to read unconditionally.
     @State var notesFromCoach: [CoachAuthoredNote] = []
+    /// Whether this coach has been granted the client's full training past
+    /// (migration 0015). Absent grant = only since they became your coach.
+    @State var fullHistoryShared = false
+    @State var historyBusy = false
     /// Folded by default — see the body comment. Not private: Fuse can't bridge
     /// private @State.
     @State var expanded = false
@@ -75,6 +79,7 @@ struct CoachSharingCard: View {
                 // The label names EVERYTHING this level shares — since
                 // 2026-07-29 that includes coach-relevant notes distilled from
                 // AI-coach chats. Consent people can't read is not consent.
+                historyTransferRow
                 row("Training history, injuries & AI-chat notes", .history)
                 row("Average sleep", .sleep)
                 row("Average calories & protein", .nutrition)
@@ -144,6 +149,7 @@ struct CoachSharingCard: View {
             notesFromCoach = (try? await SharingService.shared.coachNotes(
                 clientID: SharingService.shared.currentSession?.userID ?? "",
                 coachID: coach.id)) ?? []
+            await loadHistoryGrant()
         }
     }
 
@@ -200,4 +206,62 @@ struct CoachSharingCard: View {
             self.error = "Couldn't update sharing — it'll retry next time you open this."
         }
     }
+    /// Handing over your whole training past — the operator's "transfer forever
+    /// history".
+    ///
+    /// Off by default, and the default is NOT "nothing": a coach always sees
+    /// what you've done since they became your coach. This switch decides
+    /// whether they also see everything BEFORE that, which is what makes
+    /// changing or restarting with a coach not mean starting from zero.
+    ///
+    /// Separate from the `.history` consent bit above, which governs the
+    /// distilled briefing. This one governs raw sessions, and they are genuinely
+    /// different asks.
+    var historyTransferRow: some View {
+        Toggle(isOn: Binding(
+            get: { fullHistoryShared },
+            set: { on in
+                fullHistoryShared = on
+                Task { await setFullHistory(on) }
+            }
+        )) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text("My full training history").font(.caption)
+                Text(fullHistoryShared
+                     ? "Everything, back to your first session"
+                     : "Only since @\(coach.username) became your coach")
+                    .font(.caption2).foregroundStyle(Theme.textTertiary)
+            }
+        }
+        .tint(Theme.accent)
+        .disabled(historyBusy)
+    }
+
+    func setFullHistory(_ on: Bool) async {
+        historyBusy = true
+        defer { historyBusy = false }
+        do {
+            if on {
+                // nil = forever.
+                try await SharingService.shared.setHistoryGrant(coachID: coach.id, from: nil)
+            } else {
+                try await SharingService.shared.clearHistoryGrant(coachID: coach.id)
+            }
+        } catch let failure {
+            // Reflect the failure rather than leaving the switch lying about
+            // what the coach can see. (`catch` shadows the @State `error`, so
+            // the binding is named.)
+            _ = failure
+            fullHistoryShared = !on
+            error = "Couldn't update history sharing. Try again."
+        }
+    }
+
+    func loadHistoryGrant() async {
+        guard let grant = try? await SharingService.shared.historyGrant(coachID: coach.id)
+        else { return }
+        // A grant with no date is forever; no grant at all is the default.
+        fullHistoryShared = grant.hasGrant && grant.from == nil
+    }
+
 }

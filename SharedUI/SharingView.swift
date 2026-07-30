@@ -738,10 +738,11 @@ struct SharingView: View {
         // week-old numbers while the client's app had fresh ones all along.
         // Fire-and-forget: a failed push must never block the hub rendering.
         Task { await BriefingRepush.afterNotesChanged() }
-        // Same idea for the leaderboard: publish this week's numbers at most
-        // once a day (the collection costs ~14 per-day health queries), so a
-        // friend opening their board sees you rather than a gap.
-        Task { await LeaderboardPublisher.publishIfDue() }
+        // NOT a publish trigger. Publishing here was backwards: the hub is
+        // where you go to LOOK at the board, so your own number was always one
+        // visit behind, and someone who never opened it never appeared at all.
+        // Publishing happens on app foreground and after a workout — see
+        // SocialSync.
         if requests.isEmpty {
             requestSenders = [:]
         } else {

@@ -1524,6 +1524,11 @@ struct ActiveWorkoutView: View {
                         broadcastResult = result
                         FeatureUsage.record(TelemetryEvent.workoutShared)
                     }
+                    // A new heaviest set is the change people expect on a board
+                    // straight away, and the lift half reads only the local
+                    // store — so this publishes past the daily gate. Shared
+                    // path, so Android gets it without separate wiring.
+                    await SocialSync.afterWorkoutSaved()
                 }
 
                 // #938: share the PERSISTED workout via the same builder History

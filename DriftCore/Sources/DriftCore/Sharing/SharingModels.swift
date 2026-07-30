@@ -311,3 +311,19 @@ public enum WorkoutAudience: String, Sendable, Equatable {
         return coaches ? .coaches : .private
     }
 }
+
+/// A `coach_history_grants` row (migration 0015). `historyFrom == nil` means
+/// FOREVER — the client handed over their whole training past. The ABSENCE of a
+/// row means something different: only what happened since the coaching
+/// relationship began.
+public struct HistoryGrantDTO: Codable, Sendable, Hashable {
+    public let clientId: String
+    public let coachId: String
+    public let historyFrom: String?
+
+    enum CodingKeys: String, CodingKey {
+        case clientId = "client_id"
+        case coachId = "coach_id"
+        case historyFrom = "history_from"
+    }
+}

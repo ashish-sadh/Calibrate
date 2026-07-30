@@ -11,22 +11,30 @@ public struct LeaderboardEntryDTO: Codable, Sendable, Hashable {
     /// predates the column, matching the server default — an unknown row must
     /// never be treated as public.
     public var visibility: String
+    /// When this value was last published. Decoded so the UI can say how old a
+    /// number is instead of implying every row is current: nothing publishes
+    /// while someone's app isn't running, so a board legitimately mixes a
+    /// Monday value with a Thursday one.
+    public var updatedAt: String?
 
     enum CodingKeys: String, CodingKey {
         case userId = "user_id"
         case boardKey = "board_key"
         case periodStart = "period_start"
+        case updatedAt = "updated_at"
         case value, unit, visibility
     }
 
     public init(userId: String, boardKey: String, periodStart: String,
-                value: Double, unit: String, visibility: String = "friends") {
+                value: Double, unit: String, visibility: String = "friends",
+                updatedAt: String? = nil) {
         self.userId = userId
         self.boardKey = boardKey
         self.periodStart = periodStart
         self.value = value
         self.unit = unit
         self.visibility = visibility
+        self.updatedAt = updatedAt
     }
 
     public init(from decoder: Decoder) throws {
@@ -37,6 +45,13 @@ public struct LeaderboardEntryDTO: Codable, Sendable, Hashable {
         value = try c.decode(Double.self, forKey: .value)
         unit = (try? c.decode(String.self, forKey: .unit)) ?? ""
         visibility = (try? c.decode(String.self, forKey: .visibility)) ?? "friends"
+        updatedAt = try? c.decode(String.self, forKey: .updatedAt)
+    }
+
+    /// How stale this value is, in whole days, or nil when unknown.
+    public func ageInDays(now: Date = Date()) -> Int? {
+        guard let updatedAt, let when = SeenMarks.parse(updatedAt) else { return nil }
+        return Calendar.current.dateComponents([.day], from: when, to: now).day
     }
 }
 

@@ -75,9 +75,10 @@ let logger: Logger = Logger(subsystem: "com.drift.health", category: "DriftAndro
             guard let health = DriftPlatform.health, health.isAvailable else { return }
             _ = try? await health.syncWeight()
         }
-        // Social alerts (#1162) — same shared poll the iOS foreground runs, so
-        // the policy can't diverge between platforms.
-        Task { @MainActor in await SocialAlertPoll.run() }
+        // Social alerts + leaderboard publish — the same shared entry point the
+        // iOS foreground runs, so the sync policy can't diverge between
+        // platforms (SocialSync).
+        Task { @MainActor in await SocialSync.onForeground() }
     }
 
     /* SKIP @bridge */public func onPause() {
