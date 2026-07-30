@@ -76,7 +76,11 @@ struct SocialPillRow: View {
                 }
                 // Android: a horizontal scroller inside a vertical one needs a
                 // pinned MINIMUM height or it collapses when the IME closes.
+                #if os(Android)
+                .frame(minHeight: 38)
+                #else
                 .frame(minHeight: 44)
+                #endif
             }
         }
         .task { await load() }
@@ -184,7 +188,17 @@ struct SocialPillRow: View {
                     Circle().fill(Theme.accent).frame(width: 6, height: 6)
                 }
             }
+            // Android inflates this: Material applies a ~48dp minimum touch
+            // target to buttons, so the same padding produces a visibly chunkier
+            // pill than iOS (operator 2026-07-30: "Android boxes are weirdly
+            // bigger"). Tighter padding + a pinned MINIMUM height (never a fixed
+            // one — fixed heights clip at font_scale > 1) brings it back in line.
+            #if os(Android)
+            .padding(.horizontal, 10).padding(.vertical, 4)
+            .frame(minHeight: 34)
+            #else
             .padding(.horizontal, 12).padding(.vertical, 8)
+            #endif
             .background(Theme.cardBackground, in: Capsule())
             .overlay { Capsule().strokeBorder(Theme.separatorFaint, lineWidth: 1) }
             // Without an explicit shape the capsule's corners aren't tappable,
@@ -207,7 +221,12 @@ struct SocialPillRow: View {
                 Image(systemName: sym("chevron.right"))
                     .font(.caption2).foregroundStyle(Theme.textTertiary)
             }
+            #if os(Android)
+            .padding(.horizontal, 10).padding(.vertical, 4)
+            .frame(minHeight: 34)
+            #else
             .padding(.horizontal, 12).padding(.vertical, 8)
+            #endif
             .background(Theme.cardBackground, in: Capsule())
             .overlay { Capsule().strokeBorder(Theme.separatorFaint, lineWidth: 1) }
             .contentShape(Capsule())

@@ -221,7 +221,12 @@ struct LeaderboardsCard: View {
                             .font(.system(size: 9))
                         Text(wantGlobal ? "Everyone" : "Friends").font(.caption2)
                     }
+                    #if os(Android)
+                    .padding(.horizontal, 8).padding(.vertical, 2)
+                    .frame(minHeight: 26)
+                    #else
                     .padding(.horizontal, 8).padding(.vertical, 4)
+                    #endif
                     .background(isGlobal == wantGlobal ? Theme.accent.opacity(0.15) : Color.clear,
                                 in: Capsule())
                     .overlay {
@@ -377,7 +382,14 @@ struct LeaderboardsCard: View {
                                 Image(systemName: sym("hourglass")).font(.system(size: 8))
                             }
                         }
+                        // See SocialPillRow: Material's touch-target floor makes
+                        // these visibly chunkier than iOS at the same padding.
+                        #if os(Android)
+                        .padding(.horizontal, 8).padding(.vertical, 2)
+                        .frame(minHeight: 26)
+                        #else
                         .padding(.horizontal, 9).padding(.vertical, 5)
+                        #endif
                         .background(isSelected ? Theme.accent.opacity(0.15) : Color.clear,
                                     in: Capsule())
                         .foregroundStyle(isSelected ? Theme.accent : Theme.textSecondary)
@@ -390,7 +402,11 @@ struct LeaderboardsCard: View {
         }
         // Android: a horizontal scroller nested in a vertical one collapses
         // without a pinned minimum height.
+        #if os(Android)
+        .frame(minHeight: 32)
+        #else
         .frame(minHeight: 30)
+        #endif
     }
 
 }
