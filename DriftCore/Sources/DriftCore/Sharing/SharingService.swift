@@ -76,6 +76,21 @@ public final class SharingService {
         if var s = currentSession { s.username = username; SharingSessionStore.save(s, db: db) }
     }
 
+    /// Set (or clear) my one-line tagline. Trimmed and capped to match the
+    /// server CHECK, so the write can't be rejected for length.
+    public func setTagline(_ text: String?) async throws {
+        let uid = try requireUserID()
+        let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let value = trimmed.isEmpty ? nil : String(trimmed.prefix(80))
+        // NSNull, NOT `value as Any?`. Assigning Optional<Any>.none to a
+        // [String: Any] subscript REMOVES the key, so an upsert would leave the
+        // old tagline in place and "clear it" would silently do nothing —
+        // exactly the trap flagged in review on `setHistoryGrant`.
+        let row: [String: Any] = ["id": uid, "tagline": value ?? NSNull()]
+        let _: [SharedProfile] = try await client.restInsert(
+            "profiles", body: [row], token: try await validToken(), upsert: true)
+    }
+
     /// Search the directory by username / display-name prefix. Excludes self.
     public func searchUsers(_ query: String) async throws -> [SharedProfile] {
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
@@ -88,7 +103,7 @@ public final class SharingService {
         // link could never see your name.
         let path = "profiles?discoverable=is.true"
             + "&or=(username.ilike.*\(q)*,display_name.ilike.*\(q)*)"
-            + "&select=id,username,display_name,avatar_url&limit=25"
+            + "&select=id,username,display_name,avatar_url,tagline&limit=25"
         let results: [SharedProfile] = try await client.restGet(path, token: token)
         let me = currentSession?.userID
         return results.filter { $0.id != me }
@@ -117,7 +132,7 @@ public final class SharingService {
         for start in stride(from: 0, to: unique.count, by: Self.profileBatchSize) {
             let chunk = unique[start..<min(start + Self.profileBatchSize, unique.count)]
             let path = "profiles?id=in.(\(chunk.joined(separator: ",")))"
-                + "&select=id,username,display_name,avatar_url"
+                + "&select=id,username,display_name,avatar_url,tagline"
             out += try await client.restGet(path, token: token) as [SharedProfile]
         }
         return out
@@ -164,7 +179,7 @@ public final class SharingService {
         let handle = InviteLink.normalize(username)
         guard !handle.isEmpty else { return nil }
         let rows: [SharedProfile] = try await client.restGet(
-            "profiles?username=eq.\(handle)&select=id,username,display_name,avatar_url&limit=1",
+            "profiles?username=eq.\(handle)&select=id,username,display_name,avatar_url,tagline&limit=1",
             token: try await validToken())
         return rows.first
     }
@@ -704,11 +719,14 @@ public final class SharingService {
     /// writing this, verified.
     public func setHistoryGrant(coachID: String, from: String?) async throws {
         let uid = try requireUserID()
-        var row: [String: Any] = [
+        // NSNull for the same reason as `setTagline`: `from as Any?` drops the
+        // key, so upserting "forever" over an existing dated grant would leave
+        // the date in place and hand over nothing. Caught in review.
+        let row: [String: Any] = [
             "client_id": uid, "coach_id": coachID,
+            "history_from": from ?? NSNull(),
             "updated_at": DateFormatters.iso8601.string(from: Date()),
         ]
-        row["history_from"] = from as Any?  // nil encodes as JSON null = forever
         let _: [HistoryGrantDTO] = try await client.restInsert(
             "coach_history_grants", body: [row], token: try await validToken(), upsert: true)
     }

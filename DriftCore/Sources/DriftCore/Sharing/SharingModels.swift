@@ -29,16 +29,21 @@ public struct SharedProfile: Codable, Sendable, Identifiable, Hashable {
     public var username: String
     public var displayName: String?
     public var avatarUrl: String?
+    /// Optional one-line bio (migration 0019). Decodes as nil when a row
+    /// predates the column or a client never selected it.
+    public var tagline: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, username
+        case id, username, tagline
         case displayName = "display_name"
         case avatarUrl = "avatar_url"
     }
 
-    public init(id: String, username: String, displayName: String? = nil, avatarUrl: String? = nil) {
+    public init(id: String, username: String, displayName: String? = nil,
+                avatarUrl: String? = nil, tagline: String? = nil) {
         self.id = id; self.username = username
         self.displayName = displayName; self.avatarUrl = avatarUrl
+        self.tagline = tagline
     }
 }
 

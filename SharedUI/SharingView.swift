@@ -55,6 +55,13 @@ struct SharingView: View {
     /// Set when a `drift://add/<handle>` link resolved to a real person, so the
     /// hub can offer to connect without making them search.
     @State var invitedProfile: SharedProfile?
+    /// A profile opened from search. One presentation modifier per view, so this
+    /// shares the sheet slot with nothing else.
+    @State var viewingProfile: SharedProfile?
+    @State var editingTagline = false
+    @State var taglineDraft = ""
+    /// My own directory row, so the card can show my tagline back to me.
+    @State var myProfile: SharedProfile?
     /// Section titles the user has expanded past the collapsed cap.
     @State var expandedSections: Set<String> = []
 
@@ -88,6 +95,9 @@ struct SharingView: View {
         .task { await bootstrap() }
         .sheet(isPresented: $showingInvite) {
             InviteShareSheet(username: svc.currentUsername ?? "")
+        }
+        .sheet(item: $viewingProfile) { person in
+            PublicProfileSheet(profile: person, context: person.tagline)
         }
         // An invite link that resolved: offer to connect right there rather
         // than dropping the person into a search field.
@@ -394,6 +404,7 @@ struct SharingView: View {
     /// else your connection count.
     private var identityCard: some View {
         VStack(alignment: .leading, spacing: 10) {
+            taglineRow
             HStack(spacing: 12) {
             Text(String((svc.currentUsername ?? "?").prefix(1)).uppercased())
                 .font(.title2.weight(.semibold)).foregroundStyle(.white)
@@ -559,13 +570,29 @@ struct SharingView: View {
 
             ForEach(searchResults) { profile in
                 HStack(spacing: 10) {
-                    avatar(profile.username)
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text("@\(profile.username)").font(.subheadline.weight(.medium))
-                        if let name = profile.displayName, !name.isEmpty {
-                            Text(name).font(.caption2).foregroundStyle(Theme.textSecondary)
+                    // Tapping the person opens their profile — mutual friends,
+                    // public activity, and the friend/coach ask. A @handle alone
+                    // gives you nothing to decide on (operator 2026-07-30).
+                    Button { viewingProfile = profile } label: {
+                        HStack(spacing: 10) {
+                            avatar(profile.username)
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text("@\(profile.username)").font(.subheadline.weight(.medium))
+                                    .foregroundStyle(Theme.textPrimary)
+                                if let name = profile.displayName, !name.isEmpty {
+                                    Text(name).font(.caption2).foregroundStyle(Theme.textSecondary)
+                                }
+                                // The tagline is the whole point of having one:
+                                // it's what makes a stranger legible in a list.
+                                if let tag = profile.tagline, !tag.isEmpty {
+                                    Text(tag).font(.caption2).italic()
+                                        .foregroundStyle(Theme.textTertiary).lineLimit(2)
+                                }
+                            }
                         }
+                        .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
                     Spacer()
                     // Already connected? Say so. Offering "Add friend" to your
                     // own coach reads as broken and, tapped, 409s on the
@@ -739,6 +766,7 @@ struct SharingView: View {
         })
         // Absent reads as listed, matching the column default.
         discoverable = (await listed) ?? true
+        if let me { myProfile = (try? await svc.profiles(ids: [me]))?.first }
 
         do {
             conns = try await connections
@@ -898,6 +926,66 @@ struct SharingView: View {
             return "You've reached \(limit) connections — remove one to add someone new."
         }
     }
+    /// Your one-line tagline — what a stranger reads next to your @handle in
+    /// search.
+    ///
+    /// Optional and empty by default: describing yourself to strangers is a
+    /// choice, not a setup step. But it's the difference between a directory of
+    /// handles and a list of people you can actually decide about (operator
+    /// 2026-07-30: "enthusiastic about pole, deadlift... looking for a gym
+    /// buddy").
+    @ViewBuilder private var taglineRow: some View {
+        if editingTagline {
+            VStack(alignment: .leading, spacing: 6) {
+                // Skip Fuse has no TextField(axis:) — single line on both, which
+                // suits an 80-character limit anyway.
+                TextField("e.g. deadlift + pole, looking for a gym buddy",
+                          text: $taglineDraft)
+                    .font(.caption).textFieldStyle(.roundedBorder)
+                HStack(spacing: 8) {
+                    Button {
+                        let text = taglineDraft
+                        editingTagline = false
+                        Task { await run { try await svc.setTagline(text) } }
+                    } label: { Text("Save").font(.caption.weight(.semibold)) }
+                    .buttonStyle(.borderedProminent).tint(Theme.accent)
+                    Button {
+                        editingTagline = false
+                    } label: { Text("Cancel").font(.caption) }
+                    .buttonStyle(.bordered).tint(Theme.textSecondary)
+                    Spacer()
+                    Text("\(max(0, 80 - taglineDraft.count)) left")
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
+                }
+            }
+        } else {
+            Button {
+                taglineDraft = myTagline ?? ""
+                editingTagline = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: sym("quote.bubble"))
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
+                    Text(myTagline ?? "Add a tagline — what you're into")
+                        .font(.caption)
+                        .foregroundStyle(myTagline == nil ? Theme.textTertiary : Theme.textSecondary)
+                        .lineLimit(2)
+                    Spacer()
+                    Image(systemName: sym("pencil"))
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    /// My own tagline, read back from the directory row for my id.
+    private var myTagline: String? {
+        guard let mine = myProfile?.tagline, !mine.isEmpty else { return nil }
+        return mine
+    }
+
 }
 
 /// A friend's workout as it appears in your app — live (refreshes) or completed.
@@ -1000,4 +1088,5 @@ enum WeightFormat {
         }
         return String(format: "%.0f lb", lbs)
     }
+
 }
