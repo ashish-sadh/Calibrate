@@ -247,6 +247,7 @@
 		F2DAD90846C1E28C0DBBB863 /* IntentRoutingEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = A048685BCBAD258ADEEB3E22 /* IntentRoutingEval.swift */; };
 		F382B53D48F74D309E9C295A /* MultiIntentDeterministicEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BBFE4D3A672CECBACA7F08D /* MultiIntentDeterministicEval.swift */; };
 		F53B09509125A32622EC9BED /* ExercisePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12B8B416F88DD8A700930E34 /* ExercisePickerView.swift */; };
+		F64C59FBFB64F6322032E07A /* FocusedSocialViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB0560C8A55F7D957B7F4921 /* FocusedSocialViews.swift */; };
 		F6746A0A13DC1D820EE372CC /* ToolRouterEval.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF1A03F6A7AD74047A466B9 /* ToolRouterEval.swift */; };
 		F8F9713D1EA8F8245BBBF694 /* TodayDonutViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBA094F99189B3E26DB18B04 /* TodayDonutViewTests.swift */; };
 		F9171D74E89BD4878CB6E966 /* ExerciseDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F11FFEF7FE6BC274423EFB8 /* ExerciseDetailView.swift */; };
@@ -469,6 +470,7 @@
 		A9693A1E065B9E2D3DA846EF /* CoachingBriefCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachingBriefCard.swift; sourceTree = "<group>"; };
 		A9DA1F02B1BF76DA862072A6 /* AIChooserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChooserView.swift; sourceTree = "<group>"; };
 		AAC05282764E0169FEFB3D88 /* PhotoLogTool.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhotoLogTool.swift; sourceTree = "<group>"; };
+		AB0560C8A55F7D957B7F4921 /* FocusedSocialViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FocusedSocialViews.swift; sourceTree = "<group>"; };
 		ABDB900BABC9B592330F2629 /* DriftCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = DriftCore; path = DriftCore; sourceTree = SOURCE_ROOT; };
 		AC5F3236EF7B5CE9409448BD /* NormalizerEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NormalizerEval.swift; sourceTree = "<group>"; };
 		AE223F71A43F6E379F03A9BE /* ChatIconButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatIconButton.swift; sourceTree = "<group>"; };
@@ -634,6 +636,7 @@
 				12B8B416F88DD8A700930E34 /* ExercisePickerView.swift */,
 				438B9A646EE10372C4CE4BBE /* ExercisePoseViews.swift */,
 				19C12565F5386458D6B1B9A2 /* ExerciseVoiceLogSheet.swift */,
+				AB0560C8A55F7D957B7F4921 /* FocusedSocialViews.swift */,
 				CE1C2C759DEB2E972ADAF6B6 /* FoodLogViewModel.swift */,
 				814B3D811D16B9738D33196C /* FoodTabView.swift */,
 				5E362DE4494FE51C5DE792B4 /* FriendSharePicker.swift */,
@@ -1291,6 +1294,7 @@
 				03B2DCD4AB0BBFB2F177E4DE /* ExercisePoseViews.swift in Sources */,
 				743683D061EE62198FF1B2C2 /* ExerciseVoiceLogSheet.swift in Sources */,
 				ADDD7CCA7EA9B8017F76F366 /* FloatingTabBarClearance.swift in Sources */,
+				F64C59FBFB64F6322032E07A /* FocusedSocialViews.swift in Sources */,
 				E3CEF38E5F1D8E62C22B5543 /* FoodLogSheet.swift in Sources */,
 				2DA1EB98CF95BFAB2C46016A /* FoodLogViewModel.swift in Sources */,
 				D681045AF7657C38E75D4D86 /* FoodSearchView.swift in Sources */,

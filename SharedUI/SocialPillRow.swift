@@ -106,7 +106,9 @@ struct SocialPillRow: View {
                  icon: "person.2.fill", tint: Theme.accent,
                  detail: clientsWaiting > 0 ? "\(clientsWaiting) waiting" : nil,
                  dot: clientsWaiting > 0) {
-                SharingView()
+                // Focused roster, not the whole hub — matching what the coach
+                // pill already does (operator 2026-07-30).
+                ClientsView()
             }
         }
 
@@ -130,7 +132,7 @@ struct SocialPillRow: View {
             pill(title: sharingStats ? "Leaderboard" : "See yourself ranked",
                  icon: "chart.bar.fill", tint: Theme.textSecondary,
                  detail: leaderboardDetail, dot: false) {
-                SharingView()
+                LeaderboardView()
             }
         }
     }
