@@ -91,6 +91,50 @@ public enum Preferences {
         set { kv.set(newValue, forKey: shareStatsWithFriendsKey) }
     }
 
+    private static let sharedGoalKey = "drift_shared_goal_statement"
+    private static let sharedGoalDateKey = "drift_shared_goal_date"
+
+    /// The goal the user deliberately chose to share with their human coach.
+    ///
+    /// This replaces auto-sharing the AI-chat notes. The difference is consent
+    /// shape, not content: notes are things you said to a machine in passing
+    /// (injuries, pain, "back's sore again") and nobody experiences that as
+    /// telling their trainer. A goal is something you wrote and pressed a button
+    /// to send (operator 2026-07-30: "don't share AI chat with human trainer.
+    /// Have a button, set or revise goal, that shares the summary").
+    ///
+    /// nil = nothing shared. Clearing it stops it being sent on the next push.
+    public static var sharedGoalStatement: String? {
+        get { kv.string(forKey: sharedGoalKey) }
+        set { kv.set(newValue, forKey: sharedGoalKey) }
+    }
+
+    /// When that goal was last set, so a coach reads a dated statement rather
+    /// than an ageless one.
+    public static var sharedGoalDate: String? {
+        get { kv.string(forKey: sharedGoalDateKey) }
+        set { kv.set(newValue, forKey: sharedGoalDateKey) }
+    }
+
+    private static let publicProfileWorkoutsKey = "drift_public_profile_workouts"
+
+    /// Whether finished workouts may appear on your PUBLIC profile — the one a
+    /// stranger can open from a global leaderboard.
+    ///
+    /// Separate from the friends/coach switches, because "who among the people I
+    /// know" and "does this show to strangers" are different questions. Bundling
+    /// them would force someone to hide a rehab block from their friends in
+    /// order to hide it from strangers (operator 2026-07-30).
+    ///
+    /// Defaults ON, which is only defensible because the public profile itself
+    /// is opt-in: it exists only once you publish a global board. Someone who
+    /// never joined one has no profile for this to matter on. Remembered, so
+    /// marking one session private carries to the next.
+    public static var showWorkoutsOnPublicProfile: Bool {
+        get { kv.boolOrNil(forKey: publicProfileWorkoutsKey) ?? true }
+        set { kv.set(newValue, forKey: publicProfileWorkoutsKey) }
+    }
+
     private static let globalBoardKeysKey = "drift_global_board_keys"
 
     /// Which boards this person publishes GLOBALLY rather than to friends only.

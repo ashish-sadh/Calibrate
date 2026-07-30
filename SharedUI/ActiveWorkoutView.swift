@@ -74,6 +74,9 @@ struct ActiveWorkoutView: View {
     @State var shareToFriends = Preferences.shareWorkoutsWithFriends
     @State var shareToCoaches = Preferences.shareWorkoutsWithCoaches
     @State var broadcastResult: WorkoutBroadcast.Result? = nil
+    /// Whether this session may appear on the PUBLIC profile a stranger can open
+    /// from a global leaderboard. Separate axis from the two switches above.
+    @State var showOnPublicProfile = Preferences.showWorkoutsOnPublicProfile
     // Command strip — say it, don't hunt for it: "add face pulls",
     // "drop curls", "last bench?" (exercise-UX design 2026-07-10)
     @State var commandText = ""
@@ -1424,6 +1427,28 @@ struct ActiveWorkoutView: View {
                 }
                 .tint(Theme.accent)
 
+                // Only when there IS a public profile — i.e. only once this
+                // person publishes a global board. Showing it otherwise would
+                // advertise strangers as an audience they never opted into
+                // (operator 2026-07-30: "give people option to keep their rehab
+                // session private... it's fine to share with coach").
+                if !Preferences.globalBoardKeys.isEmpty {
+                    Toggle(isOn: Binding(
+                        get: { showOnPublicProfile },
+                        set: { showOnPublicProfile = $0
+                               Preferences.showWorkoutsOnPublicProfile = $0 }
+                    )) {
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text("Show on my public profile").font(.caption)
+                            Text(showOnPublicProfile
+                                 ? "Strangers who find you on a leaderboard can see this"
+                                 : "Friends and your coach only")
+                                .font(.caption2).foregroundStyle(Theme.textTertiary)
+                        }
+                    }
+                    .tint(Theme.accent)
+                }
+
                 // Say where it went. Automatic sharing that stays silent about
                 // its recipients is the kind of thing people resent finding out
                 // about later.
@@ -1519,7 +1544,8 @@ struct ActiveWorkoutView: View {
                 Task { @MainActor in
                     let result = await WorkoutBroadcast.send(
                         workoutName: sharedName, sets: sharedSets,
-                        toFriends: shareToFriends, toCoaches: shareToCoaches)
+                        toFriends: shareToFriends, toCoaches: shareToCoaches,
+                        publicVisible: showOnPublicProfile)
                     if result.sentAnything {
                         broadcastResult = result
                         FeatureUsage.record(TelemetryEvent.workoutShared)

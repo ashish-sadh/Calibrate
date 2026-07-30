@@ -67,7 +67,8 @@ public enum WorkoutBroadcast {
     public static func send(workoutName: String,
                            sets: [SharingService.SharedSet],
                            toFriends: Bool = Preferences.shareWorkoutsWithFriends,
-                           toCoaches: Bool = Preferences.shareWorkoutsWithCoaches) async -> Result {
+                           toCoaches: Bool = Preferences.shareWorkoutsWithCoaches,
+                           publicVisible: Bool = Preferences.showWorkoutsOnPublicProfile) async -> Result {
         var result = Result(friends: 0, coaches: 0, failed: 0)
         let svc = SharingService.shared
         let audience = WorkoutAudience.from(friends: toFriends, coaches: toCoaches)
@@ -77,7 +78,8 @@ public enum WorkoutBroadcast {
         let reached = recipients(from: connections, toFriends: toFriends, toCoaches: toCoaches)
         do {
             try await svc.publishCompletedWorkout(workoutName: workoutName, sets: sets,
-                                                 audience: audience)
+                                                 audience: audience,
+                                                 publicVisible: publicVisible)
             result.friends = reached.filter { $0.kind == .friend }.count
             result.coaches = reached.filter { $0.kind == .coach }.count
         } catch {

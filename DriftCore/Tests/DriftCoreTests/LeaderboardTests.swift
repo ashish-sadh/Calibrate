@@ -295,3 +295,46 @@ struct AudienceTests {
         #expect(entry.visibility == "global")
     }
 }
+
+/// Tier-0 for what a HUMAN coach may read as prose.
+///
+/// The load-bearing assertion is a negative one: AI-chat notes must never appear.
+/// They're things someone told a machine in passing — injuries, pain levels —
+/// and nobody experiences that as telling their trainer (operator 2026-07-30).
+@MainActor
+struct CoachFacingSummaryTests {
+
+    private func notesWithChatter() -> CoachNotes {
+        var notes = CoachNotes()
+        notes.notes = [
+            .init(date: "2026-07-01", text: "left shoulder impingement, sharp at 7/10", kind: .moment),
+            .init(date: "2026-07-02", text: "drinking most nights this month", kind: .moment),
+            .init(date: "2026-07-03", text: "probably overreaching", kind: .observation),
+        ]
+        return notes
+    }
+
+    @Test func aiChatNotesNeverReachTheCoach() {
+        let summary = SharingService.coachFacingSummary(notesWithChatter())
+        #expect(!summary.contains("impingement"))
+        #expect(!summary.contains("drinking"))
+        #expect(!summary.contains("overreaching"))
+    }
+
+    @Test func theSharedGoalDoesReachTheCoach() {
+        Preferences.sharedGoalStatement = "Add 20 lbs to my deadlift by December"
+        Preferences.sharedGoalDate = "2026-07-30"
+        defer { Preferences.sharedGoalStatement = nil; Preferences.sharedGoalDate = nil }
+        let summary = SharingService.coachFacingSummary(notesWithChatter())
+        #expect(summary.contains("Add 20 lbs to my deadlift"))
+        // Dated, so a coach can tell a stale goal from a current one.
+        #expect(summary.contains("2026-07-30"))
+        // And STILL no chatter.
+        #expect(!summary.contains("impingement"))
+    }
+
+    @Test func noGoalMeansNothingIsInvented() {
+        Preferences.sharedGoalStatement = nil
+        #expect(!SharingService.coachFacingSummary(CoachNotes()).contains("Goal"))
+    }
+}

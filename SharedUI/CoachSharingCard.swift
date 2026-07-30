@@ -27,6 +27,10 @@ struct CoachSharingCard: View {
     /// (migration 0015). Absent grant = only since they became your coach.
     @State var fullHistoryShared = false
     @State var historyBusy = false
+    /// The goal the user chose to share with this coach. Editing is explicit —
+    /// see `goalRow`.
+    @State var goalDraft = Preferences.sharedGoalStatement ?? ""
+    @State var editingGoal = false
     /// Folded by default — see the body comment. Not private: Fuse can't bridge
     /// private @State.
     @State var expanded = false
@@ -79,8 +83,9 @@ struct CoachSharingCard: View {
                 // The label names EVERYTHING this level shares — since
                 // 2026-07-29 that includes coach-relevant notes distilled from
                 // AI-coach chats. Consent people can't read is not consent.
+                goalRow
                 historyTransferRow
-                row("Training history, injuries & AI-chat notes", .history)
+                row("Training history, injuries & your goal", .history)
                 row("Average sleep", .sleep)
                 row("Average calories & protein", .nutrition)
                 row("Weight trend", .weight)
@@ -262,6 +267,84 @@ struct CoachSharingCard: View {
         else { return }
         // A grant with no date is forever; no grant at all is the default.
         fullHistoryShared = grant.hasGrant && grant.from == nil
+    }
+
+    /// Set or revise the goal your coach reads.
+    ///
+    /// This is what a human coach gets INSTEAD of your AI-chat notes. Those
+    /// notes are things you told a machine in passing — injuries, pain levels,
+    /// "back's sore again" — and nobody experiences saying that to an assistant
+    /// as telling their trainer. So they're no longer sent at all, and what
+    /// replaces them is one sentence you wrote on purpose and pressed a button
+    /// to share (operator 2026-07-30).
+    ///
+    /// Dated when saved, so a coach reads "as of the 12th" rather than an
+    /// ageless statement they can't tell is stale.
+    @ViewBuilder var goalRow: some View {
+        if editingGoal {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("WHAT YOU'RE WORKING TOWARD").sectionHeading()
+                // Skip Fuse has neither `TextField(_:text:axis:)` nor the
+                // `lineLimit(2...4)` range overload — both fail the Android
+                // compile, so the multiline affordance is iOS-only and Android
+                // gets a single-line field rather than nothing.
+                #if os(Android)
+                TextField("e.g. add 20 lbs to my deadlift by December", text: $goalDraft)
+                    .font(.caption)
+                    .textFieldStyle(.roundedBorder)
+                #else
+                TextField("e.g. add 20 lbs to my deadlift by December, without aggravating my shoulder",
+                          text: $goalDraft, axis: .vertical)
+                    .font(.caption)
+                    .lineLimit(4)
+                    .textFieldStyle(.roundedBorder)
+                #endif
+                Text("Only this — and what you share above — reaches @\(coach.username). Your AI-coach chats never do.")
+                    .font(.caption2).foregroundStyle(Theme.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+                HStack(spacing: 8) {
+                    Button {
+                        let trimmed = goalDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+                        Preferences.sharedGoalStatement = trimmed.isEmpty ? nil : trimmed
+                        Preferences.sharedGoalDate = DateFormatters.dateOnly.string(from: Date())
+                        editingGoal = false
+                        // Push straight away — a goal that reaches the coach on
+                        // some later trigger is a goal you can't tell you shared.
+                        Task { await BriefingRepush.afterNotesChanged() }
+                    } label: {
+                        Text("Share with coach").font(.caption.weight(.semibold))
+                    }
+                    .buttonStyle(.borderedProminent).tint(Theme.accent)
+
+                    Button {
+                        goalDraft = Preferences.sharedGoalStatement ?? ""
+                        editingGoal = false
+                    } label: { Text("Cancel").font(.caption) }
+                    .buttonStyle(.bordered).tint(Theme.textSecondary)
+                }
+            }
+        } else {
+            Button { editingGoal = true } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: sym("target"))
+                        .font(.caption2).foregroundStyle(Theme.accent)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(Preferences.sharedGoalStatement == nil
+                             ? "Set a goal to share" : "Revise your goal")
+                            .font(.caption).foregroundStyle(Theme.textPrimary)
+                        Text(Preferences.sharedGoalStatement
+                             ?? "Your coach sees what you're working toward — not your AI chats")
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
+                            .lineLimit(2)
+                    }
+                    Spacer()
+                    Image(systemName: sym("chevron.right"))
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
     }
 
 }

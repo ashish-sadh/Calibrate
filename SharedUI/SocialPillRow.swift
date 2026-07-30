@@ -29,6 +29,9 @@ import DriftCore
 struct SocialPillRow: View {
     @State var signedIn = SharingService.shared.isSignedIn
     @State var loaded = false
+    /// Guards against two loads overlapping. NOT a "load once" latch — that was
+    /// the bug (see `load`).
+    @State var loading = false
 
     @State var coach: SharedProfile?
     @State var coachUnread = 0
@@ -179,7 +182,16 @@ struct SocialPillRow: View {
     // MARK: - Load
 
     func load() async {
-        guard !loaded else { return }
+        // `!loading`, NOT `!loaded`. This used to early-return forever after the
+        // first run, so the counts froze for the whole app session: a coach
+        // opened a client, `SeenMarks` cleared the mark, came back to Today —
+        // and the "1 waiting" dot was still there until the app was relaunched.
+        // Operator repro, 2026-07-30: "it's not clearing up recent dots".
+        // `.task` re-fires whenever Today reappears, which is exactly when these
+        // numbers should be re-read.
+        guard !loading else { return }
+        loading = true
+        defer { loading = false }
         // `defer`, not a line at the bottom: `loaded` used to be set only after
         // all five fetches returned, so a hung request or a stale session left
         // this row as EmptyView FOREVER — the whole social surface silently

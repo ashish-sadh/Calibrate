@@ -379,6 +379,18 @@ public final class SharingService {
     /// category leaves no trace in the request body — the filtering is not a
     /// server-side courtesy.
     ///
+    /// What a human coach may read as prose: the intake the user typed, plus the
+    /// goal they explicitly chose to share. Never the AI-chat notes.
+    nonisolated static func coachFacingSummary(_ notes: CoachNotes) -> String {
+        var parts: [String] = []
+        let intake = notes.intake.summary
+        if !intake.isEmpty { parts.append(intake) }
+        if let goal = Preferences.sharedGoalStatement, !goal.isEmpty {
+            parts.append("Goal (shared \(Preferences.sharedGoalDate ?? "")): \(goal)")
+        }
+        return parts.joined(separator: "\n\n")
+    }
+
     /// Upserts on (client_id, coach_id): the coach reads the current picture,
     /// not an append-only history they'd have to page through.
     public func shareBriefing(with coachID: String,
@@ -387,11 +399,21 @@ public final class SharingService {
                               metrics: BriefingMetrics) async throws {
         let uid = try requireUserID()
         let sharesHistory = level.contains(.history)
+        // AI-CHAT NOTES ARE NO LONGER SENT. `notes.notes` is everything the AI
+        // coach overheard — injuries, pain levels, things said in passing to a
+        // machine, in a context nobody experiences as "telling my trainer".
+        // The operator's call (2026-07-30): "don't share AI chat with human
+        // trainer." What a human coach gets instead is the GOAL the user
+        // deliberately set and pressed a button to share (`sharedGoal`), which
+        // is an intentional act rather than a transcript.
+        //
+        // `notes` stays in the signature: it still supplies the intake summary,
+        // which the user typed as an introduction to a coach.
         let row: [String: Any] = [
             "client_id": uid,
             "coach_id": coachID,
-            "summary": sharesHistory ? notes.intake.summary : "",
-            "notes": sharesHistory ? notes.notes.map(Self.noteRow) : [],
+            "summary": sharesHistory ? Self.coachFacingSummary(notes) : "",
+            "notes": [],
             "metrics": metrics.payload,
             "updated_at": ISO8601DateFormatter().string(from: Date()),
         ]
@@ -699,6 +721,17 @@ public final class SharingService {
             token: try await validToken())
     }
 
+    /// Take a session off — or put it back on — my public profile, after the
+    /// fact. The retroactive half of the opt-out: someone realising a session
+    /// they already logged shouldn't be on a profile strangers can open needs a
+    /// way to fix that, not just a switch for next time.
+    public func setSessionPublicVisible(_ visible: Bool, sessionID: String) async throws {
+        let uid = try requireUserID()
+        let _: [LiveWorkoutDTO] = try await client.restUpdate(
+            "live_workouts?id=eq.\(sessionID)&client_id=eq.\(uid)",
+            body: ["public_visible": visible], token: try await validToken())
+    }
+
     /// Take one board private across ALL periods (0016). Returns how many rows
     /// changed, so a caller can tell "nothing was public" from "it worked".
     @discardableResult
@@ -832,12 +865,16 @@ public final class SharingService {
     /// `shareCompletedWorkout`, which names a recipient — that's a different
     /// intent and a legacy-shaped row is the honest way to express it.
     public func publishCompletedWorkout(workoutName: String, sets: [SharedSet],
-                                       audience: WorkoutAudience) async throws {
+                                       audience: WorkoutAudience,
+                                       publicVisible: Bool = Preferences.showWorkoutsOnPublicProfile) async throws {
         guard audience != .private else { return }
         let uid = try requireUserID()
         let row: [String: Any] = [
             "client_id": uid, "template_name": workoutName,
             "audience": audience.rawValue, "status": SessionStatus.live.rawValue,
+            // Whether a STRANGER may see it on the public profile — a separate
+            // axis from audience (0018).
+            "public_visible": publicVisible,
         ]
         let inserted: [LiveWorkoutDTO] = try await client.restInsert(
             "live_workouts", body: [row], token: try await validToken())

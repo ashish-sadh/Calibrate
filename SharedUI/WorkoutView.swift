@@ -106,7 +106,7 @@ struct WorkoutView: View {
                     Button {
                         showingCoach = true
                     } label: {
-                        Label("Coach Me", systemImage: sym("brain.head.profile")).frame(maxWidth: .infinity)
+                        Label("AI Coach", systemImage: sym("brain.head.profile")).frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered).tint(Theme.accent)
                 }
