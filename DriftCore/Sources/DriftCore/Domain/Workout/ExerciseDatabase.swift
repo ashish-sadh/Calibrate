@@ -83,12 +83,34 @@ public enum ExerciseDatabase {
     /// exercise. Plurals/short suffixes are handled by prefix matching
     /// (squat/squats, curl/curls, push/push-ups). Among fully-covering names the
     /// most specific (fewest extra words) wins.
+    ///
+    /// **Containment fallback (2026-07-29).** Full coverage alone was far too
+    /// strict: ONE qualifier the catalog doesn't know sank the whole match, so
+    /// "wall sit hold" missed `Wall Sit`, "box bulgarian split squat" missed
+    /// `Bulgarian Split Squat`, and "knee push-up" missed `Push-Up`. A real
+    /// user logged a 10-exercise session and Drift found 1. When nothing covers
+    /// the query, this now falls back to the LONGEST catalog name entirely
+    /// contained in what the user said — the reverse direction, "you told me
+    /// more than I know about" rather than "you must say only what I know".
+    ///
+    /// The fallback demands ≥2 catalog tokens on purpose: a one-word entry
+    /// contained in a long phrase is far too weak a signal ("the row machine
+    /// was busy so I did squats" must not resolve to `Row`). And it stays a
+    /// fallback — it can never outrank a full-coverage hit, so no match that
+    /// worked before changes.
     public static func match(name raw: String) -> ExerciseInfo? {
         let q = raw.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
         guard q.count >= 2 else { return nil }
         let source = allWithCustom
 
         if let exact = source.first(where: { $0.name.lowercased() == q }) { return exact }
+
+        // Vernacular that shares no words with the catalog name ("outer thigh
+        // machine" → "Hip Abduction Machine"). Token logic can't bridge those.
+        if let aliased = ExerciseAliases.canonical(for: q),
+           let hit = source.first(where: { $0.name.lowercased() == aliased.lowercased() }) {
+            return hit
+        }
 
         let stop: Set<String> = ["the", "a", "and", "with", "of", "for", "to", "on", "my", "in"]
         func tokenize(_ s: String) -> [String] {
@@ -107,17 +129,41 @@ public enum ExerciseDatabase {
 
         var best: ExerciseInfo?
         var bestPrecision = 0.0
+        // Second-best: the longest catalog name entirely CONTAINED in what the
+        // user said (see `containedCandidate` below).
+        var contained: ExerciseInfo?
+        var containedTokens = 0
+
         for ex in source {
             let nTokens = tokenize(ex.name)
             guard !nTokens.isEmpty else { continue }
             // Every spoken token must be covered by the candidate name.
             let covered = qTokens.allSatisfy { qt in nTokens.contains { tokensMatch(qt, $0) } }
-            guard covered else { continue }
-            // Prefer the most specific full-covering name (fewest extra words).
-            let precision = Double(qTokens.count) / Double(nTokens.count)
-            if precision > bestPrecision { bestPrecision = precision; best = ex }
+            if covered {
+                // Prefer the most specific full-covering name (fewest extra words).
+                let precision = Double(qTokens.count) / Double(nTokens.count)
+                if precision > bestPrecision { bestPrecision = precision; best = ex }
+            } else if nTokens.count >= 2,
+                      nTokens.allSatisfy({ nt in qTokens.contains { tokensMatch(nt, $0) } }) {
+                // More catalog words = more of the phrase explained. Ties
+                // broken by shorter-then-alphabetical, NOT by array order:
+                // "Push-Up" (catalog) and "Push-Ups" (template registry) are
+                // the same lift under two names, and a user's history must not
+                // split between them based on how the catalog happened to load.
+                let better: Bool
+                if nTokens.count != containedTokens {
+                    better = nTokens.count > containedTokens
+                } else if let current = contained, current.name.count != ex.name.count {
+                    better = ex.name.count < current.name.count
+                } else if let current = contained {
+                    better = ex.name.lowercased() < current.name.lowercased()
+                } else {
+                    better = true
+                }
+                if better { contained = ex; containedTokens = nTokens.count }
+            }
         }
-        return best
+        return best ?? contained
     }
 
     // MARK: - Custom Exercises (persisted in UserDefaults)

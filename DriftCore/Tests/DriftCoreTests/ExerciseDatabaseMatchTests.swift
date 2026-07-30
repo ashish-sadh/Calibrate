@@ -159,7 +159,7 @@ import Testing
 
 @Test func packageIITemplatesDecodeAndResolve() throws {
     let templates = DefaultTemplates.packageII
-    #expect(templates.count == 6)
+    #expect(templates.count == 7)
     let customNames = Set(DefaultTemplates.customExercises.map { $0.name.lowercased() })
     let catalogNames = Set(ExerciseDatabase.all.map { $0.name.lowercased() })
     for t in templates {
@@ -296,4 +296,69 @@ import Testing
     ExerciseDatabase.addCustomExercise(name: name, bodyPart: "Legs", imageUrl: new, imageUrlAuthoritative: true)
     info = ExerciseDatabase.allWithCustom.first { $0.name == name }
     #expect(ExercisePoses.assetBaseName(fromImageUrl: info?.imageUrl) == "Band_Good_Morning")
+}
+
+// MARK: - The 2026-07-29 session: 10 exercises logged, 1 found
+
+/// A real user logged a 10-exercise trainer session and Drift resolved ONE of
+/// them. Every other line failed the same way: full token coverage rejected any
+/// candidate the moment the user said one qualifier the catalog didn't know
+/// ("hold", "box", "bench", "knee"). This is the regression fixture — the
+/// exact strings, as typed.
+///
+/// @MainActor because it registers the custom exercises the session needs, and
+/// the custom blob is process-global shared state (#1160).
+@Test @MainActor func match_theSessionThatFoundOneOfTen() {
+    let key = "drift_custom_exercises"
+    let snapshot = DriftPlatform.keyValueStore.data(forKey: key)
+    defer { DriftPlatform.keyValueStore.set(snapshot, forKey: key) }
+    DefaultTemplates.registerCustomExercises()
+
+    // Every line must resolve to something, and to the RIGHT something —
+    // "found a match" is worthless if it logged the wrong lift.
+    let session: [(logged: String, expected: String)] = [
+        ("side plank hold", "Side Planks"),
+        ("Wall sit hold", "Wall Sit"),
+        ("Knee push-up", "Knee Push-Up"),
+        ("Eccentric floor push-up", "Push-Up"),
+        ("Outer thigh machine", "Hip Abduction Machine"),
+        ("Box Bulgarian split squat", "Box Bulgarian Split Squat"),
+        ("Wide grip pulldown", "Wide-Grip Lat Pulldown"),
+        ("seated plate row", "Seated Plate Row"),
+        ("Floor lying Y raises", "Floor Y Raise"),
+        ("Bench dumbbell skull crusher", "Skull Crusher"),
+    ]
+
+    for (logged, expected) in session {
+        #expect(ExerciseDatabase.match(name: logged)?.name == expected,
+                "\"\(logged)\" should resolve to \(expected)")
+    }
+}
+
+/// The containment fallback must not become a way to match anything. It needs
+/// two catalog words inside the phrase, so a lift mentioned in passing can't
+/// hijack the line.
+@Test func match_containmentFallbackStillRejectsNonsense() {
+    #expect(ExerciseDatabase.match(name: "chest ups") == nil)
+    #expect(ExerciseDatabase.match(name: "qwerty zzz plarp") == nil)
+    // One catalog word buried in a sentence is not a log entry.
+    #expect(ExerciseDatabase.match(name: "the row machine was busy today") == nil)
+}
+
+/// Containment is a FALLBACK: a name that fully covers the query still wins, so
+/// nothing that resolved before resolves differently now.
+@Test func match_fullCoverageStillBeatsContainment() {
+    // "incline bench press" fully covers → an incline press, NOT the shorter
+    // "Bench Press" that is merely contained in it.
+    let hit = ExerciseDatabase.match(name: "incline bench press")
+    #expect(hit?.name.lowercased().contains("incline") == true)
+}
+
+/// Vernacular that shares no words with the anatomical catalog name.
+@Test func match_aliasesBridgeGymVernacular() {
+    #expect(ExerciseDatabase.match(name: "outer thigh machine")?.name == "Hip Abduction Machine")
+    #expect(ExerciseDatabase.match(name: "inner thigh machine")?.name == "Thigh Adductor")
+    // Aliases are exact-phrase: a longer sentence falls through to the matcher
+    // rather than letting the table hijack it.
+    #expect(ExerciseAliases.canonical(for: "outer thigh machine warmup") == nil)
 }

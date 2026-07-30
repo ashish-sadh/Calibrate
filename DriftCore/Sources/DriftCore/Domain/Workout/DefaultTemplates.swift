@@ -243,6 +243,25 @@ public enum DefaultTemplates {
         .init(name: "EZ Bar Curl", bodyPart: "Arms", muscles: ["biceps"], fedDir: "EZ-Bar_Curl"),
         .init(name: "Turkish Get-Up", bodyPart: "Full Body", muscles: ["shoulders", "abdominals"], fedDir: "Kettlebell_Turkish_Get-Up_Squat_style"),
         .init(name: "Chin-Up", bodyPart: "Back", muscles: ["lats", "biceps"], fedDir: "Chin-Up"),
+        // Logged by a real user 2026-07-29 and findable NOWHERE — not the
+        // catalog, not this registry, not under another name.
+        //
+        // Only movements with no honest home get an entry. Their session also
+        // contained "side plank hold", "eccentric floor push-up" and "bench
+        // dumbbell skull crusher"; those are a hold, a tempo and an implement
+        // variant of `Side Planks` / `Push-Ups` / `Skull Crushers`, which the
+        // containment fallback in `ExerciseDatabase.match` now resolves. Adding
+        // near-duplicates would have made the picker worse to browse, and split
+        // one person's PR history across two names for the same lift.
+        //
+        // Photos: a floor Y raise traces the same arm path as the incline one,
+        // so that pose pair is honest reuse. A knee push-up, high knees and a
+        // plate-loaded row have no truthful analog in free-exercise-db —
+        // diagram only, rather than showing a movement the user isn't doing.
+        .init(name: "Knee Push-Up", bodyPart: "Chest", muscles: ["chest", "triceps"]),
+        .init(name: "High Knees", bodyPart: "Full Body", muscles: ["quadriceps", "calves"]),
+        .init(name: "Seated Plate Row", bodyPart: "Back", muscles: ["middle back", "lats"]),
+        .init(name: "Floor Y Raise", bodyPart: "Shoulders", muscles: ["shoulders", "middle back"], fedDir: "Incline_Y_Raise"),
     ]
 
     // MARK: - Helper
@@ -372,6 +391,25 @@ public enum DefaultTemplates {
                 e("Incline Y Raise", rest: 75, notes: "8-12 reps, 30° bench, 2-5 lbs"),
                 e("Skull Crushers", rest: 45, notes: "12-15 reps — optional"),
                 e("Wall Sit", sets: 1, rest: 60, notes: "35-45 secs"),
+            ]), createdAt: now),
+
+            // Same trainer, second dumbbell day — the session a user logged on
+            // 2026-07-29 (the one where 9 of 10 exercises resolved to nothing).
+            // Kept as its own template rather than folded into "Total Body
+            // Dumbbells": it shares the shape but swaps in the scaled push-up
+            // progression and the floor Y raise, which is the point of it.
+            WorkoutTemplate(name: "Total Body Dumbbells II", exercisesJson: json([
+                w("Side Planks", notes: "20-25 secs per side"),
+                w("Wall Sit", sets: 1, notes: "35-45 secs"),
+                e("Knee Push-Up", rest: 60, notes: "10-15 reps, hips in line with shoulders"),
+                e("Push-Ups", rest: 60, notes: "eccentric — 6-8 reps, 4 secs down, knees to reset"),
+                e("Bar Hang", sets: 4, rest: 60, notes: "10 secs, then high knees — core tight"),
+                e("High Knees", sets: 4, rest: 45, notes: "20-30 secs, off the bar hang"),
+                e("Hip Abduction Machine", rest: 60, notes: "12-15 reps"),
+                e("Box Bulgarian Split Squat", rest: 90, notes: "6-10 per side, control with standing leg"),
+                e("Wide-Grip Lat Pulldown", sets: 4, rest: 90, notes: "8 reps, or seated plate row"),
+                e("Floor Y Raise", rest: 75, notes: "8-12 reps, prone on the floor, 2-5 lbs"),
+                e("Skull Crushers", rest: 45, notes: "12-15 reps, dumbbells on a flat bench"),
             ]), createdAt: now),
 
             WorkoutTemplate(name: "Dumbbell Circuits", exercisesJson: json([
