@@ -143,6 +143,7 @@
 		9A29F8037875F1A3BD01852E /* NumericField.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEBA03C80C4A4C8407D09C43 /* NumericField.swift */; };
 		9ACECC13D2365A3DF7F2C28C /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F78E3B6C1497F6A200DF8095 /* ContentView.swift */; };
 		9B11BE8782BE0D44DD4D4816 /* GoalSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E7AB5CF548B4E61C45C1485 /* GoalSetupView.swift */; };
+		9CD13B0FBE04EAEAFF3A8003 /* LeaderboardsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DF23892E56C7BF54A171CD9 /* LeaderboardsCard.swift */; };
 		9E576FCB247BD6516612E63F /* ManualFoodEntrySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4683CA86D3045B1534504B0 /* ManualFoodEntrySheet.swift */; };
 		9EA6ACD1BB8579E641944A41 /* ImmersiveVoiceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 351EB505D48F8340399F5757 /* ImmersiveVoiceView.swift */; };
 		9F09FCD3472B6C02FEC11B48 /* llama.xcframework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 4101CD9171B652C6B8D1BB4E /* llama.xcframework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
@@ -410,6 +411,7 @@
 		68A2CFFF213F435739A92CA8 /* BodySummaryCardsRowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodySummaryCardsRowTests.swift; sourceTree = "<group>"; };
 		6B190FDA50ACC7784A35A9A5 /* CoachVoiceShims.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachVoiceShims.swift; sourceTree = "<group>"; };
 		6B6C02FCD909BDE67D229EC1 /* CycleCalculationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CycleCalculationTests.swift; sourceTree = "<group>"; };
+		6DF23892E56C7BF54A171CD9 /* LeaderboardsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LeaderboardsCard.swift; sourceTree = "<group>"; };
 		6E7AB5CF548B4E61C45C1485 /* GoalSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalSetupView.swift; sourceTree = "<group>"; };
 		6F11FFEF7FE6BC274423EFB8 /* ExerciseDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseDetailView.swift; sourceTree = "<group>"; };
 		70967B704173BE9C3F988E68 /* ExercisePoses */ = {isa = PBXFileReference; lastKnownFileType = folder; name = ExercisePoses; path = Drift/ExercisePoses; sourceTree = SOURCE_ROOT; };
@@ -633,6 +635,7 @@
 				CE1C2C759DEB2E972ADAF6B6 /* FoodLogViewModel.swift */,
 				814B3D811D16B9738D33196C /* FoodTabView.swift */,
 				5E362DE4494FE51C5DE792B4 /* FriendSharePicker.swift */,
+				6DF23892E56C7BF54A171CD9 /* LeaderboardsCard.swift */,
 				D454B059C6C3366F1E55C00D /* MealCalendarPicker.swift */,
 				56B5C611ABC5A11C8044CD7A /* MealTimePicker.swift */,
 				830DCA5606BA7ED09ECCB6DE /* MuscleHighlightCard.swift */,
@@ -1304,6 +1307,7 @@
 				EDBADA2C372F712D791B9CB3 /* LabReportDetailView.swift in Sources */,
 				E0F86EB4273E7AC079F525CE /* LabReportOCR.swift in Sources */,
 				CF5BB4A5266F949DA9DEE006 /* LabReportUploadView.swift in Sources */,
+				9CD13B0FBE04EAEAFF3A8003 /* LeaderboardsCard.swift in Sources */,
 				D676610D58E5F117B1698F2A /* ListeningCircle.swift in Sources */,
 				86CDB53C69F53085CA2E0555 /* LogMealSheet.swift in Sources */,
 				906FAE3EA52F19F188BB4CC1 /* LogMethodCardsRow.swift in Sources */,

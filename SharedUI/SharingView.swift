@@ -151,6 +151,14 @@ struct SharingView: View {
             } else {
                 connectionSection("FRIENDS", friendConns, subtitle: nil,
                                   emptyText: "No friends yet. Search a @username above to add a friend or a coach.")
+                // Below the friend list, not above it: the point of the screen is
+                // the people, and a scoreboard at the top would reframe them as
+                // competitors before you'd even seen their names. Hidden entirely
+                // with no friends — a leaderboard of one is a joke at your own
+                // expense.
+                if !friendConns.isEmpty {
+                    LeaderboardsCard(connections: conns)
+                }
             }
         }
     }
@@ -730,6 +738,10 @@ struct SharingView: View {
         // week-old numbers while the client's app had fresh ones all along.
         // Fire-and-forget: a failed push must never block the hub rendering.
         Task { await BriefingRepush.afterNotesChanged() }
+        // Same idea for the leaderboard: publish this week's numbers at most
+        // once a day (the collection costs ~14 per-day health queries), so a
+        // friend opening their board sees you rather than a gap.
+        Task { await LeaderboardPublisher.publishIfDue() }
         if requests.isEmpty {
             requestSenders = [:]
         } else {

@@ -72,6 +72,25 @@ public enum Preferences {
         set { kv.set(newValue, forKey: shareWorkoutsWithCoachesKey) }
     }
 
+    private static let shareStatsWithFriendsKey = "drift_share_stats_friends"
+
+    /// Publish weekly steps / calories / workout counts to the friends
+    /// leaderboard.
+    ///
+    /// Default **OFF**, unlike the workout switches above, and the difference is
+    /// deliberate. Sharing a workout sends it to people you chose, one at a
+    /// time; the leaderboard shows all your friends each other's numbers at
+    /// once. That is a wider exposure than connecting to someone implies, so it
+    /// is opted INTO rather than out of — and it's symmetric: nothing is
+    /// published until this is on, and you only see friends who turned it on
+    /// too. Turning it off deletes what was already published
+    /// (`LeaderboardService.withdraw`), because a switch that only stops future
+    /// writes leaves last week's numbers on other people's screens.
+    public static var shareStatsWithFriends: Bool {
+        get { kv.bool(forKey: shareStatsWithFriendsKey) }
+        set { kv.set(newValue, forKey: shareStatsWithFriendsKey) }
+    }
+
     // MARK: - Online Food Search
 
     private static let onlineFoodSearchKey = "drift_online_food_search"

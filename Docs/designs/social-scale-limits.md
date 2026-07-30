@@ -109,3 +109,82 @@ read state and paginated rosters, **not** to raise the constant.
   don't degrade with total user count.
 - **Storage.** Messages and briefings are small text rows. Nothing here grows
   per-user in a way that matters at this stage.
+
+---
+
+## 2026-07-30 addendum — boards are data, and the chat poll was the real cost
+
+Two follow-ups after the first pass, both from the operator: "can we build
+leaderboard for steps of friends, make sure it's scalable" and "even make sure
+chat is scalable", then "highest deadlift in the last month… figure out how it
+can be multiple of this".
+
+### Leaderboards: one table, arbitrarily many boards
+
+Migration 0011 `leaderboard_entries (user_id, board_key, period_start) → value`.
+A board is a STRING, not a column: `steps`, `calories`, `workouts`,
+`lift:deadlift`. Adding a board needs no migration, and a board only *renders*
+when ≥2 people among you+friends have a value on it — so a group that deadlifts
+gets a deadlift board and one that walks doesn't, with nothing to configure.
+
+This replaced 0009's `weekly_stats`, which hardcoded four columns. The drop was
+guarded on `count(*) = 0` and the guard was tested by simulating a non-empty
+table (it raised and refused). Safe only because that table was created after
+builds 371/72 shipped, so no released client could have written it.
+
+Measured at **2.2M rows** (200k users × 11 boards, the ceiling the publish cap
+allows):
+
+| query | plan | time |
+|---|---|---|
+| 50 friends, both periods (shipped) | Index Scan on PK | **6.5 ms** |
+| `period_start = X`, RLS filters (anti-pattern) | Seq Scan, 1.6M rows removed | **1,199 ms** |
+
+184× apart, and only the second grows with total users — *before* counting the
+`are_connected()` call RLS would make per row. The `user_id=in.(…)` list is not
+redundant with RLS; it is the difference between the two rows of that table.
+
+Two bounds keep it there: `LeaderboardPublisher.maxLiftBoards = 8` (someone with
+300 exercises would otherwise publish 300 rows/month, and the fan-in would be
+150 × 300), and `LeaderboardBoard.liftKey` collapsing case/punctuation so
+"Bench Press" / "bench press" / "Bench-Press" are one board rather than three
+near-empty ones.
+
+### Chat: the DB was fine, the client was not
+
+EXPLAIN'd at 200k messages / 2k users — every chat query is index-served and
+scales with per-user data, flat in table size:
+
+| query | plan | time |
+|---|---|---|
+| thread with one peer, newest 200 | BitmapOr on `messages_pair` | 1.7 ms |
+| incremental poll (`created_at > cursor`) | Index Scan Backward on `messages_recipient` | 2.3 ms |
+| `unread_counts` view, all peers | Bitmap Index Scan → GroupAggregate | 4.2 ms |
+
+The actual cost was **the 3-second poll re-requesting the entire 200-message
+thread and diffing it client-side** — 20 requests a minute per open chat, up to
+200 rows each, essentially none of them new. Now incremental: it asks only for
+messages newer than the newest it holds, so the steady state is an empty
+response. Cursor is the server timestamp, not a local clock (a device a minute
+fast would skip a minute of messages forever).
+
+Migration 0010 adds server-side read state — a `read_through` WATERMARK per
+(reader, peer), one row per conversation rather than a receipt per message —
+plus an `unread_counts` view for exact per-peer counts in one request. That
+closes the "silently reports zero unread" hole the first pass could only
+paper over.
+
+**A security bug the test caught, not the review.** The view is
+`security_invoker = true`, which was necessary but not sufficient:
+`messages_read_parties` also lets you read rows where you are the SENDER, so the
+view emitted rows keyed to the OTHER person's `reader_id`, computed from messages
+you sent. Verified under `set local role authenticated`: 3 of 4 rows returned
+belonged to other readers — a read-receipt side channel telling you whether a
+friend had read you, i.e. exactly the feature the migration header says it isn't
+building. Fixed with `where m.recipient_id = auth.uid()`; re-verified 1 row, 0
+leaking. **Query a new view as a real user before believing it.**
+
+### Still open
+
+`fetchMessages(with:before:)` exists for scrolling back past the newest 200, but
+no UI calls it yet — the history is reachable, the gesture isn't built.

@@ -107,9 +107,18 @@ struct ChatView: View {
         loading = true
         messages = (try? await svc.fetchMessages(with: peer.id)) ?? []
         loading = false
-        // Reading the conversation IS reading it — clear this peer's unread
-        // mark so the Today card and the hub stop badging it.
+        markRead()
+    }
+
+    /// Reading the conversation IS reading it.
+    ///
+    /// Both marks: the LOCAL one keeps the UI instant and works offline, and the
+    /// SERVER watermark (migration 0010) is what makes the count correct on the
+    /// next launch and on another device. Local-only was the bug — it could not
+    /// see messages the client hadn't downloaded, so unread silently read zero.
+    private func markRead() {
         SeenMarks.markMessagesSeen(peer: peer.id)
+        Task { try? await svc.markThreadRead(peer: peer.id) }
     }
 
     private func send() async {
@@ -128,18 +137,41 @@ struct ChatView: View {
     }
 
     /// Poll for new messages while the chat is open (auto-cancelled on leave).
+    ///
+    /// INCREMENTAL. This used to re-request the entire 200-message thread every
+    /// 3 seconds and diff it against what was on screen — 20 requests a minute,
+    /// up to 200 rows each, per open chat, of which essentially none were new.
+    /// It now asks only for messages newer than the last one it holds, so the
+    /// steady state is an empty response.
+    ///
+    /// The cursor is the newest message's SERVER timestamp, not a local clock:
+    /// a device running a minute fast would otherwise skip everything sent in
+    /// that minute and the messages would never appear.
     private func pollLoop() async {
         while !Task.isCancelled {
             try? await Task.sleep(nanoseconds: 3_000_000_000)
             if Task.isCancelled { break }
-            // Compare contents, not counts — at the 200-message page cap the
-            // count never changes, and a same-size send/receive crossing also
-            // kept the stale page on screen.
-            if let fresh = try? await svc.fetchMessages(with: peer.id), fresh != messages {
-                messages = fresh
-                // Still on screen, so anything that just arrived is read.
-                SeenMarks.markMessagesSeen(peer: peer.id)
+
+            guard let cursor = messages.last?.createdAt else {
+                // Empty thread — nothing to be newer than, so a full fetch is
+                // both correct and cheap.
+                if let fresh = try? await svc.fetchMessages(with: peer.id), !fresh.isEmpty {
+                    messages = fresh
+                    markRead()
+                }
+                continue
             }
+            guard let arrived = try? await svc.messages(with: peer.id, since: cursor),
+                  !arrived.isEmpty else { continue }
+
+            // Append only what we don't already hold: a send that lands between
+            // the poll firing and its response would otherwise double up.
+            let known = Set(messages.map(\.id))
+            let fresh = arrived.filter { !known.contains($0.id) }
+            guard !fresh.isEmpty else { continue }
+            messages.append(contentsOf: fresh)
+            // Still on screen, so anything that just arrived is read.
+            markRead()
         }
     }
 }

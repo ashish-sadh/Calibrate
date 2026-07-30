@@ -231,3 +231,42 @@ public enum SharingJSON {
         return e
     }()
 }
+
+/// A row of the `unread_counts` view (migration 0010): how many messages one
+/// correspondent has sent you since you last read them, and when the newest
+/// arrived. Exact — no client-side window.
+public struct UnreadCountDTO: Codable, Sendable, Identifiable, Hashable {
+    public let readerId: String
+    public let peerId: String
+    public let unread: Int
+    public let latestAt: String?
+
+    public var id: String { peerId }
+
+    enum CodingKeys: String, CodingKey {
+        case readerId = "reader_id"
+        case peerId = "peer_id"
+        case unread
+        case latestAt = "latest_at"
+    }
+
+    public init(readerId: String, peerId: String, unread: Int, latestAt: String? = nil) {
+        self.readerId = readerId
+        self.peerId = peerId
+        self.unread = unread
+        self.latestAt = latestAt
+    }
+}
+
+/// A `message_reads` row — the per-conversation read watermark.
+public struct UnreadMarkDTO: Codable, Sendable, Hashable {
+    public let readerId: String
+    public let peerId: String
+    public let readThrough: String
+
+    enum CodingKeys: String, CodingKey {
+        case readerId = "reader_id"
+        case peerId = "peer_id"
+        case readThrough = "read_through"
+    }
+}

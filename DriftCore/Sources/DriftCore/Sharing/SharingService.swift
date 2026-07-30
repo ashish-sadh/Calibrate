@@ -478,12 +478,132 @@ public final class SharingService {
 
     public func fetchMessages(with otherID: String) async throws -> [MessageDTO] {
         let uid = try requireUserID()
-        let filter = "or=(and(sender_id.eq.\(uid),recipient_id.eq.\(otherID)),"
-            + "and(sender_id.eq.\(otherID),recipient_id.eq.\(uid)))"
         let newestFirst: [MessageDTO] = try await client.restGet(
-            "messages?\(filter)&select=*&order=created_at.desc&limit=200",
+            "messages?\(threadFilter(uid, otherID))&select=*&order=created_at.desc&limit=200",
             token: try await validToken())
         return newestFirst.reversed()
+    }
+
+    /// Only what arrived after `since` — what an open chat should poll for.
+    ///
+    /// The 3-second poll used to re-request the WHOLE 200-message thread and
+    /// compare it to what was on screen: 20 requests a minute, up to 200 rows
+    /// each, per open chat, essentially all of it re-sending messages the client
+    /// already had. This returns the empty array in the common case.
+    ///
+    /// `gt` not `gte`, so the message that set the cursor isn't redelivered
+    /// forever. Server timestamps throughout — a device clock that's a minute
+    /// fast would otherwise skip everything sent in that minute.
+    public func messages(with otherID: String, since: String) async throws -> [MessageDTO] {
+        let uid = try requireUserID()
+        let rows: [MessageDTO] = try await client.restGet(
+            "messages?\(threadFilter(uid, otherID))&created_at=gt.\(since)"
+                + "&select=*&order=created_at.asc&limit=200",
+            token: try await validToken())
+        return rows
+    }
+
+    /// One page of history OLDER than `before`, for scrolling back.
+    ///
+    /// Without this a thread was permanently capped at its newest 200 messages
+    /// and everything earlier was unreachable — the messages were on the server,
+    /// just unreadable, which is its own kind of data loss.
+    public func messages(with otherID: String, before: String,
+                        limit: Int = 200) async throws -> [MessageDTO] {
+        let uid = try requireUserID()
+        let newestFirst: [MessageDTO] = try await client.restGet(
+            "messages?\(threadFilter(uid, otherID))&created_at=lt.\(before)"
+                + "&select=*&order=created_at.desc&limit=\(limit)",
+            token: try await validToken())
+        return newestFirst.reversed()
+    }
+
+    /// Both directions of one conversation. Served by `messages_pair`
+    /// (sender_id, recipient_id, created_at) as a BitmapOr of two index scans —
+    /// verified on a 200k-row replica, 1.7 ms.
+    private func threadFilter(_ uid: String, _ otherID: String) -> String {
+        "or=(and(sender_id.eq.\(uid),recipient_id.eq.\(otherID)),"
+            + "and(sender_id.eq.\(otherID),recipient_id.eq.\(uid)))"
+    }
+
+    // MARK: - Read state (migration 0010)
+
+    /// Exact unread count per correspondent, in ONE request.
+    ///
+    /// Replaces counting a 100-message window client-side, which silently
+    /// reported ZERO for anyone whose newest message fell outside it. Backed by
+    /// the `unread_counts` view, whose cost is proportional to YOUR received
+    /// messages and flat in the size of the table.
+    public func unreadCounts() async throws -> [UnreadCountDTO] {
+        let uid = try requireUserID()
+        return try await client.restGet(
+            "unread_counts?reader_id=eq.\(uid)&select=*", token: try await validToken())
+    }
+
+    /// Mark everything from `peerID` up to `at` as read. One upsert regardless
+    /// of how far behind you were — `read_through` is a watermark, not a receipt
+    /// per message.
+    public func markThreadRead(peer peerID: String, at when: Date = Date()) async throws {
+        let uid = try requireUserID()
+        let row: [String: Any] = [
+            "reader_id": uid, "peer_id": peerID,
+            "read_through": DateFormatters.iso8601.string(from: when),
+        ]
+        let _: [UnreadMarkDTO] = try await client.restInsert(
+            "message_reads", body: [row], token: try await validToken(), upsert: true)
+    }
+
+    // MARK: - Leaderboards (migration 0011)
+
+    /// Publish this device's board entries in ONE upsert.
+    ///
+    /// Batched deliberately: a request per board would be ~11 round trips per
+    /// publish (three ambient boards plus up to eight lifts), and the count grows
+    /// with how many exercises someone trains.
+    public func upsertLeaderboardEntries(_ entries: [LeaderboardEntryDTO]) async throws {
+        guard !entries.isEmpty else { return }
+        let now = DateFormatters.iso8601.string(from: Date())
+        let body: [[String: Any]] = entries.map { entry in
+            ["user_id": entry.userId, "board_key": entry.boardKey,
+             "period_start": entry.periodStart, "value": entry.value,
+             "unit": entry.unit, "updated_at": now]
+        }
+        let _: [LeaderboardEntryDTO] = try await client.restInsert(
+            "leaderboard_entries", body: body, token: try await validToken(), upsert: true)
+    }
+
+    /// Entries for an explicit set of people across the given periods.
+    ///
+    /// The `user_id=in.(…)` list is NOT redundant with RLS. Querying by period
+    /// alone would also return only your friends' rows — correctly — but Postgres
+    /// would evaluate `are_connected()` once per row in that period, i.e. once
+    /// per user in the product. Measured on a 200k-row replica of this shape:
+    /// 0.33 ms with the id list (primary-key probes) versus 21 ms scanning the
+    /// period, and only the second number grows as Drift does.
+    ///
+    /// Chunked for the same URL-length reason as `profiles(ids:)`, and both
+    /// periods ride one filter so the weekly and monthly boards arrive together.
+    public func leaderboardEntries(userIDs: [String],
+                                  periods: [String]) async throws -> [LeaderboardEntryDTO] {
+        guard !userIDs.isEmpty, !periods.isEmpty else { return [] }
+        let unique = Array(Set(userIDs))
+        let periodList = Set(periods).joined(separator: ",")
+        let token = try await validToken()
+        var out: [LeaderboardEntryDTO] = []
+        for start in stride(from: 0, to: unique.count, by: Self.profileBatchSize) {
+            let chunk = unique[start..<min(start + Self.profileBatchSize, unique.count)]
+            let path = "leaderboard_entries?user_id=in.(\(chunk.joined(separator: ",")))"
+                + "&period_start=in.(\(periodList))&select=*"
+            out += try await client.restGet(path, token: token) as [LeaderboardEntryDTO]
+        }
+        return out
+    }
+
+    /// Remove everything I published — what "stop sharing" has to mean.
+    public func deleteMyLeaderboardEntries() async throws {
+        let uid = try requireUserID()
+        try await client.restDelete("leaderboard_entries?user_id=eq.\(uid)",
+                                    token: try await validToken())
     }
 
     /// Accepted edges involving the caller (both directions).
