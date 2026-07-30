@@ -172,6 +172,17 @@ struct DashboardView: View {
                         Button { selectedTab = 2 } label: { calorieBalanceCard }.pressable()
                     }
 
+                    // Coach, clients & friends — second thing on Today, right
+                    // under the rings. It has moved three times in two days
+                    // (More → bottom of Recovery → Activity) and each time
+                    // nobody found it; the operator's call is that people who
+                    // train with someone else check on that person before they
+                    // log anything, "at least until people get used to it".
+                    // Bare: the card owns its own navigation, because the
+                    // destination depends on data only it has (straight to the
+                    // coach's chat when there's one obvious conversation).
+                    FriendsDashboardCard()
+
                     // V7 Phase 2 log-methods row — Snap · Voice · Search · Recent.
                     // Always visible regardless of whether food was logged so
                     // first-time users have 4 clear entry points into logging.
@@ -268,17 +279,6 @@ struct DashboardView: View {
                             workoutConsistencyDismissedUntil = Date().addingTimeInterval(86400).timeIntervalSince1970
                         }
                     }
-
-                    // Coach, clients & friends. Lived only under More until
-                    // 2026-07-28, where nobody found it; was then buried at
-                    // the bottom of Recovery (operator 2026-07-29: "Friends
-                    // is a bit hidden"). Activity is its home — training
-                    // partners belong next to the workouts. Signed-out shows
-                    // a quiet invitation rather than nothing.
-                    // Bare: the card owns its own navigation now, because the
-                    // destination depends on data only it has (straight to the
-                    // coach's chat when there's one obvious conversation).
-                    FriendsDashboardCard()
 
                     // ── Recovery ──
                     sectionHeader("Recovery")

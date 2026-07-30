@@ -50,6 +50,28 @@ public enum Preferences {
         set { kv.set(newValue, forKey: aiEnabledKey) }
     }
 
+    // MARK: - Workout sharing (#1162)
+
+    private static let shareWorkoutsWithFriendsKey = "drift_share_workouts_friends"
+    private static let shareWorkoutsWithCoachesKey = "drift_share_workouts_coaches"
+
+    /// Auto-share finished workouts with friends. Default ON — the operator's
+    /// call (2026-07-29): "by default keep it on", with per-workout toggles in
+    /// the completion sheet so a test session can be kept private.
+    public static var shareWorkoutsWithFriends: Bool {
+        get { kv.boolOrNil(forKey: shareWorkoutsWithFriendsKey) ?? true }
+        set { kv.set(newValue, forKey: shareWorkoutsWithFriendsKey) }
+    }
+
+    /// Auto-share finished workouts with coaches. Default ON: monitoring your
+    /// training is what a coach relationship IS. Still switchable per workout —
+    /// "sometimes I might be testing and only want to share with friends but
+    /// not trainer."
+    public static var shareWorkoutsWithCoaches: Bool {
+        get { kv.boolOrNil(forKey: shareWorkoutsWithCoachesKey) ?? true }
+        set { kv.set(newValue, forKey: shareWorkoutsWithCoachesKey) }
+    }
+
     // MARK: - Online Food Search
 
     private static let onlineFoodSearchKey = "drift_online_food_search"

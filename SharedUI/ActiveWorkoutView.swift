@@ -68,6 +68,12 @@ struct ActiveWorkoutView: View {
     // sheet — Skip Fuse breaks on stacked presentations.
     @State var completedSets: [SharingService.SharedSet] = []
     @State var friendSendMode = false
+    // Finishing a workout shares it automatically; these two switches are the
+    // escape hatch for a session you're only testing (operator 2026-07-29).
+    // Seeded from the persisted preference so a coach-only user sets it once.
+    @State var shareToFriends = Preferences.shareWorkoutsWithFriends
+    @State var shareToCoaches = Preferences.shareWorkoutsWithCoaches
+    @State var broadcastResult: WorkoutBroadcast.Result? = nil
     // Command strip — say it, don't hunt for it: "add face pulls",
     // "drop curls", "last bench?" (exercise-UX design 2026-07-10)
     @State var commandText = ""
@@ -1396,11 +1402,45 @@ struct ActiveWorkoutView: View {
     private var friendShareSection: some View {
         if SharingService.shared.isSignedIn {
             Divider().overlay(Theme.separatorFaint)
+
+            // Automatic, with an escape hatch (operator 2026-07-29): both ON by
+            // default, flip either off for a session you're only testing. The
+            // switches persist, so someone who always wants coach-only gets it
+            // without touching this again.
+            VStack(alignment: .leading, spacing: 6) {
+                Toggle(isOn: Binding(
+                    get: { shareToFriends },
+                    set: { shareToFriends = $0; Preferences.shareWorkoutsWithFriends = $0 }
+                )) {
+                    Text("Share with friends").font(.caption)
+                }
+                .tint(Theme.accent)
+
+                Toggle(isOn: Binding(
+                    get: { shareToCoaches },
+                    set: { shareToCoaches = $0; Preferences.shareWorkoutsWithCoaches = $0 }
+                )) {
+                    Text("Share with my coach").font(.caption)
+                }
+                .tint(Theme.accent)
+
+                // Say where it went. Automatic sharing that stays silent about
+                // its recipients is the kind of thing people resent finding out
+                // about later.
+                if let broadcast = broadcastResult {
+                    Text(broadcast.summary)
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
+                } else if !shareToFriends && !shareToCoaches {
+                    Text("This workout stays private.")
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
+                }
+            }
+
             if !friendSendMode {
                 Button {
                     friendSendMode = true
                 } label: {
-                    Label("Send to a friend or coach", systemImage: sym("paperplane.fill"))
+                    Label("Send to someone specific", systemImage: sym("paperplane.fill"))
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered).tint(Theme.chartTrend)
@@ -1471,6 +1511,21 @@ struct ActiveWorkoutView: View {
                                          isWarmup: $0.isWarmup)
             }
             if andDismiss {
+                // Share it without making the user pick recipients every session.
+                // Fire-and-forget: the workout is already saved locally, so a
+                // network failure here must not read as a failed save.
+                let sharedName = workout.name
+                let sharedSets = completedSets
+                Task { @MainActor in
+                    let result = await WorkoutBroadcast.send(
+                        workoutName: sharedName, sets: sharedSets,
+                        toFriends: shareToFriends, toCoaches: shareToCoaches)
+                    if result.sentAnything {
+                        broadcastResult = result
+                        FeatureUsage.record(TelemetryEvent.workoutShared)
+                    }
+                }
+
                 // #938: share the PERSISTED workout via the same builder History
                 // uses — the old inline snapshot could render an empty summary
                 // (e.g. when no set rows qualified) while History looked fine.

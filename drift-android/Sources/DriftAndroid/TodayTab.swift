@@ -151,20 +151,21 @@ struct TodayTab: View {
 
                     intakeCard
 
+                    // Coach, clients & friends — second thing on Today, right
+                    // under the rings, matching iOS. It has moved three times
+                    // in two days and each time nobody found it; people who
+                    // train with someone else check on that person before they
+                    // log anything (operator 2026-07-29).
+                    // Bare: the card owns its own navigation (see
+                    // FriendsDashboardCard) — it may go to the coach's chat
+                    // rather than the hub, and a bare sheet would give
+                    // SharingView's internal NavigationLinks no stack to push
+                    // onto (every row a dead tap, operator repro on build 69).
+                    FriendsDashboardCard()
+
                     logChips
 
                     mealsCard
-
-                    // Friends & coaches — was More-only until 2026-07-28.
-                    // NavigationLink PUSH, matching iOS. It was a sheet, but a
-                    // bare sheet gives SharingView's internal NavigationLinks
-                    // (tap-to-chat, client detail) no stack to push onto, so
-                    // every row inside was a dead tap (operator repro on
-                    // device, build 69, 2026-07-29).
-                    // Bare: the card owns its own navigation now (see
-                    // FriendsDashboardCard) — it may go to the coach's chat
-                    // rather than the hub.
-                    FriendsDashboardCard()
 
                     statTrio
                 }
