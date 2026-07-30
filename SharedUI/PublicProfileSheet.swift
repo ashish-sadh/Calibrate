@@ -25,6 +25,17 @@ struct PublicProfileSheet: View {
     /// What they were doing on the board you found them on — the reason you're
     /// here, so it stays on screen.
     let context: String?
+    /// nil when you don't know this person — the original stranger case, which
+    /// gets request buttons. Set for someone you're already connected to: the
+    /// same page then carries the relationship and the way to change it, which
+    /// is what makes "a coach is just a profile" true rather than a slogan.
+    var relationship: Connection.Kind?
+    /// True when pushed onto a navigation stack rather than presented as a
+    /// sheet: the stack supplies Back, so the in-content chrome would duplicate
+    /// it, and Message can push chat instead of having nowhere to go.
+    var pushed = false
+    /// Called after a relationship change so the hub can refetch.
+    var onChanged: (() -> Void)?
 
     @Environment(\.dismiss) var dismiss
 
@@ -35,11 +46,14 @@ struct PublicProfileSheet: View {
     @State var sending = false
     @State var sent: String?
     @State var errorText: String?
+    /// Removal arms on the first tap and fires on the second — same two-tap
+    /// confirm the hub's management strip uses, no dialog (Fuse focus traps).
+    @State var confirmingRemove = false
 
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
-                chrome
+                if !pushed { chrome }
                 identity
 
                 if let errorText {
@@ -50,6 +64,8 @@ struct PublicProfileSheet: View {
                     Text(sent).font(.caption).foregroundStyle(Theme.deficit)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .card()
+                } else if relationship != nil {
+                    connectedActions
                 } else {
                     requestButtons
                 }
@@ -88,9 +104,100 @@ struct PublicProfileSheet: View {
                 .background(Theme.accentGradient, in: Circle())
             Text("@\(profile.username)")
                 .font(.title3.weight(.semibold)).foregroundStyle(Theme.textPrimary)
+            if let name = profile.displayName, !name.isEmpty {
+                Text(name).font(.subheadline).foregroundStyle(Theme.textSecondary)
+            }
+            // The tagline is the one line a person wrote about themselves — the
+            // reason we ask for it at all. Skip it when it IS the context line
+            // (search passes the tagline as context) so it doesn't print twice.
+            if let tag = profile.tagline, !tag.isEmpty, tag != context {
+                Text(tag).font(.caption).italic()
+                    .foregroundStyle(Theme.textTertiary)
+                    .multilineTextAlignment(.center)
+            }
             if let context {
                 Text(context).font(.caption).foregroundStyle(Theme.textSecondary)
             }
+        }
+    }
+
+    /// What you can do with someone you're already connected to: message them,
+    /// and change or end the relationship. The management actions live HERE —
+    /// operator 2026-07-30: "coach may be hidden under coach profile (convert to
+    /// friend, remove coach)". Mirrors the hub's strip so both places agree.
+    @ViewBuilder var connectedActions: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 6) {
+                Image(systemName: sym(relationshipIcon))
+                    .font(.caption).foregroundStyle(Theme.chartTrend)
+                Text(relationshipLabel).font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.chartTrend)
+                Spacer()
+            }
+            .padding(.horizontal, 12).padding(.vertical, 8)
+            .background(Theme.chartTrend.opacity(0.12), in: Capsule())
+
+            if pushed, relationship != .client {
+                NavigationLink {
+                    ChatView(peer: profile, relationship: (relationship ?? .friend).rawValue)
+                } label: {
+                    Label("Message", systemImage: sym("bubble.left.fill"))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent).tint(Theme.accent)
+            }
+
+            if relationship == .coach {
+                Button { Task { await manage { try await SharingService.shared.demoteCoach(profile.id) } } } label: {
+                    Label("Back to friend", systemImage: sym("person.fill"))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered).tint(Theme.chartTrend).disabled(sending)
+            }
+            if relationship == .friend {
+                Button { Task { await manage { try await SharingService.shared.requestCoachPromotion(profile.id) } } } label: {
+                    Label("Ask to coach me", systemImage: sym("figure.strengthtraining.traditional"))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.bordered).tint(Theme.chartTrend).disabled(sending)
+            }
+
+            Button {
+                if confirmingRemove {
+                    Task { await manage { try await SharingService.shared.removeConnection(with: profile.id) } }
+                } else {
+                    confirmingRemove = true
+                }
+            } label: {
+                Text(confirmingRemove ? "Tap again to confirm" : removeLabel)
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.bordered).tint(Theme.surplus).disabled(sending)
+        }
+    }
+
+    var relationshipLabel: String {
+        switch relationship {
+        case .coach: return "Your coach"
+        case .client: return "Your client"
+        case .friend: return "Friends"
+        case nil: return ""
+        }
+    }
+
+    var relationshipIcon: String {
+        switch relationship {
+        case .coach: return "figure.strengthtraining.traditional"
+        case .client: return "person.crop.circle.badge.checkmark"
+        default: return "person.2.fill"
+        }
+    }
+
+    var removeLabel: String {
+        switch relationship {
+        case .coach: return "Remove coach"
+        case .client: return "Remove client"
+        default: return "Unfriend"
         }
     }
 
@@ -178,6 +285,25 @@ struct PublicProfileSheet: View {
             }
         } catch {
             errorText = "Couldn't send that request. Try again."
+        }
+    }
+
+    /// Run a relationship change, report it in place, and let the hub refetch.
+    /// Leaves the page open on success — the header re-renders from the caller's
+    /// refreshed state, and dismissing under the user hides whether it worked.
+    func manage(_ action: @escaping () async throws -> Void) async {
+        sending = true
+        errorText = nil
+        confirmingRemove = false
+        defer { sending = false }
+        do {
+            try await action()
+            onChanged?()
+            dismiss()
+        } catch let e as SharingError {
+            errorText = SharingView.message(for: e)
+        } catch {
+            errorText = "Couldn't do that. Try again."
         }
     }
 

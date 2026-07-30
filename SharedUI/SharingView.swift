@@ -99,7 +99,12 @@ struct SharingView: View {
             InviteShareSheet(username: svc.currentUsername ?? "")
         }
         .sheet(item: $viewingProfile) { person in
-            PublicProfileSheet(profile: person, context: person.tagline)
+            // Pass the relationship when we already have one, so opening a
+            // friend's profile from search shows the relationship and its
+            // actions instead of an "Add friend" button that would 409.
+            PublicProfileSheet(profile: person, context: person.tagline,
+                               relationship: conns.first(where: { $0.id == person.id })?.kind,
+                               onChanged: { Task { await refreshHub() } })
         }
         // An invite link that resolved: offer to connect right there rather
         // than dropping the person into a search field.
@@ -197,11 +202,17 @@ struct SharingView: View {
                 HStack(spacing: 6) {
                     NavigationLink {
                         // A client opens the coach's client detail (their workouts +
-                        // assign + message); coaches/friends open chat directly.
+                        // assign + message). Friends and coaches open their PERSON
+                        // PAGE — activity, mutuals, and the relationship actions —
+                        // with Message one tap in. Tapping a person used to land
+                        // straight in a chat log, which is a conversation, not a
+                        // person (operator 2026-07-30).
                         if c.kind == .client {
                             ClientDetailView(client: c.profile)
                         } else {
-                            ChatView(peer: c.profile, relationship: c.kind.rawValue)
+                            PublicProfileSheet(profile: c.profile, context: nil,
+                                               relationship: c.kind, pushed: true,
+                                               onChanged: { Task { await refreshHub() } })
                         }
                     } label: {
                         HStack(spacing: 10) {
@@ -591,6 +602,8 @@ struct SharingView: View {
             }
 
             ForEach(searchResults) { profile in
+                let existing = conns.first(where: { $0.id == profile.id })
+                VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 10) {
                     // Tapping the person opens their profile — mutual friends,
                     // public activity, and the friend/coach ask. A @handle alone
@@ -620,12 +633,28 @@ struct SharingView: View {
                     // own coach reads as broken and, tapped, 409s on the
                     // duplicate edge (operator screenshot 2026-07-29: @cindyk
                     // is the coach AND shows Add friend/Coach).
-                    if let existing = conns.first(where: { $0.id == profile.id }) {
-                        Text(existingRelationshipLabel(existing.kind))
+                    if let existing {
+                        // The badge is the way OUT of the relationship, not just
+                        // a label. Finding someone you're already with and having
+                        // no way to unfriend them from here is a dead end
+                        // (operator 2026-07-30) — same strip the list rows use.
+                        Button {
+                            managingID = managingID == existing.id ? nil : existing.id
+                            confirmingRemoveID = nil
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text(existingRelationshipLabel(existing.kind))
+                                Image(systemName: sym(managingID == existing.id
+                                                      ? "chevron.up" : "chevron.down"))
+                            }
                             .font(.caption2.weight(.semibold))
                             .padding(.horizontal, 10).padding(.vertical, 5)
                             .background(Theme.chartTrend.opacity(0.15), in: Capsule())
                             .foregroundStyle(Theme.chartTrend)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Manage \(existingRelationshipLabel(existing.kind)) with @\(profile.username)")
                     } else if pendingIDs.contains(profile.id) || requestedIDs.contains(profile.id) {
                         Label("Requested", systemImage: sym("checkmark"))
                             .font(.caption.weight(.semibold)).foregroundStyle(Theme.deficit)
@@ -641,6 +670,10 @@ struct SharingView: View {
                                 .background(Theme.chartTrend, in: Capsule()).foregroundStyle(.white)
                         }.buttonStyle(.plain)
                     }
+                }
+                if let existing, managingID == existing.id {
+                    managementStrip(existing)
+                }
                 }
                 .padding(.vertical, 4)
             }
