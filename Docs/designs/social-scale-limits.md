@@ -10,16 +10,29 @@ slowness — which is why they'd have shipped unnoticed.
 
 ## The shape of the system
 
-Everything social is Supabase + PostgREST + RLS. There is no server-side
-application code: the client composes REST queries and RLS decides what rows it
-may see. That's the right call for privacy (no service can read what the policies
-forbid) and it means **cost scales with clients, not with a fleet we run**. Adding
-100× the users adds 100× the requests against Postgres, which is a
-vertical-scaling problem with a long runway, and none of it requires us to
-operate anything new.
+Everything social is Supabase + PostgREST + RLS. Today the client composes REST
+queries and RLS decides what rows it may see, which is the right call for privacy
+(no service can read what the policies forbid) and means **cost scales with
+clients, not with a fleet we run**.
 
-What it also means: **any aggregate has to be computed client-side**, from rows
-the client pulled. That's the root of every real limit below.
+> **Correction, 2026-07-30.** An earlier version of this doc said "there is no
+> server-side application code" and "any aggregate has to be computed
+> client-side", then reasoned from it. Both were wrong, and the operator caught
+> it: "I think supabase has something to run on server side?" What's actually
+> available on this project — checked, not assumed:
+>
+> | capability | state | worth using for |
+> |---|---|---|
+> | Postgres functions (`security definer`) | **already shipping** — `are_connected`, `is_coach_of`, `mutual_friend_count`, `public_activity`, `prune_telemetry` | server-side aggregates and any query RLS can't express client-side |
+> | `pg_cron` 1.6.4 | **installed + scheduled 0013** | retention, rollups, anything periodic |
+> | Realtime | **already publishes `messages`** | replacing the chat poll with a subscription |
+> | `pg_net` 0.20.4, `http` 1.6 | available, not installed | a trigger calling out — real push notifications |
+> | `pgmq` 1.5.1, `wrappers`, `pg_jsonschema` | available, not installed | queues / FDWs / validation if ever needed |
+> | Edge Functions (Deno) | available, none deployed | anything needing a secret (FCM/APNs signing) |
+>
+> So the honest constraint was never "no server-side code" — it was "we haven't
+> used any yet." The client-side-aggregate limits below are real, but they were
+> choices, not laws.
 
 ## What breaks, in order of how quietly it does so
 
@@ -92,10 +105,12 @@ read state and paginated rosters, **not** to raise the constant.
 
 ## Features we are NOT building, for scale reasons
 
-- **A global/community leaderboard over per-user rows.** Ranking every user
-  against every user needs a server-side aggregate; there's no server-side code.
-  If this ships it must be ONE precomputed number (a median, a challenge total)
-  and never a materialised global ranking.
+- ~~**A global/community leaderboard over per-user rows.**~~ **WRONG — retracted
+  2026-07-30.** A global top-N is an ordered index read, not an aggregate: with
+  a `(board_key, period_start, value desc)` partial index it's 6 ms at 2.2M rows
+  (4,173 ms without). Shipped in 0012. The reason to prefer podium + your
+  bracket over an absolute top-100 is that steps are FAKEABLE, not that ranking
+  is expensive.
 - **A friends activity feed with fan-out on write.** Every social read today is
   fan-out-on-read against the reader's own edges, which RLS makes safe and
   simple. A feed table would need write fan-out per follower and is the first
@@ -188,3 +203,20 @@ leaking. **Query a new view as a real user before believing it.**
 
 `fetchMessages(with:before:)` exists for scrolling back past the newest 200, but
 no UI calls it yet — the history is reachable, the gesture isn't built.
+
+**Realtime instead of polling.** `supabase_realtime` already publishes
+`messages`, so the server half of push-based chat exists. The incremental poll
+made the cost acceptable, but a subscription would make it instant. iOS is
+straightforward (URLSession WebSocket). **Android is the blocker**: URLSession
+parks forever under Skip Fuse, so it needs an OkHttp WebSocket facade — the same
+shape as the existing Kotlin HTTP facade, bounded work but not free.
+
+**Real push notifications.** Worth stating plainly, because an earlier decision
+here was reasoned from the wrong constraint: local notifications cannot fire for
+a server event while the app is closed. `SocialAlertPoll` only runs when iOS
+grants a background refresh, which is opportunistic — so "notify the coach when a
+client logs a workout" is currently *eventually*, not *promptly*. A trigger on
+`messages` / `live_workouts` → `pg_net` → FCM/APNs (with keys in
+`supabase_vault`, or signed from an Edge Function) is the only way to make it
+timely. That needs credentials, which is a real cost — but the constraint is
+credentials, never "there's no server".
