@@ -275,10 +275,10 @@ struct DashboardView: View {
                     // is a bit hidden"). Activity is its home — training
                     // partners belong next to the workouts. Signed-out shows
                     // a quiet invitation rather than nothing.
-                    NavigationLink { SharingView() } label: {
-                        FriendsDashboardCard()
-                    }
-                    .tint(.primary)
+                    // Bare: the card owns its own navigation now, because the
+                    // destination depends on data only it has (straight to the
+                    // coach's chat when there's one obvious conversation).
+                    FriendsDashboardCard()
 
                     // ── Recovery ──
                     sectionHeader("Recovery")

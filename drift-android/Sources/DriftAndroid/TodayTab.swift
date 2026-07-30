@@ -161,10 +161,10 @@ struct TodayTab: View {
                     // (tap-to-chat, client detail) no stack to push onto, so
                     // every row inside was a dead tap (operator repro on
                     // device, build 69, 2026-07-29).
-                    NavigationLink { SharingView() } label: {
-                        FriendsDashboardCard()
-                    }
-                    .buttonStyle(.plain)
+                    // Bare: the card owns its own navigation now (see
+                    // FriendsDashboardCard) — it may go to the coach's chat
+                    // rather than the hub.
+                    FriendsDashboardCard()
 
                     statTrio
                 }

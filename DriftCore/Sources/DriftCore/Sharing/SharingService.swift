@@ -373,6 +373,16 @@ public final class SharingService {
     /// Fetches newest-first then reverses — `asc&limit=200` returned the FIRST
     /// 200 messages ever, so once a conversation passed 200 the poll re-read
     /// the same stale page forever and new messages never appeared.
+    /// Everything recently sent TO the caller, across all correspondents — one
+    /// round trip for the Today card instead of one fetch per connection.
+    /// `Inbox.entries` groups it into newest-per-person with unread counts.
+    public func recentInbox(limit: Int = 100) async throws -> [MessageDTO] {
+        let uid = try requireUserID()
+        return try await client.restGet(
+            "messages?recipient_id=eq.\(uid)&select=*&order=created_at.desc&limit=\(limit)",
+            token: try await validToken())
+    }
+
     public func fetchMessages(with otherID: String) async throws -> [MessageDTO] {
         let uid = try requireUserID()
         let filter = "or=(and(sender_id.eq.\(uid),recipient_id.eq.\(otherID)),"

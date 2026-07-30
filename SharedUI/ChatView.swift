@@ -107,6 +107,9 @@ struct ChatView: View {
         loading = true
         messages = (try? await svc.fetchMessages(with: peer.id)) ?? []
         loading = false
+        // Reading the conversation IS reading it — clear this peer's unread
+        // mark so the Today card and the hub stop badging it.
+        SeenMarks.markMessagesSeen(peer: peer.id)
     }
 
     private func send() async {
@@ -134,6 +137,8 @@ struct ChatView: View {
             // kept the stale page on screen.
             if let fresh = try? await svc.fetchMessages(with: peer.id), fresh != messages {
                 messages = fresh
+                // Still on screen, so anything that just arrived is read.
+                SeenMarks.markMessagesSeen(peer: peer.id)
             }
         }
     }

@@ -425,16 +425,71 @@ struct ClientBriefingTests {
             session("s4", client: "someone-else", started: now),
         ]
 
-        #expect(CoachSeenStore.unseenCount(for: clientID, sessions: sessions) == 2,
+        #expect(SeenMarks.unseenSessionCount(for: clientID, sessions: sessions) == 2,
                 "never looked: both completed sessions are new")
 
-        CoachSeenStore.markSeen(client: clientID, at: now)
-        #expect(CoachSeenStore.unseenCount(for: clientID, sessions: sessions) == 0)
+        SeenMarks.markSessionsSeen(client: clientID, at: now)
+        #expect(SeenMarks.unseenSessionCount(for: clientID, sessions: sessions) == 0)
 
         // A session finished after the visit badges again.
         let later = sessions + [session("s5", client: clientID,
                                         started: now.addingTimeInterval(60))]
-        #expect(CoachSeenStore.unseenCount(for: clientID, sessions: later) == 1)
+        #expect(SeenMarks.unseenSessionCount(for: clientID, sessions: later) == 1)
+    }
+
+    // MARK: - Inbox / message unread marks
+
+    private func message(_ id: String, from sender: String, to recipient: String,
+                         _ body: String, at when: Date) -> MessageDTO {
+        MessageDTO(id: id, senderId: sender, recipientId: recipient, body: body,
+                   createdAt: DateFormatters.iso8601.string(from: when))
+    }
+
+    /// One entry per correspondent, newest first, carrying the latest body —
+    /// the preview is what makes the Today card an inbox instead of a counter.
+    @Test func inboxGroupsByPeerAndKeepsTheNewestBody() {
+        let now = Date()
+        let messages = [
+            message("m1", from: "cindy", to: "me", "Older from Cindy",
+                    at: now.addingTimeInterval(-7200)),
+            message("m2", from: "cindy", to: "me", "Let's push the squat next week",
+                    at: now.addingTimeInterval(-600)),
+            message("m3", from: "hud", to: "me", "gym at 6?",
+                    at: now.addingTimeInterval(-1800)),
+            // My own reply must never create an entry — an entry is about what
+            // someone sent ME.
+            message("m4", from: "me", to: "cindy", "will do", at: now),
+        ]
+
+        let entries = Inbox.entries(from: messages, me: "me")
+        #expect(entries.count == 2)
+        #expect(entries.first?.peerID == "cindy", "newest correspondent leads")
+        #expect(entries.first?.latestBody == "Let's push the squat next week")
+        #expect(entries.last?.peerID == "hud")
+        #expect(!entries.contains { $0.peerID == "me" })
+    }
+
+    /// Unread counts only INBOUND messages, and clear when the conversation is
+    /// opened. Your own replies are not news.
+    @Test func unreadCountsInboundOnlyAndClearsOnRead() {
+        let peer = "peer-\(UUID().uuidString)"
+        let now = Date()
+        let messages = [
+            message("m1", from: peer, to: "me", "one", at: now.addingTimeInterval(-600)),
+            message("m2", from: peer, to: "me", "two", at: now.addingTimeInterval(-300)),
+            message("m3", from: "me", to: peer, "my reply", at: now),
+        ]
+
+        #expect(SeenMarks.unreadCount(peer: peer, messages: messages) == 2,
+                "never opened: both inbound are unread")
+
+        SeenMarks.markMessagesSeen(peer: peer, at: now)
+        #expect(SeenMarks.unreadCount(peer: peer, messages: messages) == 0)
+
+        let later = messages + [message("m4", from: peer, to: "me", "three",
+                                        at: now.addingTimeInterval(60))]
+        #expect(SeenMarks.unreadCount(peer: peer, messages: later) == 1,
+                "a message after the visit is unread again")
     }
 
     // MARK: - Plateau alerts

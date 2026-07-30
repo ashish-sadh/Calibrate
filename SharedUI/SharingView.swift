@@ -171,9 +171,9 @@ struct SharingView: View {
                             }
                             Spacer()
                             // The coach's unread mark — Drift's honest stand-in
-                            // for a push notification (see CoachSeenStore).
+                            // for a push notification (see SeenMarks).
                             if c.kind == .client {
-                                let unseen = CoachSeenStore.unseenCount(
+                                let unseen = SeenMarks.unseenSessionCount(
                                     for: c.profile.id, sessions: clientSessions)
                                 if unseen > 0 {
                                     Text("\(unseen) new")
