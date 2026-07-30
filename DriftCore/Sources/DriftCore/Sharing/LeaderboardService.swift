@@ -69,6 +69,24 @@ public enum LeaderboardService {
         return Leaderboard.sections(from: entries, profiles: profiles, me: me)
     }
 
+    /// Your own boards, when no friend has joined them yet. See
+    /// `Leaderboard.soloSections` for why showing these matters.
+    public static func soloSections(connections: [Connection],
+                                   now: Date = Date()) async -> [Leaderboard.Section] {
+        let svc = SharingService.shared
+        guard svc.isSignedIn, Preferences.shareStatsWithFriends,
+              let me = svc.currentSession?.userID else { return [] }
+        var profiles = Dictionary(uniqueKeysWithValues:
+            connections.filter { $0.kind == .friend }.map { ($0.profile.id, $0.profile) })
+        if let mine = svc.currentUsername {
+            profiles[me] = SharedProfile(id: me, username: mine)
+        }
+        let periods = [periodStart(.week, for: now), periodStart(.month, for: now)]
+        let entries = (try? await svc.leaderboardEntries(userIDs: Array(profiles.keys),
+                                                        periods: periods)) ?? []
+        return Leaderboard.soloSections(from: entries, profiles: profiles, me: me)
+    }
+
     /// A global board: the podium, then the caller's own bracket.
     ///
     /// Two halves because they answer different questions. The podium is

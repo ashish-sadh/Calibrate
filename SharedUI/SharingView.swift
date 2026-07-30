@@ -55,6 +55,8 @@ struct SharingView: View {
     /// Set when a `drift://add/<handle>` link resolved to a real person, so the
     /// hub can offer to connect without making them search.
     @State var invitedProfile: SharedProfile?
+    /// Section titles the user has expanded past the collapsed cap.
+    @State var expandedSections: Set<String> = []
 
     private var svc: SharingService { .shared }
 
@@ -149,16 +151,17 @@ struct SharingView: View {
             if connectionsFailed {
                 couldNotLoadCard
             } else {
-                connectionSection("FRIENDS", friendConns, subtitle: nil,
-                                  emptyText: "No friends yet. Search a @username above to add a friend or a coach.")
-                // Below the friend list, not above it: the point of the screen is
-                // the people, and a scoreboard at the top would reframe them as
-                // competitors before you'd even seen their names. Hidden entirely
-                // with no friends — a leaderboard of one is a joke at your own
-                // expense.
+                // ABOVE the friend list (operator 2026-07-30: "long list of
+                // friends hiding leaderboard... move leaderboard up"). I had put
+                // it below on the theory that people outrank a scoreboard — true
+                // in principle, wrong in practice: twelve friends is a wall of
+                // ~150pt rows and the board was three screens down, which is the
+                // same as not shipping it.
                 if !friendConns.isEmpty {
                     LeaderboardsCard(connections: conns)
                 }
+                connectionSection("FRIENDS", friendConns, subtitle: nil,
+                                  emptyText: "No friends yet. Search a @username above to add a friend or a coach.")
             }
         }
     }
@@ -172,7 +175,11 @@ struct SharingView: View {
             if list.isEmpty, let emptyText {
                 Text(emptyText).font(.caption).foregroundStyle(Theme.textSecondary)
             }
-            ForEach(list) { c in
+            // Collapsed past a handful. Twelve people at ~150pt each buried
+            // everything under this section — including the leaderboard, which
+            // is what the operator actually came here for. The cap is a display
+            // choice only: nobody is hidden, the rest are one tap away.
+            ForEach(visible(list, in: title)) { c in
                 // The manage button lives BESIDE the NavigationLink, never
                 // inside its label — nested tap targets are dead on Fuse.
                 HStack(spacing: 6) {
@@ -190,8 +197,12 @@ struct SharingView: View {
                             VStack(alignment: .leading, spacing: 1) {
                                 Text("@\(c.profile.username)").font(.subheadline.weight(.medium))
                                     .foregroundStyle(Theme.textPrimary)
-                                Text(subtitle ?? (c.profile.displayName ?? "tap to chat"))
-                                    .font(.caption2).foregroundStyle(Theme.textSecondary)
+                                // Only when it SAYS something. "tap to chat" on
+                                // every row is decoration that doubles the height
+                                // of a twelve-person list.
+                                if let line = subtitle ?? c.profile.displayName {
+                                    Text(line).font(.caption2).foregroundStyle(Theme.textSecondary)
+                                }
                             }
                             Spacer()
                             // The coach's unread mark — Drift's honest stand-in
@@ -211,7 +222,7 @@ struct SharingView: View {
                             Image(systemName: sym("chevron.right"))
                                 .font(.caption2).foregroundStyle(Theme.textTertiary)
                         }
-                        .contentShape(Rectangle()).padding(.vertical, 4)
+                        .contentShape(Rectangle()).padding(.vertical, 2)
                     }
                     .buttonStyle(.plain)
 
@@ -227,8 +238,13 @@ struct SharingView: View {
                     .buttonStyle(.plain)
                 }
                 if managingID == c.id { managementStrip(c) }
-                if c.id != list.last?.id { Divider().overlay(Theme.separatorFaint) }
+                // Keyed off what's ON SCREEN, not the full list — otherwise the
+                // collapsed view ends on a dangling divider.
+                if c.id != visible(list, in: title).last?.id {
+                    Divider().overlay(Theme.separatorFaint)
+                }
             }
+            expander(list, in: title)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .card()
@@ -645,7 +661,7 @@ struct SharingView: View {
     private var privacyFootnote: some View {
         HStack(spacing: 6) {
             Image(systemName: sym("lock.fill")).font(.caption2).foregroundStyle(Theme.deficit)
-            Text("Only your @username, display name, and the workouts you explicitly share leave this device. Everything else stays local.")
+            Text("Your @username and display name, the workouts you share, and — if you turn on Leaderboards — your weekly steps, calories and best lifts leave this device. Everything else stays local.")
                 .font(.caption2).foregroundStyle(Theme.textTertiary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -748,6 +764,40 @@ struct SharingView: View {
         } else {
             let profs = (try? await svc.profiles(ids: requests.map(\.requesterId))) ?? []
             requestSenders = Dictionary(profs.map { ($0.id, $0) }, uniquingKeysWith: { a, _ in a })
+        }
+    }
+
+    /// How many rows a section shows before collapsing. Six fills roughly one
+    /// screen with the search card above it, which is the point at which a list
+    /// stops being scannable and starts being scrolled past.
+    static let collapsedRowCap = 6
+
+    func visible(_ list: [Connection], in title: String) -> [Connection] {
+        guard !expandedSections.contains(title), list.count > Self.collapsedRowCap else {
+            return list
+        }
+        return Array(list.prefix(Self.collapsedRowCap))
+    }
+
+    /// "Show all 12" / "Show fewer". Only when there IS more to show.
+    @ViewBuilder
+    func expander(_ list: [Connection], in title: String) -> some View {
+        if list.count > Self.collapsedRowCap {
+            let isExpanded = expandedSections.contains(title)
+            Button {
+                if isExpanded { expandedSections.remove(title) }
+                else { expandedSections.insert(title) }
+            } label: {
+                HStack(spacing: 4) {
+                    Text(isExpanded ? "Show fewer" : "Show all \(list.count)")
+                        .font(.caption.weight(.medium)).foregroundStyle(Theme.accent)
+                    Image(systemName: sym(isExpanded ? "chevron.up" : "chevron.down"))
+                        .font(.caption2).foregroundStyle(Theme.accent)
+                    Spacer()
+                }
+                .contentShape(Rectangle()).padding(.top, 2)
+            }
+            .buttonStyle(.plain)
         }
     }
 

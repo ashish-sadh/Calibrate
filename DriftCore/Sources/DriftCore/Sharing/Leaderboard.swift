@@ -170,7 +170,8 @@ public enum Leaderboard {
     /// extra requests: the boards come from rows already fetched.
     public static func sections(from entries: [LeaderboardEntryDTO],
                               profiles: [String: SharedProfile],
-                              me: String?) -> [Section] {
+                              me: String?,
+                              minimum: Int = minimumParticipants) -> [Section] {
         var byBoard: [String: [LeaderboardEntryDTO]] = [:]
         for entry in entries where profiles[entry.userId] != nil {
             byBoard[entry.boardKey, default: []].append(entry)
@@ -185,7 +186,7 @@ public enum Leaderboard {
                 if let existing = best[entry.userId], existing.value >= entry.value { continue }
                 best[entry.userId] = entry
             }
-            guard best.count >= minimumParticipants else { continue }
+            guard best.count >= minimum else { continue }
 
             let board = LeaderboardBoard.from(key: key, unit: group.first?.unit ?? "")
             let rows = rank(best.values.map { ($0.userId, $0.value) },
@@ -246,6 +247,26 @@ public enum Leaderboard {
             lastRank = rank
         }
         return rows
+    }
+
+    /// Boards where the user is publishing but NOBODY ELSE is yet.
+    ///
+    /// The cold-start problem I built and the operator hit within a day: an
+    /// opt-in board that needs two participants can never bootstrap. You turn it
+    /// on, you are the only publisher, the ≥2 rule hides every board — including
+    /// your own numbers — so the screen says "nothing shared yet" to someone who
+    /// just shared something, and there is no reason to leave it on.
+    ///
+    /// So these render, clearly labelled as waiting rather than as a ranking.
+    /// "#1 of 1" is still never shown; your value is, because seeing it is what
+    /// tells you the thing works and is worth nudging a friend about.
+    public static func soloSections(from entries: [LeaderboardEntryDTO],
+                                   profiles: [String: SharedProfile],
+                                   me: String?) -> [Section] {
+        let all = sections(from: entries, profiles: profiles, me: me, minimum: 1)
+        // Only the ones that DIDN'T qualify as real boards, and only mine.
+        let real = Set(sections(from: entries, profiles: profiles, me: me).map(\.board.key))
+        return all.filter { !real.contains($0.board.key) && $0.rows.contains(where: \.isMe) }
     }
 
     /// Where the user sits on one board, phrased without naming anyone else —

@@ -338,3 +338,58 @@ struct CoachFacingSummaryTests {
         #expect(!SharingService.coachFacingSummary(CoachNotes()).contains("Goal"))
     }
 }
+
+/// Tier-0 for the COLD START — a board nobody else has joined yet.
+///
+/// The operator hit this on day one: "my leaderboard looks empty even though I
+/// have 12 friends." Publishing was working (11 entries); he was simply the only
+/// publisher, and the ≥2 rule hid every board including his own.
+struct SoloBoardTests {
+
+    private func profile(_ n: String) -> SharedProfile {
+        SharedProfile(id: n, username: n, displayName: nil, avatarUrl: nil)
+    }
+    private func entry(_ u: String, _ b: String, _ v: Double) -> LeaderboardEntryDTO {
+        LeaderboardEntryDTO(userId: u, boardKey: b, periodStart: "2026-07-27", value: v, unit: "")
+    }
+
+    /// Alone on a board: it is NOT a real board, but my value is still surfaced.
+    @Test func myOwnNumbersSurfaceWhenNobodyElseHasJoined() {
+        let people = ["me": profile("me"), "ana": profile("ana")]
+        let entries = [entry("me", "steps", 47_000)]
+        #expect(Leaderboard.sections(from: entries, profiles: people, me: "me").isEmpty,
+                "one participant is still not a ranking")
+        let solo = Leaderboard.soloSections(from: entries, profiles: people, me: "me")
+        #expect(solo.map(\.board.key) == ["steps"])
+        #expect(solo[0].rows.first?.value == 47_000)
+    }
+
+    /// Once a friend joins, it becomes a REAL board and must stop being listed
+    /// as waiting — otherwise it renders twice.
+    @Test func aBoardStopsBeingSoloOnceAFriendJoins() {
+        let people = ["me": profile("me"), "ana": profile("ana")]
+        let entries = [entry("me", "steps", 47_000), entry("ana", "steps", 51_000)]
+        #expect(Leaderboard.sections(from: entries, profiles: people, me: "me").count == 1)
+        #expect(Leaderboard.soloSections(from: entries, profiles: people, me: "me").isEmpty)
+    }
+
+    /// A friend publishing alone is NOT my waiting board — I'd be showing
+    /// someone else's number under "your numbers".
+    @Test func aFriendsSoloBoardIsNotMine() {
+        let people = ["me": profile("me"), "ana": profile("ana")]
+        let entries = [entry("ana", "lift:squat", 300)]
+        #expect(Leaderboard.soloSections(from: entries, profiles: people, me: "me").isEmpty)
+    }
+
+    /// Mixed: one real board, one waiting. Each appears exactly once.
+    @Test func realAndWaitingBoardsDoNotOverlap() {
+        let people = ["me": profile("me"), "ana": profile("ana")]
+        let entries = [entry("me", "steps", 47_000), entry("ana", "steps", 51_000),
+                       entry("me", "lift:deadlift", 405)]
+        let real = Leaderboard.sections(from: entries, profiles: people, me: "me").map(\.board.key)
+        let solo = Leaderboard.soloSections(from: entries, profiles: people, me: "me").map(\.board.key)
+        #expect(real == ["steps"])
+        #expect(solo == ["lift:deadlift"])
+        #expect(Set(real).intersection(Set(solo)).isEmpty)
+    }
+}

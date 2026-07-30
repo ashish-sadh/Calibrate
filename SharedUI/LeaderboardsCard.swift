@@ -24,6 +24,8 @@ struct LeaderboardsCard: View {
     /// Not private — Fuse can't bridge private @State.
     @State var sharing = Preferences.shareStatsWithFriends
     @State var sections: [Leaderboard.Section] = []
+    /// Boards where I'm publishing but no friend has joined yet.
+    @State var solo: [Leaderboard.Section] = []
     @State var expanded: Set<String> = []
     @State var loading = false
     @State var busy = false
@@ -50,7 +52,7 @@ struct LeaderboardsCard: View {
                 invitation
             } else if loading {
                 ProgressView().frame(maxWidth: .infinity).padding(.vertical, 12)
-            } else if sections.isEmpty {
+            } else if sections.isEmpty && solo.isEmpty {
                 Text("Nothing shared yet. Boards appear once you and a friend both have numbers for the same thing — steps, a lift, anything.")
                     .font(.caption).foregroundStyle(Theme.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -58,6 +60,7 @@ struct LeaderboardsCard: View {
                 ForEach(sections) { section in
                     boardView(section)
                 }
+                if !solo.isEmpty { waitingSection }
             }
         }
         .card()
@@ -237,9 +240,10 @@ struct LeaderboardsCard: View {
     var myID: String? { SharingService.shared.currentSession?.userID }
 
     func refresh() async {
-        guard sharing else { sections = []; globalBoards = [:]; return }
+        guard sharing else { sections = []; solo = []; globalBoards = [:]; return }
         loading = true
         sections = await LeaderboardService.sections(connections: connections)
+        solo = await LeaderboardService.soloSections(connections: connections)
         loading = false
         await loadGlobal()
     }
@@ -286,4 +290,38 @@ struct LeaderboardsCard: View {
             }
         }
     }
+    /// Your numbers, with nobody to compare them to yet.
+    ///
+    /// The cold start I designed in and the operator hit on day one: "my
+    /// leaderboard looks empty even though I have 12 friends." His publishing
+    /// was fine — 11 entries — but he was the ONLY publisher, and the
+    /// two-participant rule hid every board including his own. A board that says
+    /// "nothing shared yet" to someone who just shared something reads as broken,
+    /// and gives them no reason to leave it on.
+    ///
+    /// So the values show, labelled as waiting rather than ranked. No "#1 of 1",
+    /// no podium — just what you'd bring to a board, and a nudge, because the
+    /// only thing that fixes a cold start is a friend turning it on too.
+    var waitingSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("WAITING FOR FRIENDS").sectionHeading()
+            Text("You're the only one sharing so far. These are your numbers — a board appears as soon as one friend turns this on too.")
+                .font(.caption2).foregroundStyle(Theme.textTertiary)
+                .fixedSize(horizontal: false, vertical: true)
+            ForEach(solo) { section in
+                if let mine = section.rows.first(where: \.isMe) {
+                    HStack(spacing: 8) {
+                        Text(section.board.title)
+                            .font(.caption).foregroundStyle(Theme.textPrimary)
+                        Text(section.board.period.label)
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
+                        Spacer()
+                        Text(Leaderboard.formatted(mine.value, board: section.board))
+                            .font(.caption.weight(.semibold)).foregroundStyle(Theme.textPrimary)
+                    }
+                }
+            }
+        }
+    }
+
 }
