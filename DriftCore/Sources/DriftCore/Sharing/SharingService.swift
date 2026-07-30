@@ -77,8 +77,11 @@ public final class SharingService {
     }
 
     /// Set (or clear) my one-line tagline. Trimmed and capped to match the
-    /// server CHECK, so the write can't be rejected for length.
-    public func setTagline(_ text: String?) async throws {
+    /// server CHECK, so the write can't be rejected for length. Returns the
+    /// upserted directory row so the caller can reflect it immediately instead
+    /// of waiting for the next hub refresh.
+    @discardableResult
+    public func setTagline(_ text: String?) async throws -> SharedProfile? {
         let uid = try requireUserID()
         let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let value = trimmed.isEmpty ? nil : String(trimmed.prefix(80))
@@ -87,8 +90,9 @@ public final class SharingService {
         // old tagline in place and "clear it" would silently do nothing —
         // exactly the trap flagged in review on `setHistoryGrant`.
         let row: [String: Any] = ["id": uid, "tagline": value ?? NSNull()]
-        let _: [SharedProfile] = try await client.restInsert(
+        let rows: [SharedProfile] = try await client.restInsert(
             "profiles", body: [row], token: try await validToken(), upsert: true)
+        return rows.first
     }
 
     /// Search the directory by username / display-name prefix. Excludes self.

@@ -974,7 +974,15 @@ struct SharingView: View {
                     Button {
                         let text = taglineDraft
                         editingTagline = false
-                        Task { await run { try await svc.setTagline(text) } }
+                        // Reflect the save immediately. The old code fired the
+                        // write but never updated myProfile, so the display
+                        // branch re-rendered the stale (usually nil) tagline and
+                        // the new one only appeared after re-entering the tab.
+                        Task { await run {
+                            if let updated = try await svc.setTagline(text) {
+                                myProfile = updated
+                            }
+                        } }
                     } label: { Text("Save").font(.caption.weight(.semibold)) }
                     .buttonStyle(.borderedProminent).tint(Theme.accent)
                     Button {
