@@ -95,6 +95,9 @@ struct MealChips: View {
                         Image(systemName: meal.icon).font(.caption2)
                         #endif
                         Text(meal.displayName).font(.caption.weight(.medium))
+                            // "Breakfast" hyphenated onto two lines inside the
+                            // narrower Quick Add card — chips are one line.
+                            .lineLimit(1).fixedSize(horizontal: true, vertical: false)
                     }
                     .foregroundStyle(selection == meal ? .white : .secondary)
                     .padding(.horizontal, 10).padding(.vertical, 6)

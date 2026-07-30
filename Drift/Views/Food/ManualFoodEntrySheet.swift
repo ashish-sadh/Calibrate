@@ -14,6 +14,10 @@ struct ManualFoodEntrySheet: View {
     @State private var serving = "1"
     @State private var servingUnit = "serving"
     @State private var logTime = Date()
+    /// Auto-selected from the current hour; MealTimePicker keeps it in step
+    /// with the time slider until the user taps a chip to pin it.
+    @State private var mealType = MealType.defaultForHour(
+        Calendar.current.component(.hour, from: Date()))
 
     init(viewModel: FoodLogViewModel, prefill: AIChatViewModel.ManualFoodPrefill? = nil, onLogged: @escaping () -> Void) {
         self.viewModel = viewModel
@@ -112,9 +116,13 @@ struct ManualFoodEntrySheet: View {
                     .padding(.horizontal, 16).padding(.vertical, 10)
                     .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
 
-                    // Log time — defaults to now, user can change
-                    DatePicker("Log time", selection: $logTime, displayedComponents: .hourAndMinute)
-                        .font(.caption).foregroundStyle(Theme.textSecondary)
+                    // Time + meal, the same coupled control the barcode and
+                    // photo review sheets use: the meal chip auto-follows the
+                    // time of day, and tapping a chip pins it without moving
+                    // the time. Previously this sheet had a bare DatePicker and
+                    // silently applied autoMealType — the meal was neither
+                    // visible nor changeable here.
+                    MealTimePicker(time: $logTime, mealType: $mealType)
                         .padding(.horizontal, 16).padding(.vertical, 10)
                         .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
                 }
@@ -143,7 +151,7 @@ struct ManualFoodEntrySheet: View {
                         let loggedAtStr = ISO8601DateFormatter().string(from: viewModel.anchoredToSelectedDay(logTime))
                         viewModel.quickAdd(name: name.isEmpty ? "Quick Add" : name,
                                            calories: totalCal, proteinG: p, carbsG: c, fatG: f,
-                                           fiberG: Double(fiber) ?? 0, mealType: viewModel.autoMealType,
+                                           fiberG: Double(fiber) ?? 0, mealType: mealType,
                                            loggedAt: loggedAtStr, servingSizeG: servingG)
                         viewModel.loadSuggestions()
                         onLogged()
