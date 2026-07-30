@@ -133,10 +133,15 @@ struct LeaderboardsCard: View {
                 HStack(spacing: 10) {
                     // Medal for the podium, muted number after — the shape
                     // people recognise from a results page.
+                    // 22pt was too narrow for "2nd" at bold caption, so it
+                    // hyphenated to "2n/d" and shoved that row's avatar and name
+                    // out of line with 1st and 3rd. Fixed width + one line keeps
+                    // every rank in the same column.
                     Text(medal(row.rank))
                         .font(.caption.weight(.bold))
                         .foregroundStyle(medalTint(row.rank))
-                        .frame(width: 22, alignment: .center)
+                        .lineLimit(1)
+                        .frame(width: 30, alignment: .leading)
                     Text(String(row.profile.username.prefix(1)).uppercased())
                         .font(.caption2.weight(.semibold)).foregroundStyle(.white)
                         .frame(width: 24, height: 24)
@@ -145,12 +150,13 @@ struct LeaderboardsCard: View {
                     Text(row.isMe ? "You" : "@\(row.profile.username)")
                         .font(.caption.weight(row.isMe ? .semibold : .regular))
                         .foregroundStyle(Theme.textPrimary).lineLimit(1)
-                    Spacer()
+                    Spacer(minLength: 8)
                     Text(Leaderboard.formatted(row.value, board: section.board))
                         .font(.caption.weight(.semibold).monospacedDigit())
                         .foregroundStyle(Theme.textPrimary)
+                        .lineLimit(1)
                 }
-                .padding(.vertical, 3)
+                .padding(.vertical, 6)
                 .padding(.horizontal, 8)
                 .background(row.isMe ? Theme.accent.opacity(0.07) : Color.clear,
                             in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
@@ -282,18 +288,26 @@ struct LeaderboardsCard: View {
                 Text(rank.map(String.init) ?? "·")
                     .font(.caption2.weight(.bold))
                     .foregroundStyle(rank == 1 ? Theme.accent : Theme.textTertiary)
+                    .lineLimit(1)
                     .frame(width: 16, alignment: .trailing)
                 Text(isMe ? "You" : "@\(profile?.username ?? String(entry.userId.prefix(6)))")
                     .font(.caption.weight(isMe ? .semibold : .regular))
                     .foregroundStyle(Theme.textPrimary).lineLimit(1)
-                Spacer()
+                Spacer(minLength: 8)
                 Text(Leaderboard.formatted(entry.value, board: board))
-                    .font(.caption.weight(.semibold)).foregroundStyle(Theme.textPrimary)
-                if !isMe, profile != nil {
-                    Image(systemName: sym("chevron.right"))
-                        .font(.caption2).foregroundStyle(Theme.textTertiary)
-                }
+                    .font(.caption.weight(.semibold).monospacedDigit())
+                    .foregroundStyle(Theme.textPrimary).lineLimit(1)
+                // Always reserve the chevron's width — rendering it only on
+                // tappable rows left the values ragged down the right edge.
+                Image(systemName: sym("chevron.right"))
+                    .font(.caption2)
+                    .foregroundStyle((!isMe && profile != nil) ? Theme.textTertiary : .clear)
+                    .frame(width: 8)
             }
+            // Same 8pt inset as the rows above, so both lists share one left
+            // edge instead of the global list hanging outside it.
+            .padding(.vertical, 4)
+            .padding(.horizontal, 8)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
