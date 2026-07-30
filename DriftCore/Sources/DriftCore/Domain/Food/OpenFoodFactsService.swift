@@ -81,7 +81,7 @@ public enum OpenFoodFactsService {
 
         let nutriments = product["nutriments"] as? [String: Any] ?? [:]
 
-        let calories = nutriments["energy-kcal_100g"] as? Double
+        let statedCalories = nutriments["energy-kcal_100g"] as? Double
             ?? nutriments["energy-kcal"] as? Double ?? 0
         let protein = nutriments["proteins_100g"] as? Double
             ?? nutriments["proteins"] as? Double ?? 0
@@ -91,6 +91,15 @@ public enum OpenFoodFactsService {
             ?? nutriments["fat"] as? Double ?? 0
         let fiber = nutriments["fiber_100g"] as? Double
             ?? nutriments["fiber"] as? Double ?? 0
+
+        // Atwater guard: OFF's `energy-kcal` fallback (per-serving) can end up
+        // paired with per-100g macros, and crowd-sourced energy fields are
+        // sometimes plain wrong. Prefer the macro-implied value when they clash.
+        let calories = AtwaterCheck.reconciledCalories(
+            stated: statedCalories, proteinG: protein, carbsG: carbs, fatG: fat, fiberG: fiber)
+        if calories != statedCalories {
+            Log.foodLog.info("Atwater guard (\(barcode)): stated \(Int(statedCalories))cal/100g vs macros \(Int(protein))P \(Int(carbs))C \(Int(fat))F → \(Int(calories))cal/100g")
+        }
 
         let name = product["product_name"] as? String ?? "Unknown Product"
         let brand = product["brands"] as? String
@@ -142,11 +151,16 @@ public enum OpenFoodFactsService {
 
         return products.compactMap { product in
             let nutriments = product["nutriments"] as? [String: Any] ?? [:]
-            let calories = nutriments["energy-kcal_100g"] as? Double ?? nutriments["energy-kcal"] as? Double ?? 0
+            let statedCalories = nutriments["energy-kcal_100g"] as? Double ?? nutriments["energy-kcal"] as? Double ?? 0
             let protein = nutriments["proteins_100g"] as? Double ?? 0
             let carbs = nutriments["carbohydrates_100g"] as? Double ?? 0
             let fat = nutriments["fat_100g"] as? Double ?? 0
             let fiber = nutriments["fiber_100g"] as? Double ?? 0
+
+            // Atwater guard — see `lookup`. Runs before the `> 0` gate so a row
+            // with real macros but a missing/zero energy field still surfaces.
+            let calories = AtwaterCheck.reconciledCalories(
+                stated: statedCalories, proteinG: protein, carbsG: carbs, fatG: fat, fiberG: fiber)
 
             guard calories > 0 else { return nil }
             let name = product["product_name"] as? String ?? ""

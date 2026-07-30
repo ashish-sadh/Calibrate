@@ -88,11 +88,16 @@ public enum USDAFoodService {
                 nutrients.first { ($0["nutrientId"] as? Int) == id }?["value"] as? Double ?? 0
             }
 
-            let cal = nutrientValue(1008)    // Energy (kcal)
-            let protein = nutrientValue(1003) // Protein
-            let carbs = nutrientValue(1005)   // Carbohydrates
-            let fat = nutrientValue(1004)     // Total fat
-            let fiber = nutrientValue(1079)   // Fiber
+            let statedCal = nutrientValue(1008) // Energy (kcal)
+            let protein = nutrientValue(1003)   // Protein
+            let carbs = nutrientValue(1005)     // Carbohydrates
+            let fat = nutrientValue(1004)       // Total fat
+            let fiber = nutrientValue(1079)     // Fiber
+
+            // Atwater guard — USDA rows are normally self-consistent, but the
+            // same energy/macro sanity check applies uniformly across sources.
+            let cal = AtwaterCheck.reconciledCalories(
+                stated: statedCal, proteinG: protein, carbsG: carbs, fatG: fat, fiberG: fiber)
 
             guard cal > 0 else { return nil }
 

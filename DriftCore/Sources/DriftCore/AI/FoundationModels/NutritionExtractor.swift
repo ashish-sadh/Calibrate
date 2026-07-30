@@ -65,6 +65,62 @@ public enum NutritionBounds {
     }
 }
 
+// MARK: - Atwater energy/macro consistency (barcode + OCR + USDA import guard)
+
+/// Guards against the failure mode where a food's stated energy disagrees with
+/// the energy implied by its macros — the classic symptom of a source that
+/// paired a per-serving calorie figure with per-100g macros, or shipped a bad
+/// crowd-sourced energy field. Reported 2026-07-30: a barcode scan of "aloo
+/// bhujia" returned 130 kcal alongside 8P/41C/47F per 100g, which by Atwater
+/// (4/4/9) is ~619 kcal — the label itself reads 624.
+///
+/// All values must share ONE basis (all per-100g, or all per-serving) — the
+/// ratio is what matters, so callers can check either the raw source struct or
+/// the scaled `Food` as long as energy and macros were scaled together.
+public enum AtwaterCheck {
+    /// Relative gap between stated and macro-implied energy above which we stop
+    /// trusting the stated figure. 25% comfortably clears the normal noise from
+    /// rounding and sugar alcohols; the fiber discount below handles high-fiber
+    /// foods so the tolerance doesn't have to.
+    public static let tolerance = 0.25
+
+    /// Below this macro-implied energy there isn't enough signal to judge the
+    /// stated calories (a drink logged as calories-only, an all-zero macro row).
+    public static let minSignalKcal = 20.0
+
+    /// Energy (kcal) implied by macros. Protein and carbohydrate at 4 kcal/g,
+    /// fat at 9. Dietary fiber is part of total carbohydrate on a label but is
+    /// only ~2 kcal/g, so we discount it — without this, high-fiber foods
+    /// (psyllium, bran) look "inconsistent" and would be wrongly rewritten.
+    public static func computedCalories(proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double = 0) -> Double {
+        let p = max(0, proteinG)
+        let f = max(0, fatG)
+        let c = max(0, carbsG)
+        let fib = min(max(0, fiberG), c)          // fiber can't exceed total carbohydrate
+        return p * 4 + (c - fib) * 4 + fib * 2 + f * 9
+    }
+
+    /// True when the stated energy is consistent with the macros — or when
+    /// there isn't enough macro signal to say. Callers that only want to log a
+    /// mismatch (rather than rewrite it) use this directly.
+    public static func isConsistent(stated: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double = 0) -> Bool {
+        let computed = computedCalories(proteinG: proteinG, carbsG: carbsG, fatG: fatG, fiberG: fiberG)
+        guard computed >= minSignalKcal else { return true }   // not enough signal to judge
+        guard stated > 0 else { return false }                 // real macros, no energy → inconsistent
+        return abs(stated - computed) / computed <= tolerance
+    }
+
+    /// The energy we should actually store. When the macros disagree with the
+    /// stated energy by more than `tolerance` (and there is macro signal to
+    /// trust), prefer the macro-implied value; otherwise keep the stated one.
+    /// Preferring the computed value beats rejecting the record outright: the
+    /// user still gets a usable, self-consistent entry from a barcode scan.
+    public static func reconciledCalories(stated: Double, proteinG: Double, carbsG: Double, fatG: Double, fiberG: Double = 0) -> Double {
+        guard !isConsistent(stated: stated, proteinG: proteinG, carbsG: carbsG, fatG: fatG, fiberG: fiberG) else { return stated }
+        return computedCalories(proteinG: proteinG, carbsG: carbsG, fatG: fatG, fiberG: fiberG).rounded()
+    }
+}
+
 // MARK: - Extractor
 
 public enum NutritionExtractor {

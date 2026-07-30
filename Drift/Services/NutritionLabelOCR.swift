@@ -30,11 +30,28 @@ enum NutritionLabelOCR {
         let recognizedText = try await recognizeText(in: cgImage)
         Log.foodLog.info("OCR recognized \(recognizedText.count) lines")
 
+        let extracted: ExtractedNutrition
         if Preferences.fmNutritionExtractEnabled,
            let fmResult = await extractViaFMIfAvailable(lines: recognizedText) {
-            return fmResult
+            extracted = fmResult
+        } else {
+            extracted = parseNutritionFromText(recognizedText)
         }
-        return parseNutritionFromText(recognizedText)
+        return applyAtwaterGuard(extracted)
+    }
+
+    /// Reconcile stated calories against the extracted macros. A label photo can
+    /// mix the per-serving and per-100g columns (or OCR can misread the energy
+    /// line); when the macros imply a materially different figure we prefer it.
+    /// Single choke for both the FM and regex branches.
+    private static func applyAtwaterGuard(_ n: ExtractedNutrition) -> ExtractedNutrition {
+        let reconciled = AtwaterCheck.reconciledCalories(
+            stated: n.calories, proteinG: n.proteinG, carbsG: n.carbsG, fatG: n.fatG, fiberG: n.fiberG)
+        guard reconciled != n.calories else { return n }
+        Log.foodLog.info("Atwater guard (OCR): stated \(Int(n.calories))cal vs macros \(Int(n.proteinG))P \(Int(n.carbsG))C \(Int(n.fatG))F → \(Int(reconciled))cal")
+        var fixed = n
+        fixed.calories = reconciled
+        return fixed
     }
 
     /// Returns the FM-extracted nutrition (mapped to ExtractedNutrition) on
