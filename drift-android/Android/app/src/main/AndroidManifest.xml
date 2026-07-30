@@ -45,6 +45,15 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Invite links (#1162): drift://add/<username>, and the scheme
+                 social-alert notifications deep-link into. BROWSABLE so a tap
+                 from a messaging app resolves here. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="drift" />
+            </intent-filter>
             <!-- Health Connect shows this when the user taps "app privacy policy"
                  on the permission sheet (pre-Android-14 path) -->
             <intent-filter>

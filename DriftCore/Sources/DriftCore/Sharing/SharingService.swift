@@ -81,7 +81,13 @@ public final class SharingService {
         let q = query.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !q.isEmpty else { return [] }
         let token = try await validToken()
-        let path = "profiles?or=(username.ilike.*\(q)*,display_name.ilike.*\(q)*)"
+        // `discoverable=is.true` is the public-profile switch (migration 0007):
+        // hidden accounts are reachable by invite link but never surfaced by
+        // search. Enforced in the query, not by RLS, because a hidden profile
+        // must stay READABLE BY ID — otherwise someone who connected via your
+        // link could never see your name.
+        let path = "profiles?discoverable=is.true"
+            + "&or=(username.ilike.*\(q)*,display_name.ilike.*\(q)*)"
             + "&select=id,username,display_name,avatar_url&limit=25"
         let results: [SharedProfile] = try await client.restGet(path, token: token)
         let me = currentSession?.userID
@@ -106,6 +112,41 @@ public final class SharingService {
         ]
         let _: [FriendshipDTO] = try await client.restInsert("friendships", body: [row],
                                                              token: try await validToken())
+    }
+
+    // MARK: - Discovery (invite links + the public-profile switch)
+
+    /// Resolve one profile by @handle — how an invite link becomes a person.
+    /// Deliberately ignores `discoverable`: someone who sent you their link
+    /// wants to be found by it, and hiding means "keep me out of search", not
+    /// "break my own invites".
+    public func profile(username: String) async throws -> SharedProfile? {
+        let handle = InviteLink.normalize(username)
+        guard !handle.isEmpty else { return nil }
+        let rows: [SharedProfile] = try await client.restGet(
+            "profiles?username=eq.\(handle)&select=id,username,display_name,avatar_url&limit=1",
+            token: try await validToken())
+        return rows.first
+    }
+
+    /// Whether the caller is currently listed in search.
+    public func isDiscoverable() async throws -> Bool {
+        let uid = try requireUserID()
+        struct Row: Codable { let discoverable: Bool? }
+        let rows: [Row] = try await client.restGet(
+            "profiles?id=eq.\(uid)&select=discoverable&limit=1",
+            token: try await validToken())
+        // Absent reads as listed, matching the column default: an account made
+        // before the column existed was always searchable.
+        return rows.first?.discoverable ?? true
+    }
+
+    /// Turn search listing on or off. Existing connections are unaffected.
+    public func setDiscoverable(_ discoverable: Bool) async throws {
+        let uid = try requireUserID()
+        let _: [SharedProfile] = try await client.restUpdate(
+            "profiles?id=eq.\(uid)", body: ["discoverable": discoverable],
+            token: try await validToken())
     }
 
     /// Every pending edge involving the caller, either direction. Search needs

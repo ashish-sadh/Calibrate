@@ -44,5 +44,20 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- Invite links (#1162): drift://add/<username> opens the app and offers
+	     to connect. Also the scheme social alerts deep-link into. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLName</key>
+			<string>com.drift.health.invite</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>drift</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

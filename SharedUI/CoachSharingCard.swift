@@ -23,31 +23,70 @@ struct CoachSharingCard: View {
     /// What this coach has written about you. Not gated by any toggle — your
     /// coach's notes about you are yours to read unconditionally.
     @State var notesFromCoach: [CoachAuthoredNote] = []
+    /// Folded by default — see the body comment. Not private: Fuse can't bridge
+    /// private @State.
+    @State var expanded = false
+
+    /// One-line consent state for the collapsed header: how much of what's
+    /// available is on. "Sharing 4 of 6" reads instantly; "4" alone doesn't say
+    /// whether that's most or barely any.
+    var summary: String {
+        let on = level.descriptions.count
+        guard on > 0 else { return "Not sharing" }
+        return "Sharing \(on) of \(BriefingSharingLevel.allCategories.count)"
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("SHARE WITH @\(coach.username)").sectionHeading()
-                Spacer()
-                if syncing {
-                    Text("Updating…").font(.caption2).foregroundStyle(Theme.textTertiary)
+            // ROLLED UP by default (operator 2026-07-29: "no need to see all
+            // the time how many things are being shared… also what if I have
+            // multiple coaches"). Six toggles inline ate half the Friends
+            // screen, and one card PER coach made the hub unusable past the
+            // first one. Consent still has to be READABLE, so the collapsed
+            // header states the count and the categories in one line — you can
+            // see what you share without unfolding anything.
+            Button {
+                expanded.toggle()
+            } label: {
+                HStack(spacing: 6) {
+                    Text("SHARING WITH @\(coach.username)").sectionHeading()
+                    Spacer()
+                    if syncing {
+                        Text("Updating…").font(.caption2).foregroundStyle(Theme.textTertiary)
+                    } else {
+                        Text(summary)
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(level == .none ? Theme.textTertiary : Theme.chartTrend)
+                    }
+                    Image(systemName: sym(expanded ? "chevron.up" : "chevron.down"))
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
                 }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if !expanded, level != .none {
+                // The categories, named, without six switch rows.
+                Text(level.descriptions.joined(separator: " · "))
+                    .font(.caption2).foregroundStyle(Theme.textTertiary)
             }
 
-            // The label names EVERYTHING this level shares — since 2026-07-29
-            // that includes coach-relevant notes distilled from AI-coach
-            // chats. Consent people can't read is not consent.
-            row("Training history, injuries & AI-chat notes", .history)
-            row("Average sleep", .sleep)
-            row("Average calories & protein", .nutrition)
-            row("Weight trend", .weight)
-            row("Body composition (DEXA: fat %, lean mass, regional)", .bodyComp)
-            row("Training detail (best sets & recovery)", .strength)
+            if expanded {
+                // The label names EVERYTHING this level shares — since
+                // 2026-07-29 that includes coach-relevant notes distilled from
+                // AI-coach chats. Consent people can't read is not consent.
+                row("Training history, injuries & AI-chat notes", .history)
+                row("Average sleep", .sleep)
+                row("Average calories & protein", .nutrition)
+                row("Weight trend", .weight)
+                row("Body composition (DEXA: fat %, lean mass, regional)", .bodyComp)
+                row("Training detail (best sets & recovery)", .strength)
 
-            Text(level == .none
-                 ? "Your coach sees only the workouts you share."
-                 : "Averages and scan summaries only — your coach never sees individual meals, weigh-ins, nights or scan documents.")
-                .font(.caption2).foregroundStyle(Theme.textTertiary)
+                Text(level == .none
+                     ? "Your coach sees only the workouts you share."
+                     : "Averages and scan summaries only — your coach never sees individual meals, weigh-ins, nights or scan documents.")
+                    .font(.caption2).foregroundStyle(Theme.textTertiary)
+            }
 
             // The mirror (#1156): the client can read EXACTLY what the coach
             // reads — the preview is the coach's own view fed local data, so

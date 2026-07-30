@@ -48,6 +48,13 @@ struct SharingView: View {
     // dialog, because Fuse dialogs carry keyboard/focus traps (#1077).
     @State var managingID: String? = nil
     @State var confirmingRemoveID: String? = nil
+    // Discovery (#1162): the invite link people actually connect with, and the
+    // public-profile switch.
+    @State var discoverable = true
+    @State var showingInvite = false
+    /// Set when a `drift://add/<handle>` link resolved to a real person, so the
+    /// hub can offer to connect without making them search.
+    @State var invitedProfile: SharedProfile?
 
     private var svc: SharingService { .shared }
 
@@ -77,6 +84,15 @@ struct SharingView: View {
         .background(Theme.background.ignoresSafeArea())
         .navigationTitle("Friends")
         .task { await bootstrap() }
+        .sheet(isPresented: $showingInvite) {
+            InviteShareSheet(username: svc.currentUsername ?? "")
+        }
+        // An invite link that resolved: offer to connect right there rather
+        // than dropping the person into a search field.
+        .onChange(of: SharingDeepLink.pendingUsername) { _, handle in
+            guard let handle, !handle.isEmpty else { return }
+            Task { await resolveInvite(handle) }
+        }
     }
 
     // MARK: - Onboarding (username only)
@@ -297,6 +313,28 @@ struct SharingView: View {
         .card()
     }
 
+    /// An invite link resolved to a person: drop them into the search results
+    /// so the existing row (with its Add friend / Coach / "Your coach" states)
+    /// does the rest. Reusing that row means an invited person and a searched
+    /// person can never behave differently.
+    private func resolveInvite(_ handle: String) async {
+        SharingDeepLink.clear()
+        guard svc.isSignedIn else { return }
+        guard handle != svc.currentUsername else {
+            error = "That's your own invite link."
+            return
+        }
+        // `try?` flattens the already-optional return, so this is one level.
+        guard let profile = try? await svc.profile(username: handle) else {
+            error = "No Drift account for @\(handle) yet."
+            return
+        }
+        invitedProfile = profile
+        searchText = handle
+        searchResults = [profile]
+        searchedOnce = true
+    }
+
     /// What to show instead of add buttons for someone you're already with.
     private func existingRelationshipLabel(_ kind: Connection.Kind) -> String {
         switch kind {
@@ -331,7 +369,8 @@ struct SharingView: View {
     /// second line is the thing most worth noticing: pending requests first,
     /// else your connection count.
     private var identityCard: some View {
-        HStack(spacing: 12) {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 12) {
             Text(String((svc.currentUsername ?? "?").prefix(1)).uppercased())
                 .font(.title2.weight(.semibold)).foregroundStyle(.white)
                 .frame(width: 56, height: 56)
@@ -360,6 +399,38 @@ struct SharingView: View {
                 }
             }
             .font(.caption).foregroundStyle(Theme.surplus)
+            }
+
+            Divider().overlay(Theme.separatorFaint)
+
+            // THE way people connect: you send a link, they tap it. Search
+            // only ever worked if you already knew the handle.
+            HStack(spacing: 10) {
+                Button { showingInvite = true } label: {
+                    Label("Share invite link", systemImage: sym("square.and.arrow.up"))
+                        .font(.caption.weight(.semibold)).foregroundStyle(Theme.accent)
+                }
+                .buttonStyle(.plain)
+                Spacer()
+            }
+
+            // The public-profile switch. Off = reachable by your link only.
+            Toggle(isOn: Binding(
+                get: { discoverable },
+                set: { on in
+                    discoverable = on
+                    Task { await run { try await svc.setDiscoverable(on) } }
+                }
+            )) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("Findable by search").font(.caption)
+                    Text(discoverable
+                         ? "People can find you by @username"
+                         : "Only people with your invite link can find you")
+                        .font(.caption2).foregroundStyle(Theme.textTertiary)
+                }
+            }
+            .tint(Theme.accent)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .card()
@@ -634,6 +705,7 @@ struct SharingView: View {
         async let connections = svc.connections()
         async let sessions = try? await svc.clientSessions()
         async let pending = try? await svc.pendingEdges()
+        async let listed = try? await svc.isDiscoverable()
         requests = await reqs ?? []
         incomingTemplates = await tmpls ?? []
         clientSessions = await sessions ?? []
@@ -641,6 +713,8 @@ struct SharingView: View {
         pendingIDs = Set((await pending ?? []).map {
             $0.requesterId == me ? $0.addresseeId : $0.requesterId
         })
+        // Absent reads as listed, matching the column default.
+        discoverable = (await listed) ?? true
 
         do {
             conns = try await connections

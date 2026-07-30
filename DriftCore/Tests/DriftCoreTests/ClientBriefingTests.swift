@@ -17,6 +17,21 @@ struct ClientBriefingTests {
         #expect(level.descriptions.isEmpty)
     }
 
+    /// `allCategories` drives the "Sharing 4 of 6" rollup, so it must list
+    /// every bit that has a description — otherwise adding a category silently
+    /// makes the count lie about how much is shared.
+    @Test func allCategoriesCoversEveryDescribedBit() {
+        let everything = BriefingSharingLevel(
+            rawValue: BriefingSharingLevel.allCategories
+                .reduce(0) { $0 | $1.rawValue })
+        #expect(everything.descriptions.count == BriefingSharingLevel.allCategories.count,
+                "a category exists that allCategories doesn't list, or vice versa")
+        // And each one contributes exactly one description on its own.
+        for category in BriefingSharingLevel.allCategories {
+            #expect(category.descriptions.count == 1)
+        }
+    }
+
     /// The load-bearing test: a withheld category must be absent from the wire
     /// payload, not merely hidden in the UI. Filtering happens before the
     /// network, so opting out of nutrition means the number never leaves.

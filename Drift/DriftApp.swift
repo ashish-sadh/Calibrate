@@ -49,6 +49,12 @@ struct DriftApp: App {
                 // rewritten in the same commit; this is the trigger so iOS
                 // doesn't request light/dark per system setting.
                 .preferredColorScheme(.light)
+                // Invite links (#1162): park the handle for the Friends hub to
+                // pick up. Parsing lives in DriftCore so both platforms accept
+                // exactly the same links.
+                .onOpenURL { url in
+                    SharingDeepLink.handle(url.absoluteString)
+                }
                 .onChange(of: scenePhase) { _, newPhase in
                     // Broadcast to any listening AIChatViewModel so it can snapshot state.
                     // Listener-based so the singleton doesn't need a VM reference.

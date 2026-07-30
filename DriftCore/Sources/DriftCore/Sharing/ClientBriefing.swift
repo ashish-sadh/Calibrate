@@ -34,6 +34,11 @@ public struct BriefingSharingLevel: OptionSet, Codable, Sendable, Hashable {
 
     public static let none: BriefingSharingLevel = []
 
+    /// Every category a client can opt into, so UI can say "4 of 6" without
+    /// hardcoding a count that silently goes stale the next time a bit is added.
+    public static let allCategories: [BriefingSharingLevel] =
+        [.history, .sleep, .nutrition, .weight, .bodyComp, .strength]
+
     /// Per-coach preference. Defaults to nothing shared — a coach connection is
     /// consent to see workouts, not a standing grant over health data.
     public static func stored(for coachID: String) -> BriefingSharingLevel {
