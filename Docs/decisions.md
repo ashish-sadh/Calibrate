@@ -881,3 +881,49 @@ ALSO FIXED: search offered "Add friend / Coach" for people already
 connected (409 on tap, and reads broken). Rows now state the existing
 relationship, and "Requested" comes from real pending edges instead of
 only remembering taps made this session.
+
+---
+
+## 2026-07-29 — Name resolution must tolerate MORE words than it knows, not fewer
+
+A user logged a 10-exercise trainer session and Drift resolved one of them.
+It looked like a catalog-coverage problem. It was a matching problem, and the
+distinction matters because we nearly "fixed" it by bulk-adding exercises.
+
+`ExerciseDatabase.match` demanded FULL COVERAGE: every meaningful word the
+user said had to appear in the candidate name. That gate exists for a good
+reason — it's what stops "chest ups" from silently logging as squats — but it
+is the wrong shape for how people name lifts. Nine of the ten failures were
+one unknown qualifier away from a perfect match: "wall sit **hold**", "**box**
+bulgarian split squat", "**knee** push-up", "**bench** dumbbell skull
+crusher". A qualifier the catalog has never heard of is the NORMAL case; the
+catalog is a fixed list and human phrasing isn't.
+
+THE RULE: full coverage stays as the primary pass, and containment is the
+fallback — the longest catalog name entirely contained in what the user said.
+"You told me more than I know about" is a resolvable situation; "you must say
+only what I know" is not a workable contract. Guardrails that keep it from
+becoming a match-anything rule: ≥2 catalog tokens (one word buried in a
+sentence is not a log entry), and it can never outrank a full-coverage hit,
+so no previously-working match changes behaviour.
+
+TIE-BREAKS MUST NOT DEPEND ON LOAD ORDER. `Push-Up` (bundled catalog) and
+`Push-Ups` (template registry) are the same lift under two names, and the
+containment pass initially picked whichever the array happened to yield
+first. That is a data-integrity bug, not a cosmetic one: the same phrase
+could land a user's sets under either name across launches and split their PR
+history. Ties now break shorter-then-alphabetical. The names themselves stay
+— renaming a catalog entry out from under existing logged rows is exactly
+what the user-data tenet forbids.
+
+ADD FOUR, NOT TEN. Only movements with no honest home got an entry (Knee
+Push-Up, High Knees, Seated Plate Row, Floor Y Raise). The rest of the
+session was a hold, a tempo and an implement variant of exercises that
+already exist. Near-duplicates make the picker worse to browse AND split one
+lift's history across two names — the same failure as the tie-break bug,
+arrived at deliberately.
+
+Where the gap fell is worth noting: scaled push-ups and floor holds are the
+beginner and rehab vocabulary. The catalog was strongest exactly where
+confident lifters are and weakest where the people least able to work around
+it are.
