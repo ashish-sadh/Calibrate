@@ -393,3 +393,58 @@ struct SoloBoardTests {
         #expect(Set(real).intersection(Set(solo)).isEmpty)
     }
 }
+
+/// Tier-0 for the food-logging streak — the board most people will actually
+/// appear on, so its edges get read by everyone.
+struct FoodLoggingStreakTests {
+
+    private func days(_ offsets: [Int], from today: Date) -> Set<String> {
+        let cal = Calendar.current
+        return Set(offsets.compactMap { cal.date(byAdding: .day, value: -$0, to: today) }
+                          .map { DateFormatters.dateOnly.string(from: $0) })
+    }
+
+    private let today = DateFormatters.dateOnly.date(from: "2026-07-30")!
+
+    @Test func countsConsecutiveDaysEndingToday() {
+        #expect(FoodLoggingStreak.current(loggedDays: days([0, 1, 2, 3], from: today),
+                                          today: today) == 4)
+    }
+
+    /// A streak that resets at midnight punishes people for sleeping — someone
+    /// who logs dinner nightly must not read zero every morning.
+    @Test func yesterdayKeepsTheStreakAlive() {
+        #expect(FoodLoggingStreak.current(loggedDays: days([1, 2, 3], from: today),
+                                          today: today) == 3)
+    }
+
+    /// Broken is broken. Inflating it would make the number meaningless to
+    /// compare against a friend's.
+    @Test func aGapEndsIt() {
+        #expect(FoodLoggingStreak.current(loggedDays: days([2, 3, 4], from: today),
+                                          today: today) == 0,
+                "last log was two days ago — the streak is over")
+        // A gap in the MIDDLE stops the count there rather than counting across.
+        #expect(FoodLoggingStreak.current(loggedDays: days([0, 1, 3, 4], from: today),
+                                          today: today) == 2)
+    }
+
+    @Test func noLogsIsZeroNotACrash() {
+        #expect(FoodLoggingStreak.current(loggedDays: [], today: today) == 0)
+    }
+
+    /// The long streaks the operator expects to see ("for some it will be 90-100
+    /// days") must count correctly, not cap early.
+    @Test func longStreaksCountFully() {
+        #expect(FoodLoggingStreak.current(loggedDays: days(Array(0..<97), from: today),
+                                          today: today) == 97)
+    }
+
+    /// A streak is not a per-period total, so it must not read "this week".
+    @Test func theStreakBoardLabelsItselfHonestly() {
+        let board = LeaderboardBoard.from(key: "food_streak")
+        #expect(board.title == "Food logging streak")
+        #expect(board.unit == "days")
+        #expect(board.period.label == "right now")
+    }
+}

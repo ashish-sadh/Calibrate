@@ -32,7 +32,9 @@ public enum LeaderboardService {
                                               calendar: Calendar = .current) -> String {
         var cal = calendar
         cal.firstWeekday = 2  // Monday
-        let component: Calendar.Component = period == .week ? .weekOfYear : .month
+        // `.running` (streaks) stores under the WEEK key: it refreshes on the
+        // same cadence as everything else, it just doesn't mean "this week".
+        let component: Calendar.Component = (period == .month) ? .month : .weekOfYear
         let start = cal.dateInterval(of: component, for: date)?.start ?? date
         return DateFormatters.dateOnly.string(from: start)
     }

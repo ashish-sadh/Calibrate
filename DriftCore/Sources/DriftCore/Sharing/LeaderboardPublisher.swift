@@ -117,6 +117,15 @@ public enum LeaderboardPublisher {
                             value: workouts, unit: ""))
         }
 
+        // Food-logging streak. The board that actually populates: steps need a
+        // phone in your pocket and a lift board needs a friend training the same
+        // lift, but anyone who has used Drift twice has a streak.
+        let streak = FoodLoggingStreak.mine(today: now)
+        if streak > 0 {
+            out.append(.init(userId: userID, boardKey: "food_streak", periodStart: week,
+                            value: Double(streak), unit: "days"))
+        }
+
         // --- Lifts, last 30 days ---
         out += liftEntries(userID: userID, periodStart: month, now: now)
         return out

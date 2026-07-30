@@ -290,36 +290,31 @@ struct LeaderboardsCard: View {
             }
         }
     }
-    /// Your numbers, with nobody to compare them to yet.
+    /// Your numbers, with nobody to compare them to yet — rendered as a REAL
+    /// board, not a stripped-down list.
     ///
-    /// The cold start I designed in and the operator hit on day one: "my
-    /// leaderboard looks empty even though I have 12 friends." His publishing
-    /// was fine — 11 entries — but he was the ONLY publisher, and the
-    /// two-participant rule hid every board including his own. A board that says
-    /// "nothing shared yet" to someone who just shared something reads as broken,
-    /// and gives them no reason to leave it on.
+    /// Two operator notes got us here. First: "my leaderboard looks empty even
+    /// though I have 12 friends" — he was the only publisher and the
+    /// two-participant rule hid everything. Then, when the values came back as a
+    /// plain title/value list: "I wanna see myself in the leaderboard even if no
+    /// one joins — initially it will be empty, seeing yourself will give idea
+    /// how it will look."
     ///
-    /// So the values show, labelled as waiting rather than ranked. No "#1 of 1",
-    /// no podium — just what you'd bring to a board, and a nudge, because the
-    /// only thing that fixes a cold start is a friend turning it on too.
+    /// He's right, and it overrides my earlier instinct. I avoided showing a
+    /// rank of one because "#1 of 1" is hollow — but an empty screen teaches
+    /// nothing at all, and a board you can SEE is what makes it obvious what a
+    /// friend joining would add. So these use the same rank/name/value layout as
+    /// a live board; `Leaderboard.standing` already says "You're the only one
+    /// sharing steps so far", which keeps it honest without pretending it's a
+    /// competition.
     var waitingSection: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             Text("WAITING FOR FRIENDS").sectionHeading()
-            Text("You're the only one sharing so far. These are your numbers — a board appears as soon as one friend turns this on too.")
+            Text("Here's how your boards will look. They fill in as friends turn this on.")
                 .font(.caption2).foregroundStyle(Theme.textTertiary)
                 .fixedSize(horizontal: false, vertical: true)
             ForEach(solo) { section in
-                if let mine = section.rows.first(where: \.isMe) {
-                    HStack(spacing: 8) {
-                        Text(section.board.title)
-                            .font(.caption).foregroundStyle(Theme.textPrimary)
-                        Text(section.board.period.label)
-                            .font(.caption2).foregroundStyle(Theme.textTertiary)
-                        Spacer()
-                        Text(Leaderboard.formatted(mine.value, board: section.board))
-                            .font(.caption.weight(.semibold)).foregroundStyle(Theme.textPrimary)
-                    }
-                }
+                boardView(section)
             }
         }
     }

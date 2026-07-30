@@ -69,12 +69,17 @@ public struct LeaderboardEntryDTO: Codable, Sendable, Hashable {
 public struct LeaderboardBoard: Sendable, Hashable, Identifiable {
     public enum Period: String, Sendable {
         case week, month
+        /// A running total that isn't bounded by the period at all — a streak.
+        /// Stored under the WEEK key so it refreshes and upserts on the same
+        /// cadence as everything else, but it does not MEAN "this week".
+        case running
 
         /// What a board covers, in words, for the line under its title.
         public var label: String {
             switch self {
             case .week: return "this week"
             case .month: return "last 30 days"
+            case .running: return "right now"
             }
         }
     }
@@ -101,6 +106,9 @@ public struct LeaderboardBoard: Sendable, Hashable, Identifiable {
                         period: .week, isCore: true)
         case "workouts":
             return .init(key: key, title: "Workouts", unit: "", period: .week, isCore: true)
+        case "food_streak":
+            return .init(key: key, title: "Food logging streak", unit: "days",
+                        period: .running, isCore: true)
         default:
             if key.hasPrefix("lift:") {
                 let slug = String(key.dropFirst("lift:".count))
@@ -198,7 +206,7 @@ public enum Leaderboard {
         // Core boards first in a fixed order, then discovered lifts by
         // participation (the ones your group actually shares), then title so the
         // order is stable between refreshes.
-        let coreOrder = ["steps", "calories", "workouts"]
+        let coreOrder = ["food_streak", "steps", "calories", "workouts"]
         return sections.sorted { a, b in
             let ai = coreOrder.firstIndex(of: a.board.key)
             let bi = coreOrder.firstIndex(of: b.board.key)

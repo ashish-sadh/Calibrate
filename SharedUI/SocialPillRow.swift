@@ -46,6 +46,11 @@ struct SocialPillRow: View {
     /// False when the inbox window couldn't cover every correspondent, so
     /// "you're up to date" is not a claim we're entitled to make.
     @State var inboxComplete = true
+    /// Local food-logging streak. Computed from this device's own log, so it has
+    /// a real number to show even before anyone opts into publishing anything.
+    @State var streak = 0
+    /// Boards I'm actually on (or waiting on) once opted in.
+    @State var boardCount = 0
 
     var body: some View {
         Group {
@@ -112,7 +117,36 @@ struct SocialPillRow: View {
                 SharingView()
             }
         }
+
+        // Leaderboard, last and quiet. Two jobs depending on whether they've
+        // opted in — and in BOTH cases it leads with a real number, because the
+        // food streak is computed locally and needs no consent to display
+        // (operator 2026-07-30: "food streak I already have locally").
+        //
+        // Not opted in, this is the only pill that names something they'd GAIN;
+        // opted in, it's a status line. Never a dot: a leaderboard is not
+        // something that needs you.
+        if friendCount > 0 {
+            pill(title: sharingStats ? "Leaderboard" : "See yourself ranked",
+                 icon: "chart.bar.fill", tint: Theme.textSecondary,
+                 detail: leaderboardDetail, dot: false) {
+                SharingView()
+            }
+        }
     }
+
+    /// The number that makes the pill worth a tap.
+    private var leaderboardDetail: String? {
+        if !sharingStats {
+            // Lead with what they already have. "Join a leaderboard" is an ask;
+            // "your 12-day streak" is an offer.
+            return streak > 0 ? "Your \(streak)-day food streak" : "Compare with friends"
+        }
+        if boardCount > 0 { return boardCount == 1 ? "1 board" : "\(boardCount) boards" }
+        return streak > 0 ? "\(streak)-day food streak" : nil
+    }
+
+    private var sharingStats: Bool { Preferences.shareStatsWithFriends }
 
     /// What the coach pill says under the title. Assignments outrank messages —
     /// a program you haven't started is more actionable than an unread line.
@@ -243,6 +277,16 @@ struct SocialPillRow: View {
             let unread = rollup.entries.first { $0.peerID == connection.id }?.unread ?? 0
             return unseen > 0 || unread > 0
         }.count
+
+        // Local, so it costs one DB read and needs no consent to display.
+        streak = FoodLoggingStreak.mine()
+        if Preferences.shareStatsWithFriends {
+            let mine = await LeaderboardService.sections(connections: connections)
+            let waiting = await LeaderboardService.soloSections(connections: connections)
+            boardCount = mine.count + waiting.count
+        } else {
+            boardCount = 0
+        }
 
         friendCount = friends.count
         friendActivity = friends.filter { connection in
