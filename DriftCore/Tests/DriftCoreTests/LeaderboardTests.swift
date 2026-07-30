@@ -381,15 +381,20 @@ struct SoloBoardTests {
         #expect(Leaderboard.soloSections(from: entries, profiles: people, me: "me").isEmpty)
     }
 
-    /// Mixed: one real board, one waiting. Each appears exactly once.
+    /// Mixed: one real board, one waiting. Each appears exactly once, and they
+    /// never overlap.
+    ///
+    /// Uses a CORE board for the waiting case: a solo lift is deliberately not a
+    /// waiting board any more (it was twelve cards of noise), so asserting one
+    /// here would be asserting the behaviour we removed. See `BoardNoiseTests`.
     @Test func realAndWaitingBoardsDoNotOverlap() {
         let people = ["me": profile("me"), "ana": profile("ana")]
         let entries = [entry("me", "steps", 47_000), entry("ana", "steps", 51_000),
-                       entry("me", "lift:deadlift", 405)]
+                       entry("me", "food_streak", 12)]
         let real = Leaderboard.sections(from: entries, profiles: people, me: "me").map(\.board.key)
         let solo = Leaderboard.soloSections(from: entries, profiles: people, me: "me").map(\.board.key)
         #expect(real == ["steps"])
-        #expect(solo == ["lift:deadlift"])
+        #expect(solo == ["food_streak"])
         #expect(Set(real).intersection(Set(solo)).isEmpty)
     }
 }
@@ -503,5 +508,61 @@ struct PeriodRolloverTests {
 
     @Test func weeklyBoardsSayLastSevenDays() {
         #expect(LeaderboardBoard.from(key: "steps").period.label == "last 7 days")
+    }
+}
+
+/// Tier-0 for noise control — the operator's "very cluttered... not every
+/// exercise... think of creative ways of reducing noise in exercises".
+struct BoardNoiseTests {
+
+    private func profile(_ n: String) -> SharedProfile {
+        SharedProfile(id: n, username: n, displayName: nil, avatarUrl: nil)
+    }
+    private func entry(_ u: String, _ b: String, _ v: Double) -> LeaderboardEntryDTO {
+        LeaderboardEntryDTO(userId: u, boardKey: b, periodStart: "2026-07-27", value: v, unit: "")
+    }
+
+    /// The screenshot: twelve solo boards, "Wrist Extension" among them. While
+    /// nobody else has joined, only the four everyone-has boards may take a card.
+    @Test func waitingBoardsAreCoreOnly() {
+        let people = ["me": profile("me"), "ana": profile("ana")]
+        let mine = [entry("me", "steps", 59_000), entry("me", "food_streak", 3),
+                    entry("me", "calories", 693), entry("me", "workouts", 5),
+                    entry("me", "lift:wrist_extension", 30),
+                    entry("me", "lift:calf_raises", 115),
+                    entry("me", "lift:leg_extension", 70)]
+        let solo = Leaderboard.soloSections(from: mine, profiles: people, me: "me")
+        let keys = Set(solo.map(\.board.key))
+        let expected: Set<String> = ["food_streak", "steps", "calories", "workouts"]
+        #expect(keys == expected)
+        #expect(solo.allSatisfy { $0.board.isCore })
+    }
+
+    /// A lift STILL becomes a board the moment someone else is on it — the
+    /// filter suppresses noise, it doesn't disable the feature.
+    @Test func aLiftBecomesABoardWhenSomeoneElseJoins() {
+        let people = ["me": profile("me"), "ana": profile("ana")]
+        let shared = [entry("me", "lift:wrist_extension", 30),
+                      entry("ana", "lift:wrist_extension", 35)]
+        let real = Leaderboard.sections(from: shared, profiles: people, me: "me")
+        #expect(real.map(\.board.key) == ["lift:wrist_extension"])
+    }
+
+    /// A big group can't flood it either: core boards all survive, lifts are
+    /// capped to the most-shared.
+    @Test func liftBoardsAreCappedButCoreBoardsAreNot() {
+        var entries: [LeaderboardEntryDTO] = []
+        var people: [String: SharedProfile] = [:]
+        for name in ["me", "ana", "bo"] { people[name] = profile(name) }
+        for core in ["steps", "calories", "workouts", "food_streak"] {
+            entries += [entry("me", core, 10), entry("ana", core, 20)]
+        }
+        for lift in ["squat", "bench", "row", "curl", "dip", "ohp"] {
+            let key = "lift:" + lift
+            entries += [entry("me", key, 100), entry("ana", key, 90)]
+        }
+        let keys = Leaderboard.sections(from: entries, profiles: people, me: "me").map(\.board.key)
+        #expect(keys.filter { !$0.hasPrefix("lift:") }.count == 4, "every core board survives")
+        #expect(keys.filter { $0.hasPrefix("lift:") }.count == Leaderboard.maxLiftBoards)
     }
 }

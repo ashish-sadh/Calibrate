@@ -26,6 +26,9 @@ struct LeaderboardsCard: View {
     @State var sections: [Leaderboard.Section] = []
     /// Boards where I'm publishing but no friend has joined yet.
     @State var solo: [Leaderboard.Section] = []
+    /// Which board is on screen. One at a time — twelve stacked cards was a
+    /// scroll nobody finished (operator 2026-07-30).
+    @State var selectedBoard: String?
     @State var expanded: Set<String> = []
     @State var loading = false
     @State var busy = false
@@ -52,15 +55,20 @@ struct LeaderboardsCard: View {
                 invitation
             } else if loading {
                 ProgressView().frame(maxWidth: .infinity).padding(.vertical, 12)
-            } else if sections.isEmpty && solo.isEmpty {
+            } else if allBoards.isEmpty {
                 Text("Nothing shared yet. Boards appear once you and a friend both have numbers for the same thing — steps, a lift, anything.")
                     .font(.caption).foregroundStyle(Theme.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
-                ForEach(sections) { section in
-                    boardView(section)
+                boardPicker
+                if let shown = currentBoard {
+                    boardView(shown)
+                    if solo.contains(where: { $0.board.key == shown.board.key }) {
+                        Text("Waiting on a friend — this fills in as soon as one turns Leaderboards on.")
+                            .font(.caption2).foregroundStyle(Theme.textTertiary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
-                if !solo.isEmpty { waitingSection }
             }
         }
         .card()
@@ -290,33 +298,48 @@ struct LeaderboardsCard: View {
             }
         }
     }
-    /// Your numbers, with nobody to compare them to yet — rendered as a REAL
-    /// board, not a stripped-down list.
-    ///
-    /// Two operator notes got us here. First: "my leaderboard looks empty even
-    /// though I have 12 friends" — he was the only publisher and the
-    /// two-participant rule hid everything. Then, when the values came back as a
-    /// plain title/value list: "I wanna see myself in the leaderboard even if no
-    /// one joins — initially it will be empty, seeing yourself will give idea
-    /// how it will look."
-    ///
-    /// He's right, and it overrides my earlier instinct. I avoided showing a
-    /// rank of one because "#1 of 1" is hollow — but an empty screen teaches
-    /// nothing at all, and a board you can SEE is what makes it obvious what a
-    /// friend joining would add. So these use the same rank/name/value layout as
-    /// a live board; `Leaderboard.standing` already says "You're the only one
-    /// sharing steps so far", which keeps it honest without pretending it's a
-    /// competition.
-    var waitingSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("WAITING FOR FRIENDS").sectionHeading()
-            Text("Here's how your boards will look. They fill in as friends turn this on.")
-                .font(.caption2).foregroundStyle(Theme.textTertiary)
-                .fixedSize(horizontal: false, vertical: true)
-            ForEach(solo) { section in
-                boardView(section)
+
+    /// Real boards first, then the ones still waiting on a friend.
+    var allBoards: [Leaderboard.Section] { sections + solo }
+
+    var currentBoard: Leaderboard.Section? {
+        allBoards.first { $0.board.key == selectedBoard } ?? allBoards.first
+    }
+
+    /// One tap per board, horizontally scrollable. Chosen over a swipe pager
+    /// because a pager hides how many boards exist and how to reach them, and
+    /// because SkipUI's paging TabView is not something to rely on across both
+    /// platforms. The strip shows the whole set at a glance and stays one tap
+    /// from any of them.
+    var boardPicker: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 6) {
+                ForEach(allBoards) { section in
+                    let isSelected = section.board.key == (currentBoard?.board.key ?? "")
+                    Button { selectedBoard = section.board.key } label: {
+                        HStack(spacing: 4) {
+                            Text(section.board.title)
+                                .font(.caption2.weight(isSelected ? .bold : .regular))
+                            // A quiet marker for boards that are still just you,
+                            // so the strip doesn't promise a competition.
+                            if solo.contains(where: { $0.board.key == section.board.key }) {
+                                Image(systemName: sym("hourglass")).font(.system(size: 8))
+                            }
+                        }
+                        .padding(.horizontal, 9).padding(.vertical, 5)
+                        .background(isSelected ? Theme.accent.opacity(0.15) : Color.clear,
+                                    in: Capsule())
+                        .foregroundStyle(isSelected ? Theme.accent : Theme.textSecondary)
+                        .contentShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                }
             }
+            .padding(.horizontal, 1)
         }
+        // Android: a horizontal scroller nested in a vertical one collapses
+        // without a pinned minimum height.
+        .frame(minHeight: 30)
     }
 
 }

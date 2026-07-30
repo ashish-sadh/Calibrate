@@ -171,6 +171,11 @@ public enum Leaderboard {
     /// exercise someone has ever logged.
     public static let minimumParticipants = 2
 
+    /// How many discovered LIFT boards may render at once. Core boards are
+    /// unbounded (there are four); lifts are ranked by participation, so the cap
+    /// keeps the ones the group most shares and drops the long tail.
+    public static let maxLiftBoards = 3
+
     /// Turn raw entries into the boards actually worth rendering.
     ///
     /// Auto-discovery lives here, in one pure function, so "which boards exist"
@@ -211,7 +216,7 @@ public enum Leaderboard {
         // participation (the ones your group actually shares), then title so the
         // order is stable between refreshes.
         let coreOrder = ["food_streak", "steps", "calories", "workouts"]
-        return sections.sorted { a, b in
+        let ordered = sections.sorted { a, b in
             let ai = coreOrder.firstIndex(of: a.board.key)
             let bi = coreOrder.firstIndex(of: b.board.key)
             switch (ai, bi) {
@@ -222,6 +227,13 @@ public enum Leaderboard {
                 if a.participants != b.participants { return a.participants > b.participants }
                 return a.board.title < b.board.title
             }
+        }
+        // Keep every core board; keep only the most-shared lifts.
+        var liftsKept = 0
+        return ordered.filter { section in
+            guard !section.board.isCore else { return true }
+            liftsKept += 1
+            return liftsKept <= maxLiftBoards
         }
     }
 
@@ -276,9 +288,20 @@ public enum Leaderboard {
                                    profiles: [String: SharedProfile],
                                    me: String?) -> [Section] {
         let all = sections(from: entries, profiles: profiles, me: me, minimum: 1)
-        // Only the ones that DIDN'T qualify as real boards, and only mine.
         let real = Set(sections(from: entries, profiles: profiles, me: me).map(\.board.key))
-        return all.filter { !real.contains($0.board.key) && $0.rows.contains(where: \.isMe) }
+        return all.filter { section in
+            guard !real.contains(section.board.key),
+                  section.rows.contains(where: \.isMe) else { return false }
+            // CORE ONLY while waiting. Every lift you train became its own solo
+            // board — twelve of them, "Wrist Extension" included, each ~200pt.
+            // Steps/calories/workouts/streak are things everyone has and can
+            // compare; a lift board is only interesting once someone ELSE
+            // trains it, and until then it is pure noise (operator 2026-07-30:
+            // "not every exercise... think of creative ways of reducing noise").
+            // The lift is still PUBLISHED — it just doesn't take a card until a
+            // friend shows up on it, at which point it becomes a real board.
+            return section.board.isCore
+        }
     }
 
     /// Where the user sits on one board, phrased without naming anyone else —
