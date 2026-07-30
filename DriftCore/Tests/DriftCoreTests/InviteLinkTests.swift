@@ -2,33 +2,44 @@ import Foundation
 import Testing
 @testable import DriftCore
 
-/// Tier-0 for invite-link parsing (#1162 discovery).
+/// Tier-0 for invite parsing (#1162 discovery).
 ///
-/// Links arrive pasted, forwarded, re-cased and mangled by messaging apps, and
-/// a link that silently fails to resolve is indistinguishable from "that person
-/// doesn't use Drift" — so the tolerant cases matter as much as the strict ones.
+/// Handles arrive pasted, forwarded and re-cased, and an invite that silently
+/// fails to resolve is indistinguishable from "that person doesn't use Drift" —
+/// so the tolerant cases matter as much as the strict ones.
+///
+/// The `https://drift.app/...` shape is GONE (2026-07-30): we never owned the
+/// domain, so every invite sent hit a Safari TLS error. `mintsNoWebURL` below
+/// is the guard that keeps it from coming back.
 struct InviteLinkTests {
 
     // MARK: - Generating
 
-    @Test func generatesTheHttpsShapeForSharing() {
-        // https, because a custom scheme often isn't tappable in messaging apps.
-        #expect(InviteLink.url(for: "cindyk") == "https://drift.app/add/cindyk")
+    @Test func generatesTheDeepLinkShape() {
         #expect(InviteLink.deepLink(for: "cindyk") == "drift://add/cindyk")
     }
 
     @Test func generatingNormalisesTheHandle() {
-        #expect(InviteLink.url(for: "@CindyK") == "https://drift.app/add/cindyk")
         #expect(InviteLink.deepLink(for: "Cindy K!") == "drift://add/cindyk")
     }
 
-    /// A bare URL in a chat thread reads like spam — the share text says who
-    /// and what.
-    @Test func shareTextNamesThePersonAndTheApp() {
-        let text = InviteLink.shareText(for: "cindyk")
-        #expect(text.contains("@cindyk"))
+    /// The share text says who, and what to DO — a bare handle in a chat thread
+    /// leaves the recipient with nowhere to go.
+    @Test func shareTextNamesThePersonAndTheSteps() {
+        let text = InviteLink.shareText(for: "@CindyK")
+        #expect(text.contains("@cindyk"), "normalised handle")
         #expect(text.contains("Drift"))
-        #expect(text.contains("https://drift.app/add/cindyk"))
+        #expect(text.localizedCaseInsensitiveContains("friends"), "names where to go")
+    }
+
+    /// THE REGRESSION GUARD. Shipping a URL on a domain we don't own put
+    /// "Safari can't establish a secure connection" in front of every invited
+    /// user. Nothing we hand a share sheet may contain a web URL until there is
+    /// a host actually serving it.
+    @Test func mintsNoWebURL() {
+        let text = InviteLink.shareText(for: "cindyk")
+        #expect(!text.contains("http"), "no web URL: \(text)")
+        #expect(!text.localizedCaseInsensitiveContains("drift.app"))
     }
 
     // MARK: - Parsing both shapes
@@ -39,19 +50,22 @@ struct InviteLinkTests {
         #expect(InviteLink.username(from: "drift:///add/cindyk") == "cindyk")
     }
 
-    @Test func parsesTheHttpsShapeIncludingWww() {
-        #expect(InviteLink.username(from: "https://drift.app/add/cindyk") == "cindyk")
-        #expect(InviteLink.username(from: "https://www.drift.app/add/cindyk") == "cindyk")
-        #expect(InviteLink.username(from: "http://drift.app/add/cindyk") == "cindyk")
+    /// The dead web shape is no longer an invite. Deleted rather than kept as a
+    /// tolerated legacy input: the feature existed for a few hours and never
+    /// worked, so there is nothing in the wild to stay compatible with.
+    @Test func theRemovedWebShapeIsNotAnInvite() {
+        #expect(InviteLink.username(from: "https://drift.app/add/cindyk") == nil)
+        #expect(InviteLink.username(from: "https://www.drift.app/add/cindyk") == nil)
     }
 
-    /// Messaging apps re-case, add trailing slashes and append tracking params.
-    /// All of those still mean "add cindyk".
+    /// Messaging apps re-case and pad what they forward. All of these still
+    /// mean "add cindyk".
     @Test func parsingSurvivesWhatMessengersDoToLinks() {
-        #expect(InviteLink.username(from: "HTTPS://DRIFT.APP/ADD/CindyK") == "cindyk")
-        #expect(InviteLink.username(from: "https://drift.app/add/cindyk/") == "cindyk")
-        #expect(InviteLink.username(from: "https://drift.app/add/cindyk?utm=whatsapp") == "cindyk")
+        #expect(InviteLink.username(from: "DRIFT://ADD/CindyK") == "cindyk")
+        #expect(InviteLink.username(from: "drift://add/cindyk/") == "cindyk")
+        #expect(InviteLink.username(from: "drift://add/cindyk?utm=whatsapp") == "cindyk")
         #expect(InviteLink.username(from: "  drift://add/cindyk  ") == "cindyk")
+        #expect(InviteLink.username(from: " @CindyK ") == "cindyk")
     }
 
     /// Someone pasting a bare handle means the same thing; refusing it would be
@@ -87,7 +101,7 @@ struct InviteLinkTests {
     }
 
     @Test func isInviteAgreesWithUsername() {
-        #expect(InviteLink.isInvite("https://drift.app/add/cindyk"))
+        #expect(InviteLink.isInvite("@cindyk"))
         #expect(InviteLink.isInvite("drift://add/cindyk"))
         #expect(!InviteLink.isInvite("drift://add/xx"))
     }

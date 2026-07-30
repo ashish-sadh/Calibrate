@@ -2,13 +2,14 @@ import SwiftUI
 import Observation
 import DriftCore
 
-/// Where an invite link lands before the hub can act on it.
+/// Where an inbound `drift://add/<handle>` lands before the hub can act on it.
 ///
-/// The link may arrive long before the Friends screen exists — cold launch from
-/// a tap in iMessage, for instance — so the handle is parked here and the hub
-/// picks it up whenever it appears. `@Observable` (needs `import Observation`
-/// on Skip) so a stored handle re-triggers the hub's `onChange` even if the
-/// screen was already open.
+/// Android only in practice — iOS doesn't register the scheme (see
+/// `InviteLink`). It may arrive long before the Friends screen exists — cold
+/// launch from a tap — so the handle is parked here and the hub picks it up
+/// whenever it appears. `@Observable` (needs `import Observation` on Skip) so a
+/// stored handle re-triggers the hub's `onChange` even if the screen was
+/// already open.
 @Observable
 final class SharingDeepLink {
     /// Set by each platform's URL handler; cleared by the hub once resolved.
@@ -27,11 +28,12 @@ final class SharingDeepLink {
     static func clear() { pendingUsername = nil }
 }
 
-/// The invite itself: your link, ready to send.
+/// The invite: your @handle and how to act on it.
 ///
-/// ShareLink on Skip shares TEXT only (no file attachment) — which is exactly
-/// what's needed here, so this is one of the rare share surfaces that behaves
-/// identically on both platforms.
+/// NOT a link — see `InviteLink` for why the `https://drift.app/...` version
+/// was removed. ShareLink on Skip shares TEXT only (no file attachment), which
+/// is exactly what a handle invite needs, so this is one of the rare share
+/// surfaces that behaves identically on both platforms.
 struct InviteShareSheet: View {
     let username: String
     @Environment(\.dismiss) var dismiss
@@ -57,19 +59,17 @@ struct InviteShareSheet: View {
             Text("@\(username)")
                 .font(.title3.weight(.semibold)).foregroundStyle(Theme.textPrimary)
 
-            Text("Send this link. Tapping it opens Drift and offers to connect — they don't have to search for you.")
+            // No link, and the copy no longer promises one. This screen used to
+            // show `https://drift.app/add/<handle>` and claim "tapping it opens
+            // Drift" — we don't own that domain, so every invite anyone sent hit
+            // a Safari TLS error (operator repro, 2026-07-30). Handle-sharing
+            // works today on both platforms with nothing to host.
+            Text("Send them your handle. They search it in Drift → Friends and tap Add friend.")
                 .font(.caption).foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center)
 
-            Text(InviteLink.url(for: username))
-                .font(.caption.monospaced()).foregroundStyle(Theme.textTertiary)
-                .padding(10)
-                .frame(maxWidth: .infinity)
-                .background(Theme.cardBackgroundElevated,
-                            in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
-
             ShareLink(item: InviteLink.shareText(for: username)) {
-                Label("Share link", systemImage: sym("square.and.arrow.up"))
+                Label("Share handle", systemImage: sym("square.and.arrow.up"))
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent).tint(Theme.accent)

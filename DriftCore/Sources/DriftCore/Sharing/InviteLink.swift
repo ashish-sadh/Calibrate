@@ -1,55 +1,72 @@
 import Foundation
 
-/// The invite link — how people actually connect.
+/// Inviting someone by @handle.
 ///
-/// Search already matched username AND display_name, so finding someone was
-/// never the bottleneck: you had to already KNOW their handle. Real users send
-/// a link ("add me on Drift"), and a coach signing up a client standing in
-/// front of them needs something shorter than dictating a username.
+/// **This used to mint `https://drift.app/add/<handle>` and that was a bug I
+/// shipped (2026-07-30).** We don't own `drift.app`, so every invite anyone sent
+/// landed on "Safari can't establish a secure connection" — the operator caught
+/// it from a WhatsApp thread. The code even carried a comment calling the host
+/// "not a live website, a stable container for the handle", which was
+/// self-deception: the URL went into a SHARE SHEET, where the entire contract is
+/// that the recipient taps it.
 ///
-/// Two shapes, one meaning:
-/// - `drift://add/cindyk` — the custom scheme, opens the app directly.
-/// - `https://drift.app/add/cindyk` — survives pasting anywhere (iMessage,
-///   WhatsApp, email) and is what a QR code encodes. Only recognised as an
-///   invite; nothing is fetched from that host, so no web service is implied.
+/// Worse, the fallback didn't work either: `drift://` is registered on Android
+/// (AndroidManifest intent filter) but NOT on iOS, so the custom scheme was
+/// dead on the platform most invites would come from.
 ///
-/// Parsing lives here, in DriftCore, so both platforms accept exactly the same
-/// links and the rules are Tier-0 testable rather than discovered in the field.
+/// So there is no link. An invite is the @handle plus a sentence telling the
+/// recipient what to do with it — which works in every messaging app, on both
+/// platforms, with no domain, no universal-link entitlement and no
+/// apple-app-site-association file to host.
+///
+/// A real tappable link needs a domain we control serving a smart-banner page
+/// (and iOS associated-domains). Worth doing when there's a website to put it
+/// on; not worth faking before then.
+///
+/// Parsing stays deliberately tolerant — someone will paste "@cindyk", "cindyk",
+/// or a `drift://add/cindyk` link from Android — and lives here in DriftCore so
+/// both platforms accept exactly the same input, Tier-0 tested rather than
+/// discovered in the field.
 public enum InviteLink {
 
     public static let scheme = "drift"
-    /// Not a live website — a stable, human-readable container for the handle.
-    public static let webHost = "drift.app"
     static let path = "add"
 
-    /// Canonical form for sharing. Uses the https shape because it stays
-    /// tappable in every messaging app, where a custom scheme often doesn't.
-    public static func url(for username: String) -> String {
-        "https://\(webHost)/\(path)/\(normalize(username))"
-    }
-
-    /// The deep-link shape, for QR codes and in-app handoff.
+    /// The deep-link shape. Live on Android (intent filter); NOT registered on
+    /// iOS, so don't put it in front of users on either platform until it is.
+    /// Kept because Android's handler is wired and it's what a QR code would
+    /// encode.
     public static func deepLink(for username: String) -> String {
         "\(scheme)://\(path)/\(normalize(username))"
     }
 
-    /// Copy for a share sheet. Says who and what, because a bare URL in a chat
-    /// thread reads like spam.
+    /// What actually goes in the share sheet.
+    ///
+    /// The handle, and the two steps to act on it. No URL: a dead link is worse
+    /// than no link, because it makes the app look broken to someone who hasn't
+    /// installed it yet. Naming the tab is the difference between an invite
+    /// someone completes and one they mean to get back to.
     public static func shareText(for username: String) -> String {
-        "Add me on Drift — @\(normalize(username))\n\(url(for: username))"
+        let handle = normalize(username)
+        return """
+        Add me on Drift — @\(handle)
+
+        Open Drift → Friends → search @\(handle), then tap Add friend.
+        """
     }
 
-    /// Pull the handle out of anything a user might hand us: either link shape,
-    /// with or without a leading `@`, any casing, trailing slash or query.
-    /// Returns nil when it isn't an invite at all.
+    /// Pull a handle out of anything a user might hand us: a bare handle, an
+    /// @handle, or a `drift://add/<handle>` link. Returns nil when it isn't an
+    /// invite at all.
     public static func username(from raw: String) -> String? {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
 
-        // Tolerate someone pasting just "@cindyk" or "cindyk" — the intent is
-        // unambiguous and refusing it would be pedantry.
+        // Tolerate "@cindyk" or "cindyk" — the intent is unambiguous and
+        // refusing it would be pedantry. This is the PRIMARY path now that
+        // invites are handles rather than links.
         //
-        // But ONLY when the input is ALREADY a handle apart from casing and a
+        // But ONLY when the input is already a handle apart from casing and a
         // leading @. Normalising first would turn "just some text" into
         // "justsometext" and accept it, so any pasted sentence would look like
         // an invite — caught by rejectsNonInvites().
@@ -63,24 +80,16 @@ public enum InviteLink {
             return isValid(stripped) ? stripped : nil
         }
 
-        guard let components = URLComponents(string: trimmed) else { return nil }
+        guard let components = URLComponents(string: trimmed),
+              components.scheme?.lowercased() == scheme else { return nil }
         let segments = components.path.split(separator: "/").map(String.init)
 
-        if components.scheme?.lowercased() == scheme {
-            // drift://add/<name> — URLComponents puts "add" in host, not path.
-            if components.host?.lowercased() == path, let name = segments.first {
-                return valid(name)
-            }
-            // Tolerate drift:///add/<name> too, where it all lands in path.
-            if segments.count >= 2, segments[0].lowercased() == path {
-                return valid(segments[1])
-            }
-            return nil
+        // drift://add/<name> — URLComponents puts "add" in host, not path.
+        if components.host?.lowercased() == path, let name = segments.first {
+            return valid(name)
         }
-
-        if let host = components.host?.lowercased(),
-           host == webHost || host == "www.\(webHost)",
-           segments.count >= 2, segments[0].lowercased() == path {
+        // Tolerate drift:///add/<name> too, where it all lands in path.
+        if segments.count >= 2, segments[0].lowercased() == path {
             return valid(segments[1])
         }
         return nil
@@ -96,7 +105,7 @@ public enum InviteLink {
 
     /// Lowercase, strip a leading @, drop anything the username charset
     /// forbids. Mirrors the `^[a-z0-9_]{3,20}$` CHECK on `profiles.username`,
-    /// so a link can never carry a handle the server would reject.
+    /// so an invite can never carry a handle the server would reject.
     public static func normalize(_ raw: String) -> String {
         let stripped = raw.hasPrefix("@") ? String(raw.dropFirst()) : raw
         let allowed = Set("abcdefghijklmnopqrstuvwxyz0123456789_")
