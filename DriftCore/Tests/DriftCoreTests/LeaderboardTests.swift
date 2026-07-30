@@ -249,12 +249,23 @@ struct AudienceTests {
         #expect(WorkoutAudience.from(friends: false, coaches: true) == .coaches)
     }
 
-    /// Friends implies coaches: a coach monitoring your training is the
-    /// relationship, so "friends can see it but my coach can't" isn't a state
-    /// anyone means.
-    @Test func friendsImpliesCoaches() {
+    /// Each of the four switch combinations maps to its OWN audience.
+    ///
+    /// This test previously asserted `from(friends: true, coaches: false) == .all`
+    /// — i.e. it locked in the bug: the coach switch did nothing while the
+    /// completion sheet claimed the session was friends-only. A test that
+    /// encodes the defect is worse than no test, because it defends it.
+    @Test func everySwitchCombinationHasItsOwnAudience() {
         #expect(WorkoutAudience.from(friends: true, coaches: true) == .all)
-        #expect(WorkoutAudience.from(friends: true, coaches: false) == .all)
+        #expect(WorkoutAudience.from(friends: true, coaches: false) == .friends)
+        #expect(WorkoutAudience.from(friends: false, coaches: true) == .coaches)
+        #expect(WorkoutAudience.from(friends: false, coaches: false) == .private)
+        // Four distinct outcomes — nothing collapses.
+        let all = Set([WorkoutAudience.from(friends: true, coaches: true),
+                       .from(friends: true, coaches: false),
+                       .from(friends: false, coaches: true),
+                       .from(friends: false, coaches: false)])
+        #expect(all.count == 4)
     }
 
     /// Both switches off must publish NOTHING — this is the "I'm just testing"

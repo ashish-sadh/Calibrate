@@ -27,6 +27,8 @@ struct LeaderboardsCard: View {
     @State var expanded: Set<String> = []
     @State var loading = false
     @State var busy = false
+    /// A withdrawal that didn't reach the server. Surfaced, never swallowed.
+    @State var withdrawFailed = false
     /// Global boards, keyed by board. Fetched only for boards the user chose to
     /// publish globally — you can't browse a global board you haven't joined,
     /// which is what keeps it symmetric rather than a place to watch strangers.
@@ -39,6 +41,11 @@ struct LeaderboardsCard: View {
         VStack(alignment: .leading, spacing: 10) {
             header
 
+            if withdrawFailed {
+                Text("Couldn't stop sharing — you're still on your friends' boards. Check your connection and try again.")
+                    .font(.caption).foregroundStyle(Theme.surplus)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
             if !sharing {
                 invitation
             } else if loading {
@@ -151,7 +158,12 @@ struct LeaderboardsCard: View {
             var keys = Preferences.globalBoardKeys
             if isGlobal { keys.remove(board.key) } else { keys.insert(board.key) }
             Preferences.globalBoardKeys = keys
-            Task { await consentChanged(true) }
+            Task {
+                // Going private must reach rows from EVERY period, not just this
+                // week's — otherwise last month's value stays globally readable.
+                if isGlobal { try? await LeaderboardService.unpublish(board: board.key) }
+                await consentChanged(true)
+            }
         } label: {
             HStack(spacing: 4) {
                 Image(systemName: sym(isGlobal ? "globe" : "person.2.fill"))
@@ -260,8 +272,18 @@ struct LeaderboardsCard: View {
             await LeaderboardPublisher.publishIfDue(force: true)
             await refresh()
         } else {
-            await LeaderboardService.withdraw()
-            sections = []
+            do {
+                try await LeaderboardService.withdraw()
+                sections = []
+                globalBoards = [:]
+            } catch {
+                // Put the switch BACK and say so. Clearing the board on a failed
+                // withdrawal showed people the off state while their rows stayed
+                // live on other boards, and nothing ever retried.
+                sharing = true
+                Preferences.shareStatsWithFriends = true
+                withdrawFailed = true
+            }
         }
     }
 }

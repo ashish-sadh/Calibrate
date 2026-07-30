@@ -120,7 +120,23 @@ public enum LeaderboardService {
     /// Turning sharing off REMOVES what was published — a switch that only stops
     /// future writes leaves last month's deadlift on your friends' boards, which
     /// is not what anyone means by turning it off.
-    public static func withdraw() async {
-        try? await SharingService.shared.deleteMyLeaderboardEntries()
+    ///
+    /// THROWS, deliberately. This used to be `try?`, and the UI cleared the board
+    /// unconditionally: withdrawing on a dead connection showed the off state
+    /// while the rows stayed live on strangers' boards, and because
+    /// `shareStatsWithFriends` was already false nothing ever retried. A consent
+    /// control that reports success it didn't achieve is worse than one that
+    /// fails loudly.
+    public static func withdraw() async throws {
+        try await SharingService.shared.deleteMyLeaderboardEntries()
+    }
+
+    /// Take ONE board private, across every period.
+    ///
+    /// Server-side (`unpublish_board`, 0016) because the client only knows the
+    /// current period key: restamping just this week left July's row globally
+    /// readable forever, and its existence kept the profile-discovery gate open.
+    public static func unpublish(board key: String) async throws {
+        _ = try await SharingService.shared.unpublishBoard(key)
     }
 }

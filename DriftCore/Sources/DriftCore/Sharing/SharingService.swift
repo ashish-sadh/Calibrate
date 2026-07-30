@@ -699,6 +699,16 @@ public final class SharingService {
             token: try await validToken())
     }
 
+    /// Take one board private across ALL periods (0016). Returns how many rows
+    /// changed, so a caller can tell "nothing was public" from "it worked".
+    @discardableResult
+    public func unpublishBoard(_ boardKey: String) async throws -> Int {
+        let rows: [Int] = try await client.restInsert(
+            "rpc/unpublish_board", body: ["board": boardKey],
+            token: try await validToken())
+        return rows.first ?? 0
+    }
+
     /// Remove everything I published — what "stop sharing" has to mean.
     public func deleteMyLeaderboardEntries() async throws {
         let uid = try requireUserID()
@@ -888,11 +898,51 @@ public final class SharingService {
     }
 
     /// Sessions from the caller's clients (trainer view), newest first.
+    /// Sessions shared WITH me — from clients, coaches and friends.
+    ///
+    /// Reads BOTH shapes, and it has to. `publishCompletedWorkout` (0012/0014)
+    /// writes ONE client-owned row with `trainer_id IS NULL`, while this method
+    /// used to filter on `trainer_id = me`. The result was that finishing a
+    /// workout wrote a row NO client query could return: the coach got no alert,
+    /// nothing appeared in the roster or the friends hub, and the completion
+    /// sheet still said "Shared with 3 friends and your coach". Caught by
+    /// adversarial review, 2026-07-30 — every test passed.
+    ///
+    /// Client-owned rows are fetched by an EXPLICIT id list rather than by
+    /// letting RLS filter an unfiltered select: the policy calls
+    /// `are_connected()` / `is_coach_of()` per row, so an unfiltered query would
+    /// evaluate them once per row in the table. Same rule as `leaderboardEntries`.
     public func clientSessions() async throws -> [LiveWorkoutDTO] {
         let uid = try requireUserID()
-        return try await client.restGet(
+        let token = try await validToken()
+
+        // Legacy per-recipient rows addressed to me.
+        let legacy: [LiveWorkoutDTO] = try await client.restGet(
             "live_workouts?trainer_id=eq.\(uid)&select=*&order=started_at.desc&limit=100",
-            token: try await validToken())
+            token: token)
+
+        // Client-owned rows from people I'm connected to. RLS still decides what
+        // I may actually see (a coach gets full history back to the granted
+        // floor, a friend the rolling 30 days) — the id list is only there to
+        // keep the query indexed.
+        let peers = (try? await connections())?.map(\.profile.id) ?? []
+        var owned: [LiveWorkoutDTO] = []
+        for start in stride(from: 0, to: peers.count, by: Self.profileBatchSize) {
+            let chunk = peers[start..<min(start + Self.profileBatchSize, peers.count)]
+            owned += try await client.restGet(
+                "live_workouts?trainer_id=is.null"
+                    + "&client_id=in.(\(chunk.joined(separator: ",")))"
+                    + "&select=*&order=started_at.desc&limit=100",
+                token: token) as [LiveWorkoutDTO]
+        }
+
+        // One row per session, newest first. A session can't legitimately appear
+        // in both shapes, but de-duplicating costs nothing and a doubled feed
+        // entry reads as a bug.
+        var seen = Set<String>()
+        return (legacy + owned)
+            .filter { seen.insert($0.id).inserted }
+            .sorted { ($0.startedAt ?? "") > ($1.startedAt ?? "") }
     }
 
     /// All sets of a session (for the live mirror / completed report body).

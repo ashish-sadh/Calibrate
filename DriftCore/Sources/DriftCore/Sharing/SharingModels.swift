@@ -300,15 +300,27 @@ public struct PublicActivityDTO: Codable, Sendable, Hashable, Identifiable {
 public enum WorkoutAudience: String, Sendable, Equatable {
     /// Friends (rolling 30 days) and any current coach (full history).
     case all
-    /// Coaches only — what "share with friends" off, "share with coach" on means.
+    /// Coaches only — "share with friends" off, "share with coach" on.
     case coaches
+    /// Friends only — "share with friends" on, "share with coach" OFF.
+    ///
+    /// Added 0017. This used to map to `.all`, which handed the session to the
+    /// coach anyway: the switch did nothing and the completion sheet reported
+    /// otherwise. The operator's words were "sometimes I might be testing and
+    /// only want to share with friends but not trainer" — this is that state.
+    case friends
     /// Nobody. Saved locally, never published.
     case `private`
 
-    /// The audience implied by the two completion-sheet switches.
+    /// The audience implied by the two completion-sheet switches. Four states in,
+    /// four out — no combination collapses into another.
     public static func from(friends: Bool, coaches: Bool) -> WorkoutAudience {
-        if friends { return .all }        // friends implies coaches see it too
-        return coaches ? .coaches : .private
+        switch (friends, coaches) {
+        case (true, true):   return .all
+        case (true, false):  return .friends
+        case (false, true):  return .coaches
+        case (false, false): return .private
+        }
     }
 }
 
