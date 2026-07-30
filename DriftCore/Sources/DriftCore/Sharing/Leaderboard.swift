@@ -77,7 +77,7 @@ public struct LeaderboardBoard: Sendable, Hashable, Identifiable {
         /// What a board covers, in words, for the line under its title.
         public var label: String {
             switch self {
-            case .week: return "this week"
+            case .week: return "last 7 days"
             case .month: return "last 30 days"
             case .running: return "right now"
             }
@@ -187,12 +187,16 @@ public enum Leaderboard {
 
         var sections: [Section] = []
         for (key, group) in byBoard {
-            // One row per person per board — if a client ever wrote two periods
-            // for the same board, the better value wins rather than both showing.
+            // One row per person per board, keeping the MOST RECENT — not the
+            // biggest. Now that two period keys are fetched (see
+            // LeaderboardService.sections), max-value would pin someone to a
+            // good week forever; recency is what "their current number" means.
             var best: [String: LeaderboardEntryDTO] = [:]
             for entry in group {
-                if let existing = best[entry.userId], existing.value >= entry.value { continue }
-                best[entry.userId] = entry
+                guard let existing = best[entry.userId] else { best[entry.userId] = entry; continue }
+                let newer = (entry.updatedAt ?? entry.periodStart)
+                    > (existing.updatedAt ?? existing.periodStart)
+                if newer { best[entry.userId] = entry }
             }
             guard best.count >= minimum else { continue }
 

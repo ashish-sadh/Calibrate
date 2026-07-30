@@ -27,6 +27,24 @@ public enum LeaderboardService {
     ///
     /// `nonisolated` because it's pure date math and is used as a default
     /// argument, which Swift evaluates outside the actor.
+    /// The period keys worth READING: the current one and the one before it.
+    ///
+    /// A board used to empty at every rollover. The value is a trailing window
+    /// now, but the storage KEY still rolls on Monday (and on the 1st), so a
+    /// friend who hasn't opened the app since has no row under the new key —
+    /// the board drops below two participants and vanishes for everyone.
+    /// Reading both keys and keeping the most recent row per person (see
+    /// `Leaderboard.sections`) means their last known number carries over, aged
+    /// rather than erased. Operator: "why empty every Monday?"
+    public nonisolated static func readPeriods(_ period: LeaderboardBoard.Period,
+                                              for date: Date = Date(),
+                                              calendar: Calendar = .current) -> [String] {
+        let component: Calendar.Component = (period == .month) ? .month : .weekOfYear
+        let previous = calendar.date(byAdding: component, value: -1, to: date) ?? date
+        return [periodStart(period, for: date, calendar: calendar),
+                periodStart(period, for: previous, calendar: calendar)]
+    }
+
     public nonisolated static func periodStart(_ period: LeaderboardBoard.Period,
                                               for date: Date = Date(),
                                               calendar: Calendar = .current) -> String {
@@ -65,7 +83,7 @@ public enum LeaderboardService {
         }
         guard profiles.count >= Leaderboard.minimumParticipants else { return [] }
 
-        let periods = [periodStart(.week, for: now), periodStart(.month, for: now)]
+        let periods = readPeriods(.week, for: now) + readPeriods(.month, for: now)
         let entries = (try? await svc.leaderboardEntries(userIDs: Array(profiles.keys),
                                                         periods: periods)) ?? []
         return Leaderboard.sections(from: entries, profiles: profiles, me: me)
@@ -83,7 +101,7 @@ public enum LeaderboardService {
         if let mine = svc.currentUsername {
             profiles[me] = SharedProfile(id: me, username: mine)
         }
-        let periods = [periodStart(.week, for: now), periodStart(.month, for: now)]
+        let periods = readPeriods(.week, for: now) + readPeriods(.month, for: now)
         let entries = (try? await svc.leaderboardEntries(userIDs: Array(profiles.keys),
                                                         periods: periods)) ?? []
         return Leaderboard.soloSections(from: entries, profiles: profiles, me: me)

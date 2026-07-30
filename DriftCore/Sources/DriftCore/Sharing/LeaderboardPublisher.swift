@@ -69,14 +69,22 @@ public enum LeaderboardPublisher {
         let week = LeaderboardService.periodStart(.week, for: now)
         let month = LeaderboardService.periodStart(.month, for: now)
 
-        // --- Ambient, week-to-date ---
-        // Week-TO-DATE rather than a trailing 7 days: the board compares people
-        // over the same calendar window, and a trailing window would rank
-        // whoever happened to open the app latest in the day.
+        // --- Ambient, TRAILING 7 DAYS ---
+        //
+        // Rolling, not week-to-date. Calendar-to-date had a cliff: at 00:01 on
+        // Monday everyone's total was ~0 and climbed back over seven days, so
+        // the board was near-meaningless for the first half of every week and a
+        // friend who hadn't opened the app since Sunday vanished from it
+        // entirely. Operator: "it should be a sliding window, right? Why empty
+        // every Monday?"
+        //
+        // The old argument for calendar windows was fairness — everyone measured
+        // over the same days. But that's precisely what a Monday breaks: my
+        // seven days against your one. Two trailing 7-day totals computed a day
+        // apart are FAR closer to equal than that, and they never reset.
         if let health = DriftPlatform.health, health.isAvailable {
-            var cal = Calendar.current
-            cal.firstWeekday = 2  // Monday, matching LeaderboardService
-            let start = cal.dateInterval(of: .weekOfYear, for: now)?.start ?? now
+            let cal = Calendar.current
+            let start = cal.date(byAdding: .day, value: -6, to: cal.startOfDay(for: now)) ?? now
             var steps = 0.0
             var calories = 0.0
             var day = start
@@ -104,13 +112,15 @@ public enum LeaderboardPublisher {
         // count board — unlike the coach briefing, a board only needs "did you
         // train", and splitting it here would make two boards that rank the same
         // people by which hardware they own.
-        var workouts = Double((try? WorkoutService.weeklyWorkoutCounts(weeks: 1))?.last?.count ?? 0)
+        // Trailing 7 days here too, for the same reason.
+        let cal = Calendar.current
+        let since = cal.date(byAdding: .day, value: -6, to: cal.startOfDay(for: now)) ?? now
+        let sinceDay = DateFormatters.dateOnly.string(from: since)
+        var workouts = Double(((try? WorkoutService.fetchWorkouts(limit: 200)) ?? [])
+            .filter { $0.date >= sinceDay }.count)
         if let health = DriftPlatform.health, health.isAvailable,
            let recent = try? await health.fetchRecentWorkouts(days: 7) {
-            var cal = Calendar.current
-            cal.firstWeekday = 2
-            let start = cal.dateInterval(of: .weekOfYear, for: now)?.start ?? now
-            workouts += Double(recent.filter { $0.date >= start }.count)
+            workouts += Double(recent.filter { $0.date >= since }.count)
         }
         if workouts > 0 {
             out.append(.init(userId: userID, boardKey: "workouts", periodStart: week,

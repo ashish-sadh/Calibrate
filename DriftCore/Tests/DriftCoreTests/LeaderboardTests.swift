@@ -142,7 +142,7 @@ struct LeaderboardTests {
                    entry("cy", "steps", 40_000)],
             profiles: people("ana", "me", "cy"), me: "me")
         let line = Leaderboard.standing(sections[0])
-        #expect(line == "#3 of 3 on steps this week")
+        #expect(line == "#3 of 3 on steps last 7 days")
         #expect(line?.contains("ana") == false)
     }
 
@@ -446,5 +446,62 @@ struct FoodLoggingStreakTests {
         #expect(board.title == "Food logging streak")
         #expect(board.unit == "days")
         #expect(board.period.label == "right now")
+    }
+}
+
+/// Tier-0 for the rollover that used to empty every board.
+///
+/// Operator: "it should be a sliding window right? Why empty every Monday?"
+/// Two fixes, both asserted here: the VALUE is a trailing window (so it never
+/// resets to near-zero), and the READ spans the current and previous period key
+/// (so a friend who hasn't opened the app since the roll doesn't vanish).
+@MainActor
+struct PeriodRolloverTests {
+
+    private func profile(_ n: String) -> SharedProfile {
+        SharedProfile(id: n, username: n, displayName: nil, avatarUrl: nil)
+    }
+    private func entry(_ u: String, _ period: String, _ v: Double,
+                       updated: String) -> LeaderboardEntryDTO {
+        LeaderboardEntryDTO(userId: u, boardKey: "steps", periodStart: period,
+                            value: v, unit: "", visibility: "friends", updatedAt: updated)
+    }
+
+    private let monday = DateFormatters.dateOnly.date(from: "2026-07-27")!
+
+    @Test func readSpansTheCurrentAndPreviousPeriod() {
+        #expect(LeaderboardService.readPeriods(.week, for: monday) == ["2026-07-27", "2026-07-20"])
+        #expect(LeaderboardService.readPeriods(.month, for: monday) == ["2026-07-01", "2026-06-01"])
+    }
+
+    /// THE BUG: I publish on the new Monday, my friend last published Sunday.
+    /// Under one-period reads the board had a single participant and vanished.
+    @Test func aFriendWhoHasNotOpenedTheAppSinceTheRollStillCounts() {
+        let people = ["me": profile("me"), "ana": profile("ana")]
+        let entries = [
+            entry("me", "2026-07-27", 12_000, updated: "2026-07-27T09:00:00Z"),
+            entry("ana", "2026-07-20", 61_000, updated: "2026-07-26T20:00:00Z"),
+        ]
+        let sections = Leaderboard.sections(from: entries, profiles: people, me: "me")
+        #expect(sections.count == 1, "the board must survive the rollover")
+        #expect(sections[0].rows.count == 2)
+    }
+
+    /// Two rows for one person across periods: the NEWER wins, not the bigger.
+    /// Max-value would pin someone to their best week forever.
+    @Test func recencyBeatsMagnitudeAcrossPeriods() {
+        let people = ["me": profile("me"), "ana": profile("ana")]
+        let entries = [
+            entry("ana", "2026-07-20", 90_000, updated: "2026-07-24T10:00:00Z"),
+            entry("ana", "2026-07-27", 15_000, updated: "2026-07-28T10:00:00Z"),
+            entry("me", "2026-07-27", 20_000, updated: "2026-07-28T10:00:00Z"),
+        ]
+        let rows = Leaderboard.sections(from: entries, profiles: people, me: "me")[0].rows
+        #expect(rows.count == 2, "one row per person, not one per period")
+        #expect(rows.first { !$0.isMe }?.value == 15_000, "their CURRENT number, not their best")
+    }
+
+    @Test func weeklyBoardsSayLastSevenDays() {
+        #expect(LeaderboardBoard.from(key: "steps").period.label == "last 7 days")
     }
 }
