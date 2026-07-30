@@ -109,6 +109,62 @@ private func setUsage(_ db: AppDatabase, name: String, foodId: Int64?,
     #expect(chips.map(\.name) == ["Chole + Rice", "Milk"])
 }
 
+// MARK: - Name-only foods (AI / photo / manual / custom)
+//
+// Field report 2026-07-30: foods logged by AI-describe / photo / custom entry
+// get a food_usage row (name + macros) but NO catalog `food` row, so they
+// showed under Recent yet were invisible in the Suggestions strip and
+// "YOUR FOODS". These pin the fix.
+
+/// Insert a usage row carrying its own macros, as the AI/custom log path does.
+private func setCustomUsage(_ db: AppDatabase, name: String, uses: Int,
+                            lastUsed: String, calories: Double) throws {
+    try db.writer.write { dbc in
+        try dbc.execute(sql: """
+            INSERT INTO food_usage (food_name, food_id, use_count, last_used, last_servings,
+                                    calories, protein_g, carbs_g, fat_g, fiber_g, serving_size_g)
+            VALUES (?, NULL, ?, ?, 1, ?, 8, 20, 4, 2, 240)
+            """, arguments: [name, uses, lastUsed, calories])
+    }
+}
+
+@Test func customLoggedFoodAppearsInChips() throws {
+    let db = try makeDB()
+    // "Chai" logged via AI/describe — no catalog row at all.
+    try setCustomUsage(db, name: "Chai", uses: 3, lastUsed: "2026-07-30T10:08:00Z", calories: 120)
+    let chips = try db.fetchSuggestionChips()
+    #expect(chips.contains { $0.name == "Chai" },
+            "AI/custom-logged foods must reach the Suggestions strip, not just Recent")
+    let chai = try #require(chips.first { $0.name == "Chai" })
+    #expect(chai.calories == 120, "macros come from the usage row when there's no catalog food")
+}
+
+@Test func customLoggedFoodAppearsInFrequentAndRecent() throws {
+    let db = try makeDB()
+    let recent = ISO8601DateFormatter().string(from: Date())
+    try setCustomUsage(db, name: "Uncooked Phulka", uses: 4, lastUsed: recent, calories: 282)
+
+    #expect(try db.fetchFrequentFoods().contains { $0.name == "Uncooked Phulka" },
+            "\"YOUR FOODS\" must include name-only foods")
+    #expect(try db.fetchMostRecentlyLoggedFoods(limit: 10).contains { $0.name == "Uncooked Phulka" },
+            "recent-foods must include name-only foods")
+}
+
+@Test func staleFrequentFoodDropsOutOfWindow() throws {
+    let db = try makeDB()
+    let old = ISO8601DateFormatter().string(
+        from: Calendar.current.date(byAdding: .day, value: -120, to: Date())!)
+    let fresh = ISO8601DateFormatter().string(from: Date())
+    let staleId = try insertFood(db, name: "Old Samosa")
+    try setUsage(db, name: "Old Samosa", foodId: staleId, uses: 50, lastUsed: old)
+    try setCustomUsage(db, name: "Fresh Chai", uses: 2, lastUsed: fresh, calories: 120)
+
+    let names = try db.fetchFrequentFoods().map(\.name)
+    #expect(!names.contains("Old Samosa"),
+            "a 50x food untouched for 120 days must not outrank this week's foods forever")
+    #expect(names.contains("Fresh Chai"))
+}
+
 @Test func respectsLimit() throws {
     let db = try makeDB()
     for i in 1...6 {

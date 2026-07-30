@@ -341,26 +341,17 @@ extension AppDatabase {
     }
 
     public func fetchMostRecentlyLoggedFoods(limit: Int) throws -> [Food] {
-        // Bounded to 90 days via idx_food_entry_date — this runs synchronously
-        // when the Add Food sheet opens, and an unbounded GROUP BY over
-        // food_entry gets slower every month of use. Anything not logged in
-        // 90 days isn't "recent" for the suggestion row anyway.
-        let cutoff = DateFormatters.dateOnly.string(
+        // Sourced from food_usage (not food_entry JOIN food) so foods logged via
+        // AI/photo/manual/custom — which have a usage row but no catalog food_id
+        // — appear as "recent" too (field report 2026-07-30). Bounded to 90 days:
+        // anything not logged since then isn't "recent" for the suggestion row.
+        let cutoff = ISO8601DateFormatter().string(
             from: Calendar.current.date(byAdding: .day, value: -90, to: Date()) ?? Date())
         return try dbWriter.read { db in
-            try Food.fetchAll(db, sql: """
-                SELECT f.*
-                FROM food f
-                JOIN (
-                    SELECT food_id, MAX(logged_at) AS last_logged
-                    FROM food_entry
-                    WHERE food_id IS NOT NULL AND date >= ?
-                    GROUP BY food_id
-                    ORDER BY last_logged DESC
-                    LIMIT ?
-                ) AS recent ON f.id = recent.food_id
-                ORDER BY recent.last_logged DESC
-                """, arguments: [cutoff, limit])
+            try usageFoods(db,
+                whereSQL: "last_used >= ?",
+                orderSQL: "last_used DESC",
+                limit: limit, args: [cutoff])
         }
     }
 

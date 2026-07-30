@@ -99,16 +99,80 @@ extension AppDatabase {
         }
     }
 
-    /// Most-logged foods by usage count.
+    /// Build `[Food]` from `food_usage` so the suggestion surfaces include foods
+    /// logged via AI-describe / photo / manual / custom — which get a usage row
+    /// (name + macros) but NO catalog `food` row — not just catalog foods.
+    /// Field report 2026-07-30: today's Chai / whey / phulka showed in Recent
+    /// (reads food_usage by name) but were invisible in "YOUR FOODS" and the
+    /// diary Suggestions strip (both required a `food_id`).
+    ///
+    /// Rows with a live `food_id` decode from the catalog for full unit/package
+    /// fidelity; name-only rows (or rows whose catalog food was deleted) are
+    /// synthesized from the usage row's own stored macros. Order is `orderSQL`.
+    func usageFoods(_ db: Database, whereSQL: String, orderSQL: String,
+                    limit: Int, args: StatementArguments = StatementArguments()) throws -> [Food] {
+        var a = args
+        a += [limit]
+        let rows = try Row.fetchAll(db, sql: """
+            SELECT food_name, food_id, calories, protein_g, carbs_g, fat_g, fiber_g, serving_size_g
+            FROM food_usage
+            WHERE \(whereSQL)
+            ORDER BY \(orderSQL)
+            LIMIT ?
+            """, arguments: a)
+        let ids = Array(Set(rows.compactMap { $0["food_id"] as Int64? }))
+        var catalog: [Int64: Food] = [:]
+        if !ids.isEmpty {
+            let qs = Array(repeating: "?", count: ids.count).joined(separator: ",")
+            let foods = try Food.fetchAll(db, sql: "SELECT * FROM food WHERE id IN (\(qs))",
+                                          arguments: StatementArguments(ids))
+            for f in foods { if let id = f.id { catalog[id] = f } }
+        }
+        // Name fallback: older builds tracked combo usage with food_id = nil, so
+        // a usage row must still resolve to its catalog food by name — otherwise
+        // the same combo surfaces twice (once from the usage row, once from the
+        // recipe pass) with different casing.
+        let names = rows.filter { ($0["food_id"] as Int64?) == nil }
+            .map { ($0["food_name"] as String).lowercased() }
+        var byName: [String: Food] = [:]
+        if !names.isEmpty {
+            let qs = Array(repeating: "?", count: names.count).joined(separator: ",")
+            let foods = try Food.fetchAll(db, sql: "SELECT * FROM food WHERE LOWER(name) IN (\(qs))",
+                                          arguments: StatementArguments(names))
+            for f in foods { byName[f.name.lowercased()] = f }
+        }
+        return rows.compactMap { row in
+            if let fid = row["food_id"] as Int64?, let f = catalog[fid] { return f }
+            let name: String = row["food_name"]
+            guard !name.isEmpty else { return nil }
+            if let f = byName[name.lowercased()] { return f }
+            let ssg = (row["serving_size_g"] as Double?) ?? 0
+            return Food(
+                name: name,
+                category: "Logged",
+                servingSize: ssg > 0 ? ssg : 1,
+                servingUnit: "serving",
+                calories: (row["calories"] as Double?) ?? 0,
+                proteinG: (row["protein_g"] as Double?) ?? 0,
+                carbsG: (row["carbs_g"] as Double?) ?? 0,
+                fatG: (row["fat_g"] as Double?) ?? 0,
+                fiberG: (row["fiber_g"] as Double?) ?? 0,
+                source: "custom"
+            )
+        }
+    }
+
+    /// Most-logged foods by usage count. Bounded to a 60-day recency window so a
+    /// food logged 50× months ago doesn't outrank this week's foods forever
+    /// (the "YOUR FOODS looks stale" half of the 2026-07-30 report).
     public func fetchFrequentFoods(limit: Int = 10) throws -> [Food] {
         try reader.read { db in
-            try Food.fetchAll(db, sql: """
-                SELECT f.* FROM food f
-                INNER JOIN food_usage fu ON f.id = fu.food_id
-                WHERE fu.food_id IS NOT NULL AND fu.use_count > 1
-                ORDER BY fu.use_count DESC
-                LIMIT ?
-                """, arguments: [limit])
+            let cutoff = ISO8601DateFormatter().string(
+                from: Calendar.current.date(byAdding: .day, value: -60, to: Date()) ?? Date())
+            return try usageFoods(db,
+                whereSQL: "use_count > 1 AND last_used >= ?",
+                orderSQL: "use_count DESC, last_used DESC",
+                limit: limit, args: [cutoff])
         }
     }
 
@@ -216,18 +280,28 @@ extension AppDatabase {
     /// need a usage row to have any signal at all.
     public func fetchSuggestionChips(limit: Int = 10) throws -> [Food] {
         try reader.read { db in
-            try Food.fetchAll(db, sql: """
-                SELECT f.* FROM food f
-                LEFT JOIN food_usage fu ON fu.food_id = f.id OR LOWER(fu.food_name) = LOWER(f.name)
-                WHERE (f.source = 'recipe' AND f.is_recipe = 1) OR fu.food_name IS NOT NULL
-                GROUP BY f.id
-                ORDER BY
-                    MAX(COALESCE(fu.is_favorite, 0)) DESC,
-                    MAX(COALESCE(fu.use_count, 0)) DESC,
-                    MAX(COALESCE(fu.last_used, '')) DESC,
-                    f.name
-                LIMIT ?
-                """, arguments: [limit])
+            // Everything the user has actually logged — catalog OR name-only
+            // (AI/photo/manual/custom) — ranked favorites → most-used → recent.
+            var chips = try usageFoods(db,
+                whereSQL: "food_name IS NOT NULL",
+                orderSQL: "is_favorite DESC, use_count DESC, last_used DESC",
+                limit: limit, args: [])
+            // Never-logged user recipes still qualify (saved combos with macros),
+            // appended after logged foods — a twice-logged food should outrank a
+            // never-used combo (field report 2026-07-09).
+            if chips.count < limit {
+                let usedIds = chips.compactMap { $0.id }
+                let excludeSQL = usedIds.isEmpty ? ""
+                    : " AND id NOT IN (\(Array(repeating: "?", count: usedIds.count).joined(separator: ",")))"
+                let recipes = try Food.fetchAll(db, sql: """
+                    SELECT * FROM food
+                    WHERE source = 'recipe' AND is_recipe = 1\(excludeSQL)
+                    ORDER BY name
+                    LIMIT ?
+                    """, arguments: StatementArguments(usedIds) + [limit - chips.count])
+                chips += recipes
+            }
+            return chips
         }
     }
 
