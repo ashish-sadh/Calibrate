@@ -137,4 +137,39 @@ public enum Inbox {
             }
             .sorted { ($0.latestAt ?? .distantPast) > ($1.latestAt ?? .distantPast) }
     }
+
+    /// `entries` plus whether they can be trusted as the WHOLE picture.
+    public struct Rollup: Sendable, Equatable {
+        public let entries: [InboxEntry]
+        /// False when the message window came back full, so correspondents
+        /// whose newest message fell outside it are invisible here.
+        public let complete: Bool
+
+        public init(entries: [InboxEntry], complete: Bool) {
+            self.entries = entries
+            self.complete = complete
+        }
+
+        public var totalUnread: Int { entries.reduce(0) { $0 + $1.unread } }
+    }
+
+    /// Group messages into per-correspondent entries AND report whether the
+    /// window that produced them was exhaustive.
+    ///
+    /// Unread is a LOCAL notion (`SeenMarks` lives in the key-value store, not
+    /// on the server), so per-peer counts can only be derived from messages the
+    /// client actually pulled. That's fine at one coach and five friends. With
+    /// thirty chatty correspondents, a fixed newest-N window stops covering
+    /// everyone, and a peer with genuinely unread messages silently reports
+    /// zero — the UI then says "up to date" to someone who is not.
+    ///
+    /// Rather than pretend, `complete` goes false the moment the window comes
+    /// back full, and callers must not claim to be caught up while it is.
+    /// Fixing this properly needs server-side read state, which is a real
+    /// schema change and not something to fake client-side.
+    public static func rollup(from messages: [MessageDTO], me: String,
+                             windowLimit: Int) -> Rollup {
+        Rollup(entries: entries(from: messages, me: me),
+               complete: messages.count < windowLimit)
+    }
 }

@@ -173,15 +173,11 @@ struct DashboardView: View {
                     }
 
                     // Coach, clients & friends — second thing on Today, right
-                    // under the rings. It has moved three times in two days
-                    // (More → bottom of Recovery → Activity) and each time
-                    // nobody found it; the operator's call is that people who
-                    // train with someone else check on that person before they
-                    // log anything, "at least until people get used to it".
-                    // Bare: the card owns its own navigation, because the
-                    // destination depends on data only it has (straight to the
-                    // coach's chat when there's one obvious conversation).
-                    FriendsDashboardCard()
+                    // under the rings, as THIN PILLS. The full-width card that
+                    // lived here gave one chat the visual weight of the rings
+                    // (operator 2026-07-30). Each pill is a doorway to a page,
+                    // not a shortcut to a message.
+                    SocialPillRow()
 
                     // V7 Phase 2 log-methods row — Snap · Voice · Search · Recent.
                     // Always visible regardless of whether food was logged so

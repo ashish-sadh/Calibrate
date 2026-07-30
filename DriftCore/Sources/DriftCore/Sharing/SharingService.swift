@@ -94,19 +94,59 @@ public final class SharingService {
         return results.filter { $0.id != me }
     }
 
+    /// How many IDs go into one `id=in.(…)` filter.
+    ///
+    /// Each UUID costs ~37 characters in the query string, so an unchunked
+    /// fetch grows the URL linearly with the connection count and eventually
+    /// trips a proxy's request-line limit (commonly 8–16 KB) — a failure that
+    /// arrives as an opaque 414 on the ONE request that renders every friend
+    /// row, i.e. the whole social surface goes blank for the heaviest users
+    /// first. 50 IDs ≈ 1.9 KB, comfortably inside any limit.
+    nonisolated static let profileBatchSize = 50
+
     /// Batch-fetch profiles for a set of user IDs (to render friend rows).
+    ///
+    /// Chunked and de-duplicated. Chunks run sequentially rather than
+    /// concurrently: this is a background enrichment call, and someone with 300
+    /// connections should not open six parallel sockets on every dashboard load.
     public func profiles(ids: [String]) async throws -> [SharedProfile] {
         guard !ids.isEmpty else { return [] }
-        let list = ids.joined(separator: ",")
-        let path = "profiles?id=in.(\(list))&select=id,username,display_name,avatar_url"
-        return try await client.restGet(path, token: try await validToken())
+        let unique = Array(Set(ids))
+        let token = try await validToken()
+        var out: [SharedProfile] = []
+        for start in stride(from: 0, to: unique.count, by: Self.profileBatchSize) {
+            let chunk = unique[start..<min(start + Self.profileBatchSize, unique.count)]
+            let path = "profiles?id=in.(\(chunk.joined(separator: ",")))"
+                + "&select=id,username,display_name,avatar_url"
+            out += try await client.restGet(path, token: token) as [SharedProfile]
+        }
+        return out
     }
 
     // MARK: - Friend / trainer edges
 
+    /// The most connections Drift supports for one person.
+    ///
+    /// A STATED ceiling, because the alternative is silent degradation. Past a
+    /// few hundred edges the surfaces built on top stop being correct rather
+    /// than merely slow: `recentInbox`'s newest-N window no longer covers every
+    /// correspondent (so per-peer unread reads zero — see `Inbox.rollup`), and
+    /// `clientSessions`' 100-row window no longer covers every client. Drift is
+    /// built for friends plus a coaching roster, not a follower graph. If a real
+    /// coach ever needs more, the fix is server-side read state and paginated
+    /// rosters — not raising this number and hoping.
+    public nonisolated static let maxConnections = 150
+
     /// Send a friend (or trainer) request to another profile.
     public func sendRequest(to profileID: String, role: FriendRole = .friend) async throws {
         let uid = try requireUserID()
+        // Counted from accepted edges only: pending requests you have sent are
+        // not yet connections, and refusing to ask because of them would let
+        // anyone stall you by never answering.
+        let existing = try await acceptedFriendships().count
+        guard existing < Self.maxConnections else {
+            throw SharingError.tooManyConnections(limit: Self.maxConnections)
+        }
         let row: [String: Any] = [
             "requester_id": uid, "addressee_id": profileID, "role": role.rawValue,
         ]
@@ -169,6 +209,12 @@ public final class SharingService {
 
     /// Accept or decline a pending request the caller received.
     public func respondToRequest(_ id: String, accept: Bool) async throws {
+        // Same ceiling as `sendRequest`, so accepting can't walk past it. A
+        // decline is always allowed — being at the limit must never trap you
+        // with requests you cannot clear.
+        if accept, try await acceptedFriendships().count >= Self.maxConnections {
+            throw SharingError.tooManyConnections(limit: Self.maxConnections)
+        }
         let status = accept ? FriendStatus.accepted : .blocked
         let _: [FriendshipDTO] = try await client.restUpdate(
             "friendships?id=eq.\(id)", body: ["status": status.rawValue],
@@ -417,7 +463,13 @@ public final class SharingService {
     /// Everything recently sent TO the caller, across all correspondents — one
     /// round trip for the Today card instead of one fetch per connection.
     /// `Inbox.entries` groups it into newest-per-person with unread counts.
-    public func recentInbox(limit: Int = 100) async throws -> [MessageDTO] {
+    /// How many recent messages one inbox fetch pulls. Exposed so callers can
+    /// pass it to `Inbox.rollup` and learn whether the window was exhaustive —
+    /// see that method for why a full window means the unread counts are a
+    /// floor, not a total.
+    public nonisolated static let inboxWindow = 100
+
+    public func recentInbox(limit: Int = SharingService.inboxWindow) async throws -> [MessageDTO] {
         let uid = try requireUserID()
         return try await client.restGet(
             "messages?recipient_id=eq.\(uid)&select=*&order=created_at.desc&limit=\(limit)",

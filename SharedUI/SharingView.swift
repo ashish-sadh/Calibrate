@@ -829,6 +829,10 @@ struct SharingView: View {
             ? "That username is taken — try another." : m
         case .forbidden: return "Your session expired — sign in again."
         case .decoding(let m): return "Unexpected response: \(m)"
+        // Says the number and what to do about it. A ceiling the user can't see
+        // reads as the app being broken.
+        case .tooManyConnections(let limit):
+            return "You've reached \(limit) connections — remove one to add someone new."
         }
     }
 }

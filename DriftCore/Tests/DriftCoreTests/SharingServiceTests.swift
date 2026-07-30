@@ -319,10 +319,17 @@ struct SharingServiceTests {
         let mock = MockHTTP()
         let (svc, db) = try makeService(mock)
         signIn(svc, db: db)
-        mock.queue = [(201, [Any]())]
+        // Two responses: the connection-ceiling read, then the insert. The read
+        // was added 2026-07-30 (SharingService.maxConnections).
+        mock.queue = [(200, [Any]()), (201, [Any]())]
 
         try await svc.requestCoachPromotion("hud")
-        #expect(mock.requests.count == 1, "exactly one call — the friend edge is not read or written")
+        // The invariant is about WRITES, not call count: exactly one, and it's
+        // an insert of a new edge. A GET is free; a PATCH would rewrite the
+        // friendship out from under both people.
+        let writes = mock.requests.filter { $0.httpMethod != "GET" }
+        #expect(writes.count == 1, "one write only — the friend edge is never modified")
+        #expect(!mock.requests.contains { $0.httpMethod == "PATCH" || $0.httpMethod == "DELETE" })
         let last = mock.requests.last
         #expect(last?.httpMethod == "POST")
         #expect(last?.url?.absoluteString.hasSuffix("friendships") == true)

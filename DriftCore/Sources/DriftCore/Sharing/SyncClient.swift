@@ -14,6 +14,10 @@ public enum SharingError: Error, Equatable, Sendable {
     case conflict(String)       // 409 — e.g. username already taken
     case forbidden              // 401/403 — RLS denied / token expired
     case decoding(String)
+    /// The caller already has as many connections as Drift supports. A stated
+    /// ceiling with a clear message, chosen over letting the social surfaces
+    /// degrade quietly past the point they were designed for.
+    case tooManyConnections(limit: Int)
 }
 
 /// Thin HTTP transport for Supabase (PostgREST + GoTrue auth). Buffered,

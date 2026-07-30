@@ -125,3 +125,59 @@ struct SharingFoundationTests {
         #expect(SyncMap.serverUUID(.workout, localID: 1, db: db) == "w-uuid")
     }
 }
+
+// MARK: - Scale limits (2026-07-30)
+
+/// These guard the seams where the social features stop being CORRECT rather
+/// than merely slow. Every one of them was found by asking "what does this do at
+/// 200 connections?" instead of by a failure report — which is the only time
+/// it's cheap to fix.
+struct SharingScaleTests {
+
+    private func message(_ id: String, from sender: String, to me: String,
+                         at when: Date) -> MessageDTO {
+        MessageDTO(id: id, senderId: sender, recipientId: me, body: "hi",
+                   createdAt: DateFormatters.iso8601.string(from: when))
+    }
+
+    /// A full window means correspondents fell off the end, so the unread
+    /// numbers are a floor and the UI must not say "up to date".
+    @Test func fullInboxWindowIsNotACompletePicture() {
+        let now = Date()
+        let messages = (0..<100).map { message("m\($0)", from: "peer\($0)", to: "me", at: now) }
+        let rollup = Inbox.rollup(from: messages, me: "me", windowLimit: 100)
+        #expect(!rollup.complete, "100 of 100 returned — there may be more")
+    }
+
+    @Test func partialInboxWindowIsComplete() {
+        let messages = [message("m1", from: "peer1", to: "me", at: Date())]
+        #expect(Inbox.rollup(from: messages, me: "me", windowLimit: 100).complete)
+    }
+
+    /// An empty inbox is genuinely empty, not "unknown" — otherwise a brand new
+    /// user gets told to catch up on nothing.
+    @Test func emptyInboxIsComplete() {
+        let rollup = Inbox.rollup(from: [], me: "me", windowLimit: 100)
+        #expect(rollup.complete)
+        #expect(rollup.entries.isEmpty)
+        #expect(rollup.totalUnread == 0)
+    }
+
+    /// The URL-length wall: `id=in.(…)` grows ~37 chars per UUID, and one
+    /// oversized request would blank every friend row at once.
+    @Test func profileFetchesStayInsideAnyProxyURLLimit() {
+        let batch = SharingService.profileBatchSize
+        let worstCaseURLBytes = batch * 37 + 64  // + the path and select clause
+        #expect(worstCaseURLBytes < 8_192,
+                "a single profiles chunk must fit a conservative 8 KB request line")
+        // And the ceiling must actually need chunking, or the batching is dead code.
+        #expect(SharingService.maxConnections > batch)
+    }
+
+    /// The ceiling has to sit below the point where the windows above stop
+    /// covering everyone, or it isn't protecting anything.
+    @Test func connectionCeilingSitsBelowTheWindowsItProtects() {
+        #expect(SharingService.maxConnections <= SharingService.inboxWindow * 2,
+                "past ~2 messages per connection the inbox window stops covering everyone")
+    }
+}
