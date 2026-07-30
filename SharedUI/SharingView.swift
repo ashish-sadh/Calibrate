@@ -27,6 +27,9 @@ struct SharingView: View {
     @State var searching = false
     @State var searchedOnce = false
     @State var requestedIDs: Set<String> = []
+    /// The other party of every pending edge, either direction — so search can
+    /// say "Requested" for someone asked days ago, not just this session.
+    @State var pendingIDs: Set<String> = []
     @State var requests: [FriendshipDTO] = []
     /// Requester profiles by user ID, so a request row can say WHO is asking —
     /// an identity-blind "Friend request" made accepting strangers the default.
@@ -294,6 +297,15 @@ struct SharingView: View {
         .card()
     }
 
+    /// What to show instead of add buttons for someone you're already with.
+    private func existingRelationshipLabel(_ kind: Connection.Kind) -> String {
+        switch kind {
+        case .coach: return "Your coach"
+        case .client: return "Your client"
+        case .friend: return "Friends"
+        }
+    }
+
     private func rawUsername(_ id: String) -> String {
         conns.first { $0.id == id }?.profile.username ?? "?"
     }
@@ -460,8 +472,18 @@ struct SharingView: View {
                         }
                     }
                     Spacer()
-                    if requestedIDs.contains(profile.id) {
-                        Label("Sent", systemImage: sym("checkmark"))
+                    // Already connected? Say so. Offering "Add friend" to your
+                    // own coach reads as broken and, tapped, 409s on the
+                    // duplicate edge (operator screenshot 2026-07-29: @cindyk
+                    // is the coach AND shows Add friend/Coach).
+                    if let existing = conns.first(where: { $0.id == profile.id }) {
+                        Text(existingRelationshipLabel(existing.kind))
+                            .font(.caption2.weight(.semibold))
+                            .padding(.horizontal, 10).padding(.vertical, 5)
+                            .background(Theme.chartTrend.opacity(0.15), in: Capsule())
+                            .foregroundStyle(Theme.chartTrend)
+                    } else if pendingIDs.contains(profile.id) || requestedIDs.contains(profile.id) {
+                        Label("Requested", systemImage: sym("checkmark"))
                             .font(.caption.weight(.semibold)).foregroundStyle(Theme.deficit)
                     } else {
                         Button { Task { await sendRequest(to: profile, role: .friend) } } label: {
@@ -611,9 +633,14 @@ struct SharingView: View {
         // an empty list must never look the same.
         async let connections = svc.connections()
         async let sessions = try? await svc.clientSessions()
+        async let pending = try? await svc.pendingEdges()
         requests = await reqs ?? []
         incomingTemplates = await tmpls ?? []
         clientSessions = await sessions ?? []
+        let me = svc.currentSession?.userID
+        pendingIDs = Set((await pending ?? []).map {
+            $0.requesterId == me ? $0.addresseeId : $0.requesterId
+        })
 
         do {
             conns = try await connections

@@ -15,6 +15,11 @@ struct ClientDetailView: View {
     @State var error: String?
     @State var briefing: ClientBriefing?
     @State var brief: CoachClientBrief.Brief?
+    // Coach-authored notes — the coach's own dated log about this client,
+    // which the client also reads (migration 0006).
+    @State var myNotes: [CoachAuthoredNote] = []
+    @State var noteDraft = ""
+    @State var savingNote = false
 
     private var svc: SharingService { .shared }
 
@@ -60,6 +65,7 @@ struct ClientDetailView: View {
             VStack(alignment: .leading, spacing: 16) {
                 header
                 briefingCard
+                coachNotesCard
                 messageCard
                 recentWorkoutsCard
                 assignCard
@@ -75,6 +81,88 @@ struct ClientDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         #endif
         .task { await load() }
+    }
+
+    /// The coach's OWN dated notes about this client — the counterpart to the
+    /// AI's notes, and clearly separated from them (operator 2026-07-29: the
+    /// AI notes read as if the trainer had written them).
+    ///
+    /// The client always reads these, and the composer says so before you
+    /// type: a note about someone they can't see is a file kept on a person.
+    private var coachNotesCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("YOUR NOTES").sectionHeading()
+            Text("Dated, and @\(client.username) can read these.")
+                .font(.caption2).foregroundStyle(Theme.textTertiary)
+
+            // One TextField per ViewBuilder scope on Fuse — this card has
+            // exactly one, and the extracted composer keeps it that way.
+            CoachNoteComposer(draft: $noteDraft, saving: savingNote) {
+                await saveNote()
+            }
+
+            if myNotes.isEmpty {
+                Text("No notes yet. Write what you'd want to remember before their next session.")
+                    .font(.caption2).foregroundStyle(Theme.textTertiary)
+            } else {
+                ForEach(myNotes) { note in
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: 6) {
+                            Text(note.dateOnly)
+                                .font(.caption2.monospacedDigit())
+                                .foregroundStyle(Theme.textTertiary)
+                            Text("YOU")
+                                .font(.caption2.weight(.bold))
+                                .padding(.horizontal, 5).padding(.vertical, 1)
+                                .background(Theme.accent.opacity(0.15), in: Capsule())
+                                .foregroundStyle(Theme.accent)
+                            Spacer()
+                            Button {
+                                Task { await deleteNote(note) }
+                            } label: {
+                                Text("Delete")
+                                    .font(.caption2).foregroundStyle(Theme.textTertiary)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        Text(note.text)
+                            .font(.caption).foregroundStyle(Theme.textSecondary)
+                    }
+                    if note.id != myNotes.last?.id {
+                        Divider().overlay(Theme.separatorFaint)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .card()
+    }
+
+    private func saveNote() async {
+        let text = noteDraft
+        guard !text.trimmingCharacters(in: .whitespaces).isEmpty else { return }
+        savingNote = true
+        defer { savingNote = false }
+        do {
+            try await svc.addCoachNote(clientID: client.id, text: text)
+            noteDraft = ""
+            myNotes = (try? await svc.coachNotes(
+                clientID: client.id,
+                coachID: svc.currentSession?.userID ?? "")) ?? myNotes
+        } catch {
+            self.error = (error as? SharingError).map(String.init(describing:))
+                ?? error.localizedDescription
+        }
+    }
+
+    private func deleteNote(_ note: CoachAuthoredNote) async {
+        do {
+            try await svc.deleteCoachNote(note.id)
+            myNotes.removeAll { $0.id == note.id }
+        } catch {
+            self.error = (error as? SharingError).map(String.init(describing:))
+                ?? error.localizedDescription
+        }
     }
 
     private var header: some View {
@@ -197,6 +285,8 @@ struct ClientDetailView: View {
         let all = (try? await svc.clientSessions()) ?? []
         sessions = all.filter { $0.clientId == client.id }
         briefing = try? await svc.fetchBriefing(for: client.id)
+        myNotes = (try? await svc.coachNotes(
+            clientID: client.id, coachID: svc.currentSession?.userID ?? "")) ?? []
         loading = false
         // Opening the page IS seeing it — clear this client's "N new" badge
         // once the sessions are actually on screen, not before.
@@ -221,5 +311,38 @@ struct ClientDetailView: View {
             self.error = (error as? SharingError).map(String.init(describing:)) ?? error.localizedDescription
         }
         assigningID = nil
+    }
+}
+
+/// The coach's note field, extracted into its own View for two reasons: Fuse
+/// binds only the FIRST TextField per ViewBuilder scope, and keeping the draft
+/// binding here means typing doesn't re-evaluate the whole client page.
+struct CoachNoteComposer: View {
+    @Binding var draft: String
+    let saving: Bool
+    let onSave: () async -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            TextField("e.g. Knee felt better with the tempo squats", text: $draft)
+                .font(.caption)
+                #if !os(Android)
+                .textFieldStyle(.roundedBorder)
+                #endif
+            Button {
+                Task { await onSave() }
+            } label: {
+                if saving {
+                    ProgressView()
+                } else {
+                    Text("Add").font(.caption.weight(.semibold))
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(Theme.accent, in: Capsule())
+                        .foregroundStyle(.white)
+                }
+            }
+            .buttonStyle(.plain)
+            .disabled(saving || draft.trimmingCharacters(in: .whitespaces).isEmpty)
+        }
     }
 }

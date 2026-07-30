@@ -223,6 +223,13 @@ public struct BriefingMetrics: Codable, Sendable, Equatable {
     /// yyyy-MM-dd of the scan the numbers come from, so a coach knows how
     /// fresh the picture is.
     public var scanDate: String?
+    // Regional fat distribution from the same scan — what lets a coach see
+    // WHERE the fat sits, not just how much. Within `.bodyComp`'s plain
+    // meaning, and the toggle label names it (2026-07-29 operator ask for
+    // DEXA diagrams). Still summary-only: three percentages, never the scan.
+    public var trunkFatPct: Double?
+    public var armsFatPct: Double?
+    public var legsFatPct: Double?
     // Weekly-average TRENDS (operator ask: "I wish they can see weight trend
     // and average sleep trend etc too"). Each rides its existing category
     // bit — weight series under .weight, sleep under .sleep, calories under
@@ -349,6 +356,9 @@ public struct BriefingMetrics: Codable, Sendable, Equatable {
         if let value = leanMassLbs { dict["lean_mass_lbs"] = value }
         if let value = leanMassDeltaLbs { dict["lean_mass_delta_lbs"] = value }
         if let value = scanDate { dict["scan_date"] = value }
+        if let value = trunkFatPct { dict["trunk_fat_pct"] = value }
+        if let value = armsFatPct { dict["arms_fat_pct"] = value }
+        if let value = legsFatPct { dict["legs_fat_pct"] = value }
         if let series = weightSeries { dict["weight_series"] = series.map(\.payload) }
         if let series = sleepSeries { dict["sleep_series"] = series.map(\.payload) }
         if let series = caloriesSeries { dict["calories_series"] = series.map(\.payload) }
@@ -380,6 +390,9 @@ public struct BriefingMetrics: Codable, Sendable, Equatable {
         metrics.leanMassLbs = double(dict["lean_mass_lbs"])
         metrics.leanMassDeltaLbs = double(dict["lean_mass_delta_lbs"])
         metrics.scanDate = dict["scan_date"] as? String
+        metrics.trunkFatPct = double(dict["trunk_fat_pct"])
+        metrics.armsFatPct = double(dict["arms_fat_pct"])
+        metrics.legsFatPct = double(dict["legs_fat_pct"])
         metrics.weightSeries = WeeklyPoint.decode(dict["weight_series"])
         metrics.sleepSeries = WeeklyPoint.decode(dict["sleep_series"])
         metrics.caloriesSeries = WeeklyPoint.decode(dict["calories_series"])

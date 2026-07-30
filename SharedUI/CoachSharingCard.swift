@@ -20,6 +20,9 @@ struct CoachSharingCard: View {
     @State var error: String?
     @State var showingPreview = false
     @State var preview: ClientBriefing?
+    /// What this coach has written about you. Not gated by any toggle — your
+    /// coach's notes about you are yours to read unconditionally.
+    @State var notesFromCoach: [CoachAuthoredNote] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -38,7 +41,7 @@ struct CoachSharingCard: View {
             row("Average sleep", .sleep)
             row("Average calories & protein", .nutrition)
             row("Weight trend", .weight)
-            row("Body composition (DEXA)", .bodyComp)
+            row("Body composition (DEXA: fat %, lean mass, regional)", .bodyComp)
             row("Training detail (best sets & recovery)", .strength)
 
             Text(level == .none
@@ -74,13 +77,35 @@ struct CoachSharingCard: View {
                 }
             }
 
+            // What your coach wrote about you, dated and attributed. Shown
+            // regardless of the toggles: these are their words about you, and
+            // withholding them from you would be the one-way file the design
+            // explicitly refuses (migration 0006).
+            if !notesFromCoach.isEmpty {
+                Divider().overlay(Theme.separatorFaint)
+                Text("NOTES FROM @\(coach.username.uppercased())").sectionHeading()
+                ForEach(notesFromCoach.prefix(5)) { note in
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(note.dateOnly)
+                            .font(.caption2.monospacedDigit()).foregroundStyle(Theme.textTertiary)
+                        Text(note.text)
+                            .font(.caption).foregroundStyle(Theme.textSecondary)
+                    }
+                }
+            }
+
             if let error {
                 Text(error).font(.caption2).foregroundStyle(Theme.surplus)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .card()
-        .task { level = BriefingSharingLevel.stored(for: coach.id) }
+        .task {
+            level = BriefingSharingLevel.stored(for: coach.id)
+            notesFromCoach = (try? await SharingService.shared.coachNotes(
+                clientID: SharingService.shared.currentSession?.userID ?? "",
+                coachID: coach.id)) ?? []
+        }
     }
 
     /// Build the preview from LOCAL data at the current level — the same

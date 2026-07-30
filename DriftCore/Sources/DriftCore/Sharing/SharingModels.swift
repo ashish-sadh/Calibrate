@@ -160,6 +160,44 @@ public struct MessageDTO: Codable, Sendable, Identifiable, Hashable {
     }
 }
 
+/// A note a HUMAN coach wrote about their client (migration 0006). Distinct
+/// from `CoachNotes.Note`, which the APP writes from the client's own words —
+/// conflating the two is what made the briefing read as if the coach had
+/// authored the AI's observations.
+///
+/// Always visible to the client: a note about someone they cannot read is a
+/// file kept on a person, which is not what Drift is.
+public struct CoachAuthoredNote: Codable, Sendable, Identifiable, Hashable {
+    public let id: String
+    public let coachId: String
+    public let clientId: String
+    public var text: String
+    public var createdAt: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id, text
+        case coachId = "coach_id"
+        case clientId = "client_id"
+        case createdAt = "created_at"
+    }
+
+    public init(id: String, coachId: String, clientId: String,
+                text: String, createdAt: String? = nil) {
+        self.id = id
+        self.coachId = coachId
+        self.clientId = clientId
+        self.text = text
+        self.createdAt = createdAt
+    }
+
+    /// yyyy-MM-dd for display — a coach note is a dated timeline entry, never
+    /// an undated verdict.
+    public var dateOnly: String {
+        guard let createdAt else { return "" }
+        return String(createdAt.prefix(10))
+    }
+}
+
 /// A resolved connection with its relationship kind, for the Friends hub.
 public struct Connection: Sendable, Identifiable, Hashable {
     public enum Kind: String, Sendable { case friend, coach, client }

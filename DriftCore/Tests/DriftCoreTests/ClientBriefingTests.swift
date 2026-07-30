@@ -302,6 +302,53 @@ struct ClientBriefingTests {
         #expect(!briefing.isEmpty)
     }
 
+    // MARK: - Regional fat (the DEXA diagram's data)
+
+    /// Regional percentages ride `.bodyComp` and stay off the wire without it;
+    /// a region the scan didn't measure is omitted, never drawn as zero.
+    @Test func regionalFatFollowsBodyCompConsentAndOmitsMissingRegions() {
+        let scan = DEXAScan(scanDate: "2026-07-25", leanMassKg: 63.5, bodyFatPct: 24.1,
+                            trunkFatPct: 26.0, armsFatPct: 18.5, legsFatPct: nil)
+
+        let withheld = BriefingAggregator.metrics(level: [.weight], scans: [scan])
+        #expect(withheld.trunkFatPct == nil)
+        #expect(withheld.payload["trunk_fat_pct"] == nil)
+
+        let shared = BriefingAggregator.metrics(level: [.bodyComp], scans: [scan])
+        #expect(shared.trunkFatPct == 26.0)
+        #expect(shared.armsFatPct == 18.5)
+        #expect(shared.legsFatPct == nil, "the scan didn't measure legs")
+        #expect(shared.payload["legs_fat_pct"] == nil)
+
+        let decoded = BriefingMetrics.decode(shared.payload)
+        #expect(decoded.trunkFatPct == 26.0)
+        #expect(decoded.armsFatPct == 18.5)
+        #expect(decoded.legsFatPct == nil)
+    }
+
+    // MARK: - Coach-authored notes
+
+    /// A coach note is DATED and attributed — a client reads a timeline, not
+    /// an undated verdict.
+    @Test func coachAuthoredNotesAreDatedAndDecodeFromPostgrest() throws {
+        let json = """
+        [{"id":"n1","coach_id":"cindy","client_id":"me",
+          "text":"Knee felt better with tempo squats",
+          "created_at":"2026-07-29T18:22:05.123456+00:00"}]
+        """
+        let notes = try SharingJSON.decoder.decode([CoachAuthoredNote].self,
+                                                   from: Data(json.utf8))
+        #expect(notes.count == 1)
+        #expect(notes.first?.coachId == "cindy")
+        #expect(notes.first?.clientId == "me")
+        #expect(notes.first?.dateOnly == "2026-07-29")
+        #expect(notes.first?.text == "Knee felt better with tempo squats")
+
+        // No timestamp yet (optimistic local row): no date rather than a wrong one.
+        let undated = CoachAuthoredNote(id: "n2", coachId: "c", clientId: "m", text: "x")
+        #expect(undated.dateOnly.isEmpty)
+    }
+
     // MARK: - Recovery map
 
     /// The client grades its own recovery with its LEARNED thresholds, so the

@@ -835,3 +835,49 @@ FRESHNESS, TWICE OVER. `updated_at` is now displayed ("Updated 2h ago") —
 it was parsed and dropped, so a coach could read a three-week-old trend as
 today's. And opening your own Friends hub re-pushes your briefings, since
 a local-first snapshot otherwise only moved when a toggle was flipped.
+
+## 2026-07-29 — Coach notes are the OTHER direction, and the AI must say it's the AI
+
+Operator, after reading the coach view: "AI notes are confusing, looks like
+trainer added it… give option for trainer to add notes (show them that this
+will be shown to client)… for AI summary make it explicit where it comes
+from."
+
+PROVENANCE FIRST. Every note the coach was reading had been written BY THE
+APP from the client's own words (Coach Me intake, AI-distilled chat
+moments, program records) — but nothing said so, so it read as the coach's
+own file. The card is now titled "FROM DRIFT'S AI COACH", states "Written
+by Drift's AI coach from what the client told it — not by you", and badges
+each note with its source (AI · intake / AI · from chat / AI · program).
+An AI observation presented as a human's is a trust bug, not a copy nit.
+
+COACH NOTES INVERT THE TRUST DIRECTION, so they get their own table
+(migration 0006) rather than a column on `client_briefings`:
+- `client_briefings` is client-write / coach-read, precisely so a coach
+  cannot edit their client's history. Coach notes are coach-write /
+  both-read. Two directions of trust do not belong in one row.
+- THE CLIENT ALWAYS READS THEM. There is no private-to-coach mode, and the
+  composer says so before you type. A note about someone that they cannot
+  read is a file kept on a person, which is not what Drift is. On the
+  client's side they render ungated by any sharing toggle — consent governs
+  what the client SENDS, never what they may READ about themselves.
+- DATED AND ATTRIBUTED, per the operator's check: a client reads a timeline
+  ("2026-07-29 — YOU"), not an undated verdict.
+- NO UPDATE POLICY, on purpose: either party may delete, neither may
+  rewrite the other's words.
+
+DIAGRAMS: the coach's recovery view graduates from a chip strip to the REAL
+anatomical figure — `MuscleBodyView` already took injected per-slug colours,
+so the coach sees the same body model the client does, coloured by the
+client's own learned thresholds. DEXA regional fat reuses that same figure
+rather than introducing a second diagram vocabulary; the three regional
+percentages ride `.bodyComp`, whose label now names them.
+
+COLLAPSIBLE BY DEFAULT for reference material (recovery, body comp, best
+sets, history), open for what a coach acts on (alerts, stats, trends).
+Collapsed headers carry a summary so folding never hides the headline.
+
+ALSO FIXED: search offered "Add friend / Coach" for people already
+connected (409 on tap, and reads broken). Rows now state the existing
+relationship, and "Requested" comes from real pending edges instead of
+only remembering taps made this session.

@@ -108,6 +108,16 @@ public final class SharingService {
                                                              token: try await validToken())
     }
 
+    /// Every pending edge involving the caller, either direction. Search needs
+    /// this to say "Requested" for someone asked days ago — `requestedIDs` only
+    /// remembers taps made in the current session.
+    public func pendingEdges() async throws -> [FriendshipDTO] {
+        let uid = try requireUserID()
+        return try await client.restGet(
+            "friendships?status=eq.pending&or=(requester_id.eq.\(uid),addressee_id.eq.\(uid))&select=*",
+            token: try await validToken())
+    }
+
     /// Requests awaiting the caller's decision.
     public func incomingRequests() async throws -> [FriendshipDTO] {
         let uid = try requireUserID()
@@ -229,6 +239,50 @@ public final class SharingService {
             }
         }
         return order.compactMap { seen[$0] }
+    }
+
+    // MARK: - Coach-authored notes (the other direction: coach → client)
+
+    /// Notes written BY a human coach ABOUT one client, newest first. Readable
+    /// by both parties — a coach reads their own log, the client reads what
+    /// their coach wrote about them. There is no private-to-coach mode by
+    /// design (migration 0006).
+    public func coachNotes(clientID: String, coachID: String) async throws -> [CoachAuthoredNote] {
+        let rows: [CoachAuthoredNote] = try await client.restGet(
+            "coach_notes?client_id=eq.\(clientID)&coach_id=eq.\(coachID)&select=*&order=created_at.desc",
+            token: try await validToken())
+        return rows
+    }
+
+    /// Every note written about the CALLER, across all their coaches — what a
+    /// client sees on their own sharing card.
+    public func notesAboutMe() async throws -> [CoachAuthoredNote] {
+        let uid = try requireUserID()
+        return try await client.restGet(
+            "coach_notes?client_id=eq.\(uid)&select=*&order=created_at.desc",
+            token: try await validToken())
+    }
+
+    /// Write a note about a client. The caller must be their coach; RLS
+    /// enforces it, so a stale UI can't write onto a stranger.
+    public func addCoachNote(clientID: String, text: String) async throws {
+        let uid = try requireUserID()
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let row: [String: Any] = [
+            "coach_id": uid, "client_id": clientID,
+            // Cap it: this is a training note, not a document, and an
+            // unbounded field is an unbounded row.
+            "text": String(trimmed.prefix(1000)),
+        ]
+        let _: [CoachAuthoredNote] = try await client.restInsert(
+            "coach_notes", body: [row], token: try await validToken())
+    }
+
+    /// Retract (coach) or remove (client) — either party may delete, neither
+    /// may rewrite the other's words.
+    public func deleteCoachNote(_ id: String) async throws {
+        try await client.restDelete("coach_notes?id=eq.\(id)", token: try await validToken())
     }
 
     // MARK: - Client briefing (what a coach sees beyond the workouts)

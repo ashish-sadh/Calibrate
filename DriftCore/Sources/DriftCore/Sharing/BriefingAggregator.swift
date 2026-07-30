@@ -161,6 +161,9 @@ public enum BriefingAggregator {
 
         metrics.scanDate = latest.scanDate
         metrics.bodyFatPct = latest.bodyFatPct
+        metrics.trunkFatPct = latest.trunkFatPct
+        metrics.armsFatPct = latest.armsFatPct
+        metrics.legsFatPct = latest.legsFatPct
         if let now = latest.bodyFatPct, let then = previous?.bodyFatPct {
             metrics.bodyFatDeltaPct = now - then
         }
