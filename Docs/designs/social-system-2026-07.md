@@ -228,6 +228,47 @@ beats silent degradation.
 - A two-account simulator walkthrough of the full coach↔client journey. It found
   the two worst bugs above; it has never been run end to end.
 
+### Workout-history backfill — the gap that makes "transfer history" hollow
+
+**A session only reaches the server at the moment it is finished.**
+`WorkoutBroadcast.send` is called once, from the completion sheet, and nothing
+else ever publishes a workout. So anything logged before the sharing feature
+existed — or with the share switches off — is local-only.
+
+Which means `coach_history_grants` currently grants access to rows that may not
+exist. A coach sees the BRIEFING (aggregates, plateaus, best sets, all computed
+locally and pushed as a snapshot) but not the sessions themselves. "Forever
+history" is real in the schema and empty in practice.
+
+The fix is a backfill: walk the local workout store, publish anything not yet on
+the server as a client-owned row **with its original `started_at`** (not now, or
+a year of training lands as one day), push its sets, mark completed. Triggered
+explicitly from the coach's sharing card with a count, so nobody bulk-uploads
+by accident.
+
+**IT MUST NOT NOTIFY, AND THAT IS TWO PROBLEMS, NOT ONE** (operator
+2026-07-30). Getting only the first one right still ruins it:
+
+1. **Push/local alerts.** `NotifiableEvent.clientWorkoutImported` already returns
+   false from `alertsPhone`, so routing the backfill through the *imported* event
+   is most of the answer — but `SocialAlertPoll` must be checked, not assumed.
+2. **The unseen badge, which is the one that will bite.** A coach's "N new
+   sessions" comes from `SeenMarks.unseenSessionCount`, computed on the COACH's
+   device from rows they haven't marked seen. The backfilling client cannot
+   touch that. So a 200-session backfill silently becomes "200 new sessions" on
+   the coach's roster, and every client detail view screams.
+
+   Client-side marking cannot fix this — the state lives on the other person's
+   device. It needs a **server-side marker**: a `backfilled boolean default
+   false` column on `live_workouts`, set true by the backfill, and excluded from
+   both the alert poll and the unseen count. History should appear as history:
+   present when you look for it, silent when it arrives.
+
+Also needs: **idempotence** (a local set of published workout IDs, checked before
+each push — a re-run that duplicates a year of sessions is not hand-fixable),
+**batching** with resume (thousands of sets; a partial run must leave whole
+sessions, never half of one), and a bound on how far back it goes.
+
 ## 8. Migrations
 
 `0001` core (profiles, friendships, shared_templates, live_workouts, messages) ·
