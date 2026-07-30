@@ -63,11 +63,7 @@ struct LeaderboardsCard: View {
                 boardPicker
                 if let shown = currentBoard {
                     boardView(shown)
-                    if solo.contains(where: { $0.board.key == shown.board.key }) {
-                        Text("Waiting on a friend — this fills in as soon as one turns Leaderboards on.")
-                            .font(.caption2).foregroundStyle(Theme.textTertiary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
+
                 }
             }
         }
@@ -108,98 +104,153 @@ struct LeaderboardsCard: View {
 
     // MARK: - One board
 
+    /// One board, styled to be worth screenshotting.
+    ///
+    /// The old version was a stack of plain text rows with the title repeated
+    /// from the chip above it and the "only you so far" line said twice
+    /// (operator 2026-07-30: "doesn't look pretty... make it shareable"). This
+    /// leads with the leader, medals the top three, and says the visibility
+    /// state as a CONTROL rather than a text link.
     func boardView(_ section: Leaderboard.Section) -> some View {
         let isOpen = expanded.contains(section.board.key)
-        // Three rows is enough to see the shape of it; the rest is on request.
-        let shown = isOpen ? section.rows : Array(section.rows.prefix(3))
-        return VStack(alignment: .leading, spacing: 4) {
-            Button {
-                if isOpen { expanded.remove(section.board.key) }
-                else { expanded.insert(section.board.key) }
-            } label: {
-                HStack(spacing: 6) {
-                    Text(section.board.title)
-                        .font(.caption.weight(.semibold)).foregroundStyle(Theme.textPrimary)
+        let shown = isOpen ? section.rows : Array(section.rows.prefix(5))
+        return VStack(alignment: .leading, spacing: 10) {
+            // Hero: the number that matters, big.
+            if let leader = section.rows.first {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(Leaderboard.formatted(leader.value, board: section.board))
+                        .font(.title2.weight(.bold).monospacedDigit())
+                        .foregroundStyle(Theme.textPrimary)
+                    Text(leader.isMe ? "you lead" : "@\(leader.profile.username) leads")
+                        .font(.caption).foregroundStyle(Theme.textSecondary)
+                    Spacer()
                     Text(section.board.period.label)
                         .font(.caption2).foregroundStyle(Theme.textTertiary)
-                    Spacer()
-                    if section.rows.count > 3 {
-                        Text(isOpen ? "Less" : "All \(section.rows.count)")
-                            .font(.caption2).foregroundStyle(Theme.accent)
-                    }
                 }
-                .contentShape(Rectangle())
             }
-            .buttonStyle(.plain)
 
             ForEach(shown) { row in
-                HStack(spacing: 8) {
-                    Text("\(row.rank)")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(row.rank == 1 ? Theme.accent : Theme.textTertiary)
-                        .frame(width: 16, alignment: .trailing)
+                HStack(spacing: 10) {
+                    // Medal for the podium, muted number after — the shape
+                    // people recognise from a results page.
+                    Text(medal(row.rank))
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(medalTint(row.rank))
+                        .frame(width: 22, alignment: .center)
+                    Text(String(row.profile.username.prefix(1)).uppercased())
+                        .font(.caption2.weight(.semibold)).foregroundStyle(.white)
+                        .frame(width: 24, height: 24)
+                        .background(row.isMe ? AnyShapeStyle(Theme.accentGradient)
+                                             : AnyShapeStyle(Theme.textTertiary), in: Circle())
                     Text(row.isMe ? "You" : "@\(row.profile.username)")
                         .font(.caption.weight(row.isMe ? .semibold : .regular))
-                        .foregroundStyle(Theme.textPrimary)
-                        .lineLimit(1)
+                        .foregroundStyle(Theme.textPrimary).lineLimit(1)
                     Spacer()
                     Text(Leaderboard.formatted(row.value, board: section.board))
-                        .font(.caption.weight(.semibold)).foregroundStyle(Theme.textPrimary)
+                        .font(.caption.weight(.semibold).monospacedDigit())
+                        .foregroundStyle(Theme.textPrimary)
                 }
+                .padding(.vertical, 3)
+                .padding(.horizontal, 8)
+                .background(row.isMe ? Theme.accent.opacity(0.07) : Color.clear,
+                            in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
+            }
+
+            if section.rows.count > 5 {
+                Button {
+                    if isOpen { expanded.remove(section.board.key) }
+                    else { expanded.insert(section.board.key) }
+                } label: {
+                    Text(isOpen ? "Show fewer" : "Show all \(section.rows.count)")
+                        .font(.caption2).foregroundStyle(Theme.accent)
+                }
+                .buttonStyle(.plain)
             }
 
             if let standing = Leaderboard.standing(section) {
-                Text(standing)
-                    .font(.caption2).foregroundStyle(Theme.textSecondary)
+                Text(standing).font(.caption2).foregroundStyle(Theme.textSecondary)
             }
 
-            globalStrip(section.board)
+            visibilityControl(section.board)
+            globalRows(section.board)
         }
-        .padding(.bottom, 2)
     }
 
-    /// The global half of a board: a podium to aspire to, then the people
-    /// nearest you. Only rendered when this board is set to global — and the
-    /// switch to do that lives right here, next to the board it affects, rather
-    /// than in a settings screen away from the consequence.
-    @ViewBuilder
-    func globalStrip(_ board: LeaderboardBoard) -> some View {
-        let isGlobal = Preferences.globalBoardKeys.contains(board.key)
-        Button {
-            var keys = Preferences.globalBoardKeys
-            if isGlobal { keys.remove(board.key) } else { keys.insert(board.key) }
-            Preferences.globalBoardKeys = keys
-            Task {
-                // Going private must reach rows from EVERY period, not just this
-                // week's — otherwise last month's value stays globally readable.
-                if isGlobal { try? await LeaderboardService.unpublish(board: board.key) }
-                await consentChanged(true)
-            }
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: sym(isGlobal ? "globe" : "person.2.fill"))
-                    .font(.caption2)
-                Text(isGlobal ? "Global" : "Friends only")
-                    .font(.caption2)
-                Spacer()
-                Text(isGlobal ? "Make private" : "Go global")
-                    .font(.caption2).foregroundStyle(Theme.accent)
-            }
-            .foregroundStyle(Theme.textTertiary)
-            .contentShape(Rectangle())
+    func medal(_ rank: Int) -> String {
+        switch rank {
+        case 1: return "1st"
+        case 2: return "2nd"
+        case 3: return "3rd"
+        default: return "\(rank)"
         }
-        .buttonStyle(.plain)
+    }
 
-        if isGlobal, let global = globalBoards[board.key] {
+    func medalTint(_ rank: Int) -> Color {
+        switch rank {
+        case 1: return Theme.accent
+        case 2, 3: return Theme.chartTrend
+        default: return Theme.textTertiary
+        }
+    }
+
+    /// Friends vs Global, as an actual two-option control.
+    ///
+    /// It used to be the words "Friends only" with a red "Go global" link beside
+    /// them, which reads as a label plus an ad rather than a setting — the
+    /// operator couldn't tell what state he was in. Two capsules, one selected,
+    /// says both things at once.
+    func visibilityControl(_ board: LeaderboardBoard) -> some View {
+        let isGlobal = Preferences.globalBoardKeys.contains(board.key)
+        return HStack(spacing: 6) {
+            Text("VISIBLE TO").font(.system(size: 9, weight: .bold))
+                .foregroundStyle(Theme.textTertiary)
+            ForEach([false, true], id: \.self) { wantGlobal in
+                Button {
+                    var keys = Preferences.globalBoardKeys
+                    if wantGlobal { keys.insert(board.key) } else { keys.remove(board.key) }
+                    Preferences.globalBoardKeys = keys
+                    Task {
+                        // Going private must reach EVERY period, not just this
+                        // one, or last month's row stays publicly readable.
+                        if !wantGlobal { try? await LeaderboardService.unpublish(board: board.key) }
+                        await consentChanged(true)
+                    }
+                } label: {
+                    HStack(spacing: 3) {
+                        Image(systemName: sym(wantGlobal ? "globe" : "person.2.fill"))
+                            .font(.system(size: 9))
+                        Text(wantGlobal ? "Everyone" : "Friends").font(.caption2)
+                    }
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(isGlobal == wantGlobal ? Theme.accent.opacity(0.15) : Color.clear,
+                                in: Capsule())
+                    .overlay {
+                        Capsule().strokeBorder(
+                            isGlobal == wantGlobal ? Theme.accent.opacity(0.4) : Theme.separatorFaint,
+                            lineWidth: 1)
+                    }
+                    .foregroundStyle(isGlobal == wantGlobal ? Theme.accent : Theme.textSecondary)
+                    .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+            Spacer()
+        }
+    }
+
+    /// The global podium + bracket, when this board is public.
+    @ViewBuilder
+    func globalRows(_ board: LeaderboardBoard) -> some View {
+        if Preferences.globalBoardKeys.contains(board.key), let global = globalBoards[board.key] {
             if !global.podium.isEmpty {
-                Text("TOP 3 WORLDWIDE").font(.caption2.weight(.bold))
+                Text("TOP 3 WORLDWIDE").font(.system(size: 9, weight: .bold))
                     .foregroundStyle(Theme.textTertiary)
                 ForEach(Array(global.podium.enumerated()), id: \.element.userId) { index, entry in
                     strangerRow(rank: index + 1, entry: entry, board: board)
                 }
             }
             if !global.bracket.isEmpty {
-                Text("AROUND YOU").font(.caption2.weight(.bold))
+                Text("AROUND YOU").font(.system(size: 9, weight: .bold))
                     .foregroundStyle(Theme.textTertiary)
                 ForEach(global.bracket, id: \.userId) { entry in
                     strangerRow(rank: nil, entry: entry, board: board)
