@@ -41,10 +41,10 @@ struct CombosView: View {
                         }
                     }
                     .listStyle(.plain)
-                    .searchable(text: $searchQuery, prompt: "Search combos")
+                    .searchable(text: $searchQuery, prompt: "Search meals")
                 }
             }
-            .navigationTitle("Combos & Recipes")
+            .navigationTitle("Saved meals")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -54,7 +54,7 @@ struct CombosView: View {
                     Button { editingCombo = nil; showingBuilder = true } label: {
                         Image(systemName: "plus")
                     }
-                    .accessibilityLabel("Add combo")
+                    .accessibilityLabel("Add meal")
                 }
             }
             .sheet(item: $comboToLog) { combo in
@@ -127,11 +127,11 @@ struct CombosView: View {
     private var emptyState: some View {
         VStack(spacing: 16) {
             Image(systemName: "fork.knife.circle").font(.system(size: Theme.FontSize.display4)).foregroundStyle(Theme.textTertiary)
-            Text("No combos yet").font(.headline)
+            Text("No saved meals yet").font(.headline)
             Text("Foods you log together often will appear here automatically, or create one with +")
                 .font(.subheadline).foregroundStyle(Theme.textSecondary).multilineTextAlignment(.center)
             Button { showingBuilder = true } label: {
-                Label("Create Combo", systemImage: "plus")
+                Label("Create meal", systemImage: "plus")
                     .font(.subheadline.weight(.semibold))
                     .padding(.horizontal, 20).padding(.vertical, 10)
                     .background(Theme.accent, in: Capsule())

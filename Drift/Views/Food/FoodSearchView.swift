@@ -112,7 +112,7 @@ struct FoodSearchView: View {
                 // Search bar
                 HStack {
                     Image(systemName: "magnifyingglass").foregroundStyle(Theme.textSecondary)
-                    TextField("Search food or recipe", text: $query)
+                    TextField("Search food or meal", text: $query)
                         .textFieldStyle(.plain)
                         .focused($searchFocused)
                         .onChange(of: query) { _, q in
@@ -153,7 +153,14 @@ struct FoodSearchView: View {
                                 }
                             }
                         }
-                    if !query.isEmpty {
+                    if query.isEmpty {
+                        // Barcode scan lives in the search bar itself — one obvious
+                        // "look this up" affordance, not a separate chip below.
+                        Button { showingScanner = true } label: {
+                            Image(systemName: "barcode.viewfinder").foregroundStyle(Theme.accent)
+                        }
+                        .accessibilityLabel("Scan barcode")
+                    } else {
                         Button { query = ""; results = []; matchingRecipes = [] } label: {
                             Image(systemName: "xmark.circle.fill").foregroundStyle(Theme.textSecondary)
                         }
@@ -266,21 +273,21 @@ struct FoodSearchView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 // Quick actions
+                // Scan now lives in the search bar. These three cover the other
+                // ways to add food: browse a saved meal, build a new one, or type
+                // a single custom food. "Meal" = a saved group of foods (used
+                // consistently across CombosView + QuickAddView).
                 HStack(spacing: 8) {
-                    Button { showingScanner = true } label: {
-                        Label("Scan", systemImage: "barcode.viewfinder").font(.caption)
-                    }.buttonStyle(.bordered).tint(Theme.accent)
-
                     Button { showingCombos = true } label: {
-                        Label("Combos", systemImage: "fork.knife").font(.caption)
+                        Label("Saved", systemImage: "bookmark").font(.caption)
                     }.buttonStyle(.bordered).tint(Theme.accent)
 
                     Button { showingRecipeBuilder = true } label: {
-                        Label("Build", systemImage: "list.bullet.rectangle").font(.caption)
+                        Label("Build", systemImage: "fork.knife").font(.caption)
                     }.buttonStyle(.bordered).tint(Theme.accent)
 
                     Button { showingManual = true } label: {
-                        Label("Manual", systemImage: "pencil").font(.caption)
+                        Label("Custom", systemImage: "square.and.pencil").font(.caption)
                     }.buttonStyle(.bordered).tint(Theme.accent)
                 }
                 .padding(.horizontal, 16)
@@ -618,7 +625,7 @@ struct FoodSearchView: View {
 
             // Matching recipes
             if !matchingRecipes.isEmpty {
-                Section("Your Recipes") {
+                Section("Your meals") {
                     ForEach(matchingRecipes) { recipe in
                         Button {
                             FoodService.logRecipe(recipe, servings: 1, mealType: effectiveMealType,
@@ -955,7 +962,7 @@ private struct EditRecipeSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Name") { TextField("Recipe name", text: $name) }
+                Section("Name") { TextField("Meal name", text: $name) }
                 Section("Nutrition (per serving)") {
                     field("Calories", $calories, "kcal")
                     field("Protein", $protein, "g")
@@ -964,7 +971,7 @@ private struct EditRecipeSheet: View {
                     field("Fiber", $fiber, "g")
                 }
             }
-            .navigationTitle("Edit Recipe").navigationBarTitleDisplayMode(.inline)
+            .navigationTitle("Edit meal").navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
                 ToolbarItem(placement: .confirmationAction) {

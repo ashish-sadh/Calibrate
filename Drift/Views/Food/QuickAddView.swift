@@ -47,7 +47,7 @@ struct QuickAddView: View {
                     }
                     // Recipe name (show after first ingredient added)
                     if !items.isEmpty {
-                        TextField("Combo name", text: $recipeName)
+                        TextField("Meal name", text: $recipeName)
                             .font(.headline)
                             .padding(12)
                             .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
@@ -61,7 +61,7 @@ struct QuickAddView: View {
                         if items.isEmpty {
                             VStack(spacing: 8) {
                                 Image(systemName: "fork.knife").font(.title2).foregroundStyle(Theme.accent.opacity(0.4))
-                                Text("Add food items to build your combo")
+                                Text("Add food items to build your meal")
                                     .font(.subheadline).foregroundStyle(Theme.textTertiary)
                             }
                             .frame(maxWidth: .infinity)
@@ -177,11 +177,11 @@ struct QuickAddView: View {
                     }
                 }
             }
-            .alert("Delete Combo?", isPresented: $showingDeleteConfirm) {
+            .alert("Delete meal?", isPresented: $showingDeleteConfirm) {
                 Button("Delete", role: .destructive) { deleteCombo() }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This combo will be permanently deleted.")
+                Text("This meal will be permanently deleted.")
             }
             .onAppear {
                 if items.isEmpty && !initialItems.isEmpty {
@@ -246,7 +246,7 @@ struct QuickAddView: View {
 
     private func saveAndLogRecipe() {
         let servings = max(Double(recipeServings) ?? 1, 0.1)
-        let name = recipeName.isEmpty ? (items.count == 1 ? items[0].name : "Recipe") : recipeName
+        let name = recipeName.isEmpty ? (items.count == 1 ? items[0].name : "Meal") : recipeName
         let effectiveExpand = items.count > 1 && expandOnLog
 
         // Edit mode (#192): update the existing recipe row in place and
