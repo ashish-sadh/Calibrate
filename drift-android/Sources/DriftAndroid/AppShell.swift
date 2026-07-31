@@ -40,7 +40,10 @@ struct PillTabBar: View {
                 let isSelected = selected == tab
                 Button {
                     guard selected != tab else { return }
-                    withAnimation(.easeOut(duration: 0.22)) { selected = tab }
+                    // Theme.Motion.passive == iOS ContentView's tab cross-fade
+                    // curve — the token, not a hardcoded copy, so the two
+                    // platforms stay in lockstep (#1074 kit, directive-2).
+                    withAnimation(Theme.Motion.passive) { selected = tab }
                 } label: {
                     VStack(spacing: 2) {
                         if tab == .today {
@@ -74,6 +77,9 @@ struct PillTabBar: View {
                         Text(tab.label)
                             .font(.system(size: 10, weight: .semibold))
                             .lineLimit(1)
+                            // iOS pill bar shrinks-to-fit rather than wrapping
+                            // (ContentView.swift:346) — match it.
+                            .minimumScaleFactor(0.8)
                     }
                     .foregroundStyle(isSelected ? Theme.ink : Theme.textTertiary)
                     .frame(maxWidth: .infinity)

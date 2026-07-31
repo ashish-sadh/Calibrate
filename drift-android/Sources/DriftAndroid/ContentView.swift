@@ -14,8 +14,20 @@ struct ContentView: View {
             // destination's Compose NavHost stays composed on top, so tapping
             // the pill bar while on a sub-screen (e.g. More → Friends) did
             // nothing — only the system back button worked. #android-tab-switch
+            //
+            // frame(maxWidth/maxHeight: .infinity) + .transition(.opacity) are
+            // the #1074 letter-stacking fix: iOS's TabView cross-fades two
+            // already-measured pages, but this switch rebuilds the incoming tab
+            // DURING the 0.22s animation — with no size modifier the content was
+            // measured at intermediate animated widths, so text re-wrapped into
+            // vertical letter stacks mid-swap ("fonts keep changing", operator).
+            // Pinning the frame means text can never be measured narrow, and the
+            // opacity transition makes the swap alpha-only (Compose fadeIn/Out —
+            // real on SkipUI, Transition.swift:122) instead of layout-animating.
             tabContent
                 .id(selectedTab)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .transition(.opacity)
 
             HStack(spacing: 8) {
                 PillTabBar(selected: $selectedTab)
