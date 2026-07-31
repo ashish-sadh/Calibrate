@@ -69,7 +69,20 @@ struct ContentView: View {
                 tabContent
                     .ignoresSafeArea(.keyboard)
 
-                tabBarOverlay
+                VStack(spacing: 0) {
+                    // Strong-style minimized-workout pill (#1167) — visible on
+                    // every tab, taps to resume the live sheet. It owns its own
+                    // bottom gap, so an empty bar reserves no space.
+                    MinimizedWorkoutBar()
+                        .padding(.horizontal, 16)
+                    tabBarOverlay
+                }
+            }
+            .onAppear { LiveWorkoutMonitor.shared.refresh() }
+            .onChange(of: LiveWorkoutMonitor.shared.wantsResume) { _, wants in
+                // The pill asked to resume: bring the Workout tab forward so its
+                // sheet presents. WorkoutView reads the same flag and opens.
+                if wants { selectedTab = .workout }
             }
             .background(Theme.background.ignoresSafeArea())
             .sheet(item: $pendingLogMeal) { request in

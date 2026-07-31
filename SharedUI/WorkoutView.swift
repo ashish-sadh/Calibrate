@@ -49,44 +49,28 @@ struct WorkoutView: View {
     @State var lastLoadedAt = Date.distantPast
 
     #if os(Android)
-    /// Android-only caches. `WorkoutService.hasActiveSession` (UserDefaults
-    /// read + JSON decode) and `ExerciseDatabase.bodyPart(for:)` (catalog
-    /// lookup) are cheap on iOS but cross the JNI bridge on every Compose
-    /// recomposition here — directive 0e forbids that work in a view body,
-    /// so both are hoisted into the off-main Snapshot.
-    @State var hasActiveSession = false
+    /// Android-only cache. `ExerciseDatabase.bodyPart(for:)` (catalog lookup) is
+    /// cheap on iOS but crosses the JNI bridge on every Compose recomposition
+    /// here — directive 0e forbids that work in a view body, so it's hoisted
+    /// into the off-main Snapshot.
     @State var bodyPartsByWorkout: [Int64: [String]] = [:]
     #endif
 
-    /// iOS evaluates the service directly in `body` exactly as before; Android
-    /// reads the Snapshot-cached flag.
-    var activeSessionExists: Bool {
-        #if os(Android)
-        return hasActiveSession
-        #else
-        return WorkoutService.hasActiveSession
-        #endif
+    /// The root minimized-workout pill asked to reopen the sheet (#1167).
+    /// Present it and clear the flag so a later tab rebuild doesn't reopen it.
+    private func consumeResumeRequest() {
+        guard LiveWorkoutMonitor.shared.wantsResume else { return }
+        LiveWorkoutMonitor.shared.wantsResume = false
+        showingNewWorkout = true
     }
 
     var body: some View {
         ScrollView {
             VStack(spacing: 14) {
-                // Active session banner
-                if !showingNewWorkout && activeSessionExists {
-                    Button { showingNewWorkout = true } label: {
-                        HStack {
-                            Image(systemName: sym("figure.strengthtraining.traditional"))
-                                .foregroundStyle(.white)
-                            Text("Workout in progress").font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.white)
-                            Spacer()
-                            Text("Resume").font(.caption.weight(.bold)).foregroundStyle(.white.opacity(0.8))
-                            Image(systemName: sym("chevron.right")).font(.caption2).foregroundStyle(.white.opacity(0.6))
-                        }
-                        .padding(12)
-                        .background(Theme.ink, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
-                    }.buttonStyle(.plain)
-                }
+                // The in-tab "Workout in progress" banner was removed with #1167:
+                // the root minimized-workout pill (MinimizedWorkoutBar) now shows
+                // the same Resume affordance on EVERY tab, so a second copy here
+                // would be a duplicate whenever you're on the Workout tab.
 
                 // Start buttons
                 HStack(spacing: 10) {
@@ -577,6 +561,11 @@ struct WorkoutView: View {
         }
         .onAppear {
             AIScreenTracker.shared.currentScreen = .exercise
+            // The root minimized-workout pill asks to resume by setting a flag
+            // and switching to this tab. On Android the tab is rebuilt on
+            // switch, so reading the flag here (onAppear) is what catches it
+            // (#1167). On iOS the tab stays alive, so the onChange below fires.
+            consumeResumeRequest()
             // Deferred one frame so the tab swap renders instantly (same
             // treatment Food/Weight already had), and skipped entirely when
             // data is <30s fresh — explicit paths (workout saved, template
@@ -584,6 +573,9 @@ struct WorkoutView: View {
             if Date().timeIntervalSince(lastLoadedAt) > 30 {
                 Task { @MainActor in loadData() }
             }
+        }
+        .onChange(of: LiveWorkoutMonitor.shared.wantsResume) { _, wants in
+            if wants { consumeResumeRequest() }
         }
         .onChange(of: showingNewWorkout) { _, showing in if !showing { loadData() } }
         .onChange(of: showingCreateTemplate) { _, showing in if !showing { loadData() } }
@@ -920,7 +912,6 @@ struct WorkoutView: View {
             templates = snapshot.templates
             streak = snapshot.streak
             overloadAlerts = snapshot.overloadAlerts
-            hasActiveSession = snapshot.hasActiveSession
             bodyPartsByWorkout = snapshot.bodyPartsByWorkout
             isLoading = false
         }
@@ -954,13 +945,12 @@ struct WorkoutView: View {
         var templates: [WorkoutTemplate] = []
         var streak: (current: Int, longest: Int)?
         var overloadAlerts: [PlateauResult] = []
-        var hasActiveSession = false
         var bodyPartsByWorkout: [Int64: [String]] = [:]
     }
 
     /// Off-main load — every query the iOS `loadData()` runs inline, plus the
-    /// two body-hoisted lookups (active-session flag, per-workout body-part
-    /// chips) so the Android view body does zero DB/catalog work.
+    /// body-hoisted per-workout body-part chip lookup, so the Android view body
+    /// does zero DB/catalog work.
     static func fetchSnapshot() async -> Snapshot {
         await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
@@ -971,7 +961,6 @@ struct WorkoutView: View {
                 s.templates = (try? WorkoutService.fetchTemplates()) ?? []
                 s.streak = try? WorkoutService.workoutStreak()
                 s.overloadAlerts = ProgressiveOverloadService.allPlateaus()
-                s.hasActiveSession = WorkoutService.hasActiveSession
                 var chips: [Int64: [String]] = [:]
                 for summary in s.workouts {
                     guard let wid = summary.workout.id else { continue }

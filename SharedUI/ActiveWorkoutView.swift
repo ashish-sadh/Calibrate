@@ -186,7 +186,7 @@ struct ActiveWorkoutView: View {
             }
             Button("Keep going", role: .cancel) {}
         } message: {
-            Text("Minimized workouts stay in the Workout tab. Discarding deletes the logged sets.")
+            Text("Minimized workouts show as a bar you can resume from any tab. Discarding deletes the logged sets.")
         }
     }
 
@@ -446,6 +446,8 @@ struct ActiveWorkoutView: View {
                 completionSheet()
             }
             .onAppear {
+                // The workout is on screen — hide the root minimized pill (#1167).
+                LiveWorkoutMonitor.shared.setPresented(true)
                 if let pd = pastDate {
                     workoutDate = pd
                     workoutName = "Workout"
@@ -486,6 +488,10 @@ struct ActiveWorkoutView: View {
                 stopTimers()
                 // Only persist if workout wasn't finished or cancelled
                 if !workoutEnded && !exercises.isEmpty { persistSession() }
+                // Sheet is gone: if a session was just persisted (minimize), the
+                // root pill appears; if it was finished/cancelled (session
+                // cleared), it stays hidden. setPresented re-reads which (#1167).
+                LiveWorkoutMonitor.shared.setPresented(false)
             }
             .onChange(of: scenePhase) { _, newPhase in
                 if newPhase == .active && !workoutEnded {

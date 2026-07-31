@@ -743,7 +743,7 @@ struct SharingView: View {
     private var privacyFootnote: some View {
         HStack(spacing: 6) {
             Image(systemName: sym("lock.fill")).font(.caption2).foregroundStyle(Theme.deficit)
-            Text("Your @username and display name, the workouts you share, and — if you turn on Leaderboards — your weekly steps, calories and best lifts leave this device. Everything else stays local.")
+            Text("Your @username and display name, the workouts you share, and — if you turn on Leaderboards — your weekly steps, calories, workout count and logging streak leave this device. Everything else stays local.")
                 .font(.caption2).foregroundStyle(Theme.textTertiary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

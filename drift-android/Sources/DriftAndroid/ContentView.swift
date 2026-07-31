@@ -29,15 +29,29 @@ struct ContentView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .transition(.opacity)
 
-            HStack(spacing: 8) {
-                PillTabBar(selected: $selectedTab)
-                    .frame(maxWidth: .infinity)
-                ChatIconButton(isPresented: $showingCoach)
+            VStack(spacing: 0) {
+                // Strong-style minimized-workout pill (#1167) — visible on every
+                // tab, taps to resume the live sheet. It owns its own bottom gap,
+                // so an empty bar reserves no space.
+                MinimizedWorkoutBar()
+                    .padding(.horizontal, 10)
+                HStack(spacing: 8) {
+                    PillTabBar(selected: $selectedTab)
+                        .frame(maxWidth: .infinity)
+                    ChatIconButton(isPresented: $showingCoach)
+                }
+                .padding(.horizontal, 10)
+                .padding(.bottom, 6)
             }
-            .padding(.horizontal, 10)
-            .padding(.bottom, 6)
         }
         .background(Theme.background.ignoresSafeArea())
+        .onAppear { LiveWorkoutMonitor.shared.refresh() }
+        .onChange(of: LiveWorkoutMonitor.shared.wantsResume) { _, wants in
+            // The pill asked to resume: bring the Workout tab forward (it's torn
+            // down when not selected here, so this rebuilds WorkoutView, whose
+            // onAppear reads the same flag and presents the sheet).
+            if wants { selectedTab = .workout }
+        }
         // Compose defaults every native control (Toggle, Stepper, TextField
         // caret/focus ring, checkboxes) to MaterialTheme's blue primary, which
         // read as a different app next to Drift's pink accent (#1078). `tint`
