@@ -19,6 +19,8 @@ struct DriftApp: App {
         DriftPlatform.nutritionWriter = HealthNutritionSyncService.shared
         DriftPlatform.secureStore = SecureTokenStoreKeychain()
         DriftPlatform.notifier = AppleLocalNotifier()
+        // Image-in seam (#1128): PHPicker wrapper returning downscaled JPEG Data.
+        DriftPlatform.imagePicker = ImagePickerService()
         // Stamp the install date once so the 7-day Feedback activation banner
         // has a stable anchor (#759). Idempotent — only writes when unset.
         Preferences.seedInstallDateIfNeeded()

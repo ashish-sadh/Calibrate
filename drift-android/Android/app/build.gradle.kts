@@ -38,6 +38,15 @@ android {
         // applicationId = ANDROID_APPLICATION_ID ?? PRODUCT_BUNDLE_IDENTIFIER
         // versionCode = CURRENT_PROJECT_VERSION
         // versionName = MARKETING_VERSION
+
+        // arm64-v8a only: every device Play Internal Testing installs onto has
+        // been arm64 for years. Without this, `skip export --release --arch
+        // automatic` WMO-compiles the Swift native lib 3x (arm64-v8a +
+        // armeabi-v7a 32-bit + x86_64 emulator-only) — the dominant cost of a
+        // cold publish. armeabi-v7a/x86_64 buy nothing for internal testers.
+        ndk {
+            abiFilters += "arm64-v8a"
+        }
     }
 
     buildFeatures {
@@ -99,4 +108,8 @@ dependencies {
     // (Coach/meal/photo/scan) routes through OkHttp's blocking execute() via
     // HttpFacade instead.
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    // Photo Picker contract (image-in seam #1128) — PickVisualMedia needs
+    // androidx.activity ≥ 1.7; pinned explicitly so a transitively-resolved
+    // older AppCompat activity doesn't win.
+    implementation("androidx.activity:activity:1.9.3")
 }

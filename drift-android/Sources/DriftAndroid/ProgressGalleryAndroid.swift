@@ -1,19 +1,20 @@
 import SwiftUI
 import DriftCore
 
-/// Android's Progress-photo timeline (#1121). Read-only for now: it shows the
-/// check-in cards the operator's iPhone shows — date, weight, the 4-up pose
-/// row, and the headline measurement — reusing `ProgressPhotoImage` so both
-/// platforms load the identical on-device JPEGs.
+/// Android's Progress-photo timeline (#1121). Shows the check-in cards the
+/// operator's iPhone shows — date, weight, the 4-up pose row, and the headline
+/// measurement — reusing `ProgressPhotoImage` so both platforms load the
+/// identical on-device JPEGs.
 ///
-/// CAPTURE is deliberately out of scope here: iOS's AddProgressEntryView is
-/// built on PhotosPicker + the camera, which need an Android permission +
-/// Activity-result seam (tracked with the rest of capture logging, #1063).
-/// Until that lands, photos taken on iPhone appear here after a restore, and
-/// the empty state says so rather than offering a dead "+".
+/// The toolbar "+" adds a photo through the `DriftPlatform.imagePicker` seam
+/// (#1128) — v1 is deliberately front-pose/today with no measurements; full
+/// parity with iOS's AddProgressEntryView (4 poses + measurements + weight)
+/// is a tracked follow-up, not a silent gap. Camera capture stays out until
+/// its own Activity-result seam lands (#1063).
 struct ProgressGalleryAndroid: View {
     @State var entries: [Entry] = []
     @State var loaded = false
+    @State var picking = false
 
     struct Entry: Identifiable, Sendable {
         let id: String            // date
@@ -47,6 +48,17 @@ struct ProgressGalleryAndroid: View {
             }
             .background(Theme.background.ignoresSafeArea())
             .navigationTitle("Progress")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        guard !picking else { return }
+                        Task { await addPhoto() }
+                    } label: {
+                        Image(systemName: sym("plus"))
+                    }
+                    .accessibilityLabel("Add a progress photo")
+                }
+            }
         }
         .task { await load() }
     }
@@ -55,12 +67,37 @@ struct ProgressGalleryAndroid: View {
         VStack(spacing: 10) {
             Text("No progress photos yet")
                 .font(.subheadline).foregroundStyle(Theme.textSecondary)
-            Text("Capture arrives with photo logging on Android. Photos taken on iPhone show up here after a restore.")
+            Text("Tap + to add a photo from your library. Photos taken on iPhone show up here after a restore.")
                 .font(.caption).foregroundStyle(Theme.textTertiary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 32)
+    }
+
+    /// v1 capture (#1128 proof): library pick → front pose, today. 1440/q0.82
+    /// matches iOS ProgressPhotoStore's persist settings. File write + DB
+    /// insert run off-main; `load()` re-renders the gallery with the new card.
+    private func addPhoto() async {
+        picking = true
+        defer { picking = false }
+        guard let data = await DriftPlatform.imagePicker?.pickLibraryImage(maxLongEdge: 1440, quality: 0.82),
+              !data.isEmpty else { return }
+        logger.info("ProgressGalleryAndroid: picked \(data.count) bytes")
+        // DateFormatters.todayString is the repo's pinned local-day formatter —
+        // a bare DateFormatter() is UTC on Android and would file the photo
+        // under the wrong day (android_foundation_utc_dateformatter).
+        let today = DateFormatters.todayString
+        let filename = "\(today)_\(ProgressPose.front.rawValue).jpg" // stable per (date,pose), mirrors ProgressPhotoStore
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            DispatchQueue.global(qos: .userInitiated).async {
+                try? data.write(to: ProgressPhotoPaths.url(for: filename), options: .atomic)
+                var rec = ProgressPhoto(date: today, pose: .front, filename: filename)
+                _ = try? AppDatabase.shared.saveProgressPhoto(&rec)
+                continuation.resume()
+            }
+        }
+        await load()
     }
 
     private func entryCard(_ entry: Entry) -> some View {

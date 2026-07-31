@@ -48,6 +48,9 @@ let logger: Logger = Logger(subsystem: "com.drift.health", category: "DriftAndro
             // (Coach/meal/photo/scan) routes through the OkHttp facade instead.
             DriftPlatform.httpSession = AndroidHTTPSession()
             DriftPlatform.notifier = AndroidLocalNotifier()
+            // Image-in seam (#1128): system Photo Picker → downscaled JPEG Data
+            // via the polled ImagePickerFacade Activity-result bridge.
+            DriftPlatform.imagePicker = ImagePickerService()
         }
     }
 

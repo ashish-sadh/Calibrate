@@ -29,9 +29,7 @@ struct WorkoutScanSheet: View {
     @State private var processingStatus = "Preparing photo…"
     @State private var processingStartedAt: Date?
     @State private var showingCamera = false
-    @State private var showingLibrary = false
     @State private var showingPDFImporter = false
-    @State private var libraryItem: PhotosPickerItem?
     /// Optional user note sent WITH the image as extra context for the model
     /// ("weights are in kg", "this is my Tuesday push day", "only log the
     /// bottom column") — not a standalone text-logging path.
@@ -57,16 +55,6 @@ struct WorkoutScanSheet: View {
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } } }
             .fullScreenCover(isPresented: $showingCamera) {
                 CameraView { image in handle(image: image) }
-            }
-            .photosPicker(isPresented: $showingLibrary, selection: $libraryItem, matching: .images)
-            .onChange(of: libraryItem) { _, item in
-                guard let item else { return }
-                Task {
-                    if let data = try? await item.loadTransferable(type: Data.self),
-                       let image = UIImage(data: data) {
-                        handle(image: image)
-                    }
-                }
             }
             .fileImporter(isPresented: $showingPDFImporter, allowedContentTypes: [.pdf]) { result in
                 if case .success(let url) = result { handle(pdfURL: url) }
@@ -105,7 +93,18 @@ struct WorkoutScanSheet: View {
                     .buttonStyle(.borderedProminent).tint(Theme.accent)
                     .disabled(!UIImagePickerController.isSourceTypeAvailable(.camera))
 
-                    Button { showingLibrary = true } label: {
+                    Button {
+                        // Routed through the DriftPlatform.imagePicker seam
+                        // (#1128) — same PHPicker, same 2048/q0.7 downscale the
+                        // inline .photosPicker path produced, so behavior is
+                        // unchanged; the seam is what Android shares.
+                        Task {
+                            guard let data = await DriftPlatform.imagePicker?
+                                .pickLibraryImage(maxLongEdge: 2048, quality: 0.7) else { return }
+                            beginProcessing()
+                            await parse(imageData: data)
+                        }
+                    } label: {
                         Label("Choose Screenshot or Photo", systemImage: "photo.on.rectangle").frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.bordered).tint(Theme.accent)

@@ -10,6 +10,10 @@ public enum DriftPlatform {
     public static var widget: WidgetRefresher?
     /// Apple Health nutrition write-back (#934). nil on macOS/tests = no-op.
     public static var nutritionWriter: HealthNutritionWriter?
+    /// Photo-library image-in seam (#1128). iOS installs a PHPicker wrapper,
+    /// Android an Activity-result facade wrapper. nil on macOS/tests =
+    /// fail-soft (capture entry points hide or no-op, matching `health`).
+    public static var imagePicker: ImagePicking?
     /// Platform-secure store for the sharing auth session (iOS Keychain /
     /// Android EncryptedSharedPreferences). nil = fall back to the SQLite
     /// `sync_session` table (durable on both platforms, less protected).

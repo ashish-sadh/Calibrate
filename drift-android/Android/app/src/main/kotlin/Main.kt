@@ -68,6 +68,16 @@ open class MainActivity: AppCompatActivity {
             logger.info("Health Connect permissions granted: ${granted.size}")
         }
 
+        // Photo Picker (image-in seam #1128) — same rule as above: the contract
+        // must be registered before the activity reaches STARTED, so it lives
+        // here. ImagePickerFacade.launch() fires it; the result flows back
+        // through companion state that the Swift side polls.
+        ImagePickerFacade.pickLauncher = registerForActivityResult(
+            androidx.activity.result.contract.ActivityResultContracts.PickVisualMedia()
+        ) { uri ->
+            ImagePickerFacade.onPicked(uri)
+        }
+
         setContent {
             val saveableStateHolder = rememberSaveableStateHolder()
             saveableStateHolder.SaveableStateProvider(true) {
