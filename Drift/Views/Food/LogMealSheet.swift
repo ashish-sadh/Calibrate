@@ -99,26 +99,10 @@ struct LogMealSheet: View {
             // background under the status bar / home indicator while letting the
             // keyboard inset propagate to the child.
             .background(Theme.background.ignoresSafeArea(.container))
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") {
-                        // V7 polish: user asked that finishing a log
-                        // session (Done after Search/Voice/Recent
-                        // adds) routes them to the Food Diary so they
-                        // see what they just added in context.
-                        // Posting `.navigateToTab` with the legacy
-                        // food index = 2 — ContentView's binding shim
-                        // maps that to `PrimaryTab.food`.
-                        NotificationCenter.default.post(
-                            name: .navigateToTab,
-                            object: nil,
-                            userInfo: ["tab": 2]
-                        )
-                        dismiss()
-                    }
-                    .foregroundStyle(Theme.textPrimary)
-                }
-            }
+            // Done button removed (field ask 2026-07-31: "keep it minimal") —
+            // swipe-down dismisses the sheet. Every actual log path already
+            // routes to the diary on its own (Recent/combo/AI dismiss+navigate;
+            // Search fires a per-add toast), so the button only added chrome.
             .navigationBarTitleDisplayMode(.inline)
             .fullScreenCover(isPresented: $showingPhotoLog) {
                 PhotoLogFlowView(foodLog: foodLogVM)

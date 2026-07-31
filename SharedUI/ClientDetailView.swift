@@ -26,6 +26,10 @@ struct ClientDetailView: View {
     /// belongs in their own library.
     @State var pendingBuild: WorkoutTemplate?
     @State var assigningBuild = false
+    /// The template the coach tapped to preview before assigning (#4). Tapping a
+    /// row's name opened nothing before — only the Assign button did anything, so
+    /// the coach couldn't see what was inside a template without assigning it.
+    @State var previewingTemplate: WorkoutTemplate?
 
     private var svc: SharingService { .shared }
 

@@ -893,8 +893,12 @@ struct FoodSearchView: View {
                                           loggedAt: viewModel.anchoredToSelectedDay(logTime))
                         viewModel.loadSuggestions()
                         refreshSearch()
-                        loggedCount += 1
+                        // #1025 parity: the detail-sheet Log was the one add path that
+                        // stayed silent (no haptic, no toast) — every other add row fires
+                        // confirmLog. Dismiss first so the toast lands on the search screen
+                        // beneath, matching the row-tap confirmation the user already knows.
                         selectedFood = nil
+                        confirmLog(food.name, calories: food.calories * multiplier)
                     }
                     .fontWeight(.semibold)
                 }

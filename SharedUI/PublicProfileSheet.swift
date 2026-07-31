@@ -18,8 +18,12 @@ import DriftCore
 ///     sheet, the same buttons — which is what makes "make a friend your coach"
 ///     feel like a relationship changing rather than a mode switch.
 ///
-/// No message button. You cannot message someone who hasn't accepted you; the
-/// request is the only channel a stranger gets.
+/// No message button for STRANGERS. You cannot message someone who hasn't
+/// accepted you; the request is the only channel a stranger gets. Once you're
+/// connected (friend/coach) Message appears regardless of how the sheet was
+/// reached — see `canMessage`. Before #8 this was gated on `pushed`, so opening
+/// an existing friend from SEARCH (a modal sheet, no nav stack) silently dropped
+/// Message; now the modal path supplies its own NavigationStack to push onto.
 struct PublicProfileSheet: View {
     let profile: SharedProfile
     /// What they were doing on the board you found them on — the reason you're
@@ -50,7 +54,27 @@ struct PublicProfileSheet: View {
     /// confirm the hub's management strip uses, no dialog (Fuse focus traps).
     @State var confirmingRemove = false
 
+    /// You can message anyone you're actually connected to — a friend or a
+    /// coach — but not a stranger (no relationship) and not a client (that
+    /// conversation lives in ClientDetailView). Independent of `pushed`: the
+    /// only thing `pushed` decided before #8 was whether a push target existed,
+    /// which the modal path now provides for itself below.
+    var canMessage: Bool {
+        relationship != nil && relationship != .client
+    }
+
     var body: some View {
+        // A pushed sheet already sits inside the hub's NavigationStack; a modal
+        // sheet (search / leaderboard tap) has none, so Message had nowhere to
+        // push. Give the modal path its own stack so the button works there too.
+        if pushed {
+            content
+        } else {
+            NavigationStack { content }
+        }
+    }
+
+    var content: some View {
         ScrollView {
             VStack(spacing: 14) {
                 if !pushed { chrome }
@@ -137,7 +161,7 @@ struct PublicProfileSheet: View {
             .padding(.horizontal, 12).padding(.vertical, 8)
             .background(Theme.chartTrend.opacity(0.12), in: Capsule())
 
-            if pushed, relationship != .client {
+            if canMessage {
                 NavigationLink {
                     ChatView(peer: profile, relationship: (relationship ?? .friend).rawValue)
                 } label: {
