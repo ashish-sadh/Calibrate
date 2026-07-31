@@ -966,3 +966,35 @@ published for PAST periods are not withdrawn here. Global boards only read the
 current period, so nothing renders from them; they are stale rows, not visible
 ones. Sweeping them is tracked in #1172 alongside the Private-mode work, which
 is where the period-wide unpublish story already lives.
+
+## 2026-07-31 — Leaderboard is a FIXED set of four boards; per-exercise lifts removed
+
+The leaderboard was self-selecting: steps/calories/workouts/streak plus one
+board per lift you trained, a board appearing wherever a friend trained the
+same lift. Clever, and it fragmented the surface into a board per exercise —
+"Wrist Extension", "Calf Raises" — most of them a board of one. Operator
+(2026-07-31): "have a fixed set for now — no need for individual exercises to
+be part of or aggregated for the leaderboard."
+
+WHAT CHANGED: `Leaderboard.boardKeys` is now the single source of truth — the
+four ambient boards (steps, calories, workouts, food_streak), the same set for
+everyone. The publisher no longer collects lift entries (`liftEntries`,
+`liftKey`, `maxLiftBoards`, `liftWindowDays` deleted); the read path
+(`sections`) filters to `boardKeys`, so a stale `lift:*` row from an older
+client can't fragment the list back. `from(key:)` keeps a defensive `lift:`
+branch so any such row still renders sanely if passed straight in, but it never
+reaches the board list. Nine existing `lift:*` rows were deleted from the
+server (derived data, rebuildable from workouts — safe, scoped
+`board_key LIKE 'lift:%'`).
+
+NUMBERS ARE REFRESHED ON VIEW. Publishing was gated to once a day, which is
+right for the silent background pass but wrong the moment someone opens the
+board — their steps since morning simply weren't on it. `publishForView`
+refreshes the viewer's own row on open (rate-limited to 10 min by a real
+timestamp, not the day-string), and the card reads first then re-reads only if
+a publish happened, so the board shows instantly with no lingering spinner.
+
+WHY "for now" didn't mean a feature flag: keeping the lift machinery behind a
+gate would have left ~90 lines of tested-but-dead code and a board model that
+still branched on lifts everywhere. The code is in git history if lifts return;
+a flag that's off for everyone is just rot.

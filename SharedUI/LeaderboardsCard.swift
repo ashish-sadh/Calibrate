@@ -56,7 +56,7 @@ struct LeaderboardsCard: View {
             } else if loading {
                 ProgressView().frame(maxWidth: .infinity).padding(.vertical, 12)
             } else if allBoards.isEmpty {
-                Text("Nothing shared yet. Boards appear once you and a friend both have numbers for the same thing — steps, a lift, anything.")
+                Text("Nothing shared yet. Boards appear once you and a friend both have numbers for the same thing — steps, calories, workouts or your logging streak.")
                     .font(.caption).foregroundStyle(Theme.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
             } else {
@@ -321,10 +321,23 @@ struct LeaderboardsCard: View {
     func refresh() async {
         guard sharing else { sections = []; solo = []; globalBoards = [:]; return }
         loading = true
-        sections = await LeaderboardService.sections(connections: connections)
-        solo = await LeaderboardService.soloSections(connections: connections)
+        await reload()
         loading = false
         await loadGlobal()
+        // Refresh MY OWN numbers in the background so everyone reading my row
+        // sees today's, not yesterday's — then re-read, but only if a publish
+        // actually happened (rate-limited to 10 min). Done AFTER the first read
+        // so the board shows instantly rather than waiting on ~14 health
+        // queries (no lingering spinner).
+        if await LeaderboardPublisher.publishForView() {
+            await reload()
+            await loadGlobal()
+        }
+    }
+
+    private func reload() async {
+        sections = await LeaderboardService.sections(connections: connections)
+        solo = await LeaderboardService.soloSections(connections: connections)
     }
 
     /// Global boards, one fetch per board the user opted into — bounded by how

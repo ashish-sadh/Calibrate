@@ -2,12 +2,17 @@ import Foundation
 
 /// Collects what you'd appear on a board with, and publishes it.
 ///
-/// Two families today:
-///   * **week** — steps, active calories, workout count. Ambient: everyone has
-///     them, no logging discipline required.
-///   * **month** — your heaviest single set per lift, over the last 30 days.
-///     This is what makes the boards self-selecting: you publish the lifts you
-///     actually train, and a board appears only where a friend trains it too.
+/// A FIXED set of ambient boards (operator 2026-07-31): steps, active calories,
+/// workout count — all trailing 7 days — plus the food-logging streak. Everyone
+/// has these without any logging discipline, and the set is the same for every
+/// user, so a board is a shared thing rather than one person's private lift.
+///
+/// Per-exercise lift boards were removed here on the operator's call ("have a
+/// fixed set for now — no need for individual exercises to be part of or
+/// aggregated for the leaderboard"). They were self-selecting and clever but
+/// fragmented the board into hundreds of one-person lifts and made the whole
+/// surface hard to read. `Leaderboard.boardKeys` is the fixed set both this
+/// publisher and the read path honor.
 ///
 /// Separate from `LeaderboardService` because this half is the only part that
 /// touches the health seam and the local workout store; the service is pure
@@ -15,21 +20,8 @@ import Foundation
 @MainActor
 public enum LeaderboardPublisher {
 
-    /// **How many lift boards one person may publish per period.**
-    ///
-    /// Bounded because unbounded is the whole scaling risk here: someone with 300
-    /// distinct exercises in their history would write 300 rows a month, and the
-    /// friend fan-in would be 150 × 300 rather than 150 × ~11. Capped at the lifts
-    /// they train MOST, which are also the ones most likely to overlap with a
-    /// friend's — a board needs two people, so publishing your rarest lift is
-    /// almost certainly publishing a board of one.
-    public static let maxLiftBoards = 8
-
-    /// Days of history a monthly lift board looks at. "Highest deadlift in the
-    /// last month", per the operator.
-    public static let liftWindowDays = 30
-
     private static let lastPublishKey = "drift_leaderboard_last_publish_day"
+    private static let lastPublishAtKey = "drift_leaderboard_last_publish_at"
 
     /// Publish at most once a day unless forced.
     ///
@@ -43,7 +35,34 @@ public enum LeaderboardPublisher {
         let today = DateFormatters.dateOnly.string(from: Date())
         if !force, DriftPlatform.keyValueStore.string(forKey: lastPublishKey) == today { return }
         await publishNow()
-        DriftPlatform.keyValueStore.set(today, forKey: lastPublishKey)
+        stampPublished(at: Date())
+    }
+
+    /// Refresh the viewer's OWN numbers when they open the leaderboard, so
+    /// everyone reading their row sees a current value rather than yesterday's
+    /// (operator 2026-07-31: "make sure numbers are refreshed and reported
+    /// correctly from everyone"). The once-a-day gate is right for the silent
+    /// background publish, but wrong the moment someone is actually LOOKING at
+    /// the board — their steps since this morning simply weren't on it.
+    ///
+    /// Rate-limited by a real timestamp (default 10 min) so opening the tab
+    /// repeatedly, or a recomposition, doesn't re-run the 14 health queries.
+    /// Returns whether it actually published, so the caller re-reads only when
+    /// the numbers could have changed.
+    @discardableResult
+    public static func publishForView(now: Date = Date(),
+                                      minInterval: TimeInterval = 600) async -> Bool {
+        guard Preferences.shareStatsWithFriends, SharingService.shared.isSignedIn else { return false }
+        let last = DriftPlatform.keyValueStore.double(forKey: lastPublishAtKey)
+        if last > 0, now.timeIntervalSince1970 - last < minInterval { return false }
+        await publishNow()
+        stampPublished(at: now)
+        return true
+    }
+
+    private static func stampPublished(at date: Date) {
+        DriftPlatform.keyValueStore.set(DateFormatters.dateOnly.string(from: date), forKey: lastPublishKey)
+        DriftPlatform.keyValueStore.set(date.timeIntervalSince1970, forKey: lastPublishAtKey)
     }
 
     public static func publishNow() async {
@@ -67,7 +86,6 @@ public enum LeaderboardPublisher {
     static func collect(userID: String, now: Date = Date()) async -> [LeaderboardEntryDTO] {
         var out: [LeaderboardEntryDTO] = []
         let week = LeaderboardService.periodStart(.week, for: now)
-        let month = LeaderboardService.periodStart(.month, for: now)
 
         // --- Ambient, TRAILING 7 DAYS ---
         //
@@ -136,53 +154,6 @@ public enum LeaderboardPublisher {
                             value: Double(streak), unit: "days"))
         }
 
-        // --- Lifts, last 30 days ---
-        out += liftEntries(userID: userID, periodStart: month, now: now)
         return out
-    }
-
-    /// Heaviest single set per lift in the window, capped to the most-trained.
-    ///
-    /// Heaviest SET, not estimated 1RM: a 1RM is a formula, and ranking friends
-    /// by a projection invites arguing with the projection. What someone actually
-    /// picked up is a fact.
-    static func liftEntries(userID: String, periodStart: String,
-                           now: Date = Date()) -> [LeaderboardEntryDTO] {
-        guard let cutoff = Calendar.current.date(byAdding: .day, value: -liftWindowDays, to: now),
-              let workouts = try? WorkoutService.fetchWorkouts(limit: 500) else { return [] }
-
-        let cutoffDay = DateFormatters.dateOnly.string(from: cutoff)
-        let recentIDs = Set(workouts.filter { $0.date >= cutoffDay }.compactMap(\.id))
-        guard !recentIDs.isEmpty else { return [] }
-
-        var heaviest: [String: Double] = [:]
-        var sessions: [String: Set<Int64>] = [:]
-        for id in recentIDs {
-            guard let sets = try? WorkoutService.fetchSets(forWorkout: id) else { continue }
-            for set in sets {
-                // Warmups are not what anyone means by their heaviest set.
-                guard !set.isWarmup, let weight = set.weightLbs, weight > 0,
-                      let key = LeaderboardBoard.liftKey(for: set.exerciseName) else { continue }
-                heaviest[key] = max(heaviest[key] ?? 0, weight)
-                sessions[key, default: []].insert(id)
-            }
-        }
-
-        // Most-trained first, so the cap keeps the lifts most likely to be shared
-        // with a friend. Ties by key, so the selection is stable rather than
-        // shuffling which boards you appear on between publishes.
-        let ranked = heaviest.keys.sorted { a, b in
-            let sa = sessions[a]?.count ?? 0
-            let sb = sessions[b]?.count ?? 0
-            if sa != sb { return sa > sb }
-            return a < b
-        }
-
-        return ranked.prefix(maxLiftBoards).compactMap { key in
-            guard let weight = heaviest[key] else { return nil }
-            return LeaderboardEntryDTO(userId: userID, boardKey: key,
-                                      periodStart: periodStart,
-                                      value: weight.rounded(), unit: "lbs")
-        }
     }
 }

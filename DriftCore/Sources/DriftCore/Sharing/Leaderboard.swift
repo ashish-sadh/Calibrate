@@ -122,22 +122,12 @@ public struct LeaderboardBoard: Sendable, Hashable, Identifiable {
 
     /// `bench_press` → `Bench Press`. Deliberately not a lookup against the
     /// exercise catalog: the slug came from another person's device, which may
-    /// know exercises this one doesn't.
+    /// know exercises this one doesn't. Kept for the defensive `lift:` branch in
+    /// `from(key:)` — a legacy row still renders sanely rather than as a raw key.
     static func prettify(_ slug: String) -> String {
         slug.split(separator: "_")
             .map { $0.prefix(1).uppercased() + $0.dropFirst() }
             .joined(separator: " ")
-    }
-
-    /// Exercise name → board key. Lossy on purpose (case, punctuation and
-    /// spacing all collapse) so "Bench Press", "bench press" and "Bench-Press"
-    /// are ONE board rather than three near-empty ones.
-    public static func liftKey(for exercise: String) -> String? {
-        let slug = exercise.lowercased()
-            .split { !$0.isLetter && !$0.isNumber }
-            .joined(separator: "_")
-        guard slug.count >= 2, slug.count <= 40 else { return nil }
-        return "lift:\(slug)"
     }
 }
 
@@ -171,10 +161,13 @@ public enum Leaderboard {
     /// exercise someone has ever logged.
     public static let minimumParticipants = 2
 
-    /// How many discovered LIFT boards may render at once. Core boards are
-    /// unbounded (there are four); lifts are ranked by participation, so the cap
-    /// keeps the ones the group most shares and drops the long tail.
-    public static let maxLiftBoards = 3
+    /// The FIXED set of boards (operator 2026-07-31). The same four for
+    /// everyone — ambient stats anyone has, so a board is a shared comparison
+    /// rather than one person's private lift. Per-exercise lift boards were
+    /// removed: self-selecting was clever but fragmented the surface into
+    /// hundreds of one-person boards. Both the publisher and the read path gate
+    /// on this set.
+    public static let boardKeys: Set<String> = ["steps", "calories", "workouts", "food_streak"]
 
     /// Which boards to fetch the WORLDWIDE view for (#1170).
     ///
@@ -206,7 +199,11 @@ public enum Leaderboard {
                               me: String?,
                               minimum: Int = minimumParticipants) -> [Section] {
         var byBoard: [String: [LeaderboardEntryDTO]] = [:]
-        for entry in entries where profiles[entry.userId] != nil {
+        // FIXED board set (operator 2026-07-31): only the four ambient boards.
+        // Any other key — a `lift:*` row from an older client that still has
+        // them published — is ignored here so the board list can't fragment
+        // back into per-exercise noise while those rows age out.
+        for entry in entries where profiles[entry.userId] != nil && boardKeys.contains(entry.boardKey) {
             byBoard[entry.boardKey, default: []].append(entry)
         }
 
@@ -232,28 +229,13 @@ public enum Leaderboard {
             sections.append(Section(board: board, rows: rows))
         }
 
-        // Core boards first in a fixed order, then discovered lifts by
-        // participation (the ones your group actually shares), then title so the
-        // order is stable between refreshes.
+        // Fixed order — the same four boards for everyone.
         let coreOrder = ["food_streak", "steps", "calories", "workouts"]
-        let ordered = sections.sorted { a, b in
-            let ai = coreOrder.firstIndex(of: a.board.key)
-            let bi = coreOrder.firstIndex(of: b.board.key)
-            switch (ai, bi) {
-            case let (x?, y?): return x < y
-            case (_?, nil): return true
-            case (nil, _?): return false
-            default:
-                if a.participants != b.participants { return a.participants > b.participants }
-                return a.board.title < b.board.title
-            }
-        }
-        // Keep every core board; keep only the most-shared lifts.
-        var liftsKept = 0
-        return ordered.filter { section in
-            guard !section.board.isCore else { return true }
-            liftsKept += 1
-            return liftsKept <= maxLiftBoards
+        return sections.sorted { a, b in
+            let ai = coreOrder.firstIndex(of: a.board.key) ?? coreOrder.count
+            let bi = coreOrder.firstIndex(of: b.board.key) ?? coreOrder.count
+            if ai != bi { return ai < bi }
+            return a.board.title < b.board.title
         }
     }
 

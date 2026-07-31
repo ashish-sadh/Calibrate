@@ -31,56 +31,45 @@ struct LeaderboardTests {
     /// because someone shipped it.
     @Test func aBoardAppearsWhenTwoPeopleShareIt() {
         let sections = Leaderboard.sections(
+            from: [entry("me", "steps", 50_000), entry("ana", "steps", 61_000)],
+            profiles: people("me", "ana"), me: "me")
+        #expect(sections.map(\.board.key) == ["steps"])
+        #expect(sections[0].board.title == "Steps")
+        #expect(sections[0].board.period == .week)
+    }
+
+    /// A board of one is a joke at that person's expense.
+    @Test func aBoardOfOneIsNotABoard() {
+        let sections = Leaderboard.sections(
+            from: [entry("me", "steps", 50_000)],
+            profiles: people("me", "ana"), me: "me")
+        #expect(sections.isEmpty)
+    }
+
+    /// FIXED SET (operator 2026-07-31): per-exercise lift rows are ignored, so a
+    /// stale `lift:*` row from an older client can never fragment the board list
+    /// back into per-exercise noise — even when two people share the same lift.
+    @Test func liftRowsAreIgnoredEvenWhenShared() {
+        let sections = Leaderboard.sections(
             from: [entry("me", "lift:deadlift", 405, unit: "lbs"),
                    entry("ana", "lift:deadlift", 365, unit: "lbs")],
             profiles: people("me", "ana"), me: "me")
-        #expect(sections.map(\.board.key) == ["lift:deadlift"])
-        #expect(sections[0].board.title == "Deadlift")
-        #expect(sections[0].board.period == .month)
+        #expect(sections.isEmpty, "lift boards are no longer part of the leaderboard")
     }
 
-    /// A board of one is a joke at that person's expense — and it's also how the
-    /// screen fills with a board per exercise anyone ever logged.
-    @Test func aBoardOfOneIsNotABoard() {
-        let sections = Leaderboard.sections(
-            from: [entry("me", "lift:zercher_squat", 185, unit: "lbs")],
-            profiles: people("me", "ana"), me: "me")
-        #expect(sections.isEmpty)
-    }
-
-    /// Different lifts don't merge into one board just because both exist.
-    @Test func lifts_nobodyShares_produceNoBoards() {
-        let sections = Leaderboard.sections(
-            from: [entry("me", "lift:deadlift", 405), entry("ana", "lift:bench_press", 225)],
-            profiles: people("me", "ana"), me: "me")
-        #expect(sections.isEmpty)
-    }
-
-    /// Core boards sort above discovered lifts, in a fixed order, so the screen
-    /// doesn't reorder itself as friends' training changes week to week.
-    @Test func coreBoardsComeFirstInAFixedOrder() {
+    /// The four core boards render, in a fixed order, and nothing else does —
+    /// even when a shared lift row is present in the same fetch.
+    @Test func onlyTheFourCoreBoardsRenderInAFixedOrder() {
         let entries = [
             entry("me", "lift:squat", 300), entry("ana", "lift:squat", 280),
             entry("me", "workouts", 4), entry("ana", "workouts", 3),
             entry("me", "steps", 50_000), entry("ana", "steps", 61_000),
             entry("me", "calories", 3_000), entry("ana", "calories", 2_500),
+            entry("me", "food_streak", 12), entry("ana", "food_streak", 9),
         ]
         let keys = Leaderboard.sections(from: entries, profiles: people("me", "ana"),
                                        me: "me").map(\.board.key)
-        #expect(keys == ["steps", "calories", "workouts", "lift:squat"])
-    }
-
-    /// Among discovered lifts, the ones more of the group shares rank higher —
-    /// that's what makes the top of the list the group's common ground.
-    @Test func moreWidelySharedLiftsSortFirst() {
-        let entries = [
-            entry("me", "lift:squat", 300), entry("ana", "lift:squat", 280),
-            entry("me", "lift:bench_press", 225), entry("ana", "lift:bench_press", 205),
-            entry("bo", "lift:bench_press", 245),
-        ]
-        let keys = Leaderboard.sections(from: entries, profiles: people("me", "ana", "bo"),
-                                       me: "me").map(\.board.key)
-        #expect(keys == ["lift:bench_press", "lift:squat"])
+        #expect(keys == ["food_streak", "steps", "calories", "workouts"])
     }
 
     /// Entries from someone who isn't a friend any more must not resurrect them
@@ -147,10 +136,12 @@ struct LeaderboardTests {
     }
 
     @Test func standingUsesTheBoardsOwnPeriod() {
+        // food_streak's period is `.running` ("right now"), not a week — so this
+        // pins that the standing line reads the board's OWN period label.
         let sections = Leaderboard.sections(
-            from: [entry("ana", "lift:deadlift", 300), entry("me", "lift:deadlift", 405)],
+            from: [entry("ana", "food_streak", 3), entry("me", "food_streak", 12)],
             profiles: people("ana", "me"), me: "me")
-        #expect(Leaderboard.standing(sections[0]) == "You're leading on deadlift last 30 days")
+        #expect(Leaderboard.standing(sections[0]) == "You're leading on food logging streak right now")
     }
 
     /// "You are nowhere" is not a message worth putting on a home screen.
@@ -163,25 +154,10 @@ struct LeaderboardTests {
 
     // MARK: - Keys and titles
 
-    /// One board per lift, not three for the same one. This is what stops
-    /// "Bench Press", "bench press" and "Bench-Press" fragmenting a group.
-    @Test func liftKeysCollapseCaseAndPunctuation() {
-        let expected = "lift:bench_press"
-        #expect(LeaderboardBoard.liftKey(for: "Bench Press") == expected)
-        #expect(LeaderboardBoard.liftKey(for: "bench press") == expected)
-        #expect(LeaderboardBoard.liftKey(for: "Bench-Press") == expected)
-        #expect(LeaderboardBoard.liftKey(for: "  BENCH   PRESS  ") == expected)
-    }
-
-    @Test func liftKeysRejectNonsense() {
-        #expect(LeaderboardBoard.liftKey(for: "") == nil)
-        #expect(LeaderboardBoard.liftKey(for: "!") == nil)
-        #expect(LeaderboardBoard.liftKey(for: String(repeating: "a", count: 60)) == nil)
-    }
-
-    /// A newer client can publish a board this build has never heard of. Dropping
-    /// the row would make the two versions disagree about what exists.
-    @Test func unknownBoardKeysStillRender() {
+    /// `from(key:)` still renders a legacy `lift:*` row sanely (defensive — the
+    /// read path filters these out of the board list, but a raw key must never
+    /// surface unprettified if one is ever passed straight in).
+    @Test func legacyLiftKeysStillRenderSanely() {
         let board = LeaderboardBoard.from(key: "lift:zercher_squat", unit: "lbs")
         #expect(board.title == "Zercher Squat")
         #expect(board.unit == "lbs")
@@ -267,12 +243,10 @@ struct LeaderboardPeriodTests {
         #expect(LeaderboardService.periodStart(.month, for: day("2026-07-01")) == "2026-07-01")
     }
 
-    /// The publish cap is what keeps rows-per-user bounded: without it someone
-    /// with 300 exercises writes 300 rows a month and the friend fan-in is
-    /// 150 × 300.
-    @Test func liftBoardsPerPersonAreCapped() {
-        #expect(LeaderboardPublisher.maxLiftBoards <= 10)
-        #expect(LeaderboardPublisher.maxLiftBoards >= 3, "too few and no board finds a pair")
+    /// The fixed set is exactly the four ambient boards — rows-per-user is
+    /// bounded by construction now (no per-exercise fan-out to cap).
+    @Test func theBoardSetIsFixedToFourAmbientBoards() {
+        #expect(Leaderboard.boardKeys == ["steps", "calories", "workouts", "food_streak"])
     }
 }
 
@@ -574,19 +548,10 @@ struct BoardNoiseTests {
         #expect(solo.allSatisfy { $0.board.isCore })
     }
 
-    /// A lift STILL becomes a board the moment someone else is on it — the
-    /// filter suppresses noise, it doesn't disable the feature.
-    @Test func aLiftBecomesABoardWhenSomeoneElseJoins() {
-        let people = ["me": profile("me"), "ana": profile("ana")]
-        let shared = [entry("me", "lift:wrist_extension", 30),
-                      entry("ana", "lift:wrist_extension", 35)]
-        let real = Leaderboard.sections(from: shared, profiles: people, me: "me")
-        #expect(real.map(\.board.key) == ["lift:wrist_extension"])
-    }
-
-    /// A big group can't flood it either: core boards all survive, lifts are
-    /// capped to the most-shared.
-    @Test func liftBoardsAreCappedButCoreBoardsAreNot() {
+    /// A big group full of shared lifts still yields ONLY the four core boards —
+    /// the fixed set can't be flooded back into per-exercise boards, however many
+    /// people share a lift.
+    @Test func onlyCoreBoardsRenderEvenInABigGroupOfSharedLifts() {
         var entries: [LeaderboardEntryDTO] = []
         var people: [String: SharedProfile] = [:]
         for name in ["me", "ana", "bo"] { people[name] = profile(name) }
@@ -597,9 +562,8 @@ struct BoardNoiseTests {
             let key = "lift:" + lift
             entries += [entry("me", key, 100), entry("ana", key, 90)]
         }
-        let keys = Leaderboard.sections(from: entries, profiles: people, me: "me").map(\.board.key)
-        #expect(keys.filter { !$0.hasPrefix("lift:") }.count == 4, "every core board survives")
-        #expect(keys.filter { $0.hasPrefix("lift:") }.count == Leaderboard.maxLiftBoards)
+        let keys = Set(Leaderboard.sections(from: entries, profiles: people, me: "me").map(\.board.key))
+        #expect(keys == ["steps", "calories", "workouts", "food_streak"])
     }
 }
 
