@@ -176,6 +176,26 @@ public enum Leaderboard {
     /// keeps the ones the group most shares and drops the long tail.
     public static let maxLiftBoards = 3
 
+    /// Which boards to fetch the WORLDWIDE view for (#1170).
+    ///
+    /// Every board you have a global stake in: one you OR a friend publishes
+    /// (`sections ∪ solo`) that you've opened to Everyone. The union with `solo`
+    /// is the fix — `solo` holds boards where you are the only publisher, and
+    /// those must still show the worldwide podium. Deriving the set from
+    /// `sections` alone gated the global fetch behind `minimumParticipants` (≥2
+    /// of YOUR friends on that exact board), so someone who turned a board
+    /// global to see the world saw nothing until a second friend happened to
+    /// join it — reported as "worldwide ranking missing entries". Whether
+    /// strangers rank has nothing to do with how many of your friends play.
+    public static func globalCandidateKeys(
+        sections: [Section], solo: [Section],
+        isGlobal: (String) -> Bool
+    ) -> Set<String> {
+        Set(sections.map(\.board.key))
+            .union(solo.map(\.board.key))
+            .filter(isGlobal)
+    }
+
     /// Turn raw entries into the boards actually worth rendering.
     ///
     /// Auto-discovery lives here, in one pure function, so "which boards exist"

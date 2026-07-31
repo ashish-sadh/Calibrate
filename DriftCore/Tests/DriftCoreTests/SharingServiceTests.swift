@@ -107,6 +107,44 @@ struct SharingServiceTests {
         #expect(SharingSessionStore.load(db: db)?.username == "ashish")
     }
 
+    /// A tagline write must PATCH the existing row, never upsert. A PostgREST
+    /// upsert (POST + merge-duplicates) feeds {id, tagline} into
+    /// INSERT ... ON CONFLICT, and Postgres validates the insert tuple before
+    /// the conflict can redirect to UPDATE — so `username` NOT NULL rejects it
+    /// and every tagline save 400'd server-side. (#1173, reproduced against the
+    /// live DB 2026-07-31.)
+    @Test func setTaglinePatchesProfileRowInsteadOfUpserting() async throws {
+        let mock = MockHTTP()
+        mock.queue = [(200, [["id": "me", "username": "ashish",
+                              "tagline": "deadlift + pole"]] as [[String: Any]])]
+        let (svc, db) = try makeService(mock)
+        signIn(svc, db: db, username: "ashish")
+
+        let updated = try await svc.setTagline("  deadlift + pole  ")
+        let req = try #require(mock.requests.last)
+        #expect(req.httpMethod == "PATCH", "must not be a POST upsert")
+        #expect(req.url?.absoluteString.contains("profiles?id=eq.me") == true)
+        #expect(req.value(forHTTPHeaderField: "Prefer")?.contains("merge-duplicates") != true)
+        // Trimmed, and the body carries ONLY the tagline column — no username,
+        // which is exactly what the NOT NULL insert path choked on.
+        #expect(mock.lastBody?["tagline"] as? String == "deadlift + pole")
+        #expect(mock.lastBody?["id"] == nil)
+        #expect(updated?.tagline == "deadlift + pole")
+    }
+
+    /// Clearing must send an explicit null, not drop the key — a bare `{}` PATCH
+    /// would leave the old tagline in place and "clear it" would do nothing.
+    @Test func clearingTaglineSendsExplicitNull() async throws {
+        let mock = MockHTTP()
+        mock.queue = [(200, [["id": "me", "username": "ashish"]] as [[String: Any]])]
+        let (svc, db) = try makeService(mock)
+        signIn(svc, db: db, username: "ashish")
+
+        _ = try await svc.setTagline("   ")
+        #expect(mock.requests.last?.httpMethod == "PATCH")
+        #expect(mock.lastBody?["tagline"] is NSNull)
+    }
+
     @Test func searchExcludesSelfAndBuildsIlike() async throws {
         let mock = MockHTTP()
         mock.queue = [(200, [

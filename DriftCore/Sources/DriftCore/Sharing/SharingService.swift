@@ -76,22 +76,32 @@ public final class SharingService {
         if var s = currentSession { s.username = username; SharingSessionStore.save(s, db: db) }
     }
 
-    /// Set (or clear) my one-line tagline. Trimmed and capped to match the
-    /// server CHECK, so the write can't be rejected for length. Returns the
-    /// upserted directory row so the caller can reflect it immediately instead
-    /// of waiting for the next hub refresh.
+    /// Set (or clear) my one-line tagline. Trimmed and capped to 80 chars.
+    /// Returns the updated directory row so the caller can reflect it
+    /// immediately instead of waiting for the next hub refresh.
     @discardableResult
     public func setTagline(_ text: String?) async throws -> SharedProfile? {
         let uid = try requireUserID()
         let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let value = trimmed.isEmpty ? nil : String(trimmed.prefix(80))
-        // NSNull, NOT `value as Any?`. Assigning Optional<Any>.none to a
-        // [String: Any] subscript REMOVES the key, so an upsert would leave the
-        // old tagline in place and "clear it" would silently do nothing —
-        // exactly the trap flagged in review on `setHistoryGrant`.
-        let row: [String: Any] = ["id": uid, "tagline": value ?? NSNull()]
-        let rows: [SharedProfile] = try await client.restInsert(
-            "profiles", body: [row], token: try await validToken(), upsert: true)
+        // PATCH the existing row — NOT an upsert. `claimUsername` creates the
+        // profile before a tagline can ever be set, so there is always a row to
+        // update; and an upsert here doesn't just do extra work, it FAILS. A
+        // PostgREST upsert is `INSERT ... ON CONFLICT (id) DO UPDATE`, and
+        // Postgres forms and validates the insert tuple before the conflict can
+        // redirect it to the UPDATE arm — so a body of {id, tagline} trips
+        // `username`'s NOT NULL constraint and the whole statement 400s. Every
+        // tagline save had been failing silently this way (reproduced against
+        // the live DB, 2026-07-31: "null value in column username violates
+        // not-null constraint"). PATCH `?id=eq.<uid>` touches only the tagline
+        // column and matches how `setDiscoverable` writes.
+        //
+        // NSNull, NOT `value as Any?`: assigning Optional<Any>.none to a
+        // [String: Any] subscript REMOVES the key, so "clear my tagline" would
+        // send an empty patch and silently do nothing.
+        let body: [String: Any] = ["tagline": value ?? NSNull()]
+        let rows: [SharedProfile] = try await client.restUpdate(
+            "profiles?id=eq.\(uid)", body: body, token: try await validToken())
         return rows.first
     }
 

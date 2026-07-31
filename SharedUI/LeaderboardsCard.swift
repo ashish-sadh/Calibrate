@@ -331,7 +331,8 @@ struct LeaderboardsCard: View {
     /// many they chose, not by how many exist. Strangers' handles resolve in ONE
     /// batched profile call across every board rather than per row.
     func loadGlobal() async {
-        let keys = Set(sections.map(\.board.key)).filter { Preferences.boardIsGlobal($0) }
+        let keys = Leaderboard.globalCandidateKeys(
+            sections: sections, solo: solo, isGlobal: Preferences.boardIsGlobal)
         guard !keys.isEmpty else { globalBoards = [:]; return }
         var boards: [String: GlobalBoard] = [:]
         for key in keys {

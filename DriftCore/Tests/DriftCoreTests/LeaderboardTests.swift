@@ -194,6 +194,42 @@ struct LeaderboardTests {
         #expect(Leaderboard.formatted(50_000, board: steps) == 50_000.formatted(.number))
         #expect(Leaderboard.formatted(405, board: lift) == "405 lbs")
     }
+
+    // MARK: - Which boards fetch the worldwide view (#1170)
+
+    private func section(_ key: String) -> Leaderboard.Section {
+        Leaderboard.Section(board: LeaderboardBoard.from(key: key), rows: [])
+    }
+
+    /// THE BUG. A board where you're the only publisher (in `solo`, not
+    /// `sections`) must still fetch the worldwide podium when you've opened it to
+    /// Everyone. Deriving the fetch set from `sections` alone required ≥2 of your
+    /// own friends on that board first, so "I turned on global, show me the
+    /// world" showed nothing.
+    @Test func soloBoardYouOpenedGlobalStillFetchesTheWorld() {
+        let keys = Leaderboard.globalCandidateKeys(
+            sections: [section("steps")],          // 2+ friends here
+            solo: [section("calories")],           // only you here
+            isGlobal: { $0 == "calories" || $0 == "steps" })
+        #expect(keys.contains("calories"), "a solo board opened global must load")
+        #expect(keys.contains("steps"))
+    }
+
+    @Test func friendsOnlyBoardsAreNeverFetchedGlobally() {
+        let keys = Leaderboard.globalCandidateKeys(
+            sections: [section("steps")],
+            solo: [section("calories")],
+            isGlobal: { _ in false })              // nothing opened to Everyone
+        #expect(keys.isEmpty)
+    }
+
+    @Test func aBoardInBothSectionsAndSoloIsNotDoubleCounted() {
+        let keys = Leaderboard.globalCandidateKeys(
+            sections: [section("steps")],
+            solo: [section("steps")],
+            isGlobal: { _ in true })
+        #expect(keys == ["steps"])
+    }
 }
 
 /// Tier-0 for the period keys, which are PRIMARY KEY components on the server.
