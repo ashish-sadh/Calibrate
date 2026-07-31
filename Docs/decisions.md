@@ -927,3 +927,42 @@ Where the gap fell is worth noting: scaled push-ups and floor holds are the
 beginner and rehab vocabulary. The catalog was strongest exactly where
 confident lifters are and weakest where the people least able to work around
 it are.
+
+## 2026-07-31 — Leaderboard boards go back to friends-only by default (a reversal)
+
+This setting has now been decided twice, in opposite directions, one day
+apart. Recording both so it stops oscillating.
+
+2026-07-30: inverted from opt-in (`globalBoardKeys`) to opt-out
+(`friendsOnlyBoardKeys`) on the operator's call. The argument was a real one —
+under an opt-in, a board full of strangers essentially never happened, so
+global discovery never got off the ground. The safeguard offered was that the
+master switch (`shareStatsWithFriends`) stays opt-in, so the default only
+decides how wide an already-deliberate act goes.
+
+2026-07-31 (#1171): inverted BACK to opt-in, after the operator used the
+shipped build and read the two-capsule control as confusing — "Friends vs
+Everyone confusing — default to Friends; Global doesn't make sense."
+
+WHAT ACTUALLY SETTLES IT, so the next person doesn't re-litigate on vibes:
+whether strangers can see your deadlift is not a discovery-funnel question.
+The 07-30 reasoning optimised for the feature's adoption; the objection is
+about the user's expectation. In a privacy-first app those are not
+symmetrical — a default that WIDENS an audience is the one kind of default we
+don't get to pick on someone's behalf. Global discovery has to be earned by
+making the "Everyone" tap worth taking, not by starting people there.
+
+THE OLD KEY STAYS ON DISK. `drift_friends_only_board_keys` is left written and
+unread rather than migrated or deleted. Deleting it is the only irreversible
+move available here and it buys nothing. A Tier-0 test
+(`staleOptOutKeyDoesNotLeakBoardsGlobal`) asserts that a board absent from the
+stale set does not inherit global from it — the exact way this could have
+leaked quietly.
+
+WHAT THIS CHANGE DOES NOT DO: existing users who were global-by-default are
+now friends-only in the app, and `LeaderboardPublisher.publishNow()` restamps
+their current-period rows `friends` on the next publish — but rows already
+published for PAST periods are not withdrawn here. Global boards only read the
+current period, so nothing renders from them; they are stale rows, not visible
+ones. Sweeping them is tracked in #1172 alongside the Private-mode work, which
+is where the period-wide unpublish story already lives.

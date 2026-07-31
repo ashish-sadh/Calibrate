@@ -567,37 +567,50 @@ struct BoardNoiseTests {
     }
 }
 
-/// Tier-0 for the visibility default, inverted 2026-07-30.
+/// Tier-0 for the visibility default, inverted BACK to opt-in 2026-07-31 (#1171).
 ///
-/// Boards are global by DEFAULT now. The safeguard is that the master switch is
-/// still opt-in, so this only decides how wide an already-deliberate act goes —
-/// these assertions are what keep that true.
+/// Boards are FRIENDS-ONLY by default. This flag has flipped twice; these
+/// assertions are the record of which way it points, so a future change has to
+/// argue with a failing test rather than a comment.
 @MainActor
 struct BoardVisibilityDefaultTests {
 
-    @Test func boardsAreGlobalUnlessPulledBack() {
-        Preferences.friendsOnlyBoardKeys = []
-        #expect(Preferences.boardIsGlobal("steps"))
-        #expect(Preferences.boardIsGlobal("lift:deadlift"))
-        // A board this build has never heard of is still global — the default
-        // must not depend on knowing the key.
-        #expect(Preferences.boardIsGlobal("lift:zercher_squat"))
-    }
-
-    @Test func pullingOneBackDoesNotAffectOthers() {
-        Preferences.friendsOnlyBoardKeys = ["lift:deadlift"]
-        defer { Preferences.friendsOnlyBoardKeys = [] }
+    @Test func boardsAreFriendsOnlyUntilOpenedUp() {
+        Preferences.globalBoardKeys = []
+        #expect(!Preferences.boardIsGlobal("steps"))
         #expect(!Preferences.boardIsGlobal("lift:deadlift"))
-        #expect(Preferences.boardIsGlobal("steps"), "per board, not all-or-nothing")
+        // A board this build has never heard of is friends-only too — the
+        // default must not depend on knowing the key.
+        #expect(!Preferences.boardIsGlobal("lift:zercher_squat"))
     }
 
-    /// THE SAFEGUARD. A global default is only defensible because nothing is
-    /// published until the master switch is on. If this ever inverts too, the
-    /// default becomes silent public exposure.
+    @Test func openingOneUpDoesNotAffectOthers() {
+        Preferences.globalBoardKeys = ["lift:deadlift"]
+        defer { Preferences.globalBoardKeys = [] }
+        #expect(Preferences.boardIsGlobal("lift:deadlift"))
+        #expect(!Preferences.boardIsGlobal("steps"), "per board, not all-or-nothing")
+    }
+
+    /// An existing install that never touched the control reads as friends-only
+    /// even though it has the OLD opt-out key on disk. That key is left in place
+    /// deliberately (never destroy what a user set) — it must simply go unread.
+    @Test func staleOptOutKeyDoesNotLeakBoardsGlobal() {
+        Preferences.globalBoardKeys = []
+        DriftPlatform.keyValueStore.set(["lift:deadlift"],
+                                        forKey: "drift_friends_only_board_keys")
+        defer { DriftPlatform.keyValueStore.removeObject(forKey: "drift_friends_only_board_keys") }
+        #expect(!Preferences.boardIsGlobal("steps"),
+                "a board absent from the old opt-out set must not inherit global")
+        #expect(!Preferences.boardIsGlobal("lift:deadlift"))
+    }
+
+    /// THE SAFEGUARD. Nothing is published at all until the master switch is on.
+    /// With the per-board default now also friends-only, this is the second of
+    /// two gates rather than the only one — but it still has to hold.
     @Test func nothingPublishesUntilTheMasterSwitchIsOn() {
         DriftPlatform.keyValueStore.removeObject(forKey: "drift_share_stats_friends")
         #expect(!Preferences.shareStatsWithFriends,
-                "leaderboards must stay opt-in even though boards default global")
+                "leaderboards must stay opt-in")
     }
 }
 

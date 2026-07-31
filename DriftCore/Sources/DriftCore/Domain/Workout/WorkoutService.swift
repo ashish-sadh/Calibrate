@@ -340,6 +340,43 @@ public enum WorkoutService {
         }
     }
 
+    /// Fold notes edited during a live workout back into the template they came
+    /// from (#1169). Returns nil when nothing the user typed actually changed —
+    /// the caller skips the write.
+    ///
+    /// Diffs against `baseline` (the notes as the workout OPENED) rather than
+    /// against the template's own notes, because the live workout auto-fills a
+    /// `"Tip: …"` form cue for any exercise the template left blank. Comparing
+    /// to the template would read every one of those generated tips as a user
+    /// edit and bake it in.
+    ///
+    /// Notes only. Sets, rest, warmup flag and duration mode are carried across
+    /// untouched: someone adding a set mid-session is adapting today's workout,
+    /// not redefining the plan, and silently rewriting the plan from a session
+    /// is how a template stops being trustworthy.
+    ///
+    /// Matched by exercise name — the same key the template load path uses.
+    /// Duplicate names in one template collapse to a single entry, which is
+    /// why the caller builds `edited`/`baseline` keeping the FIRST occurrence.
+    public static func templateExercisesApplyingNoteEdits(
+        _ existing: [WorkoutTemplate.TemplateExercise],
+        edited: [String: String],
+        baseline: [String: String]
+    ) -> [WorkoutTemplate.TemplateExercise]? {
+        var out = existing
+        var changed = false
+        for i in out.indices {
+            let name = out[i].name
+            guard let now = edited[name], now != (baseline[name] ?? "") else { continue }
+            let trimmed = now.trimmingCharacters(in: .whitespacesAndNewlines)
+            let newValue: String? = trimmed.isEmpty ? nil : trimmed
+            guard newValue != out[i].notes else { continue }
+            out[i].notes = newValue
+            changed = true
+        }
+        return changed ? out : nil
+    }
+
     // MARK: - History & PRs
 
     /// Get all sets for an exercise, most recent first.

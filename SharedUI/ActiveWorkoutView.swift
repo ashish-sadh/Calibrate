@@ -34,6 +34,15 @@ struct ActiveWorkoutView: View {
     @State var workoutDate = Date()
     @State var workoutNotes = ""
     @State var exercises: [ActiveExercise] = []
+    /// Exercise notes as they stood when this workout opened, keyed by exercise
+    /// name — the baseline `syncNotesToTemplate()` diffs against (#1169).
+    ///
+    /// Needed because `addExercise` auto-fills `"Tip: …"` from
+    /// `ExerciseService.formTip(for:)` when a template exercise has no note.
+    /// Without a baseline, a plain "start template, finish workout" round trip
+    /// would write every generated tip into the user's template as if they had
+    /// typed it. Only notes that differ from this snapshot are the user's.
+    @State var notesAtOpen: [String: String] = [:]
     @State var showingExercisePicker = false
     @State var startTime = Date()
     @State var workoutTimer = SecondTicker()
@@ -445,7 +454,14 @@ struct ActiveWorkoutView: View {
                 if pastDate == nil {
                     let restored = restoreSession()
                     startWorkoutTimer()
-                    if restored { return }
+                    if restored {
+                        // A restored session's notes are already whatever they
+                        // were last saved as — and anything edited before the
+                        // kill has already synced on a persist tick. Baseline
+                        // from here so a resume never re-writes the template.
+                        captureNotesBaseline()
+                        return
+                    }
                 }
                 if let t = template {
                     workoutName = t.name
@@ -463,6 +479,7 @@ struct ActiveWorkoutView: View {
                     for ex in working {
                         addExercise(name: ex.name, setCount: ex.sets, restTime: ex.restSeconds, notes: ex.notes, trackByTime: ex.isDuration)
                     }
+                    captureNotesBaseline()
                 }
             }
             .onDisappear {
@@ -768,14 +785,29 @@ struct ActiveWorkoutView: View {
                             #endif
                         }.frame(width: 30)
 
-                        // Inline delete button
+                        // Inline delete button.
+                        //
+                        // Separated from the done checkbox and given a hit area
+                        // several times the glyph (#1168): at width 20 with zero
+                        // spacing in a `spacing: 0` HStack, the two sat flush and
+                        // reaching ✕ kept toggling the set done instead — the
+                        // worst possible miss, since it logs a set you were
+                        // trying to delete. The glyph stays small and tertiary;
+                        // only the tappable rectangle grew.
                         Button {
                             exercises[ei].sets.removeAll(where: { $0.id == set.id })
                             if exercises[ei].sets.isEmpty { exercises.remove(at: ei) }
                             stopRestIfAnchorMissing()
                         } label: {
-                            Image(systemName: sym("xmark")).font(.system(size: Theme.FontSize.micro)).foregroundStyle(Theme.textTertiary)
-                        }.frame(width: 20).accessibilityLabel("Delete set")
+                            Image(systemName: sym("xmark"))
+                                .font(.footnote)
+                                .foregroundStyle(Theme.textTertiary)
+                                .frame(width: 32, height: 36)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.leading, 8)
+                        .accessibilityLabel("Delete set")
                     }
                     .padding(.vertical, 2)
                     #if !os(Android)
@@ -992,6 +1024,30 @@ struct ActiveWorkoutView: View {
 
     // MARK: - Session Persistence
 
+    /// Snapshot the current exercise notes as "untouched". First occurrence
+    /// wins so a template with the same exercise twice keys consistently with
+    /// `templateExercisesApplyingNoteEdits`.
+    private func captureNotesBaseline() {
+        notesAtOpen = Dictionary(exercises.map { ($0.name, $0.notes ?? "") },
+                                 uniquingKeysWith: { first, _ in first })
+    }
+
+    /// Write notes the user edited mid-workout back to the source template
+    /// (#1169). Cheap no-op when nothing changed, so the 30s persist tick and
+    /// the finish path can both call it.
+    private func syncNotesToTemplate() {
+        guard let t = template, let tid = t.id else { return }
+        let edited = Dictionary(exercises.map { ($0.name, $0.notes ?? "") },
+                                uniquingKeysWith: { first, _ in first })
+        guard let merged = WorkoutService.templateExercisesApplyingNoteEdits(
+                t.exercises, edited: edited, baseline: notesAtOpen),
+              let json = try? JSONEncoder().encode(merged),
+              let jsonStr = String(data: json, encoding: .utf8) else { return }
+        WorkoutService.updateTemplate(id: tid, name: t.name, exercisesJson: jsonStr)
+        // Re-baseline, or every later tick re-writes the same edit.
+        notesAtOpen = edited
+    }
+
     private func persistSession() {
         // A finished/discarded workout must never re-persist. The 30s
         // auto-save tick hops through an async Task, so one enqueued just
@@ -1000,6 +1056,7 @@ struct ActiveWorkoutView: View {
         // WorkoutService.saveSession also tombstones this at the service
         // level; this guard is the cheap first line).
         guard !workoutEnded else { return }
+        syncNotesToTemplate()
         let sessionExercises = exercises.map { ex in
             WorkoutService.SavedSession.SessionExercise(
                 name: ex.name, isWarmup: ex.isWarmupExercise,
@@ -1482,6 +1539,8 @@ struct ActiveWorkoutView: View {
 
     private func saveWorkout(andDismiss: Bool = true) {
         FeatureUsage.record(TelemetryEvent.workoutFinished)
+        // Before `workoutEnded` shuts the persist path down (#1169).
+        syncNotesToTemplate()
         workoutEnded = true
         stopTimers()
         WorkoutService.clearSession()

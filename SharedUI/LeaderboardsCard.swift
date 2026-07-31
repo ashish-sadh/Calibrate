@@ -212,10 +212,10 @@ struct LeaderboardsCard: View {
                 .foregroundStyle(Theme.textTertiary)
             ForEach([false, true], id: \.self) { wantGlobal in
                 Button {
-                    // Opt-OUT set now: boards are global unless pulled back.
-                    var keys = Preferences.friendsOnlyBoardKeys
-                    if wantGlobal { keys.remove(board.key) } else { keys.insert(board.key) }
-                    Preferences.friendsOnlyBoardKeys = keys
+                    // Opt-IN set (#1171): boards are friends-only until opened up.
+                    var keys = Preferences.globalBoardKeys
+                    if wantGlobal { keys.insert(board.key) } else { keys.remove(board.key) }
+                    Preferences.globalBoardKeys = keys
                     Task {
                         // Going private must reach EVERY period, not just this
                         // one, or last month's row stays publicly readable.

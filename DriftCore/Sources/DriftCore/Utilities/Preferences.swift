@@ -135,32 +135,41 @@ public enum Preferences {
         set { kv.set(newValue, forKey: publicProfileWorkoutsKey) }
     }
 
-    private static let friendsOnlyBoardKeysKey = "drift_friends_only_board_keys"
+    private static let globalBoardKeysKey = "drift_global_board_keys"
 
-    /// Boards this person has pulled BACK to friends-only.
+    /// Boards this person has deliberately opened to EVERYONE.
     ///
-    /// **Inverted 2026-07-30 on the operator's call: boards are global by
-    /// DEFAULT, and this is the opt-out set.** It used to be `globalBoardKeys`,
-    /// an opt-in — which meant a board full of strangers essentially never
-    /// happened, and global discovery (the whole point of the feature) never got
-    /// off the ground.
+    /// Opt-in: a board is friends-only until it appears in this set.
     ///
-    /// The safeguard that makes this defensible is that the MASTER switch is
-    /// still opt-in: nothing is published at all until `shareStatsWithFriends`
-    /// is turned on. So the default only decides *how wide* an already-deliberate
-    /// act goes. The card's copy states that plainly — a default this wide has to
-    /// be read, not discovered.
+    /// This setting has now been decided twice, in opposite directions, and the
+    /// history is worth keeping so it doesn't oscillate a third time. It was an
+    /// opt-in originally; inverted to an opt-out on 2026-07-30 on the operator's
+    /// call, reasoning that an opt-in meant a board full of strangers never
+    /// happened and global discovery never got off the ground; inverted BACK to
+    /// an opt-in on 2026-07-31 (#1171) after the operator used the shipped
+    /// version and read the two-capsule control as confusing — "default to
+    /// Friends; Global doesn't make sense."
+    ///
+    /// The taste argument that settles it: whether strangers can see your
+    /// deadlift is not a discovery-funnel question, and a default that widens an
+    /// audience is the one kind of default a privacy-first app doesn't get to
+    /// pick for someone. Global discovery has to be earned by making the
+    /// Everyone tap worth taking, not by starting people there.
     ///
     /// Per board, so steps can be public while a lift stays among friends.
-    public static var friendsOnlyBoardKeys: Set<String> {
-        get { Set(kv.stringArray(forKey: friendsOnlyBoardKeysKey) ?? []) }
+    ///
+    /// NOTE: the old opt-out key (`drift_friends_only_board_keys`) is
+    /// deliberately left on disk, unread. Deleting it would be the one
+    /// irreversible move here, and it costs nothing to keep.
+    public static var globalBoardKeys: Set<String> {
+        get { Set(kv.stringArray(forKey: globalBoardKeysKey) ?? []) }
         set { kv.set(newValue.isEmpty ? nil : Array(newValue).sorted(),
-                     forKey: friendsOnlyBoardKeysKey) }
+                     forKey: globalBoardKeysKey) }
     }
 
-    /// Is this board published to everyone? Global unless pulled back.
+    /// Is this board published to everyone? Friends-only unless opened up.
     public static func boardIsGlobal(_ key: String) -> Bool {
-        !friendsOnlyBoardKeys.contains(key)
+        globalBoardKeys.contains(key)
     }
 
     // MARK: - Online Food Search
