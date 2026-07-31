@@ -3057,5 +3057,22 @@
    "coach sections collapse for easy reading; alerts, stats and trends stay open",
    "coaches can write dated notes about you \u2014 and you always get to read them, ungated by any sharing toggle"
   ]
+ },
+ {
+  "build": 376,
+  "date": "2026-07-30T19:50:00-0700",
+  "description": "Clean same-commit baseline publish (pairs with Android 77): social person pages + leaderboard polish, food logging correctness fixes",
+  "fixes": [
+   "suggestions no longer ignore AI/photo/custom-logged foods",
+   "streak counted since April now reports correctly",
+   "Atwater guard rejects impossible calorie/macro pairings at parse time",
+   "leaderboard row alignment ('2nd' two-line wrap) and vanished tagline after Save"
+  ],
+  "features": [
+   "person pages: tap a search result or leaderboard row to see the person",
+   "boards visible to everyone by default, friends-only per board; unread counts on the people strip",
+   "Custom entry sheet: time slider + meal chips; Scan folded into search bar",
+   "coach view: anatomical recovery + DEXA figures, collapsible sections"
+  ]
  }
 ]
