@@ -32,6 +32,11 @@ import Foundation
 /// Run: xcodebuild test -scheme DriftLLMEvalMacOS -destination 'platform=macOS' \
 ///      -only-testing:'DriftLLMEvalMacOS/FoundationModelsChatParityTests'
 final class FoundationModelsChatParityTests: XCTestCase {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        try LLMEvalGate.requireLLM()  // report as skipped, never false-green
+    }
+
 
     // MARK: - Gold set (curated subset of IntentRoutingEval)
 
@@ -167,6 +172,7 @@ final class FoundationModelsChatParityTests: XCTestCase {
 
     override class func setUp() {
         super.setUp()
+        guard LLMEvalGate.enabled else { return }  // Tier-3 gate: default run must not load the model
         // Llama.cpp Gemma baseline — parity has no meaning without the
         // baseline, so bail loud if the model file is missing.
         guard FileManager.default.fileExists(atPath: gemmaPath.path) else {

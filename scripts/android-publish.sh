@@ -41,9 +41,17 @@ echo "versionCode: $CUR → $NEXT"
 
 ./scripts/android-sync-core-resources.sh
 
-# Clean the Android build tree — stale outputs after a version change cause
-# "Duplicate resources" merger failures (seen 2026-07-18).
-rm -rf drift-android/.build/Android drift-android/.build/skip-export
+# Clean ONLY the packaging/staging outputs, NOT the Swift compile cache.
+# History: this used to be `rm -rf .build/Android .build/skip-export` (for the
+# 2026-07-18 "Duplicate resources" merger failure), which made every publish a
+# fully COLD release build — by 2026-07-30 that meant 2h10m (the whole Swift
+# world at -O, ×4 ABIs). The duplicate-resources bug was root-fixed by
+# `--release` below (no more debug+release double-write), so the blanket nuke
+# is redundant; scoping it to jni-libs staging + the export dir keeps the
+# compiled Swift objects warm (~10-15 min publishes). If a publish ever fails
+# with "Duplicate resources" again, the fallback is the old full nuke:
+#   rm -rf drift-android/.build/Android drift-android/.build/skip-export
+rm -rf drift-android/.build/skip-export drift-android/.build/Android/DriftAndroid/jni-libs
 
 # --release: a plain `skip export` runs `gradle assemble`, which builds the
 # debug AND release variants in one invocation. Both variants' Swift builds
@@ -51,10 +59,14 @@ rm -rf drift-android/.build/Android drift-android/.build/skip-export
 # the release jni-lib merge then fails with "Duplicate resources" where each
 # file conflicts with ITSELF (seen 2026-07-28/29, 8 failed publish attempts).
 # Building only the release variant removes the double-write entirely.
+# --arch aarch64: every tester phone is arm64 (Pixel 2 up); x86/x86_64 exist
+# only on emulators, which install debug builds — never this AAB. Building one
+# ABI instead of four cuts the release Swift compile ~4× (2026-07-30: the
+# 4-ABI AAB was 205 MB and took 2h10m cold).
 # --no-ios: this pipeline only needs the AAB; skip the iOS .ipa export.
 # --no-export-project: the project-source zip chokes on GRDB's recursive
 # Tests/CustomSQLite symlink loop and wastes ~150 MB; publish never needs it.
-(cd drift-android && skip export --release --no-ios --no-export-project --plain) || true  # non-AAB sub-steps may fail; the AAB is what matters
+(cd drift-android && skip export --release --no-ios --no-export-project --arch aarch64 --plain) || true  # non-AAB sub-steps may fail; the AAB is what matters
 
 AAB=drift-android/.build/skip-export/DriftAndroid-release.aab
 if [ ! -f "$AAB" ]; then

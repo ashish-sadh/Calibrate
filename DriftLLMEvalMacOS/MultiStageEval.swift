@@ -9,6 +9,11 @@ import Foundation
 /// Ship criterion: ≥+2% accuracy AND no latency regression vs single-stage.
 /// Run: xcodebuild test -scheme DriftLLMEvalMacOS -destination 'platform=macOS' -only-testing:MultiStageEval
 final class MultiStageEval: XCTestCase {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        try LLMEvalGate.requireLLM()  // report as skipped, never false-green
+    }
+
 
     override class func setUp() {
         super.setUp()

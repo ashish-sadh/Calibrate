@@ -10,12 +10,18 @@ import Foundation
 /// Requires: ~/drift-state/models/gemma-4-e2b-q4_k_m.gguf
 /// Run:      xcodebuild test -scheme DriftLLMEvalMacOS -destination 'platform=macOS' -only-testing:'DriftLLMEvalMacOS/MultiTurnContextEval'
 final class MultiTurnContextEval: XCTestCase {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        try LLMEvalGate.requireLLM()  // report as skipped, never false-green
+    }
+
 
     nonisolated(unsafe) static var gemmaBackend: LlamaCppBackend?
     static let gemmaPath = URL.homeDirectory.appending(path: "drift-state/models/gemma-4-e2b-q4_k_m.gguf")
 
     override class func setUp() {
         super.setUp()
+        guard LLMEvalGate.enabled else { return }  // Tier-3 gate: default run must not load the model
         guard FileManager.default.fileExists(atPath: gemmaPath.path) else {
             fatalError("❌ Gemma 4 model not found at \(gemmaPath.path). Run: bash scripts/download-models.sh")
         }

@@ -67,7 +67,7 @@ Each entry tagged with its maintenance status. **Auto-maintained** = a script or
 ## Rules
 - Build and test after every change
 - All unit tests must pass before committing: ~850 in DriftCoreTests (`swift test`) + ~1200 in iOS DriftTests (`xcodebuild`)
-- Run LLM eval lite after AI changes; deep eval only when asked
+- Run LLM eval lite after AI changes (`xcodebuild test -scheme DriftLLMEvalMacOS` — deterministic fast gate, ~1 min); full Tier-3 `DRIFT_LLM_EVAL=1` only for AI-pipeline changes or when asked
 - TestFlight is auto-published every 3 hours via hook (`.claude/hooks/testflight-check.sh`). The hook injects publish instructions after a commit when 3+ hours have passed. Follow the instructions when they appear. Never publish more frequently than every 3 hours.
 - No MacroFactor references anywhere
 - Privacy-first: everything local, no cloud, no analytics
@@ -113,7 +113,8 @@ The codebase is split into a multi-platform `DriftCore` Swift package + the iOS 
 | Touched code | Command | Wall time |
 |---|---|---|
 | Pure logic in `DriftCore/Sources/DriftCore/` | `cd DriftCore && swift test` | ~2s warm (~913 tests) |
-| AI pipeline (LLM eval) | `xcodebuild test -scheme DriftLLMEvalMacOS -destination 'platform=macOS'` | ~12 min full (real Gemma 4) |
+| AI pipeline — fast gate (deterministic, default) | `xcodebuild test -scheme DriftLLMEvalMacOS -destination 'platform=macOS'` | ~1 min (LLM suites skip) |
+| AI pipeline — full Tier-3 (real Gemma 4) | same + `DRIFT_LLM_EVAL=1` build setting | 1–3 h; after AI-pipeline changes, budget accordingly |
 | iOS UI / HealthKit / Widget integration | `xcodebuild test -scheme Drift -destination 'iOS Simulator,name=iPhone 17 Pro'` | ~25s (~1219 tests) |
 | Pre-TestFlight | run all of the above (preflight-check.sh enforces) |  |
 
@@ -130,7 +131,7 @@ Five tiers by cost. Each test file MUST belong to exactly one tier; mixing tiers
 | **0** | every save | <2s warm | `DriftCore/Tests/DriftCoreTests/` | pure logic — InputNormalizer, ToolRanker, parsers, formatters, services with in-memory DB |
 | **1** | every commit | ~25s | `DriftTests/` (iOS sim) | UI/ViewModel binding, HealthKit, Widget, Notification, Speech, OCR, Keychain |
 | **2** | every commit | ~30s | `DriftLLMEvalMacOS/` *(deterministic only)* | LLM-pipeline cases that don't actually call a model — IntentRouting smoke, prompt-structure asserts |
-| **3** | pre-TestFlight (preflight gate) | ~12 min | `DriftLLMEvalMacOS/` *(LLM-backed)* | real Gemma 4 routing, multi-turn, prompt regressions |
+| **3** | after AI-pipeline changes (NOT a publish gate — 2026-07-30) | 1–3 h | `DriftLLMEvalMacOS/` *(LLM-backed, `DRIFT_LLM_EVAL=1` build setting)* | real Gemma 4 routing, multi-turn, prompt regressions |
 | **4** | manual / weekly / opt-in | minutes–hours | gated by env var | `DRIFT_DEEP_EVAL=1`, `DRIFT_AUTORESEARCH=1`, `DRIFT_LATENCY_BENCH=1`, `DRIFT_USDA_EVAL=1` — benchmarks, optimization loops, coverage scans |
 
 **New test? Decision flow:**
@@ -162,7 +163,8 @@ xcodebuild build -project Drift.xcodeproj -scheme Drift -destination 'platform=i
 pkill -9 -f xcodebuild 2>/dev/null; sleep 2
 xcodebuild test -project Drift.xcodeproj -scheme Drift -destination 'platform=iOS Simulator,name=iPhone 17 Pro'
 
-# macOS LLM eval (real Gemma 4 routing, multi-turn, prompt regressions) — ~12 min
+# macOS eval fast gate (deterministic; LLM suites skip) — ~1 min
+# Full Tier-3 with real Gemma 4: append DRIFT_LLM_EVAL=1 (build setting, 1–3 h)
 pkill -9 -f xcodebuild 2>/dev/null; sleep 2
 xcodebuild test -scheme DriftLLMEvalMacOS -destination 'platform=macOS'
 

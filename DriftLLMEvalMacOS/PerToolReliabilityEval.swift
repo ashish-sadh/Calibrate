@@ -13,6 +13,11 @@ import Foundation
 /// Requires Gemma model at ~/drift-state/models/gemma-4-e2b-q4_k_m.gguf.
 /// Run: xcodebuild test -scheme DriftLLMEvalMacOS -only-testing:'DriftLLMEvalMacOS/PerToolReliabilityEval'
 final class PerToolReliabilityEval: XCTestCase {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        try LLMEvalGate.requireLLM()  // report as skipped, never false-green
+    }
+
 
     override class func setUp() {
         super.setUp()

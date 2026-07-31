@@ -16,6 +16,7 @@ enum PerStageEvalSupport {
     /// Load the Gemma model into perStageGemmaBackend. Call from class setUp().
     /// Calls fatalError when the model file is missing so the failure is visible.
     static func loadModel() {
+        guard LLMEvalGate.enabled else { return }  // Tier-3 gate: default run must not load the model
         guard perStageGemmaBackend == nil else { return }
         guard FileManager.default.fileExists(atPath: modelPath.path) else {
             fatalError("❌ Gemma model not found at \(modelPath.path)\nRun: bash scripts/download-models.sh")

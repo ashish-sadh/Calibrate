@@ -20,6 +20,11 @@ import Foundation
 /// Run: xcodebuild test -scheme DriftLLMEvalMacOS -destination 'platform=macOS' \
 ///      -only-testing:'DriftLLMEvalMacOS/FoundationModelsExerciseTranscriptEval'
 final class FoundationModelsExerciseTranscriptEval: XCTestCase {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        try LLMEvalGate.requireLLM()  // report as skipped, never false-green
+    }
+
 
     // MARK: - Gold set
 

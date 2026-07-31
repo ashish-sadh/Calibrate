@@ -7,6 +7,11 @@ import Foundation
 /// so regressions here mean the classifier stage degraded, not the normalizer.
 /// Requires Gemma model at ~/drift-state/models/gemma-4-e2b-q4_k_m.gguf
 final class IntentClassifierEval: XCTestCase {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        try LLMEvalGate.requireLLM()  // report as skipped, never false-green
+    }
+
 
     override class func setUp() {
         super.setUp()

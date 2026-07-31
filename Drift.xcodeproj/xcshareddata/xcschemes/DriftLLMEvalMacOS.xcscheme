@@ -55,6 +55,11 @@
       </CommandLineArguments>
       <EnvironmentVariables>
          <EnvironmentVariable
+            key = "DRIFT_LLM_EVAL"
+            value = "$(DRIFT_LLM_EVAL)"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
             key = "DRIFT_DEEP_EVAL"
             value = "$(DRIFT_DEEP_EVAL)"
             isEnabled = "YES">

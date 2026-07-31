@@ -88,8 +88,8 @@ failure mode that turned the old suite into a liability.
 |---|---|---|---|---|
 | **0** | every save | <2s warm | `DriftCore/Tests/DriftCoreTests/` | pure logic — normalizer, ranker, parsers, formatters, services w/ in-memory DB |
 | **1** | every commit | ~25s | `DriftTests/` (iOS sim) | UI/ViewModel binding, HealthKit, Widget, Notification, Speech, OCR, Keychain |
-| **2** | every commit | ~30s | `DriftLLMEvalMacOS/` *(deterministic)* | LLM-pipeline cases that don't call a model — routing smoke, prompt-structure asserts |
-| **3** | pre-TestFlight | ~12 min | `DriftLLMEvalMacOS/` *(LLM-backed)* | real model routing, multi-turn, prompt regressions |
+| **2** | every commit | ~1 min | `DriftLLMEvalMacOS/` *(deterministic — the DEFAULT scheme run; LLM suites skip via `LLMEvalGate`)* | LLM-pipeline cases that don't call a model — routing smoke, prompt-structure asserts |
+| **3** | after AI-pipeline changes (NOT a publish gate, 2026-07-30) | 1–3 h | `DriftLLMEvalMacOS/` *(LLM-backed; `DRIFT_LLM_EVAL=1` build setting)* | real model routing, multi-turn, prompt regressions |
 | **4** | manual / weekly | minutes–hours | env-gated | `DRIFT_DEEP_EVAL=1`, `DRIFT_AUTORESEARCH=1`, `DRIFT_LATENCY_BENCH=1`, `DRIFT_USDA_EVAL=1` |
 
 **New test? Decision flow:**
@@ -145,9 +145,9 @@ xcodebuild test -project Drift.xcodeproj -scheme Drift \
 > **CRITICAL: never run two `xcodebuild test` at once** — they fight for the
 > simulator and deadlock. Kill stale processes first, every time.
 
-Tier-4 env vars don't reach the macOS test host as shell env (Xcode 13+); pass
-them as a build setting: `xcodebuild ... DRIFT_DEEP_EVAL=1` (wired via `$(VAR)`
-scheme refs). See `Docs/decisions.md`.
+Tier-3/4 env vars don't reach the macOS test host as shell env (Xcode 13+); pass
+them as a build setting: `xcodebuild ... DRIFT_LLM_EVAL=1` / `DRIFT_DEEP_EVAL=1`
+(wired via `$(VAR)` scheme refs). See `Docs/decisions.md`.
 
 ---
 

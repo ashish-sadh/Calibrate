@@ -190,6 +190,11 @@ final class ChatLatencyBenchmark: XCTestCase {
 /// Skips cleanly when the Gemma 4 model isn't present so CI without the model doesn't break.
 /// Baseline is the same `~/drift-state/latency-baseline.json` written by `testTTFT_baseline`.
 final class SingleItemSmokeTest: XCTestCase {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        try LLMEvalGate.requireLLM()  // report as skipped, never false-green
+    }
+
 
     // MARK: - Constants
 
@@ -207,6 +212,7 @@ final class SingleItemSmokeTest: XCTestCase {
 
     override class func setUp() {
         super.setUp()
+        guard LLMEvalGate.enabled else { return }  // Tier-3 gate: default run must not load the model
         guard FileManager.default.fileExists(atPath: gemmaPath.path) else {
             print("⏭  SingleItemSmokeTest: Gemma 4 model missing at \(gemmaPath.path) — will skip")
             return

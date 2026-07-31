@@ -23,6 +23,11 @@ import Foundation
 /// Run: xcodebuild test -scheme DriftLLMEvalMacOS -destination 'platform=macOS' \
 ///      -only-testing:'DriftLLMEvalMacOS/FoundationModelsFoodExtractorIndianEval'
 final class FoundationModelsFoodExtractorIndianEval: XCTestCase {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        try LLMEvalGate.requireLLM()  // report as skipped, never false-green
+    }
+
 
     // MARK: - Gold set (South Indian breakfast — Indian-food-bar tenet)
 

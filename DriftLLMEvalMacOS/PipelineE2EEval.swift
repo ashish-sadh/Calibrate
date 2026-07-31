@@ -13,6 +13,11 @@ import Foundation
 ///
 /// Run: xcodebuild test -scheme DriftLLMEvalMacOS -destination 'platform=macOS'
 final class PipelineE2EEval: XCTestCase {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        try LLMEvalGate.requireLLM()  // report as skipped, never false-green
+    }
+
 
     // MARK: - Shared Backend
 
@@ -20,6 +25,7 @@ final class PipelineE2EEval: XCTestCase {
 
     override class func setUp() {
         super.setUp()
+        guard LLMEvalGate.enabled else { return }  // Tier-3 gate: default run must not load the model
         let path = URL.homeDirectory.appending(path: "drift-state/models/gemma-4-e2b-q4_k_m.gguf")
         guard FileManager.default.fileExists(atPath: path.path) else {
             fatalError("❌ Model missing. Run: bash scripts/download-models.sh")

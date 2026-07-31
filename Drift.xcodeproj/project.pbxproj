@@ -208,6 +208,7 @@
 		D9A128D4F889E2840AC18E69 /* TypingDotsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0C39E63F96CF31FBB0B41E7 /* TypingDotsView.swift */; };
 		D9DE6DF521D46B095D703364 /* AIChatView+ChatBubble.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54EC02163255E62885FDBDBA /* AIChatView+ChatBubble.swift */; };
 		D9FC9C93092DE0E5348964FF /* AIChatView+MessageHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B3C6E9E3E3CA35B6E5D9D02 /* AIChatView+MessageHandling.swift */; };
+		DA1A9D1A9EDA2CAA011D743F /* LLMEvalGate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FDF77F22E8692A8FB93D9AF /* LLMEvalGate.swift */; };
 		DA416FC020E2523119C7E6A7 /* DriftCore in Frameworks */ = {isa = PBXBuildFile; productRef = 474D4520B459A2F8572DBAA1 /* DriftCore */; };
 		DA9CA09CC6D7266C7E1A7269 /* EditFoodEntrySheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27B67D40BAF0BC47AA2BD1B0 /* EditFoodEntrySheet.swift */; };
 		DC947891799CF8AC7D747102 /* MealTimelineSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DA98672D7F186556C86D15C /* MealTimelineSection.swift */; };
@@ -353,6 +354,7 @@
 		2C1DD3DDDC0B2E17B8004FC1 /* AIChatView+Cards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AIChatView+Cards.swift"; sourceTree = "<group>"; };
 		2DA8F00FFE3800D16CBCCB37 /* SharingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharingView.swift; sourceTree = "<group>"; };
 		2DEC3049742676C1201A6847 /* HardEvalSet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HardEvalSet.swift; sourceTree = "<group>"; };
+		2FDF77F22E8692A8FB93D9AF /* LLMEvalGate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMEvalGate.swift; sourceTree = "<group>"; };
 		3053C86565C8B26D3B16A0A2 /* AutoResearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoResearchTests.swift; sourceTree = "<group>"; };
 		3258B6E91169170587AAB02B /* GoalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalView.swift; sourceTree = "<group>"; };
 		351EB505D48F8340399F5757 /* ImmersiveVoiceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImmersiveVoiceView.swift; sourceTree = "<group>"; };
@@ -1044,6 +1046,7 @@
 				FD0CE09FD6BD4F070AF9B084 /* FoundationModelsFoodExtractorIndianEval.swift */,
 				2DEC3049742676C1201A6847 /* HardEvalSet.swift */,
 				A048685BCBAD258ADEEB3E22 /* IntentRoutingEval.swift */,
+				2FDF77F22E8692A8FB93D9AF /* LLMEvalGate.swift */,
 				1BBFE4D3A672CECBACA7F08D /* MultiIntentDeterministicEval.swift */,
 				F1C54188E36BDCD10D5F753A /* MultiStageEval.swift */,
 				C1D0EF86656667CEF40EB779 /* MultiTurnContextEval.swift */,
@@ -1472,6 +1475,7 @@
 				E63F9BB35572B3EF11BF9DE5 /* HardEvalSet.swift in Sources */,
 				A459C9B6E82F83B1CC545F63 /* IntentClassifierEval.swift in Sources */,
 				F2DAD90846C1E28C0DBBB863 /* IntentRoutingEval.swift in Sources */,
+				DA1A9D1A9EDA2CAA011D743F /* LLMEvalGate.swift in Sources */,
 				F382B53D48F74D309E9C295A /* MultiIntentDeterministicEval.swift in Sources */,
 				8E747171A19B2FB4FB6B5C0B /* MultiStageEval.swift in Sources */,
 				08A036DA58D553363E9D412E /* MultiTurnContextEval.swift in Sources */,

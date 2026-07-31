@@ -8,6 +8,11 @@ import Foundation
 /// Setup:    bash scripts/download-models.sh
 /// Run:      xcodebuild test -scheme DriftLLMEvalMacOS -destination 'platform=macOS'
 final class IntentRoutingEval: XCTestCase {
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        try LLMEvalGate.requireLLM()  // report as skipped, never false-green
+    }
+
 
     // MARK: - Model Loading
 
@@ -20,6 +25,7 @@ final class IntentRoutingEval: XCTestCase {
 
     override class func setUp() {
         super.setUp()
+        guard LLMEvalGate.enabled else { return }  // Tier-3 gate: default run must not load the model
         guard FileManager.default.fileExists(atPath: gemmaPath.path) else {
             // Intentionally crash the setup so test failures are visible — no silent skip
             fatalError("""
