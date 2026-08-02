@@ -189,6 +189,48 @@ public enum Leaderboard {
             .filter(isGlobal)
     }
 
+    /// One row per person, for a board read across MORE THAN ONE period key.
+    ///
+    /// The global board reads the current period key and the one before it, for
+    /// the same reason the friends board does (see `readPeriods`): a storage key
+    /// that rolls on Monday erases everyone who hasn't opened the app since.
+    /// Reading two keys means someone can hold two rows, and a board that ranks
+    /// both would list the same person twice — once at this week's number and
+    /// once at last week's.
+    ///
+    /// The CURRENT row wins when it exists; otherwise the newest older one
+    /// carries over, aged rather than erased. Deliberately not "the biggest":
+    /// max-value would pin someone to a good week forever, which is the same
+    /// mistake `sections` documents.
+    public static func currentPerUser(_ entries: [LeaderboardEntryDTO],
+                                     preferring period: String) -> [LeaderboardEntryDTO] {
+        var best: [String: LeaderboardEntryDTO] = [:]
+        for entry in entries {
+            guard let existing = best[entry.userId] else { best[entry.userId] = entry; continue }
+            if existing.periodStart == period { continue }
+            if entry.periodStart == period || entry.periodStart > existing.periodStart {
+                best[entry.userId] = entry
+            }
+        }
+        return Array(best.values)
+    }
+
+    /// The rows immediately around `value` — at most `span` on each side.
+    ///
+    /// Pure, and separate from the fetch, because the server can only bracket by
+    /// the values it stored: once two period keys are in play the client holds
+    /// rows the query ordered by a number it later discarded (a stale row that
+    /// ranked above you may resolve to a current one below you). Trimming here,
+    /// after `currentPerUser` has picked what each person's number actually IS,
+    /// is the only place the neighbourhood is true.
+    public static func bracket(_ rows: [LeaderboardEntryDTO], around value: Double,
+                              span: Int) -> [LeaderboardEntryDTO] {
+        let sorted = rows.sorted { $0.value > $1.value }
+        let above = sorted.filter { $0.value > value }.suffix(span)
+        let atOrBelow = sorted.filter { $0.value <= value }.prefix(span)
+        return Array(above) + Array(atOrBelow)
+    }
+
     /// Turn raw entries into the boards actually worth rendering.
     ///
     /// Auto-discovery lives here, in one pure function, so "which boards exist"

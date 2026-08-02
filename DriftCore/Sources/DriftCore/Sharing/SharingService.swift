@@ -652,18 +652,31 @@ public final class SharingService {
 
     // MARK: - Global boards + discovery (migration 0012)
 
-    /// The podium: the top `limit` values on a board, globally.
+    /// The podium: candidates for the top `limit` values on a board, globally.
     ///
     /// Cheap because of `leaderboard_global_rank`, a PARTIAL index over exactly
     /// the rows people chose to publish globally — 6 ms at 2.2M rows versus
     /// 4,173 ms without it. Deliberately SMALL (3, not 100): steps are trivially
     /// fakeable, so the top of an absolute board is noise, and the operator's ask
     /// was a podium for inspiration rather than a ranking to climb.
-    public func globalPodium(boardKey: String, period: String,
+    ///
+    /// Reads BOTH period keys (#1170). Reading only the current one emptied the
+    /// worldwide board at every Monday rollover: every row still sat under the
+    /// previous key, so the podium went blank for everyone until each device
+    /// happened to publish again — while the friends board, which already read
+    /// two keys, kept showing those same people. That asymmetry was the reported
+    /// "worldwide missing entries".
+    ///
+    /// Over-fetches, and returns CANDIDATES rather than the podium: one person
+    /// can hold a row under each key, so the caller must collapse to one row per
+    /// person (`Leaderboard.currentPerUser`) before trimming to `limit`.
+    public func globalPodium(boardKey: String, periods: [String],
                             limit: Int = 3) async throws -> [LeaderboardEntryDTO] {
-        try await client.restGet(
-            "leaderboard_entries?board_key=eq.\(boardKey)&period_start=eq.\(period)"
-                + "&visibility=eq.global&select=*&order=value.desc&limit=\(limit)",
+        guard !periods.isEmpty else { return [] }
+        return try await client.restGet(
+            "leaderboard_entries?board_key=eq.\(boardKey)"
+                + "&period_start=in.(\(Set(periods).joined(separator: ",")))"
+                + "&visibility=eq.global&select=*&order=value.desc&limit=\(limit * 4)",
             token: try await validToken())
     }
 
@@ -674,15 +687,21 @@ public final class SharingService {
     /// `span` rows at or below, `span` rows above. Nobody games their way into
     /// the middle of a board, which is what makes this half trustworthy in a way
     /// the podium isn't.
-    public func globalBracket(boardKey: String, period: String, around value: Double,
+    public func globalBracket(boardKey: String, periods: [String], around value: Double,
                              span: Int = 10) async throws -> [LeaderboardEntryDTO] {
+        guard !periods.isEmpty else { return [] }
         let token = try await validToken()
-        let base = "leaderboard_entries?board_key=eq.\(boardKey)&period_start=eq.\(period)"
+        // Both keys, for the reason `globalPodium` documents (#1170), and double
+        // the span each side: a person holding a row under each key spends two
+        // of these slots, and the stale one is discarded client-side.
+        let base = "leaderboard_entries?board_key=eq.\(boardKey)"
+            + "&period_start=in.(\(Set(periods).joined(separator: ",")))"
             + "&visibility=eq.global&select=*"
+        let fetch = span * 2
         async let below: [LeaderboardEntryDTO] = client.restGet(
-            base + "&value=lte.\(value)&order=value.desc&limit=\(span)", token: token)
+            base + "&value=lte.\(value)&order=value.desc&limit=\(fetch)", token: token)
         async let above: [LeaderboardEntryDTO] = client.restGet(
-            base + "&value=gt.\(value)&order=value.asc&limit=\(span)", token: token)
+            base + "&value=gt.\(value)&order=value.asc&limit=\(fetch)", token: token)
         return (try await below) + (try await above)
     }
 

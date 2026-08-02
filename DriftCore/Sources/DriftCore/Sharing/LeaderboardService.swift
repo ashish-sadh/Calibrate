@@ -127,32 +127,39 @@ public enum LeaderboardService {
               let me = svc.currentSession?.userID else { return nil }
 
         let board = LeaderboardBoard.from(key: key)
-        let period = periodStart(board.period, for: now)
-        guard let podium = try? await svc.globalPodium(boardKey: key, period: period),
-              !podium.isEmpty else { return nil }
+        // BOTH period keys, exactly as the friends path reads them (#1170).
+        // `current` is what a row means TODAY; the older key only carries people
+        // who haven't published since the last rollover.
+        let periods = readPeriods(board.period, for: now)
+        let current = periodStart(board.period, for: now)
+        let candidates = (try? await svc.globalPodium(boardKey: key, periods: periods)) ?? []
+        let podium = Array(Leaderboard.currentPerUser(candidates, preferring: current)
+            .sorted { $0.value > $1.value }
+            .prefix(3))
+        guard !podium.isEmpty else { return nil }
 
         // My own value anchors the bracket. Absent it there is nothing to be
         // "near", so the podium alone is the honest answer.
         var myValue = podium.first { $0.userId == me }?.value
         if myValue == nil {
-            let mine = (try? await svc.leaderboardEntries(userIDs: [me], periods: [period])) ?? []
-            myValue = mine.first { $0.boardKey == key }?.value
+            let mine = (try? await svc.leaderboardEntries(userIDs: [me], periods: periods)) ?? []
+            myValue = Leaderboard.currentPerUser(mine.filter { $0.boardKey == key },
+                                                 preferring: current).first?.value
         }
 
         var bracket: [LeaderboardEntryDTO] = []
         if let myValue {
-            bracket = (try? await svc.globalBracket(boardKey: key, period: period,
-                                                    around: myValue)) ?? []
+            let rows = (try? await svc.globalBracket(boardKey: key, periods: periods,
+                                                     around: myValue)) ?? []
+            let podiumIDs = Set(podium.map(\.userId))
+            bracket = Leaderboard.bracket(
+                Leaderboard.currentPerUser(rows, preferring: current)
+                    .filter { !podiumIDs.contains($0.userId) },
+                around: myValue, span: 10)
         }
 
-        let podiumIDs = Set(podium.map(\.userId))
-        return GlobalBoard(
-            board: board,
-            podium: podium,
-            bracket: bracket.filter { !podiumIDs.contains($0.userId) }
-                .sorted { $0.value > $1.value },
-            myValue: myValue,
-            me: me)
+        return GlobalBoard(board: board, podium: podium, bracket: bracket,
+                          myValue: myValue, me: me)
     }
 
     /// Turning sharing off REMOVES what was published — a switch that only stops

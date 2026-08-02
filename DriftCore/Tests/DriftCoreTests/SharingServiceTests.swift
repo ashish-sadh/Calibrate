@@ -427,4 +427,52 @@ struct SharingServiceTests {
         #expect(conns.first?.kind == .coach)
         #expect(conns.first?.profile.username == "hudson")
     }
+
+    // MARK: Global boards (#1170)
+
+    /// THE REGRESSION. The worldwide queries must ask for BOTH period keys.
+    ///
+    /// This is the assertion the pure ranking tests cannot make: the rows were
+    /// selected correctly, the query just never asked for them. `period_start`
+    /// was pinned with `eq.` to the current key, so at every Monday rollover the
+    /// global board went blank while the friends board — which already used
+    /// `in.(…)` — kept listing the same people.
+    @Test func theWorldwidePodiumAsksForBothPeriodKeys() async throws {
+        let mock = MockHTTP()
+        let (svc, db) = try makeService(mock)
+        signIn(svc, db: db)
+
+        _ = try await svc.globalPodium(boardKey: "steps",
+                                       periods: ["2026-08-03", "2026-07-27"])
+        let url = try #require(mock.requests.last?.url?.absoluteString.removingPercentEncoding)
+        #expect(url.contains("2026-08-03"), "the current key")
+        #expect(url.contains("2026-07-27"), "and the one before it — the whole bug")
+        #expect(!url.contains("period_start=eq."), "a single pinned key is the defect")
+    }
+
+    @Test func theWorldwideBracketAsksForBothPeriodKeys() async throws {
+        let mock = MockHTTP()
+        let (svc, db) = try makeService(mock)
+        signIn(svc, db: db)
+
+        _ = try await svc.globalBracket(boardKey: "steps",
+                                        periods: ["2026-08-03", "2026-07-27"],
+                                        around: 40_000)
+        let urls = mock.requests.compactMap { $0.url?.absoluteString.removingPercentEncoding }
+        // Both halves of the bracket — the rows above you and the ones below.
+        #expect(urls.filter { $0.contains("2026-07-27") && $0.contains("2026-08-03") }.count == 2)
+        #expect(!urls.contains { $0.contains("period_start=eq.") })
+    }
+
+    /// Only rows their owner opened to Everyone may appear worldwide. A missing
+    /// `visibility` filter would turn a ranking into a leak.
+    @Test func worldwideQueriesStayScopedToGloballyPublishedRows() async throws {
+        let mock = MockHTTP()
+        let (svc, db) = try makeService(mock)
+        signIn(svc, db: db)
+
+        _ = try await svc.globalPodium(boardKey: "steps", periods: ["2026-08-03"])
+        let url = try #require(mock.requests.last?.url?.absoluteString)
+        #expect(url.contains("visibility=eq.global"))
+    }
 }

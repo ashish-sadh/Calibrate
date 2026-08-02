@@ -208,6 +208,122 @@ struct LeaderboardTests {
     }
 }
 
+/// Tier-0 for the WORLDWIDE board's row selection (#1170).
+///
+/// The reported bug — "worldwide ranking wrong / missing entries" — was a period
+/// key, not a sort. The global read asked for ONE key while the friends read
+/// asked for two, so at every Monday rollover the world went blank while the
+/// friends board still listed those same people. Audited against live rows on
+/// 2026-08-02: all six publishers sat under `2026-07-27`, i.e. the whole global
+/// board was hours from emptying.
+struct GlobalBoardRowTests {
+
+    private func entry(_ user: String, _ value: Double, period: String,
+                       updated: String? = nil) -> LeaderboardEntryDTO {
+        LeaderboardEntryDTO(userId: user, boardKey: "steps", periodStart: period,
+                            value: value, unit: "", visibility: "global",
+                            updatedAt: updated)
+    }
+
+    private let current = "2026-08-03"
+    private let previous = "2026-07-27"
+
+    /// THE BUG, at the unit that caused it: someone who last published before
+    /// the rollover still has a number, and it is the one that must show.
+    @Test func aPersonWhoHasNotPublishedSinceTheRolloverKeepsTheirRow() {
+        let rows = Leaderboard.currentPerUser([entry("stale", 45_000, period: previous)],
+                                              preferring: current)
+        #expect(rows.count == 1, "reading only the current key is what emptied the board")
+        #expect(rows.first?.value == 45_000)
+    }
+
+    /// Two keys means two rows for an active publisher. Ranking both would list
+    /// the same person twice — once at this week's number, once at last week's.
+    @Test func onePersonHoldingBothKeysCollapsesToTheCurrentOne() {
+        let rows = Leaderboard.currentPerUser(
+            [entry("ana", 90_000, period: previous), entry("ana", 12_000, period: current)],
+            preferring: current)
+        #expect(rows.count == 1)
+        #expect(rows.first?.value == 12_000, "the CURRENT number, not the flattering one")
+    }
+
+    /// Order of arrival must not decide the answer — the fetch returns rows
+    /// ordered by value, so the stale row often lands first.
+    @Test func theCurrentRowWinsRegardlessOfArrivalOrder() {
+        let ascending = Leaderboard.currentPerUser(
+            [entry("ana", 12_000, period: current), entry("ana", 90_000, period: previous)],
+            preferring: current)
+        #expect(ascending.first?.value == 12_000)
+    }
+
+    /// Nobody has a current row: fall back to the NEWEST older one rather than
+    /// the biggest, matching how `sections` ages a value.
+    @Test func withNoCurrentRowTheNewestOlderOneCarriesOver() {
+        let rows = Leaderboard.currentPerUser(
+            [entry("ana", 90_000, period: "2026-07-13"), entry("ana", 20_000, period: previous)],
+            preferring: current)
+        #expect(rows.count == 1)
+        #expect(rows.first?.value == 20_000, "aged, not max-value")
+    }
+
+    /// The podium's actual contract: distinct people, highest first.
+    @Test func thePodiumIsThreeDISTINCTPeopleHighestFirst() {
+        let candidates = [
+            entry("ana", 114_007, period: previous), entry("ana", 30_000, period: current),
+            entry("bo", 95_998, period: current),
+            entry("cy", 46_790, period: current),
+            entry("di", 10_201, period: previous),
+        ]
+        let podium = Leaderboard.currentPerUser(candidates, preferring: current)
+            .sorted { $0.value > $1.value }
+            .prefix(3)
+        #expect(podium.map(\.userId) == ["bo", "cy", "ana"])
+        #expect(Set(podium.map(\.userId)).count == 3, "nobody appears twice")
+    }
+
+    // MARK: - Bracket
+
+    @Test func theBracketKeepsTheNearestNeighboursOnEachSide() {
+        let rows = (1...20).map { entry("u\($0)", Double($0) * 1_000, period: current) }
+        let bracket = Leaderboard.bracket(rows, around: 10_000, span: 2)
+        // Nearest ABOVE 10k are 11k and 12k; at-or-below are 10k and 9k.
+        #expect(bracket.map(\.value) == [12_000, 11_000, 10_000, 9_000])
+    }
+
+    /// Highest-first, so the bracket reads like the board above it.
+    @Test func theBracketIsOrderedHighestFirst() {
+        let rows = [entry("a", 500, period: current), entry("b", 1_500, period: current),
+                    entry("c", 1_000, period: current)]
+        #expect(Leaderboard.bracket(rows, around: 1_000, span: 5).map(\.value)
+                == [1_500, 1_000, 500])
+    }
+
+    /// Your own row anchors the neighbourhood — dropping it is what made the
+    /// bracket read as "missing entries" for the person looking at it.
+    @Test func myOwnRowStaysInTheBracket() {
+        let rows = [entry("me", 1_000, period: current), entry("ana", 1_200, period: current)]
+        let bracket = Leaderboard.bracket(rows, around: 1_000, span: 5)
+        #expect(bracket.contains { $0.userId == "me" })
+    }
+
+    /// A stale row the SERVER ranked above you can resolve to a current value
+    /// below you. The bracket is trimmed after that resolution, not before —
+    /// otherwise the neighbourhood is built from numbers nobody has any more.
+    @Test func aStaleRowIsPlacedByItsCurrentValueNotTheFetchedOne() {
+        let resolved = Leaderboard.currentPerUser(
+            [entry("ana", 90_000, period: previous), entry("ana", 500, period: current),
+             entry("me", 1_000, period: current)],
+            preferring: current)
+        let bracket = Leaderboard.bracket(resolved, around: 1_000, span: 5)
+        #expect(bracket.map(\.userId) == ["me", "ana"], "ana ranks at 500, not 90,000")
+    }
+
+    @Test func anEmptyBoardBracketsToNothing() {
+        #expect(Leaderboard.bracket([], around: 1_000, span: 5).isEmpty)
+        #expect(Leaderboard.currentPerUser([], preferring: current).isEmpty)
+    }
+}
+
 /// Tier-0 for the period keys, which are PRIMARY KEY components on the server.
 /// Getting one wrong doesn't produce a wrong number — it produces a second row
 /// for the same period, splitting one person's totals.
