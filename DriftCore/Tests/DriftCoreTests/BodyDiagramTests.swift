@@ -49,10 +49,10 @@ struct BodyDiagramTests {
                               "shoulders", "traps", "triceps"]
         for muscle in catalogMuscles {
             let slugs = BodyDiagram.librarySlugs(forDriftMuscle: muscle)
-            if muscle == "abductors" {
-                #expect(slugs.isEmpty, "abductors has no region in the v3 source data — documented gap")
-                continue
-            }
+            // `abductors` was a documented empty gap until 2026-08-02. It isn't
+            // one: the abductors ARE glute medius/minimus, which live in the
+            // gluteal region — anatomically right, not a fallback. Every
+            // catalog muscle now resolves.
             #expect(!slugs.isEmpty, "\(muscle) resolves to no library region")
             // The mapped region must exist on the muscle's preferred side.
             let side = BodyDiagram.preferredSide(forDriftMuscle: muscle)

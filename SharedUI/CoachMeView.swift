@@ -46,7 +46,18 @@ struct CoachMeView: View {
         let id = UUID()
         let text: String
         let fromCoach: Bool
+        /// An anatomy card that belongs with this message, when the moment
+        /// warranted one. Attached to the MESSAGE rather than kept as one
+        /// floating card so it stays anchored to the thing it explains as the
+        /// conversation scrolls on.
+        var lesson: MuscleEducation.Lesson? = nil
     }
+
+    /// Muscles already explained in this conversation. The anti-lecture guard —
+    /// one muscle, one explanation, however many times it comes up.
+    @State var taught: Set<String> = []
+    /// The anatomy aside that belongs with the drafted plan.
+    @State var sessionLesson: MuscleEducation.Lesson?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -102,6 +113,7 @@ struct CoachMeView: View {
 
     // MARK: - Chat
 
+    @ViewBuilder
     func bubble(_ message: Message) -> some View {
         HStack {
             if !message.fromCoach { Spacer(minLength: 40) }
@@ -113,6 +125,43 @@ struct CoachMeView: View {
                             in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
             if message.fromCoach { Spacer(minLength: 40) }
         }
+        if let lesson = message.lesson {
+            lessonCard(lesson)
+        }
+    }
+
+    /// The anatomy card: the figure with ONE muscle lit, and what it does.
+    ///
+    /// Inline in the conversation rather than a sheet — it's an aside, not a
+    /// destination, and something you have to tap and dismiss is a lecture. One
+    /// side of the body only: the side that shows the muscle (`preferredSide`),
+    /// because a back view with nothing highlighted on it is noise.
+    func lessonCard(_ lesson: MuscleEducation.Lesson) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            MuscleBodyView(side: lesson.side,
+                           primarySlugs: Set(lesson.slugs),
+                           fitBox: CGSize(width: 56, height: 108))
+                .frame(width: 56)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(lesson.headline)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Theme.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                // The Latin trails, for whoever wants it — it never leads.
+                Text(lesson.info.latinName)
+                    .font(.caption2.italic())
+                    .foregroundStyle(Theme.textTertiary)
+                Text(lesson.detail)
+                    .font(.caption2)
+                    .foregroundStyle(Theme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(10)
+        .background(Theme.cardBackgroundElevated,
+                    in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
+        .padding(.trailing, 40)
     }
 
     /// Tappable answers for the question just asked. Never the only path —
@@ -189,6 +238,10 @@ struct CoachMeView: View {
                     }
                 }
                 .padding(.vertical, 4)
+            }
+
+            if let sessionLesson {
+                lessonCard(sessionLesson)
             }
 
             Text("Want it different? Say so — \u{201C}swap the deadlift\u{201D}, \u{201C}make it harder\u{201D}, \u{201C}add mobility\u{201D}.")
@@ -271,7 +324,8 @@ struct CoachMeView: View {
             notes.intake.noteInjuryTalk(inCoachReply: turn.reply)
             if let note = turn.note { notes.record(note, kind: .moment) }
             notes.save()
-            messages.append(Message(text: turn.reply, fromCoach: true))
+            messages.append(Message(text: turn.reply, fromCoach: true,
+                                    lesson: lessonFor(trimmed)))
             llmDriving = true
             llmSuggestions = turn.suggestions
             if let modelAsk = turn.ask { ask = modelAsk }
@@ -300,12 +354,13 @@ struct CoachMeView: View {
                     redraft()
                 } else {
                     messages.append(Message(text: CoachIntake.Step.duration.question,
-                                            fromCoach: true))
+                                            fromCoach: true, lesson: lessonFor(trimmed)))
                 }
             } else {
                 applyOffline(trimmed)
                 if let step = notes.intake.nextStep {
-                    messages.append(Message(text: step.question, fromCoach: true))
+                    messages.append(Message(text: step.question, fromCoach: true,
+                                            lesson: lessonFor(trimmed)))
                 } else if notes.intake.canDraft {
                     redraft()
                 }
@@ -344,6 +399,17 @@ struct CoachMeView: View {
         notes.save()
     }
 
+    /// An anatomy aside for what the user just said, if the moment warrants one.
+    ///
+    /// Records the muscle so it's never explained twice — the guard that keeps
+    /// this an aside rather than a lecture.
+    func lessonFor(_ text: String) -> MuscleEducation.Lesson? {
+        guard let lesson = MuscleEducation.lesson(forUserText: text, alreadyTaught: taught)
+        else { return nil }
+        taught.insert(lesson.muscle)
+        return lesson
+    }
+
     func redraft() {
         // ONE session when that's what was asked for. The old path only ever
         // produced a week of templates, so "I just want one exercise" ended at
@@ -355,6 +421,13 @@ struct CoachMeView: View {
                 recentBodyParts: Array(ExerciseService.recentBodyParts()))]
         } else {
             program = CoachProgramBuilder.draft(from: notes.intake)
+        }
+        // "That's why we're picking these" — the draft explains the muscle it
+        // leads with, once, and only if it hasn't already come up.
+        if let session = program.first,
+           let lesson = MuscleEducation.lesson(forSession: session, alreadyTaught: taught) {
+            taught.insert(lesson.muscle)
+            sessionLesson = lesson
         }
     }
 
@@ -379,6 +452,12 @@ struct CoachMeView: View {
         notes.save()
         messages = []
         program = []
+        // A fresh conversation gets to hear the anatomy again — leaving `taught`
+        // populated would silence every lesson after the first Reset.
+        taught = []
+        sessionLesson = nil
+        ask = nil
+        focus = nil
         Task { await start() }
     }
 }

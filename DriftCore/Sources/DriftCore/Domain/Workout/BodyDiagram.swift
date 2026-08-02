@@ -99,7 +99,16 @@ public enum BodyDiagram {
         case "shoulders": ["deltoids"]
         case "traps": ["trapezius"]
         case "triceps": ["triceps"]
-        case "abductors": []  // no region in source data — documented gap
+        // The library HAS an obliques region; it was simply never mapped, so
+        // every oblique lookup silently returned an empty figure.
+        case "obliques": ["obliques"]
+        // Deep core has no region of its own — it sits UNDER the abs. The abs
+        // region is the honest closest match: the right part of the body lights
+        // up, which is what the diagram is for.
+        case "transverse abdominis": ["abs"]
+        // Was a documented gap. The abductors ARE glute medius/minimus, and
+        // they live in the gluteal region — anatomically right, not a fallback.
+        case "abductors": ["gluteal"]
         default: []
         }
     }
@@ -109,7 +118,7 @@ public enum BodyDiagram {
     public static func preferredSide(forDriftMuscle muscle: String) -> Side {
         switch muscle.lowercased() {
         case "lats", "middle back", "lower back", "glutes", "hamstrings",
-             "calves", "traps", "triceps":
+             "calves", "traps", "triceps", "abductors":
             .back
         default:
             .front
@@ -206,34 +215,5 @@ public enum SVGPathParser {
     }
 }
 
-/// Plain-English education card content for the 17 catalog muscles — the
-/// reference design shows the diagram beside a name + function line.
-public struct MuscleInfo: Sendable {
-    public let displayName: String
-    public let latinName: String
-    public let function: String
-
-    public static func info(for driftMuscle: String) -> MuscleInfo? {
-        infos[driftMuscle.lowercased()]
-    }
-
-    private static let infos: [String: MuscleInfo] = [
-        "abdominals": .init(displayName: "Abs", latinName: "rectus abdominis", function: "Curls your torso forward and braces your core"),
-        "abductors": .init(displayName: "Abductors", latinName: "gluteus medius/minimus", function: "Move your leg away from your body"),
-        "adductors": .init(displayName: "Adductors", latinName: "adductor group", function: "Pull your legs together"),
-        "biceps": .init(displayName: "Biceps", latinName: "biceps brachii", function: "Bend your elbow and turn your palm up"),
-        "calves": .init(displayName: "Calves", latinName: "gastrocnemius & soleus", function: "Point your toes and push off the ground"),
-        "chest": .init(displayName: "Chest", latinName: "pectoralis major", function: "Pushes your arms forward and together"),
-        "forearms": .init(displayName: "Forearms", latinName: "flexors & extensors", function: "Grip strength and wrist control"),
-        "glutes": .init(displayName: "Glutes", latinName: "gluteus maximus", function: "Drive your hips forward — stand, jump, climb"),
-        "hamstrings": .init(displayName: "Hamstrings", latinName: "biceps femoris group", function: "Bend your knee and pull your hip back"),
-        "lats": .init(displayName: "Lats", latinName: "latissimus dorsi", function: "Pull your arms down and toward you"),
-        "lower back": .init(displayName: "Lower Back", latinName: "erector spinae", function: "Keeps your spine upright and extends it"),
-        "middle back": .init(displayName: "Middle Back", latinName: "rhomboids & mid-traps", function: "Squeeze your shoulder blades together"),
-        "neck": .init(displayName: "Neck", latinName: "sternocleidomastoid", function: "Turns and tilts your head"),
-        "quadriceps": .init(displayName: "Quads", latinName: "quadriceps femoris", function: "Straighten your knee — squat, run, kick"),
-        "shoulders": .init(displayName: "Shoulders", latinName: "deltoids", function: "Raise and rotate your arms in every direction"),
-        "traps": .init(displayName: "Traps", latinName: "trapezius", function: "Shrug, and hold your shoulder blades steady"),
-        "triceps": .init(displayName: "Triceps", latinName: "triceps brachii", function: "Straighten your elbow — every press finishes here"),
-    ]
-}
+// `MuscleInfo` moved to `MuscleGuide.swift` (2026-08-02) and grew the guide's
+// nicknames, heads and training notes. This file stays about GEOMETRY.
