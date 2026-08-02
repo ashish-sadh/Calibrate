@@ -83,6 +83,17 @@ public struct CoachIntake: Codable, Sendable, Equatable {
             && isFilled(.injuries)
     }
 
+    /// Enough to write ONE session for right now.
+    ///
+    /// Deliberately far lower than `canDraft`: someone standing in the gym
+    /// asking what to do today does not have a weekly schedule to give you, and
+    /// asking for one is the interrogation the operator reported (2026-08-02) —
+    /// "I just want one exercise" answered with "how many days a week can you
+    /// train?". Knowing how long they have is enough to fill the time sensibly;
+    /// equipment and focus refine it but shouldn't block it, and both default
+    /// safely (full gym, whatever's rested).
+    public var canDraftToday: Bool { sessionMinutes != nil }
+
     // MARK: - Steps
 
     public enum Step: String, Codable, Sendable, CaseIterable {

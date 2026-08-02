@@ -13,6 +13,10 @@ import DriftCore
 struct CoachMeView: View {
     /// Called after templates are saved so the host can refresh its list.
     var onSaved: () -> Void = {}
+    /// Start this session NOW. The host dismisses the coach and opens the
+    /// active-workout sheet — a nested sheet from in here races the dismiss
+    /// (the lesson `previewFollowUp` in WorkoutView already encodes).
+    var onStart: (WorkoutTemplate) -> Void = { _ in }
     @Environment(\.dismiss) var dismiss
 
     @State var notes = CoachNotes.load()
@@ -28,6 +32,15 @@ struct CoachMeView: View {
     /// chips). The scripted chips remain the offline fallback.
     @State var llmSuggestions: [String] = []
     @State var llmDriving = false
+    /// One session now, or a weekly split. Sticky once known: the model returns
+    /// null on turns where it's mid-question, and re-deciding every turn flipped
+    /// a today-session back into a program mid-conversation.
+    @State var ask: CoachProgramBuilder.Ask?
+    /// A muscle or movement they named for today ("lats", "push", "legs").
+    @State var focus: String?
+
+    /// A single session can be STARTED; a weekly split can only be filed.
+    var isSingleSession: Bool { ask == .today && program.count == 1 }
 
     struct Message: Identifiable, Equatable {
         let id = UUID()
@@ -151,9 +164,14 @@ struct CoachMeView: View {
 
     var draftCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Here's the plan").font(.subheadline.weight(.semibold))
+            Text(isSingleSession ? "Here's your session" : "Here's the plan")
+                .font(.subheadline.weight(.semibold))
             // The coach explains itself — why this shape, from the intake.
-            Text(CoachProgramBuilder.rationale(for: notes.intake))
+            Text(isSingleSession
+                 ? CoachProgramBuilder.todayRationale(
+                     for: notes.intake, focus: focus,
+                     recentBodyParts: Array(ExerciseService.recentBodyParts()))
+                 : CoachProgramBuilder.rationale(for: notes.intake))
                 .font(.caption).foregroundStyle(Theme.textSecondary)
             ForEach(program, id: \.name) { template in
                 VStack(alignment: .leading, spacing: 3) {
@@ -176,14 +194,39 @@ struct CoachMeView: View {
             Text("Want it different? Say so — \u{201C}swap the deadlift\u{201D}, \u{201C}make it harder\u{201D}, \u{201C}add mobility\u{201D}.")
                 .font(.caption2).foregroundStyle(Theme.textTertiary)
 
-            Button { Task { await save() } } label: {
-                Text(saving ? "Saving…" : "Save \(program.count) template\(program.count == 1 ? "" : "s")")
-                    .font(.subheadline.weight(.semibold)).foregroundStyle(.white)
-                    .frame(maxWidth: .infinity).padding(.vertical, 10)
-                    .background(Theme.accent, in: Capsule())
+            // One session someone asked for RIGHT NOW leads with Start —
+            // filing it is the secondary thing they might also want. A weekly
+            // program has nothing to start, so it keeps Save as the only action.
+            if isSingleSession, let session = program.first {
+                Button {
+                    dismiss()
+                    onStart(session)
+                } label: {
+                    Text("Start workout")
+                        .font(.subheadline.weight(.semibold)).foregroundStyle(.white)
+                        .frame(maxWidth: .infinity).padding(.vertical, 10)
+                        .background(Theme.accent, in: Capsule())
+                }
+                .buttonStyle(.plain)
+
+                Button { Task { await save() } } label: {
+                    Text(saving ? "Saving…" : "Save as template")
+                        .font(.subheadline.weight(.semibold)).foregroundStyle(Theme.accent)
+                        .frame(maxWidth: .infinity).padding(.vertical, 10)
+                        .overlay(Capsule().stroke(Theme.accent, lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+                .disabled(saving)
+            } else {
+                Button { Task { await save() } } label: {
+                    Text(saving ? "Saving…" : "Save \(program.count) template\(program.count == 1 ? "" : "s")")
+                        .font(.subheadline.weight(.semibold)).foregroundStyle(.white)
+                        .frame(maxWidth: .infinity).padding(.vertical, 10)
+                        .background(Theme.accent, in: Capsule())
+                }
+                .buttonStyle(.plain)
+                .disabled(saving)
             }
-            .buttonStyle(.plain)
-            .disabled(saving)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .card()
@@ -217,6 +260,9 @@ struct CoachMeView: View {
         // A refine request once a draft exists re-drafts rather than restarting
         // intake — "make it harder" is not a new interview.
         let history = messages.map { "\($0.fromCoach ? "coach" : "user"): \($0.text)" }
+        // What they typed decides the ask when the model hasn't. Sticky, and
+        // never downgraded from an explicit model call.
+        if ask == nil { ask = CoachProgramBuilder.Ask.detect(from: trimmed) }
 
         if let turn = await NebiusCoach.turn(history: history,
                                              known: notes.intake,
@@ -228,18 +274,41 @@ struct CoachMeView: View {
             messages.append(Message(text: turn.reply, fromCoach: true))
             llmDriving = true
             llmSuggestions = turn.suggestions
+            if let modelAsk = turn.ask { ask = modelAsk }
+            if let named = turn.focus, !named.isEmpty { focus = named }
             // #1158: a reply that asks a question must not answer itself with
             // a plan in the same breath — the draft waits for the next turn.
             let stillAsking = turn.reply.trimmingCharacters(in: .whitespacesAndNewlines).hasSuffix("?")
-            if (turn.readyToDraft || notes.intake.canDraft) && !stillAsking { redraft() }
+            // A today-session needs only how long they have — gating it on
+            // `canDraft` (days/week, equipment, injuries asked) is the weekly
+            // interview, and running it on someone standing in the gym is the
+            // complaint this whole path exists to fix.
+            let ready = turn.readyToDraft
+                || (ask == .today ? notes.intake.canDraftToday : notes.intake.canDraft)
+            if ready && !stillAsking { redraft() }
         } else {
             // Offline: the scripted intake still advances the conversation.
             llmDriving = false
-            applyOffline(trimmed)
-            if let step = notes.intake.nextStep {
-                messages.append(Message(text: step.question, fromCoach: true))
-            } else if notes.intake.canDraft {
-                redraft()
+            if ask == .today {
+                // A today-session asks ONE thing, not the weekly interview.
+                if notes.intake.sessionMinutes == nil,
+                   let minutes = Int(trimmed.filter(\.isNumber).prefix(2)), minutes > 0 {
+                    notes.intake.sessionMinutes = minutes
+                }
+                notes.save()
+                if notes.intake.canDraftToday {
+                    redraft()
+                } else {
+                    messages.append(Message(text: CoachIntake.Step.duration.question,
+                                            fromCoach: true))
+                }
+            } else {
+                applyOffline(trimmed)
+                if let step = notes.intake.nextStep {
+                    messages.append(Message(text: step.question, fromCoach: true))
+                } else if notes.intake.canDraft {
+                    redraft()
+                }
             }
         }
     }
@@ -276,7 +345,17 @@ struct CoachMeView: View {
     }
 
     func redraft() {
-        program = CoachProgramBuilder.draft(from: notes.intake)
+        // ONE session when that's what was asked for. The old path only ever
+        // produced a week of templates, so "I just want one exercise" ended at
+        // a filing cabinet instead of a workout you could start.
+        if ask == .today {
+            program = [CoachProgramBuilder.todaySession(
+                from: notes.intake,
+                focus: focus,
+                recentBodyParts: Array(ExerciseService.recentBodyParts()))]
+        } else {
+            program = CoachProgramBuilder.draft(from: notes.intake)
+        }
     }
 
     func save() async {

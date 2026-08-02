@@ -425,7 +425,11 @@ public enum ExerciseService {
     }
 
     /// Body parts trained in the last 7 days.
-    private static func recentBodyParts() -> Set<String> {
+    ///
+    /// Public because the coach needs it too: a session built for "today" avoids
+    /// hammering what you trained yesterday, which is most of the difference
+    /// between a coach and a random generator.
+    public static func recentBodyParts() -> Set<String> {
         guard let workouts = try? WorkoutService.fetchWorkouts(limit: 7) else { return [] }
         var parts: Set<String> = []
         for w in workouts.prefix(5) {

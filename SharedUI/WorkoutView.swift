@@ -30,6 +30,9 @@ struct WorkoutView: View {
     /// onDismiss. Replaces an asyncAfter(0.3) dead gap between the two sheets.
     enum PreviewFollowUp { case start(WorkoutTemplate), edit(WorkoutTemplate) }
     @State var previewFollowUp: PreviewFollowUp? = nil
+    /// A session the coach drafted and the user chose to START, held across the
+    /// coach sheet's dismissal.
+    @State var coachSession: WorkoutTemplate? = nil
     @State var renameTemplateId: Int64?
     @State var renameTemplateName = ""
     @State var showingRenameAlert = false
@@ -467,8 +470,17 @@ struct WorkoutView: View {
             }
         }
         #endif
-        .sheet(isPresented: $showingCoach) {
-            CoachMeView { loadData() }
+        .sheet(isPresented: $showingCoach, onDismiss: {
+            // Same rule as the template preview: open the workout only once the
+            // coach sheet has finished dismissing, never as a nested sheet.
+            guard let session = coachSession else { return }
+            coachSession = nil
+            WorkoutService.clearSession()
+            selectedTemplate = session
+            FeatureUsage.record(TelemetryEvent.workoutStarted)
+            showingNewWorkout = true
+        }) {
+            CoachMeView(onSaved: { loadData() }, onStart: { coachSession = $0 })
         }
         .sheet(isPresented: $showingCreateTemplate) {
             CreateTemplateView { loadData() }

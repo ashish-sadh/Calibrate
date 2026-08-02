@@ -330,6 +330,34 @@ public enum CoachProgramBuilder {
         case today
         /// A reusable weekly split.
         case program
+
+        /// Read the ask straight from what someone typed.
+        ///
+        /// The model normally decides this, but it returns null whenever it's
+        /// mid-interview, and offline there is no model at all. Without a
+        /// deterministic reading, "I just want one exercise" fell through to the
+        /// weekly-program branch and the user was handed templates to file —
+        /// the operator's report (2026-08-02): "it just finally gave option to
+        /// add templates not single workout session".
+        ///
+        /// Returns nil when it's genuinely ambiguous; a wrong guess here starts
+        /// the wrong conversation, and asking once is cheap.
+        public static func detect(from text: String) -> Ask? {
+            let t = text.lowercased()
+            // Ordered: a phrase naming ONE session wins over a schedule word,
+            // because "one workout for today, I train 3 days a week" is still a
+            // request for one workout.
+            let now = ["today", "right now", "one exercise", "one workout", "one session",
+                       "single workout", "single session", "just one", "at the gym",
+                       "what should i do", "give me a workout", "something to do now",
+                       "this evening", "this morning", "quick workout"]
+            if now.contains(where: t.contains) { return .today }
+
+            let weekly = ["program", "routine", "plan for", "make me a plan", "split",
+                          "days a week", "day a week", "weekly", "schedule"]
+            if weekly.contains(where: t.contains) { return .program }
+            return nil
+        }
     }
 
     /// A single session for today, optionally aimed at a focus the user named
@@ -411,6 +439,35 @@ public enum CoachProgramBuilder {
             : "each group gets a focused day"
         let names = plan.map(\.name).joined(separator: " / ")
         return "\(built). \(names): \(frequency)."
+    }
+
+    /// Why THIS session, for someone who asked what to do right now.
+    ///
+    /// Separate from `rationale` because that one explains a weekly split
+    /// ("Push / Pull / Legs: the big groups come back more than once a week"),
+    /// which is nonsense printed over a single session — and printing the wrong
+    /// explanation is worse than printing none.
+    public static func todayRationale(for intake: CoachIntake, focus: String? = nil,
+                                     recentBodyParts: [String] = []) -> String {
+        let minutes = intake.sessionMinutes ?? 45
+        let parts = focusParts(focus, intake: intake, recent: recentBodyParts)
+        let named = parts.map { $0.capitalized }.joined(separator: ", ")
+
+        var why = "~\(minutes) min, hitting \(named)"
+        if let focus, !focus.trimmingCharacters(in: .whitespaces).isEmpty {
+            why += " — you asked for \(focus.lowercased())"
+        } else if !recentBodyParts.isEmpty {
+            // Only claim freshness when it actually drove the choice.
+            let tired = Set(recentBodyParts.map { $0.lowercased() })
+            let rested = parts.filter { part in !tired.contains { $0.contains(part) } }
+            if rested.count == parts.count {
+                why += " — rested since your last few sessions"
+            }
+        }
+        if let equipment = intake.equipment, !equipment.isEmpty {
+            why += ", with \(equipment.lowercased())"
+        }
+        return why + "."
     }
 
     /// Ordered, deduped muscle coverage of a drafted day — computed from the

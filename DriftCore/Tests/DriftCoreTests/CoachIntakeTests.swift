@@ -196,4 +196,105 @@ struct CoachIntakeTests {
         #expect(summary.contains("Saturday"))
         #expect(summary.contains("45 min"))
     }
+
+    // MARK: - One session now, vs a weekly program
+
+    /// THE BUG (operator 2026-08-02): "I just want one exercise" was answered
+    /// with "how many days a week can you train?", and the flow could only end
+    /// in templates to file. Someone standing in the gym has no weekly schedule
+    /// to give — knowing how long they have is enough.
+    @Test func oneSessionNeedsOnlyHowLongTheyHave() {
+        var intake = CoachIntake()
+        intake.sessionMinutes = 45
+        #expect(intake.canDraftToday)
+        #expect(!intake.canDraft, "the weekly gate must still be the higher bar")
+    }
+
+    @Test func withoutADurationThereIsNothingToFill() {
+        #expect(!CoachIntake().canDraftToday)
+    }
+
+    /// A today-session must NOT wait on the weekly slots — that wait is the
+    /// interrogation being fixed.
+    @Test func oneSessionDoesNotWaitForScheduleOrEquipmentOrInjuries() {
+        var intake = CoachIntake()
+        intake.sessionMinutes = 30
+        #expect(intake.daysPerWeek == nil)
+        #expect(intake.equipment == nil)
+        #expect(!intake.isFilled(.injuries))
+        #expect(intake.canDraftToday, "none of those may block one session")
+    }
+}
+
+/// Tier-0 for reading WHICH thing the user asked for.
+///
+/// The model normally decides, but it returns null mid-interview and there is
+/// no model offline — and the fallback was "weekly program", which is how a
+/// one-exercise request became a filing cabinet.
+struct CoachAskDetectionTests {
+
+    @Test func askingForOneThingRightNowIsATodaySession() {
+        for text in ["I just want one exercise", "what should I do today",
+                     "I'm at the gym", "give me a workout", "just one session",
+                     "quick workout before work"] {
+            #expect(CoachProgramBuilder.Ask.detect(from: text) == .today,
+                    "\(text) is a right-now ask")
+        }
+    }
+
+    @Test func askingForSomethingRepeatableIsAProgram() {
+        for text in ["make me a plan", "I want to train 3 days a week",
+                     "build me a program", "give me a push pull legs split"] {
+            #expect(CoachProgramBuilder.Ask.detect(from: text) == .program,
+                    "\(text) is a weekly ask")
+        }
+    }
+
+    /// One session TODAY still wins when a schedule word is also present —
+    /// "one workout for today, I train 3 days a week" is a request for one
+    /// workout, not an interview.
+    @Test func aRightNowAskWinsOverAScheduleWord() {
+        #expect(CoachProgramBuilder.Ask.detect(from: "one workout for today, I train 3 days a week")
+                == .today)
+    }
+
+    /// Ambiguity returns nil rather than guessing: a wrong guess starts the
+    /// wrong conversation, and asking once is cheap.
+    @Test func anAmbiguousOpenerIsNotGuessed() {
+        #expect(CoachProgramBuilder.Ask.detect(from: "I want to train my lats") == nil)
+        #expect(CoachProgramBuilder.Ask.detect(from: "hey") == nil)
+    }
+}
+
+/// Tier-0 for what the single-session card SAYS.
+struct TodayRationaleTests {
+
+    private func intake(minutes: Int = 45) -> CoachIntake {
+        var i = CoachIntake()
+        i.sessionMinutes = minutes
+        return i
+    }
+
+    /// The weekly rationale printed over one session claimed a split that
+    /// doesn't exist ("Push / Pull / Legs: the big groups come back more than
+    /// once a week"). Printing the wrong explanation is worse than none.
+    @Test func todayNeverClaimsAWeeklySplit() {
+        let why = CoachProgramBuilder.todayRationale(for: intake(), focus: "lats")
+        #expect(!why.contains("days a week"))
+        #expect(!why.contains("/"), "no split names on a single session")
+        #expect(why.contains("45 min"))
+    }
+
+    @Test func aNamedFocusIsEchoedBack() {
+        let why = CoachProgramBuilder.todayRationale(for: intake(), focus: "legs")
+        #expect(why.lowercased().contains("legs"))
+    }
+
+    /// Only claim freshness when it actually drove the pick — a coach that
+    /// says "rested" about a muscle you trained yesterday is not trustworthy.
+    @Test func freshnessIsClaimedOnlyWhenItIsTrue() {
+        let stale = CoachProgramBuilder.todayRationale(
+            for: intake(), focus: "legs", recentBodyParts: ["legs"])
+        #expect(!stale.contains("rested"), "legs were trained recently")
+    }
 }
