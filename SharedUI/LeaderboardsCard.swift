@@ -173,7 +173,12 @@ struct LeaderboardsCard: View {
                 .buttonStyle(.plain)
             }
 
-            if let standing = Leaderboard.standing(section) {
+            if Preferences.boardIsPrivate(section.board.key) {
+                // Say what private MEANS. "No rows" on its own reads as broken.
+                Text("Private — your \(section.board.title.lowercased()) isn't shared with anyone. Switch to Friends to join this board again.")
+                    .font(.caption2).foregroundStyle(Theme.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            } else if let standing = Leaderboard.standing(section) {
                 Text(standing).font(.caption2).foregroundStyle(Theme.textSecondary)
             }
 
@@ -199,34 +204,28 @@ struct LeaderboardsCard: View {
         }
     }
 
-    /// Friends vs Global, as an actual two-option control.
+    /// Private / Friends / Everyone, as an actual three-option control.
     ///
     /// It used to be the words "Friends only" with a red "Go global" link beside
     /// them, which reads as a label plus an ad rather than a setting — the
-    /// operator couldn't tell what state he was in. Two capsules, one selected,
-    /// says both things at once.
+    /// operator couldn't tell what state he was in. Capsules, one selected, say
+    /// both things at once.
+    ///
+    /// Private is the third state the control was missing (operator
+    /// 2026-08-02): Friends-vs-Everyone let you pick an audience but never pick
+    /// NO audience, so silencing one number meant the master switch and every
+    /// board with it.
     func visibilityControl(_ board: LeaderboardBoard) -> some View {
-        let isGlobal = Preferences.boardIsGlobal(board.key)
+        let current = Leaderboard.visibility(isGlobal: Preferences.boardIsGlobal(board.key),
+                                             isPrivate: Preferences.boardIsPrivate(board.key))
         return HStack(spacing: 6) {
             Text("VISIBLE TO").font(.system(size: 9, weight: .bold))
                 .foregroundStyle(Theme.textTertiary)
-            ForEach([false, true], id: \.self) { wantGlobal in
-                Button {
-                    // Opt-IN set (#1171): boards are friends-only until opened up.
-                    var keys = Preferences.globalBoardKeys
-                    if wantGlobal { keys.insert(board.key) } else { keys.remove(board.key) }
-                    Preferences.globalBoardKeys = keys
-                    Task {
-                        // Going private must reach EVERY period, not just this
-                        // one, or last month's row stays publicly readable.
-                        if !wantGlobal { try? await LeaderboardService.unpublish(board: board.key) }
-                        await consentChanged(true)
-                    }
-                } label: {
+            ForEach(Leaderboard.Visibility.allCases, id: \.self) { want in
+                Button { apply(want, to: board) } label: {
                     HStack(spacing: 3) {
-                        Image(systemName: sym(wantGlobal ? "globe" : "person.2.fill"))
-                            .font(.system(size: 9))
-                        Text(wantGlobal ? "Everyone" : "Friends").font(.caption2)
+                        Image(systemName: sym(want.symbol)).font(.system(size: 9))
+                        Text(want.label).font(.caption2)
                     }
                     #if os(Android)
                     .padding(.horizontal, 8).padding(.vertical, 2)
@@ -234,17 +233,18 @@ struct LeaderboardsCard: View {
                     #else
                     .padding(.horizontal, 8).padding(.vertical, 4)
                     #endif
-                    .background(isGlobal == wantGlobal ? Theme.accent.opacity(0.15) : Color.clear,
+                    .background(current == want ? Theme.accent.opacity(0.15) : Color.clear,
                                 in: Capsule())
                     .overlay {
                         Capsule().strokeBorder(
-                            isGlobal == wantGlobal ? Theme.accent.opacity(0.4) : Theme.separatorFaint,
+                            current == want ? Theme.accent.opacity(0.4) : Theme.separatorFaint,
                             lineWidth: 1)
                     }
-                    .foregroundStyle(isGlobal == wantGlobal ? Theme.accent : Theme.textSecondary)
+                    .foregroundStyle(current == want ? Theme.accent : Theme.textSecondary)
                     .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
+                .disabled(busy)
             }
             Spacer()
         }
@@ -362,6 +362,56 @@ struct LeaderboardsCard: View {
     /// Flipping the switch acts immediately in both directions: on publishes so
     /// you're not absent from a board you just joined, off deletes what was
     /// published rather than merely stopping future writes.
+    /// Move ONE board to a new audience.
+    ///
+    /// Widening (→ Friends, → Everyone) republishes so a row exists under the
+    /// new audience. Narrowing to Private DELETES the rows, and the private
+    /// state is only painted once that succeeds — showing "Private" over a row
+    /// friends can still read is the failure this whole control exists to
+    /// prevent, and it's the one the old `try?` on withdraw already taught us.
+    func apply(_ want: Leaderboard.Visibility, to board: LeaderboardBoard) {
+        let key = board.key
+        let before = Leaderboard.visibility(isGlobal: Preferences.boardIsGlobal(key),
+                                            isPrivate: Preferences.boardIsPrivate(key))
+        guard want != before else { return }
+
+        var privateKeys = Preferences.privateBoardKeys
+        var globalKeys = Preferences.globalBoardKeys
+        switch want {
+        case .private:  privateKeys.insert(key);  globalKeys.remove(key)
+        case .friends:  privateKeys.remove(key);  globalKeys.remove(key)
+        case .everyone: privateKeys.remove(key);  globalKeys.insert(key)
+        }
+        Preferences.privateBoardKeys = privateKeys
+        Preferences.globalBoardKeys = globalKeys
+
+        Task {
+            busy = true
+            defer { busy = false }
+            do {
+                switch want {
+                case .private:
+                    try await LeaderboardService.makePrivate(board: key)
+                case .friends:
+                    // Everyone → Friends restamps every period; leaving old
+                    // rows global keeps last month's number publicly readable.
+                    if before == .everyone { try await LeaderboardService.unpublish(board: key) }
+                    // Private → Friends has no rows at all any more.
+                    if before == .private { await LeaderboardPublisher.publishIfDue(force: true) }
+                case .everyone:
+                    await LeaderboardPublisher.publishIfDue(force: true)
+                }
+                withdrawFailed = false
+                await refresh()
+            } catch {
+                // Put the setting BACK and say so.
+                Preferences.privateBoardKeys = Preferences.privateBoardKeys.subtracting([key])
+                if before == .everyone { Preferences.globalBoardKeys.insert(key) }
+                withdrawFailed = true
+            }
+        }
+    }
+
     func consentChanged(_ on: Bool) async {
         busy = true
         defer { busy = false }
@@ -384,8 +434,15 @@ struct LeaderboardsCard: View {
         }
     }
 
-    /// Real boards first, then the ones still waiting on a friend.
-    var allBoards: [Leaderboard.Section] { sections + solo }
+    /// Real boards first, then the ones still waiting on a friend, then the
+    /// ones taken private — which publish no rows and so appear in neither, but
+    /// must stay listed or the control that undid them is unreachable.
+    var allBoards: [Leaderboard.Section] {
+        let shown = sections + solo
+        return shown + Leaderboard.privatePlaceholders(
+            isPrivate: Preferences.boardIsPrivate,
+            existing: Set(shown.map(\.board.key)))
+    }
 
     var currentBoard: Leaderboard.Section? {
         allBoards.first { $0.board.key == selectedBoard } ?? allBoards.first

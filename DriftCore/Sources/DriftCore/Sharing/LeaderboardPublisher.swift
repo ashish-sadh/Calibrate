@@ -68,7 +68,11 @@ public enum LeaderboardPublisher {
     public static func publishNow() async {
         guard Preferences.shareStatsWithFriends,
               let uid = SharingService.shared.currentSession?.userID else { return }
+        // A private board publishes NOTHING. Filtered before the upsert rather
+        // than stamped with a visibility, because "private" isn't an audience —
+        // there is no row to show anyone.
         var entries = await collect(userID: uid)
+            .filter { !Preferences.boardIsPrivate($0.boardKey) }
         guard !entries.isEmpty else { return }
         // Stamp each row with the audience the user chose for THAT board. Done
         // here, at the last moment, so flipping a board to friends-only takes
@@ -148,11 +152,26 @@ public enum LeaderboardPublisher {
         // Food-logging streak. The board that actually populates: steps need a
         // phone in your pocket and a lift board needs a friend training the same
         // lift, but anyone who has used Drift twice has a streak.
+        // Published even at ZERO, unlike the health boards above.
+        //
+        // A broken streak used to be OMITTED, and an omitted row doesn't
+        // overwrite anything — so the last good value sat on everyone's board
+        // forever. Live rows on 2026-08-02 showed exactly that: a user whose
+        // steps/calories/workouts all updated that afternoon still showed a
+        // 5-day streak last written on 08-01, because their streak had since
+        // broken and the row was skipped. Operator: "it's not getting refreshed
+        // and food logging streak should be refreshed daily? Is it happening?"
+        // It wasn't — the number was a fossil.
+        //
+        // Zero is safe to publish HERE because the streak comes from the local
+        // food log, where zero unambiguously means "no logs". The health boards
+        // above stay guarded: HealthKit returns 0 both for a genuinely still day
+        // and for revoked permission, and publishing that would wipe a real
+        // number over a permissions prompt. `rank` drops zeroes from display, so
+        // this leaves the board rather than showing a demoralising 0.
         let streak = FoodLoggingStreak.mine(today: now)
-        if streak > 0 {
-            out.append(.init(userId: userID, boardKey: "food_streak", periodStart: week,
-                            value: Double(streak), unit: "days"))
-        }
+        out.append(.init(userId: userID, boardKey: "food_streak", periodStart: week,
+                        value: Double(streak), unit: "days"))
 
         return out
     }

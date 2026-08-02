@@ -189,6 +189,61 @@ public enum Leaderboard {
             .filter(isGlobal)
     }
 
+    /// Who can see one board. The control has three states, not two.
+    public enum Visibility: String, Sendable, CaseIterable {
+        /// Published to nobody — not even friends.
+        case `private`
+        /// Your friends only. The default: a board is friends-only until opened.
+        case friends
+        /// Everyone on Drift.
+        case everyone
+
+        public var label: String {
+            switch self {
+            case .private:  return "Private"
+            case .friends:  return "Friends"
+            case .everyone: return "Everyone"
+            }
+        }
+
+        /// SF Symbol / Material name for the capsule.
+        public var symbol: String {
+            switch self {
+            case .private:  return "lock.fill"
+            case .friends:  return "person.2.fill"
+            case .everyone: return "globe"
+            }
+        }
+    }
+
+    /// Resolve a board's visibility from the two opt-in sets.
+    ///
+    /// PRIVATE WINS. Both sets are stored separately (see `Preferences`), so a
+    /// board can appear in both — a user who went Everyone, then Private, has a
+    /// stale global entry. Reading them in the wrong order publishes a board
+    /// someone believes is off, which is the one failure mode here that isn't
+    /// recoverable by tapping again.
+    public static func visibility(isGlobal: Bool, isPrivate: Bool) -> Visibility {
+        if isPrivate { return .private }
+        return isGlobal ? .everyone : .friends
+    }
+
+    /// Placeholder sections for boards taken private, so the control that undid
+    /// them stays reachable.
+    ///
+    /// A private board publishes no rows, so it appears in neither `sections`
+    /// nor `solo` — and the visibility control lives INSIDE a board's card.
+    /// Without this, going private deletes the only affordance for coming back:
+    /// the board vanishes and the setting can never be changed again. A setting
+    /// you cannot reverse from the UI is a trap, not a preference.
+    public static func privatePlaceholders(isPrivate: (String) -> Bool,
+                                          existing: Set<String>) -> [Section] {
+        boardKeys
+            .filter { isPrivate($0) && !existing.contains($0) }
+            .sorted()
+            .map { Section(board: LeaderboardBoard.from(key: $0), rows: []) }
+    }
+
     /// One row per person, for a board read across MORE THAN ONE period key.
     ///
     /// The global board reads the current period key and the one before it, for
@@ -262,7 +317,12 @@ public enum Leaderboard {
                     > (existing.updatedAt ?? existing.periodStart)
                 if newer { best[entry.userId] = entry }
             }
-            guard best.count >= minimum else { continue }
+            // Count only people with an ACTUAL number toward the threshold.
+            // `rank` drops zeroes, so counting them here produced a board that
+            // passed "2 participants" and then rendered one row — "#1 of 1",
+            // the exact thing `minimumParticipants` exists to prevent. Reachable
+            // now that a broken streak publishes 0 instead of going stale.
+            guard best.values.filter({ $0.value > 0 }).count >= minimum else { continue }
 
             let board = LeaderboardBoard.from(key: key, unit: group.first?.unit ?? "")
             let rows = rank(best.values.map { ($0.userId, $0.value) },

@@ -184,4 +184,14 @@ public enum LeaderboardService {
     public static func unpublish(board key: String) async throws {
         _ = try await SharingService.shared.unpublishBoard(key)
     }
+
+    /// Take ONE board private — published to nobody.
+    ///
+    /// THROWS, for the same reason `withdraw` does: a consent control that
+    /// reports a success it didn't achieve is worse than one that fails loudly.
+    /// The caller must not paint the private state until the rows are actually
+    /// gone, or the user sees "Private" over a row their friends can still read.
+    public static func makePrivate(board key: String) async throws {
+        try await SharingService.shared.deleteMyLeaderboardEntries(board: key)
+    }
 }

@@ -800,6 +800,21 @@ public final class SharingService {
                                     token: try await validToken())
     }
 
+    /// Remove MY rows for ONE board, every period.
+    ///
+    /// Taking a board private has to delete, not restamp: `unpublish_board`
+    /// sets visibility=friends, which is the Everyone→Friends move and still
+    /// leaves the number on your friends' boards. Private means nobody.
+    ///
+    /// Scoped to the caller's own user_id and one board_key — the narrowest
+    /// delete that does the job, and RLS refuses anything wider.
+    public func deleteMyLeaderboardEntries(board key: String) async throws {
+        let uid = try requireUserID()
+        try await client.restDelete(
+            "leaderboard_entries?user_id=eq.\(uid)&board_key=eq.\(key)",
+            token: try await validToken())
+    }
+
     /// Accepted edges involving the caller (both directions).
     public func acceptedFriendships() async throws -> [FriendshipDTO] {
         let uid = try requireUserID()

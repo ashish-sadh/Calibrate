@@ -168,8 +168,39 @@ public enum Preferences {
     }
 
     /// Is this board published to everyone? Friends-only unless opened up.
+    ///
+    /// Private wins: a board someone took private is not global, whatever a
+    /// stale entry in `globalBoardKeys` says. Reading the two sets in the wrong
+    /// order would publish a board the user believes is off.
     public static func boardIsGlobal(_ key: String) -> Bool {
-        globalBoardKeys.contains(key)
+        !boardIsPrivate(key) && globalBoardKeys.contains(key)
+    }
+
+    private static let privateBoardKeysKey = "drift_private_board_keys"
+
+    /// Boards this person has taken fully PRIVATE — published to nobody, not
+    /// even friends (operator 2026-08-02: "make sure there is private setting
+    /// in the leaderboard").
+    ///
+    /// The third state the control was missing. Friends-vs-Everyone let you
+    /// choose an audience but never choose *no* audience: the only way to stop
+    /// sharing one number was the master switch, which took every board down
+    /// with it. Someone who's happy to share steps but not their weight-linked
+    /// streak had no way to say so.
+    ///
+    /// Separate from `globalBoardKeys` rather than folded into one tri-state
+    /// key, so an older build that only knows the global set reads a private
+    /// board as friends-only — narrower than the user asked for, never wider.
+    /// A forgetful downgrade must fail toward privacy.
+    public static var privateBoardKeys: Set<String> {
+        get { Set(kv.stringArray(forKey: privateBoardKeysKey) ?? []) }
+        set { kv.set(newValue.isEmpty ? nil : Array(newValue).sorted(),
+                     forKey: privateBoardKeysKey) }
+    }
+
+    /// Is this board published to nobody?
+    public static func boardIsPrivate(_ key: String) -> Bool {
+        privateBoardKeys.contains(key)
     }
 
     // MARK: - Online Food Search

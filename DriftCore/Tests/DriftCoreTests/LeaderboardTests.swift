@@ -208,6 +208,113 @@ struct LeaderboardTests {
     }
 }
 
+/// Tier-0 for a board that stopped refreshing (operator 2026-08-02).
+struct StaleRowTests {
+
+    private func profile(_ name: String) -> SharedProfile {
+        SharedProfile(id: name, username: name, displayName: nil, avatarUrl: nil)
+    }
+    private func people(_ names: String...) -> [String: SharedProfile] {
+        Dictionary(uniqueKeysWithValues: names.map { ($0, profile($0)) })
+    }
+    private func entry(_ user: String, _ value: Double) -> LeaderboardEntryDTO {
+        LeaderboardEntryDTO(userId: user, boardKey: "food_streak",
+                            periodStart: "2026-07-27", value: value, unit: "days")
+    }
+
+    /// THE BUG. A broken streak published as 0 must take that person OFF the
+    /// board — not park them at the bottom, and not leave the old number up.
+    @Test func aZeroedStreakLeavesTheBoardEntirely() {
+        let sections = Leaderboard.sections(
+            from: [entry("ana", 12), entry("bo", 9), entry("broke", 0)],
+            profiles: people("ana", "bo", "broke"), me: "broke")
+        let rows = sections.first?.rows ?? []
+        #expect(rows.count == 2)
+        #expect(!rows.contains { $0.profile.id == "broke" })
+    }
+
+    /// A zero must not prop a board up to "2 participants" and then vanish,
+    /// leaving one row reading "#1 of 1".
+    @Test func zeroesDoNotCountTowardTheMinimum() {
+        let sections = Leaderboard.sections(
+            from: [entry("ana", 12), entry("broke", 0)],
+            profiles: people("ana", "broke"), me: "broke")
+        #expect(sections.isEmpty, "one real number is not a board")
+    }
+
+    /// Two real numbers still make a board, zero or not.
+    @Test func twoRealNumbersStillMakeABoard() {
+        let sections = Leaderboard.sections(
+            from: [entry("ana", 12), entry("bo", 3), entry("broke", 0)],
+            profiles: people("ana", "bo", "broke"), me: "broke")
+        #expect(sections.count == 1)
+        #expect(sections.first?.rows.count == 2)
+    }
+}
+
+/// Tier-0 for the THIRD visibility state (operator 2026-08-02).
+///
+/// Friends-vs-Everyone let someone pick an audience but never pick NO audience:
+/// silencing one number meant the master switch, and every other board went
+/// down with it.
+struct BoardPrivacyTests {
+
+    @Test func theThreeStatesResolveFromTheTwoOptInSets() {
+        #expect(Leaderboard.visibility(isGlobal: false, isPrivate: false) == .friends)
+        #expect(Leaderboard.visibility(isGlobal: true, isPrivate: false) == .everyone)
+        #expect(Leaderboard.visibility(isGlobal: false, isPrivate: true) == .private)
+    }
+
+    /// THE SAFETY PROPERTY. Both sets are stored separately, so a board that
+    /// went Everyone → Private appears in both. Resolving that the wrong way
+    /// publishes a board the user believes is off — the one failure here that
+    /// tapping again does not undo.
+    @Test func privateBeatsAStaleGlobalEntry() {
+        #expect(Leaderboard.visibility(isGlobal: true, isPrivate: true) == .private)
+    }
+
+    /// Friends is the default — a board is never public by accident (#1171).
+    @Test func theDefaultIsFriends() {
+        #expect(Leaderboard.visibility(isGlobal: false, isPrivate: false) == .friends)
+    }
+
+    /// A private board publishes no rows, so it lands in neither `sections` nor
+    /// `solo` — and the control that would undo it lives inside its card. No
+    /// placeholder means private is a one-way door.
+    @Test func aPrivateBoardStaysListedSoItCanBeUndone() {
+        let placeholders = Leaderboard.privatePlaceholders(
+            isPrivate: { $0 == "steps" }, existing: [])
+        #expect(placeholders.map(\.board.key) == ["steps"])
+        #expect(placeholders.first?.rows.isEmpty == true)
+    }
+
+    /// Don't list it twice when rows do exist (a stale row mid-transition).
+    @Test func aPrivateBoardAlreadyOnScreenIsNotDuplicated() {
+        let placeholders = Leaderboard.privatePlaceholders(
+            isPrivate: { $0 == "steps" }, existing: ["steps"])
+        #expect(placeholders.isEmpty)
+    }
+
+    @Test func boardsThatAreNotPrivateGetNoPlaceholder() {
+        #expect(Leaderboard.privatePlaceholders(isPrivate: { _ in false }, existing: []).isEmpty)
+    }
+
+    /// Only the four real boards can be placeholdered — a stale `lift:*` key
+    /// left in the private set must not resurrect a board that no longer exists.
+    @Test func onlyTheFixedBoardSetCanBePlaceholdered() {
+        let placeholders = Leaderboard.privatePlaceholders(
+            isPrivate: { _ in true }, existing: [])
+        #expect(Set(placeholders.map(\.board.key)) == Leaderboard.boardKeys)
+    }
+
+    @Test func everyStateHasItsOwnLabelAndSymbol() {
+        let labels = Set(Leaderboard.Visibility.allCases.map(\.label))
+        let symbols = Set(Leaderboard.Visibility.allCases.map(\.symbol))
+        #expect(labels == ["Private", "Friends", "Everyone"])
+        #expect(symbols.count == 3, "three states must be visually distinct")
+    }
+}
+
 /// Tier-0 for the WORLDWIDE board's row selection (#1170).
 ///
 /// The reported bug — "worldwide ranking wrong / missing entries" — was a period
