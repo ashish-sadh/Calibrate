@@ -266,6 +266,61 @@ struct CoachAskDetectionTests {
     }
 }
 
+/// The operator's ACTUAL transcript (screenshots, 2026-08-02), walked through
+/// the decision functions turn by turn.
+///
+/// This is the bug report as a test. Every individual rule is covered above;
+/// this asserts they compose into the right outcome for the conversation that
+/// was actually had, which is the thing that was broken.
+struct OperatorLatsTranscriptTests {
+
+    @Test func theLatsConversationEndsInOneStartableSession() {
+        var ask: CoachProgramBuilder.Ask?
+        var intake = CoachIntake()
+        var taught: Set<String> = []
+
+        // Turn 1 — "I want to train my lats"
+        // Ambiguous as an ASK (train could mean a program), so it must not be
+        // guessed... but it IS a muscle they named, so the anatomy aside fires.
+        ask = ask ?? CoachProgramBuilder.Ask.detect(from: "I want to train my lats")
+        #expect(ask == nil, "naming a muscle is not yet a today-vs-program answer")
+        let lesson = MuscleEducation.lesson(forUserText: "I want to train my lats",
+                                            alreadyTaught: taught)
+        #expect(lesson?.muscle == "lats")
+        #expect(lesson?.reason == .focus)
+        taught.insert(lesson!.muscle)
+
+        // Turn 2 — "I just want one exercise". THE line that was answered with
+        // "how many days a week can you train?".
+        ask = ask ?? CoachProgramBuilder.Ask.detect(from: "I just want one exercise")
+        #expect(ask == .today)
+
+        // Turn 3 — "Gym". Turn 4 — "No pain".
+        intake.equipment = "Full gym"
+        intake.askedInjuries = true
+        // Still no weekly schedule, and there must never be one asked for.
+        #expect(intake.daysPerWeek == nil)
+
+        // The coach knows how long they have (default 45 for a walk-in).
+        intake.sessionMinutes = 45
+        #expect(intake.canDraftToday, "this is enough to hand someone a session")
+
+        // The draft is ONE session, and it's startable.
+        let session = CoachProgramBuilder.todaySession(from: intake, focus: "lats")
+        #expect(!session.exercises.isEmpty)
+        #expect(session.name.lowercased().contains("lats"))
+
+        // And it does NOT claim a weekly split.
+        let why = CoachProgramBuilder.todayRationale(for: intake, focus: "lats")
+        #expect(!why.contains("days a week"))
+
+        // The lats were already explained in turn 1 — the session card must not
+        // repeat itself.
+        let again = MuscleEducation.lesson(forSession: session, alreadyTaught: taught)
+        #expect(again?.muscle != "lats", "one muscle, one explanation")
+    }
+}
+
 /// Tier-0 for what the single-session card SAYS.
 struct TodayRationaleTests {
 
