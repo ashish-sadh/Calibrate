@@ -25,6 +25,8 @@ struct BodyMapView: View {
     enum MuscleStatus: Sendable {
         case recovered, moderate, recovering, untrained
 
+        /// Tint for the FIGURE. Untrained stays faint on purpose — that's what
+        /// "you haven't worked this" looks like on the body map.
         var color: Color {
             switch self {
             case .recovered: Theme.deficit
@@ -32,6 +34,19 @@ struct BodyMapView: View {
             case .recovering: Theme.surplus
             case .untrained: .gray.opacity(0.4)
             }
+        }
+
+        /// Tint for the chip LABEL, which has to stay readable.
+        ///
+        /// The figure tint was doing both jobs, so an untrained group's name
+        /// rendered as 40%-opacity grey on an 8%-opacity grey fill — "Chest",
+        /// "Back", "Shoulders", "Arms" and "Core" were all but invisible while
+        /// only the trained group could be read (operator 2026-08-02: "many
+        /// boxes just smudges and mixes into background"). A muscle you HAVEN'T
+        /// trained is exactly the one you're scanning this card to find, so it
+        /// is the worst possible label to fade out.
+        var labelColor: Color {
+            self == .untrained ? Theme.textSecondary : color
         }
     }
 
@@ -165,7 +180,7 @@ struct BodyMapView: View {
         return Button { selectedGroup = selectedGroup == group ? nil : group } label: {
             VStack(spacing: 3) {
                 Text(group).font(.caption2.weight(.semibold))
-                    .foregroundStyle(status.color)
+                    .foregroundStyle(status.labelColor)
                 if let days = daysSince[group] {
                     Text(days == 0 ? "Today" : "\(days)d ago")
                         .font(.caption2.monospacedDigit()).foregroundStyle(Theme.textSecondary)

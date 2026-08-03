@@ -42,8 +42,13 @@ struct ContentView: View {
                 // safeAreaInset rather than padding: a ScrollView insets its
                 // CONTENT and still scrolls under the bar, which is what iOS
                 // does — padding would leave a dead band the page can't use.
+                //
+                // The minimized-workout pill (#1167) sits in the SAME overlay
+                // stack and is conditional, so the clearance has to grow with
+                // it — otherwise resuming a workout re-buries the last card the
+                // fixed inset just uncovered.
                 .safeAreaInset(edge: .bottom, spacing: 0) {
-                    Color.clear.frame(height: 78)
+                    Color.clear.frame(height: bottomOverlayClearance)
                 }
 
             VStack(spacing: 0) {
@@ -79,6 +84,19 @@ struct ContentView: View {
             // Real Drift Coach chat — Nebius-backed, SharedUI single-source. #1066
             AIChatView()
         }
+    }
+
+    /// How much of the screen bottom the floating overlays cover.
+    ///
+    /// 78 matches iOS's `FloatingTabBar.clearance` for the pill bar; the
+    /// minimized-workout pill stacks above it and only exists sometimes, so its
+    /// height is added only when it's actually on screen. Same visibility
+    /// condition as `MinimizedWorkoutBar.body`, which is what keeps the two from
+    /// disagreeing.
+    private var bottomOverlayClearance: CGFloat {
+        let monitor = LiveWorkoutMonitor.shared
+        let pillShowing = !monitor.isPresented && monitor.minimizedName != nil
+        return pillShowing ? 78 + 56 : 78
     }
 
     @ViewBuilder
