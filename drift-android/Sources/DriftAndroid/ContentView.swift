@@ -28,6 +28,23 @@ struct ContentView: View {
                 .id(selectedTab)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .transition(.opacity)
+                // Scroll clear of the floating pill bar.
+                //
+                // The bar is an OVERLAY in this ZStack and nothing reserved
+                // space for it, so the last card on every tab sat underneath
+                // it — Today's weight/workouts/streak row and Workout's Health
+                // Connect card were both cut off mid-content. iOS has had this
+                // all along via `floatingTabBarClearance()` (78pt of
+                // additionalSafeAreaInsets), but that modifier lives in
+                // Drift/Views/Shared and is UIKit-based, so it never applied
+                // here.
+                //
+                // safeAreaInset rather than padding: a ScrollView insets its
+                // CONTENT and still scrolls under the bar, which is what iOS
+                // does — padding would leave a dead band the page can't use.
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    Color.clear.frame(height: 78)
+                }
 
             VStack(spacing: 0) {
                 // Strong-style minimized-workout pill (#1167) — visible on every

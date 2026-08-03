@@ -324,16 +324,33 @@ extension View {
         // frame — removing it took the workout tab from 85ms to 29ms p50
         // frame time (#1074). Three stacked offset fills at descending
         // opacity read as the same soft bottom lift with zero blur passes.
-        return self.background(
-            ZStack {
+        //
+        // Plus a HAIRLINE BORDER, which iOS does not need (operator 2026-08-02:
+        // "Many boxes just smudges and mixes into background"). The three fills
+        // are offset DOWNWARD, so they lift the bottom edge and do nothing for
+        // the other three — and a white card on #EFEFF1 has almost no contrast
+        // of its own. On iOS a real gaussian shadow spreads on all sides and
+        // carries the separation; the blur-free substitute here cannot, so the
+        // card genuinely did dissolve into the page.
+        //
+        // This is the 0.5pt border the V7 pass removed as "redundant". It was
+        // redundant on iOS. Reinstating it ONLY under os(Android) keeps that
+        // judgement intact where it was true.
+        return self
+            .background(
+                ZStack {
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(Color.black.opacity(0.02)).offset(y: 6)
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(Color.black.opacity(0.03)).offset(y: 3.5)
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(Color.black.opacity(0.04)).offset(y: 1.5)
+                }
+            )
+            .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(Color.black.opacity(0.02)).offset(y: 6)
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(Color.black.opacity(0.03)).offset(y: 3.5)
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(Color.black.opacity(0.04)).offset(y: 1.5)
-            }
-        )
+                    .stroke(Color.black.opacity(0.11), lineWidth: 1)
+            )
         #else
         return self
             .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)

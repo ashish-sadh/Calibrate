@@ -712,7 +712,15 @@ struct ActiveWorkoutView: View {
                 .accessibilityLabel("Weight unit, currently \(exercises[ei].weighInKg ? "kilograms" : "pounds")")
                 Text(isDuration ? "Time (s)" : "Reps").font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary).frame(width: setRepsColumnWidth)
                 Spacer()
-                Text("✓").font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary).frame(width: 30)
+                // A WORD, not a ✓ glyph (operator 2026-08-02: "what is this
+                // check sign doing... it's confusing that people try to click
+                // on it"). Every other header here is a word — Set, Previous,
+                // lbs, Reps — so a lone checkmark read as the odd one out, and
+                // it was the SAME glyph as the done-state control sitting
+                // directly beneath it. A check above a column of tappable
+                // circles looks like the button that ticks them all.
+                Text("Done").font(.caption2.weight(.bold)).foregroundStyle(Theme.textTertiary)
+                    .lineLimit(1).frame(width: 30)
             }
 
             // Sets — index-based bindings, not `ForEach($exercises[ei].sets)`:

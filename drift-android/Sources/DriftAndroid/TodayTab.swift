@@ -194,7 +194,9 @@ struct TodayTab: View {
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("TODAY'S INTAKE").sectionHeading()
-                        Text("\(max(store.totals.remaining, 0)) kcal left")
+                        // `.formatted()` for the thousands separator — iOS
+                        // reads "1,470 kcal left", Android read "2000".
+                        Text("\(max(store.totals.remaining, 0).formatted()) kcal left")
                             .font(Theme.rounded(size: Theme.FontSize.title2))
                             .foregroundStyle(Theme.textPrimary)
                     }
@@ -268,8 +270,10 @@ struct TodayTab: View {
                 Text(label).font(.caption).foregroundStyle(Theme.textSecondary)
             }
             HStack(spacing: 0) {
-                Text("\(value)").font(.subheadline.weight(.bold).monospacedDigit()).foregroundStyle(Theme.textPrimary)
-                Text("/\(target)\(unit)").font(.subheadline.monospacedDigit()).foregroundStyle(Theme.textTertiary)
+                // Separators here too: the macro row read "0/2000" against
+                // iOS's "0/1,469".
+                Text("\(value.formatted())").font(.subheadline.weight(.bold).monospacedDigit()).foregroundStyle(Theme.textPrimary)
+                Text("/\(target.formatted())\(unit)").font(.subheadline.monospacedDigit()).foregroundStyle(Theme.textTertiary)
             }
         }
         .frame(maxWidth: .infinity)

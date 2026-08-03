@@ -155,10 +155,24 @@ struct WorkoutView: View {
                 .accessibilityIdentifier("workout-voice-entry")
                 #endif
 
+                // Explicit colors, NOT `.bordered` + `.tint(.secondary)`.
+                //
+                // That pair maps to a Material filled-tonal button on Android,
+                // which paints a grey container AND a grey label — grey-on-grey
+                // on a grey page, so the control read as DISABLED (operator
+                // 2026-08-02: "many boxes just smudges and mixes into
+                // background"). Naming the foreground and background here makes
+                // it render the same on both platforms instead of depending on
+                // how each maps a semantic tint.
                 Button { showingPastWorkout = true } label: {
                     Label("Log Past Workout", systemImage: sym("clock.arrow.circlepath"))
-                        .font(.caption)
-                }.buttonStyle(.bordered).tint(.secondary)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(Theme.textPrimary)
+                        .padding(.horizontal, 14).padding(.vertical, 8)
+                        .background(Theme.cardBackground, in: Capsule())
+                        .overlay(Capsule().stroke(Color.black.opacity(0.11), lineWidth: 1))
+                }
+                .buttonStyle(.plain)
 
                 // Templates
                 VStack(alignment: .leading, spacing: 8) {
