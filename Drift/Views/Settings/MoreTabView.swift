@@ -104,12 +104,23 @@ struct MoreTabView: View {
                     }
 
                     VStack(spacing: 6) {
-                        Link(destination: URL(string: "https://ashish-sadh.github.io/Drift/")!) {
+                        // In-app Supabase ticket, NOT a link out (operator
+                        // 2026-08-02: "replace iPhone GitHub based feedback to
+                        // supabase based feedback"). This was the only feedback
+                        // route most people would ever see on iOS — the footer
+                        // — and it opened a GitHub Pages site, so reporting a
+                        // bug meant leaving the app and, in practice, having a
+                        // GitHub account. Android has routed this to the
+                        // in-app form all along; the `support_tickets` table
+                        // had zero rows from either platform, which is what a
+                        // feedback path nobody can complete looks like.
+                        NavigationLink { SupportView() } label: {
                             Text("Report a bug")
                                 .font(.caption2)
                                 .foregroundStyle(Theme.textTertiary)
                                 .underline()
                         }
+                        .buttonStyle(.plain)
                         Text("Drift · v\(versionString) · \(yearString)")
                             .font(.caption2)
                             .foregroundStyle(Theme.textTertiary)
