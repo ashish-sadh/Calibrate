@@ -6,6 +6,13 @@ public enum WorkoutCommand: Equatable, Sendable {
     case add(query: String, sets: Int?)
     /// Remove an exercise from the running session ("drop the leg curls").
     case remove(query: String)
+    /// Swap one exercise for another ("replace squats with leg press").
+    ///
+    /// `new` is nil when they didn't name a substitute ("swap the squats",
+    /// "replace this") — the handler picks one that trains the same thing.
+    /// That's the case worth getting right: someone whose rack is taken knows
+    /// what they want to stop doing, not what to do instead.
+    case replace(old: String, new: String?, sets: Int?)
     /// Show last-session history ("what did I bench last time", "last squat?").
     case history(query: String)
     /// "what's next" — the first exercise with unfinished sets.
@@ -24,6 +31,11 @@ public enum WorkoutCommandParser {
 
     public static func parse(_ raw: String) -> WorkoutCommand {
         let lower = raw.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // SWAP, before remove: "swap out the squats" starts with a swap verb,
+        // and reading it as a removal would silently drop the lift instead of
+        // substituting one — the destructive misread of the two.
+        if let swap = parseReplace(lower) { return swap }
 
         for prefix in ["remove ", "drop ", "delete ", "take out ", "skip "] where lower.hasPrefix(prefix) {
             return .remove(query: stripArticles(String(lower.dropFirst(prefix.count))))
@@ -72,6 +84,61 @@ public enum WorkoutCommandParser {
         let (sets, name) = extractSets(from: stripArticles(query))
         return .add(query: name, sets: sets)
     }
+
+    /// Verbs that mean "give me a different exercise for this one".
+    ///
+    /// "skip" is deliberately absent — it lives in the remove list, and someone
+    /// skipping a lift is dropping it, not asking for a replacement.
+    private static let swapVerbs = ["replace ", "swap out ", "swap ", "substitute ",
+                                    "sub out ", "sub ", "change ", "switch out ", "switch "]
+
+    /// Separators between the old exercise and the new one. Order matters:
+    /// " with " must be tried before " w " so "with" isn't clipped mid-word.
+    private static let swapSeparators = [" with ", " for ", " to ", " instead of ", " into "]
+
+    /// "replace squats with leg press" → .replace(old: "squats", new: "leg press").
+    /// "swap the squats"               → .replace(old: "squats", new: nil).
+    ///
+    /// Returns nil when this isn't a swap at all, so the caller falls through
+    /// to the rest of the grammar.
+    static func parseReplace(_ lower: String) -> WorkoutCommand? {
+        guard let verb = swapVerbs.first(where: { lower.hasPrefix($0) }) else { return nil }
+        let rest = stripArticles(String(lower.dropFirst(verb.count)))
+        guard !rest.isEmpty else { return nil }
+
+        // "instead of" inverts the order: "leg press instead of squats".
+        if let range = rest.range(of: " instead of ") {
+            let new = stripArticles(String(rest[..<range.lowerBound]))
+            let old = stripArticles(String(rest[range.upperBound...]))
+            guard !old.isEmpty else { return nil }
+            let (sets, name) = extractSets(from: new)
+            return .replace(old: old, new: name.isEmpty ? nil : name, sets: sets)
+        }
+
+        for separator in swapSeparators {
+            guard let range = rest.range(of: separator) else { continue }
+            let old = stripArticles(String(rest[..<range.lowerBound]))
+            let newRaw = stripArticles(String(rest[range.upperBound...]))
+            guard !old.isEmpty else { return nil }
+            // "swap squats for something easier" names no exercise — treat it
+            // as "pick one for me" rather than searching for "something easier".
+            let (sets, name) = extractSets(from: newRaw)
+            let vague = name.isEmpty || vagueTargets.contains(name)
+            return .replace(old: old, new: vague ? nil : name, sets: sets)
+        }
+
+        // No separator: "swap the squats" / "replace this".
+        let (sets, name) = extractSets(from: rest)
+        return .replace(old: name, new: nil, sets: sets)
+    }
+
+    /// Phrases that mean "you choose" rather than naming an exercise.
+    private static let vagueTargets: Set<String> = [
+        "something", "something else", "something easier", "something harder",
+        "anything", "anything else", "another", "another one", "an alternative",
+        "alternative", "a different one", "different one", "something lighter",
+        "something similar", "the same thing", "whatever",
+    ]
 
     /// Reduce a form question to the exercise words:
     /// "how to correct my bench form" → "bench".

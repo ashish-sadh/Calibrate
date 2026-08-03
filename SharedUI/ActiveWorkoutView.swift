@@ -1272,6 +1272,8 @@ struct ActiveWorkoutView: View {
         switch WorkoutCommandParser.parse(raw) {
         case .remove(let query):
             removeExercise(matching: query)
+        case .replace(let old, let new, let sets):
+            replaceExercise(matching: old, with: new, sets: sets)
         case .history(let query):
             showHistory(for: query)
         case .next:
@@ -1417,6 +1419,70 @@ struct ActiveWorkoutView: View {
         stopRestIfAnchorMissing()
         commandFeedback = CommandFeedback(text: "Removed \(removed.name).") {
             exercises.insert(removed, at: min(idx, exercises.count))
+        }
+    }
+
+    /// Swap one exercise in the running session for another, in place.
+    ///
+    /// Mid-workout a swap is asked for because something is wrong — the rack is
+    /// taken, a joint is complaining, the weight isn't there — so the important
+    /// case is the one where they DON'T name a substitute ("swap the squats").
+    /// Picking one that trains the same thing is the whole ask; making them
+    /// think of the alternative themselves is what "not very smart" meant.
+    ///
+    /// Keeps the original's position and set count: a swap is a substitution,
+    /// not a delete-then-append that buries the new lift at the bottom of a
+    /// session someone is halfway through.
+    private func replaceExercise(matching query: String, with replacement: String?, sets: Int?) {
+        // "swap this" / "replace it" → whatever they're on right now.
+        let target = query.isEmpty || ["this", "it", "that", "current"].contains(query)
+            ? (currentExerciseName()?.lowercased() ?? "")
+            : query
+
+        let idx = exercises.firstIndex { $0.name.lowercased().contains(target) }
+            ?? ExerciseDatabase.match(name: target).flatMap { info in
+                exercises.firstIndex { $0.name == info.name }
+            }
+        guard let idx, !target.isEmpty else {
+            commandFeedback = CommandFeedback(text: "No \"\(query)\" in this workout.")
+            return
+        }
+        let old = exercises[idx]
+
+        // Same equipment rule the rest of the app uses — a home profile must
+        // not be offered a leg-press machine it doesn't have.
+        let profile = TrainingProfile.load()
+        let equipment: Set<String> = profile?.restrictsEquipment == true
+            ? Set((profile?.equipment ?? []) + ["body only"]) : []
+        let inSession = Set(exercises.map(\.name))
+
+        let resolved: String?
+        if let replacement, !replacement.isEmpty {
+            resolved = ExerciseDatabase.match(name: replacement)?.name
+                ?? ExerciseService.resolveExerciseName(replacement)
+        } else {
+            resolved = ExerciseAlternatives.best(for: old.name, excluding: inSession,
+                                                 equipment: equipment)?.name
+        }
+
+        guard let newName = resolved else {
+            commandFeedback = CommandFeedback(text: replacement.map {
+                "Couldn't find \"\($0)\" in the exercise library."
+            } ?? "Couldn't find a good swap for \(old.name).")
+            return
+        }
+
+        // Build the replacement through the normal path so it gets its own
+        // history ghosts, then move it into the old one's slot.
+        addExercise(name: newName, setCount: sets ?? old.sets.count,
+                    restTime: old.restTime, isWarmup: old.isWarmupExercise)
+        guard let added = exercises.popLast() else { return }
+        exercises[idx] = added
+        stopRestIfAnchorMissing()
+
+        let why = replacement == nil ? " — same muscles" : ""
+        commandFeedback = CommandFeedback(text: "Swapped \(old.name) → \(newName)\(why).") {
+            exercises[idx] = old
         }
     }
 
