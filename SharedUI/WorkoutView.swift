@@ -64,6 +64,19 @@ struct WorkoutView: View {
     private func consumeResumeRequest() {
         guard LiveWorkoutMonitor.shared.wantsResume else { return }
         LiveWorkoutMonitor.shared.wantsResume = false
+        // Only present if there is still something to resume. The flag can
+        // outlive the session it refers to — `loadSession()` retires a draft
+        // after 5 hours of inactivity — and presenting anyway opens an EMPTY
+        // workout that reads as "my session was lost". Belt and braces with the
+        // check in `requestResume()`, because this path also runs on a tab
+        // rebuild, where the flag may have been set some time ago.
+        guard WorkoutService.loadSession() != nil else {
+            LiveWorkoutMonitor.shared.refresh()
+            return
+        }
+        // A resumed session restores its own exercises; a stale template
+        // selection would otherwise fight the restore.
+        selectedTemplate = nil
         showingNewWorkout = true
     }
 

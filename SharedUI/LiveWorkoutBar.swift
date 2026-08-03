@@ -66,7 +66,27 @@ final class LiveWorkoutMonitor {
 
     /// Ask the workout sheet to reopen. The root switches to the Workout tab;
     /// `WorkoutView` reads `wantsResume` and presents.
-    func requestResume() { wantsResume = true }
+    ///
+    /// RE-VALIDATES FIRST. `minimizedName` is cached and only recomputed on
+    /// lifecycle events, but `loadSession()` retires a session after 5 hours of
+    /// inactivity — it finalizes the entered sets into a real workout and
+    /// clears the draft. Nothing tells the pill that happened, so it kept
+    /// offering "tap to resume" for a session that no longer existed, and the
+    /// tap opened an EMPTY new workout instead. Reproduced 2026-08-03: a
+    /// session minimized the previous evening still advertised
+    /// "P5 Day 1 - Lower + Core · 4h 02m · tap to resume" and resumed into a
+    /// blank "Morning Workout".
+    ///
+    /// The work isn't lost — `finalizeAbandonedSession` already saved it to
+    /// history — but the pill has to stop promising something it can't deliver.
+    /// `refresh()` clears `minimizedName`, which hides the pill.
+    func requestResume() {
+        guard WorkoutService.loadSession() != nil else {
+            refresh()
+            return
+        }
+        wantsResume = true
+    }
 }
 
 /// The persistent minimized-workout pill — rendered at app root, above the tab
