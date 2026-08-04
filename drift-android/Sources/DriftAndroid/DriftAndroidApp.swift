@@ -31,6 +31,8 @@ let logger: Logger = Logger(subsystem: "com.drift.health", category: "DriftAndro
     }
 
     /* SKIP @bridge */public func onInit() {
+        lineBufferStandardOutput()
+        Log.app.info("Drift Android launched")
         logger.debug("onInit")
         // Android half of the platform-health seam (HealthKitService on iOS).
         // onInit runs on Android's main thread (Application.onCreate), and the

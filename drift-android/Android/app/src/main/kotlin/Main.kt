@@ -39,12 +39,41 @@ open class AndroidAppMain: Application {
 
     override fun onCreate() {
         super.onCreate()
+        startStdioRelay()
         logger.info("starting app")
         ProcessInfo.launch(applicationContext)
         AppDelegate.shared.onInit()
     }
 
+    /// Android throws away a process's stdout/stderr, so every Swift `print()`
+    /// — and any `fatalError` message, which goes to the unbuffered fd 2 — is
+    /// invisible in logcat (#1081). Point both fds at a pipe and pump each line
+    /// back out through android.util.Log. Runs before anything else in the app
+    /// so startup output is captured too. DriftCore's structured `Log.*` goes
+    /// straight to liblog and does not depend on this relay.
+    private fun startStdioRelay() {
+        try {
+            val pipe = android.system.Os.pipe()
+            android.system.Os.dup2(pipe[1], 1)
+            android.system.Os.dup2(pipe[1], 2)
+            val relay = Thread({
+                try {
+                    java.io.FileInputStream(pipe[0]).bufferedReader().forEachLine { line ->
+                        android.util.Log.i(STDIO_TAG, line)
+                    }
+                } catch (e: Throwable) {
+                    android.util.Log.w(STDIO_TAG, "relay stopped: ${e}")
+                }
+            }, "drift-stdio-relay")
+            relay.isDaemon = true
+            relay.start()
+        } catch (e: Throwable) {
+            android.util.Log.w(STDIO_TAG, "relay unavailable: ${e}")
+        }
+    }
+
     companion object {
+        private val STDIO_TAG = "com.drift.health/stdio"
     }
 }
 

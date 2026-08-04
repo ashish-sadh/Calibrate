@@ -1,3 +1,19 @@
+/// Android's `ANDROID_LOG_*` priorities from `android/log.h` (ABI-stable since
+/// API 1), keyed by the level names `PlainLogger.emit` uses. Declared outside
+/// the platform gates so it stays testable from macOS.
+enum AndroidLogPriority {
+    static func priority(for level: String) -> Int32 {
+        switch level {
+        case "debug": return 3
+        case "info": return 4
+        case "warning": return 5
+        case "error": return 6
+        case "fault": return 7
+        default: return 4
+        }
+    }
+}
+
 #if canImport(os)
 import os
 
@@ -16,10 +32,27 @@ public enum Log {
 }
 #else
 
+#if os(Android)
+/// liblog's C entry point, declared directly rather than by depending on
+/// swift-android-native's `AndroidLogging` — that would make every macOS
+/// `swift test` and iOS build resolve an extra package for three lines. The
+/// `log` library is linked via the platform-conditioned `linkerSettings` on
+/// the DriftCore target in Package.swift.
+@_silgen_name("__android_log_write")
+private func drift_android_log_write(_ priority: Int32,
+                                     _ tag: UnsafePointer<CChar>,
+                                     _ text: UnsafePointer<CChar>) -> Int32
+#endif
+
 /// Fallback logger for platforms without os.Logger (Android). Mirrors the
 /// os.Logger call surface Drift uses (debug/info/warning/error/fault) so
-/// call sites compile unchanged; output goes to stdout, which Android
-/// surfaces in logcat.
+/// call sites compile unchanged.
+///
+/// On Android, output goes straight to liblog — Android discards a process's
+/// stdout, so the `print` this used to do was silently dropped (#1081). The
+/// tag is `com.drift.health/<category>`, matching the `subsystem/category`
+/// shape Skip's own logger emits, so one `adb logcat | grep com.drift.health`
+/// catches everything. Elsewhere off-Apple (Linux) it still prints to stdout.
 public struct PlainLogger: Sendable {
     let category: String
 
@@ -30,7 +63,17 @@ public struct PlainLogger: Sendable {
     public func fault(_ message: String) { emit("fault", message) }
 
     private func emit(_ level: String, _ message: String) {
+        #if os(Android)
+        let tag = "com.drift.health/\(category)"
+        let priority = AndroidLogPriority.priority(for: level)
+        _ = tag.withCString { tagPointer in
+            message.withCString { textPointer in
+                drift_android_log_write(priority, tagPointer, textPointer)
+            }
+        }
+        #else
         print("com.drift.health/\(category) [\(level)] \(message)")
+        #endif
     }
 }
 

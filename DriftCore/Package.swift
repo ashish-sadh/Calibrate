@@ -47,6 +47,11 @@ let package = Package(
             path: "Sources/DriftCore",
             resources: [
                 .process("Resources"),
+            ],
+            linkerSettings: [
+                // liblog — PlainLogger calls __android_log_write directly so
+                // Log.* reaches logcat (Utilities/Log.swift).
+                .linkedLibrary("log", .when(platforms: [.android])),
             ]
         ),
         .executableTarget(
