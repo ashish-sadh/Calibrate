@@ -12,6 +12,35 @@ not ported at all.
 
 ## Session notes (append-only)
 
+- **2026-08-03 (scout #14, Opus 5):** **BODY COMPOSITION (#1069)** — the coarsest node left on the
+  board, and the one scout #12 named as remaining. It was two matrix rows standing in for ~1,750 lines
+  of iOS source across 6 files (`Drift/Views/BodyComposition/**`), and — the finding that mattered most —
+  **#1069 carried only the `android-parity` label, no `needs-plan`, so the planner lane could not see it
+  at all.** An entire feature area was invisible to the pipeline. Now decomposed into 7 scoped children
+  on the #1114–#1119 / #1142–#1145 pattern. **Cost-changing structural finding:** the whole DEXA +
+  measurement-analysis data layer is *already in DriftCore and compiles for Android today*
+  (`Models/DEXAScan`, `Models/DEXARegion`, `Domain/Health/DEXAService`, `BodyCompositionAnalysis`,
+  `BodyMeasurementAnalysis`, and `AppDatabase.fetchProgressEntries()` public at
+  `AppDatabase+Progress.swift:113`) — #1185 and #1189 are pure view ports with zero seam work; only PDF
+  import (#1191) is genuinely blocked (PDFKit is iOS-only *and* it needs the #1175 file-in seam).
+  **Device window opened mid-session** (executor's `xcodebuild test` finished, emulator-5554 came up) so
+  the 5-session device-verify debt was partly discharged — first scout device drive since #12. Confirmed
+  on build 79: the progress-photo thumbnail is a **DEAD TAP** (screen pixel-identical before/after —
+  #1187, the whole viewer/compare payoff surface is unreachable), cards render **raw ISO `2026-07-30`**
+  instead of `Jul 30, 2026`, no weight, no measurement line, a single lonely thumb instead of 4 pose
+  slots, `lock.fill` for `lock.shield.fill`, bare `+` for `plus.circle.fill`. Zero crashes across the
+  drive (0-NO-CRASH clean); emulator restored to the More tab as found. **Device-only find** the source
+  sweep would have missed: the More tab's "COMING TO ANDROID" card is a hardcoded string array
+  advertising **already-shipped** Coach chat and photo logging as unshipped — a floating Coach button
+  sits one card below the text saying Coach is coming (#1192). Rows changed: **27** (2 coarse rows →
+  25 enumerated across two new sub-sections + 1 More row + section header). Issues filed: **8** (#1185
+  DEXA screen+manual entry, #1186 P1 gallery data defects, #1187 P1 dead-tap viewer, #1188 gallery
+  structure, #1189 Trends sheet, #1190 DEXA charts, #1191 blocked PDF import, #1192 stale COMING card) —
+  at budget, all `needs-plan`. #1069 commented as an INDEX with a suggested sequencing. No code touched
+  (matrix only). **Residual device debt:** the ≥2-entry states (timeline scrubber, Compare/Trends row)
+  and the metric-unit + measurement-only-entry cases in #1186 need seeded fixtures — Android has no UI
+  to create them until #1166.
+
 - **2026-08-03 (executor, Sonnet), #1111:** Shipped Snap meal photo logging shell — completed WIP inherited from an earlier watchdog-restarted executor session on this same ticket (`NebiusMealPhotoLogger.swift` + Tier-0 tests + `CameraCaptureFacade.kt` + manifest/`Main.kt` wiring were already present, uncommitted). Added: FileProvider `<provider>` block + `res/xml/file_paths.xml` (was MISSING — `CameraCaptureFacade.launch()` would have crashed with `IllegalArgumentException` on the first "Take Photo" tap, never previously exercised), `CameraCaptureService.swift` (Swift-side facade wrapper mirroring `ImagePickerService.swift`, handles the permission-request→poll→launch→poll→result state machine), `SnapMealSheet.swift` (capture/analyzing/review/error phases, mirrors `DescribeMealSheet`'s review-row style verbatim rather than extracting a shared `MealReviewList` per the plan's speculative File #6 — only 2 occurrences, CLAUDE.md's anti-premature-abstraction tenet, and LAUNCH HARDENING's "no speculative refactors" all argue against touching the already-shipped Describe sheet), `PhotoStackShape` drawn glyph (skip-ui has zero `photo.*`/gallery/album SF Symbol mappings at all — checked `composeSymbolName` directly), `TelemetrySurface.snapMeal` constant, TodayTab wiring (Snap chip now opens the real sheet; the `showingCoachInfo`/`AIChatView` placeholder it used to open is DELETED — was 100% dead after the repoint, Coach remains reachable via the floating `ChatIconButton` in `ContentView.swift`). Both capture paths device-verified working end-to-end THROUGH TO THE CLOUD CALL: camera permission prompt → grant → system camera → confirm → app resume (no crash, no duplicate-MainActivity); gallery picker → pick → app resume. 5 rapid background/foreground cycles clean, zero crashes, zero ANRs (0-NO-CRASH). Tier-0 8/8 new + 2686/2686 total green; `android-build-check.sh` green; full iOS suite 1274/1274 green (DriftCore touch is ADD-ONLY, zero iOS behavior change).
   **RESIDUAL — blocks the happy path, filed as #1177 (P1, needs-plan):** the cloud vision round-trip itself returns HTTP 200 with only the first (empty, role-announcement) SSE chunk — 4105 bytes, byte-identical size across two completely different test images — before the connection is cut, so `NebiusMealPhotoLogger.parse` always resolves to nil and the error screen fires (verified working: clean UI, Retry + Retake, no crash). Isolated via a temporary debug capture (added, verified, then fully reverted — `git diff --stat` on the two touched shared files is empty) that a control test (Describe, text-only, same buffered Android transport) succeeds end-to-end on the same build/device, so this is specific to the (slower-to-first-token) vision-call shape, not a general network/config/throttle failure — likely the buffered-path sibling of the exact "idle connection gets reaped" failure class #1133's own code comments already document for the streaming path. Needs real architectural investigation (real-device confirmation beyond the emulator, possibly a `stream:false` request for the buffered path or an OkHttp-Kotlin-facade transport mirroring #1136) — out of scope for a bounded executor session, filed `needs-plan`. Also affects Workout Scan (#1110) once its photo path is device-tested — same shared `RemoteLLMBackend` transport.
   Build: verified via `skip app launch --android` (not yet published — see next session note for the publish outcome). #1100 (Stop-hook lane-scoped skip) also closed this session: fix had already landed (`ff33e89c`) but the issue was never closed — re-verified with a proper decoy-process test (my own self-test hit the documented pgrep ancestor-exclusion caveat) rather than re-implementing.
@@ -648,7 +677,7 @@ V6CoachingNudge, WorkoutConsistencyCard, GoalProgressCard, TodayDonutView, V6Rin
 | Recovery | iOS `supplementCard` (N/M taken → SupplementsTabView) when supplements configured — Android none (Supplements TAB is ported #1068; dashboard entry not) | missing | #1061 |
 | Coach entry | floating `ChatIconButton` → AIChatView — PORTED (AppShell.swift + ContentView.swift), matches iOS single AI access point | ok | #1066 |
 
-## Body / Weight (epic #1065 = INDEX · Android-only re-creation: WeightTab.swift 325 ln vs iOS WeightTabView.swift 422 ln + 6 sub-views · scoped ports #1142 insights / #1143 body-comp-entry / #1144 edit+outlier / #1145 residual · DEXA+photos → #1069 · source-verified 2026-07-28, device-verify debt)
+## Body / Weight (epic #1065 = INDEX · Android-only re-creation: WeightTab.swift 325 ln vs iOS WeightTabView.swift 422 ln + 6 sub-views · scoped ports #1142 insights / #1143 body-comp-entry / #1144 edit+outlier / #1145 residual · DEXA+photos → #1069 = INDEX, decomposed 2026-08-03 into #1185 DEXA screen / #1190 DEXA charts / #1191 DEXA PDF-import / #1186 gallery data defects / #1187 viewer / #1188 gallery structure / #1189 Trends sheet, plus existing #1166 capture · source-verified 2026-07-28, device-verify debt)
 
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
@@ -667,8 +696,47 @@ V6CoachingNudge, WorkoutConsistencyCard, GoalProgressCard, TodayDonutView, V6Rin
 | Weight tab | milestone celebration overlay + haptic | missing | #1145 |
 | Weight tab | empty state (manual-log CTA; AH-sync stays hidden till health seam) — Android shows inline "No weights yet" | deviation | #1145 |
 | Today dashboard | body summary cards row (`BodySummaryCardsRow` — mounted in `DashboardView`, NOT the Weight tab; misfiled here) | unknown | #1061 |
-| DEXA overview | DEXAOverviewView + detail | missing | #1069 |
-| Progress photos | gallery / viewer overlays / timer camera / add entry — Android-only re-creation `ProgressGalleryAndroid.swift` EXISTS + wired (`MoreTab.swift:147`), NOT the SharedUI ProgressGalleryView port; **add-entry now runs on the landed #1128 image-in seam** (`:84` → `DriftPlatform.imagePicker.pickLibraryImage` — the seam's first/only wired consumer). Live timer-camera capture + full 4-pose parity → #1166; viewer parity unverified (source-only) | deviation | #1069/#1166 |
+### Body composition — DEXA (#1069 index · iOS `Drift/Views/BodyComposition/DEXAOverviewView.swift` 632 ln · NO Android route exists)
+
+Source-enumerated 2026-08-03 (scout #14). **The whole data layer is already in DriftCore and
+Android-available** (`Models/DEXAScan`, `Models/DEXARegion`, `Domain/Health/DEXAService`,
+`Domain/Health/BodyCompositionAnalysis`) — these are pure view ports, not seam work.
+
+| screen | sub-interaction | status | issue |
+|---|---|---|---|
+| DEXA | route from More — Android `MoreTab.swift` has no Body Composition row at all | missing | #1185 |
+| DEXA | overview cards (BF% / lean / fat / visceral, goal-aware deltas, 0.05 neutral threshold) + miniStat row (RMR / A-G / bone / total) | missing | #1185 |
+| DEXA | "WHAT CHANGED" breakdown card — `BodyCompositionAnalysis.scanDelta` narrative + verdict tint + weight-trend `reconcile` line | missing | #1185 |
+| DEXA | regional breakdown (arms/trunk/legs/android/gynoid) + muscle balance L/R table | missing | #1185 |
+| DEXA | "All Scans (N)" list + per-scan delete + "Clear All" destructive alert | missing | #1185 |
+| DEXA | manual entry sheet (`DEXAEntryView`) — the ONLY data-in path Android can have, since PDF is iOS-only | missing | #1185 |
+| DEXA | trend charts (BF% / fat mass / lean mass) — `Charts` absent on Skip, needs Path port; lean-mass drop must read RED | missing | #1190 |
+| DEXA | BodySpec PDF import (`.fileImporter` + spinner + result/error cards) — blocked on #1175 seam AND PDFKit-free parser | missing | #1191 |
+
+### Body composition — progress photos (#1069 index · Android re-creation `ProgressGalleryAndroid.swift` 169 ln vs iOS `ProgressGalleryView.swift` 311 ln + viewer 277 + charts 170 + add-entry 478)
+
+Device-verified 2026-08-03 (scout #14, emulator-5554 build 79) except where noted.
+Wired at `MoreTab.swift:120` → `:190` (sheet). Add-entry runs on the landed #1128 image-in seam (`:84`).
+
+| screen | sub-interaction | status | issue |
+|---|---|---|---|
+| Progress photos | gallery route + check-in cards render | ok | — |
+| Progress photos | thumbnail tap → full-screen viewer — **DEAD TAP**, screen pixel-identical after tap; viewer absent entirely | broken | #1187 |
+| Progress photos | viewer depth: pose switcher, date swipe, stat-overlay chips, compare mode + goal-aware deltas | missing | #1187 |
+| Progress photos | card date — Android renders raw ISO `2026-07-30` vs iOS `Jul 30, 2026` | deviation | #1186 |
+| Progress photos | card weight — Android exact-date match vs iOS nearest-within-±14d, so weight usually absent | deviation | #1186 |
+| Progress photos | measurement line — Android hardcodes **inches** + chest-only vs iOS unit-aware 4-site `displayOrder` | deviation | #1186 |
+| Progress photos | measurement-only check-ins (no photo) never appear — Android groups by photos; `fetchProgressEntries()` is public in DriftCore | missing | #1186 |
+| Progress photos | 4-up pose slots with placeholders for missing angles — Android draws only existing photos | deviation | #1188 |
+| Progress photos | timeline scrubber (segmented pose picker + horizontal dated thumbs, ≥2 entries) — source-only, needs ≥2-entry device check | missing | #1188 |
+| Progress photos | Compare / Trends action row — source-only, needs ≥2-entry device check | missing | #1188 |
+| Progress photos | empty state — Android is 2 lines of grey text with no "Add First Check-in" CTA | deviation | #1188 |
+| Progress photos | tap-to-edit / delete a check-in — Android header inert; **no correction path exists at all** | missing | #1188 |
+| Progress photos | privacy banner — `lock.fill` + larger type + always shown vs iOS `lock.shield.fill` + `.tiny` + only when non-empty | deviation | #1188 |
+| Progress photos | toolbar add glyph — bare `+` vs iOS `plus.circle.fill` | deviation | #1188 |
+| Progress photos | add-entry depth: 4 poses (camera + library each), measurements by `MeasurementSite.Group`, notes, delete, MeasurementGuideSheet | deviation | #1166 |
+| Progress photos | live timer camera (`TimerCameraView`) — needs a camera seam beyond #1128's library-only pick | missing | #1166 |
+| Progress photos | Trends sheet (`ProgressChartsView`): insights (ratios / symmetry / biggest movers) + per-site Path charts | missing | #1189 |
 
 ## More / Settings (epic #1067 = INDEX · Android stub: MoreTab.swift 90 lines vs iOS ~3.5k-line tree · scoped ports #1114–#1119)
 
@@ -679,6 +747,7 @@ inherits #1108. KEY POLICY (0-AI-FOCUS): no key-entry UI of any kind ships on An
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
 | More hub (MoreTabView :4-193) | hub layout: HEALTH/APP sections, navRow chrome (36pt icon tile, subtitle, chevron, contentShape), inline title | missing | #1114 |
+| More hub (Android-only) | "COMING TO ANDROID" card (`MoreTab.swift:161-173`) is a hardcoded string array — lists **shipped** Coach chat (#1066) and photo logging (#1111) as unshipped; drifts further with every port. Device-confirmed 2026-08-03 build 79 | deviation | #1192 |
 | More hub | HEALTH rows ×7: Body Rhythm→SleepRecoveryView, Cycle→CycleView (conditional `hasCycleData` via health seam), Supplements, Body Composition→DEXAOverviewView, Progress Photos→ProgressGalleryView, Glucose, Biomarkers — destinations: Supplements + Progress Photos now LANDED (wired in Android More stub TRACKING section, `MoreTab.swift:146-147`); remaining dests #1122 (Biomarkers) / #1123 (Glucose) / #1124 (Cycle) / #1069 (Body Comp) / #1061 (Body Rhythm). Full-hub port keeps rows HIDDEN until each dest lands (no dead taps, #1093) | missing | #1114 |
 | More hub | APP row Profile → ProfileView | missing | #1114/#1116 |
 | More hub | APP row Weight Goal → GoalView | missing | #1114/#1117 |
