@@ -38,6 +38,13 @@ func sym(_ name: String) -> String {
     // SpeechRecognizer seam (#1063), so the write glyph reads truthfully.
     case "mic.fill", "mic": return "pencil"
     case "arrow.forward.circle.fill": return "arrow.forward"
+    // Material's mapped set has no cloud, globe or wifi glyph of any kind, so
+    // the cloud-touchpoint banner on Photo Log (#1111) takes the neutral
+    // informational icon. Deliberately NOT "lock": a padlock beside "your
+    // photo is sent to Drift's cloud AI" reads as a security guarantee we
+    // aren't making, and a stand-in that asserts something false is worse
+    // than one that is merely approximate.
+    case "cloud", "cloud.fill": return "info.circle"
     case "exclamationmark.circle.fill": return "exclamationmark.triangle.fill"
     // Error states: Material has no speech-bubble variant, and the triangle IS
     // the right meaning here (operator 2026-07-28: "closest icons are fine" —

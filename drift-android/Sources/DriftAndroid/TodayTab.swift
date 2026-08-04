@@ -263,7 +263,12 @@ struct TodayTab: View {
             .onAppear { store.reload() }
             // TodayStore's .foodEntryAdded observer refreshes the dashboard,
             // but onDismiss also covers the cancel path's ring re-check.
-            .sheet(isPresented: $showingSnap, onDismiss: { store.reload() }) {
+            // fullScreenCover, not sheet: iOS presents Photo Log edge-to-edge
+            // (ContentView.swift:118 — "single owner of the Photo Log
+            // fullScreenCover"), so a partial sheet with the dashboard dimmed
+            // behind it and a drag grabber above the title read as a
+            // different app.
+            .fullScreenCover(isPresented: $showingSnap, onDismiss: { store.reload() }) {
                 SnapMealSheet()
             }
             .sheet(isPresented: $showingDescribe, onDismiss: { store.reload() }) {

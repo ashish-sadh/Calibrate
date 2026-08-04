@@ -41,10 +41,23 @@ struct SnapMealSheet: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // In-content chrome (#1089 pattern) — sheet nav bar off.
-                HStack {
-                    Button("Cancel") { dismiss() }.foregroundStyle(Theme.accent)
-                    Spacer()
+                // In-content chrome (#1089 pattern) — sheet nav bar off. iOS
+                // gets its "Photo Log" title + Cancel from a real inline nav
+                // bar; SkipUI's costs an ~80dp dead band inside a sheet, so
+                // the same two elements are drawn as content. The pill behind
+                // Cancel is the chrome iOS 26 paints for toolbar text buttons
+                // (same treatment as TemplatePreviewSheet / ActiveWorkoutView).
+                ZStack {
+                    Text("Photo Log")
+                        .font(.headline)
+                        .foregroundStyle(Theme.textPrimary)
+                    HStack {
+                        Button("Cancel") { dismiss() }
+                            .foregroundStyle(Theme.textPrimary)
+                            .padding(.horizontal, 14).padding(.vertical, 7)
+                            .background(Theme.pillBackground, in: Capsule())
+                        Spacer()
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
@@ -73,73 +86,129 @@ struct SnapMealSheet: View {
 
     // MARK: - Capture
 
+    /// Line-for-line port of iOS `PhotoLogCaptureView.body` (#1111): header
+    /// block top-anchored, cloud banner under it, then the capture buttons
+    /// floated between two Spacers. The prior Android layout centred the
+    /// title and pinned the buttons to the bottom, which read as a different
+    /// app (gap sweep, 2026-08-04).
     private var captureView: some View {
-        VStack(spacing: 22) {
+        VStack(spacing: 16) {
+            header
+            cloudBanner
             Spacer()
+            captureButtons
+            Spacer()
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+    }
 
-            Text("Snap your meal")
-                .font(.subheadline.weight(.semibold))
+    private var header: some View {
+        VStack(spacing: 6) {
+            // 58pt frame ≈ iOS's 44pt `.light` SF `camera`, which draws ~50pt
+            // wide (SF Symbols run ~1.15× their point size); CameraShape fills
+            // 20 of its 24 design units, so 58 × 20/24 ≈ 48pt.
+            CameraShape()
+                .stroke(Theme.textSecondary, lineWidth: 1.7)
+                .frame(width: 58, height: 58)
+            Text("Snap a meal to log it")
+                .font(.headline)
                 .foregroundStyle(Theme.textPrimary)
-
-            Text("Take a photo of your plate, or pick one from your gallery")
+            Text("Photo Log uses cloud AI to identify what's on your plate.")
                 .font(.caption)
                 .foregroundStyle(Theme.textSecondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 32)
+        }
+        .padding(.top, 8)
+    }
 
-            Spacer()
+    /// iOS's `infoBanner` in its has-a-key form. Android has no key UI at all
+    /// (directive 0-AI-FOCUS) so the BYOK half is dropped, but the banner
+    /// itself stays: Drift's privacy tenet is that every cloud touchpoint is
+    /// surfaced explicitly, and this is the one screen that ships a photo off
+    /// the device. Copy is Android-true rather than iOS-verbatim because the
+    /// iOS string names the user's own provider and its per-photo price,
+    /// neither of which exists here.
+    private var cloudBanner: some View {
+        HStack(alignment: .top, spacing: 8) {
+            // iOS draws SF `cloud` here. skip-ui's Material map has no cloud,
+            // globe or wifi glyph at all, and the operator's standing rule is
+            // closest-mapped-icon over a hand-drawn Path (2026-07-28), so
+            // sym() sends this to info.circle: neutral, truthful for an info
+            // banner, and it can't be misread as a security claim the way a
+            // padlock could.
+            Image(systemName: sym("cloud"))
+                .foregroundStyle(Theme.textTertiary)
+            Text("Photo is sent to Drift's cloud AI to identify what's on your plate. Nothing else leaves your phone.")
+                .font(.caption2)
+                .foregroundStyle(Theme.textSecondary)
+                .multilineTextAlignment(.leading)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .background(Theme.pillBackground, in: RoundedRectangle(cornerRadius: Theme.radiusChip))
+        .accessibilityIdentifier("photo-log-privacy-banner")
+    }
 
-            VStack(spacing: 12) {
-                Button {
-                    Task { await capture(from: .camera) }
-                } label: {
-                    HStack(spacing: 10) {
-                        CameraShape().stroke(Theme.textPrimary, lineWidth: 1.7).frame(width: 20, height: 20)
-                        Text("Take Photo").font(.headline).foregroundStyle(Theme.textPrimary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Theme.radiusControl)
-                            .stroke(Theme.separator, lineWidth: 0.5)
-                    )
+    /// iOS: Take Photo is `.borderedProminent`/`.tint(Theme.ink)` (black
+    /// capsule, white label); Library + barcode are `.bordered`/
+    /// `.tint(Theme.textPrimary)` (gray capsules). Android had both as white
+    /// rounded cards — the shape and the fill were both wrong.
+    ///
+    /// 7pt vertical padding, not 12: an iOS `.bordered` button measures ~34pt
+    /// tall on the reference screenshot, and Compose's own text line box is
+    /// already ~21dp, so 12 gave a 45dp slab that read visibly chunkier than
+    /// iPhone. Barcode is the missing third button — seam filed as #1206.
+    private var captureButtons: some View {
+        VStack(spacing: 10) {
+            Button {
+                Task { await capture(from: .camera) }
+            } label: {
+                HStack(spacing: 8) {
+                    CameraShape().stroke(.white, lineWidth: 1.7).frame(width: 20, height: 20)
+                    Text("Take Photo").font(.body.weight(.medium)).foregroundStyle(.white)
                 }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("snap-meal-take-photo")
-
-                Button {
-                    Task { await capture(from: .library) }
-                } label: {
-                    HStack(spacing: 10) {
-                        PhotoStackShape().stroke(Theme.textPrimary, lineWidth: 1.7).frame(width: 20, height: 20)
-                        Text("Choose from Library").font(.headline).foregroundStyle(Theme.textPrimary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusControl))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: Theme.radiusControl)
-                            .stroke(Theme.separator, lineWidth: 0.5)
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("snap-meal-choose-library")
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 7)
+                .background(Theme.ink, in: Capsule())
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 24)
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("snap-meal-take-photo")
+
+            Button {
+                Task { await capture(from: .library) }
+            } label: {
+                HStack(spacing: 8) {
+                    PhotoStackShape().stroke(Theme.textPrimary, lineWidth: 1.7).frame(width: 20, height: 20)
+                    Text("Choose from Library").font(.body.weight(.medium)).foregroundStyle(Theme.textPrimary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 7)
+                .background(Theme.pillBackground, in: Capsule())
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("snap-meal-choose-library")
         }
     }
 
     // MARK: - Analyzing
 
+    /// Ported from iOS `PhotoLogFlowView.analyzingView` — same copy, same
+    /// 1.4× accent spinner. Android previously showed a bare spinner and
+    /// "Reading your plate…", with no sense of how long the wait is.
     private var analyzingView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 18) {
             Spacer()
-            ProgressView()
-            Text("Reading your plate…")
-                .font(.subheadline)
+            ProgressView().scaleEffect(1.4).tint(Theme.accent)
+            Text("Analyzing your meal…")
+                .font(.headline)
+                .foregroundStyle(Theme.textPrimary)
+            Text("One photo → one call. Usually 3–6 seconds.")
+                .font(.caption)
                 .foregroundStyle(Theme.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 40)
             Spacer()
         }
     }
