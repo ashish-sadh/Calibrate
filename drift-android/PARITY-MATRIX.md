@@ -9,11 +9,56 @@ Structural ground truth: Android hosts SharedUI single-source files for
 **Today / Body / More** are still Android-only re-creations (TodayTab.swift,
 WeightTab.swift, MoreTab.swift). Capture + Coach + health sub-screens are
 not ported at all. **Sharing / Social** hosts ~4.6k ln of SharedUI single-source
-and ships in the APK, but is 100% non-functional on Android — sign-in itself
-parks on the URLSession bridge (#1194, P0), so treat its rows as unreachable
-rather than untested.
+and ships in the APK. *(Corrected scout #18, 2026-08-04: this header previously
+said Sharing was "100% non-functional — sign-in parks on the URLSession bridge
+(#1194, P0)". **#1194 is CLOSED** — `SyncClient.swift:40` now defaults to
+`DriftPlatform.httpSession`, and `rg "URLSession.shared" DriftCore/Sources` hits
+only the seam's own default. Scout #16's parking verdict was overturned
+on-device. Sharing rows are `unknown` = **untested**, not unreachable; #1197
+is the verification pass.)*
 
 ## Session notes (append-only)
+
+- **2026-08-04 (scout #18, Opus 5):** **MORE / SETTINGS (#1067)** — next in rotation and the largest untouched block (44 `missing` rows),
+  last enumerated by scout #5 on **2026-07-27**. Both sibling lanes live (executor PID 89218, planner PID 74139) and a zero-interference
+  `screencap` showed the executor holding the app on the **Body/Weight** tab mid-drive, so per [[harness_parity_lanes_share_one_emulator]]
+  the emulator was left alone — **9th consecutive source-only sweep**, and the device debt is now the board's biggest structural weakness.
+  **The headline: the two issues that gate this entire 44-row block, #1114 and #1115, were both sitting in `planned` with specs that would
+  have made an executor ship regressions.** `MoreTabView.swift` moved 6× in the 8 days since enumeration (1116 ln now, not the ~1025 the
+  rows assume), and every delta landed inside those specs. #1114 told the executor to build **(a)** a `Cycle → CycleView` row iOS *deleted*
+  2026-07-28 (`b8b14696`, `:29-32` "keep the first impression light for new users"), **(b)** a footer "Report a bug" **external Link** that
+  iOS replaced 2026-08-02 with an in-app `SupportView` precisely *because* the external link was the bug ("`support_tickets` had zero rows
+  from either platform, which is what a feedback path nobody can complete looks like") — and Android already has the correct in-app form —
+  and **(c)** a HEALTH/APP-only section list that omits the **SOCIAL** section iOS added 2026-07-30, which Android *already ships*, so a
+  literal port would have deleted working code. #1115 was worse in kind: it points at **`UsageInsightsView`** twice, including an exact
+  line range to "fold in here", and that struct **does not exist anywhere in the repo** — deleted 2026-07-28 for `TelemetrySettingsView`,
+  whose own doc comment explains the counters "never answered what real users reach for". An executor would have reconstructed a deleted
+  screen from the issue text. Both knocked back to **`needs-plan`** with corrected scope commented. The sharpest consequence found:
+  #1114's "90-line stub … retires when this lands" is now false (**194 ln**) and retiring it as written **deletes the only opt-out for a
+  live cloud telemetry pipeline** (`MoreTab.swift:46-68`; telemetry really is running — `DriftAndroidApp.swift:66-67,93,98`), because iOS
+  homes those toggles behind a Settings screen Android doesn't have yet — a privacy-tenet break disguised as cleanup. Issues filed: **2**.
+  **#1207** P1 — the More tab's Health Connect button is `broken`, not merely thin: `HealthConnectFacade.kt:92-94` is a fire-and-forget
+  `permissionLauncher.launch()`, so `MoreTab.swift:83`'s `syncWeight()` races the grant dialog, reads nothing, returns 0, and has both its
+  result and its error discarded (`_ = try?`) — **the first tap after a fresh install can never import anything and never says so**; iOS's
+  counterpart (`:272-305`) is a `do/catch` with four distinct status strings and a 3s auto-clear. Plus no `availabilityStatus()` gate
+  (states 0 and 2 both render a promise the device can't keep, [[android_hide_unwired_integration_ui]]) and it uses anchor-based
+  `syncWeight()` where iOS deliberately uses `fullResyncWeight()` ("the buried Full Re-sync was the only escape from a poisoned anchor").
+  **#1208** P2 — **Body Rhythm / `SleepRecoveryView` (589 ln), the first row of iOS's HEALTH section, had no scoped issue at all**: #1068
+  scopes only Biomarkers/Glucose/Cycle/Supplements, and the matrix mis-routed it to **#1061, the Today epic**, purely because the file
+  lives in `Drift/Views/Dashboard/` — so the planner has never seen it. Filed with its two real blockers named up front (Charts absent on
+  Fuse → the `Path` treatment already precedented by `BriefingTrendChart`/#1190; HRV+RHR reads absent from the facade → consume #1176,
+  don't duplicate). Also commented **#1124** (Cycle) — with its entry point gone from both platforms it would ship an unreachable screen;
+  left the groom call to the planner rather than closing it unilaterally. Rows changed: **17** (7 corrected/⚠-flagged, 8 added, 2
+  verified-clean). Header corrected too: it claimed Sharing was **"100% non-functional — sign-in parks on the URLSession bridge (#1194,
+  P0)"**, but **#1194 is CLOSED** and `SyncClient.swift:40` now defaults to `DriftPlatform.httpSession` — scout #16's parking verdict was
+  overturned, so those 33 rows are *untested*, not unreachable, and #1197 is the pass that clears them. Deliberately did **not** file two
+  leads that source disproved: the More toggles persist correctly (`Preferences` uses `keyValueStore`, not UserDefaults — #1108 holds) and
+  all 53 `SharedUICopy/` files are byte-identical to `SharedUI/` right now; both recorded as verified-clean rows. Also checked and covered
+  elsewhere: no Android-only view sets `navigationBarTitleDisplayMode` at all (0 hits), but #1200 already scopes this systemically across
+  21 shared call sites — widened the matrix row instead of filing a duplicate. No code touched (matrix only). **Residual device debt:**
+  every ⚠ row above is source-verified only; #1207's first-tap failure in particular wants an on-device run that also checks whether the
+  permission ask still spawns the duplicate MainActivity of [[harness_skip_permission_relaunches_mainactivity]] (#1096). Rotation next:
+  **Coach / AI chat** (#1066) — 39 rows, last swept 07-28, and four of its children (#1180, #1137, #1174, #1135) have moved since.
 
 - **2026-08-04 (scout #17, Opus 5):** **TODAY (#1061)** — next in rotation (scout #16 deferred it for Sharing) and independently
   the right pick: `TodayTab.swift` (8 touches) and `DashboardView.swift` (6) are the most-churned Today-area files since the
@@ -956,35 +1001,54 @@ Wired at `MoreTab.swift:120` → `:190` (sheet). Add-entry runs on the landed #1
 | Progress photos | live timer camera (`TimerCameraView`) — needs a camera seam beyond #1128's library-only pick | missing | #1166 |
 | Progress photos | Trends sheet (`ProgressChartsView`): insights (ratios / symmetry / biggest movers) + per-site Path charts | missing | #1189 |
 
-## More / Settings (epic #1067 = INDEX · Android stub: MoreTab.swift 90 lines vs iOS ~3.5k-line tree · scoped ports #1114–#1119)
+## More / Settings (epic #1067 = INDEX · Android re-creation: MoreTab.swift **194 ln** vs iOS MoreTabView.swift **1116 ln** + 9 sibling files · scoped ports #1114–#1119)
 
-Source-enumerated 2026-07-27 (scout #5); `missing` rows are source-verified (no Android
-route exists), not emulator-driven. Persistence acceptance on every ported control
-inherits #1108. KEY POLICY (0-AI-FOCUS): no key-entry UI of any kind ships on Android.
+Source-enumerated 2026-07-27 (scout #5), **re-verified against HEAD 2026-08-04 (scout #18)**;
+`missing` rows are source-verified (no Android route exists), not emulator-driven. Persistence
+acceptance on every ported control inherits #1108. KEY POLICY (0-AI-FOCUS): no key-entry UI of
+any kind ships on Android.
+
+**Scout #18 staleness note:** `MoreTabView.swift` moved 6× between the enumeration and HEAD
+(SOCIAL section added, Cycle row deleted, Report-a-bug re-homed in-app, UsageInsightsView
+replaced by TelemetrySettingsView). #1114 and #1115 were sitting in `planned` with specs
+encoding the *pre-change* iOS, so both were knocked back to `needs-plan` with corrected scope.
+Rows below are HEAD-accurate; the ones marked ⚠ are where the old spec would have built a
+regression.
 
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
-| More hub (MoreTabView :4-193) | hub layout: HEALTH/APP sections, navRow chrome (36pt icon tile, subtitle, chevron, contentShape), inline title | missing | #1114 |
+| More hub (MoreTabView :4-210) | hub layout: HEALTH/**SOCIAL**/APP sections, navRow chrome (36pt icon tile, subtitle, chevron, contentShape), inline title | missing | #1114 |
+| More hub | ⚠ **SOCIAL section** (`:69-75`, added 2026-07-30): "Friends & Coaches" → SharingView, deliberately its own section not an APP row. **Android already ships it** (`MoreTab.swift:139-159`) — a literal port of #1114's pre-change spec would DELETE a working section | ok | — |
+| More hub | ⚠ nav title `.inline` (`:142`, "large title made the nav bar jump ~50pt on every swap"). **No Android-only view sets displayMode at all** (0 hits in drift-android/Sources); SharedUI port inherits it, Fuse bridging is #1200 | deviation | #1114/#1200 |
 | More hub (Android-only) | "COMING TO ANDROID" card (`MoreTab.swift:161-173`) is a hardcoded string array — lists **shipped** Coach chat (#1066) and photo logging (#1111) as unshipped; drifts further with every port. Device-confirmed 2026-08-03 build 79 | deviation | #1192 |
-| More hub | HEALTH rows ×7: Body Rhythm→SleepRecoveryView, Cycle→CycleView (conditional `hasCycleData` via health seam), Supplements, Body Composition→DEXAOverviewView, Progress Photos→ProgressGalleryView, Glucose, Biomarkers — destinations: Supplements + Progress Photos now LANDED (wired in Android More stub TRACKING section, `MoreTab.swift:146-147`); remaining dests #1122 (Biomarkers) / #1123 (Glucose) / #1124 (Cycle) / #1069 (Body Comp) / #1061 (Body Rhythm). Full-hub port keeps rows HIDDEN until each dest lands (no dead taps, #1093) | missing | #1114 |
+| More hub | ⚠ HEALTH rows **×6, NOT ×7** (corrected #18): Body Rhythm→SleepRecoveryView, Supplements, Body Composition→DEXAOverviewView, Progress Photos→ProgressGalleryView, Glucose, Biomarkers. Destinations: Supplements + Progress Photos LANDED (`MoreTab.swift:96,120`); remaining #1122 (Biomarkers) / #1123 (Glucose) / #1069 (Body Comp) / **#1208 (Body Rhythm)**. Full-hub port keeps rows HIDDEN until each dest lands (no dead taps, #1093) | missing | #1114 |
+| More hub | ⚠ **Cycle row DELETED from iOS** 2026-07-28 (`b8b14696`; `:29-32` "keep the first impression light for new users"). The `hasCycleData` conditional is gone with it. #1114's old spec said to build it → would ship a row iOS doesn't have. CycleView is now unreachable on BOTH platforms (flagged on #1124) | ios-only-by-design | #1124 (deferred) |
+| More hub | ⚠ **Body Rhythm → SleepRecoveryView (589 ln) had NO scoped issue** — #1068 scopes only Biomarkers/Glucose/Cycle/Supplements, and the matrix mis-routed it to #1061 (the *Today* epic) because the file sits in `Drift/Views/Dashboard/`. Filed #18. Blocked on Charts→Path + an HRV/RHR facade (#1176) | missing | **#1208** |
 | More hub | APP row Profile → ProfileView | missing | #1114/#1116 |
 | More hub | APP row Weight Goal → GoalView | missing | #1114/#1117 |
 | More hub | APP row "Bring Your Own Key" → PhotoLogSettingsView — `#if !os(Android)`, no replacement row | ios-only-by-design | KEY POLICY |
 | More hub | APP row Settings → SettingsView | missing | #1114/#1115 |
-| More hub | footer: "Report a bug" external Link + version line (Android keeps build stamp, gated) | missing | #1114 |
+| More hub | ⚠ footer "Report a bug" is **no longer an external Link** — `NavigationLink { SupportView() }` since 2026-08-02 (`b46d434b`, `:117`); the external link WAS the bug ("`support_tickets` had zero rows from either platform"). `SupportView` is SharedUI and **already wired on Android** (`MoreTab.swift:191`) — but as a `.sheet` row under a **TRACKING** header, not a footer link | deviation | #1114 |
+| More hub | version line `Drift · v{version} · {year}` (Android keeps its build stamp, gated — `MoreTab.swift:177`) | deviation | #1114 |
 | More hub | pop-to-root on tab reselect (`navId` reset via selectedTab onChange) | missing | #1114 |
+| More hub (Android-only) | ⚠ **PRIVACY card w/ 2 live toggles** — `usageTelemetryEnabled` (ON by default) + `aiCaptureEnabled` (`MoreTab.swift:46-68`). iOS homes these in Settings → Telemetry & Privacy, which Android lacks. Telemetry IS live on Android (`DriftAndroidApp.swift:66-67,93,98`), so "retire the stub" per #1114 **removes the only opt-out for a running cloud pipeline** — privacy-tenet break. Must land with #1115's TelemetrySettingsView. Copy also weaker than iOS (drops the "@username / account" line) | deviation | #1114/#1115 |
+| More hub (Android-only) | TRACKING card: Supplements · Support & feedback · Progress Photos, all `.sheet` where iOS **pushes**; sheets cost ~80dp of nav chrome ([[skipui_sheet_chrome_and_hscroll_height_traps]]). "Support & feedback" under a *TRACKING* header is also an IA mismatch | deviation | #1114 |
+| More hub | Health Connect card: ⚠ **first tap imports nothing, ever** — `requestPermissions()` is fire-and-forget (`HealthConnectFacade.kt:92-94`), so `syncWeight()` races the grant dialog; result + error both discarded (`MoreTab.swift:80-88`). No status line in ANY outcome (iOS has 4 + 3s auto-clear); no `availabilityStatus()` gate (states 0/2 render as a dead promise); uses anchor-based `syncWeight()` not iOS's deliberate `fullResyncWeight()`; skips body-comp | broken | **#1207** |
 | More hub (stub today) | PREFERENCES weight-unit picker — live on Android; iOS home is Settings→UNITS (stub order lbs,kg vs iOS kg,lbs) | deviation | #1115 |
 | More hub (stub today) | HEALTH CONNECT connect/sync card — live; iOS equivalent is Settings→HEALTH SOURCES with status text | deviation | #1115/#1070 |
 | More hub (stub today) | privacy blurb + "coming to Android" list — Android-only interim, retires with hub port | deviation | #1114 |
 | SettingsView (:195-898) | UNITS: Body Weight Unit segmented kg/lbs + "exercise weights stay in lbs" caption | missing | #1115 |
-| SettingsView | HEALTH SOURCES: "Sync from Apple Health" one-action full resync + body-comp import + 3s status line (HC wording on Android, #1095 header precedent) | missing | #1115/#1070 |
+| SettingsView (:256-306) | HEALTH SOURCES: "Sync from Apple Health" one-action full resync + body-comp import + 3s status line (HC wording on Android, #1095 header precedent). Android's stand-in is the More-hub HC card — see the `broken` row above; plan #1115 to CONSUME #1207's status/gating, not re-derive it | missing | #1115/#1070/#1207 |
 | SettingsView | HEALTH SOURCES: Write Nutrition toggle (#934; foreign-app-detect / auth-denied / unavailable states, auto-disable reason line) — needs HC WRITE; hidden until seam grows writes | missing | #1115/#1070 |
 | SettingsView | HEALTH SOURCES: "Sync Past Data…" confirmationDialog (30/90/all, skip-foreign-days) — write-gated, same hiding | missing | #1115/#1070 |
 | SettingsView | iCloud Backup NavigationLink row — Android backup screen is #1094/#1109's deliverable; row hidden until it exists | missing | #1094/#1109 |
 | SettingsView | DATA: Export Workouts CSV + Export Food Logs CSV (DriftCore-built CSV; UIActivityViewController → Android share seam, coordinate w/ #1109 SAF bridge) | missing | #1115 |
 | SettingsView | PRIVACY: Online Food Search toggle + conditional "only search terms sent" caption | missing | #1115 |
 | SettingsView | PRIVACY: WebSearchSettingsCard — Google key+cx / Brave key fields, expand/collapse, active-provider line: pure key-entry UI; Android web_search runs keyless/provisioned tier with NO settings surface | ios-only-by-design | KEY POLICY |
-| SettingsView | PRIVACY: Usage Insights row → UsageInsightsView (counter rows, ShareLink export, Reset counts, empty state; FeatureUsage = DriftCore) | missing | #1115 |
+| SettingsView | ⚠ **PRIVACY: Usage Insights row → UsageInsightsView — THE SCREEN NO LONGER EXISTS.** `rg -l UsageInsightsView` = 0 hits repo-wide; replaced 2026-07-28 by TelemetrySettingsView ("counters tallied what happened on THIS phone, which never answered what real users reach for"). #1115's spec still cites it at `:1030-1098` and says "fold in here" → executor would rebuild a deleted screen. Row deleted, superseded by the two below | ios-only-by-design | *(removed from iOS)* |
+| SettingsView (:459-531) | PRIVACY: **Support & feedback** row → `SupportView()` (`:499`) — never enumerated. `SupportView` is already SharedUI + already reachable on Android, so this row is near-free | deviation | #1115 |
+| SettingsView | PRIVACY: **Telemetry & Privacy** row → `TelemetrySettingsView()` (`:516`) — never enumerated | missing | #1115 |
+| TelemetrySettingsView (:1069-1116) | ENTIRE screen — 2 toggles (`usageTelemetryEnabled` on-by-default, `aiCaptureEnabled` off) + footer disclosure ("Neither is linked to your @username or to a Drift account"). Pure DriftCore, no seams. **Load-bearing on Android**: it's the destination the More-stub toggles must move into, or the opt-out disappears | missing | #1115 |
 | SettingsView | NOTIFICATIONS row → NotificationsSettingsView; hidden until #1119 lands | missing | #1115/#1119 |
 | SettingsView | ADVANCED: AI Chat Telemetry card — staged-intent toggle (enable-confirm alert, revert-on-cancel binding :548-562), delete-confirm alert, turns count, Export JSON, Delete all (ChatTelemetryService = DriftCore) | missing | #1115 |
 | SettingsView | ADVANCED: telemetry "View insights" → AIChatInsightsView (iOS-target file) — link hidden on Android until an AI-insights port exists | missing | #1115 (hide) |
@@ -1015,6 +1079,8 @@ inherits #1108. KEY POLICY (0-AI-FOCUS): no key-entry UI of any kind ships on An
 | RestorePickerView (163) | backup list, destructive restore confirm, atomic restore + relaunch prompt, empty/loading states | missing | #1094/#1109 |
 | BackupOnboardingSheet (115) | app-level onboarding prompt (trigger: DriftApp.swift:67 → Android trigger would live in DriftAndroidApp) | missing | #1094 |
 | PhotoLogSettingsView (323) | ENTIRE screen — provider picker, model picker, SecureField key entry + Paste/Save/Replace/Clear, Keychain storage, Test Connection ping: all key management. Android photo AI = provisioned Nebius (#1111) + local Google tier | ios-only-by-design | KEY POLICY |
+| *(verified clean #18)* | **Preference durability** — `weightUnit` / `usageTelemetryEnabled` / `aiCaptureEnabled` all route through `kv` = `DriftPlatform.keyValueStore` (`Preferences.swift:16-26`, `:447-465`), NOT UserDefaults. The [[skip_userdefaults_data_writes_dropped]] class is genuinely closed here (#1108). Don't re-chase | ok | — |
+| *(verified clean #18)* | **SharedUICopy divergence** — all 53 files in `drift-android/Sources/DriftAndroid/SharedUICopy/` are byte-identical to `SharedUI/` at HEAD. The sync script is current; no Android-runs-different-code bug today. (#1071 still worth doing — the mechanism is the hazard, not its current state) | ok | #1071 |
 | Health Connect | connection flow + permission grant | confirmed missing: `onLaunch()` calls `requestAuthorization()` silently, no settings-hub entry, sync failures swallowed by `try?` — worse than iOS's explicit "Sync from Apple Health" button + status text + past-sync dialog | #1070/#1090 |
 
 ## Coach / AI chat (epic #1066 = INDEX · single-source: SharedUI/AIChatView*.swift + AIChatViewModel + MessageHandling(2024 ln) · hosted by ContentView floating ChatIconButton + TodayTab coach sheet · scoped children #1125 cards+interview / #1126 voice / #1133 streaming-hang / #1135 food-logging)
