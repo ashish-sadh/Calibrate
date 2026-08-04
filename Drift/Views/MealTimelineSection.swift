@@ -132,12 +132,15 @@ struct MealTimelineSection: View {
     @ViewBuilder
     private func compactRow(row: MealTimelineRow) -> some View {
         let isExpanded = expandedRowID == row.id
-        Button {
-            withAnimation(.easeInOut(duration: 0.18)) {
-                expandedRowID = isExpanded ? nil : row.id
-            }
-        } label: {
-            VStack(alignment: .leading, spacing: 6) {
+        // The expanded detail is a SIBLING of the toggle button, not inside its
+        // label. A button nested in another button's label has its taps
+        // swallowed by the outer one, so Remove would look live and do nothing.
+        VStack(alignment: .leading, spacing: 6) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.18)) {
+                    expandedRowID = isExpanded ? nil : row.id
+                }
+            } label: {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     Text(row.timeText)
                         .font(.system(size: 11.5, weight: .semibold).monospacedDigit())
@@ -156,35 +159,65 @@ struct MealTimelineSection: View {
                         .font(.system(size: Theme.FontSize.tiny))
                         .foregroundStyle(Theme.textTertiary)
                 }
-
-                if isExpanded {
-                    HStack(spacing: 6) {
-                        if !row.portionText.isEmpty {
-                            chip(row.portionText, color: Theme.textSecondary)
-                        }
-                        macroChip("P", grams: row.proteinG, color: Theme.proteinRed)
-                        macroChip("C", grams: row.carbsG, color: Theme.macroCarbs)
-                        macroChip("F", grams: row.fatG, color: Theme.macroFat)
-                        if row.fiberG > 0.5 {
-                            macroChip("Fiber", grams: row.fiberG, color: Theme.macroFiber)
-                        }
-                        Spacer(minLength: 0)
-                    }
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
             }
-            // Density pass: was .padding(.horizontal 14, .vertical 12)
-            // — dropped to (14, 8) which is the comfortable lower bound
-            // for tap-target while halving the per-row footprint.
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(Rectangle())
+            .pressable()
+            .accessibilityLabel(row.accessibilityLabel)
+            .accessibilityHint(isExpanded ? "Hide details" : "Show details")
+            .accessibilityIdentifier("meal-timeline-row-\(row.id)")
+
+            if isExpanded {
+                HStack(spacing: 6) {
+                    if !row.portionText.isEmpty {
+                        chip(row.portionText, color: Theme.textSecondary)
+                    }
+                    macroChip("P", grams: row.proteinG, color: Theme.proteinRed)
+                    macroChip("C", grams: row.carbsG, color: Theme.macroCarbs)
+                    macroChip("F", grams: row.fatG, color: Theme.macroFat)
+                    if row.fiberG > 0.5 {
+                        macroChip("Fiber", grams: row.fiberG, color: Theme.macroFiber)
+                    }
+                    Spacer(minLength: 0)
+                    // Remove, in the open row itself (operator 2026-08-03:
+                    // "when I expand add a way to remove from dashboard
+                    // itself"). Deleting an entry was swipe-only — a gesture
+                    // you have to already know is there, and the same class of
+                    // hidden affordance behind the "misclicking is a lot"
+                    // feedback. The swipe still works; this just stops being
+                    // the only way.
+                    if let entryId = row.entryId, let onDelete {
+                        Button(role: .destructive) {
+                            withAnimation(.easeInOut(duration: 0.18)) {
+                                expandedRowID = nil
+                            }
+                            onDelete(entryId)
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "trash")
+                                Text("Remove")
+                            }
+                            .font(.system(size: Theme.FontSize.tiny, weight: .semibold))
+                            .foregroundStyle(Theme.surplus)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Theme.surplus.opacity(0.1),
+                                        in: RoundedRectangle(cornerRadius: 6))
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Remove \(row.foodName)")
+                        .accessibilityIdentifier("meal-timeline-remove-\(row.id)")
+                    }
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
         }
-        .pressable()
-        .accessibilityLabel(row.accessibilityLabel)
-        .accessibilityHint(isExpanded ? "Hide details" : "Show details")
-        .accessibilityIdentifier("meal-timeline-row-\(row.id)")
+        // Density pass: was .padding(.horizontal 14, .vertical 12)
+        // — dropped to (14, 8) which is the comfortable lower bound
+        // for tap-target while halving the per-row footprint.
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
     }
 
     private func chip(_ text: String, color: Color) -> some View {
