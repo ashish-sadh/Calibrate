@@ -57,7 +57,7 @@ while true; do
         export DRIFT_PARITY_LANE=scout
         exec "${CLAUDE_BIN:-$HOME/.local/bin/claude}" -p "/android-parity-scout" \
             --dangerously-skip-permissions \
-            --model claude-opus-4-8 \
+            --model claude-opus-5 \
             --fallback-model claude-opus-4-8 \
             --effort max \
             --output-format stream-json \
