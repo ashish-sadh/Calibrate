@@ -102,7 +102,8 @@ enum ChatSim {
                 history: history,
                 isLargeModel: LocalAIService.shared.isLargeModel,
                 onStep: { sink.steps.append($0) },
-                onToken: { _ in }
+                onToken: { _ in },
+                onComplete: nil
             )
             trace.agentSteps = sink.steps
             trace.response = out.text

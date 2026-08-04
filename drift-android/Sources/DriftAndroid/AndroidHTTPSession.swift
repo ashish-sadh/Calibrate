@@ -16,8 +16,19 @@ public final class AndroidHTTPSession: HTTPDataSession, @unchecked Sendable {
     private static func onFacadeQueue<T: Sendable>(_ work: @escaping @Sendable () throws -> T) async throws -> T {
         try await withCheckedThrowingContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async {
-                do { continuation.resume(returning: try work()) }
-                catch { continuation.resume(throwing: error) }
+                // Blocking OkHttp execute() stays off-Main (no ANR). But unlike
+                // Apple's runtime, Skip does NOT re-hop the awaiting @MainActor
+                // chain back to Main when a continuation resumes from a foreign
+                // thread — it continues on whatever thread called resume(). That
+                // stranded the entire cloud reply pipeline off-Main (#1180), so
+                // resume from a MainActor task instead.
+                do {
+                    let value = try work()
+                    Task { @MainActor in continuation.resume(returning: value) }
+                } catch {
+                    nonisolated(unsafe) let err = error
+                    Task { @MainActor in continuation.resume(throwing: err) }
+                }
             }
         }
     }

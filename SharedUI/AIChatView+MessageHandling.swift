@@ -1469,8 +1469,13 @@ extension AIChatViewModel {
                 Task { @MainActor in
                     guard let self, self.generationEpoch == epoch else { return }
                     if case .thinking = self.generatingState { self.generatingState = .generating }
+                    // #1180: whole-array reassignment, not in-place indexed
+                    // mutation — in-place element mutation of an @Observable
+                    // array doesn't reliably signal Compose to recompose.
                     if let idx = self.messages.firstIndex(where: { $0.id == responseId }) {
-                        self.messages[idx].text += token
+                        var updated = self.messages
+                        updated[idx].text += token
+                        self.messages = updated
                     }
                 }
             }
@@ -1549,21 +1554,27 @@ extension AIChatViewModel {
     private func applyPhotoTurnResponse(_ response: String, responseId: UUID, originalText: String) {
         guard let idx = messages.firstIndex(where: { $0.id == responseId }) else { return }
 
+        // #1180: whole-array reassignment, not in-place indexed mutation —
+        // see applyOutput's comment in sendMessage().
+        var updated = messages
         if let card = parseProposedMealCard(from: response) {
             // Give the card a spoken-friendly summary instead of blank text: in
             // talk-mode the coach SPEAKS this ("Add chicken, rice — ~520 cal.
             // Log it?") and it shows as the immersive caption. Without it the
             // coach proposed silently. #coach-talk-mode
-            messages[idx].text = Self.proposalSummary(card)
-            messages[idx].proposedMealCard = card
-            messages[idx].remoteProvider = aiService.remoteProviderName
+            updated[idx].text = Self.proposalSummary(card)
+            updated[idx].proposedMealCard = card
+            updated[idx].remoteProvider = aiService.remoteProviderName
+            messages = updated
             pendingProposalTurnId = responseId
         } else if response.isEmpty {
-            messages.remove(at: idx)
+            updated.remove(at: idx)
+            messages = updated
             pendingProposalTurnId = nil   // followup produced nothing — drop stale proposal
         } else {
-            messages[idx].text = response
-            messages[idx].remoteProvider = aiService.remoteProviderName
+            updated[idx].text = response
+            updated[idx].remoteProvider = aiService.remoteProviderName
+            messages = updated
             pendingProposalTurnId = nil   // a plain-text reply supersedes any pending proposal
         }
     }
@@ -1739,8 +1750,11 @@ extension AIChatViewModel {
         let history = buildConversationHistory()
         let isLarge = aiService.isLargeModel
 
-        Task {
-            defer {
+        Task { @MainActor in
+            // Shared between both delivery paths below so the logic isn't
+            // duplicated. `endGeneration` was the old `defer` body; `applyOutput`
+            // was everything that ran after the await. #1180.
+            @MainActor func endGeneration() {
                 // Bump epoch first — any onStep Tasks queued before this point will see a
                 // mismatched epoch and skip updating generatingState back to .thinking.
                 if generationEpoch == myEpoch { generationEpoch += 1 }
@@ -1749,108 +1763,146 @@ extension AIChatViewModel {
                 stageStarted = nil
             }
 
+            @MainActor func applyOutput(_ output: AgentOutput) async {
+                // Apply agent output. Mutates a local copy and reassigns
+                // `messages` as a whole (not `messages[idx].x = ...` in place)
+                // — #1180: on this runtime, in-place indexed-element mutation
+                // of an @Observable array silently doesn't signal Compose to
+                // recompose (data is correct in memory, UI just never redraws),
+                // while a full property reassignment reliably does.
+                if let idx = messages.firstIndex(where: { $0.id == responseId }) {
+                    if output.text.isEmpty {
+                        var updated = messages
+                        updated.remove(at: idx)
+                        messages = updated
+                    } else {
+                        var updated = messages
+                        updated[idx].text = output.text
+                        updated[idx].clarificationOptions = output.clarificationOptions
+                        updated[idx].remoteProvider = aiService.remoteProviderName
+                        attachToolCards(to: &updated[idx], toolsCalled: output.toolsCalled)
+                        messages = updated
+                        // Voice talk-mode: typed turns speak here; voice turns defer to
+                        // speakVoiceTurn below (one utterance: reply + action ack + re-arm).
+                        if !lastTurnWasVoice { speakReply(output.text) }
+                    }
+                }
+                // Ask-don't-guess: enter the waiting phase so the next turn is
+                // resolved against the options rather than re-classified. #226.
+                if let options = output.clarificationOptions {
+                    convState.phase = .awaitingClarification(options: options)
+                }
+
+                // Handle UI actions from tool results
+                if let action = output.action {
+                    switch action {
+                    case .openFoodSearch(let query, let servings):
+                        foodSearchQuery = query
+                        foodSearchServings = servings
+                        showingFoodSearch = true
+                    case .openRecipeBuilder(let items, let mealName):
+                        var resolved: [RecipeItem] = []
+                        for itemName in items {
+                            if let recipe = resolveRecipeItem(itemName) {
+                                resolved.append(recipe)
+                            } else if itemName.lowercased().contains(" with ") {
+                                for sub in itemName.components(separatedBy: " with ").map({ $0.trimmingCharacters(in: .whitespaces) }).filter({ !$0.isEmpty }) {
+                                    if let recipe = resolveRecipeItem(sub) { resolved.append(recipe) }
+                                    else { resolved.append(RecipeItem(name: sub, portionText: "1 serving", calories: 0, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0)) }
+                                }
+                            } else {
+                                resolved.append(RecipeItem(name: itemName, portionText: "1 serving", calories: 0, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0))
+                            }
+                        }
+                        pendingRecipeItems = resolved
+                        pendingRecipeName = mealName ?? currentMealType.rawValue
+                        showingRecipeBuilder = true
+                    case .openWorkout(let templateName):
+                        if let templates = try? WorkoutService.fetchTemplates(),
+                           let matched = templates.first(where: { $0.name.lowercased().contains(templateName.lowercased()) }) {
+                            workoutTemplate = matched
+                            showingWorkout = true
+                        } else if let smart = ExerciseService.buildSmartSession(muscleGroup: templateName) {
+                            workoutTemplate = smart
+                            showingWorkout = true
+                        }
+                    case .openWeightEntry: break
+                    case .openBarcodeScanner:
+                        showingBarcodeScanner = true
+                    case .navigate(let tab):
+                        let (label, icon) = Self.tabMeta(tab)
+                        let card = NavigationCardData(destination: label, icon: icon, tab: tab)
+                        messages.append(ChatMessage(role: .assistant, text: "Opening \(label)...", navigationCard: card))
+                        NotificationCenter.default.post(name: .navigateToTab, object: nil, userInfo: ["tab": tab])
+                    case .openManualFoodEntry(let name, let calories, let proteinG, let carbsG, let fatG):
+                        pendingManualFoodEntry = AIChatViewModel.ManualFoodPrefill(
+                            name: name, calories: calories, proteinG: proteinG, carbsG: carbsG, fatG: fatG)
+                        showingManualFoodEntry = true
+                    }
+                }
+
+                // Voice turn: speak the reply (+ any action ack) as ONE utterance,
+                // then re-arm the mic for hands-free continuation. #coach-keep-listening
+                if lastTurnWasVoice {
+                    lastTurnWasVoice = false
+                    speakVoiceTurn(reply: output.text, action: output.action)
+                }
+
+                // Q7: Remote backend error — fallback or surface to user. #519.
+                if let remoteErr = aiService.lastRemoteError {
+                    await handleRemoteBackendError(remoteErr, originalText: text, responseId: responseId)
+                }
+            }
+
+            let onStep: (String) -> Void = { [weak self] step in
+                let epoch = myEpoch
+                Task { @MainActor in
+                    guard let self, self.generationEpoch == epoch else { return }
+                    self.generatingState = .thinking(step: step)
+                    self.stageStarted = Date()
+                }
+            }
+            let onToken: @Sendable (String) -> Void = { [weak self] token in
+                let epoch = myEpoch
+                Task { @MainActor in
+                    guard let self, self.generationEpoch == epoch else { return }
+                    if case .thinking = self.generatingState { self.generatingState = .generating }
+                    // #1180: whole-array reassignment, not in-place indexed
+                    // mutation — see applyOutput's comment above.
+                    if let idx = self.messages.firstIndex(where: { $0.id == responseId }) {
+                        var updated = self.messages
+                        updated[idx].text += token
+                        self.messages = updated
+                    }
+                }
+            }
+
+            #if os(Android)
+            // #1180: on this runtime, THIS Task's own suspended continuation
+            // after `await AIToolAgent.run(...)` doesn't reliably resume once
+            // a turn crosses the cloud/facade boundary. `onComplete` sidesteps
+            // it: `run()` invokes it directly from inside its own (confirmed-
+            // reachable) execution instead of relying on the caller's return
+            // path. This Task's own `await` below may simply never rejoin —
+            // harmless, since all real work happens from the callback.
+            _ = await AIToolAgent.run(
+                message: text, screen: screen, history: history,
+                isLargeModel: isLarge,
+                onStep: onStep, onToken: onToken,
+                onComplete: { output in
+                    endGeneration()
+                    await applyOutput(output)
+                }
+            )
+            #else
+            defer { endGeneration() }
             let output = await AIToolAgent.run(
                 message: text, screen: screen, history: history,
                 isLargeModel: isLarge,
-                onStep: { [weak self] step in
-                    let epoch = myEpoch
-                    Task { @MainActor in
-                        guard let self, self.generationEpoch == epoch else { return }
-                        self.generatingState = .thinking(step: step)
-                        self.stageStarted = Date()
-                    }
-                },
-                onToken: { [weak self] token in
-                    let epoch = myEpoch
-                    Task { @MainActor in
-                        guard let self, self.generationEpoch == epoch else { return }
-                        if case .thinking = self.generatingState { self.generatingState = .generating }
-                        if let idx = self.messages.firstIndex(where: { $0.id == responseId }) {
-                            self.messages[idx].text += token
-                        }
-                    }
-                }
+                onStep: onStep, onToken: onToken, onComplete: nil
             )
-
-            // Apply agent output
-            if let idx = messages.firstIndex(where: { $0.id == responseId }) {
-                if output.text.isEmpty {
-                    messages.remove(at: idx)
-                } else {
-                    messages[idx].text = output.text
-                    messages[idx].clarificationOptions = output.clarificationOptions
-                    messages[idx].remoteProvider = aiService.remoteProviderName
-                    attachToolCards(to: &messages[idx], toolsCalled: output.toolsCalled)
-                    // Voice talk-mode: typed turns speak here; voice turns defer to
-                    // speakVoiceTurn below (one utterance: reply + action ack + re-arm).
-                    if !lastTurnWasVoice { speakReply(output.text) }
-                }
-            }
-            // Ask-don't-guess: enter the waiting phase so the next turn is
-            // resolved against the options rather than re-classified. #226.
-            if let options = output.clarificationOptions {
-                convState.phase = .awaitingClarification(options: options)
-            }
-
-            // Handle UI actions from tool results
-            if let action = output.action {
-                switch action {
-                case .openFoodSearch(let query, let servings):
-                    foodSearchQuery = query
-                    foodSearchServings = servings
-                    showingFoodSearch = true
-                case .openRecipeBuilder(let items, let mealName):
-                    var resolved: [RecipeItem] = []
-                    for itemName in items {
-                        if let recipe = resolveRecipeItem(itemName) {
-                            resolved.append(recipe)
-                        } else if itemName.lowercased().contains(" with ") {
-                            for sub in itemName.components(separatedBy: " with ").map({ $0.trimmingCharacters(in: .whitespaces) }).filter({ !$0.isEmpty }) {
-                                if let recipe = resolveRecipeItem(sub) { resolved.append(recipe) }
-                                else { resolved.append(RecipeItem(name: sub, portionText: "1 serving", calories: 0, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0)) }
-                            }
-                        } else {
-                            resolved.append(RecipeItem(name: itemName, portionText: "1 serving", calories: 0, proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0))
-                        }
-                    }
-                    pendingRecipeItems = resolved
-                    pendingRecipeName = mealName ?? currentMealType.rawValue
-                    showingRecipeBuilder = true
-                case .openWorkout(let templateName):
-                    if let templates = try? WorkoutService.fetchTemplates(),
-                       let matched = templates.first(where: { $0.name.lowercased().contains(templateName.lowercased()) }) {
-                        workoutTemplate = matched
-                        showingWorkout = true
-                    } else if let smart = ExerciseService.buildSmartSession(muscleGroup: templateName) {
-                        workoutTemplate = smart
-                        showingWorkout = true
-                    }
-                case .openWeightEntry: break
-                case .openBarcodeScanner:
-                    showingBarcodeScanner = true
-                case .navigate(let tab):
-                    let (label, icon) = Self.tabMeta(tab)
-                    let card = NavigationCardData(destination: label, icon: icon, tab: tab)
-                    messages.append(ChatMessage(role: .assistant, text: "Opening \(label)...", navigationCard: card))
-                    NotificationCenter.default.post(name: .navigateToTab, object: nil, userInfo: ["tab": tab])
-                case .openManualFoodEntry(let name, let calories, let proteinG, let carbsG, let fatG):
-                    pendingManualFoodEntry = AIChatViewModel.ManualFoodPrefill(
-                        name: name, calories: calories, proteinG: proteinG, carbsG: carbsG, fatG: fatG)
-                    showingManualFoodEntry = true
-                }
-            }
-
-            // Voice turn: speak the reply (+ any action ack) as ONE utterance,
-            // then re-arm the mic for hands-free continuation. #coach-keep-listening
-            if lastTurnWasVoice {
-                lastTurnWasVoice = false
-                speakVoiceTurn(reply: output.text, action: output.action)
-            }
-
-            // Q7: Remote backend error — fallback or surface to user. #519.
-            if let remoteErr = aiService.lastRemoteError {
-                await handleRemoteBackendError(remoteErr, originalText: text, responseId: responseId)
-            }
+            await applyOutput(output)
+            #endif
         }
     }
 
@@ -1877,18 +1929,25 @@ extension AIChatViewModel {
                 history: history,
                 isLargeModel: false,
                 onStep: { _ in },
-                onToken: { _ in }
+                onToken: { _ in },
+                onComplete: nil
             )
+            // #1180: whole-array reassignment, not in-place indexed mutation
+            // — see applyOutput's comment in sendMessage().
             if let idx = messages.firstIndex(where: { $0.id == responseId }) {
-                messages[idx].text = "(answered locally \u{2014} Claude was unreachable) \(fallback.text)"
-                messages[idx].remoteProvider = nil
-                attachToolCards(to: &messages[idx], toolsCalled: fallback.toolsCalled)
+                var updated = messages
+                updated[idx].text = "(answered locally \u{2014} Claude was unreachable) \(fallback.text)"
+                updated[idx].remoteProvider = nil
+                attachToolCards(to: &updated[idx], toolsCalled: fallback.toolsCalled)
+                messages = updated
             }
         } else {
             if let idx = messages.firstIndex(where: { $0.id == responseId }) {
-                messages[idx].text = error.userFacingMessage
-                messages[idx].retryTurn = originalText
-                messages[idx].remoteProvider = nil
+                var updated = messages
+                updated[idx].text = error.userFacingMessage
+                updated[idx].retryTurn = originalText
+                updated[idx].remoteProvider = nil
+                messages = updated
             }
         }
     }

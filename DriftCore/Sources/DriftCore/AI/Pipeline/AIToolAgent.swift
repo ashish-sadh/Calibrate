@@ -97,7 +97,8 @@ public enum AIToolAgent {
         history: String,
         isLargeModel: Bool,
         onStep: (String) -> Void,
-        onToken: @escaping @Sendable (String) -> Void
+        onToken: @escaping @Sendable (String) -> Void,
+        onComplete: (@Sendable @MainActor (AgentOutput) async -> Void)?
     ) async -> AgentOutput {
         let telemetryStart = Date().timeIntervalSinceReferenceDate
         let output = await runInner(
@@ -117,6 +118,13 @@ public enum AIToolAgent {
             latencyMs: latencyMs,
             turnIndex: ConversationState.shared.turnCount
         )
+        // #1180: on Android, the caller's own suspended continuation after
+        // `await AIToolAgent.run(...)` doesn't reliably resume once a turn
+        // has crossed the cloud/facade boundary. Deliver via callback
+        // instead of the return value so the caller's UI-apply logic runs
+        // from inside this already-confirmed-reachable execution. iOS never
+        // passes onComplete, so this is a no-op there.
+        await onComplete?(output)
         return output
     }
 
