@@ -8,9 +8,55 @@ Structural ground truth: Android hosts SharedUI single-source files for
 **Workout** (WorkoutTab → WorkoutView) and **Food** (FoodTab → FoodTabView);
 **Today / Body / More** are still Android-only re-creations (TodayTab.swift,
 WeightTab.swift, MoreTab.swift). Capture + Coach + health sub-screens are
-not ported at all.
+not ported at all. **Sharing / Social** hosts ~4.6k ln of SharedUI single-source
+and ships in the APK, but is 100% non-functional on Android — sign-in itself
+parks on the URLSession bridge (#1194, P0), so treat its rows as unreachable
+rather than untested.
 
 ## Session notes (append-only)
+
+- **2026-08-04 (scout #16, Opus 5):** **SHARING / SOCIAL — an entire feature area with ZERO matrix rows.** Rotation
+  said Today next, but a staleness check first (which iOS files moved since the last sweep) showed the social cluster
+  was the single fastest-moving area of the week — ~100 file-touches since 07-28 — and `grep -c 'Sharing'
+  PARITY-MATRIX.md` returned **0**. ~4.6k lines across 21 SharedUI files, all compiled into the Android APK, all
+  reachable (`MoreTab:141` → `SharingView()`, `TodayTab:159` → `SocialPillRow()`), none ever enumerated. The cause is
+  identifiable: operator directive **`0-SHARING-DONE`** ("shipped + hardened, Android 63 — DO NOT re-port/re-plan it;
+  only a REAL tester-found bug") steered every lane away, so nobody looked. Both sibling lanes live (executor PID 6458
+  mid-`skip app launch`, reinstalled build 80 at 03:19 and was driving the app; planner PID 33593), so per
+  [[harness_parity_lanes_share_one_emulator]] **no UI driving** — 7th consecutive scout carrying device debt.
+  **The headline: this is that real tester-found bug, and it is a P0.** Scout #15 left the sharing contradiction as
+  the top open question and the #1194 planner plan made it "Step 0 — settle on-device, the scout couldn't run this".
+  I settled it *without* the emulator, from the source chain plus read-only device state: `SyncClient:40` binds
+  `URLSession.shared` and all three construction sites take the default (`SharingService:18`, `SupportService:80`,
+  `TelemetryService:25`); every REST **and** GoTrue-auth call funnels through the one `send()` → `session.data(for:)`
+  (`:88,119,213`); on Skip that is the swift-corelibs bridge at `RemoteLLMBackend:17-31` which
+  `AndroidHTTPSession.swift`'s own shipped comment says "parks non-cancellably… its completion handler never fires".
+  So `signInAnonymously()` → `authPost("signup")` parks and **no Android device can ever obtain a sharing identity** —
+  no error, no timeout (a `timeoutInterval` can't rescue a handler that never fires). Device corroboration, zero
+  interference, via `adb shell run-as … sqlite3 -readonly`: `sync_session`/`sync_map` exist (v47 ran) and
+  `sync_session` holds **zero rows** after days of launches; `org.swift.foundation.URLCache` empty. Friends, coaches,
+  chat, leaderboards, public profiles, template sharing — plus More → **Report a bug** (`SupportService:80`) and the
+  telemetry opt-in the `MoreTab:61` toggle promises — have never worked on Android. **`0-SHARING-DONE` is materially
+  false for Android**; directives file is operator-owned so it was NOT edited — operator call flagged here and on
+  #1197 (suggest narrowing it to "don't re-port the *iOS* sharing UI"). Precision note: the failure is graceful, not a
+  hang — `connections()` → `requireUserID()` throws `.notSignedIn` fast, so `SocialPillRow` correctly shows its invite
+  pill and Today does not spin; only the claim-username gateway parks. **#1194 escalated P1 → P0** + the settled
+  Step-0 verdict commented, including one Done-when addition the plan needs: acceptance must **start from username
+  claim** (every Android install has an empty `sync_session`), because verifying a populated hub would skip the exact
+  call that parks. Rows changed: **34** (new Sharing/Social section, 0 → 33 rows + section header). Issues filed:
+  **2** — **#1196** P1 (three username fields lose `.textInputAutocapitalization(.never)`, `FriendSharePicker` also
+  loses autocorrect-off; filed as *cosmetic* after verifying `normalizedUsername:146` lowercases and
+  `searchUsers:110` lowercases + uses `ilike`, so nothing functional breaks — the honest call, not a padded P0) and
+  **#1197** P1 (the 6 surfaces created 07-28→07-30, ~1,893 ln, that post-date the hardening pass and carry **no**
+  `os(Android)` gates: CoachBriefingView 574, PublicProfileSheet 342, CoachPageView 189, FocusedSocialViews 136,
+  CoachMeView 474, BriefingSnapshot 178 — explicitly blocked on #1194 except `CoachMeView`, drivable today via
+  `WorkoutView:510`). Deliberately only 2 issues against a budget of 8: with the gateway dead, more would be
+  speculation about screens no one can reach. Also verified clean and NOT worth filing — the cluster is unusually
+  Skip-aware (`TextField(axis:)`/`lineLimit(4)` correctly `#if os(Android)`-gated at `CoachSharingCard:291`,
+  `BriefingTrendChart:527` uses GeometryReader+`Path` not the absent `Charts`, no `contextMenu`/`swipeActions`
+  anywhere, "not private — Fuse can't bridge private @State" notes throughout, `SocialPillRow`'s zero-height
+  `Color.clear` load anchor). No code touched (matrix only). **Residual device debt:** every `unknown` row above —
+  and the one row a scout could clear today without #1194 is `CoachMeView` via the Workout tab.
 
 - **2026-08-04 (scout #15, Opus 5):** **FOOD (#1062)** — next in rotation and 7 days stale (last swept by scout
   #9 on 07-28). Sibling lanes BOTH live (executor `/android-parity` PID 33952 on #1180 mid-build-loop, planner PID
@@ -951,6 +997,64 @@ device-verify pending an uncontended emulator window (both sibling lanes live th
 | AI Chat Insights | AIChatInsightsView (#261 opt-in local telemetry) — dev/debug surface | ios-only-by-design | |
 | Backend selector / AISetup / AIChooser | Local Brain/Cloud picker + BYOK key-UI (#540) — Android is Nebius-only, no key UI (0-AI-FOCUS) | ios-only-by-design | |
 | DriftCoachSheet wrapper | backend-picker sheet wrapper — iOS presents AIChatView inside it; Android presents AIChatView directly | ios-only-by-design | |
+
+## Sharing / Social (single-source: SharedUI/{SharingView,SocialPillRow,CoachPageView,ClientDetailView,PublicProfileSheet,LeaderboardsCard,FocusedSocialViews,CoachSharingCard,CoachBriefingView,CoachMeView,BriefingSnapshot,ChatView,FriendSharePicker,ShareTemplateSheet,SharingDeepLink}.swift ≈4.6k ln · hosted by MoreTab:141 `NavigationLink { SharingView() }` + TodayTab:159 `SocialPillRow()`)
+
+**Section created 2026-08-04 (scout #16) — the area had ZERO rows before today** despite being the
+fastest-moving iOS surface of the week (~100 file-touches since 07-28). Every file here is SharedUI
+single-source and already compiles + ships in the Android APK; the code is unusually Skip-aware
+(Fuse TextField traps gated, `Path`+GeometryReader charts instead of `Charts`, no `contextMenu`/
+`swipeActions`, "not private — Fuse can't bridge private @State" notes throughout).
+
+**⚠️ The whole area is gated behind ONE transport defect — #1194.** `SyncClient.swift:40` binds
+`session: any HTTPDataSession = URLSession.shared`, and all three construction sites take that default
+(`SharingService:18`, `SupportService:80`, `TelemetryService:25`). On Skip, swift-corelibs
+`URLSession.data(for:)` **parks non-cancellably** — stated in `AndroidHTTPSession.swift`'s own shipped
+header comment ("its completion handler never fires") and root-caused in #1133. Every REST *and* auth
+call funnels through `SyncClient.send()` → `session.data(for:)` (`SyncClient:88,119,213`), so
+`signInAnonymously()` → `authPost("signup")` parks and **no Android device can ever obtain a sharing
+identity**. Device corroboration (2026-08-04, build 80, emulator-5554, read-only `sqlite3 -readonly`):
+`sync_session` exists (migration v47 ran) and holds **zero rows**; `cache/org.swift.foundation.URLCache`
+is empty. So every signed-in surface below is *unreachable*, not merely unverified — marked `unknown`
+rather than a fabricated per-row verdict. **This contradicts operator directive `0-SHARING-DONE`**
+("shipped + hardened, Android 63"), which is why the area was never swept — see session note.
+Degradation is graceful, not a hang: `connections()` calls `requireUserID()` which throws `.notSignedIn`
+fast, so `SocialPillRow` correctly shows its invite pill and Today does not spin.
+
+| screen | sub-interaction | status | issue |
+|---|---|---|---|
+| Onboarding | **username claim** (`SharingView:119` usernameCard) — TextField + "Claim @x" → `startSharing()` → `signInAnonymously()` → `authPost("signup")` → **parks forever**; no error, no timeout (URLRequest.timeoutInterval does not rescue a handler that never fires). THE gateway defect: nothing else in this section is reachable | broken | #1194 |
+| Onboarding | `.textInputAutocapitalization(.never)` is `#if !os(Android)` at `SharingView:128` (claim) + `:572` (friend search); `FriendSharePicker:75` additionally loses `.autocorrectionDisabled()`. Android IMEs capitalize the first char → field displays "Ashish". **Cosmetic only** — `normalizedUsername:146` lowercases and `SharingService.searchUsers:110` lowercases *and* uses `ilike`, so both paths absorb it; the field text just disagrees with the button label | deviation | #1196 |
+| Onboarding | claim button `.disabled(normalizedUsername.count < 3)` + 20-char/charset normalization | unknown | #1194 |
+| Identity | identityCard (`:418`) — @username, avatar, tagline, sign-out (signOut deletes the server profile so the name can be re-claimed) | unknown | #1194 |
+| Identity | taglineRow (`:998`) — `TextField(axis:)` absent on Fuse, so Android gets a single-line field (gated, deliberate) | deviation | #1194 |
+| Identity | privacy footnote (`:743`) | unknown | #1194 |
+| Hub | hub body (`:153`) — signed-in root, `.navigationTitle("Friends")` | unknown | #1194 |
+| Hub | peopleStrip (`:492`) → NavigationLink → ClientDetailView | unknown | #1194 |
+| Hub | managementStrip (`:281`) — promote/demote coach, remove connection | unknown | #1194 |
+| Hub | searchCard (`:566`) — debounced live search via `.onChange` + `.onSubmit`; generation-counter race guard (`searchGen &+= 1`) | unknown | #1194 |
+| Hub | requestsCard (`:685`) — accept/decline incoming friend + trainer requests | unknown | #1194 |
+| Hub | incomingTemplatesCard (`:715`) — coach-assigned templates, accept/decline | unknown | #1194 |
+| Hub | workoutsFromFriendsCard (`:325`) → ClientSessionDetailView (`:1062`) | unknown | #1194 |
+| Hub | expander (`:873`) — collapsed connection lists | unknown | #1194 |
+| Hub | couldNotLoadCard (`:895`) — the error state that SHOULD catch #1194 but can't (a parked call never throws) | broken | #1194 |
+| Hub | invite sheet (`SharingDeepLink:37` InviteShareSheet) — `ShareLink` is text-only on Skip (no file attach); Android-gated `.presentationDetents([.fraction(0.75), .large])` vs iOS `.medium` | ok | — |
+| Public profile | `PublicProfileSheet` (342 ln, `.sheet(item:)` from `SharingView:101` + `LeaderboardsCard:74`) — activity feed, mutuals, send-request/add-coach, remove-connection confirm. **Created 07-30, after the 07-28 hardening pass; zero `os(Android)` gates, never Android-verified** | unknown | #1197 |
+| Today entry | `SocialPillRow` — zero-height `Color.clear` load anchor (iOS-found 07-30 deadlock fix), invite pill when signed-out, Android-gated `.frame(minHeight: 38)` for the hScroll-collapse trap | ok | — |
+| Today entry | pills: requests / your-coach / clients / leaderboard, unread + assignment dots | unknown | #1194 |
+| Focused | `ClientsView` (`FocusedSocialViews:15`) — client roster ordered by unseen sessions → ClientDetailView. **Created 07-30, no `os(Android)` gates, never verified** | unknown | #1197 |
+| Focused | `LeaderboardView` (`FocusedSocialViews:103`) — board-only screen + "Find friends" empty state | unknown | #1197 |
+| Leaderboards | `LeaderboardsCard` (498 ln, 07-30) — steps/calories/workouts/logging-streak boards; IS Android-gated in 3 places | unknown | #1197 |
+| Coach page | `CoachPageView` (189 ln, 07-30) — assignments, accept/decline, unread count. **No `os(Android)` gates, never verified** | unknown | #1197 |
+| Client detail | `ClientDetailView` (469 ln) — client workspace, `.sheet` CreateTemplateView builder, `CoachNoteComposer:441` (own struct — one TextField per Fuse scope, deliberate); `navigationBarTitleDisplayMode` + `.roundedBorder` Android-gated | unknown | #1194 |
+| Coach sharing | `CoachSharingCard` (350 ln) — share-level picker + goal row; correctly gates `TextField(axis:)`/`lineLimit(4)` behind `#if os(Android)` (hard Fuse compile errors) | unknown | #1194 |
+| Coach briefing | `CoachBriefingView` (574 ln, 07-29) — collapsible recovery/bodycomp/records/history sections + `BriefingTrendChart:527` (GeometryReader + `Path`, the Skip-safe pattern, NOT `Charts`). **No `os(Android)` gates, never verified**; 5 GeometryReaders = per-frame recomposition on Fuse → check SPEED when reachable | unknown | #1197 |
+| Coach me | `CoachMeView` (474 ln) — AI coach-me flow; `CoachDraftField:466` is its own struct with the "Fuse binds only the FIRST TextField per scope" note. Reached from `WorkoutView:510` (NOT transport-gated — this one is drivable today) | unknown | #1197 |
+| Briefing data | `BriefingSnapshot` (178 ln) — `metrics(level:)` feeding CoachSharingCard; pure DriftCore data | unknown | #1194 |
+| Chat | `ChatView` (177 ln) — 1:1 messages, `TextField` + send. Deferred residual from `0-SHARING-DONE`: Android chat opens scrolled-to-top | unknown | #1194 |
+| Share flows | `ShareTemplateSheet` (68 ln) + `FriendSharePicker` (179 ln, coach-first ordering, search, share-with-all) — reached from `ActiveWorkoutView:1610` | unknown | #1194 |
+| Support | `SupportService:80` ("Report a bug") rides the same parked `SyncClient()` — More → Report a bug silently never sends on Android | broken | #1194 |
+| Telemetry | `TelemetryService:25` — same parked client; Android telemetry uploads never complete (privacy-benign, but the opt-in toggle in MoreTab:61 promises a behavior that cannot happen) | broken | #1194 |
 
 ## Capture (epic #1063 · iOS-only: Drift/Views/PhotoLog/**, BarcodeScannerView)
 
