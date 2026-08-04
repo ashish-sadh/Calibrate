@@ -46,6 +46,27 @@ struct HTTPFacadeCodecTests {
         #expect(Data(base64Encoded: encoded.bodyBase64) == Data())
     }
 
+    /// #1194: the codec used to drop `httpMethod`, so every PostgREST GET/
+    /// PATCH/DELETE went out as a POST once sharing moved onto this seam.
+    @Test(arguments: ["GET", "POST", "PATCH", "DELETE", "HEAD"])
+    func encodeRequestForwardsExplicitMethod(method: String) {
+        var request = URLRequest(url: URL(string: "https://project.supabase.co/rest/v1/profiles")!)
+        request.httpMethod = method
+        #expect(HTTPFacadeCodec.encodeRequest(request).method == method)
+    }
+
+    @Test func encodeRequestDefaultsToGETWhenMethodUnset() {
+        var request = URLRequest(url: URL(string: "https://example.com")!)
+        request.httpMethod = nil
+        #expect(HTTPFacadeCodec.encodeRequest(request).method == "GET")
+    }
+
+    @Test func encodeRequestUppercasesMethodForOkHttpBodyRule() {
+        var request = URLRequest(url: URL(string: "https://example.com")!)
+        request.httpMethod = "patch"
+        #expect(HTTPFacadeCodec.encodeRequest(request).method == "PATCH")
+    }
+
     // MARK: - decodeResponse
 
     @Test func decodeResponseWithStatus200ReturnsData() throws {
@@ -73,5 +94,35 @@ struct HTTPFacadeCodecTests {
         #expect(throws: HTTPFacadeCodec.DecodeError.self) {
             _ = try HTTPFacadeCodec.decodeResponse("not json", url: URL(string: "https://example.com")!)
         }
+    }
+
+    /// #1194: `headerFields: nil` was harmless while RemoteLLMBackend was the
+    /// only consumer, but PostgREST returns the row count in `Content-Range`.
+    @Test func decodeResponseRoundTripsResponseHeaders() throws {
+        // `headersJson` nests as a *string* field, exactly as HttpFacade.kt
+        // emits it — build the reply through JSONSerialization so the escaping
+        // is the real thing rather than a hand-written approximation.
+        let reply = try JSONSerialization.data(withJSONObject: [
+            "status": 200,
+            "bodyBase64": "",
+            "headersJson": #"{"Content-Range":"0-4/42","Content-Type":"application/json"}"#,
+        ])
+        let raw = try #require(String(data: reply, encoding: .utf8))
+
+        let (_, response) = try HTTPFacadeCodec.decodeResponse(raw, url: URL(string: "https://example.com")!)
+
+        let http = try #require(response as? HTTPURLResponse)
+        #expect(http.value(forHTTPHeaderField: "Content-Range") == "0-4/42")
+        #expect(http.value(forHTTPHeaderField: "Content-Type") == "application/json")
+    }
+
+    /// A reply from an older facade build (or the `status:-1` error object,
+    /// which carries no headers at all) must still decode.
+    @Test func decodeResponseWithoutHeadersJSONStillDecodes() throws {
+        let payload = Data(#"[{"id":1}]"#.utf8)
+        let raw = #"{"status":200,"bodyBase64":"\#(payload.base64EncodedString())"}"#
+        let (data, response) = try HTTPFacadeCodec.decodeResponse(raw, url: URL(string: "https://example.com")!)
+        #expect(data == payload)
+        #expect((response as? HTTPURLResponse)?.statusCode == 200)
     }
 }

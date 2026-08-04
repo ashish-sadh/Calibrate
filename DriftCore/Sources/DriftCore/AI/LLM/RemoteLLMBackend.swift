@@ -144,7 +144,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
         provider: Provider,
         modelID: String,
         apiKey: String?,
-        session: any HTTPDataSession = URLSession.shared,
+        session: any HTTPDataSession = DriftPlatform.httpSession,
         requestTimeout: TimeInterval = 60
     ) {
         self.provider = provider

@@ -29,7 +29,7 @@ public enum FetchURLTool {
                     return .error("fetch_url needs a valid http(s) URL.")
                 }
                 do {
-                    let data = try await URLSession.shared.data(from: url).0
+                    let data = try await DriftPlatform.httpSession.data(for: URLRequest(url: url)).0
                     return .text(extractText(from: String(data: data, encoding: .utf8) ?? ""))
                 } catch {
                     return .error("Couldn't fetch that page.")

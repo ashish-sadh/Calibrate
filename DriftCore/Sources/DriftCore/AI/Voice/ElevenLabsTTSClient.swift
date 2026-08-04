@@ -84,7 +84,7 @@ public enum ElevenLabsTTSClient {
                                   modelID: String,
                                   apiKey: String,
                                   settings: VoiceSettings = .coach,
-                                  session: URLSession = .shared) async throws -> Data {
+                                  session: any HTTPDataSession = DriftPlatform.httpSession) async throws -> Data {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw TTSError.emptyText }
         guard !apiKey.isEmpty else { throw TTSError.missingKey }

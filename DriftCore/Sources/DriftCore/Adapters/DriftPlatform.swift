@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// Single registry for platform-bound adapters. The iOS Drift app installs
 /// concrete impls on launch (`DriftPlatform.health = HealthKitService.shared`
@@ -32,12 +35,22 @@ public enum DriftPlatform {
     /// so the "unsafe" opt-out of actor isolation is sound.
     nonisolated(unsafe) public static var keyValueStore: KeyValueStore = UserDefaultsKVStore()
 
-    /// HTTP transport seam for RemoteLLMBackend (#1136). iOS/macOS leave this nil
-    /// → URLSession.shared. Android installs AndroidHTTPSession (OkHttp facade)
-    /// because swift-corelibs-foundation URLSession parks non-cancellably on Skip.
-    /// `nonisolated(unsafe)` — same rationale as `keyValueStore`: read off-main at
-    /// the construction site, written once at launch.
-    nonisolated(unsafe) public static var httpSession: (any HTTPDataSession)? = nil
+    /// HTTP transport seam for ALL of DriftCore's networking (#1136, widened in
+    /// #1194). Defaults to `URLSession.shared`, so iOS/macOS behaviour is
+    /// unchanged. The Android app installs `AndroidHTTPSession` (OkHttp facade)
+    /// in its launch `onInit`, because swift-corelibs-foundation's URLSession
+    /// parks non-cancellably on Skip — a parked call is worse than a failed one
+    /// (no error, no timeout, no fallback, just a spinner forever).
+    ///
+    /// Anything in DriftCore that talks to the network goes through here.
+    /// Reaching for `URLSession.shared` directly is a regression: it works on
+    /// iOS and hangs on Android, which is the failure mode that left sharing
+    /// dead on Android from the day it shipped.
+    ///
+    /// `nonisolated(unsafe)`: same rationale as `keyValueStore` — a `Sendable`
+    /// value written exactly once at launch, before any read, then read
+    /// off-main at the construction sites.
+    nonisolated(unsafe) public static var httpSession: any HTTPDataSession = URLSession.shared
 
     /// Local-notification seam (#1162). iOS installs a wrapper around
     /// `UNUserNotificationCenter`; Android installs one around

@@ -24,19 +24,32 @@ class HttpFacade {
     /// Smoke test for the Swift↔Kotlin reflective bridge.
     fun ping(): String = "ok"
 
-    /// Blocking POST. Returns {"status":Int,"bodyBase64":String} for any
+    /// Blocking request for any HTTP method. Returns
+    /// {"status":Int,"bodyBase64":String,"headersJson":String} for any
     /// completed HTTP exchange (including non-2xx responses), or
     /// {"status":-1,"error":...} for any exception (timeout, unreachable
     /// host, TLS failure, …). NEVER throws across the bridge, matching every
     /// HealthConnectFacade method.
-    fun post(urlString: String, headersJson: String, bodyBase64: String, timeoutMillis: Long): String {
+    ///
+    /// `method` matters beyond correctness: PostgREST reads it (GET reads,
+    /// PATCH/DELETE writes) and OkHttp throws IllegalArgumentException on the
+    /// wrong method/body pairing, so the body rule below is exact — GET/HEAD
+    /// never carry one, DELETE carries one only when there are bytes to send,
+    /// and POST/PUT/PATCH always do (OkHttp requires non-null there even for
+    /// an empty body).
+    fun request(urlString: String, method: String, headersJson: String, bodyBase64: String, timeoutMillis: Long): String {
         return try {
             val headers = JSONObject(headersJson)
             val contentType = if (headers.has("Content-Type")) headers.getString("Content-Type") else "application/json"
             val bodyBytes = Base64.decode(bodyBase64, Base64.NO_WRAP)
-            val body = bodyBytes.toRequestBody(contentType.toMediaType())
+            val verb = method.uppercase()
+            val body = when {
+                verb == "GET" || verb == "HEAD" -> null
+                verb == "DELETE" && bodyBytes.isEmpty() -> null
+                else -> bodyBytes.toRequestBody(contentType.toMediaType())
+            }
 
-            val requestBuilder = Request.Builder().url(urlString).post(body)
+            val requestBuilder = Request.Builder().url(urlString).method(verb, body)
             val keys = headers.keys()
             while (keys.hasNext()) {
                 val key = keys.next()
@@ -58,9 +71,18 @@ class HttpFacade {
 
             call.execute().use { response ->
                 val responseBytes = response.body?.bytes() ?: ByteArray(0)
+                // Response headers matter to consumers past RemoteLLMBackend:
+                // PostgREST returns the row count in Content-Range, and the
+                // GoTrue/PostgREST error path is often header-only. Repeated
+                // names collapse comma-joined, matching HTTPURLResponse.
+                val responseHeaders = JSONObject()
+                for (name in response.headers.names()) {
+                    responseHeaders.put(name, response.headers(name).joinToString(", "))
+                }
                 JSONObject()
                     .put("status", response.code)
                     .put("bodyBase64", Base64.encodeToString(responseBytes, Base64.NO_WRAP))
+                    .put("headersJson", responseHeaders.toString())
                     .toString()
             }
         } catch (e: Exception) {

@@ -63,7 +63,7 @@ public enum OpenFoodFactsService {
 
         Log.foodLog.info("Looking up barcode: \(barcode)")
 
-        let (data, response) = try await URLSession.shared.data(from: url)
+        let (data, response) = try await DriftPlatform.httpSession.data(for: URLRequest(url: url))
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw LookupError.networkError("Invalid response")
@@ -144,7 +144,7 @@ public enum OpenFoodFactsService {
 
         var request = URLRequest(url: url)
         request.setValue("Drift/1.0 (iOS)", forHTTPHeaderField: "User-Agent")
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await DriftPlatform.httpSession.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else { return [] }
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let products = json["hits"] as? [[String: Any]] else { return [] }

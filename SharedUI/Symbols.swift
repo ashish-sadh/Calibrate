@@ -64,6 +64,12 @@ func sym(_ name: String) -> String {
     // views that need Image(systemName: "fork.knife") on Android must wait
     // on the symbolset investigation (Fuse builds drop xcassets symbolsets).
     case "message.fill", "bubble.left.fill": return "paperplane.fill"
+    // quote.bubble shipped the ⚠️ triangle on the Friends header's "Add a
+    // tagline — what you're into" row (#1194 session). skip-ui maps no bubble
+    // or quote glyph at all. The trailing pencil already carries "edit" and
+    // the avatar carries "person", so both would read as duplicates; the
+    // smiling face is the closest mapped glyph for a personality blurb.
+    case "quote.bubble": return "face.smiling"
     // skip-ui maps NO two-person glyph (person.2/group/people all absent) — only
     // single-person symbols. Fall to the closest mapped one so the Friends row
     // shows a person, never the warning triangle (operator directive 0a).

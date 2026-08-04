@@ -75,7 +75,7 @@ public enum WebSearchTool {
         }
         var req = URLRequest(url: url)
         req.timeoutInterval = 10
-        let (data, response) = try await URLSession.shared.data(for: req)
+        let (data, response) = try await DriftPlatform.httpSession.data(for: req)
         if let http = response as? HTTPURLResponse, http.statusCode != 200 {
             throw URLError(.badServerResponse)
         }
@@ -117,7 +117,7 @@ public enum WebSearchTool {
         req.setValue("application/json", forHTTPHeaderField: "Accept")
         req.setValue(key, forHTTPHeaderField: "X-Subscription-Token")
         req.timeoutInterval = 10
-        let (data, response) = try await URLSession.shared.data(for: req)
+        let (data, response) = try await DriftPlatform.httpSession.data(for: req)
         if let http = response as? HTTPURLResponse, http.statusCode != 200 {
             throw URLError(.badServerResponse)
         }
@@ -157,7 +157,7 @@ public enum WebSearchTool {
         guard let url = URL(string: "https://api.duckduckgo.com/?q=\(encoded)&format=json&no_html=1&skip_disambig=1") else {
             throw URLError(.badURL)
         }
-        return try await URLSession.shared.data(from: url).0
+        return try await DriftPlatform.httpSession.data(for: URLRequest(url: url)).0
     }
 
     /// Pure: format the Instant Answer JSON into a compact summary the agent

@@ -326,7 +326,7 @@ public final class LocalAIService {
     ) {
         backend?.unload()
         backend = RemoteLLMBackend(provider: provider, modelID: modelID, apiKey: apiKey,
-                                   session: DriftPlatform.httpSession ?? URLSession.shared)
+                                   session: DriftPlatform.httpSession)
         activeBackendType = .remote
         state = .ready
     }

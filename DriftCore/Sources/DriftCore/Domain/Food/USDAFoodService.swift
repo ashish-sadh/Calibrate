@@ -75,7 +75,7 @@ public enum USDAFoodService {
 
         var request = URLRequest(url: url)
         request.timeoutInterval = 8
-        let (data, response) = try await URLSession.shared.data(for: request)
+        let (data, response) = try await DriftPlatform.httpSession.data(for: request)
         guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else { return [] }
         guard let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let foods = json["foods"] as? [[String: Any]] else { return [] }

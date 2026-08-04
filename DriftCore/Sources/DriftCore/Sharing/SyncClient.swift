@@ -37,7 +37,7 @@ public struct SyncClient: Sendable {
 
     public init(baseURL: String = AppConfig.syncBaseURL,
                 anonKey: String = AppConfig.syncAnonKey,
-                session: any HTTPDataSession = URLSession.shared,
+                session: any HTTPDataSession = DriftPlatform.httpSession,
                 timeout: TimeInterval = 20) {
         self.baseURL = baseURL
         self.anonKey = anonKey
