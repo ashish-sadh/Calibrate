@@ -12,6 +12,43 @@ not ported at all.
 
 ## Session notes (append-only)
 
+- **2026-08-04 (scout #15, Opus 5):** **FOOD (#1062)** — next in rotation and 7 days stale (last swept by scout
+  #9 on 07-28). Sibling lanes BOTH live (executor `/android-parity` PID 33952 on #1180 mid-build-loop, planner PID
+  7226); executor had reinstalled the APK 4 min before I started, so per [[harness_parity_lanes_share_one_emulator]]
+  the emulator was left untouched — **source sweep**, 6th consecutive scout carrying device debt. Two findings that
+  change what the queue is worth doing:
+  **(1) #1193 P1 — Android food search runs a different, weaker code path than iPhone.** `FoodTab.swift:184` calls
+  raw `AppDatabase.searchFoods` (prefix-then-ALPHABETICAL, one LIKE) where iOS calls `FoodService.searchFood`
+  (spell-correct -> synonym expansion -> `searchFoodsRanked` exact/prefix/phrase tiers -> `food_usage` personal rank
+  -> time-of-day boost -> `trackSearchMiss`). The synonym table it skips is `SpellCorrectService.swift:86,137,155`
+  — `curd`/`dahi`/`raita`/`thayir` -> yogurt, `kozhi` -> chicken — i.e. **the Indian-food-first tenet is the exact
+  thing Android drops**: typing `curd` returns nothing because no row is *named* curd. Also silently reintroduces
+  the #930 "Egg Curry outranks Egg" class that iOS explicitly fixed. `SpellCorrectService` is pure `import
+  Foundation` in DriftCore and already compiles for Android — the tactical fix is ONE line, and #1138's port
+  subsumes it anyway (the ported file calls `FoodService.searchFood` itself), so this shouldn't wait behind a P2.
+  **(2) #1194 P1 — #1136 built the OkHttp seam, wired ONE consumer, and closed.** `DriftPlatform.httpSession` is
+  referenced exactly once in the codebase (`LocalAIService:329`). `SyncClient:40` (Supabase sharing + telemetry +
+  support — no call site injects the seam), `OpenFoodFactsService:66,147` (online search AND barcode lookup),
+  `USDAFoodService:78`, `WebSearchTool:78,120,160`, `FetchURLTool:32`, `ElevenLabsTTSClient:97` and
+  `AIModelManager:150-157` all still take `URLSession.shared` -> the completion-handler bridge at
+  `RemoteLLMBackend:17-31` that #1136 proved parks non-cancellably on Skip. **And the seam can't simply be pointed
+  at:** `HTTPFacadeCodec.encodeRequest:17-27` drops `request.httpMethod` entirely and `HttpFacade.kt:39` hardcodes
+  `.post(body)`, so every GET (OFF/USDA/web tools) and PATCH/DELETE (PostgREST) would go out as a POST. Filed with
+  the sharing contradiction called out explicitly as **step 1** (0-SHARING-DONE says Android sharing shipped
+  hardened, yet by source it rides the parking bridge — one of those is wrong; settle it on-device before assuming,
+  and if sharing does spin this is a P0, not a P1).
+  **Staleness caught:** the four Food children (#1138-#1141) and #1138's planner plan (2026-07-29) all predate
+  `bab6b201` (07-30, Scan folded into the search FIELD + chips cut 4->3 to Saved/Build/Custom + every string
+  standardized on "Meal"), `fdc49f9e` (07-30, `MealTimePicker` replaced the bare DatePicker in ManualFoodEntry +
+  QuickAdd) and `e9b4d5cf` (07-31, LogMealSheet `Done` removed). An executor following the plan verbatim ships the
+  pre-refactor layout — commented onto #1138 + #1139 rather than filing duplicates (0-PLANNER-GROOMS-THE-BOARD
+  wants consolidation, not more issues). Rows changed: **51** (Food 25 -> 76: the 1021-line FoodSearchView went
+  from ONE coarse row to 34, plus new #1139/#1140/residual sub-sections; +1 App-shell transport row). Issues filed:
+  **2** (#1193, #1194 — both `needs-plan`). Issues commented: **2**. No code touched (matrix only). **Residual
+  device debt** (unchanged, now 6 sessions): every Food `unknown` row — date strip/calendar sheet, rings, timeline,
+  edit-sheet serving input, keyboard + scroll-dismiss behaviour — plus first-hand confirmation of the #1193 repro
+  (`curd` returns nothing) and whether Supabase traffic actually completes on Android (#1194 step 1).
+
 - **2026-08-03 (scout #14, Opus 5):** **BODY COMPOSITION (#1069)** — the coarsest node left on the
   board, and the one scout #12 named as remaining. It was two matrix rows standing in for ~1,750 lines
   of iOS source across 6 files (`Drift/Views/BodyComposition/**`), and — the finding that mattered most —
@@ -601,16 +638,23 @@ not ported at all.
 
 ## Food (epic #1062 = INDEX · single-source: SharedUI/FoodTabView.swift hosted by FoodTab + Android stand-ins AndroidFoodSearchSheet/AndroidRecentMealsSheet · scoped ports #1138 search-hub / #1139 quick-add+manual / #1140 combos+recipes / #1141 residual affordances; capture #1063, goal #1117, edit-bug #1120)
 
-Source-decomposed 2026-07-28 (scout #9): #1062 was a coarse mega-epic; split into 4 scoped children
-mirroring #1067→#1114-1119. All 10 iOS-only food files (`Drift/Views/Food/**`: FoodSearchView 49KB,
-QuickAddView 36KB, CombosView, ComboLogSheet, ManualFoodEntrySheet, FoodLogSheet, LogMealSheet,
-PlantPointsCardView, ServingMultiplierStepper, VoiceLogSheet) have ZERO Android presence (grep-verified);
-Android ships thin stand-ins (`FoodTab.swift` AndroidFoodSearchSheet:39 / AndroidRecentMealsSheet:198) +
-the shared FoodTabView with every create/build/combo/goal/confirm path `#if DRIFT_IOS_APP`-gated. SHARED
-FoodTabView surfaces (date strip, rings, timeline, edit sheet, serving input) compile on Android via the
-ported ServingInputView/EditFoodEntrySheet/MealCalendarPicker/MealTimePicker/FoodLogViewModel/DescribeMealSheet
-— those rows stay `unknown` = DEVICE-VERIFY DEBT (both sibling lanes live this session, emulator untouched
-per the scout-#3 collision lesson).
+Source-decomposed 2026-07-28 (scout #9); **sub-interaction-enumerated 2026-08-04 (scout #15)**. #1062 was a
+coarse mega-epic, split into 4 scoped children mirroring #1067->#1114-1119. All 10 iOS-only food files
+(`Drift/Views/Food/**`) have ZERO Android presence (grep-verified); Android ships thin stand-ins
+(`FoodTab.swift` AndroidFoodSearchSheet:39 / AndroidRecentMealsSheet:198) + the shared FoodTabView with every
+create/build/combo/goal/confirm path `#if DRIFT_IOS_APP`-gated. SHARED FoodTabView surfaces (date strip, rings,
+timeline, edit sheet, serving input) compile on Android via the ported ServingInputView/EditFoodEntrySheet/
+MealCalendarPicker/MealTimePicker/FoodLogViewModel/DescribeMealSheet -- those rows stay `unknown` = DEVICE-VERIFY
+DEBT (executor lane held the emulator again this session; 6th consecutive scout). FoodTabView line citations below
+re-verified at HEAD 2026-08-04 -- all still accurate.
+
+**iOS moved after scout #9's sweep, and the #1138-#1141 issue bodies + #1138's planner plan (2026-07-29) all
+predate it:** `bab6b201` (07-30) folded barcode Scan into the search FIELD as a trailing accessory (empty-query
+only; the clear-x takes over while typing), cut the chip row 4->3 (`Saved`/`Build`/`Custom`) and standardized
+every user-facing string on "**Meal**"; `fdc49f9e` (07-30) replaced the bare `DatePicker` in ManualFoodEntrySheet
++ QuickAddView with `MealTimePicker` (time slider + auto-following meal chip); `e9b4d5cf` (07-31) removed
+LogMealSheet's `Done` button. Staleness commented onto #1138 + #1139 this session -- an executor following the
+plan verbatim would ship the pre-refactor layout.
 
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
@@ -630,14 +674,84 @@ per the scout-#3 collision lesson).
 | Food tab root | Snap shortcut (safeAreaInset camera.viewfinder → PhotoLog) — DRIFT_IOS_APP :128-156; Food-tab entry point still not ported (Today's chip is the only Snap entry on Android) | missing | #1111 (Today chip shipped; Food-tab entry unclaimed) |
 | Food tab root | suggestion chips: iOS → FoodLogSheet/ComboLogSheet review; Android quick-logs DIRECTLY + toast undo (deliberate interim :753-781) — quick-log write needs drive | deviation | #1140/#1138 |
 | Food tab root | entry-row contextMenu (Edit/Favorite/Log Again/Copy/Move) — Darwin-only by house rule; Edit=row tap, Delete=✕, Favorite/Copy=edit sheet mapped; Log Again + Move Up/Down have NO Android path | deviation | #1141 |
-| FoodSearchView (iOS 49KB) | search-first UX: query + RECENT/COMBOS/FAVORITES/FREQUENT/YOUR FOODS/POPULAR sections, per-result FoodLogSheet, favorite swipe, recent 1-tap re-log | missing | #1138 |
-| FoodLogSheet / LogMealSheet | single-food + meal log sheets (serving + meal-type + Log; FAB "Log a meal" #1038) — funnel of the search hub | missing | #1138 |
-| QuickAddView (iOS 36KB) | ingredient picker + IngredientPickerView manual fields + servings + expandOnLog aggregate-vs-individual + save-as-recipe | missing | #1139 |
-| ManualFoodEntrySheet | manual macro entry (name/cal/P/C/F/fiber/serving) — iOS-target file | missing | #1139 |
-| CombosView + ComboLogSheet | combo/recipe CRUD (list, delete-swipe, Build→QuickAdd, per-item log sheet w/ servings) — iOS-target files, no Android entry | missing | #1140 |
-| PlantPointsCardView | plant-diversity card + expandable plant list — iOS-target file | missing | #1141 |
-| MealReviewSheet / PhotoLogReviewView | editable review (all photo/capture logging funnels through it on iOS) | missing | #1063 |
-| VoiceLogSheet (food) | voice food logging (speech→parse→review) — blocked on Android speech seam | missing | #1063 (#1126 seam) |
+
+### Food search hub (#1138 · iOS `Drift/Views/Food/FoodSearchView.swift` **1021 ln** vs Android stand-in `FoodTab.swift:39` `AndroidFoodSearchSheet` 150 ln)
+
+Enumerated 2026-08-04 (scout #15) from the iOS file at HEAD. One row per sub-interaction so the port can't
+silently drop any ([[feedback_android_full_parity]]). Everything here is `#1138` unless a different issue owns it.
+
+| screen | sub-interaction | status | issue |
+|---|---|---|---|
+| Search hub | search field + live debounce (iOS 200ms + off-main detached; Android 200ms via `.task(id:)`) | ok | — |
+| Search hub | **result QUALITY**: iOS `FoodService.searchFood` (spell-correct + Indian synonym expansion curd/dahi/thayir->yogurt + `searchFoodsRanked` exact/prefix/phrase tiers + `food_usage` personal rank + time-of-day boost + `trackSearchMiss`); Android calls raw `AppDatabase.searchFoods` (`FoodTab.swift:184`) = prefix-then-ALPHABETICAL, none of the above | broken | **#1193** |
+| Search hub | min query length: iOS searches from 1 char, Android gates at `>= 2` | deviation | #1138 |
+| Search hub | fuzzy fallback — iOS retries with the last char dropped when 0 hits and q>=4 (`:137-139`); Android none | missing | #1138 |
+| Search hub | **barcode accessory INSIDE the search field** (`barcode.viewfinder`, empty-query only, `:156-168`, new 07-30) -> `BarcodeLookupView` fullScreenCover; clear-`x` takes over while typing (Android HAS the clear path via SearchQueryField) | missing | #1063 (live-camera seam) |
+| Search hub | 3 quick chips `Saved`(bookmark)/`Build`(fork.knife)/`Custom`(square.and.pencil) `:280-292` — Android has no chip row at all | missing | #1140 (Saved) / #1139 (Build+Custom) |
+| Search hub | zero-query section **RECENT** (`FoodService.recentFoods(limit:8)`, non-embedded) | missing | #1138 |
+| Search hub | zero-query section **COMBOS** (`viewModel.combos` -> `comboToLog` -> ComboLogSheet; itemCount + total-cal subtitle) | missing | #1140 |
+| Search hub | zero-query section **⭐ FAVORITES** (`viewModel.favoriteFoods` -> `recentEntryRow`) | missing | #1138 |
+| Search hub | zero-query section **FREQUENTLY USED** (`viewModel.frequentFoods`) | missing | #1138 |
+| Search hub | zero-query section **YOUR FOODS** — embedded-only, frequency-then-recency blend, dedup by lowercased name, cap 8 (`:231-234`) | missing | #1138 |
+| Search hub | zero-query section **POPULAR** — cold-start browse only (hidden once `yourFoods` non-empty); canonical-name filter drops fuzzy junk (`:923-939`) | missing | #1138 |
+| Search hub | Android shows ONE hint line ("Search the food database — dosa, dal, eggs…") in place of all six sections above | deviation | #1138 |
+| Search hub | `foodSuggestionRow` **trailing `+` = 1-TAP QUICK-LOG at last-used servings** (`:402-411`), distinct from tapping the row (opens log sheet). Android's `+` glyph is decorative — the whole row opens the confirm sheet, so the 1-tap path does not exist | missing | #1138 |
+| Search hub | `recentEntryRow` split behaviour: DB food -> log sheet; recipe/manual -> bookmark icon + `+` quick-adds macros directly (`:460-475`) | missing | #1138 |
+| Search hub | **`confirmLog` toast + haptic on EVERY add path** ("Added X · N cal" capsule, 1.5s, token-guarded; `:83-108`) — #1025 filed because silent adds caused double-logging. Android has no add confirmation at all | missing | #1138 |
+| Search hub | `contextMenu` Favorite/Unfavorite on suggestion + recent rows (`:414-422`, `:478-486`) — Darwin-only gesture, needs an Android affordance | missing | #1138 |
+| Search hub | results `Section("Foods")` row = name + macroSummary + unit info (`1 <unit>` or `<size><unit>`); Android row = name + "N kcal · P Ng · size" | deviation | #1138 |
+| Search hub | results **leading swipe = Favorite** (`:596-603`) | missing | #1138 |
+| Search hub | results **trailing swipe = Delete**, Scanned-category foods only (`:604-613`) | missing | #1138 |
+| Search hub | results `Section("Your meals")` recipe matches + **`group · N` badge** when `expandOnLog` (`:643-649`); tap logs the recipe directly | missing | #1140 |
+| Search hub | recipe row trailing swipe Delete (`:657-665`); leading swipe **Edit** routes to QuickAddView-rebuild (has `recipeItems`) OR `EditRecipeSheet` (flat) — `:666-676` | missing | #1140 |
+| Search hub | **`EditRecipeSheet`** (`:945-1003`, nested in this file, unnamed in the #1138 body): Name + per-serving cal/P/C/F/fiber `decimalPad` fields, Save disabled on empty name, title "Edit meal" | missing | #1140 |
+| Search hub | **Online Results** section (globe header) — OpenFoodFacts + USDA in parallel, opt-in `Preferences.onlineFoodSearchEnabled`, fires when local hits < 5 and q >= 3, dedup vs local + within itself | missing | #1138 (**transport blocked #1194**) |
+| Search hub | "Searching online…" states (full-screen when zero local hits, inline Section when some) | missing | #1138 |
+| Search hub | `noResultsView` = "No results for X" + **Log with AI** (borderedProminent) + **Enter manually**; Android has the AI row but no manual-entry escape | deviation | #1138 / #1139 |
+| Search hub | inline `describeWithAIRow` between Foods and Your-meals when no exact match and q>=2 (`:622-624`); Android appends it after the flat list | deviation | #1138 |
+| Search hub | log sheet (`logFoodSheet` `:798-910`) vs Android `ServingConfirmSheet`: iOS adds per-unit macro header line, `ServingInputView`, totals card (cal + P/C/F chips + fiber), `.presentationDetents([.fraction(0.65), .large])` | deviation | #1138 |
+| Search hub | log sheet **`SuspiciousPieceBanner`** multi-piece sanity check (`:829-837`, the TJ-meatballs class) | missing | #1138 |
+| Search hub | log sheet **`PastDayLogBadge`** when the viewed day isn't today (`:864-868`) + `.pastDayLogBadge` on the standalone hub (`:66`) | missing | #1138 |
+| Search hub | log sheet toolbar **star favorite toggle** in the `principal` slot (`:880-889`) | missing | #1138 |
+| Search hub | nav chrome: title flips to "Add Food (N logged)" and Cancel -> **Done** once anything is logged (`:69-75`) | missing | #1138 |
+| Search hub | `embedded: Bool` mode (LogMealSheet host drops NavigationStack + toolbar and swaps the section set) | missing | #1138 (dep LogMealSheet port) |
+| Search hub | Coach handoff pre-select: `initialQuery`/`initialServings`/`initialMealType`/`initialSelectionId` -> auto-open the log sheet on the resolved row (#930/#978 correctness) | missing | #1138 / #1135 |
+| Search hub | keyboard: focus-on-appear one runloop tick after present (`:266`); `.scrollDismissesKeyboard(.immediately)` on results, `.interactively` in the log sheet | unknown | #1138 (device-verify) |
+
+### Build / Custom entry (#1139 · iOS `QuickAddView.swift` 738 ln + `ManualFoodEntrySheet.swift` 180 ln · no Android trigger exists)
+
+| screen | sub-interaction | status | issue |
+|---|---|---|---|
+| QuickAddView | "Build a Meal" — FOOD ITEMS list, empty copy "Add food items to build your meal" | missing | #1139 |
+| QuickAddView | `IngredientPickerView` sheet (`:208-210`) + per-item edit sheet (`editingIndexBinding` `:211`) + remove-item button (`:88`) | missing | #1179 (builder carve-out) |
+| QuickAddView | Total row + Servings field (`decimalPad` `:127`) | missing | #1139 |
+| QuickAddView | **`Log items individually` Toggle -> `expandOnLog`** (`:139-142`) — drives the `group · N` badge on "Your meals" rows | missing | #1139 |
+| QuickAddView | `MealTimePicker` (`:151`, replaced the bare DatePicker 07-30) | missing | #1139 |
+| QuickAddView | `"Delete meal?"` destructive alert (`:180-184`) + save-as-recipe / rebuild-existing (`editingRecipeID`) | missing | #1139 |
+| ManualFoodEntrySheet | "Quick Add": name + Calories (`numberPad`) + P/C/F/Fiber + Serving (`decimalPad`), live "Macros sum to N kcal" cross-check (`:64`) | missing | #1139 |
+| ManualFoodEntrySheet | **`MealTimePicker`** (`:122-125`, replaced the bare DatePicker 07-30) — logs the PICKED mealType, not `autoMealType` | missing | #1139 |
+
+### Saved meals / combos (#1140 · iOS `CombosView.swift` 164 ln + `ComboLogSheet.swift` 214 ln · no Android entry)
+
+| screen | sub-interaction | status | issue |
+|---|---|---|---|
+| CombosView | "Saved meals" list; trailing swipe Delete + Edit, leading swipe (`:26-36`); toolbar Done + `+` add-meal | missing | #1140 |
+| CombosView | empty state "No saved meals yet" + "Create meal" CTA (`:130-134`) | missing | #1140 |
+| ComboLogSheet | per-combo sheet: FOOD ITEMS + `ServingMultiplierStepper` per item (`:154`), title = combo name | missing | #1140 |
+| ComboLogSheet | menu **Delete combo** + `"Delete <name>?"` destructive alert (`:70-88`) | missing | #1140 |
+| ComboLogSheet | legacy-format notice ("saved in an older format… logged as a single entry", `:166`) | missing | #1140 |
+| ServingMultiplierStepper | +/- stepper w/ editable `decimalPad` field, `.onSubmit` commits + drops focus (`:30-39`) — Android IME caveat | missing | #1140 |
+
+### Residual food surfaces
+
+| screen | sub-interaction | status | issue |
+|---|---|---|---|
+| LogMealSheet (308 ln) | segmented Recent/Search/Describe/Snap host; Android ships `AndroidRecentMealsSheet` (Recent only, no segmented chrome) | deviation | #1138 |
+| LogMealSheet | `Done` button REMOVED 07-31 (`e9b4d5cf`, swipe-down dismisses) — Android stand-ins still render an in-content Done | deviation | #1138 |
+| LogMealSheet | Snap segment auto-triggers `PhotoLogFlowView` then bounces back to Recent on dismiss (`:107`) | missing | #1063 |
+| PlantPointsCardView (201) | plant-diversity card + expandable plant list + "No plant foods logged yet" empty state | missing | #1141 |
+| MealReviewSheet / PhotoLogReviewView | editable review — every photo/capture logging path funnels through it on iOS | missing | #1063 |
+| VoiceLogSheet (471) | voice food logging: Describe -> Listening… -> "Understanding what you ate…" -> "Couldn't hear that"/Try again -> review; mic dictate button | missing | #1063 (speech seam #1178) |
 
 ## Today (epic #1061 = INDEX · Android-only re-creation: TodayTab.swift 410 ln vs iOS DashboardView.swift + DashboardView+Cards.swift · scoped ports #1129–#1132)
 
@@ -898,3 +1012,4 @@ is DONE** — ported to SharedUI, wired `MoreTab.swift:146`; removed from the po
 | Tab bar | 5 tabs, pill highlight, food glyph reads fork-knife (cart FIXED) | ok | |
 | Navigation | push/sheet transition speed + font stability; nav titles render in Material typography, not the app font | deviation | #1074/#1165 |
 | Theme | dark/light, goal-aware green/red, Material accent leak | unknown | |
+| Network transport | `DriftPlatform.httpSession` (OkHttp facade) is wired into ONE consumer (`LocalAIService:329`); Supabase `SyncClient`, OpenFoodFacts, USDA, Coach `web_search`/`fetch_url`, TTS + model-download all still bind the parking `URLSession` bridge (`RemoteLLMBackend:17-31`). Facade is also POST-only — `HTTPFacadeCodec.encodeRequest` drops `httpMethod`, `HttpFacade.kt:39` hardcodes `.post` | broken | **#1194** |
