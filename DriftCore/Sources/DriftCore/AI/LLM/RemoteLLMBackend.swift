@@ -370,6 +370,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
     /// timeout never runs in that path). The in-flight chat spinner can never
     /// hang indefinitely. #890
     private func dataWithTimeout(for request: URLRequest, timeout: TimeInterval) async throws -> (Data, URLResponse) {
+        #if canImport(Darwin)
         try await withThrowingTaskGroup(of: (Data, URLResponse).self) { group in
             group.addTask { try await self.session.data(for: request) }
             group.addTask {
@@ -379,6 +380,15 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
             defer { group.cancelAll() }
             return try await group.next()!
         }
+        #else
+        // #1133: a withTaskGroup racing Task.sleep never resolves on the
+        // Android Swift-concurrency runtime even after the real child
+        // completes — proved by a 10s classifyFull timeout not firing after
+        // 5+ minutes. The OkHttp facade (AndroidHTTPSession -> HttpFacade,
+        // #1136) already enforces call/read/write timeouts, so the call is
+        // bounded without a Swift-side race. Await directly.
+        try await session.data(for: request)
+        #endif
     }
 
     private func categorize(status: Int) -> RemoteBackendError {

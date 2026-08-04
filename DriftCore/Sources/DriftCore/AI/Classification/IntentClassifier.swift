@@ -328,6 +328,7 @@ public enum IntentClassifier {
     // MARK: - Timeout Helper
 
     public static func withTimeout<T: Sendable>(seconds: Int, operation: @Sendable @escaping () async -> T?) async -> T? {
+        #if canImport(Darwin)
         await withTaskGroup(of: T?.self) { group in
             group.addTask { await operation() }
             group.addTask {
@@ -338,5 +339,14 @@ public enum IntentClassifier {
             group.cancelAll()
             return result
         }
+        #else
+        // #1133: a withTaskGroup racing Task.sleep never resolves on the
+        // Android Swift-concurrency runtime even after the real child
+        // completes — this is the layer whose 10s timeout provably never
+        // fired after a 5+ minute hang. The OkHttp facade (#1136) already
+        // bounds the underlying network call, so await the operation
+        // directly instead of racing it.
+        return await operation()
+        #endif
     }
 }
