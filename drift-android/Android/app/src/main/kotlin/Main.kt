@@ -78,6 +78,19 @@ open class MainActivity: AppCompatActivity {
             ImagePickerFacade.onPicked(uri)
         }
 
+        // Camera capture — "Take Photo" half of Snap meal logging (#1111).
+        // Same deferred-callback shape as the two contracts above.
+        CameraCaptureFacade.cameraLauncher = registerForActivityResult(
+            androidx.activity.result.contract.ActivityResultContracts.TakePicture()
+        ) { success ->
+            CameraCaptureFacade.onCaptured(success)
+        }
+        CameraCaptureFacade.permissionLauncher = registerForActivityResult(
+            androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
+        ) { granted ->
+            CameraCaptureFacade.onPermissionResult(granted)
+        }
+
         setContent {
             val saveableStateHolder = rememberSaveableStateHolder()
             saveableStateHolder.SaveableStateProvider(true) {

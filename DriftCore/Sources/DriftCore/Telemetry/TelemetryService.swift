@@ -267,6 +267,7 @@ public enum TelemetryEvent {
 public enum TelemetrySurface {
     public static let coachChat = "coach_chat"
     public static let describeMeal = "describe_meal"
+    public static let snapMeal = "snap_meal"
     public static let exerciseText = "exercise_text"
     public static let photoLog = "photo_log"
     public static let workoutScan = "workout_scan"

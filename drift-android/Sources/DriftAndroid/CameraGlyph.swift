@@ -79,3 +79,52 @@ struct ChatBubbleShape: Shape {
         return p
     }
 }
+
+/// Photo-stack glyph drawn as a `Path`: skip-ui's Material map has NO photo/
+/// gallery/album/picture entry at all (checked `composeSymbolName` directly —
+/// zero hits for any "photo.*" name), so any `sym("photo…")` call would fall
+/// through to the warning triangle rather than a wrong-but-plausible object.
+/// Used for "Choose from Library" on the Snap capture sheet (#1111), where
+/// `CameraShape` above is already taken by "Take Photo".
+///
+/// Two overlapping rounded rectangles (the back one smaller, offset up-left),
+/// matching how SF Symbols composes `photo.on.rectangle` minus its interior
+/// sun/mountain glyph — dropped for legibility at the 20pt button size this
+/// is drawn at; always paired with a text label so the silhouette alone
+/// carries no ambiguity risk.
+struct PhotoStackShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        let s = min(rect.width, rect.height) / 24.0
+        let ox = rect.midX - 12.0 * s
+        let oy = rect.midY - 12.0 * s
+        func pt(_ x: Double, _ y: Double) -> CGPoint { CGPoint(x: ox + x * s, y: oy + y * s) }
+
+        var p = Path()
+        // Back rectangle — smaller, offset up-left.
+        let rb = 1.6
+        p.move(to: pt(1 + rb, 2))
+        p.addLine(to: pt(17 - rb, 2))
+        p.addQuadCurve(to: pt(17, 2 + rb), control: pt(17, 2))
+        p.addLine(to: pt(17, 14 - rb))
+        p.addQuadCurve(to: pt(17 - rb, 14), control: pt(17, 14))
+        p.addLine(to: pt(1 + rb, 14))
+        p.addQuadCurve(to: pt(1, 14 - rb), control: pt(1, 14))
+        p.addLine(to: pt(1, 2 + rb))
+        p.addQuadCurve(to: pt(1 + rb, 2), control: pt(1, 2))
+        p.closeSubpath()
+
+        // Front rectangle — larger, offset down-right, drawn on top.
+        let rf = 2.0
+        p.move(to: pt(7 + rf, 8))
+        p.addLine(to: pt(23 - rf, 8))
+        p.addQuadCurve(to: pt(23, 8 + rf), control: pt(23, 8))
+        p.addLine(to: pt(23, 22 - rf))
+        p.addQuadCurve(to: pt(23 - rf, 22), control: pt(23, 22))
+        p.addLine(to: pt(7 + rf, 22))
+        p.addQuadCurve(to: pt(7, 22 - rf), control: pt(7, 22))
+        p.addLine(to: pt(7, 8 + rf))
+        p.addQuadCurve(to: pt(7 + rf, 8), control: pt(7, 8))
+        p.closeSubpath()
+        return p
+    }
+}

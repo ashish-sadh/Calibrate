@@ -12,6 +12,37 @@ not ported at all.
 
 ## Session notes (append-only)
 
+- **2026-08-03 (executor, Sonnet), #1111:** Shipped Snap meal photo logging shell — completed WIP inherited from an earlier watchdog-restarted executor session on this same ticket (`NebiusMealPhotoLogger.swift` + Tier-0 tests + `CameraCaptureFacade.kt` + manifest/`Main.kt` wiring were already present, uncommitted). Added: FileProvider `<provider>` block + `res/xml/file_paths.xml` (was MISSING — `CameraCaptureFacade.launch()` would have crashed with `IllegalArgumentException` on the first "Take Photo" tap, never previously exercised), `CameraCaptureService.swift` (Swift-side facade wrapper mirroring `ImagePickerService.swift`, handles the permission-request→poll→launch→poll→result state machine), `SnapMealSheet.swift` (capture/analyzing/review/error phases, mirrors `DescribeMealSheet`'s review-row style verbatim rather than extracting a shared `MealReviewList` per the plan's speculative File #6 — only 2 occurrences, CLAUDE.md's anti-premature-abstraction tenet, and LAUNCH HARDENING's "no speculative refactors" all argue against touching the already-shipped Describe sheet), `PhotoStackShape` drawn glyph (skip-ui has zero `photo.*`/gallery/album SF Symbol mappings at all — checked `composeSymbolName` directly), `TelemetrySurface.snapMeal` constant, TodayTab wiring (Snap chip now opens the real sheet; the `showingCoachInfo`/`AIChatView` placeholder it used to open is DELETED — was 100% dead after the repoint, Coach remains reachable via the floating `ChatIconButton` in `ContentView.swift`). Both capture paths device-verified working end-to-end THROUGH TO THE CLOUD CALL: camera permission prompt → grant → system camera → confirm → app resume (no crash, no duplicate-MainActivity); gallery picker → pick → app resume. 5 rapid background/foreground cycles clean, zero crashes, zero ANRs (0-NO-CRASH). Tier-0 8/8 new + 2686/2686 total green; `android-build-check.sh` green; full iOS suite 1274/1274 green (DriftCore touch is ADD-ONLY, zero iOS behavior change).
+  **RESIDUAL — blocks the happy path, filed as #1177 (P1, needs-plan):** the cloud vision round-trip itself returns HTTP 200 with only the first (empty, role-announcement) SSE chunk — 4105 bytes, byte-identical size across two completely different test images — before the connection is cut, so `NebiusMealPhotoLogger.parse` always resolves to nil and the error screen fires (verified working: clean UI, Retry + Retake, no crash). Isolated via a temporary debug capture (added, verified, then fully reverted — `git diff --stat` on the two touched shared files is empty) that a control test (Describe, text-only, same buffered Android transport) succeeds end-to-end on the same build/device, so this is specific to the (slower-to-first-token) vision-call shape, not a general network/config/throttle failure — likely the buffered-path sibling of the exact "idle connection gets reaped" failure class #1133's own code comments already document for the streaming path. Needs real architectural investigation (real-device confirmation beyond the emulator, possibly a `stream:false` request for the buffered path or an OkHttp-Kotlin-facade transport mirroring #1136) — out of scope for a bounded executor session, filed `needs-plan`. Also affects Workout Scan (#1110) once its photo path is device-tested — same shared `RemoteLLMBackend` transport.
+  Build: verified via `skip app launch --android` (not yet published — see next session note for the publish outcome). #1100 (Stop-hook lane-scoped skip) also closed this session: fix had already landed (`ff33e89c`) but the issue was never closed — re-verified with a proper decoy-process test (my own self-test hit the documented pgrep ancestor-exclusion caveat) rather than re-implementing.
+
+- **2026-08-03 (scout, Opus):** IMAGE-IN / CAPTURE reconciliation (executor `/android-parity` PID 7297
+  Sonnet + planner PID 7330 LIVE on emulator-5554 → Android UNTOUCHED per the scout-#3 collision lesson;
+  iPhone sim was uncontended but this was a source + issue-state sweep, no device drive needed). Trigger:
+  6 days since scout #12 (2026-07-28) — verify-don't-trust against live `gh`. **Headline: #1128 (image-in
+  seam) CLOSED 2026-07-31 (`9aff629f`)** — shipped `DriftPlatform.imagePicker.pickLibraryImage()`
+  (`DriftCore/.../Adapters/ImagePicking.swift`), registered on Android (`DriftAndroidApp.swift:53`), wired
+  into exactly ONE consumer so far (`ProgressGalleryAndroid.swift:84`). Crucial shape: the seam is
+  **photo-LIBRARY only, NOT live camera** — it unblocks Snap-from-library / WorkoutScan-image / Coach
+  photo-attach, while barcode + live PhotoLog capture still need a SEPARATE camera seam. This invalidated
+  the "blocked on #1128" premise the matrix cited across Food/Today/Coach/Capture + the
+  [[project_android_image_in_seam_blocker]] memory (updated this session). **Actions:** (1) filed **#1174
+  P1** — Coach input-bar photo-attach, a genuine tracking hole: the `AIChatView+InputBar.swift:121-142`
+  comment forward-references #1125 for "photo attach", but **#1125's filed scope is cards + interview
+  only** (verified in its body) and #1111 is the Food-tab Snap (a different surface) — so photo-in-chat
+  was owned by no issue; now buildable on the landed seam. (2) Refreshed **#1110** (Workout Scan): removed
+  stale `blocked` (its #1128 blocker landed → image path buildable now; PDF still #1109-SAF-gated) +
+  commented the per-path nuance ([[harness_stale_blocked_label]]). (3) Added a matrix row for **#1137**
+  (Coach send button = DEAD TAP, only IME enter sends — `broken`; the old Input-bar row wrongly implied
+  "send" worked). Rows changed: **9** (Capture ×4 refined; Coach input-bar repointed #1125→#1174 + NEW
+  #1137 send-button row; Food barcode + Snap ×2; Today Snap chip; Progress-photos add-entry; Nav font
+  #1165). Issues filed: **1** (#1174). Issues refreshed: **1** (#1110 `blocked` cleared). No code touched
+  (matrix only); tree clean, publish lane's `Skip.env` untouched. Confirmed `3b0946cb`'s dashboard
+  meal-remove is **iOS-only** (`Drift/Views/MealTimelineSection.swift`) — does NOT close Android #1131;
+  iOS pulled slightly further ahead. Device-verify debt unchanged (emulator contended, 4th+ consecutive
+  scout) — next uncontended window: the library-seam consumers (#1174/#1111 once built) + the standing
+  Food/Coach/Weight `unknown` rows.
+
 - **2026-07-28 (executor, Sonnet), #1100:** Executed #1100's plan exactly: `.claude/hooks/ensure-clean-state.sh`
   now skips the dirty/untracked-file gate for `DRIFT_PARITY_LANE` ∈ {scout, planner} Stop-hook runs when
   `pgrep -f 'android-parity --dangerously'` finds a live executor sibling (the UNPUSHED gate is byte-identical,
@@ -566,8 +597,8 @@ per the scout-#3 collision lesson).
 | Food tab root | goal setup sheet (`showingGoalSetup`) — sheet + BOTH macro-card tap affordances iOS-gated (:600/:612); gates flip in the GoalSetupView port | missing | #1117 |
 | Food tab root | plant points detail — static LeafShape row renders on Android; tap + expandable list iOS-gated :634-641 | missing | #1141 |
 | Food tab root | confirm-log sheet (`showingConfirmLog` :237) — only trigger is the iOS-only contextMenu "Log Again" :1115 | missing | #1141 |
-| Food tab root | barcode scanner fullScreenCover (`showingScanner` :165) | missing | #1063 |
-| Food tab root | Snap shortcut (safeAreaInset camera.viewfinder → PhotoLog) — DRIFT_IOS_APP :128-156 | missing | #1111 (#1063 seam) |
+| Food tab root | barcode scanner fullScreenCover (`showingScanner` :165) — inherently LIVE-camera (AVFoundation); the landed #1128 seam is photo-library-ONLY, does NOT cover barcode → still needs a camera seam | missing | #1063 (live-camera seam pending) |
+| Food tab root | Snap shortcut (safeAreaInset camera.viewfinder → PhotoLog) — DRIFT_IOS_APP :128-156; Food-tab entry point still not ported (Today's chip is the only Snap entry on Android) | missing | #1111 (Today chip shipped; Food-tab entry unclaimed) |
 | Food tab root | suggestion chips: iOS → FoodLogSheet/ComboLogSheet review; Android quick-logs DIRECTLY + toast undo (deliberate interim :753-781) — quick-log write needs drive | deviation | #1140/#1138 |
 | Food tab root | entry-row contextMenu (Edit/Favorite/Log Again/Copy/Move) — Darwin-only by house rule; Edit=row tap, Delete=✕, Favorite/Copy=edit sheet mapped; Log Again + Move Up/Down have NO Android path | deviation | #1141 |
 | FoodSearchView (iOS 49KB) | search-first UX: query + RECENT/COMBOS/FAVORITES/FREQUENT/YOUR FOODS/POPULAR sections, per-result FoodLogSheet, favorite swipe, recent 1-tap re-log | missing | #1138 |
@@ -601,7 +632,7 @@ V6CoachingNudge, WorkoutConsistencyCard, GoalProgressCard, TodayDonutView, V6Rin
 | Nutrition hero | iOS `calorieBalanceCard` = `TodayDonutView` (goal path) + no-goal fallback (eaten + P/C/F/Fiber chips); Android `intakeCard` re-creates 3 concentric rings + legend but is ALWAYS ring-mode (no no-goal fallback) | deviation | #1061 |
 | Nutrition hero | skeleton while loading (`SkeletonCalorieBalanceCard`) — Android has no skeleton (shared TodayStore mitigates the cold "0 kcal" flash, #1075) | deviation | #1075 |
 | Log methods | iOS `LogMethodCardsRow` = Snap · **Voice** · Search · Recent; Android = Snap · **Describe** · Search · Recent (Voice→text substitute) | deviation | #1126 |
-| Log methods | **Snap chip**: iOS opens photo capture; Android's camera-glyph chip opens **Coach chat** (`showingCoachInfo`→AIChatView) — no capture, misleading glyph | deviation | #1063/#1128 |
+| Log methods | **Snap chip**: opens `SnapMealSheet` (#1111, 2026-08-03) — Take Photo (new `CameraCaptureFacade`/`CameraCaptureService`) + Choose from Library (`DriftPlatform.imagePicker`, #1128) both capture correctly and reach the review UI shell; the cloud vision round-trip itself is currently BROKEN (#1177 — buffered Android transport truncates every photo response to the first empty SSE chunk, HTTP 200, no error) so the happy path (real food detection) cannot complete on-device yet. Error+Retry state verified working (graceful, no crash). No longer opens Coach chat (that misrouted placeholder is gone). | broken | #1111 (mechanics shipped) / #1177 (blocks happy path) |
 | Log methods | Describe / Search / Recent chips wired (was `broken` #1093, now CLOSED) → DescribeMealSheet / AndroidFoodSearchSheet / AndroidRecentMealsSheet | ok | #1093 (closed) |
 | Meal timeline | iOS `MealTimelineSection` = dot-rail + **swipe-to-delete** (`onDelete`) + `onAdd` nudge; Android `mealsCard` = flat list, **NO delete** (can't remove a mis-log from Today), empty→Food tab | deviation | #1131 |
 | Meal timeline | skeleton while loading (`SkeletonMealTimelineSection`) — Android none | deviation | #1075 |
@@ -637,7 +668,7 @@ V6CoachingNudge, WorkoutConsistencyCard, GoalProgressCard, TodayDonutView, V6Rin
 | Weight tab | empty state (manual-log CTA; AH-sync stays hidden till health seam) — Android shows inline "No weights yet" | deviation | #1145 |
 | Today dashboard | body summary cards row (`BodySummaryCardsRow` — mounted in `DashboardView`, NOT the Weight tab; misfiled here) | unknown | #1061 |
 | DEXA overview | DEXAOverviewView + detail | missing | #1069 |
-| Progress photos | gallery / viewer overlays / timer camera / add entry — Android-only re-creation `ProgressGalleryAndroid.swift` EXISTS + wired (`MoreTab.swift:147`), NOT the SharedUI ProgressGalleryView port; viewer/timer-camera/add-entry parity unverified (source-only session) | deviation | #1069 |
+| Progress photos | gallery / viewer overlays / timer camera / add entry — Android-only re-creation `ProgressGalleryAndroid.swift` EXISTS + wired (`MoreTab.swift:147`), NOT the SharedUI ProgressGalleryView port; **add-entry now runs on the landed #1128 image-in seam** (`:84` → `DriftPlatform.imagePicker.pickLibraryImage` — the seam's first/only wired consumer). Live timer-camera capture + full 4-pose parity → #1166; viewer parity unverified (source-only) | deviation | #1069/#1166 |
 
 ## More / Settings (epic #1067 = INDEX · Android stub: MoreTab.swift 90 lines vs iOS ~3.5k-line tree · scoped ports #1114–#1119)
 
@@ -719,7 +750,8 @@ device-verify pending an uncontended emulator window (both sibling lanes live th
 | Coach entry | floating ChatIconButton (ContentView) + TodayTab coach sheet → AIChatView | ok | |
 | Chat shell | header ("Drift Coach" + close), scroll, thinking dots, TypewriterText, Android scroll-sentinel | ok | |
 | Empty-state hero | iOS = ListeningCircle (tap-to-talk); Android = static SparkleShape "Ask me anything" (tap focuses input) | deviation | #1126 |
-| Input bar | Android = plain TextField + send only; iOS adds photo (PhotosPicker) + mic | deviation | #1125 (photo) / #1126 (mic) |
+| Input bar | iOS `idleControls` (`AIChatView+InputBar.swift:121-142`) adds photo (PhotosPicker) + mic; Android gates BOTH off (`#if DRIFT_IOS_APP`). Photo-attach NEWLY UNBLOCKED — #1128 image-in seam landed 2026-07-31, `DriftPlatform.imagePicker` live (was mis-pointed at #1125, which is cards+interview only) | deviation | #1174 (photo) / #1126 (mic) |
+| Input bar | **send button** (`arrow.up.circle.fill`, InputBar :160) — DEAD TAP on Android: `vm.sendMessage()` never fires on tap, only IME enter/submit sends (glyph is a drawn `sym()` Shape → hit-target falls through, [[harness_dead_synthetic_tap_means_contentshape]]) | broken | #1137 |
 | Suggestions row | horizontal smart-suggestion pills → send | ok | |
 | Deterministic turns | meal-planning reply, multi-turn pills, ClarificationCard, RemoteProviderBadge, Retry — render/route on Android | ok | #1133 (confirms) |
 | Open-ended cloud-LLM turn | HANGS on "Looking that up…" indefinitely — NOT a transport issue (2026-07-28: OkHttp facade #1136 proves the real Nebius round-trip completes in 2-8s; reply still never reaches the UI, so the break is a deeper Swift-concurrency/task-race issue further up the call chain) | broken | #1133 |
@@ -739,12 +771,17 @@ device-verify pending an uncontended emulator window (both sibling lanes live th
 
 ## Capture (epic #1063 · iOS-only: Drift/Views/PhotoLog/**, BarcodeScannerView)
 
+**Seam split (scout 2026-08-03):** #1128 landed a photo-**LIBRARY** seam (`DriftPlatform.imagePicker.pickLibraryImage`),
+NOT live camera. So each capture path is gated differently: **library-pick → parse/review** is buildable NOW
+(Snap #1111, WorkoutScan-image #1110); **live camera** (PhotoLog capture, barcode) still needs a separate
+AVFoundation/CameraX seam; **PDF** needs SAF (#1109). Ship each path or show an explicit "not yet" state — never a dead control.
+
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
-| Photo log | capture view (camera, settings, barcode sheets) | missing | #1063 |
-| Photo log | flow + review (PhotoLogFlowView/PhotoLogReviewView) | missing | #1063 |
-| Barcode scanner | scan → food match → log | missing | #1063 |
-| Workout scan | photo/PDF → template or session (WorkoutScanSheet + ReviewView) | missing | #1110 (#1095 closed-descoped; #1063 shares the camera seam) |
+| Photo log | capture view — Android's own `CameraCaptureFacade` (TakePicture ActivityResult + FileProvider, #1111, 2026-08-03) now covers live camera too, not just library-pick; verified on-device (permission prompt, capture, confirm, no crash) | ok | #1111 |
+| Photo log | flow + review (`SnapMealSheet`, #1111, 2026-08-03) — capture/analyzing/review/error phases all render correctly, error state has Retry + Retake; **review can never be reached today** because the cloud vision call truncates before returning content (#1177) | broken | #1111 (shell shipped) / #1177 (blocks review) |
+| Barcode scanner | scan → food match → log — inherently live-camera; NOT covered by the library-only #1128 seam | missing | #1063 (live-camera seam pending) |
+| Workout scan | photo/PDF → template or session (WorkoutScanSheet + ReviewView) — **image path UNBLOCKED** (#1128 seam; `WorkoutScanSheet:102` already routes through it); PDF still #1109-SAF-gated; `blocked` label cleared 2026-08-03 | missing | #1110 (image path unblocked; PDF #1109) |
 
 ## Health sub-screens (epic #1068 = INDEX · iOS-only: Drift/Views/{Biomarkers,Glucose,Cycle}/** · scoped ports #1122–#1124)
 
@@ -790,5 +827,5 @@ is DONE** — ported to SharedUI, wired `MoreTab.swift:146`; removed from the po
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
 | Tab bar | 5 tabs, pill highlight, food glyph reads fork-knife (cart FIXED) | ok | |
-| Navigation | push/sheet transition speed + font stability | deviation | #1074 |
+| Navigation | push/sheet transition speed + font stability; nav titles render in Material typography, not the app font | deviation | #1074/#1165 |
 | Theme | dark/light, goal-aware green/red, Material accent leak | unknown | |

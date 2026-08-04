@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FileProvider path spec for the camera-capture temp JPEGs (#1111). The
+     facade writes to cacheDir via File.createTempFile, so only that root
+     needs exposing. -->
+<paths>
+    <cache-path name="camera" path="." />
+</paths>

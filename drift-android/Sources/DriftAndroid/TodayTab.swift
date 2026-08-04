@@ -112,7 +112,7 @@ struct TotalsRow: Sendable {
 struct TodayTab: View {
     @Binding var selectedTab: PrimaryTab
     @State var store = TodayStore.shared
-    @State var showingCoachInfo = false
+    @State var showingSnap = false
     @State var showingSearch = false
     @State var showingRecent = false
     @State var showingDescribe = false
@@ -168,9 +168,11 @@ struct TodayTab: View {
             }
             .background(Theme.background.ignoresSafeArea())
             .onAppear { store.reload() }
-            .sheet(isPresented: $showingCoachInfo) { AIChatView() }
             // TodayStore's .foodEntryAdded observer refreshes the dashboard,
             // but onDismiss also covers the cancel path's ring re-check.
+            .sheet(isPresented: $showingSnap, onDismiss: { store.reload() }) {
+                SnapMealSheet()
+            }
             .sheet(isPresented: $showingDescribe, onDismiss: { store.reload() }) {
                 DescribeMealSheet()
             }
@@ -288,7 +290,7 @@ struct TodayTab: View {
             // square and a SEND ARROW respectively — different objects, the
             // directive-0a failure (field report 2026-07-28). Same remedy as
             // DumbbellGlyph / ClockGlyph / SparkleGlyph.
-            chipGlyph("Snap", action: { showingCoachInfo = true }) {
+            chipGlyph("Snap", action: { showingSnap = true }) {
                 CameraShape().stroke(Theme.textPrimary, lineWidth: 1.7)
                     .frame(width: 22, height: 22)
             }
