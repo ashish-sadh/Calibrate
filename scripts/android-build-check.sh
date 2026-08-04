@@ -13,6 +13,27 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# Recurrence guard (#1120): SkipUI bridges .scrollDismissesKeyboard to a Compose
+# nested-scroll connection that eats pointer input inside the scroller, so every
+# TextField under it stops taking focus taps. It cost us the workout set fields
+# (#1076) and then, one day later, the Edit-Food override macros — an iOS→SharedUI
+# port silently re-imported the trap. The defect is invisible until someone drives
+# that exact screen, so grep for it on every check instead.
+ungated=$(awk '
+  FNR == 1 { prev1 = ""; prev2 = "" }
+  /\.scrollDismissesKeyboard/ {
+    if (prev1 !~ /#if[[:space:]]+!os\(Android\)/ && prev2 !~ /#if[[:space:]]+!os\(Android\)/)
+      printf "  %s:%d:%s\n", FILENAME, FNR, $0
+  }
+  { prev2 = prev1; prev1 = $0 }
+' SharedUI/*.swift)
+if [ -n "$ungated" ]; then
+  echo "android-build-check: ungated .scrollDismissesKeyboard in SharedUI — starves Android TextField focus (#1120):" >&2
+  echo "$ungated" >&2
+  echo "wrap each in '#if !os(Android)' / '#endif' — see SharedUI/ActiveWorkoutView.swift:297-305" >&2
+  exit 1
+fi
+
 SWIFT="${SWIFT_ANDROID_SWIFT:-$HOME/.swiftly/bin/swift}"
 TRIPLE="${1:-aarch64-unknown-linux-android28}"
 

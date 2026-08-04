@@ -284,7 +284,14 @@ struct EditFoodEntrySheet: View {
             }
             .padding(.horizontal, 16)
         }
+        // Same Android focus-starvation trap as ActiveWorkoutView:297-305 —
+        // SkipUI bridges scrollDismissesKeyboard to a Compose nested-scroll
+        // connection that eats pointer input inside the scroller, so the
+        // override macro fields (Cal/P/C/F/Fb) never took a focus tap (#1120).
+        // Compose hides the IME on scroll natively, so Android loses nothing.
+        #if !os(Android)
         .scrollDismissesKeyboard(.interactively)
+        #endif
         .background(Theme.background)
         #if os(Android)
         .task {
