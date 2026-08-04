@@ -15,6 +15,40 @@ rather than untested.
 
 ## Session notes (append-only)
 
+- **2026-08-04 (scout #17, Opus 5):** **TODAY (#1061)** — next in rotation (scout #16 deferred it for Sharing) and independently
+  the right pick: `TodayTab.swift` (8 touches) and `DashboardView.swift` (6) are the most-churned Today-area files since the
+  section was enumerated on 07-28, so the rows were 7 days behind the code. Both sibling lanes live (executor PID 33400 with two
+  Gradle/Kotlin daemons up, APK reinstalled 04:54; planner PID 64574), so per [[harness_parity_lanes_share_one_emulator]] the
+  emulator was left alone — **8th consecutive source-only sweep**. **The headline is that this section had rotted in a way that
+  was costing the other lanes work, not just going stale.** #1131 was sitting in `planned` with a Done-When requiring the
+  "dot-rail visual" — iOS **deleted** the dot-rail in the 2026-05-24 density pass (`MealTimelineSection.swift:34-42`: "the gutter
+  was visual noise that didn't earn its space"), so an executor satisfying that criterion would have *built a new P1 deviation
+  while closing a P2*. Commented the corrected scope, retitled, and knocked it back to `needs-plan`. Same class of rot in two
+  more rows: **Log methods** was a FALSE deviation ("iOS = Snap·**Voice**·Search·Recent") — `LogMethodCard` has exactly four
+  cases and none is Voice (`LogMethodCardsRow.swift:87-88`, `:12` "#935 merged the old Voice/Text pair"), so Android already
+  matches and the row's pointer at #1126 was noise; and the **Body summary row** filed all three columns under **#1070
+  (Health Connect adapter)**, which hid a portable-now fix behind a seam that doesn't exist — SLEEP/READINESS do need #1070,
+  but WEIGHT needs nothing (`TodayTab.swift:74` *already* calls `WeightTrendService.shared.trendWeight`; `weeklyRate` is its
+  sibling property). Issues filed: **3**, all P1, all Android-only files with zero iOS risk — **#1201** meal list renders the raw
+  `ORDER BY fe.logged_at DESC` (`AppDatabase.swift:304`) where iOS re-sorts ascending (`MealTimelineSection.swift:370-379`), so
+  breakfast sits at opposite ends of the card on the two platforms (one-line fix, deliberately NOT folded into #1131 so it isn't
+  blocked behind a multi-part port); **#1202** Today has no reload throttle where iOS skips loads under 30s fresh and explicitly
+  deleted its duplicate `onAppear` load for this exact reason (`DashboardView.swift:336-352`) — and each unthrottled reload
+  fetches **500 workouts twice** (`workoutStreak()` is `weeklyWorkoutCounts(weeks: 52)`, both hitting `fetchWorkouts(limit: 500)`)
+  plus reads and sorts the **entire weight table** to display one number (`getHistory(days: 365)` returns everything unfiltered),
+  in bare uncancellable `Task`s that can overlap; **#1203** the WEIGHT stat drops both the weekly-rate line and the goal-aware
+  green/red, rendering every direction in the same fixed coral — a design-tenet-#3 violation. Rows changed: **21** (3 corrected,
+  2 split/rerouted, 16 added incl. the section's first-ever SPEED block). Deliberately **did not** file two plausible-looking
+  leads that source disproved, rather than pad the count: Android's meal-row kcal (`Int(e.calories * e.servings)`) is *exactly*
+  iOS's `totalCalories`, and the "% of goal" chip on a goal-less install is backed by a real TDEE fallback with a 1200 floor
+  (`FoodService.swift:369-377`), not an invented target — both recorded as verified-clean rows so the next scout doesn't re-chase
+  them. Also checked and clean: `DateFormatters.shortTime` IS zone-pinned (`:73-78`), so the [[android_foundation_utc_dateformatter]]
+  class of bug is genuinely closed here, and the main `loggedAt` writer is non-fractional ISO (`FoodLogViewModel.swift:295`) so
+  Android's narrower parse chain still resolves it. No code touched (matrix only). **Residual device debt:** every SPEED row
+  above wants a Pixel-2 confirmation the emulator can't give ([[infra_android_emulator_swiftshader_gpu]], directive
+  0-EMULATOR-GPU-CAVEAT) — judge #1202 structurally, not on framestats. Rotation next: **More / Settings** (44 `missing` rows,
+  the largest untouched block on the board).
+
 - **2026-08-04 (scout #16, Opus 5):** **SHARING / SOCIAL — an entire feature area with ZERO matrix rows.** Rotation
   said Today next, but a staleness check first (which iOS files moved since the last sweep) showed the social cluster
   was the single fastest-moving area of the week — ~100 file-touches since 07-28 — and `grep -c 'Sharing'
@@ -809,23 +843,47 @@ render them empty — those stay `missing`→#1070, not new ports. Shared compon
 in iOS-only `Drift/Views/` (LogMethodCardsRow, BodySummaryCardsRow, MealTimelineSection,
 V6CoachingNudge, WorkoutConsistencyCard, GoalProgressCard, TodayDonutView, V6Rings).
 
+**Re-verified 2026-08-04 (scout #17), source-only — 8th consecutive scout with no device
+access.** The 07-28 rows had gone stale in both directions: one row was a FALSE deviation
+(Log methods — iOS has no Voice card) and one was actively MISLEADING (Meal timeline —
+"dot-rail", which iOS deleted 2026-05-24, and which #1131's Done-When still required).
+Two rows were misrouted to blocked seam epics that can't fix them (WEIGHT column → #1070).
+New this pass: a SPEED block (#1202) and the meal-list ordering defect (#1201) — the Today
+section had never carried a single perf row despite operator directive 0-PERF-P0.
+
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
 | Chrome | brand header: iOS = `BrandMark` **asset** in the **nav toolbar** (principal); Android draws a "D" **circle IN scroll content** — wrong element AND wrong placement | deviation | #1121/dir-8 |
 | Chrome | privacy banner — Android `lock.fill` vs iOS `lock.shield.fill`; Android adds a trailing Spacer (iOS is leading-aligned) | deviation | #1061 |
 | Chrome | pull-to-refresh (`.refreshable`) — Android TodayTab has none | deviation | #1061 |
-| Chrome | 180s auto-refresh poll — Android reloads on `.foodEntryAdded` + onAppear instead (acceptable interim) | ok | #1061 |
+| Chrome | 180s auto-refresh poll — Android reloads on `.foodEntryAdded` + onAppear instead. The *substitution* is still an acceptable interim, but see the SPEED rows below: the onAppear half is unthrottled. | deviation | #1202 |
+| **Speed** | **no reload throttle.** iOS skips `loadToday()` when data is <30s fresh (`DashboardView.swift:346-352`) and DELETED its duplicate `.onAppear` load on purpose ("the duplicate here raced it on each tab switch (perf 2026-07-09)", `:336-341`). Android has no `lastFullLoadAt` equivalent — `.onAppear { store.reload() }` (`TodayTab.swift:170`) fires unconditionally on every entry to the tab, on top of `init()` (`:47`) and the `.foodEntryAdded` observer (`:53-55`). Directly on operator directive 0-PERF-P0. | deviation | #1202 |
+| **Speed** | **500 workouts fetched TWICE per reload.** `weeklyWorkoutCounts(weeks: 1)` and `workoutStreak()` are called back-to-back (`TodayTab.swift:106-107`); `workoutStreak()` is itself `weeklyWorkoutCounts(weeks: 52)` (`WorkoutService.swift:663-666`) and both funnel into `fetchWorkouts(limit: 500)` (`:638-639` → `:278-282`). No caching between them. Every hop crosses JNI. | deviation | #1202 |
+| **Speed** | **entire weight table read + sorted to display one number.** `WeightServiceAPI.getHistory(days: 365)` returns the whole table unfiltered (`WeightServiceAPI.swift:70-76` — `if days >= 365 { return entries }`), then Android sorts all of it to take `.first` (`TodayTab.swift:100`). iOS reads the same value from already-loaded `viewModel.latestWeight`. | deviation | #1202 |
+| **Speed** | **overlapping unstructured reloads.** `reload()` wraps everything in a bare `Task { }` (`TodayTab.swift:69`) — no stored handle, no cancellation, no re-entrancy guard, so a tab switch racing a `.foodEntryAdded` post can have two loads writing the same `@Observable` fields in unspecified order. iOS's `.task` is view-lifetime-bound and cancels. | deviation | #1202 |
+| Nutrition hero | "% of goal" chip + rings render against `resolvedCalorieTarget()` even when no `WeightGoal` exists — so a goal-less install reads "N% of goal" against a TDEE-derived number. **Checked and NOT a fabricated value:** `resolvedCalorieTarget()` falls back to real TDEE with a 1200 floor (`FoodService.swift:369-377`), and Android's `max(t.target, 1200)` (`TodayTab.swift:82`) is a redundant re-floor, not an invented goal. The wording is the only deviation; folded into the existing no-goal-fallback row. | deviation | #1061 |
 | Banners | profile-incomplete nudge → ProfileView ("Add age, sex & height…") — Android none | missing | #1116 |
 | Banners | 7-day feedback banner (#759, days 7–14 → More/Report-a-bug; xmark dismiss) — Android none | missing | #1114 |
 | Banners | stale-backup banner (#561, >3d → Backup settings sheet) — Android none | missing | #1094 |
 | Nutrition hero | iOS `calorieBalanceCard` = `TodayDonutView` (goal path) + no-goal fallback (eaten + P/C/F/Fiber chips); Android `intakeCard` re-creates 3 concentric rings + legend but is ALWAYS ring-mode (no no-goal fallback) | deviation | #1061 |
 | Nutrition hero | skeleton while loading (`SkeletonCalorieBalanceCard`) — Android has no skeleton (shared TodayStore mitigates the cold "0 kcal" flash, #1075) | deviation | #1075 |
-| Log methods | iOS `LogMethodCardsRow` = Snap · **Voice** · Search · Recent; Android = Snap · **Describe** · Search · Recent (Voice→text substitute) | deviation | #1126 |
+| Log methods | **CORRECTED scout #17** (row was a FALSE deviation since 07-28): iOS is Snap · **Describe** · Search · Recent — there is no Voice card. `LogMethodCard` has exactly 4 cases (`LogMethodCardsRow.swift:87-88`) and `:12` records "#935 merged the old Voice/Text pair". Android's Snap · Describe · Search · Recent is the SAME set, not a substitute. Do not route this to #1126 (that's TTS/voice-input, correctly carved to #1126/#1178). | ok | — |
+| Log methods | container styling: iOS = `LazyVGrid` 4 flexible cols, `minHeight 56`, `.padding(.vertical, 10)`, `strokeBorder(Theme.separator, 0.5)`, `.dynamicTypeSize(...accessibility2)`; Android = `HStack(spacing: 10)`, `.padding(.vertical, 16)`, `.shadowSoft()` and **no border**. Taller chips + shadow-instead-of-hairline. LazyVGrid avoidance may be deliberate ([[skipui_font_scale_rendering_traps]] #1159 — Texts+LazyVGrid vanish at font_scale >1); confirm before "fixing" to a grid. | deviation | #1121 |
+| Log methods | Recent chip glyph: iOS `clock`, Android `clock.arrow.circlepath` — different Material mapping. Cosmetic; not filed separately. | deviation | #1121 |
 | Log methods | **Snap chip**: opens `SnapMealSheet` (#1111, 2026-08-03) — Take Photo (new `CameraCaptureFacade`/`CameraCaptureService`) + Choose from Library (`DriftPlatform.imagePicker`, #1128) both capture correctly and reach the review UI shell; the cloud vision round-trip itself is currently BROKEN (#1177 — buffered Android transport truncates every photo response to the first empty SSE chunk, HTTP 200, no error) so the happy path (real food detection) cannot complete on-device yet. Error+Retry state verified working (graceful, no crash). No longer opens Coach chat (that misrouted placeholder is gone). | broken | #1111 (mechanics shipped) / #1177 (blocks happy path) |
 | Log methods | Describe / Search / Recent chips wired (was `broken` #1093, now CLOSED) → DescribeMealSheet / AndroidFoodSearchSheet / AndroidRecentMealsSheet | ok | #1093 (closed) |
-| Meal timeline | iOS `MealTimelineSection` = dot-rail + **swipe-to-delete** (`onDelete`) + `onAdd` nudge; Android `mealsCard` = flat list, **NO delete** (can't remove a mis-log from Today), empty→Food tab | deviation | #1131 |
+| Meal timeline | **CORRECTED scout #17 — the old row (and #1131's Done-When) said "dot-rail"; iOS DELETED the rail in the 2026-05-24 density pass** (`MealTimelineSection.swift:34-42`: "the gutter was visual noise that didn't earn its space"). iOS is now ONE bounded card + hairline `Divider`s (`:43-58`). Android's flat list is therefore CLOSER to iOS than previously recorded; residual = card wrapper + dividers + row typography. Building a rail would create a new deviation. | deviation | #1131 (rescoped) |
+| Meal timeline | **row order is REVERSED vs iPhone.** `AppDatabase.fetchFoodEntries(for:)` is `ORDER BY fe.logged_at DESC` (`AppDatabase.swift:304`); iOS re-sorts **ascending** (`MealTimelineSection.swift:370-379`, "so the earliest meal sits at the top"); Android renders the raw DESC (`TodayTab.swift:88-98`). Breakfast lands at opposite ends of the card on the two platforms. One-line fix. | deviation | #1201 |
+| Meal timeline | **tap-to-expand detail** — iOS row toggles portion chip + P/C/F(+Fiber >0.5g) macro chips (`MealTimelineSection.swift:132-221`); Android rows are inert `HStack`s, not Buttons (`TodayTab.swift:363-385`) | missing | #1131 |
+| Meal timeline | **in-row Remove button** (operator 2026-08-03 "when I expand add a way to remove from dashboard itself", commit 3b0946cb, `:182-211`) — Android none. Must be a SIBLING of the toggle Button, not nested in its label (`:135-137`) or the tap is swallowed. | missing | #1131 |
+| Meal timeline | swipe-to-delete — iOS hand-rolls `SwipeToDeleteContainer` + `DragGesture` (`:250-316`) precisely because `.swipeActions` is List-only; Android none. Follow-on to the Remove button, not a gate. | missing | #1131 |
+| Meal timeline | header **"+"** add button (`:64-89`, `meal-timeline-add`) — Android header is text only (`TodayTab.swift:346`) | missing | #1131 |
+| Meal timeline | empty-state copy: iOS "try the **Snap** card above" (`:24`, pinned by #821 Done-When 2); Android "try the **Search** chip above" (`TodayTab.swift:353`) | deviation | #1131 |
+| Meal timeline | row content: iOS = `time · name · kcal` (+separate "kcal" unit label, time `minWidth 56`); Android = `time · (name/detail) · mealType pill` — Android adds a meal-type pill iOS doesn't show and folds servings+kcal into a subtitle | deviation | #1131 |
+| Meal timeline | kcal math — Android `Int(e.calories * e.servings)` (`TodayTab.swift:95`) == iOS `entry.totalCalories` (`FoodEntry.swift:104`). **Verified equal, no bug.** | ok | — |
 | Meal timeline | skeleton while loading (`SkeletonMealTimelineSection`) — Android none | deviation | #1075 |
-| Body summary row | iOS `BodySummaryCardsRow` = WEIGHT / **SLEEP / READINESS** (goal-aware WEIGHT, spec empty states #821); Android `statTrio` = WEIGHT / **WORKOUTS / STREAK** (SLEEP+READINESS dropped — health-gated; workout cols are a DriftCore substitute) | deviation | #1070 |
+| Body summary row | **SPLIT scout #17 — the old row filed all three columns under #1070, hiding a portable-now fix behind a seam.** SLEEP + READINESS are genuinely HealthKit-sourced and correctly hidden ([[android_hide_unwired_integration_ui]]); Android substitutes WORKOUTS / STREAK (DriftCore). That half stays #1070. | missing | #1070 |
+| Body summary row | **WEIGHT column needs NO health seam and is broken parity today**: iOS shows a `%+.2f unit/wk` rate line + **goal-aware value color** (green aligned / red against / neutral ink when no goal) — `BodySummaryCardsRow.swift:162-196`, `goalAlignedColor :246-263`. Android passes fixed `Theme.accent` and renders the value in `Theme.textPrimary` unconditionally (`TodayTab.swift:396`, `:412-414`), with no rate at all. Violates design tenet #3 (goal-aware color, never "good/bad"). Both inputs already run on Android — `TodayTab.swift:74` already calls `WeightTrendService.shared.trendWeight`, and `weeklyRate` is its sibling property (`WeightTrendService.swift:26`). | deviation | #1203 |
 | Coaching nudge | iOS `V6CoachingNudge` (topmost proactiveAlert, Ask-AI pill, 24h dismiss; `BehaviorInsightService` = DriftCore) — Android none | missing | #1130 |
 | Behavior insights | iOS `insightsCard` (BehaviorInsight list under "Insights") — Android none | missing | #1130 |
 | Goal progress | iOS `goalCard` (`GoalProgressCard` → GoalView) / empty "No weight goal set" — Android none (statTrio has WEIGHT value only, no progress card) | missing | #1117 |
