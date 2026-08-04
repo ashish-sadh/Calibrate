@@ -196,6 +196,16 @@ struct MealTimelineSection: View {
                             HStack(spacing: 4) {
                                 Image(systemName: "trash")
                                 Text("Remove")
+                                    // Never wrap. With five macro chips beside
+                                    // it the row runs out of width, and SwiftUI
+                                    // compressed THIS button rather than the
+                                    // chips — the label broke mid-word into
+                                    // "Remov / e" and the button grew to two
+                                    // lines, taller than everything next to it
+                                    // (operator 2026-08-04: "Remove button looks
+                                    // weird").
+                                    .lineLimit(1)
+                                    .fixedSize()
                             }
                             .font(.system(size: Theme.FontSize.tiny, weight: .semibold))
                             .foregroundStyle(Theme.surplus)
@@ -205,6 +215,10 @@ struct MealTimelineSection: View {
                                         in: RoundedRectangle(cornerRadius: 6))
                             .contentShape(Rectangle())
                         }
+                        // Wins the width contest against the chips, which is
+                        // the correct priority: a chip that truncates is still
+                        // readable, a button that wraps is broken.
+                        .layoutPriority(1)
                         .buttonStyle(.plain)
                         .accessibilityLabel("Remove \(row.foodName)")
                         .accessibilityIdentifier("meal-timeline-remove-\(row.id)")
@@ -220,10 +234,14 @@ struct MealTimelineSection: View {
         .padding(.vertical, 8)
     }
 
+    // `lineLimit(1)` on both chip kinds: they share the expanded row with the
+    // Remove button, and a squeezed chip must truncate on one line rather than
+    // wrap and drag the whole row taller.
     private func chip(_ text: String, color: Color) -> some View {
         Text(text)
             .font(.system(size: Theme.FontSize.tiny, weight: .medium))
             .foregroundStyle(color)
+            .lineLimit(1)
             .padding(.horizontal, 6)
             .padding(.vertical, 3)
             .background(Theme.cardBackgroundElevated, in: RoundedRectangle(cornerRadius: 6))
@@ -235,6 +253,7 @@ struct MealTimelineSection: View {
             Text("\(Int(grams.rounded()))g \(label)")
                 .font(.system(size: Theme.FontSize.tiny, weight: .medium).monospacedDigit())
                 .foregroundStyle(Theme.textSecondary)
+                .lineLimit(1)
         }
         .padding(.horizontal, 5)
         .padding(.vertical, 3)
