@@ -264,7 +264,27 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
             return ""
         }
         do {
-            var request = try buildRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: key, toolsJSON: toolsJSON, visionModelID: visionModelID, maxTokens: maxTokens, temperature: temperature)
+            // #1177: image turns on the BUFFERED transport ask for a
+            // non-streaming completion. Requesting SSE and then buffering the
+            // whole body is the worst of both worlds on Android: the provider
+            // flushes the role-announcement chunk instantly and then goes
+            // BYTE-SILENT for the whole vision read, and an idle-looking
+            // connection reaped mid-stream comes back as a clean HTTP 200
+            // carrying only that first chunk — no error, nothing to retry, a
+            // silent dead-end. `stream:false` is one round trip with a real
+            // Content-Length, so there is no held-open silent window to reap,
+            // and a genuine cut now throws instead of masquerading as success.
+            // Nothing is lost: the buffered path never streamed anyway (it
+            // parses the finished body and fires onToken at the end).
+            // Mirrors the Darwin/URLSession guard below — Darwin keeps true
+            // streaming, and buffered TEXT turns (short, proven working) stay
+            // on SSE.
+            #if canImport(Darwin)
+            let bufferedTransport = (session as? URLSession) == nil
+            #else
+            let bufferedTransport = true
+            #endif
+            var request = try buildRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: key, toolsJSON: toolsJSON, visionModelID: visionModelID, maxTokens: maxTokens, temperature: temperature, stream: !(bufferedTransport && imageData != nil))
             request.timeoutInterval = effectiveTimeout
 
             // True token streaming via URLSession.bytes — tokens reach the UI as
@@ -403,7 +423,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
 
     // MARK: - Request Building
 
-    private func buildRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, toolsJSON: String? = nil, visionModelID: String? = nil, maxTokens: Int = 512, temperature: Double? = nil) throws -> URLRequest {
+    private func buildRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, toolsJSON: String? = nil, visionModelID: String? = nil, maxTokens: Int = 512, temperature: Double? = nil, stream: Bool = true) throws -> URLRequest {
         switch provider {
         case .anthropic:
             return try buildAnthropicRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey, maxTokens: maxTokens, temperature: temperature)
@@ -412,7 +432,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
             // Image turns need a vision model — the text coach model (Qwen3) 400s
             // on images. Swap to visionModelID only when an image is attached.
             let model = (imageData != nil) ? (visionModelID ?? modelID) : modelID
-            return try buildOpenAICompatibleRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey, baseURL: baseURL, model: model, toolsJSON: toolsJSON, maxTokens: maxTokens, temperature: temperature)
+            return try buildOpenAICompatibleRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey, baseURL: baseURL, model: model, toolsJSON: toolsJSON, maxTokens: maxTokens, temperature: temperature, stream: stream)
         case .gemini:
             return try buildGeminiRequest(prompt: prompt, imageData: imageData, systemPrompt: systemPrompt, apiKey: apiKey)
         }
@@ -453,7 +473,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
     /// Build an OpenAI-compatible `/chat/completions` request. Shared by `.openai`
     /// (api.openai.com) and `.nebius` (api.studio.nebius.ai) — identical request
     /// body + SSE shape, only the base URL differs.
-    private func buildOpenAICompatibleRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, baseURL: String, model: String, toolsJSON: String? = nil, maxTokens: Int = 512, temperature: Double? = nil) throws -> URLRequest {
+    private func buildOpenAICompatibleRequest(prompt: String, imageData: Data?, systemPrompt: String, apiKey: String, baseURL: String, model: String, toolsJSON: String? = nil, maxTokens: Int = 512, temperature: Double? = nil, stream: Bool = true) throws -> URLRequest {
         guard let url = URL(string: "\(baseURL)/chat/completions") else {
             throw BackendError.invalidURL
         }
@@ -476,7 +496,7 @@ public final class RemoteLLMBackend: AIBackend, @unchecked Sendable {
         var body: [String: Any] = [
             "model": model,
             "max_tokens": maxTokens,
-            "stream": true,
+            "stream": stream,
             "messages": [
                 ["role": "system", "content": systemPrompt],
                 ["role": "user", "content": userContent]
@@ -700,6 +720,16 @@ enum OpenAISSEParser {
     }
 
     static func parse(data: Data, onToken: @escaping @Sendable (String) -> Void) -> String {
+        // A `stream:false` turn (#1177 — the Android buffered transport's image
+        // path) answers with ONE `chat.completion` object instead of `data: …`
+        // events. Detect it by decoding the whole body as JSON: every SSE body
+        // starts with `data: `, so this fails cleanly there and falls through
+        // to the event loop below — no string sniffing, no mode flag to thread.
+        if let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let completion = parseNonStreaming(object, onToken: onToken) {
+            return completion
+        }
+
         guard let raw = String(data: data, encoding: .utf8) else { return "" }
         var text = ""
         var tools: [Int: ToolBuf] = [:]
@@ -731,6 +761,26 @@ enum OpenAISSEParser {
             return SSE.formatToolCall(name: firstTool.name, arguments: firstTool.arguments)
         }
         return text
+    }
+
+    /// Decodes a non-streaming `chat.completion` body: `choices[0].message`
+    /// carries the finished reply in one shot instead of `delta` fragments.
+    /// Returns nil when the object isn't a completion (an error payload, or an
+    /// SSE body that happened to decode) so the caller falls back to the SSE
+    /// path. Tool calls win over content, matching the streaming parser.
+    private static func parseNonStreaming(_ object: [String: Any], onToken: @escaping @Sendable (String) -> Void) -> String? {
+        guard let choices = object["choices"] as? [[String: Any]],
+              let message = choices.first?["message"] as? [String: Any] else { return nil }
+
+        if let call = (message["tool_calls"] as? [[String: Any]])?.first,
+           let function = call["function"] as? [String: Any],
+           let name = function["name"] as? String, !name.isEmpty {
+            return SSE.formatToolCall(name: name, arguments: function["arguments"] ?? [:])
+        }
+
+        guard let content = message["content"] as? String, !content.isEmpty else { return "" }
+        onToken(content)
+        return content
     }
 
     static func parseStream<Lines: AsyncSequence>(

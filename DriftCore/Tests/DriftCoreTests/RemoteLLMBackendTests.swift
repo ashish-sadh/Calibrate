@@ -623,6 +623,89 @@ struct RemoteLLMBackendTests {
         #expect(body["model"] as? String == "Qwen/Qwen3-235B-A22B-Instruct-2507")
     }
 
+    // MARK: - Non-Streaming Completions (#1177)
+
+    /// The Android buffered transport asks image turns for `stream:false`, so
+    /// the reply is ONE `chat.completion` object rather than `data: …` events.
+    /// Body shape captured from a live Nebius `Qwen2.5-VL-72B` vision call.
+    @Test func nonStreamingCompletionBodyParsedAsText() async {
+        let body = Data("""
+        {"id":"chatcmpl-1","object":"chat.completion","model":"Qwen/Qwen2.5-VL-72B-Instruct",
+         "choices":[{"finish_reason":"stop","index":0,
+          "message":{"role":"assistant","content":"Protein is low.","tool_calls":[],"refusal":null}}],
+         "usage":{"completion_tokens":4}}
+        """.utf8)
+        let backend = RemoteLLMBackend(
+            provider: .nebius, modelID: "m", apiKey: "k",
+            session: MockHTTPSession(responseData: body)
+        )
+        var tokens: [String] = []
+        let out = await backend.respondStreaming(to: "hi", systemPrompt: "sys") { tokens.append($0) }
+        #expect(out == "Protein is low.")
+        // The buffered path has no incremental delivery to lose — the finished
+        // content still reaches onToken so callers that render tokens see it.
+        #expect(tokens == ["Protein is low."])
+    }
+
+    /// Native function-calling has to survive the non-streaming shape too:
+    /// `message.tool_calls[0]` instead of accumulated `delta.tool_calls`.
+    @Test func nonStreamingCompletionToolCallReturnsDriftJSON() async throws {
+        let body = Data("""
+        {"id":"chatcmpl-2","object":"chat.completion",
+         "choices":[{"finish_reason":"tool_calls","index":0,
+          "message":{"role":"assistant","content":null,
+           "tool_calls":[{"id":"call_1","type":"function",
+            "function":{"name":"log_food","arguments":"{\\"name\\":\\"eggs\\",\\"servings\\":\\"2\\"}"}}]}}]}
+        """.utf8)
+        let backend = RemoteLLMBackend(
+            provider: .nebius, modelID: "m", apiKey: "k",
+            session: MockHTTPSession(responseData: body)
+        )
+        let result = await backend.respond(to: "log 2 eggs", systemPrompt: "sys")
+        let intent = try #require(IntentClassifier.parseResponse(result))
+        #expect(intent.tool == "log_food")
+        #expect(intent.params["name"] == "eggs")
+        #expect(intent.params["servings"] == "2")
+    }
+
+    /// The scoping guard: only IMAGE turns on the buffered transport drop to
+    /// `stream:false`. Text turns keep SSE — that path is proven working on
+    /// Android and must not change (#1177 plan, LAUNCH-HARDENING).
+    @Test func bufferedImageTurnRequestsNonStreamingAndTextKeepsSSE() async throws {
+        let photoBox = RequestBox()
+        let photoBackend = RemoteLLMBackend(
+            provider: .nebius, modelID: "m", apiKey: "k",
+            session: CapturingSession(box: photoBox))
+        _ = await photoBackend.respondStreamingWithPhoto(
+            to: "what is this", imageData: Data([0xFF, 0xD8, 0xFF]),
+            systemPrompt: "sys", visionModelID: "vl", onToken: { _ in })
+        let photoBody = try #require(decodeBody(photoBox.request))
+        #expect(photoBody["stream"] as? Bool == false)
+
+        let textBox = RequestBox()
+        let textBackend = RemoteLLMBackend(
+            provider: .nebius, modelID: "m", apiKey: "k",
+            session: CapturingSession(box: textBox))
+        _ = await textBackend.respond(to: "hi", systemPrompt: "sys")
+        let textBody = try #require(decodeBody(textBox.request))
+        #expect(textBody["stream"] as? Bool == true)
+    }
+
+    /// Anthropic image turns are untouched — Android's cloud provider is Nebius
+    /// (OpenAI-compatible) and Darwin streams Anthropic natively, so widening
+    /// the change there would be unverified risk.
+    @Test func anthropicImageTurnStillRequestsStreaming() async throws {
+        let box = RequestBox()
+        let backend = RemoteLLMBackend(
+            provider: .anthropic, modelID: "claude-sonnet-4-6", apiKey: "k",
+            session: CapturingSession(box: box))
+        _ = await backend.respondStreamingWithPhoto(
+            to: "what is this", imageData: Data([0xFF, 0xD8, 0xFF]),
+            systemPrompt: "sys", onToken: { _ in })
+        let body = try #require(decodeBody(box.request))
+        #expect(body["stream"] as? Bool == true)
+    }
+
     // MARK: - In-Flight Timeout (#890)
 
     /// A hung Nebius turn must surface a bounded, fallbackable error instead of

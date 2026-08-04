@@ -51,6 +51,18 @@ public final class AndroidHTTPSession: HTTPDataSession, @unchecked Sendable {
         let raw = try await Self.onFacadeQueue {
             try Self.facadePost(encoded.url, encoded.headersJson, encoded.bodyBase64, encoded.timeoutMillis)
         }
-        return try HTTPFacadeCodec.decodeResponse(raw, url: request.url ?? URL(string: "https://invalid")!)
+        // Every cloud failure this seam has produced (#1133, #1136, #1177) was
+        // invisible from the Swift side — the reply arrives as a plain 200 and
+        // the damage only shows up as an empty parse three layers up. One line
+        // per call, sizes only (no bodies — keys and meal photos cross here).
+        let decoded = try HTTPFacadeCodec.decodeResponse(raw, url: request.url ?? URL(string: "https://invalid")!)
+        // Every cloud bug this seam has produced (#1133, #1136, #1177) was
+        // invisible from Swift: the reply arrives as a plain 200 and the damage
+        // only surfaces as an empty parse three layers up. A reply that is
+        // implausibly small for its status is the tell. Sizes and status ONLY —
+        // request bodies carry the API key and response bodies carry the user's
+        // meal, and neither belongs in logcat.
+        logger.info("AndroidHTTPSession: POST \(encoded.bodyBase64.count)B(b64) → HTTP \((decoded.1 as? HTTPURLResponse)?.statusCode ?? -1), \(decoded.0.count)B")
+        return decoded
     }
 }
