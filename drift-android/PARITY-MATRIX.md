@@ -19,6 +19,45 @@ is the verification pass.)*
 
 ## Session notes (append-only)
 
+- **2026-08-11 (scout #21, Opus 5):** **SHARING / SOCIAL** — taken over the rotation's "finish Food" because the executor's uncommitted WIP was
+  entirely Food (`DescribeMealSheet`, `FoodLogViewModel`, `PhotoLogResponse`, `PhotoLogEntry`→DriftCore), so a Food sweep would have been graded
+  against code about to change under it. Sharing was also the board's largest dark block: **24 `unknown` + 4 `broken` rows, and not one of them
+  had ever been driven.** The emulator was free at the start (planner 19s old, executor idle, no Gradle/Kotlin daemon above 0.1% CPU, installed
+  build 89). **The headline is that this entire section was resting on a premise that is false, and one `sqlite3` read settled it in a minute:
+  `sync_session` holds a real row — `driftoffline`, valid unexpired GoTrue JWT.** Scout #16 read that same table as empty on build 80 and
+  concluded "no Android device can ever obtain a sharing identity, every signed-in surface is *unreachable*"; scout #18 corrected the header but
+  left all 27 rows pointing at the closed #1194. So the board has been telling three lanes for a week that a working subsystem was dead. Driving
+  it confirmed the opposite end to end: the hub renders (identity card, avatar, invite link, privacy footnote), **live debounced friend search
+  works** — typing `neha` returned `@neha` with working Add-friend/Coach capsules — and `connections()` *succeeded*, which is provable rather than
+  assumed because that one call is deliberately not `try?` (`SharingView:811`), so a failure would have rendered `couldNotLoadCard` instead of the
+  empty state. Writes land too: `telemetry_events` holds **2,412 `platform='android'` rows, latest 11:02 UTC today**, which independently kills
+  the `Telemetry | broken` row *and* the App-shell row claiming the OkHttp facade is "wired into ONE consumer / POST-only" (`rg URLSession.shared
+  DriftCore/Sources` = 3 hits, all in `DriftPlatform.swift`: two doc comments and the seam's own iOS default). Two real defects found. **#1216
+  (P1)** is a shell bug the Friends screen merely exposes: Android's IME lifts the floating `PillTabBar` **on top of the keyboard**, so between the
+  search field and the lifted bar there is ~28dp where a result row needs ~60 — you type a handle and see nothing until you dismiss the keyboard,
+  which defeats the debounce that exists precisely so you don't have to press return (`ContentView.swift:11,50-64`; iOS's `floatingTabBarClearance()`
+  is UIKit `additionalSafeAreaInsets` and its keyboard *overlays* the bar). It costs every typing surface in the tab shell ~110dp, not just this one.
+  **#1217 (P1)** is a fail-open privacy control: *Findable by search* paints **ON** with "People can find you by @username" for an account whose
+  server row is `discoverable = false`, because `@State discoverable = true` (`:53`) is a guess rendered before `discoverable = (await listed) ?? true`
+  (`:823`) resolves — and it corrected only after an unrelated keystroke, the #1180 no-repaint-without-a-poke shape. Severity stated honestly in the
+  issue: the error points in the *conservative* direction and tapping it still writes what the user meant, so it is a state-correctness bug on a
+  settings control, not a leak. Issues filed: **2** (#1216, #1217). Commented **2**: #1204 gains the Friends search field (Material `OutlinedTextField`
+  stroke *inside* the `Theme.pillBackground` pill, 56dp floor, stroke turns accent-pink on focus so it reads as a validation error) as another
+  instance of its themed fix rather than a duplicate issue; **#1197** gets the thing that was actually blocking it — the 6 never-verified surfaces
+  aren't unreachable, **the emulator's identity simply has zero connections**, and every coach/client/friend surface is gated behind having one
+  (`SocialPillRow:69`), so "open Friends and look" can never get there. That comment carries a two-row additive INSERT recipe attaching `driftoffline`
+  to the existing `driftprobe81` probe account (with its scoped undo, row counts to check, and an explicit "do NOT test against `@ashish`" — the
+  operator's real account, 14 friends / 3 trainer edges), which makes the whole block drivable in one session. Rows changed: **41** (27 repointed off
+  the closed #1194, 8 flipped `unknown`/`broken`→`ok` with device evidence, 4 added, 2 stale rows outside this section corrected). Deliberately did
+  **not** file the most tempting lead: the `Add friend` capsule renders black and `Coach` renders Material-looking indigo, but those are
+  `Theme.ink` `#0A0A0A` and `Theme.chartTrend` `#5856D6` set explicitly under `.buttonStyle(.plain)` (`:662-671`) — they match iOS, and it is
+  recorded as a verified-clean "do not fix" row so the next scout doesn't chase it. Also did not drive **Sign out**, by choice: it deletes the
+  server profile. No code touched (matrix only). **Residuals:** the executor took the emulator mid-sweep (Drift Coach, "log 2 eggs", ~03:54) so the
+  #1217 timed-repaint capture and the "does it scroll with the IME up" check for #1216 are both unfinished — each issue says so in its own body
+  rather than pretending. And the iPhone simulator **still has no Drift build installed** (now 3 sessions running), so every iOS-side claim here
+  remains source-derived; that side-by-side is the standing debt to `0-SCREENSHOT-EXACT-IS-THE-BAR`. Rotation next: **Sharing again** once #1197's
+  fixture rows exist (the 6 surfaces are one session's work with them, indefinitely blocked without), then finish Food (edit sheet + search).
+
 - **2026-08-11 (scout #20, Opus 5):** **FOOD TAB** — next in rotation per scout #19, and driven on the device as that note asked. The
   emulator was genuinely free at the start despite both sibling lanes being live (executor PID 43626, planner PID 86908): the launcher was
   foreground, no Gradle/Kotlin daemon was above 0.1% CPU, and — the check that actually decided it — `git diff --stat 2910cead HEAD --
@@ -918,7 +957,7 @@ silently drop any ([[feedback_android_full_parity]]). Everything here is `#1138`
 | Search hub | results `Section("Your meals")` recipe matches + **`group · N` badge** when `expandOnLog` (`:643-649`); tap logs the recipe directly | missing | #1140 |
 | Search hub | recipe row trailing swipe Delete (`:657-665`); leading swipe **Edit** routes to QuickAddView-rebuild (has `recipeItems`) OR `EditRecipeSheet` (flat) — `:666-676` | missing | #1140 |
 | Search hub | **`EditRecipeSheet`** (`:945-1003`, nested in this file, unnamed in the #1138 body): Name + per-serving cal/P/C/F/fiber `decimalPad` fields, Save disabled on empty name, title "Edit meal" | missing | #1140 |
-| Search hub | **Online Results** section (globe header) — OpenFoodFacts + USDA in parallel, opt-in `Preferences.onlineFoodSearchEnabled`, fires when local hits < 5 and q >= 3, dedup vs local + within itself | missing | #1138 (**transport blocked #1194**) |
+| Search hub | **Online Results** section (globe header) — OpenFoodFacts + USDA in parallel, opt-in `Preferences.onlineFoodSearchEnabled`, fires when local hits < 5 and q >= 3, dedup vs local + within itself. **No longer transport-blocked** (scout #21): #1194 is closed and every DriftCore HTTP consumer now rides `DriftPlatform.httpSession` — this is a plain port, not a blocked one | missing | #1138 |
 | Search hub | "Searching online…" states (full-screen when zero local hits, inline Section when some) | missing | #1138 |
 | Search hub | `noResultsView` = "No results for X" + **Log with AI** (borderedProminent) + **Enter manually**; Android has the AI row but no manual-entry escape | deviation | #1138 / #1139 |
 | Search hub | inline `describeWithAIRow` between Foods and Your-meals when no exact match and q>=2 (`:622-624`); Android appends it after the flat list | deviation | #1138 |
@@ -1235,55 +1274,69 @@ single-source and already compiles + ships in the Android APK; the code is unusu
 (Fuse TextField traps gated, `Path`+GeometryReader charts instead of `Charts`, no `contextMenu`/
 `swipeActions`, "not private — Fuse can't bridge private @State" notes throughout).
 
-**⚠️ The whole area is gated behind ONE transport defect — #1194.** `SyncClient.swift:40` binds
-`session: any HTTPDataSession = URLSession.shared`, and all three construction sites take that default
-(`SharingService:18`, `SupportService:80`, `TelemetryService:25`). On Skip, swift-corelibs
-`URLSession.data(for:)` **parks non-cancellably** — stated in `AndroidHTTPSession.swift`'s own shipped
-header comment ("its completion handler never fires") and root-caused in #1133. Every REST *and* auth
-call funnels through `SyncClient.send()` → `session.data(for:)` (`SyncClient:88,119,213`), so
-`signInAnonymously()` → `authPost("signup")` parks and **no Android device can ever obtain a sharing
-identity**. Device corroboration (2026-08-04, build 80, emulator-5554, read-only `sqlite3 -readonly`):
-`sync_session` exists (migration v47 ran) and holds **zero rows**; `cache/org.swift.foundation.URLCache`
-is empty. So every signed-in surface below is *unreachable*, not merely unverified — marked `unknown`
-rather than a fabricated per-row verdict. **This contradicts operator directive `0-SHARING-DONE`**
-("shipped + hardened, Android 63"), which is why the area was never swept — see session note.
-Degradation is graceful, not a hang: `connections()` calls `requireUserID()` which throws `.notSignedIn`
-fast, so `SocialPillRow` correctly shows its invite pill and Today does not spin.
+**✅ TRANSPORT IS CLEAR — the "#1194 gates this whole area" premise is dead (scout #21, 2026-08-11,
+device-proven on build 89).** This block previously claimed `SyncClient.swift:40` binds
+`session = URLSession.shared` and therefore no Android device could ever obtain a sharing identity.
+At HEAD that line reads `session: any HTTPDataSession = DriftPlatform.httpSession` — the Android
+facade seam — and all three construction sites (`SharingService:18`, `SupportService:80`,
+`TelemetryService:25`) take that default. Three independent proofs, all collected 2026-08-11:
+
+1. **The emulator holds a real sharing identity.** `sync_session` has **1 row** — username
+   `driftoffline`, uid `cf600644-…`, unexpired GoTrue JWT. (Scout #16 read zero rows on build 80 and
+   inferred unreachability; that inference is retired.)
+2. **REST reads succeed.** The hub rendered its "No friends yet" empty state, not `couldNotLoadCard`
+   — and `connections()` is deliberately NOT `try?` (`SharingView:811`), so a failed fetch would have
+   thrown into the error card. Live friend search returned `@neha` from the server.
+3. **Writes succeed too.** `telemetry_events` holds **2,412 `platform='android'` rows**, most recent
+   2026-08-11 11:02 UTC, through the same `SyncClient`.
+
+So nothing below is transport-blocked. Rows still marked `unknown` are **untested**, and the reason
+they're untested is a fixture problem, not a port problem: **the emulator's identity has zero
+connections**, and every coach/client/friend surface is gated behind having one — `SocialPillRow:69`
+collapses to the invite pill when `coach == nil && clientCount == 0 && friendCount == 0`, which is
+exactly what Today shows. #1197 carries the two-INSERT recipe that attaches `driftoffline` to the
+existing `driftprobe81` probe account and makes the whole block drivable in one session.
 
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
-| Onboarding | **username claim** (`SharingView:119` usernameCard) — TextField + "Claim @x" → `startSharing()` → `signInAnonymously()` → `authPost("signup")` → **parks forever**; no error, no timeout (URLRequest.timeoutInterval does not rescue a handler that never fires). THE gateway defect: nothing else in this section is reachable | broken | #1194 |
+| Onboarding | **username claim** (`SharingView:119` usernameCard) — TextField + "Claim @x" → `startSharing()` → `signInAnonymously()` → `authPost("signup")`. **WORKS** (scout #21): the emulator holds a claimed identity (`sync_session` = `driftoffline`, valid JWT). The old "parks forever" verdict was an inference from a zero-row table on build 80 — retired | ok | — |
 | Onboarding | `.textInputAutocapitalization(.never)` is `#if !os(Android)` at `SharingView:128` (claim) + `:572` (friend search); `FriendSharePicker:75` additionally loses `.autocorrectionDisabled()`. Android IMEs capitalize the first char → field displays "Ashish". **Cosmetic only** — `normalizedUsername:146` lowercases and `SharingService.searchUsers:110` lowercases *and* uses `ilike`, so both paths absorb it; the field text just disagrees with the button label | deviation | #1196 |
-| Onboarding | claim button `.disabled(normalizedUsername.count < 3)` + 20-char/charset normalization | unknown | #1194 |
-| Identity | identityCard (`:418`) — @username, avatar, tagline, sign-out (signOut deletes the server profile so the name can be re-claimed) | unknown | #1194 |
-| Identity | taglineRow (`:998`) — `TextField(axis:)` absent on Fuse, so Android gets a single-line field (gated, deliberate) | deviation | #1194 |
-| Identity | privacy footnote (`:743`) | unknown | #1194 |
-| Hub | hub body (`:153`) — signed-in root, `.navigationTitle("Friends")` | unknown | #1194 |
-| Hub | peopleStrip (`:492`) → NavigationLink → ClientDetailView | unknown | #1194 |
-| Hub | managementStrip (`:281`) — promote/demote coach, remove connection | unknown | #1194 |
-| Hub | searchCard (`:566`) — debounced live search via `.onChange` + `.onSubmit`; generation-counter race guard (`searchGen &+= 1`) | unknown | #1194 |
-| Hub | requestsCard (`:685`) — accept/decline incoming friend + trainer requests | unknown | #1194 |
-| Hub | incomingTemplatesCard (`:715`) — coach-assigned templates, accept/decline | unknown | #1194 |
-| Hub | workoutsFromFriendsCard (`:325`) → ClientSessionDetailView (`:1062`) | unknown | #1194 |
-| Hub | expander (`:873`) — collapsed connection lists | unknown | #1194 |
-| Hub | couldNotLoadCard (`:895`) — the error state that SHOULD catch #1194 but can't (a parked call never throws) | broken | #1194 |
+| Onboarding | claim button `.disabled(normalizedUsername.count < 3)` + 20-char/charset normalization | unknown | #1197 |
+| Identity | identityCard (`:418`) — @username, avatar (accent-gradient circle, first initial), "Find friends & coaches below" subtitle, "Sign out". **Device-verified rendering** (scout #21). Sign-out itself NOT driven — it deletes the server profile, so it stays untested by choice, not by accident | ok | — |
+| Identity | **"Findable by search" toggle paints ON before `load()` resolves** — `@State discoverable = true` (`:53`) + `discoverable = (await listed) ?? true` (`:823`). Device showed ON / "People can find you by @username" for an account whose server row is `discoverable = false`; corrected only after an unrelated keystroke. Fail-open on a privacy control | deviation | #1217 |
+| Identity | taglineRow (`:998`) — `TextField(axis:)` absent on Fuse, so Android gets a single-line field (gated, deliberate). Renders as "Add a tagline — what you're into" + pencil; edit path not driven | deviation | #1197 |
+| Identity | "Share invite link" row (`:453`) — renders, accent-tinted, correct glyph | ok | — |
+| Identity | privacy footnote (`:743`) — full "@username and display name … Everything else stays local" copy renders | ok | — |
+| Hub | hub body (`:153`) — signed-in root, `.navigationTitle("Friends")`, back chevron. **Device-verified** | ok | — |
+| Hub | peopleStrip (`:492`) → NavigationLink → ClientDetailView | unknown | #1197 |
+| Hub | managementStrip (`:281`) — promote/demote coach, remove connection | unknown | #1197 |
+| Hub | searchCard (`:566`) — debounced live search via `.onChange` + `.onSubmit`; generation-counter race guard (`searchGen &+= 1`). **WORKS on device** (scout #21): typing `neha` returned `@neha` with working Add-friend / Coach capsules | ok | — |
+| Hub | search **results are buried while the IME is up** — Android lifts the floating `PillTabBar` on top of the keyboard, leaving ~28dp between the field and the bar (a result row is ~60dp). Shell-wide, not Friends-specific: `ContentView.swift:11,50-64` | deviation | #1216 |
+| Hub | search field renders as a Material `OutlinedTextField` — stroke box *inside* the `Theme.pillBackground` pill (doubled chrome) + 56dp height floor; the stroke turns saturated accent-pink when focused, so it reads as a validation error. iOS draws no border | deviation | #1204 |
+| Hub | search-result action capsules — **NOT a bug** (verified-clean, scout #21): `Add friend` renders black and `Coach` renders indigo because they set `Theme.ink` `#0A0A0A` / `Theme.chartTrend` `#5856D6` explicitly under `.buttonStyle(.plain)` (`:662-671`). Matches iOS; the Material-purple look is the token, not a leak. Do not "fix" | ok | — |
+| Hub | FRIENDS empty state (`:769`) — "No friends yet. Search a @username above to add a friend or a coach." Distinct from `couldNotLoadCard`, which is what proves REST succeeded | ok | — |
+| Hub | requestsCard (`:685`) — accept/decline incoming friend + trainer requests | unknown | #1197 |
+| Hub | incomingTemplatesCard (`:715`) — coach-assigned templates, accept/decline | unknown | #1197 |
+| Hub | workoutsFromFriendsCard (`:325`) → ClientSessionDetailView (`:1062`) | unknown | #1197 |
+| Hub | expander (`:873`) — collapsed connection lists | unknown | #1197 |
+| Hub | couldNotLoadCard (`:895`) — correctly ABSENT on device: `connections()` succeeded, so the empty state showed instead. Its "a parked call never throws" caveat is moot now that the facade returns real errors. Not driven in a genuine failure (airplane mode) yet | unknown | #1197 |
 | Hub | invite sheet (`SharingDeepLink:37` InviteShareSheet) — `ShareLink` is text-only on Skip (no file attach); Android-gated `.presentationDetents([.fraction(0.75), .large])` vs iOS `.medium` | ok | — |
 | Public profile | `PublicProfileSheet` (342 ln, `.sheet(item:)` from `SharingView:101` + `LeaderboardsCard:74`) — activity feed, mutuals, send-request/add-coach, remove-connection confirm. **Created 07-30, after the 07-28 hardening pass; zero `os(Android)` gates, never Android-verified** | unknown | #1197 |
 | Today entry | `SocialPillRow` — zero-height `Color.clear` load anchor (iOS-found 07-30 deadlock fix), invite pill when signed-out, Android-gated `.frame(minHeight: 38)` for the hScroll-collapse trap | ok | — |
-| Today entry | pills: requests / your-coach / clients / leaderboard, unread + assignment dots | unknown | #1194 |
+| Today entry | pills: requests / your-coach / clients / leaderboard, unread + assignment dots | unknown | #1197 |
 | Focused | `ClientsView` (`FocusedSocialViews:15`) — client roster ordered by unseen sessions → ClientDetailView. **Created 07-30, no `os(Android)` gates, never verified** | unknown | #1197 |
 | Focused | `LeaderboardView` (`FocusedSocialViews:103`) — board-only screen + "Find friends" empty state | unknown | #1197 |
 | Leaderboards | `LeaderboardsCard` (498 ln, 07-30) — steps/calories/workouts/logging-streak boards; IS Android-gated in 3 places | unknown | #1197 |
 | Coach page | `CoachPageView` (189 ln, 07-30) — assignments, accept/decline, unread count. **No `os(Android)` gates, never verified** | unknown | #1197 |
-| Client detail | `ClientDetailView` (469 ln) — client workspace, `.sheet` CreateTemplateView builder, `CoachNoteComposer:441` (own struct — one TextField per Fuse scope, deliberate); `navigationBarTitleDisplayMode` + `.roundedBorder` Android-gated | unknown | #1194 |
-| Coach sharing | `CoachSharingCard` (350 ln) — share-level picker + goal row; correctly gates `TextField(axis:)`/`lineLimit(4)` behind `#if os(Android)` (hard Fuse compile errors) | unknown | #1194 |
+| Client detail | `ClientDetailView` (469 ln) — client workspace, `.sheet` CreateTemplateView builder, `CoachNoteComposer:441` (own struct — one TextField per Fuse scope, deliberate); `navigationBarTitleDisplayMode` + `.roundedBorder` Android-gated | unknown | #1197 |
+| Coach sharing | `CoachSharingCard` (350 ln) — share-level picker + goal row; correctly gates `TextField(axis:)`/`lineLimit(4)` behind `#if os(Android)` (hard Fuse compile errors) | unknown | #1197 |
 | Coach briefing | `CoachBriefingView` (574 ln, 07-29) — collapsible recovery/bodycomp/records/history sections + `BriefingTrendChart:527` (GeometryReader + `Path`, the Skip-safe pattern, NOT `Charts`). **No `os(Android)` gates, never verified**; 5 GeometryReaders = per-frame recomposition on Fuse → check SPEED when reachable | unknown | #1197 |
 | Coach me | `CoachMeView` (474 ln) — AI coach-me flow; `CoachDraftField:466` is its own struct with the "Fuse binds only the FIRST TextField per scope" note. Reached from `WorkoutView:510` (NOT transport-gated — this one is drivable today) | unknown | #1197 |
-| Briefing data | `BriefingSnapshot` (178 ln) — `metrics(level:)` feeding CoachSharingCard; pure DriftCore data | unknown | #1194 |
-| Chat | `ChatView` (177 ln) — 1:1 messages, `TextField` + send. Deferred residual from `0-SHARING-DONE`: Android chat opens scrolled-to-top | unknown | #1194 |
-| Share flows | `ShareTemplateSheet` (68 ln) + `FriendSharePicker` (179 ln, coach-first ordering, search, share-with-all) — reached from `ActiveWorkoutView:1610` | unknown | #1194 |
-| Support | `SupportService:80` ("Report a bug") rides the same parked `SyncClient()` — More → Report a bug silently never sends on Android | broken | #1194 |
-| Telemetry | `TelemetryService:25` — same parked client; Android telemetry uploads never complete (privacy-benign, but the opt-in toggle in MoreTab:61 promises a behavior that cannot happen) | broken | #1194 |
+| Briefing data | `BriefingSnapshot` (178 ln) — `metrics(level:)` feeding CoachSharingCard; pure DriftCore data | unknown | #1197 |
+| Chat | `ChatView` (177 ln) — 1:1 messages, `TextField` + send. Deferred residual from `0-SHARING-DONE`: Android chat opens scrolled-to-top | unknown | #1197 |
+| Share flows | `ShareTemplateSheet` (68 ln) + `FriendSharePicker` (179 ln, coach-first ordering, search, share-with-all) — reached from `ActiveWorkoutView:1610` | unknown | #1197 |
+| Support | `SupportService:80` ("Report a bug") — transport is fine (same client as telemetry, which lands). `support_tickets` holds **0 rows from EITHER platform**, but that is equally consistent with "nobody has filed one" on a single-user app, so `broken` is not provable. Needs one real submit from each platform | unknown | #1197 |
+| Telemetry | `TelemetryService:25` — **WORKS.** `telemetry_events` holds **2,412 `platform='android'` rows**, latest 2026-08-11 11:02 UTC. The "uploads never complete" verdict was inherited from the #1194 premise and is false; the MoreTab:61 opt-in toggle governs a pipeline that really is running | ok | — |
 
 ## Capture (epic #1063 · iOS-only: Drift/Views/PhotoLog/**, BarcodeScannerView)
 
@@ -1347,4 +1400,4 @@ is DONE** — ported to SharedUI, wired `MoreTab.swift:146`; removed from the po
 | Startup wiring | audit residual: no scout has diffed `DriftApp.init()` against `DriftAndroidApp` **call-for-call**. #1209 (tool registration) and #1212 (trend/TDEE refresh) were both found one-at-a-time by symptom; the remaining `DriftApp` launch calls have never been enumerated | unknown | fold into #1212's plan |
 | Navigation | push/sheet transition speed + font stability; nav titles render in Material typography, not the app font | deviation | #1074/#1165 |
 | Theme | dark/light, goal-aware green/red, Material accent leak | unknown | |
-| Network transport | `DriftPlatform.httpSession` (OkHttp facade) is wired into ONE consumer (`LocalAIService:329`); Supabase `SyncClient`, OpenFoodFacts, USDA, Coach `web_search`/`fetch_url`, TTS + model-download all still bind the parking `URLSession` bridge (`RemoteLLMBackend:17-31`). Facade is also POST-only — `HTTPFacadeCodec.encodeRequest` drops `httpMethod`, `HttpFacade.kt:39` hardcodes `.post` | broken | **#1194** |
+| Network transport | `DriftPlatform.httpSession` (OkHttp facade) — **FIXED, row was stale** (corrected scout #21, 2026-08-11). #1194 taught the facade HTTP methods + response headers and moved ALL DriftCore networking onto the seam: `grep -rn 'URLSession.shared' DriftCore/Sources` returns **3 hits, all in `DriftPlatform.swift`** (2 doc comments + the seam's own iOS default at `:53`) — i.e. exactly one real binding, which is the intended one. The "wired into ONE consumer / POST-only" claim is false at HEAD. Device-proven both directions: GET reads (friend search, `connections()`) and POST writes (2,412 android `telemetry_events`) both land | ok | — |
