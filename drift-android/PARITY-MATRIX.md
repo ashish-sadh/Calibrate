@@ -19,6 +19,55 @@ is the verification pass.)*
 
 ## Session notes (append-only)
 
+- **2026-08-11 (scout #22, Opus 5):** **BODY / WEIGHT** — picked over the rotation's "Sharing again" because scout #21 left that section blocked on #1197's
+  fixture rows (no connections on the emulator identity, so six surfaces are unreachable until someone INSERTs them), while Body/Weight was the largest
+  never-driven block on the board: **39 rows carrying a `source-verified 2026-07-28, device-verify debt` tag and not one device screenshot behind any of
+  them.** The emulator was safe to take on a check worth reusing: `git diff --stat <build-90-publish> HEAD -- drift-android/ SharedUI/ DriftCore/` returned
+  only Coach/ComposeKick/PhotoLogEntry files — **zero Weight files** — so installed build 90 was byte-equivalent to HEAD for everything in this section even
+  though HEAD is build 91. The executor was running `xctest`, not driving. Build stayed 90 with an unchanged `lastUpdateTime` across the whole sweep, so
+  unlike scouts #20 and #21 nothing was reinstalled underneath this drive, and `logcat -b crash` was **empty** for `com.drift.health` throughout.
+  **The headline is a control that deletes the screen's hero element: tapping the `1W` range chip makes the weight chart vanish outright** — the chip row
+  runs straight into `HISTORY`, with no empty state and no message; `1M` and `All` bring it back. I specifically ruled out the #1180 shape before believing
+  it, scrolling down and back up to force a recomposition with the chart still absent, and reproduced it twice. The cause is that Android treats the chip as
+  a **data filter** (`WeightTab.swift:143-149`) and then gates the chart's existence on the filtered array (`:193`), while `cutoff = now − 7d` keeps the
+  current time of day (`Aug 4 05:47`) and the newest series point sits at `Aug 4 00:00` — so the only in-window point is filtered out. It is not really an
+  off-by-one: **any range containing no weigh-in blanks the chart**, so a weekly weigher's `1W` is dead permanently. iOS is the mirror image and says so in
+  its own words — `WeightChartView.swift:18-22`: *"`rangeStart` **no longer filters the data**; it sets the initial visible WINDOW"* — plots the full series,
+  floors the window at `max(7 * 86_400, …)` (`:69-73`), and pins `.frame(height: 340)` at the mount so the chart cannot vanish. **"No longer" is the tell:
+  iOS shipped this bug, fixed it by splitting plot-data from visible-window, and Android is still in the pre-fix state** — the same shape scout #20 found for
+  #1212. Filed **#1220 (P1)**, which also captures the second-order loss: iOS's chip is a zoom you can pan inside, and `WeightChartAndroid` is a static Path
+  with no gesture at all, so hard-filtering leaves no route to the data outside the window. Second issue **#1221 (P1)**: the history list is a flat
+  `2026-08-04 · 178.8 lbs · 🗑` list where iOS is a **month-grouped log** — `MMMM yyyy` headers with the month's median, weight-primary/date-secondary rows,
+  a per-row delta vs the next-older entry (arrow, goal-aware colour, ±0.05 "No Change" band, suppressed past a 90-day gap), a HealthKit heart, dividers, and
+  `LazyVStack` rows that #950 made lazy deliberately. Confirmed unowned before filing — #1143 owns the history *disclosure* and the *edit* affordance, and a
+  search across open+closed issues for `WeightLogListView` returns nothing that specifies row content. That issue also carries the delete finding, which is
+  a **correction to this matrix**: the row said `delete a weigh-in (trash button) | ok`, and the button does work, but iOS has **no delete button at all** —
+  it is a `role: .destructive` item inside a `.contextMenu`, so it costs a long-press plus a deliberate selection, where Android is one unconfirmed tap on
+  every row of a scrolling list with no undo. Against the "user data is sacred" tenet that is the wrong default and strictly more dangerous than the control
+  it stands in for. Issues filed: **2** (#1220, #1221). Commented **3**, each on the issue that already owns the region rather than filing a fourth ticket
+  into the same function: **#1143** gains the log sheet's **missing date field** (its body describes iOS's "Weight + Date" but its Done-When omits Date, so
+  every Android weigh-in is stamped today and a missed day cannot be back-filled) plus the **`Save` that silently eats the tap** on empty input where iOS
+  renders it `.disabled` — with the note that scout #19's #1137 finding (SkipUI *does* honour `.disabled`; it was the binding that went stale) may invalidate
+  the #1091 workaround this behaviour rests on. **#1205** gets device confirmation of its CURRENT-card defect plus **one correction**: it recorded the chips
+  as "7d -0.2 / 30d -2.8", but today there is **no 7d chip at all** and 30d reads **-1.7** — `change()` returns nil when the newest entry *is* the window
+  edge, so the same card prints "7-day change: -0.5lbs" beside a missing 7d chip. It also inherits the composition delta nobody owned: Android adds a
+  full-width red button mid-screen that iOS does not have anywhere (iOS's is a toolbar `+`), drops iOS's toolbar back chevron, and renders a LARGE nav title
+  where iOS pins `.inline`. **#1204** gains a second confirmed surface — the weight field's stroke turns accent-pink on focus, worse here than on Friends
+  because this sheet's Save really does reject empty input silently, so the pink outline reads as the field being at fault; two surfaces now argue for fixing
+  it at the shared `NumericField` layer. Rows changed: **26** (11 repointed off the CLOSED #1142/#1144/#1145 — the board had been aiming the executor at dead
+  tickets for a week — 12 added, 3 flipped from `ok` on device evidence). Deliberately did **not** file the most tempting visual lead: the chart's green Trend
+  line runs consistently *above* every grey scale point, but Android builds it from the full 365-day history before windowing (`:86-88`), so it is a lagging
+  EMA over a declining series and **not** the windowed-EMA-reseed bug iOS documents fixing — recorded as a verified-clean row so the next scout doesn't chase
+  it. Also verified working and recorded so nobody re-tests: 1M/3M/6M/1Y/All windowing (1M → `Jul 13…Aug 4`, average and difference both recompute), the
+  decimal keypad on the weight field, typing commit, and comma-decimal handling. No code touched (matrix only). **Residuals:** I did not drive **delete** or
+  **save** a weigh-in, by choice — both write to a DB three lanes share, and [[harness_shared_emulator_test_writes_poison_state]] is exactly how #1213's
+  phantom `34.64 kg` got into a sibling lane's screenshots; the empty-input Save no-op was safe to test because source proves it cannot write. The **empty
+  state** row therefore stays source-derived (reaching it means deleting every weigh-in). And the iPhone simulator **still has no Drift build installed** —
+  now four sessions running — so every iOS claim here is source-derived, including #1220's and #1221's; that side-by-side remains the standing debt to
+  `0-SCREENSHOT-EXACT-IS-THE-BAR`, and it is worth an operator-facing note that the scout lane has never once been able to satisfy that directive literally.
+  Rotation next: **Body/Weight again** — the DEXA (8 rows, all `missing`, no Android route) and progress-photo blocks are still scout-#14 vintage, and
+  `More → Progress Photos` is one tap away; then Sharing if #1197's fixture rows have landed.
+
 - **2026-08-11 (scout #21, Opus 5):** **SHARING / SOCIAL** — taken over the rotation's "finish Food" because the executor's uncommitted WIP was
   entirely Food (`DescribeMealSheet`, `FoodLogViewModel`, `PhotoLogResponse`, `PhotoLogEntry`→DriftCore), so a Food sweep would have been graded
   against code about to change under it. Sharing was also the board's largest dark block: **24 `unknown` + 4 `broken` rows, and not one of them
@@ -1069,25 +1118,37 @@ section had never carried a single perf row despite operator directive 0-PERF-P0
 | Recovery | iOS `supplementCard` (N/M taken → SupplementsTabView) when supplements configured — Android none (Supplements TAB is ported #1068; dashboard entry not) | missing | #1061 |
 | Coach entry | floating `ChatIconButton` → AIChatView — PORTED (AppShell.swift + ContentView.swift), matches iOS single AI access point | ok | #1066 |
 
-## Body / Weight (epic #1065 = INDEX · Android-only re-creation: WeightTab.swift 325 ln vs iOS WeightTabView.swift 422 ln + 6 sub-views · scoped ports #1142 insights / #1143 body-comp-entry / #1144 edit+outlier / #1145 residual · DEXA+photos → #1069 = INDEX, decomposed 2026-08-03 into #1185 DEXA screen / #1190 DEXA charts / #1191 DEXA PDF-import / #1186 gallery data defects / #1187 viewer / #1188 gallery structure / #1189 Trends sheet, plus existing #1166 capture · source-verified 2026-07-28, device-verify debt)
+## Body / Weight (epic #1065 = INDEX · Android-only re-creation: WeightTab.swift 326 ln vs iOS WeightTabView.swift 422 ln + 6 sub-views · **live scoped issues: #1205 insights+CURRENT-card+chrome [absorbs #1142] / #1143 affordance completion [absorbs #1144 #1145] / #1220 range-chip chart blanking / #1221 history-row content** · DEXA+photos → #1069 = INDEX, decomposed 2026-08-03 into #1185 DEXA screen / #1190 DEXA charts / #1191 DEXA PDF-import / #1186 gallery data defects / #1187 viewer / #1188 gallery structure / #1189 Trends sheet, plus existing #1166 capture · **Weight-tab rows DEVICE-VERIFIED 2026-08-11 (scout #22, build 90)**; DEXA + progress-photo rows below remain source/scout-#14 vintage)
+
+> **Repointed 2026-08-11 (scout #22):** #1142, #1144 and #1145 are **CLOSED** — consolidated by the Fable planner into #1205 (#1142) and #1143 (#1144, #1145). Eleven rows in this section still cited the closed issues, i.e. the board was pointing the executor at dead tickets. All now point at the surviving issue.
 
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
 | Weight tab | overall structure — Android WeightTab re-creation, not the iOS WeightTabView single-source port | deviation | #1065 |
-| Weight tab | weight chart (WeightChartAndroid, Path-based — Charts absent on Skip) | ok | #1092 |
-| Weight tab | Log Weight save (validates in-action, not `.disabled`) | ok | #1091 |
-| Weight tab | time-range chips (1W…All, in-memory re-window) | ok | — |
-| Weight tab | stats header: current + trend + 7d/30d change chips (goal-aware) | ok | — |
-| Weight tab | delete a weigh-in (trash button) | ok | — |
-| Weight tab | Daily/Weekly granularity menu | missing | #1145 |
-| Weight tab | WeightInsightsView: trend-EMA + explainer + body-comp cards → metric sheets + weekday pattern + weight-changes sparklines | missing | #1142 |
+| Weight tab | element ORDER — iOS `timeRangeBar → chart → bigChangeBanner → insights → history`; Android `CURRENT card → red Log Weight button → chips → chart → history` | deviation | #1205 |
+| Weight tab | weight chart renders (WeightChartAndroid, Path-based — Charts absent on Skip) | ok | #1092 |
+| Weight tab | **`1W` chip REMOVES the chart card entirely** — chips filter the data + `!displayPoints.isEmpty` gates the view (`WeightTab.swift:143,193`); iOS plots the full series and uses range only as a window | broken | #1220 |
+| Weight tab | chart pan/scroll through history inside the window (iOS `.chartXVisibleDomain`) — Android chart is a static Path, zero gestures | missing | #1220 |
+| Weight tab | time-range chips 1M/3M/6M/1Y/All re-window correctly (1M → `Jul 13…Aug 4`, avg + difference recompute) | ok | — |
+| Weight tab | stats header — **self-contradicting**: displays `178.8 lbs` over `Current: 180.1lbs`, and prints "7-day change: -0.5lbs" while the 7d chip is absent (`change()` returns nil when the newest entry IS the window edge) | broken | #1205 |
+| Weight tab | nav title renders LARGE; iOS pins `.navigationBarTitleDisplayMode(.inline)` (`WeightTabView.swift:76`) — modifier is bridged per #1200 | deviation | #1200 |
+| Weight tab | toolbar back chevron (→ Today) + toolbar `+` — Android has neither; uses an in-body full-width red button iOS lacks | missing | #1205 |
+| Weight tab | Log Weight save — **bright primary CTA silently no-ops on empty input**; iOS renders it `.disabled` (`WeightEntryView.swift:74`) | deviation | #1143 |
+| Weight tab | log sheet: decimal keypad appears (digits + `.` + `,`), typing commits, comma-decimal maps to `.` | ok | — |
+| Weight tab | log sheet: **no date field** — every Android weigh-in is stamped today, a missed day can't be back-filled; iOS `Section("Date")` + `DatePicker` | missing | #1143 |
+| Weight tab | log sheet: field stroke turns accent-pink on focus (Material `OutlinedTextField` under `.roundedBorder`) — reads as a validation error | deviation | #1204 |
+| Weight tab | delete a weigh-in — button WORKS, but it's a one-tap unconfirmed trash on every row; iOS hides delete behind a `.contextMenu` destructive item | deviation | #1221 |
+| Weight tab | history row CONTENT — raw ISO `2026-08-04`, date-leading hierarchy, no month grouping/median, no per-row delta, no HK heart, no dividers, non-lazy | missing | #1221 |
+| Weight tab | Daily/Weekly granularity menu | missing | #1143 |
+| Weight tab | WeightInsightsView: trend-EMA + explainer + body-comp cards → metric sheets + weekday pattern + weight-changes sparklines | missing | #1205 |
 | Weight tab | body-comp entry (fat%/BMI/water + muscle/bone/visceral in log sheet) | missing | #1143 |
-| Weight tab | edit a weigh-in (tap-to-edit — iOS `.contextMenu` absent on Skip) | missing | #1144 |
-| Weight tab | big-change outlier banner (>10% → correct/edit/remove) | missing | #1144 |
-| Weight tab | collapsible history disclosure (chevron + N entries) — Android list is always-expanded | deviation | #1145 |
-| Weight tab | milestone celebration overlay + haptic | missing | #1145 |
-| Weight tab | empty state (manual-log CTA; AH-sync stays hidden till health seam) — Android shows inline "No weights yet" | deviation | #1145 |
-| Today dashboard | body summary cards row (`BodySummaryCardsRow` — mounted in `DashboardView`, NOT the Weight tab; misfiled here) | unknown | #1061 |
+| Weight tab | edit a weigh-in (tap-to-edit — iOS `.contextMenu` absent on Skip) | missing | #1143 |
+| Weight tab | big-change outlier banner (>10% → correct/edit/remove) | missing | #1143 |
+| Weight tab | collapsible history disclosure (chevron + N entries) — Android list is always-expanded | deviation | #1143 |
+| Weight tab | milestone celebration overlay + haptic | missing | #1143 |
+| Weight tab | empty state (manual-log CTA; AH-sync stays hidden till health seam) — Android shows inline "No weights yet" | deviation | #1143 |
+| Weight tab | chart trend line sits above the scale points — VERIFIED CLEAN, not a bug: lagging EMA over a declining series, built from full 365d history before windowing (`WeightTab.swift:86`), so NOT the windowed-EMA-reseed bug iOS fixed | ok | — |
+| Today dashboard | body summary cards row (`BodySummaryCardsRow` — mounted in `DashboardView`, NOT the Weight tab; misfiled here) — confirmed iOS-only, `Drift/Views/BodySummaryCardsRow.swift`, **zero** Android references | missing | #1061 |
 ### Body composition — DEXA (#1069 index · iOS `Drift/Views/BodyComposition/DEXAOverviewView.swift` 632 ln · NO Android route exists)
 
 Source-enumerated 2026-08-03 (scout #14). **The whole data layer is already in DriftCore and
