@@ -61,4 +61,16 @@ public enum DriftPlatform {
     /// `nonisolated(unsafe)` — same rationale as `keyValueStore`: written once
     /// at launch, read from the background poll off the main actor.
     nonisolated(unsafe) public static var notifier: (any LocalNotifier)? = nil
+
+    /// UI-refresh kick seam (#1180). Android installs a closure that forces one
+    /// Compose recomposition from a genuine main-Looper message: bridged
+    /// `@Observable` writes bump their state slots but never schedule a
+    /// recomposition, so without the kick the screen repaints only when
+    /// unrelated window machinery (IME, focus change, sheet transition) happens
+    /// to trigger the next composition pass — which is why a tap that already
+    /// wrote its rows can look completely dead.
+    ///
+    /// nil on iOS/macOS/tests = no-op: SwiftUI needs no kick, so every call
+    /// site is a nil-check that costs nothing and changes nothing there.
+    @MainActor public static var uiRefreshKick: (() -> Void)?
 }

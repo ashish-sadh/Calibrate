@@ -272,6 +272,13 @@ extension AIChatViewModel {
         var text = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
         if text.count > 300 { text = String(text.prefix(300)) }
         guard !text.isEmpty || pendingPhotoData != nil, !isGenerating else { return }
+        // #1180: every send entry point funnels through here — suggestion pill,
+        // send button, IME submit, quick-reply chip — and on Android none of
+        // the writes below (the user bubble, cleared chips, the thinking
+        // placeholder, every synchronous phase handler's reply) schedule a
+        // recomposition on their own. One kick on the way out flushes them all,
+        // whichever branch returned. No-op on iOS.
+        defer { DriftPlatform.uiRefreshKick?() }
         inputText = ""
 
         // Simulator + Apple FM fast-fail. FoundationModels isn't shipped
@@ -1480,6 +1487,10 @@ extension AIChatViewModel {
                 generatingState = .idle
                 stageStarted = nil
                 pendingTurnHasPhoto = false
+                // #1180: same async-delivery rule as the handleAIPipeline
+                // onComplete kick — the photo/followup reply (meal card, error
+                // chip) has no window change to ride in on.
+                DriftPlatform.uiRefreshKick?()
             }
 
             let onToken: @Sendable (String) -> Void = { [weak self] token in
@@ -1495,6 +1506,7 @@ extension AIChatViewModel {
                         updated[idx].text += token
                         self.messages = updated
                     }
+                    DriftPlatform.uiRefreshKick?()   // #1180
                 }
             }
 
@@ -1672,6 +1684,12 @@ extension AIChatViewModel {
             messages[idx].text = "Logged \(names)\(extra) — \(total) cal."
         }
 
+        // #1180: a confirm tap writes rows and swaps the card for "Logged …"
+        // with no sheet or keyboard change to poke a repaint. Unkicked, the
+        // frame is identical before and after — which reads as "didn't
+        // register" and invites the re-tap that duplicates the entries.
+        DriftPlatform.uiRefreshKick?()
+
         // Clear undo tokens after 10s
         let snapshot = loggedIds
         Task {
@@ -1694,6 +1712,7 @@ extension AIChatViewModel {
         DriftPlatform.widget?.refresh()
         mealLogRevision += 1
         messages.append(ChatMessage(role: .assistant, text: "Undone — all entries from that photo removed."))
+        DriftPlatform.uiRefreshKick?()   // #1180: tap-triggered, no window change
     }
 
     private func handleCheatMeal(_ lower: String) -> Bool {
@@ -1879,6 +1898,7 @@ extension AIChatViewModel {
                     guard let self, self.generationEpoch == epoch else { return }
                     self.generatingState = .thinking(step: step)
                     self.stageStarted = Date()
+                    DriftPlatform.uiRefreshKick?()   // #1180: step labels progress mid-turn
                 }
             }
             let onToken: @Sendable (String) -> Void = { [weak self] token in
@@ -1893,6 +1913,7 @@ extension AIChatViewModel {
                         updated[idx].text += token
                         self.messages = updated
                     }
+                    DriftPlatform.uiRefreshKick?()   // #1180: future-proofs streaming (Android is buffered today)
                 }
             }
 
@@ -1911,6 +1932,12 @@ extension AIChatViewModel {
                 onComplete: { output in
                     endGeneration()
                     await applyOutput(output)
+                    // #1180: nothing about a reply arriving pokes the window,
+                    // so without this the bubble, cards, sheet opens and the
+                    // error path's Retry chip (handleRemoteBackendError is
+                    // awaited inside applyOutput) all wait for an unrelated
+                    // touch to paint.
+                    DriftPlatform.uiRefreshKick?()
                 }
             )
             #else

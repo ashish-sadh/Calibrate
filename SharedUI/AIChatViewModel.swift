@@ -12,7 +12,12 @@ final class AIChatViewModel {
     /// User messages already distilled into a human-coach note — the chat
     /// view's onDisappear only summarizes what arrived after this mark.
     var notedUserMessageCount = 0
-    var inputText = ""
+    /// #1180 (absorbed #1137): keystrokes are the one event with no func-level
+    /// funnel to hook, and the send button's `.disabled(!canSend …)` derives
+    /// straight from this. Without a kick per write, `canSend` stays stale for
+    /// as long as the keyboard is up — the arrow reads grey and the tap is
+    /// genuinely dead until a back-press pokes a recomposition. No-op on iOS.
+    var inputText = "" { didSet { DriftPlatform.uiRefreshKick?() } }
     var generatingState: GeneratingState = .idle
     var stageStarted: Date? = nil
     var streamingMessageId: UUID? = nil

@@ -32,6 +32,8 @@ import Testing
          "#1212 — without it latestWeightKg/trend are populated only as a side effect of the Today tab"),
         ("TDEEEstimator.shared.refresh()",
          "#1212 — without it TDEEEstimator.current stays nil and food targets fall back to a flat 2000 kcal"),
+        ("DriftPlatform.uiRefreshKick =",
+         "#1180 — without it bridged @Observable writes never schedule a Compose recomposition, so a tap that already wrote its rows leaves the frame unchanged; one Coach confirm tap read as dead and became three duplicate food_entry rows"),
     ]
 
     @Test func androidShellMakesEveryRequiredLaunchCall() throws {

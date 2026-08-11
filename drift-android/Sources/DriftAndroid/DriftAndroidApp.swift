@@ -53,6 +53,11 @@ let logger: Logger = Logger(subsystem: "com.drift.health", category: "DriftAndro
             // Image-in seam (#1128): system Photo Picker → downscaled JPEG Data
             // via the polled ImagePickerFacade Activity-result bridge.
             DriftPlatform.imagePicker = ImagePickerService()
+            // UI-refresh kick (#1180): bridged @Observable writes never schedule
+            // a Compose recomposition, so without this the screen repaints only
+            // when unrelated window machinery pokes it — taps look dead even
+            // after they've already written their rows.
+            DriftPlatform.uiRefreshKick = { ComposeKickService.kick() }
             // Register all AI tools in ToolRegistry — the same call
             // DriftApp.init() makes on iOS. Without it the registry is empty,
             // every Coach turn resolves to "unknown tool", and

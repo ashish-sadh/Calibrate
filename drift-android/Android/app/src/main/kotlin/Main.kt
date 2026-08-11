@@ -221,6 +221,12 @@ internal fun PresentationRootView(context: ComposeContext) {
     PresentationRoot(defaultColorScheme = colorScheme, context = context) { ctx ->
         SyncSystemBarsWithTheme()
         val contentContext = ctx.content()
+        // #1180: register this scope as a reader of ComposeKick.rootTick, so
+        // ComposeKick.kick() can invalidate the composition root and re-execute
+        // the bridged tree. NOT wrapped in key(...) — key would recreate
+        // composition state on every kick, losing scroll positions and the
+        // focused text field; a plain read invalidates while keeping identity.
+        ComposeKick.rootTick.value
         Box(modifier = ctx.modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             AppRootView().Compose(context = contentContext)
         }
