@@ -45,6 +45,12 @@ func sym(_ name: String) -> String {
     // aren't making, and a stand-in that asserts something false is worse
     // than one that is merely approximate.
     case "cloud", "cloud.fill": return "info.circle"
+    // "we looked and didn't recognise this" — Material's mapped set has no
+    // question mark of any kind. Info is the neutral stand-in; the WARNING
+    // TRIANGLE is specifically wrong here, because an empty result is the
+    // model answering, not a failure (#1195). Reserve the triangle for the
+    // states that really did go wrong.
+    case "questionmark.circle", "questionmark.circle.fill": return "info.circle"
     case "exclamationmark.circle.fill": return "exclamationmark.triangle.fill"
     // Error states: Material has no speech-bubble variant, and the triangle IS
     // the right meaning here (operator 2026-07-28: "closest icons are fine" —

@@ -27,6 +27,11 @@ struct SnapMealSheet: View {
 
     enum Phase: Equatable {
         case capture, analyzing, reviewing
+        /// The cloud looked and found no food. iOS keeps this separate from
+        /// `.error` (`PhotoLogFlowView.emptyView` vs `errorView`) and so do we:
+        /// nothing went wrong, so it gets a neutral glyph and "take another"
+        /// rather than a red warning triangle and "try again". #1195
+        case empty
         case error(String)
     }
 
@@ -66,6 +71,7 @@ struct SnapMealSheet: View {
                 case .capture: captureView
                 case .analyzing: analyzingView
                 case .reviewing: reviewView
+                case .empty: emptyView
                 case .error(let message): errorView(message: message)
                 }
             }
@@ -270,17 +276,57 @@ struct SnapMealSheet: View {
         .background(Theme.cardBackground, in: RoundedRectangle(cornerRadius: Theme.radiusSmall))
     }
 
+    // MARK: - Empty
+
+    /// Ported from iOS `PhotoLogFlowView.emptyView` — same copy, same neutral
+    /// tertiary glyph, same single "Take another" action. The cloud answered;
+    /// it just didn't see food. Re-sending the identical bytes ("Try Again")
+    /// would only spend a second call to get the same answer, so this state
+    /// deliberately offers ONLY a retake, exactly as iOS does.
+    private var emptyView: some View {
+        VStack(spacing: 16) {
+            Spacer()
+            // questionmark.circle → info.circle on Android (see Symbols.swift).
+            // Explicitly NOT the warning triangle: nothing failed here.
+            Image(systemName: sym("questionmark.circle"))
+                .font(.largeTitle)
+                .foregroundStyle(Theme.textTertiary)
+            Text("We couldn't spot any food in that photo.")
+                .font(.headline)
+                .foregroundStyle(Theme.textPrimary)
+                .multilineTextAlignment(.center)
+            Text("Try one with the meal centered and in good light.")
+                .font(.caption)
+                .foregroundStyle(Theme.textSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 32)
+            Button("Take another") {
+                capturedImage = nil
+                phase = .capture
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.accent)
+            .padding(.top, 8)
+            Spacer()
+        }
+    }
+
     // MARK: - Error
 
+    /// iOS `PhotoLogFlowView.errorView`: the triangle IS the right glyph here
+    /// (something genuinely failed) and iOS draws it in `Theme.surplus`, not
+    /// tertiary — the colour is what separates "this broke" from the neutral
+    /// empty state above. Android keeps the extra Retake affordance because
+    /// re-sending the same bytes is the likelier fix for a transport blip.
     private func errorView(message: String) -> some View {
         VStack(spacing: 16) {
             Spacer()
             Image(systemName: sym("exclamationmark.bubble"))
-                .font(.title)
-                .foregroundStyle(Theme.textTertiary)
+                .font(.largeTitle)
+                .foregroundStyle(Theme.surplus)
             Text(message)
-                .font(.subheadline)
-                .foregroundStyle(Theme.textSecondary)
+                .font(.headline)
+                .foregroundStyle(Theme.textPrimary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 32)
             Button("Try Again") {
@@ -289,7 +335,8 @@ struct SnapMealSheet: View {
                 }
             }
             .buttonStyle(.borderedProminent)
-            .tint(Theme.ink)
+            .tint(Theme.accent)
+            .padding(.top, 8)
             Button("Retake Photo") {
                 capturedImage = nil
                 phase = .capture
@@ -334,7 +381,7 @@ struct SnapMealSheet: View {
         }
         guard !resp.items.isEmpty else {
             recordTurn(items: [], outcome: "empty", started: started)
-            phase = .error("Couldn't spot any food in that photo. Try a clearer shot of the plate.")
+            phase = .empty
             return
         }
 
