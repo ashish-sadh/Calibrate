@@ -73,10 +73,28 @@ let logger: Logger = Logger(subsystem: "com.drift.health", category: "DriftAndro
             // flusher never races the DB open (#1112 lesson).
             TelemetryService.shared.event(TelemetryEvent.appOpen)
             TelemetryService.shared.flush()
-            guard let health = DriftPlatform.health, health.isAvailable else { return }
-            try? await health.requestAuthorization()
-            let synced = (try? await health.syncWeight()) ?? 0
-            if synced > 0 { logger.info("HealthConnect: \(synced) weight days synced at launch") }
+            // Health Connect catch-up first, so the trend below sees weights
+            // logged in other apps. Scoped with `if` rather than the previous
+            // `guard ... else { return }`: an unavailable Health Connect must
+            // not skip the launch refresh that follows it.
+            if let health = DriftPlatform.health, health.isAvailable {
+                try? await health.requestAuthorization()
+                let synced = (try? await health.syncWeight()) ?? 0
+                if synced > 0 { logger.info("HealthConnect: \(synced) weight days synced at launch") }
+            }
+            // The rest of DriftApp.init()'s launch sequence (#1212 — same class
+            // as #1209). Without these, the weight trend is populated only as a
+            // side effect of the Today tab and `TDEEEstimator.current` stays nil
+            // forever, so FoodService (:374, :794) and AIRuleEngine (:182) fall
+            // back to a flat 2000 kcal on every entry path that doesn't visit
+            // Today first — Coach opened from another tab, a deep link, a cold
+            // start restored onto another tab.
+            //
+            // Order is a contract, not a preference: TDEEEstimator.refresh()
+            // reads WeightTrendService.shared.latestWeightKg. iOS runs them in
+            // this order for the same reason (DriftApp.swift:228 then :233).
+            WeightTrendService.shared.refresh()
+            await TDEEEstimator.shared.refresh()
         }
     }
 

@@ -450,11 +450,32 @@ import GRDB
     #expect(RawIngredient.milk.typicalUnit == .ml)
 }
 
-// MARK: - Weight Goal Edge Cases (8 tests)
+// MARK: - Weight Goal Edge Cases (9 tests)
 
 @Test func goalRemainingWeight() async throws {
     let g = WeightGoal(targetWeightKg: 50, monthsToAchieve: 6, startDate: "2026-01-01", startWeightKg: 60)
     #expect(abs(g.remainingKg(currentWeightKg: 55) - (-5)) < 0.01)
+}
+
+// #1213: the Android Today card and Coach's weight_info both rendered
+// "gain 95.6 lbs … 100% done" for a losing goal sitting 31% of the way in.
+// The three outputs are asserted together, on the exact goal + weigh-in read
+// off the device, because the failure was self-consistent — a single wrong
+// `currentWeightKg` reaching all three is what made "gain", "95.6" and "100%"
+// agree with each other while disagreeing with the user's data.
+@Test func goalMidJourneyLosingReportsDirectionRemainingAndProgress() async throws {
+    let g = WeightGoal(targetWeightKg: 78.0, monthsToAchieve: 6, startDate: "2026-07-01", startWeightKg: 82.5)
+    let currentKg = 81.1
+
+    #expect(g.isLosing(currentWeightKg: currentKg), "81.1 kg against a 78.0 kg target is a LOSING goal")
+    #expect(abs(g.remainingKg(currentWeightKg: currentKg) - (-3.1)) < 0.01)
+    // What the user actually reads on the card is the converted magnitude.
+    let remainingLbs = abs(WeightUnit.lbs.convert(fromKg: g.remainingKg(currentWeightKg: currentKg)))
+    #expect(abs(remainingLbs - 6.8) < 0.05, "Expected ~6.8 lbs to go, got \(remainingLbs)")
+
+    let progress = g.progress(currentWeightKg: currentKg)
+    #expect(abs(progress - 0.311) < 0.01, "1.4 kg of a 4.5 kg journey is ~31%, got \(progress * 100)%")
+    #expect(progress < 1.0, "A goal with 3.1 kg still to go must never read 100% done")
 }
 
 @Test func goalProgressOvershoot() async throws {

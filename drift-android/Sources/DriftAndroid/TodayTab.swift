@@ -96,10 +96,15 @@ struct TotalsRow: Sendable {
             // FIRST, before anything reads a weight: `macroTargets()` below
             // reaches `TDEEEstimator.cachedOrSync()`, which asks
             // WeightTrendService for the latest weight and caches whatever it
-            // gets. Unrefreshed in a fresh process that weight is nil, so the
-            // estimator cached its no-weight fallback (a flat 2000 kcal,
-            // source "Default") and every calorie target hung off it. iOS does
-            // the same refresh first (DashboardViewModel.loadData:112).
+            // gets. Unrefreshed that weight is nil, so the estimator caches its
+            // no-weight fallback (a flat 2000 kcal, source "Default") and every
+            // calorie target hangs off it. iOS does the same refresh first
+            // (DashboardViewModel.loadData:112).
+            //
+            // Since #1212 the *cold* case is covered at the app entry point
+            // (DriftAndroidApp.onLaunch), which is what makes non-Today entry
+            // paths correct too. This call is the reload path: it re-reads the
+            // DB after a weigh-in logged elsewhere in this process.
             WeightTrendService.shared.refresh()
             let t = FoodService.getDailyTotals()
             totals = TotalsRow(eaten: t.eaten, target: t.target, remaining: t.remaining,
@@ -174,9 +179,21 @@ struct TotalsRow: Sendable {
         goalHasCustomMacros = goal.proteinTargetG != nil || goal.carbsTargetG != nil || goal.fatTargetG != nil
         // The target line needs a real weigh-in — iOS hides it otherwise.
         if let displayKg = latestWeightKg ?? trendWeightKg {
+            let remainingAbs = abs(weightUnit.convert(fromKg: goal.remainingKg(currentWeightKg: displayKg)))
+            let losing = goal.isLosing(currentWeightKg: displayKg)
             goalCalorieTarget = goal.macroTargets(currentWeightKg: trendWeightKg)?.calorieTarget
-            goalRemainingAbs = abs(weightUnit.convert(fromKg: goal.remainingKg(currentWeightKg: displayKg)))
-            targetIsLosing = goal.isLosing(currentWeightKg: displayKg)
+            goalRemainingAbs = remainingAbs
+            targetIsLosing = losing
+            // #1213 caught this line rendering "gain 95.6 lbs" for a losing
+            // goal that is 31% done, then stopped reproducing. Every input is
+            // logged so the next occurrence names its own cause instead of
+            // needing another round of solving the arithmetic backwards.
+            // Locals, not properties: string interpolation is an autoclosure,
+            // and capturing `self` here would need explicit `self.` on each.
+            let latest = latestWeightKg.map { "\($0)" } ?? "nil"
+            let trend = trendWeightKg.map { "\($0)" } ?? "nil"
+            let unitName = weightUnit.displayName
+            logger.info("goalLine latest=\(latest) trend=\(trend) display=\(displayKg) target=\(goal.targetWeightKg) start=\(goal.startWeightKg) remainingAbs=\(remainingAbs) losing=\(losing) unit=\(unitName)")
         } else {
             goalCalorieTarget = nil
         }
