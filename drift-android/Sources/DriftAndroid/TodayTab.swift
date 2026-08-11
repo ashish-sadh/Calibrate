@@ -3,18 +3,10 @@ import Observation
 import SkipFuse
 import DriftCore
 
-// These row types lived in FoodTab.swift until the Food tab became the shared
-// FoodTabView port (#1062) — the dashboard is their only consumer now.
-struct FoodEntryRow: Identifiable, Sendable {
-    let id: Int64
-    let name: String
-    let detail: String    // "2 servings · 340 kcal"
-    let mealType: String
-    /// Logged time-of-day ("6:53 PM"), leading the row like iOS's Today card
-    /// (field report 2026-07-28: Android showed the name only, so two logs of
-    /// the same food were indistinguishable). Empty when unparseable.
-    let time: String
-}
+// `FoodEntryRow` lived here to feed the dashboard's hand-built meal list. That
+// list is now the shared `MealTimelineSection` (#1131), which builds its own
+// rows from `[FoodEntry]` via `rows(from:)` — sorting, time formatting and
+// nil-id handling included — so the local row type had no consumer left.
 
 struct TotalsRow: Sendable {
     var eaten = 0
@@ -60,7 +52,7 @@ struct TotalsRow: Sendable {
     var carbsTarget = 0
     var fatTarget = 0
     var fiberTarget = 25
-    var meals: [FoodEntryRow] = []
+    var foodEntries: [FoodEntry] = []
     var currentWeight = "—"
     var weekWorkouts = 0
     var streak = 0
@@ -126,17 +118,9 @@ struct TotalsRow: Sendable {
                 fatTarget = Int(kcal * 0.30 / 9)
                 fiberTarget = 25
             }
-            let entries = (try? AppDatabase.shared.fetchFoodEntries(for: DateFormatters.todayString)) ?? []
-            meals = entries.compactMap { e in
-                guard let id = e.id else { return nil }
-                let servings = e.servings == 1 ? "" : "\(e.servings.formatted()) servings · "
-                let logged = DateFormatters.iso8601.date(from: e.loggedAt)
-                    ?? DateFormatters.sqliteDatetime.date(from: e.loggedAt)
-                return FoodEntryRow(id: id, name: e.foodName,
-                                    detail: "\(servings)\(Int(e.calories * e.servings)) kcal",
-                                    mealType: e.mealType ?? "",
-                                    time: logged.map { DateFormatters.shortTime.string(from: $0) } ?? "")
-            }
+            // Handed to `MealTimelineSection` raw: the shared component owns
+            // sorting (ascending, so the earliest meal leads) and formatting.
+            foodEntries = (try? AppDatabase.shared.fetchFoodEntries(for: DateFormatters.todayString)) ?? []
             let unit = Preferences.weightUnit
             weightUnit = unit
             if let latest = WeightServiceAPI.getHistory(days: 365).sorted(by: { $0.date > $1.date }).first {
@@ -611,52 +595,20 @@ struct TodayTab: View {
 
     // MARK: - Meals
 
+    /// The shared component, called exactly as `DashboardView` calls it. It
+    /// brings its own "TODAY'S MEALS" header (with the trailing "+"), the
+    /// tap-to-expand macro chips, the in-row Remove, and iOS's empty state —
+    /// the three things the Android re-creation was missing. The meal-type
+    /// pill goes with the re-creation: iOS shows none.
     private var mealsCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("TODAY'S MEALS").sectionHeading()
-            if store.meals.isEmpty {
-                Button { selectedTab = .food } label: {
-                    HStack(spacing: 8) {
-                        ForkKnifeShape()
-                            .fill(Theme.textSecondary)
-                            .frame(width: 12, height: 12)
-                        Text("Log your first meal — try the Search chip above")
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.textSecondary)
-                        Spacer()
-                    }
-                    .card()
-                }
-                .buttonStyle(.plain)
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(store.meals) { row in
-                        HStack {
-                            // Time leads the row like iOS ("6:53 PM  Coffee").
-                            if !row.time.isEmpty {
-                                Text(row.time)
-                                    .font(.caption.monospacedDigit())
-                                    .foregroundStyle(Theme.textSecondary)
-                            }
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(row.name).font(.subheadline).foregroundStyle(Theme.textPrimary)
-                                Text(row.detail).font(.caption2).foregroundStyle(Theme.textSecondary)
-                            }
-                            Spacer()
-                            if !row.mealType.isEmpty {
-                                Text(row.mealType.capitalized)
-                                    .font(.system(size: Theme.FontSize.nano))
-                                    .padding(.horizontal, 6).padding(.vertical, 2)
-                                    .background(Theme.pillBackground, in: Capsule())
-                                    .foregroundStyle(Theme.textSecondary)
-                            }
-                        }
-                        .padding(.vertical, 6)
-                    }
-                }
-                .card()
+        MealTimelineSection(
+            entries: store.foodEntries,
+            onAdd: { showingSearch = true },
+            onDelete: { id in
+                try? AppDatabase.shared.deleteFoodEntry(id: id)
+                store.reload()
             }
-        }
+        )
     }
 
     // MARK: - Stat trio (Weight / Workouts / Streak)

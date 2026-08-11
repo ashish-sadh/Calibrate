@@ -97,6 +97,39 @@ final class MealTimelineSectionTests: XCTestCase {
                        "Unparseable timestamp renders an em-dash, not a crash")
     }
 
+    /// SQLite's `datetime('now')` — which is the `logged_at` column DEFAULT —
+    /// writes "2026-08-10 19:40:00" in UTC, not ISO. Before #1131 that shape
+    /// fell through both ISO parsers and the row rendered its time as "—".
+    func testSqliteDatetimeLoggedAtRendersARealTime() {
+        let entry = makeRawEntry(name: "paneer tikka", loggedAt: "2026-08-11 02:40:00")
+        let rows = MealTimelineSection.rows(from: [entry])
+        XCTAssertEqual(rows.count, 1)
+        XCTAssertNotEqual(rows[0].timeText, "—",
+                          "sqlite-datetime loggedAt must parse, not fall through to the em-dash")
+
+        // Pinned against the same instant rendered through the app's own
+        // display formatter, so the assertion holds in any device timezone.
+        let expected = DateFormatters.shortTime.string(
+            from: DateFormatters.sqliteDatetime.date(from: "2026-08-11 02:40:00")!
+        )
+        XCTAssertEqual(rows[0].timeText, expected,
+                       "sqlite datetimes are UTC instants displayed in the device zone")
+    }
+
+    /// The three `loggedAt` shapes must interleave correctly, not clump by
+    /// format — a sqlite-shaped row used to sort to the end as `.distantFuture`.
+    func testSqliteAndISOEntriesSortTogetherByInstant() {
+        let iso = ISO8601DateFormatter()
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let sqliteStamp = "2026-08-11 02:40:00"
+        let pivot = DateFormatters.sqliteDatetime.date(from: sqliteStamp)!
+        let early = makeRawEntry(name: "early", loggedAt: iso.string(from: pivot.addingTimeInterval(-3600)))
+        let middle = makeRawEntry(name: "middle", loggedAt: sqliteStamp)
+        let late = makeRawEntry(name: "late", loggedAt: iso.string(from: pivot.addingTimeInterval(3600)))
+        let rows = MealTimelineSection.rows(from: [late, early, middle])
+        XCTAssertEqual(rows.map(\.foodName), ["early", "middle", "late"])
+    }
+
     // MARK: - View construction smoke
 
     func testMealTimelineSectionConstructsWithMixedEntries() {
@@ -109,6 +142,21 @@ final class MealTimelineSectionTests: XCTestCase {
     }
 
     // MARK: - Helpers
+
+    /// Sibling of `makeEntry` for the cases that care about the exact
+    /// `loggedAt` string rather than an offset from now.
+    private func makeRawEntry(name: String, loggedAt: String) -> FoodEntry {
+        FoodEntry(
+            foodName: name,
+            servingSizeG: 100,
+            servings: 1,
+            calories: 100,
+            proteinG: 0, carbsG: 0, fatG: 0, fiberG: 0,
+            loggedAt: loggedAt,
+            date: nil,
+            mealType: nil
+        )
+    }
 
     private func makeEntry(
         id: Int64? = nil,
