@@ -19,6 +19,46 @@ is the verification pass.)*
 
 ## Session notes (append-only)
 
+- **2026-08-10 (scout #19, Opus 5):** **COACH / AI CHAT (#1066)** — next in rotation, last swept 07-28, and the **first device-driven sweep in ten
+  sessions**. The device debt broke on a technicality worth recording: both sibling lanes were live (executor PID 53813, planner PID 54136) so
+  [[harness_parity_lanes_share_one_emulator]] would normally mean hands-off — but they had started **60 seconds earlier** (22:15) and
+  `git diff --stat e3a952b6 HEAD` showed the entire build-85→HEAD Android delta to be `SnapMealSheet`/`TodayTab`/`Symbols`/`Skip.env`, i.e. **zero
+  Coach files**. The installed APK was therefore byte-equivalent to HEAD for everything in this section, and the executor was still reading, not
+  installing. Nine prior sweeps deferred on a rule that, checked rather than assumed, didn't bind. **The headline is a P0 that source-reading alone
+  had missed for three months and that device-driving found in four turns: Drift Coach on Android cannot execute a single tool.** Every query —
+  typed text, and the app's *own* "Weekly summary" suggestion pill, twice — returns the identical canned string *"I'm here. Ask me about your food,
+  weight, sleep, or workouts…"*. That string is `AIToolAgent.swift:809-812`, reachable **only** when `ToolRegistry` reports `unknown tool`, and it
+  returns `didFail: false` so nothing anywhere flags it — it reads as the Coach choosing to be vague. Cause: `ToolRegistration.registerAll()` has
+  exactly three call sites — `Drift/DriftApp.swift:38` (iOS), `DriftChatSim/Entry.swift:32` (CLI), and **nothing in `drift-android/Sources/`**
+  (`rg` returns zero hits), while `DriftAndroidApp.swift` wires five `DriftPlatform` seams (`:41-55`) and `LocalAIService.swift:81` documents the
+  contract it skipped. Confirmed non-lazy before filing: `ToolRegistry.shared` is `private init() {}` over an empty dict (`ToolSchema.swift:128-136`).
+  **One missing line has disabled the showstopper surface on the whole platform** — filed **#1209 (P0)**. It also **reorders the board**: #1135 blames
+  the `#if DRIFT_IOS_APP` review sheets for food-logging degradation, but that gate is downstream — the tool never runs, so wiring the review path
+  first would change nothing observable. **Two `planned` issues were knocked back to `needs-plan` because their specs would have shipped no-ops.**
+  **#1137** (send button) says "dead tap target … add `.contentShape(Rectangle())`"; the a11y tree with *"protein" visibly in the field* reports
+  `clickable="true" enabled="false"` — the click modifier IS registered and SkipUI is honoring `.disabled(!canSend)` (`InputBar:166`) because
+  `canSend` (`:159`) never re-evaluates while the keyboard is up. One back-press, **same field text**, flips it to `enabled="true"` and the tap sends.
+  A contentShape on a disabled control is a no-op; the button is disabled precisely when a user would reach for it, and IME `.onSubmit` works only
+  because it carries no `.disabled` guard. **#1180** describes an indefinite hang on "Looking that up…" via a MainActor-continuation theory; that
+  symptom is **gone** (replies in ~2s, `via Nebius`, logcat `⏱ classify: 1481–3002ms` ×4) and the residue is narrower *and* broader than the plan
+  says — the **user's own bubble** doesn't paint either. Two pill taps looked stone dead at +4s (no bubble, no dots, no reply); typing something
+  unrelated then painted **both** queued turns at once. Since `AIChatView.swift:475-477` writes `vm.inputText` and calls `sendMessage()`
+  synchronously, the un-painted user bubble proves the miss happens **before any await** — a plain `@Observable` write from a `Button` action fails
+  to recompose, no actor hop involved — which is a ~1s repro instead of a 36s one. IME submit only *looks* fine because dismissing the keyboard is
+  itself a free recomposition poke; every entry point that keeps the keyboard up (pills, send button) looks dead. That single mechanism unifies
+  #1137 + #1180 + the "Suggestions row | ok" row, which device evidence flips to `broken`. Third issue **#1210** (P2): the send glyph is a **paper
+  plane** where iOS is a filled `arrow.up.circle.fill` (`Symbols.swift:110`; device `content-desc="paperplane.fill"`) — a *different object*, which
+  is the substitution that same file's own comments reject for `dumbbell`/`flame`/`sparkles`/`timer`, each given a `Shape` instead. Issues filed:
+  **3** (#1209 P0, #1210 P2, plus 2 corrected back to `needs-plan`). Rows changed: **16** (7 corrected from source-true/device-false, 5 added, 2
+  status flips, 2 verified-clean). Deliberately **did not** file two tempting leads: the greeting appearing as both hero and first bubble is
+  *shared* by design (`AIChatView.swift:412-414` — "appended as a message in onAppear"), and the chat re-opening scrolled to the **top** is almost
+  certainly shared too — the scroll block (`:97-112`) fires only `.onChange(of: messages.count)` on **both** platforms with no `onAppear`
+  scroll-to-bottom, so it needs an iOS side-by-side before anyone calls it Android-only; recorded as an `unknown` row rather than a fabricated
+  deviation. No code touched (matrix only). **Residual:** the iPhone simulator has **no Drift build installed** (`simctl listapps` shows none) and
+  installing one means an `xcodebuild` that would race the executor's ([[harness_android_build_oom_kill_daemons_first]]), so every iOS-side claim
+  here is source-derived — a genuine screenshot-exact side-by-side of the Coach input bar still owes the operator a run. Rotation next: **Food tab**
+  (#1138/#1139/#1140/#1193) — and it should be device-driven, now that the ten-sweep source-only streak is broken.
+
 - **2026-08-04 (scout #18, Opus 5):** **MORE / SETTINGS (#1067)** — next in rotation and the largest untouched block (44 `missing` rows),
   last enumerated by scout #5 on **2026-07-27**. Both sibling lanes live (executor PID 89218, planner PID 74139) and a zero-interference
   `screencap` showed the executor holding the app on the **Body/Weight** tab mid-drive, so per [[harness_parity_lanes_share_one_emulator]]
@@ -1090,13 +1130,24 @@ b8c244a6): `AIChatView` (+ChatBubble/+InputBar/+Suggestions/+MessageHandling), `
 brain (`CoachCloud.install` synchronous in onAppear). iOS wraps it in `DriftCoachSheet` (owns the backend
 picker); **Android presents `AIChatView()` directly** (ContentView:31 + TodayTab:161) — no picker, Nebius-only,
 correct per 0-AI-FOCUS no-key-UI. The message harness (`AIChatView+MessageHandling`) is DriftCore-shared and
-runs on Android, so DETERMINISTIC tools route; four gap-classes remain: **(a)** all 13 tool-result CARDS are
-`#if DRIFT_IOS_APP` — text summary only on Android (→#1125); **(b)** every FOOD-logging tool routes through an
-iOS-only sheet and DEGRADES to "add it from the Food tab" (→#1135, dep #1062); **(c)** VOICE (mic / talk-mode
-/ TTS) shimmed off (`CoachVoiceShims` no-ops → #1126); **(d)** open-ended cloud-LLM turns HANG on "Looking that
-up…" (streaming buffered `#else` branch never yields → #1133). Interview ("set me up") is `#if DRIFT_IOS_APP`
-(→#1125). BackendSelector / AISetup / AIChooser are key-UI, iOS-only-by-design. Rows below are SOURCE-verified;
-device-verify pending an uncontended emulator window (both sibling lanes live this session).
+runs on Android — but ⚠ **DEVICE-VERIFIED 2026-08-10 (scout #19): NO tool routes at all.** The message harness
+reaches `ToolRegistry.shared.execute()`, which is **empty for the life of the Android process** — `rg "registerAll"
+drift-android/Sources/` returns nothing, while `Drift/DriftApp.swift:38` calls `ToolRegistration.registerAll()`
+and `LocalAIService.swift:81` documents that it must be. Every tool name therefore comes back `unknown tool`,
+and `AIToolAgent.swift:809-812` converts that into one canned string — *"I'm here. Ask me about your food,
+weight, sleep, or workouts…"* — with `didFail: false`, so nothing surfaces the breakage. **Four consecutive
+device turns → four identical fallbacks** (typed text, and the app's own "Weekly summary" pill twice). This is
+**#1209, P0**, and it sits UPSTREAM of most rows below: the "deterministic tools route" claim and the per-tool
+`deviation | #1125 (card)` rows are **source-true but device-false** — the card is missing *and* the tool never
+ran. Remaining gap-classes: **(a)** all 13 tool-result CARDS are `#if DRIFT_IOS_APP` (→#1125); **(b)** food-logging
+tools additionally route through iOS-only sheets (→#1135, dep #1062) — downstream of #1209, which must land first;
+**(c)** VOICE shimmed off (`CoachVoiceShims` no-ops → #1126); **(d)** ⚠ **the "turns HANG on 'Looking that up…'"
+claim is STALE** — replies now land in ~2s with a `via Nebius` badge (logcat `⏱ AIToolAgent Phase 2 (classify):
+1481-3002ms` × 4). What survives of #1133/#1180 is a **repaint** defect, not a hang: state lands and Compose
+never recomposes, so the turn is invisible until an unrelated interaction pokes the UI. Interview ("set me up")
+is `#if DRIFT_IOS_APP` (→#1125). BackendSelector / AISetup / AIChooser are key-UI, iOS-only-by-design.
+Rows below are DEVICE-verified 2026-08-10 (build 85 — byte-identical to HEAD for every Coach file; the only
+Android deltas since are `SnapMealSheet`/`TodayTab`/`Symbols`) except where marked source-only.
 
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
@@ -1104,18 +1155,22 @@ device-verify pending an uncontended emulator window (both sibling lanes live th
 | Chat shell | header ("Drift Coach" + close), scroll, thinking dots, TypewriterText, Android scroll-sentinel | ok | |
 | Empty-state hero | iOS = ListeningCircle (tap-to-talk); Android = static SparkleShape "Ask me anything" (tap focuses input) | deviation | #1126 |
 | Input bar | iOS `idleControls` (`AIChatView+InputBar.swift:121-142`) adds photo (PhotosPicker) + mic; Android gates BOTH off (`#if DRIFT_IOS_APP`). Photo-attach NEWLY UNBLOCKED — #1128 image-in seam landed 2026-07-31, `DriftPlatform.imagePicker` live (was mis-pointed at #1125, which is cards+interview only) | deviation | #1174 (photo) / #1126 (mic) |
-| Input bar | **send button** (`arrow.up.circle.fill`, InputBar :160) — DEAD TAP on Android: `vm.sendMessage()` never fires on tap, only IME enter/submit sends (glyph is a drawn `sym()` Shape → hit-target falls through, [[harness_dead_synthetic_tap_means_contentshape]]) | broken | #1137 |
-| Suggestions row | horizontal smart-suggestion pills → send | ok | |
-| Deterministic turns | meal-planning reply, multi-turn pills, ClarificationCard, RemoteProviderBadge, Retry — render/route on Android | ok | #1133 (confirms) |
-| Open-ended cloud-LLM turn | HANGS on "Looking that up…" indefinitely — NOT a transport issue (2026-07-28: OkHttp facade #1136 proves the real Nebius round-trip completes in 2-8s; reply still never reaches the UI, so the break is a deeper Swift-concurrency/task-race issue further up the call chain) | broken | #1133 |
+| Input bar | ⚠ **send button** (InputBar :160) — unusable, but **NOT the hit-target bug the row used to claim**. Device a11y tree with "protein" visibly in the field: `ai-chat-send clickable="true" enabled="false"` — the click modifier IS registered; SkipUI is honoring `.disabled(!canSend)` (:166) because `canSend` (:159) never re-evaluates while the keyboard is up. One back-press (an unrelated recomposition), same field text → `enabled="true"` and the tap DOES send. So it is disabled precisely when a user would reach for it. `.contentShape(Rectangle())` would be a **no-op**; same root cause as #1180. IME `.onSubmit` (:60,:69) works only because it has no `.disabled` guard | broken | #1137 (spec corrected + knocked to `needs-plan` 08-10) |
+| Input bar | send GLYPH is a different object: iOS `arrow.up.circle.fill` (filled circle+arrow) vs Android an outlined **paper plane** — `Symbols.swift:110` maps it, device `content-desc="paperplane.fill"`. Contradicts the policy the same file states for `dumbbell`/`flame`/`sparkles`/`timer` ("closest same-meaning icon, never a different object"), each of which got a `Shape` instead | deviation | **#1210** |
+| Suggestions row | ⚠ **was `ok` — device says otherwise.** Pills fire but paint NOTHING: screen unchanged at +4s (no user bubble, no thinking dots, no reply), twice. Typing something unrelated then painted **both** queued turns at once. `AIChatView.swift:475-477` sets `vm.inputText` + `sendMessage()` synchronously, so the un-painted user bubble proves the miss happens **before any await** — a plain `@Observable` write from a `Button` action doesn't recompose. Reads as a dead control to any user | broken | **#1180** (evidence added; knocked to `needs-plan` 08-10) |
+| Deterministic turns | ⚠ RemoteProviderBadge ("via Nebius") does render — device-confirmed. But "deterministic tools route" only holds for paths that never touch `ToolRegistry`; anything tool-backed hits #1209. Re-verify meal-planning / ClarificationCard / Retry on device AFTER #1209 lands — they have never been driven | unknown | #1209 (gates) |
+| Open-ended cloud-LLM turn | ⚠ **"HANGS indefinitely" is STALE** (was: never reaches the UI). Device 08-10: reply renders in ~2s with a `via Nebius` badge; logcat `⏱ AIToolAgent Phase 2 (classify): 2479/2284/1481/3002ms` for four turns. The transport and the return path both complete — what is left is the REPAINT (#1180), not a hang. The reply's *content*, however, is always the canned fallback → #1209 | broken | **#1209** (content) / #1180 (repaint) |
+| Reply CONTENT (all tools) | ⚠ **every turn returns the same canned deflection** — "I'm here. Ask me about your food, weight, sleep, or workouts…". `ToolRegistry` is empty on Android (`registerAll()` has no Android call site), so `execute()` → `unknown tool` → `AIToolAgent.swift:809-812` fallback with `didFail: false`. Verified 4/4 turns incl. the app's own "Weekly summary" pill. **Drift Coach cannot execute a single tool on Android** | broken | **#1209 (P0)** |
+| Chat history | persists across close (X) → reopen — bubbles + `via Nebius` badges all survive | ok | |
+| Chat scroll on reopen | opens scrolled to TOP with the newest turn cut off. **NOT filed as a deviation**: the scroll block (`AIChatView.swift:97-112`) only fires `.onChange(of: messages.count)` on BOTH platforms — there is no `onAppear` scroll-to-bottom for either, so iOS very likely does the same. Needs an iOS side-by-side before anyone calls it Android-only (cf. the sharing-ChatView "opens scrolled-to-top" deferred item) | unknown | — |
 | Tool-result cards | ALL 13 (food/nutrition/weight/workout/nav/supplement/medication/sleep/glucose/biomarker/help/proposedMeal) are `#if DRIFT_IOS_APP` — none render on Android, text summary only | missing | #1125 |
-| Weight logging tool | saves via DriftCore ("Logged X"), works — weightCard visual absent | deviation | #1125 (card) |
-| Activity/workout logging tool | yes/no confirm → saves, works — workoutCard visual absent | deviation | #1125 (card) |
-| Workout start / templates / smart-workout | showingWorkout → ActiveWorkoutView (SharedUI) — opens + runs on Android | ok | |
-| Delete-food tool | `FoodService.deleteEntry` — works | ok | |
-| Query / nutrition-lookup tools | `ToolRegistry` text result renders; nutritionCard visual absent | deviation | #1125 (card) |
-| Navigation tool | navigate(tab) posts `.navigateToTab` immediately — tab switch WORKS on Android; navigationCard visual absent | deviation | #1125 (card) |
-| Food-logging tools | single-food / usual-meal / meal-continuation / meal-plan / manual / barcode ALL route to `#if DRIFT_IOS_APP` sheets → DEGRADE to "add it from the Food tab for now" (no logging) | missing | #1135 (dep #1062/#1128) |
+| Weight logging tool | ⚠ row said "saves via DriftCore, works" — **source-only, never device-run**. `ToolRegistry.shared` is `private init() {}` with an empty dict (`ToolSchema.swift:128-136`) and no lazy self-registration, so on Android this tool is not registered and cannot execute. Card also absent | broken | **#1209** (blocks) / #1125 (card) |
+| Activity/workout logging tool | ⚠ same — "yes/no confirm → saves" is source-only; unregistered on Android | broken | **#1209** (blocks) / #1125 (card) |
+| Workout start / templates / smart-workout | ⚠ `ActiveWorkoutView` itself opens + runs on Android (that part holds — it is reachable from the Workout tab), but the CHAT route to it goes through the registry and cannot fire | broken (via chat) | **#1209** |
+| Delete-food tool | ⚠ `FoodService.deleteEntry` works as a service; the chat TOOL is unregistered | broken (via chat) | **#1209** |
+| Query / nutrition-lookup tools | ⚠ "`ToolRegistry` text result renders" — device 08-10 shows the opposite: the registry has no such tool, so the turn returns the `unknown tool` fallback | broken | **#1209** / #1125 (card) |
+| Navigation tool | ⚠ "tab switch WORKS on Android" — source-only. `navigate(tab)` never runs because the tool isn't registered | broken | **#1209** / #1125 (card) |
+| Food-logging tools | single-food / usual-meal / meal-continuation / meal-plan / manual / barcode. The `#if DRIFT_IOS_APP` sheet gate is real — but ⚠ it is **downstream**: these tools are not in the registry either, so the turn never reaches the sheet and the user sees the generic `unknown tool` fallback, not even "add it from the Food tab for now". **#1209 must land before #1135** or wiring the review path will change nothing observable | missing | **#1209 (first)** → #1135 (dep #1062/#1128) |
 | Voice talk-mode | ImmersiveVoiceView + ListeningCircle + header voiceCluster (speaker/waveform) + mic + TTS — all iOS-only, `CoachVoiceShims` no-ops on Android | missing | #1126 |
 | Interview ("set me up") | multi-turn TrainingProfile Q&A → Nebius routine — `handleMultiTurnState` is `#if DRIFT_IOS_APP` | missing | #1125 |
 | AI Chat Insights | AIChatInsightsView (#261 opt-in local telemetry) — dev/debug surface | ios-only-by-design | |
