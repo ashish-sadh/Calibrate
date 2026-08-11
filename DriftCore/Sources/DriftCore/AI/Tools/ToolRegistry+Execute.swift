@@ -51,6 +51,12 @@ extension ToolRegistry {
     /// Lives in Drift (not DriftCore) because it touches `ConversationState.shared`.
     public func execute(_ call: ToolCall) async -> ToolResult {
         guard let tool = self.tool(named: call.tool) else {
+            // Registry size is what separates the two causes of this branch:
+            // a populated registry means the model invented a tool name (the
+            // benign case the canned fallback exists for), an empty one means
+            // the shell forgot to call `ToolRegistration.registerAll()` — the
+            // bug that shipped twice, on iOS (96e3173) and Android (#1209).
+            Log.app.info("Unknown tool: \(call.tool) — registry has \(self.allTools().count) tools")
             return .error("Unknown tool: \(call.tool)")
         }
 

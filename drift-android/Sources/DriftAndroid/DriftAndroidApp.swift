@@ -53,6 +53,14 @@ let logger: Logger = Logger(subsystem: "com.drift.health", category: "DriftAndro
             // Image-in seam (#1128): system Photo Picker → downscaled JPEG Data
             // via the polled ImagePickerFacade Activity-result bridge.
             DriftPlatform.imagePicker = ImagePickerService()
+            // Register all AI tools in ToolRegistry — the same call
+            // DriftApp.init() makes on iOS. Without it the registry is empty,
+            // every Coach turn resolves to "unknown tool", and
+            // `ToolRegistry.toolsJSONString` returns nil so cloud requests
+            // carry no function schemas at all (#1209). Pure closure capture,
+            // so it is safe to run synchronously here; PhotoLogTool is
+            // iOS-only (Keychain + CloudVision) and intentionally absent.
+            ToolRegistration.registerAll()
         }
     }
 
