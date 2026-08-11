@@ -186,6 +186,15 @@ struct MealTimelineSection: View {
                     // hidden affordance behind the "misclicking is a lot"
                     // feedback. The swipe still works; this just stops being
                     // the only way.
+                    //
+                    // ICON ONLY (operator 2026-08-04: "do we even need a
+                    // label?"). No: what fixed discoverability was making the
+                    // control VISIBLE on expand, not the word next to it — and
+                    // the Food tab's diary already deletes with a bare icon per
+                    // row, so a labelled pill was the odd one out. It was also
+                    // the direct cause of the wrap: ~75pt of button competing
+                    // with five chips. At ~28pt the width contention is gone
+                    // structurally rather than held back by fixedSize.
                     if let entryId = row.entryId, let onDelete {
                         Button(role: .destructive) {
                             withAnimation(.easeInOut(duration: 0.18)) {
@@ -193,32 +202,17 @@ struct MealTimelineSection: View {
                             }
                             onDelete(entryId)
                         } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "trash")
-                                Text("Remove")
-                                    // Never wrap. With five macro chips beside
-                                    // it the row runs out of width, and SwiftUI
-                                    // compressed THIS button rather than the
-                                    // chips — the label broke mid-word into
-                                    // "Remov / e" and the button grew to two
-                                    // lines, taller than everything next to it
-                                    // (operator 2026-08-04: "Remove button looks
-                                    // weird").
-                                    .lineLimit(1)
-                                    .fixedSize()
-                            }
-                            .font(.system(size: Theme.FontSize.tiny, weight: .semibold))
-                            .foregroundStyle(Theme.surplus)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(Theme.surplus.opacity(0.1),
-                                        in: RoundedRectangle(cornerRadius: 6))
-                            .contentShape(Rectangle())
+                            Image(systemName: "trash")
+                                .font(.system(size: Theme.FontSize.tiny, weight: .semibold))
+                                .foregroundStyle(Theme.surplus)
+                                // Tap target stays finger-sized even though the
+                                // glyph shrank — the hit area is what a
+                                // destructive control must not skimp on.
+                                .frame(width: 28, height: 22)
+                                .background(Theme.surplus.opacity(0.1),
+                                            in: RoundedRectangle(cornerRadius: 6))
+                                .contentShape(Rectangle())
                         }
-                        // Wins the width contest against the chips, which is
-                        // the correct priority: a chip that truncates is still
-                        // readable, a button that wraps is broken.
-                        .layoutPriority(1)
                         .buttonStyle(.plain)
                         .accessibilityLabel("Remove \(row.foodName)")
                         .accessibilityIdentifier("meal-timeline-remove-\(row.id)")
