@@ -22,8 +22,19 @@ cd "${CLAUDE_PROJECT_DIR:-.}"
 # process (the versioned path or the LATEST alias), plus the legacy pattern as
 # a fallback. An interactive session is bare `claude` WITHOUT `--print`, so it
 # never self-matches.
+# 2026-08-10: the #931 fix missed the tiered PARITY lanes, so the skip still
+# never fired for them and an interactive session was again told to commit a
+# concurrent executor's mid-refactor files (a rename in flight, at that).
+# Two gaps: (1) the lanes exec `~/.local/bin/claude`, not the versioned path,
+# so pattern 1 could not match; (2) the skill alternation listed senior/junior/
+# planning/... but no android-parity lane. Both closed below. This only ever
+# widens the skip for NON-autonomous sessions — autopilot's own sessions carry
+# DRIFT_AUTONOMOUS=1 and still face the full commit-or-abandon gate — and an
+# interactive session is bare `claude` with no -p/--print, so it cannot
+# self-match and skip its own gate.
 if [ "${DRIFT_AUTONOMOUS:-0}" != "1" ] && \
    { pgrep -f 'claude/versions/.*(--print| -p )' > /dev/null 2>&1 || \
+     pgrep -f 'claude .*(-p|--print) .*/(android-parity|android-parity-planner|android-parity-scout)' > /dev/null 2>&1 || \
      pgrep -f 'claude .*-p .*/(senior|junior|planning|design-doc|testflight|admin-replies|knowledge-curate|ui-evaluator|ui-review)' > /dev/null 2>&1; }; then
   exit 0
 fi
