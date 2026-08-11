@@ -27,6 +27,11 @@ final class AIChatViewModel {
     /// #978: resolve the confirm sheet by food ID (not just name) so an ambiguous name
     /// (e.g. two "Egg" rows with different macros) can't make the card and sheet disagree.
     var foodSearchResolvedId: Int64? = nil
+    /// The resolved food as a review row — macros already scaled to the stated
+    /// portion. Android's review sheet (#1135) opens THIS, so the same lesson
+    /// #930/#978 taught the iOS sheet holds there too: never re-search by name.
+    /// Nil when the turn found no match and the sheet must resolve the query.
+    var foodSearchResolvedItem: PhotoLogItem? = nil
     var foodSearchMealType: MealType? = nil
     var showingWorkout = false
     var workoutTemplate: WorkoutTemplate? = nil

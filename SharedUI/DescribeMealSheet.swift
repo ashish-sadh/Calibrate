@@ -6,6 +6,11 @@ import DriftCore
 // "log with AI" row present this sheet; iOS keeps its richer VoiceLogSheet
 // (mic + dictation) for now, so only Android wires this in.
 //
+// It is ALSO Android's editable review surface for Drift Coach's food-logging
+// turns (#1135) — the coach seeds `initialItems` with what it already resolved
+// and the sheet opens straight in review, so "log 2 eggs" commits real diary
+// rows instead of degrading to a message.
+//
 // Pipeline mirrors ExerciseVoiceLogSheet (the workout twin):
 //   input (typed text) → NebiusMealLogger.parse (cloud, same brain as Drift
 //   Coach) → editable review rows + MealTimePicker → quickAddBatch.
@@ -20,6 +25,13 @@ struct DescribeMealSheet: View {
     /// Query handed from the search sheet's "log with AI" row — parsed
     /// immediately so the tap lands in the review, not an empty field.
     let initialQuery: String?
+    /// Rows the caller has ALREADY resolved — Drift Coach hands its parsed food
+    /// intents straight to the review, skipping input+parse entirely (#1135).
+    /// Takes precedence over `initialQuery`.
+    let initialItems: [PhotoLogItem]?
+    /// Meal slot the caller detected ("log 2 eggs for breakfast"). Nil falls
+    /// back to the time-of-day slot, matching the un-seeded flow.
+    let initialMealType: MealType?
     let onLogged: () -> Void
 
     @State var foodLog = FoodLogViewModel()
@@ -34,8 +46,13 @@ struct DescribeMealSheet: View {
         case error(String)
     }
 
-    init(initialQuery: String? = nil, onLogged: @escaping () -> Void = {}) {
+    init(initialQuery: String? = nil,
+         initialItems: [PhotoLogItem]? = nil,
+         initialMealType: MealType? = nil,
+         onLogged: @escaping () -> Void = {}) {
         self.initialQuery = initialQuery
+        self.initialItems = initialItems
+        self.initialMealType = initialMealType
         self.onLogged = onLogged
     }
 
@@ -60,12 +77,16 @@ struct DescribeMealSheet: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Theme.background.ignoresSafeArea())
             .onAppear {
-                // Fresh session every presentation (#1106) — then honor a
-                // search-handed query by parsing it straight away.
+                // Fresh session every presentation (#1106) — then honor the
+                // caller's seed. Reset FIRST or Fuse resurrects the last
+                // presentation's rows.
                 phase = .input
                 items = []
                 logTime = Date()
-                if let q = initialQuery?.trimmingCharacters(in: .whitespacesAndNewlines), !q.isEmpty {
+                if let seeded = initialItems, !seeded.isEmpty {
+                    // Coach already resolved these — land straight in the review.
+                    enterReview(seeded, mealType: initialMealType)
+                } else if let q = initialQuery?.trimmingCharacters(in: .whitespacesAndNewlines), !q.isEmpty {
                     draft = q
                     Task { await parse(q) }
                 }
@@ -247,9 +268,9 @@ struct DescribeMealSheet: View {
             latencyMS: Int(Date().timeIntervalSince(started) * 1000))
     }
 
-    private func enterReview(_ parsed: [PhotoLogItem]) {
+    private func enterReview(_ parsed: [PhotoLogItem], mealType slot: MealType? = nil) {
         items = parsed
-        mealType = foodLog.autoMealType
+        mealType = slot ?? foodLog.autoMealType
         logTime = Date()
         phase = .reviewing
     }

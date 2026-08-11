@@ -105,6 +105,27 @@ public struct PhotoLogItem: Codable, Equatable, Sendable {
     }
 }
 
+public extension PhotoLogItem {
+    /// Adapt a resolved recipe/combo component into a review row. The AI chat's
+    /// composed-meal paths ("dal and rice", "add it to my breakfast") carry
+    /// `RecipeItem`s; the editable review sheet speaks `PhotoLogItem`, so this
+    /// is the one seam between them. #1135
+    ///
+    /// `resolveRecipeItem` already scales a RecipeItem's macros to the stated
+    /// portion — passing them through unchanged is deliberate, NOT an omission.
+    init(from item: RecipeItem) {
+        self.init(
+            name: item.name,
+            grams: item.servingSizeG,
+            calories: item.calories,
+            proteinG: item.proteinG,
+            carbsG: item.carbsG,
+            fatG: item.fatG,
+            fiberG: item.fiberG,
+            confidence: .medium)
+    }
+}
+
 public enum Confidence: String, Codable, Equatable, CaseIterable, Sendable {
     case low, medium, high
 

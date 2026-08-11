@@ -23,6 +23,23 @@ extension AIChatViewModel {
         return "\(formatted) \(primary.label)"
     }
 
+    /// The same resolved food, shaped as a review row for the editable log
+    /// sheet (#1135). Macros are scaled here once — the sheet logs what it is
+    /// handed and never re-searches, so card and sheet can't disagree
+    /// (the #930/#978 lesson). Grams mirror `smartServingText`: an explicit
+    /// gram amount wins, otherwise the serving weight times servings.
+    static func reviewRow(food: Food, servings: Double, gramAmount: Double?) -> PhotoLogItem {
+        PhotoLogItem(
+            name: food.name,
+            grams: gramAmount ?? (food.servingSize * servings),
+            calories: food.calories * servings,
+            proteinG: food.proteinG * servings,
+            carbsG: food.carbsG * servings,
+            fatG: food.fatG * servings,
+            fiberG: food.fiberG * servings,
+            confidence: .medium)
+    }
+
     // MARK: - Tab Metadata
 
     /// Map tab index to (label, SF Symbol) for confirmation cards.
@@ -161,23 +178,18 @@ extension AIChatViewModel {
             if recipeItems.isEmpty {
                 messages[statusIdx] = ChatMessage(role: .assistant, text: "Searching for \(text)...")
                 foodSearchQuery = text
+                foodSearchResolvedItem = nil
                 showingFoodSearch = true
             } else if recipeItems.count == 1 && notFound.isEmpty {
                 let item = recipeItems[0]
-                #if DRIFT_IOS_APP
+                // Un-gated (#1135): FoodLogViewModel is SharedUI and quickAddBatch
+                // writes the same diary rows on both platforms, so a one-item meal
+                // logs directly on Android too instead of narrating a dead end.
                 let vm = FoodLogViewModel()
                 let mealType = MealType(rawValue: mealName.lowercased()) ?? vm.autoMealType
                 vm.logRecipeItems(recipeItems, mealType: mealType)
                 messages[statusIdx] = ChatMessage(role: .assistant,
                     text: "Logged \(item.name) (\(Int(item.calories)) cal) for \(mealName.capitalized)!")
-                #else
-                // FoodLogViewModel + FoodService+Logging are iOS-app-only; Coach
-                // food logging on Android lands with the food sheets in #1062.
-                // Narrate the match instead of a dead tap. (DRIFT_IOS_APP, not
-                // os(Android), so the Darwin bridging pass takes this branch too.)
-                messages[statusIdx] = ChatMessage(role: .assistant,
-                    text: "Found \(item.name) (\(Int(item.calories)) cal) — add it from the Food tab for now.")
-                #endif
             } else {
                 var msg = "Building \(mealName): \(recipeItems.map { "\($0.name) (\(Int($0.calories)) cal)" }.joined(separator: ", "))."
                 if !notFound.isEmpty {
@@ -906,6 +918,7 @@ extension AIChatViewModel {
         foodSearchServings = intent.servings
         foodSearchResolvedName = nil
         foodSearchResolvedId = nil
+        foodSearchResolvedItem = nil
         let detectedMeal = intent.mealHint.flatMap { MealType(rawValue: $0) } ?? MealType.fromHour()
         foodSearchMealType = detectedMeal
         if let match = AIActionExecutor.findFood(query: intent.query, servings: intent.servings, gramAmount: intent.gramAmount) {
@@ -917,6 +930,7 @@ extension AIChatViewModel {
             // can no longer disagree ("Egg" card → "Egg Curry" sheet).
             foodSearchResolvedName = f.name
             foodSearchResolvedId = f.id
+            foodSearchResolvedItem = Self.reviewRow(food: f, servings: s, gramAmount: intent.gramAmount)
             let servingText = Self.smartServingText(food: f, servings: s, gramAmount: intent.gramAmount)
             // .rounded(), not truncation — Egg ×2 has 9.6g fat; Int() showed 9
             // and turned 0.8g carbs into the "0g carbs" the bug report flagged.
@@ -1053,6 +1067,7 @@ extension AIChatViewModel {
                 foodSearchQuery = food.name
                 foodSearchResolvedName = food.name   // #1031: carry the resolved identity so the
                 foodSearchResolvedId = food.id        // sheet opens THIS food, not a re-ranked one
+                foodSearchResolvedItem = Self.reviewRow(food: food, servings: 1, gramAmount: nil)
                 foodSearchServings = 1.0
                 foodSearchMealType = MealType(rawValue: mealName)
                 let card = FoodCardData(
@@ -1104,9 +1119,11 @@ extension AIChatViewModel {
                 foodSearchQuery = intent.query
                 foodSearchServings = intent.servings
                 foodSearchMealType = MealType(rawValue: mealName)
+                foodSearchResolvedItem = nil
                 if let match = AIActionExecutor.findFood(query: intent.query, servings: intent.servings, gramAmount: intent.gramAmount) {
                     let f = match.food
                     let s = match.servings
+                    foodSearchResolvedItem = Self.reviewRow(food: f, servings: s, gramAmount: intent.gramAmount)
                     let servingText = Self.smartServingText(food: f, servings: s, gramAmount: intent.gramAmount)
                     let card = FoodCardData(
                         name: f.name, calories: (f.calories * s).safeInt,
@@ -1387,6 +1404,7 @@ extension AIChatViewModel {
         case .openFoodSearch(let query, let servings):
             foodSearchQuery = query
             foodSearchServings = servings
+            foodSearchResolvedItem = nil   // tool gave a query, not a row — let the sheet resolve it
             showingFoodSearch = true
         case .navigate(let tab):
             let (label, icon) = Self.tabMeta(tab)
@@ -1799,6 +1817,7 @@ extension AIChatViewModel {
                     case .openFoodSearch(let query, let servings):
                         foodSearchQuery = query
                         foodSearchServings = servings
+                        foodSearchResolvedItem = nil   // query only — the sheet resolves it
                         showingFoodSearch = true
                     case .openRecipeBuilder(let items, let mealName):
                         var resolved: [RecipeItem] = []

@@ -4,8 +4,8 @@ import Observation
 
 // Single-source (SharedUI): drives the Food tab on BOTH the iOS app and the
 // Android app (#1059/#1062 port). No platform imports — widget refresh goes
-// through the DriftPlatform seam; the one iOS-view-typed helper
-// (`logRecipeItems`) is gated DRIFT_IOS_APP.
+// through the DriftPlatform seam, and every logging helper runs on both
+// platforms (#1135 un-gated the last one, `logRecipeItems`).
 @MainActor
 @Observable
 final class FoodLogViewModel {
@@ -353,16 +353,16 @@ final class FoodLogViewModel {
         logFood(food, servings: lastUsed, mealType: autoMealType)
     }
 
-    #if DRIFT_IOS_APP
     /// Log each RecipeItem as its own FoodEntry — one row per ingredient.
     /// Shared helper so AI-chat "log breakfast avocado toast and coffee"
     /// (QuickAddView) and Food-tab re-log of a saved combo (ComboLogSheet)
     /// produce the same diary rows. `perItemServings` lets ComboLogSheet pass
     /// per-checkbox servings; `recipeServings` lets QuickAddView scale the
     /// whole stack. Callers that don't need either just pass `items` and
-    /// `mealType`. (iOS-app-gated: RecipeItem is a QuickAddView type; the
-    /// Android port logs combos via `logCombo`.)
-    func logRecipeItems(_ items: [QuickAddView.RecipeItem],
+    /// `mealType`. (`QuickAddView.RecipeItem` is a typealias for this same
+    /// DriftCore type, so iOS callers are unaffected — #1135 un-gated it so
+    /// the Android coach can log a one-item meal directly.)
+    func logRecipeItems(_ items: [RecipeItem],
                         recipeServings: Double = 1,
                         perItemServings: [UUID: Double] = [:],
                         mealType: MealType,
@@ -382,7 +382,6 @@ final class FoodLogViewModel {
                                  servings: 1)
         })
     }
-    #endif
 
     /// One food entry queued for a batched insert. (#949)
     struct BatchFoodItem {

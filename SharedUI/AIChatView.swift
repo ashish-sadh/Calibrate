@@ -185,9 +185,9 @@ struct AIChatView: View {
             Task { await CoachChatNoteTaker.capture(history: history) }
         }
         #if DRIFT_IOS_APP
-        // The food-logging sheets aren't ported to Android yet (#1062); on Android
-        // the triggers degrade to an assistant message (see the onChange handlers
-        // below). Workout stays live above — ActiveWorkoutView is already SharedUI.
+        // iOS presents its own richer food sheets; Android routes the same flags
+        // into the shared review sheet in the `os(Android)` block below (#1135).
+        // Workout stays live above — ActiveWorkoutView is already SharedUI.
         .fullScreenCover(isPresented: $vm.showingBarcodeScanner) {
             BarcodeLookupView(viewModel: FoodLogViewModel())
         }
@@ -217,12 +217,51 @@ struct AIChatView: View {
                 })
         }
         #elseif os(Android)
-        // Android: a chat turn that wants an un-ported food sheet degrades to an
-        // assistant message instead of a dead flag flip. #1066 / #1062
-        .onChange(of: vm.showingFoodSearch) { _, s in if s { vm.showingFoodSearch = false; degradeUnportedSheet() } }
-        .onChange(of: vm.showingRecipeBuilder) { _, s in if s { vm.showingRecipeBuilder = false; degradeUnportedSheet() } }
-        .onChange(of: vm.showingManualFoodEntry) { _, s in if s { vm.showingManualFoodEntry = false; degradeUnportedSheet() } }
-        .onChange(of: vm.showingMealReview) { _, s in if s { vm.showingMealReview = false; degradeUnportedSheet() } }
+        // Android: every food-logging turn lands in the SAME editable review
+        // sheet the Describe and Snap flows ship (#1135). It's seeded with what
+        // the coach already resolved, so "log 2 eggs" commits real diary rows —
+        // no re-search, no "coming to Android soon". Exact-surface parity with
+        // the iOS sheets follows in #1138/#1139; only barcode still degrades.
+        .sheet(isPresented: $vm.showingFoodSearch, onDismiss: { vm.mealLogRevision += 1 }) {
+            if let resolved = vm.foodSearchResolvedItem {
+                DescribeMealSheet(initialItems: [resolved], initialMealType: vm.foodSearchMealType)
+            } else {
+                DescribeMealSheet(initialQuery: vm.foodSearchQuery)
+            }
+        }
+        .sheet(isPresented: $vm.showingRecipeBuilder, onDismiss: {
+            vm.pendingRecipeItems = []
+            vm.pendingRecipeName = ""
+        }) {
+            DescribeMealSheet(initialItems: vm.pendingRecipeItems.map { PhotoLogItem(from: $0) },
+                              initialMealType: MealType(rawValue: vm.pendingRecipeName.lowercased()))
+        }
+        .sheet(isPresented: $vm.showingManualFoodEntry, onDismiss: {
+            vm.pendingManualFoodEntry = nil
+        }) {
+            // A macro-carrying prefill is already a complete row; a bare name
+            // still needs resolving, so hand it over as a query. (#1139 will
+            // re-point this at the ported ManualFoodEntrySheet.)
+            if let prefill = vm.pendingManualFoodEntry, prefill.calories > 0 {
+                DescribeMealSheet(initialItems: [PhotoLogItem(
+                    name: prefill.name, grams: 0, calories: Double(prefill.calories),
+                    proteinG: prefill.proteinG, carbsG: prefill.carbsG, fatG: prefill.fatG,
+                    fiberG: prefill.fiberG, confidence: .medium)],
+                    onLogged: { vm.showingManualFoodEntry = false })
+            } else {
+                DescribeMealSheet(initialQuery: vm.pendingManualFoodEntry?.name ?? "",
+                                  onLogged: { vm.showingManualFoodEntry = false })
+            }
+        }
+        .sheet(isPresented: $vm.showingMealReview, onDismiss: { vm.pendingMealReviewItems = [] }) {
+            // "Log my usual lunch" → the recalled meal, ready to review and log.
+            DescribeMealSheet(initialItems: vm.pendingMealReviewItems,
+                              onLogged: {
+                                  vm.showingMealReview = false
+                                  vm.mealLogRevision += 1
+                              })
+        }
+        // Barcode scanning still needs the ML Kit seam (#1206) — degrade it.
         .onChange(of: vm.showingBarcodeScanner) { _, s in if s { vm.showingBarcodeScanner = false; degradeUnportedSheet() } }
         #endif
         .onAppear {
@@ -515,13 +554,13 @@ struct AIChatView: View {
     }
 
     #if os(Android)
-    /// Append a graceful "add it from the Food tab" message when a chat turn
-    /// tries to open a food sheet that isn't ported to Android yet (see the sheet
-    /// onChange handlers on `body`). #1066 / #1062
+    /// Barcode scanning is the last chat action without an Android surface — it
+    /// needs the ML Kit camera seam (#1206). Say so and point at what does work,
+    /// rather than flipping a flag into a sheet that never appears. #1135
     func degradeUnportedSheet() {
         vm.messages.append(AIChatViewModel.ChatMessage(
             role: .assistant,
-            text: "You can add that from the Food tab — Coach food logging is coming to Android soon."))
+            text: "Barcode scanning isn't on Android yet — tell me what it is (\u{201C}log 100g paneer\u{201D}) and I'll log it."))
     }
     #endif
 }
