@@ -106,6 +106,33 @@ public struct PhotoLogItem: Codable, Equatable, Sendable {
 }
 
 public extension PhotoLogItem {
+    /// The one-line macro summary under an item's name on every AI review row
+    /// (Describe, Snap, and — since #1135 — every Coach food-logging turn).
+    ///
+    /// `.rounded()` before `safeInt`, never a bare `Int()`. #1218: truncation
+    /// turned Egg ×2's 0.8g of carbs into "C 0" and shaved a gram off protein
+    /// and fat, so the last screen before committing a diary row disagreed
+    /// with the iPhone card for the identical food. `safeInt` alone still
+    /// truncates — it only clamps NaN/±∞/overflow — so both halves are load
+    /// bearing. Same idiom as iOS's own review row and `FoodCardData`.
+    ///
+    /// Prebuilt as a String deliberately: `Text(stringVariable)` takes the
+    /// verbatim overload, so a >999-cal item reads "1200 cal" on BOTH
+    /// platforms rather than iOS-only "1,200".
+    var reviewSummary: String {
+        "\(calories.rounded().safeInt) cal · \(grams.rounded().safeInt)g"
+            + " · P \(proteinG.rounded().safeInt)"
+            + " C \(carbsG.rounded().safeInt)"
+            + " F \(fatG.rounded().safeInt)"
+    }
+
+    /// Compact per-item line for AI-surface telemetry. Rounds like
+    /// `reviewSummary` so a recorded turn agrees with what the user actually
+    /// saw, which is the point of having it when debugging fallback rates.
+    var telemetrySummary: String {
+        "\(name) · \(calories.rounded().safeInt)cal · \(grams.rounded().safeInt)g"
+    }
+
     /// Adapt a resolved recipe/combo component into a review row. The AI chat's
     /// composed-meal paths ("dal and rice", "add it to my breakfast") carry
     /// `RecipeItem`s; the editable review sheet speaks `PhotoLogItem`, so this

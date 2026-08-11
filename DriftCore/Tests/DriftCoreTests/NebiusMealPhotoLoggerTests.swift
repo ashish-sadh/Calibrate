@@ -29,8 +29,14 @@ final class NebiusMealPhotoLoggerTests: XCTestCase {
         XCTAssertEqual(resp?.items.map(\.name), ["Roti", "Dal Tadka", "Jeera Rice"])
     }
 
-    func testNoFoodVisibleReturnsNil() {
-        XCTAssertNil(NebiusMealPhotoLogger.decode(#"{"items":[],"overall_confidence":"low","notes":null}"#))
+    /// #1195: "no food visible" is a SUCCESSFUL vision call — the prompt asks
+    /// for `{"items":[]}` in exactly this case. It must decode, so Snap can
+    /// say "couldn't spot any food" instead of claiming the cloud was
+    /// unreachable.
+    func testNoFoodVisibleDecodesAsValidEmptyResponse() {
+        let resp = NebiusMealPhotoLogger.decode(#"{"items":[],"overall_confidence":"low","notes":null}"#)
+        XCTAssertNotNil(resp)
+        XCTAssertTrue(resp?.items.isEmpty ?? false)
     }
 
     func testGarbageReturnsNil() {

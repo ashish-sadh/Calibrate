@@ -34,6 +34,9 @@ public enum NebiusMealPhotoLogger {
     /// authoritative context. Returns nil when the cloud isn't configured,
     /// both attempts fail, or nothing decodes (caller shows an error+retry —
     /// there is no on-device vision fallback for photos, unlike text).
+    /// A non-nil response with ZERO items is a different answer entirely: the
+    /// model looked and found no food. Callers branch on it rather than
+    /// treating it as a transport failure (#1195).
     public static func parse(imageData: Data, visionModelID: String,
                              userNote: String? = nil,
                              onStage: (@Sendable (ScanStage) -> Void)? = nil) async -> PhotoLogResponse? {

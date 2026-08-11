@@ -44,3 +44,57 @@ import Testing
     let total = fiberPerServing * servings
     #expect(MacroFormatter.fiber(total) == "1.5")
 }
+
+// MARK: - PhotoLogItem.reviewSummary (#1218)
+
+/// The same truncation defect as #282, one surface over: the AI review rows
+/// (Describe / Snap / Coach) built their macro line with a bare `Int()`, so
+/// Egg ×2's real 0.8g of carbs rendered "C 0" on Android while the identical
+/// food read "1g" on the iPhone card. Round, then clamp.
+
+private func eggPairItem(
+    calories: Double = 144.6,
+    grams: Double = 100.4,
+    proteinG: Double = 12.6,
+    carbsG: Double = 0.8,
+    fatG: Double = 9.6
+) -> PhotoLogItem {
+    PhotoLogItem(name: "Egg ×2", grams: grams, calories: calories,
+                 proteinG: proteinG, carbsG: carbsG, fatG: fatG,
+                 confidence: .high)
+}
+
+@Test func reviewSummaryRoundsRatherThanTruncates() {
+    #expect(eggPairItem().reviewSummary == "145 cal · 100g · P 13 C 1 F 10")
+}
+
+/// A food that genuinely has no carbs must still read "C 0" — the fix is
+/// rounding, not a blanket floor of 1.
+@Test func reviewSummaryKeepsTrueZeroAtZero() {
+    let item = eggPairItem(carbsG: 0)
+    #expect(item.reviewSummary.contains(" C 0 "))
+}
+
+/// Rounding is half-up at .5 and still rounds DOWN below it, so the line
+/// never over-reports either.
+@Test func reviewSummaryRoundsDownBelowHalf() {
+    let item = eggPairItem(calories: 144.4, grams: 100.5, proteinG: 12.4, carbsG: 0.4, fatG: 9.5)
+    #expect(item.reviewSummary == "144 cal · 101g · P 12 C 0 F 10")
+}
+
+/// Model JSON is unvalidated input: `Int()` on NaN/±∞ is an uncatchable trap
+/// (#1036). `safeInt` clamps — NaN to 0, +∞ to `Int.max` — so a garbage
+/// response renders something ugly instead of killing the review sheet.
+@Test func reviewSummarySurvivesNaNAndInfinity() {
+    let nanItem = eggPairItem(calories: .nan, carbsG: .nan)
+    #expect(nanItem.reviewSummary == "0 cal · 100g · P 13 C 0 F 10")
+
+    let infItem = eggPairItem(calories: .infinity)
+    #expect(infItem.reviewSummary == "\(Int.max) cal · 100g · P 13 C 1 F 10")
+}
+
+/// Telemetry rounds the same way, so a recorded turn agrees with the digits
+/// the user actually saw on the row.
+@Test func telemetrySummaryRoundsLikeTheRow() {
+    #expect(eggPairItem().telemetrySummary == "Egg ×2 · 145cal · 100g")
+}

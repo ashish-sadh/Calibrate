@@ -43,8 +43,15 @@ final class NebiusMealLoggerTests: XCTestCase {
         XCTAssertEqual(resp?.items.first?.servingUnit, "piece")
     }
 
-    func testEmptyItemsReturnsNil() {
-        XCTAssertNil(NebiusMealLogger.decode(#"{"items":[],"overall_confidence":"low","notes":null}"#))
+    /// #1195: an empty item list is the model ANSWERING ("no food here"), not a
+    /// failure. Folding it into nil made Snap's no-food branch unreachable, so
+    /// a foodless photo blamed the user's network. This pair is the contract:
+    /// garbage → nil, empty → a valid response the caller interprets.
+    func testEmptyItemsDecodesAsValidEmptyResponse() {
+        let resp = NebiusMealLogger.decode(#"{"items":[],"overall_confidence":"low","notes":null}"#)
+        XCTAssertNotNil(resp)
+        XCTAssertTrue(resp?.items.isEmpty ?? false)
+        XCTAssertEqual(resp?.overallConfidence, .low)
     }
 
     func testGarbageReturnsNil() {

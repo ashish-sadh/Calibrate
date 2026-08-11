@@ -182,7 +182,7 @@ struct DescribeMealSheet: View {
                 Text(item.name)
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Theme.textPrimary)
-                Text("\(Int(item.calories)) cal · \(Int(item.grams))g · P \(Int(item.proteinG)) C \(Int(item.carbsG)) F \(Int(item.fatG))")
+                Text(item.reviewSummary)
                     .font(.caption2)
                     .foregroundStyle(Theme.textSecondary)
             }
@@ -258,14 +258,14 @@ struct DescribeMealSheet: View {
     /// this surface produces.
     private func recordTurn(query: String, items: [PhotoLogItem], outcome: String, started: Date) {
         let summary = items
-            .map { "\($0.name) · \(Int($0.calories))cal · \(Int($0.grams))g" }
+            .map(\.telemetrySummary)
             .joined(separator: "\n")
         TelemetryService.shared.aiTurn(
             surface: TelemetrySurface.describeMeal,
             query: query,
             response: summary.isEmpty ? nil : summary,
             outcome: outcome,
-            latencyMS: Int(Date().timeIntervalSince(started) * 1000))
+            latencyMS: (Date().timeIntervalSince(started) * 1000).rounded().safeInt)
     }
 
     private func enterReview(_ parsed: [PhotoLogItem], mealType slot: MealType? = nil) {
