@@ -19,6 +19,46 @@ is the verification pass.)*
 
 ## Session notes (append-only)
 
+- **2026-08-11 (scout #20, Opus 5):** **FOOD TAB** — next in rotation per scout #19, and driven on the device as that note asked. The
+  emulator was genuinely free at the start despite both sibling lanes being live (executor PID 43626, planner PID 86908): the launcher was
+  foreground, no Gradle/Kotlin daemon was above 0.1% CPU, and — the check that actually decided it — `git diff --stat 2910cead HEAD --
+  drift-android/ SharedUI/ DriftCore/` was **empty**, so installed build 87 was byte-identical to HEAD for every file in this section, and
+  the executor's only uncommitted work (`ToolRegistry+Execute.swift`, `ToolRegistrationTests.swift`, `DriftAndroidApp.swift` — its #1209 fix)
+  touched no Food code. Six sweeps of device-verify debt cleared in about fifteen minutes of driving. **The headline is not a Food bug.**
+  Driving the Food tab surfaced a wrong number on the Today card — `Target: eat 2349 kcal/day to **gain 95.6 lbs**` — and pulling the device's
+  own storage showed the goal is a *losing* one: `weight_entry` latest **81.1 kg**, `app_pref/drift_weight_goal` = `{target 78.0, start 82.5}`,
+  which gives **lose 6.8 lbs, 31% done**. Drift Coach's `weight_info` printed the identical `gain 95.6 lbs … 100% done`, in the same bubble as
+  `Rate: -0.2lbs/week (losing)`. Two independent surfaces — one an Android-only file, one shared DriftCore — producing the *same* wrong number
+  means a shared bad input, and solving the three outputs backwards pins it exactly: `|78.0 − cw| = 43.36 kg` plus a "gain" direction forces
+  **`cw ≈ 34.64 kg`**, and `(34.64−82.5)/(78−82.5) = 10.6 ≥ 1` is precisely why `progress()` returns 100% (`WeightGoal.swift:277`). 34.64 kg
+  matches **no row** in the table (range 80.94–82.56), so it is not a row-ordering pick. Filed **#1213 (P0)** evidence-first with the root cause
+  *left open* and a device-diagnostic as step one, rather than guessing — the honest state is that source reading could not explain 34.64.
+  Hunting it did, however, turn up a defect that IS fully provable without the device, and it is the **#1209 pattern again**: `DriftAndroidApp`
+  never calls `WeightTrendService.shared.refresh()` or `TDEEEstimator.shared.refresh()`, both of which iOS runs at launch (`DriftApp.swift:228`,
+  `:233`). The clincher is iOS's own comment there — *"Was previously initialized lazily by Dashboard's onAppear — non-Dashboard launch paths got
+  stale values"* — **iOS had this exact bug and fixed it by hoisting the refresh to launch; Android is still in the pre-fix state**, its only
+  refresh being a side effect of `TodayTab.swift:103`, the Dashboard equivalent. `TDEEEstimator.refresh()` is called *nowhere* on the platform,
+  and three consumers read `TDEEEstimator.shared.current?.tdee ?? 2000` (`FoodService:374`, `:794`, `AIRuleEngine:182`), so any launch that does
+  not pass through Today computes food targets and AI reasoning on a flat 2000 kcal. `cachedOrSync()` is not a rescue — `:293` reads the same
+  unrefreshed `latestWeightKg`. A prior session already hit this and patched it *locally in one screen* (`TodayTab.swift:96-102` carries the
+  post-mortem comment), which is why it survived. Filed **#1212 (P0)**, one file, iOS-risk-free. Issues filed: **2** (#1212, #1213, cross-linked
+  so the planner can merge if #1212's fix resolves #1213). Rows changed: **17** (9 added, 5 unknown→verified, 1 stale row corrected, 2
+  false-positive guards). Also commented **#1129**, whose premise is stale: the matrix and the issue both said the Daily Average card was
+  *missing*, and it **ships** (`TodayTab.swift:455-480`) — screenshotted rendering eating/deficit/burning; an executor would have re-ported a
+  card that already exists. Deliberately did **not** file three tempting leads that source disproved, all recorded as verified-clean rows so the
+  next scout doesn't re-chase them: the "Seed sample data" button in the empty diary is `#if DEBUG` (`:1205-1213`) and correctly absent from
+  release; the dot under today with an empty diary is the today-marker, not a false logged-dot (`dayDotColor` `:545-547`); and the fractional
+  "3.8/30 plants" with "+6 new today" exceeding it is intentional shared formatting (`:625` selects `%.1f`; the two figures are a weighted score
+  and a species count). One real Food finding to correct the record: the matrix called the quick-log confirmation a "toast **undo**" — there is no
+  Undo action in it on either platform, just a 2s capsule. Verified working, along with the chip write path, the macro card, the meal timeline,
+  the date strip and the consistency heatmap. Its **paint latency** is the #1180 mechanism again: at +0s after the tap there was no toast, no row
+  and no macro change; all three appeared together by +1s, i.e. the synchronous `@State` write schedules no recomposition and the repaint rides
+  the async `reload()`. No code touched (matrix only). **Residuals:** the executor took the emulator mid-sweep (Health Connect permission grants
+  at 00:28, its #1207 work), so **#1120's edit-sheet override fields and the search stand-in (#1193) were not driven** — they stay the top of the
+  next Food sweep, along with the Select Date sheet and the sort-chip row. And the iPhone simulator still has **no Drift build installed**, so
+  #1213's iOS scope is unresolved; that side-by-side is now blocking a P0, not just owed. Rotation next: **finish Food** (edit sheet + search),
+  then Body/Weight.
+
 - **2026-08-10 (scout #19, Opus 5):** **COACH / AI CHAT (#1066)** — next in rotation, last swept 07-28, and the **first device-driven sweep in ten
   sessions**. The device debt broke on a technicality worth recording: both sibling lanes were live (executor PID 53813, planner PID 54136) so
   [[harness_parity_lanes_share_one_emulator]] would normally mean hands-off — but they had started **60 seconds earlier** (22:15) and
@@ -823,9 +863,15 @@ plan verbatim would ship the pre-refactor layout.
 
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
-| Food tab root | date strip + Select Date calendar sheet (`showingDatePicker`, logged-dots) — SHARED (MealCalendarPicker ported, os(Android) branches :410) | unknown | device-verify debt |
-| Food tab root | macro rings / donut summary — SHARED FoodTabView | unknown | device-verify debt |
-| Food tab root | meal timeline sections + entry rows — SHARED FoodTabView | unknown | device-verify debt |
+| Food tab root | date strip — **DEVICE-VERIFIED ok scout #20**: renders Sat 8→Sat 15 w/ Tue 11 pill, taps change day. Android windows the strip to −3/+7 days vs iOS −30/+7 (`FoodTabView.swift:386-394`, deliberate: `ScrollViewReader.scrollTo` never fires on Fuse) — deeper history only via the month sheet | deviation (documented, by design) | — |
+| Food tab root | date-strip dot — **NOT a bug** (scout #20 checked before filing): the dot under today with an empty diary is the today-marker, `dayDotColor(isToday:hasFood:)` `:545-547` returns `Theme.accent` for today regardless of food; `hasFood` only colors non-today days | ok | — |
+| Food tab root | Select Date calendar sheet (`showingDatePicker` → MealCalendarPicker, os(Android) in-content header :410-430) | unknown | device-verify debt (sheet not opened — executor took the emulator mid-sweep) |
+| Food tab root | macro summary card (P/C/F/Fb bars + kcal headline) — **DEVICE-VERIFIED ok scout #20**: renders and updates live across two logs (0→280→500 kcal, macros + "N left" all tracked) | ok | — |
+| Food tab root | meal timeline sections + entry rows — **DEVICE-VERIFIED ok scout #20**: "Snack · 12:22 AM–12:23 AM · 500 cal" section header w/ `+`/chevron, per-entry name + time + portion + macro line + cal + `✕`; time-range collapses correctly as entries accrue | ok | — |
+| Food tab root | Food Diary **sort / meal-grouping chip row** (`:844-876`) — renders only when `todayEntries.count > 1`; 🍽 toggle then 🕐/P/C/F/Fb/🌱 flat-sort chips. Emoji labels render monochrome-white on the ink capsule on Android where iOS keeps the color emoji (`.foregroundStyle` does not recolor Darwin color glyphs) | unknown | device-verify debt (tap intercepted by executor; emoji-tint delta is source-derived, wants a side-by-side) |
+| Food tab root | Logging Consistency heatmap card (`:1252`, shared) — **DEVICE-VERIFIED renders scout #20**: 30-cell grid + "N/30 days" + Less/More legend; cell fills tracked the two logs | ok | — |
+| Food tab root | plant-points row (`:615-642`) — **DEVICE-VERIFIED renders scout #20** via `LeafShape`; fractional totals ("3.8/30") are intentional (`:625` picks `%.1f` when non-integral), and `+N new today` counts distinct new species so it can exceed the weighted total — shared, **not** an Android defect | ok (row renders; tap is the gap) | #1141 (tap only) |
+| Food tab root | `#if DEBUG` "Seed sample data" button (`:1205-1213`) — visible on the emulator because that is a debug build; correctly compiled out of release. **Verified-clean, do not file** | ios-only-by-design (DEBUG-gated, both platforms) | — |
 | Food tab root | entry row edit sheet (`editingEntry` → EditFoodEntrySheet, SharedUI ported; beware stale SharedUICopy dupe #1071) — cal/macro OVERRIDE fields reported dead to tap | broken | #1120 |
 | Food tab root | serving input in edit sheet (ServingInputView ported) | unknown | device-verify debt |
 | Food tab root | add-food search sheet — Android stand-in `AndroidFoodSearchSheet` (FoodTab.swift:39); iOS FoodSearchView (49KB, 6 sections + 7 sub-sheets) NOT ported; #1075 = stand-in returns-nothing break | deviation | #1138 |
@@ -837,7 +883,9 @@ plan verbatim would ship the pre-refactor layout.
 | Food tab root | confirm-log sheet (`showingConfirmLog` :237) — only trigger is the iOS-only contextMenu "Log Again" :1115 | missing | #1141 |
 | Food tab root | barcode scanner fullScreenCover (`showingScanner` :165) — inherently LIVE-camera (AVFoundation); the landed #1128 seam is photo-library-ONLY, does NOT cover barcode → still needs a camera seam | missing | #1063 (live-camera seam pending) |
 | Food tab root | Snap shortcut (safeAreaInset camera.viewfinder → PhotoLog) — DRIFT_IOS_APP :128-156; Food-tab entry point still not ported (Today's chip is the only Snap entry on Android) | missing | #1111 (Today chip shipped; Food-tab entry unclaimed) |
-| Food tab root | suggestion chips: iOS → FoodLogSheet/ComboLogSheet review; Android quick-logs DIRECTLY + toast undo (deliberate interim :753-781) — quick-log write needs drive | deviation | #1140/#1138 |
+| Food tab root | suggestion chips: iOS → FoodLogSheet/ComboLogSheet review; Android quick-logs DIRECTLY (deliberate interim :753-781). **WRITE PATH DEVICE-VERIFIED ok scout #20** — tapped 2 chips, both persisted with correct cal/macros/portion and the diary + macro card + plant row all updated | deviation (by design) | #1140/#1138 |
+| Food tab root | quick-log confirmation toast (`flashCopied` :365-370 → `.overlay(alignment: .bottom)` :175-185, 2s self-cancelling `.task(id:)`) — **DEVICE-VERIFIED ok scout #20**: green "Added Dal Tadka to today" capsule, bottom-anchored, gone by +3s. NB it is a toast only — there is **no Undo action** in it on either platform; the matrix previously called it "toast undo", which overstates it (the trash `✕` on the row is the undo) | ok | — |
+| Food tab root | toast **paint latency**: capture at +0s after the chip tap showed no toast, no new row and no macro change; everything appeared together by +1s. Consistent with [[skip_fuse_compose_recomposition_delivery]] — the synchronous `@State` write does not schedule a recomposition, the repaint rides the async `reload()`. Same mechanism as #1180/#1137 | deviation | #1180 (same root cause) |
 | Food tab root | entry-row contextMenu (Edit/Favorite/Log Again/Copy/Move) — Darwin-only by house rule; Edit=row tap, Delete=✕, Favorite/Copy=edit sheet mapped; Log Again + Move Up/Down have NO Android path | deviation | #1141 |
 
 ### Food search hub (#1138 · iOS `Drift/Views/Food/FoodSearchView.swift` **1021 ln** vs Android stand-in `FoodTab.swift:39` `AndroidFoodSearchSheet` 150 ln)
@@ -972,7 +1020,9 @@ section had never carried a single perf row despite operator directive 0-PERF-P0
 | Coaching nudge | iOS `V6CoachingNudge` (topmost proactiveAlert, Ask-AI pill, 24h dismiss; `BehaviorInsightService` = DriftCore) — Android none | missing | #1130 |
 | Behavior insights | iOS `insightsCard` (BehaviorInsight list under "Insights") — Android none | missing | #1130 |
 | Goal progress | iOS `goalCard` (`GoalProgressCard` → GoalView) / empty "No weight goal set" — Android none (statTrio has WEIGHT value only, no progress card) | missing | #1117 |
-| Daily Average (TDEE) | iOS `tdeeCard` (eating/deficit/burning ring, target line, source pills, explainer → AlgorithmSettings) — Android none; all DriftCore, portable NOW | missing | #1129 |
+| Daily Average (TDEE) | ~~Android none~~ — **ROW WAS STALE, corrected scout #20 by screenshot**: the card SHIPS (`TodayTab.swift:455-480`) and renders eating / deficit-ring / burning + the target line + a Weight pill. #1129 should be re-scoped to whatever is still missing (source pills, explainer → AlgorithmSettings) or closed, not re-ported | deviation (partial port, not missing) | #1129 (re-scope) |
+| Daily Average (TDEE) | **target line prints the wrong goal DIRECTION and magnitude**: rendered `Target: eat 2349 kcal/day to **gain 95.6 lbs**` where the device's own stored data (latest 81.1 kg, target 78.0 kg, start 82.5 kg) gives `lose 6.8 lbs`. Coach `weight_info` prints the same wrong `gain 95.6 … 100% done` (correct: 31%), so the bad value is a shared input, not two formatting bugs — solving backwards pins `currentWeightKg ≈ 34.64 kg`, which matches **no row** in `weight_entry` (range 80.94–82.56). Android call site `TodayTab.swift:176-179` mirrors iOS `DashboardView+Cards.swift:104-106` correctly | broken | **#1213 (P0)** |
+| Daily Average (TDEE) | iOS-scope unresolved for #1213: `ToolRegistration.swift:561-565` is shared, so this may reproduce on iOS. **No iPhone build is installed on the simulator** and building one races the executor's daemons — the side-by-side is still owed | unknown | #1213 |
 | Activity section | iOS "Activity" header + `healthRow` (Active cal / Steps → Exercise tab) — Android hides (HealthKit seam) | missing | #1070 |
 | Activity | iOS Apple-Health `workoutCard` (burned N cal, ≤3 workouts) when today workouts exist — Android none (HealthKit seam) | missing | #1070 |
 | Activity | iOS `WorkoutConsistencyCard` (weekly, 24h dismiss; `BehaviorInsightService.workoutConsistencyVariant` + WorkoutService = DriftCore, NOT health-gated) — Android none | missing | #1132 |
@@ -1293,6 +1343,8 @@ is DONE** — ported to SharedUI, wired `MoreTab.swift:146`; removed from the po
 | screen | sub-interaction | status | issue |
 |---|---|---|---|
 | Tab bar | 5 tabs, pill highlight, food glyph reads fork-knife (cart FIXED) | ok | |
+| **Startup wiring** | **`DriftAndroidApp` never calls `WeightTrendService.shared.refresh()` or `TDEEEstimator.shared.refresh()`** — iOS does both at `DriftApp.swift:228`/`:233` with a documented ordering contract ("Must run before TDEEEstimator.refresh() since TDEE reads `latestWeightKg`"). Android's only refresh is a side effect of `TodayTab.swift:103`; `TDEEEstimator.refresh()` is called **nowhere** on the platform. iOS *had* this exact bug ("initialized lazily by Dashboard's onAppear — non-Dashboard launch paths got stale values") and fixed it by hoisting to launch; Android is still pre-fix. Impact: 3 consumers read `TDEEEstimator.shared.current?.tdee ?? 2000` (`FoodService:374`, `:794`, `AIRuleEngine:182`), so any launch not passing through Today computes food targets + AI reasoning on a flat 2000 kcal. Same class as #1209 — [[android_startup_wiring_diverges_from_driftapp]] | broken | **#1212 (P0)** |
+| Startup wiring | audit residual: no scout has diffed `DriftApp.init()` against `DriftAndroidApp` **call-for-call**. #1209 (tool registration) and #1212 (trend/TDEE refresh) were both found one-at-a-time by symptom; the remaining `DriftApp` launch calls have never been enumerated | unknown | fold into #1212's plan |
 | Navigation | push/sheet transition speed + font stability; nav titles render in Material typography, not the app font | deviation | #1074/#1165 |
 | Theme | dark/light, goal-aware green/red, Material accent leak | unknown | |
 | Network transport | `DriftPlatform.httpSession` (OkHttp facade) is wired into ONE consumer (`LocalAIService:329`); Supabase `SyncClient`, OpenFoodFacts, USDA, Coach `web_search`/`fetch_url`, TTS + model-download all still bind the parking `URLSession` bridge (`RemoteLLMBackend:17-31`). Facade is also POST-only — `HTTPFacadeCodec.encodeRequest` drops `httpMethod`, `HttpFacade.kt:39` hardcodes `.post` | broken | **#1194** |
