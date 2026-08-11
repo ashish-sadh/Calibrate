@@ -49,7 +49,7 @@ while true; do
         export DRIFT_PARITY_LANE=planner
         exec "${CLAUDE_BIN:-$HOME/.local/bin/claude}" -p "/android-parity-planner" \
             --dangerously-skip-permissions \
-            --model claude-opus-5 \
+            --model claude-fable-5 \
             --fallback-model claude-opus-4-8 \
             --effort max \
             --output-format stream-json \
