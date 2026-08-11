@@ -4,8 +4,8 @@
 AI-first local health tracker. AI chat is the primary interface — every data entry doable through conversation. Traditional UI for visual analytics and fallback. No cloud, no accounts. Published on TestFlight as "Drift Fitness" (bundle: com.drift.health).
 
 ## Numbers
-- **Version:** 0.1.0, Build 380 (iOS) · 89 (Android Play internal)
-- **Tests:** 1,274 iOS DriftTests (UI/HealthKit/OCR-bound only — bulk of suite migrated down) + 2,705 DriftCoreTests in 147 suites (cross-platform pure-logic suite, 1 known issue); LLM eval ~160+ cases in DriftLLMEvalMacOS. (DriftCore count re-measured 2026-08-11; iOS count last re-measured 2026-07-31.)
+- **Version:** 0.1.0, Build 380 (iOS) · 90 (Android Play internal)
+- **Tests:** 1,274 iOS DriftTests (UI/HealthKit/OCR-bound only — bulk of suite migrated down) + 2,748 DriftCoreTests in 148 suites (cross-platform pure-logic suite, 1 known issue); LLM eval ~160+ cases in DriftLLMEvalMacOS. (DriftCore count re-measured 2026-08-11; iOS count last re-measured 2026-07-31.)
 - **AI Eval:** 400+ scenarios in eval harness + LLM eval (~130-case gold set in IntentRoutingEval)
 - **Per-tool Reliability (Gemma 4, 50-query gold set):** log_food 10/10 (100%), edit_meal 9/10 (90%, tuned +10% from 80%), log_weight 10/10 (100%), mark_supplement 10/10 (100%), food_info 9/10 (90%) — overall 48/50 (96%)
 - **Foods:** 5,751 (curated down from 11,162 at build 237 — dropped verbose USDA SR Legacy bulk variants; hand-curated Indian-first + international cuisine retained. #1015/#1017 removed 36 duplicate rows, stripped 57 USDA distribution-program name suffixes, and de-title-cased 169 apostrophe names. Ceiling enforced at 6,000, cleanliness by FoodDBSizeTests. 2026-07-27: +12 field-miss additions, +315 INDB standard recipes — anuvaad.org.in Indian Nutrient Databank v2024.11, serving grams derived per-recipe, deduped on normalized keys + significant-token subsets against the whole catalog.)
