@@ -1,43 +1,47 @@
 import Foundation
-import DriftCore
 
-// MARK: - Serving unit (Photo Log specific)
+// MARK: - Photo Log review model
 //
-// `PhotoLogServingUnit` lives in DriftCore (pure data + parse/suggest helpers).
-// The remainder of this file — PhotoLogEditableItem, PhotoLogViewState,
-// PhotoLogTotals — references CloudVision types (Confidence, PhotoLogItem)
-// and stays in the iOS app target.
+// `PhotoLogServingUnit`, `Confidence` and `PhotoLogItem` all live alongside
+// this file in DriftCore. Moved out of the iOS app target 2026-08-11 (#1111):
+// the review math — per-gram rates, the #1043 per-unit `originalGrams`, macro
+// re-derivation — is identical on both platforms, and Android's Snap review
+// needs it verbatim rather than a second implementation that can drift.
 
 /// Mutable editing state for a single `PhotoLogItem` in the review sheet.
 /// Users can check/uncheck items, pick a friendlier serving unit, and edit
 /// the amount. Calories and macros scale linearly with grams so the summary
 /// stays accurate during edits. Separate from `PhotoLogItem` (which is
 /// decode-only) so we can keep the wire format immutable. #224 / #267.
-struct PhotoLogEditableItem: Identifiable, Equatable {
-    let id: UUID
-    var name: String
-    var grams: Double
-    var calories: Double
-    var proteinG: Double
-    var carbsG: Double
-    var fatG: Double
-    var fiberG: Double
-    var confidence: Confidence
-    var selected: Bool
-    var servingUnit: PhotoLogServingUnit
+/// `Sendable` because every stored property is a value type that already is
+/// (`Confidence`, `PhotoLogServingUnit`, String/Double/UUID/[String]). Needed
+/// once this crossed into DriftCore: the iOS AI-correction call hands an item
+/// to a `@Sendable` async closure across the module boundary.
+public struct PhotoLogEditableItem: Identifiable, Equatable, Sendable {
+    public let id: UUID
+    public var name: String
+    public var grams: Double
+    public var calories: Double
+    public var proteinG: Double
+    public var carbsG: Double
+    public var fatG: Double
+    public var fiberG: Double
+    public var confidence: Confidence
+    public var selected: Bool
+    public var servingUnit: PhotoLogServingUnit
     /// User-visible amount in `servingUnit`. Changing this recomputes `grams`
     /// via `gramsPerServingUnit` and rescales macros.
-    var servingAmount: Double
+    public var servingAmount: Double
     /// Ingredient list surfaced from the LLM for plant-points counting. Empty
     /// when the model didn't return it — callers fall back to `name` for
     /// plant classification.
-    var ingredients: [String]
+    public var ingredients: [String]
     /// User-initiated edit of a macro field (e.g. "actually this pizza has
     /// 15g protein not 12"). When set, subsequent amount/unit changes still
     /// rescale macros proportionally, but from the user's corrected baseline
     /// rather than the LLM's. Resets the per-gram rates so future reflows
     /// respect the correction.
-    var macrosManuallyEdited: Bool
+    public var macrosManuallyEdited: Bool
 
     /// Per-gram rates — stored as `var` so `setMacros` can update them when
     /// the user hand-corrects one macro. Amount/unit reflows multiply these
@@ -54,11 +58,11 @@ struct PhotoLogEditableItem: Identifiable, Equatable {
 
     /// #1044: a blank/unnamed/0-cal row (e.g. an unfilled "Add item") must not be logged
     /// to the diary or written to the searchable food catalog.
-    var isLoggable: Bool {
+    public var isLoggable: Bool {
         !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && calories > 0
     }
 
-    init(from item: PhotoLogItem, id: UUID = UUID()) {
+    public init(from item: PhotoLogItem, id: UUID = UUID()) {
         self.id = id
         self.name = item.name
         self.grams = max(item.grams, 0)
@@ -125,14 +129,14 @@ struct PhotoLogEditableItem: Identifiable, Equatable {
     /// Grams per 1 unit of the currently-selected serving unit.
     /// `fixedGramsPerUnit` handles weight/volume conversions; pieces/slices
     /// use the LLM's `originalGrams` as the per-unit weight.
-    var gramsPerServingUnit: Double {
+    public var gramsPerServingUnit: Double {
         if let gpu = servingUnit.fixedGramsPerUnit { return gpu }
         // pieces / slices: one unit = the LLM's original weight for this food.
         return originalGrams > 0 ? originalGrams : 100
     }
 
     /// Update `servingAmount` and reflow `grams` + macros.
-    mutating func setAmount(_ newAmount: Double) {
+    public mutating func setAmount(_ newAmount: Double) {
         servingAmount = max(newAmount, 0)
         grams = servingAmount * gramsPerServingUnit
         rescale()
@@ -141,7 +145,7 @@ struct PhotoLogEditableItem: Identifiable, Equatable {
     /// Switch the displayed serving unit, keeping the current grams the same.
     /// `servingAmount` is recomputed so the user's macros don't jump when
     /// they change from "180 g" to "oz" (they see "6.4 oz" instead).
-    mutating func setUnit(_ newUnit: PhotoLogServingUnit) {
+    public mutating func setUnit(_ newUnit: PhotoLogServingUnit) {
         servingUnit = newUnit
         let gpu = gramsPerServingUnit
         servingAmount = gpu > 0 ? grams / gpu : 0
@@ -164,7 +168,7 @@ struct PhotoLogEditableItem: Identifiable, Equatable {
     /// the corrected baseline. Example: user sets protein 12→15 for their
     /// 120 g pizza slice → `proteinPerGram` becomes 0.125 so a 1→2 slice
     /// change now gives 30 g protein, not the original 24.
-    mutating func setMacro(_ field: MacroField, to value: Double) {
+    public mutating func setMacro(_ field: MacroField, to value: Double) {
         let v = max(value, 0)
         let g = max(grams, 0)
         switch field {
@@ -187,7 +191,7 @@ struct PhotoLogEditableItem: Identifiable, Equatable {
         macrosManuallyEdited = true
     }
 
-    enum MacroField {
+    public enum MacroField {
         case calories, protein, carbs, fat, fiber
     }
 
@@ -197,7 +201,7 @@ struct PhotoLogEditableItem: Identifiable, Equatable {
     /// correctness signal. `macrosManuallyEdited` is reset since AI just
     /// replaced the baseline. Uses fixed-conversion units only (not pieces/
     /// slices) to avoid stale `originalGrams` after the swap.
-    mutating func applyAICorrection(_ aiItem: PhotoLogItem) {
+    public mutating func applyAICorrection(_ aiItem: PhotoLogItem) {
         name = aiItem.name
         let g = max(aiItem.grams, 1)
         let c = max(aiItem.calories, 0)
@@ -236,7 +240,7 @@ struct PhotoLogEditableItem: Identifiable, Equatable {
     /// Substitutes the canonical name, recalculates per-gram rates from the
     /// DB food's macros, and rescales to the current grams. If grams is 0,
     /// a category-aware portion default is applied first.
-    mutating func applyHintMatch(_ food: Food) {
+    public mutating func applyHintMatch(_ food: Food) {
         name = food.name
         if grams < 1 {
             grams = PhotoLogMatcher.portionDefault(category: food.category, recognizedName: food.name)
@@ -261,7 +265,7 @@ struct PhotoLogEditableItem: Identifiable, Equatable {
     /// hand. Defaults to 100 g / zero macros; per-gram rates stay at zero
     /// until a macro is typed so `rescale()` doesn't wipe the user's input
     /// when they adjust the amount.
-    static func blank() -> PhotoLogEditableItem {
+    public static func blank() -> PhotoLogEditableItem {
         let seed = PhotoLogItem(
             name: "",
             grams: 100,
@@ -279,28 +283,18 @@ struct PhotoLogEditableItem: Identifiable, Equatable {
     }
 }
 
-/// UI phases of the Photo Log flow. A single `@State` holds this so the
-/// capture/review sheet can swap layouts without nested sheets. #224 / #267.
-enum PhotoLogViewState: Equatable {
-    case capture                            // pick photo OR take one
-    case analyzing                          // in-flight API call
-    case review([PhotoLogEditableItem], Confidence, String?)  // items, overall, notes
-    case empty                              // 0 items returned
-    case error(String)                      // user-visible message
-}
-
 /// Summed macro totals across the currently-selected items. Pure helper so
 /// the review view can re-render on check/uncheck without re-running UI code.
-struct PhotoLogTotals: Equatable {
-    var calories: Int
-    var proteinG: Int
-    var carbsG: Int
-    var fatG: Int
-    var selectedCount: Int
+public struct PhotoLogTotals: Equatable {
+    public var calories: Int
+    public var proteinG: Int
+    public var carbsG: Int
+    public var fatG: Int
+    public var selectedCount: Int
 
-    static let zero = PhotoLogTotals(calories: 0, proteinG: 0, carbsG: 0, fatG: 0, selectedCount: 0)
+    public static let zero = PhotoLogTotals(calories: 0, proteinG: 0, carbsG: 0, fatG: 0, selectedCount: 0)
 
-    static func sum(_ items: [PhotoLogEditableItem]) -> PhotoLogTotals {
+    public static func sum(_ items: [PhotoLogEditableItem]) -> PhotoLogTotals {
         var totals = PhotoLogTotals.zero
         for item in items where item.selected {
             totals.calories += item.calories.rounded().safeInt  // #1036: editable macros can be huge
