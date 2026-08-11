@@ -80,7 +80,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.drift.health
         MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: 380
+        CURRENT_PROJECT_VERSION: 381
         SWIFT_VERSION: "6.0"
         # SharedUI/ compiles in three configurations: this app, the Skip
         # module's Android pass, AND its Darwin (iOS) bridging pass. Platform
@@ -125,7 +125,7 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.drift.health.widget
         MARKETING_VERSION: "0.1.0"
-        CURRENT_PROJECT_VERSION: 380
+        CURRENT_PROJECT_VERSION: 381
         SWIFT_VERSION: "6.0"
         INFOPLIST_FILE: DriftWidget/Info.plist
         DEVELOPMENT_TEAM: ZJ5H5XH82A
