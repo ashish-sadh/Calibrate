@@ -203,6 +203,11 @@ public enum FoodService {
         (try? AppDatabase.shared.fetchFoodEntries(forMealLog: id)) ?? []
     }
 
+    /// Every food entry ever logged, oldest first — the whole diary, for CSV export.
+    public static func fetchAllFoodEntriesForExport() -> [FoodExportRow] {
+        (try? AppDatabase.shared.fetchAllFoodEntriesForExport()) ?? []
+    }
+
     /// Fetch food items for plant points calculation.
     public static func fetchFoodItemsForPlantPoints(from startDate: String, to endDate: String) -> [PlantPointsFoodItem] {
         (try? AppDatabase.shared.fetchFoodItemsForPlantPoints(from: startDate, to: endDate)) ?? []

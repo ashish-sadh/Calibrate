@@ -893,27 +893,10 @@ struct SettingsView: View {
     }
 
     private func exportFoodLogsCSV() -> URL? {
-        var csv = "Date,Time,Food,Calories,Protein,Carbs,Fat,Fiber,Servings\n"
-        // Export last 90 days
-        let today = Date()
-        for dayOffset in 0..<90 {
-            guard let date = Calendar.current.date(byAdding: .day, value: -dayOffset, to: today) else { continue }
-            let dateStr = DateFormatters.dateOnly.string(from: date)
-            let logs = FoodService.fetchMealLogs(for: dateStr)
-            guard !logs.isEmpty else { continue }
-            for log in logs {
-                guard let logId = log.id else { continue }
-                let entries = FoodService.fetchFoodEntries(forMealLog: logId)
-                guard !entries.isEmpty else { continue }
-                for e in entries {
-                    let fName = e.foodName.replacingOccurrences(of: "\"", with: "\"\"")
-                    let time = (DateFormatters.iso8601.date(from: e.loggedAt) ?? DateFormatters.sqliteDatetime.date(from: e.loggedAt))
-                        .map { DateFormatters.shortTime.string(from: $0) } ?? ""
-                    csv += "\"\(dateStr)\",\"\(time)\",\"\(fName)\",\(Int(e.totalCalories)),\(Int(e.totalProtein)),\(Int(e.totalCarbs)),\(Int(e.totalFat)),\(Int(e.totalFiber)),\(String(format: "%.1f", e.servings))\n"
-                }
-            }
-        }
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("drift_food_logs.csv")
+        // The whole diary, not a window — one query, oldest entry first.
+        let csv = FoodCSVExport.csv(rows: FoodService.fetchAllFoodEntriesForExport())
+        let dateStr = DateFormatters.dateOnly.string(from: Date())
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("drift_food_logs_\(dateStr).csv")
         try? csv.write(to: url, atomically: true, encoding: .utf8)
         return url
     }

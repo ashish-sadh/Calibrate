@@ -331,6 +331,26 @@ extension AppDatabase {
         }) ?? []
     }
 
+    /// Every food entry ever logged, oldest first, each paired with the day it
+    /// belongs to. Deliberately unbounded: the CSV export used to walk the last 90
+    /// days one query at a time, so anyone with a longer history silently got a
+    /// truncated file that looked complete (field report 2026-08-16).
+    public func fetchAllFoodEntriesForExport() throws -> [FoodExportRow] {
+        try dbWriter.read { db in
+            try Row.fetchAll(db, sql: """
+                -- logged_at is the last resort: both date columns are populated in
+                -- practice, but a row with neither still belongs in the user's export.
+                SELECT fe.*, COALESCE(fe.date, ml.date, substr(fe.logged_at, 1, 10)) AS export_date
+                FROM food_entry fe
+                LEFT JOIN meal_log ml ON fe.meal_log_id = ml.id
+                ORDER BY export_date ASC, fe.logged_at ASC
+                """).map { row in
+                let date: String = row["export_date"] ?? ""
+                return try FoodExportRow(date: date, entry: FoodEntry(row: row))
+            }
+        }
+    }
+
     public func fetchFoodEntries(forMealLog mealLogId: Int64) throws -> [FoodEntry] {
         try dbWriter.read { db in
             try FoodEntry
