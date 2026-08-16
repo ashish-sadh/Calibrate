@@ -3074,5 +3074,26 @@
    "Custom entry sheet: time slider + meal chips; Scan folded into search bar",
    "coach view: anatomical recovery + DEXA figures, collapsible sections"
   ]
+ },
+ {
+  "build": 382,
+  "date": "2026-08-16T10:58:59-07:00",
+  "description": "Android parity run (Drift Coach tools, TDEE, Photo Log, shared meal card) plus a full-history data export",
+  "fixes": [
+   "food-log CSV export covered only the last 90 days \u2014 it now exports the whole diary",
+   "Drift Coach on Android executes tools again and repaints its own replies",
+   "Android startup refreshes weight trend + TDEE instead of showing a flat 2000 kcal",
+   "AI review rows round macros; \"no food in this photo\" reads as an empty state, not a network error",
+   "meal-row Remove button no longer wraps mid-word",
+   "unreadable Muscle Recovery labels and resume-pill clearance",
+   "worldwide leaderboard emptied at every Monday rollover; tagline saves now persist"
+  ],
+  "features": [
+   "Android: Drift Coach logs food through a seeded review sheet",
+   "Android: Photo Log capture screen, Daily Average energy-balance card, shared Today meal card",
+   "workout: swap an exercise mid-session from the inline chat; persistent minimized-workout pill",
+   "coach: anatomy knowledge base + inline muscle diagram in chat; draft and start one session",
+   "\"Report a bug\" files an in-app ticket instead of linking out to GitHub"
+  ]
  }
 ]

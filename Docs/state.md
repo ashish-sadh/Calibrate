@@ -4,7 +4,7 @@
 AI-first local health tracker. AI chat is the primary interface — every data entry doable through conversation. Traditional UI for visual analytics and fallback. No cloud, no accounts. Published on TestFlight as "Drift Fitness" (bundle: com.drift.health).
 
 ## Numbers
-- **Version:** 0.1.0, Build 380 (iOS) · 90 (Android Play internal)
+- **Version:** 0.1.0, Build 382 (iOS) · 93 (Android Play internal)
 - **Tests:** 1,274 iOS DriftTests (UI/HealthKit/OCR-bound only — bulk of suite migrated down) + 2,760 DriftCoreTests in 148 suites (cross-platform pure-logic suite, 1 known issue); LLM eval ~160+ cases in DriftLLMEvalMacOS. (DriftCore count re-measured 2026-08-16; iOS count last re-measured 2026-07-31.)
 - **AI Eval:** 400+ scenarios in eval harness + LLM eval (~130-case gold set in IntentRoutingEval)
 - **Per-tool Reliability (Gemma 4, 50-query gold set):** log_food 10/10 (100%), edit_meal 9/10 (90%, tuned +10% from 80%), log_weight 10/10 (100%), mark_supplement 10/10 (100%), food_info 9/10 (90%) — overall 48/50 (96%)
