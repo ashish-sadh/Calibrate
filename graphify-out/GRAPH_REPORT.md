@@ -1,12 +1,12 @@
 # Graph Report - /Users/ashishsadh/workspace/Drift  (2026-08-17)
 
 ## Corpus Check
-- 1013 files · ~5,150,483 words
+- 1013 files · ~5,150,869 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 17529 nodes · 58829 edges · 200 communities detected
-- Extraction: 63% EXTRACTED · 37% INFERRED · 0% AMBIGUOUS · INFERRED: 22012 edges (avg confidence: 0.8)
+- 17533 nodes · 58847 edges · 192 communities detected
+- Extraction: 63% EXTRACTED · 37% INFERRED · 0% AMBIGUOUS · INFERRED: 22021 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -202,14 +202,6 @@
 - [[_COMMUNITY_Community 189|Community 189]]
 - [[_COMMUNITY_Community 190|Community 190]]
 - [[_COMMUNITY_Community 191|Community 191]]
-- [[_COMMUNITY_Community 192|Community 192]]
-- [[_COMMUNITY_Community 193|Community 193]]
-- [[_COMMUNITY_Community 194|Community 194]]
-- [[_COMMUNITY_Community 195|Community 195]]
-- [[_COMMUNITY_Community 196|Community 196]]
-- [[_COMMUNITY_Community 197|Community 197]]
-- [[_COMMUNITY_Community 198|Community 198]]
-- [[_COMMUNITY_Community 199|Community 199]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `date` - 632 edges
@@ -224,134 +216,134 @@
 10. `Font` - 197 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `forceRelease()` --calls--> `confirm`  [INFERRED]
+  /Users/ashishsadh/workspace/Drift/command-center/app.js → /Users/ashishsadh/workspace/Drift/DriftCore/Sources/DriftCore/AI/Tools/ToolSchema.swift
+- `BiomarkerCardData` --calls--> `biomarkerCardAllOptimal()`  [INFERRED]
+  /Users/ashishsadh/workspace/Drift/drift-android/Sources/DriftAndroid/SharedUICopy/AIChatViewModel.swift → /Users/ashishsadh/workspace/Drift/DriftTests/ConfirmationCardTests.swift
 - `rounded()` --calls--> `custom`  [INFERRED]
   /Users/ashishsadh/workspace/Drift/drift-android/Sources/DriftAndroid/SharedUICopy/Theme.swift → /Users/ashishsadh/workspace/Drift/DriftCore/Sources/DriftCore/Models/WeightGoal.swift
+- `rounded()` --calls--> `custom`  [INFERRED]
+  /Users/ashishsadh/workspace/Drift/drift-android/Sources/DriftAndroid/SharedUICopy/Theme.swift → /Users/ashishsadh/workspace/Drift/drift-android/Sources/DriftAndroid/SharedUICopy/AddSupplementView.swift
 - `weightEntryKgToLbsConversion()` --calls--> `WeightEntry`  [INFERRED]
   /Users/ashishsadh/workspace/Drift/DriftCore/Tests/DriftCoreTests/RobustnessTests.swift → /Users/ashishsadh/workspace/Drift/DriftCore/Sources/DriftCore/Models/WeightEntry.swift
-- `foodEntryTotalCaloriesZeroServings()` --calls--> `FoodEntry`  [INFERRED]
-  /Users/ashishsadh/workspace/Drift/DriftCore/Tests/DriftCoreTests/RobustnessTests.swift → /Users/ashishsadh/workspace/Drift/DriftCore/Sources/DriftCore/Models/FoodEntry.swift
-- `foodEntryTotalMacros()` --calls--> `FoodEntry`  [INFERRED]
-  /Users/ashishsadh/workspace/Drift/DriftCore/Tests/DriftCoreTests/RobustnessTests.swift → /Users/ashishsadh/workspace/Drift/DriftCore/Sources/DriftCore/Models/FoodEntry.swift
-- `foodEntryFractionalServings()` --calls--> `FoodEntry`  [INFERRED]
-  /Users/ashishsadh/workspace/Drift/DriftCore/Tests/DriftCoreTests/RobustnessTests.swift → /Users/ashishsadh/workspace/Drift/DriftCore/Sources/DriftCore/Models/FoodEntry.swift
 
 ## Communities
 
 ### Community 0 - "Community 0"
 Cohesion: 0.0
-Nodes (3697): add64(), allBase85(), anyOfInStr(), apndFileControl(), apndIsAppendvfsDatabase(), apndIsOrdinaryDatabaseFile(), apndOpen(), apndReadMark() (+3689 more)
+Nodes (2521): cli_vprintf(), disable_debug_trace_modes(), fiddle_reset_db(), fsdirRegister(), idxRegisterVtab(), recoverEnterMutex(), recoverLeaveMutex(), restore_debug_trace_modes() (+2513 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.0
-Nodes (947): saveAsTemplate(), logFood, AIChainOfThought, Step, AIChainOfThoughtPlanBoundaryTests, AIContextBuilder, AIContextBuilder, AIDataCache (+939 more)
+Nodes (2186): add64(), allBase85(), anyOfInStr(), apndFileControl(), apndIsAppendvfsDatabase(), apndIsOrdinaryDatabaseFile(), apndOpen(), apndReadMark() (+2178 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.0
-Nodes (940): saveWorkout(), AIActionExecutor, AIActionExecutor, AIActionExecutor, FoodMatch, WeightIntent, AIChatViewModel, AIEvalHarness (+932 more)
+Nodes (1005): saveAsTemplate(), logFood, AIChainOfThought, Step, AIChainOfThoughtPlanBoundaryTests, AIChatViewModel, InterviewStep, AIChatViewModel (+997 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.0
-Nodes (557): completionSheet(), AddProgressEntryView, CameraTarget, MeasurementGuideSheet, AddMode, custom, popular, AddSupplementView (+549 more)
+Nodes (763): AIActionExecutor, AIActionExecutor, FoodMatch, WeightIntent, AIChatViewModel, AIEvalHarness, friendlyMessageTranslatesOfflineError(), friendlyMessageTranslatesTimeout() (+755 more)
 
 ### Community 4 - "Community 4"
 Cohesion: 0.0
-Nodes (709): Verdict, no, unclear, yes, WorkoutExercise, AIBackend, AIBackendType, foundationModels (+701 more)
+Nodes (765): AddMode, custom, popular, AddSupplementView, Verdict, no, unclear, yes (+757 more)
 
 ### Community 5 - "Community 5"
 Cohesion: 0.01
-Nodes (372): AIBackend, DeviceCapability, AIBackendCoordinator, AIBackendCoordinator, AIBackendCoordinatorTests, StaleLocalBackendMock, gemma4URLIsPinnedToRevision(), isValidGGUFAcceptsGGUFMagic() (+364 more)
+Nodes (388): completionSheet(), AddProgressEntryView, CameraTarget, MeasurementGuideSheet, AIChatInsightsView, AIChatView, AIChatView, AIChatView (+380 more)
 
 ### Community 6 - "Community 6"
 Cohesion: 0.01
-Nodes (962): addAggInfoColumn(), addAggInfoFunc(), addArgumentToVtab(), addModuleArgument(), addOp4IntSlow(), addSpaceSeparator(), adjustOrderByCol(), agginfoFree() (+954 more)
+Nodes (320): gemma4URLIsPinnedToRevision(), isValidGGUFAcceptsGGUFMagic(), isValidGGUFRejectsEmptyFile(), isValidGGUFRejectsNonGGUFFile(), nonRetryableErrorsAreNotRetried(), retryableURLErrorsIncludeTransientNetworkFailures(), AIScreen, algorithm (+312 more)
 
 ### Community 7 - "Community 7"
 Cohesion: 0.01
-Nodes (407): AffirmationParser, AffirmationParserBoundaryTests, affirmationNo(), affirmationUnclear(), affirmationYes(), longCorrectiveSentenceIsUnclearNotCancel(), negativeBeatsAmbiguous(), AIActionParser (+399 more)
+Nodes (322): calPatternDoesNotMatchCalcium(), confirmCopyStaticOverrideExecutesCopy(), conversationPhaseAwaitingExercises(), conversationPhaseAwaitingMeal(), conversationPhaseStartsIdle(), conversationResetPreservesMetadata(), copyYesterdayStaticOverrideShowsPreview(), mealPlanningPhaseDoesNotBlockTopicSwitch() (+314 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.01
-Nodes (363): food, intentClassifierClassifyLegacyCoversAsyncPath(), food, food, foodEntryConvenienceInitCopiesMicronutrients(), foodEntryConvenienceInitWithNilMicronutrients(), foodEntryMicronutrientsNilByDefault(), foodEntryMicronutrientsScaleWithServings() (+355 more)
+Nodes (370): ActiveWorkoutRestTimerTests, ActiveExercise, ActiveSet, addExercise(), addFromCommand(), askCoach(), cancelRestEndNotification(), captureNotesBaseline() (+362 more)
 
 ### Community 9 - "Community 9"
 Cohesion: 0.01
-Nodes (111): AIActionParserTests, aiParseFoodWithoutAmount(), aiParseFoodWithServings(), aiParseLogFood(), aiParseMultipleActionsFirstWins(), aiParseNoAction(), aiParseShowWeight(), aiParseStartWorkout() (+103 more)
+Nodes (368): AffirmationParser, AffirmationParserBoundaryTests, affirmationNo(), affirmationUnclear(), affirmationYes(), longCorrectiveSentenceIsUnclearNotCancel(), negativeBeatsAmbiguous(), synonymExpansionBasic() (+360 more)
 
 ### Community 10 - "Community 10"
 Cohesion: 0.01
-Nodes (55): splitDefinitionsPPLHasThreeDays(), AppleLocalNotifier, BriefingRepush, BriefingSnapshot, CoachChatNoteTaker, ChatView, CoachPageView, CoachSharingCard (+47 more)
+Nodes (351): food, AppDatabaseFoodCountTests, makeTestDB(), food, food, foodEntryConvenienceInitCopiesMicronutrients(), foodEntryConvenienceInitWithNilMicronutrients(), foodEntryMicronutrientsNilByDefault() (+343 more)
 
 ### Community 11 - "Community 11"
 Cohesion: 0.01
-Nodes (272): CodingKeys, barcode, brand, caloriesPer100g, carbsGPer100g, createdAt, fatGPer100g, fiberGPer100g (+264 more)
+Nodes (65): AIBackend, DeviceCapability, AIBackendCoordinator, AIBackendCoordinator, AIBackendCoordinatorTests, StaleLocalBackendMock, AmbiguityEval, value (+57 more)
 
 ### Community 12 - "Community 12"
-Cohesion: 0.02
-Nodes (132): beginListening(), cancelFromImmersive(), confirmFromImmersive(), degradeUnportedSheet(), handleTalkModeChange(), init(), AIChatViewModel, InterviewStep (+124 more)
+Cohesion: 0.01
+Nodes (69): Action, createWorkout, logWeight, none, showNutrition, showWeight, startWorkout, splitDefinitionsPPLHasThreeDays() (+61 more)
 
 ### Community 13 - "Community 13"
 Cohesion: 0.01
-Nodes (88): lineBufferStandardOutput(), App, AppDatabaseInitializationTests, TestDBError, ComposeKickService, CustomStringConvertible, DriftAndroidAppDelegate, DriftAndroidRootView (+80 more)
+Nodes (264): AppDatabase, CodingKeys, barcode, brand, caloriesPer100g, carbsGPer100g, createdAt, fatGPer100g (+256 more)
 
 ### Community 14 - "Community 14"
 Cohesion: 0.02
-Nodes (168): FoodLogIntentBridge, BiomarkerCatalogMapTests, CompositeFoodBounds, CompositeFoodExtractor, FMCompositeFoodEntry, FMCompositeFoodExtractorError, bounded, notComposite (+160 more)
+Nodes (81): AIActionParser, AIActionParserTests, aiParseFoodWithoutAmount(), aiParseFoodWithServings(), aiParseLogFood(), aiParseMultipleActionsFirstWins(), aiParseNoAction(), aiParseShowWeight() (+73 more)
 
 ### Community 15 - "Community 15"
 Cohesion: 0.02
-Nodes (124): ActiveWorkoutRestTimerTests, ActiveExercise, ActiveSet, addExercise(), addFromCommand(), askCoach(), cancelRestEndNotification(), captureNotesBaseline() (+116 more)
+Nodes (174): AIActionExecutor, FoodLogIntentBridge, CompositeFoodBounds, CompositeFoodExtractor, FMCompositeFoodEntry, FMCompositeFoodExtractorError, bounded, notComposite (+166 more)
 
 ### Community 16 - "Community 16"
-Cohesion: 0.02
-Nodes (84): intentClassifierClassifyFullCoversAsyncPath(), MemoryItem, CoachMemoryExtractor, CoachMemoryStore, intentThreshold_crossDomainInsightAlwaysProceeds(), intentThreshold_patternDetectorAlwaysProceeds(), IntentClassifier, activeSystemPrompt_llamaCppReturnsIntelligencePrompt() (+76 more)
+Cohesion: 0.01
+Nodes (81): AndroidLocalNotifier, lineBufferStandardOutput(), App, AppDatabaseInitializationTests, TestDBError, CameraCaptureFacade, onCaptured(), captureImage() (+73 more)
 
 ### Community 17 - "Community 17"
 Cohesion: 0.02
-Nodes (123): FoodInfoGoalProgressTests, activityLoadClassification(), defaultFiberGRoundsUpToNearestFive(), dietPrefHighProtein(), dietPrefLowCarb(), dietPrefLowFatStillMeetsMinimum(), dynamicSleepNeedCapped(), macroTargetsAutoCalculate() (+115 more)
+Nodes (149): BiomarkerCatalogMapTests, extractorCapturesExplicitRemember(), extractorCapturesGoals(), extractorCapturesPreferences(), extractorIgnoresPlainChatter(), CompositeFoodExtractorFMEval, ParityReport, Row (+141 more)
 
 ### Community 18 - "Community 18"
 Cohesion: 0.02
-Nodes (98): BriefSignal, CoachingBriefService, alertSignalMapsDirectionAndId(), buildBriefInputCapsAtThreeAcrossSources(), dedupKeepsHighestPriorityFirstWinnerOnIdCollision(), makeAlert(), makePattern(), notThinDataAtBoundaryOfThreeDays() (+90 more)
+Nodes (58): beginListening(), cancelFromImmersive(), confirmFromImmersive(), degradeUnportedSheet(), handleTalkModeChange(), init(), rearmMic(), startOrStopVoice() (+50 more)
 
 ### Community 19 - "Community 19"
-Cohesion: 0.03
-Nodes (124): commaGroupedNumberParsed(), dateParsingDDMonYYYY(), dateParsingFullMonthName(), dateParsingMMDDYYYY(), dateParsingMonthNameDDYYYY(), dateParsingYYYYMMDD(), emptyInputReturnsEmpty(), findResult() (+116 more)
+Cohesion: 0.02
+Nodes (44): CoachIntake, CoachAskDetectionTests, CoachIntakeTests, OperatorLatsTranscriptTests, TodayRationaleTests, CoachDraftField, CoachMeView, Message (+36 more)
 
 ### Community 20 - "Community 20"
-Cohesion: 0.03
-Nodes (31): behaviorInsightStructFields(), BehaviorInsight, BehaviorInsightServiceTests, BriefItemTests, BriefItem, CoachingBriefPayload, brief, thinData (+23 more)
+Cohesion: 0.02
+Nodes (58): intentThreshold_crossDomainInsightAlwaysProceeds(), intentThreshold_patternDetectorAlwaysProceeds(), asymmetry_foodVsWeightOnMediumIncomplete(), asymmetry_supplementWriteVsRead(), data_tools_neverClarify(), domainMapping_coversAllClassifierTools(), driftSensitivity_foodMediumMustProceed(), driftSensitivity_metaMediumMustClarify() (+50 more)
 
 ### Community 21 - "Community 21"
 Cohesion: 0.04
-Nodes (13): CoachIntake, CoachIntakeTests, OperatorLatsTranscriptTests, TodayRationaleTests, CoachDraftField, CoachMeView, Message, CoachProgramBuilder (+5 more)
+Nodes (69): FoodInfoGoalProgressTests, defaultFiberGRoundsUpToNearestFive(), dietPrefHighProtein(), dietPrefLowCarb(), dietPrefLowFatStillMeetsMinimum(), macroTargetsAutoCalculate(), macroTargetsFiberTargetRespectsFloor(), macroTargetsFiberWithAllMacrosSet() (+61 more)
 
 ### Community 22 - "Community 22"
-Cohesion: 0.06
-Nodes (47): MacroField, calories, carbs, fat, protein, PhotoLogEditableItem, PhotoLogTotals, addItemBlankRowHasZeroMacrosUntilPicked() (+39 more)
+Cohesion: 0.05
+Nodes (16): behaviorInsightStructFields(), BehaviorInsight, BehaviorInsightServiceTests, CoachingBriefCardTests, FoundationModelsFoodExtractor, glucoseSpike_aboveThreshold_fires(), glucoseSpike_belowDataThreshold_returnsNil(), glucoseSpike_belowSpikeThreshold_returnsNil() (+8 more)
 
 ### Community 23 - "Community 23"
-Cohesion: 0.05
-Nodes (14): BiomarkerInsights, BiomarkerInsightsTests, BiomarkerInsightsTrendBoundaryTests, CompositeFoodExtractorFMEval, ParityReport, Row, LabTextParser, LabTextParserDateBoundaryTests (+6 more)
+Cohesion: 0.06
+Nodes (42): PhotoLogEditableItem, PhotoLogTotals, addItemBlankRowHasZeroMacrosUntilPicked(), addItemDBPickPopulatesNameAndMacros(), aiReturnedServingUnitAndAmountOverrideHeuristic(), aiUnknownUnitFallsBackToHeuristic(), applyAICorrectionPreservesSelectedFlag(), applyAICorrectionResetsManuallyEditedFlag() (+34 more)
 
 ### Community 24 - "Community 24"
-Cohesion: 0.05
-Nodes (1): IntentRoutingEval
+Cohesion: 0.04
+Nodes (41): intentClassifierClassifyLegacyCoversAsyncPath(), DomainExtractorEval, plantPointsAliasNormalization(), plantPointsAvocadoDeduplication(), plantPointsKeywordExtraction(), plantPointsNOVA3UsesIngredients(), plantPointsNOVA4SkipsEverything(), plantPointsProcessedExcluded() (+33 more)
 
 ### Community 25 - "Community 25"
-Cohesion: 0.05
-Nodes (32): AppDatabase, AppDatabase, AppDatabaseFoodCountTests, makeTestDB(), DbKeyValueStore, HydrationService, HydrationServiceTests, HydrationUnitAliasTests (+24 more)
+Cohesion: 0.03
+Nodes (37): DownloadError, invalidGGUF, sizeMismatch, DownloadState, completed, downloading, error, idle (+29 more)
 
 ### Community 26 - "Community 26"
 Cohesion: 0.06
 Nodes (4): Rule, VoiceTranscriptionPostFixer, VoiceTranscriptionPostFixerBoundaryTests, VoiceTranscriptionPostFixerTests
 
 ### Community 27 - "Community 27"
-Cohesion: 0.06
-Nodes (24): AndroidLocalNotifier, CameraCaptureFacade, onCaptured(), captureImage(), facadeHasPermission(), facadeLaunch(), facadePermissionPoll(), facadePoll() (+16 more)
+Cohesion: 0.08
+Nodes (13): CyclePeriod, CycleCalculationsTests, cycleOvulationDay26(), cycleOvulationDay28(), cycleOvulationDay30(), cyclePhaseDay14IsOvulation(), cyclePhaseDay20IsLuteal(), cyclePhaseDay3IsMenstrual() (+5 more)
 
 ### Community 28 - "Community 28"
 Cohesion: 0.08
-Nodes (11): foodTiming_parseLocalHour_invalidReturnsNil(), foodTiming_parseLocalHour_utcMidnight(), MealTimingService, ReminderSlot, MealTimingServiceBoundaryTests, MealTimingServiceTests, TDEEEstimatorMedianTests, median_emptyInput_returnsZeroWithoutTrapping() (+3 more)
+Nodes (9): MealTimingService, ReminderSlot, MealTimingServiceBoundaryTests, MealTimingServiceTests, TDEEEstimatorMedianTests, median_emptyInput_returnsZeroWithoutTrapping(), median_evenCount_averagesMiddleTwo(), median_oddCount() (+1 more)
 
 ### Community 29 - "Community 29"
 Cohesion: 0.07
@@ -359,187 +351,187 @@ Nodes (9): BodySummaryCardPayload, BodySummaryCardsRow, BodySummaryPayloads, Goa
 
 ### Community 30 - "Community 30"
 Cohesion: 0.09
-Nodes (17): BackgroundTaskHandle, BackgroundTaskHandle, BackupScheduler, BGTask, SendableTaskBox, BackupSchedulerTests, Boom, CapturingSubmitter (+9 more)
+Nodes (16): BackgroundTaskHandle, BackgroundTaskHandle, BackupScheduler, BGTask, SendableTaskBox, BackupSchedulerTests, CapturingSubmitter, FakeTaskHandle (+8 more)
 
 ### Community 31 - "Community 31"
-Cohesion: 0.13
-Nodes (36): fileTail(), lockName(), strappend(), vfstrace_errcode_name(), vfstrace_print_errcode(), vfstrace_printf(), vfstraceAccess(), vfstraceCheckReservedLock() (+28 more)
-
-### Community 32 - "Community 32"
-Cohesion: 0.15
-Nodes (24): hasRequiredParams_editMeal_actionOnly(), hasRequiredParams_foodInfo_queryOrName(), hasRequiredParams_logFood_emptyParams(), hasRequiredParams_logFood_nameOnly(), hasRequiredParams_logWeight_valueOnly(), hasRequiredParams_markSupplement_nameOnly(), hasRequiredParams_nonTargetTool_defaultsTrue(), noRetryWhenFoodInfoHasNameButNoQuery() (+16 more)
-
-### Community 33 - "Community 33"
-Cohesion: 0.13
+Cohesion: 0.12
 Nodes (4): InviteLink, InviteLinkTests, InviteShareSheet, SharingDeepLink
 
-### Community 34 - "Community 34"
+### Community 32 - "Community 32"
 Cohesion: 0.18
 Nodes (3): BodyCompositionAnalysis, BodyCompositionAnalysisEdgeCaseTests, BodyCompositionAnalysisTests
 
-### Community 35 - "Community 35"
-Cohesion: 0.22
-Nodes (12): PhotoLogService, ResponseCache, analyzeOfflineThrowsOfflineError(), differentImagesHitNetworkEachTime(), FakeReachability, FakeVisionClient, preprocessSkipsDownscaleForSmallImage(), sameImageIsOnlyAnalyzedOnce() (+4 more)
+### Community 33 - "Community 33"
+Cohesion: 0.13
+Nodes (7): AndroidLaunchWiringTests, WorkoutEncouragement, WorkoutEncouragementEdgeCaseTests, allLinesAreShortEnoughToGlance(), exerciseCompleteInterpolatesRemaining(), linesRotateDeterministicallyAndNeverRepeatBackToBack(), zeroRemainingFallsThroughToWorkoutComplete()
 
-### Community 36 - "Community 36"
+### Community 34 - "Community 34"
 Cohesion: 0.23
 Nodes (5): Series, WeightChartSeriesEdgeCaseTests, WeightChartSeriesTests, daily, weekly
 
-### Community 37 - "Community 37"
+### Community 35 - "Community 35"
 Cohesion: 0.19
 Nodes (11): Cadence, adherence, daily, dailyWithGap, everyN, LCG, Noise, ar1 (+3 more)
 
-### Community 38 - "Community 38"
-Cohesion: 0.35
-Nodes (10): lastWeight(), deleteWorkout(), lastWeightsEmptyInputReturnsEmpty(), lastWeightsIsExactNameMatch(), lastWeightsMatchesPerNameLastWeight(), lastWeightsNilWeightOnNewestSetYieldsNoEntry(), lastWeightsReturnsOnlyLoggedNames(), lastWeightsSkipsWarmupSets() (+2 more)
-
-### Community 39 - "Community 39"
-Cohesion: 0.14
-Nodes (11): EvalCategory, contextSwitch, foodRouting, multiTurn, navigation, quickReplyPills, regression, supplement (+3 more)
-
-### Community 40 - "Community 40"
-Cohesion: 0.35
-Nodes (11): FoodCorrelation, GlucoseFoodCorrelationTool, glucoseFood_emptyFoodEntriesReturnsEmpty(), glucoseFood_emptyReadingsReturnsEmpty(), glucoseFood_foodThatLowersGlucoseRanksLast(), glucoseFood_noGlucoseAroundFoodTime(), glucoseFood_riceSpikesHigherThanEggs(), glucoseFood_sampleCountAccumulates() (+3 more)
-
-### Community 41 - "Community 41"
+### Community 36 - "Community 36"
 Cohesion: 0.18
-Nodes (6): CoachVoiceService, RecordingState, idle, recording, unavailable, SpeechRecognitionService
+Nodes (3): GlucoseSpikeAnalysisFormattingTests, ServingMultiplierStepper, ServingMultiplierStepperTests
 
-### Community 42 - "Community 42"
-Cohesion: 0.29
-Nodes (12): copy_stemmer(), doubleConsonant(), hasVowel(), isConsonant(), isVowel(), m_eq_1(), m_gt_0(), m_gt_1() (+4 more)
-
-### Community 43 - "Community 43"
+### Community 37 - "Community 37"
 Cohesion: 0.25
 Nodes (6): formatStep(), formatTotal(), LaunchTrace, logStep(), logTotal(), LaunchTraceTests
 
-### Community 44 - "Community 44"
+### Community 38 - "Community 38"
 Cohesion: 0.24
 Nodes (3): WeightChartTrendColorTests, SeriesCache, WeightChartView
 
-### Community 45 - "Community 45"
-Cohesion: 0.22
-Nodes (7): CircleState, idle, listening, processing, speaking, unavailable, ListeningCircle
-
-### Community 46 - "Community 46"
-Cohesion: 0.32
-Nodes (2): NudgeCoachSeed, NudgeCoachSeedTests
-
-### Community 47 - "Community 47"
+### Community 39 - "Community 39"
 Cohesion: 0.29
 Nodes (1): ImagePickerFacade
 
-### Community 48 - "Community 48"
+### Community 40 - "Community 40"
+Cohesion: 0.29
+Nodes (1): MeasurementSiteMetadataTests
+
+### Community 41 - "Community 41"
 Cohesion: 0.48
 Nodes (1): GlucoseReadingZoneTests
 
-### Community 49 - "Community 49"
+### Community 42 - "Community 42"
 Cohesion: 0.29
 Nodes (0): 
 
-### Community 50 - "Community 50"
-Cohesion: 0.33
-Nodes (2): DriftCoachSheet, DriftCoachSheetTests
-
-### Community 51 - "Community 51"
+### Community 43 - "Community 43"
 Cohesion: 0.48
 Nodes (2): GGML_ATTRIBUTE_FORMAT(), ggml_unused_vars_impl()
 
-### Community 52 - "Community 52"
+### Community 44 - "Community 44"
 Cohesion: 0.33
 Nodes (1): DocumentPickerFacade
 
-### Community 53 - "Community 53"
+### Community 45 - "Community 45"
 Cohesion: 0.33
 Nodes (1): AIScreenRoutingTests
 
-### Community 54 - "Community 54"
+### Community 46 - "Community 46"
 Cohesion: 0.33
 Nodes (0): 
 
-### Community 55 - "Community 55"
+### Community 47 - "Community 47"
 Cohesion: 0.33
 Nodes (0): 
 
-### Community 56 - "Community 56"
+### Community 48 - "Community 48"
 Cohesion: 0.4
 Nodes (1): SafeIntTests
 
-### Community 57 - "Community 57"
+### Community 49 - "Community 49"
 Cohesion: 0.4
 Nodes (1): AIModelTierContractTests
 
-### Community 58 - "Community 58"
+### Community 50 - "Community 50"
 Cohesion: 0.4
 Nodes (1): DietPreferenceTests
 
-### Community 59 - "Community 59"
+### Community 51 - "Community 51"
 Cohesion: 0.4
 Nodes (1): SavedFoodCompatibilityTests
 
-### Community 60 - "Community 60"
+### Community 52 - "Community 52"
 Cohesion: 0.4
 Nodes (0): 
 
-### Community 61 - "Community 61"
+### Community 53 - "Community 53"
 Cohesion: 0.5
 Nodes (1): ComposeKick
 
-### Community 62 - "Community 62"
+### Community 54 - "Community 54"
 Cohesion: 0.5
 Nodes (1): HttpFacade
 
-### Community 63 - "Community 63"
+### Community 55 - "Community 55"
 Cohesion: 0.67
 Nodes (1): ProgressPhotoPaths
 
-### Community 64 - "Community 64"
+### Community 56 - "Community 56"
 Cohesion: 0.67
 Nodes (1): init()
 
-### Community 65 - "Community 65"
+### Community 57 - "Community 57"
 Cohesion: 0.67
 Nodes (1): AIChatView
 
-### Community 66 - "Community 66"
+### Community 58 - "Community 58"
 Cohesion: 0.67
 Nodes (1): Food
 
-### Community 67 - "Community 67"
+### Community 59 - "Community 59"
 Cohesion: 0.67
 Nodes (1): AIScreenTracker
 
-### Community 68 - "Community 68"
+### Community 60 - "Community 60"
 Cohesion: 0.67
 Nodes (0): 
 
-### Community 69 - "Community 69"
+### Community 61 - "Community 61"
 Cohesion: 0.67
 Nodes (1): Tool modules grouped by domain.  Each module exposes a `register(mcp)` function
 
-### Community 70 - "Community 70"
+### Community 62 - "Community 62"
 Cohesion: 1.0
 Nodes (1): AppConfig
 
-### Community 71 - "Community 71"
+### Community 63 - "Community 63"
 Cohesion: 1.0
 Nodes (1): Food
 
-### Community 72 - "Community 72"
+### Community 64 - "Community 64"
 Cohesion: 1.0
 Nodes (1): DateFormatters
 
-### Community 73 - "Community 73"
+### Community 65 - "Community 65"
 Cohesion: 1.0
 Nodes (1): Double
 
-### Community 74 - "Community 74"
+### Community 66 - "Community 66"
 Cohesion: 1.0
 Nodes (1): DriftPlatform
 
-### Community 75 - "Community 75"
+### Community 67 - "Community 67"
 Cohesion: 1.0
 Nodes (1): Features
+
+### Community 68 - "Community 68"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 69 - "Community 69"
+Cohesion: 1.0
+Nodes (1): BackupKeys
+
+### Community 70 - "Community 70"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 71 - "Community 71"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 72 - "Community 72"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 73 - "Community 73"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 74 - "Community 74"
+Cohesion: 1.0
+Nodes (0): 
+
+### Community 75 - "Community 75"
+Cohesion: 1.0
+Nodes (1): pytest config: put drift_mcp package on sys.path for in-tree tests.
 
 ### Community 76 - "Community 76"
 Cohesion: 1.0
@@ -547,7 +539,7 @@ Nodes (0):
 
 ### Community 77 - "Community 77"
 Cohesion: 1.0
-Nodes (1): BackupKeys
+Nodes (0): 
 
 ### Community 78 - "Community 78"
 Cohesion: 1.0
@@ -571,7 +563,7 @@ Nodes (0):
 
 ### Community 83 - "Community 83"
 Cohesion: 1.0
-Nodes (1): pytest config: put drift_mcp package on sys.path for in-tree tests.
+Nodes (0): 
 
 ### Community 84 - "Community 84"
 Cohesion: 1.0
@@ -995,323 +987,291 @@ Nodes (0):
 
 ### Community 189 - "Community 189"
 Cohesion: 1.0
-Nodes (0): 
+Nodes (1): Return first non-zero value matching any of the given nutrient IDs (priority ord
 
 ### Community 190 - "Community 190"
 Cohesion: 1.0
-Nodes (0): 
-
-### Community 191 - "Community 191"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 192 - "Community 192"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 193 - "Community 193"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 194 - "Community 194"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 195 - "Community 195"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 196 - "Community 196"
-Cohesion: 1.0
-Nodes (0): 
-
-### Community 197 - "Community 197"
-Cohesion: 1.0
-Nodes (1): Return first non-zero value matching any of the given nutrient IDs (priority ord
-
-### Community 198 - "Community 198"
-Cohesion: 1.0
 Nodes (1): Returns (piece_g, cup_g, tbsp_g) from USDA foodPortions array.
 
-### Community 199 - "Community 199"
+### Community 191 - "Community 191"
 Cohesion: 1.0
 Nodes (1): Convert USDA all-caps descriptions to readable Title Case names.     e.g. 'APPLE
 
 ## Knowledge Gaps
 - **973 isolated node(s):** `Row`, `HardTurn`, `Scenario`, `Case`, `Case` (+968 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **Thin community `Community 70`** (2 nodes): `AppConfig`, `AppConfig.swift`
+- **Thin community `Community 62`** (2 nodes): `AppConfig`, `AppConfig.swift`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 71`** (2 nodes): `Food`, `Food+RecipeAccessors.swift`
+- **Thin community `Community 63`** (2 nodes): `Food`, `Food+RecipeAccessors.swift`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 72`** (2 nodes): `DateFormatters`, `DateFormatters.swift`
+- **Thin community `Community 64`** (2 nodes): `DateFormatters`, `DateFormatters.swift`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 73`** (2 nodes): `Double`, `SafeInt.swift`
+- **Thin community `Community 65`** (2 nodes): `Double`, `SafeInt.swift`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 74`** (2 nodes): `DriftPlatform`, `DriftPlatform.swift`
+- **Thin community `Community 66`** (2 nodes): `DriftPlatform`, `DriftPlatform.swift`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 75`** (2 nodes): `Features`, `Features.swift`
+- **Thin community `Community 67`** (2 nodes): `Features`, `Features.swift`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 76`** (2 nodes): `makeSession()`, `FoundationModelsBackend.swift`
+- **Thin community `Community 68`** (2 nodes): `makeSession()`, `FoundationModelsBackend.swift`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 77`** (2 nodes): `BackupKeys`, `BackupKeys.swift`
+- **Thin community `Community 69`** (2 nodes): `BackupKeys`, `BackupKeys.swift`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 78`** (2 nodes): `v6-app.jsx`, `V6App()`
+- **Thin community `Community 70`** (2 nodes): `v6-app.jsx`, `V6App()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 79`** (2 nodes): `v6-weight-log.jsx`, `V6WeightLogSheet()`
+- **Thin community `Community 71`** (2 nodes): `v6-weight-log.jsx`, `V6WeightLogSheet()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 80`** (2 nodes): `v6-ai.jsx`, `V6AISheet()`
+- **Thin community `Community 72`** (2 nodes): `v6-ai.jsx`, `V6AISheet()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 81`** (2 nodes): `v6-log-sheet.jsx`, `V6LogSheet()`
+- **Thin community `Community 73`** (2 nodes): `v6-log-sheet.jsx`, `V6LogSheet()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 82`** (2 nodes): `youtube_url()`, `add_youtube_urls.py`
+- **Thin community `Community 74`** (2 nodes): `youtube_url()`, `add_youtube_urls.py`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 83`** (2 nodes): `pytest config: put drift_mcp package on sys.path for in-tree tests.`, `conftest.py`
+- **Thin community `Community 75`** (2 nodes): `pytest config: put drift_mcp package on sys.path for in-tree tests.`, `conftest.py`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 84`** (1 nodes): `Package.swift`
+- **Thin community `Community 76`** (1 nodes): `Package.swift`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 85`** (1 nodes): `settings.gradle.kts`
+- **Thin community `Community 77`** (1 nodes): `settings.gradle.kts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 86`** (1 nodes): `build.gradle.kts`
+- **Thin community `Community 78`** (1 nodes): `build.gradle.kts`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 87`** (1 nodes): `Package.swift`
+- **Thin community `Community 79`** (1 nodes): `Package.swift`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 88`** (1 nodes): `DriftCore.swift`
+- **Thin community `Community 80`** (1 nodes): `DriftCore.swift`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 89`** (1 nodes): `__init__.py`
+- **Thin community `Community 81`** (1 nodes): `__init__.py`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 90`** (1 nodes): `ggml-vulkan.h`
+- **Thin community `Community 82`** (1 nodes): `ggml-vulkan.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 91`** (1 nodes): `ggml-virtgpu.h`
+- **Thin community `Community 83`** (1 nodes): `ggml-virtgpu.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 92`** (1 nodes): `ggml-zdnn.h`
+- **Thin community `Community 84`** (1 nodes): `ggml-zdnn.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 93`** (1 nodes): `ggml-opencl.h`
+- **Thin community `Community 85`** (1 nodes): `ggml-opencl.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 94`** (1 nodes): `ggml-hexagon.h`
+- **Thin community `Community 86`** (1 nodes): `ggml-hexagon.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 95`** (1 nodes): `ggml-cann.h`
+- **Thin community `Community 87`** (1 nodes): `ggml-cann.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 96`** (1 nodes): `ggml-cpp.h`
+- **Thin community `Community 88`** (1 nodes): `ggml-cpp.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 97`** (1 nodes): `ggml-sycl.h`
+- **Thin community `Community 89`** (1 nodes): `ggml-sycl.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 98`** (1 nodes): `ggml-blas.h`
+- **Thin community `Community 90`** (1 nodes): `ggml-blas.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 99`** (1 nodes): `ggml-backend.h`
+- **Thin community `Community 91`** (1 nodes): `ggml-backend.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 100`** (1 nodes): `ggml-openvino.h`
+- **Thin community `Community 92`** (1 nodes): `ggml-openvino.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 101`** (1 nodes): `ggml-cuda.h`
+- **Thin community `Community 93`** (1 nodes): `ggml-cuda.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 102`** (1 nodes): `ggml-alloc.h`
+- **Thin community `Community 94`** (1 nodes): `ggml-alloc.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 103`** (1 nodes): `ggml-zendnn.h`
+- **Thin community `Community 95`** (1 nodes): `ggml-zendnn.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 104`** (1 nodes): `ggml-opt.h`
+- **Thin community `Community 96`** (1 nodes): `ggml-opt.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 105`** (1 nodes): `llama.h`
+- **Thin community `Community 97`** (1 nodes): `llama.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 106`** (1 nodes): `ggml-metal.h`
+- **Thin community `Community 98`** (1 nodes): `ggml-metal.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 107`** (1 nodes): `ggml-cpu.h`
+- **Thin community `Community 99`** (1 nodes): `ggml-cpu.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 108`** (1 nodes): `gguf.h`
+- **Thin community `Community 100`** (1 nodes): `gguf.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 109`** (1 nodes): `ggml-webgpu.h`
+- **Thin community `Community 101`** (1 nodes): `ggml-webgpu.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 110`** (1 nodes): `ggml-rpc.h`
+- **Thin community `Community 102`** (1 nodes): `ggml-rpc.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 111`** (1 nodes): `ggml-vulkan.h`
+- **Thin community `Community 103`** (1 nodes): `ggml-vulkan.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 112`** (1 nodes): `ggml-virtgpu.h`
+- **Thin community `Community 104`** (1 nodes): `ggml-virtgpu.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 113`** (1 nodes): `ggml-zdnn.h`
+- **Thin community `Community 105`** (1 nodes): `ggml-zdnn.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 114`** (1 nodes): `ggml-opencl.h`
+- **Thin community `Community 106`** (1 nodes): `ggml-opencl.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 115`** (1 nodes): `ggml-hexagon.h`
+- **Thin community `Community 107`** (1 nodes): `ggml-hexagon.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 116`** (1 nodes): `ggml-cann.h`
+- **Thin community `Community 108`** (1 nodes): `ggml-cann.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 117`** (1 nodes): `ggml-cpp.h`
+- **Thin community `Community 109`** (1 nodes): `ggml-cpp.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 118`** (1 nodes): `ggml-sycl.h`
+- **Thin community `Community 110`** (1 nodes): `ggml-sycl.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 119`** (1 nodes): `ggml-blas.h`
+- **Thin community `Community 111`** (1 nodes): `ggml-blas.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 120`** (1 nodes): `ggml-backend.h`
+- **Thin community `Community 112`** (1 nodes): `ggml-backend.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 121`** (1 nodes): `ggml-openvino.h`
+- **Thin community `Community 113`** (1 nodes): `ggml-openvino.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 122`** (1 nodes): `ggml-cuda.h`
+- **Thin community `Community 114`** (1 nodes): `ggml-cuda.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 123`** (1 nodes): `ggml-alloc.h`
+- **Thin community `Community 115`** (1 nodes): `ggml-alloc.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 124`** (1 nodes): `ggml-zendnn.h`
+- **Thin community `Community 116`** (1 nodes): `ggml-zendnn.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 125`** (1 nodes): `ggml-opt.h`
+- **Thin community `Community 117`** (1 nodes): `ggml-opt.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 126`** (1 nodes): `llama.h`
+- **Thin community `Community 118`** (1 nodes): `llama.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 127`** (1 nodes): `ggml-metal.h`
+- **Thin community `Community 119`** (1 nodes): `ggml-metal.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 128`** (1 nodes): `ggml-cpu.h`
+- **Thin community `Community 120`** (1 nodes): `ggml-cpu.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 129`** (1 nodes): `gguf.h`
+- **Thin community `Community 121`** (1 nodes): `gguf.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 130`** (1 nodes): `ggml-webgpu.h`
+- **Thin community `Community 122`** (1 nodes): `ggml-webgpu.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 131`** (1 nodes): `ggml-rpc.h`
+- **Thin community `Community 123`** (1 nodes): `ggml-rpc.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 132`** (1 nodes): `sqlite3.h`
+- **Thin community `Community 124`** (1 nodes): `sqlite3.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 133`** (1 nodes): `sqlite3ext.h`
+- **Thin community `Community 125`** (1 nodes): `sqlite3ext.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 134`** (1 nodes): `ggml-vulkan.h`
+- **Thin community `Community 126`** (1 nodes): `ggml-vulkan.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 135`** (1 nodes): `ggml-virtgpu.h`
+- **Thin community `Community 127`** (1 nodes): `ggml-virtgpu.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 136`** (1 nodes): `ggml-zdnn.h`
+- **Thin community `Community 128`** (1 nodes): `ggml-zdnn.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 137`** (1 nodes): `ggml-opencl.h`
+- **Thin community `Community 129`** (1 nodes): `ggml-opencl.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 138`** (1 nodes): `ggml-hexagon.h`
+- **Thin community `Community 130`** (1 nodes): `ggml-hexagon.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 139`** (1 nodes): `ggml-cann.h`
+- **Thin community `Community 131`** (1 nodes): `ggml-cann.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 140`** (1 nodes): `ggml-cpp.h`
+- **Thin community `Community 132`** (1 nodes): `ggml-cpp.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 141`** (1 nodes): `ggml-sycl.h`
+- **Thin community `Community 133`** (1 nodes): `ggml-sycl.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 142`** (1 nodes): `ggml-blas.h`
+- **Thin community `Community 134`** (1 nodes): `ggml-blas.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 143`** (1 nodes): `ggml-backend.h`
+- **Thin community `Community 135`** (1 nodes): `ggml-backend.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 144`** (1 nodes): `ggml-openvino.h`
+- **Thin community `Community 136`** (1 nodes): `ggml-openvino.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 145`** (1 nodes): `ggml-cuda.h`
+- **Thin community `Community 137`** (1 nodes): `ggml-cuda.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 146`** (1 nodes): `ggml-alloc.h`
+- **Thin community `Community 138`** (1 nodes): `ggml-alloc.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 147`** (1 nodes): `ggml-zendnn.h`
+- **Thin community `Community 139`** (1 nodes): `ggml-zendnn.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 148`** (1 nodes): `ggml-opt.h`
+- **Thin community `Community 140`** (1 nodes): `ggml-opt.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 149`** (1 nodes): `llama.h`
+- **Thin community `Community 141`** (1 nodes): `llama.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 150`** (1 nodes): `ggml-metal.h`
+- **Thin community `Community 142`** (1 nodes): `ggml-metal.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 151`** (1 nodes): `ggml-cpu.h`
+- **Thin community `Community 143`** (1 nodes): `ggml-cpu.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 152`** (1 nodes): `gguf.h`
+- **Thin community `Community 144`** (1 nodes): `gguf.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 153`** (1 nodes): `ggml-webgpu.h`
+- **Thin community `Community 145`** (1 nodes): `ggml-webgpu.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 154`** (1 nodes): `ggml-rpc.h`
+- **Thin community `Community 146`** (1 nodes): `ggml-rpc.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 155`** (1 nodes): `ggml-vulkan.h`
+- **Thin community `Community 147`** (1 nodes): `ggml-vulkan.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 156`** (1 nodes): `ggml-virtgpu.h`
+- **Thin community `Community 148`** (1 nodes): `ggml-virtgpu.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 157`** (1 nodes): `ggml-zdnn.h`
+- **Thin community `Community 149`** (1 nodes): `ggml-zdnn.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 158`** (1 nodes): `ggml-opencl.h`
+- **Thin community `Community 150`** (1 nodes): `ggml-opencl.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 159`** (1 nodes): `ggml-hexagon.h`
+- **Thin community `Community 151`** (1 nodes): `ggml-hexagon.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 160`** (1 nodes): `ggml-cann.h`
+- **Thin community `Community 152`** (1 nodes): `ggml-cann.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 161`** (1 nodes): `ggml-cpp.h`
+- **Thin community `Community 153`** (1 nodes): `ggml-cpp.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 162`** (1 nodes): `ggml-sycl.h`
+- **Thin community `Community 154`** (1 nodes): `ggml-sycl.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 163`** (1 nodes): `ggml-blas.h`
+- **Thin community `Community 155`** (1 nodes): `ggml-blas.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 164`** (1 nodes): `ggml-backend.h`
+- **Thin community `Community 156`** (1 nodes): `ggml-backend.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 165`** (1 nodes): `ggml-openvino.h`
+- **Thin community `Community 157`** (1 nodes): `ggml-openvino.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 166`** (1 nodes): `ggml-cuda.h`
+- **Thin community `Community 158`** (1 nodes): `ggml-cuda.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 167`** (1 nodes): `ggml-alloc.h`
+- **Thin community `Community 159`** (1 nodes): `ggml-alloc.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 168`** (1 nodes): `ggml-zendnn.h`
+- **Thin community `Community 160`** (1 nodes): `ggml-zendnn.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 169`** (1 nodes): `ggml-opt.h`
+- **Thin community `Community 161`** (1 nodes): `ggml-opt.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 170`** (1 nodes): `llama.h`
+- **Thin community `Community 162`** (1 nodes): `llama.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 171`** (1 nodes): `ggml-metal.h`
+- **Thin community `Community 163`** (1 nodes): `ggml-metal.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 172`** (1 nodes): `ggml-cpu.h`
+- **Thin community `Community 164`** (1 nodes): `ggml-cpu.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 173`** (1 nodes): `gguf.h`
+- **Thin community `Community 165`** (1 nodes): `gguf.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 174`** (1 nodes): `ggml-webgpu.h`
+- **Thin community `Community 166`** (1 nodes): `ggml-webgpu.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 175`** (1 nodes): `ggml-rpc.h`
+- **Thin community `Community 167`** (1 nodes): `ggml-rpc.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 176`** (1 nodes): `ggml-vulkan.h`
+- **Thin community `Community 168`** (1 nodes): `ggml-vulkan.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 177`** (1 nodes): `ggml-virtgpu.h`
+- **Thin community `Community 169`** (1 nodes): `ggml-virtgpu.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 178`** (1 nodes): `ggml-zdnn.h`
+- **Thin community `Community 170`** (1 nodes): `ggml-zdnn.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 179`** (1 nodes): `ggml-opencl.h`
+- **Thin community `Community 171`** (1 nodes): `ggml-opencl.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 180`** (1 nodes): `ggml-hexagon.h`
+- **Thin community `Community 172`** (1 nodes): `ggml-hexagon.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 181`** (1 nodes): `ggml-cann.h`
+- **Thin community `Community 173`** (1 nodes): `ggml-cann.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 182`** (1 nodes): `ggml-cpp.h`
+- **Thin community `Community 174`** (1 nodes): `ggml-cpp.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 183`** (1 nodes): `ggml-sycl.h`
+- **Thin community `Community 175`** (1 nodes): `ggml-sycl.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 184`** (1 nodes): `ggml-blas.h`
+- **Thin community `Community 176`** (1 nodes): `ggml-blas.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 185`** (1 nodes): `ggml-backend.h`
+- **Thin community `Community 177`** (1 nodes): `ggml-backend.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 186`** (1 nodes): `ggml-openvino.h`
+- **Thin community `Community 178`** (1 nodes): `ggml-openvino.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 187`** (1 nodes): `ggml-cuda.h`
+- **Thin community `Community 179`** (1 nodes): `ggml-cuda.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 188`** (1 nodes): `ggml-alloc.h`
+- **Thin community `Community 180`** (1 nodes): `ggml-alloc.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 189`** (1 nodes): `ggml-zendnn.h`
+- **Thin community `Community 181`** (1 nodes): `ggml-zendnn.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 190`** (1 nodes): `ggml-opt.h`
+- **Thin community `Community 182`** (1 nodes): `ggml-opt.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 191`** (1 nodes): `llama.h`
+- **Thin community `Community 183`** (1 nodes): `llama.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 192`** (1 nodes): `ggml-metal.h`
+- **Thin community `Community 184`** (1 nodes): `ggml-metal.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 193`** (1 nodes): `ggml-cpu.h`
+- **Thin community `Community 185`** (1 nodes): `ggml-cpu.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 194`** (1 nodes): `gguf.h`
+- **Thin community `Community 186`** (1 nodes): `gguf.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 195`** (1 nodes): `ggml-webgpu.h`
+- **Thin community `Community 187`** (1 nodes): `ggml-webgpu.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 196`** (1 nodes): `ggml-rpc.h`
+- **Thin community `Community 188`** (1 nodes): `ggml-rpc.h`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 197`** (1 nodes): `Return first non-zero value matching any of the given nutrient IDs (priority ord`
+- **Thin community `Community 189`** (1 nodes): `Return first non-zero value matching any of the given nutrient IDs (priority ord`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 198`** (1 nodes): `Returns (piece_g, cup_g, tbsp_g) from USDA foodPortions array.`
+- **Thin community `Community 190`** (1 nodes): `Returns (piece_g, cup_g, tbsp_g) from USDA foodPortions array.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 199`** (1 nodes): `Convert USDA all-caps descriptions to readable Title Case names.     e.g. 'APPLE`
+- **Thin community `Community 191`** (1 nodes): `Convert USDA all-caps descriptions to readable Title Case names.     e.g. 'APPLE`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `date` connect `Community 1` to `Community 2`, `Community 3`, `Community 4`, `Community 5`, `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 12`, `Community 13`, `Community 15`, `Community 16`, `Community 17`, `Community 18`, `Community 20`, `Community 21`, `Community 23`, `Community 25`, `Community 28`, `Community 30`, `Community 37`, `Community 40`?**
-  _High betweenness centrality (0.026) - this node is a cross-community bridge._
-- **Why does `date` connect `Community 1` to `Community 2`, `Community 3`, `Community 5`, `Community 37`, `Community 40`, `Community 9`, `Community 8`, `Community 12`, `Community 13`, `Community 16`, `Community 18`, `Community 20`, `Community 25`, `Community 28`, `Community 30`?**
+- **Why does `date` connect `Community 2` to `Community 3`, `Community 4`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 11`, `Community 12`, `Community 13`, `Community 14`, `Community 16`, `Community 18`, `Community 19`, `Community 20`, `Community 28`, `Community 30`, `Community 35`?**
+  _High betweenness centrality (0.032) - this node is a cross-community bridge._
+- **Why does `date` connect `Community 2` to `Community 3`, `Community 35`, `Community 5`, `Community 6`, `Community 7`, `Community 8`, `Community 9`, `Community 11`, `Community 13`, `Community 14`, `Community 16`, `Community 18`, `Community 20`, `Community 28`?**
+  _High betweenness centrality (0.016) - this node is a cross-community bridge._
+- **Why does `isDate()` connect `Community 1` to `Community 0`, `Community 2`, `Community 5`, `Community 7`?**
   _High betweenness centrality (0.013) - this node is a cross-community bridge._
-- **Why does `CodingKeys` connect `Community 11` to `Community 1`?**
-  _High betweenness centrality (0.011) - this node is a cross-community bridge._
-- **Are the 663 inferred relationships involving `String` (e.g. with `.format()` and `.change()`) actually correct?**
-  _`String` has 663 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 664 inferred relationships involving `String` (e.g. with `.format()` and `.change()`) actually correct?**
+  _`String` has 664 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 631 inferred relationships involving `date` (e.g. with `.measureTTFT()` and `.testSingleItemTTFTSmoke()`) actually correct?**
   _`date` has 631 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 182 inferred relationships involving `sqlite3_free()` (e.g. with `sqlite3_fopen()` and `sqlite3_popen()`) actually correct?**
