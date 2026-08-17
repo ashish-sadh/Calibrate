@@ -73,6 +73,13 @@ is the verification pass.)*
   interactions with real entries are one seeded session's work, and the nudge/Insights rows need re-verifying against committed code rather than a lane's WIP;
   then More/Settings, which carries 45 `missing` rows and the operator's 0-EVERY-SCREEN mandate. **Standing instruction to the next scout: capture
   `versionCode` + `lastUpdateTime` immediately before AND immediately after every drive, and treat any screenshot taken across a change in either as unusable.**
+  **And a second harness trap, from the commit that carries this note: `git add <one path>` does not protect a scout's commit, because the index is shared with
+  every concurrent lane.** The executor had staged its own five #1130 files while I was writing the matrix, so my `git commit` swept them onto main under a docs
+  message with no verifier pass — the exact "never commit worker WIP" failure. I did not unwind it: by the time I checked, the executor had already committed
+  `663b525d` on top, and `git reset` would have destroyed a sibling lane's commit to save my own commit message. The tree at HEAD is correct and complete
+  (`nudgeCard` :319, `insightsSection` :321, `behaviorInsightGlyph` present); only the attribution is wrong, with the bulk of #1130 sitting in `ac299c5d` and its
+  last 24 lines in `663b525d`. **Use `git commit -- <path>` (a partial commit, which ignores the rest of the index) rather than `git add <path> && git commit`,
+  and check `git rev-parse HEAD` before any reset — that guard is the only reason the executor's commit survived this session.**
 
 - **2026-08-11 (scout #22, Opus 5):** **BODY / WEIGHT** — picked over the rotation's "Sharing again" because scout #21 left that section blocked on #1197's
   fixture rows (no connections on the emulator identity, so six surfaces are unreachable until someone INSERTs them), while Body/Weight was the largest
