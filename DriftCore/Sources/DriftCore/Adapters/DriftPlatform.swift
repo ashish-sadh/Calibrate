@@ -17,6 +17,11 @@ public enum DriftPlatform {
     /// Android an Activity-result facade wrapper. nil on macOS/tests =
     /// fail-soft (capture entry points hide or no-op, matching `health`).
     public static var imagePicker: ImagePicking?
+    /// File-in seam (#1175). Android installs a SAF `OpenDocument` wrapper;
+    /// iOS deliberately leaves this nil because SwiftUI's `.fileImporter` is
+    /// native there. nil on iOS/macOS/tests = fail-soft (import entry points
+    /// hide or no-op), matching `imagePicker`.
+    public static var documentImporter: DocumentImporting?
     /// Platform-secure store for the sharing auth session (iOS Keychain /
     /// Android EncryptedSharedPreferences). nil = fall back to the SQLite
     /// `sync_session` table (durable on both platforms, less protected).

@@ -939,7 +939,14 @@ public enum WorkoutService {
         defer { url.stopAccessingSecurityScopedResource() }
         #endif
 
-        let content = try String(contentsOf: url, encoding: .utf8)
+        return try importStrongCSV(content: try String(contentsOf: url, encoding: .utf8))
+    }
+
+    /// Same import, from CSV text already in memory. The Android path (#1175)
+    /// gets bytes from the SAF document seam rather than a security-scoped URL,
+    /// so both platforms run this identical parser — the file-reading half is
+    /// the only thing that differs.
+    public static func importStrongCSV(content: String) throws -> ImportResult {
         let isHevy = content.lowercased().contains("exercise_title") || content.lowercased().contains("set_type")
         let result = CSVParser.parse(content: content)
 
@@ -972,7 +979,6 @@ public enum WorkoutService {
             }
 
             guard let ds = dateStr, let en = exerciseName else { continue }
-            let date = String(ds.prefix(10))
             let wKey = WorkoutKey(timestamp: ds, name: workoutName)
 
             workoutsByKey[wKey] = (workoutName, duration, notes)
@@ -1045,7 +1051,6 @@ public enum WorkoutService {
 
         // Build per-session exercise lists: workoutName → [[exercises in session1], [exercises in session2], ...]
         var sessionsByName: [String: [[String]]] = [:]
-        var currentSession: [String: (date: String, exercises: [String])] = [:]
 
         // Use struct key instead of string concatenation (avoids pipe-in-name bug)
         struct SessionKey: Hashable { let name: String; let date: String }

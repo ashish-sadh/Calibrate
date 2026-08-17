@@ -114,6 +114,15 @@ open class MainActivity: AppCompatActivity {
             ImagePickerFacade.onPicked(uri)
         }
 
+        // Document picker (file-in seam #1175) — SAF OpenDocument, the CSV
+        // half of "Import from Strong / Hevy". Same registration rule and same
+        // polled-companion result path as the photo picker above.
+        DocumentPickerFacade.openLauncher = registerForActivityResult(
+            androidx.activity.result.contract.ActivityResultContracts.OpenDocument()
+        ) { uri ->
+            DocumentPickerFacade.onPicked(uri)
+        }
+
         // Camera capture — "Take Photo" half of Snap meal logging (#1111).
         // Same deferred-callback shape as the two contracts above.
         CameraCaptureFacade.cameraLauncher = registerForActivityResult(

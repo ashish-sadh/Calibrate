@@ -204,6 +204,11 @@ struct WorkoutView: View {
                                 Label("Import from Strong / Hevy", systemImage: sym("square.and.arrow.down"))
                             }
                             #endif
+                            #if os(Android)
+                            Button { runAndroidCSVImport() } label: {
+                                Label("Import from Strong / Hevy", systemImage: sym("square.and.arrow.down"))
+                            }
+                            #endif
                             // Numbered icons, not star/star.fill — the filled
                             // star read as "Package II is favorited" (field
                             // report 2026-07-09).
@@ -406,6 +411,12 @@ struct WorkoutView: View {
                                 .font(.caption)
                         }.buttonStyle(.bordered)
                         #endif
+                        #if os(Android)
+                        Button { runAndroidCSVImport() } label: {
+                            Label("Import from Strong / Hevy", systemImage: sym("square.and.arrow.down"))
+                                .font(.caption)
+                        }.buttonStyle(.bordered)
+                        #endif
                     }.padding(.top, 30)
                 } else {
                     VStack(alignment: .leading, spacing: 10) {
@@ -548,9 +559,9 @@ struct WorkoutView: View {
                 onReload: { loadData() }
             )
         }
-        // CSV import is UTType + fileImporter — no SkipUI equivalent. Android
-        // CSV import is a filed seam (#1067); the entry points above are gated
-        // to match so nothing dead-ends.
+        // CSV import is UTType + fileImporter — no SkipUI equivalent, so the
+        // Android entry points above call `runAndroidCSVImport()` instead: the
+        // file-in seam (#1175) presents SAF's picker and returns the bytes.
         #if DRIFT_IOS_APP
         .fileImporter(isPresented: $showingImport, allowedContentTypes: [.commaSeparatedText]) { handleImport($0) }
         #endif
@@ -898,6 +909,53 @@ struct WorkoutView: View {
         }
     }
     #endif
+    #if os(Android)
+    /// Android's half of "Import from Strong / Hevy" (#1175). SkipUI has no
+    /// `.fileImporter`, so the file-in seam presents SAF's document picker and
+    /// hands back raw bytes; from there both platforms run the same importer.
+    private func runAndroidCSVImport() {
+        Task { @MainActor in
+            guard let importer = DriftPlatform.documentImporter else { return }
+            // Strong and Hevy exports are text/csv, but Android content
+            // providers label a downloaded CSV inconsistently — plain text and
+            // the Excel alias are the two other labels seen in the wild, and
+            // omitting them greys the user's own export out in the picker.
+            let picked = await importer.importDocument(allowedMIMETypes: [
+                "text/csv", "text/comma-separated-values", "text/plain", "application/vnd.ms-excel"
+            ])
+            // nil = the user backed out of the picker: no alert, same as iOS.
+            guard let picked else { return }
+            guard let content = String(data: picked, encoding: .utf8) else {
+                importResult = "That file isn't text — export your history as CSV and try again."
+                showingImportAlert = true
+                return
+            }
+            do {
+                let r = try await Self.importCSVOffMain(content: content)
+                importResult = r.workouts == 0
+                    ? "No workouts found — this doesn't look like a Strong or Hevy CSV export."
+                    : "Imported \(r.workouts) workouts, \(r.sets) sets"
+                showingImportAlert = true
+                loadData()
+            } catch {
+                importResult = "Failed: \(error.localizedDescription)"
+                showingImportAlert = true
+            }
+        }
+    }
+
+    /// Parse + save off the main thread — an import writes a workout and its
+    /// sets per session, and doing that inline would ANR exactly the way the
+    /// `loadData()` reads would (same rule, same continuation shape).
+    private static func importCSVOffMain(content: String) async throws -> WorkoutService.ImportResult {
+        try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                do { continuation.resume(returning: try WorkoutService.importStrongCSV(content: content)) }
+                catch { continuation.resume(throwing: error) }
+            }
+        }
+    }
+    #endif
     /// Empty-state actions — extracted (#941): three buttons inline pushed the
     /// enclosing ViewBuilder past the type-checker's budget.
     private var emptyTemplatesActions: some View {
@@ -906,6 +964,11 @@ struct WorkoutView: View {
             HStack(spacing: 12) {
                 #if DRIFT_IOS_APP
                 Button { showingImport = true } label: {
+                    Label("Import", systemImage: sym("square.and.arrow.down")).font(.caption)
+                }.buttonStyle(.bordered)
+                #endif
+                #if os(Android)
+                Button { runAndroidCSVImport() } label: {
                     Label("Import", systemImage: sym("square.and.arrow.down")).font(.caption)
                 }.buttonStyle(.bordered)
                 #endif

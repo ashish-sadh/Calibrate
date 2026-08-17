@@ -53,6 +53,10 @@ let logger: Logger = Logger(subsystem: "com.drift.health", category: "DriftAndro
             // Image-in seam (#1128): system Photo Picker → downscaled JPEG Data
             // via the polled ImagePickerFacade Activity-result bridge.
             DriftPlatform.imagePicker = ImagePickerService()
+            // File-in seam (#1175): SAF OpenDocument → raw file Data via the
+            // polled DocumentPickerFacade bridge. iOS leaves this nil because
+            // SwiftUI's .fileImporter is native there.
+            DriftPlatform.documentImporter = DocumentImporterService()
             // UI-refresh kick (#1180): bridged @Observable writes never schedule
             // a Compose recomposition, so without this the screen repaints only
             // when unrelated window machinery pokes it — taps look dead even

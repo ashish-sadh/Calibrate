@@ -249,6 +249,52 @@ import GRDB
     try FileManager.default.removeItem(at: url)
 }
 
+/// Android has no security-scoped URL — the file-in seam (#1175) hands back
+/// raw bytes, so the importer must accept CSV text directly and produce the
+/// same result the URL path does from the same content.
+@Test func strongCSVImportFromContentMatchesURLPath() async throws {
+    let csv = """
+    Date,Workout Name,Duration,Exercise Name,Set Order,Weight,Reps,Distance,Seconds,Notes,Workout Notes,RPE
+    2026-03-29 10:00:00,"Pull",40m,"Barbell Row",1,135.0,8.0,0,0.0,"","",
+    2026-03-29 10:00:00,"Pull",40m,"Lat Pulldown",1,110.0,10.0,0,0.0,"","",
+    """
+    let fromContent = try WorkoutService.importStrongCSV(content: csv)
+    #expect(fromContent.workouts == 1)
+    #expect(fromContent.sets == 2)
+    #expect(fromContent.exercises == 2)
+
+    let url = FileManager.default.temporaryDirectory.appendingPathComponent("strong_content_parity.csv")
+    try csv.write(to: url, atomically: true, encoding: .utf8)
+    let fromURL = try WorkoutService.importStrongCSV(url: url)
+    #expect(fromURL.workouts == fromContent.workouts)
+    #expect(fromURL.sets == fromContent.sets)
+    #expect(fromURL.exercises == fromContent.exercises)
+    try FileManager.default.removeItem(at: url)
+}
+
+/// The Android entry point decodes picked bytes to UTF-8 text before calling
+/// the importer; a Hevy export arriving as Data must survive that hop.
+@Test func strongCSVImportFromPickedBytes() async throws {
+    let csv = """
+    title,start_time,exercise_title,set_index,weight_lbs,reps,set_type
+    "Leg Day",2026-03-30 09:00:00,"Back Squat",1,225.0,5,normal
+    """
+    let bytes = Data(csv.utf8)
+    let content = try #require(String(data: bytes, encoding: .utf8))
+    let r = try WorkoutService.importStrongCSV(content: content)
+    #expect(r.workouts == 1)
+    #expect(r.sets == 1)
+    #expect(r.exercises == 1)
+}
+
+/// Not-a-CSV input must come back as a zero-row result rather than throwing —
+/// the Android import UI keys its "this isn't a Strong/Hevy export" message off
+/// `workouts == 0`, so a throw here would surface as "Failed: ..." instead.
+@Test func strongCSVImportFromGarbageContentIsEmptyNotThrow() async throws {
+    let r = try WorkoutService.importStrongCSV(content: "not a csv at all\njust prose\n")
+    #expect(r.workouts == 0)
+}
+
 // MARK: - Recovery Estimator (12 tests)
 
 @Test func recoveryHighHRVHighScore() async throws {

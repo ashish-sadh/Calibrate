@@ -72,7 +72,13 @@ func sym(_ name: String) -> String {
     // Material's "outlined" star isn't), so both fall back to the fill.
     case "star", "star.slash": return "star.fill"
     case "camera.fill", "camera": return "camera.viewfinder"
-    case "square.and.arrow.down": return "list.bullet"
+    // Import (#1175): every call site is "bring a file INTO Drift". The old
+    // list.bullet stand-in drew the SAME glyph as the Drift Packages chip
+    // sitting next to it, so the two buttons read as duplicates. Material has
+    // no download tray; ExitToApp (arrow into a bracket) is the closest mapped
+    // "move it in here" glyph and, unlike a bullet list, differs from its
+    // neighbour.
+    case "square.and.arrow.down": return "arrow.forward.square"
     // target has NO mapping: Material's set has no bullseye and the house
     // stand-in read as HOME on the Today tab — a different object, the same
     // failure as the shopping-cart food icon. The tab bar draws TargetShape
