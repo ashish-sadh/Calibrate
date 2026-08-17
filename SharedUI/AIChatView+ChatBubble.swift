@@ -139,8 +139,9 @@ extension AIChatView {
 
             VStack(alignment: msg.role == .user ? .trailing : .leading, spacing: 6) {
                 #if DRIFT_IOS_APP
-                // Photo attach in chat lands with the media sweep (#1125). UIImage
-                // is UIKit-only; DRIFT_IOS_APP keeps it out of the Darwin bridging pass.
+                // UIImage is UIKit-only; DRIFT_IOS_APP keeps it out of the
+                // Darwin bridging pass. Android renders the same photo from the
+                // cached file below (#1174).
                 if msg.role == .user, let jpeg = msg.photoAttachment,
                    let uiImage = UIImage(data: jpeg) {
                     Image(uiImage: uiImage)
@@ -148,6 +149,16 @@ extension AIChatView {
                         .scaledToFill()
                         .frame(width: 200, height: 150)
                         .clipShape(RoundedRectangle(cornerRadius: Theme.radiusSmall))
+                }
+                #elseif os(Android)
+                if msg.role == .user, let path = msg.photoAttachmentPath {
+                    AsyncImage(url: URL(fileURLWithPath: path)) { image in
+                        image.resizable().scaledToFill()
+                    } placeholder: {
+                        Rectangle().fill(Theme.cardBackgroundElevated)
+                    }
+                    .frame(width: 200, height: 150)
+                    .clipShape(RoundedRectangle(cornerRadius: Theme.radiusSmall))
                 }
                 #endif
 
@@ -240,6 +251,12 @@ extension AIChatView {
                 #if DRIFT_IOS_APP
                 if let card = msg.proposedMealCard {
                     proposedMealCardView(card, messageId: msg.id)
+                }
+                #elseif os(Android)
+                // The one card the photo turn needs to be usable — the other 12
+                // stay in #1125. Mirrors +Cards.swift:14-89. #1174
+                if let card = msg.proposedMealCard {
+                    proposedMealCardAndroid(card, messageId: msg.id)
                 }
                 #endif
                 if let retryText = msg.retryTurn {

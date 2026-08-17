@@ -38,6 +38,12 @@ func sym(_ name: String) -> String {
     // SpeechRecognizer seam (#1063), so the write glyph reads truthfully.
     case "mic.fill", "mic": return "pencil"
     case "arrow.forward.circle.fill": return "arrow.forward"
+    // Undo chip on the photo-meal confirm (#1174). skip-ui maps no undo or
+    // counterclockwise arrow; the only circular one is Refresh, which the Retry
+    // chip four lines above already owns and which reads as "run it again" —
+    // the OPPOSITE of undo. The back arrow is the same object (an arrow) and
+    // the same direction as iOS's uturn.backward, with "Undo" beside it.
+    case "arrow.uturn.backward": return "arrow.left"
     // Material's mapped set has no cloud, globe or wifi glyph of any kind, so
     // the cloud-touchpoint banner on Photo Log (#1111) takes the neutral
     // informational icon. Deliberately NOT "lock": a padlock beside "your

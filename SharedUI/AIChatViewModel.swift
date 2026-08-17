@@ -70,6 +70,11 @@ final class AIChatViewModel {
     var pendingTurnHasPhoto: Bool = false
     /// JPEG bytes of the photo the user has selected but not yet sent.
     var pendingPhotoData: Data? = nil
+    /// Android only: on-disk copy of `pendingPhotoData`, written by
+    /// `ChatPhotoCache` at attach time. SkipUI renders images from a URL, so
+    /// the input-bar thumbnail needs a file; iOS decodes the bytes directly
+    /// and leaves this nil. #1174
+    var pendingPhotoPath: String? = nil
     /// ID of the assistant message that currently holds a ProposedMealCardData,
     /// so correction turns can replace the card in place.
     var pendingProposalTurnId: UUID? = nil
@@ -292,6 +297,9 @@ final class AIChatViewModel {
         /// JPEG bytes attached by the user. Displayed as a thumbnail in the
         /// user bubble; sent to the remote backend as a vision turn. #518.
         var photoAttachment: Data?
+        /// Android only: on-disk copy of `photoAttachment` so the bubble can
+        /// render it through `AsyncImage`. Nil on iOS. #1174
+        var photoAttachmentPath: String?
         /// Inline proposed-meal card emitted by the AI via propose_meal. #518.
         var proposedMealCard: ProposedMealCardData?
         let createdAt = Date()

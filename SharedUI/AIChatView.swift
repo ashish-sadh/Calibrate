@@ -537,7 +537,7 @@ struct AIChatView: View {
             Spacer()
             Button { vm.undoProposedMeal() } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: "arrow.uturn.backward")
+                    Image(systemName: sym("arrow.uturn.backward"))
                         .font(.system(size: Theme.FontSize.tiny, weight: .medium))
                     Text("Undo")
                         .font(.caption.weight(.semibold))

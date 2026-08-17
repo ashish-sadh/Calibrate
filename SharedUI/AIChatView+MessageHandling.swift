@@ -1447,6 +1447,11 @@ extension AIChatViewModel {
         let displayText = text.isEmpty ? "What's in this photo?" : text
         var userMsg = ChatMessage(role: .user, text: displayText)
         userMsg.photoAttachment = imageData
+        // Hand the on-disk copy to the bubble and stop owning it here, so the
+        // input bar's next attach can't remove the file this message renders
+        // from. Always nil on iOS (UIImage decodes the bytes). #1174
+        userMsg.photoAttachmentPath = pendingPhotoPath
+        pendingPhotoPath = nil
         messages.append(userMsg)
         defer { saveConversationState() }
 

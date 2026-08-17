@@ -10,8 +10,10 @@ import PhotosUI
 // button switches between toggleRecording and stop/send while recording. Camera
 // only appears when remote backend is active (local backend has no vision).
 //
-// Android v1 (#1066): photo attach + mic are gated off (they land with the
-// media/voice work in #1125/#1126) — the bar is a plain text field + send.
+// Android (#1174): photo attach is live — the camera opens the system photo
+// picker through DriftPlatform.imagePicker and the thumbnail renders from the
+// ChatPhotoCache file (SkipUI has no Data→Image path). Mic is still gated off;
+// it lands with the SpeechRecognizer seam in #1178.
 
 extension AIChatView {
 
@@ -48,13 +50,46 @@ extension AIChatView {
                     }
                     .transition(.opacity.combined(with: .scale(scale: 0.95, anchor: .leading)))
                 }
+                #elseif os(Android)
+                // Same 52pt thumbnail + remove-X, loaded from the cached file
+                // (Coil) instead of decoding the bytes. Gated on BOTH fields so
+                // a send that lost the race can't strand a thumbnail. The X's
+                // 32×44 tap frame replaces the HStack's 8pt spacing rather than
+                // adding to it, so the glyph lands where iOS puts it. #1174
+                if vm.pendingPhotoData != nil, let path = vm.pendingPhotoPath {
+                    HStack(spacing: 0) {
+                        AsyncImage(url: URL(fileURLWithPath: path)) { image in
+                            image.resizable().scaledToFill()
+                        } placeholder: {
+                            Rectangle().fill(Theme.cardBackgroundElevated)
+                        }
+                        .frame(width: 52, height: 52)
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        Button {
+                            ChatPhotoCache.remove(URL(fileURLWithPath: path))
+                            vm.pendingPhotoData = nil
+                            vm.pendingPhotoPath = nil
+                            DriftPlatform.uiRefreshKick?()   // #1180
+                        } label: {
+                            Image(systemName: sym("xmark.circle.fill"))
+                                .font(.system(size: Theme.FontSize.base))
+                                .foregroundStyle(Theme.textSecondary)
+                        }
+                        .buttonStyle(.plain)
+                        .frame(width: 32, height: 44)
+                        .contentShape(Rectangle())
+                        .accessibilityLabel("Remove photo")
+                        Spacer()
+                    }
+                }
                 #endif
 
                 #if os(Android)
                 // SkipUI has no TextField(axis:) initializer and no ClosedRange
                 // lineLimit — a plain single-line field (the shipped ChatView
                 // input bar uses the same shape). #1066
-                TextField("Ask anything...", text: $vm.inputText)
+                TextField(vm.pendingPhotoData != nil ? "Describe the photo (optional)..." : "Ask anything...",
+                          text: $vm.inputText)
                     .textFieldStyle(.plain).font(.subheadline)
                     .focused($inputFocused)
                     .onSubmit { vm.sendMessage() }
@@ -121,8 +156,9 @@ extension AIChatView {
     @ViewBuilder
     var idleControls: some View {
         // UIKit/PhotosUI + the speech shim are iOS-app-only; DRIFT_IOS_APP keeps
-        // them out of the Skip Android AND Darwin bridging passes. Photo attach +
-        // mic land with #1125 / #1126; Android v1 is a text-only Coach.
+        // them out of the Skip Android AND Darwin bridging passes. Android gets
+        // the same camera control through the image-in seam below (#1174); mic
+        // waits on the SpeechRecognizer seam (#1178).
         #if DRIFT_IOS_APP
         PhotosPicker(selection: $photoPickerItem, matching: .images) {
             Image(systemName: vm.pendingPhotoData != nil ? "camera.fill" : "camera")
@@ -154,6 +190,33 @@ extension AIChatView {
         }
         .accessibilityLabel("Voice input")
         .disabled(vm.isGenerating)
+        #elseif os(Android)
+        // skip-ui's Material map has no camera at all and `camera.viewfinder`
+        // resolves to a QR SCANNER — a different object — so the glyph is drawn
+        // (CameraGlyph.swift), the same call-site idiom Snap uses. Accent fill
+        // on attach mirrors iOS's camera → camera.fill flip. #1174
+        Button {
+            Task {
+                guard let data = await DriftPlatform.imagePicker?
+                        .pickLibraryImage(maxLongEdge: 1024, quality: 0.7),
+                      !data.isEmpty else { return }   // cancel / denial: stay put
+                vm.pendingPhotoData = data
+                vm.pendingPhotoPath = ChatPhotoCache.store(data)?.path
+                // #1180: the picker is an Activity, so returning from it gives
+                // Compose no window change of its own to repaint on — verified
+                // on the emulator, the thumbnail never appeared without this.
+                DriftPlatform.uiRefreshKick?()
+            }
+        } label: {
+            CameraShape()
+                .stroke(vm.pendingPhotoData != nil ? Theme.accent : Theme.textSecondary, lineWidth: 1.7)
+                .frame(width: 20, height: 20)
+        }
+        .buttonStyle(.plain)
+        .frame(width: 40, height: 40)
+        .contentShape(Rectangle())
+        .disabled(vm.isGenerating)
+        .accessibilityLabel("Attach photo")
         #endif
 
         let canSend = !vm.inputText.isEmpty || vm.pendingPhotoData != nil

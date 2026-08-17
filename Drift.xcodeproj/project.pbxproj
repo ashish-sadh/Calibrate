@@ -38,6 +38,7 @@
 		1E11E5682458FC83023281D7 /* WeightInsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A039993077E4BE9F83149249 /* WeightInsightsView.swift */; };
 		1E41F060499A92A9EFB59BE1 /* BiomarkerDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 155E590DFD0A95014B993B9D /* BiomarkerDetailView.swift */; };
 		2007C3F2341DA1EB49016893 /* DescribeMealSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFB4059C65AD94747FA41A1C /* DescribeMealSheet.swift */; };
+		200E4211836365D8B1C3E3EB /* AIChatView+ProposedMealCardAndroid.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD314E3C023FD2016B92E538 /* AIChatView+ProposedMealCardAndroid.swift */; };
 		234789CE004676FA7E37A620 /* BackupSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA787634824828D47A81583C /* BackupSettingsView.swift */; };
 		23BF8720FC949BA82AFA68B2 /* AutoResearchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3053C86565C8B26D3B16A0A2 /* AutoResearchTests.swift */; };
 		24D454E75E424F7ACA736A91 /* GlucoseTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DAF3E5EFC6C85282C084A8 /* GlucoseTabView.swift */; };
@@ -506,6 +507,7 @@
 		CB66CE8222D505237BF36996 /* AmbiguityEval.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AmbiguityEval.swift; sourceTree = "<group>"; };
 		CBA094F99189B3E26DB18B04 /* TodayDonutViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayDonutViewTests.swift; sourceTree = "<group>"; };
 		CCE57CE0133752BC4B5C80F3 /* CloudVisionKeyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudVisionKeyTests.swift; sourceTree = "<group>"; };
+		CD314E3C023FD2016B92E538 /* AIChatView+ProposedMealCardAndroid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AIChatView+ProposedMealCardAndroid.swift"; sourceTree = "<group>"; };
 		CE1C2C759DEB2E972ADAF6B6 /* FoodLogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodLogViewModel.swift; sourceTree = "<group>"; };
 		CFEA7EC8DCE26EE3C7942983 /* WebSearchSettingsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebSearchSettingsCard.swift; sourceTree = "<group>"; };
 		D0E8B598BCB7486A2C75848E /* WeightViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightViewModel.swift; sourceTree = "<group>"; };
@@ -618,6 +620,7 @@
 				54EC02163255E62885FDBDBA /* AIChatView+ChatBubble.swift */,
 				7F3D0C18C8783AF8F1F473B3 /* AIChatView+InputBar.swift */,
 				5B3C6E9E3E3CA35B6E5D9D02 /* AIChatView+MessageHandling.swift */,
+				CD314E3C023FD2016B92E538 /* AIChatView+ProposedMealCardAndroid.swift */,
 				98ADC92978075E7C92121D54 /* AIChatView+Suggestions.swift */,
 				74D1E8917416095000ED7D48 /* AIChatViewModel.swift */,
 				9CFFE8FDEE3FE443759F397D /* BodyMapView.swift */,
@@ -1243,6 +1246,7 @@
 				E68C25C1E22EAE7338CEE59D /* AIChatView+InputBar.swift in Sources */,
 				624D0CDDC2EE4E9BFDD87100 /* AIChatView+Interview.swift in Sources */,
 				D9FC9C93092DE0E5348964FF /* AIChatView+MessageHandling.swift in Sources */,
+				200E4211836365D8B1C3E3EB /* AIChatView+ProposedMealCardAndroid.swift in Sources */,
 				458D9ECE76AED099E8D209E7 /* AIChatView+Suggestions.swift in Sources */,
 				3D3875A216EC1403585C6067 /* AIChatView.swift in Sources */,
 				E4C82C1EE81626071A9673B1 /* AIChatViewModel.swift in Sources */,
