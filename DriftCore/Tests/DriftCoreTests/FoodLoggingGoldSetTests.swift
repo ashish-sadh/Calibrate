@@ -604,6 +604,9 @@ final class FoodLoggingGoldSetTests: XCTestCase {
     func testFoodInfo_macroIntakeQueries_areNotFoodLookups() async {
         let intakeQueries = [
             "whats my protein today", "how much protein have i eaten",
+            // The verbatim Coach query that rendered an empty bubble on Android —
+            // the tool text was always here; the render dropped it. #1232
+            "how much protein did i eat today",
             "carbs today", "how many carbs have i had",
             "how much fat have i eaten today", "my calories today",
         ]

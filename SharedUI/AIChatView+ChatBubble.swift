@@ -163,9 +163,20 @@ extension AIChatView {
                 #endif
 
                 if !msg.text.isEmpty {
+                    #if os(Android)
+                    // TypewriterText advances `revealed` from a Task, and @State
+                    // writes off the composition never schedule a recomposition on
+                    // Fuse — the delivery kick paints prefix(0) and no tick ever
+                    // repaints, so every reply that lands in <1s (the rules-path
+                    // answers: protein, calories, water, weight) was a permanently
+                    // empty bubble. Plain Text paints at that same kick. The reveal
+                    // animation is iOS-only polish. #1232
+                    let isNewInstant = false
+                    #else
                     let isNewInstant = msg.role == .assistant
                         && msg.id != vm.streamingMessageId
                         && Date().timeIntervalSince(msg.createdAt) < 1.0
+                    #endif
                     Group {
                         if isNewInstant {
                             TypewriterText(text: msg.text)
