@@ -65,6 +65,20 @@ struct TotalsRow: Sendable {
     // in a body (directive 0e).
     var proactiveAlerts: [BehaviorInsight] = []
     var behaviorInsights: [BehaviorInsight] = []
+    /// These two are the most expensive thing on the tab and the least urgent.
+    /// `computeInsights()` alone runs `weeklyWorkoutCounts(weeks: 8)` and then
+    /// ONE `fetchWeightEntries` PER WEEK (BehaviorInsightService:328-338) —
+    /// eight serial round trips, each crossing the JNI bridge — and `reload()`
+    /// has no throttle of its own yet (#1202), so it fires on every tab
+    /// re-entry and after every food log.
+    ///
+    /// Throttling just these two is safe in a way throttling the rest of
+    /// `reload()` would not be: they summarise 7- to 30-day windows, so no
+    /// answer they give can actually change between two reloads a minute apart.
+    /// The rings and the meal list, which DO change on every log, still reload
+    /// unconditionally.
+    private var coachingComputedAt: TimeInterval = 0
+    private static let coachingRecomputeInterval: TimeInterval = 60
 
     // MARK: - Daily Average (energy balance) inputs
     //
@@ -155,8 +169,12 @@ struct TotalsRow: Sendable {
             // defaults until the Health Connect seam (#1070) — the sleep and
             // Apple-workout detectors simply don't fire, which is the honest
             // Android answer rather than a fabricated one.
-            proactiveAlerts = BehaviorInsightService.computeProactiveAlerts()
-            behaviorInsights = BehaviorInsightService.computeInsights()
+            let now = Date().timeIntervalSince1970
+            if now - coachingComputedAt >= Self.coachingRecomputeInterval {
+                coachingComputedAt = now
+                proactiveAlerts = BehaviorInsightService.computeProactiveAlerts()
+                behaviorInsights = BehaviorInsightService.computeInsights()
+            }
         }
     }
 
@@ -325,7 +343,10 @@ struct TodayTab: View {
             .sheet(isPresented: $showingRecent, onDismiss: { store.reload() }) {
                 AndroidRecentMealsSheet(viewModel: foodLogVM)
             }
-            .sheet(isPresented: $showingCoach) {
+            // Clear the seed on dismiss: `autoSubmit` fires whenever the prefill
+            // is non-empty, so a leftover seed would make the NEXT presentation
+            // of this sheet silently re-ask the last nudge's question.
+            .sheet(isPresented: $showingCoach, onDismiss: { coachPrefill = "" }) {
                 AIChatView(prefill: coachPrefill, autoSubmit: !coachPrefill.isEmpty)
             }
         }
