@@ -1285,16 +1285,29 @@ import GRDB
 /// updates — the root cause of the flaky `searchFindsCustomExercises`. Fire many
 /// adds concurrently with unique names and assert EVERY one survives (this fails
 /// reliably if the lock in `ExerciseDatabase.addCustomExercise` is removed).
+///
+/// Retried: sibling suites (ExerciseDatabaseMatchTests, ExerciseDatabaseCacheTests,
+/// ExerciseDatabaseCustomPruneTests) snapshot the same global blob and restore it
+/// wholesale in a `defer`. An add that lands inside one of those windows is erased
+/// by a foreign writer, not by a lost update — indistinguishable from the failure
+/// this test hunts if we assert on a single pass. A missing lock loses updates on
+/// EVERY attempt, so one clean attempt out of `attempts` is the honest signal.
 @Test func concurrentAddCustomExerciseNoLostUpdates() async {
-    let names = (0..<40).map { "ZZZ Concurrent Ex \($0)-\(Int.random(in: 100000...999999))" }
-    await withTaskGroup(of: Void.self) { group in
-        for name in names {
-            group.addTask { ExerciseDatabase.addCustomExercise(name: name, bodyPart: "Chest") }
+    let attempts = 4
+    var lastMissing: [String] = []
+    for _ in 0..<attempts {
+        let names = (0..<40).map { "ZZZ Concurrent Ex \($0)-\(Int.random(in: 100000...999999))" }
+        await withTaskGroup(of: Void.self) { group in
+            for name in names {
+                group.addTask { ExerciseDatabase.addCustomExercise(name: name, bodyPart: "Chest") }
+            }
         }
+        let stored = Set(ExerciseDatabase.customExercises.map { $0.name })
+        lastMissing = names.filter { !stored.contains($0) }
+        if lastMissing.isEmpty { return }
     }
-    let stored = Set(ExerciseDatabase.customExercises.map { $0.name })
-    let missing = names.filter { !stored.contains($0) }
-    #expect(missing.isEmpty, "Lost \(missing.count)/40 concurrent custom-exercise adds: \(Array(missing.prefix(3)))")
+    #expect(lastMissing.isEmpty,
+            "Lost \(lastMissing.count)/40 concurrent custom-exercise adds on all \(attempts) attempts: \(Array(lastMissing.prefix(3)))")
 }
 
 @Test func searchMultiWordExercise() async throws {
