@@ -1,7 +1,7 @@
 # Graph Report - /Users/ashishsadh/workspace/Drift  (2026-08-17)
 
 ## Corpus Check
-- 1013 files · ~5,150,473 words
+- 1013 files · ~5,150,483 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -1305,11 +1305,11 @@ Nodes (1): Convert USDA all-caps descriptions to readable Title Case names.     
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `date` connect `Community 1` to `Community 2`, `Community 3`, `Community 4`, `Community 5`, `Community 7`, `Community 8`, `Community 9`, `Community 10`, `Community 12`, `Community 13`, `Community 15`, `Community 16`, `Community 17`, `Community 18`, `Community 20`, `Community 21`, `Community 23`, `Community 25`, `Community 28`, `Community 30`, `Community 37`, `Community 40`?**
-  _High betweenness centrality (0.043) - this node is a cross-community bridge._
-- **Why does `empty` connect `Community 1` to `Community 2`, `Community 4`, `Community 5`, `Community 8`, `Community 10`, `Community 13`, `Community 25`, `Community 30`?**
-  _High betweenness centrality (0.025) - this node is a cross-community bridge._
-- **Why does `Stage` connect `Community 30` to `Community 1`, `Community 4`?**
-  _High betweenness centrality (0.020) - this node is a cross-community bridge._
+  _High betweenness centrality (0.026) - this node is a cross-community bridge._
+- **Why does `date` connect `Community 1` to `Community 2`, `Community 3`, `Community 5`, `Community 37`, `Community 40`, `Community 9`, `Community 8`, `Community 12`, `Community 13`, `Community 16`, `Community 18`, `Community 20`, `Community 25`, `Community 28`, `Community 30`?**
+  _High betweenness centrality (0.013) - this node is a cross-community bridge._
+- **Why does `CodingKeys` connect `Community 11` to `Community 1`?**
+  _High betweenness centrality (0.011) - this node is a cross-community bridge._
 - **Are the 663 inferred relationships involving `String` (e.g. with `.format()` and `.change()`) actually correct?**
   _`String` has 663 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 631 inferred relationships involving `date` (e.g. with `.measureTTFT()` and `.testSingleItemTTFTSmoke()`) actually correct?**
